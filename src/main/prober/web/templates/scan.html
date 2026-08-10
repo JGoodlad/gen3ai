@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}scan{% endblock %}
+
+{% block content %}
+<h1>Turning-point scan</h1>
+<p class="lede">
+  <code>ProbeSession.scan()</code> — for every matching battle, its single worst decision, ranked
+  globally. Model-free: this reads the recorded critic values, it does not re-run a checkpoint.
+  <code>value_drop</code> ranks by the most negative ΔV(s→s′); <code>td_residual</code> by the
+  most negative critic surprise δ = r + γV(s′) − V(s).
+</p>
+
+<section class="card">
+  <form class="filters" hx-get="/partials/scan" hx-target="#scan"
+        hx-trigger="change, load" hx-indicator="#scan-busy">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>outcome
+      <select name="outcome">
+        <option value="loss">loss</option><option value="win">win</option><option value="">all</option>
+      </select>
+    </label>
+    <label>opponent
+      <select name="opponent">{{ m.opponent_options(opponents) }}</select>
+    </label>
+    <label>step
+      <select name="step">{{ m.step_options(summary) }}</select>
+    </label>
+    <label>metric
+      <select name="metric">
+        <option value="value_drop">value_drop (ΔV)</option>
+        <option value="td_residual">td_residual (critic surprise)</option>
+      </select>
+    </label>
+    <label>limit
+      <select name="limit"><option>25</option><option>50</option><option>100</option></select>
+    </label>
+    <span id="scan-busy" class="htmx-indicator muted">scanning every battle…</span>
+  </form>
+</section>
+
+<section class="card">
+  {# Deliberately NOT server-rendered: the scan opens every trace's npz and measured ~2 s on a
+     real run, and two seconds of white page is worse than a page that arrives and fills in. #}
+  <div id="scan">
+    <p class="empty">
+      <span class="spinner" style="display:inline-block;vertical-align:-1px"></span>
+      Reading the recorded critic values for every captured battle — a second or two.
+    </p>
+  </div>
+</section>
+{% endblock %}

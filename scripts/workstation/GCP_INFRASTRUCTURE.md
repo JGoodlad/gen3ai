@@ -7,6 +7,20 @@ One GCP e2-micro VM (`proxy.g5d.io`) serves two purposes:
 Both tunnels are desktop-initiated (no inbound ports needed on your home router).
 Both ends are key-only — no password auth possible from outside.
 
+## Web endpoints at a glance
+
+| Port | What | Exposed as | How it runs |
+|---|---|---|---|
+| 6006 | TensorBoard | `tensorboard.g5d.io` | `tensorboard.service` + `cloudflared-tensorboard` |
+| 6007 | Model architecture viewer | `model.g5d.io` | `gen3ai-model-viewer.service` + tunnel ingress |
+| 6008 | **Prober web views** | **nothing — local only** | run by hand; SSH-forward to reach it |
+| 1080 | SOCKS5 proxy | — | `proxy-tunnel` |
+
+Every origin binds `127.0.0.1`, so a Cloudflare tunnel entry is the only way anything becomes
+publicly reachable. Ports **8000** (dev Showdown) and **8001** (LIVE TRAINING Showdown — never
+touch it) are not web endpoints and are not tunnelled; an agent needing its own Showdown server
+binds a `9XXX` port.
+
 ---
 
 ## GCP VM details
@@ -339,6 +353,117 @@ than 300 KB of HTML.
 digraph, the measured audit numbers and the contamination notes. Put **Cloudflare Access** in front
 of it unless that is intended to be world-readable. The origin binds to `127.0.0.1` only, so the
 tunnel is the sole path in.
+
+---
+
+## Prober web views (`:6008`) — LOCAL ONLY, not on g5d.io
+
+The prober's browser front end (`src/main/prober/web/`, see its `CLAUDE.md`) serves the read-only
+forensic views — run summary, battles, `scan`, `triage`, the `falsify_scan` crater bracket, the
+`calibration` reliability curve.
+
+**There is no service and no tunnel entry for it.** Unlike TensorBoard and the model viewer, it is
+run by hand when you want it and stopped when you are done. Port **6008** is reserved for it,
+beside TensorBoard's 6006 and the model viewer's 6007, and it binds loopback only.
+
+```bash
+# on the workstation — point it at models/ and pick any run from the header
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.prober.web /home/goodlad/dev/gen3ai/models
+# -> http://127.0.0.1:6008
+
+# from another machine, over the workstation SSH tunnel (no cloudflared involved)
+ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io
+# then open http://localhost:6008
+```
+
+`models/` lives only in the main checkout, so pass an absolute `models/...` path when running from
+a git worktree.
+
+### The shared password
+
+Reading is anonymous. The two probes that spend minutes of CPU (`falsify_scan`, `calibration`) are
+behind one shared password, handed out in Discord as needed. No usernames, no email: helping out
+should not cost anyone personal information.
+
+**The password itself is deliberately not written down in this repository.** This file is
+committed, and the repo is public — printing the secret here would publish the thing the Discord
+hand-out exists to control. It lives only at `~/.config/gen3ai/prober-password` (mode 0600) on the
+workstation; `cat` it when you need to share it.
+
+Nothing exports the password itself — only the PATH to it, from two places so it survives a reboot
+for both consumers:
+
+| File | Who reads it |
+|---|---|
+| `~/.config/environment.d/60-gen3ai-prober.conf` | the systemd **user manager**, at login/boot — so a future `gen3ai-prober-web.service` inherits it |
+| `~/.profile` | login shells, **including non-interactive ones** |
+| `~/.bashrc` | interactive non-login shells |
+
+Both shell files are needed, and the reason is a trap worth remembering: Ubuntu's `~/.bashrc`
+opens with *"If not running interactively, don't do anything"* and returns, so an export appended
+to it is invisible to `bash -lc`, cron, and anything else non-interactive. `~/.profile` has no such
+guard. (Verified: with only the `.bashrc` export, `bash -lc 'echo $GEN3AI_PROBER_PASSWORD_FILE'`
+printed nothing.)
+
+```bash
+cat ~/.config/gen3ai/prober-password          # the secret itself
+echo $GEN3AI_PROBER_PASSWORD_FILE             # the path, in a fresh login shell
+```
+
+`environment.d` is picked up when the user manager starts, so a change needs a re-login (or
+`systemctl --user import-environment` for an already-running session). To rotate the password,
+edit the file and restart whatever is serving — the app reads it once at startup, and its
+cookie-signing key is per-process, so every existing session ends at the same moment.
+
+**It fails closed.** With no password set the probes are switched off entirely rather than left
+open, so a misconfigured deploy is read-only, never a public CPU-burn button. `--open` is the
+explicit opt-out for a laptop.
+
+### Which runs it will open
+
+It is pointed at `models/` and enumerates the runs inside it; the header carries a picker. A
+request names a run by NAME, and the name must be a member of that server-built listing — no
+client string is ever joined to a path, so traversal is unrepresentable rather than filtered.
+
+The one asymmetry worth knowing: **a direct child of `models/` may be a symlink** and is followed
+(resolved once, at enumeration) — that is how the launcher's worktree runs appear, and on this box
+the five newest runs are exactly that. A symlink **inside** a run refuses the whole run. Details
+and the attack list: `src/main/prober/web/CLAUDE.md` and `runs_test.py`.
+
+### If it is ever promoted to `prober.g5d.io`
+
+Same shape as the other two — an origin service on `:6008` plus a `cloudflared` ingress entry on
+the existing tunnel.
+
+**No Cloudflare Access — decided by the owner (2026-08-09): this is an open-source model, and its
+architecture, training outcomes and forensic traces are all intended to be public.** Same posture
+as `model.g5d.io`. The expensive probes are gated instead by the app's own shared password (above),
+which protects CPU rather than data. The one thing on these pages that is *not* model content is
+incidental: the run header and the battle `id` column print absolute paths under
+`/home/goodlad/dev/gen3ai/models/`, so the deploy discloses the box's directory layout and run
+names. If that ever matters, it is a rendering change (show run-relative ids), not a reason for an
+auth layer.
+
+**Both of the things that used to block a deploy are now closed:** the app takes a models root and
+picks any run (so the unit does not need restarting when the current run changes), and the job
+endpoints require the shared password (so an anonymous visitor cannot start a re-roll).
+
+What still differs from the model viewer's unit, and should go in this one:
+
+- **It holds state and does real work.** The model viewer is a pure function per request. This
+  caches a `ProbeSession` per run and runs jobs on a thread pool. Set `--job-workers 1`, a
+  `MemoryMax=`, and the same `Nice=10` / `CPUWeight=20`. Jobs are in-process state, so a restart
+  silently discards a running scan.
+- **`EnvironmentFile` / `Environment=GEN3AI_PROBER_PASSWORD_FILE=…`** — a user unit does inherit
+  `environment.d`, but stating it in the unit makes the dependency visible where someone reading
+  the unit will look.
+- **No live reload.** The model viewer re-executes its generator module on mtime change; this is a
+  FastAPI app whose routes are bound at startup, so a code change needs `systemctl --user restart`.
+
+Carry over from the Jul 29 2026 outage note regardless: `Restart=always`,
+`StartLimitIntervalSec=0`, exponential backoff, and a memory cap — a live tunnel in front of a dead
+origin is the signature failure here too.
 
 ---
 

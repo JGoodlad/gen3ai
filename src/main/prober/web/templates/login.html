@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}unlock{% endblock %}
+
+{% block content %}
+<h1>Unlock the expensive probes</h1>
+<p class="lede">
+  Everything you can already see stays open — run summary, battles, scan, triage, and any finished
+  probe result. What this unlocks is the two probes that <em>spend real time</em>:
+  <code>falsify_scan</code> and <code>calibration</code> re-roll battles through the Showdown
+  bridge, which is minutes of CPU next to a live training run.
+</p>
+<p class="lede">
+  One shared password, no account, no email. Ask for it if you need it.
+</p>
+
+<section class="card" style="max-width: 30rem">
+  {% if message %}<p class="err">{{ message }}</p>{% endif %}
+  <form method="post" action="/login" class="filters">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <label style="flex: 1 1 100%">password
+      <input type="password" name="password" autocomplete="current-password" autofocus
+             {% if not auth_configured %}disabled{% endif %}>
+    </label>
+    <button class="primary" type="submit" {% if not auth_configured %}disabled{% endif %}>unlock</button>
+  </form>
+  {% if not auth_configured %}
+  <p class="muted">
+    This instance has no password set, so the probes are switched off entirely. An operator sets
+    <code>GEN3AI_PROBER_PASSWORD_FILE</code> (or <code>GEN3AI_PROBER_PASSWORD</code>) and restarts.
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

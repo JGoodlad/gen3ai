@@ -1,0 +1,81 @@
+{% import "_macros.html" as m %}
+{% set gate = r.gate %}
+{% set oc = r.overall_calibration %}
+{% for name, spec in specs %}{{ m.chart(name, spec) }}{% endfor %}
+
+<div class="stats">
+  <div class="stat"><div class="k">critic_mean_reducible (LOOSE upper bound)</div>
+       <div class="v warn">{{ m.pct(gate.critic_mean_reducible_upper_bound, 0) }}</div></div>
+  <div class="stat"><div class="k">unattributed → overvalued</div>
+       <div class="v">{{ m.pct(gate.unattributed_critic_overvalued, 0) }}</div></div>
+  <div class="stat"><div class="k">unattributed → lost position</div>
+       <div class="v">{{ m.pct(gate.unattributed_lost_position, 0) }}</div></div>
+  <div class="stat"><div class="k">policy_reducible (proven)</div>
+       <div class="v pos">{{ m.pct(gate.policy_reducible, 0) }}</div></div>
+</div>
+
+<h2>The selection confound, stated in the data</h2>
+<p class="muted">
+  A calibrated critic reads &lt;0 on wins and &gt;0 on losses; the unconditional bias is then
+  mostly the capture quota over-sampling losses, not miscalibration. If these two have the same
+  sign, the headline above is not just loose — it is measuring the quota.
+</p>
+<div class="scroll-x">
+<table>
+  <thead><tr>
+    <th class="num">bias E[V−G]</th><th class="num">bias on wins</th><th class="num">bias on losses</th>
+    <th class="num">captured win fraction</th><th class="num">MAE</th>
+    <th class="num">explained var</th><th class="num">slope</th><th class="num">n</th>
+  </tr></thead>
+  <tbody><tr data-row>
+    <td class="num">{{ m.signed(oc.bias) }}</td>
+    <td class="num">{{ m.signed(oc.bias_on_wins) }}</td>
+    <td class="num">{{ m.signed(oc.bias_on_losses) }}</td>
+    <td class="num">{{ m.num(oc.captured_win_fraction, 3) }}</td>
+    <td class="num">{{ m.num(oc.mae) }}</td>
+    <td class="num">{{ m.num(oc.ev, 3) }}</td>
+    <td class="num">{{ m.num(oc.slope, 3) }}</td>
+    <td class="num">{{ oc.n }}</td>
+  </tr></tbody>
+</table>
+</div>
+
+<p class="interp">{{ r.interpretation }}</p>
+
+<h2>Reliability curve</h2>
+<div class="scroll-x">
+<table>
+  <thead><tr>
+    <th class="num">V range</th><th class="num">V mean</th><th class="num">G mean</th>
+    <th class="num">gap V−G</th><th class="num">n</th>
+  </tr></thead>
+  <tbody>
+  {% for b in r.reliability_curve %}
+    <tr data-row>
+      <td class="num mono">{{ m.num(b.v_lo, 1) }} … {{ m.num(b.v_hi, 1) }}</td>
+      <td class="num">{{ m.num(b.v_mean) }}</td>
+      <td class="num">{{ m.num(b.g_mean) }}</td>
+      <td class="num">{{ m.signed(b.gap) }}</td>
+      <td class="num">{{ b.n }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Unattributed resolution</h2>
+<div class="stats">
+  <div class="stat"><div class="k">unattributed craters</div>
+       <div class="v">{{ r.unattributed_resolution.n_unattributed_craters }}</div></div>
+  <div class="stat"><div class="k">no gap available</div>
+       <div class="v">{{ r.unattributed_resolution.n_without_gap }}</div></div>
+  <div class="stat"><div class="k">overvalued share</div>
+       <div class="v">{{ m.pct(r.unattributed_resolution.overvalued_share_of_unattributed, 0) }}</div></div>
+  <div class="stat"><div class="k">mean reliability gap</div>
+       <div class="v">{{ m.num(r.unattributed_resolution.mean_reliability_gap) }}</div></div>
+</div>
+{% if r.unattributed_resolution.examples %}
+<ul class="mono muted">{% for e in r.unattributed_resolution.examples %}<li>{{ e | tojson }}</li>{% endfor %}</ul>
+{% endif %}
+
+{{ m.caveats(r.caveats) }}

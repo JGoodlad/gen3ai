@@ -10,6 +10,13 @@ re-running a script per turn.
 export PYTHONPATH=$PYTHONPATH:src && python3 -m main.prober <run_dir | eval_traces_dir | summary.json> [--ckpt PATH] [--inv N]
 ```
 
+**Three surfaces, one engine.** The TUI here, the JSON CLI (`query.py`), and a **browser front
+end** (`web/`, `python -m main.prober.web <run_dir>`) are siblings over the same analysis — none
+is a layer on another. The web app is read-only and adapts `ProbeSession` only (run summary ·
+battles · scan · triage · the `falsify_scan` crater bracket · the `calibration` reliability
+curve); `analyze` / `lookahead` / `better_line` / `replay_counterfactual` stay TUI+CLI. See
+`web/CLAUDE.md`.
+
 ## Engine / app split (the important seam)
 
 The analysis is a **pure, framework-agnostic engine** (`engine.py` + `model.py`);
@@ -1041,9 +1048,38 @@ depth-2 beam principal variation, determinism), `app_test.py`
 (Textual `run_test` Pilot with an injected fake model — never loads a real checkpoint,
 so it stays fast; incl. the review flag/note/glyph flow + the `L`/`B`/`C` Counterfactual guards):
 
+and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `app_test.py`
+`TestClient` over a synthetic run, each endpoint compared against a direct `ProbeSession` call ·
+`openapi_snapshot_test.py` the committed-contract drift gate · `render_integration_test.py`
+`@integration`, headless chrome with the network blocked — see `web/CLAUDE.md`):
+
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/prober -q
 ```
 
-`textual` is pinned in `environment.yml`. The shared Textual base lives in
-`src/main/tui/` — see its CLAUDE.md.
+`textual`, `fastapi`, `uvicorn`, `jinja2` and `httpx` are pinned in `environment.yml`
+(`httpx` is what starlette's `TestClient` runs on, so the web unit tests need it). The shared
+Textual base lives in `src/main/tui/` — see its CLAUDE.md.
+
+## Web front end (`web/`)
+
+A third sibling over the engine — FastAPI + server-rendered Jinja2/HTMX, charts as Vega-Lite specs
+emitted from Python, all JS **vendored** (no CDN, no build step, no `node_modules`). Read-only,
+adapts `ProbeSession` and nothing else; `ProbeSession` and the TUI are unmodified.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python3 -m main.prober.web models/   # :6008, pick any run
+python3 -m main.prober.web --check-openapi                                # contract drift gate
+```
+
+Pointed at `models/` it enumerates the runs and offers a picker; a run is selected by NAME and the
+name must be in the server's own listing, so no client string ever reaches a path join. Reading is
+anonymous; `falsify_scan` / `calibration` need the shared password.
+
+**Local only — not on g5d.io** (no unit, no tunnel entry). From elsewhere:
+`ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
+
+Full detail — the one rule (every number comes back from a session method verbatim), the job
+registry for the minutes-long probes, what the headless render test actually verifies, and the
+two gotchas (`starlette.HTTPException` dispatch; `build_trace_tree` tolerating a nonexistent path)
+— is in **`src/main/prober/web/CLAUDE.md`**.

@@ -1,0 +1,31 @@
+{% import "_macros.html" as m %}
+{# One fragment for both heavy probes. While pending/running it re-requests ITSELF every 2s
+   (hx-swap-oob is not needed — the poller replaces the whole #job block, including this trigger),
+   and the trigger disappears the moment the job reaches a terminal state, so a finished page
+   stops hitting the server. #}
+<div {% if not job.done %}hx-get="/partials/job/{{ job.id }}" hx-trigger="every 2s"
+     hx-target="#job"{% endif %} data-job-status="{{ job.status }}" data-job-id="{{ job.id }}">
+
+  <div class="job-status">
+    {% if not job.done %}<span class="spinner"></span>{% endif %}
+    <span class="mono">{{ job.kind }}</span>
+    <span class="pill">{{ job.status }}</span>
+    <span>{{ job.elapsed_sec }}s</span>
+    <span class="muted mono">{{ job.params | tojson }}</span>
+  </div>
+
+  {% if job.status == "error" %}
+    <p class="err">{{ job.error }}</p>
+  {% elif not job.done %}
+    <p class="muted">Re-rolling turns through the bridge. This does not block other pages.</p>
+  {% else %}
+    {% set r = job.result %}
+    {% if not r %}
+      <p class="empty">the probe returned nothing</p>
+    {% elif job.kind == "falsify_scan" %}
+      {% include "partials/falsify_result.html" %}
+    {% elif job.kind == "calibration" %}
+      {% include "partials/calibration_result.html" %}
+    {% endif %}
+  {% endif %}
+</div>

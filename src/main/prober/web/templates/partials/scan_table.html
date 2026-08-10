@@ -1,0 +1,65 @@
+{% import "_macros.html" as m %}
+{% if error %}
+  <p class="err">{{ error }}</p>
+{% elif not rows %}
+  <p class="empty">no battles match these filters</p>
+{% else %}
+{{ m.chart("scan", spec) }}
+<p class="muted" data-count="{{ rows | length }}">
+  {{ rows | length }} battle{{ "" if rows|length == 1 else "s" }}, worst turning point each —
+  most negative first. <strong>Pick a row and take its id onward:</strong> this view finds
+  <em>where</em> a loss turned; explaining <em>why</em> is <code>analyze</code> in the TUI or the CLI.
+</p>
+<div class="scroll-x">
+<table>
+  <thead><tr>
+    <th class="num" title="Training step whose eval produced this trace">step</th>
+    <th title="Which opponent was played">opponent</th>
+    <th>outcome</th>
+    <th class="num" title="Total turns in the battle">turns</th>
+    <th class="num" title="Invocation index — the Nth recorded decision. This is the number you pass to analyze/falsify.">inv</th>
+    <th class="num" title="Battle turn number">turn</th>
+    <th title="The action actually taken">chose</th>
+    <th title="Our active Pokémon, HP and status, before the decision">our active</th>
+    <th title="Opponent's active Pokémon">opp active</th>
+    <th class="num" title="ΔV — how far the critic's value fell from this decision to the next. The most negative step is the turning point.">ΔV</th>
+    <th class="num" title="TD residual δ = r + γV(s′) − V(s): how much worse the outcome was than the critic expected. Large negative = the critic was surprised.">TD δ</th>
+    <th class="num" title="Environment reward for this step">reward</th>
+    <th title="Model-free flags on this decision">flags</th>
+    <th>events</th>
+    <th title="Copy the battle id for the CLI or the TUI">take it onward</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% set w = r.worst or {} %}
+    <tr data-row data-battle-id="{{ r.short_id }}">
+      <td class="num">{{ "{:,}".format(r.step) }}</td>
+      <td>{{ r.opponent }}</td>
+      <td class="{{ r.outcome }}">{{ r.outcome }}</td>
+      <td class="num">{{ r.turns }}</td>
+      <td class="num">{{ w.inv }}</td>
+      <td class="num">{{ w.turn }}</td>
+      <td class="mono">{{ w.chosen }}</td>
+      <td>{{ w.our_active }}</td>
+      <td>{{ w.opp_active }}</td>
+      <td class="num">{{ m.signed(w.delta_v) }}</td>
+      <td class="num">{{ m.signed(w.td_residual) }}</td>
+      <td class="num">{{ m.signed(w.reward_total) }}</td>
+      <td>{% for f in (w.flags or []) %}<span class="pill">{{ f }}</span> {% endfor %}</td>
+      <td class="wrap mono">{{ (w.events or []) | join(", ") }}</td>
+      {# The handoff. Without this the table is a dead end: it names the exact decision that lost
+         the battle and gives you no way to act on it. `analyze` is deliberately not a web view
+         (it loads a checkpoint and holds state), so the honest bridge is the command. #}
+      <td class="nowrap">
+        <button class="linky copybtn" type="button"
+                data-copy="python -m main.prober.query analyze {{ r.id }} {{ w.inv }}"
+                title="Copy: python -m main.prober.query analyze &lt;id&gt; {{ w.inv }}">copy cmd</button>
+        <button class="linky copybtn" type="button"
+                data-copy="{{ r.id }}" title="Copy the battle id">id</button>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}

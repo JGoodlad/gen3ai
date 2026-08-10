@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}run{% endblock %}
+
+{% block content %}
+<h1>Run summary</h1>
+<p class="lede">
+  <code>ProbeSession.run_summary()</code> — every eval step, the model identity that produced its
+  traces, the opponents played, and the checkpoints on disk. Model-free: no checkpoint is loaded
+  to build this page.
+</p>
+
+{# The entry point. Six equal tabs in the header answer six different questions and say so
+   nowhere; this is the map, in the order src/main/prober/CLAUDE.md recommends working through
+   them. #}
+<section class="card startcard">
+  <h2 style="margin-top:0">Where to start</h2>
+  <ol class="startlist">
+    {% for href, label, question, blurb in views %}
+    <li>
+      <a href="{{ href }}{% if run %}?run={{ run | urlencode }}{% endif %}">{{ label }}</a>
+      <span class="q">{{ question }}</span>
+      <span class="muted">{{ blurb }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{% if not data %}
+  <section class="card"><p class="empty">No run data.</p></section>
+{% else %}
+<section class="card">
+  <div class="stats">
+    <div class="stat"><div class="k">eval steps</div><div class="v">{{ data.n_steps }}</div></div>
+    <div class="stat"><div class="k">battles captured</div><div class="v">{{ data.totals.battles }}</div></div>
+    <div class="stat"><div class="k">wins</div><div class="v win">{{ data.totals.win }}</div></div>
+    <div class="stat"><div class="k">losses</div><div class="v loss">{{ data.totals.loss }}</div></div>
+    <div class="stat"><div class="k">γ</div><div class="v">{{ data.gamma }}</div></div>
+    <div class="stat"><div class="k">checkpoints</div><div class="v">{{ data.checkpoints | length }}</div></div>
+  </div>
+  {{ m.chart("outcomes", spec) }}
+</section>
+
+<section class="card">
+  <h2>Steps</h2>
+  <div class="scroll-x">
+  <table>
+    <thead><tr>
+      <th class="num">step</th><th class="num">win</th><th class="num">loss</th>
+      <th>opponents</th><th>git</th><th>arch signature</th><th>snapshot</th>
+    </tr></thead>
+    <tbody>
+    {% for s in data.steps %}
+      <tr data-row>
+        <td class="num">{{ "{:,}".format(s.step) }}</td>
+        <td class="num win">{{ s.totals.win }}</td>
+        <td class="num loss">{{ s.totals.loss }}</td>
+        <td class="wrap">{% for o in s.opponents %}<span class="pill">{{ o.name }} {{ o.win }}–{{ o.loss }}</span> {% endfor %}</td>
+        <td class="mono">{{ (s.identity.git_hash or "")[:8] if s.identity else "—" }}</td>
+        <td class="mono">{{ s.identity.arch_signature if s.identity else "—" }}</td>
+        <td>{% if s.identity and s.identity.snapshot_available %}<span class="pos">exact</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Checkpoints on disk</h2>
+  {% if not data.checkpoints %}
+    <p class="empty">none found (the model-resolution ladder will fall back to best_model/latest)</p>
+  {% else %}
+  <div class="scroll-x">
+  <table>
+    <thead><tr><th class="num">step</th><th>path</th></tr></thead>
+    <tbody>
+    {% for c in data.checkpoints %}
+      <tr data-row><td class="num">{{ "{:,}".format(c.step) }}</td><td class="mono">{{ c.path }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

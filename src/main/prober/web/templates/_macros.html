@@ -1,0 +1,39 @@
+{# Shared fragments. `chart` is the ONE place a Vega-Lite spec reaches the page: the server emits
+   the spec as JSON and app.js embeds it, so no template ever writes plotting code. #}
+
+{% macro chart(name, spec) %}
+  {% if spec %}
+  <div class="chart" data-chart="{{ name }}">
+    <script type="application/json" class="vega-spec">{{ spec | tojson }}</script>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro caveats(items, title="caveats — read these before quoting a number") %}
+  {% if items %}
+  <details class="caveats">
+    <summary>{{ title }} ({{ items | length }})</summary>
+    <ul>{% for c in items %}<li>{{ c }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+{% endmacro %}
+
+{% macro num(v, digits=2) %}{% if v is none %}<span class="muted">—</span>{% else %}{{ "%.*f" | format(digits, v) }}{% endif %}{% endmacro %}
+
+{% macro signed(v, digits=2) %}{% if v is none %}<span class="muted">—</span>{% else %}<span class="{{ 'neg' if v < 0 else 'pos' }}">{{ "%.*f" | format(digits, v) }}</span>{% endif %}{% endmacro %}
+
+{% macro pct(v, digits=1) %}{% if v is none %}<span class="muted">—</span>{% else %}{{ "%.*f" | format(digits, v * 100) }}%{% endif %}{% endmacro %}
+
+{% macro step_options(summary, selected=None) %}
+  <option value="">all steps</option>
+  {% for s in (summary.steps if summary else []) %}
+  <option value="{{ s.step }}" {% if selected == s.step %}selected{% endif %}>{{ "{:,}".format(s.step) }}</option>
+  {% endfor %}
+{% endmacro %}
+
+{% macro opponent_options(names, selected=None) %}
+  <option value="">all opponents</option>
+  {% for name in names %}
+  <option value="{{ name }}" {% if selected == name %}selected{% endif %}>{{ name }}</option>
+  {% endfor %}
+{% endmacro %}

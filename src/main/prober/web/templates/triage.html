@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}triage{% endblock %}
+
+{% block content %}
+<h1>Loss-lever triage</h1>
+<p class="lede">
+  <code>ProbeSession.triage()</code> — every loss is attributed to its single worst turning point,
+  bucketed into the fixed taxonomy, and the buckets are ranked by estimated recoverable win-rate.
+  That ranking is <strong>an upper bound</strong>: it assumes fixing the lever flips every loss it
+  explains, and it weights only the fixed bot opponents. Read the caveats.
+</p>
+
+<section class="card">
+  <form class="filters" hx-get="/partials/triage" hx-target="#triage"
+        hx-trigger="change" hx-indicator="#triage-busy">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>step
+      <select name="step">{{ m.step_options(summary) }}</select>
+    </label>
+    <label>opponent
+      <select name="opponent">{{ m.opponent_options(opponents) }}</select>
+    </label>
+    <span id="triage-busy" class="htmx-indicator muted">triaging…</span>
+  </form>
+</section>
+
+<section class="card">
+  <div id="triage">{% include "partials/triage_table.html" %}</div>
+</section>
+{% endblock %}

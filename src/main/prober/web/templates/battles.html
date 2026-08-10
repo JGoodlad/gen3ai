@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}battles{% endblock %}
+
+{% block content %}
+<h1>Battles</h1>
+<p class="lede">
+  <code>ProbeSession.battles()</code> — every captured trace, filterable. The <code>id</code> is
+  the <code>*_summary.json</code> path the CLI takes: paste it into
+  <code>python -m main.prober.query overview &lt;id&gt;</code> or open its <code>_replay.html</code>
+  sibling in a browser.
+</p>
+
+<section class="card">
+  {# `change` refires the fragment on every control; `load` paints it once so the first view is
+     not an empty table waiting for an interaction. #}
+  <form class="filters" hx-get="/partials/battles" hx-target="#battles"
+        hx-trigger="change" hx-indicator="#battles-busy">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>outcome
+      <select name="outcome">
+        <option value="">all</option><option value="loss">loss</option><option value="win">win</option>
+      </select>
+    </label>
+    <label>opponent
+      <select name="opponent">{{ m.opponent_options(opponents) }}</select>
+    </label>
+    <label>step
+      <select name="step">{{ m.step_options(summary) }}</select>
+    </label>
+    <span id="battles-busy" class="htmx-indicator muted">loading…</span>
+  </form>
+</section>
+
+<section class="card">
+  {# Rendered SERVER-SIDE on first paint (measured 119 ms) — landing on an empty page and
+     waiting for a round trip is the flow break, not the millisecond. The same fragment template
+     handles later filter swaps, so the two can never drift. #}
+  <div id="battles">{% include "partials/battles_table.html" %}</div>
+</section>
+{% endblock %}

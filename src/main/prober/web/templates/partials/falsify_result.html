@@ -1,0 +1,51 @@
+{% import "_macros.html" as m %}
+{% set gate = r.gate %}
+{% for name, spec in specs %}{{ m.chart(name, spec) }}{% endfor %}
+
+<div class="stats">
+  <div class="stat"><div class="k">critic headroom (UPPER BOUND)</div>
+       <div class="v warn">{{ m.pct(gate.critic_headroom_upper_bound, 0) }}</div></div>
+  <div class="stat"><div class="k">policy_reducible (proven)</div>
+       <div class="v pos">{{ m.pct(gate.policy_reducible, 0) }}</div></div>
+  <div class="stat"><div class="k">aleatoric</div><div class="v">{{ m.pct(gate.aleatoric, 0) }}</div></div>
+  <div class="stat"><div class="k">unattributed</div><div class="v">{{ m.pct(gate.unattributed, 0) }}</div></div>
+  <div class="stat"><div class="k">dominant lever</div>
+       <div class="v mono">{{ r.dominant_lever or "—" }}</div></div>
+</div>
+
+<p class="interp">{{ r.interpretation }}</p>
+
+<h2>Weighted vs count shares</h2>
+<p class="muted">
+  A large gap means a few big ambiguous craters dominate the |δ|-weighted view — anchors are
+  pre-selected as the worst craters, so weighting concentrates the gate on them.
+</p>
+<div class="scroll-x">
+<table>
+  <thead><tr><th>verdict</th><th class="num">count</th><th class="num">count share</th><th class="num">|δ| share</th></tr></thead>
+  <tbody>
+  {% for v in r.verdict_counts.keys() %}
+    <tr data-row>
+      <td class="mono">{{ v }}</td>
+      <td class="num">{{ r.verdict_counts[v] }}</td>
+      <td class="num">{{ m.pct(r.count_shares[v], 1) }}</td>
+      <td class="num">{{ m.pct(r.weighted_shares[v], 1) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Coverage</h2>
+<p class="muted">Nothing is silently dropped — every battle is accounted for here.</p>
+<div class="scroll-x">
+<table>
+  <thead><tr>{% for k in r.coverage.keys() if k != "skipped_no_record_sample" %}<th class="num">{{ k }}</th>{% endfor %}</tr></thead>
+  <tbody><tr data-row>{% for k, v in r.coverage.items() if k != "skipped_no_record_sample" %}<td class="num">{{ v }}</td>{% endfor %}</tr></tbody>
+</table>
+</div>
+{% if r.coverage.skipped_no_record_sample %}
+<p class="muted mono">skipped (no reconstruction.json): {{ r.coverage.skipped_no_record_sample | join(", ") }}</p>
+{% endif %}
+
+{{ m.caveats(r.caveats) }}

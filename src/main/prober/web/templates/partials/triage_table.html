@@ -1,0 +1,62 @@
+{% import "_macros.html" as m %}
+{% if error %}
+  <p class="err">{{ error }}</p>
+{% elif not data or not data.categories %}
+  <p class="empty">no losses to triage at this filter</p>
+{% else %}
+<div class="stats">
+  <div class="stat"><div class="k">step</div><div class="v">{{ "{:,}".format(data.step) if data.step else "—" }}</div></div>
+  <div class="stat"><div class="k">losses analyzed</div><div class="v">{{ data.n_losses_analyzed }}</div></div>
+  <div class="stat"><div class="k">bot opponents</div><div class="v">{{ data.n_bot_opponents }}</div></div>
+  <div class="stat"><div class="k">winning/behind signal</div>
+       <div class="v">{{ "P(win)" if data.winning_split.wp_coverage else "V only" }}</div></div>
+</div>
+<p class="muted">{{ data.ranking_metric }}</p>
+{% if not data.winning_split.wp_coverage %}
+<p class="interp">
+  <strong>This run recorded no win-prob head</strong>, so the “was it winning?” split that separates
+  <code>critic_blindspot</code> (a confident throw) from <code>positional_grind</code> (already
+  behind) fell back to <code>V &gt; {{ data.winning_split.v_even }}</code>. V is a shaped, discounted
+  return with a negative offset — a measured self-mirror 50/50 reads about −6.5 — so that fallback
+  systematically over-counts “already behind”. Read those two categories as a pair, not separately.
+</p>
+{% endif %}
+
+{{ m.chart("triage", spec) }}
+
+<div class="scroll-x">
+<table>
+  <thead><tr>
+    <th>category</th><th class="num">est. recoverable pp</th><th class="num">n</th>
+    <th class="num">% of sampled losses</th><th>lever</th><th>what it means</th>
+  </tr></thead>
+  <tbody>
+  {% for c in data.categories %}
+    <tr data-row>
+      <td class="mono">{{ c.category }}</td>
+      <td class="num">{{ m.num(c.est_recoverable_winrate_pct, 2) }}</td>
+      <td class="num">{{ c.n }}</td>
+      <td class="num">{{ m.num(c.pct_of_sampled_losses, 1) }}</td>
+      <td class="wrap">{{ c.lever }}</td>
+      <td class="wrap muted">{{ c.blurb }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if data.bot_win_rates %}
+<h2>Bot win rates (the rating anchor)</h2>
+<p>{% for k, v in data.bot_win_rates.items() %}<span class="pill">{{ k }} {{ m.pct(v, 0) }}</span> {% endfor %}</p>
+{% endif %}
+
+<h2>Worst-turn examples</h2>
+{% for c in data.categories %}
+  {% if c.examples %}
+  <p class="mono"><strong>{{ c.category }}</strong></p>
+  <ul class="mono muted">{% for e in c.examples %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+{% endfor %}
+
+{{ m.caveats(data.caveats) }}
+{% endif %}

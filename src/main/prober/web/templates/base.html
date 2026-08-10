@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}prober{% endblock %} · gen3ai prober</title>
+<link rel="stylesheet" href="/static/app.css">
+{# Vendored, not CDN-linked. The arch viewer's render test skips itself when the CDN is
+   unreachable, which turns the strongest gate in that suite into a no-op offline; these pages
+   must render with the network taken away entirely. #}
+<script src="/static/vendor/htmx.min.js" defer></script>
+<script src="/static/vendor/vega.min.js"></script>
+<script src="/static/vendor/vega-lite.min.js"></script>
+<script src="/static/vendor/vega-embed.min.js"></script>
+<script src="/static/app.js" defer></script>
+</head>
+<body data-page-name="{{ page_name }}" data-run="{{ run or '' }}"
+      data-unlocked="{{ '1' if unlocked else '0' }}">
+<header class="top">
+  <span class="brand">gen3ai prober</span>
+  <nav class="tabs">
+    {% for href, label in nav %}
+    <a href="{{ href }}{% if run %}?run={{ run | urlencode }}{% endif %}"
+       {% if label == page_name %}class="active" aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {# The run picker is a plain GET form to the CURRENT page, so switching run keeps you on the
+     view you were looking at and works with JavaScript off. The value submitted is the run NAME,
+     never a path — see runs.py for why that distinction is the whole security model. #}
+  {# Grouped by generation: 79 flat near-identical names (`ai_v9_06_gen5_no_concat_0809`,
+     `ai_v8_17_rand20_...`) is a scanning task, not a choice. #}
+  {% if runs %}
+  <form class="runpick" method="get" action="">
+    <label class="sr-only" for="runsel">run</label>
+    <select id="runsel" name="run" onchange="this.form.submit()">
+      {% for group, items in run_groups %}
+      <optgroup label="{{ group }} ({{ items | length }})">
+        {% for r in items %}
+        <option value="{{ r.name }}" {% if r.name == run %}selected{% endif %}>
+          {{ r.name }}{% if not r.has_traces %} — no traces{% endif %}{% if r.linked %} ↗{% endif %}
+        </option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <noscript><button type="submit">go</button></noscript>
+  </form>
+  {% endif %}
+
+  <span class="authbox">
+    {% if not auth_required %}
+      <span class="pill">open</span>
+    {% elif unlocked %}
+      <span class="pill pos">unlocked</span>
+      <form method="post" action="/logout" class="inline"><button class="linky">lock</button></form>
+    {% elif auth_configured %}
+      <a class="linky" href="/login?next={{ ('/' ~ page_name) if page_name != 'run' else '/' }}">unlock</a>
+    {% else %}
+      <span class="pill">read-only</span>
+    {% endif %}
+  </span>
+</header>
+<main>
+{# The context strip. Without it the run being viewed lives only inside a dropdown widget, so a
+   screenshot of a chart carries no record of where it came from. #}
+{% if run_meta %}
+<p class="ctxstrip">
+  <span class="mono strong">{{ run_meta.run }}</span>
+  <span>·</span><span>{{ run_meta.n_steps }} eval steps</span>
+  <span>·</span><span>{{ run_meta.battles }} battles captured</span>
+  <span>·</span><span class="win">{{ run_meta.wins }}W</span><span class="loss">{{ run_meta.losses }}L</span>
+</p>
+{% endif %}
+{% if error %}<section class="card"><p class="err">{{ error }}</p></section>{% endif %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

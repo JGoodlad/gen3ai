@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}calibration{% endblock %}
+
+{% block content %}
+<h1>Critic calibration — <code>calibration</code></h1>
+<p class="lede">
+  Splits <code>falsify_scan</code>'s <strong>unattributed</strong> bucket into
+  <strong>critic_overvalued</strong> (epistemic — a better critic helps) and
+  <strong>lost_position</strong> (the critic was right), by comparing recorded V(s) to the
+  realized discounted return G(s) against a reliability curve fit over <em>both</em> wins and
+  losses. Binning by V rather than by outcome is what keeps the baseline selection-free — a
+  loss-conditioned V−G is biased positive by construction.
+</p>
+<p class="lede">
+  It still self-diagnoses a confound it cannot remove: the captured sample's win fraction is set
+  by the eval capture quota, not the true win rate, so the headline number is a
+  <strong>loose upper bound</strong>. The <code>bias_on_wins</code> / <code>bias_on_losses</code>
+  split below is the calibrated-critic signature — read it before the headline.
+</p>
+
+<section class="card">
+  <form class="filters" hx-post="/partials/job/calibration" hx-target="#job"
+        hx-indicator="#cal-busy">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>opponent
+      <select name="opponent">{{ m.opponent_options(opponents) }}</select>
+    </label>
+    <label>step
+      <select name="step">{{ m.step_options(summary) }}</select>
+    </label>
+    <label>battles<input type="number" name="limit" value="20" min="1" max="200" size="4"></label>
+    <label>worst/battle<input type="number" name="worst" value="2" min="1" max="10" size="3"></label>
+    <label>seeds<input type="number" name="seeds" value="32" min="2" max="200" size="4"></label>
+    <label>V-bins<input type="number" name="bins" value="10" min="2" max="50" size="3"></label>
+    <label>overvalue τ<input type="number" name="overvalue_tau" value="5.0" step="0.5" size="4"></label>
+    <label>concurrency<input type="number" name="concurrency" value="8" min="1" max="16" size="3"></label>
+    <button class="primary" type="submit">run calibration</button>
+    <span id="cal-busy" class="htmx-indicator muted">submitting…</span>
+  </form>
+</section>
+
+<section class="card">
+  <div id="job">
+    {% if job %}
+      <div hx-get="/partials/job/{{ job.id }}" hx-trigger="load" hx-target="#job">
+        <p class="empty">restoring the last {{ job.kind }} job…</p>
+      </div>
+    {% else %}
+      <p class="empty">no calibration submitted yet</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}falsify{% endblock %}
+
+{% block content %}
+<h1>Crater bracket — <code>falsify_scan</code></h1>
+<p class="lede">
+  Re-rolls the worst δ-craters of every matching loss and splits them into
+  <strong>aleatoric</strong> (bad-tail dice), <strong>unattributed</strong> (a real crater the
+  sweep pinned on neither luck nor a better action — <em>not</em> proven critic error),
+  <strong>policy_reducible</strong> (a top-k alternative provably beat the chosen action — the
+  only proven leg) and <strong>mixed</strong>. Bridge-eval traces with a
+  <code>*_reconstruction.json</code> sibling only.
+</p>
+<p class="lede">
+  <strong>This is minutes of work, not a page load.</strong> Each re-roll spawns Node; the box
+  normally carries a live training run, so leave concurrency at 1 unless it is idle. Submitting
+  starts a background job and this page polls it.
+</p>
+
+<section class="card">
+  <form class="filters" hx-post="/partials/job/falsify-scan" hx-target="#job"
+        hx-indicator="#falsify-busy">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>outcome
+      <select name="outcome"><option value="loss">loss</option><option value="win">win</option></select>
+    </label>
+    <label>opponent
+      <select name="opponent">{{ m.opponent_options(opponents) }}</select>
+    </label>
+    <label>step
+      <select name="step">{{ m.step_options(summary) }}</select>
+    </label>
+    <label>battles<input type="number" name="limit" value="20" min="1" max="200" size="4"></label>
+    <label>worst/battle<input type="number" name="worst" value="2" min="1" max="10" size="3"></label>
+    <label>seeds<input type="number" name="seeds" value="32" min="2" max="200" size="4"></label>
+    <label>alts<input type="number" name="alts" value="2" min="1" max="8" size="3"></label>
+    <label>concurrency<input type="number" name="concurrency" value="1" min="1" max="8" size="3"></label>
+    <button class="primary" type="submit">run scan</button>
+    <span id="falsify-busy" class="htmx-indicator muted">submitting…</span>
+  </form>
+</section>
+
+<section class="card">
+  <div id="job">
+    {% if job %}
+      {# A finished scan survives a page reload: the registry keeps the latest job per kind. #}
+      <div hx-get="/partials/job/{{ job.id }}" hx-trigger="load" hx-target="#job">
+        <p class="empty">restoring the last {{ job.kind }} job…</p>
+      </div>
+    {% else %}
+      <p class="empty">no scan submitted yet</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

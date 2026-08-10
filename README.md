@@ -201,6 +201,9 @@ src/
     launcher/          # Restart loop + Textual TUI (preferred entry point)
                      #   checkpoint.py, worktree.py, child.py, input.py,
                      #   run.py, state.py, ui.py
+    prober/            # Forensic-replay inspector: Textual TUI + the pure analysis engine
+                     #   query.py — the JSON CLI over ProbeSession (for agents/scripts)
+                     #   web/     — browser front end (FastAPI + Jinja2/HTMX over ProbeSession)
     exit_codes.py      # TrainExitCode enum (COMPLETE/INTERRUPTED/CRASH)
     train_rl_agent.py  # Training script (also callable directly)
     eval_worker.py     # Subprocess bot-eval worker (frozen snapshot, CPU; spawned by PerOpponentEvalCallback)

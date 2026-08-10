@@ -1,0 +1,230 @@
+/* Prober web — one stylesheet, no framework.
+ *
+ * Dark by default, matching the arch viewer, because these pages sit next to a terminal. The
+ * light palette is a `prefers-color-scheme` override rather than the base, so the default open
+ * on a dark desktop needs no toggle and no flash. */
+
+:root {
+  --bg: #16161a;
+  --surface: #1d1d21;
+  --surface-2: #242423;
+  --line: #33333a;
+  --text: #e6e6e2;
+  --dim: #9a9a95;
+  --accent: #58a6c8;
+  --good: #57b894;
+  --bad: #d0806a;
+  --warn: #d4b483;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #fbfbf9;
+    --surface: #ffffff;
+    --surface-2: #f2f2ef;
+    --line: #dcdcd6;
+    --text: #1d1d1b;
+    --dim: #6b6b66;
+    --accent: #2a6f97;
+    --good: #2a7f62;
+    --bad: #a4553f;
+    --warn: #8a6d3b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header.top {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+header.top .brand { font-weight: 600; letter-spacing: 0.2px; }
+header.top .run { font-family: var(--mono); font-size: 12px; color: var(--dim);
+                  margin-left: auto; overflow-wrap: anywhere; }
+
+/* Run picker + auth badge. The picker pushes the auth box to the right on a desktop row and
+   wraps below it on a phone (see the narrow block). */
+form.runpick { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+form.runpick select { font: inherit; font-size: 13px; max-width: 22rem; padding: 4px 8px;
+                      background: var(--surface-2); color: var(--text);
+                      border: 1px solid var(--line); border-radius: 6px; }
+.authbox { display: flex; align-items: center; gap: 8px; }
+form.inline { display: inline; }
+button.linky, a.linky { background: none; border: none; padding: 0; font: inherit;
+                        font-size: 13px; color: var(--accent); cursor: pointer;
+                        text-decoration: underline; }
+.pill.pos { color: var(--good); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+           white-space: nowrap; }
+
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.tabs a {
+  color: var(--dim); text-decoration: none; padding: 4px 10px;
+  border-radius: 6px; font-size: 14px;
+}
+nav.tabs a:hover { background: var(--surface-2); color: var(--text); }
+nav.tabs a.active { background: var(--surface-2); color: var(--accent); font-weight: 600; }
+
+main { padding: 18px; max-width: 1400px; }
+
+/* Context strip — which run you are looking at, on every page and in every screenshot. */
+.ctxstrip { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline;
+            margin: 0 0 14px; font-size: 13px; color: var(--dim);
+            padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.ctxstrip .strong { color: var(--text); font-weight: 600; }
+.ctxstrip .win { color: var(--good); }
+.ctxstrip .loss { color: var(--bad); }
+
+/* "Where to start" — the entry point the six equal tabs do not provide. */
+.startcard { border-left: 3px solid var(--accent); }
+ol.startlist { margin: 0; padding-left: 1.3em; }
+ol.startlist li { margin: 10px 0; line-height: 1.45; }
+ol.startlist a { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 15px; }
+ol.startlist a:hover { text-decoration: underline; }
+ol.startlist .q { display: block; color: var(--text); }
+ol.startlist .muted { display: block; font-size: 13px; }
+
+td.nowrap, .nowrap { white-space: nowrap; }
+button.copybtn { margin-right: 6px; }
+th[title] { cursor: help; border-bottom: 1px dotted var(--dim); }
+
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 24px 0 8px; }
+p.lede { color: var(--dim); margin: 0 0 18px; max-width: 78ch; }
+
+section.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+/* Filters ------------------------------------------------------------------ */
+form.filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+form.filters label { display: flex; flex-direction: column; gap: 3px;
+                     font-size: 12px; color: var(--dim); }
+form.filters select, form.filters input, button {
+  font: inherit; font-size: 14px; padding: 5px 8px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+button { cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #08131a; font-weight: 600; }
+button:disabled { opacity: 0.5; cursor: default; }
+
+/* Tables ------------------------------------------------------------------- */
+.scroll-x { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line);
+         white-space: nowrap; }
+th { color: var(--dim); font-weight: 600; font-size: 11px; text-transform: uppercase;
+     letter-spacing: 0.4px; position: sticky; top: 0; background: var(--surface); }
+tbody tr:hover { background: var(--surface-2); }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.mono, .mono { font-family: var(--mono); font-size: 12px; }
+td.wrap { white-space: normal; max-width: 60ch; }
+
+.win { color: var(--good); }
+.loss { color: var(--bad); }
+.neg { color: var(--bad); }
+.pos { color: var(--good); }
+
+/* Chart holders -------------------------------------------------------------- */
+/* Vega sizes to the container, but a legend or an axis label can still make the emitted SVG
+   wider than the box. `overflow-x: auto` keeps that scroll INSIDE the chart, which is the rule
+   the whole layout follows: wide content scrolls in its own container, the page never does. */
+.chart { width: 100%; min-height: 60px; margin: 8px 0 4px; overflow-x: auto; }
+.chart svg { max-width: 100%; }
+
+/* Stat strip ----------------------------------------------------------------- */
+.stats { display: flex; gap: 26px; flex-wrap: wrap; margin: 4px 0 12px; }
+.stat .k { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.4px; }
+.stat .v { font-size: 20px; font-family: var(--mono); }
+
+/* Caveats — deliberately prominent. Every one of these probes returns a bound, not a
+   measurement, and a browser is where that most easily gets read as a number on a dashboard. */
+details.caveats { margin-top: 12px; border-left: 3px solid var(--warn); padding-left: 12px; }
+details.caveats summary { cursor: pointer; color: var(--warn); font-size: 13px; font-weight: 600; }
+details.caveats li { color: var(--dim); font-size: 13px; margin: 6px 0; }
+.interp { color: var(--text); background: var(--surface-2); border-radius: 6px;
+          padding: 10px 12px; font-size: 13px; line-height: 1.55; }
+
+.err { color: var(--bad); font-family: var(--mono); font-size: 13px; white-space: pre-wrap; }
+.empty { color: var(--dim); font-style: italic; }
+.muted { color: var(--dim); }
+.pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px;
+        background: var(--surface-2); color: var(--dim); font-family: var(--mono); }
+
+.job-status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--dim);
+              flex-wrap: wrap; }
+.job-status .mono { overflow-wrap: anywhere; }
+.spinner { width: 11px; height: 11px; border-radius: 50%;
+           border: 2px solid var(--line); border-top-color: var(--accent);
+           animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* Narrow viewports ------------------------------------------------------------------------
+ *
+ * These are tables of forensic numbers, so the phone answer is NOT to reflow every table into
+ * cards — a scan row read out of column order is worse than one you scroll. The rules are:
+ *
+ *   1. The PAGE never scrolls sideways; wide things scroll inside their own `.scroll-x`/`.chart`.
+ *   2. Nothing hides behind a scroll nobody can see. The nav WRAPS rather than becoming a
+ *      horizontal strip — the arch viewer shipped exactly that strip and five of its six controls
+ *      were invisible.
+ *   3. Form controls are >=16px. Below that, iOS zooms the whole page when a <select> takes focus
+ *      and does not zoom back out, so one tap on the opponent filter leaves the page stuck.
+ *   4. The header stops being sticky. Wrapped, it is ~3 lines; pinning that to the top of a phone
+ *      screen costs more than the convenience is worth.
+ */
+@media (max-width: 720px) {
+  header.top { position: static; padding: 8px 12px; gap: 8px 14px; }
+  header.top .run { margin-left: 0; width: 100%; font-size: 11px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  nav.tabs { width: 100%; }
+  nav.tabs a { padding: 4px 8px; }
+  /* The picker becomes its own full-width row rather than competing with the nav, and gets the
+     16px floor for the same iOS reason as every other control. */
+  form.runpick { margin-left: 0; width: 100%; }
+  form.runpick select { width: 100%; max-width: none; font-size: 16px; }
+
+  main { padding: 12px; }
+  h1 { font-size: 18px; }
+  p.lede { font-size: 14px; }
+  section.card { padding: 12px; margin-bottom: 12px; }
+
+  /* One control per row, each comfortably tappable. */
+  form.filters { gap: 10px; }
+  form.filters label { flex: 1 1 100%; font-size: 13px; }
+  form.filters select, form.filters input { width: 100%; }
+  form.filters select, form.filters input, button { font-size: 16px; padding: 7px 9px; }
+  button { flex: 1 1 100%; }
+
+  .stats { gap: 16px; }
+  .stat .v { font-size: 18px; }
+
+  /* The scroll lives in the wrapper, never on <body>. `max-width: 100%` is what stops a wide
+     table from stretching the card (and with it the page) instead of scrolling inside it. */
+  .scroll-x { max-width: 100%; -webkit-overflow-scrolling: touch; }
+  th, td { padding: 5px 8px; }
+  td.wrap { max-width: 34ch; }
+}

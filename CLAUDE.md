@@ -8,6 +8,39 @@ Architecture constants (embedding dims, layer sizes, etc.) are defined as module
 
 **Before reasoning about the model, read [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md).** It is the only document that states the architecture *as it is now* — obs layout, phase chain, what each head consumes, the `DamageOperator` block, the edge families, and a flag table marking which nominally-set flags are actually `INERT`. Version-numbered narrative lives in [`designs/CHANGELOG.md`](designs/CHANGELOG.md) and describes the past, not the present.
 
+## 🚨 CRITICAL — running subagents / Workflows on this box
+
+**Two rules. Both are required; either alone fails.** Measured 2026-08-09: two workflows returned
+**0 results out of 5 agents and 0 out of 4** — 5.6M subagent tokens across three attempts, most of
+it wasted — before this was understood.
+
+**1. Pass `stallMs: 900_000` on EVERY `agent()` call in a Workflow script.**
+Workflow subagents have their own stall watchdog **hardcoded** in the Claude Code binary
+(`K2b=180000, B1p=5` — 3 minutes, 5 retries, verified by string-inspecting v2.1.226). There is **no
+env var and no `settings.json` key**; the runner reads only a per-call override
+(`ye = _e?.stallMs != null ? Number(_e.stallMs) : K2b`). `stallMs` is Workflow-only — it appears in
+no tool input schema, so the `Agent` tool rejects it.
+⚠️ **`CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` does NOT cover Workflow** — it feeds the Agent-tool path
+(`env || 600000`) and IS live (1800000). Two different watchdogs; that is why a `180000` in a
+workflow error looks impossible.
+
+**2. Cap concurrency to 1–2 agents. This is the actual cause.**
+`stallMs` only raises the kill threshold; it creates no stream capacity. The stalls are **API
+stream starvation** when ≥3 LLM streams are live on the account (interactive sessions + agents).
+Signature: an agent transcript ending on a **`user`-role tool result with no assistant turn after**
+— the tool returned, the next model stream produced nothing. Long/quiet tools are innocent, and
+"emit periodic output" instructions do not help. Even with `stallMs`, fanning out 6 verifiers at
+once still cost ~3.5 attempts per agent, and **a workflow retry restarts the agent from scratch**
+(4 attempts = 4× tokens). Plain `Agent` calls beat Workflow fan-out on a busy account, because a
+stalled `Agent` can be **resumed** with `SendMessage` to its agentId rather than redone.
+
+**3. Never let a script report agent ERRORS as "no findings".** `parallel()` returns `null` for a
+failed agent, so `findings.length === 0` is ambiguous — track failures and return a distinct
+status. Diagnose from `journal.jsonl` in the transcript dir; the field is **`result`**, not
+`value`, and many `started` lines with zero `result` lines is this failure's signature.
+
+---
+
 ## Documentation Maintenance
 
 Keep docs in sync **automatically, as part of the same change** — no need to be asked:
@@ -30,6 +63,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/agents/training/` | Bot-eval subprocess architecture + Showdown-port (`server_config`) threading |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
 | `src/main/prober/` | Forensic-replay inspector (Textual TUI) + the pure probe engine `probe_replay.py` shares; trace discovery; worker-thread model |
+| `src/main/prober/web/` | The prober's browser front end — FastAPI over `ProbeSession`, Jinja2+HTMX, vendored JS, the committed `openapi.json` contract |
 | `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — shared by the prober + launcher UIs |
 | `designs/` | Which `ai_vN` folder is relevant; version map |
 
@@ -152,7 +186,7 @@ puts you.
 | Pattern | Requires | Marker |
 |---|---|---|
 | `*_test.py` | Nothing — pure unit tests with mocks | — |
-| `*_integration_test.py` | `deps/pokemon-showdown` Node bridge (no battles, no live server) | `@pytest.mark.integration` |
+| `*_integration_test.py` | An out-of-process dependency, no live server: usually the `deps/pokemon-showdown` Node bridge (no battles) — but the two **`*_render_integration_test.py`** files instead need a headless **browser** (`build_arch_viewer_render_integration_test.py`, `prober/web/render_integration_test.py`), and skip naming that when there is none | `@pytest.mark.integration` |
 | `*_fuzz_test.py` | `deps/pokemon-showdown` — runs **real battles in-process via the local BattleStream bridge** (`utils/bridge/local_battle_runner.py`); **no live server**. The default for fuzzing. | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
 | `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
 | `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
@@ -674,6 +708,51 @@ return G(s) — a selection-aware reliability curve that self-diagnoses the eval
 — engine/app split, the model-resolution ladder, Outcome panel, flags, and the
 agent API — are in `src/main/prober/CLAUDE.md`.
 
+### Web front end (`src/main/prober/web/`)
+
+A **third sibling** over the same engine (the TUI and the JSON CLI are the other two — none is a
+layer on another). Read-only browser views for the analyses a terminal renders worst, adapting
+`ProbeSession` and nothing else: run summary · battles · `scan` · `triage` · the `falsify_scan`
+crater bracket · the `calibration` reliability curve. `analyze` / `lookahead` / `better-line` /
+`replay-counterfactual` stay TUI+CLI.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober.web models/   # :6008, pick any run
+python -m main.prober.web --check-openapi        # the committed-contract drift gate
+```
+
+Point it at **`models/`** and the header carries a run picker. A request names a run by NAME, and
+the name must be a member of the server's own listing — **no client string is ever joined to a
+path**, so traversal is unrepresentable rather than filtered. A direct child of `models/` may be a
+symlink and is followed (that is how the launcher's worktree runs appear); a symlink *inside* a run
+refuses the run.
+
+**Reading is anonymous; the two minutes-long probes (`falsify_scan`, `calibration`) need a shared
+password** (`GEN3AI_PROBER_PASSWORD_FILE`, set at boot on this box). It fails closed — no password
+configured means the probes are off, not open. `--open` is the laptop opt-out.
+
+**Local only — it is NOT on g5d.io.** Unlike tensorboard (`:6006`) and the model viewer
+(`:6007`), there is no systemd unit and no tunnel entry; it binds loopback on **6008** and you
+start it when you want it. From another machine:
+`ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`. What a `prober.g5d.io` deploy
+would take is in `scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*.
+
+FastAPI + uvicorn (the minutes-long `falsify_scan`/`calibration` probes run as background jobs the
+page polls, so they never block the event loop), server-rendered Jinja2 + HTMX (no build step, no
+`node_modules` — the repo's root `package.json` still has zero dependencies), charts as
+**Vega-Lite specs emitted from Python** (dicts: diffable, snapshot-testable). **All JS is
+vendored**, never CDN-linked — the arch viewer's render test *skips* when its CDN is unreachable,
+which makes the strongest gate in that suite a no-op offline; here headless chrome runs with every
+non-loopback host mapped to a dead address, so a remote asset FAILS the test instead.
+
+**Usable at desktop and phone widths**, gated as a MEASUREMENT rather than a CSS review: the page
+publishes what it measured of its own layout (viewport width, whether the narrow breakpoint
+matched, header height, control font size, and **which element** overflows if any) and the render
+test reads that back at 1280px and at the 500px floor headless chrome allows. The rule the layout
+serves is that the page never scrolls sideways — wide tables and charts scroll inside their own
+box. Detail — what the render record proves, plus the two non-obvious traps (Vega does not wrap
+title text; a media query can lose on specificity) — is in `src/main/prober/web/CLAUDE.md`.
+
 ---
 
 ## Showdown Server
@@ -757,6 +836,7 @@ src/
                      #   core: checkpoint.py, worktree.py, child.py, input.py, state.py, ipc.py
                      #   UI: app.py + launcher.tcss · run loop: run.py · format.py · tui.py (alias)
     prober/            # Forensic-replay inspector (Textual TUI) — has CLAUDE.md
+                     #   web/ — browser front end (FastAPI + Jinja2/HTMX over ProbeSession) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)

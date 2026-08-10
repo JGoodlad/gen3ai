@@ -1,0 +1,36 @@
+{% if error %}
+  <p class="err">{{ error }}</p>
+{% elif not rows %}
+  <p class="empty">no battles match these filters</p>
+{% else %}
+<p class="muted" data-count="{{ rows | length }}">
+  {% if total is defined and total > (rows | length) %}
+    showing the first <strong>{{ rows | length }}</strong> of <strong>{{ total }}</strong> —
+    narrow it with the filters above rather than scrolling
+  {% else %}
+    {{ rows | length }} battle{{ "" if rows|length == 1 else "s" }}
+  {% endif %}
+</p>
+<div class="scroll-x">
+<table>
+  <thead><tr>
+    <th class="num">step</th><th>opponent</th><th>outcome</th><th class="num">index</th>
+    <th>state</th><th>id</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr data-row>
+      <td class="num">{{ "{:,}".format(r.step) }}</td>
+      <td>{{ r.opponent }}</td>
+      <td class="{{ r.outcome }}">{{ r.outcome }}</td>
+      <td class="num">{{ r.index }}</td>
+      <td>{% if r.has_npz %}<span class="pos">obs</span>{% else %}<span class="muted">no npz</span>{% endif %}</td>
+      <td class="mono">{{ r.short_id }}</td>
+      <td class="nowrap"><button class="linky copybtn" type="button"
+          data-copy="{{ r.id }}" title="Copy the battle id for the CLI or the TUI">copy id</button></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}

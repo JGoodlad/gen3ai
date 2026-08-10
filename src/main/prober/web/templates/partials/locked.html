@@ -1,0 +1,10 @@
+{# The HTMX answer to "submit" when the visitor has not unlocked. A 403 would be swallowed into
+   the generic responseError handler; this puts the reason and the way forward in the page. #}
+<div data-job-status="locked">
+  <p class="err">This probe needs the shared password.</p>
+  <p class="muted">
+    It re-rolls battles through the Showdown bridge — minutes of CPU beside a live training run —
+    so it is the one thing here that is not anonymous. Everything else on the site stays open.
+  </p>
+  <p><a class="linky" href="/login?next={{ next_url }}">unlock →</a></p>
+</div>
