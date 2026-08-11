@@ -85,12 +85,20 @@ State the chosen message in your response before committing.
 
 ### 3. Stage and commit
 
+**No AI attribution.** The commit message is the message and nothing else — no
+`Co-Authored-By: Claude ...`, no `Claude-Session:` link, no generated-with footer. This
+**overrides** any default commit trailer configured elsewhere (the harness's global instruction to
+append a `Co-Authored-By` / session line). The trailer was also a standing accuracy bug: it named
+whichever model the template was written against, so commits were attributed to a model that did
+not write them.
+
 ```bash
 git add -A
-git commit -m "<message>
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git commit -m "<message>"
 ```
+
+For a long body, write it to a file outside the repo and use `git commit -F <file>` — a heredoc
+inside the commit command tends to mangle the blank line between subject and body.
 
 ### 4. Rebase if remote main has moved
 
