@@ -271,3 +271,34 @@ of the distributional head's atoms, so its job is multi-dimensional.
 **Open question this raises and does NOT answer:** whether directional multiplicity is worth
 anything. Two mechanisms now agree the readout wants ~1 direction; that may be the model telling us
 one direction is all this readout needs.
+
+## 2026-08-11 — G2a SEAT COVERAGE measured (the two ceilings on design_opponent_intent.md)
+
+Run on gen-5's traces (400 battles, 16410 decisions; `tmp/g2a_seat_coverage.py`). **Neither
+ceiling blocks the design; one materially bounds `β` v1.**
+
+**α's ceiling — 89.3%.** Of 1233 scoreable decisions (the opponent used a NAMEABLE move), the
+op's K=6 threat seats CONTAINED the move they actually clicked **1101 times (89.3%)**; 10.7%
+masked. Seat-set size was 6 in every case. Read: `α`'s discrete-support constraint costs ~11% of
+move-decisions, NOT the "thin, possibly-unrepresentative slice" §8 feared — **the discrete
+constraint is affordable and `move_belief_coef` is not a hard blocker for building `α`.**
+*Caveat:* measured on the model that PRODUCED the traces; and 38% of decisions were unscoreable
+(1487 `none`, 1248 `unknown`, 3822 explicit switches), so 89.3% is conditional on a nameable move.
+
+**β's ceiling — 53.6%, and this one bites.** Switches are **24.7%** of all decisions (4056 of
+16410) — a large share of the action space, confirming §5.2's "SWITCH is the highest-value single
+slot". But only **53.6% of switches are to an ALREADY-REVEALED mon**; **46.4% bring a previously
+unseen mon**, which v1 MASKS. So `β` v1 trains on barely half its target and is blind on the half
+that is hardest. **This promotes B1 (hidden-team belief, BUILT 2026-06-13, never run) from
+"optional upgrade if the mask rate warrants" to the thing β v1 is actually waiting on** — §4.3
+predicted the shape (early-game switches go to unrevealed mons) but not that it would be ~half.
+
+**Consequences for the build order:**
+1. `α` (move axis) is GO on coverage — 89.3% is a healthy ceiling.
+2. `β`'s unrevealed half is a real limitation; either accept a half-blind `β` v1, or promote B1
+   into the same generation (it is structural, so it must ride a fresh run either way).
+3. The **{ATTACK, SWITCH} fallback (§7a.4) is independently attractive**, not just a fallback:
+   SWITCH is 24.7% of decisions, belief-free, zero mask, and is the one slot both ceilings agree on.
+
+Cross-check: the summary's `outcome.opp.action` encodes switches explicitly (`switched_to:X` /
+`X_sent_in`, 3822) — consistent with the species-change detector used for the rates above.

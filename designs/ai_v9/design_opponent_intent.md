@@ -666,6 +666,45 @@ content. That separates the two claims cleanly: **R1-into-tokens tests the DELIV
 later upgrades the DISTRIBUTION.** A null on the first is about plumbing; a null on the second is
 about intent.
 
+### 7a.2b THE BUILD (gen-8 arm) — `--value-threat-inject`, and where it goes
+
+Measured first (G2a, gen-5 traces, 400 battles / 16410 decisions, `tmp/g2a_seat_coverage.py`):
+**α's ceiling is 89.3%** (the K=6 seats already hold the clicked move in 1101/1233 nameable-move
+decisions) — the discrete constraint is affordable. **β's ceiling is 53.6%**: switches are **24.7%
+of ALL decisions**, but 46.4% of them bring a previously-unseen mon, which v1 masks. So B1 is what
+β v1 is waiting on, and the {ATTACK, SWITCH} form (§7a.4) is attractive on its own merits.
+
+**Where the injection goes, and why not the obvious place.** `prefuse_proj` already writes op rows
+onto tokens PRE-transformer — and gen-5 had it and still lost the 44 Elo, so "inject earlier" is
+not the fix. Two things differ here: the CONTENT is a coherent α-weighted contraction rather than
+`in_permon`'s incoherent per-defender max, and the PLACEMENT is **post-transformer, immediately
+before the value pool**, so the trunk cannot wash it out:
+
+```
+row_j        = Σ_k α_k · pair_in[k, j, :]        # α := normalize(w) in v1 (the shipped R1 rung)
+aug_j        = our_token_j + W_inj(row_j)        # W_inj ZERO-INIT, shared over j
+value_pooled = attend(value_cls, [aug_our_tokens, their_tokens])   # VF ONLY
+```
+
+**The policy path keeps the UNAUGMENTED tokens**, so `pi` is bit-identical ON vs OFF — not just at
+init but for any `W_inj`. That is the strongest available statement that this arm changes the
+critic and nothing else, and it is a test, not a claim (§7a.2c).
+
+v1 deliberately uses `α := normalize(w)`: it separates **DELIVERY** (does a coherent magnitude row
+reaching the critic un-mixed help?) from **DISTRIBUTION** (does a supervised `α` beat `w`?). Both
+are needed; conflating them makes a null uninterpretable.
+
+### 7a.2c Gates for the injection arm
+
+| # | gate | needs a run? |
+|---|---|---|
+| **V0** | ON == OFF **bitwise** at init on a REAL `MaskablePPO`-built policy (zero-init `W_inj`; ledger **M1** — SB3's ortho pass destroys extractor zero-inits, so `restore_identity_init()` must cover it) | no |
+| **V1** | **`pi` is bit-identical ON vs OFF for ARBITRARY `W_inj`** — the vf-only claim, asserted rather than assumed | no |
+| **V2** | **Equivariance**: permute our six mons ⇒ `value_pooled` **invariant** (permutation-invariant pooling over per-entity rows) | no |
+| **V3** | Version gate: flipping the flag FATALs on resume (structural, state_dict-changing) | no |
+| **V4** | Cost: no measurable regression on the compiled B=1 path (a shipped 6.53× lever) | no |
+| **V5** | Acceptance: dense **`ladder_elo`** vs **gen-4 2081 ± 11** — the honest target is recovering the ~44, not beating gen-5's 2037 | yes |
+
 ### 7a.3 An alternative hypothesis for `d3` = 0.63% that this doc does not raise
 
 §1 reads `d3`'s decay as a CHANNEL failure (an edge carries a ratio, not a magnitude). Plausible —
