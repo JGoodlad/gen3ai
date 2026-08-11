@@ -274,7 +274,12 @@ mechanized. **The trigger FIRED on gen-5** (`value_seeds/out_effective_rank` 1.0
 196k→15.7M steps — the k=4 outputs identical), so the wiring now exists:
 `--value-seed-vicreg-coef` (v62, `agents/model/seed_vicreg.py`) folds a VICReg
 variance+**covariance** floor on the seed outputs into the PPO loss (`value_seeds/vicreg_*`
-terms logged beside the contract). 0.0 (the production value — OFF for every run so far, gen-5
+terms logged beside the contract). **Both targets are SCALE-RELATIVE** — the variance hinge is on
+cross-seed std ÷ the dim's own RMS (target 0.25) and the covariance term is a cross-seed
+*correlation* — because the first cut's absolute γ=1.0 was ~7× the readout's entire signal RMS
+(0.207) and unreachable by construction: a seed output is a convex combination of the six kv rows,
+whose spread is 0.141. `value_seeds/out_rms` is logged as the watchdog for the relative target's
+one degenerate response (shrinking the feature instead of differentiating it). 0.0 (the production value — OFF for every run so far, gen-5
 included) is byte-identical; resume-immutable (the vf_coef class, `check_value_seed_vicreg`);
 fail-loud at startup if enabled on a config without the seed readout. Intended ON at the gen-6
 launch, judged by `out_effective_rank` rising toward k.

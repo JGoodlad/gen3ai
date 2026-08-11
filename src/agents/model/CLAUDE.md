@@ -46,7 +46,10 @@ runs *after* `MoveBelief` and consumes its predicted-move logits to compute the 
 damage to each of our mons. **gen3_no_concat_v1 (v61): its flat block no longer enters either
 projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
 the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
-with the `value_seeds/*` TB collapse contract logged every train(); the VICReg floor on those outputs is `--value-seed-vicreg-coef`, v62 resume-immutable).
+with the `value_seeds/*` TB collapse contract logged every train(); the VICReg floor on those outputs is `--value-seed-vicreg-coef`, v62 resume-immutable — its
+variance+covariance targets are **scale-relative** by design, since the first cut's absolute
+γ=1.0 was ~7× the readout's own signal RMS and left `out_effective_rank` pinned at 1.0 for 2M
+steps; see `seed_vicreg.py`).
 Under `--opp-belief-latent-coef>0` `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
 (the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
 `pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs

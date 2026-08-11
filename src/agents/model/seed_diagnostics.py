@@ -31,6 +31,15 @@ the seeds are differentiating on their own and the regularizer is dead weight. (
 numbers for calibration: its collapsed state read ~2/3 energy in one direction ≈ effective
 rank ~1.6 of a 32-dim code.)
 
+⚠️ THE REGULARIZER'S TARGETS MUST BE SCALE-RELATIVE. Gen-6's first launch used an ABSOLUTE std
+hinge (γ=1.0) against a readout whose entire signal has RMS ≈0.207 and whose cross-seed spread is
+structurally bounded by ≈0.14 (each seed output is a convex combination of the same six kv rows).
+`out_effective_rank` sat at exactly 1.000 for 2M steps while the hinge saturated at 0.997 — the
+term pushed constantly toward something unreachable. `seed_vicreg.py` now hinges on the RATIO
+(cross-seed std ÷ the dim's own RMS) and penalises cross-seed CORRELATION, and logs
+`value_seeds/out_rms` so the one degenerate response (shrink the feature instead of
+differentiating it) is visible rather than silent.
+
 TRIGGER FIRED — 2026-08-10, gen-5 (`ai_v9_06_gen5_no_concat_0809`): `out_effective_rank` = 1.0
 and `out_cos` = 1.000 sustained from 196k through 15M+ steps (`out_var` ≈ 5e-6; `query_cos` 0.33
 — distinct queries, identical attention patterns). The wiring lives in `seed_vicreg.py`

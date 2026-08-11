@@ -2380,3 +2380,43 @@ Gates in `pair_reduce_test.py`: forward-level G0 through the real op (flat block
 equal default-vs-multi, only `pair_reducer.*` keys added), G2 status-coherence (the per-channel
 max provably describes a move-profile NO single opponent move has; one α fixes it), G4
 candidate-invariance + defender-equivariance, α-init identity, second-moment recovery.
+
+### v62 addendum (2026-08-10, same day, after gen-6's first 2M steps): the VICReg targets are SCALE-RELATIVE
+
+The v62 entry above shipped ABSOLUTE targets — a per-dim std hinge at γ=1.0 and a raw
+squared-covariance penalty. **Gen-6's first launch measured them as a failure and was killed at
+2.06M steps**: `value_seeds/out_effective_rank` stayed pinned at exactly 1.000 across all 21
+logged points while `vicreg_var_term` sat saturated at ~0.997 and `out_cos` at 0.9997. Diagnosis,
+measured on the live gen-5 checkpoint (`tmp` probe over 256 stratified states):
+
+| quantity | value |
+|---|---|
+| seed-output RMS | 0.207 |
+| cross-seed std (what the term pushes) | 0.0015 |
+| kv-row RMS | 0.246 |
+| spread across the 6 mon rows | 0.141 |
+| the shipped γ | **1.0** |
+
+γ=1.0 is ~7× the entire signal's RMS, and since each seed output is a **convex combination of the
+same six kv rows**, the achievable cross-seed std is bounded by the row spread (~0.14/dim). The
+target was unreachable except by `kv_proj` inflating its own scale ~10× against every downstream
+norm. A saturated ReLU hinge still has gradient (slope −1), so the term applied constant pressure
+— the spread did move ~5× in 2M steps — but multiplicity, the quantity the whole feature exists
+for, never budged. **An absolute target on a layer whose scale is learned is a bug, not a tuning
+choice**, and the `query_cos` reading (0.128 — near-orthogonal queries) rules out the queries as
+the cause: it is the attention distributions over six rows that are degenerate.
+
+The fix (same version — no run has trained on the old form; no field, forward or weight-shape
+change, so no `MODEL_CONFIG_VERSION`/`ARCH_SIGNATURE` bump):
+- **Variance** → per-dim cross-seed std ÷ that dim's own RMS (batch+seed, **detached** so the
+  gradient can only widen the seeds), hinged at `SEED_VICREG_GAMMA_REL` = **0.25** — "the seeds
+  differ by ≥25% of the feature's own scale", inside the ~0.68 ceiling the row spread implies.
+- **Covariance** → cross-seed **correlation** (not raw covariance) of the batch-centered outputs,
+  so the penalty lives in [0,1] and is comparable across runs and scales.
+- **Two new metrics**: `value_seeds/out_std_rel` (the achieved fraction, target 0.25) and
+  `value_seeds/out_rms` (the magnitude **watchdog** — a relative target's one degenerate response
+  is to shrink the feature rather than differentiate it, and this makes that visible; read the
+  two together).
+- Gates: `test_targets_are_scale_free` (100× rescale ⇒ identical loss — the direct regression for
+  this bug), `test_realistic_collapsed_scale_still_pays_full_hinge` (the measured operating point
+  above is now a closable gap rather than a saturated one), and the unchanged cov gate.
