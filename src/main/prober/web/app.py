@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 import threading
+from collections import OrderedDict
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -112,7 +113,9 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # engines would not be comparable"), so it is a startup flag here rather than a query param —
     # a per-request knob would invite exactly the incomparable mix the seam exists to prevent.
     app.state.impl = impl
-    app.state.sessions = {}                       # resolved run path -> ProbeSession
+    # LRU, NOT a plain dict — see _MAX_CACHED_SESSIONS. A scan of one run caches ~430 MB, and an
+    # anonymous visitor can walk every run in the picker.
+    app.state.sessions = OrderedDict()            # resolved run path -> ProbeSession
     app.state.session_lock = threading.Lock()
     app.state.jobs = JobRegistry(max_workers=max_job_workers)
     app.mount("/static", StaticFiles(directory=_STATIC), name="static")
@@ -137,21 +140,35 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     def session(run_path: str):
-        """The cached `ProbeSession` for one resolved run. Built lazily and once per run —
-        constructing it walks the trace tree, and every page would otherwise pay that walk."""
-        got = app.state.sessions.get(run_path)
-        if got is None:
-            with app.state.session_lock:
-                got = app.state.sessions.get(run_path)
-                if got is None:
-                    from main.prober.session import ProbeSession
-                    try:
-                        got = ProbeSession(run_path, impl=app.state.impl)
-                    except Exception as exc:      # noqa: BLE001 — a broken run is a 400, not a 500
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"cannot open that run: {type(exc).__name__}: {exc}") from exc
-                    app.state.sessions[run_path] = got
+        """The cached `ProbeSession` for one resolved run, as a BOUNDED LRU.
+
+        Built lazily and once per run — constructing it walks the trace tree, and every page would
+        otherwise pay that walk. But the cache must also be bounded: a `scan` of one run leaves
+        ~430 MB of cached summaries and value arrays behind (measured on the real `models/`:
+        6 runs → 3.0 GB, monotonic), and the picker offers 81 runs, so an unbounded dict hands an
+        anonymous visitor a ~35 GB lever on a box that is training. Evicting closes the session so
+        its caches are dropped now rather than whenever the collector notices.
+        """
+        sessions = app.state.sessions
+        with app.state.session_lock:
+            got = sessions.get(run_path)
+            if got is not None:
+                sessions.move_to_end(run_path)            # most-recently-used last
+                return got
+            from main.prober.session import ProbeSession
+            try:
+                got = ProbeSession(run_path, impl=app.state.impl)
+            except Exception as exc:              # noqa: BLE001 — a broken run is a 400, not a 500
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"cannot open that run: {type(exc).__name__}: {exc}") from exc
+            sessions[run_path] = got
+            while len(sessions) > _MAX_CACHED_SESSIONS:
+                _, evicted = sessions.popitem(last=False)  # least-recently-used
+                try:
+                    evicted.close()
+                except Exception:                 # noqa: BLE001 — eviction must never fail a request
+                    pass
         return got
 
     def unlocked(request: Request) -> bool:
@@ -684,6 +701,12 @@ def _form_float(value: "str | None", default: float) -> float:
 # A run has thousands of traces; 2397 rows rendered to 545 KB of HTML is not a table anyone reads,
 # it is a download. Cap it and say so — the filters are how you find a specific battle.
 _BATTLE_PAGE = 200
+
+# How many runs' `ProbeSession`s stay cached. MEASURED: a scan of one run leaves ~430 MB behind
+# (real `models/`: 1→466 MB, 6→3.0 GB RSS, monotonic), and the picker offers 81 runs — so an
+# unbounded cache is an anonymous-visitor lever on ~35 GB, next to a live trainer. Three keeps
+# "compare two runs" instant at roughly 1.3 GB worst case.
+_MAX_CACHED_SESSIONS = 3
 
 
 def _cap(rows, limit):

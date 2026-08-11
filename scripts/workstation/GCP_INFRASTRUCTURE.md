@@ -13,7 +13,7 @@ Both ends are key-only — no password auth possible from outside.
 |---|---|---|---|
 | 6006 | TensorBoard | `tensorboard.g5d.io` | `tensorboard.service` + `cloudflared-tensorboard` |
 | 6007 | Model architecture viewer | `model.g5d.io` | `gen3ai-model-viewer.service` + tunnel ingress |
-| 6008 | **Prober web views** | **nothing — local only** | run by hand; SSH-forward to reach it |
+| 6008 | Prober web views | `prober.g5d.io` | `gen3ai-prober-web.service` + tunnel ingress |
 | 1080 | SOCKS5 proxy | — | `proxy-tunnel` |
 
 Every origin binds `127.0.0.1`, so a Cloudflare tunnel entry is the only way anything becomes
@@ -356,21 +356,42 @@ tunnel is the sole path in.
 
 ---
 
-## Prober web views (`:6008`) — LOCAL ONLY, not on g5d.io
+## Prober web views — https://prober.g5d.io (`:6008`)
 
 The prober's browser front end (`src/main/prober/web/`, see its `CLAUDE.md`) serves the read-only
 forensic views — run summary, battles, `scan`, `triage`, the `falsify_scan` crater bracket, the
 `calibration` reliability curve.
 
-**There is no service and no tunnel entry for it.** Unlike TensorBoard and the model viewer, it is
-run by hand when you want it and stopped when you are done. Port **6008** is reserved for it,
-beside TensorBoard's 6006 and the model viewer's 6007, and it binds loopback only.
+Third endpoint on the same tunnel, same shape as TensorBoard and the model viewer: an origin
+service on `:6008` plus a `cloudflared` ingress entry.
+
+```bash
+systemctl --user status  gen3ai-prober-web
+systemctl --user restart gen3ai-prober-web       # needed after ANY code change — see below
+journalctl --user -u gen3ai-prober-web -f
+```
+
+Unit: `~/.config/systemd/user/gen3ai-prober-web.service`
+(reference copy versioned at `scripts/workstation/gen3ai-prober-web.service`)
+
+**It serves `models/` from the MAIN CHECKOUT, so it runs whatever code local main is at.** Pushing
+to origin is not enough — local main must be fast-forwarded and the unit restarted, or the endpoint
+keeps serving the previous commit. Unlike the model viewer (which re-executes its generator on
+mtime change) this is a FastAPI app whose routes are bound at startup; nothing here reloads.
+
+**It is pointed at `models/`, not at one run** — the header carries a run picker — so a new
+generation starting does NOT require touching the unit.
+
+### Local-only alternative
+
+If the tunnel is down, or you want a throwaway instance on a different port (note :6008 is taken
+by the service — use `--port 6108` for a second one):
 
 ```bash
 # on the workstation — point it at models/ and pick any run from the header
 export PYTHONPATH=$PYTHONPATH:src
-python -m main.prober.web /home/goodlad/dev/gen3ai/models
-# -> http://127.0.0.1:6008
+python -m main.prober.web /home/goodlad/dev/gen3ai/models --port 6108
+# -> http://127.0.0.1:6108
 
 # from another machine, over the workstation SSH tunnel (no cloudflared involved)
 ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io
@@ -431,10 +452,7 @@ The one asymmetry worth knowing: **a direct child of `models/` may be a symlink*
 the five newest runs are exactly that. A symlink **inside** a run refuses the whole run. Details
 and the attack list: `src/main/prober/web/CLAUDE.md` and `runs_test.py`.
 
-### If it is ever promoted to `prober.g5d.io`
-
-Same shape as the other two — an origin service on `:6008` plus a `cloudflared` ingress entry on
-the existing tunnel.
+### Access posture, and the deploy's own guards
 
 **No Cloudflare Access — decided by the owner (2026-08-09): this is an open-source model, and its
 architecture, training outcomes and forensic traces are all intended to be public.** Same posture
@@ -445,25 +463,18 @@ incidental: the run header and the battle `id` column print absolute paths under
 names. If that ever matters, it is a rendering change (show run-relative ids), not a reason for an
 auth layer.
 
-**Both of the things that used to block a deploy are now closed:** the app takes a models root and
-picks any run (so the unit does not need restarting when the current run changes), and the job
-endpoints require the shared password (so an anonymous visitor cannot start a re-roll).
+Because reading is anonymous, **anything an anonymous request can make grow needs a bound**, and
+two were found by measuring rather than by review:
 
-What still differs from the model viewer's unit, and should go in this one:
+- the login-throttle failure map (LRU-bounded; it was 3000 permanent entries per 3000 spoofed
+  identities), and
+- **the per-run `ProbeSession` cache** — a `scan` of one run leaves ~430 MB behind, and the picker
+  offers 81 runs, so walking them all reached ~35 GB on a box with 89 GB that is also training.
+  Now LRU-bounded at 3 (`_MAX_CACHED_SESSIONS`), with `MemoryMax=6G` in the unit as the backstop.
 
-- **It holds state and does real work.** The model viewer is a pure function per request. This
-  caches a `ProbeSession` per run and runs jobs on a thread pool. Set `--job-workers 1`, a
-  `MemoryMax=`, and the same `Nice=10` / `CPUWeight=20`. Jobs are in-process state, so a restart
-  silently discards a running scan.
-- **`EnvironmentFile` / `Environment=GEN3AI_PROBER_PASSWORD_FILE=…`** — a user unit does inherit
-  `environment.d`, but stating it in the unit makes the dependency visible where someone reading
-  the unit will look.
-- **No live reload.** The model viewer re-executes its generator module on mtime change; this is a
-  FastAPI app whose routes are bound at startup, so a code change needs `systemctl --user restart`.
-
-Carry over from the Jul 29 2026 outage note regardless: `Restart=always`,
-`StartLimitIntervalSec=0`, exponential backoff, and a memory cap — a live tunnel in front of a dead
-origin is the signature failure here too.
+`--job-workers 1` is the third bound: the job endpoints are the only way a visitor who has the
+password can spend real CPU, and one re-roll job at a time is the cap. Jobs are in-process state,
+so a restart silently discards a running scan.
 
 ---
 

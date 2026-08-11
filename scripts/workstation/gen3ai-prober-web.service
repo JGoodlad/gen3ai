@@ -1,0 +1,61 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-prober-web.service
+#
+# The origin behind https://prober.g5d.io (the cloudflared tunnel forwards to
+# localhost:6008). Serves the prober's read-only forensic views over models/ —
+# see the "Prober web views" section of GCP_INFRASTRUCTURE.md and
+# src/main/prober/web/CLAUDE.md.
+#
+# Install:
+#   cp scripts/workstation/gen3ai-prober-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now gen3ai-prober-web.service
+#
+# Requires the cloudflared ingress entry for prober.g5d.io — see GCP_INFRASTRUCTURE.md.
+
+[Unit]
+Description=Gen3AI prober web views (origin for prober.g5d.io)
+After=network-online.target
+Wants=network-online.target
+# Same reasoning as the model viewer: systemd's default start-rate limit (5 starts
+# / 10s) puts a unit into `failed` and STOPS restarting it, which reproduces the
+# Jul 29 2026 TensorBoard shape — a dead origin behind a tunnel that still looks
+# healthy from outside. 0 disables the limit; the backoff below stops a spin.
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/home/goodlad/dev/gen3ai
+Environment=HOME=/home/goodlad
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src
+# The shared password that gates falsify_scan / calibration. The PATH is named
+# here, never the secret: a unit file is world-readable, and `systemctl cat`
+# prints it. The file itself is mode 0600. Without this the app still serves
+# every read view and simply refuses the two expensive probes (fails CLOSED).
+Environment=GEN3AI_PROBER_PASSWORD_FILE=/home/goodlad/.config/gen3ai/prober-password
+
+# models/ (not a single run): the header carries a run picker, so the endpoint
+# does not need restarting when a new generation starts training.
+# --job-workers 1: each job spawns Node re-rolls beside a live trainer, and the
+# job endpoints are the one thing an authenticated visitor can use to spend real
+# CPU. One at a time is the bound.
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober.web \
+    /home/goodlad/dev/gen3ai/models --host 127.0.0.1 --port 6008 --job-workers 1
+
+Restart=always
+RestartSec=2
+RestartSteps=6
+RestartMaxDelaySec=5min
+
+# MEASURED, not guessed. The app caches ProbeSessions LRU-bounded at 3, and a
+# scan of one run peaks around 400-700 MB; three plus a Node re-roll child sits
+# near 2.5-3 GB. 6G leaves headroom for a falsify job without ever letting this
+# process be what pushes an 89 GB box (running training) into a global OOM — if
+# it gets there, its own cgroup should OOM and restart instead.
+MemoryMax=6G
+
+# The workstation's job is training. A forensic viewer must never compete for it:
+# a `scan` is ~2 s of file IO and a falsify job is minutes of Node.
+Nice=10
+CPUWeight=20
+
+[Install]
+WantedBy=default.target

@@ -721,3 +721,65 @@ def test_the_probe_engine_defaults_to_node(client):
     """Unchanged behaviour unless someone asks for rust."""
     assert client.get("/api/health").json()["impl"] == "node"
     assert _the_session(client)._impl == "node"
+
+
+def test_the_session_cache_is_bounded_and_closes_what_it_evicts(tmp_path_factory):
+    """A `scan` of one run leaves ~430 MB of cached summaries behind (measured on the real
+    models/: 6 runs -> 3.0 GB, monotonic), and the picker offers 81 runs. Unbounded, that is an
+    anonymous visitor's lever on ~35 GB of a box that is training — the same defect class as the
+    auth failure map.
+    """
+    import shutil
+    from main.prober.web.app import _MAX_CACHED_SESSIONS
+
+    root = tmp_path_factory.mktemp("many")
+    staging = tmp_path_factory.mktemp("staging")
+    names = []
+    for i in range(_MAX_CACHED_SESSIONS + 2):
+        built = fixture_run.build(str(staging / f"s{i}"))
+        dest = root / f"run_{i}"
+        shutil.move(built, str(dest))
+        names.append(dest.name)
+
+    app = create_app(str(root))
+    closed = []
+    with TestClient(app) as c:
+        for name in names:
+            r = c.get("/api/run", params={"run": name})
+            assert r.status_code == 200, name
+            # Record closes on whatever is currently cached, so an eviction is observable.
+            for sess in app.state.sessions.values():
+                if not hasattr(sess, "_close_spy"):
+                    sess._close_spy = True
+                    original = sess.close
+                    sess.close = lambda o=original, s=sess: (closed.append(s), o())[1]
+
+        assert len(app.state.sessions) <= _MAX_CACHED_SESSIONS, (
+            f"cache grew to {len(app.state.sessions)} — an anonymous visitor can walk every run")
+        assert closed, "evicted sessions must be closed, not left for the collector"
+
+
+def test_the_most_recently_used_run_survives_eviction(tmp_path_factory):
+    """LRU, not FIFO: the run you are actually looking at must not be the one thrown away."""
+    import shutil
+    from main.prober.web.app import _MAX_CACHED_SESSIONS
+
+    root = tmp_path_factory.mktemp("lru")
+    staging = tmp_path_factory.mktemp("lrustage")
+    names = []
+    for i in range(_MAX_CACHED_SESSIONS + 1):
+        built = fixture_run.build(str(staging / f"s{i}"))
+        dest = root / f"run_{i}"
+        shutil.move(built, str(dest))
+        names.append(dest.name)
+
+    app = create_app(str(root))
+    with TestClient(app) as c:
+        for name in names[:_MAX_CACHED_SESSIONS]:
+            c.get("/api/run", params={"run": name})
+        keep = names[0]
+        c.get("/api/run", params={"run": keep})       # touch the oldest -> now newest
+        c.get("/api/run", params={"run": names[-1]})  # force one eviction
+
+        cached = {p.rsplit("/", 1)[-1] for p in app.state.sessions}
+        assert keep in cached, "the just-used run was evicted — that is FIFO, not LRU"

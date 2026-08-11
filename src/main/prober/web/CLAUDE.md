@@ -193,23 +193,17 @@ load a checkpoint and hold expensive per-decision state; they are the stateful t
 different session model than "one cached `ProbeSession` per run". The TUI remains the surface for
 them.
 
-## The `impl` seam is a STARTUP flag, never a query parameter
+## The session cache is BOUNDED (`_MAX_CACHED_SESSIONS`)
 
-`ProbeSession(root, impl="node"|"rust")` chooses which offline replay/search driver the
-re-roll-backed probes spawn (`gen3_search_driver_impl_seam_v1`). Here it is
-`python -m main.prober.web models/ --impl rust` → `create_app(impl=…)` → `app.state.impl` →
-`ProbeSession(run_path, impl=…)`, and `/api/health` reports it so a visitor can see which engine
-produced a result.
+One `ProbeSession` is cached per run, and a `scan` of one run costs **~430 MB** of cached summaries
+and value arrays (measured on the real `models/`: 6 runs → 3.0 GB, growing monotonically). The
+picker offers **81** runs, so an unbounded dict is an anonymous visitor's lever to ~35 GB — on a box
+whose day job is training.
 
-**It is deliberately not a per-request knob.** `ProbeSession` treats `impl` as session-wide on
-purpose — two probes of the same run answered under different engines are not comparable — and
-this app caches one `ProbeSession` per run and shares it across every visitor. A query parameter
-would therefore either be a lie (the cached session already has an engine) or would need a session
-per `(run, impl)` pair, which is the incomparable mix the seam exists to prevent. A startup flag
-matches the CLI's own treatment and keeps one server = one engine.
-
-Default stays `"node"`. Covered by `app_test.py` (the flag reaches `ProbeSession._impl` and shows
-in `/api/health`; the default is node).
+So `app.state.sessions` is an LRU bounded at `_MAX_CACHED_SESSIONS`, and an evicted session gets
+`.close()` called (dropping its `_summaries` / `_models` caches) rather than being left to the
+garbage collector's discretion. Same defect class as the auth failure map, found the same way:
+*anything an anonymous request can make grow must have a bound*.
 
 ## Architecture decisions, and why
 
