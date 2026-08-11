@@ -675,7 +675,7 @@ of ALL decisions**, but 46.4% of them bring a previously-unseen mon, which v1 ma
 β v1 is waiting on, and the {ATTACK, SWITCH} form (§7a.4) is attractive on its own merits.
 
 **Where the injection goes, and why not the obvious place.** `prefuse_proj` already writes op rows
-onto tokens PRE-transformer — and gen-5 had it and still lost the 44 Elo, so "inject earlier" is
+onto tokens PRE-transformer — and gen-5 had it and did not come out ahead, so "inject earlier" is
 not the fix. Two things differ here: the CONTENT is a coherent α-weighted contraction rather than
 `in_permon`'s incoherent per-defender max, and the PLACEMENT is **post-transformer, immediately
 before the value pool**, so the trunk cannot wash it out:
@@ -703,7 +703,7 @@ are needed; conflating them makes a null uninterpretable.
 | **V2** | **Equivariance**: permute our six mons ⇒ `value_pooled` **invariant** (permutation-invariant pooling over per-entity rows) | no |
 | **V3** | Version gate: flipping the flag FATALs on resume (structural, state_dict-changing) | no |
 | **V4** | Cost: no measurable regression on the compiled B=1 path (a shipped 6.53× lever) | no |
-| **V5** | Acceptance: dense **`ladder_elo`** vs **gen-4 2081 ± 11** — the honest target is recovering the ~44, not beating gen-5's 2037 | yes |
+| **V5** | Acceptance: dense **`ladder_elo`**, fit over the **last 3–4 checkpoints** rather than the endpoint (per §7a.1's amendment — the gen-4/gen-5 trajectories interleave and the 43-point gap is one endpoint, so a single-point target would re-commit the same error). Compare against gen-4's tail, and treat 'recovering the ~44' as a hypothesis under test, **not** the established baseline | yes |
 
 ### 7a.3 An alternative hypothesis for `d3` = 0.63% that this doc does not raise
 

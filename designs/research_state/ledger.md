@@ -302,3 +302,30 @@ predicted the shape (early-game switches go to unrevealed mons) but not that it 
 
 Cross-check: the summary's `outcome.opp.action` encodes switches explicitly (`switched_to:X` /
 `X_sent_in`, 3822) — consistent with the species-change detector used for the rates above.
+
+### ⚠️ CORRECTION (2026-08-11, same day) to the ladder entry above — I quoted an SE as a CI
+
+A sibling session read both `snapshot_ladder/ladder.json` files back and caught three errors in my
+2026-08-11 entry. All three are mine and the entry above should be read through them:
+
+1. **"±11" was the STANDARD ERROR, not the CI.** At 1.96·se the intervals are gen-4
+   **[2059.6, 2101.6]** vs gen-5 **[2017.6, 2057.2]** — disjoint by **2.4 Elo**. Marginal. Quoting
+   ±11 made the separation read far more decisively than the data supports.
+2. **The trajectories INTERLEAVE.** gen-5 is AHEAD at 14M (2025.2 vs 2021.1) and 16M (2036.6 vs
+   2030.2) and level at 20M. Selecting the endpoint from two repeatedly-crossing trajectories is
+   outcome-conditioning of exactly the kind these honesty gates exist to catch.
+3. **The whole 43-point gap is one endpoint** — gen-4's final checkpoint jumps +30 while gen-5's
+   stays flat.
+
+**So "the concat deletion cost ~44 Elo" is SUGGESTIVE, not established**, and any acceptance gate
+must fit the last 3–4 checkpoints rather than compare endpoints. Disambiguate by laddering gen-4
+@22M against gen-5 @24M.
+
+**What does NOT change:** the critic-side conclusion never rested on that number. The seed readout
+measuring **~1 effective direction** under two structurally different pressures (VICReg, gen-6;
+per-seed quantile, gen-7 — centered PR 0.846 vs 0.835) is independent and self-standing, so the
+scope gap is real on structural grounds and the injection arm remains the right response.
+
+**The durable lesson (mine): an instrument upgrade is not a licence to over-read it.** I corrected
+a resolution problem and immediately introduced a precision error in the same breath — quoting a
+standard error as a confidence interval, on the very metric I had just promoted to primary.
