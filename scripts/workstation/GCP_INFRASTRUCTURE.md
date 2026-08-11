@@ -362,6 +362,15 @@ The prober's browser front end (`src/main/prober/web/`, see its `CLAUDE.md`) ser
 forensic views — run summary, battles, `scan`, `triage`, the `falsify_scan` crater bracket, the
 `calibration` reliability curve.
 
+⚠️ **Adding an ingress hostname INTERRUPTS the other two.** `cloudflared` does not hot-reload its
+ingress: sending `SIGHUP` makes the process EXIT, and `Restart=always` brings it back ~3 s later
+(measured 2026-08-10 — PID changed, `NRestarts` went 0→1, and all three hostnames re-registered
+their QUIC connections). So editing `config.yml` costs tensorboard.g5d.io and model.g5d.io a few
+seconds of downtime whichever way you do it; there is no gentler path, and `systemctl --user
+restart cloudflared-tensorboard` is the honest spelling. Validate first — `cd ~/.cloudflared &&
+cloudflared tunnel ingress validate` — because a malformed config takes all three down until it is
+fixed, not just the new one.
+
 Third endpoint on the same tunnel, same shape as TensorBoard and the model viewer: an origin
 service on `:6008` plus a `cloudflared` ingress entry.
 
