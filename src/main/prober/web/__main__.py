@@ -44,6 +44,11 @@ def main(argv=None) -> int:
     ap.add_argument("--port", type=int, default=6008, help="port (default 6008)")
     ap.add_argument("--job-workers", type=int, default=2,
                     help="concurrent falsify/calibration jobs (default 2 — each spawns Node)")
+    ap.add_argument("--impl", default="node", choices=["node", "rust"],
+                    help="offline replay/search engine the falsify/calibration probes spawn "
+                         "(default node). SESSION-WIDE by design: ProbeSession treats it as a "
+                         "property of the whole investigation, since two probes of one run "
+                         "answered under different engines are not comparable.")
     ap.add_argument("--open", dest="open_access", action="store_true",
                     help="no password: anyone may start the expensive probes. For a laptop, "
                          "NOT for anything reachable off this box.")
@@ -90,10 +95,11 @@ def main(argv=None) -> int:
 
     password = load_password()
     app = create_app(os.path.abspath(a.run), max_job_workers=a.job_workers,
-                     password=password, open_access=a.open_access)
+                     password=password, open_access=a.open_access, impl=a.impl)
     n_runs = len(app.state.runs.list_runs())
 
     print(f"prober web → http://{a.host}:{a.port}   ({n_runs} run(s) under {a.run})")
+    print(f"  probe engine: {a.impl}")
     # Say the access posture out loud at startup. A hosted instance silently running with the
     # probes wide open, or silently unable to run them at all, are both states an operator should
     # learn from the log rather than from a user's confusion.

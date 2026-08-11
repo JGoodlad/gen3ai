@@ -37,6 +37,11 @@
             "title": "Auth Required",
             "type": "boolean"
           },
+          "impl": {
+            "description": "Offline replay/search engine the probes spawn: node | rust.",
+            "title": "Impl",
+            "type": "string"
+          },
           "jobs_unlocked": {
             "description": "May THIS request start an expensive probe?",
             "title": "Jobs Unlocked",
@@ -73,6 +78,7 @@
           "n_runs",
           "jobs_unlocked",
           "auth_required",
+          "impl",
           "version"
         ],
         "title": "Health",

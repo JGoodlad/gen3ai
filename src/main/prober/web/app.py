@@ -65,6 +65,7 @@ class Health(BaseModel):
     n_runs: int = Field(..., description="Selectable runs under that root.")
     jobs_unlocked: bool = Field(..., description="May THIS request start an expensive probe?")
     auth_required: bool = Field(..., description="False when started with --open.")
+    impl: str = Field(..., description="Offline replay/search engine the probes spawn: node | rust.")
     version: str
 
 
@@ -93,7 +94,8 @@ class JobState(JobRef):
 
 
 def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
-               password: "str | None" = None, open_access: bool = False) -> FastAPI:
+               password: "str | None" = None, open_access: bool = False,
+               impl: str = "node") -> FastAPI:
     """Build the app.
 
     `root` is a models directory (the picker enumerates its runs) or a single run directory (the
@@ -105,6 +107,11 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     app.state.root = root
     app.state.runs = RunStore(root) if root else None
     app.state.auth = Auth(password, open_access=open_access)
+    # WHICH offline replay/search engine the re-roll-backed probes spawn. `ProbeSession` treats
+    # this as SESSION-WIDE on purpose ("two probes of the same run answering under different
+    # engines would not be comparable"), so it is a startup flag here rather than a query param —
+    # a per-request knob would invite exactly the incomparable mix the seam exists to prevent.
+    app.state.impl = impl
     app.state.sessions = {}                       # resolved run path -> ProbeSession
     app.state.session_lock = threading.Lock()
     app.state.jobs = JobRegistry(max_workers=max_job_workers)
@@ -139,7 +146,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                 if got is None:
                     from main.prober.session import ProbeSession
                     try:
-                        got = ProbeSession(run_path)
+                        got = ProbeSession(run_path, impl=app.state.impl)
                     except Exception as exc:      # noqa: BLE001 — a broken run is a 400, not a 500
                         raise HTTPException(
                             status_code=400,
@@ -203,7 +210,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def api_health(request: Request) -> Health:
         n = len(app.state.runs.list_runs()) if app.state.runs else 0
         return Health(ok=True, models_root=app.state.root, n_runs=n,
-                      jobs_unlocked=unlocked(request),
+                      jobs_unlocked=unlocked(request), impl=app.state.impl,
                       auth_required=app.state.auth.required, version=VERSION)
 
     @app.get("/api/runs", response_model=list[RunRow], tags=["read-only"],

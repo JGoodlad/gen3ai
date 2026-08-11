@@ -1074,7 +1074,9 @@ python3 -m main.prober.web --check-openapi                                # cont
 
 Pointed at `models/` it enumerates the runs and offers a picker; a run is selected by NAME and the
 name must be in the server's own listing, so no client string ever reaches a path join. Reading is
-anonymous; `falsify_scan` / `calibration` need the shared password.
+anonymous; `falsify_scan` / `calibration` need the shared password. `--impl {node,rust}` picks the
+offline replay/search driver those two spawn — a **startup** flag, matching `ProbeSession`'s
+session-wide treatment of `impl` rather than a per-request knob.
 
 **Local only — not on g5d.io** (no unit, no tunnel entry). From elsewhere:
 `ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.

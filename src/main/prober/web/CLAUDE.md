@@ -10,6 +10,7 @@ export PYTHONPATH=$PYTHONPATH:src
 python -m main.prober.web models/                         # a models ROOT -> pick any run in it
 python -m main.prober.web models/run_<timestamp>          # one run -> the picker offers only it
 python -m main.prober.web models/ --port 6108 --job-workers 1 --open
+python -m main.prober.web models/ --impl rust             # the probes spawn the rust driver
 python -m main.prober.web --openapi                       # regenerate the committed contract
 python -m main.prober.web --check-openapi                 # the staleness gate (exit 1 if stale)
 ```
@@ -163,6 +164,19 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
   `V > 0`, which the project's own docs call systematically wrong, so it belongs next to the two
   categories it distorts.
 
+## Which sim the probes spawn (`--impl`)
+
+`falsify_scan` and `calibration` re-roll turns through an offline replay/search driver, and since
+`gen3_search_driver_impl_seam_v1` that driver can be **node** (default) or **rust**.
+`ProbeSession` treats the choice as **session-wide** — *"two probes of the same run answering
+under different engines would not be comparable"* — so this is a **startup flag**, not a query
+parameter. A per-request knob would invite exactly the incomparable mix the seam exists to
+prevent, and the app caches one `ProbeSession` per run, which the session-wide reading matches
+exactly.
+
+`/api/health` reports the active engine, so a falsify result can always be traced to the sim that
+produced it.
+
 ## Scope (deliberately read-only)
 
 | View | Session call | Notes |
@@ -179,15 +193,23 @@ load a checkpoint and hold expensive per-decision state; they are the stateful t
 different session model than "one cached `ProbeSession` per run". The TUI remains the surface for
 them.
 
-**Also not exposed: the `impl` seam.** `ProbeSession(root, impl="node"|"rust")` chooses which
-offline replay/search driver the re-roll-backed probes spawn (`gen3_search_driver_impl_seam_v1`).
-The web app always takes the default `"node"`, so `falsify_scan` and `calibration` here run on the
-Node driver. That is a deliberate omission rather than an oversight — `impl` is **session-wide on
-purpose** (two probes of the same run answered under different engines are not comparable), and
-this app caches one `ProbeSession` per run and shares it across every visitor, so a per-request
-`impl` would either be a lie or would need a session per (run, impl) pair. If rust is ever wanted
-here, the honest shape is a process-level `--impl` flag threaded into `create_app`, matching the
-CLI's own session-wide treatment.
+## The `impl` seam is a STARTUP flag, never a query parameter
+
+`ProbeSession(root, impl="node"|"rust")` chooses which offline replay/search driver the
+re-roll-backed probes spawn (`gen3_search_driver_impl_seam_v1`). Here it is
+`python -m main.prober.web models/ --impl rust` → `create_app(impl=…)` → `app.state.impl` →
+`ProbeSession(run_path, impl=…)`, and `/api/health` reports it so a visitor can see which engine
+produced a result.
+
+**It is deliberately not a per-request knob.** `ProbeSession` treats `impl` as session-wide on
+purpose — two probes of the same run answered under different engines are not comparable — and
+this app caches one `ProbeSession` per run and shares it across every visitor. A query parameter
+would therefore either be a lie (the cached session already has an engine) or would need a session
+per `(run, impl)` pair, which is the incomparable mix the seam exists to prevent. A startup flag
+matches the CLI's own treatment and keeps one server = one engine.
+
+Default stays `"node"`. Covered by `app_test.py` (the flag reaches `ProbeSession._impl` and shows
+in `/api/health`; the default is node).
 
 ## Architecture decisions, and why
 
