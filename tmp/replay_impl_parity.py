@@ -61,38 +61,7 @@ ALLOWLIST = [
     ),
 ]
 
-REJECT_FRAMING_REASON = (
-    "CHOICE-REJECT framing (pre-existing bridge layer, NOT the replay kernels). When an arm "
-    "feeds an explicit choice the sim refuses — here `switch N` into a FAINTED slot, the same "
-    "class the search harness sees for a `disabled` move — Node emits `|error|[Invalid choice] "
-    "…` as a chunk TO THAT SIDE ONLY, while the port's bridge.rs reject path (which models only "
-    "the trapped-SWITCH case) emits no |error| and re-opens the boundary with a request to BOTH "
-    "sides. "
-    "\n    THE RULE, probe-measured (src/rust_sim/harness/probe_choice_reject_framing.js): "
-    "emitChoiceError emits `[Unavailable choice]` + a re-request IFF the update callback "
-    "actually CHANGED the request (the DISABLED-move case; its re-request adds a top-level "
-    "`\"update\": true` and `\"disabledSource\": \"\"` on the offending slot); with no update "
-    "it is `[Invalid choice]` and NOTHING follows. Measured `[Invalid]`+no-re-request siblings: "
-    "a switch into the ACTIVE, an out-of-range move slot. THE FAINTED-SLOT case here is the one "
-    "the probe did NOT capture (its fixture failed to faint the mon) — it is the same structural "
-    "class (side.ts:964 passes NO update callback) and is observed live by THIS harness, but the "
-    "exact string is taken from source, not measured. In every measured class the NON-offending "
-    "side receives ZERO lines, which is why the sibling `choices_used` entry below exists. "
-    "\n    Reconciled ONLY when, after dropping the |error| / |request| FRAMING chunks, every "
-    "remaining LOG chunk is byte-equal on BOTH sides and non-empty — so the battle itself is "
-    "provably identical. `outcome` / `choices_used` / `turn_log` are still compared STRICTLY."
-)
 
-REJECT_EXTRA_CHOICE_REASON = (
-    "CHOICE-REJECT re-ask (the SAME pre-existing bridge gap as above, seen in "
-    "`choices_used`). Node's reject re-opens the boundary for the REJECTED SIDE ONLY, so the "
-    "other side's already-accepted choice stands; the port's driver-level reject rebuilds the "
-    "whole boundary, so the OTHER side is asked again and its follow-up pick is recorded too. "
-    "The extra pick is never EXECUTED (the log chunks, `turn_log` and `outcome` are byte-equal "
-    "— that is the reconciliation's precondition), it is only recorded. Reconciled ONLY on an "
-    "arm whose reject framing already reconciled, and ONLY when node's list is a SUBSEQUENCE "
-    "of the port's for that side — so a genuinely DIFFERENT pick still fails."
-)
 
 REJECT_PREFIXES = ("|error|[Invalid choice]", "|error|[Unavailable choice]")
 
@@ -102,51 +71,6 @@ def is_subsequence(small, big):
     return all(any(x == y for y in it) for x in small)
 
 
-def reconcile_reject_framing(expected, got):
-    """Fold away the reject-framing difference arm-by-arm; returns how many arms it applied to.
-
-    NARROW on purpose (the bridge's own allowlists are the model): it fires ONLY when the NODE
-    response actually carries a reject `|error|`, and it forgives ONLY the `|error|`/`|request|`
-    framing chunks. After dropping those, every remaining LOG chunk must be byte-equal on BOTH
-    sides and non-empty, else the reconciliation REFUSES and the divergence is reported in full.
-    """
-    def is_framing(c):
-        return c.startswith("|error|") or c.startswith("|request|")
-
-    hits = extra_choice_hits = 0
-    for ea, ga in zip(expected.get("arms", []) or expected.get("rerolls", []),
-                      got.get("arms", []) or got.get("rerolls", [])):
-        chunks = [(s, ea.get(f"{s}_chunks", []), ga.get(f"{s}_chunks", []))
-                  for s in ("p1", "p2")]
-        if not any(c.startswith(REJECT_PREFIXES) for _s, e, _g in chunks for c in e):
-            continue
-        folded = []
-        for side, e, g in chunks:
-            el = [norm(c) for c in e if not is_framing(c)]
-            gl = [norm(c) for c in g if not is_framing(c)]
-            if not el or el != gl:
-                folded = None
-                break
-            folded.append((side, el))
-        if folded is None:
-            continue  # refuse: a real log difference hides under the framing
-        for side, el in folded:
-            ea[f"{side}_chunks"] = el
-            ga[f"{side}_chunks"] = el
-        hits += 1
-        # The SAME reject also makes the port re-ask the OTHER side (see the reason string).
-        # Only an EXTRA recorded pick is forgiven, never a different one.
-        for side in ("p1", "p2"):
-            e, g = ea["choices_used"].get(side, []), ga["choices_used"].get(side, [])
-            if e != g and is_subsequence(e, g):
-                ga["choices_used"][side] = e
-                extra_choice_hits += 1
-    return hits, extra_choice_hits
-
-
-# The error CLASSES this harness knows how to recognize in BOTH impls' messages. A case
-# declares which class it expects; the harness asserts BOTH sides report that class, so an
-# allowlisted message text can never hide a driver failing for a different reason.
 ERROR_CLASSES = {
     "invalid-turn": "invalid turn ",
     "unreached-turn": "battle never reached the start of turn ",
@@ -518,9 +442,6 @@ def main():
             for act in (nout.get("pre_state", {}) or {}).get(side, {}).get("active", []):
                 if act and act.get("volatiles"):
                     cov["pre_state:nonempty-volatiles"] += 1
-        _fh, _ch = reconcile_reject_framing(nout, rout)
-        allow_hits[REJECT_FRAMING_REASON] += _fh
-        allow_hits[REJECT_EXTRA_CHOICE_REASON] += _ch
         ds = []
         diff(nout, rout, name, ds)
         matched_leaves += max(count_leaves(nout) - len(ds), 0)
@@ -611,8 +532,6 @@ def main():
     print("ALLOWLIST (explicit, never silent):")
     for _pred, reason in ALLOWLIST:
         print(f"  - hits={allow_hits.get(reason, 0)}  {reason}")
-    print(f"  - hits={allow_hits.get(REJECT_FRAMING_REASON, 0)}  {REJECT_FRAMING_REASON}")
-    print(f"  - hits={allow_hits.get(REJECT_EXTRA_CHOICE_REASON, 0)}  {REJECT_EXTRA_CHOICE_REASON}")
     print()
     print("COVERAGE ACTUALLY EXERCISED (the classes the search golden was missing):")
     for k in sorted(cov):

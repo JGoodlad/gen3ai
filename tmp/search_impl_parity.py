@@ -45,30 +45,6 @@ ALLOWLIST = [
     ),
 ]
 
-ILLEGAL_MOVE_ERROR = "|error|[Unavailable choice] Can't move: "
-
-ILLEGAL_MOVE_REJECT_REASON = (
-    "ILLEGAL-MOVE REJECT framing (pre-existing bridge layer, NOT the search kernels). "
-    "MEASURED against the real sim by src/rust_sim/harness/probe_choice_reject_framing.js "
-    "(re-runnable; the numbers below are captured bytes, not a source read). When an arm "
-    "feeds an explicit move the request marks `disabled` (a Choice lock here), Node emits "
-    "`|error|[Unavailable choice] Can't move: X's Y is disabled` + a re-request TO THAT "
-    "SIDE ONLY, and the re-request differs from the one it answered in EXACTLY two ways: "
-    "a top-level `\"update\": true`, and `\"disabledSource\": \"\"` appended to the "
-    "offending move slot (Side.chooseMove's updateRequestForPokemon). The port's "
-    "bridge.rs reject path handles only the trapped-SWITCH case, so it emits no |error|, "
-    "no disabledSource, and re-opens the boundary with a request to BOTH sides. "
-    "\n    THE RULE (model this CONDITION, not a per-message verdict): emitChoiceError "
-    "emits `[Unavailable choice]` + a re-request IFF the update callback actually CHANGED "
-    "the request; with no update it is `[Invalid choice]` and NOTHING follows. Probe-"
-    "measured siblings, all `[Invalid]`+no-re-request: a switch into the ACTIVE, an "
-    "out-of-range move slot. In EVERY class the NON-offending side receives ZERO lines — "
-    "so this is a BOUNDARY divergence as much as an error-framing one, which is also what "
-    "makes the sibling `choices_used` entry in replay_impl_parity.py exist. "
-    "\n    Reconciled ONLY when every LOG chunk is byte-equal on both sides (so the battle "
-    "itself is identical); the arm's outcome / choices_used / requests are still compared "
-    "strictly."
-)
 
 # Fields the port renders from state it models only approximately. These are NOT
 # forgiven (a divergence still fails); they are printed every run so a green result is
@@ -150,40 +126,6 @@ def diff(exp, got, path, out):
         out.append((path, exp, got))
 
 
-def reconcile_illegal_move_reject(expected, got):
-    """Fold away the illegal-move-reject framing difference; True if it applied.
-
-    NARROW on purpose (the bridge's own allowlists are the model): it fires ONLY when
-    the NODE response actually carries the `[Unavailable choice] Can't move:` error, and
-    it forgives ONLY the `|error|` / `|request|` framing chunks — after dropping those,
-    every remaining LOG chunk must be byte-equal on BOTH sides and non-empty, else the
-    reconciliation refuses and the divergence is reported in full.
-    """
-    def is_framing(c):
-        return c.startswith("|error|") or c.startswith("|request|")
-
-    applied = False
-    for ea, ga in zip(expected.get("arms", []), got.get("arms", [])):
-        chunks = [(s, ea.get(f"{s}_chunks", []), ga.get(f"{s}_chunks", [])) for s in ("p1", "p2")]
-        if not any(c.startswith(ILLEGAL_MOVE_ERROR) for _s, e, _g in chunks for c in e):
-            continue
-        folded = []
-        for side, e, g in chunks:
-            el = [norm_chunk(c) for c in e if not is_framing(c)]
-            gl = [norm_chunk(c) for c in g if not is_framing(c)]
-            if not el or el != gl:
-                folded = None
-                break
-            folded.append((side, el))
-        if folded is None:
-            continue  # refuse: a real log difference hides under the framing
-        for side, el in folded:
-            ea[f"{side}_chunks"] = el
-            ga[f"{side}_chunks"] = el
-        applied = True
-    return applied
-
-
 def allowlisted(path):
     for pred, reason in ALLOWLIST:
         if pred(path):
@@ -263,8 +205,6 @@ def main():
                     payload = dict(payload, id=expected.get("id"))
                     got, _raw = drv.call(payload)
                     n_arms += len(expected.get("arms", []))
-                    if reconcile_illegal_move_reject(expected, got):
-                        allow_hits[ILLEGAL_MOVE_REJECT_REASON] += 1
                     ds = []
                     diff(expected, got, f"{name}@turn{c['turn']}", ds)
                     matched_leaves += max(count_leaves(expected) - len(ds), 0)
@@ -289,7 +229,6 @@ def main():
     print("ALLOWLIST (explicit, never silent):")
     for _pred, reason in ALLOWLIST:
         print(f"  - hits={allow_hits.get(reason, 0)}  {reason}")
-    print(f"  - hits={allow_hits.get(ILLEGAL_MOVE_REJECT_REASON, 0)}  {ILLEGAL_MOVE_REJECT_REASON}")
     print()
     print("COVERAGE NOTES (matched here, but the golden does not exercise them):")
     for path, reason in COVERAGE_NOTES:

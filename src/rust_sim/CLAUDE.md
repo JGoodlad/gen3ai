@@ -6219,10 +6219,13 @@ Run the invariant after admitting a move class or touching the guard.
 measurement — the real census is 369 → 91 unmodeled → 74 fail-loud + 16 silent + 1 false-reject.
 Whatever universe produced 215 was not the gen3-legal one; the numbers above supersede it.
 
-### ROUND 41 (PARTIAL) — the CHOICE-REJECT framing: measured, modelled, NOT yet closed
+### ROUND 41 (FIX) — the CHOICE-REJECT framing: measured, modelled, CLOSED
 
-`gen3_choice_reject_framing_v1`. **Honest status: the engine change is IN and safe, but the
-divergence it targets is STILL ALLOWLISTED — do not read this section as "done".**
+`gen3_choice_reject_framing_v1`. The bridge modelled exactly ONE reject class (the trapped
+switch), so every other illegal choice emitted no `|error|` and re-opened the boundary to BOTH
+sides. **CLOSED: both parity harnesses' reject allowlist entries are DELETED and both still PASS
+strictly** (leaf fields went UP — search 18873 -> 18877, replay 30689 -> 30703 — because the
+framing chunks are now compared instead of stripped).
 
 **THE MEASUREMENT (the durable part).** `harness/probe_choice_reject_framing.js` (new,
 re-runnable) drives the real sim and captures what Node emits per reject class. Every number
@@ -6262,12 +6265,21 @@ emitting nothing. `bridge_test::bridge_incremental_matches_genesis_replay` caugh
 guard is `mon.must_struggle(dex)` at the top of the Move arm. **"The request marks it disabled"
 and "the sim will refuse it" are not the same predicate.**
 
-**WHAT IS NOT DONE.** `tmp/search_impl_parity.py` still reconciles its ILLEGAL-MOVE entry
-(`hits=1`), so the allowlist entries in BOTH harnesses were deliberately NOT deleted — deleting
-them would turn a still-open divergence into a red gate. Whoever picks this up: the remaining
-delta is in the SEARCH driver's arm path, not the classifier (the classifier is exercised and
-the bridge goldens agree), so diff one reconciled arm's chunks field-by-field before changing
-`classify_reject` again.
+**A MEASUREMENT TRAP worth naming.** After the fix the search harness still reported `hits=1`,
+which reads as "still diverging" and nearly stopped the work one step short. It is not: that
+reconciler fires whenever the NODE side carries the error and strips the framing from BOTH sides,
+so its hit count is independent of whether the port matches. **A reconciler's hit count measures
+how often the CASE occurs, not how often the port is WRONG.** The only way to tell is to disable
+it and re-run — which is also exactly what deleting it does, so the check and the fix are the same
+action. Both harnesses passed with the entries removed, and the leaf-field COUNT rising is the
+positive signal that strictly-compared surface grew rather than shrank.
+
+**Pins.** `tests/bridge_choice_reject_test.rs` (4) — one per measured class plus the forced-Struggle
+control. Each asserts the CONDITION (did a re-request follow?) not just the message, and each
+asserts the NON-offending side received ZERO chunks. FAULT-INJECTION PROVEN with the right
+specificity: neutering `classify_reject` fails exactly the 3 reject tests while the Struggle
+control still passes (it asserts the ABSENCE of an error, which pre-fix code also satisfies);
+source restored and md5-verified.
 
 **Gates (all green, all re-run after the fix):** `cargo test --release` **647 passed / 0 failed**;
 the bridge byte goldens (`bridge_test` incl. the genesis-parity check, `bridge_corpus_test`,
