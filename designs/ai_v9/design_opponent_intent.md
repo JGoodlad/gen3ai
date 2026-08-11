@@ -312,23 +312,71 @@ That last point resolves a ranking question left open elsewhere: the `d2` phys/s
 `d5` bench×bench family are **not** independent cheap wins to be scheduled separately — they are
 the grid `β` needs in order to be useful, and `β` is what makes them worth having.
 
-### 4.5 The belief prerequisite — the constraint's real cost, and its gate
+### 4.5 THE BELIEF STACK — everything `α` rests on
 
-Confining `α` to the seats means **`α`'s ceiling is seat coverage.** So belief quality stops being a
-background worry and becomes a gated dependency with a measurable rate (§4.2 case 3 for moves, §4.3 case 2 for mons).
+Confining `α` to the seats means **`α`'s ceiling is belief quality.** So the whole stack becomes a
+gated dependency rather than background context. Audited against `designs/production_config.json`
+and the live code, 2026-08-11:
 
-**`move_belief_coef = 0.0` in production.** The move-belief head runs (`move_belief_mode: revealed`)
-and the `known_moves` label is **already emitted and already plumbed** — `ARCHITECTURE.md` §7 lists
-it as "emitted; **unconsumed**". Only `move_belief_latent_coef` (0.05) and `hp_type_belief_coef`
-(0.05) are on, so `w` is shaped by the Smogon prior at init plus the RL gradient
-(`belief_grad_mode: shaping`), and **never by direct "does this move exist" supervision.**
+| # | belief | predicts | mechanism | in production | SUPERVISED? |
+|---|---|---|---|---|---|
+| **B-move** | which moves the revealed mons still hold | learned head, Smogon prior at init | **ON** (`move_belief_mode: revealed`) | ❌ **NO** — `move_belief_coef` **0.0** |
+| **B-hptype** | which of the 16 typed Hidden Powers | learned head | **ON** (`hp_belief_mode: composed`) | ✅ 0.05, acc ≈ 0.91 |
+| **B-spread** | their EVs/nature ⇒ the 5 derived stats | — | ❌ **OFF** | n/a |
+| **B-team** | species of the ~3 unrevealed slots | Hungarian head (**B1**) | ❌ **OFF** — BUILT 2026-06-13, never run | n/a |
+| **B-latent** | identity in role-token space | SimSiam | ❌ OFF | n/a |
+| **B-item** | P(opp active holds Choice Band) | **STATIC species usage prior**, collapses to 0/1 on reveal | **ON** | **not learnable — a lookup** |
+| **B-ability** | which ability | **STATIC Smogon per-species prior** | **ON** (obs) | **not learnable — a lookup** |
 
-Turning it on is close to free — the label already rides the rollout buffer. **It is a precondition
-of this design, not a separate project.**
+**Read the last column.** Of seven belief legs, **exactly one is supervised** (B-hptype). Two are
+static lookups that cannot improve with training. Three are off. And **the one this entire design
+rests on — B-move — runs unsupervised**, shaped only by the Smogon prior at init plus the RL
+gradient (`belief_grad_mode: shaping`) and a 0.05 latent term.
 
-**The pre-build gate, and it needs nothing but existing traces:** *how often does the belief's top-K
-actually contain the move they clicked?* If coverage is poor, fix the belief before building `α`.
-Ordering: **measure coverage → supervise the belief → build `α`.**
+#### The two that block this design
+
+**B-move — a coefficient, and nothing killed it.** `known_moves` (the revealed mons' full privileged
+movesets, direct BCE) is **already emitted and already plumbed**; `ARCHITECTURE.md` §7 lists it as
+"emitted; **unconsumed**". The flag is `--move-belief-coef`, **training-only, not version-locked,
+resume-mutable**. No ledger or changelog entry records it being turned off after a failure — it was
+simply never turned on. House scale for belief aux coefficients is 0.05.
+
+**B-spread — and this one is a PHYSICS DEFECT, not a missing signal.** With it off, the op prices
+every opponent's offense from a hardcoded assumption (`damage_op.py:1727`):
+
+```
+atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1        # de-timid
+```
+
+— 252 EVs and a boosting nature, **applied uniformly to every mon on their team**, at nine sites.
+So `pair_in`'s incoming damage numbers, the foundation everything downstream weights, are computed
+against a **fictional maximally-invested opponent**. The over-estimate is **not uniform**: it scales
+with base stats, so it distorts the *relative* threat ordering across their team, not merely the
+level. `--spread-belief` replaces the constants with believed stats;
+`--spread-belief-nature` (v40) additionally fixes an order-statistic bias where a point-estimate head
+over-estimates whichever stat carries the largest EV investment.
+
+**Consequence for this design, stated plainly: B-spread is a correctness fix to component 1, not a
+third belief leg to stack.** Weighting distorted physics with a better `α` inherits the distortion.
+
+**Operationally they are very different**, and the difference sets the schedule:
+
+| | flag | class | can it join a running generation? |
+|---|---|---|---|
+| B-move | `--move-belief-coef` | **training-only, resume-mutable** | yes, on a resume |
+| B-spread | `--spread-belief` (+`-coef`, `-nature`) | **STRUCTURAL, version-checked, FRESH-ONLY** | **no** |
+| B-team (B1) | `--opp-belief-aux-coef` | structural slots | no |
+
+#### The gate — measure before enabling
+
+**G2a, and it needs nothing but existing traces:** *how often does the belief's top-K actually
+contain the move they clicked, and how often is a switch to a revealed mon?* Those two rates are the
+ceilings on `α` and `β`. If coverage is already high, supervising B-move buys little and the
+generation slot is better spent on B-spread; if it is low, we enable with a measured prize.
+
+**Ordering: measure coverage → fix the belief (B-move coefficient, B-spread structurally, B-team if
+`β`'s mask rate warrants) → build `α`.** Enabling these because they are available is not the same
+as enabling them because we know what they are worth.
 
 ### 4.6 Rejected: the `UNKNOWN` slot, and the learned property head
 
@@ -509,7 +557,7 @@ three separate gates can kill it before anything expensive happens.
 | # | step | gate |
 |---|---|---|
 | **0a** | **Measure seat coverage on existing traces** — no head, no training, no GPU. The cheapest thing in this document and it gates everything. | **G2a** |
-| 0b | Turn on `move_belief_coef` (label already emitted + plumbed, currently unconsumed); turn on **B1** only if 0a says the unrevealed-switch rate warrants it | coverage re-measured |
+| 0b | **The belief generation (§4.5).** `--move-belief-coef 0.05` (resume-mutable) **+ `--spread-belief` / `--spread-belief-coef` / `--spread-belief-nature` (STRUCTURAL ⇒ fresh run required)**; **B1** only if 0a's unrevealed-switch rate warrants it. B-spread is the physics fix and must land here — a better `α` over de-timid physics inherits the distortion. | coverage re-measured; `belief/spread_*` (mae, largest_bias→0) |
 | 0c | Fix the G1-FINAL skyline (§9.1), re-run with the new coordinates | discriminates "grid exhausted" vs "wrong currency" |
 | 1 | Unify `pair_in`; add `neutralization` + `tempo_cost` | G0, G1 |
 | 2 | Label plumbing — `opp_action_target` / `_mask`; seat matching by canonical id; mask on belief miss | G4 |
@@ -601,6 +649,10 @@ replay corpus is the natural *validation* set; using it as a training set is a d
 | **the DISCRETE constraint** — the model must always pick among the belief's discrete states and may never invent a move; interpretability is the reason | **owner, 2026-08-11** |
 | the two reconciliations (§3, §4) | owner, 2026-08-11 |
 | `move_belief_coef` = **0.0** in production (belief head runs, `known_moves` emitted + plumbed, BCE **unconsumed**); `move_belief_latent_coef` 0.05, `hp_type_belief_coef` 0.05 on | `designs/production_config.json` (read 2026-08-11); `ARCHITECTURE.md` §7 |
+| the full **belief stack** table (§4.5) — 7 legs, exactly 1 supervised, 2 unlearnable static lookups, 3 off | `designs/production_config.json`; `damage_op.py:2870-2877` (`p_cb` = `SPECIES_CB_PRIOR`, collapses to 0/1 on reveal); `agents/observation/abilities.py` + `reactive.py` (Smogon per-species ability priors); `gen3_ability_priors.json` |
+| **the de-timid physics defect** — opp offense priced as 252 EV × 1.1 nature uniformly, at 9 sites | `damage_op.py:1727` (`atk_j = (2.0·a_base[ATK] + off_const) * 1.1  # de-timid`), also `:332`, `:1489`, `:1498`, `:1714`, `:1882`, `:2127`; `:118` names `--spread-belief` as the replacement |
+| `--move-belief-coef` is **training-only / resume-mutable**; `--spread-belief` is **STRUCTURAL, version-checked, fresh-only** | `train_rl_agent.py:1007-1012`, `:1558-1596`, `:2094-2105`, `:3832` |
+| no ledger/changelog entry records `move_belief_coef` being disabled after a failure | searched `CHANGELOG.md`, `research_state/ledger.md` (2026-08-11) |
 | B1 hidden-team belief: BUILT 2026-06-13, **never run**, acc 0.08–0.16 vs ~0.003 chance | `research_state/ledger.md` B1; `levers/hidden_team_belief.md` |
 | a repulsion penalty buys SPREAD, not MULTIPLICITY (⇒ supervised discrete structure over penalised latent structure) | gen-6 measurement; `ec32c93` (v63 per-seed quantile assignment) |
 
