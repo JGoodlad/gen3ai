@@ -134,6 +134,86 @@ the Natural Cure mon rather than the physically bulky one."* The two numbers tha
 were maximized independently and describe different worlds. **This is a reduction failure, not a
 belief failure** — a perfect move belief does not fix it.
 
+### 2.1 CORRECTION (2026-08-10) — on the PATH THAT DECIDES, status is not mis-reduced, it is ABSENT
+
+Everything above describes the **flat/trunk** block. Traced through to the **pointer switch logit**
+— the sink that actually chooses a switch — the defect is **strictly worse than "a ninth max"**, and
+the doc understated its own case.
+
+Dissect the switch cell the pointer head receives (`pointer_cells`, `_PTR_SWITCH_CELL_IN` = 15,
+verified against production where `damage_matrices_outgoing_all = False` so there is no OAX tail):
+
+| | contents |
+|---|---|
+| physical | `low_roll, high_roll, crit, pko, accuracy` |
+| special | `low_roll, high_roll, crit, pko, accuracy` |
+| plus | `p_outspeed`, `provenance` |
+| Choice-Band tail | `phys_high_cb`, `pko_cb`, `p_cb` |
+
+**Ten damage numbers, one speed number, two belief-mass numbers, and NO status coordinate in any
+currency.** `p_major` / `p_immob` are never sliced into the switch cell at all.
+
+Where incoming status actually goes in production (gen-5, v61):
+
+| route | status? | what it carries |
+|---|---|---|
+| pointer switch cell *j* | **absent** | — |
+| trunk residual `status_in_proj` | **OFF** — gated by `threat_status_refine`, which is `False` | (would be a token residual) |
+| **`s3` edge family** | **the only live route** (`edge_bias_families` includes `s3`) | an attention **bias** — a softmax-normalised RATIO, not an absolute |
+
+So the honest statement of the defect, on the path that decides:
+
+> The decision *"they will click Will-O-Wisp, so bring the Natural Cure mon"* is made at the switch
+> logit. The switch logit's per-action cell contains **no status information at all**. Status reaches
+> the policy only after conversion into a **ratio**, on a different route.
+
+**This is a CURRENCY failure sitting one level below the reduction failure.** You cannot trade
+"35% of my HP" against "80% chance of burn" if the two never appear in the same vector in the same
+units — no reducer, however expressive, fixes that. It also sharpens the ordering in §4.1 and §8:
+**what the message CARRIES binds before how it is aggregated**, and a status coordinate in a damage
+currency is a prerequisite for the hedging rungs, not an optional enrichment.
+
+**Two further coordinates are missing for the same reason** — named here so §3.2's `φ` has a target
+list, and both pass the admission test in §9a (name two actions whose ordering they flip):
+
+| coordinate | currency | flips |
+|---|---|---|
+| **neutralization** | fraction of this mon's future contribution destroyed *without* a KO | Swampert → Celebi against Gengar's burn/Thunderbolt branch. On damage alone Swampert reads **0.0 in both branches** (immune to one; burn deals none) and wins forever |
+| **tempo** | turns of my clock spent undoing it | Milotic **Refresh**es the burn away, so *neutralization* correctly reads ≈0 — but it costs a **turn**. Nothing in ten damage numbers plus speed encodes that, so "absorbs it" and "absorbs it and falls a turn behind a setup sweeper" are the same state |
+
+Milotic is the sharper example precisely because it is **ours** — the receiver `j` indexes our six
+mons, so its ability, moveset and stats are **fully observed**. All the uncertainty in `φ` lives on
+the *sender* axis (their believed moves), and the belief head has already run by then. There is no
+marginalization question on the receiver side at all.
+
+*(Deliberately out of scope: **physics mutation.** Marvel Scale means burning Milotic multiplies its
+Def by 1.5 and moves **every subsequent number in the matrix**. That is a statement about the
+successor state, not an outcome coordinate. A one-ply reduction can learn "burn into Milotic is
+fine"; it cannot represent "and here is the new matrix." Naming the limit beats pretending a richer
+`φ` closes it.)*
+
+**The model answer is already in the code, one field over.** The Choice-Band tail delivers
+`phys_high_cb` (the magnitude **conditional** on them being Banded) beside `p_cb` (**how likely
+that is**) — both present, **un-collapsed**, left for the reader to combine. That is Contract W's
+spirit already shipped, in exactly one place. Status should look like that.
+
+*(Verified 2026-08-10 against `damage_op.py::pointer_cells` / `_DMG_PER_MON`,
+`features_extractor.py:2707` and `:3598`, and `designs/production_config.json`.)*
+
+**Read this against the G1 null — the two fit together, and the fit is the point.** G1 FINAL
+(n=299, 5 seeds) found no rung beating R0 beyond seed spread, **and the 2800-dim SKYLINE over the
+un-collapsed pair grid showed no linear headroom either** (R0 0.403±0.034 · SKYLINE 0.413±0.037).
+A skyline that cannot beat the collapsed summary is not a statement about aggregation at all — it
+says **the quantity the decision needs was never in the grid.** That is exactly what a currency
+failure predicts, and §2.1 names the missing quantities independently of the bake-off.
+
+**Stated with the caveat it deserves:** this is a *post-hoc* reading, offered because it is the most
+economical one, not because G1 was designed to test it. The alternative readings stay live — the
+target is the beam (our own critic's preference, not ground truth, §10.3), and a linear probe cannot
+rule out non-linear headroom. **What it does justify is a re-ordering, not a new rung:** the next
+experiment on this line should add a coordinate (§9a) and re-run G1, rather than add expressiveness
+to a reducer over a vector that G1 has now shown to be linearly exhausted.
+
 ---
 
 ## 3. Contract vs knob — the structural split
@@ -175,7 +255,9 @@ Everything follows from that signature:
 - **Magnitudes survive.** `Σα = 1`, `α ≥ 0` ⇒ the output is a **convex combination of HP
   fractions, which is an HP fraction.** Units, range and scale are preserved
   ([[marginalization_and_uncertainty]] § convex combinations), so the result is still legal input
-  to a pointer cell read affinely at a logit.
+  to a pointer switch cell. **Range** is the operative word: the pointer head reads the cell through
+  a `tanh`, and a convex combination cannot leave `[0,1]` — so it lands in the responsive region
+  rather than the saturated tails. An unbounded latent carries no such guarantee.
 - **Today's behaviour is inside the contract**, so migration can start byte-identical:
   `α = onehot(argmax_k w_k · high_frac[k,j])`.
 - **`acc` and `provenance` stop being special.** They are currently gathered at an argmax, which
@@ -224,13 +306,51 @@ quantity.**
 
 | consumer | reads | why |
 |---|---|---|
-| pointer switch cell *j* | **W** (physical units) | read affinely at a logit; an absolute HP fraction is the point |
+| pointer switch cell *j* | **W** (physical units) — **but see the correction below; W ⊕ L is permitted, W-replaced-by-L is not** | a **shared, thin** reader with a bounded nonlinearity: `Linear([token ‖ cell]) + ctx → tanh → Linear → scalar`, the SAME weights for all six slots |
 | `prefuse_proj` token injection | **W + L** | token content can carry a latent; more is strictly better here |
 | `MultiSeedValueReadout` — the critic's k=4 seed queries over the op's per-our-mon rows | **W + L** | same |
 | d3 / s3 edge biases | neither — they read `pair_in` directly | an edge carries a ratio; it never needed the reduction |
 
 This routing table is the same "what can each channel physically carry" rule as
 `design_conditional_opponent_cells.md` §0.1, applied one level down.
+
+> **CORRECTION (2026-08-10) — an earlier draft of this row said the switch cell is "read affinely
+> at a logit." That is FALSE about the code, and the overclaim mattered.** `PointerHead` computes
+> per switch slot `Linear([team_token ‖ switch_cell]) + ctx → tanh → Linear → scalar`
+> (`features_extractor.py:2069-2076`) — a one-hidden-layer MLP with the policy context added as a
+> bias and a zero-init scorer. **An MLP over the cell already exists.** So "why not just put an MLP
+> over a latent" is not a hypothetical to argue against; it is the status quo, and the cell is
+> physical anyway. Four reasons survive, and they are narrower than "affine":
+>
+> 1. **The reader is SHARED across all six slots** — one `switch_proj`, one `switch_score`. Weight
+>    sharing is only *legitimate* if the input means the same thing in every slot. An HP fraction
+>    does, by construction, in every slot and against every opponent. **Units are what license the
+>    sharing** — this is the strongest of the four.
+> 2. **The reader is THIN and the nonlinearity is BOUNDED.** One shared hidden layer is little
+>    machinery for un-scrambling an arbitrary latent, and `tanh` saturates: a quantity in `[0,1]`
+>    sits in the responsive region, an unbounded latent can reach the flat tails where the gradient
+>    dies.
+> 3. **Auditability — unaffected by the reader, and the biggest loss.** A cell carrying an HP
+>    fraction is checkable against the sim; that is what the physics oracle (22/22) and the
+>    constructed-scenario probes do. Replace it with a latent and **we delete our own oracle.**
+> 4. **Extrapolation.** A monotone calibrated input means learning a slope, not a manifold — and
+>    slopes extend past the observed range. Weakened by the `tanh`, not eliminated.
+>
+> **And regularization is not a substitute, for the same reason it is not a substitute for grounded
+> seed queries (§3.2 note): regularizers REMOVE degenerate solutions; they do not CREATE meaning.**
+> No weight-decay / spectral-norm / Lipschitz penalty makes coordinate 3 of a latent mean "fraction
+> of max HP." Calibration, monotonicity and cross-slot comparability are semantic properties, and
+> semantics come from supervision or construction. Supervise a latent to predict real damage and you
+> have rebuilt Contract W with extra steps and a worse audit trail.
+>
+> **So this row is NOT a prohibition.** `W ⊕ L` at the same sink is fine and is probably the right
+> end state — the physical cell as a calibrated, auditable backbone, plus a latent for what units
+> cannot express (the neutralization and tempo coordinates §2.1 shows are missing). The rule to keep
+> is narrower: **do not REPLACE the physical cell with a latent.** Adding one beside it is fine.
+>
+> Independent empirical support for resisting "just make the reader bigger": capacity has returned
+> null in this project repeatedly — ledger **P3**, both LUT conditioning arms,
+> `project_arch_compute_decision`. What has moved this model is changing *what gets delivered*.
 
 > **The critic row is no longer hypothetical (2026-08-09, `6aac795`).** The concat deletion shipped
 > `MultiSeedValueReadout` — **k=4 × 64 learned seed queries cross-attending the op's per-our-mon
@@ -243,11 +363,18 @@ This routing table is the same "what can each channel physically carry" rule as
 >
 > **But it is also, itself, a learned reduction over a set — with the failure mode.** k seeds with
 > no grounding can collapse to one query and the loss will not say so. That risk was pre-registered
-> rather than discovered: the readout ships with a `seeds/*` TensorBoard contract logged every
-> `train()` (query/output cosine, uncentered effective rank, a VICReg variance target, and a
-> pre-registered trigger) — the `z_arch` collapse lesson mechanized. **Read those diagnostics before
-> designing anything that feeds this sink**; if the seeds have collapsed, a richer message is being
-> delivered to an effectively rank-1 reader and any bake-off against it is measuring the wrong thing.
+> rather than discovered: v61 shipped a TensorBoard contract logged every `train()` (query/output
+> cosine, uncentered effective rank, a VICReg variance target, and a pre-registered trigger) — the
+> `z_arch` collapse lesson mechanized. **Read those diagnostics before designing anything that feeds
+> this sink**; if the seeds have collapsed, a richer message is being delivered to an effectively
+> rank-1 reader and any bake-off against it is measuring the wrong thing.
+>
+> *Naming, current as of v62: the TB family is **`value_seeds/*`** (renamed from `seeds/*`), and the
+> VICReg term is **no longer diagnostic-only** — `--value-seed-vicreg-coef` adds a variance+covariance
+> floor to the loss (`instrumented_ppo.py:1590-1596`). Under v61 it was `.detach()`-and-log only; the
+> trigger fired on gen-5 and v62 wired it. **Consequence for honest monitoring:** `value_seeds/out_var`
+> is now a trained quantity and has stopped being a diagnostic — `query_cos` and `out_effective_rank`
+> stay outside the loss and remain the honest reads.*
 >
 > **CONFIRMED on gen-5 (2026-08-10): the seeds ARE collapsed.** `seeds/out_cos` = 1.000 and
 > `seeds/out_effective_rank` = 1.0 at every measurement from 196k through 15.7M steps
@@ -440,10 +567,25 @@ observation, so a new zero-init module is covered automatically once it is zero 
 permute our team → every per-defender row **permutes with it**. Executable form of
 [[entity_tokens_biases_pointers]] §6.9.
 
-**G5 — the acceptance measurement (POST-concat only).** In the first post-concat run, permutation
-importance of the reduced `our_mon` block must **exceed** the 6.60% `in_permon` reads today,
-and the constructed G2 scenario must move the switch logits. *This number cannot be taken before
-the concat is removed (§1a) and must not be forecast.*
+**G5 — the acceptance measurement (POST-concat; now takeable).** Permutation importance of the
+reduced `our_mon` block must **exceed the baseline established by step 0**, and the constructed G2
+scenario must move the switch logits.
+
+> **The threshold was re-pinned 2026-08-10.** An earlier draft set it against "the 6.60% `in_permon`
+> reads today" — a figure from the **defective** pre-`754ca78` sampler, and measured while the concat
+> was still carrying the traffic. **Both defects point the same way: it is too low.** Comparing a
+> post-concat reducer against a suppressed, mis-sampled baseline would pass this gate on
+> arithmetic rather than on merit.
+>
+> **The baseline is whatever §8 step 0 measures on gen-5** — same probe, stratified sampler, no
+> concat, `how=hard_max`. That is a like-for-like R0 control and the only honest comparator. Record
+> it here when taken; do not forecast it.
+>
+> **TAKEN (2026-08-10) — and it vindicates the re-pin emphatically.** `gen5_op_block_split_24M_site_op`:
+> the reduced route reads **65.07% shuffle flips** (kl 1.82, |dV| 5.54 zero / 3.30 shuf). The old
+> threshold was **6.60%**. A rung clearing 6.6% would have "passed" G5 while sitting an order of
+> magnitude below the R0 control it was supposed to beat — the failure mode this correction was
+> written to prevent, confirmed with a real number rather than an argument.
 
 **G6 — cost.** Contract L is ~36 small MLP evals per side per forward. Measure the B=1 CPU
 opponent forward (the compiled path, `--compile-extractor`, currently 0.976 ms) and the training
@@ -601,8 +743,41 @@ prefuse rows, so the G6 compiled-path check is mandatory **before** the gen-6 la
   asymmetric: adding a statistic costs dims, removing one can cost a generation.
 - **Do NOT pre-blend probabilistic branches into one column** (ibid. §2.3).
 - **Do NOT revealed-gate a marginal over the opponent's bench** (ibid. §4.1).
-- **Do NOT decide `how` from the current 5.77% reading.** §1a explains why that number is
-  structurally unable to price the post-concat world.
+- **Do NOT decide `how` from the superseded gen-3 cell reading.** §1(a) explains why that number was
+  structurally unable to price the post-concat world — and the sampler that produced it was defective
+  besides. Take step 0's gen-5 measurement instead.
+
+### 9a. The admission test for a new message coordinate
+
+`φ`'s input width is not free: the pointer reader is thin and shared (§3.2 correction), so every
+coordinate dilutes the others. One cheap, strict rule before adding one:
+
+> **Name two specific actions whose ordering it flips.** If you cannot produce the pair, it is
+> decoration.
+
+- neutralization → flips Swampert → Celebi against the burn/Thunderbolt branch ✅
+- tempo → flips "Milotic absorbs it" → "absorbs it but falls a turn behind" ✅
+- "average threat level" → flips nothing; a smooth function of what is already delivered ❌
+
+**And the derivability rule, with its counter-rule — both halves are needed.**
+
+*Do not deliver what is derivable.* If a quantity is a simple function of coordinates already
+present, the model can compute it; adding it is redundancy. This is the provide-facts line.
+
+*But "derivable in principle" is not "derivable in practice."* Gradient starvation (Pezeshki et al.
+2021) says a feature that could be computed but sits behind a collapse never develops — whatever
+already explains the loss starves it. So:
+
+> **Derivable from what IS delivered → do not add it. Derivable only from something the reduction
+> already destroyed → you MUST add it, because "in principle" died at the `amax`.**
+
+Status is the clean case: it is not derivable from ten damage numbers by *any* function, because it
+was never delivered in a compatible currency (§2.1). That is absence, not laziness.
+
+**Validate with a representation probe, not the loss** — freeze, linearly decode the quantity from
+the cell, report r². The recorded warning is that damage **spread** decodes at **r² 0.06**
+(`project_representation_probe`): the model carries magnitude and barely carries uncertainty — the
+same second-moment hole as §4.1, one level up.
 
 ---
 
@@ -684,7 +859,14 @@ today) and **gated on R2L landing**, but it deserves its own short design.
 | ⚠️ the gen-3 figures this doc originally quoted (`imx_CELLS` 5.77%, `in_permon` 4.52→6.60%) are **defective** | `gen3_op_block_split_40M.json`, `gen3_op_block_dependence*.json` — produced by the pre-`754ca78` sampler (lexical step-dir sort ⇒ whole sample from one mid-run dir). Superseded; do not re-quote |
 | the concat is deleted; gen-5 is the first run without it | `6aac795` (`gen3_no_concat_v1`, `MODEL_CONFIG_VERSION` 61 — verified live via `agents.model.model_version`); run `ai_v9_06_gen5_no_concat_0809` |
 | the reduction is already ONE named call site with a `how` knob | `src/agents/model/damage_op.py:534` `_chan_max(..., how="hard_max")`; non-`hard_max` raises `NotImplementedError` (read 2026-08-09) |
-| `MultiSeedValueReadout` k=4 × 64 vf-only seed queries + the `seeds/*` collapse contract | `6aac795`; `src/agents/training/instrumented_ppo.py` (`seed_diagnostics` every `train()`) |
+| `MultiSeedValueReadout` k=4 × 64 vf-only seed queries + the collapse contract (TB family `value_seeds/*`, renamed from `seeds/*` at v62) | `6aac795`; `src/agents/training/instrumented_ppo.py` (`seed_diagnostics` every `train()`) |
+| ⚠️ **SUPERSEDED** — an earlier row here said the seed diagnostics are "logged only, NOT in the loss." True of **v61 only**. The trigger (`query_cos` > 0.6 **or** `out_effective_rank` < k/2 past ~2M) **FIRED on gen-5**, and **v62 wired VICReg into the loss**: `loss += value_seed_vicreg_coef * seed_vicreg_loss(...)` | `instrumented_ppo.py:1590-1596`, `:357`; `--value-seed-vicreg-coef` (`train_rl_agent.py:859`), resume-immutable; gen-6 runs it at 0.1 (read 2026-08-10) |
+| **the pointer switch cell contains NO status coordinate** (15 = 12 incoming + `[phys_high_cb, pko_cb, p_cb]`) | `damage_op.py::pointer_cells`; `_DMG_PER_MON` = 2×5 + 2 = 12 (read 2026-08-10) |
+| in production, incoming status reaches the model ONLY as the `s3` edge family (a ratio); the trunk route is OFF | `production_config.json`: `threat_status_refine` **False** (⇒ `status_in_proj` is `None`, `features_extractor.py:2707`), `edge_bias_families` includes `s3` (`:3598`); `damage_matrices_outgoing_all` **False** ⇒ no OAX tail, so the cell is exactly 15 |
+| the pointer head reads the cell through a shared thin MLP, **not** affinely | `features_extractor.py:2049`, `:2069-2076` — `Linear([token ‖ cell]) + ctx → tanh → Linear`, same weights for all 6 slots (corrected 2026-08-10) |
+| gradient starvation — a computable-but-buried feature never develops | Pezeshki et al. 2021, *Gradient Starvation: A Learning Proclivity in Neural Networks* |
+| simplicity bias — the simplest predictive feature wins even when richer ones exist | Shah et al. 2020, *The Pitfalls of Simplicity Bias*; Geirhos et al. 2020, *Shortcut Learning* |
+| damage **spread** decodes at r² 0.06 | ledger; `project_representation_probe` |
 | sum ≻ mean ≻ max for multisets | Xu et al. 2019, *How Powerful are Graph Neural Networks?* |
 | no single aggregator suffices | Corso et al. 2020, *Principal Neighbourhood Aggregation* |
 | max over learned features | Qi et al. 2017, *PointNet* |
