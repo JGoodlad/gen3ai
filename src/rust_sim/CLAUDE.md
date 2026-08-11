@@ -6219,6 +6219,63 @@ Run the invariant after admitting a move class or touching the guard.
 measurement — the real census is 369 → 91 unmodeled → 74 fail-loud + 16 silent + 1 false-reject.
 Whatever universe produced 215 was not the gen3-legal one; the numbers above supersede it.
 
+### ROUND 41 (PARTIAL) — the CHOICE-REJECT framing: measured, modelled, NOT yet closed
+
+`gen3_choice_reject_framing_v1`. **Honest status: the engine change is IN and safe, but the
+divergence it targets is STILL ALLOWLISTED — do not read this section as "done".**
+
+**THE MEASUREMENT (the durable part).** `harness/probe_choice_reject_framing.js` (new,
+re-runnable) drives the real sim and captures what Node emits per reject class. Every number
+below is captured bytes, not a source read:
+
+| choice | error line | re-request? | NON-offending side |
+|---|---|---|---|
+| DISABLED move | `[Unavailable choice] Can't move: X's Y is disabled` | **yes**, that side only | **0 lines** |
+| switch into the ACTIVE | `[Invalid choice] Can't switch: You can't switch to an active Pokémon` | no | **0 lines** |
+| out-of-range move slot | `[Invalid choice] Can't move: Your X doesn't have a move N` | no | **0 lines** |
+
+The re-request differs from the one it answered in EXACTLY two ways: a top-level `"update":true`
+and `"disabledSource":""` on the offending slot.
+
+**THE RULE** (model the CONDITION, not a per-message verdict): `Side.emitChoiceError` emits
+`[Unavailable choice]` + re-issues the request IFF its update callback actually CHANGED the
+request; with nothing to change it is `[Invalid choice]` and nothing follows.
+
+**⚠️ THE FOURTH CLASS — switch into a FAINTED slot — is NOT measured.** The probe's fixture
+failed to faint the mon twice (first Earthquake into a Rock/FLYING Aerodactyl — a 0x immune
+no-op, so the fixture silently tested nothing; then a one-sided drive loop that stalls the moment
+the OTHER side needs a forced replacement). It is the same structural class (side.ts:964 passes
+no update callback) and the replay harness observes it live, but its string is from source.
+
+**WHAT LANDED.** `RejectClass` + `classify_reject` in `bridge.rs` cover the disabled move
+(Unavailable + a re-request via the new `build_request_with_disabled_source` /
+`serialize_active_with_disabled_source`), the out-of-range move slot, and the switch into an
+active / fainted / non-existent slot (Invalid, no re-request) — emitted to the offending side
+ONLY, keeping the boundary open for that side rather than re-opening it to both.
+`REJECT_STREAK_CAP` still bounds the exchange.
+
+**THE BUG THE GOLDENS CAUGHT, and the lesson.** The first cut classified a FORCED STRUGGLE as a
+disabled-move reject. It is a SUBSTITUTION, not a refusal: when every slot is gone (Taunt /
+Disable / Choice lock / 0 PP) the request offers only Struggle and `side.choose` swaps the pick,
+emitting nothing. `bridge_test::bridge_incremental_matches_genesis_replay` caught it on the
+`taunt_struggle` scenario — a scenario that exists because that wedge shipped once before. The
+guard is `mon.must_struggle(dex)` at the top of the Move arm. **"The request marks it disabled"
+and "the sim will refuse it" are not the same predicate.**
+
+**WHAT IS NOT DONE.** `tmp/search_impl_parity.py` still reconciles its ILLEGAL-MOVE entry
+(`hits=1`), so the allowlist entries in BOTH harnesses were deliberately NOT deleted — deleting
+them would turn a still-open divergence into a red gate. Whoever picks this up: the remaining
+delta is in the SEARCH driver's arm path, not the classifier (the classifier is exercised and
+the bridge goldens agree), so diff one reconciled arm's chunks field-by-field before changing
+`classify_reject` again.
+
+**Gates (all green, all re-run after the fix):** `cargo test --release` **647 passed / 0 failed**;
+the bridge byte goldens (`bridge_test` incl. the genesis-parity check, `bridge_corpus_test`,
+`writeline_test`, `trapping_test`) all pass; `tmp/rust_record_replay_check.py` node-vs-rust
+139/139 + 93/93 chunks; both parity harnesses PASS; `pytest src/utils/bridge/` 118 passed; and the
+e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is **UNCHANGED**. The change only fires on
+choices poke-env never sends, so the production transport is untouched.
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because

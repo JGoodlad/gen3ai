@@ -656,10 +656,26 @@ fn serialize_side(state: &BattleState, side: usize, dex: &Dex) -> String {
 /// request (→ `trapped:true`, dropping `maybeTrapped`). Otherwise a live-bench
 /// trapped mon shows `maybeTrapped:true` (gen3 NEVER emits `trapped` on the first
 /// request). No live bench → neither flag.
-fn serialize_active(
+/// Serialize `active[0]`, optionally with the post-reject `disabledSource` mutation
+/// (`gen3_choice_reject_framing_v1`).
+///
+/// When `ds_slot` is `Some(k)`, slot `k` is rendered `"disabled":true` with a trailing
+/// `,"disabledSource":""` — the exact delta `Side.chooseMove`'s `updateRequestForPokemon`
+/// applies to the request it re-issues after refusing a DISABLED move. PROBE-MEASURED
+/// (`harness/probe_choice_reject_framing.js`): the re-issued request differs from the one it
+/// answered in EXACTLY two places — this key, and the top-level `"update":true` that
+/// [`build_request_with_disabled_source`]'s `update` flag already appends.
+///
+/// `ds_slot: None` is the ordinary request (every non-reject caller).
+///
+/// The empty-string source is not a placeholder: gen-3's Choice lock (`choicelock`) carries no
+/// `disabledSource`, so the sim copies `''` verbatim. A future disabler that DOES set one
+/// (Disable proper) would need the real string threaded here.
+fn serialize_active_with_disabled_source(
     state: &BattleState,
     side: usize,
     trapped_firm: bool,
+    ds_slot: Option<usize>,
     dex: &Dex,
 ) -> String {
     let s = &state.sides[side];
@@ -757,24 +773,31 @@ fn serialize_active(
                 // must be gated or a transformed Mimic-carrier would drop one slot's key.
                 let mimicked = mon.transform.is_none()
                     && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
+                // The post-reject mutation: this slot is the one the client was refused, so
+                // it renders `disabled:true` + the trailing `disabledSource` key.
+                let ds = ds_slot == Some(k);
+                let disabled = disabled || ds;
+                let ds_tail = if ds { ",\"disabledSource\":\"\"" } else { "" };
                 if mimicked {
                     format!(
-                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"disabled\":{}}}",
+                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"disabled\":{}{}}}",
                         json_escape(&name),
                         json_escape(&id),
                         pp,
                         maxpp,
-                        disabled
+                        disabled,
+                        ds_tail
                     )
                 } else {
                     format!(
-                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"target\":\"{}\",\"disabled\":{}}}",
+                        "{{\"move\":\"{}\",\"id\":\"{}\",\"pp\":{},\"maxpp\":{},\"target\":\"{}\",\"disabled\":{}{}}}",
                         json_escape(&name),
                         json_escape(&id),
                         pp,
                         maxpp,
                         json_escape(&target),
-                        disabled
+                        disabled,
+                        ds_tail
                     )
                 }
             })
@@ -839,10 +862,26 @@ fn build_request(
     no_cancel: bool,
     dex: &Dex,
 ) -> String {
+    build_request_with_disabled_source(state, side, kind, trapped_firm, update, no_cancel, None, dex)
+}
+
+/// [`build_request`] plus the post-reject `disabledSource` slot
+/// (`gen3_choice_reject_framing_v1`) — see [`serialize_active_with_disabled_source`].
+#[allow(clippy::too_many_arguments)]
+fn build_request_with_disabled_source(
+    state: &BattleState,
+    side: usize,
+    kind: SideRequest,
+    trapped_firm: bool,
+    update: bool,
+    no_cancel: bool,
+    ds_slot: Option<usize>,
+    dex: &Dex,
+) -> String {
     let side_json = serialize_side(state, side, dex);
     let mut body = match kind {
         SideRequest::Move => {
-            let active = serialize_active(state, side, trapped_firm, dex);
+            let active = serialize_active_with_disabled_source(state, side, trapped_firm, ds_slot, dex);
             format!("{{\"active\":[{active}],\"side\":{side_json}}}")
         }
         SideRequest::ForceSwitch => {
@@ -1271,6 +1310,123 @@ pub struct BridgeSession {
     /// re-issues the same request; if the client re-sends a choice that is rejected the same way,
     /// nothing advances — see `REJECT_STREAK_CAP`.
     reject_streak: u32,
+}
+
+/// A refused choice, in the two shapes `Side.emitChoiceError` produces
+/// (`gen3_choice_reject_framing_v1`).
+///
+/// The distinction is NOT the message and NOT "how many times it was tried" — it is whether the
+/// refusal MUTATED the request. A mutation makes the sim re-issue the (now-different) request and
+/// tag the error `[Unavailable choice]`; with nothing to re-issue it is `[Invalid choice]` and the
+/// client must re-pick from the request it already holds. Model the condition, not a per-message
+/// verdict, or the next disabler added here will be classified by hand and get it wrong.
+#[derive(Debug, Clone)]
+enum RejectClass {
+    /// No request change ⇒ `[Invalid choice]`, and NOTHING follows.
+    Invalid { message: String },
+    /// The request changed (a slot gained `disabledSource`) ⇒ `[Unavailable choice]` plus a
+    /// re-issued request carrying `"update":true`.
+    Unavailable { message: String, ds_slot: usize },
+}
+
+impl RejectClass {
+    fn message(&self) -> &str {
+        match self {
+            RejectClass::Invalid { message } | RejectClass::Unavailable { message, .. } => message,
+        }
+    }
+
+    /// The exact wire line, byte-for-byte with the sim (probe-measured).
+    fn error_line(&self) -> String {
+        let tag = match self {
+            RejectClass::Invalid { .. } => "[Invalid choice]",
+            RejectClass::Unavailable { .. } => "[Unavailable choice]",
+        };
+        format!("|error|{} {}", tag, self.message())
+    }
+}
+
+/// Classify a choice this boundary must REFUSE, or `None` when it is legal.
+///
+/// Mirrors `Side.chooseMove` / `Side.chooseSwitch`'s refusal ladder for the cases the bridge can
+/// actually reach. The trapped SWITCH is handled by its own older block in `advance` (it has a
+/// two-phase maybeTrapped→trapped machine this classifier deliberately does not duplicate), so it
+/// is excluded here by the caller.
+///
+/// NOTE the message strings carry a non-ASCII `é` in "Pokémon" — that is the sim's own byte
+/// sequence and must not be "normalized".
+fn classify_reject(
+    state: &BattleState,
+    side: usize,
+    wire: &WireChoice,
+    resolved: &Choice,
+    dex: &Dex,
+) -> Option<RejectClass> {
+    let s = &state.sides[side];
+    let mon = &s.pokemon[s.active];
+    match resolved {
+        Choice::Move(k) => {
+            // FORCED STRUGGLE is a SUBSTITUTION, not a refusal. When every usable slot is gone
+            // (Taunt / Disable / the Choice lock / 0 PP) the sim's request offers only Struggle
+            // and `side.choose` swaps the pick for it — no `|error|`, no re-request. Classifying
+            // it as a disabled-move reject made the incremental path emit an error the genesis
+            // reference (and node) never send: caught by
+            // `bridge_test::bridge_incremental_matches_genesis_replay` on the `taunt_struggle`
+            // scenario, which exists precisely because that wedge shipped once before.
+            if mon.must_struggle(dex) {
+                return None;
+            }
+            // An out-of-range slot: report the number the CLIENT sent, not the internal
+            // out-of-range fallback `resolve_choice` substitutes.
+            if *k >= mon.set.moves.len() {
+                let shown = match wire {
+                    WireChoice::Move(n) => n + 1,
+                    _ => k + 1,
+                };
+                return Some(RejectClass::Invalid {
+                    message: format!(
+                        "Can't move: Your {} doesn't have a move {}",
+                        display_name(mon, dex),
+                        shown
+                    ),
+                });
+            }
+            if move_disabled(mon, *k, dex) {
+                let mv = side_move_id(mon, &mon.set.moves[*k]);
+                let (_, name) = active_move_display(&mv, dex, mon.hidden_power_bp);
+                return Some(RejectClass::Unavailable {
+                    message: format!(
+                        "Can't move: {}'s {} is disabled",
+                        display_name(mon, dex),
+                        name
+                    ),
+                    ds_slot: *k,
+                });
+            }
+            None
+        }
+        Choice::Switch(n) => {
+            if *n >= s.pokemon.len() {
+                return Some(RejectClass::Invalid {
+                    message: format!(
+                        "Can't switch: You do not have a Pokémon in slot {} to switch to",
+                        n + 1
+                    ),
+                });
+            }
+            if *n == s.active {
+                return Some(RejectClass::Invalid {
+                    message: "Can't switch: You can't switch to an active Pokémon".to_string(),
+                });
+            }
+            if s.pokemon[*n].fainted || s.pokemon[*n].hp == 0 {
+                return Some(RejectClass::Invalid {
+                    message: "Can't switch: You can't switch to a fainted Pokémon".to_string(),
+                });
+            }
+            None
+        }
+    }
 }
 
 /// How many consecutive rejects at ONE boundary before the bridge calls it a no-progress LOOP.
@@ -1736,6 +1892,74 @@ impl BridgeSession {
                     let firm = locked || bs.trap_is_firm(s, dex);
                     (reject, firm)
                 };
+                // Every OTHER reject class (`gen3_choice_reject_framing_v1`). The trapped switch
+                // above was the ONLY one the port modelled; an illegal move slot / a switch into
+                // the active-or-fainted-or-nonexistent slot fell through to `bp.got[s]`, and the
+                // driver's legality gate then skipped the decision and re-opened the WHOLE
+                // boundary — emitting no `|error|` and re-requesting BOTH sides.
+                //
+                // PROBE-MEASURED (`harness/probe_choice_reject_framing.js`, the real sim):
+                //   disabled move       -> `[Unavailable choice] Can't move: X's Y is disabled`
+                //                          + a re-request TO THAT SIDE ONLY carrying
+                //                          `"update":true` + `"disabledSource":""` on the slot
+                //   switch into ACTIVE  -> `[Invalid choice] Can't switch: You can't switch to an
+                //                          active Pokémon`, and NOTHING follows
+                //   out-of-range move   -> `[Invalid choice] Can't move: Your X doesn't have a
+                //                          move N`, and NOTHING follows
+                // ...and in EVERY class the NON-offending side receives ZERO lines.
+                //
+                // THE RULE is not "escalate on repeat" (an easy misreading of the two error
+                // classes): `Side.emitChoiceError` emits `[Unavailable choice]` + re-issues the
+                // request IFF its update callback actually CHANGED the request, else
+                // `[Invalid choice]` and nothing. So the DISABLED case re-requests because it
+                // mutates a slot, and the others do not because they mutate nothing.
+                let general = if reject {
+                    None
+                } else {
+                    let bs = self.battle.state().expect("state");
+                    classify_reject(bs, s, &cmd.choice, &resolved, dex)
+                };
+                if let Some(rej) = general {
+                    // Same bound as the trapped exchange — a deterministic client re-sending the
+                    // same refused choice must fail loud, not spin (see `REJECT_STREAK_CAP`).
+                    self.reject_streak += 1;
+                    if self.reject_streak > REJECT_STREAK_CAP {
+                        self.fatal = Some(format!(
+                            "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
+                             boundary ({}). The client keeps re-sending a choice this boundary \
+                             rejects, so nothing can advance — failing loud instead of spinning.",
+                            s + 1,
+                            self.reject_streak,
+                            cmd.choice,
+                            rej.message(),
+                        ));
+                        self.stopped = true;
+                        return;
+                    }
+                    self.chunks.push_chunk(s, vec![rej.error_line()]);
+                    if let RejectClass::Unavailable { ds_slot, .. } = rej {
+                        // The ONLY class that re-issues. Emitted to `s` ALONE: the other side's
+                        // already-accepted choice stands, so re-asking it would both duplicate a
+                        // request the sim never sends and record a phantom extra pick.
+                        let rereq = {
+                            let bs = self.battle.state().expect("state");
+                            let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
+                            build_request_with_disabled_source(
+                                bs,
+                                s,
+                                kind_s,
+                                false,
+                                true,
+                                false,
+                                Some(ds_slot),
+                                dex,
+                            )
+                        };
+                        self.chunks.push_chunk(s, vec![rereq.clone()]);
+                        self.active_request[s] = Some(rereq);
+                    }
+                    continue; // side s still needs a choice; the boundary stays open
+                }
                 if reject {
                     // Bound the reject↔re-request exchange: a deterministic client re-sends the
                     // same rejected choice forever (`REJECT_STREAK_CAP`).
