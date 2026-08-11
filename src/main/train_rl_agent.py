@@ -381,6 +381,7 @@ def _run_arch_toggles(args) -> dict:
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
         seed_quantile=bool(args.seed_quantile_coef and args.seed_quantile_coef > 0),
+        value_threat_inject=bool(getattr(args, 'value_threat_inject', False)),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
@@ -1394,6 +1395,17 @@ async def main():
                              "steps (so long-lived workers track the moving policy). Default 500k.")
     parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
                         type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
+    parser.add_argument("--value-threat-inject", "--value_threat_inject",
+                        dest="value_threat_inject", action="store_true", default=False,
+                        help="CRITIC THREAT INJECTION (gen3_value_threat_inject_v1, v64): add the "
+                             "DamageOperator's alpha-weighted incoming-threat row for each of OUR "
+                             "mons to that mon's token on the VALUE POOL's copy only, so value_cls "
+                             "pools per-entity threat MAGNITUDES instead of the softmax RATIOS the "
+                             "d3 edge family can carry. vf-ONLY: the policy reads the unaugmented "
+                             "tokens, so pi is bit-identical at any weight (gated). Forces the op's "
+                             "pair reduction to the R1 belief_mean rung (hard_max builds no reducer "
+                             "and would leave nothing to inject). Zero-init => ON starts identical "
+                             "to OFF. STRUCTURAL + version-checked: fixed for a run's lifetime.")
     parser.add_argument("--seed-quantile-coef", "--seed_quantile_coef", dest="seed_quantile_coef",
                         type=float, default=0.0,
                         help="PER-SEED QUANTILE assignment (gen3_seed_quantile_v1): seed k of the "
@@ -2122,6 +2134,7 @@ async def main():
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("seed_quantile_coef", 0.0)        # v63 training-only coef; the HEAD itself is structural
+    _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature

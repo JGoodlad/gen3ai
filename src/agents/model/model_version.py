@@ -451,7 +451,7 @@ from typing import Any, Dict, List
 #   vf_coef class, NOT weight-shape): enforced only on the training-resume path via
 #   check_value_seed_vicreg; excluded from check_compatible/_WEIGHT_FIELDS (a frozen opponent's
 #   forward never touches it). 0.0 = OFF (loss byte-identical).
-MODEL_CONFIG_VERSION = 63
+MODEL_CONFIG_VERSION = 64
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1116,6 +1116,14 @@ class ModelVersion:
     # compare. OFF (default) builds no module and is byte-for-byte baseline (NO ARCH_SIGNATURE bump).
     # Its COEFFICIENT (--seed-quantile-coef) is training-only, like value_dist_coef.
     seed_quantile: bool = False
+    # v64 STRUCTURAL (gen3_value_threat_inject_v1): the critic-side magnitude route — one shared
+    # zero-init Linear(reducer.extra_dim, D_MODEL) adding the op's alpha-weighted incoming row to
+    # each of OUR mons' tokens on the VALUE POOL's copy only. Adding/removing changes the
+    # state_dict, so it is gated in check_compatible with a bool compare. It also FORCES the op's
+    # reduce_how from R0 hard_max to R1 belief_mean, which builds the (parameter-free) reducer —
+    # another reason a flip cannot share weights. OFF (default) is byte-for-byte baseline; the
+    # policy path is untouched at ANY value of the projection (NO ARCH_SIGNATURE bump).
+    value_threat_inject: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1392,6 +1400,9 @@ class ModelVersion:
             ),
             seed_quantile=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("seed_quantile", False)
+            ),
+            value_threat_inject=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_threat_inject", False)
             ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
@@ -1882,6 +1893,18 @@ class ModelVersion:
                 "The per-seed quantile head is fixed for a run's lifetime: adding/removing it changes "
                 "the state_dict, and its aux loss is what gives each value seed a distinct job.\n"
                 "Resume with the matching --seed-quantile-coef setting, or start a fresh training run."
+            )
+        # gen3_value_threat_inject_v1 (v64): the injection projection is a state_dict-changing
+        # module, AND the flag switches the op's reducer on, so a flip is doubly incompatible.
+        if self.value_threat_inject != saved.value_threat_inject:
+            raise ModelVersionError(
+                f"value_threat_inject mismatch: saved={saved.value_threat_inject}, "
+                f"current={self.value_threat_inject}.\n"
+                "The critic's threat-injection projection is fixed for a run's lifetime: adding or "
+                "removing it changes the state_dict, and the flag also switches the DamageOperator's "
+                "pair reduction from hard_max to belief_mean — so a mid-run flip would change what "
+                "the critic reads AND which modules exist.\n"
+                "Resume with the matching --value-threat-inject setting, or start a fresh training run."
             )
         if self.value_dist_mode != saved.value_dist_mode:
             raise ModelVersionError(
@@ -2581,4 +2604,10 @@ def _migrate_config(data: dict) -> dict:
         # False = OFF, byte-identical: every pre-v63 run trained without it.
         data.setdefault("seed_quantile", False)
         data["config_version"] = 63
+    if version < 64:
+        # v64: gen3_value_threat_inject_v1 — the critic's per-entity magnitude route (structural,
+        # one shared zero-init Linear on the value pool's copy of our tokens).
+        # False = OFF, byte-identical: every pre-v64 run trained without it.
+        data.setdefault("value_threat_inject", False)
+        data["config_version"] = 64
     return data

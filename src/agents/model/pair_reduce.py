@@ -138,7 +138,8 @@ class PairReducer(torch.nn.Module):
         self.deepsets = torch.nn.ModuleDict(
             {p: DeepSetsReducer(n_channels, p) for p in l_pools})
         # W-rung output: E[cell] + E[cell²] + α-provenance; L-rung: one latent per pool.
-        self.extra_dim = len(w_hows) * (2 * n_channels + 1) + len(l_pools) * PAIR_REDUCE_LATENT
+        # Delegated so `pair_reduce_extra_dim` (used before this module exists) cannot drift from it.
+        self.extra_dim = pair_reduce_extra_dim(how, n_channels)
 
     def forward(self, w: torch.Tensor, cells: torch.Tensor) -> torch.Tensor:
         parts = []
@@ -153,6 +154,24 @@ class PairReducer(torch.nn.Module):
         for pool in self.deepsets:
             parts.append(self.deepsets[pool](w, cells))
         return torch.cat(parts, dim=-1)
+
+
+def pair_reduce_extra_dim(how: str, n_channels: int) -> int:
+    """The width `PairReducer(how, n_channels)` emits per defender, WITHOUT building one.
+
+    Exists because a consumer may need the width before the op is constructed (the extractor builds
+    `CLSPool` earlier than `DamageOperator`, and module construction order is load-bearing — SB3
+    restores optimizer state POSITIONALLY, so reordering to suit a new feature silently corrupts
+    every resume). Kept as the single source of that arithmetic: `PairReducer.__init__` calls this
+    too, so the two cannot drift.
+    """
+    if how == "hard_max":
+        return 0
+    if how not in PAIR_REDUCE_HOWS:
+        raise ValueError(f"pair_reduce_extra_dim how={how!r} — one of {PAIR_REDUCE_HOWS}")
+    w_hows = ["belief_mean"] if how == "multi" else [h for h in _W_HOWS if how == h]
+    n_pools = len([p for p in ("sum", "max") if how == "multi" or how == f"deepsets_{p}"])
+    return len(w_hows) * (2 * n_channels + 1) + n_pools * PAIR_REDUCE_LATENT
 
 
 def build_pair_reducer(how: str, n_channels: int) -> Optional[PairReducer]:

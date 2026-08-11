@@ -53,7 +53,23 @@ steps; see `seed_vicreg.py`. **And repulsion has a ceiling of its own** — gen-
 VICReg term while rank stayed 1.05, because the deviations occupied <1 direction (three seeds
 identical, one breakaway). `--seed-quantile-coef` (v63, `seed_quantile.py`) is the positive
 alternative: seed k predicts quantile τ_k of the return through ONE SHARED Linear, so k different
-predictions require k different seed reads. Structural + version-checked, off = no module).
+predictions require k different seed reads. Structural + version-checked, off = no module.
+**BOTH pressures cap at ~1-D differentiation, which is why the seed line stops here**: gen-7's
+quantile arm drove `crossing_rate` to 0.000 and `quantile_spread` to 1.016 — the seeds genuinely
+predict four ordered quantiles — while `out_effective_rank` reached only 1.157 of k=4, matching
+gen-6's centered PR 0.846 from the opposite direction. A SHARED readout can only constrain each
+seed's component along its own weight vector; every orthogonal direction stays free, so
+multiplicity is not the missing axis and no coefficient fixes it. The response is
+**`--value-threat-inject` (v64, `value_threat_inject.py`)** — magnitude as TOKEN CONTENT rather
+than as another readout seat: one shared zero-init `Linear(13, D_MODEL)` adds the op's α-weighted
+incoming row for our mon j (α = the R1 `belief_mean` rung, which the flag forces on since R0
+`hard_max` builds no reducer) to that mon's token on **the value pool's copy only**, inside
+`CLSPool`. Keeping the augmented tensor a local is what makes "vf-only" structural rather than a
+convention: `our_cls`, `our_active_refined` and the pointer head cannot reach it, so `pi` is
+bit-identical at ANY weight — gated against a large random projection, not just at init. Equivariant
+in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
+is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
+is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
 Under `--opp-belief-latent-coef>0` `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
 (the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
 `pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs

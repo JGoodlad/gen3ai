@@ -2465,3 +2465,53 @@ semantic in a way decorrelation cannot be (the τ=0.1 seat must find what makes 
   collapsing — which K1 does not refute. But un-collapsing is a MEANS: gen-5 matched gen-4 while
   fully collapsed, so multiplicity may still be worth ~0. Judge on `out_effective_rank` first,
   anchored ELO second.
+
+### v64 — `gen3_value_threat_inject_v1` (2026-08-11): the critic reads a per-entity MAGNITUDE
+
+**The seed line ends here, on a measurement.** v62 (repulsion) and v63 (per-seed quantiles) attacked
+`MultiSeedValueReadout`'s collapse from opposite directions and landed in the same place. Gen-7's
+quantile arm succeeded on its own terms — `quantile_crossing_rate` 0.456 → **0.000**,
+`quantile_spread` 0.007 → **1.016** at 10.6M steps, so the four seeds really do predict four
+ordered quantiles — yet `value_seeds/out_effective_rank` reached only **1.157** against a ceiling of
+k=4, matching gen-6's centered PR **0.846**. The shared structural cause: a SHARED readout
+constrains only each seed output's component along its own weight vector, leaving every orthogonal
+direction unconstrained. **Seed multiplicity was not the axis the critic was missing**, and no
+coefficient on either term changes that. Two independent nulls on the same object is a kill, not a
+tuning problem.
+
+- **The build.** `--value-threat-inject` adds, for each of OUR mons `j`, the op's α-weighted
+  incoming row `Σ_k α_k · pair_in[k, j, :]` to that mon's post-transformer token via ONE shared
+  zero-init `Linear(13, D_MODEL)`, on **the value pool's copy only**; `value_cls` then pools the
+  augmented set. `agents/model/value_threat_inject.py`; the augmentation lives inside `CLSPool` so
+  the augmented tensor is a LOCAL.
+- **Why token content and not another readout seat.** An attention BIAS (the `d3` edge family) is
+  softmax-normalised — it can rank defenders by threat and structurally cannot say "62% of max HP".
+  An attention VALUE carries magnitude. This is the third delivery route named in
+  `design_opponent_intent.md` §7a.2, and the first one tried on the critic since the concat died.
+- **vf-only is STRUCTURAL, not a convention.** `our_cls`, `our_active_refined` and the pointer head
+  read the untouched tensor, so `pi` is bit-identical for an ARBITRARY `W_inj`. Gated by
+  randomising the projection to N(0, 5²) and asserting `torch.equal` on pi while vf must MOVE (the
+  second half stops the gate passing vacuously on an inert route).
+- **Equivariant in both axes.** α is shared across defenders by Contract W (no `J` index exists on
+  it by signature) ⇒ invariant under permuting their moves; the row rides mon `j`'s own token ⇒
+  equivariant under permuting ours; attention pooling is permutation-invariant. Gated by permuting
+  our six mons and asserting `value_pooled` is unchanged — plus the counterpart gate that
+  MIS-pairing rows to mons DOES change it, so invariance cannot pass by carrying no information.
+- **It forces the op's reducer on.** R0 `hard_max` (production) builds no `PairReducer` and stashes
+  nothing, so the flag switches `reduce_how` to the R1 `belief_mean` rung. Derived, never a second
+  user knob: this arm tests DELIVERY, and a variable rung would confound that with the DISTRIBUTION
+  question.
+- **Two traps handled.** (1) `CLSPool` is constructed ~250 lines BEFORE `DamageOperator`, so the
+  projection width comes from a new pure helper `pair_reduce_extra_dim(how, n_channels)` (which
+  `PairReducer.__init__` now also calls, so they cannot drift) rather than from `self.damage_op` —
+  reordering module construction to suit the feature would have shifted optimizer parameter
+  POSITIONS and corrupted every resume. A post-construction assert ties the two widths together.
+  (2) `W_inj` is in the `restore_identity_init()` capture set (ledger M1), gated on a REAL
+  `MaskablePPO` build rather than a bare extractor — the only place SB3's ortho clobber is visible.
+- **Honest scope.** v1 substitutes **α := normalize(w)**, a PRESENCE belief, where the design wants
+  a supervised USAGE belief. Deliberate: it separates the DELIVERY claim (does a per-entity absolute
+  in the value pool help?) from the DISTRIBUTION claim (does a learned α beat w?), so a null indicts
+  the route and not the belief. G1-FINAL's null does not predict this one — it tested aggregation on
+  the POLICY's cells and never changed critic delivery.
+- Structural + version-checked (fresh runs only), `MODEL_CONFIG_VERSION` 63 → 64; OFF builds no
+  module, leaves the op on `hard_max`, and is byte-identical. No `ARCH_SIGNATURE` bump.

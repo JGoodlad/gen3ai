@@ -64,6 +64,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "zarch_dim": "zarch_dim",
     "zarch_lut": "zarch_lut",                                               # v46
     "zarch_lut_init_std": "zarch_lut_init_std",
+    "value_threat_inject": "value_threat_inject",                           # v64
 }
 
 # Kwargs that are NOT a plain attribute read. Each is a callable over `args`.

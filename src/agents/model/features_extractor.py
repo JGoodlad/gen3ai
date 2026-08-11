@@ -19,6 +19,8 @@ from agents.observation.constants import (
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
+from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
+                                              value_threat_inject_dim)
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
@@ -1099,7 +1101,7 @@ class CLSPool(torch.nn.Module):
     transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
     """
 
-    def __init__(self, layout: Dict[str, Any]):
+    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0):
         super().__init__()
         self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
         self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -1114,8 +1116,18 @@ class CLSPool(torch.nn.Module):
         self.value_cls_attn = torch.nn.MultiheadAttention(embed_dim=D_MODEL, num_heads=TRANSFORMER_N_HEADS, batch_first=True)
         self.norm_pool_value = torch.nn.LayerNorm(D_MODEL)
 
+        # gen3_value_threat_inject_v1: the op's per-our-mon reduced threat row as TOKEN CONTENT on
+        # the value pool's copy of our tokens. Owned HERE rather than by the extractor so the
+        # augmented tensor is a LOCAL, and no policy-facing read can reach it by construction —
+        # that is what makes V1 ("pi bit-identical for arbitrary W_inj") a structural property
+        # instead of a discipline the next edit could break.
+        self.value_threat_proj = (
+            ValueThreatInject(value_threat_inject_dim, D_MODEL)
+            if value_threat_inject_dim else None)
+
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
-                ctx: ExtractorContext) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                ctx: ExtractorContext,
+                threat_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
         their_cls_q = self.their_cls.expand(batch_size, -1, -1)
@@ -1130,7 +1142,20 @@ class CLSPool(torch.nn.Module):
         our_active_refined = our_team_out[batch_idx, ctx.our_active_idx]            # [B, 128]
 
         # Value pool: one query over both teams' 12 tokens (fainted slots key-masked).
-        all_team_out = torch.cat([our_team_out, their_team_out], dim=1)             # [B, 12, 128]
+        # gen3_value_threat_inject_v1: ONLY this pool's copy of our tokens carries the op's
+        # per-entity threat magnitude. `our_team_pooled` / `our_active_refined` above, and the
+        # pointer head downstream, all read the untouched `our_team_out` — so the policy is
+        # provably blind to `W_inj` (V1) and this arm moves the critic alone.
+        our_for_value = our_team_out
+        if self.value_threat_proj is not None:
+            if threat_rows is None:
+                raise ValueError(
+                    "value_threat_inject is built but the op supplied no reduced rows — the "
+                    "DamageOperator must run with reduce_how=VALUE_THREAT_INJECT_REDUCE_HOW so "
+                    "`last_reduced_extra` is populated. A silent skip here would make the flag a "
+                    "no-op that still passes every shape test.")
+            our_for_value = self.value_threat_proj(our_team_out, threat_rows)
+        all_team_out = torch.cat([our_for_value, their_team_out], dim=1)            # [B, 12, 128]
         value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
         value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,
                                                 key_padding_mask=ctx.all_fainted)
@@ -2263,7 +2288,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  spread_belief_nature_marginalize: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
-                 seed_quantile: bool = False,
+                 seed_quantile: bool = False, value_threat_inject: bool = False,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
@@ -2348,7 +2373,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.edge_bias = (EdgeBias(self.edge_bias_families)
                           if self.edge_bias_families != "off" else None)
         self.team_transformer = TeamTransformer(layout)
-        self.cls_pool = CLSPool(layout)
+        # The injection width IS the op reducer's `extra_dim`, computed by the SAME function the
+        # reducer uses. It has to come from the pure helper rather than `self.damage_op`, because
+        # the op is built ~250 lines BELOW this point and module construction order is load-bearing
+        # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
+        # every resume). A post-construction assert below ties the two together.
+        _vti_dim = value_threat_inject_dim() if bool(value_threat_inject) else 0
+        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
@@ -2591,14 +2622,37 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         if self.damage_candidate_k and not damage_op:
             raise ValueError("damage_candidate_k>0 requires damage_op=True — it caps the DamageOperator's "
                              "incoming candidate sweep, which only exists when the op is built.")
+        # gen3_value_threat_inject_v1: the critic-side magnitude route needs the op's Contract-W
+        # reduced rows, and R0 `hard_max` (production) builds NO reducer and stashes nothing — so
+        # the flag FORCES the R1 rung on. It is derived, never a second user knob: this arm tests
+        # DELIVERY, and a variable rung would confound that with the DISTRIBUTION question.
+        self.value_threat_inject = bool(value_threat_inject)
+        if self.value_threat_inject and not damage_op:
+            raise ValueError(
+                "value_threat_inject=True requires damage_op=True — the injected row IS the op's "
+                "reduced incoming threat, so with no op there is nothing to inject and the flag "
+                "would be a silent no-op.")
+        _reduce_how = (VALUE_THREAT_INJECT_REDUCE_HOW if self.value_threat_inject
+                       else "hard_max")
         # The incoming matrix's K is damage_topk_k (the one "how many opp moves" knob).
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
                                          matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
-                                         candidate_k=self.damage_candidate_k)
+                                         candidate_k=self.damage_candidate_k,
+                                         reduce_how=_reduce_how)
                           if damage_op else None)
+        # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
+        # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
+        # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
+        if self.value_threat_inject:
+            _built = self.damage_op.pair_reducer.extra_dim
+            if _built != self.cls_pool.value_threat_proj.extra_dim:
+                raise AssertionError(
+                    f"value_threat_inject width mismatch: the op's reducer emits {_built} but the "
+                    f"projection was built for {self.cls_pool.value_threat_proj.extra_dim} — "
+                    "`value_threat_inject_dim()` has drifted from `PairReducer.extra_dim`.")
         self.threat_prob_outspeed = bool(threat_prob_outspeed)
         # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
         # per-OUR-mon INCOMING damage block (incl. the bench = safe-switch reads) is projected onto the 6
@@ -3681,7 +3735,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # CLS pools — derived ONCE, on the final (possibly damage-re-attended) team tokens, so the policy
         # pools, the value pool, and the side/aux readouts below ALL reflect the same state.
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
-            our_team_out, their_team_out, ctx
+            our_team_out, their_team_out, ctx,
+            threat_rows=(self.damage_op.last_reduced_extra
+                         if self.value_threat_inject else None),
         )
         # gen3_pointer_native_v1 / gen3_entity_move_seats_v1: stash the pointer action head's
         # PER-ENTITY inputs for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head

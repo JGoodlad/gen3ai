@@ -295,6 +295,31 @@ included) is byte-identical; resume-immutable (the vf_coef class, `check_value_s
 fail-loud at startup if enabled on a config without the seed readout. Intended ON at the gen-6
 launch, judged by `out_effective_rank` rising toward k.
 
+**Both seed pressures produce ~1-D differentiation, which is what `--value-threat-inject` (v64)
+responds to.** Gen-7 ran the quantile arm and it worked on its own terms — `quantile_crossing_rate`
+0.456 → **0.000** and `quantile_spread` 0.007 → **1.016** at 10.6M steps, so the four seeds do
+predict four ordered quantiles — yet `out_effective_rank` reached only **1.157** against a ceiling
+of k=4. Gen-6's repulsion arm landed in the same place from the opposite direction (centered PR
+0.846). The structural reason is shared between them: a **shared** readout constrains only each
+seed output's component along its own weight vector, leaving every orthogonal direction free. Seed
+MULTIPLICITY is therefore not the axis the critic was missing, and no coefficient on either term
+changes that.
+
+`--value-threat-inject` takes the third route instead — **magnitude as token content, per entity**.
+For each of OUR mons `j`, the op's α-weighted incoming row (`Σ_k α_k · pair_in[k, j, :]`, α = the R1
+`belief_mean` rung, which the flag forces on because R0 `hard_max` builds no reducer) is projected
+by ONE shared zero-init `Linear(13, 128)` and added to that mon's token on **the value pool's copy
+only**. `value_cls` then pools augmented tokens; `our_cls`, `our_active_refined` and the pointer
+head all read the untouched tensor, so `pi` is bit-identical at **any** weight — asserted against a
+large random projection, not merely at init. The route is invariant under permuting their moves (α
+is shared across defenders by Contract W), equivariant under permuting ours (the row rides mon `j`'s
+token), and invariant at the pool — unlike the deleted flat concat, whose meaning was slot-ordered.
+`W_inj` is covered by `restore_identity_init()` (ledger M1) and that is gated on a real
+`MaskablePPO` build, not a bare extractor. Structural + version-checked, fresh runs only; OFF
+(production) builds no module and leaves the op on `hard_max`. **v1 substitutes α := normalize(w),
+a PRESENCE belief where the design wants a supervised USAGE belief** — deliberately, so a null
+indicts the delivery route rather than the belief.
+
 ### 3.3 The action head is the pointer head — there is no flat `action_net`
 
 `Gen3DualHeadMaskablePolicy._build` replaces SB3's flat `Linear(latent, 11)` with a **raising stub**
@@ -598,6 +623,7 @@ raises at build time.
 | `value_active_readout` | false | OFF — vf does not read `our_active_refined` |
 | `zarch_film` / `zarch_dim` / `zarch_lut` | `"off"` / 0 / `"off"` | OFF — no team-archetype conditioning |
 | `move_candidate_floor` | 0.0 | OFF — the legacy flat prior floor; the learnset legality gate is not applied |
+| `value_threat_inject` | false | OFF — the critic reads no per-entity threat magnitude; the op stays on the R0 `hard_max` reduction and builds no `PairReducer`. Turning it on forces the R1 `belief_mean` rung and adds one shared zero-init `Linear(13, 128)` on the **value pool's** copy of our tokens; `pi` is unaffected at any weight (§3.2) |
 
 **No flag exists for the pointer-native action head.** It is unconditional — there is no off state,
 and there is no flat `action_net` to fall back to.

@@ -913,6 +913,7 @@ def current_model_version(
     value_dist_vmax: float = 0.0,
     value_dist_coef: float = 1.0,
     seed_quantile: bool = False,
+    value_threat_inject: bool = False,
     damage_topk_k: int = 0,
     damage_refine_rounds: int = 0,
     damage_matrices_outgoing: bool = False,
@@ -991,6 +992,7 @@ def current_model_version(
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
     ext_kwargs["value_dist_vmax"] = value_dist_vmax
     ext_kwargs["seed_quantile"] = seed_quantile
+    ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_refine_rounds"] = damage_refine_rounds
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
@@ -1086,6 +1088,10 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_seed_quantile_v1 (v63): the per-seed quantile head is a state_dict-changing module,
         # so a frozen opponent's gate must see it (else a quantile-on run FATALs on its own sentinels).
         "seed_quantile": bool(getattr(fe, "seed_quantile", False)),
+        # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
+        # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
+        # gate must see it (else an inject-on run FATALs loading its own sentinels).
+        "value_threat_inject": bool(getattr(fe, "value_threat_inject", False)),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
