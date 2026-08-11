@@ -571,6 +571,102 @@ Gen-7 is spoken for by the v63 quantile arm; this is gen-8 material at the earli
 
 ---
 
+## 7a. REVIEW (2026-08-11) — scope gap, one alternative hypothesis, and a fallback arm
+
+Four notes from a review of this doc against the live measurements. None contradicts the design;
+one names something it does not cover.
+
+### 7a.1 ⚠️ THIS IS A POLICY-SIDE DESIGN — the measured regression is CRITIC-side
+
+The whole chain terminates at the **pointer logits**, which are policy-only. Meanwhile the
+critic's deficit is now MEASURED, and it is separate:
+
+| run | dense `ladder_elo` @24M |
+|---|---|
+| gen-4 (concat alive) | **2081 ± 11** |
+| gen-5 (no concat)    | **2037 ± 11** |
+
+Disjoint CIs on the dense frozen-vs-frozen ladder (the sparse `eval/elo` at ±30 could not resolve
+it and reported "parity" — see `research_state/ledger.md`, 2026-08-11). The concat deletion
+probably **cost ~44 Elo**, and what replaced it for the critic — `MultiSeedValueReadout` — has
+measured at **~1 effective direction** under two structurally different pressures (VICReg
+repulsion, gen-6; per-seed quantile assignment, gen-7: centered PR 0.846 vs 0.835, identical).
+
+**So `α` does not, on its own, repair the critic.** The two deficits are complementary:
+the policy cannot express *"they'll click this, so this is my answer"*; the critic lost its
+magnitude window. Do not let this doc be read as answering both. **§7a.2 is the resolution** — the
+same `α`-reduced object serves both heads, and it is the first critic route that is equivariant in
+BOTH axes.
+
+### 7a.2 The critic route that falls out of this design (and why it is equivariant)
+
+`cell[j] = Σ_k α_k · pair_in[k, j, :]` is a **per-entity, magnitude-carrying, coherent** row. Send
+it to the two consumers by their physical channel (`design_conditional_opponent_cells.md` §0.1):
+
+* **policy** → the pointer switch cell (per-action absolute at the logit) — this doc's component 3;
+* **critic** → **token content on our mon `j`'s token**, which `value_cls` then pools.
+
+Equivariance, per axis:
+
+| permute | why it holds |
+|---|---|
+| **their moves (`k`)** | `α` = softmax over seats with `g` SHARED over `k` ⇒ `α` permutes with the seats ⇒ `Σ_k α_k·pair_in[k,j]` is **INVARIANT** |
+| **our mons (`j`)** | the row is computed per `j` and injected onto mon `j`'s own token ⇒ **EQUIVARIANT** (it rides the entity) |
+| **the readout** | `value_cls` is softmax attention over tokens ⇒ its output is **permutation-INVARIANT** |
+
+No positional axis is introduced anywhere — unlike the deleted concat, which was a slot-ordered
+flatten, and unlike a widened seat (§6 item 7a of the OA doc), where the within-seat axis stays
+positional. It also needs **no seeds**, which matters given the two-generation seed-collapse result.
+
+**Two honest limits.** (1) This restores *conditional per-mon threat*, NOT **cross-pair joint**
+reasoning (*"their Ice Beam threatens three of my mons"*) — that still needs PV or pair-token
+promotion, and the §2b.4 coverage probe is what decides whether the critic misses it. (2) The
+`in_permon` anti-pattern (`design_conditional_opponent_cells.md` §0.4) still stands **against an
+incoherent max collapse**; a coherent `α`-weighted contraction is a different object (a conditional
+expectation, the quantity a pivot decision actually needs) — but "a collapse cannot deliver the axis
+it collapsed" remains true for the joint questions.
+
+**This can be tested BEFORE `α` exists.** Substitute `α := normalize(w)` (the ladder's R1
+`belief_mean`, already implemented in `agents/model/pair_reduce.py`) and inject that row as token
+content. That separates the two claims cleanly: **R1-into-tokens tests the DELIVERY channel; `α`
+later upgrades the DISTRIBUTION.** A null on the first is about plumbing; a null on the second is
+about intent.
+
+### 7a.3 An alternative hypothesis for `d3` = 0.63% that this doc does not raise
+
+§1 reads `d3`'s decay as a CHANNEL failure (an edge carries a ratio, not a magnitude). Plausible —
+but a channel carrying *distorted content* would also read low, and §4.5 establishes that the
+content **is** distorted: every opponent's offense is priced as 252 EV × 1.1 nature, uniformly, at
+nine sites, with an error that scales with base stats and therefore corrupts the RELATIVE threat
+ordering across their team — precisely what `d3` exists to convey.
+
+So there are two live explanations for the same number, and they imply different next moves:
+**channel** ⇒ build `α` + the per-action delivery; **content** ⇒ fix B-spread and `d3` may recover
+on its own. **B-spread (step 0b) distinguishes them cheaply and is already first in the build
+order** — so re-measure the `d3` family flip rate after the belief generation, BEFORE concluding
+the channel was the problem.
+
+### 7a.4 The coverage-risk fallback: `α` over {ATTACK, SWITCH} only
+
+§8 names low seat coverage (G2a) as a way this dies. The degenerate version is immune to it and
+should be **pre-registered now rather than improvised under pressure**:
+
+> `α ∈ Δ²` over **{ATTACK, SWITCH}** — one scalar, **belief-free**, always observable from the
+> event log, zero mask rate, no B-move prerequisite.
+
+§4.4(1) and §5.2 already say this slot carries the largest single effect (at `P(SWITCH)=0.7` this
+turn's expected incoming damage is ~0.3× its attack-conditional value, and nothing in the model
+represents that today). If G2a returns poor coverage, ship this instead of stalling on the belief.
+
+### 7a.5 Schedule honesty — this is TWO generations, not one
+
+"G0–G7 need no training run" is true of the GATES, but build step **0b** does: `--spread-belief`
+is STRUCTURAL and fresh-only. So the realistic shape is **gen-8 = the foundation generation**
+(B-spread/de-timid + `--move-belief-coef 0.05`) and **gen-9 = `α`**. Worth stating plainly so this
+is not planned as "all offline until one big run."
+
+---
+
 ## 8. What could kill this, honestly
 
 **`α` ≈ `w` (the G2b risk, and the one I would watch).** In gen3 OU the answer to "what will they

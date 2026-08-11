@@ -207,3 +207,67 @@ _Last updated: 2026-08-08._
   reviving G7 is an owner override, not a data conclusion. Lesson pattern-match: "gate a lever on
   whether the quantity PREDICTS performance" (the code-rank lesson) — applied here BEFORE spending
   2×2M G7 forks.
+
+## 2026-08-11 — the op `in_matrix` REFUND is a measured NO (out_dim 660→138 not worth doing for perf)
+
+I proposed shrinking the op's returned block 660→138 on the strength of the step-0 finding that
+dims 138–659 (`in_matrix`) are write-only. Measure-first killed it. All numbers CPU-only, box
+busy (load **18.0–26.2 on 16 cores**, factor ~1.1–1.6); ratios are the load-stable signal, and the
+conclusion sits 2–3 orders of magnitude from the decision boundary so contention cannot flip it.
+GPU-side is **UNMEASURED** (the host's `nvidia-smi` is broken by a driver/library mismatch).
+
+* **The materialization is ~0.1% of the op forward** (B=1024): final `cat` 0.014 ms + `out_gain`
+  over the 522 extra columns 0.008 ms + stash clone 0.011 ms ≈ **0.033 ms of 29.2 ms**. At B=1 it
+  is ~2 µs of 1.44 ms. The op is itself only 7–12% of a policy forward, so the lean block is
+  ~0.01% of a forward and even DELETING the imx computation outright caps at **0.7–1.3%**.
+* **Bytes are a rounding error**: 8.55 MB at B=4096 against the op's own `[B,6,370]` candidate
+  intermediates at ~146 MB EACH at B=16384.
+* **No backward saving**: imx under `no_grad` measured +2.2% at B=256 and −1.1% at B=1024 —
+  sign-inconsistent, noise.
+* **The structural catch:** `last_raw_block = block.detach()` (`damage_op.py:2910`), so keeping the
+  probes' 660-wide view REQUIRES still computing and concatenating the 522 dims. A lean *return*
+  can only ever refund the gain-multiply and the slice. Refunding the COMPUTE means making
+  `_incoming_matrix` opt-in, which changes `last_raw_block` semantics for every probe and strands
+  `last_topk_idx`/`last_topk_w` (set inside it, read by the prober for exact move names).
+
+**Premise correction that matters for any future attempt:** `pointer_cells` does NOT read only the
+first 85 dims — it reaches through **138** (`ob = incoming_dim` = 85 for the move cells,
+`st0 = ob + _DMG_OUTGOING` = 130 for status; `damage_op.py:1251-1259`). So the outgoing(45) and
+status(8) regions are LIVE and 138 is the correct lean width. Independent confirmation of the
+write-only result: with imx removed from the graph entirely, the returned live prefix is
+**bit-identical**.
+
+**Disposition:** not doing it for throughput. If it is ever done, argue it as an API/clarity change
+(a 138-wide contract that cannot be mis-sliced) and judge it on that. Harnesses kept:
+`tmp/op_phase1_{measure,context,backward}.py`, write-up `tmp/op_refund_measurements.md`.
+
+## 2026-08-11 — BOTH seed mechanisms produce ONE-DIMENSIONAL differentiation (structural, predictable)
+
+Measured on matched 4.8M checkpoints, same 512 stratified states:
+
+| run | mechanism | uncentered PR | **centered PR** (deviation dimensionality) |
+|---|---|---|---|
+| gen-6 | VICReg repulsion | 1.037 | **0.846** |
+| gen-7 | per-seed quantile | 1.048 | **0.835** |
+
+**Identical.** The quantile objective delivers everything it promised at the readout — spread
+0.007 → 0.93, crossing_rate pinned at 0.000 (perfect τ-ordering), out_cos 1.00 → 0.93 — yet the
+seed deviations still occupy ONE direction, exactly like the repulsion arm.
+
+**The cause is structural and should have been predicted:** the per-seed prediction is
+`p_k = w · out_k` through ONE SHARED readout `w`. Four different scalars require the seeds to
+differ **along w** and constrain NOTHING orthogonal to it. A scalar-per-seed target — even k
+distinct ones — can only ever demand a 1-D differentiation. The shared readout was chosen to stop
+the HEAD faking the spread (it does), but it simultaneously caps the achievable dimensionality at
+one. `out_effective_rank` 1.10 is therefore the objective working as specified, not failing.
+
+**If directional multiplicity is wanted, the target must stop being a scalar-through-a-shared-line.**
+Two candidates, both preserving the no-faking property: (a) **FROZEN orthogonal per-seed readout
+directions** — seed k read through a fixed random unit `w_k`, so hitting τ_k requires moving along
+`w_k` specifically and the k constrained directions are orthogonal by construction (the head cannot
+adapt because the directions are frozen); (b) **vector targets per seed** — each seed owns a CHUNK
+of the distributional head's atoms, so its job is multi-dimensional.
+
+**Open question this raises and does NOT answer:** whether directional multiplicity is worth
+anything. Two mechanisms now agree the readout wants ~1 direction; that may be the model telling us
+one direction is all this readout needs.
