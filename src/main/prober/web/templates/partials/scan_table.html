@@ -51,6 +51,10 @@
          the battle and gives you no way to act on it. `analyze` is deliberately not a web view
          (it loads a checkpoint and holds state), so the honest bridge is the command. #}
       <td class="nowrap">
+        {# Straight to the crater: the replay opens WINDOWED on the losing turn and anchored on the
+           exact decision, so "where it went wrong" becomes "here is the game around it". #}
+        <a class="linky" href="/battle?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&start={{ w.turn }}#inv-{{ w.inv }}"
+           title="Read the game around turn {{ w.turn }}">turns</a>
         <button class="linky copybtn" type="button"
                 data-copy="python -m main.prober.query analyze {{ r.id }} {{ w.inv }}"
                 title="Copy: python -m main.prober.query analyze &lt;id&gt; {{ w.inv }}">copy cmd</button>

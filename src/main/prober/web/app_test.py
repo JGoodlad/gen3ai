@@ -12,6 +12,7 @@ already owns and which needs Node).
 
 from __future__ import annotations
 
+import os
 import time
 
 import pytest
@@ -757,6 +758,153 @@ def test_the_session_cache_is_bounded_and_closes_what_it_evicts(tmp_path_factory
         assert len(app.state.sessions) <= _MAX_CACHED_SESSIONS, (
             f"cache grew to {len(app.state.sessions)} — an anonymous visitor can walk every run")
         assert closed, "evicted sessions must be closed, not left for the collector"
+
+
+# -- /battle: the turn-by-turn replay ---------------------------------------------------------
+#
+# The security tests here are the important ones. `/battle` is the first view that takes a
+# per-TRACE identifier from the client, and `ProbeSession._battle` falls back to opening an
+# arbitrary path for an id it does not recognise — so this endpoint is exactly where the run
+# picker's "membership, not sanitisation" rule has to be repeated one level down.
+
+_REPLAY_BATTLE = "step_4000000/heuristic2/loss_003"       # the fixture battle with a real log
+
+
+def test_api_battle_turns_is_byte_for_byte_the_session_result(client, run):
+    got = client.get("/api/battle-turns", params={"battle": _REPLAY_BATTLE}).json()
+    want = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    assert got == want
+
+
+def test_api_battle_turns_defaults_to_a_battle_rather_than_erroring(client, run):
+    body = client.get("/api/battle-turns").json()
+    assert body["short_id"] in {b["short_id"] for b in ProbeSession(run).battles()}
+
+
+def test_an_unknown_battle_is_a_404_that_does_not_echo_the_input(client):
+    r = client.get("/api/battle-turns", params={"battle": "step_1/nope/loss_999"})
+    assert r.status_code == 404
+    assert "nope" not in r.json()["error"]
+
+
+@pytest.mark.parametrize("attack", [
+    "../../../etc/passwd",
+    "/etc/passwd",
+    "%2e%2e%2fetc%2fpasswd",
+    "step_4000000/heuristic2/../../../loss_003",
+    "step_4000000/heuristic2/loss_003\x00",
+])
+def test_a_battle_token_is_never_joined_to_a_path(client, attack):
+    """The run picker's rule, one level down: the token is only ever tested for MEMBERSHIP in the
+    server's own listing. A traversal string cannot appear in that listing, so it cannot select
+    anything — nothing here is being sanitised, and that is the point."""
+    r = client.get("/api/battle-turns", params={"battle": attack})
+    assert r.status_code == 404
+    assert "passwd" not in r.text and "etc" not in r.json().get("error", "")
+
+
+def test_a_summary_path_from_another_run_is_refused(tmp_path_factory):
+    """The concrete escape this guards. `ProbeSession._battle` accepts a raw `*_summary.json` PATH
+    and will happily `build_trace_tree` one belonging to a different run. Serving a single pinned
+    run must not become a way to read its siblings' traces."""
+    import shutil
+    root = tmp_path_factory.mktemp("two")
+    pinned = fixture_run.build(str(root))                      # -> <root>/run_fixture
+    staging = tmp_path_factory.mktemp("stage")
+    other = shutil.move(fixture_run.build(str(staging)), str(root / "run_secret"))
+    leaked = os.path.join(other, "eval_traces", "step_4000000", "heuristic2",
+                          "loss_003_summary.json")
+    assert os.path.exists(leaked)                              # the attack is well-formed
+
+    app = create_app(pinned)                                   # pinned to ONE run
+    with TestClient(app) as c:
+        r = c.get("/api/battle-turns", params={"battle": leaked})
+        assert r.status_code == 404, "a path from another run resolved — the token reached a path"
+        assert "run_secret" not in r.text
+
+
+def test_the_battle_page_renders_the_turns_with_their_log(client):
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert html.lstrip().startswith("<!DOCTYPE html>")
+    assert "Battle replay" in html
+    assert html.count('class="card turn"') == 2, "one card per game turn"
+    # The damage is re-attributed: our icebeam's number is the OPPONENT's recorded HP loss (-31%),
+    # which is the misreading `build_result_timeline` exists to fix.
+    assert "we icebeam did 31%" in html, "the battle log is the whole point of this view"
+    assert "opp earthquake did 22%" in html
+    assert "hpfill" in html, "an HP bar is sized from the session's hp_pct"
+    assert 'id="inv-0"' in html, "each decision needs an anchor to be linkable"
+
+
+def test_the_replay_says_when_the_move_order_is_unknown(client):
+    """The fixture records no `move_order`, so top-to-bottom is NOT the real sequence. Showing an
+    implied order we cannot ground in the log would be a quiet lie — but the caveat is a legend
+    printed ONCE plus a marker per log, not the full sentence repeated under all fifty turns."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert "log unordered" in html, "the dashed marker is the whole signal"
+    assert "order not recorded" in html
+    assert html.count("not necessarily in the order shown") == 1, (
+        "the caveat should be explained once, not repeated under every turn")
+
+
+def test_the_replay_window_pages_and_deep_links(client, run):
+    """A 249-turn battle (measured, real run) is a download, not a page — so it is windowed, and
+    every position in it has to be a URL you can send someone."""
+    from main.prober.web.app import _TURN_PAGE
+    assert _TURN_PAGE <= 100
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": "2"}).text
+    assert 'data-turn="2"' in html
+    assert 'data-turn="1"' not in html, "start= must window the replay, not just scroll it"
+
+
+def test_a_bad_start_value_does_not_break_the_page(client):
+    """A hand-edited URL is a browser control by another name: it must never 422 the view."""
+    for start in ("", "abc", "-5", "99999"):
+        r = client.get("/battle", params={"battle": _REPLAY_BATTLE, "start": start})
+        assert r.status_code == 200, f"start={start!r} broke the page"
+        assert "card turn" in r.text
+
+
+def test_the_replay_is_reachable_from_the_tables_that_find_a_battle(client):
+    """Otherwise the view exists but nothing leads to it: `battles` finds the trace and `scan`
+    finds the losing TURN, so both must open the replay — scan's link landing ON that turn."""
+    battles = client.get("/partials/battles").text
+    assert "/battle?run=" in battles and ">turns<" in battles
+
+    scan = client.get("/partials/scan", params={"outcome": "loss"}).text
+    assert "/battle?run=" in scan
+    assert "&start=" in scan and "#inv-" in scan, "scan must open the replay AT the crater"
+
+
+def test_the_replay_offers_jumps_into_a_long_battle(client):
+    """The session's own `notable` block, rendered as links — not re-derived here."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert "worst value drops" in html and "faints" in html
+    assert "start=" in html.split("jumps")[1][:600]
+
+
+def test_the_picker_always_contains_the_battle_being_shown():
+    """A `<select>` whose options do not contain its value silently displays the FIRST one. With
+    the picker capped, arriving from a `scan` deep link to a battle outside the cap would name one
+    battle in the dropdown while rendering another below it — a control that lies about what you
+    are looking at."""
+    from main.prober.web.app import _BATTLE_PICK, _picker_rows
+
+    rows = [{"short_id": f"step_1/bot/loss_{i:03d}"} for i in range(_BATTLE_PICK + 50)]
+    outside = rows[-1]
+    shown = _picker_rows(rows, outside)
+    assert len(shown) <= _BATTLE_PICK
+    assert any(r["short_id"] == outside["short_id"] for r in shown), (
+        "the selected battle is missing from its own picker")
+    # An in-cap selection must not be duplicated or reordered.
+    assert _picker_rows(rows, rows[0]) == rows[:_BATTLE_PICK]
+
+
+def test_the_battle_links_keep_the_selected_run(models_client):
+    html = models_client.get("/battle", params={"run": "run_other"}).text
+    assert "run=run_other" in html
+    assert "ctxstrip" in html and "run_other" in html
 
 
 def test_the_most_recently_used_run_survives_eviction(tmp_path_factory):

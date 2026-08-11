@@ -968,6 +968,62 @@ def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict) -> "
     )
 
 
+# Plain-language for a "couldn't move" (cant) reason decoded from the TurnDelta, and for a move that
+# produced nothing visible. Both live HERE rather than in a renderer: the TUI paints them with Rich
+# styles, the web/CLI want the same words as plain text, and two copies of this vocabulary would
+# drift the moment one surface learns a new reason.
+CANT_PHRASE = {"slp": "asleep", "frz": "frozen", "par": "fully paralyzed", "flinch": "flinched",
+               "recharge": "recharging", "nopp": "no PP", "truant": "loafing",
+               "attract": "immobilized", "taunt": "taunted", "disable": "disabled",
+               "flinched": "flinched"}
+NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect"}
+
+
+def cant_phrase(cant: str) -> str:
+    return CANT_PHRASE.get(str(cant).lower(), str(cant))
+
+
+def timeline_entry_text(e: dict) -> str:
+    """One :func:`build_result_timeline` entry as a PLAIN-TEXT battle-log line — the unstyled
+    sibling of the TUI's Rich renderer (``app._append_timeline_entry``), with the same wording:
+
+        ``we thunderbolt did 31% (suicune 31% → faint)`` · ``opp rockslide did 73% (salamence 100%
+        → 27%)`` · ``we switch tyranitar → skarmory`` · ``opp sends in metagross`` ·
+        ``we hypnosis — missed``
+
+    Pure. It exists so the JSON CLI and the web view render the timeline without either of them
+    re-deriving the sentence (the engine is the single source of truth for what happened, including
+    how it reads)."""
+    side = str(e.get("side", ""))
+    kind = e.get("kind")
+    if kind == "switch":
+        return f"{side} switch {e.get('actor', '')} → {e.get('switch_to', '')}".strip()
+    if kind == "send_in":
+        verb = "send in" if side == "we" else "sends in"
+        return f"{side} {verb} {e.get('sent_in', '')}".strip()
+    if kind == "faint":
+        return f"{side} {e.get('actor', '')} fainted".strip()
+
+    parts = [side, str(e.get("move") or "?")]
+    text = " ".join(p for p in parts if p)
+    if e.get("cant"):
+        text += f" — couldn't move ({cant_phrase(e['cant'])})"
+    elif e.get("damage"):
+        text += (f" did {e['damage']}  ({e.get('target', '')} "
+                 f"{e.get('hp_before', '')} → {e.get('hp_after', '')})")
+    elif e.get("resulting"):        # hit a switch-IN; only the resulting HP is known
+        text += f" → {e.get('target', '')} (now {e.get('hp_after', '')})"
+    elif e.get("status"):
+        text += f" → {e.get('target', '')} {e['status']}"
+    elif e.get("no_effect"):        # nothing happened — say WHY, never leave it blank
+        text += f" — {NO_EFFECT_TEXT.get(e['no_effect'], 'no effect')}"
+    if e.get("boost"):
+        text += f"  ·  {e['boost']}"
+    if e.get("crit"):
+        text += "  ⚡CRIT"
+    return text
+
+
 def build_belief(inv: dict) -> "BeliefView | None":
     """The hidden-opponent species belief at a decision — model-free, parsed from the summary
     invocation's ``belief`` block (the recorder writes it only when the belief was enabled). Each

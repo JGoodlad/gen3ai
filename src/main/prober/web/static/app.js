@@ -13,7 +13,8 @@
  *   charts       how many Vega-Lite specs the server embedded
  *   chartMarks   how many mark elements Vega ACTUALLY DREW — the number no text check can see,
  *                and the one that goes to zero when a spec compiles but plots nothing
- *   rows         data rows in the DOM
+ *   rows         data rows in the DOM (table rows AND battle-replay turn cards)
+ *   monstack     on the battle replay: did the two mons stack (phone) or sit side by side?
  *   swaps        completed HTMX swaps (0 on first paint; >0 proves an interaction re-rendered)
  *   chartError   the first embed failure, if any
  *
@@ -46,8 +47,26 @@
                                 'g[class*="role-mark"] > text').length;
   }
 
+  /* Data rows in the DOM. Deliberately `[data-row]` rather than `tbody tr[data-row]`: the battle
+   * replay's rows are turn CARDS, not table rows, and a selector that only understands tables
+   * would report 0 for a perfectly rendered page. Every table row already carries the attribute,
+   * so the count is unchanged everywhere else. */
   function rowCount(root) {
-    return root.querySelectorAll("tbody tr[data-row]").length;
+    return root.querySelectorAll("[data-row]").length;
+  }
+
+  /* Did the two mons on a battle-replay board STACK, or are they side by side?
+   *
+   * This is the one place the layout genuinely reflows rather than scrolls, so "it works on a
+   * phone" here means "the boards stacked" — and that is a fact only the laid-out page knows.
+   * Absent on every page that has no board. */
+  function monStacking() {
+    var board = document.querySelector(".board");
+    if (!board) { return null; }
+    var mons = board.querySelectorAll(".mon");
+    if (mons.length !== 2) { return null; }
+    var a = mons[0].getBoundingClientRect(), b = mons[1].getBoundingClientRect();
+    return b.top >= a.bottom - 1 ? "1" : "0";
   }
 
   /* The widest element that is NOT allowed to scroll on its own.
@@ -109,6 +128,8 @@
     }
     d.scrollers = String(wrappers.length);
     d.scrollingwrappers = String(scrolling);
+    var stacked = monStacking();
+    if (stacked !== null) { d.monstack = stacked; }
 
     if (err) { d.chartError = String(err); }
     d.ready = "1";

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}battle{% endblock %}
+
+{% block content %}
+<h1>Battle replay</h1>
+<p class="lede">
+  <code>ProbeSession.battle_turns()</code> — one game, turn by turn: the board each decision was
+  made on, an ordered battle log of what then happened, and the critic's read of it. Model-free
+  (no checkpoint), so it opens instantly. For <em>why</em> a decision was made — the policy's
+  alternatives, beliefs and saliency — the surface is
+  <code>python -m main.prober.query analyze &lt;id&gt; &lt;inv&gt;</code> or the TUI.
+</p>
+
+{# A plain GET form, not HTMX: this page is one you read and LINK to ("look at turn 47"), so every
+   view of it must be a shareable URL that also works with JavaScript off. #}
+<section class="card">
+  <form class="filters" method="get" action="/battle">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>battle
+      <select name="battle" onchange="this.form.submit()">
+        {% for b in battles %}
+        <option value="{{ b.short_id }}" {% if b.short_id == selected.short_id %}selected{% endif %}>
+          {{ b.short_id }} — {{ b.outcome }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit">open</button></noscript>
+  </form>
+  <p class="muted small">
+    Pick from the newest {{ battles | length }} traces here, or find one on
+    <a href="/battles{% if run %}?run={{ run | urlencode }}{% endif %}">battles</a> /
+    <a href="/scan{% if run %}?run={{ run | urlencode }}{% endif %}">scan</a> and follow its
+    <strong>turns</strong> link.
+  </p>
+</section>
+
+{% if turns %}
+{# Every link on this page is this battle plus a window position, so build the stem once. #}
+{% set turn_url = "/battle?run=" ~ ((run or '') | urlencode) ~ "&battle=" ~ (turns.short_id | urlencode) %}
+<section class="card">
+  <p class="battlehead">
+    <span class="mono strong">{{ turns.short_id }}</span>
+    <span class="{{ turns.outcome }}">{{ turns.outcome | upper }}</span>
+    <span class="muted">vs {{ turns.opponent }}</span>
+    <span class="muted">· step {{ "{:,}".format(turns.step) }}</span>
+    <span class="muted">· {{ turns.n_turns }} turns / {{ turns.n_decisions }} decisions</span>
+  </p>
+
+  {# Jump targets. A 249-turn replay needs entry points, and these come back from the session's own
+     `notable` block — the same one `battle_overview` returns — rather than being re-derived here.
+     `decision_turns[inv]` is the session's own inv→turn lookup, so linking to a decision's turn
+     costs this template no arithmetic. #}
+  {% set nb = turns.notable %}
+  {% set dt = turns.decision_turns %}
+  {% macro jump(inv, label, title="") %}
+    <a class="jump" title="{{ title }}"
+       href="{{ turn_url }}&amp;start={{ dt[inv] if dt[inv] is not none else '' }}#inv-{{ inv }}">{{ label }}</a>
+  {% endmacro %}
+  {% if nb %}
+  <p class="jumps">
+    {% if nb.biggest_value_drops %}
+      <span class="k">worst value drops</span>
+      {% for d in nb.biggest_value_drops %}
+        {{ jump(d.inv, "turn %s (ΔV %.1f)" | format(dt[d.inv], d.delta_v),
+                "decision %d" | format(d.inv)) }}
+      {% endfor %}
+    {% endif %}
+    {% if nb.faints %}
+      <span class="k">faints</span>
+      {% for i in nb.faints[:8] %}{{ jump(i, "turn %s" | format(dt[i])) }}{% endfor %}
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+
+{% include "partials/turns_list.html" %}
+
+{% elif not error %}
+<section class="card"><p class="empty">this battle recorded no decisions</p></section>
+{% endif %}
+{% endblock %}

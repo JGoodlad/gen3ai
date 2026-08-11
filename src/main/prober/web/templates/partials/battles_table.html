@@ -26,7 +26,12 @@
       <td class="num">{{ r.index }}</td>
       <td>{% if r.has_npz %}<span class="pos">obs</span>{% else %}<span class="muted">no npz</span>{% endif %}</td>
       <td class="mono">{{ r.short_id }}</td>
-      <td class="nowrap"><button class="linky copybtn" type="button"
+      <td class="nowrap">
+        {# The row is not a dead end: the replay is one click away, and the id is one click from
+           the CLI. `run` rides the link because the battle picker resolves names per run. #}
+        <a class="linky" href="/battle?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}"
+           title="Read this battle turn by turn">turns</a>
+        <button class="linky copybtn" type="button"
           data-copy="{{ r.id }}" title="Copy the battle id for the CLI or the TUI">copy id</button></td>
     </tr>
   {% endfor %}

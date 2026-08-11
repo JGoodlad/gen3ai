@@ -679,9 +679,11 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
+main.prober.query summary|list|scan|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
 exposes the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
-every loss across an opponent (model-free, ranked)**, digest one battle, find
+every loss across an opponent (model-free, ranked)**, digest one battle, **`turns` READ one battle as a
+GAME — decisions grouped by game turn, each with the board it was made on, an ordered battle log of what
+then happened (HP loss attributed to the move that dealt it), and V·ΔV·TD δ (model-free, ~20 ms)**, find
 decisions the model disagrees with, deeply analyze one decision, **`lookahead`
 a decision: one-ply VALUE-DELTA — re-roll each legal action one turn (opp plays its recorded move),
 materialize the successor, and read the critic's V(s′) per action** (the model-scored counterpart to
@@ -712,9 +714,11 @@ agent API — are in `src/main/prober/CLAUDE.md`.
 
 A **third sibling** over the same engine (the TUI and the JSON CLI are the other two — none is a
 layer on another). Read-only browser views for the analyses a terminal renders worst, adapting
-`ProbeSession` and nothing else: run summary · battles · `scan` · `triage` · the `falsify_scan`
-crater bracket · the `calibration` reliability curve. `analyze` / `lookahead` / `better-line` /
-`replay-counterfactual` stay TUI+CLI.
+`ProbeSession` and nothing else: run summary · battles · `scan` · `triage` · the **turn-by-turn
+battle replay** (`/battle` — board, battle log and critic per game turn; reached from a `scan` row's
+**turns** link, which lands on the losing turn) · the `falsify_scan` crater bracket · the
+`calibration` reliability curve. `analyze` / `lookahead` / `better-line` / `replay-counterfactual`
+stay TUI+CLI.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober.web models/   # :6008, pick any run
@@ -750,8 +754,11 @@ publishes what it measured of its own layout (viewport width, whether the narrow
 matched, header height, control font size, and **which element** overflows if any) and the render
 test reads that back at 1280px and at the 500px floor headless chrome allows. The rule the layout
 serves is that the page never scrolls sideways — wide tables and charts scroll inside their own
-box. Detail — what the render record proves, plus the two non-obvious traps (Vega does not wrap
-title text; a media query can lose on specificity) — is in `src/main/prober/web/CLAUDE.md`.
+box. **`/battle` is the one view that REFLOWS instead** (a turn is a narrative, not a row whose
+columns carry the meaning): its boards stack on a phone and sit side by side on a desktop, and that
+is measured too (`monstack`), not asserted. Detail — what the render record proves, plus the two
+non-obvious traps (Vega does not wrap title text; a media query can lose on specificity) — is in
+`src/main/prober/web/CLAUDE.md`.
 
 ---
 

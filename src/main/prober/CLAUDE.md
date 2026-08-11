@@ -13,9 +13,17 @@ export PYTHONPATH=$PYTHONPATH:src && python3 -m main.prober <run_dir | eval_trac
 **Three surfaces, one engine.** The TUI here, the JSON CLI (`query.py`), and a **browser front
 end** (`web/`, `python -m main.prober.web <run_dir>`) are siblings over the same analysis — none
 is a layer on another. The web app is read-only and adapts `ProbeSession` only (run summary ·
-battles · scan · triage · the `falsify_scan` crater bracket · the `calibration` reliability
-curve); `analyze` / `lookahead` / `better_line` / `replay_counterfactual` stay TUI+CLI. See
-`web/CLAUDE.md`.
+battles · scan · triage · the **turn-by-turn battle replay** · the `falsify_scan` crater bracket ·
+the `calibration` reliability curve); `analyze` / `lookahead` / `better_line` /
+`replay_counterfactual` stay TUI+CLI. See `web/CLAUDE.md`.
+
+**Reading a game turn by turn** is `battle_turns()` (below) — model-free, so it opens instantly.
+The TUI walks the same ground one decision at a time with `j`/`k` (the Summary panel IS a single
+turn's story, in far more depth); `query turns` prints the whole game as JSON; `/battle` renders it
+as a phone-readable replay. The shared plain-text battle log is `engine.timeline_entry_text`, the
+unstyled sibling of the TUI's Rich `_append_timeline_entry` — one vocabulary
+(`engine.CANT_PHRASE` / `NO_EFFECT_TEXT`), so a reason one surface learns cannot go missing on
+another.
 
 ## Engine / app split (the important seam)
 
@@ -514,6 +522,19 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   know less" (negative correlation ⇒ information-sensitive). Measured @53M: corr −0.025
   (information-BLIND), 57% reactive switch-after-opp-switch. Caveat: revealed-count
   correlates with game progress — a confound to control for.
+- `battle_turns(battle_id)` — **model-free TURN-BY-TURN replay**: the same trace read as a GAME
+  rather than as a ranked table. Decisions grouped by **game turn** (a turn is not a decision — a
+  faint puts the `move_selection` and the `forced_switch` it caused on the same turn), each row
+  carrying the **board** it was made on (`our`/`opp`: species · `hp` + numeric `hp_pct` · status ·
+  boosts · item · moves · revealed bench), what was **chosen** + its recorded probability, the
+  ordered **`timeline`** of what then happened (`engine.build_result_timeline` entries, each with a
+  `text` field rendered by `engine.timeline_entry_text` so no surface re-derives the sentence),
+  `order_certain` (false ⇒ both sides moved and `move_order` wasn't recorded, so top-to-bottom is
+  NOT the real sequence — say so, never guess), and the critic's read (`value` · `delta_v` ·
+  `td_residual` · `reward_total` + components · `events` · `flags`). Plus the same `notable` block
+  `battle_overview` returns and a `decision_turns[inv] → turn` lookup, so a surface can link "the
+  worst drop" to a turn without arithmetic of its own. No checkpoint: **17–20 ms** for the longest
+  real battle measured (249 turns). CLI: `query turns <battle_id>`; the browser view is `/battle`.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`
@@ -770,6 +791,7 @@ python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
 python -m main.prober.query overview <battle_id>
+python -m main.prober.query turns    <battle_id>          # MODEL-FREE turn-by-turn replay of the game
 python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 python -m main.prober.query lookahead <battle_id> [--inv N] [--worst K] [--seeds N] [--followup random|default]

@@ -149,6 +149,148 @@ def test_overview_delta_td_and_notable(tmp_path):
     assert nt["biggest_value_drops"] == [{"inv": 0, "delta_v": 3.0}]
 
 
+# -- battle_turns: the model-free TURN-BY-TURN replay ----------------------------------------
+# `battle_overview` answers "which decision cratered" as a flat ranked table; this answers "how did
+# the game GO". Same trace, deliberately different shape — so these pin the shape, not the numbers
+# (which the overview tests already own).
+
+def _turns_run(tmp_path):
+    """A run whose single battle has a real board and recorded per-side actions, so the fold
+    produces an actual battle log. Turn 2 carries TWO decisions (a move, then the forced switch its
+    faint caused) — the case that makes turn-grouping load-bearing rather than cosmetic."""
+    run = tmp_path / "run"
+    bd = run / "eval_traces" / "step_1000/staller"
+    os.makedirs(bd, exist_ok=True)
+    acts = {"icebeam": {"prob": "70.0%", "valid": True},
+            "switch:m0": {"prob": "30.0%", "valid": True}}
+
+    def inv(turn, phase, chosen, our_hp, opp_hp, out):
+        return {"i": turn, "turn": turn, "phase": phase, "chosen": chosen,
+                "our": {"species": "milotic", "hp": our_hp},
+                "opp": {"species": "swampert", "hp": opp_hp},
+                "actions": acts, "outcome": out}
+
+    invs = [
+        inv(1, "move_selection", "icebeam", "100%", "100%",
+            # The recorder's real shape: `total` plus one packed string per reward GROUP.
+            {"reward": {"total": 0.5, "base": "pbrs_material=+0.50"},
+             "our": {"action": "icebeam", "hp_delta": "-18%"},
+             "opp": {"action": "earthquake", "hp_delta": "-42%"},
+             "events": [], "move_order": "we_first"}),
+        inv(2, "move_selection", "icebeam", "82%", "58%",
+            {"reward": {"total": -3.0},
+             "our": {"action": "icebeam", "hp_delta": "-100%"},
+             "opp": {"action": "earthquake", "hp_delta": "0%"},
+             "events": ["our:milotic:fainted"], "move_order": "opp_first"}),
+        inv(2, "forced_switch", "switch:m0", "faint", "58%",
+            {"reward": {"total": 0.0}, "our": {"action": "switched_to:blissey"},
+             "opp": {"action": "none"}, "events": []}),
+    ]
+    with open(bd / "loss_001_summary.json", "w") as f:
+        json.dump({"meta": {"step": 1000, "result": "LOSS", "turns": 2, "invocations": 3},
+                   "invocations": invs}, f)
+    np.savez(bd / "loss_001_states.npz", obs=np.zeros((3, _OBS_LEN), dtype=np.float32),
+             has_state=np.ones(3, dtype=np.int8),
+             values=np.array([4.0, 3.0, -6.0], dtype=np.float32))
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.95}, f)
+    return str(run), str(bd / "loss_001_summary.json")
+
+
+def test_battle_turns_groups_decisions_by_game_turn(tmp_path):
+    """A turn is not a decision: a faint puts the move AND the forced switch it caused on the same
+    turn, and a reader following a game needs them under one heading."""
+    run, summ = _turns_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)          # no model_loader → must stay model-free
+    assert t["n_turns"] == 2 and t["n_decisions"] == 3
+    assert [x["turn"] for x in t["turns"]] == [1, 2]
+    assert [len(x["decisions"]) for x in t["turns"]] == [1, 2]
+    assert [d["phase"] for d in t["turns"][1]["decisions"]] == ["move_selection", "forced_switch"]
+    assert [d["inv"] for d in t["turns"][1]["decisions"]] == [1, 2]
+    json.dumps(t)                                      # the whole thing must be JSON-serializable
+
+
+def test_battle_turns_carries_the_board_and_a_rendered_battle_log(tmp_path):
+    run, summ = _turns_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)
+    d0 = t["turns"][0]["decisions"][0]
+    assert d0["our"]["species"] == "milotic" and d0["our"]["hp"] == "100%"
+    assert d0["our"]["hp_pct"] == 100.0 and d0["opp"]["hp_pct"] == 100.0
+    # The HP loss is attributed to the move that DEALT it, and each entry arrives pre-rendered so
+    # no surface has to re-derive the sentence.
+    assert [e["text"] for e in d0["timeline"]] == [
+        "we icebeam did 42%  (swampert 100% → 58%)",
+        "opp earthquake did 18%  (milotic 100% → 82%)"]
+    assert d0["order_certain"] is True                 # move_order was recorded
+    assert d0["chosen"] == "icebeam" and d0["top_prob"] == 0.7
+    # Components are every key BESIDE `total` — the recorder emits no nested "components" key, and
+    # reading one gave a silently-always-empty breakdown.
+    assert d0["reward_components"] == {"base": "pbrs_material=+0.50"}
+
+
+def test_battle_turns_hp_pct_survives_a_faint_and_a_missing_hp(tmp_path):
+    """`hp_pct` exists so a view can size an HP bar without parsing a display string. 'faint' is
+    0.0 (a real zero-width bar), an unrecorded HP is None (no bar at all) — never a silent 0 that
+    would draw a healthy mon as dead."""
+    run, summ = _turns_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)
+    forced = t["turns"][1]["decisions"][1]
+    assert forced["our"]["hp"] == "faint" and forced["our"]["hp_pct"] == 0.0
+
+    run2, summ2 = _build_run(tmp_path / "b")            # that fixture records no HP at all
+    d = ProbeSession(run2).battle_turns(summ2)["turns"][0]["decisions"][0]
+    assert d["our"]["hp_pct"] is None
+
+
+def test_battle_turns_reports_the_critic_and_the_jump_targets(tmp_path):
+    run, summ = _turns_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)
+    d0 = t["turns"][0]["decisions"][0]
+    assert d0["value"] == 4.0 and d0["delta_v"] == -1.0
+    assert abs(d0["td_residual"] - (0.5 + 0.95 * 3.0 - 4.0)) < 1e-9      # γ from metadata.json
+    # `notable` is the SAME block battle_overview returns, and decision_turns maps its decision
+    # indices onto turns so a surface can link to one without doing arithmetic.
+    assert t["notable"]["faints"] == [1]
+    assert t["notable"]["biggest_value_drops"][0]["inv"] == 1            # the -9.0 cliff
+    assert t["decision_turns"] == [1, 2, 2]
+    assert ProbeSession(run).battle_overview(summ)["notable"] == t["notable"]
+
+
+def test_battle_turns_flags_an_unknown_move_order_rather_than_guessing(tmp_path):
+    """When both sides moved and `move_order` was not recorded, top-to-bottom is not the real
+    sequence. The reader has to be TOLD, not shown a guess."""
+    run = tmp_path / "u"
+    bd = run / "eval_traces" / "step_1/bot"
+    os.makedirs(bd, exist_ok=True)
+    inv = {"i": 1, "turn": 1, "phase": "move_selection", "chosen": "surf",
+           "our": {"species": "milotic", "hp": "100%"}, "opp": {"species": "swampert", "hp": "100%"},
+           "actions": {"surf": {"prob": "50.0%", "valid": True}},
+           "outcome": {"reward": {"total": 0.0}, "events": [],
+                       "our": {"action": "surf", "hp_delta": "-10%"},
+                       "opp": {"action": "earthquake", "hp_delta": "-20%"}}}   # no move_order
+    with open(bd / "loss_001_summary.json", "w") as f:
+        json.dump({"meta": {}, "invocations": [inv]}, f)
+    d = ProbeSession(str(run)).battle_turns(str(bd / "loss_001_summary.json"))
+    assert d["turns"][0]["decisions"][0]["order_certain"] is False
+
+
+def test_cli_turns_emits_json(tmp_path):
+    import sys
+    import main.prober.query as q
+    _, summ = _turns_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "turns", summ]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["n_turns"] == 2
+    assert parsed["turns"][0]["decisions"][0]["chosen"] == "icebeam"
+
+
 def test_overview_has_active_board(tmp_path):
     run, summ = _build_run(tmp_path)
     ov = ProbeSession(run).battle_overview(summ)

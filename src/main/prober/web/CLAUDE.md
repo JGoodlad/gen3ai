@@ -185,8 +185,37 @@ produced it.
 | `/battles` | `battles()` | outcome / opponent / step filters |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
+| `/battle` | `battle_turns()` | **one game, turn by turn** — board · battle log · critic (model-free) |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
+
+### `/battle` — the turn-by-turn replay
+
+The read-it-like-a-game view: decisions grouped by GAME TURN, each with the board it was made on,
+the ordered battle log of what then happened, and V / ΔV / TD δ / reward. `scan` answers *which*
+decision lost the battle; this answers *how the game went* around it.
+
+Three things about it are deliberate:
+
+- **It is NOT HTMX.** Every other page refilters a table in place; this one is a thing you read and
+  LINK to ("look at turn 47"). So the battle picker and the turn window are plain GET forms and
+  links — every position in the replay is a shareable URL that also works with JavaScript off.
+  `scan` and `battles` rows carry a **turns** link, and scan's opens the replay *windowed on the
+  losing turn and anchored on the exact decision*.
+- **It is windowed at `_TURN_PAGE` (50 turns).** Measured: the longest real battle is **249 turns /
+  522 KB** of session JSON — the same "download, not a page" failure `_BATTLE_PAGE` exists to
+  prevent, except this one lands on a phone. Nothing is unreachable: prev/next links plus the
+  session's own `notable` jump targets (worst value drops, faints) reach any turn.
+- **It renders server-side on first paint** — measured **17–20 ms** for `battle_turns()` on that
+  249-turn battle, ~110 ms for the whole page. Nothing here needs to be async.
+
+**A battle is named by its `short_id`, and the name is checked for MEMBERSHIP** — `runs.py`'s rule
+one level down, and load-bearing for the same reason: `ProbeSession._battle` falls back to
+`build_trace_tree(battle_id)` for an id it does not recognise, which will happily open a
+`*_summary.json` belonging to **another run**. `app.battle_row()` therefore matches the token
+against the run's own battle listing and passes the session a path the *server* produced. The
+reversion test proved it: without that check a pinned single-run instance served a sibling run's
+trace with a **200**.
 
 **Deferred, on purpose:** `analyze`, `lookahead`, `better_line`, `replay_counterfactual`. Those
 load a checkpoint and hold expensive per-decision state; they are the stateful tier and want a
@@ -264,7 +293,8 @@ there is no browser):
 | `htmx` / `vega` / `vega-lite` | the vendored bundles defined their globals **with the network blocked** |
 | `charts` | how many specs the server embedded |
 | `chart-marks` | how many mark elements **Vega actually drew** — a spec can compile cleanly and plot nothing |
-| `rows` | data rows present in the DOM |
+| `rows` | data rows present in the DOM (table rows **and** battle-replay turn cards) |
+| `monstack` | on `/battle`: whether the two mons stacked (phone) or sat side by side (desktop) |
 | `swaps` | completed HTMX swaps |
 | `chart-error` / `htmx-error` | a failure surfaced on the page rather than only in the console |
 | `vw` · `docw` · `narrow` · `headerh` · `ctlfont` · `overflowby` + `overflowwhat` · `scrollers` + `scrollingwrappers` | the LAYOUT, measured (see below) |
@@ -284,8 +314,15 @@ page would silently be a no-op. `app.js` pins `renderer: "svg"` for exactly that
 `.scroll-x` for tables, `.chart` for an oversized SVG. Everything else follows from that.
 
 These are tables of forensic numbers, so the phone answer is deliberately **not** to reflow every
-table into cards: a `scan` row read out of column order is worse than one you scroll. Under
-`@media (max-width: 720px)` the layout instead: drops the sticky header and truncates the run path,
+table into cards: a `scan` row read out of column order is worse than one you scroll. **`/battle`
+is the one exception, and it earns it** — a turn is a short narrative (board → choice → what
+happened → what the critic thought), not a row whose columns carry the meaning, so it is built as
+cards that reflow: the two mons stack, the log wraps, and the page needs no scroll container at
+all. That claim is measured, not asserted — `app.js` publishes **`monstack`** (did the two boards
+stack, or are they side by side?) and the render test requires `1` at 500px, `0` at 1280px, plus
+`scrollers == 0` so the view cannot quietly regress into "grew a scrollbar".
+
+Under `@media (max-width: 720px)` the layout instead: drops the sticky header and truncates the run path,
 **wraps** the nav (never a horizontal strip — the arch viewer shipped that strip and five of its
 six controls were invisible), gives each filter control its own full-width row at **≥16px** (below
 that, iOS zooms the page when a `<select>` takes focus and does not zoom back out), and tightens

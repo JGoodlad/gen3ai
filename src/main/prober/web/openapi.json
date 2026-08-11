@@ -330,6 +330,75 @@
         ]
       }
     },
+    "/api/battle-turns": {
+      "get": {
+        "operationId": "api_battle_turns_api_battle_turns_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); default = the run's first captured battle",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); default = the run's first captured battle",
+              "title": "Battle"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Api Battle Turns Api Battle Turns Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "ProbeSession.battle_turns() \u2014 one battle's decisions grouped by game turn",
+        "tags": [
+          "read-only"
+        ]
+      }
+    },
     "/api/battles": {
       "get": {
         "operationId": "api_battles_api_battles_get",
@@ -1155,6 +1224,91 @@
         "summary": "ProbeSession.triage() \u2014 failure categories ranked by recoverable win-rate",
         "tags": [
           "read-only"
+        ]
+      }
+    },
+    "/battle": {
+      "get": {
+        "operationId": "page_battle_battle_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "battle short_id; default = the first",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "battle short_id; default = the first",
+              "title": "Battle"
+            }
+          },
+          {
+            "description": "first game turn to show (windowing)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "first game turn to show (windowing)",
+              "title": "Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Turn-by-turn replay of one battle: board, what happened, the critic's read",
+        "tags": [
+          "pages"
         ]
       }
     },

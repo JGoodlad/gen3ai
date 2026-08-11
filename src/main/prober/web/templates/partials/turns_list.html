@@ -1,0 +1,116 @@
+{% import "_macros.html" as m %}
+{# The replay itself: one CARD per game turn.
+   Cards, not a table — and this is the one place the phone answer differs from the rest of the
+   site. Elsewhere a row of forensic numbers must keep its columns (a scan row read out of column
+   order is worse than one you scroll). Here a turn is a small NARRATIVE — board, choice, what
+   happened, what the critic thought — so it reflows down a phone without losing its meaning, and
+   nothing needs to scroll sideways at all. #}
+
+{% macro side(s, who) %}
+  <div class="mon {{ who }}">
+    <span class="who">{{ "we" if who == "our" else "opp" }}</span>
+    <span class="species">{{ s.species or "—" }}</span>
+    {% if s.hp_pct is not none %}
+      {# The bar is sized from the session's numeric hp_pct; the text keeps the recorded string
+         ("faint" stays "faint"), so nothing is invented for the sake of a graphic. #}
+      <span class="hpbar" role="img" aria-label="{{ s.hp }} hp">
+        <span class="hpfill {{ 'low' if s.hp_pct < 25 else ('mid' if s.hp_pct < 60 else 'ok') }}"
+              style="width: {{ s.hp_pct }}%"></span>
+      </span>
+    {% endif %}
+    <span class="hp">{{ s.hp }}</span>
+    {% if s.status %}<span class="badge status">{{ s.status }}</span>{% endif %}
+    {% if s.boosts %}<span class="badge boost">{{ s.boosts }}</span>{% endif %}
+    {% if s.item %}<span class="badge item">@{{ s.item }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+<p class="muted small windowbar">
+  {% if window %}
+    showing turns <strong>{{ window[0].turn }}</strong>–<strong>{{ window[-1].turn }}</strong>
+    of {{ turns.n_turns }}
+  {% endif %}
+  {% if first_turn is not none %}
+    <a class="pagelink" href="{{ turn_url }}&amp;start={{ first_turn }}">← earlier</a>
+  {% endif %}
+  {% if last_turn is not none %}
+    <a class="pagelink" href="{{ turn_url }}&amp;start={{ last_turn }}">later →</a>
+  {% endif %}
+</p>
+
+{# The legend for the dashed logs below — printed once, and only when this window actually has one.
+   `order_certain` is false when both sides moved and the recorder did not capture who went first
+   (it comes from the TurnDelta, which a model-free read has no access to), so top-to-bottom there
+   is NOT the real sequence. #}
+{% if window | map(attribute="decisions") | sum(start=[]) | rejectattr("order_certain") | first is defined %}
+<p class="muted small legend">
+  A dashed rule (<span class="swatch"></span>) means the <strong>move order was not
+  recorded</strong> — those actions happened on that turn, but not necessarily in the order shown.
+</p>
+{% endif %}
+
+{% for t in window %}
+<section class="card turn" data-turn="{{ t.turn }}">
+  <h2 class="turnhead">turn {{ t.turn if t.turn is not none else "?" }}</h2>
+
+  {% for d in t.decisions %}
+  <div class="decision" id="inv-{{ d.inv }}" data-row data-inv="{{ d.inv }}">
+
+    <div class="board">
+      {{ side(d.our, "our") }}
+      <span class="vs">vs</span>
+      {{ side(d.opp, "opp") }}
+    </div>
+
+    <p class="chose">
+      {% if d.phase and d.phase != "move_selection" %}<span class="badge phase">{{ d.phase }}</span>{% endif %}
+      chose <strong>{{ d.chosen }}</strong>
+      {% if d.top_prob is not none %}<span class="muted">({{ m.pct(d.top_prob, 0) }} confident)</span>{% endif %}
+      {% for f in d.flags %}<span class="badge flag {{ f }}">{{ f }}</span>{% endfor %}
+    </p>
+
+    {% if d.timeline %}
+    {# A log whose order we cannot ground gets a DASHED rule and a three-word marker, explained
+       once in the legend above. Spelling the caveat out under all fifty turns buried the battle
+       log it was annotating — and the honesty is in not implying a sequence, not in the wording
+       being repeated. #}
+    <ul class="log {{ 'unordered' if not d.order_certain else '' }}"
+        {% if not d.order_certain %}title="Both sides moved and the move order was not recorded — these happened this turn, but not necessarily in this order."{% endif %}>
+      {% for e in d.timeline %}
+      <li class="{{ e.side }}">{{ e.text }}</li>
+      {% endfor %}
+      {% if not d.order_certain %}<li class="muted orderq">order not recorded</li>{% endif %}
+    </ul>
+    {% elif d.events %}
+    <ul class="log"><li class="muted">{{ d.events | join(" · ") }}</li></ul>
+    {% endif %}
+
+    {# The critic's read, last: what the game did comes before what the model made of it. #}
+    <p class="critic">
+      <span title="the critic's value of this state">V {{ m.num(d.value) }}</span>
+      <span title="change in V to the next decision — the value cliff a loss is diagnosed by">ΔV {{ m.signed(d.delta_v) }}</span>
+      <span title="TD residual r + γV(s′) − V(s): how SURPRISED the critic was">TD δ {{ m.signed(d.td_residual) }}</span>
+      <span title="the env reward for this step{% for k, v in d.reward_components.items() %} · {{ k }}: {{ v }}{% endfor %}">
+        r {{ m.signed(d.reward_total) }}{% if d.reward_components %}<span class="muted"> ⓘ</span>{% endif %}</span>
+      <span class="cmd">
+        <button class="linky copybtn" type="button"
+                data-copy="python -m main.prober.query analyze {{ turns.id }} {{ d.inv }}"
+                title="Copy the analyze command for this decision (loads the checkpoint — CLI/TUI only)">
+          analyze #{{ d.inv }}</button>
+      </span>
+    </p>
+  </div>
+  {% endfor %}
+</section>
+{% endfor %}
+
+{% if window %}
+<p class="muted small windowbar">
+  {% if first_turn is not none %}
+    <a class="pagelink" href="{{ turn_url }}&amp;start={{ first_turn }}">← earlier</a>
+  {% endif %}
+  {% if last_turn is not none %}
+    <a class="pagelink" href="{{ turn_url }}&amp;start={{ last_turn }}">later →</a>
+  {% endif %}
+</p>
+{% endif %}

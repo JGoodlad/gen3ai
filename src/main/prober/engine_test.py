@@ -1221,6 +1221,60 @@ def test_timeline_no_effect_uses_recorded_move_outcome():
     assert next(e for e in failed if e["move"] == "toxic")["no_effect"] == "failed"
 
 
+# ── timeline_entry_text (the PLAIN-TEXT battle log the CLI + web render) ─────────────────────────
+# The TUI paints these entries with Rich styles; the JSON CLI and the browser need the same words as
+# text. Both readings come from one function so a new fact (a crit, a miss, a boost) cannot show up
+# on one surface and be silently missing from the other.
+from main.prober.engine import timeline_entry_text   # noqa: E402
+
+
+def _texts(tl):
+    return [timeline_entry_text(e) for e in tl]
+
+
+def test_timeline_text_reads_as_a_battle_log():
+    tl = _tl("brickbreak", "-73%", "rockslide", "-85%", our_after="27%", opp_after="15%",
+             move_order="we_first")
+    assert _texts(tl) == ["we brickbreak did 85%  (tyranitar 100% → 15%)",
+                          "opp rockslide did 73%  (salamence 100% → 27%)"]
+
+
+def test_timeline_text_covers_faint_switch_and_send_in():
+    tl = _tl("icebeam", "-72%", "hiddenpower → metagross_sent_in", "-100%",
+             ours="tyranitar", opps="salamence", events=["opp:salamence:fainted"],
+             our_after="28%", opp_after="100%", move_order="we_first", opp_crit=True)
+    text = _texts(tl)
+    assert text[0] == "we icebeam did 100%  (salamence 100% → faint)"
+    assert text[1] == "opp hiddenpower did 72%  (tyranitar 100% → 28%)  ⚡CRIT"
+    assert text[2] == "opp sends in metagross"
+
+    switched = _tl("switched_to:skarmory", "+0%", "spikes", "+0%", ours="tyranitar", opps="skarmory")
+    assert "we switch tyranitar → skarmory" in _texts(switched)
+
+
+def test_timeline_text_explains_a_move_that_did_nothing():
+    """A blank line reads as missing data. Every no-visible-effect case must SAY why."""
+    tl = _tl("hypnosis", "+0%", "seismictoss", "+3%", ours="gengar", opps="registeel",
+             our_move_outcome="miss", opp_move_outcome="hit", opp_effectiveness="immune",
+             move_order="we_first")
+    assert _texts(tl) == ["we hypnosis — missed", "opp seismictoss — no effect (immune)"]
+
+
+def test_timeline_text_spells_out_a_cant_reason_rather_than_its_code():
+    tl = _tl("earthquake", "+0%", "rest", "+0%", ours="donphan", opps="snorlax", our_cant="slp")
+    assert "we earthquake — couldn't move (asleep)" in _texts(tl)
+
+
+def test_timeline_text_and_the_tui_renderer_share_one_vocabulary():
+    """The regression this guards: the TUI used to own private copies of the `cant` and
+    `no effect` wordings, so teaching one surface a new reason left the other printing a raw code."""
+    from main.prober import app as tui
+    from main.prober.engine import CANT_PHRASE, NO_EFFECT_TEXT
+    assert tui._NO_EFFECT_TEXT is NO_EFFECT_TEXT
+    assert tui._cant_phrase("frz") == CANT_PHRASE["frz"] == "frozen"
+    assert tui._cant_phrase("something_new") == "something_new"      # unknown code passes through
+
+
 # ── raw Showdown protocol (replay.html → per-turn slice) ──────────────────────────────────────────
 from main.prober.engine import parse_protocol_log, protocol_for_turn   # noqa: E402
 

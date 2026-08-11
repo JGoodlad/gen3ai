@@ -24,12 +24,21 @@ STEPS = (2000000, 4000000)
 
 
 def _inv(turn: int, chosen: str, reward_total: float, *, faint: bool = False,
-         species=("zapdos", "jynx")) -> dict:
+         species=("zapdos", "jynx"), hp=None, outcome=None) -> dict:
+    """One recorded decision. `hp` is `(our, opp)` display strings and `outcome` the recorded
+    per-side `{action, hp_delta}` pair — both optional, because most views only need the board and
+    the reward, and only the turn-by-turn replay reads them.
+    """
+    our, opp = {"species": species[0]}, {"species": species[1]}
+    if hp:
+        our["hp"], opp["hp"] = hp
+    out = {"reward": {"total": reward_total},
+           "events": (["our:zapdos:fainted"] if faint else [])}
+    out.update(outcome or {})
     return {"i": turn, "turn": turn, "phase": "move_selection", "chosen": chosen,
-            "our": {"species": species[0]}, "opp": {"species": species[1]},
+            "our": our, "opp": opp,
             "actions": {chosen: {"prob": "80.0%", "valid": True}},
-            "outcome": {"reward": {"total": reward_total},
-                        "events": (["our:zapdos:fainted"] if faint else [])}}
+            "outcome": out}
 
 
 def _write_battle(run: str, step: int, opponent: str, name: str, invs, values) -> None:
@@ -71,9 +80,17 @@ def build(root: str) -> str:
     _write_battle(run, STEPS[0], OPPONENTS[1], "win_001",
                   [_inv(1, "thunderbolt", 0.5), _inv(2, "thunderbolt", 1.0)], [3.0, 8.0])
 
-    # step 2 — a shallower crater, so ordering across steps is visible.
+    # step 2 — a shallower crater, so ordering across steps is visible. This one also carries the
+    # BOARD (hp) and the recorded per-side ACTIONS, which is what the turn-by-turn replay folds into
+    # a battle log — without them every view still works but the log is empty, and a render test
+    # over an empty log proves nothing about the feature it is meant to gate.
     _write_battle(run, STEPS[1], OPPONENTS[1], "loss_003",
-                  [_inv(1, "icebeam", -0.5), _inv(2, "roost", -2.0, faint=True)],
+                  [_inv(1, "icebeam", -0.5, hp=("100%", "100%"),
+                        outcome={"our": {"action": "icebeam", "hp_delta": "-22%"},
+                                 "opp": {"action": "earthquake", "hp_delta": "-31%"}}),
+                   _inv(2, "roost", -2.0, faint=True, hp=("78%", "69%"),
+                        outcome={"our": {"action": "roost", "hp_delta": "-100%"},
+                                 "opp": {"action": "earthquake", "hp_delta": "0%"}})],
                   [7.0, 5.0, 1.0])
     _write_battle(run, STEPS[1], OPPONENTS[1], "win_002",
                   [_inv(1, "thunderbolt", 2.0)], [4.0, 9.0])

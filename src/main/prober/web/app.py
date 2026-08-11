@@ -171,6 +171,32 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                     pass
         return got
 
+    def battle_row(sess, token: "str | None") -> dict:
+        """The battle this request is about, as a row the SESSION ITSELF enumerated.
+
+        THE SAME RULE AS `runs.py`, one level down: a client's `battle` value is only tested for
+        MEMBERSHIP in the run's own battle listing — it is never joined to a path and never handed
+        to the session as one. That distinction is load-bearing here, because
+        `ProbeSession._battle` falls back to `build_trace_tree(battle_id)` for an unknown id, which
+        would happily open a `*_summary.json` belonging to a DIFFERENT run (or anywhere else the
+        process can read). So the URL carries the opaque `short_id`
+        (`step_<N>/<opponent>/<outcome>_<idx>`), the server matches it against its own listing, and
+        the PATH it then passes to the session is one the server produced.
+
+        A miss is a 404 that does not echo the token — a rendered message must not become an oracle.
+        """
+        rows, err = guarded(lambda: sess.battles())
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        if not rows:
+            raise HTTPException(status_code=404, detail="this run captured no battle traces")
+        if not token:
+            return rows[0]
+        for r in rows:
+            if r["short_id"] == token:
+                return r
+        raise HTTPException(status_code=404, detail="no such battle in this run")
+
     def unlocked(request: Request) -> bool:
         return app.state.auth.unlocked(request.cookies.get(COOKIE))
 
@@ -251,6 +277,17 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         step: "int | None" = Query(None),
     ) -> list:
         return session(pick(run)).battles(outcome=outcome, opponent=opponent, step=step)
+
+    @app.get("/api/battle-turns", tags=["read-only"], response_model=dict,
+             summary="ProbeSession.battle_turns() — one battle's decisions grouped by game turn")
+    def api_battle_turns(
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(
+            None, description="the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); "
+                              "default = the run's first captured battle"),
+    ) -> dict:
+        sess = session(pick(run))
+        return sess.battle_turns(battle_row(sess, battle)["id"])
 
     @app.get("/api/scan", tags=["read-only"], response_model=list,
              summary="ProbeSession.scan() — each battle's worst turning point, ranked (model-free)")
@@ -402,6 +439,27 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                     error=err or rerr, opponents=_opponents(data),
                     rows=shown, total=total, capped=_BATTLE_PAGE)
 
+    @app.get("/battle", response_class=HTMLResponse, tags=["pages"],
+             summary="Turn-by-turn replay of one battle: board, what happened, the critic's read")
+    def page_battle(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None, description="battle short_id; default = the first"),
+        start: "str | None" = Query(None, description="first game turn to show (windowing)"),
+    ) -> HTMLResponse:
+        # DELIBERATELY NOT HTMX. Every other page refilters a table in place; this one is a thing
+        # you read, link to and send to someone ("look at turn 47"). So the battle picker and the
+        # turn window are plain GET forms and links, which makes every view of it a shareable URL
+        # and leaves it fully working with JavaScript off.
+        name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        turns, terr = guarded(lambda: sess.battle_turns(row["id"]))
+        window, first, last = _turn_window(turns, _form_int(start))
+        return page(request, "battle.html", "battle", name, summary=data, error=err or terr,
+                    battles=_picker_rows(sess.battles(), row), selected=row,
+                    turns=turns, window=window, first_turn=first, last_turn=last)
+
     @app.get("/scan", response_class=HTMLResponse, tags=["pages"],
              summary="Cross-battle worst-turning-point scan")
     def page_scan(request: Request, run: "str | None" = Query(None)) -> HTMLResponse:
@@ -459,8 +517,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         rows, err = guarded(lambda: sess.battles(
             outcome=outcome or None, opponent=opponent or None, step=_form_int(step)))
         shown, total = _cap(rows, _BATTLE_PAGE)
+        # `run` rides along because each row links into /battle, which resolves a battle WITHIN a
+        # run — a link that dropped it would silently open the default run's battle instead.
         return fragment(request, "partials/battles_table.html", rows=shown, error=err,
-                        total=total, capped=_BATTLE_PAGE)
+                        total=total, capped=_BATTLE_PAGE, run=run)
 
     @app.get("/partials/scan", response_class=HTMLResponse, tags=["partials"],
              summary="Scan table + chart fragment (HTMX target)")
@@ -479,7 +539,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
             metric=metric, limit=_form_int(limit, 25)))
         spec = charts.scan_drop_spec(rows, metric=metric) if rows else None
         return fragment(request, "partials/scan_table.html", rows=rows or [], error=err,
-                        spec=spec, metric=metric)
+                        spec=spec, metric=metric, run=run)
 
     @app.get("/partials/triage", response_class=HTMLResponse, tags=["partials"],
              summary="Triage table + lever chart fragment (HTMX target)")
@@ -595,7 +655,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
 # 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
 _NAV = [("/", "run"), ("/triage", "triage"), ("/scan", "scan"), ("/battles", "battles"),
-        ("/falsify", "falsify"), ("/calibration", "calibration")]
+        ("/battle", "battle"), ("/falsify", "falsify"), ("/calibration", "calibration")]
 
 # What each view ANSWERS, in recipe order. Rendered as the "where to start" card on `/` and as the
 # one-line subtitle on each page, so a newcomer never has to guess which tab holds their question.
@@ -606,6 +666,8 @@ VIEW_QUESTIONS = [
      "The single worst decision in every matching battle, ranked globally. Model-free."),
     ("/battles", "battles", "Which battles were captured?",
      "The raw trace list, filterable — the ids you hand to the CLI or the TUI."),
+    ("/battle", "battle", "How did one game actually go?",
+     "Turn by turn: the board, what each side did, and what the critic made of it. Model-free."),
     ("/falsify", "falsify", "Was that crater bad luck or a reducible mistake?",
      "Re-rolls the dice on the worst craters. Minutes of work; needs the shared password."),
     ("/calibration", "calibration", "Was the critic wrong, or was the position lost?",
@@ -701,6 +763,55 @@ def _form_float(value: "str | None", default: float) -> float:
 # A run has thousands of traces; 2397 rows rendered to 545 KB of HTML is not a table anyone reads,
 # it is a download. Cap it and say so — the filters are how you find a specific battle.
 _BATTLE_PAGE = 200
+
+# How many battles the /battle page's picker <select> offers, and how many game turns one view of a
+# battle shows. MEASURED on a real run: the longest battle is 249 turns / 522 KB of session JSON, so
+# an unwindowed replay is the same "download, not a page" failure `_BATTLE_PAGE` exists to prevent —
+# and it lands on a phone. The window is navigated by plain prev/next links (and jumped into by the
+# `notable` shortcuts), so nothing is unreachable.
+#
+# The picker is 100, not 300, because it is a CONVENIENCE, not the way you find a battle: `battles`
+# and `scan` are, and both now link straight into the replay. At 300 the dropdown was 40 KB of a
+# 154 KB page (measured) — a quarter of the payload, on a phone, for a list nobody scrolls.
+_BATTLE_PICK = 100
+_TURN_PAGE = 50
+
+
+def _picker_rows(rows: "list[dict]", selected: dict) -> "list[dict]":
+    """The capped picker list, with the battle actually being shown GUARANTEED to be in it.
+
+    Without that guarantee a `<select>` whose options don't contain the selected value silently
+    falls back to displaying its FIRST option — so arriving from a `scan` deep link to an old
+    battle would name one battle in the picker while rendering another below it. A dropdown that
+    lies about what you are looking at is worse than a short dropdown.
+    """
+    shown = rows[:_BATTLE_PICK]
+    if selected and not any(r["short_id"] == selected["short_id"] for r in shown):
+        shown = [selected] + shown[:_BATTLE_PICK - 1]
+    return shown
+
+
+def _turn_window(turns: "dict | None", start: "int | None"):
+    """The slice of `battle_turns()["turns"]` to render, plus the first/last GAME TURN either side of
+    it (`None` when there is nothing further that way — the template renders prev/next off that).
+
+    `start` is a game turn NUMBER, not an index: it arrives from a `notable` jump link ("the biggest
+    value drop was at turn 47"), and turn numbers are what a reader and a CLI both speak. Turns
+    whose number is missing (older recorders bucket them under `None`) sort last and are reachable
+    by paging to the end rather than being silently dropped.
+    """
+    rows = (turns or {}).get("turns") or []
+    if not rows:
+        return [], None, None
+    begin = 0
+    if start is not None:
+        begin = next((i for i, t in enumerate(rows)
+                      if t["turn"] is not None and t["turn"] >= start), max(0, len(rows) - 1))
+    begin = max(0, min(begin, len(rows) - 1))
+    end = min(begin + _TURN_PAGE, len(rows))
+    prev_turn = rows[max(0, begin - _TURN_PAGE)]["turn"] if begin > 0 else None
+    next_turn = rows[end]["turn"] if end < len(rows) else None
+    return rows[begin:end], prev_turn, next_turn
 
 # How many runs' `ProbeSession`s stay cached. MEASURED: a scan of one run leaves ~430 MB behind
 # (real `models/`: 1→466 MB, 6→3.0 GB RSS, monotonic), and the picker offers 81 runs — so an

@@ -10,6 +10,7 @@ A typical investigation:
     python -m main.prober.query list     <run_dir> --outcome loss          # pick battles
     python -m main.prober.query scan     <run_dir> --outcome loss --opponent X  # worst turn per battle, ranked
     python -m main.prober.query overview <summary.json>                    # model-free digest
+    python -m main.prober.query turns    <summary.json>                    # model-free TURN-BY-TURN replay
     python -m main.prober.query find     <summary.json> value_drop --limit 5
     python -m main.prober.query find     <summary.json> disagree           # loads the model
     python -m main.prober.query analyze  <summary.json> <inv> [--tier nearest]
@@ -58,6 +59,10 @@ examples:
 
   # 3. model-free per-decision digest of that battle (V(s), ΔV, TD, flags, `notable`)
   python -m main.prober.query overview <id>
+
+  # 3b. read the game as a REPLAY instead: decisions grouped by turn, each with the board it was
+  #     made on, the ordered battle log of what happened, and the critic's read
+  python -m main.prober.query turns <id>
 
   # 4. rank decisions by where the critic's value cratered, or where the model disagrees
   python -m main.prober.query find <id> value_drop --limit 5
@@ -183,6 +188,12 @@ def _build_parser() -> argparse.ArgumentParser:
     svi.add_argument("--opponent", help="restrict to one opponent")
     svi.add_argument("--outcome", choices=["win", "loss"], help="restrict to win/loss battles")
     svi.add_argument("--max-battles", type=int, default=400, help="cap battles scanned (default 400)")
+
+    # Model-free, so it gets its OWN parser rather than joining the overview/find/analyze group —
+    # accepting a --ckpt it would never load is a lie in the --help output.
+    trn = sub.add_parser(
+        "turns", help="MODEL-FREE turn-by-turn replay of one battle (board · what happened · critic)")
+    trn.add_argument("battle", help="a battle id (the *_summary.json path from list/summary)")
 
     for name, helptext in (("overview", "model-free per-decision digest"),
                            ("find", "rank/list invocations matching a criterion"),
@@ -402,6 +413,8 @@ def _run(args) -> object:
         if args.limit is not None:
             return rows[:args.limit]
         return forensics.decision_table_digest(rows)
+    if args.cmd == "turns":
+        return ProbeSession(args.battle).battle_turns(args.battle)
     sess = ProbeSession(args.battle, ckpt_override=args.ckpt, tier=args.tier)
     if args.cmd == "overview":
         return sess.battle_overview(args.battle)

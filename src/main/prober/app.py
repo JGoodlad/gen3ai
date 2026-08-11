@@ -151,6 +151,11 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import (
+    # The battle-log VOCABULARY lives in the engine, not here: this file renders it with Rich
+    # styles and `engine.timeline_entry_text` renders it as plain text for the CLI and the web.
+    # Two copies would mean a reason one surface learns quietly missing on the other.
+    NO_EFFECT_TEXT as _NO_EFFECT_TEXT,
+    cant_phrase as _cant_phrase,
     InvocationAnalysis, analyze_invocation, build_belief_trajectory, build_result_timeline,
     parse_protocol_log, protocol_for_turn, summary_flags,
 )
@@ -2769,16 +2774,6 @@ def _append_belief_truth(out: Text, view) -> None:
             out.append(f"   (#{m.true_rank})", style="dim")
 
 
-# Plain-language for a "couldn't move" (cant) reason decoded from the TurnDelta.
-_CANT_PHRASE = {"slp": "asleep", "frz": "frozen", "par": "fully paralyzed", "flinch": "flinched",
-                "recharge": "recharging", "nopp": "no PP", "truant": "loafing", "attract": "immobilized",
-                "taunt": "taunted", "disable": "disabled", "flinched": "flinched"}
-
-
-def _cant_phrase(cant: str) -> str:
-    return _CANT_PHRASE.get(str(cant).lower(), str(cant))
-
-
 # Per-line tint for the raw protocol log (first matching prefix wins; default dim).
 _PROTO_STYLE = (
     ("|faint|", "bold red"), ("|-crit|", "bold yellow"), ("|-miss|", "yellow"),
@@ -2803,8 +2798,8 @@ def _protocol_text(lines: "tuple[str, ...]", turn: int) -> Text:
 
 
 _SIDE_STYLE = {"we": "bold green", "opp": "bold red"}
-# Why a move did nothing visible (engine `no_effect`) — so a blank line never reads as missing data.
-_NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect"}
+# (`_NO_EFFECT_TEXT` — why a move did nothing visible, so a blank line never reads as missing data —
+#  and `_cant_phrase` are imported from the engine at the top of this file.)
 
 
 def _append_timeline_entry(line: Text, e: dict) -> None:

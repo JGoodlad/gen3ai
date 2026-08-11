@@ -39,13 +39,41 @@ from main.prober.discovery import (
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, build_board, build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, parse_pct, parse_protocol_log,
-    protocol_for_turn, summary_flags, SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob,
+    protocol_for_turn, summary_flags, timeline_entry_text, SETUP_MOVES, WP_EVEN_DEFAULT,
+    _npz_win_prob, _pct as _hp_pct, _timeline_for,
 )
 
 
 def _active_str(side) -> str:
     s = f"{side.active_species} {side.active_hp}"
     return f"{s} {side.status}" if side.status else s
+
+
+def _chosen_prob(inv: dict) -> "float | None":
+    """The policy's recorded probability on the action it actually took, or None when the trace
+    didn't record that action's row."""
+    acts, chosen = inv.get("actions", {}), inv.get("chosen", "")
+    return parse_pct(acts[chosen]["prob"]) if chosen in acts else None
+
+
+def _mon_dict(m) -> dict:
+    """One benched `MonState` as JSON. `hp_pct` is the NUMERIC form of the recorded `hp` string
+    ('28%' → 28.0, 'faint' → 0.0) so a surface can size an HP bar without parsing a display string —
+    the parse belongs here, next to the recorder's format, not in six renderers."""
+    return {"species": m.species, "hp": m.hp, "hp_pct": _hp_pct(m.hp), "fainted": m.fainted,
+            "status": m.status, "item": m.item, "moves": list(m.moves)}
+
+
+def _side_dict(side) -> dict:
+    """One side's board at a decision as JSON: the active (species/hp/status/boosts/item/moves) plus
+    the revealed bench. Opponent movesets/items are revealed-only by construction — `build_board`
+    reads the recorder's one-sided view, so this cannot leak hidden information."""
+    return {
+        "species": side.active_species, "hp": side.active_hp,
+        "hp_pct": _hp_pct(side.active_hp), "status": side.status, "boosts": side.boosts,
+        "item": side.item, "moves": list(side.moves),
+        "bench": [_mon_dict(m) for m in side.bench],
+    }
 
 
 def _r(x, n=3):
@@ -489,7 +517,6 @@ class ProbeSession:
         invs = summary["invocations"]
         rows = []
         for i, inv in enumerate(invs):
-            acts = inv.get("actions", {})
             chosen = inv.get("chosen", "")
             reward = (inv.get("outcome") or {}).get("reward")
             rtotal = reward.get("total") if isinstance(reward, dict) else reward
@@ -500,7 +527,7 @@ class ProbeSession:
                 "inv": i, "turn": inv.get("turn"), "phase": inv.get("phase"),
                 "chosen": chosen,
                 "our_active": _active_str(board.ours), "opp_active": _active_str(board.opp),
-                "top_prob": parse_pct(acts[chosen]["prob"]) if chosen in acts else None,
+                "top_prob": _chosen_prob(inv),
                 "value": v,
                 "delta_v": (v_next - v) if (v is not None and v_next is not None) else None,
                 "td_residual": self._td(rtotal, v, v_next),
@@ -514,6 +541,89 @@ class ProbeSession:
             "model_resolution": _choice_dict(self._resolve(b)),
             "notable": self._notable(rows),
             "invocations": rows,
+        }
+
+    def battle_turns(self, battle_id: str) -> dict:
+        """A MODEL-FREE **turn-by-turn replay** of one battle: the decisions GROUPED BY GAME TURN,
+        each carrying the board it was made on, what was chosen, the ordered battle-log timeline of
+        what then happened, and the critic's read (V, ΔV, TD δ) + reward.
+
+        `battle_overview` answers "which decision cratered?" as a flat ranked table. This answers
+        "how did the game GO?" — you read it top to bottom like a replay. The two are deliberately
+        different shapes over the same trace; neither derives from the other.
+
+        Turn grouping matters because a turn is not a decision: a faint makes the same turn carry a
+        `move_selection` AND the `forced_switch` that follows it, and a reader tracking a game needs
+        those under one heading. `n_decisions` != sum of turns only when a trace records a decision
+        with no turn number (older recorders), which is bucketed under its own `turn: None`.
+
+        No checkpoint is loaded, so this is fast enough to open any battle in the run interactively.
+        """
+        b = self._battle(battle_id)
+        summary = self._summary(b)
+        values = self._values(b)
+        invs = summary.get("invocations", [])
+        meta = summary.get("meta", {})
+
+        boards = [build_board(inv) for inv in invs]
+        turns: "list[dict]" = []
+        by_turn: dict = {}
+        for i, inv in enumerate(invs):
+            outcome = inv.get("outcome") or {}
+            reward = outcome.get("reward")
+            rtotal = reward.get("total") if isinstance(reward, dict) else reward
+            v, v_next = self._v(values, i), self._v(values, i + 1)
+            next_board = boards[i + 1] if i + 1 < len(boards) else None
+            entries = _timeline_for(inv, next_board, outcome)
+            row = {
+                "inv": i,
+                "turn": inv.get("turn"),
+                "phase": inv.get("phase"),
+                "chosen": inv.get("chosen", ""),
+                "top_prob": _chosen_prob(inv),
+                "our": _side_dict(boards[i].ours),
+                "opp": _side_dict(boards[i].opp),
+                # Each entry keeps its structured fields AND the engine's rendering of them, so a
+                # surface prints `text` rather than re-deriving the sentence (see the module rule in
+                # `web/app.py`: a view reshapes nothing).
+                "timeline": [dict(e, text=timeline_entry_text(e)) for e in entries],
+                # When both sides moved and `move_order` wasn't recorded, top-to-bottom is NOT the
+                # real sequence — the reader must be told rather than shown a guess.
+                "order_certain": all(e.get("order_certain", True) for e in entries
+                                     if e.get("kind") == "move"),
+                "value": _r(v),
+                "delta_v": _r(v_next - v) if (v is not None and v_next is not None) else None,
+                "td_residual": _r(self._td(rtotal, v, v_next)),
+                "reward_total": _r(rtotal),
+                # `RewardBreakdown.to_dict()` is `{"total": …}` plus ONE STRING PER GROUP
+                # ("base": "pbrs_material=-0.44"), not a nested components dict — so the components
+                # are every other key, which is exactly how the TUI reads it too.
+                "reward_components": ({k: v for k, v in reward.items() if k != "total"}
+                                      if isinstance(reward, dict) else {}),
+                "events": outcome.get("events") or [],
+                "flags": list(summary_flags(inv)),
+            }
+            key = row["turn"]
+            if key not in by_turn:
+                by_turn[key] = {"turn": key, "decisions": []}
+                turns.append(by_turn[key])
+            by_turn[key]["decisions"].append(row)
+
+        flat = [d for t in turns for d in t["decisions"]]
+        return {
+            "id": b.summary_path, "short_id": _short_id(b),
+            "step": b.step, "opponent": b.opponent, "outcome": b.outcome,
+            "meta": meta, "gamma": self._gamma,
+            "n_turns": len(turns), "n_decisions": len(invs),
+            # The same `notable` block `battle_overview` returns (faints, switches, the biggest value
+            # drops) — a 249-turn replay needs entry points, and re-deriving them per surface is how
+            # two views of one battle start disagreeing about where it went wrong. Its entries name
+            # DECISIONS, so `decision_turns[inv]` is the turn each one happened on (null when the
+            # recorder didn't number it) — a lookup, so a surface can turn "worst drop at decision
+            # 37" into a link to a turn without doing arithmetic of its own.
+            "notable": self._notable(flat),
+            "decision_turns": [d["turn"] for d in flat],
+            "turns": turns,
         }
 
     # -- deep analysis (loads the resolved model) ---------------------------

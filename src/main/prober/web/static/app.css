@@ -182,6 +182,90 @@ details.caveats li { color: var(--dim); font-size: 13px; margin: 6px 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 
+/* Battle replay (/battle) ------------------------------------------------------------------
+ *
+ * The one view here built as CARDS rather than a table. Everything else on this site is a grid of
+ * forensic numbers whose columns carry the meaning, so the phone rule there is "scroll, don't
+ * reflow". A TURN is different: it is a short narrative (board → choice → what happened → what the
+ * critic thought), and a narrative reflows down a phone without losing anything. So this section is
+ * the one that goes full width at every size and never needs a sideways scroll.
+ */
+.battlehead { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 0 0 8px; }
+.small { font-size: 12px; }
+p.jumps { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 6px 0 0;
+          font-size: 13px; }
+p.jumps .k { color: var(--dim); font-size: 11px; text-transform: uppercase;
+             letter-spacing: 0.4px; margin-right: 2px; }
+a.jump, a.pagelink { color: var(--accent); text-decoration: none; padding: 2px 8px;
+                     border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); }
+a.jump:hover, a.pagelink:hover { border-color: var(--accent); }
+.windowbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin: 10px 0; }
+
+section.card.turn { padding: 10px 14px; margin-bottom: 10px; }
+/* `scroll-margin-top` is what makes a `#inv-N` jump land BELOW the sticky header instead of
+   underneath it — without it the linked turn is the one row you cannot see. */
+.turn { scroll-margin-top: 70px; }
+h2.turnhead { font-size: 12px; margin: 0 0 8px; color: var(--dim); text-transform: uppercase;
+              letter-spacing: 0.6px; }
+.decision { padding: 6px 0; scroll-margin-top: 70px; }
+.decision + .decision { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 10px; }
+.decision:target { background: var(--surface-2); border-radius: 6px;
+                   box-shadow: 0 0 0 2px var(--accent); }
+
+/* Board: two mons and a "vs". A grid, so both sides' species/HP line up on a desktop row and
+   stack cleanly when there is no room. */
+.board { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 6px; }
+.board .vs { color: var(--dim); font-size: 12px; }
+.mon { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.mon .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--dim); min-width: 2.2em; }
+.mon.our .who { color: var(--good); }
+.mon.opp .who { color: var(--bad); }
+.mon .species { font-weight: 600; }
+.mon .hp { font-family: var(--mono); font-size: 12px; color: var(--dim);
+           font-variant-numeric: tabular-nums; }
+.hpbar { display: inline-block; width: 72px; height: 7px; border-radius: 4px;
+         background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.hpfill { display: block; height: 100%; background: var(--good); }
+.hpfill.mid { background: var(--warn); }
+.hpfill.low { background: var(--bad); }
+
+.badge { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px;
+         font-family: var(--mono); background: var(--surface-2); color: var(--dim); }
+.badge.status { color: var(--warn); }
+.badge.boost { color: var(--accent); }
+.badge.flag.faint { color: var(--bad); }
+.badge.flag.switch, .badge.flag.opp-switch { color: var(--accent); }
+
+p.chose { margin: 4px 0 6px; font-size: 14px; display: flex; flex-wrap: wrap;
+          gap: 6px; align-items: baseline; }
+
+/* The battle log. Left-ruled so the reader's eye finds "what happened" instantly; `we`/`opp`
+   tinted because whose move it was is the first thing you need from each line. */
+ul.log { list-style: none; margin: 6px 0; padding: 0 0 0 10px;
+         border-left: 2px solid var(--line); }
+ul.log li { font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+            overflow-wrap: anywhere; }
+ul.log li.we { color: var(--text); }
+ul.log li.opp { color: var(--dim); }
+/* An UNCERTAIN order must not look sequenced: no implied top-to-bottom reading. The dashed rule is
+   the marker, the legend at the top of the window explains it, and `.orderq` labels it in place —
+   spelling the whole caveat out under every turn buried the log it was annotating. */
+ul.log.unordered { border-left-style: dashed; }
+ul.log.unordered li::before { content: "· "; color: var(--dim); }
+li.orderq { font-family: inherit; font-size: 11px; font-style: italic; }
+/* A SENTENCE, so normal inline flow — flex here laid each phrase out as its own flex item and
+   wrapped mid-clause, orphaning the punctuation onto the next line. */
+p.legend { margin: 0 0 10px; line-height: 1.6; }
+p.legend .swatch { display: inline-block; width: 0; height: 0.9em; vertical-align: -0.1em;
+                   margin: 0 4px; border-left: 2px dashed var(--line); }
+
+p.critic { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 2px;
+           font-family: var(--mono); font-size: 12px; color: var(--dim);
+           font-variant-numeric: tabular-nums; }
+p.critic span[title] { cursor: help; }
+p.critic .cmd { margin-left: auto; }
+
 /* Narrow viewports ------------------------------------------------------------------------
  *
  * These are tables of forensic numbers, so the phone answer is NOT to reflow every table into
@@ -227,4 +311,21 @@ details.caveats li { color: var(--dim); font-size: 13px; margin: 6px 0; }
   .scroll-x { max-width: 100%; -webkit-overflow-scrolling: touch; }
   th, td { padding: 5px 8px; }
   td.wrap { max-width: 34ch; }
+
+  /* Battle replay on a phone. The turn card is the one thing here designed to reflow rather than
+     scroll, so the work is: give each side its own full-width line (species + HP bar + status read
+     left-to-right; two mons squeezed onto one line is what makes this unreadable), drop the "vs"
+     that only made sense side-by-side, and let the log wrap. The header is NOT sticky at this width
+     (see rule 4 above), so the `#inv-N` jump offset comes back down to nothing. */
+  .mon { flex: 1 1 100%; }
+  .board .vs { display: none; }
+  .hpbar { width: 56px; }
+  .turn, .decision { scroll-margin-top: 8px; }
+  section.card.turn { padding: 10px 12px; }
+  ul.log li { font-size: 12px; }
+  /* The analyze button is a desktop hand-off (it copies a CLI line); on a phone it must not sit
+     on the far right of a wrapped row where it reads as a stray control. */
+  p.critic .cmd { margin-left: 0; flex: 1 1 100%; }
+  p.critic { gap: 4px 12px; }
+  a.jump, a.pagelink { padding: 5px 10px; }   /* tap targets, not text links */
 }

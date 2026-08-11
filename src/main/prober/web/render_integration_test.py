@@ -176,7 +176,8 @@ def _probe(binary: str, base: str, path: str, size=DESKTOP) -> dict:
 
 # -- the gate ---------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/falsify", "/calibration"])
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle",
+                                  "/falsify", "/calibration"])
 def test_every_page_boots_with_its_vendored_libraries(server, path):
     """Both bundles must define their globals with the network taken away.
 
@@ -269,7 +270,8 @@ def test_the_pages_reference_no_remote_asset(server):
 # defined after the query that showed it, so `display:none` won and the sheet had no way out) —
 # only asking the laid-out page catches that.
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/falsify", "/calibration"])
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle",
+                                  "/falsify", "/calibration"])
 def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, path):
     """The single rule the whole responsive layout serves.
 
@@ -303,6 +305,40 @@ def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server):
     assert int(data["scrollingwrappers"]) >= 1, (
         "no wrapper is scrolling at 500px — either the table got narrower or, more likely, the "
         "wrapper is not constraining it and the page is absorbing the width")
+    assert data["overflowby"] == "0"
+
+
+# The replay is the one view that REFLOWS instead of scrolling, so it gets its own pair of
+# measurements. `_REPLAY` pins the fixture battle that actually has a battle log — the default
+# battle has none, and a layout test over an empty card proves very little.
+_REPLAY = "/battle?battle=step_4000000%2Fheuristic2%2Floss_003"
+
+
+def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server):
+    """Everywhere else on this site the phone answer is "scroll the table, don't reflow it",
+    because a row of forensic numbers read out of column order is worse than one you scroll. A
+    TURN is different — it is a short narrative — so here the answer IS to reflow, and the claim
+    that it does is a measurement rather than a screenshot someone looked at once.
+    """
+    data = _probe(_chrome(), server, _REPLAY, size=NARROW)
+    assert data["narrow"] == "1"
+    assert int(data["rows"]) > 0, "no turn cards rendered at 500px"
+    assert data["monstack"] == "1", (
+        "the two mons are still side by side on a phone — the board did not reflow, so the "
+        "species and HP are being squeezed into half a screen each")
+    assert data["overflowby"] == "0", (
+        f"the replay overflows by {data['overflowby']}px — widest offender: {data['overflowwhat']}")
+    assert int(data["scrollers"]) == 0, (
+        "the replay grew a .scroll-x wrapper — if it now needs one, it stopped being a reflowing "
+        "card layout and the phone rules above need rethinking, not a scrollbar")
+
+
+def test_the_battle_replay_is_side_by_side_on_a_desktop(server):
+    """The other half of the same claim: reflowing on a phone must not mean a phone layout on a
+    1280px screen, where the two boards belong on one line for read-across."""
+    data = _probe(_chrome(), server, _REPLAY, size=DESKTOP)
+    assert data["narrow"] == "0"
+    assert data["monstack"] == "0", "the mons stacked at desktop width — the phone rule leaked up"
     assert data["overflowby"] == "0"
 
 
