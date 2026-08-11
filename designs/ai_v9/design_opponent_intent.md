@@ -586,11 +586,45 @@ critic's deficit is now MEASURED, and it is separate:
 | gen-4 (concat alive) | **2081 ± 11** |
 | gen-5 (no concat)    | **2037 ± 11** |
 
-Disjoint CIs on the dense frozen-vs-frozen ladder (the sparse `eval/elo` at ±30 could not resolve
-it and reported "parity" — see `research_state/ledger.md`, 2026-08-11). The concat deletion
-probably **cost ~44 Elo**, and what replaced it for the critic — `MultiSeedValueReadout` — has
-measured at **~1 effective direction** under two structurally different pressures (VICReg
-repulsion, gen-6; per-seed quantile assignment, gen-7: centered PR 0.846 vs 0.835, identical).
+The sparse `eval/elo` at ±30 could not resolve this and reported "parity"; the dense ladder can, and
+supersedes it. What replaced the concat for the critic — `MultiSeedValueReadout` — has measured at
+**~1 effective direction** under two structurally different pressures (VICReg repulsion, gen-6;
+per-seed quantile assignment, gen-7: centered PR 0.846 vs 0.835, identical).
+
+#### ⚠️ Amendment (2026-08-11) — "cost ~44 Elo" is SUGGESTIVE, not established
+
+Read back from the persisted `snapshot_ladder/ladder.json` of both runs (converged, all pairs —
+55/55 and 66/66). Three corrections, in increasing order of importance:
+
+**The ±11 above is the STANDARD ERROR, not the CI.** `se` = 10.70 (gen-4) and 10.10 (gen-5), so the
+95% intervals are **[2059.6, 2101.6]** and **[2017.6, 2057.2]** — disjoint by **2.4 Elo**. Marginal,
+not comfortable. Quoting ±11 makes the separation read far more decisively than the data supports.
+
+**The trajectories INTERLEAVE, and the whole gap is one endpoint:**
+
+| step | gen-4 | gen-5 |
+|---|---|---|
+| 14M | 2021.1 | **2025.2** |
+| 16M | 2030.2 | **2036.6** |
+| 18M | 2049.3 | 2029.9 |
+| 20M | 2050.9 | 2050.0 |
+| 22M | 2050.3 | 2036.2 |
+| **24M** | **2080.6** | 2037.4 |
+
+gen-5 is *ahead* at 14M and 16M and dead level at 20M. **The entire 43-point gap comes from gen-4's
+final checkpoint jumping +30 while gen-5's stayed flat.** Selecting the endpoint from two
+trajectories that cross repeatedly is exactly the outcome-conditioning the ledger's own honesty
+gates name — a single-point comparison here cannot separate "the concat deletion cost Elo" from
+"gen-4's last snapshot was a good draw."
+
+**The cheap disambiguation** (no new battles for the first): fit both over their last 3–4
+checkpoints instead of the endpoint, and/or ladder gen-4's 22M directly against gen-5's 24M.
+
+**What this does NOT weaken.** §7a.1's conclusion — *this is a policy-side design and the critic
+deficit is separate* — **does not rest on the Elo number at all.** The seed readout measuring ~1
+effective direction under two independent pressures is a solid, self-standing, critic-side finding.
+So the scope gap is real on structural grounds and **§7a.2 remains the right response whether the
+concat cost 43 Elo or 0.**
 
 **So `α` does not, on its own, repair the critic.** The two deficits are complementary:
 the policy cannot express *"they'll click this, so this is my answer"*; the critic lost its
@@ -640,11 +674,34 @@ content **is** distorted: every opponent's offense is priced as 252 EV × 1.1 na
 nine sites, with an error that scales with base stats and therefore corrupts the RELATIVE threat
 ordering across their team — precisely what `d3` exists to convey.
 
-So there are two live explanations for the same number, and they imply different next moves:
-**channel** ⇒ build `α` + the per-action delivery; **content** ⇒ fix B-spread and `d3` may recover
-on its own. **B-spread (step 0b) distinguishes them cheaply and is already first in the build
-order** — so re-measure the `d3` family flip rate after the belief generation, BEFORE concluding
-the channel was the problem.
+So there are two live explanations for the same number. **B-spread (step 0b) prices them cheaply and
+is already first in the build order** — so re-measure the `d3` family flip rate after the belief
+generation, BEFORE concluding the channel was the problem.
+
+#### Refinement (2026-08-11) — they are NOT mutually exclusive, and the design does not fork on it
+
+An earlier phrasing of this note framed the two as alternatives implying different next moves
+(*channel* ⇒ build `α`; *content* ⇒ fix B-spread and `d3` may recover). That over-reads it.
+
+**The channel argument is STRUCTURAL and holds at any content quality.** An edge bias writes a
+softmax-normalised ratio within its row; it cannot deliver a per-action absolute *however accurate
+the numbers being ratio-ed are* (`ARCHITECTURE.md` §5.3, §1(a) here). Fixing the de-timid defect
+makes `d3` carry a **correct** ratio — it does not make an edge able to carry a magnitude, and it
+does not move the `argmax_a` computation off the pointer logits (§1(b)).
+
+So both can be true simultaneously, and almost certainly are:
+
+| | claim | fixed by |
+|---|---|---|
+| **content** | `d3`'s numbers are distorted (de-timid) ⇒ any channel carrying them reads low | B-spread, step 0b |
+| **channel** | an edge cannot deliver a per-action absolute ⇒ the anticipatory read has no adequate route | the per-action cell — components 1–3 |
+
+**What the post-B-spread re-measurement actually buys is a MAGNITUDE, not a verdict:** it says *how
+much* of the 0.63% was content. A large recovery means the de-timid defect was suppressing a channel
+that works better than we thought; a small one means the channel was the binding constraint. Neither
+outcome removes the need for the per-action route, and **neither should be treated as a fork in the
+build order** — step 0b runs first either way, and its `d3` reading calibrates expectations for
+components 1–3 rather than deciding whether to build them.
 
 ### 7a.4 The coverage-risk fallback: `α` over {ATTACK, SWITCH} only
 
@@ -744,6 +801,7 @@ replay corpus is the natural *validation* set; using it as a training set is a d
 | no search on the model (hard constraint) | `research_state/README.md` → amortizability gate |
 | **the DISCRETE constraint** — the model must always pick among the belief's discrete states and may never invent a move; interpretability is the reason | **owner, 2026-08-11** |
 | the two reconciliations (§3, §4) | owner, 2026-08-11 |
+| **the dense-ladder Elo values and their `se`** — gen-4 @24M **2080.6 / se 10.70**, gen-5 @24M **2037.4 / se 10.10**, both converged (55/55 and 66/66 frozen pairs) | read back from `<run>/snapshot_ladder/ladder.json` for both runs, 2026-08-11 (`agents/training/snapshot_ladder.py`) — the §7a.1 amendment's `[2059.6, 2101.6]` vs `[2017.6, 2057.2]` at 1.96·se, and the per-checkpoint trajectory table |
 | `move_belief_coef` = **0.0** in production (belief head runs, `known_moves` emitted + plumbed, BCE **unconsumed**); `move_belief_latent_coef` 0.05, `hp_type_belief_coef` 0.05 on | `designs/production_config.json` (read 2026-08-11); `ARCHITECTURE.md` §7 |
 | the full **belief stack** table (§4.5) — 7 legs, exactly 1 supervised, 2 unlearnable static lookups, 3 off | `designs/production_config.json`; `damage_op.py:2870-2877` (`p_cb` = `SPECIES_CB_PRIOR`, collapses to 0/1 on reveal); `agents/observation/abilities.py` + `reactive.py` (Smogon per-species ability priors); `gen3_ability_priors.json` |
 | **the de-timid physics defect** — opp offense priced as 252 EV × 1.1 nature uniformly, at 9 sites | `damage_op.py:1727` (`atk_j = (2.0·a_base[ATK] + off_const) * 1.1  # de-timid`), also `:332`, `:1489`, `:1498`, `:1714`, `:1882`, `:2127`; `:118` names `--spread-belief` as the replacement |
