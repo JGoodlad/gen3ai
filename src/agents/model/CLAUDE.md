@@ -49,7 +49,11 @@ the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-ou
 with the `value_seeds/*` TB collapse contract logged every train(); the VICReg floor on those outputs is `--value-seed-vicreg-coef`, v62 resume-immutable — its
 variance+covariance targets are **scale-relative** by design, since the first cut's absolute
 γ=1.0 was ~7× the readout's own signal RMS and left `out_effective_rank` pinned at 1.0 for 2M
-steps; see `seed_vicreg.py`).
+steps; see `seed_vicreg.py`. **And repulsion has a ceiling of its own** — gen-6 satisfied every
+VICReg term while rank stayed 1.05, because the deviations occupied <1 direction (three seeds
+identical, one breakaway). `--seed-quantile-coef` (v63, `seed_quantile.py`) is the positive
+alternative: seed k predicts quantile τ_k of the return through ONE SHARED Linear, so k different
+predictions require k different seed reads. Structural + version-checked, off = no module).
 Under `--opp-belief-latent-coef>0` `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
 (the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
 `pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs

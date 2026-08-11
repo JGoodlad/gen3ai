@@ -2263,6 +2263,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  spread_belief_nature_marginalize: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
+                 seed_quantile: bool = False,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
@@ -2910,6 +2911,24 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Stashed each forward when on (the [B, bins] per-atom logits, or None). Read by the (future)
         # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
         self.last_value_dist_logits: Optional[torch.Tensor] = None
+
+        # gen3_seed_quantile_v1: per-seed QUANTILE assignment — seed k predicts quantile tau_k of the
+        # return through ONE SHARED Linear, so k different numbers require k different SEED reads
+        # (see agents/model/seed_quantile.py: the shared readout is what puts the pressure on the
+        # seeds instead of letting a per-seed head fake the spread). A SIDE readout: the preds are
+        # stashed for the aux loss and never enter pi/vf, so projection dims are unchanged. Built
+        # only alongside the multi-seed readout — a config without the op has no seeds to assign.
+        self.seed_quantile = bool(seed_quantile)
+        _seed_readout = getattr(self.assembler, "seed_readout", None)
+        if self.seed_quantile and _seed_readout is None:
+            raise ValueError(
+                "seed_quantile=True but this config has no MultiSeedValueReadout (the damage op is "
+                "off, so there are no value seeds to assign quantiles to). Enable the damage-op "
+                "config the readout requires, or drop --seed-quantile-coef.")
+        from agents.model.seed_quantile import SeedQuantileHead
+        self.seed_quantile_head = (
+            SeedQuantileHead(_seed_readout.dim, _seed_readout.k) if self.seed_quantile else None)
+        self.last_seed_quantile_preds: Optional[torch.Tensor] = None
 
         # gen3_zarch_film_v1 (v44): the team-archetype latent + head FiLM — the amortization-gap
         # STORAGE fix. 'off' = no modules (byte-identical baseline). 'heads' = build the ZArchEncoder
@@ -3728,8 +3747,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # NaN-safety invariant and is single-sourced on the context).
             all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
             belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
-        return self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
-                              ctx, belief, damage_block)
+        out = self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
+                             ctx, belief, damage_block)
+        # gen3_seed_quantile_v1: read the seed outputs the assembler just stashed and emit one
+        # prediction per seed through the SHARED head. Stashed only (never in pi/vf) — the aux loss
+        # in instrumented_ppo regresses these onto the rollout return at the per-seed taus, which is
+        # what makes four IDENTICAL seeds strictly loss-increasing rather than merely unpenalized.
+        if self.seed_quantile_head is not None:
+            _seeds = self.assembler.seed_readout.last_outputs          # [B, k, dim], WITH grad
+            self.last_seed_quantile_preds = self.seed_quantile_head(_seeds)
+        else:
+            self.last_seed_quantile_preds = None
+        return out
 
     def forward(self, obs):
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

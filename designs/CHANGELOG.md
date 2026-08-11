@@ -2420,3 +2420,48 @@ change, so no `MODEL_CONFIG_VERSION`/`ARCH_SIGNATURE` bump):
 - Gates: `test_targets_are_scale_free` (100× rescale ⇒ identical loss — the direct regression for
   this bug), `test_realistic_collapsed_scale_still_pays_full_hinge` (the measured operating point
   above is now a closable gap rather than a saturated one), and the unchanged cov gate.
+
+### v63 — `gen3_seed_quantile_v1` (2026-08-11): give each value seed a DIFFERENT JOB
+
+**Why, from gen-6's measurement rather than from theory.** The v62 VICReg floor works numerically
+(`out_std_rel` 0.002 → 0.53, correlation 1.00 → 0.19, `out_cos` → 0.87) yet `out_effective_rank`
+sat at **1.05**. Decomposing the 4.8M checkpoint said exactly why:
+
+| measurement | value | meaning |
+|---|---|---|
+| uncentered PR | 1.037 | ~1 distinct readout |
+| **centered PR** | **0.846** | the deviations occupy **<1** direction |
+| deviation / shared | 0.598 | the differences ARE large |
+
+and the per-seed attention over our six mons was decisive — seeds 0/1/2 agreed to three decimals
+(≈uniform) while seed 3 alone diverged. **One seed broke away and three stayed identical**, which
+satisfies a variance hinge on average while leaving multiplicity untouched. The durable lesson:
+**a repulsion penalty buys SPREAD, not MULTIPLICITY** — it has no vocabulary for "differ along
+DIFFERENT axes"; only the covariance term does, and at equal weight it is too weak.
+
+The positive fix: seed k predicts **quantile τ_k** (0.1/0.35/0.65/0.9) of the return, pinball
+regressed, through **ONE SHARED `Linear(dim,1)`**. Four different τ ⇒ four different predictions
+⇒ four different seed READS. Collapse stops being unpenalized and becomes loss-INCREASING —
+**measured at 45.9%** higher loss on realistic normalized returns. The decomposition is also
+semantic in a way decorrelation cannot be (the τ=0.1 seat must find what makes the downside).
+
+- ⚠️ **The shared readout is load-bearing.** Per-seed projections would let the HEAD manufacture
+  the spread from four identical inputs — success reported while the seeds stay collapsed, the
+  z_arch silent-failure shape. Gate: `test_shared_readout_makes_collapse_strictly_worse`.
+- ⚠️ **PURE pinball, NOT QR-DQN's Huber variant** — a deliberate reversal of the obvious default.
+  Huber caps the gradient inside |u|<κ and pulls every estimate toward the median: MEASURED on
+  N(0,2) at κ=1 it fitted ±2.18/±0.67 against true ±2.50/±0.78. QR-DQN wants that for bootstrapped
+  TD targets; we regress an already-normalized MC return, and the shrink attacks the one thing this
+  module creates — SEPARATION. Gate: `test_pinball_recovers_the_true_quantiles`.
+- `--seed-quantile-coef` (0.0 = OFF, no module, byte-identical). The HEAD is STRUCTURAL +
+  version-checked (`MODEL_CONFIG_VERSION` 63, migrate default False, bool compare in
+  `check_compatible`, threaded through `arch_toggles_from_model` so a quantile-on run does not
+  FATAL on its own sentinels); the COEF is training-only. No `ARCH_SIGNATURE` bump (off is baseline).
+- New metrics: `value_seeds/quantile_{loss,spread,crossing_rate,pred_i}`. **The ordering invariant
+  is the cheap read**: ascending τ ⇒ ascending predictions, so a collapsed readout shows spread → 0
+  and crossing_rate → 1.
+- **Honest scope:** ledger K1 killed the DISTRIBUTIONAL CRITIC as a win-rate lever (sub-Gaussian
+  residuals). This makes a different claim — a k-dimensional target prevents a k-way readout from
+  collapsing — which K1 does not refute. But un-collapsing is a MEANS: gen-5 matched gen-4 while
+  fully collapsed, so multiplicity may still be worth ~0. Judge on `out_effective_rank` first,
+  anchored ELO second.

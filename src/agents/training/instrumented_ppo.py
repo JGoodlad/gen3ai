@@ -356,6 +356,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # ModelVersion, enforced by check_value_seed_vicreg on the training-resume path only).
     value_seed_vicreg_coef: float = 0.0
 
+    # PER-SEED QUANTILE (gen3_seed_quantile_v1, v63): seed k of the MultiSeedValueReadout predicts
+    # quantile tau_k of the return through ONE SHARED Linear, so k different predictions REQUIRE k
+    # different seed READS — the positive counterpart to the VICReg repulsion above (which gen-6
+    # measured as 1-D spread with three seeds still identical). Regressed against the SAME rollout
+    # return the critic sees, in the critic's own (PopArt-normalized) frame. 0.0 = OFF, and the HEAD
+    # is a structural version-checked toggle, so an off run builds no module at all.
+    seed_quantile_coef: float = 0.0
+
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
     # pilots the teacher's team (the training-only `distill_mask` obs key = 1), a forward of the frozen
@@ -1590,6 +1598,22 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             seed_vicreg_metrics.setdefault(_sk, []).append(_sv)
                         seed_vicreg_metrics.setdefault("value_seeds/vicreg_loss", []).append(
                             float(svr_loss.detach()))
+
+                # +SEED-QUANTILE: the per-seed pinball fold. `last_seed_quantile_preds` [B,k] is the
+                # shared head's read of THIS minibatch's seed outputs (grad-carrying). The target is
+                # the rollout return in the critic's frame — PopArt-normalized when the critic is, so
+                # the taus land in the same units the value head learns in.
+                if self.seed_quantile_coef > 0.0:
+                    _sqp = getattr(self.policy.features_extractor, "last_seed_quantile_preds", None)
+                    _sqh = getattr(self.policy.features_extractor, "seed_quantile_head", None)
+                    if _sqp is not None and _sqh is not None:
+                        from agents.model.seed_quantile import seed_quantile_loss
+                        _tgt = (popart.normalize(rollout_data.returns) if popart is not None
+                                else rollout_data.returns)
+                        sq_loss, sq_m = seed_quantile_loss(_sqp, _tgt.flatten(), _sqh.taus)
+                        loss = loss + self.seed_quantile_coef * sq_loss
+                        for _qk, _qv in sq_m.items():
+                            seed_vicreg_metrics.setdefault(_qk, []).append(_qv)
 
                 # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
                 # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.

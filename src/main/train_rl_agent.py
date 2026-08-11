@@ -380,6 +380,7 @@ def _run_arch_toggles(args) -> dict:
         win_prob_mode=args.win_prob_mode,
         pubval_mode=args.pubval_mode,
         value_dist_mode=args.value_dist_mode,
+        seed_quantile=bool(args.seed_quantile_coef and args.seed_quantile_coef > 0),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
@@ -1393,6 +1394,17 @@ async def main():
                              "steps (so long-lived workers track the moving policy). Default 500k.")
     parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
                         type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
+    parser.add_argument("--seed-quantile-coef", "--seed_quantile_coef", dest="seed_quantile_coef",
+                        type=float, default=0.0,
+                        help="PER-SEED QUANTILE assignment (gen3_seed_quantile_v1): seed k of the "
+                             "MultiSeedValueReadout predicts quantile tau_k of the return through ONE "
+                             "SHARED Linear, so k different predictions REQUIRE k different seed reads "
+                             "— collapse becomes loss-INCREASING rather than merely unpenalized (the "
+                             "positive counterpart to --value-seed-vicreg-coef's repulsion, which was "
+                             "measured on gen-6 to buy 1-D spread with three seeds still identical). "
+                             "0.0 = OFF (no module, byte-identical). >0 builds the head, so it is "
+                             "STRUCTURAL + version-checked: fresh runs only. Watch "
+                             "value_seeds/quantile_{spread,crossing_rate} and out_effective_rank.")
     parser.add_argument("--value-dist-mode", "--value_dist_mode", dest="value_dist_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Distributional VALUE head (v29): an interpretability readout off the value "
@@ -2109,6 +2121,7 @@ async def main():
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
+    _resolve("seed_quantile_coef", 0.0)        # v63 training-only coef; the HEAD itself is structural
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
@@ -3842,6 +3855,8 @@ async def main():
         # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
         # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
         model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
+        # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
+        model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)
@@ -4091,6 +4106,8 @@ async def main():
         # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
         # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
         model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
+        # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
+        model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)

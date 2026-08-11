@@ -279,7 +279,18 @@ cross-seed std ÷ the dim's own RMS (target 0.25) and the covariance term is a c
 *correlation* — because the first cut's absolute γ=1.0 was ~7× the readout's entire signal RMS
 (0.207) and unreachable by construction: a seed output is a convex combination of the six kv rows,
 whose spread is 0.141. `value_seeds/out_rms` is logged as the watchdog for the relative target's
-one degenerate response (shrinking the feature instead of differentiating it). 0.0 (the production value — OFF for every run so far, gen-5
+one degenerate response (shrinking the feature instead of differentiating it).
+
+**`--seed-quantile-coef` (v63) is the POSITIVE alternative to that repulsion, and the two are
+different mechanisms.** Gen-6 measured VICReg's ceiling: every term moved (std_rel 0.002 → 0.53,
+correlation → 0.19) yet effective rank stayed 1.05, because the deviations occupy **less than one
+direction** (centered PR 0.846) — seeds 0/1/2 kept near-identical attention while seed 3 alone
+broke away. Repulsion buys spread, not multiplicity. Under `--seed-quantile-coef`, seed k instead
+predicts **quantile τ_k** of the return through **one shared** `Linear(dim,1)`, so k different
+predictions require k different seed reads and collapse becomes loss-increasing (measured +45.9%).
+Structural + version-checked (fresh runs only); off = no module. Read
+`value_seeds/quantile_{spread,crossing_rate}` — ascending τ implies ascending predictions, so a
+collapsed readout shows spread → 0 and crossing → 1. 0.0 (the production value — OFF for every run so far, gen-5
 included) is byte-identical; resume-immutable (the vf_coef class, `check_value_seed_vicreg`);
 fail-loud at startup if enabled on a config without the seed readout. Intended ON at the gen-6
 launch, judged by `out_effective_rank` rising toward k.

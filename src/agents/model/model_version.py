@@ -451,7 +451,7 @@ from typing import Any, Dict, List
 #   vf_coef class, NOT weight-shape): enforced only on the training-resume path via
 #   check_value_seed_vicreg; excluded from check_compatible/_WEIGHT_FIELDS (a frozen opponent's
 #   forward never touches it). 0.0 = OFF (loss byte-identical).
-MODEL_CONFIG_VERSION = 62
+MODEL_CONFIG_VERSION = 63
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1110,6 +1110,12 @@ class ModelVersion:
     # change (gated in check_compatible with an unconditional int compare, like opp_belief_cls_k). 0 = off
     # (forced when mode == none).
     value_dist_bins: int = 0
+    # v63 STRUCTURAL (gen3_seed_quantile_v1): per-seed QUANTILE assignment — one shared
+    # Linear(VALUE_SEED_DIM, 1) mapping each value seed to its target quantile of the return.
+    # Adding/removing it changes the state_dict, so it is gated in check_compatible with a bool
+    # compare. OFF (default) builds no module and is byte-for-byte baseline (NO ARCH_SIGNATURE bump).
+    # Its COEFFICIENT (--seed-quantile-coef) is training-only, like value_dist_coef.
+    seed_quantile: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1383,6 +1389,9 @@ class ModelVersion:
             ),
             value_dist_bins=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_bins", 0)
+            ),
+            seed_quantile=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("seed_quantile", False)
             ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
@@ -1865,6 +1874,15 @@ class ModelVersion:
         # ValueDistHead params) AND read_only↔shaping (grad-flow); the BIN COUNT is the head's output
         # Linear width. Both are weight-shape/forward changes → FATAL on a resume mismatch. The support
         # (vmin/vmax) is value-meaning → resume-only check_value_dist, not here.
+        # gen3_seed_quantile_v1 (v63): the per-seed quantile head is one shared Linear — adding or
+        # removing it changes the state_dict, so it is fixed for a run's lifetime.
+        if self.seed_quantile != saved.seed_quantile:
+            raise ModelVersionError(
+                f"seed_quantile mismatch: saved={saved.seed_quantile}, current={self.seed_quantile}.\n"
+                "The per-seed quantile head is fixed for a run's lifetime: adding/removing it changes "
+                "the state_dict, and its aux loss is what gives each value seed a distinct job.\n"
+                "Resume with the matching --seed-quantile-coef setting, or start a fresh training run."
+            )
         if self.value_dist_mode != saved.value_dist_mode:
             raise ModelVersionError(
                 f"value_dist_mode mismatch: saved={saved.value_dist_mode!r}, current={self.value_dist_mode!r}.\n"
@@ -2558,4 +2576,9 @@ def _migrate_config(data: dict) -> dict:
         # 0.0 = OFF, byte-identical: every pre-v62 run trained without it.
         data.setdefault("value_seed_vicreg_coef", 0.0)
         data["config_version"] = 62
+    if version < 63:
+        # v63: gen3_seed_quantile_v1 — the per-seed quantile head (structural, one shared Linear).
+        # False = OFF, byte-identical: every pre-v63 run trained without it.
+        data.setdefault("seed_quantile", False)
+        data["config_version"] = 63
     return data
