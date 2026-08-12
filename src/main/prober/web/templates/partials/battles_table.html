@@ -18,19 +18,20 @@
     <th>state</th><th>id</th><th></th>
   </tr></thead>
   <tbody>
+  {# THE WHOLE ROW OPENS THE BATTLE. `data-href` is read by a delegated handler in app.js, which
+     ignores clicks that landed on a button or a link so the copy button still copies. The id cell
+     is ALSO a real <a>, which is what makes this work without JavaScript, gives the row a keyboard
+     tab stop, and lets "open in new tab" behave — a JS-only row click has none of those. #}
   {% for r in rows %}
-    <tr data-row>
+    {% set href = "/battle?run=" ~ ((run or '') | urlencode) ~ "&battle=" ~ (r.short_id | urlencode) %}
+    <tr data-row data-href="{{ href }}" class="clickable" title="Open this battle's replay">
       <td class="num">{{ "{:,}".format(r.step) }}</td>
       <td>{{ r.opponent }}</td>
       <td class="{{ r.outcome }}">{{ r.outcome }}</td>
       <td class="num">{{ r.index }}</td>
       <td>{% if r.has_npz %}<span class="pos">obs</span>{% else %}<span class="muted">no npz</span>{% endif %}</td>
-      <td class="mono">{{ r.short_id }}</td>
+      <td class="mono"><a class="rowlink" href="{{ href }}">{{ r.short_id }}</a></td>
       <td class="nowrap">
-        {# The row is not a dead end: the replay is one click away, and the id is one click from
-           the CLI. `run` rides the link because the battle picker resolves names per run. #}
-        <a class="linky" href="/battle?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}"
-           title="Read this battle turn by turn">turns</a>
         <button class="linky copybtn" type="button"
           data-copy="{{ r.id }}" title="Copy the battle id for the CLI or the TUI">copy id</button></td>
     </tr>

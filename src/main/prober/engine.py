@@ -895,7 +895,18 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
         # A move that produced NOTHING visible: say WHY (missed / no effect / immune) so a blank line
         # never reads as "data missing". Silent for utility moves (hazards/heal/boost — reason None).
         if not (e["damage"] or e["status"] or e["hp_after"]):
-            e["no_effect"] = _no_effect_reason(pa.get("move"), eff, fate) or ""
+            reason = _no_effect_reason(pa.get("move"), eff, fate)
+            # ...UNLESS the target SWITCHED IN and nothing recorded the move's fate. Then the
+            # recorded hp_delta compares the mon that LEFT, so it cannot price the hit either way —
+            # and `_no_effect_reason`'s last resort is to infer a miss from the move's accuracy,
+            # which turns "we have no evidence" into the confident claim "it missed". MEASURED: a
+            # Meteor Mash into a Jirachi switch-in read `— missed` while the battle's own protocol
+            # log showed -resisted / -damage 84/100 / -boost atk (the switch-in then healed to
+            # exactly 90% on Leftovers, so the resulting-HP branch above just missed its threshold).
+            # An absent explanation is honest; a wrong one is worse than none.
+            if switched_in and not fate and reason == "missed":
+                reason = None
+            e["no_effect"] = reason or ""
         return e
 
     def _entry_for(side):

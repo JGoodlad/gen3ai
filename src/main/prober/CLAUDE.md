@@ -531,10 +531,14 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `text` field rendered by `engine.timeline_entry_text` so no surface re-derives the sentence),
   `order_certain` (false ⇒ both sides moved and `move_order` wasn't recorded, so top-to-bottom is
   NOT the real sequence — say so, never guess), and the critic's read (`value` · `delta_v` ·
-  `td_residual` · `reward_total` + components · `events` · `flags`). Plus the same `notable` block
-  `battle_overview` returns and a `decision_turns[inv] → turn` lookup, so a surface can link "the
-  worst drop" to a turn without arithmetic of its own. No checkpoint: **17–20 ms** for the longest
-  real battle measured (249 turns). CLI: `query turns <battle_id>`; the browser view is `/battle`.
+  `td_residual` · `reward_total` + components · `events` · `flags`), plus the per-decision DETAIL a
+  deeper read wants — the full recorded **`actions`** distribution (`label`/`prob`/`valid`/`chosen`,
+  passed through in the recorder's action-index order, NEVER re-sorted — see the move-label gotcha
+  below) and the raw Showdown **`protocol`** lines for that turn (parsed ONCE per battle, not once
+  per decision). Plus the same `notable` block `battle_overview` returns and a
+  `decision_turns[inv] → turn` lookup, so a surface can link "the worst drop" to a turn without
+  arithmetic of its own. No checkpoint: **17–20 ms** for the longest real battle measured (249
+  turns, 821 KB). CLI: `query turns <battle_id>`; the browser view is `/battle`.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`

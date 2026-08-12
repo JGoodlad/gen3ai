@@ -191,7 +191,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         if not rows:
             raise HTTPException(status_code=404, detail="this run captured no battle traces")
         if not token:
-            return rows[0]
+            # The NEWEST checkpoint's first battle. `battles()` is ordered by step ASCENDING, so
+            # `rows[0]` is the oldest eval cycle in the run — landing a visitor on a battle played
+            # by a months-old checkpoint, which is never what "open the replay" means.
+            return _newest_first(rows)[0]
         for r in rows:
             if r["short_id"] == token:
                 return r
@@ -432,11 +435,17 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     @app.get("/battles", response_class=HTMLResponse, tags=["pages"],
              summary="Battle list with outcome/opponent/step filters")
     def page_battles(request: Request, run: "str | None" = Query(None)) -> HTMLResponse:
+        # DEFAULTS TO THE NEWEST STEP, not to every step. A run holds thousands of traces across
+        # every eval cycle it ever ran, and the question behind opening this page is essentially
+        # always "what is the CURRENT model doing" — an all-steps default answered that with a
+        # 200-row cap sliced out of an arbitrary mixture of checkpoints, oldest included. "All
+        # steps" is still one selection away.
         name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
-        rows, rerr = guarded(lambda: session(pick(run)).battles())
+        step = _newest_step(data)
+        rows, rerr = guarded(lambda: session(pick(run)).battles(step=step))
         shown, total = _cap(rows, _BATTLE_PAGE)
         return page(request, "battles.html", "battles", name, summary=data,
-                    error=err or rerr, opponents=_opponents(data),
+                    error=err or rerr, opponents=_opponents(data), selected_step=step,
                     rows=shown, total=total, capped=_BATTLE_PAGE)
 
     @app.get("/battle", response_class=HTMLResponse, tags=["pages"],
@@ -777,15 +786,23 @@ _BATTLE_PICK = 100
 _TURN_PAGE = 50
 
 
+def _newest_first(rows: "list[dict]") -> "list[dict]":
+    """Battles by most recent eval step first. `ProbeSession.battles()` orders by step ASCENDING
+    (the trace tree's natural order), which is the opposite of what a reader wants offered first.
+    Sorted STABLY, so the tree's within-step order is preserved."""
+    return sorted(rows, key=lambda r: r["step"], reverse=True)
+
+
 def _picker_rows(rows: "list[dict]", selected: dict) -> "list[dict]":
-    """The capped picker list, with the battle actually being shown GUARANTEED to be in it.
+    """The capped picker list — NEWEST first, with the battle actually being shown GUARANTEED to
+    be in it.
 
     Without that guarantee a `<select>` whose options don't contain the selected value silently
     falls back to displaying its FIRST option — so arriving from a `scan` deep link to an old
     battle would name one battle in the picker while rendering another below it. A dropdown that
     lies about what you are looking at is worse than a short dropdown.
     """
-    shown = rows[:_BATTLE_PICK]
+    shown = _newest_first(rows)[:_BATTLE_PICK]
     if selected and not any(r["short_id"] == selected["short_id"] for r in shown):
         shown = [selected] + shown[:_BATTLE_PICK - 1]
     return shown
@@ -846,6 +863,14 @@ def _group_runs(rows: "list[dict]") -> "list[tuple]":
             key = "other"
         groups.setdefault(key, []).append(r)
     return list(groups.items())
+
+
+def _newest_step(summary: "dict | None") -> "int | None":
+    """The most recent eval step in the run — the checkpoint whose battles you almost always mean.
+
+    `max` rather than `steps[-1]`, so this does not silently depend on the tree's ordering."""
+    steps = (summary or {}).get("steps") or []
+    return max((s["step"] for s in steps), default=None)
 
 
 def _opponents(summary: "dict | None") -> "list[str]":

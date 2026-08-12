@@ -136,7 +136,8 @@ DESKTOP = (1280, 900)
 _CHROME_TIMEOUT = 180.0     # generous on an idle box; scaled at CALL time when it is not
 
 
-def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP) -> str:
+def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP,
+              dark: bool = False) -> str:
     # The wall-clock bound is SCALED by measured CPU contention, per the project's timeout
     # doctrine (root CLAUDE.md → "Running beside a live training run"). A chrome run that takes
     # ~25s on an idle box takes several times that beside a live trainer, and a raw 180s constant
@@ -144,6 +145,11 @@ def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP) ->
     # bug. On an idle box the factor is exactly 1.0, so this is a no-op there.
     proc = subprocess.run(
         [binary, "--headless", "--no-sandbox", "--disable-gpu",
+         # `--force-dark-mode` is what makes `prefers-color-scheme: dark` match (MEASURED: there
+         # is no CLI switch for the media feature itself). NOTE it ALSO darkens the browser's own
+         # widgets, which a real dark-mode visitor does not get — so a dark screenshot flatters the
+         # page, and the `colorscheme` assertion below is what actually covers that gap.
+         *(["--force-dark-mode"] if dark else []),
          # Everything the page needs is served from loopback. Mapping every other host to a dead
          # address turns "the assets are vendored" from a claim in a docstring into a property the
          # browser enforces: a remote <script> would simply not load.
@@ -165,8 +171,8 @@ def _body_data(dom: str) -> dict:
             for k, v in re.findall(r'data-([a-z-]+)="([^"]*)"', body.group(0))}
 
 
-def _probe(binary: str, base: str, path: str, size=DESKTOP) -> dict:
-    data = _body_data(_dump_dom(binary, base + path, size=size))
+def _probe(binary: str, base: str, path: str, size=DESKTOP, dark: bool = False) -> dict:
+    data = _body_data(_dump_dom(binary, base + path, size=size, dark=dark))
     assert data.get("ready") == "1", (
         f"{path}: the bootstrap never completed — a JS error before the record hook. "
         f"chartError={data.get('chart-error')!r}, record={data}")
@@ -340,6 +346,60 @@ def test_the_battle_replay_is_side_by_side_on_a_desktop(server):
     assert data["narrow"] == "0"
     assert data["monstack"] == "0", "the mons stacked at desktop width — the phone rule leaked up"
     assert data["overflowby"] == "0"
+
+
+# -- the dark palette ---------------------------------------------------------------------------
+# The stylesheet ships TWO palettes and only one is ever on screen, so any review by screenshot
+# covers exactly half of it. These read what the page painted instead.
+#
+# `--bg` tokens, restated here on purpose: the point is to catch the palette silently NOT being
+# applied, which a test that re-derives the expected value from the same stylesheet cannot do.
+_DARK_BG, _LIGHT_BG = "rgb(22, 22, 26)", "rgb(251, 251, 249)"
+_DARK_ACCENT, _LIGHT_ACCENT = "rgb(88, 166, 200)", "rgb(42, 111, 151)"
+_UA_LINK_BLUE = "rgb(0, 0, 238)"
+
+
+@pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
+def test_the_dark_palette_is_actually_painted(server, path):
+    data = _probe(_chrome(), server, path, dark=True)
+    assert data["scheme"] == "dark", "prefers-color-scheme did not match — the probe is not testing dark"
+    assert data["bg"] == _DARK_BG, (
+        f"{path} painted {data['bg']} in dark mode — the dark palette is defined but not applied")
+
+
+@pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
+def test_links_follow_the_theme_rather_than_the_browser_default(server, path):
+    """MEASURED before the fix: an unclassed <a> was the UA default `rgb(0, 0, 238)` in BOTH
+    schemes — about 2.4:1 against the dark background, under the 4.5:1 floor. Styling only the
+    specific link classes left every plain link behind."""
+    for dark, expected in ((True, _DARK_ACCENT), (False, _LIGHT_ACCENT)):
+        data = _probe(_chrome(), server, path, dark=dark)
+        assert data["linkcolor"] != _UA_LINK_BLUE, f"{path}: a link kept the browser default blue"
+        assert data["linkcolor"] == expected, f"{path}: link is {data['linkcolor']}, want {expected}"
+
+
+def test_the_browsers_own_widgets_are_told_which_palette_is_live(server):
+    """`color-scheme` is what makes a <select>, a scrollbar and the canvas behind the page follow
+    the theme. Undeclared, a dark-mode visitor gets a WHITE dropdown on a dark page — and a
+    `--force-dark-mode` screenshot cannot show it, because that flag darkens UA widgets anyway."""
+    for dark in (True, False):
+        data = _probe(_chrome(), server, "/battles", dark=dark)
+        assert data["colorscheme"] == "light dark", (
+            f"color-scheme is {data['colorscheme']!r} — the browser will render its own widgets "
+            "in the light style regardless of the page")
+
+
+def test_chart_text_is_legible_on_whichever_palette_is_live(server):
+    """Vega-Lite's default text is near-black and `_BASE` makes the chart background transparent,
+    so on the dark palette the axis labels, titles and legends are black-on-#16161a. `app.js`
+    themes each spec at embed time from the stylesheet's own custom properties."""
+    dark = _probe(_chrome(), server, "/", dark=True)
+    light = _probe(_chrome(), server, "/", dark=False)
+    assert int(dark["chart-marks"]) > 0 and int(light["chart-marks"]) > 0
+    assert dark["axistext"] == "rgb(154, 154, 149)", (
+        f"dark axis text is {dark['axistext']} — Vega's default would be near-black and invisible")
+    assert light["axistext"] == "rgb(107, 107, 102)"
+    assert dark["axistext"] != light["axistext"], "the chart is not following the theme at all"
 
 
 def test_form_controls_are_large_enough_not_to_trap_ios_zoom(server):

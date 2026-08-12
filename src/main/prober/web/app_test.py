@@ -869,8 +869,13 @@ def test_a_bad_start_value_does_not_break_the_page(client):
 def test_the_replay_is_reachable_from_the_tables_that_find_a_battle(client):
     """Otherwise the view exists but nothing leads to it: `battles` finds the trace and `scan`
     finds the losing TURN, so both must open the replay — scan's link landing ON that turn."""
+    # The battle row IS the link — the whole row navigates (app.js reads data-href) and the id cell
+    # is a real <a>, so it works with JavaScript off, tabs to, and opens in a new tab.
     battles = client.get("/partials/battles").text
-    assert "/battle?run=" in battles and ">turns<" in battles
+    assert "/battle?run=" in battles
+    assert "data-href=" in battles, "the row is not clickable"
+    assert 'class="rowlink"' in battles, (
+        "no real <a> in the row — a JS-only row click has no keyboard stop and no open-in-new-tab")
 
     scan = client.get("/partials/scan", params={"outcome": "loss"}).text
     assert "/battle?run=" in scan
@@ -884,6 +889,64 @@ def test_the_replay_offers_jumps_into_a_long_battle(client):
     assert "start=" in html.split("jumps")[1][:600]
 
 
+def test_the_battles_tab_preselects_the_newest_checkpoint(client, run):
+    """A run holds every eval cycle it ever ran. Opening this page essentially always means "what
+    is the CURRENT model doing", and an all-steps default answered that with a 200-row cap sliced
+    out of an arbitrary mixture of checkpoints."""
+    from main.prober.web.app import _newest_step
+
+    summary = ProbeSession(run).run_summary()
+    newest = _newest_step(summary)
+    assert newest == max(s["step"] for s in summary["steps"])
+
+    html = client.get("/battles").text
+    assert f'value="{newest}" selected' in html, "the step filter did not preselect the newest step"
+    # ...and the table it first paints is that step's battles, not every step's.
+    shown = {r["short_id"] for r in ProbeSession(run).battles(step=newest)}
+    other = {r["short_id"] for r in ProbeSession(run).battles() if r["step"] != newest}
+    assert shown and other, "fixture needs >1 step for this to mean anything"
+    assert any(s in html for s in shown)
+    assert not any(o in html for o in other), "an older step's battles are on the first paint"
+    # "all steps" must still be one selection away, not gone.
+    assert '<option value="">all steps</option>' in html
+
+
+def test_the_replay_defaults_to_the_newest_checkpoint_not_the_oldest(client, run):
+    """`ProbeSession.battles()` is ordered by step ASCENDING, so the naive `rows[0]` default landed
+    a visitor on a battle played by the run's OLDEST checkpoint."""
+    from main.prober.web.app import _newest_step
+
+    body = client.get("/api/battle-turns").json()
+    assert body["step"] == _newest_step(ProbeSession(run).run_summary())
+
+
+def test_the_turn_dropdown_carries_the_model_free_detail(client):
+    """The TUI's per-decision detail, restricted to what needs no checkpoint."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert "<details class=\"more\">" in html
+    assert "policy — what else it considered" in html
+    assert "class=\"dist\"" in html, "no action distribution"
+    assert "raw Showdown protocol" not in html, (
+        "the fixture has no *_replay.html sibling, so the protocol panel must not claim one")
+    # And it says where the model-dependent analysis actually lives, rather than just omitting it.
+    assert "need the" in html and "main.prober.query analyze" in html
+
+
+def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):
+    """An unavailable action must read as grey/dimmed, never as a red danger value — the same
+    distinction the TUI draws with _DISABLED_GREY."""
+    turns = client.get("/api/battle-turns", params={"battle": _REPLAY_BATTLE}).json()
+    acts = turns["turns"][0]["decisions"][0]["actions"]
+    assert acts and any(a["chosen"] for a in acts)
+    assert all({"label", "prob", "valid", "chosen"} <= set(a) for a in acts)
+    # The session passes the recorder's order through untouched (see the "do NOT re-sort move
+    # labels" gotcha); only the template re-orders, and only for display.
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    assert [a["label"] for a in raw["turns"][0]["decisions"][0]["actions"]] == \
+           [a["label"] for a in acts]
+
+
 def test_the_picker_always_contains_the_battle_being_shown():
     """A `<select>` whose options do not contain its value silently displays the FIRST one. With
     the picker capped, arriving from a `scan` deep link to a battle outside the cap would name one
@@ -891,14 +954,18 @@ def test_the_picker_always_contains_the_battle_being_shown():
     are looking at."""
     from main.prober.web.app import _BATTLE_PICK, _picker_rows
 
-    rows = [{"short_id": f"step_1/bot/loss_{i:03d}"} for i in range(_BATTLE_PICK + 50)]
-    outside = rows[-1]
-    shown = _picker_rows(rows, outside)
+    # Ascending step, exactly as `ProbeSession.battles()` returns them.
+    rows = [{"short_id": f"step_{i}/bot/loss_001", "step": i} for i in range(_BATTLE_PICK + 50)]
+    oldest = rows[0]
+    shown = _picker_rows(rows, oldest)
     assert len(shown) <= _BATTLE_PICK
-    assert any(r["short_id"] == outside["short_id"] for r in shown), (
+    assert any(r["short_id"] == oldest["short_id"] for r in shown), (
         "the selected battle is missing from its own picker")
-    # An in-cap selection must not be duplicated or reordered.
-    assert _picker_rows(rows, rows[0]) == rows[:_BATTLE_PICK]
+    # And the list itself is newest-first, so the cap drops the OLDEST battles, not the newest.
+    newest_first = _picker_rows(rows, rows[-1])
+    assert [r["step"] for r in newest_first] == sorted(
+        (r["step"] for r in newest_first), reverse=True)
+    assert newest_first[0]["step"] == rows[-1]["step"]
 
 
 def test_the_battle_links_keep_the_selected_run(models_client):

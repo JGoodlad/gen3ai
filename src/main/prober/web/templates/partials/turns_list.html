@@ -99,6 +99,90 @@
           analyze #{{ d.inv }}</button>
       </span>
     </p>
+
+    {# THE DROP-DOWN — the TUI's per-decision detail, restricted to what is MODEL-FREE.
+       Collapsed by default because the point of the replay is reading the game; this is what you
+       open when one turn looks wrong. Everything the checkpoint would be needed for (faithfulness,
+       saliency, beliefs, the DamageOperator threat tables) stays in the TUI, and the footer says
+       so rather than leaving you wondering where it went. #}
+    <details class="more">
+      <summary>details</summary>
+      <div class="moregrid">
+
+        <div class="panel">
+          <h3>policy — what else it considered</h3>
+          {% if d.actions %}
+          {# Sorted by probability for reading. Safe to sort HERE (and only here): each entry is a
+             self-contained {label, prob} pair from the session, so unlike the recorder's parallel
+             arrays there is nothing for a re-order to mis-pair against. #}
+          <ul class="dist">
+            {% for a in d.actions | sort(attribute="prob", reverse=true) %}
+            <li class="{{ 'chosen' if a.chosen }} {{ '' if a.valid else 'invalid' }}">
+              <span class="bar"><span style="width: {{ (a.prob * 100) | round(1) }}%"></span></span>
+              <span class="lbl">{{ "▶" if a.chosen else "" }} {{ a.label }}</span>
+              <span class="p">{{ m.pct(a.prob, 1) }}{% if not a.valid %} <span class="muted">illegal</span>{% endif %}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}<p class="empty">no action distribution recorded</p>{% endif %}
+        </div>
+
+        <div class="panel">
+          <h3>board</h3>
+          {% for who, s in (("we", d.our), ("opp", d.opp)) %}
+          <p class="benchline">
+            <span class="who">{{ who }}</span>
+            {% if s.moves %}<span class="muted">{{ s.moves | join(" · ") }}</span>{% endif %}
+          </p>
+          {% if s.bench %}
+          <ul class="bench">
+            {% for mon in s.bench %}
+            <li class="{{ 'fainted' if mon.fainted }}">
+              {{ mon.species }} <span class="hp">{{ mon.hp }}</span>
+              {% if mon.status %}<span class="badge status">{{ mon.status }}</span>{% endif %}
+              {% if mon.item %}<span class="badge item">@{{ mon.item }}</span>{% endif %}
+              {% if mon.moves %}<span class="muted moveset">⮡ {{ mon.moves | join(" · ") }}</span>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}<p class="empty">nothing revealed</p>{% endif %}
+          {% endfor %}
+        </div>
+
+        {% if d.reward_components or d.events %}
+        <div class="panel">
+          {% if d.reward_components %}
+          <h3>reward {{ m.signed(d.reward_total) }}</h3>
+          <ul class="kv">
+            {% for k, v in d.reward_components.items() %}
+            <li><span class="k">{{ k }}</span> <span class="mono">{{ v }}</span></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if d.events %}
+          <h3>events</h3>
+          <ul class="kv">{% for e in d.events %}<li class="mono">{{ e }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if d.protocol %}
+        <div class="panel wide">
+          <h3>raw Showdown protocol — turn {{ d.turn }}</h3>
+          {# The exact mechanics the summary collapses: per-hit damage, a miss, an immunity, the
+             switch-in. Parsed from the trace's *_replay.html sibling. #}
+          <pre class="proto">{% for line in d.protocol %}{{ line }}
+{% endfor %}</pre>
+        </div>
+        {% endif %}
+
+      </div>
+      <p class="muted small">
+        Model-free. The policy's re-run distribution, beliefs, threat tables and saliency need the
+        checkpoint loaded — those are
+        <code>python -m main.prober.query analyze {{ turns.short_id }} {{ d.inv }}</code> or the TUI.
+      </p>
+    </details>
   </div>
   {% endfor %}
 </section>

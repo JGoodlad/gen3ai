@@ -1265,6 +1265,32 @@ def test_timeline_text_spells_out_a_cant_reason_rather_than_its_code():
     assert "we earthquake — couldn't move (asleep)" in _texts(tl)
 
 
+def test_timeline_does_not_infer_a_miss_against_a_switch_in():
+    """FOUND ON A REAL TRACE: our Meteor Mash into a Jirachi the opponent pivoted in read
+    `— missed`, while the same battle's protocol log showed -resisted / -damage 84/100 / -boost.
+
+    A voluntary switch makes the recorded hp_delta price the mon that LEFT, so it says nothing
+    about the hit — and `_no_effect_reason`'s last resort (infer a miss from the move's accuracy)
+    then converts "no evidence" into a confident wrong claim. Here the switch-in also healed to
+    exactly 90% on Leftovers, so the resulting-HP branch missed its <90 threshold. No explanation
+    is honest; a wrong one is worse than none.
+    """
+    tl = _tl("meteormash", "+0%", "switched_to:jirachi", "+0%",
+             ours="metagross", opps="tyranitar", opp_after="90%")
+    we = next(e for e in tl if e.get("move") == "meteormash")
+    assert we["no_effect"] == "", "an accuracy guess must not become a stated miss"
+    assert "missed" not in timeline_entry_text(we)
+
+    # A RECORDED miss is still a fact and must survive.
+    recorded = _tl("meteormash", "+0%", "switched_to:jirachi", "+0%", ours="metagross",
+                   opps="tyranitar", opp_after="90%", our_move_outcome="miss")
+    assert next(e for e in recorded if e.get("move") == "meteormash")["no_effect"] == "missed"
+
+    # And with no switch involved, the accuracy fallback is still the right call.
+    plain = _tl("meteormash", "+0%", "protect", "+0%", ours="metagross", opps="tyranitar")
+    assert next(e for e in plain if e.get("move") == "meteormash")["no_effect"] == "missed"
+
+
 def test_timeline_text_and_the_tui_renderer_share_one_vocabulary():
     """The regression this guards: the TUI used to own private copies of the `cant` and
     `no effect` wordings, so teaching one surface a new reason left the other printing a raw code."""

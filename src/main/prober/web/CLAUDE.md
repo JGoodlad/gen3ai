@@ -157,6 +157,14 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
   its waiting state says what it is doing rather than "loading…".
 - **The battles table is capped at `_BATTLE_PAGE` (200) and says so.** Uncapped it emitted 2397
   rows / 545 KB, which is a download rather than a table.
+- **`/battles` preselects the NEWEST eval step, and its rows open the replay.** A run holds every
+  cycle it ever ran; the question behind opening the page is essentially always "what is the
+  *current* model doing", and an all-steps default answered that with a 200-row cap sliced out of
+  an arbitrary mixture of checkpoints. "All steps" stays one selection away. Each row then carries
+  `data-href` (a delegated handler in `app.js` navigates on a row click, ignoring clicks that land
+  on a button or link) **and** a real `<a>` in the id cell — the `<a>` is what makes it work with
+  JavaScript off, gives the row a keyboard tab stop, and lets open-in-new-tab behave; a JS-only row
+  click has none of those.
 - **The run picker is grouped by generation** (`_group_runs`): 79 flat near-identical names like
   `ai_v9_06_gen5_no_concat_0809` is a scanning task, not a choice.
 - **Cryptic columns explain themselves** via `title=` (`inv`, `ΔV`, `TD δ`), and `wp_coverage=0`
@@ -203,9 +211,19 @@ Three things about it are deliberate:
   `scan` and `battles` rows carry a **turns** link, and scan's opens the replay *windowed on the
   losing turn and anchored on the exact decision*.
 - **It is windowed at `_TURN_PAGE` (50 turns).** Measured: the longest real battle is **249 turns /
-  522 KB** of session JSON — the same "download, not a page" failure `_BATTLE_PAGE` exists to
+  821 KB** of session JSON — the same "download, not a page" failure `_BATTLE_PAGE` exists to
   prevent, except this one lands on a phone. Nothing is unreachable: prev/next links plus the
   session's own `notable` jump targets (worst value drops, faints) reach any turn.
+- **Each decision has a collapsed drop-down** carrying the TUI's per-decision detail, restricted to
+  what needs **no checkpoint**: the full recorded action distribution (bars, chosen marked, illegal
+  actions *grey* — never red, mirroring the TUI's `_DISABLED_GREY`: "unavailable" must not read as
+  "dangerous"), both benches with items/movesets, the reward component breakdown, the events, and
+  the **raw Showdown protocol for that turn**. The footer names what is missing and where it lives,
+  rather than leaving the reader to wonder — beliefs, threat tables, saliency and the re-run
+  distribution all need the model, so they stay in `analyze` / the TUI.
+- **The default battle, and the picker, are NEWEST-first** (`_newest_first`). `ProbeSession.battles()`
+  is ordered by step *ascending*, so a naive `rows[0]` default landed visitors on a battle played by
+  the run's oldest checkpoint.
 - **It renders server-side on first paint** — measured **17–20 ms** for `battle_turns()` on that
   249-turn battle, ~110 ms for the whole page. Nothing here needs to be async.
 
@@ -295,6 +313,7 @@ there is no browser):
 | `chart-marks` | how many mark elements **Vega actually drew** — a spec can compile cleanly and plot nothing |
 | `rows` | data rows present in the DOM (table rows **and** battle-replay turn cards) |
 | `monstack` | on `/battle`: whether the two mons stacked (phone) or sat side by side (desktop) |
+| `scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext` | the PALETTE, measured (see below) |
 | `swaps` | completed HTMX swaps |
 | `chart-error` / `htmx-error` | a failure surfaced on the page rather than only in the console |
 | `vw` · `docw` · `narrow` · `headerh` · `ctlfont` · `overflowby` + `overflowwhat` · `scrollers` + `scrollingwrappers` | the LAYOUT, measured (see below) |
@@ -307,6 +326,32 @@ carries a Vega-Lite spec, and `app.js` re-embeds it on `htmx:afterSwap`. A non-z
 **The SVG renderer is not a preference.** Under the canvas renderer Vega leaves no DOM behind, so
 `chart-marks` would read 0 for a healthy chart and 0 for a broken one, and the best gate on the
 page would silently be a no-op. `app.js` pins `renderer: "svg"` for exactly that reason.
+
+## The two palettes, and why the dark one needs its own gate
+
+Dark is the BASE (`:root`) and light is a `prefers-color-scheme` override, so the default open on a
+dark desktop needs no toggle and no flash. But **only one palette is ever on screen**, which makes
+review-by-screenshot cover exactly half the stylesheet. Three defects lived in the unseen half
+until the record started measuring it (`scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext`):
+
+- **Chart text was Vega's near-black on `#16161a`.** `charts._BASE` makes the chart background
+  transparent so it sits on the page, and a static spec emitted by Python cannot know the theme —
+  so `app.js` applies the theme at EMBED time (`themeConfig` → `themed`), reading the live values
+  back out of the stylesheet's own custom properties rather than restating them. Spec-provided
+  config still wins over the theme, so a chart that deliberately sets a colour keeps it.
+- **Unclassed `<a>` kept the browser default `#0000EE`** — about **2.4:1** against the dark
+  background, under the 4.5:1 floor. Only the link *classes* were styled, so any plain link was
+  missed. Fixed with a base `a { color: var(--accent) }` rule, which a later link cannot undo.
+- **`color-scheme` was never declared** (measured `normal`), so the browser rendered its OWN
+  widgets — `<select>` menus, scrollbars — in the light style: a white dropdown on a dark page.
+
+**A dark screenshot FLATTERS the page, which is why the third one hid.** `--force-dark-mode` is
+the only way to make `prefers-color-scheme: dark` match in headless chrome (there is no CLI switch
+for the media feature), and it *also* darkens UA widgets — which a real dark-mode visitor does not
+get. So the widget defect was invisible in every screenshot and only the `colorscheme` reading
+catches it. The expected colours in `render_integration_test.py` are written out literally rather
+than re-derived from the stylesheet: a test that computes its expectation from the same source it
+is checking cannot catch the palette failing to apply.
 
 ## Responsive layout (desktop + phone), and how it is gated
 

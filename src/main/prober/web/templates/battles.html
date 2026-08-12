@@ -25,8 +25,10 @@
     <label>opponent
       <select name="opponent">{{ m.opponent_options(opponents) }}</select>
     </label>
+    {# Preselected to the newest step — see `page_battles`. The option list still opens with
+       "all steps", so the wider view is one selection away rather than gone. #}
     <label>step
-      <select name="step">{{ m.step_options(summary) }}</select>
+      <select name="step">{{ m.step_options(summary, selected=selected_step) }}</select>
     </label>
     <span id="battles-busy" class="htmx-indicator muted">loading…</span>
   </form>

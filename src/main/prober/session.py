@@ -566,6 +566,7 @@ class ProbeSession:
         meta = summary.get("meta", {})
 
         boards = [build_board(inv) for inv in invs]
+        protocol = self._protocol_lines(b)      # parsed ONCE, sliced per turn below
         turns: "list[dict]" = []
         by_turn: dict = {}
         for i, inv in enumerate(invs):
@@ -602,6 +603,18 @@ class ProbeSession:
                                       if isinstance(reward, dict) else {}),
                 "events": outcome.get("events") or [],
                 "flags": list(summary_flags(inv)),
+                # The FULL recorded action distribution — what else the policy considered, and how
+                # close it came to picking it. Already action-index ordered by the recorder (see the
+                # "do NOT re-sort move labels" gotcha in this package's CLAUDE.md), so it is passed
+                # through in that order and never re-sorted.
+                "actions": [{"label": label, "prob": parse_pct(a.get("prob", "0%")),
+                             "valid": bool(a.get("valid")), "chosen": label == inv.get("chosen")}
+                            for label, a in (inv.get("actions") or {}).items()],
+                # The raw Showdown lines for this decision's TURN — the exact mechanics the summary
+                # collapses (per-hit damage, a miss, an immunity, the switch-in). Empty when the
+                # trace has no `*_replay.html` sibling.
+                "protocol": list(protocol_for_turn(protocol, int(inv.get("turn") or 0)))
+                            if protocol else [],
             }
             key = row["turn"]
             if key not in by_turn:
@@ -627,6 +640,21 @@ class ProbeSession:
         }
 
     # -- deep analysis (loads the resolved model) ---------------------------
+
+    def _protocol_lines(self, b) -> list:
+        """The WHOLE parsed protocol log for a battle, from its `*_replay.html` sibling.
+
+        Separate from `_protocol_for` because a turn-by-turn read wants every turn's slice: going
+        through `_protocol_for` per decision would re-read and re-parse the same file once per turn
+        (249 times on the longest battle). Empty when the replay file is absent/unreadable."""
+        replay = b.summary_path[: -len("_summary.json")] + "_replay.html"
+        if not os.path.exists(replay):
+            return []
+        try:
+            with open(replay, encoding="utf-8") as f:
+                return list(parse_protocol_log(f.read()))
+        except Exception:  # noqa: BLE001 — best-effort
+            return []
 
     def _protocol_for(self, b, turn) -> list:
         """Raw Showdown protocol lines for a decision's turn, from the trace's `*_replay.html` sibling

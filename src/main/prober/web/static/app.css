@@ -5,6 +5,13 @@
  * on a dark desktop needs no toggle and no flash. */
 
 :root {
+  /* Tells the browser BOTH palettes exist, so it renders its OWN widgets — <select> menus, form
+     controls, scrollbars, the canvas behind the page — to match. Without it those stay in the light
+     UA style, i.e. a white dropdown on a dark page. MEASURED as `normal` before this line existed;
+     the bug was invisible in headless review because `--force-dark-mode` darkens UA widgets too,
+     which a real `prefers-color-scheme: dark` visitor does not get. */
+  color-scheme: light dark;
+
   --bg: #16161a;
   --surface: #1d1d21;
   --surface-2: #242423;
@@ -34,6 +41,12 @@
 }
 
 * { box-sizing: border-box; }
+
+/* EVERY link follows the theme. Styling only the specific classes (.linky, .jump, nav tabs) left
+   any plain <a> on the browser default `#0000EE`, which on the dark background measures about
+   2.4:1 against `--bg` — under the 4.5:1 floor, and unreadable in practice. A base rule means a
+   link added later cannot reintroduce it; the classed rules below still win where they apply. */
+a { color: var(--accent); }
 
 body {
   margin: 0;
@@ -101,6 +114,13 @@ ol.startlist a:hover { text-decoration: underline; }
 ol.startlist .q { display: block; color: var(--text); }
 ol.startlist .muted { display: block; font-size: 13px; }
 
+/* Rows that ARE a destination. The cursor and hover are the affordance; the real <a> in the row
+   is what actually makes it work (see app.js). */
+tr.clickable { cursor: pointer; }
+tr.clickable:hover { background: var(--surface-2); }
+a.rowlink { color: var(--accent); text-decoration: none; }
+tr.clickable:hover a.rowlink { text-decoration: underline; }
+
 td.nowrap, .nowrap { white-space: nowrap; }
 button.copybtn { margin-right: 6px; }
 th[title] { cursor: help; border-bottom: 1px dotted var(--dim); }
@@ -127,7 +147,10 @@ form.filters select, form.filters input, button {
   border: 1px solid var(--line); border-radius: 6px;
 }
 button { cursor: pointer; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #08131a; font-weight: 600; }
+/* Label colour is the PAGE background, not a fixed near-black. `--accent` is a light blue on the
+   dark palette and a dark blue on the light one, so a hardcoded #08131a was dark-on-dark in light
+   mode — the one place in this stylesheet where a colour did not follow the theme. */
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
 button:disabled { opacity: 0.5; cursor: default; }
 
 /* Tables ------------------------------------------------------------------- */
@@ -259,6 +282,51 @@ li.orderq { font-family: inherit; font-size: 11px; font-style: italic; }
 p.legend { margin: 0 0 10px; line-height: 1.6; }
 p.legend .swatch { display: inline-block; width: 0; height: 0.9em; vertical-align: -0.1em;
                    margin: 0 4px; border-left: 2px dashed var(--line); }
+
+/* The per-turn drop-down — the TUI's model-free detail, collapsed until you want it. */
+details.more { margin-top: 6px; }
+details.more > summary { cursor: pointer; font-size: 12px; color: var(--accent);
+                         list-style: none; display: inline-block; padding: 2px 0; }
+details.more > summary::before { content: "▸ "; }
+details.more[open] > summary::before { content: "▾ "; }
+details.more > summary::-webkit-details-marker { display: none; }
+/* auto-fit rather than a fixed column count: the panels sit side by side when there is room and
+   stack on a phone with no separate breakpoint rule to keep in sync. */
+.moregrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 10px 18px; margin: 8px 0 4px; }
+.moregrid .panel.wide { grid-column: 1 / -1; }
+.moregrid h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+               color: var(--dim); margin: 6px 0 4px; font-weight: 600; }
+
+/* Action distribution: the bar IS the probability, so a glance shows how close the call was. */
+ul.dist, ul.bench, ul.kv { list-style: none; margin: 0; padding: 0; }
+ul.dist li { display: grid; grid-template-columns: 46px 1fr auto; gap: 8px; align-items: center;
+             font-size: 12px; padding: 1px 0; }
+ul.dist .bar { display: block; height: 6px; border-radius: 3px; background: var(--surface-2);
+               border: 1px solid var(--line); overflow: hidden; }
+ul.dist .bar > span { display: block; height: 100%; background: var(--accent); }
+ul.dist .lbl { font-family: var(--mono); overflow-wrap: anywhere; }
+ul.dist .p { font-family: var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+ul.dist li.chosen .lbl { font-weight: 700; color: var(--text); }
+/* An ILLEGAL action reads GREY, never red — "unavailable" must not look like "dangerous",
+   the same distinction the TUI draws with _DISABLED_GREY. */
+ul.dist li.invalid { opacity: 0.45; }
+ul.dist li.invalid .bar > span { background: var(--dim); }
+
+ul.bench li { font-size: 12px; padding: 1px 0; overflow-wrap: anywhere; }
+ul.bench li.fainted { opacity: 0.45; text-decoration: line-through; }
+ul.bench .hp, ul.kv .mono { font-family: var(--mono); color: var(--dim); }
+ul.bench .moveset { display: block; font-size: 11px; margin-left: 12px; }
+p.benchline { margin: 6px 0 2px; font-size: 12px; }
+p.benchline .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+                   color: var(--dim); margin-right: 6px; }
+ul.kv li { font-size: 12px; padding: 1px 0; overflow-wrap: anywhere; }
+ul.kv .k { color: var(--dim); }
+
+/* Raw protocol: preformatted, so it scrolls in its own box rather than widening the page. */
+pre.proto { font-family: var(--mono); font-size: 11px; line-height: 1.5; margin: 0;
+            padding: 8px 10px; background: var(--surface-2); border-radius: 6px;
+            overflow-x: auto; max-height: 320px; overflow-y: auto; color: var(--dim); }
 
 p.critic { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 2px;
            font-family: var(--mono); font-size: 12px; color: var(--dim);

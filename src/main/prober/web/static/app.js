@@ -131,8 +131,71 @@
     var stacked = monStacking();
     if (stacked !== null) { d.monstack = stacked; }
 
+    /* THEME, measured. The page ships two palettes and only one is ever on screen, so every
+     * screenshot review covers exactly half of it. These make the other half checkable:
+     *   scheme     which palette the browser asked for
+     *   bg         what the page actually painted (proves the palette is applied, not just defined)
+     *   axistext   the fill Vega gave its axis labels — the value that is near-black by default
+     *              and therefore invisible on the dark background unless themeConfig() reached it
+     */
+    d.scheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    d.bg = window.getComputedStyle(document.body).backgroundColor;
+    /* `normal` here means the browser renders its own widgets (selects, scrollbars) in the LIGHT
+     * style regardless of the page — a white dropdown on a dark page. Not visible in a
+     * --force-dark-mode screenshot, which darkens UA widgets anyway, so it has to be read. */
+    d.colorscheme = window.getComputedStyle(document.documentElement).colorScheme || "normal";
+    var anyLink = document.querySelector("main a");
+    d.linkcolor = anyLink ? window.getComputedStyle(anyLink).color : "";
+    var axisLabel = document.querySelector('.chart g[class*="role-axis-label"] text')
+                 || document.querySelector(".chart .role-axis text")
+                 || document.querySelector(".chart text");
+    d.axistext = axisLabel ? window.getComputedStyle(axisLabel).fill : "";
+
     if (err) { d.chartError = String(err); }
     d.ready = "1";
+  }
+
+  /* Vega-Lite's default text is near-black, and `_BASE` makes the chart background transparent so
+   * it sits on the page. On the DARK palette that is black-on-#16161a: axis labels, titles and
+   * legends effectively vanish. The specs cannot know the theme — they are static JSON emitted by
+   * Python — so the theme is applied here, at embed time, which is the one place that knows what
+   * the viewer's browser asked for.
+   *
+   * The values are READ BACK OUT OF THE STYLESHEET rather than restated here. app.css already
+   * defines both palettes as custom properties on :root with a prefers-color-scheme override, so
+   * this returns whichever one is live and there is no second copy of the colours to drift.
+   */
+  function themeConfig() {
+    var css = getComputedStyle(document.documentElement);
+    function tok(name, fallback) {
+      return (css.getPropertyValue(name) || "").trim() || fallback;
+    }
+    var text = tok("--text", "#1d1d1b");
+    var dim = tok("--dim", "#6b6b66");
+    var line = tok("--line", "#dcdcd6");
+    return {
+      axis: {labelColor: dim, titleColor: text, gridColor: line, domainColor: line,
+             tickColor: line},
+      legend: {labelColor: dim, titleColor: text},
+      title: {color: text, subtitleColor: dim},
+      header: {labelColor: dim, titleColor: text},
+      view: {stroke: null}
+    };
+  }
+
+  /* Theme UNDER the spec's own config, never over it: a chart that deliberately sets something
+   * (the reliability curve's identity line, the fixed lever colours) must keep winning. */
+  function themed(spec) {
+    var cfg = themeConfig(), own = spec.config || {}, key;
+    for (key in own) {
+      if (Object.prototype.hasOwnProperty.call(own, key)) {
+        cfg[key] = typeof own[key] === "object" && own[key] && !Array.isArray(own[key])
+          ? Object.assign({}, cfg[key] || {}, own[key])
+          : own[key];
+      }
+    }
+    spec.config = cfg;
+    return spec;
   }
 
   function embedAll(root) {
@@ -152,7 +215,7 @@
         throw e;
       }
       node.dataset.embedded = "1";
-      return window.vegaEmbed(node, spec, {
+      return window.vegaEmbed(node, themed(spec), {
         actions: false,
         renderer: "svg",          /* see the header — canvas would make chartMarks meaningless */
         config: { background: null }
@@ -224,6 +287,22 @@
       /* Leave the text selected so the keyboard path still works. */
     });
     setTimeout(function () { btn.textContent = original; }, 1600);
+  });
+
+  /* Whole-row navigation for tables whose rows ARE a destination (the battle list).
+   *
+   * The row's id cell is a real <a> carrying the same href, so this is pure convenience layered on
+   * top of working markup — no-JS, keyboard tabbing and open-in-new-tab all keep working without
+   * it. Clicks that landed on a control (the copy button, the link itself) are left alone, or the
+   * copy button would navigate away instead of copying. Delegated from body so HTMX-swapped rows
+   * are covered too.
+   */
+  document.body.addEventListener("click", function (evt) {
+    var row = evt.target.closest && evt.target.closest("tr[data-href]");
+    if (!row || evt.target.closest("a, button, input, select, label")) { return; }
+    if (evt.defaultPrevented || evt.metaKey || evt.ctrlKey || evt.shiftKey) { return; }
+    if (window.getSelection && String(window.getSelection())) { return; }  /* selecting text */
+    window.location.href = row.dataset.href;
   });
 
   /* A failed fetch must be visible on the page, not only in the console. */
