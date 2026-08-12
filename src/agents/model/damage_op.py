@@ -616,54 +616,6 @@ class DamageOperator(torch.nn.Module):
         ko = acc * torch.clamp((dmg - cur_hp) / (0.15 * dmg + eps), 0.0, 1.0)
         return high, low, crit, ko
 
-    def _nature_marg_ko(self, ko_ramp, high_frac, maxhp, cur_hp, acc_all, phys_all, fixed_all, nat_probs,
-                        eps: float = 1e-6):
-        """gen3_nature_ev_belief_v1: MARGINALISE the incoming per-(defender, candidate) P(KO) `ko_ramp` over
-        the opp active's believed NATURE distribution (`--spread-belief-nature-marginalize`). The op consumes a
-        single believed offense (= base_neutral·E[nature_mult]); P(KO) is a nonlinear THRESHOLD, so the
-        mean-field read (`ko` at E[mult]) blurs the ×1.1/×0.9 asymmetry. Each candidate uses exactly ONE
-        offensive stat (atk for physical, spa for special), so a 3-point quadrature over THAT stat's nature
-        effect {reduce ×0.9, neither ×1.0, boost ×1.1} is EXACT (no cross-stat correlation to lose):
-
-            P(KO)_marg = Σ_case P(stat in case)·acc·clamp((dmg·case_mult/E[mult] − cur)/(0.15·dmg·case_mult/
-                         E[mult] + eps), 0, 1)
-
-        where `dmg = high_frac·maxhp` reconstructs the believed post-screen max-roll (the cap only bites on
-        overkill, which saturates P(KO)=1 either way). Differentiable in `nat_probs` → the op's KO gradient also
-        sharpens the nature head. Fixed-damage candidates are nature-INVARIANT → kept at `ko_ramp` untouched.
-
-        Shapes: `ko_ramp`/`high_frac` [B,n_def,C]; `maxhp`/`cur_hp` [B,n_def]; `acc_all`/`phys_all`/`fixed_all`
-        **[B,C]** (per-batch-row since gen3_topk_candidates_v1 — the candidate set is this row's top-K);
-        `nat_probs` [B,25] (softmax over natures at the opp active). Returns marginalised ko [B,n_def,C]."""
-        is_boost = (self.NATURE_MULT == 1.1).float()                          # [25,5]
-        is_reduce = (self.NATURE_MULT == 0.9).float()
-        pboost = nat_probs @ is_boost                                         # [B,5] P(stat boosted) per stat
-        preduce = nat_probs @ is_reduce                                       # [B,5] P(stat reduced)
-        e_mult = (1.0 + 0.1 * pboost - 0.1 * preduce).clamp(min=eps)          # [B,5] E[nature mult] (head's)
-        is_phys_c = phys_all                                                  # [B,C]
-
-        def _stat(t):                                                        # [B,5] → [B,C] atk if phys else spa
-            return t[:, _SB_ATK:_SB_ATK + 1] * is_phys_c + t[:, _SB_SPA:_SB_SPA + 1] * (1.0 - is_phys_c)
-        pb, pr, em = _stat(pboost), _stat(preduce), _stat(e_mult)            # [B,C] each
-        pn = (1.0 - pb - pr).clamp(min=0.0)                                   # P(neither)
-        dmg = (high_frac * maxhp[:, :, None]).clamp(min=eps)                  # [B,n,C] reconstructed believed dmg
-        cur = cur_hp[:, :, None]                                              # [B,n,1]
-        acc = acc_all[:, None, :]                                             # [B,1,C]
-
-        def _ramp(r):                                                        # r [B,C] offense ratio vs believed
-            d = dmg * r[:, None, :]
-            return acc * torch.clamp((d - cur) / (0.15 * d + eps), 0.0, 1.0)  # [B,n,C]
-        # `dmg` already folds the head's E[mult] (believed offense = base_neutral·E[mult] → high_frac ∝ it), and
-        # `em` here == that SAME E[mult]; so `dmg·case_mult/em = base_neutral·case_mult·(physics)` — the em
-        # CANCELS, leaving the per-case offense exactly. The nature-posterior gradient therefore flows ONLY
-        # through the case WEIGHTS (pr/pn/pb), a clean single path (NOT double-counted) — do NOT detach `em`
-        # (that would un-cancel it and bias the gradient). base_neutral depends on nat_probs only via the EV head.
-        ko_marg = (pr[:, None, :] * _ramp(0.9 / em)
-                   + pn[:, None, :] * _ramp(1.0 / em)
-                   + pb[:, None, :] * _ramp(1.1 / em))                        # [B,n,C]
-        keep = (fixed_all > 0).float()[:, None, :]                           # fixed-damage → nature-invariant
-        return keep * ko_ramp + (1.0 - keep) * ko_marg
-
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
                       def_stat: torch.Tensor, spd_stat: torch.Tensor, maxhp: torch.Tensor,
                       cur_hp: torch.Tensor, t1d: torch.Tensor, t2d: torch.Tensor, ability1: torch.Tensor,
@@ -2660,8 +2612,7 @@ class DamageOperator(torch.nn.Module):
 
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
-                move_latent_all: Optional[torch.Tensor] = None,
-                spread_nature_logits: Optional[torch.Tensor] = None) -> torch.Tensor:
+                move_latent_all: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2766,17 +2717,6 @@ class DamageOperator(torch.nn.Module):
             atk, spa, at1, at2, def_stat, spd_stat, maxhp, cur_hp, t1d, t2d,
             ctx.ability1_ids[:, :TEAM_SIZE], our_reflect, our_light_screen,
             bp_all, mty_all, phys_all, acc_all, fixed_all, weather_mult, eps)
-
-        # gen3_nature_ev_belief_v1 (--spread-belief-nature-marginalize): the believed offense folds in a single
-        # E[nature_mult], so the nonlinear P(KO) THRESHOLD blurs the ×1.1/×0.9 asymmetry. Marginalise it over
-        # the believed nature distribution (3-point quadrature on the candidate's one offensive stat — exact).
-        # The magnitude rolls (high/low/crit) stay at the believed mean (linear → mean-field exact).
-        if spread_nature_logits is not None:
-            nat_probs = torch.softmax(spread_nature_logits[ar, ctx.opp_active_local], dim=-1)   # [B,25]
-            ko_ramp = self._nature_marg_ko(ko_ramp, high_frac, maxhp, cur_hp, acc_all, phys_all,
-                                           fixed_all, nat_probs, eps)
-            ko_cb = self._nature_marg_ko(ko_cb, high_cb, maxhp, cur_hp, acc_all, phys_all,
-                                         fixed_all, nat_probs, eps)
 
         # --- per (defender, channel): HARD max of the belief-weighted roll/KO over the candidates ---
         # The dominant believed move owns each channel (the candidate-count-robust max, NOT a diluting

@@ -33,7 +33,6 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "move_latent": "move_latent",                                           # v24
     "spread_belief": "spread_belief",                                       # v25
     "spread_belief_nature": "spread_belief_nature",                         # v40
-    "spread_belief_nature_marginalize": "spread_belief_nature_marginalize",  # v40
     "move_prior_fusion": "move_prior_fusion",                               # v20
     "move_belief_prefuse": "move_belief_prefuse",                           # v32
     "move_belief_single_compute": "move_belief_single_compute",             # v47

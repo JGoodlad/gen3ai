@@ -370,7 +370,6 @@ def _run_arch_toggles(args) -> dict:
         move_latent=args.move_latent,
         spread_belief=args.spread_belief,
         spread_belief_nature=args.spread_belief_nature,
-        spread_belief_nature_marginalize=args.spread_belief_nature_marginalize,
         move_prior_fusion=args.move_prior_fusion,
         move_belief_prefuse=args.move_belief_prefuse,
         move_belief_single_compute=args.move_belief_single_compute,
@@ -1603,13 +1602,6 @@ async def main():
                              "nature CE + EV regression (privileged inverted label) folded at --spread-belief-coef; "
                              "metrics ride belief/natureev_* (nature_acc, ev_mae). STRUCTURAL (version-checked, "
                              "fresh-only). REQUIRES --spread-belief. Off by default.")
-    parser.add_argument("--spread-belief-nature-marginalize", "--spread_belief_nature_marginalize",
-                        dest="spread_belief_nature_marginalize", action=BoolFlag, default=None,
-                        help="Op-side NATURE MARGINALIZATION (gen3_nature_ev_belief_v1): the DamageOperator "
-                             "marginalises the nonlinear P(KO)/damage over the believed nature distribution "
-                             "(compute-then-blend over the top natures) instead of using E[nature_mult] — "
-                             "restores the ×1.1/×0.9 asymmetry in the KO threshold. FORWARD-BEHAVIOR "
-                             "(version-checked, fresh-only). REQUIRES --spread-belief-nature. Off by default.")
     parser.add_argument("--hp-belief-mode", "--hp_belief_mode", dest="hp_belief_mode",
                         choices=["composed", "flat"], default=None,
                         help="How the opponent's 16 TYPED Hidden-Power channels are produced "
@@ -2118,7 +2110,6 @@ async def main():
     _resolve("move_belief_latent_coef", 0.0)   # training-only (inherited like move_belief_coef)
     _resolve("spread_belief", False)           # v25 structural (version-checked, fresh-only)
     _resolve("spread_belief_nature", False)    # v40 structural (version-checked, fresh-only)
-    _resolve("spread_belief_nature_marginalize", False)  # v40 forward-behavior (version-checked, fresh-only)
     _resolve("spread_belief_coef", 0.0)        # training-only (inherited like move_belief_coef)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
     _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
@@ -2664,39 +2655,6 @@ async def main():
             "--spread-belief-nature requires --spread-belief (it reparameterises the SpreadBelief head). "
             "Enable --spread-belief, or drop --spread-belief-nature."
         )
-    if args.spread_belief_nature_marginalize and not args.spread_belief_nature:
-        # The op marginalises over the NATURE distribution the generative head produces → that head must be on.
-        parser.error(
-            "--spread-belief-nature-marginalize requires --spread-belief-nature (the op marginalises over the "
-            "generative head's nature distribution). Enable --spread-belief-nature, or drop the flag."
-        )
-    if args.hp_type_belief_coef and args.move_belief_mode == "off":
-        # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits), and the head is built
-        # only alongside a move belief (it composes P(HP present) from the move posterior's 237 channel).
-        # EXPLICIT coef + no belief = a real contradiction → error. But the coef DEFAULTS to 0.05
-        # (_resolve), so on the DEPRECATED `--unified-moves off` ablation baseline the un-passed default
-        # would make the flag fail out of the box — the same shape as the `--hp-belief-mode flat` case
-        # below, resolved the same way: AUTO-ZERO with a loud note (the --zarch-recon-coef precedent).
-        if _hp_coef_explicit:
-            parser.error(
-                "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
-                "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
-                "or set --hp-type-belief-coef 0."
-            )
-        print("[HPBelief] no move belief (--unified-moves off): auto-zeroing the default "
-              "--hp-type-belief-coef (the HP-type head is built only alongside a move belief).")
-        args.hp_type_belief_coef = 0.0
-    if args.hp_type_belief_coef and args.hp_belief_mode == "flat":
-        # The `flat` ablation builds NO HPTypeBelief head, so there is no posterior for the CE to
-        # supervise. AUTO-ZERO with a loud note rather than erroring (the --zarch-recon-coef
-        # single-team precedent above): --hp-type-belief-coef defaults to 0.05, so erroring would make
-        # `--hp-belief-mode flat` fail out of the box — a hostile flag to run an ablation with. The
-        # note keeps it from being a SILENT no-op, which is the failure that actually matters here.
-        print("[HPBelief] --hp-belief-mode flat: auto-zeroing --hp-type-belief-coef (the ablation "
-              "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
-              "typed HP channels are still predicted + supervised by the move-belief BCE.")
-        args.hp_type_belief_coef = 0.0
-    log_level = LogLevel[args.log_level.upper()]
 
     # One server config, built from --showdown-port and threaded to every Showdown client
     # (training-env players in spawn workers, eval, and self-play). Default port: 8000.

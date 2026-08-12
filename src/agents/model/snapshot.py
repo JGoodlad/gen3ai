@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 import stable_baselines3
 from sb3_contrib import MaskablePPO
 
-from agents.model.damage_tables import _PRIOR_FLOOR
+from agents.model.damage_tables import _PRIOR_FLOOR, sanitize_historical_move_floor
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.team_signature import TEAM_SIGNATURE_DIM as _TEAM_SIG_DIM
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
@@ -592,6 +592,7 @@ def load_model_snapshot(
             "observation_space": env.observation_space,
             "action_space": env.action_space,
         }
+    _patch_historical_floor(zip_path, kwargs)
 
     return InstrumentedMaskablePPO.load(zip_path, **kwargs)
 
@@ -815,6 +816,37 @@ def _compile_warmup_obs(fe) -> dict:
     return {"observation": torch.zeros(1, dim)}
 
 
+def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
+    """Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
+
+    Before `gen3_unconditional_move_legality_v1`, `move_candidate_floor: 0.0` was how a config said
+    "legality gate OFF" — the value was a SWITCH, not a probability. v65 gave it a validated range,
+    so every checkpoint saved before that now raises inside `build_move_prior_logits` the moment SB3
+    rebuilds the extractor from the saved `policy_kwargs`. That is a hard stop for *reading* old
+    models: the prober, the offline probes, ELO ladders, and frozen self-play opponents drawn from
+    an older pool all reconstruct an extractor and none of them are resuming training.
+
+    Sanitising HERE is safe because it does not touch the safety property. The resume guard lives in
+    `ModelVersion.check_compatible`, which compares the SAVED config against the live one and already
+    special-cases `saved == 0.0` as "predates v65" — it runs before this and is unaffected. So a
+    training resume still FATALs, while a read-only load succeeds. Doing it in `_migrate_config`
+    instead would conflate the two and silently let a resume adopt a different prior.
+    """
+    try:
+        from stable_baselines3.common.save_util import load_from_zip_file
+        data, _, _ = load_from_zip_file(zip_path, device="cpu", print_system_info=False)
+    except Exception:
+        return                                  # unreadable here → let SB3's own load report it
+    pk = (data or {}).get("policy_kwargs") or {}
+    fek = pk.get("features_extractor_kwargs")
+    if not isinstance(fek, dict) or "move_candidate_floor" not in fek:
+        return
+    before = fek["move_candidate_floor"]
+    sanitize_historical_move_floor(fek)
+    if fek["move_candidate_floor"] != before:
+        kwargs.setdefault("custom_objects", {})["policy_kwargs"] = pk
+
+
 def load_foreign_opponent(
     model_path: str,
     current_version: ModelVersion,
@@ -871,7 +903,9 @@ def load_foreign_opponent(
     foreign_version = ModelVersion.from_json_file(config_path)
     current_version.check_opponent_compatible(foreign_version)
 
-    return InstrumentedMaskablePPO.load(zip_path, env=None, device=device), foreign_version
+    load_kwargs: dict = {"env": None, "device": device}
+    _patch_historical_floor(zip_path, load_kwargs)
+    return InstrumentedMaskablePPO.load(zip_path, **load_kwargs), foreign_version
 
 
 def current_model_version(
@@ -895,7 +929,6 @@ def current_model_version(
     move_belief_latent_coef: float = 0.0,
     spread_belief: bool = False,
     spread_belief_nature: bool = False,
-    spread_belief_nature_marginalize: bool = False,
     spread_belief_coef: float = 0.0,
     move_prior_fusion: bool = False,
     move_belief_prefuse: bool = False,
@@ -976,7 +1009,6 @@ def current_model_version(
     ext_kwargs["move_latent"] = move_latent
     ext_kwargs["spread_belief"] = spread_belief
     ext_kwargs["spread_belief_nature"] = spread_belief_nature
-    ext_kwargs["spread_belief_nature_marginalize"] = spread_belief_nature_marginalize
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
     ext_kwargs["move_belief_prefuse"] = move_belief_prefuse
     ext_kwargs["move_belief_single_compute"] = move_belief_single_compute
@@ -1048,7 +1080,6 @@ def arch_toggles_from_model(model) -> dict:
         "move_latent": bool(getattr(fe, "move_latent", False)),
         "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
         "spread_belief_nature": bool(getattr(fe, "spread_belief_nature", False)),
-        "spread_belief_nature_marginalize": bool(getattr(fe, "spread_belief_nature_marginalize", False)),
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
         "move_belief_prefuse": bool(getattr(fe, "move_belief_prefuse", False)),
         "move_belief_single_compute": bool(getattr(fe, "move_belief_single_compute", False)),

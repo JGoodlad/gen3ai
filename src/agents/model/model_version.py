@@ -463,7 +463,7 @@ from typing import Any, Dict, List
 #   loud, and NOT migrated up (rewriting 0.0→0.02 would let an incompatible belief load silently).
 #   NO ARCH_SIGNATURE bump: the prior buffer is non-persistent and unchanged in shape, and every
 #   floor > 0 config produces a bit-identical buffer before and after (only floor == 0.0 changes).
-MODEL_CONFIG_VERSION = 65
+MODEL_CONFIG_VERSION = 66
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1114,7 +1114,6 @@ class ModelVersion:
     # top natures) instead of using E[nature_mult] — restores the ×1.1/×0.9 asymmetry in the threshold. No new
     # params (reads the head's nature posterior). Requires spread_belief_nature. Gated in check_compatible (a
     # mid-run flip feeds a different forward); OFF byte-for-byte.
-    spread_belief_nature_marginalize: bool = False
     # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
     # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
     spread_belief_coef: float = 0.0
@@ -1377,9 +1376,6 @@ class ModelVersion:
             ),
             spread_belief_nature=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief_nature", False)
-            ),
-            spread_belief_nature_marginalize=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("spread_belief_nature_marginalize", False)
             ),
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
@@ -1691,14 +1687,6 @@ class ModelVersion:
 
         # v40 FORWARD-BEHAVIOR toggle (gen3_nature_ev_belief_v1, like move_prior_fusion): no new params, but a
         # mid-run flip feeds the op a different (marginalised vs mean-field) forward.
-        if self.spread_belief_nature_marginalize != saved.spread_belief_nature_marginalize:
-            raise ModelVersionError(
-                f"spread_belief_nature_marginalize mismatch: saved={saved.spread_belief_nature_marginalize}, "
-                f"current={self.spread_belief_nature_marginalize}.\n"
-                "The op's nature marginalisation changes the forward (marginalised vs mean-field P(KO)) and "
-                "cannot be toggled mid-run.\n"
-                "Resume with the matching --spread-belief-nature-marginalize setting, or start a fresh run."
-            )
 
         # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): each zeros a now-subsumed obs region
         # from the model's view → a different forward the policy/value trained under (state_dict identical).
@@ -2494,7 +2482,6 @@ def _migrate_config(data: dict) -> dict:
         # spread_belief. Gated in check_compatible (bool compare). Marginalization (--spread-belief-nature-
         # marginalize, op-side) is a forward-behavior toggle.
         data.setdefault("spread_belief_nature", False)
-        data.setdefault("spread_belief_nature_marginalize", False)
         data["config_version"] = 40
     if version < 41:
         # v41: gen3_belief_grad_mode_v1 — the {shaping, detached} belief-trunk-gradient knob. detach() is
@@ -2647,4 +2634,20 @@ def _migrate_config(data: dict) -> dict:
         # instead of silently loading a checkpoint whose policy trained on a prior that gave phantom
         # mass to moves its opponents could not learn. Do NOT "fix" this by migrating 0.0 → 0.02.
         data["config_version"] = 65
+    if version < 66:
+        # v66: gen3_nature_marginalize_removed_v1 — `--spread-belief-nature-marginalize` and its kernel
+        # (`DamageOperator._nature_marg_ko`) are DELETED, not defaulted off. MEASURED on gen-8's own
+        # checkpoint over 1,075,200 ALIVE (defender, candidate) cells: |ΔP(KO)| vs mean-field was
+        # p50/p90/p95 = 0.00000, p99 = 0.00047, mean 0.0003, and only 0.39% of cells moved by >0.02.
+        # The nature posterior is peaked (top-1 mass 0.75, entropy 0.64 of 3.22 nats), so integrating
+        # over it ≈ evaluating at its mode — ledger K1's shape exactly: sound theory, absent magnitude.
+        # It also computed a WRONG answer on empty slots: `dmg.clamp(min=eps)` turned zero damage into
+        # 1e-6, and with cur_hp also 0 the ramp gave 1e-6/(0.15e-6+1e-6) = 1/1.15 = 0.8696 — a spurious
+        # 87% KO on a slot with nothing in it (gated downstream, so believed harmless, but a trap).
+        # The KEPT half is `--spread-belief-nature`, the generative nature/EV head: that is the actual
+        # correctness fix (it makes the largest-EV order-statistic bias structurally unrepresentable),
+        # and it is why `belief/spread_largest_bias` is closing -26 -> -12.8 on gen-8.
+        # The stale key is DROPPED so an old config does not carry a field nothing reads.
+        data.pop("spread_belief_nature_marginalize", None)
+        data["config_version"] = 66
     return data

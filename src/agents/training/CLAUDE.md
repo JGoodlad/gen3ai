@@ -1839,10 +1839,13 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
   decomposition DIRECTLY (the derived loss alone is many-to-one). Label: the TRUE (nature, EVs)
   **deterministically INVERTED** from agent2's `mon.stats` (`damage_tables.invert_nature_evs`, GIGO-guarded —
   gen3 hides them, so we invert the visible derived stats), emitted by `gen3_env._spread_labels` as
-  training-only `belief_nature`/`belief_ev`(+masks), cached per battle. `--spread-belief-nature-marginalize`
-  (op-side, forward-behavior) makes the DamageOperator marginalise the nonlinear P(KO) over the believed
-  nature distribution (an exact 3-point quadrature per candidate's offensive stat). Smoke: `nature_acc` rises
-  toward the true nature, `largest_bias` trends to 0.
+  training-only `belief_nature`/`belief_ev`(+masks), cached per battle. The op-side
+  `--spread-belief-nature-marginalize` (an exact 3-point quadrature of P(KO) over the believed nature
+  distribution) is **DELETED** (v66): measured on gen-8's own checkpoint across 1,075,200 alive
+  (defender, candidate) cells it moved |ΔP(KO)| by 0.00000 at p50/p90/p95 and 0.00047 at p99, because a
+  peaked nature posterior (top-1 mass 0.75) makes marginalising ≈ evaluating at the mode. Sound theory,
+  absent magnitude — ledger K1's shape. Smoke: `nature_acc` rises toward the true nature,
+  `largest_bias` trends to 0.
 - **Versioning.** `spread_belief` (the head) is the version-checked structural toggle (v25, fresh-only);
   `spread_belief_coef` is **training-only** (inherited on a flagless resume, like `move_belief_coef`). The
   loss adds NO forward/weight change → no `ARCH_SIGNATURE`/`MODEL_CONFIG_VERSION` bump (a checkpoint trained

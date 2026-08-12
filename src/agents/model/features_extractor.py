@@ -2288,7 +2288,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = _PRIOR_FLOOR,
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
-                 spread_belief_nature_marginalize: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  seed_quantile: bool = False, value_threat_inject: bool = False,
@@ -2509,12 +2508,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             raise ValueError("spread_belief_nature requires spread_belief=True (it parameterises the "
                              "SpreadBelief head). Enable --spread-belief, or drop --spread-belief-nature.")
         # gen3_nature_ev_belief_v1: the op marginalises P(KO) over the head's nature distribution → requires it.
-        if spread_belief_nature_marginalize and not spread_belief_nature:
-            raise ValueError("spread_belief_nature_marginalize requires spread_belief_nature=True (the op "
-                             "marginalises over the generative head's nature distribution).")
         self.spread_belief_enabled = spread_belief
         self.spread_belief_nature = spread_belief_nature
-        self.spread_belief_nature_marginalize = spread_belief_nature_marginalize
         self.spread_belief = SpreadBelief(layout['max_species'], nature=spread_belief_nature) if spread_belief else None
         self.last_spread_belief: Optional[torch.Tensor] = None
         self.last_spread_nature_logits: Optional[torch.Tensor] = None   # [B,6,25] (gen3_nature_ev_belief_v1)
@@ -3391,20 +3386,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # via last_move_belief_logits / last_spread_belief.
         damage_block = None
         if self.damage_op is not None:
-            # gen3_nature_ev_belief_v1: pass the nature posterior to the op ONLY when marginalization is on (the
-            # op then marginalises P(KO) over the nature distribution; None → mean-field, byte-identical).
-            spread_nat = self.last_spread_nature_logits if self.spread_belief_nature_marginalize else None
             # Optional gradient-checkpointing (same gate as the transformer): the op materialises several
             # [B,6,~416] activations → recompute in backward for ~GBs of VRAM. Bit-exact (no dropout/RNG);
             # a no-op under inference. ctx is a non-tensor arg (use_reentrant=False); the belief tensors carry
             # the grad. move_latent_all (built above) is the op's top-K identity source (None unless topk on).
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
-                                          self.last_spread_belief, move_latent_all, spread_nat,
+                                          self.last_spread_belief, move_latent_all,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, spread_nat)
+                                              move_latent_all)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         return opp_tokens, damage_block
