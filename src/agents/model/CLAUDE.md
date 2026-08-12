@@ -43,7 +43,23 @@ refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transf
 species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
 the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads); `DamageOperator`
 runs *after* `MoveBelief` and consumes its predicted-move logits to compute the believed-move incoming
-damage to each of our mons. **gen3_no_concat_v1 (v61): its flat block no longer enters either
+damage to each of our mons. **`MoveBelief`'s Smogon prior is LEGALITY-GATED unconditionally**
+(`gen3_unconditional_move_legality_v1`, v65): `build_move_prior_logits` drives every
+`(species, move)` the species cannot learn to `_ILLEGAL_PROB` 1e-6, so the belief can no longer
+invent "this special attacker might be holding Explosion". Three cases, and keeping them apart is
+the whole point — **`floor` is the LEGAL-UNOBSERVED base, never an on/off switch**:
+| case | prior | meaning |
+|---|---|---|
+| species has a learnset, move NOT in it | `_ILLEGAL_PROB` 1e-6 | **impossible** |
+| legal, absent from usage data | `floor` (`_PRIOR_FLOOR` 0.02) | unlikely but liftable by evidence |
+| legal, with recorded usage | its TRUE Smogon rate | no rarity cap — a surprise tech survives |
+| **no learnset at all** (unknown species / num 0) | `floor` everywhere | nothing known ⇒ everything stays POSSIBLE |
+That last row is a correctness invariant, not a default: *"not known to be illegal"* must never
+collapse into *"known to be illegal"*, or the belief asserts an unidentified opponent can do
+nothing. `logit(0.02) = -3.89` vs `logit(1e-6) = -13.8` is a **9.92-nat** gap, and a floor at or
+below `_MIN_PRIOR_FLOOR` (1e-3) is a hard `ValueError` — the collapse is unrepresentable rather
+than merely unlikely, because a collapsed floor silently turns the legality gate into the rarity
+prune that previously crippled surprise-move anticipation. **gen3_no_concat_v1 (v61): its flat block no longer enters either
 projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
 the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
 with the `value_seeds/*` TB collapse contract logged every train(); the VICReg floor on those outputs is `--value-seed-vicreg-coef`, v62 resume-immutable — its

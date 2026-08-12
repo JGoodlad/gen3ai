@@ -87,12 +87,16 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     from agents.model import features_extractor as fx
     from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    from agents.model.damage_tables import sanitize_historical_move_floor
 
     cfg = json.load(open(config_path))
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kwargs = {k: v for k, v in cfg.items() if k in sig}
+    # v65: pre-v65 configs recorded move_candidate_floor 0.0; keep the committed copy verbatim and
+    # reconcile at construction (see the helper's docstring for why not in _migrate_config).
+    sanitize_historical_move_floor(kwargs)
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
     if hasattr(fe, "disable_observation_debugger"):

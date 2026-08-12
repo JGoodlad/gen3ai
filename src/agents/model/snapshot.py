@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 import stable_baselines3
 from sb3_contrib import MaskablePPO
 
+from agents.model.damage_tables import _PRIOR_FLOOR
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.team_signature import TEAM_SIGNATURE_DIM as _TEAM_SIG_DIM
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
@@ -889,7 +890,7 @@ def current_model_version(
     damage_op: bool = False,
     damage_reattend: bool = False,
     damage_outgoing: bool = False,
-    move_candidate_floor: float = 0.0,
+    move_candidate_floor: float = _PRIOR_FLOOR,
     move_latent: bool = False,
     move_belief_latent_coef: float = 0.0,
     spread_belief: bool = False,
@@ -1043,7 +1044,7 @@ def arch_toggles_from_model(model) -> dict:
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
         "damage_reattend": bool(getattr(fe, "damage_reattend_enabled", False)),
         "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
-        "move_candidate_floor": float(getattr(fe, "move_candidate_floor", 0.0)),
+        "move_candidate_floor": float(getattr(fe, "move_candidate_floor", _PRIOR_FLOOR)),
         "move_latent": bool(getattr(fe, "move_latent", False)),
         "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
         "spread_belief_nature": bool(getattr(fe, "spread_belief_nature", False)),

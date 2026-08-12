@@ -46,11 +46,39 @@ def test_prior_logits_recover_usage_probability():
 
 
 def test_prior_logits_floor_for_unseen_and_unknown_species():
+    """Two DIFFERENT reasons a cell can be low, which the unconditional legality gate
+    (gen3_unconditional_move_legality_v1) must keep apart:
+
+      * "not known to be ILLEGAL"  → the liftable floor  (unseen move / unknown species)
+      * "known to be illegal"      → ~0                  (species has a learnset, move isn't in it)
+
+    This test used to read `skarmory`/`fireblast` as the "unseen move" case and assert it sat at the
+    floor. That was the LEGACY flat-prior behaviour and it is now wrong on its own premise: Skarmory
+    genuinely CANNOT learn Fire Blast (asserted below), so floor-level mass there is exactly the
+    phantom threat the gate exists to delete. The unseen-move case is re-derived from a move Skarmory
+    CAN learn but the usage data never records."""
     P = dt.build_move_prior_logits(_N_SPECIES, _N_MOVES)
     sk = gen3_data.species.get("skarmory").num
-    fb = gen3_data.moves.get("fireblast").num            # Skarmory ~never runs Fire Blast
-    assert abs(_sigmoid(P[sk, fb].item()) - dt._PRIOR_FLOOR) < 1e-3
+    legal = gen3_data.learnset.get_legal_moves("skarmory")
+
+    # ILLEGAL → ~0, never the floor.
+    fb = gen3_data.moves.get("fireblast").num
+    assert "fireblast" not in legal, "FIXTURE STALE: Skarmory can learn Fire Blast"
+    assert _sigmoid(P[sk, fb].item()) < 1e-5
+
+    # LEGAL but with no recorded usage → the liftable floor. Membership is tested on `_belief_num`,
+    # not `num`: the builder writes at the BELIEF num, which collapses every typed Hidden Power onto
+    # 237, so a raw-`num` comparison would happily pick a move whose cell a usage entry already wrote.
+    usage_nums = {dt._belief_num(m, gen3_data.moves.get(m))
+                  for m in gen3_data.priors.moves("skarmory") if gen3_data.moves.get(m) is not None}
+    unseen = next(bn for bn in (dt._belief_num(m, gen3_data.moves.get(m)) for m in sorted(legal)
+                                if gen3_data.moves.get(m) is not None)
+                  if bn not in usage_nums and 0 <= bn < _N_MOVES)     # e.g. Double Team / Swagger
+    assert abs(_sigmoid(P[sk, unseen].item()) - dt._PRIOR_FLOOR) < 1e-3
+
     # species num 0 = unknown sentinel → floor everywhere (no species-specific prior).
+    # NOTHING is known about its movepool, so every move stays POSSIBLE: "not known to be illegal"
+    # must never collapse into "known to be illegal".
     assert torch.allclose(torch.sigmoid(P[0]), torch.full((_N_MOVES,), dt._PRIOR_FLOOR), atol=1e-4)
 
 

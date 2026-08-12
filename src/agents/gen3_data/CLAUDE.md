@@ -38,9 +38,11 @@ gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unkn
 
 `learnset` is the **legality** primitive (which moves a species can LEGALLY learn in gen3) — distinct
 from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses it to PRUNE impossible
-candidate moves (`damage_tables.build_move_prior_logits(..., learnset_gate=True)`); its tolerance
-contract is that an unknown species yields `None`/`True` ("no constraint", never "no moves"), so the
-gate can never wrongly prune.
+candidate moves (`damage_tables.build_move_prior_logits`) — **unconditionally**, since a move a species
+cannot learn carrying belief mass is a correctness bug, not a tunable. Its tolerance contract is that an
+unknown species yields `None`/`True` ("no constraint", never "no moves"), so the gate can never wrongly
+prune; the builder honours that by flattening any row it never wrote (national-dex num 0, dex gaps) to
+the legal-unobserved floor rather than the impossible default.
 
 ## Species FORMES — `raw()` vs `base_form_ids()` (`gen3_species_formes_v1`)
 

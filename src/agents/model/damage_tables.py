@@ -1035,13 +1035,48 @@ def build_move_attr(n_moves: int) -> torch.Tensor:
     return attr
 
 
-# Floor probability for a move a species is ~never seen to run (keeps an unseen move POSSIBLE — never
-# logit(-inf) — so in-battle evidence can still lift it). Also the value for an unknown species (num 0).
+# Floor probability for a move a species CAN learn but is ~never seen to run (keeps an unseen-but-legal
+# move POSSIBLE — never logit(-inf) — so in-battle evidence can still lift it). Also the value for a
+# species with no known movepool (num 0 / no learnset entry), where there is nothing to prune.
 _PRIOR_FLOOR = 0.02
 
+# Probability assigned to the IMPOSSIBLE — a move the species physically cannot learn. Small enough to
+# be ~0 in the belief, finite so `torch.logit` never produces -inf. logit(1e-6) = -13.8155, vs
+# logit(_PRIOR_FLOOR=0.02) = -3.8918 — a 9.92-nat gap, so "illegal" and "legal but unobserved" are
+# materially different states of the prior rather than the same number.
+_ILLEGAL_PROB = 1e-6
 
-def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR,
-                            learnset_gate: bool = False) -> torch.Tensor:
+# The legal-unobserved floor must sit MATERIALLY above `_ILLEGAL_PROB`, or the legality gate collapses:
+# a floor of 0.0 (or anything <= _ILLEGAL_PROB) gets clamped straight back up to _ILLEGAL_PROB and every
+# legal-but-unobserved move becomes indistinguishable from an impossible one. That is the silent-GIGO
+# failure this bound exists to make loud. 1e-3 (logit = -6.907) still leaves a ~6.9-nat separation.
+_MIN_PRIOR_FLOOR = 1e-3
+
+
+def sanitize_historical_move_floor(kwargs: dict) -> dict:
+    """Make a PRE-v65 config constructible, in place, without editing the config on disk.
+
+    Every run before `gen3_unconditional_move_legality_v1` recorded ``move_candidate_floor: 0.0``,
+    because that value used to double as the legality on/off SWITCH rather than name a probability.
+    v65 gave the floor a validated range, so those configs now raise — which is correct for a
+    training RESUME (a silently-changed prior is exactly what the version gate exists to catch) but
+    wrong for the OFFLINE tooling that instantiates an extractor purely to read its structure:
+    `delivery_graph`, the architecture viewer, and `species_posterior_compiles_test` all build from
+    the committed `designs/production_config.json`.
+
+    That file is a VERBATIM copy of a real run and must keep its 0.0 — editing it to satisfy a
+    builder would falsify the historical record it exists to preserve, and would quietly break the
+    reproducibility claim `ARCHITECTURE.md` makes about it. The prior floor changes no node, edge or
+    graph shape, so the safe place to reconcile the two is at the point of CONSTRUCTION, once, here
+    — rather than in `_migrate_config`, which would let a pre-v65 checkpoint resume by silently
+    adopting a different prior.
+    """
+    if float(kwargs.get("move_candidate_floor", 0.0)) < _MIN_PRIOR_FLOOR:
+        kwargs["move_candidate_floor"] = _PRIOR_FLOOR
+    return kwargs
+
+
+def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR) -> torch.Tensor:
     """``[n_species, n_moves]`` LOG-ODDS of the Smogon move-frequency prior, indexed by national-dex
     ``num`` on BOTH axes — the base rate ``P(move in set)`` for a species, ready to fuse additively into
     the move-belief logits (``posterior_logit = head_delta + prior_logit``).
@@ -1050,55 +1085,68 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
     ~4 moves). Probabilities for move_ids that collapse to one ``num`` are SUMMED (Hidden Power: all
     typed variants share num 237, and a mon runs at most one HP type, so ``P(has HP) = Σ typed usage``).
 
-    Two modes (`learnset_gate` selects; the gate is a VERSION-CHECKED forward-behavior change, never a
-    silent default flip — OFF reproduces the original buffer byte-for-byte):
+    **LEGALITY IS UNCONDITIONAL** — it is a correctness property, not a feature, and there is no flag to
+    turn it off. A move a species physically **cannot learn** must carry ~zero belief mass; anything else
+    invents phantom threats ("a special attacker might have Explosion") out of a flat floor.
 
-    - **OFF (default, legacy):** clamp every ``(species, move)`` to ``[floor, 1-eps]`` then ``logit``.
-      A species with no prior entry (or num 0 = unknown) gets ``logit(floor)`` everywhere — a low,
-      non-zero base the learned delta can still move (keeps an unseen move POSSIBLE).
-    - **ON (LEGALITY-ONLY gate):** the only thing pruned is the IMPOSSIBLE. A move a species **cannot
-      learn** is driven to ``logit(eps)`` (≈ 0 — it removes the phantom "a special attacker might have
-      Explosion" the flat floor invented). A move it CAN learn keeps its **true Smogon usage** — a rare
-      tech stays rare-but-present (naturally negligible in the op's hard-max, yet liftable by the learned
-      head, and pinned certain the moment it's revealed), NOT floored up to ``floor`` and NOT pruned. A
-      legal move ABSENT from the usage data gets the small ``floor`` base (so in-battle evidence can still
-      surface it). **No rarity cap** — a surprise move a mon legitimately runs is never zeroed out of the
-      belief (the earlier ``<2%`` prune did that and crippled surprise-move anticipation). Because every
-      move with recorded usage is necessarily legal, the legality mask only ever bites the ABSENT cells;
-      Hidden Power's typed usages sum into ``num`` 237 (legal iff the bare ``'hiddenpower'`` is in the
-      learnset). A hidden / unknown species (no learnset) keeps the legacy flat floor (no movepool known →
-      nothing to prune; marginalising the learnset over a species belief is a later extension).
+    The rule, per ``(species, move)`` cell:
+
+    - **Illegal** (not in the species' learnset) → ``logit(_ILLEGAL_PROB)`` ≈ 0 probability. This is the
+      only thing pruned: the IMPOSSIBLE.
+    - **Legal, with recorded usage** → its **true Smogon usage**, untouched. A rare tech stays
+      rare-but-present (naturally negligible in the op's hard-max, yet liftable by the learned head, and
+      pinned certain the moment it's revealed) — NOT floored up to ``floor`` and NOT pruned. **No rarity
+      cap**: a surprise move a mon legitimately runs is never zeroed out of the belief (an earlier
+      ``<2%`` prune did that and crippled surprise-move anticipation).
+    - **Legal, absent from the usage data** → the small ``floor`` base, so in-battle evidence can still
+      surface it.
+    - **No learnset at all** (hidden / unknown species, num 0) → the flat ``floor`` everywhere. Nothing
+      is known about the movepool, so there is nothing to prune; marginalising the learnset over a
+      species belief is a later extension.
+
+    Because every move with recorded usage is necessarily legal, the legality mask only ever bites the
+    ABSENT cells. Hidden Power's typed usages sum into ``num`` 237 (legal iff the bare ``'hiddenpower'``
+    is in the learnset).
+
+    ``floor`` is the LEGAL-UNOBSERVED base only — it is not an on/off switch. It must be
+    ``>= _MIN_PRIOR_FLOOR``; see that constant for why a 0.0 floor is a hard error rather than a silent
+    collapse into "everything is impossible".
 
     Returned as a plain float32 tensor for `MoveBelief` to register as a NON-persistent buffer (pure
     data-derived physics, recomputable — never a saved weight)."""
-    eps = 1e-6
-    if not learnset_gate:
-        # LEGACY (default): flat `floor` everywhere + accumulate usage. Byte-identical to the original.
-        prob = torch.zeros(n_species, n_moves, dtype=torch.float64)
-        for sid in gen3_data.species.base_form_ids():
-            sd = gen3_data.species.get(sid)
-            snum = sd.num
-            if not (0 <= snum < n_species):
-                continue
-            for move_id, p in gen3_data.priors.moves(sid).items():
-                md = gen3_data.moves.get(move_id)
-                if md is not None:
-                    bnum = _belief_num(move_id, md)      # typed Hidden Power → 237 (opp observed bare)
-                    if 0 <= bnum < n_moves:
-                        prob[snum, bnum] += float(p)     # sum collisions (e.g. typed Hidden Power → 237)
-        prob = prob.clamp(floor, 1.0 - eps)
-        return torch.logit(prob).to(torch.float32)
+    eps = _ILLEGAL_PROB
+    if not (_MIN_PRIOR_FLOOR <= float(floor) < 1.0):
+        # Fail LOUD. A floor at/below _ILLEGAL_PROB makes legal-unobserved == illegal (the gate becomes a
+        # no-op in the wrong direction), and a floor of exactly 0.0 would additionally be logit(0) = -inf
+        # on any code path that clamps from below — a NaN source, not a configuration.
+        raise ValueError(
+            f"build_move_prior_logits: floor={floor!r} is out of range. The move-prior floor is the "
+            f"LEGAL-BUT-UNOBSERVED base probability and must satisfy "
+            f"{_MIN_PRIOR_FLOOR} <= floor < 1.0 (default {_PRIOR_FLOOR}).\n"
+            f"A floor <= {_ILLEGAL_PROB} would be indistinguishable from the ILLEGAL value, collapsing "
+            f"the legality distinction; a floor of 0.0 is additionally logit(0) = -inf. "
+            f"Pass --move-candidate-floor {_PRIOR_FLOOR} (or any value in range)."
+        )
 
-    # LEGALITY-ONLY gate: illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
+    # Illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
     prob = torch.full((n_species, n_moves), eps, dtype=torch.float64)   # default = impossible
+    # Rows this build never touches are NOT "a species that can learn nothing" — they are rows about
+    # which nothing is known: national-dex num 0 (the UNKNOWN-SPECIES sentinel an unrevealed opponent
+    # slot carries, and `MoveBelief.move_logits` indexes `move_prior_logits[opp_species_ids]` directly
+    # with it) and any gap in the num range. Leaving them at the "impossible" default would tell the
+    # model an unseen opponent has NO moves at all — strictly worse than the flat floor, and a claim
+    # the data never made. They are flattened to `floor` below (same rule as a species whose learnset
+    # is missing: no movepool known → nothing to prune).
+    covered = torch.zeros(n_species, dtype=torch.bool)
     for sid in gen3_data.species.base_form_ids():
         sd = gen3_data.species.get(sid)
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
+        covered[snum] = True
         legal = gen3_data.learnset.get_legal_moves(sid)
         if legal is None:
-            prob[snum, :] = floor                        # unknown movepool → legacy flat floor (can't prune)
+            prob[snum, :] = floor                        # unknown movepool → flat floor (nothing to prune)
         else:
             for move_id in legal:                        # every LEGAL move → a small liftable base
                 md = gen3_data.moves.get(move_id)
@@ -1132,5 +1180,6 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
         for num, u in usage.items():
             if u > float(prob[snum, num]):
                 prob[snum, num] = u                      # rare moves keep their real (small) rate
+    prob[~covered, :] = floor                            # unknown species (num 0) / dex gaps → flat floor
     prob = prob.clamp(eps, 1.0 - eps)
     return torch.logit(prob).to(torch.float32)           # log(p/(1-p)), the additive log-odds base rate

@@ -451,7 +451,19 @@ from typing import Any, Dict, List
 #   vf_coef class, NOT weight-shape): enforced only on the training-resume path via
 #   check_value_seed_vicreg; excluded from check_compatible/_WEIGHT_FIELDS (a frozen opponent's
 #   forward never touches it). 0.0 = OFF (loss byte-identical).
-MODEL_CONFIG_VERSION = 64
+# v65: gen3_unconditional_move_legality_v1 — move-belief LEGALITY is now UNCONDITIONAL. A move a
+#   species physically CANNOT LEARN always carries ~zero prior mass; there is no flag and no opt-out,
+#   because it is a correctness property rather than a feature. `learnset_gate` is DELETED from
+#   `damage_tables.build_move_prior_logits`, and `move_candidate_floor` (which used to double as the
+#   on/off switch via `floor > 0.0`) is demoted to what its name says: the LEGAL-BUT-UNOBSERVED base
+#   probability, default 0.02 (was 0.0). STAMP-ONLY migration — no new field. Nothing can be toggled,
+#   so there is nothing to record; the version stamp exists to say "a pre-v65 checkpoint was trained
+#   on a prior that gave phantom mass to unlearnable moves". Pre-v65 configs recorded
+#   move_candidate_floor=0.0, which check_compatible now rejects against the 0.02 default — deliberate,
+#   loud, and NOT migrated up (rewriting 0.0→0.02 would let an incompatible belief load silently).
+#   NO ARCH_SIGNATURE bump: the prior buffer is non-persistent and unchanged in shape, and every
+#   floor > 0 config produces a bit-identical buffer before and after (only floor == 0.0 changes).
+MODEL_CONFIG_VERSION = 65
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1068,12 +1080,19 @@ class ModelVersion:
     # both projection Linears. Gated in check_compatible (bool); OFF = baseline byte-for-byte (NO
     # ARCH_SIGNATURE bump). Requires damage_op (the op must exist).
     damage_outgoing: bool = False
-    # v23 FORWARD-BEHAVIOR float (NOT weight-shape, like move_prior_fusion): the LEGALITY-only move-prior
-    # gate. 0.0 = OFF (legacy flat 0.02-floor prior, byte-identical); >0 drives moves a species CANNOT learn
-    # to ~0 (impossible) while legal moves keep their true usage (rare-but-liftable, never pruned) and a
-    # legal-unobserved move gets this small floor base — a different belief, gated in check_compatible. The
-    # prior buffer is non-persistent so the state_dict is identical either way.
-    move_candidate_floor: float = 0.0
+    # v23 FORWARD-BEHAVIOR float (NOT weight-shape, like move_prior_fusion), REDEFINED in v65
+    # (gen3_unconditional_move_legality_v1): move LEGALITY is now UNCONDITIONAL — a move a species cannot
+    # learn ALWAYS gets ~0 prior mass, with no flag and no opt-out (it is a correctness property, not a
+    # feature). This float is now ONLY the LEGAL-BUT-UNOBSERVED base probability — the small liftable
+    # floor a legal move with no recorded Smogon usage starts from. It no longer doubles as the on/off
+    # switch, which is what let production's `--move-candidate-floor 0.0` silently disable legality
+    # altogether. Must be >= damage_tables._MIN_PRIOR_FLOOR (1e-3); 0.0 is now REJECTED, so every
+    # pre-v65 checkpoint (which recorded 0.0) fails this check LOUDLY rather than loading with a
+    # different belief. Kept in check_compatible: it changes the belief the policy/value/op trained
+    # under. The prior buffer is non-persistent so the state_dict is identical either way.
+    # NOTE: the default MUST equal damage_tables._PRIOR_FLOOR — this module is deliberately stdlib-only
+    # (no torch / no gen3_data import), so the literal is duplicated here and pinned by a test.
+    move_candidate_floor: float = 0.02
     # v24 STRUCTURAL toggle (weight-shape, like damage_op): the context-free MoveLatentEncoder — a
     # mechanics-grounded per-move latent concatenated into the move-network input (widens it → state_dict
     # change). Gated in check_compatible (bool); OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump).
@@ -1348,7 +1367,7 @@ class ModelVersion:
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_outgoing", False)
             ),
             move_candidate_floor=float(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("move_candidate_floor", 0.0)
+                policy_kwargs.get("features_extractor_kwargs", {}).get("move_candidate_floor", 0.02)
             ),
             move_latent=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_latent", False)
@@ -1684,15 +1703,25 @@ class ModelVersion:
         # v25 FORWARD-BEHAVIOR toggles (like mask_incoming_damage_obs): each zeros a now-subsumed obs region
         # from the model's view → a different forward the policy/value trained under (state_dict identical).
 
-        # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): the learnset + rarity
-        # gate produces a different move prior → a different belief the policy/value/op trained under.
+        # Forward-behavior float (no weight-shape change, like move_prior_fusion): the LEGAL-BUT-UNOBSERVED
+        # base of the move prior. Legality itself is unconditional (v65) and not comparable — only the
+        # height of this floor is a choice, and changing it changes the belief the policy/value/op trained
+        # under. A pre-v65 checkpoint recorded 0.0 (which used to mean "legality OFF") and will land here
+        # against the current 0.02 default: that rejection is the POINT, not a bug to migrate away.
         if self.move_candidate_floor != saved.move_candidate_floor:
             raise ModelVersionError(
                 f"move_candidate_floor mismatch: saved={saved.move_candidate_floor}, "
                 f"current={self.move_candidate_floor}.\n"
-                "The learnset + rarity-cap move-prior gate changes the belief the policy trained under, so "
-                "it cannot be changed on a resumed model.\n"
-                "Resume with the matching --move-candidate-floor, or start a fresh training run."
+                "This is the legal-but-unobserved base of the move prior; changing it changes the belief "
+                "the policy trained under, so it cannot be changed on a resumed model.\n"
+                + (
+                    "saved=0.0 predates v65 (gen3_unconditional_move_legality_v1), where 0.0 meant "
+                    "'no legality gate' — a prior that gave phantom mass to moves a species cannot "
+                    "learn. That is no longer representable: legality is unconditional now. This "
+                    "checkpoint cannot be resumed; start a fresh training run.\n"
+                    if saved.move_candidate_floor == 0.0 else
+                    "Resume with the matching --move-candidate-floor, or start a fresh training run.\n"
+                )
             )
 
         # Forward-behavior toggle (no weight-shape change, like attend_unrevealed_opponents): fusing the
@@ -2610,4 +2639,12 @@ def _migrate_config(data: dict) -> dict:
         # False = OFF, byte-identical: every pre-v64 run trained without it.
         data.setdefault("value_threat_inject", False)
         data["config_version"] = 64
+    if version < 65:
+        # v65: gen3_unconditional_move_legality_v1 — the move-belief legality gate became UNCONDITIONAL.
+        # STAMP-ONLY (the v60/v61 pattern): there is no new field because there is nothing to toggle.
+        # `move_candidate_floor` is left EXACTLY as recorded (0.0 for every pre-v65 run) on purpose — it
+        # is no longer a valid value, so check_compatible fails loudly against the new 0.02 default
+        # instead of silently loading a checkpoint whose policy trained on a prior that gave phantom
+        # mass to moves its opponents could not learn. Do NOT "fix" this by migrating 0.0 → 0.02.
+        data["config_version"] = 65
     return data

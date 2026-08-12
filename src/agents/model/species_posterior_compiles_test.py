@@ -78,6 +78,7 @@ def _build_production_extractor():
     import json
 
     from agents.model.model_version import ARCH_SIGNATURE
+    from agents.model.damage_tables import sanitize_historical_move_floor
 
     with open(_PRODUCTION_CONFIG) as fh:
         cfg = json.load(fh)
@@ -92,6 +93,10 @@ def _build_production_extractor():
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {a: b for a, b in cfg.items() if a in sig}
+    # v65 (gen3_unconditional_move_legality_v1): the committed config is a VERBATIM pre-v65 run copy
+    # and records move_candidate_floor 0.0, which the validated range now rejects. Reconcile at
+    # construction — the same seam delivery_graph uses — rather than editing the historical record.
+    sanitize_historical_move_floor(kw)
     torch.manual_seed(0)
     return Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval(), layout
 

@@ -22,6 +22,9 @@ from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
+# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
+# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
+from agents.model.damage_tables import _PRIOR_FLOOR
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -1492,7 +1495,8 @@ class MoveBelief(torch.nn.Module):
     reproduces the from-scratch head byte-for-byte. See `designs/ai_v6/design_differentiable_damage_op.md`."""
 
     def __init__(self, n_moves: int, move_emb_dim: int,
-                 prior_fusion: bool = False, n_species: int = 0, move_candidate_floor: float = 0.0):
+                 prior_fusion: bool = False, n_species: int = 0,
+                 move_candidate_floor: float = _PRIOR_FLOOR):
         super().__init__()
         self.move_head = torch.nn.Linear(D_MODEL, n_moves)
         self.reinject = torch.nn.Linear(move_emb_dim, D_MODEL)
@@ -1503,17 +1507,16 @@ class MoveBelief(torch.nn.Module):
         if prior_fusion:
             from agents.model.damage_tables import build_move_prior_logits
             # [n_species, n_moves] log-odds base rate (data-derived physics, recomputable → non-persistent).
-            # move_candidate_floor>0 enables the LEGALITY-ONLY gate: a move a species can't learn → ~0
-            # (impossible), a legal move keeps its TRUE usage (rare moves stay rare-but-liftable, never
-            # pruned), a legal-unobserved move gets the small floor base. 0.0 = the legacy un-gated
-            # 0.02-floor prior (byte-identical).
-            gate = move_candidate_floor > 0.0
-            prior_kwargs = {"learnset_gate": gate}
-            if gate:
-                prior_kwargs["floor"] = move_candidate_floor   # else the builder's default 0.02 (legacy)
+            # LEGALITY IS UNCONDITIONAL (gen3_unconditional_move_legality_v1): a move a species CANNOT
+            # LEARN is always ~0 (impossible) — a correctness property, not a toggle. A legal move keeps
+            # its TRUE Smogon usage (rare moves stay rare-but-liftable, never pruned); a legal-unobserved
+            # move gets `move_candidate_floor` as its small liftable base. The floor is that BASE only —
+            # it is no longer an on/off switch (it used to double as one, which is why production's 0.0
+            # silently disabled legality altogether).
             self.register_buffer(
                 "move_prior_logits",
-                build_move_prior_logits(n_species, n_moves, **prior_kwargs), persistent=False)
+                build_move_prior_logits(n_species, n_moves, floor=move_candidate_floor),
+                persistent=False)
             # Zero-init the head so the cold-start delta is EXACTLY 0 → the fused posterior == the prior at
             # step 0 (the cleanest A/B baseline + matches the docstring claim). Only under fusion; the
             # from-scratch (no-fusion) path keeps the default init unchanged.
@@ -2283,7 +2286,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_belief_mode: str = "off", opp_belief_latent: bool = False,
                  damage_op: bool = False, move_prior_fusion: bool = False,
                  win_prob_mode: str = "none",
-                 damage_outgoing: bool = False, move_candidate_floor: float = 0.0,
+                 damage_outgoing: bool = False, move_candidate_floor: float = _PRIOR_FLOOR,
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
                  spread_belief_nature_marginalize: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,

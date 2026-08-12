@@ -46,6 +46,9 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
 from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
+# The move prior's LEGAL-BUT-UNOBSERVED base (--move-candidate-floor default) and its lower bound.
+# Move legality itself is unconditional — these only set how high a legal-unobserved move starts.
+from agents.model.damage_tables import _PRIOR_FLOOR, _MIN_PRIOR_FLOOR
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.extractor_arch import build_extractor_arch_kwargs
@@ -1072,13 +1075,15 @@ async def main():
                              "--damage-op. Off by default. (Usually set via --unified-damage both.)")
     parser.add_argument("--move-candidate-floor", "--move_candidate_floor", dest="move_candidate_floor",
                         type=float, default=None,
-                        help="LEGALITY-only move-prior gate. 0.0 = OFF (legacy flat 0.02-floor prior). >0 "
-                             "drives moves a species CANNOT learn to ~0 (removes the phantom-threat noise the "
-                             "flat floor invented), while a legal move keeps its TRUE Smogon usage (rare techs "
-                             "stay rare-but-liftable, never pruned — so surprise-move anticipation survives) "
-                             "and a legal-unobserved move gets this small floor as a liftable base (try 0.02 "
-                             "or smaller). Forward-behavior toggle (version-checked, fresh-only). REQUIRES "
-                             "--move-prior-fusion (it gates the fused prior). Off by default.")
+                        help="The LEGAL-BUT-UNOBSERVED base probability of the fused move prior (default "
+                             "0.02). This is NOT an on/off switch: move LEGALITY is UNCONDITIONAL — a move a "
+                             "species CANNOT learn always gets ~0 prior mass, and a legal move always keeps "
+                             "its TRUE Smogon usage (rare techs stay rare-but-liftable, never pruned, so "
+                             "surprise-move anticipation survives). This flag only sets how high a LEGAL move "
+                             "with no recorded usage starts, so in-battle evidence can still lift it. Must be "
+                             ">= 0.001 (0.0 would make legal-unobserved indistinguishable from impossible). "
+                             "Forward-behavior value (version-checked, fresh-only); only read under "
+                             "--move-prior-fusion, which is what builds the prior.")
     parser.add_argument("--move-prior-fusion", "--move_prior_fusion", dest="move_prior_fusion",
                         action=BoolFlag, default=None,
                         help="Unified two-part move belief: fuse the Smogon move-frequency PRIOR into the "
@@ -2108,7 +2113,7 @@ async def main():
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
     _resolve("damage_reattend", False)         # v31 structural (version-checked, fresh-only)
     _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
-    _resolve("move_candidate_floor", 0.0)      # v23 forward-behavior (version-checked, fresh-only)
+    _resolve("move_candidate_floor", _PRIOR_FLOOR)  # v65 forward-behavior (version-checked, fresh-only)
     _resolve("move_latent", False)             # v24 structural (version-checked, fresh-only)
     _resolve("move_belief_latent_coef", 0.0)   # training-only (inherited like move_belief_coef)
     _resolve("spread_belief", False)           # v25 structural (version-checked, fresh-only)
@@ -2524,11 +2529,25 @@ async def main():
         print("⚠ --damage-reattend without --use-popart: the extra shared-trunk re-attend layer worsens the "
               "value-gradient contention on the trunk (the value MSE already swamps it at γ≈0.9999). PopArt "
               "is strongly recommended — add --use-popart and watch grad/value_policy_logratio.", file=sys.stderr)
-    if args.move_candidate_floor and not args.move_prior_fusion:
-        # The learnset/rarity gate prunes the FUSED prior; with no prior fusion there is no prior to gate.
+    if not (_MIN_PRIOR_FLOOR <= args.move_candidate_floor < 1.0):
+        # gen3_unconditional_move_legality_v1: the floor is the LEGAL-BUT-UNOBSERVED base, and a value at
+        # or below the "impossible" probability collapses the legality distinction it exists to preserve.
+        # 0.0 in particular is what a pre-v65 resume carries — it used to mean "legality OFF".
         parser.error(
-            "--move-candidate-floor requires --move-prior-fusion (it gates the fused move prior). "
-            "Enable --move-prior-fusion (or --unified-damage), or drop --move-candidate-floor."
+            f"--move-candidate-floor {args.move_candidate_floor} is out of range: it is the "
+            f"LEGAL-BUT-UNOBSERVED base of the move prior and must satisfy "
+            f"{_MIN_PRIOR_FLOOR} <= value < 1.0 (default {_PRIOR_FLOOR}).\n"
+            "Move legality is unconditional and has no off switch; 0.0 is no longer meaningful. "
+            "If this came from resuming a pre-v65 checkpoint, that model's belief is incompatible — "
+            "start a fresh run."
+        )
+    if args.move_candidate_floor != _PRIOR_FLOOR and not args.move_prior_fusion:
+        # A NON-DEFAULT floor with no prior fusion is a silently-ignored flag: the floor is only read when
+        # the fused prior is built. (The default is not flagged — it is just the default.)
+        parser.error(
+            "--move-candidate-floor requires --move-prior-fusion (it sets the floor of the FUSED move "
+            "prior, which only exists under fusion). Enable --move-prior-fusion (or --unified-damage), "
+            "or drop --move-candidate-floor."
         )
     if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_op:
         # The discrete incoming move-space block extends the DamageOperator.

@@ -108,12 +108,11 @@ def test_presence_prior_times_type_prior_reconstructs_typed_usage():
         assert abs(recon - usage["hiddenpower" + name]) < 0.01, (name, recon)
 
 
-def test_learnset_gate_marks_typed_hp_legal():
+def test_legality_gate_marks_typed_hp_legal():
     """A typed Hidden Power is legal iff the bare one is. `gen3_learnset.json` lists only `hiddenpower`
     (the type is an IV choice), so the legality gate used to drive all 16 typed nums to the `eps`
     IMPOSSIBLE floor for EVERY species — wrong data sitting in a live tensor."""
-    gated = dt.build_move_prior_logits(_layout["max_species"], _N_MOVES,
-                                       floor=0.02, learnset_gate=True)
+    gated = dt.build_move_prior_logits(_layout["max_species"], _N_MOVES, floor=0.02)
     zap = gen3_data.species.get("zapdos").num
     impossible = float(torch.logit(torch.tensor(1e-6)))
     for t in ("ICE", "GRASS", "FIRE"):

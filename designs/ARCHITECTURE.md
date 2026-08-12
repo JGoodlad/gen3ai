@@ -176,6 +176,12 @@ Because `damage_op_prefuse` is on, the belief + physics stack runs **once, befor
 3. **`MoveBelief`** (pre-fuse) — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset
    into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]`.
+   The prior buffer `[n_species, n_moves]` is **learnset-gated unconditionally**: a move the species
+   cannot learn is `logit(1e-6)` (impossible), a legal move keeps its **true** Smogon usage (no rarity
+   cap — a surprise tech is never zeroed), a legal move absent from the usage data gets the
+   `move_candidate_floor` base, and a row about which nothing is known (national-dex num 0 — the
+   unknown-species sentinel an unrevealed slot carries — or a dex gap) is the **flat floor**, never
+   "no moves". Non-persistent, recomputed from `data/` at build.
 4. **`HPTypeBelief.compose_typed_hp`** — inside the same step: rewrites the posterior so Hidden
    Power exists only at the 16 typed move-nums **355–370** (each `logit(presence · P(type))`) and
    the bare typeless 237 is driven to a finite `-30`. `Σ_t P(HP_t) == presence`, and presence is
@@ -622,7 +628,7 @@ raises at build time.
 | `value_from_dist` | false | OFF — the critic is the scalar `value_net` |
 | `value_active_readout` | false | OFF — vf does not read `our_active_refined` |
 | `zarch_film` / `zarch_dim` / `zarch_lut` | `"off"` / 0 / `"off"` | OFF — no team-archetype conditioning |
-| `move_candidate_floor` | 0.0 | OFF — the legacy flat prior floor; the learnset legality gate is not applied |
+| `move_candidate_floor` | 0.02 | ACTIVE — the **legal-but-unobserved** base probability of the move prior. Not a switch: learnset **legality is unconditional** (a move a species cannot learn always gets `logit(1e-6)` ≈ 0 mass). This float only sets how high a *legal* move with no recorded Smogon usage starts, so in-battle evidence can lift it. Must be ≥ `1e-3`; `0.0` is rejected (it would collapse legal-unobserved onto impossible, and `logit(0)` = −inf) |
 | `value_threat_inject` | false | OFF — the critic reads no per-entity threat magnitude; the op stays on the R0 `hard_max` reduction and builds no `PairReducer`. Turning it on forces the R1 `belief_mean` rung and adds one shared zero-init `Linear(13, 128)` on the **value pool's** copy of our tokens; `pi` is unaffected at any weight (§3.2) |
 
 **No flag exists for the pointer-native action head.** It is unconditional — there is no off state,
