@@ -244,12 +244,15 @@ pub fn followup_choice(
 /// Resolve the sim's `"default"` choice token into the concrete choice
 /// `Side.chooseDefault()` would commit.
 ///
-/// The port's wire vocabulary ([`crate::bridge::WireChoice`]) has no `default`
-/// variant, and adding one would change the production bridge's parser — so the
-/// search layer resolves it here instead, keeping the change additive. Showdown's
-/// `chooseDefault` picks, for a forced replacement, the first eligible bench slot,
-/// and for a move request the first selectable move (Struggle when none is, which
-/// the port answers with slot 1 exactly as `resolve_choice` does for `move struggle`).
+/// Rendered as a WIRE TOKEN (`"move K"` / `"switch N"`) because [`resolve_turn`] feeds
+/// strings; the resolution itself is [`crate::bridge::resolve_auto_choice`], the one
+/// `Side.autoChoose()` port, so the search layer and the live bridge cannot drift.
+///
+/// This used to carry its own copy of the logic, and that copy was WRONG for a
+/// MOVE-LOCKED mon (mustrecharge / a charging two-turn move): it scanned the four real
+/// moveslots and could return `move 2`, where Showdown's request holds a single
+/// pseudo-entry so `autoChoose` commits slot 1 — and `choice_is_legal` accepts only
+/// index 0 while locked, so the choice was refused and the boundary re-opened.
 ///
 /// `None` when nothing is legal at all (a forced switch with an empty bench). Node
 /// writes `"default"` regardless and the sim refuses it, leaving the boundary open —
@@ -258,15 +261,10 @@ pub fn followup_choice(
 fn resolve_default(sess: &BridgeSession, side: usize, dex: &Dex) -> Option<String> {
     let kind = sess.request_kind(side)?;
     let st = sess.battle_state()?;
-    if kind == RequestState::Switch {
-        return bench_switches(st, side).into_iter().next();
+    match crate::bridge::resolve_auto_choice(st, side, kind == RequestState::Switch, dex)? {
+        crate::turn::Choice::Move(k) => Some(format!("move {}", k + 1)),
+        crate::turn::Choice::Switch(n) => Some(format!("switch {}", n + 1)),
     }
-    let s = &st.sides[side];
-    let mon = &s.pokemon[s.active];
-    let first = (0..mon.move_pp.len()).find(|&k| mon.move_usable(k, dex));
-    // No usable slot ⇒ the sim substitutes Struggle, which the port's choice
-    // resolution maps to slot 1 (`bridge::resolve_choice`'s `struggle` arm).
-    Some(format!("move {}", first.map_or(1, |k| k + 1)))
 }
 
 // ===========================================================================

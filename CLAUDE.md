@@ -484,6 +484,26 @@ tree + binary 2026-08-04). Kept as history because the *coverage-hole lesson* is
   missing driver. **Do not re-derive a plan from the old reason.** Not yet gated: a full multi-cycle
   teacher run end-to-end on rust — every leg is gated, the composition is not.
 
+  **The CHOOSE path is `__ERR__`-parity gated** (`gen3_bridge_choose_path_parity_v1`). An `__ERR__`
+  is NOT an in-band error — it retires `BridgeSession`'s reader, trips `_signal_transport_dead()`,
+  and raises `ShowdownException` in every in-flight `step()` — so **any CHOOSE node tolerates, rust
+  must tolerate too**; a stricter parser there is a whole-run crash. Two such divergences killed
+  `--use-bridge=rust --n-envs 48` at ~8 min, twice, at load 31 and at load 5 alike (a RATE, not a
+  load effect): `CHOOSE <side> default`/`pass` (node passes every token to `Side.choose` verbatim;
+  `parse_choice` took only `move `/`switch ` — and `/choose default` is routine, from
+  `singles_env.py`'s `action == -2`, an inference player's `None` predict, its redecide exhaustion,
+  and `DEFAULT_CHOICE_CHANCE`), and a **stray CHOOSE after `__END__`** on a persistent child (the
+  child resets at `__END__` while `_dispatch` fires poke-env's feeds as un-awaited tasks). Gates:
+  `bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err` /
+  `::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child`, both over node AND rust.
+  **The existing fuzz gate could not catch either** — it drives only masked-legal tokens and never
+  lands a post-`__END__` CHOOSE (22k episodes × 16 workers pass clean pre-fix). A related
+  DIAGNOSTICS fix ships with it (`gen3_bridge_fatal_report_now_v1`): the `__ERR__` text used to be
+  latched into `_child_error` and printed only by the NEXT `reset()`, which never runs, so the sole
+  surviving evidence was poke-env's generic "websocket dropped" — `_report_fatal` now prints the
+  reason + child stderr tail immediately. (And `race_trace.dump_recent()` is a no-op unless
+  `GEN3_RACE_TRACE=1`; an empty dump means the buffer was off, not that nothing happened.)
+
   **Two honest gaps, allowlisted and printed by both harnesses, never silent:** (1) a CHOICE-REJECT
   (an explicit move the request marks `disabled`, or a switch into a fainted slot) emits no
   `|error|` frame and re-opens the boundary to BOTH sides where node re-asks only the offending

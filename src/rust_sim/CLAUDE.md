@@ -162,11 +162,16 @@ and leaves the boundary open in both (`is_choice_done` stays false). Verified en
 golden below.
 
 **TWO port-specific decisions worth knowing:**
-- **`"default"`** is a sim-side choice token with no `WireChoice` variant. Rather than change the
-  production bridge's parser, `search.rs::resolve_default` resolves it to the concrete choice
-  `Side.chooseDefault()` commits (a forced switch → the first eligible bench slot; a move request
-  → the first selectable move, Struggle's slot 1 when none is) and records the literal `"default"`
-  in `choices_used`, matching Node. Exercised by the golden (2 arms).
+- **`"default"`** is resolved by the ONE `Side.autoChoose()` port, `bridge::resolve_auto_choice`
+  (a forced switch → the first non-fainted bench slot; a move request → the first non-disabled
+  request slot; `Move(0)` under Struggle **or a move-lock**). `search.rs::resolve_default` only
+  renders that back to a wire token and records the literal `"default"` in `choices_used`,
+  matching Node. Exercised by the golden (2 arms).
+  **It used to hold its own copy of the logic, and that copy was wrong for a MOVE-LOCKED mon** —
+  it scanned the four real moveslots and could answer `move 2`, where the sim's single-entry
+  locked request means slot 1 and `choice_is_legal` accepts only index 0. `default` is no longer
+  search-only either: `parse_choice` accepts it (and `auto`/`pass`/`skip`) on the production
+  wire, because poke-env really sends those tokens — see the bridge row's CHOOSE-path note.
 - **`RESOLVE_GUARD`** mirrors Node's `if (guard++ > 40)` — the value BEFORE the increment, so 41
   iterations run. A naive `guard += 1; if guard > 40` cuts one short and can flip a `stuck`
   verdict; the count is pinned exactly (`used[1].len() == 41`).

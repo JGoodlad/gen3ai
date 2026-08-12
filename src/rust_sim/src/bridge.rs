@@ -69,6 +69,21 @@ pub enum WireChoice {
     /// `switch <species_name>` — the species / pokemon name, resolved against the
     /// team's bench species.
     SwitchSpecies(String),
+    /// `default` / `auto` — Showdown's `Side.autoChoose()` (`sim/side.ts:1252`). Resolved
+    /// against the boundary's REQUEST KIND (move vs forced switch), so it cannot go through
+    /// the kind-blind [`resolve_choice`]; see [`resolve_auto_choice`].
+    ///
+    /// This is not an exotic token: poke-env's `DefaultBattleOrder` reaches the bridge from
+    /// four live production paths — `singles_env.py`'s `action == -2`, an inference player
+    /// whose predict returns `None`, its redecide-budget exhaustion, and
+    /// `Player._handle_battle_request`'s `DEFAULT_CHOICE_CHANCE` fallback after a rejected
+    /// request. Rejecting it emitted `__ERR__`, which RETIRES the Python reader and kills the
+    /// whole training run (`gen3_bridge_choose_path_parity_v1`).
+    Default,
+    /// `pass` / `skip` — Showdown's `Side.choosePass()` (`sim/side.ts:1249`). NEVER legal in
+    /// gen3 singles (see [`resolve_auto_choice`]'s sibling note in `classify_reject`), and
+    /// carried purely so it becomes a faithful in-band `|error|` instead of a fatal `__ERR__`.
+    Pass,
 }
 
 /// One `>pN <choice>` command from a bridge-capture golden's CMD stream OR the live
@@ -88,6 +103,16 @@ pub struct Cmd {
 /// `None` for a token with neither the `move `/`switch ` prefix.
 pub fn parse_choice(tok: &str) -> Option<WireChoice> {
     let tok = tok.trim();
+    // The two BARE verbs Showdown's `Side.choose` accepts alongside `move`/`switch`
+    // (`sim/side.ts:1244-1254`; `auto` is an exact synonym of `default`, `skip` of `pass`).
+    // The Node bridge passes every token to the sim verbatim (`local_sim_bridge.js:279`), so
+    // it always handled these; returning `None` here made the rust child answer `__ERR__`,
+    // which is FATAL to the parent's reader rather than an in-band error.
+    match tok {
+        "default" | "auto" => return Some(WireChoice::Default),
+        "pass" | "skip" => return Some(WireChoice::Pass),
+        _ => {}
+    }
     if let Some(rest) = tok.strip_prefix("move ") {
         let rest = rest.trim();
         return Some(match rest.parse::<usize>() {
@@ -116,8 +141,73 @@ pub fn parse_choice(tok: &str) -> Option<WireChoice> {
 ///   handled exactly like a numeric out-of-range slot) if no slot matches.
 /// - **`SwitchSpecies(name)`** — normalize `name` and match it against each bench mon's
 ///   species id, returning the FIRST non-active, non-fainted slot. `None` if none match.
+/// Showdown's `Side.autoChoose()` (`sim/side.ts:1321`) for gen3 singles — what `default`
+/// commits. `is_switch` is THIS boundary's request kind for the side.
+///
+/// Three cases, all probe-anchored to `side.ts`:
+/// * **forced switch** — `chooseSwitch()` with no slot scans from `active.length` for the first
+///   non-fainted, not-already-chosen bench slot (`side.ts:920-922`). The port's `side.pokemon`
+///   array mirrors Showdown's (see `execute_switch`'s swap), so `i != active && !fainted` is the
+///   same scan.
+/// * **move-locked** (mustrecharge / a charging two-turn move) — the request carries a SINGLE
+///   pseudo-entry, so `autoChoose` commits request slot 1 = `Move(0)` (`side.ts:658-671`). It
+///   must NOT scan the real moveset: `choice_is_legal` accepts only index 0 while locked.
+/// * **otherwise** — the first entry of the request with `!disabled && pp > 0`
+///   (`side.ts:611-619`); `MonState::move_usable` is exactly that predicate. With NO usable
+///   slot the request is the synthetic Struggle entry, which is slot 1 — the same `Move(0)`
+///   mapping [`resolve_choice`] already uses for `move struggle`.
+pub fn resolve_auto_choice(
+    state: &BattleState,
+    side: usize,
+    is_switch: bool,
+    dex: &Dex,
+) -> Option<Choice> {
+    let s = &state.sides[side];
+    if is_switch {
+        return s
+            .pokemon
+            .iter()
+            .enumerate()
+            .find(|(i, m)| *i != s.active && !m.fainted)
+            .map(|(i, _)| Choice::Switch(i));
+    }
+    let mon = &s.pokemon[s.active];
+    if mon.move_locked() {
+        return Some(Choice::Move(0));
+    }
+    Some(Choice::Move(
+        (0..mon.set.moves.len())
+            .find(|&k| !move_disabled(mon, k, dex))
+            .unwrap_or(0),
+    ))
+}
+
+/// [`resolve_choice`], extended with the two wire verbs that need the boundary's REQUEST KIND.
+///
+/// Kept as a wrapper rather than folded into `resolve_choice` so the kind-blind signature (and
+/// its unit tests) stay untouched. `Pass` deliberately resolves to `None`: it is never legal in
+/// gen3 singles, so the caller's out-of-range fallback lands it on `Choice::Move(moves.len())`,
+/// which keeps `matches!(resolved, Choice::Switch(_))` false — so it skips the trapped-switch
+/// block and reaches `classify_reject`, whose `Pass` arm renders the sim's own refusal.
+pub fn resolve_wire(
+    state: &BattleState,
+    side: usize,
+    is_switch: bool,
+    choice: &WireChoice,
+    dex: &Dex,
+) -> Option<Choice> {
+    match choice {
+        WireChoice::Default => resolve_auto_choice(state, side, is_switch, dex),
+        WireChoice::Pass => None,
+        other => resolve_choice(state, side, other),
+    }
+}
+
 pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> Option<Choice> {
     match choice {
+        // Kind-dependent — the caller must route these through `resolve_wire`, which knows the
+        // boundary's request kind. Reaching here means a call site was missed.
+        WireChoice::Default | WireChoice::Pass => None,
         WireChoice::Move(k) => Some(Choice::Move(*k)),
         WireChoice::Switch(n) => Some(Choice::Switch(*n)),
         WireChoice::MoveName(id) => {
@@ -1131,7 +1221,14 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
             // unresolvable NAME (illegal — no matching move slot / bench species) maps to
             // an OUT-OF-RANGE numeric slot so the engine's existing reject-and-re-request
             // gate (`choice_is_legal`) handles it IDENTICALLY to a numeric out-of-range.
-            let resolved = resolve_choice(state, s, &cmd.choice).unwrap_or_else(|| match cmd.choice {
+            let resolved = resolve_wire(
+                state,
+                s,
+                kinds[s] == SideRequest::ForceSwitch,
+                &cmd.choice,
+                dex,
+            )
+            .unwrap_or_else(|| match cmd.choice {
                 WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
                     Choice::Switch(state.sides[s].pokemon.len())
                 }
@@ -1358,12 +1455,35 @@ impl RejectClass {
 fn classify_reject(
     state: &BattleState,
     side: usize,
+    kind: SideRequest,
     wire: &WireChoice,
     resolved: &Choice,
     dex: &Dex,
 ) -> Option<RejectClass> {
     let s = &state.sides[side];
     let mon = &s.pokemon[s.active];
+    // `pass` — Showdown's `Side.choosePass` (`sim/side.ts:1291`). In gen3 SINGLES it is never
+    // legal: at a move request the active mon is alive and there is no `commanding` volatile, and
+    // at a forced switch `forcedPassesLeft > 0` needs an EMPTY live bench, by which point the
+    // side has already lost and the battle is over (`side.ts:530-536`). Both refusals call
+    // `emitChoiceError` with no update callback, so they render `[Invalid choice]` with NOTHING
+    // following. Checked before the `resolved` match because `Pass` deliberately carries no
+    // resolution — it rides the out-of-range fallback, which would otherwise be reported as a
+    // bogus "doesn't have a move N".
+    if matches!(wire, WireChoice::Pass) {
+        return Some(RejectClass::Invalid {
+            message: match kind {
+                SideRequest::ForceSwitch => format!(
+                    "Can't pass: You need to switch in a Pokémon to replace {}",
+                    display_name(mon, dex)
+                ),
+                _ => format!(
+                    "Can't pass: Your {} must make a move (or switch)",
+                    display_name(mon, dex)
+                ),
+            },
+        });
+    }
     match resolved {
         Choice::Move(k) => {
             // FORCED STRUGGLE is a SUBSTITUTION, not a refusal. When every usable slot is gone
@@ -1870,21 +1990,24 @@ impl BridgeSession {
                         return;
                     }
                 }
+                let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
                 let resolved = {
                     let bs = self.battle.state().expect("state");
-                    resolve_choice(bs, s, &cmd.choice).unwrap_or_else(|| match cmd.choice {
-                        WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
-                            Choice::Switch(bs.sides[s].pokemon.len())
-                        }
-                        _ => Choice::Move(bs.sides[s].pokemon[bs.sides[s].active].set.moves.len()),
-                    })
+                    resolve_wire(bs, s, kind_s == SideRequest::ForceSwitch, &cmd.choice, dex)
+                        .unwrap_or_else(|| match cmd.choice {
+                            WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
+                                Choice::Switch(bs.sides[s].pokemon.len())
+                            }
+                            _ => Choice::Move(
+                                bs.sides[s].pokemon[bs.sides[s].active].set.moves.len(),
+                            ),
+                        })
                 };
                 self.cmd_buf.pop_front();
                 // Trapped-switch rejection at a MOVE boundary — the `|error|` + (hidden trap)
                 // the re-request are SEPARATE chunks; the side still needs a choice.
                 let (reject, firm) = {
                     let bs = self.battle.state().expect("state");
-                    let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
                     let locked = bs.sides[s].pokemon[bs.sides[s].active].move_locked();
                     let reject = kind_s == SideRequest::Move
                         && matches!(resolved, Choice::Switch(_))
@@ -1917,7 +2040,7 @@ impl BridgeSession {
                     None
                 } else {
                     let bs = self.battle.state().expect("state");
-                    classify_reject(bs, s, &cmd.choice, &resolved, dex)
+                    classify_reject(bs, s, kind_s, &cmd.choice, &resolved, dex)
                 };
                 if let Some(rej) = general {
                     // Same bound as the trapped exchange — a deterministic client re-sending the
@@ -2486,6 +2609,94 @@ pub fn bridge_opts(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `gen3_bridge_choose_path_parity_v1` — the wire VERBS Showdown's `Side.choose` accepts
+    /// besides `move`/`switch` (`sim/side.ts:1244-1254`). The Node bridge writes every token to
+    /// the sim verbatim, so it always handled these; returning `None` here made the rust child
+    /// answer `__ERR__ CHOOSE: unsupported choice "default"`, which is FATAL to the Python
+    /// parent (it retires `BridgeSession`'s reader and raises `ShowdownException` in every
+    /// in-flight `step()`) — the ~8-minute `--use-bridge=rust --n-envs 48` training crash.
+    /// `/choose default` is routine, not exotic: `singles_env.py`'s `action == -2`, an inference
+    /// player whose predict returns `None`, its redecide-budget exhaustion, and
+    /// `Player.DEFAULT_CHOICE_CHANCE` all emit it.
+    #[test]
+    fn parse_choice_accepts_the_sim_s_bare_verbs() {
+        assert_eq!(parse_choice("default"), Some(WireChoice::Default));
+        assert_eq!(parse_choice("auto"), Some(WireChoice::Default)); // side.ts: exact synonym
+        assert_eq!(parse_choice("pass"), Some(WireChoice::Pass));
+        assert_eq!(parse_choice("skip"), Some(WireChoice::Pass)); // side.ts: exact synonym
+        // Unchanged for everything else — the numeric/name forms and a genuinely bad token.
+        assert_eq!(parse_choice("move 3"), Some(WireChoice::Move(2)));
+        assert_eq!(parse_choice("switch 2"), Some(WireChoice::Switch(1)));
+        assert_eq!(parse_choice("nonsense"), None);
+    }
+
+    /// `resolve_auto_choice` is the ONE `Side.autoChoose()` port (`sim/side.ts:1321`). Its two
+    /// non-obvious arms, both of which a naive "first usable moveslot" gets WRONG:
+    ///
+    /// * **move-locked** (mustrecharge / a charging two-turn move) — the sim's request holds a
+    ///   SINGLE pseudo-entry, so `autoChoose` commits slot 1 = `Move(0)` (`side.ts:658-671`), and
+    ///   `choice_is_legal` accepts ONLY index 0 while locked. Scanning the real moveset can
+    ///   answer a different index → refused → the boundary re-opens. (This was a live bug in
+    ///   `search.rs::resolve_default`, which now delegates here.)
+    /// * **Struggle** (no usable slot) — the request is the synthetic single Struggle entry, i.e.
+    ///   slot 1, the same `Move(0)` mapping `resolve_choice` uses for the `move struggle` NAME.
+    ///
+    /// Revert either guard and this fails.
+    #[test]
+    fn resolve_auto_choice_matches_showdown_on_lock_and_struggle() {
+        let dex = Dex::for_gen(3);
+        // Slot 0 deliberately unusable (0 PP) so "first usable" is slot 1, not slot 0 — that is
+        // what separates the normal arm from the two special ones.
+        let p1 = "Snorlax||||bodyslam,splash,rest,curse|Serious||M||||";
+        let p2 = "Tauros||||bodyslam,splash|Serious||M||||";
+        let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
+        let mut battle = Battle::start(&opts, &dex).expect("battle");
+        let st = battle.state_mut().expect("state");
+
+        // Normal: first non-disabled slot is 0.
+        assert_eq!(
+            resolve_auto_choice(st, 0, false, &dex),
+            Some(Choice::Move(0)),
+            "a healthy mon must auto-choose its first non-disabled slot"
+        );
+        // Forced switch: the first non-fainted BENCH slot, never the active one.
+        let sw = resolve_auto_choice(st, 0, true, &dex);
+        assert!(
+            !matches!(sw, Some(Choice::Move(_))) && sw != Some(Choice::Switch(st.sides[0].active)),
+            "a forced switch must auto-choose a bench slot, got {sw:?}"
+        );
+
+        // Drain slot 0 so "first usable" becomes slot 1 …
+        let active = st.sides[0].active;
+        st.sides[0].pokemon[active].move_pp[0] = 0;
+        assert_eq!(
+            resolve_auto_choice(st, 0, false, &dex),
+            Some(Choice::Move(1)),
+            "with slot 0 at 0 PP the first NON-DISABLED slot is 1"
+        );
+
+        // … then lock the mon. Showdown's single-entry request means slot 1 REGARDLESS.
+        st.sides[0].pokemon[active].must_recharge = true;
+        assert_eq!(
+            resolve_auto_choice(st, 0, false, &dex),
+            Some(Choice::Move(0)),
+            "a MOVE-LOCKED request holds one pseudo-entry ⇒ autoChoose commits slot 1 (Move(0)), \
+             NOT the first usable real moveslot — `choice_is_legal` accepts only index 0 here"
+        );
+        st.sides[0].pokemon[active].must_recharge = false;
+
+        // Struggle: no usable slot at all ⇒ the synthetic single entry ⇒ slot 1.
+        for k in 0..st.sides[0].pokemon[active].move_pp.len() {
+            st.sides[0].pokemon[active].move_pp[k] = 0;
+        }
+        assert!(st.sides[0].pokemon[active].must_struggle(&dex), "fixture must force Struggle");
+        assert_eq!(
+            resolve_auto_choice(st, 0, false, &dex),
+            Some(Choice::Move(0)),
+            "a forced-Struggle request offers only the synthetic entry ⇒ slot 1"
+        );
+    }
 
     /// The chunked emitter's `flatten()` must equal the flat `run_full_battle_bridge` output —
     /// the invariant that lets the line-level `bridge_test` golden validate the chunk logic.

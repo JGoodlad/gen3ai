@@ -111,6 +111,34 @@ consumer reads the committed-choice lines at all (`replay_kernels.js::writeStart
 record renders exactly). The blocker was always the missing driver. Do not re-derive a plan from
 the retracted reason.
 
+**The CHOOSE path is gated for `__ERR__` parity** (`gen3_bridge_choose_path_parity_v1`). An
+`__ERR__` is not an in-band error: `_dispatch` raises on it, `_persistent_read_loop` retires the
+reader and trips `_signal_transport_dead()`, and every in-flight `step()` raises
+`ShowdownException`. So **anything the node child tolerates on a CHOOSE, the rust child must
+tolerate too** — a stricter parser there is a whole-run crash, not a better error. Two divergences
+of exactly that shape killed `--use-bridge=rust --n-envs 48` at ~8 minutes, twice, at load 31 and
+at load 5 alike (it is a RATE, not a load effect):
+- **`CHOOSE <side> default` / `pass`.** Node writes every token to the sim verbatim
+  (`local_sim_bridge.js:279`), so Showdown's `Side.choose` handled `default`/`auto`/`pass`/`skip`;
+  the port's `parse_choice` took only `move `/`switch ` and answered `__ERR__`. These are ordinary
+  production tokens, not a tail event — `singles_env.py`'s `action == -2`, an inference player
+  whose predict returns `None`, its redecide-budget exhaustion, and `Player`'s
+  `DEFAULT_CHOICE_CHANCE` fallback all emit `/choose default`. `default` now resolves through
+  `bridge::resolve_auto_choice` (the one `Side.autoChoose()` port); `pass`, never legal in gen3
+  singles, becomes the sim's own in-band `|error|[Invalid choice] Can't pass: …`.
+- **A stray CHOOSE after `__END__`.** A persistent child resets itself at `__END__`, and
+  `BridgeSession._dispatch` fires poke-env's feeds as UN-AWAITED tasks, so a late answer to the
+  ending battle's last `|request|` routinely arrives with no battle live. Node drops it
+  (`if (streams && streams[side])`); the port fell through to `flush_new_chunks` and returned
+  `no battle in progress (missing START)`.
+
+Gate: `bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err`
+and `::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child`, both parametrized over
+node AND rust — node is the reference arm. Repro (no training, ~5 s):
+`tmp/rust_bridge_stray_choose_repro.py`. **Why the existing gate missed it:**
+`bridge_session_fuzz_test.py --impl rust` drives only masked-legal `move`/`switch` tokens and
+never lands a CHOOSE after `__END__`; a 16-worker / ~22 000-episode soak passes clean either way.
+
 Still genuinely deferred:
 - **The CHOICE-REJECT framing.** When a client sends a choice the request marks illegal (an
   explicit `disabled` move, a `switch` into a fainted slot), node emits
@@ -299,6 +327,18 @@ then resolves the turn immediately). Two consequences:
   (so the run dies with the refusal text, the side, and the offending choice).
   `run_local_battles` (the eval driver) is stricter still: it raises on the `__ERR__` frame
   directly.
+  **The latch is no longer the ONLY report** (`gen3_bridge_fatal_report_now_v1`). Latching alone
+  loses the reason whenever the run dies before that next `reset()` — which is the NORMAL
+  ordering, because `_signal_transport_dead` immediately wakes the in-flight `step()` into
+  poke-env's GENERIC `ShowdownException: Showdown websocket dropped …` (a message about a
+  websocket the bridge does not use), the worker dies, and the parent cascades on dead
+  `SubprocVecEnv` pipes. That is exactly how a one-line
+  `__ERR__ CHOOSE: unsupported choice "default"` reached production as an unattributable
+  ~8-minute crash. `_report_fatal` now prints the real reason **and the child's stderr tail** to
+  stderr the moment the reader retires, on both fatal paths (`__ERR__`/malformed line, and child
+  EOF). Related diagnostics trap: the `race_trace.dump_recent()` appended to that exception is a
+  **no-op unless `GEN3_RACE_TRACE=1`**, so an empty trace there means the ring buffer was off,
+  not that nothing happened.
 
 **A dead child WAKES an in-flight `step()`** (`gen3_bridge_child_error_wakes_step_v1`) — the
 former "known gap", now closed. Latching alone only covered the NEXT `reset()`: a `step()` already

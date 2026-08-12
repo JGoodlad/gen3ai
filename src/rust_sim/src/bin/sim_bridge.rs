@@ -200,6 +200,21 @@ fn handle_line(
             Ok(LineResult::Continue)
         }
         "CHOOSE" => {
+            // A CHOOSE with NO LIVE BATTLE is a no-op, exactly as in the Node bridge
+            // (`local_sim_bridge.js`: `if (streams && streams[side]) { … }`). In PERSISTENT
+            // mode the child resets itself at `__END__` (`end_battle` → `Session::reset` →
+            // `bridge = None`), and a late answer to the ending battle's last `|request|`
+            // lands here routinely: `BridgeSession._dispatch` fires poke-env's feeds as
+            // UN-AWAITED tasks, so one can resolve after `__END__` but before the parent has
+            // dropped the old battle tag. `handle_choose` already drops such a CHOOSE, but the
+            // arm then fell through to `flush_new_chunks`, which has no bridge and returned
+            // `Err("no battle in progress (missing START)")` → `__ERR__`. That is FATAL to the
+            // parent: an `__ERR__` retires `_persistent_read_loop` and trips
+            // `_signal_transport_dead()`, so every in-flight `step()` raises
+            // `ShowdownException` and the whole run dies. Gate the flush too.
+            if sess.bridge.is_none() || sess.ended {
+                return Ok(LineResult::Continue);
+            }
             handle_choose(sess, rest, dex)?;
             // A FATAL session condition (today: a NAME-form choice that resolves against
             // nothing) must become a LOUD `__ERR__`, never an endless re-request spin —

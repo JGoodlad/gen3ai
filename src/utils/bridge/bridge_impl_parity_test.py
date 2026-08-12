@@ -427,6 +427,222 @@ def test_parity_battle_timeout_is_scaled_by_contention(monkeypatch):
         contention._cached = None
 
 
+# ===========================================================================================
+# CHOOSE-path parity — the fatal-`__ERR__` class (`gen3_bridge_choose_path_parity_v1`).
+#
+# An `__ERR__` frame is NOT a recoverable in-band error: `BridgeSession._dispatch` raises on
+# it, `_persistent_read_loop` retires the reader and calls `_signal_transport_dead()`, and every
+# in-flight `step()` raises `ShowdownException: Showdown websocket dropped …`. One `__ERR__`
+# therefore kills a whole training run. So ANY CHOOSE the Node bridge tolerates, the Rust bridge
+# must tolerate too — this is the gate on that, driven at the RAW protocol level (no poke-env,
+# no battle driver) so it is deterministic and runs in seconds.
+#
+# Two real production failures live here, both `--use-bridge=rust`-only:
+#   1. `CHOOSE <side> default` / `pass` — poke-env's `DefaultBattleOrder` / `PassBattleOrder`.
+#      `Player._handle_battle_request` (`player.py:384`) sends `/choose default` after a
+#      rejected request with probability `DEFAULT_CHOICE_CHANCE = 1/1000`, so this fires as a
+#      RATE, independent of box load — matching the observed ~8-minute crash at load 5 and at
+#      load 31 alike. Showdown's `Side.choose` accepts both tokens; `bridge.rs::parse_choice`
+#      accepted only `move `/`switch `.
+#   2. A stray CHOOSE after `__END__` on a PERSISTENT child — the child resets itself at
+#      `__END__`, and `BridgeSession._dispatch` fires poke-env's feeds as UN-AWAITED tasks, so a
+#      late answer to the ending battle's last `|request|` arrives with no battle live. Node
+#      ignores it (`local_sim_bridge.js`: `if (streams && streams[side])`); Rust flushed anyway
+#      and returned `no battle in progress (missing START)`.
+# ===========================================================================================
+
+_BOTH_IMPLS = ["node", "rust"]
+
+
+class _RawChild:
+    """A raw pipe to one sim_bridge child — the line protocol and nothing else.
+
+    ONE background reader thread feeds a queue. (A per-call reader thread abandoned on timeout
+    stays blocked in `read` and swallows the NEXT line, which silently turns a real `__ERR__`
+    into an apparent success — that bug cost a full debugging cycle while writing this.)
+    """
+
+    def __init__(self, impl: str):
+        import queue as _queue
+        import subprocess
+        import threading
+
+        from utils.bridge.sim_bridge_bin import bridge_spawn_argv
+
+        self.proc = subprocess.Popen(
+            bridge_spawn_argv(impl),
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        self._lines: "_queue.Queue[str]" = _queue.Queue()
+        self._empty = _queue.Empty
+
+        def pump():
+            for raw in self.proc.stdout:
+                self._lines.put(raw.decode().rstrip("\n"))
+            self._lines.put("")  # EOF sentinel
+
+        threading.Thread(target=pump, daemon=True).start()
+        threading.Thread(target=lambda: [None for _ in self.proc.stderr], daemon=True).start()
+
+    def send(self, line: str) -> None:
+        self.proc.stdin.write((line + "\n").encode())
+        self.proc.stdin.flush()
+
+    def readline(self, timeout: float):
+        """One stdout line, ``""`` on EOF, or ``None`` if the child stayed silent."""
+        try:
+            return self._lines.get(timeout=timeout)
+        except self._empty:
+            return None
+
+    def drain(self, quiet_for: float = 3.0):
+        """Every frame the child has queued, read until it goes quiet."""
+        out = []
+        while True:
+            line = self.readline(timeout=quiet_for)
+            if line is None:
+                return out
+            out.append(line)
+            if line == "":
+                return out
+
+    def close(self) -> None:
+        try:
+            self.send("END")
+            self.proc.wait(timeout=5)
+        except Exception:
+            self.proc.kill()
+
+
+def _decode_frame(frame: str) -> str:
+    import base64
+    return base64.b64decode(frame.split(" ", 1)[1]).decode()
+
+
+def _err_text(frame: str) -> str:
+    return _decode_frame(frame)
+
+
+def _start_json(teams) -> str:
+    import json
+    tb = Gen3Teambuilder(teams)
+    return json.dumps({
+        "formatid": BATTLE_FORMAT,
+        "persistent": True,
+        "p1": {"name": "P1", "team": tb.yield_team()},
+        "p2": {"name": "P2", "team": tb.yield_team()},
+    })
+
+
+def _choice_for(chunk: str):
+    """A legal choice token for a `|request|` chunk, or None if the side owes nothing."""
+    import json
+    for line in chunk.split("\n"):
+        if not line.startswith("|request|") or len(line) <= len("|request|"):
+            continue
+        req = json.loads(line[len("|request|"):])
+        if req.get("wait"):
+            return None
+        mons = (req.get("side") or {}).get("pokemon") or []
+        if req.get("forceSwitch"):
+            for i, mon in enumerate(mons, start=1):
+                if not mon.get("active") and "0 fnt" not in (mon.get("condition") or ""):
+                    return f"switch {i}"
+            return None
+        active = (req.get("active") or [None])[0]
+        if active:
+            for i, mv in enumerate(active.get("moves", []), start=1):
+                if not mv.get("disabled") and mv.get("pp", 1) > 0:
+                    return f"move {i}"
+            return "move 1"
+    return None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("impl", _BOTH_IMPLS)
+@pytest.mark.parametrize("token", ["default", "pass"])
+def test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err(impl, token):
+    """`CHOOSE <side> default` / `pass` must NEVER come back as `__ERR__` on either impl.
+
+    These are tokens poke-env really sends (`DefaultBattleOrder` / `PassBattleOrder`), and
+    Showdown's `Side.choose` accepts both. An in-band `|error|` frame is a fine answer — that is
+    recoverable and is what Node does for an illegal `pass`. An out-of-band `__ERR__` is not: it
+    kills the reader and the run.
+    """
+    if impl == "rust" and not _prebuilt_rust_available():
+        pytest.skip("no pre-built rust sim_bridge binary")
+    child = _RawChild(impl)
+    try:
+        child.send("START " + _start_json(TeamLoader().get_all_teams()))
+        opening = child.drain()
+        assert any(_choice_for(_decode_frame(f)) for f in opening if not f.startswith("__")), (
+            f"{impl}: no opening |request| to answer — the fixture, not the bridge, is broken")
+
+        child.send(f"CHOOSE p1 {token}")
+        for frame in child.drain(quiet_for=5.0):
+            assert not frame.startswith("__ERR__"), (
+                f"{impl}: `CHOOSE p1 {token}` produced a FATAL __ERR__ "
+                f"({_err_text(frame)!r}). poke-env sends this token "
+                f"({'player.py:384, p=1/1000 after a rejected request' if token == 'default' else 'PassBattleOrder'}), "
+                f"and an __ERR__ retires BridgeSession's reader → _signal_transport_dead() → "
+                f"ShowdownException in every in-flight step(). Node accepts it; so must rust.")
+            assert frame != "", f"{impl}: the child EXITED on `CHOOSE p1 {token}`"
+    finally:
+        child.close()
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("impl", _BOTH_IMPLS)
+@pytest.mark.parametrize("end_via", ["natural", "forfeit"])
+def test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child(impl, end_via):
+    """A CHOOSE arriving after `__END__` on a persistent child must be a silent NO-OP.
+
+    The child resets itself at `__END__`, but `BridgeSession._dispatch` fires poke-env's feeds
+    as un-awaited tasks, so a late answer to the ending battle's last `|request|` routinely
+    lands with no battle live and the old battle tag still registered. Node's
+    `if (streams && streams[side])` drops it. Rust used to fall through to `flush_new_chunks`
+    and return `no battle in progress (missing START)` → `__ERR__` → dead run.
+    """
+    if impl == "rust" and not _prebuilt_rust_available():
+        pytest.skip("no pre-built rust sim_bridge binary")
+    child = _RawChild(impl)
+    try:
+        child.send("START " + _start_json(TeamLoader().get_all_teams()))
+        decisions = 0
+        forfeited = False
+        while True:
+            line = child.readline(timeout=30.0)
+            assert line is not None, f"{impl}: child went silent before __END__"
+            assert line != "", f"{impl}: child exited before __END__"
+            if line == "__END__":
+                break
+            assert not line.startswith("__ERR__"), \
+                f"{impl}: unexpected __ERR__ mid-battle: {_err_text(line)!r}"
+            if line.startswith("__RECON__"):
+                continue
+            side, choice = line.split(" ", 1)[0], _choice_for(_decode_frame(line))
+            if choice is None:
+                continue
+            decisions += 1
+            assert decisions < 4000, f"{impl}: battle never ended (driver fixture bug)"
+            if end_via == "forfeit" and not forfeited and decisions >= 6 and side == "p2":
+                forfeited = True
+                child.send("FORCELOSE p1")   # the training seam's reset-mid-battle path
+                continue
+            child.send(f"CHOOSE {side} {choice}")
+
+        child.send("CHOOSE p2 move 1")       # the stray late answer
+        late = child.drain(quiet_for=3.0)
+        assert late == [], (
+            f"{impl}/{end_via}: a stray CHOOSE after __END__ produced "
+            f"{[_err_text(f) if f.startswith('__ERR__') else f[:40] for f in late]} "
+            f"instead of being ignored. On the rust impl this was the ~8-minute "
+            f"`--use-bridge=rust` training crash.")
+        assert child.proc.poll() is None, f"{impl}: the child exited on a stray CHOOSE"
+    finally:
+        child.close()
+
+
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     run(n)

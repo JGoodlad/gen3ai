@@ -51,6 +51,7 @@ import itertools
 import json
 import os
 import signal
+import sys
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -428,6 +429,7 @@ class BridgeSession:
                     # stdout EOF = the child process exited. On a recycle/close we CANCEL this
                     # reader (raises at readline, skips here), so reaching this is a real crash.
                     self._child_crashed = True
+                    self._report_fatal("child stdout hit EOF (the child exited)")
                     self._signal_transport_dead()
                     break
                 text = line.decode().rstrip("\n")
@@ -440,6 +442,7 @@ class BridgeSession:
                     # An ``__ERR__`` frame (or a malformed line) must not silently retire the
                     # reader — latch it so the next battle's start raises with the reason.
                     self._child_error = f"{type(e).__name__}: {e}"
+                    self._report_fatal(self._child_error)
                     self._signal_transport_dead()
                     break
         finally:
@@ -447,6 +450,32 @@ class BridgeSession:
             # raise in _start_persistent_battle, not a 180s wait timeout. (Set _child_crashed FIRST,
             # above, so the woken waiter sees it.)
             ended_event.set()
+
+    def _report_fatal(self, reason: str) -> None:
+        """Print the REAL reason a reader is retiring, at the moment it happens.
+
+        Latching into ``_child_error`` alone is not enough: the latch is only read by the NEXT
+        ``_start_persistent_battle``, and on the fatal paths the next thing that happens is
+        ``_signal_transport_dead`` waking the in-flight ``step()``, which raises poke-env's
+        generic ``ShowdownException: Showdown websocket dropped …``. That exception kills the
+        worker, the parent cascades on dead ``SubprocVecEnv`` pipes, and the reset that would
+        have printed the reason NEVER RUNS — so the only surviving evidence is a disconnect
+        message about a websocket the bridge does not use.
+
+        That is exactly how a one-line ``__ERR__ CHOOSE: unsupported choice "default"`` reached
+        production as an unattributable ~8-minute crash. Print it here, unconditionally, to
+        stderr (the launcher captures it into ``<run_dir>/crashes/restart_err_*.txt``), together
+        with the child's own stderr tail.
+        """
+        stderr = b"".join(self._stderr_buf[-20:]).decode("utf-8", "replace").strip()
+        print(
+            f"\n💥 [BRIDGE impl={self._impl}] transport is DEAD — {reason}"
+            + (f"\n   child stderr tail:\n{stderr}" if stderr else "")
+            + "\n   Every in-flight step()/reset() will now raise ShowdownException; that "
+              "message is GENERIC — the line above is the real cause.\n",
+            file=sys.stderr,
+            flush=True,
+        )
 
     def _signal_transport_dead(self) -> None:
         """Wake any IN-FLIGHT ``step()``/``reset()`` parked on a queue get, so a dead child fails
