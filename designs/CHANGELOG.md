@@ -2551,3 +2551,49 @@ tuning problem.
   the POLICY's cells and never changed critic delivery.
 - Structural + version-checked (fresh runs only), `MODEL_CONFIG_VERSION` 63 → 64; OFF builds no
   module, leaves the op on `hard_max`, and is byte-identical. No `ARCH_SIGNATURE` bump.
+
+### v67 — `gen3_opp_intent_v1` (2026-08-12): the model can finally say what it expects them to do
+
+`design_opponent_intent.md` steps 2–5. Two supervised pointer heads over what the opponent chose:
+**`α`** — a distribution over their K believed threat-move seats **plus SWITCH** — and **`β`** —
+given a switch, which of their mons comes in.
+
+- **The measured case, not a hunch** (`tmp/g2b_alpha_baseline.py`, gen-8 @26M, n=1676 attack
+  decisions): the belief's top-K CONTAINS the move they clicked **85.8%** of the time but ranks it
+  first only **51.8%** — 24.6% of the time the true move sits at rank 1, one slot away. That
+  **34.0 pp** of in-the-seats-but-mis-ranked mass is exactly what a learned re-weighting can move,
+  and it needs no new information. The hidden-team belief was greenlit on ~8–10 pp.
+- **Both heads are POINTERS.** Seat k's logit comes from seat k's own refined E4 token through a
+  SHARED scorer; bench slot j's from slot j's token. So permuting their moves permutes `α` and
+  permuting their bench permutes `β`, exactly — gated both ways. A flat `Linear(ctx, K)` would have
+  passed every shape test and learned "seat 0 is usually right" from the belief's own sort order,
+  memorising the ordering `α` exists to correct.
+- **Matching is by CANONICAL ID.** Seats are `w.topk(K)` and permute every turn, and they are built
+  by the MODEL mid-forward, so the env cannot name them. It emits the move NUM; the loss locates it
+  among the seats. A belief miss is MASKED, and `alpha_mask_rate` is logged as a first-class
+  diagnostic — it is the belief's coverage failure, and conflating it with `α` being wrong would
+  hide which component to fix.
+- **DECISION vs CONSEQUENCE** (`opp_intent_labels.py`). A phaze (our Roar moved them) and a
+  post-faint replacement both LOOK like switches in the `TurnDelta` and are not choices. Labelling
+  either as a voluntary switch would teach `β` to predict our own move and would pad `α`'s
+  denominator with rows where no decision happened. Both are masked; five cases, five gates.
+- **The one-row alignment, and why it gets its own gate.** The env can only observe their turn-t
+  action while building the obs for t+1, so the label sits one row AHEAD of the prediction.
+  `align_labels_to_predictions` shifts it back **before `get()` shuffles** — the only point where
+  the `[n_steps, n_envs]` adjacency still exists — and DROPS any pair whose successor starts a new
+  episode. Without that drop, one battle's first decision is spliced onto the previous battle's
+  last board: a silent cross-episode GIGO bug that no shape check and no loss curve would reveal.
+- **Supervision only.** Both heads read a DETACHED input, so a null result says the head cannot
+  predict the opponent — not that predicting the opponent perturbed the policy. Letting `α` shape
+  the trunk is a later, separate experiment.
+- **The interpretability deliverable ships with it** (`render_alpha` → the trace's `opp_intent`
+  block): `α` as a ranked list of NAMED moves with probabilities. A turn where the model played
+  around a Fire Blast and one where it never saw it coming are currently indistinguishable in every
+  view we have. This is justified on that alone — gen-8 established that accurate beliefs do not
+  automatically convert to Elo, so betting the head purely on strength would be the wrong bet.
+- Structural + version-checked, `MODEL_CONFIG_VERSION` 66 → 67; OFF builds neither head and is
+  byte-identical. Requires `--entity-topk-seats>0` (fail-loud: a pointer needs something to point
+  at). No `ARCH_SIGNATURE` bump. `--opp-intent-coef` itself is training-only.
+- Drive-by fix: `--help` crashed with `ValueError: unsupported format character 't'` — the
+  `--team-pfsp` help had an unescaped `%` in "sub-50% team". argparse `%`-formats help strings, so
+  the whole CLI's `--help` was dead for anyone who ran it without `2>/dev/null`.

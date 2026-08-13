@@ -308,6 +308,7 @@ class RLPlayer(Gen3Player):
                 # Calibrated P(win) from the win-probability head (None unless --win-prob-mode != none).
                 # The prober shows it + ΔP(win) beside the CRITIC line — "how a move moved the win odds".
                 "win_prob": self._win_prob(),
+                "opp_intent": self._opp_intent(),
                 # The distributional value head's predicted RETURN DISTRIBUTION (per-atom probs; None
                 # unless --value-dist-mode != none) — the prober renders the histogram + spread/PIT.
                 "value_dist": self._value_dist(),
@@ -358,6 +359,41 @@ class RLPlayer(Gen3Player):
         if logits is None:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
+
+    def _opp_intent(self) -> Optional[dict]:
+        """ALPHA/BETA as NAMED, ranked options (forensic trace only) — the interpretability payload.
+
+        This is the deliverable the whole opponent-intent design is justified on independently of
+        Elo: a turn where the model played around a Fire Blast and one where it never saw the move
+        coming look IDENTICAL in every existing view. Reads the logits + seat move-nums the
+        extractor stashed on this same forward; None when the heads are off.
+
+        The owner constraint — the model may only ever point at options it can NAME — is enforced
+        here by construction: every entry is rendered through the move dex, and a seat the belief
+        did not fill is dropped rather than shown as an anonymous index.
+        """
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        alogits = getattr(extractor, "last_alpha_logits", None)
+        seat_nums = getattr(extractor, "last_alpha_seat_nums", None)
+        if alogits is None or seat_nums is None:
+            return None
+        from agents.model.opp_intent import render_alpha
+        from agents.gen3_data import moves as _gm
+        try:
+            _by_num = {int(rec["num"]): rec.get("name") or mid
+                       for mid, rec in _gm.raw().items() if "num" in rec}
+        except Exception:
+            _by_num = {}
+        probs = torch.softmax(alogits[0], dim=-1)
+        out = {"alpha": render_alpha(probs, seat_nums[0], lambda n: _by_num.get(int(n)))}
+        blogits = getattr(extractor, "last_beta_logits", None)
+        if blogits is not None:
+            bp = torch.softmax(blogits[0], dim=-1)
+            rows = [{"slot": i, "p": float(bp[i])} for i in range(bp.shape[0])
+                    if torch.isfinite(blogits[0, i])]
+            rows.sort(key=lambda r: -r["p"])
+            out["beta"] = rows[:4]
+        return out
 
     def _value_dist(self) -> Optional[list]:
         """The distributional value head's predicted return distribution (forensic trace only) — the

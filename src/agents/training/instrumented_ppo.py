@@ -363,6 +363,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # return the critic sees, in the critic's own (PopArt-normalized) frame. 0.0 = OFF, and the HEAD
     # is a structural version-checked toggle, so an off run builds no module at all.
     seed_quantile_coef: float = 0.0
+    opp_intent_coef: float = 0.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
@@ -1301,6 +1302,23 @@ class InstrumentedMaskablePPO(MaskablePPO):
         self.policy.set_training_mode(True)
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
+        # +OPPONENT INTENT (gen3_opp_intent_v1): ALIGN the labels to the predictions, ONCE, BEFORE
+        # `get()` flattens and shuffles. The env emits, at buffer row i, what the opponent did at
+        # decision i-1 (their turn-t action is only observable while building the obs for t+1), so
+        # row i's own label sits at row i+1 of the same env column. Shifting here — while the
+        # [n_steps, n_envs] structure and `episode_starts` still exist — is the only place the
+        # episode-boundary drop is even expressible; after the shuffle the adjacency is gone.
+        # Idempotent per rollout: collect_rollouts refills these keys every time.
+        if getattr(self, "opp_intent_coef", 0.0) > 0.0:
+            _obs_buf = getattr(self.rollout_buffer, "observations", None)
+            if isinstance(_obs_buf, dict) and "opp_action_kind" in _obs_buf:
+                from agents.training.opp_intent_labels import (KIND_UNKNOWN, SWITCH_SLOT_NONE,
+                                                               align_labels_to_predictions)
+                _starts = self.rollout_buffer.episode_starts
+                for _k, _fill in (("opp_action_kind", KIND_UNKNOWN), ("opp_action_num", 0),
+                                  ("opp_switch_slot", SWITCH_SLOT_NONE)):
+                    _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
+
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
         # Optional: clip range for the value function
@@ -1614,6 +1632,83 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         loss = loss + self.seed_quantile_coef * sq_loss
                         for _qk, _qv in sq_m.items():
                             seed_vicreg_metrics.setdefault(_qk, []).append(_qv)
+
+                # +OPPONENT INTENT (gen3_opp_intent_v1): supervise ALPHA/BETA against what the
+                # opponent actually did. The label lives in the obs, one row AHEAD of the prediction
+                # (the env can only see their turn-t action while building the obs for t+1), so the
+                # buffer's label block was shifted back by one — and pairs spanning an episode
+                # boundary DROPPED — before `get()` shuffled it. See `align_labels_to_predictions`.
+                if self.opp_intent_coef > 0.0:
+                    _al = getattr(self.policy.features_extractor, "last_alpha_logits", None)
+                    _bl = getattr(self.policy.features_extractor, "last_beta_logits", None)
+                    _sn = getattr(self.policy.features_extractor, "last_alpha_seat_nums", None)
+                    _obs = rollout_data.observations
+                    if _al is not None and _sn is not None and "opp_action_kind" in _obs:
+                        from agents.model.opp_intent import (INTENT_IGNORE, intent_losses,
+                                                             match_seats_to_move_num)
+                        _kind = _obs["opp_action_kind"].long().flatten()
+                        _num = _obs["opp_action_num"].long().flatten()
+                        _atgt = match_seats_to_move_num(_sn, _num, _kind, _sn.shape[-1])
+                        _btgt = _obs["opp_switch_slot"].long().flatten()
+                        # beta learns ONLY from genuine voluntary switches; every other row is masked
+                        # at the label builder, and a switch we cannot address is masked here.
+                        _btgt = th.where(_kind == 1, _btgt,
+                                         th.full_like(_btgt, INTENT_IGNORE))
+                        # CONTENT-ADDRESSED believed-slot resolution. A switch-in that was still
+                        # HIDDEN at the decision has no valid slot INDEX: the believed slots are
+                        # anonymous DETR queries the species loss re-matches by Hungarian
+                        # assignment, so the label's Pokedex-sorted canonicalisation names a slot
+                        # whose learned content is a different mon. Ask the model's OWN species
+                        # posterior instead — "which believed slot do you think holds this mon" —
+                        # so beta and the species head refer to the same object. Masked on belief
+                        # miss, exactly as alpha masks on seat miss.
+                        _sp = _obs.get("opp_switch_species")
+                        _bel = getattr(self.policy.features_extractor,
+                                       "last_opp_believed_mask", None)
+                        _blog = getattr(self.policy.features_extractor,
+                                        "last_belief_logits", None)
+                        if _sp is not None and _bel is not None and _blog is not None \
+                                and "species" in _blog:
+                            from agents.model.opp_intent import resolve_believed_slot_by_content
+                            _content = resolve_believed_slot_by_content(
+                                _blog["species"].detach(), _bel.float(),
+                                _sp.long().flatten())
+                            # Prefer the EXACT revealed slot; fall back to the content-addressed
+                            # believed slot only where the label had none.
+                            _need = (_kind == 1) & (_btgt < 0)
+                            _btgt = th.where(_need, _content, _btgt)
+                            oi_extra_believed = float(
+                                ((_need) & (_content >= 0)).float().sum())
+                            # SEPARATE the two failure modes. `wanted` counts rows that ASKED for
+                            # content-addressing (a switch to a mon with no revealed slot);
+                            # `believed_targets` counts rows it RESOLVED. wanted=0 => the label
+                            # never emits SWITCH_SLOT_NONE (plumbing); wanted>0 with resolved=0 =>
+                            # the belief is too cold to clear the floor (expected early, and the
+                            # reason a cold smoke cannot validate this path).
+                            oi_wanted_content = float(_need.float().sum())
+                        else:
+                            oi_extra_believed = 0.0
+                            oi_wanted_content = 0.0
+                        # beta v1 supervises only switch-ins the head could actually POINT AT.
+                        # The label's slot is resolved on the board at t+1; the logits come from the
+                        # board at t. A mon UNREVEALED at t has no addressable slot there, so its
+                        # target lands on a -inf logit => +inf loss (measured: beta_loss=inf).
+                        # Dropping those rows IS design_opponent_intent.md §4.3's stated v1 scope
+                        # (revealed slots only; ~46% of switches masked, rate logged). B1 is the
+                        # named upgrade that turns the mask into a posterior soft-target.
+                        if _bl is not None:
+                            _safe = _btgt.clamp(min=0, max=_bl.shape[-1] - 1)
+                            _reach = th.isfinite(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
+                            _btgt = th.where(_reach, _btgt, th.full_like(_btgt, INTENT_IGNORE))
+                        oi_loss, oi_m = intent_losses(_al, _atgt, _bl, _btgt)
+                        # THE number that says whether content-addressing recovered anything.
+                        # Without it, a no-op looks identical to a working feature (the same
+                        # blindness that let a zero-supervision alpha pass a green smoke).
+                        oi_m["opp_intent/beta_believed_targets"] = oi_extra_believed
+                        oi_m["opp_intent/beta_wanted_content"] = oi_wanted_content
+                        loss = loss + self.opp_intent_coef * oi_loss
+                        for _ok, _ov in oi_m.items():
+                            seed_vicreg_metrics.setdefault(_ok, []).append(_ov)
 
                 # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
                 # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.

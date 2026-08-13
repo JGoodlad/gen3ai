@@ -948,6 +948,8 @@ def current_model_version(
     value_dist_coef: float = 1.0,
     seed_quantile: bool = False,
     value_threat_inject: bool = False,
+    opp_intent: bool = False,
+    species_prior_fusion: bool = False,
     damage_topk_k: int = 0,
     damage_refine_rounds: int = 0,
     damage_matrices_outgoing: bool = False,
@@ -1026,6 +1028,8 @@ def current_model_version(
     ext_kwargs["value_dist_vmax"] = value_dist_vmax
     ext_kwargs["seed_quantile"] = seed_quantile
     ext_kwargs["value_threat_inject"] = value_threat_inject
+    ext_kwargs["opp_intent"] = opp_intent
+    ext_kwargs["species_prior_fusion"] = species_prior_fusion
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_refine_rounds"] = damage_refine_rounds
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
@@ -1124,6 +1128,11 @@ def arch_toggles_from_model(model) -> dict:
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).
         "value_threat_inject": bool(getattr(fe, "value_threat_inject", False)),
+        # gen3_opp_intent_v1 (v67): state_dict-changing heads, so a frozen opponent's gate must see them.
+        "opp_intent": bool(getattr(fe, "opp_intent", False)),
+        # gen3_species_prior_fusion_v1 (v68): the state_dict is identical either way, so this toggle is
+        # the ONLY carrier of what the species head's output MEANS — a frozen opponent's gate must see it.
+        "species_prior_fusion": bool(getattr(fe, "species_prior_fusion", False)),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),

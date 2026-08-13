@@ -29,6 +29,7 @@ from agents.battle.live_view import LegalActions
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
 from agents.training.turn_delta import TurnDelta
+from agents.observation.belief_labels import assign_hidden_to_slots
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from agents.battle.gen3_battle import Gen3Battle
@@ -47,6 +48,7 @@ class Gen3Env(SinglesEnv):
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off", emit_belief_target: bool = False,
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
+                 emit_opp_intent_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False,
                  emit_pubval_target: bool = False, distill_team_species=None,
                  opponent_team=None, **kwargs):
@@ -108,6 +110,13 @@ class Gen3Env(SinglesEnv):
         # Read ONLY by the loss — never enters the policy/value forward (the believed stats the op consumes
         # are the model's own prediction, not this label).
         self._emit_spread_labels = emit_spread_labels
+        # OPPONENT-INTENT labels (TRAINING-ONLY, gen3_opp_intent_v1): what the opponent ACTUALLY did.
+        # UNLIKE every other label here, this one describes the PREVIOUS decision — the delta folded at
+        # embed time closes the window that just ended, so the opponent's action at decision t is only
+        # observable when building the obs for t+1. The one-row shift back onto the predictions happens
+        # in the PPO loss (`align_labels_to_predictions`), NOT here; this emits what the delta says and
+        # nothing more. Enabled by --opp-intent-coef>0. Read ONLY by the loss.
+        self._emit_opp_intent_labels = emit_opp_intent_labels
         # gen3_nature_ev_belief_v1: the inverted (species -> nature_num, EVs) map is FIXED per battle (agent2's
         # team doesn't change), but the inversion is ~expensive (25 natures × 64 EVs / mon), so cache it keyed
         # by the team's species set and recompute only on a new battle. Read by _spread_labels.
@@ -207,6 +216,20 @@ class Gen3Env(SinglesEnv):
                 # float32 (real obs features); only declared when --opp-belief-latent-coef>0.
                 base_obs["belief_target_slots"] = spaces.Box(
                     low=-np.inf, high=np.inf, shape=(TEAM_SIZE, POKEMON_FULL_DIM), dtype=np.float32)
+        if self._emit_opp_intent_labels:
+            # OPPONENT-INTENT labels (gen3_opp_intent_v1) — what they DID at the PREVIOUS decision.
+            # Three int64 scalars, not a seat index: the seats are `w.topk(K)` built by the MODEL
+            # mid-forward and they PERMUTE every turn, so the env cannot name them. It emits the
+            # canonical move NUM and the loss locates it among the seats (`match_seats_to_move_num`).
+            # An index-based label would silently point at a different move whenever the belief re-sorted.
+            base_obs["opp_action_kind"] = spaces.Box(low=0, high=2, shape=(1,), dtype=np.int64)
+            base_obs["opp_action_num"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
+            # beta's target: which of THEIR team slots came in (SWITCH_SLOT_NONE = masked).
+            base_obs["opp_switch_slot"] = spaces.Box(low=-100, high=TEAM_SIZE, shape=(1,), dtype=np.int64)
+            # The CONTENT-ADDRESSED key for a still-HIDDEN switch-in: its species num, resolved at
+            # loss time against the model's own believed-slot posterior (there is no valid slot
+            # index for an anonymous query — see opp_intent_labels).
+            base_obs["opp_switch_species"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
         if self._emit_spread_labels:
             # SPREAD-belief label (gen3_unified_spread_belief_v1): the TRUE derived stats {atk,def,spa,spd,spe}
             # of each REVEALED opp mon + a per-slot mask (1 = supervised). float32 (real stat VALUES, the same
@@ -275,6 +298,15 @@ class Gen3Env(SinglesEnv):
             if cfg is not None:
                 self._tracker.progress_clock.no_progress_penalty = cfg.no_progress_penalty
         self._pending_delta = None   # delta folded once at embed time, reused by calc_reward
+        self._opp_slot_map = {}      # species -> opp slot as of the CURRENT decision
+        # ...and the PREVIOUS decision's copy, which is the one beta's label must read. The label
+        # for decision t is built during step() for t+1, and embed_battle(t+1) has ALREADY
+        # refreshed the current map by then — so reading it would describe the board AFTER the
+        # switch, where the switch-in is revealed and its believed slot no longer exists.
+        # Measured: `opp_intent/beta_wanted_content` read 0.0 (no row even asked for
+        # content-addressing) until this one-step delay was added. Same timing trap as the delta.
+        self._opp_slot_map_prev = {}
+        self._intent_delta = None    # same delta, NOT consumed — the alpha/beta label reads this
         self._turn_delta_encoder = TurnDeltaEncoder(
             mappings.get("moves", {}),
             mappings.get("species", {}),
@@ -289,6 +321,13 @@ class Gen3Env(SinglesEnv):
             # Clear any prior cached delta so a non-recording embed (terminal / no legal action)
             # forces calc_reward to re-fold rather than reuse a stale window.
             self._pending_delta = None
+            # gen3_opp_intent_v1: a SEPARATE, non-consumed copy for the alpha/beta label. The
+            # reward path CONSUMES `_pending_delta` (calc_reward nulls it), and calc_reward runs
+            # INSIDE super().step() — i.e. BEFORE the label keys are merged — so reading the
+            # pending slot there always found None and every row was masked. Measured: a smoke
+            # reported alpha_mask_rate 1.0 / n_supervised 0, the exact "the head logs a loss and
+            # learns nothing" shape. This slot is written here and read there; nothing consumes it.
+            self._intent_delta = None
         if battle is self.battle1 and not battle.strict_view().finished:
             # Capture the server-authoritative legality snapshot ONCE this decision and
             # thread it to the mask, the recorded context, AND the obs encoder (its
@@ -301,6 +340,7 @@ class Gen3Env(SinglesEnv):
                 # Advance the shared ProgressClock for the JUST-COMPLETED window BEFORE encode reads
                 # it (design §5.1). Cache the returned delta so calc_reward reuses it (no double fold).
                 self._pending_delta = self._tracker.update_progress_clock(battle, legal)
+                self._intent_delta = self._pending_delta
 
         if battle is self.battle1:
             obs = self.observation_encoder.encode(
@@ -308,6 +348,10 @@ class Gen3Env(SinglesEnv):
                 progress_clock=self._tracker.progress_clock,
                 recency=self._tracker.recency,
             )
+            if self._emit_opp_intent_labels:
+                # beta's coordinate frame, snapshotted from the SAME obs vector the model reads
+                # (so `species_known` here is byte-identical to what BeliefSlots keyed on).
+                self._snapshot_opp_slot_map(obs)
             prev_mask = self._tracker.prev_mask
             history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
         else:
@@ -453,6 +497,79 @@ class Gen3Env(SinglesEnv):
         self._nature_ev_cache = out
         return out
 
+    def _snapshot_opp_slot_map(self, obs_vec) -> None:
+        """Cache `species -> opp slot` AS OF THIS DECISION — beta's target coordinate frame.
+
+        `β` predicts at decision t and the label is only observable at t+1, and the encoder packs
+        opp slots REVEALED-FIRST, so a mon that switches in is in a DIFFERENT slot at t+1 than the
+        one it occupied at t. Resolving the target on the t+1 board therefore names the wrong slot
+        (this is what produced `beta_loss = inf` — the target landed on a masked index).
+
+        For a REVEALED mon the slot is its encoder position. For a still-HIDDEN mon it is its
+        BELIEVED slot from `assign_hidden_to_slots` — the same canonical assignment the species
+        head and the latent target are built from, so `β` pointing at slot j and the species head
+        naming slot j always refer to the same mon. That is what lets `β` learn a switch to a mon
+        we had not yet seen: the target is the SLOT (privileged, exact), independent of whether the
+        species prediction for that slot happens to be right.
+        """
+        b1 = getattr(self, "battle1", None)
+        b2 = getattr(self, "battle2", None)
+        if b1 is None or b2 is None:
+            self._opp_slot_map_prev = self._opp_slot_map
+            self._opp_slot_map = {}
+            return
+        try:
+            species_known = [
+                float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
+                for i in range(TEAM_SIZE)
+            ]
+            revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True)
+                        if m is not None]
+            slot_map = {}
+            for i, m in enumerate(revealed):
+                slot_map[to_id_str(m.species)] = i
+            # REVEALED mons ONLY. A hidden mon is deliberately absent, so the label emits
+            # SWITCH_SLOT_NONE and the loss resolves it by CONTENT against the model's own
+            # believed-slot posterior. Adding hidden mons here via `assign_hidden_to_slots` would
+            # hand back its Pokedex-sorted index — the exact index-based target content-addressing
+            # exists to replace — and the content path would never execute. It did exactly that:
+            # `opp_intent/beta_believed_targets` read 0.0 until this loop was removed.
+            self._opp_slot_map_prev = self._opp_slot_map
+            self._opp_slot_map = slot_map
+        except Exception:
+            # Never break the obs path for a label; an empty map just masks this decision.
+            self._opp_slot_map_prev = self._opp_slot_map
+            self._opp_slot_map = {}
+
+    def _opp_intent_labels(self) -> dict:
+        """OPPONENT-INTENT label (gen3_opp_intent_v1) — what they did at the PREVIOUS decision.
+
+        Sourced from `self._pending_delta`, the delta `embed_battle` already folded for the
+        ProgressClock (same window, no second fold). That delta closes the window that just ENDED,
+        so it reports decision t-1 while we are building the obs for t — the consumer shifts.
+
+        `β`'s slot is resolved against the OPPONENT's team as the model sees it (encoder slot order),
+        so the target indexes the same six tokens `BetaSwitchHead` points at. An unresolvable
+        species is masked rather than guessed: a pointer cannot address what is not there.
+        """
+        from agents.training.opp_intent_labels import build_opp_intent_label, zero_opp_intent_label
+        delta = getattr(self, "_intent_delta", None)
+        if delta is None:
+            kind, num, slot, sp = zero_opp_intent_label()
+        else:
+            def _slot_of(species):
+                # The CACHED map from decision t — NOT the live board, which has already re-packed
+                # now that the switch-in is revealed. See _snapshot_opp_slot_map.
+                return getattr(self, "_opp_slot_map_prev", {}).get(
+                    to_id_str(species) if species else "")
+            kind, num, slot, sp = build_opp_intent_label(
+                delta, lambda mid: self._move_num.get(to_id_str(mid)), _slot_of,
+                lambda species: self._species_num.get(to_id_str(species)) if species else None)
+        return {"opp_action_kind": np.array([kind], dtype=np.int64),
+                "opp_action_num": np.array([num], dtype=np.int64),
+                "opp_switch_slot": np.array([slot], dtype=np.int64),
+                "opp_switch_species": np.array([sp], dtype=np.int64)}
+
     def _hp_type_labels(self, obs_vec) -> dict:
         """HP-TYPE-belief label (gen3_opp_hp_type_belief_v1) — INDEPENDENT of the other belief legs. For each
         REVEALED opp slot whose species runs a Hidden Power, the TRUE HP type index (0..15) from agent2's OWN
@@ -551,6 +668,8 @@ class Gen3Env(SinglesEnv):
             agent_obs.update(self._spread_labels(agent_obs["observation"]))
         if self._emit_hp_type_labels:
             agent_obs.update(self._hp_type_labels(agent_obs["observation"]))
+        if self._emit_opp_intent_labels:
+            agent_obs.update(self._opp_intent_labels())
         if self._emit_win_target:
             agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
             agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
@@ -646,7 +765,8 @@ class Gen3Env(SinglesEnv):
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_defensive_opportunity
-                    or self._emit_pubval_target or self._emit_distill_mask):
+                    or self._emit_pubval_target or self._emit_distill_mask
+                    or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
                     self._merge_training_keys(agent_obs)
@@ -670,7 +790,8 @@ class Gen3Env(SinglesEnv):
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_defensive_opportunity
-                    or self._emit_pubval_target or self._emit_distill_mask):
+                    or self._emit_pubval_target or self._emit_distill_mask
+                    or self._emit_opp_intent_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)
                 if agent_obs is not None:

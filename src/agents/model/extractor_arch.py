@@ -64,6 +64,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "zarch_lut": "zarch_lut",                                               # v46
     "zarch_lut_init_std": "zarch_lut_init_std",
     "value_threat_inject": "value_threat_inject",                           # v64
+    "species_prior_fusion": "species_prior_fusion",                         # v68
 }
 
 # Kwargs that are NOT a plain attribute read. Each is a callable over `args`.
@@ -75,6 +76,8 @@ _DERIVED = {
     # v63 gen3_seed_quantile_v1 — same shape: the COEF is the training hparam, the BOOL is the
     # version-checked structural toggle that builds the shared per-seed quantile Linear.
     "seed_quantile": lambda a: getattr(a, "seed_quantile_coef", 0.0) > 0.0,
+    # v67 gen3_opp_intent_v1 — same shape: the COEF is the training hparam, the BOOL builds the heads.
+    "opp_intent": lambda a: getattr(a, "opp_intent_coef", 0.0) > 0.0,
     # Computed upstream by the --zarch-lut validation (a roster table, not a CLI value).
     "zarch_lut_rosters": lambda a: getattr(a, "_zarch_lut_rosters", None),
 }

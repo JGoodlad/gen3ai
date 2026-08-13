@@ -413,3 +413,40 @@ state did — then regenerate the delivery graph.
 > historical record** (1309-dim obs, the pre-unified-transformer attention paths) and is **NOT
 > maintained** — do not update it for current-arch changes. It carries a banner saying so. It is
 > also the reason `designs/architecture_graph.dot` is generated rather than drawn.
+
+## Opponent intent — `α` / `β` (`opp_intent.py`, v67)
+
+The build for one sentence the model could not express: *"they are likely to click **this**, so
+**this** is my answer."* `--opp-intent-coef>0` adds two SUPERVISED pointer heads:
+
+- **`α`** — a distribution over the opponent's K believed threat-move seats (the refined **E4**
+  tokens) **plus a SWITCH option**. Seat k's logit is scored from seat k's own token through a
+  SHARED scorer, so `α` is equivariant under permuting their moves; SWITCH is scored from board
+  context alone (there is no per-seat object to point at — it is the "none of these" option).
+- **`β`** — given a switch, which of their mons comes in. A pointer over their six team tokens,
+  masked to alive-and-non-active: an illegal switch-in must be UNREPRESENTABLE, not merely
+  unlikely, or the head spends capacity learning the rules.
+
+**Why pointers and not a flat `Linear(ctx, K)`.** The flat form passes every shape test and then
+learns "seat 0 is usually right" from the belief's own `w.topk` sort order — memorising exactly the
+ordering `α` exists to correct. Equivariance is gated in both axes.
+
+**Matching is by canonical id.** Seats permute every turn and are built by the model mid-forward, so
+the env emits the opponent's move NUM and `match_seats_to_move_num` locates it at loss time. A
+belief miss is MASKED and `opp_intent/alpha_mask_rate` is logged — that rate is the BELIEF's coverage
+failure, and folding it into "α was wrong" would hide which component to fix.
+
+**The label is for the PREVIOUS decision.** Their turn-t action is only observable while building the
+obs for t+1, so `instrumented_ppo` shifts the label block back one row **before `get()` shuffles**
+and drops any pair whose successor starts an episode (`align_labels_to_predictions`). Skipping that
+drop splices one battle's first decision onto another's last board — invisible in every metric.
+
+**Supervision only:** both heads read a DETACHED input, so a null indicts the head's predictive
+power, not the policy. Structural + version-checked; requires `--entity-topk-seats>0` (fail-loud);
+OFF builds neither head. Metrics ride `opp_intent/*` — watch `alpha_acc` against the **51.8%**
+`argmax(w)` baseline and `alpha_acc_switch` separately, since a head that only learns "they attack"
+would otherwise hide behind the attack-heavy base rate.
+
+**Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
+`opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
+only ever point at options it can name, and rendering is where that becomes checkable.

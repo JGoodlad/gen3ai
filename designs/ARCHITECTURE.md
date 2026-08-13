@@ -633,6 +633,7 @@ raises at build time.
 | `damage_candidate_k` | 0 | OFF — the full candidate sweep, no truncation |
 | `damage_reattend` | false | OFF |
 | `opp_belief_aux_coef` | 0.0 | OFF ⇒ `opp_belief_slots` false ⇒ **no `BeliefHead`, no species posterior** |
+| `species_prior_fusion` | false | OFF ⇒ `BeliefHead.species_head`'s output IS the whole species prediction. ON makes it a learned log-prob DELTA on a TEAM-COMPOSITION prior — `log P(species | the opponent's already-revealed mons)`, naive Bayes over pairwise pool co-occurrence with Species Clause as a hard constraint — computed on-GPU from two non-persistent `[S]`/`[S,S]` buffers (one `[B,S]@[S,S]` matmul, no gather). The delta head is zero-init, so the cold-start posterior EQUALS the prior. Adds **no parameters** (identical state_dict) — which is exactly why it is version-gated: nothing in the weights would catch the flip, and it re-means every species logit. Requires `opp_belief_aux_coef > 0` |
 | `opp_belief_latent` | false | OFF |
 | `opp_belief_cls_k` | 0 | OFF |
 | `spread_belief` | false | OFF — the op prices REVEALED opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief. UNREVEALED defender slots (since `gen3_unrevealed_outgoing_prior_v1`, v60) are priced against the Species-Clause-filtered usage prior's E[def/spd]/E[maxhp] + E[type-mult], P(KO) nulled, `revealed` channel 0 |
@@ -648,6 +649,7 @@ raises at build time.
 | `value_active_readout` | false | OFF — vf does not read `our_active_refined` |
 | `zarch_film` / `zarch_dim` / `zarch_lut` | `"off"` / 0 / `"off"` | OFF — no team-archetype conditioning |
 | `move_candidate_floor` | 0.02 | ACTIVE — the **legal-but-unobserved** base probability of the move prior. Not a switch: learnset **legality is unconditional** (a move a species cannot learn always gets `logit(1e-6)` ≈ 0 mass). This float only sets how high a *legal* move with no recorded Smogon usage starts, so in-battle evidence can lift it. Must be ≥ `1e-3`; `0.0` is rejected (it would collapse legal-unobserved onto impossible, and `logit(0)` = −inf) |
+| `opp_intent` | false | OFF — no `α`/`β` heads. ON adds two POINTER scorers (α over the E4 believed-threat seats + SWITCH; β over their six team tokens), supervised against what the opponent actually did, reading a DETACHED input so they cannot perturb the policy. Requires `entity_topk_seats>0` |
 | `value_threat_inject` | false | OFF — the critic reads no per-entity threat magnitude; the op stays on the R0 `hard_max` reduction and builds no `PairReducer`. Turning it on forces the R1 `belief_mean` rung and adds one shared zero-init `Linear(13, 128)` on the **value pool's** copy of our tokens; `pi` is unaffected at any weight (§3.2) |
 
 **No flag exists for the pointer-native action head.** It is unconditional — there is no off state,

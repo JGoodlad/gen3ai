@@ -384,6 +384,8 @@ def _run_arch_toggles(args) -> dict:
         value_dist_mode=args.value_dist_mode,
         seed_quantile=bool(args.seed_quantile_coef and args.seed_quantile_coef > 0),
         value_threat_inject=bool(getattr(args, 'value_threat_inject', False)),
+        opp_intent=bool(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
+        species_prior_fusion=bool(getattr(args, 'species_prior_fusion', False)),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
@@ -1091,6 +1093,23 @@ async def main():
                              "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
                              "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
+    parser.add_argument("--species-prior-fusion", "--species_prior_fusion",
+                        dest="species_prior_fusion", action=BoolFlag, default=None,
+                        help="SPECIES belief prior fusion (gen3_species_prior_fusion_v1, v68): fuse a "
+                             "TEAM-COMPOSITION prior into BeliefHead's species head as a log-prob "
+                             "residual (posterior = prior + learned delta), the same two-part shape "
+                             "--move-prior-fusion gives the move belief. The prior is naive Bayes over "
+                             "pairwise co-occurrence in the data/teams/ pool — 'given the opponent mons "
+                             "already revealed, what is likely in a hidden slot' — with Species Clause "
+                             "as a hard constraint. The species head was the ONE belief leg with no "
+                             "prior, so it cold-started ~uniform over ~400 nums. Measured on the pool, "
+                             "5-fold held out: top-1 0.106 with nothing revealed, and with 3 revealed "
+                             "0.189 conditional vs 0.156 marginal-only (top-3 0.449 vs 0.345) — vs "
+                             "~0.0025 for uniform. The delta head is ZERO-INIT, so the cold-start "
+                             "posterior EQUALS the prior. Adds NO parameters (the co-occurrence tables "
+                             "are non-persistent buffers), but STRUCTURAL + version-checked all the "
+                             "same: flipping it re-means every species logit. REQUIRES "
+                             "--opp-belief-aux-coef>0. Off by default (byte-identical).")
     parser.add_argument("--move-belief-prefuse", "--move_belief_prefuse", dest="move_belief_prefuse",
                         action=BoolFlag, default=None,
                         help="Reinject the move belief BEFORE the team transformer instead of after, so the "
@@ -1399,6 +1418,18 @@ async def main():
                              "steps (so long-lived workers track the moving policy). Default 500k.")
     parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
                         type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
+    parser.add_argument("--opp-intent-coef", "--opp_intent_coef", dest="opp_intent_coef",
+                        type=float, default=0.0,
+                        help="OPPONENT-INTENT aux (gen3_opp_intent_v1, v67): supervise ALPHA — a "
+                             "distribution over the opponent's K believed threat-move seats PLUS "
+                             "SWITCH — and BETA — which of their mons comes in — against what they "
+                             "ACTUALLY did. Both are POINTER heads (equivariant over their moves / "
+                             "their bench) and see a DETACHED input, so a null says the head cannot "
+                             "predict them rather than that predicting them hurt the policy. "
+                             "Measured headroom (gen-8): the belief's top-K contains their move 85.8%% "
+                             "of the time but ranks it first only 51.8%% — 34pp of mis-ranked mass. "
+                             "Requires --entity-topk-seats>0. 0.0 = OFF (no heads, byte-identical). "
+                             "STRUCTURAL + version-checked; the coef itself is training-only.")
     parser.add_argument("--value-threat-inject", "--value_threat_inject",
                         dest="value_threat_inject", action="store_true", default=False,
                         help="CRITIC THREAT INJECTION (gen3_value_threat_inject_v1, v64): add the "
@@ -1803,7 +1834,7 @@ async def main():
                              "uniform share — so the trainee drills the teams it wins ~half the time (max "
                              "variance) and stops over-sampling the ones it crushes / always loses. "
                              "'onesided' keeps the LOSING side at MAX weight instead — w(p)=0.25 for p<0.5, "
-                             "else p*(1-p) (continuous at 0.5): every sub-50% team stays maximally sampled "
+                             "else p*(1-p) (continuous at 0.5): every sub-50%% team stays maximally sampled "
                              "and only mastery retires a team (under the z_arch/FiLM conditioning "
                              "hypothesis the weak tail is the learnable headroom, so 'truly lost' is the "
                              "claim under test, not a sampling prior). Measured on SELF-PLAY pool battles "
@@ -2131,6 +2162,8 @@ async def main():
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("seed_quantile_coef", 0.0)        # v63 training-only coef; the HEAD itself is structural
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
+    _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
+    _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
@@ -2424,6 +2457,14 @@ async def main():
             "--move-prior-fusion requires --move-belief-mode != off (revealed|unrevealed|both): the prior "
             "fuses into the move-belief head's logits. Set --move-belief-mode revealed, or drop "
             "--move-prior-fusion."
+        )
+    if args.species_prior_fusion and not (args.opp_belief_aux_coef and args.opp_belief_aux_coef > 0):
+        # FAIL LOUD: the species prior fuses INTO BeliefHead's species head, and that head only exists
+        # under the in-place believed slots (which --opp-belief-aux-coef>0 is what turns on).
+        parser.error(
+            "--species-prior-fusion requires --opp-belief-aux-coef > 0: the team-composition prior "
+            "fuses into the BeliefHead's species head, which is only built under the hidden-opponent "
+            "belief slots. Set --opp-belief-aux-coef, or drop --species-prior-fusion."
         )
     if args.move_belief_prefuse and args.move_belief_mode == "off":
         # FAIL LOUD: prefuse moves the move-belief REINJECTION before the transformer; with no head
@@ -3061,6 +3102,7 @@ async def main():
                     # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                     # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
                     emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
+                    emit_opp_intent_labels=(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
                     # HP-TYPE-belief supervision (gen3_typed_hp_belief_v1): emit the privileged true-HP-type
                     # label only when the CE will consume it (the head itself is unconditional under a move
                     # belief; the CLI guards that the coef implies one).
@@ -3847,6 +3889,7 @@ async def main():
         model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
         # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
         model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
+        model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)
@@ -4098,6 +4141,7 @@ async def main():
         model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
         # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
         model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
+        model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)

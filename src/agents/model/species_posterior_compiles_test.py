@@ -42,7 +42,7 @@ def test_species_posterior_matches_plain_softmax():
     torch.manual_seed(0)
     head = BeliefHead.__new__(BeliefHead)          # bypass __init__; we only exercise the spelling
     logits = torch.randn(3, 6, 400) * 7.0          # wide scale: catches a non-stable factoring
-    head.species_logits = lambda tokens: logits    # type: ignore[assignment]
+    head.species_logits = lambda tokens, *a, **k: logits    # type: ignore[assignment]
     got = BeliefHead.species_posterior(head, torch.zeros(3, 6, 8))
     want = torch.softmax(logits, dim=-1)
     assert torch.allclose(got, want, atol=1e-6), (got - want).abs().max()
@@ -54,7 +54,7 @@ def test_species_posterior_is_stable_for_large_logits():
     reappear if someone re-spells this."""
     head = BeliefHead.__new__(BeliefHead)
     logits = torch.tensor([[[1e4, 1e4 + 1.0, -1e4]]])
-    head.species_logits = lambda tokens: logits    # type: ignore[assignment]
+    head.species_logits = lambda tokens, *a, **k: logits    # type: ignore[assignment]
     got = BeliefHead.species_posterior(head, torch.zeros(1, 1, 8))
     assert torch.isfinite(got).all()
     assert pytest.approx(1.0, abs=1e-5) == float(got.sum())

@@ -21,6 +21,7 @@ from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
+from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
 # unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
@@ -1283,13 +1284,45 @@ class BeliefHead(torch.nn.Module):
     the hard species CE can't give, in the role geometry a representation probe found the encoder
     amplifies ~7.5×. The discrete species head stays as the banked fallback; the predictor's asymmetry
     + the target encoder being TASK-ANCHORED (shared `pokemon_encoder`, stop-grad) defuses collapse
-    without an EMA (a VICReg variance floor + a `latent_std` monitor are the belt-and-braces)."""
+    without an EMA (a VICReg variance floor + a `latent_std` monitor are the belt-and-braces).
 
-    def __init__(self, n_species: int, n_moves: int, latent_dim: "Optional[int]" = None):
+    **Species prior fusion (`species_prior_fusion`, gen3_species_prior_fusion_v1).** Every OTHER belief
+    leg in this extractor fuses a PRIOR with a learned DELTA (`MoveBelief.prior_fusion`, plus the
+    spread / HP-type / ability legs); the SPECIES head was the one exception — a bare
+    `Linear(D_MODEL, n_species)` cold-starting ~uniform over the whole num axis, so `belief/species_acc`
+    sat near chance for thousands of updates and every consumer of the posterior read noise (the v36
+    expected-latent defender, and the v67 BETA intent head, whose believed-slot resolution asked 110
+    rows/update and resolved 0 purely because the posterior was cold). When on, the head's output
+    becomes a LEARNED LOG-ODDS DELTA fused additively with a TEAM-COMPOSITION prior:
+
+        species_logits = head_delta + log P(species | the opponent's ALREADY-REVEALED mons)
+
+    The prior is naive Bayes over pairwise pool co-occurrence (`build_species_cooccur_prior`) — the
+    marginal plus one log-LIFT per revealed teammate — with Species Clause as a hard constraint. It is
+    computed ENTIRELY on-GPU from two non-persistent buffers (one `[B,S] @ [S,S]` matmul per forward;
+    no host round-trip, no numpy). The delta head is ZERO-INIT, so the cold-start posterior EQUALS the
+    prior exactly; OFF reproduces the from-scratch head byte-for-byte."""
+
+    def __init__(self, n_species: int, n_moves: int, latent_dim: "Optional[int]" = None,
+                 species_prior_fusion: bool = False):
         super().__init__()
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.species_head = torch.nn.Linear(D_MODEL, n_species)
         self.moves_head = torch.nn.Linear(D_MODEL, n_moves)
+        self.species_prior_fusion = species_prior_fusion
+        if species_prior_fusion:
+            from agents.model.damage_tables import build_species_cooccur_prior
+            # [n_species] log P(s) + [n_species, n_species] log[P(s|t)/P(s)] — data-derived from the
+            # committed pool artifact, recomputable → NON-persistent (the move prior's contract).
+            _log_marginal, _log_lift = build_species_cooccur_prior(n_species)
+            self.register_buffer("species_prior_log_marginal", _log_marginal, persistent=False)
+            self.register_buffer("species_prior_log_lift", _log_lift, persistent=False)
+            # Zero-init the head so the cold-start delta is EXACTLY 0 → the fused posterior == the prior
+            # at step 0. `restore_identity_init`'s end-of-__init__ observation sweep picks this up
+            # automatically, so SB3's ortho pass cannot silently clobber it (ledger M1). Only under
+            # fusion; the from-scratch (no-fusion) path keeps the default init unchanged.
+            torch.nn.init.zeros_(self.species_head.weight)
+            torch.nn.init.zeros_(self.species_head.bias)
         self.latent_head = None
         if latent_dim is not None:
             # Asymmetric predictor (own LayerNorm → bottleneck MLP) onto the role-token space.
@@ -1300,17 +1333,72 @@ class BeliefHead(torch.nn.Module):
                 torch.nn.Linear(D_MODEL, latent_dim),
             )
 
-    def species_logits(self, tokens: torch.Tensor) -> torch.Tensor:
+    def species_prior_logits(self, opp_species_ids: torch.Tensor,
+                             opp_believed_mask: "Optional[torch.Tensor]" = None) -> torch.Tensor:
+        """The CONDITIONAL team-composition prior, `[B, 1, n_species]` log-probabilities — broadcast
+        over the 6 slots, because "what is in a hidden slot" is a property of the OPPONENT'S TEAM, not
+        of which hidden slot you ask about.
+
+        `opp_species_ids` [B,6] national-dex nums (0 = the UNKNOWN sentinel a hidden slot carries);
+        `opp_believed_mask` [B,6] bool, True where the slot is still hidden (`ctx.opp_believed_mask`).
+        A slot counts as EVIDENCE iff it is revealed AND carries a real num — the two agree by
+        construction, and requiring both keeps this single-sourced with the rest of the extractor.
+
+        Naive Bayes, one matmul:
+
+            log P(s | R) ∝ log P(s) + Σ_{r ∈ R} log[ P(s | r) / P(s) ]
+
+        The sum over the revealed set is `revealed_onehot @ log_lift.T`, which is `[B,S] @ [S,S]` —
+        deliberately NOT the obvious `log_lift[:, ids]` gather, which would materialize a `[B,6,S]`
+        intermediate (157 MB at the production minibatch of 16384) for the same answer.
+
+        SPECIES CLAUSE is applied last and OVERRIDES the evidence: a species already on the board
+        cannot also be hiding on the bench. Every entry is FINITE (`SPECIES_CLAUSE_LOGIT`, never
+        `-inf`), so the `log_softmax` can never produce a NaN row and the learned delta always has a
+        live gradient to lift a floored candidate with."""
+        from agents.model.damage_tables import SPECIES_CLAUSE_LOGIT
+
+        marginal = self.species_prior_log_marginal                     # [S]
+        n_species = marginal.shape[0]
+        ids = opp_species_ids.clamp(0, n_species - 1).long()           # [B,6] defensive index clamp
+        revealed = ids > 0
+        if opp_believed_mask is not None:
+            revealed = revealed & (~opp_believed_mask.bool())
+        # BRANCHLESS + SYNC-FREE one-hot over the revealed set, exactly the `MoveBelief.move_logits`
+        # scatter trick: a revealed slot writes 1.0 at its num (always >= 1); a hidden slot writes 0.0
+        # at the clamped index 0, which no revealed slot can occupy — so the two never collide. Species
+        # Clause makes duplicate nums impossible, and `scatter_` (not `scatter_add_`) is idempotent
+        # anyway, so a malformed duplicate cannot double-count as evidence.
+        onehot = torch.zeros(ids.shape[0], n_species, dtype=marginal.dtype, device=marginal.device)
+        onehot.scatter_(1, ids, revealed.to(marginal.dtype))            # [B, S]
+        scores = marginal + onehot @ self.species_prior_log_lift.t()    # [B, S]
+        scores = torch.where(onehot > 0,
+                             torch.full_like(scores, SPECIES_CLAUSE_LOGIT), scores)
+        return torch.log_softmax(scores, dim=-1).unsqueeze(1)           # [B, 1, S]
+
+    def species_logits(self, tokens: torch.Tensor,
+                       opp_species_ids: "Optional[torch.Tensor]" = None,
+                       opp_believed_mask: "Optional[torch.Tensor]" = None) -> torch.Tensor:
         """tokens [B,6,D] → species logits [B,6,n_species]. Factored out of `forward` (mirrors
         `MoveBelief.move_logits`) so the bidirectional-threat refine can read P(species) over the
         CURRENT opp tokens MID-transformer (per round) and the final op can read it post-transformer —
         without also running the moves/latent heads. `forward` is left byte-identical (it computes its
         own `norm` once and reuses it for both heads); this standalone path is only called by the
-        v36 expected-latent-defender (gated off by default), so the baseline forward is unchanged."""
-        read = tokens.detach() if getattr(self, "detach_read", False) else tokens
-        return self.species_head(self.norm(read))
+        v36 expected-latent-defender (gated off by default), so the baseline forward is unchanged.
 
-    def species_posterior(self, tokens: torch.Tensor) -> torch.Tensor:
+        Under `species_prior_fusion` the head output is the learned DELTA and `opp_species_ids` [B,6]
+        (national-dex nums) + `opp_believed_mask` [B,6] turn it into the POSTERIOR — exactly the shape
+        `MoveBelief.move_logits` takes its `opp_species_ids`/`opp_move_ids` in."""
+        read = tokens.detach() if getattr(self, "detach_read", False) else tokens
+        logits = self.species_head(self.norm(read))                              # [B, 6, S] (delta)
+        if self.species_prior_fusion and opp_species_ids is not None:
+            logits = logits + self.species_prior_logits(
+                opp_species_ids, opp_believed_mask)                              # posterior = prior ⊕ delta
+        return logits
+
+    def species_posterior(self, tokens: torch.Tensor,
+                          opp_species_ids: "Optional[torch.Tensor]" = None,
+                          opp_believed_mask: "Optional[torch.Tensor]" = None) -> torch.Tensor:
         """tokens [B,6,D] → P(species) [B,6,n_species], the v36 expected-latent defender's input.
 
         ⚠️ THE SPELLING IS LOAD-BEARING — do not "simplify" this back to `torch.softmax`.
@@ -1328,16 +1416,23 @@ class BeliefHead(torch.nn.Module):
         max-subtraction for stability); measured max|Δ| vs eager 5.1e-07, the same order as the
         compile's own float-reassociation noise. Pinned by `inductor_compile_test.py`, which fails
         loudly if a future edit reintroduces the uncompilable form."""
-        return torch.log_softmax(self.species_logits(tokens), dim=-1).exp()
+        return torch.log_softmax(
+            self.species_logits(tokens, opp_species_ids, opp_believed_mask), dim=-1).exp()
 
-    def forward(self, their_team_out: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, their_team_out: torch.Tensor,
+                opp_species_ids: "Optional[torch.Tensor]" = None,
+                opp_believed_mask: "Optional[torch.Tensor]" = None) -> Dict[str, torch.Tensor]:
         """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
-        ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built."""
+        ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built.
+        `opp_species_ids` / `opp_believed_mask` are consumed only under `species_prior_fusion`."""
         # gen3_belief_grad_mode_v1: BeliefHead is a pure readout (no reinject), so `detached` simply stops the
         # aux-supervision gradient (species/moves/latent) from reaching the trunk — train the head only.
         read = their_team_out.detach() if getattr(self, "detach_read", False) else their_team_out
         h = self.norm(read)
-        out = {"species": self.species_head(h), "moves": self.moves_head(h)}
+        species = self.species_head(h)
+        if self.species_prior_fusion and opp_species_ids is not None:
+            species = species + self.species_prior_logits(opp_species_ids, opp_believed_mask)
+        out = {"species": species, "moves": self.moves_head(h)}
         if self.latent_head is not None:
             out["latent"] = self.latent_head(read)
         return out
@@ -2292,6 +2387,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  seed_quantile: bool = False, value_threat_inject: bool = False,
+                 opp_intent: bool = False, species_prior_fusion: bool = False,
                  damage_topk_k: int = 0, damage_reattend: bool = False,
                  move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
                  damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
@@ -2368,6 +2464,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.consequence_topk = int(consequence_topk)   # v59: C1b/C2/C3 k_cand + D4 k_bench
         self.entity_tail_seats = bool(entity_tail_seats)
         self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
+        # gen3_opp_intent_v1: DECLARED here, CONSTRUCTED at the end of __init__. `__init__` runs a
+        # dummy `forward_internal` to auto-discover the projection widths, and that forward reads
+        # these attributes — so they must exist before it, while the MODULES must be appended last
+        # (SB3 restores optimizer state POSITIONALLY). None during the dummy pass just skips the
+        # stash, which is correct: there is nothing to supervise on a dummy observation.
+        self.alpha_head: Optional[AlphaIntentHead] = None
+        self.beta_head: Optional[BetaSwitchHead] = None
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
         # BIASES (see EdgeBias). "off" builds no module (no state_dict change beyond the layer swap);
         # the maps are zero-init so an ON run is byte-identical to OFF at init. Requirement
@@ -2409,10 +2512,26 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "to the BeliefHead over the in-place believed slots. Enable --opp-belief-aux-coef>0 "
                 "(which turns on opp_belief_slots), or set --opp-belief-latent-coef 0."
             )
+        # gen3_species_prior_fusion_v1: fuse the TEAM-COMPOSITION species prior into the belief head, so
+        # the species posterior starts at the pool base rate conditioned on the opponent's revealed mons
+        # instead of ~uniform over the num axis. Two non-persistent buffers + a zero-init delta head, so
+        # the state_dict is UNCHANGED — but it is STRUCTURAL all the same: flipping it mid-run silently
+        # re-means every species logit (a resumed head trained as a from-scratch predictor would suddenly
+        # be read as a delta on a prior it never saw), which is exactly what the version gate is for.
+        # Requires opp_belief_slots — there is no BeliefHead to fuse into otherwise.
+        self.species_prior_fusion = species_prior_fusion
+        if species_prior_fusion and not opp_belief_slots:
+            raise ValueError(
+                "species_prior_fusion=True requires opp_belief_slots=True — the prior fuses INTO the "
+                "BeliefHead's species head, which only exists under the in-place believed slots. Enable "
+                "--opp-belief-aux-coef>0 (which turns on opp_belief_slots), or drop "
+                "--species-prior-fusion."
+            )
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
-                       latent_dim=(D_MODEL if opp_belief_latent else None)) if opp_belief_slots else None
+                       latent_dim=(D_MODEL if opp_belief_latent else None),
+                       species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
         )
         # Stashed each forward when belief is on (the species/moves[/latent] logits dict, or None);
         # read by the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
@@ -3121,6 +3240,30 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         else:
             self._debugger = None
 
+        # gen3_opp_intent_v1: the ALPHA/BETA intent heads. Built LAST (before the identity snapshot)
+        # so appending their params cannot shift any existing optimizer position — SB3 restores
+        # optimizer state POSITIONALLY (ledger: the ai_v6_13 "128 vs 5" crash), so a new module must
+        # always be appended, never inserted.
+        self.opp_intent = bool(opp_intent)
+        if self.opp_intent and self.entity_topk_seats <= 0:
+            raise ValueError(
+                "opp_intent=True requires entity_topk_seats>0 — alpha is a POINTER over the E4 "
+                "believed-threat move seats, so with no seats there is nothing for it to point at "
+                "and the head would silently score an empty set.")
+        # Context = both team pools (256). They are read AFTER the op's prefuse injection and the
+        # edge families, so our OUTGOING physics is already in `our_team_pooled` — design §3.1's
+        # requirement that alpha see our own threat (both sides anticipate; the fixed point is found
+        # by self-play training, never solved at inference).
+        _intent_ctx = 2 * D_MODEL
+        if self.opp_intent:
+            self.alpha_head = AlphaIntentHead(D_MODEL, _intent_ctx)
+            self.beta_head = BetaSwitchHead(D_MODEL, _intent_ctx)
+        # Stashes read ONLY by the aux loss + the prober; never fed forward (leak-safe by construction:
+        # they are OUTPUTS of the forward, and the loss pairs them with a label the env supplies).
+        self.last_alpha_logits: Optional[torch.Tensor] = None
+        self.last_alpha_seat_nums: Optional[torch.Tensor] = None
+        self.last_beta_logits: Optional[torch.Tensor] = None
+
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so
         # every module is built and every deliberate zero-init has already been applied.
@@ -3584,7 +3727,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     # unrevealed columns are priced by the expected-latent defender; else revealed-gated.
                     species_probs = None
                     if self.threat_unrevealed_outgoing and self.belief_head is not None:
-                        species_probs = self.belief_head.species_posterior(opp_tokens)  # [B,6,n_species]
+                        species_probs = self.belief_head.species_posterior(
+                            opp_tokens, ctx.species_ids[:, TEAM_SIZE:],
+                            ctx.opp_believed_mask)                                      # [B,6,n_species]
                     refined_opp = refined_opp + self.outgoing_proj(
                         self.damage_op.discrete_outgoing(ctx, species_probs))           # residual (0 at init)
                 if self.status_out_proj is not None:
@@ -3679,7 +3824,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.
         self.last_belief_logits = (
-            self.belief_head(their_team_out) if self.belief_head is not None else None
+            self.belief_head(their_team_out, ctx.species_ids[:, TEAM_SIZE:], ctx.opp_believed_mask)
+            if self.belief_head is not None else None
         )
         # Latent-belief target: the STOP-GRAD pokemon_encoder role-tokens of the TRUE hidden mons,
         # computed only when the latent head is on AND the privileged `belief_target_slots` key is in
@@ -3747,6 +3893,43 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # token every pool reads; the op cells are the same post-gain numbers the projection heads
         # consume (width-0 when the op is off — the head's Linears are built correspondingly
         # narrower, never silently zero-padded).
+        # gen3_opp_intent_v1: ALPHA (which of their believed moves will they click, or SWITCH) and
+        # BETA (if they switch, to whom). Both are POINTER heads over objects that already exist —
+        # alpha over the E4 believed-threat seats, beta over their six team tokens — so both are
+        # equivariant under permuting what they point at. Supervision-only: the input is DETACHED, so
+        # a null result says "the head cannot predict the opponent", not "predicting the opponent
+        # perturbed the policy". Stashed for the loss + the prober; never fed forward.
+        if self.alpha_head is not None:
+            _K = self.entity_topk_seats
+            _cand = self.entity_seats.last_cand
+            if _cand is None:
+                raise RuntimeError(
+                    "opp_intent is on but the E4 seat builder stashed no candidate selection — "
+                    "alpha's seats and its move-num labels would come from different selections.")
+            _seat_feats = _seat_out[:, 4:4 + _K, :].detach()                       # [B,K,D]
+            _ictx = torch.cat([our_team_pooled, their_team_pooled], dim=-1).detach()
+            _seat_nums = _cand[0]                                                  # [B,K] move NUMS
+            self.last_alpha_seat_nums = _seat_nums.detach()
+            self.last_alpha_logits = self.alpha_head(
+                _seat_feats, _ictx, seat_valid=(_seat_nums > 0).float())
+            # BETA's candidates: every slot they could legally bring in. Legality is a MASK, never
+            # something the head has to learn — an illegal switch-in must be unrepresentable.
+            #
+            # ⚠️ A REVEALED slot and a BELIEVED slot mean different things by `hp == 0`, and
+            # conflating them silently deletes half of beta's job. MEASURED
+            # (`tmp/beta_slot_probe.py`, 12 real battles): unrevealed opp slots encode hp EXACTLY
+            # 0.000 in 1033/1033 cases — for them 0 means UNKNOWN, not DEAD. Masking on `hp>0`
+            # therefore made every hidden mon unaddressable, and the ~46% of switches that bring
+            # one (G2a) went from "unsupervised" to "unrepresentable".
+            #
+            # A believed slot is ALWAYS a legal target, and that is exact rather than heuristic:
+            # a Pokemon cannot faint without being revealed, so an unrevealed mon is alive.
+            _opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, :]                # [B,6,2] (hp, active)
+            _revealed_ok = (_opp[..., 0] > 0.0) & (_opp[..., -1] < 0.5)            # alive, benched
+            _believed = ctx.opp_believed_mask.bool()                               # [B,6]
+            _beta_mask = (_revealed_ok | _believed).float()                        # [B,6]
+            self.last_beta_logits = self.beta_head(
+                their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
         _tok_req = _seat_out[:, :4, :]
         if self.damage_op is not None and damage_block is not None:
             _mcells, _scells = self.damage_op.pointer_cells(damage_block)

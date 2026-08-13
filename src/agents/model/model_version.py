@@ -473,7 +473,7 @@ from typing import Any, Dict, List
 #   log-ELAPSED scalar gave the last 20 turns 1.5% of its range; log-REMAINING gives them 55.1%
 #   (37×), which is the link TD must fit FIRST before it can bootstrap value back down a
 #   200-turn episode.
-MODEL_CONFIG_VERSION = 67
+MODEL_CONFIG_VERSION = 69
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1158,6 +1158,20 @@ class ModelVersion:
     # another reason a flip cannot share weights. OFF (default) is byte-for-byte baseline; the
     # policy path is untouched at ANY value of the projection (NO ARCH_SIGNATURE bump).
     value_threat_inject: bool = False
+    # v68 STRUCTURAL (gen3_opp_intent_v1): the ALPHA (their believed-move seats + SWITCH) and BETA
+    # (which mon they bring) intent heads — two pointer scorers, so adding/removing them changes the
+    # state_dict. Supervision-only (their input is detached), but STRUCTURAL all the same: a resume
+    # that flips this would have no weights for them / orphan weights. OFF (default) builds neither.
+    opp_intent: bool = False
+    # v69 STRUCTURAL (gen3_species_prior_fusion_v1): fuse the TEAM-COMPOSITION species prior into
+    # BeliefHead's species head — `species_logits = head_delta + log P(species | revealed opp mons)`,
+    # from two NON-PERSISTENT co-occurrence buffers. The state_dict is UNCHANGED (no new params, the
+    # buffers are recomputable), which is exactly why this needs an explicit gate: nothing else would
+    # catch it. Flipping it mid-run RE-MEANS every species logit — a head trained as a from-scratch
+    # predictor would suddenly be read as a delta on a prior it never saw, and vice versa — so it is
+    # compared with a bool like move_prior_fusion. OFF (default) reproduces the from-scratch head
+    # byte-for-byte (NO ARCH_SIGNATURE bump).
+    species_prior_fusion: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1434,6 +1448,12 @@ class ModelVersion:
             ),
             value_threat_inject=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_threat_inject", False)
+            ),
+            opp_intent=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("opp_intent", False)
+            ),
+            species_prior_fusion=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
             ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
@@ -1938,6 +1958,27 @@ class ModelVersion:
                 "pair reduction from hard_max to belief_mean — so a mid-run flip would change what "
                 "the critic reads AND which modules exist.\n"
                 "Resume with the matching --value-threat-inject setting, or start a fresh training run."
+            )
+        # gen3_opp_intent_v1 (v68): the alpha/beta pointer heads are state_dict-changing modules.
+        if self.opp_intent != saved.opp_intent:
+            raise ModelVersionError(
+                f"opp_intent mismatch: saved={saved.opp_intent}, current={self.opp_intent}.\n"
+                "The opponent-intent heads are fixed for a run's lifetime: adding or removing them "
+                "changes the state_dict.\n"
+                "Resume with the matching --opp-intent-coef setting, or start a fresh training run."
+            )
+        # gen3_species_prior_fusion_v1 (v69): the state_dict is IDENTICAL either way (the co-occurrence
+        # tables are non-persistent buffers), so this compare is the ONLY thing standing between a
+        # resume and a silently re-meant species head — ON reads the head's output as a DELTA on the
+        # team-composition prior, OFF reads the same numbers as the whole prediction.
+        if self.species_prior_fusion != saved.species_prior_fusion:
+            raise ModelVersionError(
+                f"species_prior_fusion mismatch: saved={saved.species_prior_fusion}, "
+                f"current={self.species_prior_fusion}.\n"
+                "The species belief's prior fusion is fixed for a run's lifetime: flipping it changes "
+                "what the species head's output MEANS (delta-on-prior vs. the full prediction), and "
+                "nothing in the weights would catch it.\n"
+                "Resume with the matching --species-prior-fusion setting, or start a fresh training run."
             )
         if self.value_dist_mode != saved.value_dist_mode:
             raise ModelVersionError(
@@ -2675,4 +2716,15 @@ def _migrate_config(data: dict) -> dict:
         # meaningful way to migrate them). Stamping the version keeps the schema monotonic so an
         # old config still round-trips through load/save rather than tripping the version check.
         data["config_version"] = 67
+    if version < 68:
+        # v68: gen3_opp_intent_v1 — the alpha/beta intent heads (structural, two pointer scorers).
+        # False = OFF, byte-identical: every pre-v68 run trained without them.
+        data.setdefault("opp_intent", False)
+        data["config_version"] = 68
+    if version < 69:
+        # v69: gen3_species_prior_fusion_v1 — the team-composition species prior fused into the
+        # belief head. False = OFF, byte-identical: every pre-v69 run trained the species head
+        # from scratch, so reading its output as a delta-on-prior would silently re-mean it.
+        data.setdefault("species_prior_fusion", False)
+        data["config_version"] = 69
     return data
