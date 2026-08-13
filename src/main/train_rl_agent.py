@@ -364,17 +364,13 @@ def _run_arch_toggles(args) -> dict:
         move_belief_mode=args.move_belief_mode,
         opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
         damage_op=args.damage_op,
-        damage_reattend=args.damage_reattend,
         damage_outgoing=args.damage_outgoing,
         move_candidate_floor=args.move_candidate_floor,
         move_latent=args.move_latent,
         spread_belief=args.spread_belief,
         spread_belief_nature=args.spread_belief_nature,
         move_prior_fusion=args.move_prior_fusion,
-        move_belief_prefuse=args.move_belief_prefuse,
-        move_belief_single_compute=args.move_belief_single_compute,
         damage_candidate_k=args.damage_candidate_k,
-        damage_op_prefuse=args.damage_op_prefuse,
         entity_topk_seats=args.entity_topk_seats,
         consequence_topk=args.consequence_topk,
         edge_bias_families=args.edge_bias_families,
@@ -386,18 +382,15 @@ def _run_arch_toggles(args) -> dict:
         value_threat_inject=bool(getattr(args, 'value_threat_inject', False)),
         opp_intent=bool(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
         species_prior_fusion=bool(getattr(args, 'species_prior_fusion', False)),
+        t0_species_prior=bool(getattr(args, 't0_species_prior', False)),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
         damage_topk_k=args.damage_topk_k,
-        damage_refine_rounds=args.damage_refine_rounds,
         damage_matrices_outgoing=args.damage_matrices_outgoing,
         damage_matrices_incoming=args.damage_matrices_incoming,
         damage_matrices_outgoing_all=args.damage_matrices_outgoing_all,
-        threat_refine_outgoing=args.threat_refine_outgoing,
-        threat_unrevealed_outgoing=args.threat_unrevealed_outgoing,
         threat_prob_outspeed=args.threat_prob_outspeed,
-        threat_status_refine=args.threat_status_refine,
         hp_belief_mode=args.hp_belief_mode,
         belief_grad_mode=args.belief_grad_mode,
         zarch_film=args.zarch_film,
@@ -1044,19 +1037,6 @@ async def main():
                              "belief. STRUCTURAL (widens both projections; version-checked, fresh-only). "
                              "REQUIRES --move-belief-mode revealed|both (it reads the opp active's "
                              "predicted logits, supervised only for a revealed mon). Off by default.")
-    parser.add_argument("--damage-reattend", "--damage_reattend", dest="damage_reattend",
-                        action=BoolFlag, default=None,
-                        help="Re-attend the team transformer to the computed damage: project the op's "
-                             "per-OUR-mon incoming-damage block onto the 6 our-team tokens, run ONE more "
-                             "encoder layer (our↔opp), then re-derive the CLS pools — so attention now reasons "
-                             "OVER the physics and the pi/vf pools are damage-AWARE board summaries instead of "
-                             "damage-blind ones (today the damage block is a post-pool concat no attention "
-                             "sees). NOTE: a BOARD-level enrichment, NOT first-class per-candidate switch "
-                             "scoring (the bench tokens are pooled back to one vector; that needs a per-bench "
-                             "pointer head, a follow-up). Identity-at-init ⇒ ON starts ≈ the --damage-op "
-                             "baseline. STRUCTURAL (adds modules; version-checked, fresh-only; projection "
-                             "widths unchanged). REQUIRES --damage-op. PopArt strongly recommended (the extra "
-                             "shared-trunk layer worsens value-grad contention). Off by default.")
     parser.add_argument("--unified-damage", "--unified_damage", dest="unified_damage",
                         choices=["off", "incoming", "both"], default="off",
                         help="ONE knob for the unified damage system (desugars into the component flags at "
@@ -1093,6 +1073,16 @@ async def main():
                              "is one coherent posterior (priors ⊕ prediction unified), anchored at the "
                              "prior at cold-start. Forward-behavior toggle (no weight-shape change; "
                              "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
+    parser.add_argument("--t0-species-prior", "--t0_species_prior",
+                        dest="t0_species_prior", action=BoolFlag, default=None,
+                        help="T0 SPECIES belief for the physics (gen3_t0_species_prior_v1, v72): price "
+                             "unrevealed opponent mons from the model's own team-composition belief "
+                             "(naive-Bayes over the revealed team, Species-Clause floored) instead of "
+                             "the STATIC gen3ou usage prior. The belief already existed at T2 "
+                             "(BeliefHead) where the T1 DamageOperator could not read it; this "
+                             "re-homes it to T0. Parameter-free, no state_dict change. STRUCTURAL and "
+                             "version-checked: it re-means every damage number against a hidden slot, "
+                             "so it cannot be flipped on resume.")
     parser.add_argument("--species-prior-fusion", "--species_prior_fusion",
                         dest="species_prior_fusion", action=BoolFlag, default=None,
                         help="SPECIES belief prior fusion (gen3_species_prior_fusion_v1, v68): fuse a "
@@ -1110,23 +1100,6 @@ async def main():
                              "are non-persistent buffers), but STRUCTURAL + version-checked all the "
                              "same: flipping it re-means every species logit. REQUIRES "
                              "--opp-belief-aux-coef>0. Off by default (byte-identical).")
-    parser.add_argument("--move-belief-prefuse", "--move_belief_prefuse", dest="move_belief_prefuse",
-                        action=BoolFlag, default=None,
-                        help="Reinject the move belief BEFORE the team transformer instead of after, so the "
-                             "predicted opp moves co-refine with the species/team belief through the 2 "
-                             "attention layers (the believed moveset participates in attention, rather than "
-                             "being grafted onto the already-refined tokens). Same MoveBelief module/params — "
-                             "only the call timing differs. Forward-behavior toggle (no weight-shape change; "
-                             "version-checked, fresh-only). REQUIRES --move-belief-mode != off. Off by default.")
-    parser.add_argument("--move-belief-single-compute", "--move_belief_single_compute",
-                        dest="move_belief_single_compute", action=BoolFlag, default=None,
-                        help="FREEZE the move belief: compute it EXACTLY ONCE per forward "
-                             "(pre-attention, at the prefuse reinjection) and have the refine "
-                             "kernels REUSE that posterior instead of re-reading the head "
-                             "between layers. belief ONCE -> physics ONCE -> N attention layers "
-                             "that cannot revise it; also one fewer head pass per forward. "
-                             "Forward-behavior (version-checked, fresh-only). REQUIRES "
-                             "--move-belief-prefuse. Off by default.")
     parser.add_argument("--compile-extractor", "--compile_extractor", dest="compile_extractor",
                         action="store_true", default=False,
                         help="torch.compile each SELF-PLAY OPPONENT's feature extractor in the env "
@@ -1146,20 +1119,6 @@ async def main():
                              "otherwise invisible (the run just produces fewer steps/hour forever), so "
                              "use this when you would rather fail at startup than discover it in the "
                              "FPS graph a day later.")
-    parser.add_argument("--damage-op-prefuse", "--damage_op_prefuse", dest="damage_op_prefuse",
-                        action=BoolFlag, default=None,
-                        help="UNIFY the damage computation: run the spread + HP-type beliefs and the FULL "
-                             "DamageOperator ONCE, BEFORE the transformer, inject the per-our-mon incoming "
-                             "rows onto our tokens via a zero-init prefuse_proj, and concatenate the SAME "
-                             "full block to both heads. Replaces the two-computation shape (a LEAN op "
-                             "recomputed inside the between-layers refine loop + the FULL op after the "
-                             "transformer): at B=1 on CPU - the PFSP frozen-opponent regime on the rollout "
-                             "critical path - those two are ~75%% of a dispatch-bound 6.45 ms forward, vs "
-                             "0.27 ms for the attention layers. The head concat (the policy's largest "
-                             "measured dependency) is preserved at full width, but is computed from an "
-                             "UN-REFINED belief. STRUCTURAL (version-checked, fresh-only). REQUIRES "
-                             "--damage-op + --move-belief-prefuse; MUTUALLY EXCLUSIVE with "
-                             "--damage-refine-rounds > 0. Off by default.")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,
                         help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "
@@ -1177,13 +1136,13 @@ async def main():
                              "0 (default) = E3-only: our active's 4 request-ordered move seats, which "
                              "are UNCONDITIONAL in this generation (the pointer head reads the REFINED "
                              "seats). STRUCTURAL int (version-checked, fresh-only). >0 REQUIRES "
-                             "--damage-op-prefuse + --move-latent (--unified-moves).")
+                             "--damage-op + --move-latent (--unified-moves).")
     parser.add_argument("--entity-tail-seats", "--entity_tail_seats", dest="entity_tail_seats",
                         action=BoolFlag, default=None,
                         help="gen3_entity_tail_seats_v1 (v57, E5): 6 per-opp-mon TAIL-THREAT seats — "
                              "the truncation insurance summarizing the beyond-top-K belief mass every "
                              "candidate consumer drops ([p_tail, worst_phys, worst_spec, revealed]). "
-                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op-prefuse "
+                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op "
                              "AND --entity-topk-seats > 0.")
     parser.add_argument("--edge-bias-families", "--edge_bias_families", dest="edge_bias_families",
                         type=str, default=None,
@@ -1531,18 +1490,6 @@ async def main():
                              "profiler measured the lean block at 0 calls/forward). AUTO-set to 5 by "
                              "--unified-moves (the moveset is 4, so the 5th slot is the surprise candidate); "
                              "the 5th is zeroed once all 4 opp moves are revealed. Default off.")
-    parser.add_argument("--damage-refine-rounds", "--damage_refine_rounds", dest="damage_refine_rounds",
-                        type=int, default=None,
-                        help="ITERATIVE damage refinement (gen3_iterative_damage_v1): N = the number of "
-                             "transformer layers (capped by the layer count) before which the DamageOperator's "
-                             "LEAN discrete incoming damage is RECOMPUTED from the CURRENT (being-enriched) opp "
-                             "tokens — re-reading the move belief — and injected back onto our-mon tokens via a "
-                             "zero-init refine_proj (identity at init). So each attention layer reasons over "
-                             "physics derived from the FRESHEST belief (physics-in-the-loop), and the per-round "
-                             "read sharpens the move-belief head — instead of the one-shot post-transformer op. "
-                             "0 = off (baseline forward byte-for-byte). STRUCTURAL int (version-checked, "
-                             "fresh-only). REQUIRES --damage-op (the op physics + the move belief). NOT auto-set "
-                             "by --unified-moves — an explicit A/B lever. Default off.")
     parser.add_argument("--damage-matrices", "--damage_matrices", dest="damage_matrices",
                         choices=["off", "incoming", "outgoing", "both"], default=None,
                         help="Per-move DAMAGE MATRICES (gen3_per_move_matrices_v1). 'outgoing': OUR 4 moves × "
@@ -1568,40 +1515,13 @@ async def main():
                              "bench rows reuse the SAME physics with NEUTRAL boosts (gen3 resets on switch). "
                              "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. Default off "
                              "(byte-identical).")
-    # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field (#1/#2/#3).
-    parser.add_argument("--threat-refine-outgoing", "--threat_refine_outgoing", dest="threat_refine_outgoing",
-                        action=BoolFlag, default=None,
-                        help="#1 OUTGOING threat into the TRUNK (gen3_bidir_threat_trunk_v1): inject a per-opp-mon "
-                             "outgoing-threat residual (how hard OUR active hits each opp mon) onto the OPP tokens "
-                             "via a zero-init outgoing_proj, riding the SAME between-layers refine loop — so "
-                             "attention reasons over BOTH threat directions, not just incoming. STRUCTURAL "
-                             "(version-checked, fresh-only). REQUIRES --damage-op AND --damage-refine-rounds>0. "
-                             "Default off (byte-identical).")
-    parser.add_argument("--threat-unrevealed-outgoing", "--threat_unrevealed_outgoing",
-                        dest="threat_unrevealed_outgoing", action=BoolFlag, default=None,
-                        help="#2 EXPECTED-LATENT defender: price the outgoing residual's UNREVEALED opp columns by "
-                             "marginalizing the move-belief's P(species) through SPECIES_EXP_MULT (type chart × "
-                             "expected ability immunity — Levitate/Water&Volt Absorb/Flash Fire) + SPECIES_SPREAD_"
-                             "PRIOR (E[bulk]); P(KO) NULLED (a full-HP switch-in is ~never OHKO'd). FORWARD-behavior "
-                             "(version-checked, fresh-only). REQUIRES --threat-refine-outgoing (+ a belief head, "
-                             "--opp-belief-aux-coef>0, for P(species)). Default off.")
+    # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed).
     parser.add_argument("--threat-prob-outspeed", "--threat_prob_outspeed", dest="threat_prob_outspeed",
                         action=BoolFlag, default=None,
                         help="#3 UNCERTAINTY-AWARE P(outspeed): divide the speed gap by the believed speed STD "
                              "(SPECIES_SPREAD_PRIOR; sigmoid≈normal-CDF) instead of a fixed scale — a high-variance "
                              "opp speed reads ~0.5, a pinned one reads sharp. FORWARD-behavior (version-checked, "
                              "fresh-only). REQUIRES --damage-op. Default off (byte-identical).")
-    parser.add_argument("--threat-status-refine", "--threat_status_refine", dest="threat_status_refine",
-                        action=BoolFlag, default=None,
-                        help="STATUS-LANDING into the TRUNK (gen3_status_trunk_v1, the last CPU-obs deprecation "
-                             "gap): two zero-init residuals riding the refine loop — INCOMING ('will I be "
-                             "statused' onto OUR tokens, from the opp active's believed status moves) + OUTGOING "
-                             "('can I status this opp mon' onto OPP tokens, revealed-gated, from our status moves), "
-                             "each [P(major), P(immobilize=para/frz/slp)] computed by reusing the v27 status-landing "
-                             "physics (type × ability × already × Sleep-Clause × Substitute). Status immunity is a "
-                             "computed MECHANICS fact handed over (not learned across non-local tokens) — completes "
-                             "the FULL --unified-obs deprecation. STRUCTURAL (version-checked, fresh-only). REQUIRES "
-                             "--damage-op AND --damage-refine-rounds>0. Default off (byte-identical).")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "
@@ -2134,7 +2054,6 @@ async def main():
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
     _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
-    _resolve("damage_reattend", False)         # v31 structural (version-checked, fresh-only)
     _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
     _resolve("move_candidate_floor", _PRIOR_FLOOR)  # v65 forward-behavior (version-checked, fresh-only)
     _resolve("move_latent", False)             # v24 structural (version-checked, fresh-only)
@@ -2143,10 +2062,7 @@ async def main():
     _resolve("spread_belief_nature", False)    # v40 structural (version-checked, fresh-only)
     _resolve("spread_belief_coef", 0.0)        # training-only (inherited like move_belief_coef)
     _resolve("move_prior_fusion", False)       # v20 forward-behavior (version-checked, fresh-only)
-    _resolve("move_belief_prefuse", False)     # v32 forward-behavior (version-checked, fresh-only)
-    _resolve("move_belief_single_compute", False)  # v47 forward-behavior (version-checked, fresh-only)
     _resolve("damage_candidate_k", 0)          # v49 forward-behavior (version-checked, fresh-only)
-    _resolve("damage_op_prefuse", False)       # v50 structural (version-checked, fresh-only)
     _resolve("entity_topk_seats", 0)           # v54 structural int (version-checked, fresh-only)
     _resolve("consequence_topk", 6)            # v59 forward-behavior int (version-checked)
     _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
@@ -2164,6 +2080,7 @@ async def main():
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
+    _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
@@ -2174,7 +2091,6 @@ async def main():
     _resolve("distill_value_feat_coef", 0.0)   # training-only FitNets value-FEATURE distill cosine weight (inherited on resume)
     _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
-    _resolve("damage_refine_rounds", 0)        # v31 structural int (iterative refine; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing_all", False)  # v39 structural (transposed outgoing matrix; version-checked, fresh-only)
@@ -2189,10 +2105,7 @@ async def main():
             args.damage_matrices_incoming = True
             print("[Arch] --damage-topk implies the INCOMING per-move damage matrix (gen3_op_block_trim_v1: "
                   f"the lean top-K block was deleted) — enabling it at K={args.damage_topk_k}.")
-    _resolve("threat_refine_outgoing", False)    # v36 structural (outgoing→trunk; version-checked, fresh-only)
-    _resolve("threat_unrevealed_outgoing", False)  # v36 forward-behavior (expected-latent; version-checked, fresh-only)
     _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
-    _resolve("threat_status_refine", False)      # v37 structural (status→trunk; version-checked, fresh-only)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
@@ -2466,14 +2379,6 @@ async def main():
             "fuses into the BeliefHead's species head, which is only built under the hidden-opponent "
             "belief slots. Set --opp-belief-aux-coef, or drop --species-prior-fusion."
         )
-    if args.move_belief_prefuse and args.move_belief_mode == "off":
-        # FAIL LOUD: prefuse moves the move-belief REINJECTION before the transformer; with no head
-        # (--move-belief-mode off) there is no reinjection to move.
-        parser.error(
-            "--move-belief-prefuse requires --move-belief-mode != off (revealed|unrevealed|both): it "
-            "moves the move-belief reinjection before the transformer. Set --move-belief-mode revealed, "
-            "or drop --move-belief-prefuse."
-        )
     if args.damage_candidate_k and not args.damage_op:
         # FAIL LOUD at the CLI (not at extractor build, which happens only after the run has already
         # tried to stand up a server): the cap narrows the DamageOperator's candidate axis, which
@@ -2485,32 +2390,6 @@ async def main():
         )
     if args.damage_candidate_k and args.damage_candidate_k < 0:
         parser.error("--damage-candidate-k must be >= 0 (0 = the full candidate sweep).")
-    if args.move_belief_single_compute and not args.move_belief_prefuse:
-        parser.error(
-            "--move-belief-single-compute requires --move-belief-prefuse: without prefuse the "
-            "move belief is computed AFTER the transformer, so there is no pre-attention "
-            "posterior for the refine loop to reuse. Add --move-belief-prefuse, or drop "
-            "--move-belief-single-compute."
-        )
-    if args.damage_op_prefuse and not args.damage_op:
-        parser.error(
-            "--damage-op-prefuse requires --damage-op: there is no operator to run before the "
-            "transformer. Use --unified-damage / --unified-moves, or add --damage-op."
-        )
-    if args.damage_op_prefuse and not args.move_belief_prefuse:
-        parser.error(
-            "--damage-op-prefuse requires --move-belief-prefuse: the op consumes the move belief, so "
-            "the belief must itself be computed BEFORE the transformer. Add --move-belief-prefuse, or "
-            "drop --damage-op-prefuse."
-        )
-    if args.damage_op_prefuse and args.damage_refine_rounds and args.damage_refine_rounds > 0:
-        parser.error(
-            "--damage-op-prefuse is mutually exclusive with --damage-refine-rounds > 0: the prefuse IS "
-            "the unified single computation the between-layers refine loop is being replaced by, so "
-            "running both restores the double cost it exists to remove. Set --damage-refine-rounds 0 "
-            "(and drop --threat-refine-outgoing / --threat-status-refine, which ride that loop), or "
-            "drop --damage-op-prefuse."
-        )
     if args.damage_outgoing and not args.damage_op:
         # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
         parser.error(
@@ -2518,17 +2397,17 @@ async def main():
             "Use --unified-damage both, or add --damage-op."
         )
     if args.entity_topk_seats and args.entity_topk_seats > 0 and not (
-            args.damage_op_prefuse and args.move_latent):
+            args.damage_op and args.move_latent):
         # gen3_entity_move_seats_v1: the E4 seats gather the op's PRE-transformer candidate weights
-        # and the move latent table — both exist pre-attention only under the prefuse stack.
+        # and the move latent table — both of which the tiered order produces whenever the op is on.
         parser.error(
-            "--entity-topk-seats > 0 requires --damage-op-prefuse AND --move-latent (--unified-moves): "
+            "--entity-topk-seats > 0 requires --damage-op AND --move-latent (--unified-moves): "
             "the E4 threat seats gather the op's pre-transformer candidate weights + move latents. "
             "Add those flags, or set --entity-topk-seats 0 (E3-only)."
         )
-    if args.entity_tail_seats and not (args.damage_op_prefuse
+    if args.entity_tail_seats and not (args.damage_op
                                        and args.entity_topk_seats and args.entity_topk_seats > 0):
-        parser.error("--entity-tail-seats requires --damage-op-prefuse AND --entity-topk-seats > 0 "
+        parser.error("--entity-tail-seats requires --damage-op AND --entity-topk-seats > 0 "
                      "(the tail is defined relative to the E4 seats' truncation).")
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
@@ -2540,27 +2419,14 @@ async def main():
         if (_fams & {"d1", "s1", "c1", "c2"}) and not (args.damage_op and args.damage_outgoing):
             parser.error("--edge-bias-families d1/s1/c1/c2 require --damage-op AND --damage-outgoing "
                          "(--unified-damage both / --unified-moves both).")
-        if "x" in _fams and not (args.damage_op and args.damage_op_prefuse):
-            parser.error("--edge-bias-families x requires --damage-op AND --damage-op-prefuse "
-                         "(the Pursuit belief must exist pre-transformer).")
+        if "x" in _fams and not args.damage_op:
+            parser.error("--edge-bias-families x requires --damage-op "
+                         "(the Pursuit belief comes from the op's pre-transformer posterior).")
         if (_fams & {"d2", "d4", "v", "t", "g", "c4", "c3", "c5"}) and not args.damage_op:
             parser.error("--edge-bias-families d2/d4/v/t/g/c4/c3/c5 require --damage-op (the op's kernels/buffers).")
         if (_fams & {"d3", "s3"}) and not (args.entity_topk_seats and args.entity_topk_seats > 0):
             parser.error("--edge-bias-families d3/s3 require --entity-topk-seats > 0 (the bias rows "
                          "ARE the E4 threat seats).")
-    if args.damage_reattend and not args.damage_op:
-        # The re-attend layer reads the operator's per-mon incoming-damage block → the op must exist.
-        parser.error(
-            "--damage-reattend requires --damage-op (the re-attend layer reads the operator's incoming "
-            "damage block). Use --unified-damage (with --damage-op), or add --damage-op, or drop "
-            "--damage-reattend."
-        )
-    if args.damage_reattend and not args.use_popart:
-        # SOFT warn (not a hard error — reattend runs without PopArt, just riskier): the extra shared-trunk
-        # layer routes the value gradient through more of the trunk, which the value loss already dominates.
-        print("⚠ --damage-reattend without --use-popart: the extra shared-trunk re-attend layer worsens the "
-              "value-gradient contention on the trunk (the value MSE already swamps it at γ≈0.9999). PopArt "
-              "is strongly recommended — add --use-popart and watch grad/value_policy_logratio.", file=sys.stderr)
     if not (_MIN_PRIOR_FLOOR <= args.move_candidate_floor < 1.0):
         # gen3_unconditional_move_legality_v1: the floor is the LEGAL-BUT-UNOBSERVED base, and a value at
         # or below the "impossible" probability collapses the legality distinction it exists to preserve.
@@ -2601,14 +2467,6 @@ async def main():
             "the INCOMING matrix's width, and the lean top-K block it used to select was deleted "
             "(gen3_op_block_trim_v1). Use --damage-matrices incoming/both, or set --damage-topk 0."
         )
-    if args.damage_refine_rounds and args.damage_refine_rounds > 0 and not args.damage_op:
-        # gen3_iterative_damage_v1: the refinement recomputes the DamageOperator's lean incoming damage
-        # between transformer layers (and re-reads the move belief, which --damage-op requires).
-        parser.error(
-            "--damage-refine-rounds requires --damage-op (the iterative refinement recomputes the damage "
-            "operator's lean incoming threat between transformer layers). Use --unified-damage / "
-            "--unified-moves, or add --damage-op, or set --damage-refine-rounds 0."
-        )
     if getattr(args, "damage_matrices_outgoing", False) and not args.damage_op:
         # gen3_per_move_matrices_v1: the outgoing damage matrix is emitted by the DamageOperator.
         parser.error(
@@ -2633,44 +2491,11 @@ async def main():
                 "--damage-matrices incoming requires --move-latent (the matrix header gathers each move's "
                 "identity latent). Use --unified-moves, or add --move-latent."
             )
-    # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field.
-    if getattr(args, "threat_refine_outgoing", False):
-        if not args.damage_op:
-            parser.error(
-                "--threat-refine-outgoing requires --damage-op (the outgoing physics is the damage operator). "
-                "Use --unified-damage / --unified-moves, or add --damage-op."
-            )
-        if not (args.damage_refine_rounds and args.damage_refine_rounds > 0):
-            parser.error(
-                "--threat-refine-outgoing requires --damage-refine-rounds>0 — the outgoing residual rides the "
-                "SAME between-layers refine loop. Set --damage-refine-rounds N."
-            )
-    if getattr(args, "threat_unrevealed_outgoing", False):
-        if not getattr(args, "threat_refine_outgoing", False):
-            parser.error(
-                "--threat-unrevealed-outgoing requires --threat-refine-outgoing (it only enriches the outgoing "
-                "residual's UNREVEALED columns with the expected-latent defender)."
-            )
-        if not (args.opp_belief_aux_coef and args.opp_belief_aux_coef > 0):
-            parser.error(
-                "--threat-unrevealed-outgoing requires --opp-belief-aux-coef>0 — the expected-latent defender "
-                "reads P(species) from the hidden-opponent belief head (BeliefHead.species_logits)."
-            )
+    # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed).
     if getattr(args, "threat_prob_outspeed", False) and not args.damage_op:
         parser.error(
             "--threat-prob-outspeed requires --damage-op (the P(outspeed) feature lives in the damage operator)."
         )
-    if getattr(args, "threat_status_refine", False):
-        if not args.damage_op:
-            parser.error(
-                "--threat-status-refine requires --damage-op (the status-landing physics is the damage operator). "
-                "Use --unified-damage / --unified-moves, or add --damage-op."
-            )
-        if not (args.damage_refine_rounds and args.damage_refine_rounds > 0):
-            parser.error(
-                "--threat-status-refine requires --damage-refine-rounds>0 — the status residuals ride the SAME "
-                "between-layers refine loop. Set --damage-refine-rounds N."
-            )
     if args.move_belief_latent_coef and not args.move_latent:
         # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
         parser.error(

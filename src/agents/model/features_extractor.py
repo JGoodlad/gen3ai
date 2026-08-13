@@ -847,7 +847,7 @@ class EdgeBias(torch.nn.Module):
     Each family maps its cell through a ZERO-INIT `Linear(cell → 2·n_heads)` (one head-set per
     direction, since "how much the move seat attends to the defender" and the reverse are
     different questions) — so at init every bias is exactly 0 and the trunk is byte-identical to
-    the family-off forward (the `refine_proj` identity-at-init convention; auto-protected by
+    the family-off forward (the `prefuse_proj` identity-at-init convention; auto-protected by
     `restore_identity_init`'s observation capture). All seat blocks are CONTIGUOUS index ranges
     (mons [0:6]/[6:12], E3 [20:24], E4 [24:24+K]), so delivery is plain slice assignment — no
     scatter, compile-friendly.
@@ -1004,13 +1004,12 @@ class TeamTransformer(torch.nn.Module):
 
     def forward(self, role_tokens: torch.Tensor, ctx: ExtractorContext,
                 embeddings: Embeddings,
-                between_layers: "Optional[Callable[[torch.Tensor, int], torch.Tensor]]" = None,
                 extra: "Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]" = None,
                 edge_bias_fn: "Optional[Callable[[torch.Tensor], torch.Tensor]]" = None,
                 ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
         """`extra` (gen3_entity_move_seats_v1): optional `(tokens [B,n,d_model], types [n] long,
         pad [B,n] bool)` — additional entity seats appended AFTER the global token, so every
-        absolute slice (team/history/global, the refine callback's tail cat) is position-stable.
+        absolute slice (team/history/global) is position-stable.
         The third return is the refined extra seats (None when no extra).
 
         `edge_bias_fn` (gen3_edge_bias_trunk_v1): optional callable receiving the float attention
@@ -1072,13 +1071,7 @@ class TeamTransformer(torch.nn.Module):
         # torch.is_grad_enabled(). use_reentrant=False is the correct variant here (handles
         # non-grad inputs + autocast/RNG state); with dropout=0 the recompute is bit-exact.
         use_ckpt = self.grad_checkpointing and torch.is_grad_enabled()
-        for i, layer in enumerate(self.transformer_layers):
-            # gen3_iterative_damage_v1: BEFORE each of the first N layers, recompute the lean discrete
-            # incoming damage from the CURRENT (being-enriched) tokens and inject it back onto our-mon
-            # tokens (the callback no-ops past round N / when refinement is off). So each layer attends
-            # over physics derived from the freshest belief — physics-in-the-loop, not one-shot post-hoc.
-            if between_layers is not None:
-                tokens = between_layers(tokens, i)
+        for layer in self.transformer_layers:
             if use_ckpt:
                 tokens = checkpoint(
                     lambda t, _layer=layer: _layer(t, bias=attn_bias),
@@ -1355,26 +1348,17 @@ class BeliefHead(torch.nn.Module):
         SPECIES CLAUSE is applied last and OVERRIDES the evidence: a species already on the board
         cannot also be hiding on the bench. Every entry is FINITE (`SPECIES_CLAUSE_LOGIT`, never
         `-inf`), so the `log_softmax` can never produce a NaN row and the learned delta always has a
-        live gradient to lift a floored candidate with."""
-        from agents.model.damage_tables import SPECIES_CLAUSE_LOGIT
+        live gradient to lift a floored candidate with.
 
-        marginal = self.species_prior_log_marginal                     # [S]
-        n_species = marginal.shape[0]
-        ids = opp_species_ids.clamp(0, n_species - 1).long()           # [B,6] defensive index clamp
-        revealed = ids > 0
-        if opp_believed_mask is not None:
-            revealed = revealed & (~opp_believed_mask.bool())
-        # BRANCHLESS + SYNC-FREE one-hot over the revealed set, exactly the `MoveBelief.move_logits`
-        # scatter trick: a revealed slot writes 1.0 at its num (always >= 1); a hidden slot writes 0.0
-        # at the clamped index 0, which no revealed slot can occupy — so the two never collide. Species
-        # Clause makes duplicate nums impossible, and `scatter_` (not `scatter_add_`) is idempotent
-        # anyway, so a malformed duplicate cannot double-count as evidence.
-        onehot = torch.zeros(ids.shape[0], n_species, dtype=marginal.dtype, device=marginal.device)
-        onehot.scatter_(1, ids, revealed.to(marginal.dtype))            # [B, S]
-        scores = marginal + onehot @ self.species_prior_log_lift.t()    # [B, S]
-        scores = torch.where(onehot > 0,
-                             torch.full_like(scores, SPECIES_CLAUSE_LOGIT), scores)
-        return torch.log_softmax(scores, dim=-1).unsqueeze(1)           # [B, 1, S]
+        The math itself lives in `t0_species.species_team_prior_logits` and is SHARED with the
+        T0 resolver (`gen3_t0_species_prior_v1`) — the same belief now also feeds the T1 physics,
+        and two copies of a naive-Bayes read would eventually disagree. This method is the
+        unsqueeze-to-per-slot wrapper; the body is byte-identical to what it was inline."""
+        from agents.model.t0_species import species_team_prior_logits
+
+        return species_team_prior_logits(
+            self.species_prior_log_marginal, self.species_prior_log_lift,
+            opp_species_ids, opp_believed_mask).unsqueeze(1)            # [B, 1, S]
 
     def species_logits(self, tokens: torch.Tensor,
                        opp_species_ids: "Optional[torch.Tensor]" = None,
@@ -1910,6 +1894,7 @@ class HPTypeBelief(torch.nn.Module):
 # now live in `damage_op.py` — 39% of this file for one concern. Re-exported UNCHANGED so every
 # historical import path still resolves (the prober, model_version, snapshot and the tests all do
 # `from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_*`).
+from agents.model.t0_species import T0SpeciesPrior
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     _COND_BRN_IDX,
@@ -2023,8 +2008,7 @@ class EntityMoveSeats(torch.nn.Module):
     Until now moves existed only INSIDE `PokemonEncoder` (flattened into the mon vector; v51 rescued
     the active's 4 for the pointer head) — attention could never do "Rock Slide THE TOKEN threatens
     Zapdos THE TOKEN". This module builds the two new seat families, appended AFTER the global token
-    so every existing absolute slice (team tokens, history, the refine callback's tail-preserving
-    cat) is untouched:
+    so every existing absolute slice (team tokens, history, global) is untouched:
 
       * **E3 — our active's 4 move seats** (unconditional): the SAME request-ordered, identity-
         permuted tokens the pointer head reads (`_request_order_move_tokens` — one permutation,
@@ -2087,7 +2071,7 @@ class EntityMoveSeats(torch.nn.Module):
         if self.topk_seats > 0:
             assert move_belief_logits is not None and latent_table is not None, (
                 "E4 threat seats need the pre-transformer move-belief logits + the move latent table "
-                "(guaranteed by the __init__ gate: damage_op_prefuse + move_latent)"
+                "(guaranteed by the __init__ gate: damage_op + move_latent, and by the tiered order)"
             )
             idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats)  # [B,K]
             # gen3_edge_bias_trunk_v1: stash the candidate selection so the D3 edge bias prices the
@@ -2388,18 +2372,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  seed_quantile: bool = False, value_threat_inject: bool = False,
                  opp_intent: bool = False, species_prior_fusion: bool = False,
-                 damage_topk_k: int = 0, damage_reattend: bool = False,
-                 move_belief_prefuse: bool = False, move_belief_single_compute: bool = False,
-                 damage_candidate_k: int = 0, damage_refine_rounds: int = 0,
-                 damage_op_prefuse: bool = False,
+                 t0_species_prior: bool = False,
+                 damage_topk_k: int = 0,
+                 damage_candidate_k: int = 0,
                  entity_topk_seats: int = 0,
                  consequence_topk: int = 6,
                  entity_tail_seats: bool = False,
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  damage_matrices_outgoing_all: bool = False,
-                 threat_refine_outgoing: bool = False, threat_unrevealed_outgoing: bool = False,
-                 threat_prob_outspeed: bool = False, threat_status_refine: bool = False,
+                 threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  pubval_mode: str = "none",
                  zarch_film: str = "off", zarch_dim: int = 0,
@@ -2527,6 +2509,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "--opp-belief-aux-coef>0 (which turns on opp_belief_slots), or drop "
                 "--species-prior-fusion."
             )
+        # gen3_t0_species_prior_v1: the SAME team-composition prior, re-homed to T0 so the T1 physics
+        # can read it. `BeliefHead` (T2) computes this belief post-transformer and the DamageOperator
+        # (T1) runs before it, so the op could never consume the model's own species belief and fell
+        # back to the static `SPECIES_USAGE_PRIOR` frequency table. This module is parameter-free
+        # (two non-persistent buffers), so the state_dict is unchanged and no optimizer parameter
+        # position moves — but it is STRUCTURAL: with it on, every unrevealed-defender damage number
+        # is computed against a different distribution. Independent of `species_prior_fusion`: that
+        # flag fuses the prior into the T2 aux READOUT, this one feeds the T1 physics, and either is
+        # useful without the other.
+        self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
+                                 if t0_species_prior else None)
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
@@ -2569,42 +2562,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "move-belief head's logits; with no head there is nothing to fuse. Set --move-belief-mode "
                 "revealed (or both/unrevealed), or disable --move-prior-fusion."
             )
-        # move_belief_prefuse (gen3_move_prefuse_v1): reinject the move belief into the opp role tokens
-        # BEFORE the TeamTransformer (vs the default POST-transformer reinject), so the believed moves
-        # CO-REFINE with the species/team belief through the 2 attention layers (the move prediction for
-        # one mon can inform — and be informed by — the rest of the board). FORWARD-BEHAVIOR only: the SAME
-        # MoveBelief module, a different call site → state_dict identical, projection widths unchanged, NO
-        # ARCH_SIGNATURE bump; OFF byte-for-byte. Gated in check_compatible (a resume flip feeds a different
-        # forward). Requires move_belief_mode != off (the head must exist to reinject).
-        self.move_belief_prefuse = move_belief_prefuse
-        if move_belief_prefuse and move_belief_mode == "off":
-            raise ValueError(
-                "move_belief_prefuse=True requires move_belief_mode != off — there is no move-belief head "
-                "to reinject before the transformer. Set --move-belief-mode revealed (or both/unrevealed), "
-                "or disable --move-belief-prefuse."
-            )
-        # move_belief_single_compute (gen3_belief_single_compute_v1): compute the move belief EXACTLY
-        # ONCE per forward — pre-attention — and freeze it. Under prefuse the belief is already
-        # predicted + reinjected before the transformer, but the between-layers refine callback then
-        # RE-READ `move_logits` off the (reinjected) opp tokens, so the belief was computed twice and
-        # the physics consumed a different posterior than the one attention was given. When on, the
-        # refine kernels reuse the stashed pre-transformer logits, so:
-        #   belief ONCE (pre-attention) → physics ONCE → N attention layers that CANNOT change it.
-        # This is the "frozen belief" arm of the iterative-refinement A/B (next_run_plan item 3: the
-        # per-round recompute only pays if the belief sharpens through layers — measured near-zero
-        # under detached). It is also strictly cheaper: one fewer move-belief head pass per forward.
-        # FORWARD-BEHAVIOR only (no new params, state_dict identical, projection widths unchanged, NO
-        # ARCH_SIGNATURE bump; OFF byte-for-byte) → gated in check_compatible like move_belief_prefuse.
-        # Requires move_belief_prefuse: without it the only belief is computed POST-transformer, so
-        # there is nothing stashed for the refine callback to reuse.
-        self.move_belief_single_compute = move_belief_single_compute
-        if move_belief_single_compute and not move_belief_prefuse:
-            raise ValueError(
-                "move_belief_single_compute=True requires move_belief_prefuse=True — without prefuse "
-                "the move belief is computed AFTER the transformer, so the between-layers refine "
-                "callback has no pre-attention belief to reuse. Set --move-belief-prefuse, or disable "
-                "--move-belief-single-compute."
-            )
+        # gen3_tiered_pipeline_v1: the move belief is reinjected into the opp role tokens BEFORE the
+        # TeamTransformer — UNCONDITIONALLY. It is a T0 RESOLVE step: the believed moves co-refine with
+        # the species/team belief through the attention layers instead of being grafted on afterwards,
+        # and every T1 consumer (the DamageOperator, the E4 seats, the edge cells) reads one posterior
+        # computed once. The old POST-transformer call site and its `--move-belief-prefuse` selector are
+        # DELETED; a config that recorded `move_belief_prefuse=False` is REFUSED by the v71 migration
+        # rather than silently re-ordered.
         self.move_belief = (
             MoveBelief(layout['max_moves'], layout['move_embedding_dim'],
                        prior_fusion=move_prior_fusion, n_species=layout['max_species'],
@@ -2772,181 +2736,44 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     f"projection was built for {self.cls_pool.value_threat_proj.extra_dim} — "
                     "`value_threat_inject_dim()` has drifted from `PairReducer.extra_dim`.")
         self.threat_prob_outspeed = bool(threat_prob_outspeed)
-        # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
-        # per-OUR-mon INCOMING damage block (incl. the bench = safe-switch reads) is projected onto the 6
-        # our-team tokens as a small-init residual, then ONE more TransformerEncoderLayer lets the
-        # damage-aware our tokens attend to the opp tokens (threats) + each other; the CLS pools are then
-        # RE-DERIVED from the re-attended tokens (forward_internal), so both heads + the switch logits read
-        # damage-contextualised summaries. Re-pooling keeps the SAME pooled shapes ⇒ projection widths are
-        # UNCHANGED — a state_dict change ONLY via the 3 modules below, so OFF is byte-for-byte (gated in
-        # check_compatible like opp_belief_slots; NO ARCH_SIGNATURE bump). Requires damage_op (the source).
-        self.damage_reattend_enabled = damage_reattend
-        if damage_reattend and not damage_op:
-            raise ValueError(
-                "damage_reattend=True requires damage_op=True — the re-attend layer reads the operator's "
-                "per-mon incoming damage block. Enable --damage-op (--unified-damage), or drop --damage-reattend."
-            )
-        if damage_reattend:
-            # Small-init residual (mirrors MoveBelief.reinject): the damage enrichment starts ≈0 so the
-            # damage signal grows over training rather than shocking the tokens at step 0.
-            self.reattend_proj = torch.nn.Linear(_DMG_PER_MON, D_MODEL, bias=False)
-            torch.nn.init.normal_(self.reattend_proj.weight, std=0.02)
-            self.reattend_norm = torch.nn.LayerNorm(D_MODEL)
-            self.reattend_layer = torch.nn.TransformerEncoderLayer(
-                d_model=D_MODEL, nhead=TRANSFORMER_N_HEADS, dim_feedforward=TRANSFORMER_FFN_DIM,
-                dropout=0.0, activation="relu", batch_first=True, norm_first=False)
-            # IDENTITY-AT-INIT: zero the layer's two output paths (attention out-proj + FFN second linear)
-            # so its residual contributions are 0 at step 0 → reattend_layer(tok) ≈ tok (the post-transformer
-            # tokens are already LayerNorm-standardised, so the post-LN passes through). Combined with the
-            # ≈0 damage residual, ON then starts ≈ the damage_op baseline (a clean A/B + no re-pool shock to
-            # the CLS pools); the layer + projection learn the enrichment from there.
-            torch.nn.init.zeros_(self.reattend_layer.self_attn.out_proj.weight)
-            torch.nn.init.zeros_(self.reattend_layer.self_attn.out_proj.bias)
-            torch.nn.init.zeros_(self.reattend_layer.linear2.weight)
-            torch.nn.init.zeros_(self.reattend_layer.linear2.bias)
-        else:
-            self.reattend_proj = None
-            self.reattend_norm = None
-            self.reattend_layer = None
-        # gen3_iterative_damage_v1: ITERATIVE damage refinement. N>0 recomputes the op's LEAN discrete
-        # incoming threat BETWEEN transformer layers (as the opp token / move belief is enriched by
-        # attention) and injects it back onto our-mon tokens via `refine_proj`, so each layer attends over
-        # physics derived from the CURRENT belief. STRUCTURAL toggle: 0 = off (no module, the transformer
-        # callback is None → byte-identical baseline forward); N>0 builds `refine_proj` (weight-tied across
-        # rounds, so its SHAPE is N-independent) and changes the forward (so EVERY distinct N — incl. 0↔N
-        # AND N↔M — is version-gated). Requires damage_op (→ the op's physics + a move_belief to re-read).
-        self.damage_refine_rounds = int(damage_refine_rounds)
-        if self.damage_refine_rounds < 0:
-            raise ValueError(f"damage_refine_rounds must be >= 0 (0 = off), got {damage_refine_rounds}")
-        if self.damage_refine_rounds > 0 and not damage_op:
-            raise ValueError(
-                "damage_refine_rounds>0 requires damage_op=True — the iterative refinement recomputes the "
-                "DamageOperator's lean incoming threat between transformer layers (and re-reads the move "
-                "belief, which damage_op requires). Enable --damage-op (--unified-damage / --unified-moves), "
-                "or set --damage-refine-rounds 0."
-            )
-        self.refine_proj = (torch.nn.Linear(_DMG_REFINE_FEATS, D_MODEL)
-                            if self.damage_refine_rounds > 0 else None)
-        if self.refine_proj is not None:
-            # Zero-init → the injected residual is EXACTLY 0 at init, so ON starts byte-identical to the
-            # baseline transformer (identity-at-init). The gradient still flows (∂out/∂W = the damage feats,
-            # which are non-zero), so the model learns the enrichment from the first optimizer step. No
-            # LayerNorm on the residual branch (a LayerNorm of a ~0 vector is ill-conditioned, and post-LN
-            # transformer layers already renormalize downstream).
-            torch.nn.init.zeros_(self.refine_proj.weight)
-            torch.nn.init.zeros_(self.refine_proj.bias)
-        # gen3_bidir_threat_trunk_v1: the OUTGOING half of the in-trunk threat field (#1). It reuses the SAME
-        # between-layers refine loop (damage_refine_rounds), injecting a per-OPP-mon outgoing-threat residual
-        # onto the OPP token slice via a zero-init `outgoing_proj` (symmetric to refine_proj). #2 (the
-        # expected-LATENT defender for unrevealed mons) is folded into the kernel when the belief is on and
-        # threat_unrevealed_outgoing is set. STRUCTURAL like refine_proj (adds a Linear; OFF byte-identical).
-        self.threat_refine_outgoing = bool(threat_refine_outgoing)
-        self.threat_unrevealed_outgoing = bool(threat_unrevealed_outgoing)
-        if self.threat_refine_outgoing and self.damage_refine_rounds <= 0:
-            raise ValueError(
-                "threat_refine_outgoing=True requires damage_refine_rounds>0 — the outgoing residual rides "
-                "the SAME between-layers refine loop. Set --damage-refine-rounds N (and --damage-op)."
-            )
-        if self.threat_refine_outgoing and not damage_op:
-            raise ValueError("threat_refine_outgoing=True requires damage_op=True (the outgoing physics).")
-        if self.threat_unrevealed_outgoing and not self.threat_refine_outgoing:
-            raise ValueError(
-                "threat_unrevealed_outgoing=True requires threat_refine_outgoing=True — it only enriches the "
-                "outgoing residual's UNREVEALED columns (expected-latent defender)."
-            )
-        self.outgoing_proj = (torch.nn.Linear(_DMG_OUT_REFINE, D_MODEL)
-                              if self.threat_refine_outgoing else None)
-        if self.outgoing_proj is not None:
-            torch.nn.init.zeros_(self.outgoing_proj.weight)   # identity-at-init, same rationale as refine_proj
-            torch.nn.init.zeros_(self.outgoing_proj.bias)
-        # gen3_status_trunk_v1 (v37): STATUS-LANDING into the trunk (the last CPU-obs deprecation gap). Two
-        # zero-init residuals riding the SAME between-layers refine loop: INCOMING status (opp active's
-        # believed status moves → our 6, onto OUR tokens) + OUTGOING status (our active's status moves → opp
-        # 6, revealed-gated, onto OPP tokens). Status immunity is a computed MECHANICS fact (not learnable
-        # strategy); we hand it over so the model spends capacity on HOW to value it, not on re-deriving the
-        # gen3 immunity rules across non-local tokens. STRUCTURAL (adds two Linears; OFF byte-identical).
-        self.threat_status_refine = bool(threat_status_refine)
-        # Prober-only: when True, the between-layers refine_cb stashes its per-round (move_logits, lean
-        # incoming-damage) into `last_refine_rounds` for the observability TUI. Default False → the
-        # training/rollout forward never captures (byte-for-byte unchanged); the prober flips it per re-run.
-        self.capture_refine_rounds = False
-        if self.threat_status_refine and not damage_op:
-            raise ValueError("threat_status_refine=True requires damage_op=True (the status physics).")
-        if self.threat_status_refine and self.damage_refine_rounds <= 0:
-            raise ValueError(
-                "threat_status_refine=True requires damage_refine_rounds>0 — the status residuals ride the "
-                "SAME between-layers refine loop. Set --damage-refine-rounds N."
-            )
-        self.status_in_proj = (torch.nn.Linear(_DMG_STATUS_REFINE, D_MODEL)
-                               if self.threat_status_refine else None)   # incoming → OUR tokens
-        self.status_out_proj = (torch.nn.Linear(_DMG_STATUS_REFINE, D_MODEL)
-                                if self.threat_status_refine else None)  # outgoing → OPP tokens
-        for _p in (self.status_in_proj, self.status_out_proj):
-            if _p is not None:
-                torch.nn.init.zeros_(_p.weight)   # identity-at-init (same rationale as refine_proj/outgoing_proj)
-                torch.nn.init.zeros_(_p.bias)
-        # gen3_damage_op_prefuse_v1 (v50): ONE damage computation per forward, PRE-attention. Today the op
-        # runs TWICE — a LEAN `discrete_*` recompute inside the between-layers refine loop (2 rounds in the
-        # production config) plus the FULL 835-dim block after the transformer — and at B=1 on CPU (the PFSP
-        # frozen-opponent regime, which sits on the rollout critical path) the two together are ~75% of a
-        # dispatch-bound 6.45 ms forward, against 0.27 ms for the attention layers themselves. ON: the
-        # spread/HP-type beliefs + the FULL op run on the PRE-transformer role tokens, the per-OUR-mon
-        # incoming rows are injected onto our tokens via the zero-init `prefuse_proj` (the refine_proj
-        # convention — identity-at-init), and the SAME block is concatenated to both heads. The refine loop
-        # is then redundant, so the two are mutually exclusive.
+        # gen3_tiered_pipeline_v1 (was gen3_damage_op_prefuse_v1, v50): ONE damage computation per
+        # forward, PRE-attention, and now the ONLY placement. The spread/HP-type beliefs + the FULL op
+        # run on the PRE-transformer role tokens (T0 RESOLVE → T1 REASON), the per-OUR-mon incoming rows
+        # are injected onto our tokens via the zero-init `prefuse_proj` (identity-at-init), and the same
+        # block feeds every downstream consumer. The POST-transformer call site and its
+        # `--damage-op-prefuse` selector are DELETED.
         #
-        # HONEST POSTURE: the justification is the CPU cost. The architectural story ("attention now reasons
+        # Its original justification was CPU cost: at B=1 on CPU (the PFSP frozen-opponent regime, which
+        # sits on the rollout critical path) the op dominated a dispatch-bound ~6.45 ms forward, against
+        # 0.27 ms for the attention layers themselves. The architectural story ("attention now reasons
         # over full-fidelity physics") is SECONDARY and, on this codebase's evidence, unlikely to pay —
-        # physics-into-the-trunk measured NULL 3-for-3 (ledger K9/K10) and the lean kernel was already a good
-        # proxy for the full op (K10a). What must be PRESERVED is the head concat, which ledger P1 measured as
-        # the policy's largest single dependency; ON keeps it at full width, only sourced from a pre-attention
-        # belief. STRUCTURAL (adds `prefuse_proj`) → gated in check_compatible; OFF byte-for-byte.
-        self.damage_op_prefuse = bool(damage_op_prefuse)
-        if self.damage_op_prefuse and not damage_op:
-            raise ValueError(
-                "damage_op_prefuse=True requires damage_op=True — there is no operator to run before the "
-                "transformer. Enable --damage-op (--unified-damage), or drop --damage-op-prefuse."
-            )
-        if self.damage_op_prefuse and not move_belief_prefuse:
-            raise ValueError(
-                "damage_op_prefuse=True requires move_belief_prefuse=True — the op consumes the move "
-                "belief, so the belief must itself be computed BEFORE the transformer. Set "
-                "--move-belief-prefuse, or drop --damage-op-prefuse."
-            )
-        if self.damage_op_prefuse and self.damage_refine_rounds > 0:
-            raise ValueError(
-                f"damage_op_prefuse=True is mutually exclusive with damage_refine_rounds>0 (got "
-                f"{self.damage_refine_rounds}) — the prefuse IS the unified single computation the "
-                "between-layers refine loop is being replaced by; running both would restore the double "
-                "cost it exists to remove. Set --damage-refine-rounds 0 (which also requires dropping "
-                "--threat-refine-outgoing / --threat-status-refine), or drop --damage-op-prefuse."
-            )
-        # Zero-init → the injected residual is EXACTLY 0 at init, so ON starts from the same trunk the
-        # baseline transformer sees (identity-at-init; the gradient still flows because the damage feats are
-        # non-zero). Richer than the refine loop's lean 4-feature injection: this carries the FULL per-mon
-        # incoming row. NOTE the v36/v37 OUTGOING + STATUS trunk residuals are NOT reproduced here — they
-        # rode the refine loop and measured null (K10); re-adding them would need their own projections.
-        self.prefuse_proj = (torch.nn.Linear(_DMG_PER_MON, D_MODEL)
-                             if self.damage_op_prefuse else None)
+        # physics-into-the-trunk measured NULL 3-for-3 (ledger K9/K10) and the lean kernel was already a
+        # good proxy for the full op (K10a).
+        #
+        # Zero-init → the injected residual is EXACTLY 0 at init, so the trunk starts from the same one
+        # the baseline transformer sees (identity-at-init; the gradient still flows because the damage
+        # feats are non-zero). It carries the FULL per-mon incoming row. NOTE there is no OUTGOING or
+        # STATUS trunk residual: those measured null (K10) and would need their own projections.
+        self.prefuse_proj = (torch.nn.Linear(_DMG_PER_MON, D_MODEL) if damage_op else None)
         if self.prefuse_proj is not None:
             torch.nn.init.zeros_(self.prefuse_proj.weight)
             torch.nn.init.zeros_(self.prefuse_proj.bias)
         # gen3_entity_move_seats_v1: E4 threat seats need the belief-weighted candidate definition
-        # (`DamageOperator.refine_candidates`) + the move latent table, both PRE-transformer — i.e.
-        # the prefuse stack. E3 is unconditional and needs none of this.
-        if self.entity_topk_seats > 0 and not (self.damage_op_prefuse and move_latent):
+        # (`DamageOperator.refine_candidates`) + the move latent table, both PRE-transformer — which the
+        # tiered order now guarantees whenever the op exists. E3 is unconditional and needs none of this.
+        if self.entity_topk_seats > 0 and not (damage_op and move_latent):
             raise ValueError(
-                f"entity_topk_seats={self.entity_topk_seats} requires damage_op_prefuse=True AND "
+                f"entity_topk_seats={self.entity_topk_seats} requires damage_op=True AND "
                 "move_latent=True — the E4 threat seats gather the op's pre-transformer candidate "
-                "weights and the move latent table. Enable --damage-op-prefuse + --move-latent "
+                "weights and the move latent table. Enable --damage-op + --move-latent "
                 "(--unified-moves), or set --entity-topk-seats 0 (E3-only)."
             )
         # gen3_entity_tail_seats_v1 (E5): the tail summarizes the belief the OTHER consumers
         # truncate — it needs the pre-transformer posterior + the op's move buffers, i.e. the same
-        # prefuse stack as E4.
-        if self.entity_tail_seats and not (self.damage_op_prefuse and self.entity_topk_seats > 0):
+        # T0/T1 stack as E4.
+        if self.entity_tail_seats and not (damage_op and self.entity_topk_seats > 0):
             raise ValueError(
-                "entity_tail_seats requires damage_op_prefuse AND entity_topk_seats > 0 — the tail "
+                "entity_tail_seats requires damage_op AND entity_topk_seats > 0 — the tail "
                 "is defined relative to the E4 seats' top-K truncation. Enable those, or drop "
                 "--entity-tail-seats."
             )
@@ -2981,10 +2808,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "edge_bias_families g reads the op's type tables for the weather-immunity "
                     "legs — requires --damage-op."
                 )
-            if "x" in fams and not (damage_op and self.damage_op_prefuse):
+            if "x" in fams and not damage_op:
                 raise ValueError(
                     "edge_bias_families x reads the pre-transformer composed posterior (Pursuit "
-                    "belief) + the op's tables — requires --damage-op + --damage-op-prefuse."
+                    "belief) + the op's tables — requires --damage-op."
                 )
             if "t" in fams and not damage_op:
                 raise ValueError(
@@ -3107,7 +2934,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # (a team-static DeepSets code over OUR team's invariant facts) + two zero-init FiLM
         # generators, one per root head; forward() then applies `h·(1+Δγ(z)) + Δβ(z)` to each head's
         # post-projection pre-ReLU features. Zero-init ⇒ Δγ=Δβ=0 at init ⇒ ON starts byte-identical
-        # to the baseline forward (identity-at-init, the refine_proj convention); the modulation is
+        # to the baseline forward (identity-at-init, the prefuse_proj convention); the modulation is
         # rank-zarch_dim by construction (low-rank conditioning). STRUCTURAL toggle gated in
         # check_compatible (string + int, the value_dist_mode/bins pattern); NO ARCH_SIGNATURE bump.
         if zarch_film not in ("off", "heads"):
@@ -3297,9 +3124,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         overrides it — so every deliberate zero-init inside the extractor was silently destroyed the
         moment the policy was built, in every real training run.
 
-        That silently falsified a documented invariant for six shipped features — `refine_proj`
-        (v31/v33), `outgoing_proj` (v36), `status_in_proj`/`status_out_proj` (v37) and `film_pi`/
-        `film_vf` (v44) all claim "zero-init ⇒ identity-at-init ⇒ ON starts byte-identical" — and,
+        That silently falsified a documented invariant for every shipped zero-init feature —
+        `prefuse_proj`, the edge-bias family maps and `film_pi`/`film_vf` all claim
+        "zero-init ⇒ identity-at-init ⇒ ON starts byte-identical" — and,
         more insidiously, the belief heads' cold-start contract: `MoveBelief.move_head`,
         `SpreadBelief.{stat,nature,ev}_head` and `HPTypeBelief.type_head` are zero-init precisely so
         the cold-start posterior EQUALS the Smogon prior. Clobbered, they start at prior ⊕ noise.
@@ -3429,8 +3256,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
     def _apply_move_belief(self, opp_tokens, ctx):
         """Predict + reinject the opp moveset into the given opp tokens [B, 6, D] → (enriched, logits).
-        Shared by the POST-transformer (default) and PRE-transformer (move_belief_prefuse) call sites —
-        only the input tensor + timing differ. The mask selects the slots per move_belief_mode; the
+        ONE call site: PRE-transformer, T0 RESOLVE (gen3_tiered_pipeline_v1 — the POST-transformer
+        placement is deleted). The mask selects the slots per move_belief_mode; the
         species/move ids feed prior-fusion (Smogon prior + pin revealed moves certain).
 
         gen3_typed_hp_belief_v1: the HP-type head + the typed composition run HERE, between the move
@@ -3449,7 +3276,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             ctx.all_move_ids[:, TEAM_SIZE:, :])                              # [B, 6, 4]
         logits, presence, hp_post, self.last_hp_type_logits = self._typed_hp_posterior(
             opp_tokens, ctx, raw)
-        self._last_hp_type_post = hp_post                     # for the between-layers refine recompose
+        self._last_hp_type_post = hp_post                     # stashed for the typed-HP recompose
         enriched = self.move_belief.reinject_moves(
             opp_tokens, mb_mask, self.embeddings.move_embedding, logits)
         # gen3_opp_hp_type_belief_v2: ALSO reinject the presence-gated expected TYPE embedding. This is
@@ -3466,17 +3293,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def _spread_hp_damage(self, opp_tokens, ctx):
         """The spread + HP-type belief legs and the FULL DamageOperator, in ONE place.
 
-        `opp_tokens` [B, 6, D] → `(enriched_opp_tokens, damage_block | None)`. Called from exactly two
-        sites, which differ ONLY in WHEN they run:
-          * POST-transformer (default) — the historical site: the beliefs read attention-REFINED opp
-            tokens, so the 835-dim head block prices physics from a sharpened belief.
-          * PRE-transformer (`damage_op_prefuse`, gen3_damage_op_prefuse_v1) — the beliefs read the raw
-            role tokens, the op runs ONCE, and its output both seeds the trunk (see `prefuse_proj`) and
-            feeds the heads. One op call per forward instead of two (the between-layers refine loop's
-            lean recompute + this full one).
+        `opp_tokens` [B, 6, D] → `(enriched_opp_tokens, damage_block | None)`. ONE call site:
+        PRE-transformer (gen3_tiered_pipeline_v1). The beliefs read the raw role tokens, the op runs
+        ONCE, and its output both seeds the trunk (see `prefuse_proj`) and feeds every downstream
+        consumer. The historical POST-transformer placement — beliefs read from attention-REFINED opp
+        tokens — is DELETED.
         Every stash (`last_spread_belief`, `last_hp_type_logits`, `last_move_latent_table`,
-        `last_damage_block`) is written here, so the aux losses and the prober read the same tensors
-        either way.
+        `last_damage_block`) is written here, so the aux losses and the prober read the same tensors.
         """
         # gen3_unified_spread_belief_v1: predict + reinject the opp's hidden SPREAD (revealed slots), and
         # stash the believed stats [B,6,5] for the DamageOperator (consumed at the opp active slot, replacing
@@ -3537,10 +3360,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
+                                          self._t0_species_probs,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all)
+                                              move_latent_all, self._t0_species_probs)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         return opp_tokens, damage_block
@@ -3607,15 +3431,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         ctx = self.unpack(obs)
+        # gen3_t0_species_prior_v1: resolve the hidden opponent slots to a DISCRETE species
+        # distribution HERE — still T0, before any T1 consumer — and hand the same tensor to every
+        # site that prices an unrevealed defender. One belief computed once: the edge cells and the
+        # op block can then never disagree on a value, which is the invariant `pairwise_outgoing`'s
+        # docstring already asserts for the physics. None (flag off) ⇒ every consumer falls through
+        # to the static usage prior, byte-identically.
+        self._t0_species_probs = (
+            self.t0_species_prior(ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE],
+                                  ctx.opp_believed_mask)
+            if self.t0_species_prior is not None else None
+        )
         # Expose which opp slots are believed (hidden) so eval/forensic tooling can decode the belief
         # head's per-slot species prediction for exactly those slots. Read-only stash — never read by
         # the forward itself, so the off/baseline output is unchanged.
         self.last_opp_believed_mask = ctx.opp_believed_mask
-        self.last_opp_active_local = ctx.opp_active_local   # for the prober's per-round belief-row decode
-        # gen3_status_trunk_v1 / observability: prober-only capture of the WITHIN-FORWARD refine trajectory.
-        # `capture_refine_rounds` defaults False (set ONLY by the prober before a re-run forward), so the
-        # rollout/training path never touches it → byte-for-byte unchanged. Reset the accumulator each forward.
-        self.last_refine_rounds = [] if getattr(self, "capture_refine_rounds", False) else None
+        self.last_opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         # gen3_zarch_film_v1: the team-archetype latent — computed from ctx's INVARIANT our-side
         # facts only (team-static + deterministic ⇒ constant within a battle by construction).
         # Stashed live for forward()'s FiLM application (same call) + the aux loss (same backward
@@ -3647,105 +3478,37 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # attends over them as party members (flag-guarded; None ⇒ baseline zeros).
         if self.belief_slots is not None:
             role_tokens = self.belief_slots(role_tokens, ctx.opp_believed_mask)
-        # Move belief (gen3_move_prefuse_v1, PRE-transformer variant): when move_belief_prefuse is on,
-        # reinject the predicted opp moveset into the opp ROLE tokens BEFORE the transformer, so the
-        # believed moves co-refine with the species/team belief through the 2 attention layers (instead
-        # of being grafted on afterwards). The logits are stashed here; downstream consumers (damage op +
-        # aux loss) read the same `last_move_belief_logits`. Default (off) leaves it None and runs the
-        # POST-transformer reinjection below, byte-for-byte unchanged.
+        # T0 RESOLVE — the move belief (gen3_tiered_pipeline_v1). Reinject the predicted opp moveset
+        # into the opp ROLE tokens BEFORE the transformer, so the believed moves co-refine with the
+        # species/team belief through the attention layers. The logits are stashed here; every
+        # downstream consumer (damage op, E4 seats, edge cells, aux loss) reads the same
+        # `last_move_belief_logits`. There is no second placement.
         self.last_move_belief_logits = None
-        if self.move_belief is not None and self.move_belief_prefuse:
+        if self.move_belief is not None:
             opp_role, self.last_move_belief_logits = self._apply_move_belief(
                 role_tokens[:, TEAM_SIZE:], ctx)
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
-        # gen3_damage_op_prefuse_v1: run the WHOLE physics stack ONCE, here, PRE-attention. The spread +
-        # HP-type beliefs read the raw opp role tokens (the move belief already did, via prefuse), the FULL
-        # DamageOperator runs on that belief, and its per-OUR-mon INCOMING rows are injected onto our role
-        # tokens through the zero-init `prefuse_proj` — so attention reasons over the physics, then the SAME
-        # block is concatenated to both heads below. This replaces the two-computation shape it supersedes
-        # (a LEAN op inside the between-layers refine loop + the FULL op after the transformer); the two are
-        # mutually exclusive (enforced in __init__). Off ⇒ prefused_damage stays None and the group runs at
-        # its historical POST-transformer site, byte-for-byte.
-        prefused_damage = None
-        if self.damage_op_prefuse:
-            opp_role, prefused_damage = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx)
-            inc = prefused_damage[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
+        # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
+        # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
+        # already did, just above), the FULL DamageOperator runs on that belief, and its per-OUR-mon
+        # INCOMING rows are injected onto our role tokens through the zero-init `prefuse_proj` — so
+        # attention reasons over the physics. `damage_block` is None only when the op is off, in which
+        # case there is nothing to inject (and `prefuse_proj` was never built).
+        opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx)
+        if damage_block is not None:
+            inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
                 ctx.batch_size, TEAM_SIZE, _DMG_PER_MON)                      # per-OUR-mon incoming rows
             role_tokens = torch.cat(
                 [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc), opp_role], dim=1)  # residual (0 at init)
-        # gen3_iterative_damage_v1: when refinement is on, recompute the lean discrete incoming damage from
-        # the CURRENT (being-enriched) opp tokens BEFORE each of the first N transformer layers and inject it
-        # as a residual onto our-mon token positions. The belief is re-read each round (move_belief.move_logits
-        # — the per-round gradient sharpens it), the op computes the lean per-our-mon threat, and refine_proj
-        # (zero-init → identity-at-init) carries it onto our tokens so the next layer attends over it. None
-        # (off) ⇒ the transformer runs byte-identically to the baseline. Composes with prefuse: refine reads
-        # whatever opp token the transformer currently holds (prefuse-enriched or not).
-        refine_cb = None
-        if (self.damage_refine_rounds > 0 and self.damage_op is not None
-                and self.move_belief is not None):
-            _opp_species_ids = ctx.species_ids[:, TEAM_SIZE:]                 # [B, 6] (prior-fusion lookup)
-            _opp_move_ids = ctx.all_move_ids[:, TEAM_SIZE:, :]               # [B, 6, 4] (revealed → pinned)
-
-            def refine_cb(tokens, layer_idx):
-                if layer_idx >= self.damage_refine_rounds:
-                    return tokens
-                opp_tokens = tokens[:, TEAM_SIZE:2 * TEAM_SIZE, :]            # current (mid-transformer) opp
-                # gen3_belief_single_compute_v1: FROZEN belief — reuse the pre-transformer posterior
-                # instead of re-reading the head off the (being-enriched) tokens, so the belief is
-                # computed once per forward and attention cannot revise it. The stash is live (not
-                # detached), so the physics gradient still reaches the SAME belief computation the
-                # reinjection used — one posterior, one gradient path. Default: re-read per round
-                # (physics-in-the-loop), byte-for-byte unchanged.
-                if self.move_belief_single_compute and self.last_move_belief_logits is not None:
-                    logits = self.last_move_belief_logits                     # [B,6,M] pre-attention (typed)
-                else:
-                    logits = self.move_belief.move_logits(opp_tokens, _opp_species_ids, _opp_move_ids)  # [B,6,M]
-                    # gen3_typed_hp_belief_v1: the re-read is RAW (237 live), so re-run the typed-HP
-                    # step before the physics touches it — otherwise this path would price Hidden Power
-                    # off a BP-0 typeless row while the head block priced it off real typed rows. Under
-                    # 'composed' the type head is re-read from the SAME mid-transformer tokens (matching
-                    # this mode's physics-in-the-loop intent; single-compute instead reuses the frozen
-                    # pre-attention posterior); under 'flat' this is just the 237 mask.
-                    logits, _, _, _ = self._typed_hp_posterior(opp_tokens, ctx, logits)
-                # --- INCOMING residuals onto OUR tokens: damage (always) + status (v37, if on) ---
-                # ONE candidate build per round, shared by the damage + status kernels (both select the
-                # SAME detached top-K over the SAME `logits`; they used to rebuild it independently).
-                cand = self.damage_op.refine_candidates(ctx, logits)
-                inc = self.damage_op.discrete_incoming(ctx, logits, cand)    # [B,6,4] lean per-our-mon threat
-                if self.last_refine_rounds is not None:                      # prober-only capture (axis A)
-                    self.last_refine_rounds.append((layer_idx, logits.detach(), inc.detach()))
-                refined_our = tokens[:, 0:TEAM_SIZE, :] + self.refine_proj(inc)   # residual (0 at init)
-                if self.status_in_proj is not None:
-                    # gen3_status_trunk_v1: "will I get statused" — one belief read feeds damage + status.
-                    refined_our = refined_our + self.status_in_proj(
-                        self.damage_op.discrete_incoming_status(ctx, logits, cand))
-                # --- OUTGOING residuals onto OPP tokens: damage (#1/#2, if on) + status (v37, if on) ---
-                refined_opp = opp_tokens
-                if self.outgoing_proj is not None:
-                    # gen3_bidir_threat_trunk_v1: when threat_unrevealed_outgoing + a belief head are on, read
-                    # P(species) over the CURRENT opp tokens (gradient sharpens the species belief) so the
-                    # unrevealed columns are priced by the expected-latent defender; else revealed-gated.
-                    species_probs = None
-                    if self.threat_unrevealed_outgoing and self.belief_head is not None:
-                        species_probs = self.belief_head.species_posterior(
-                            opp_tokens, ctx.species_ids[:, TEAM_SIZE:],
-                            ctx.opp_believed_mask)                                      # [B,6,n_species]
-                    refined_opp = refined_opp + self.outgoing_proj(
-                        self.damage_op.discrete_outgoing(ctx, species_probs))           # residual (0 at init)
-                if self.status_out_proj is not None:
-                    # gen3_status_trunk_v1: "can I status this opp mon" (revealed-gated).
-                    refined_opp = refined_opp + self.status_out_proj(
-                        self.damage_op.discrete_outgoing_status(ctx))
-                if self.outgoing_proj is not None or self.status_out_proj is not None:
-                    return torch.cat([refined_our, refined_opp, tokens[:, 2 * TEAM_SIZE:, :]], dim=1)
-                return torch.cat([refined_our, tokens[:, TEAM_SIZE:, :]], dim=1)
+        else:
+            role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # gen3_entity_move_seats_v1 (v54, Stage 1): build the move ENTITY seats and enter them into
         # the trunk's attention. The E3 permutation (sorted-by-id → request order, by move-num
         # identity) happens HERE, pre-transformer — one permutation, shared by the seats and the
         # pointer head (which now reads the REFINED seats below). E4 gathers the op's pre-transformer
         # candidate weights + latents (`_entity_latent_table`, stashed by `_spread_hp_damage` — the
         # prefuse gate guarantees it ran). Seats append AFTER the global token, so every absolute
-        # slice above (team/history/global, the refine callback's tail cat) is position-stable.
+        # slice above (team/history/global) is position-stable.
         _tok_req_raw, _move_valid = _request_order_move_tokens(
             self.pokemon_encoder.last_move_tokens, ctx)
         _seat_tokens, _seat_pad = self.entity_seats(
@@ -3760,18 +3523,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _edge_fn = None
         if self.edge_bias is not None:
             _fams = self.edge_bias.families
-            # Spread belief only when the PREFUSE stack computed it THIS forward (pre-trunk);
-            # non-prefuse configs would read last forward's stale value here — pass None (the
-            # kernel's legacy neutral-bulk constants) instead.
-            _sb = self.last_spread_belief if self.damage_op_prefuse else None
+            # The T0 stack computed the spread belief THIS forward, pre-trunk (gen3_tiered_pipeline_v1
+            # made that unconditional), so it is always the current one. None when the leg is off —
+            # the kernels then use their legacy neutral-bulk constants.
+            _sb = self.last_spread_belief
             _cells = {}
             if "d1" in _fams:
-                _cells["d1"] = self.damage_op.pairwise_outgoing(ctx, _sb)
+                _cells["d1"] = self.damage_op.pairwise_outgoing(
+                    ctx, _sb, species_probs=self._t0_species_probs)
             if "c1" in _fams:
                 # C1 (outgoing) reuses D1's current-world cells as its delta base when both are
                 # on; C1b (incoming) appends the defensive halves — one 6-wide consequence cell.
                 _cells["c1"] = torch.cat([
-                    self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1")),
+                    self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"),
+                                                  species_probs=self._t0_species_probs),
                     self.damage_op.pairwise_boost_incoming(
                         ctx, self.last_move_belief_logits, k_cand=self.consequence_topk),
                 ], dim=-1)
@@ -3818,7 +3583,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _base = self.team_transformer._total_tokens
             _edge_fn = lambda bias: self.edge_bias(bias, _base, _cells, _opp_oh)  # noqa: E731
         our_team_out, their_team_out, _seat_out = self.team_transformer(
-            role_tokens, ctx, self.embeddings, between_layers=refine_cb,
+            role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad),
             edge_bias_fn=_edge_fn)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
@@ -3841,40 +3606,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             target_slots = obs.get("belief_target_slots")
             if target_slots is not None:
                 self.last_belief_target_latent = self._belief_target_role_tokens(ctx, target_slots)
-        # Move belief (default, POST-transformer): predict each opp slot's moveset and REINJECT it into the
-        # slot token (flow-through) so the believed moves reach the CLS pools → both heads. Mode selects
-        # which slots (revealed / unrevealed / both); the logits are stashed for the aux loss. Skipped when
-        # move_belief_prefuse already did this reinjection BEFORE the transformer (handled above, which also
-        # already set last_move_belief_logits — left at None when move_belief is off).
-        if self.move_belief is not None and not self.move_belief_prefuse:
-            their_team_out, self.last_move_belief_logits = self._apply_move_belief(their_team_out, ctx)
-        # The spread + HP-type belief legs and the FULL damage op. By DEFAULT they run HERE, on the
-        # attention-refined opp tokens (the op is placed BEFORE the CLS pools so the optional damage
-        # re-attend can enrich the team tokens and the pools are derived ONCE, on the final tokens —
-        # keeping EVERY downstream consumer on the same state). Under `damage_op_prefuse` the whole
-        # group already ran PRE-transformer and `prefused_damage` holds its block.
-        if self.damage_op_prefuse:
-            damage_block = prefused_damage
-        else:
-            their_team_out, damage_block = self._spread_hp_damage(their_team_out, ctx)
-        # damage_reattend (gen3_damage_reattend_v1): let attention reason OVER the computed physics. The op's
-        # per-OUR-mon INCOMING rows are projected (small-init residual) onto the 6 our-team tokens, then ONE
-        # more encoder layer re-attends the 12 team tokens (our↔opp) so each of our mons' representation is
-        # contextualised by ITS incoming damage + the opp threats — and the pools below become damage-AWARE
-        # board summaries instead of damage-blind ones. (BOARD-level enrichment; the per-CANDIDATE switch
-        # scoring is now first-class regardless — the pointer head reads the final our_team_out per token,
-        # so a re-attended bench token flows straight into its own switch logit. gen3_pointer_native_v1.)
-        # Identity-at-init
-        # (the layer's output paths are zero-init'd in __init__) ⇒ ON starts ≈ the damage_op baseline; the
-        # damage signal grows with training. No-op when off (modules None).
-        if self.reattend_layer is not None and damage_block is not None:
-            inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
-                ctx.batch_size, TEAM_SIZE, _DMG_PER_MON)                          # per-OUR-mon incoming rows
-            our_team_out = self.reattend_norm(our_team_out + self.reattend_proj(inc))
-            tok = torch.cat([our_team_out, their_team_out], dim=1)                # [B, 12, D_MODEL]
-            tok = self.reattend_layer(tok, src_key_padding_mask=ctx.all_fainted)  # our↔opp re-attention
-            our_team_out, their_team_out = tok[:, :TEAM_SIZE], tok[:, TEAM_SIZE:]
-        # CLS pools — derived ONCE, on the final (possibly damage-re-attended) team tokens, so the policy
+        # (The move belief, the spread/HP-type legs and the DamageOperator all ran PRE-transformer —
+        # gen3_tiered_pipeline_v1. `damage_block` and `last_move_belief_logits` were set there and
+        # there only; there is no second call site to skip.)
+        #
+        # CLS pools — derived ONCE, on the final team tokens, so the policy
         # pools, the value pool, and the side/aux readouts below ALL reflect the same state.
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx,

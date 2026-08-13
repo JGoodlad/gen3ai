@@ -615,14 +615,14 @@ class ProbeModel:
         has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
         latent_belief = bool(getattr(ex, "opp_belief_latent", False))   # belief SimSiam latent sub-head
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
-        move_prefuse = bool(getattr(ex, "move_belief_prefuse", False))  # MoveBelief reinjected PRE-transformer
         dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
-        op_prefuse = bool(getattr(ex, "damage_op_prefuse", False))      # v50: beliefs + op run PRE-transformer
         # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
         # flags the ATTENTION layers (self-/cross-attention) so the prober can mark where the network
-        # attends. Order: Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent] → [BeliefSlots] →
-        # TeamTransformer → [BeliefHead·side] → [MoveBelief] → [SpreadBelief] → CLSPool(fork) →
-        # [WinProbHead·side] → [HiddenOppBeliefPool] → [DamageOperator] → ProjectionAssembler → π / V.
+        # attends. gen3_tiered_pipeline_v1 order: Embeddings → ObsUnpack → PokemonEncoder[+MoveLatent]
+        # → [BeliefSlots] → [MoveBelief] → [SpreadBelief] → [DamageOperator] → TeamTransformer →
+        # [BeliefHead·side] → CLSPool(fork) → [WinProbHead·side] → [HiddenOppBeliefPool] →
+        # ProjectionAssembler → π / V. The belief + physics are T0/T1: they all run PRE-transformer,
+        # unconditionally — there is no longer a POST placement.
         rows = [
             ("Embeddings", True, False, "trunk",
              "shared tables: species/move/item/ability/type emb + HP soft-type + TurnDelta embedder", False),
@@ -632,16 +632,20 @@ class ProbeModel:
              True),
             ("BeliefSlots", on("belief_slots"), True, "trunk",
              "fill hidden-opp slots with learned tokens (in-lineup)", False),
+            ("MoveBelief", on("move_belief"), True, "trunk",
+             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")
+             + " · T0 RESOLVE, PRE-transformer", False),
+            ("SpreadBelief", on("spread_belief"), True, "trunk",
+             "predict + reinject opp hidden stat-spread → DamageOperator (v25)"
+             + " · T0 RESOLVE, PRE-transformer", False),
+            ("DamageOperator", on("damage_op"), True, "shared",
+             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "")
+             + " → the trunk (prefuse_proj) + both heads · T1 REASON, PRE-transformer, once",
+             False),
             ("TeamTransformer", True, False, "trunk",
              f"SELF-ATTENTION over {tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)", True),
             ("BeliefHead", on("belief_head"), True, "side",
              "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)", False),
-            ("MoveBelief", on("move_belief"), True, "trunk",
-             f"predict + reinject opp moves ({mb})" + (" + prior-fusion" if prior_fusion else "")
-             + (" · PRE-transformer" if move_prefuse else ""), False),
-            ("SpreadBelief", on("spread_belief"), True, "trunk",
-             "predict + reinject opp hidden stat-spread → DamageOperator (v25)"
-             + (" · PRE-transformer" if op_prefuse else ""), False),
             ("CLSPool", True, False, "fork",
              "CLS queries CROSS-ATTEND the team tokens → our/their/value pools — FORKS → π · V", True),
             ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})", False),
@@ -649,10 +653,6 @@ class ProbeModel:
              f"return-distribution readout off value_pooled ({vd})", False),
             ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared",
              "k belief queries CROSS-ATTEND the 12 tokens → both heads", True),
-            ("DamageOperator", on("damage_op"), True, "shared",
-             "differentiable gen3 damage: incoming P(KO)" + (" + outgoing per-move" if dmg_out else "")
-             + " → both heads" + (" · PRE-transformer, once (v50)" if op_prefuse else ""),
-             False),
             ("ProjectionAssembler", True, False, "shared",
              "→ (pi_combined, vf_combined): pools + ctx + belief + damage", False),
             ("π policy head", True, False, "policy", f"pi_combined → norm → proj({proj})  [in {pin}]", False),
@@ -882,45 +882,6 @@ class ProbeModel:
                 opp_active = i
         return {"spread": sb[0].detach().cpu().numpy(), "believed_mask": bm,
                 "opp_species": opp_species, "opp_active": opp_active}
-
-    def refine_rounds_view(self, obs: np.ndarray, mask: np.ndarray):
-        """The WITHIN-FORWARD iterative-refinement trajectory (axis A) for THIS obs: per
-        ``--damage-refine-rounds`` round, the move-belief logits the round re-read + the lean per-our-mon
-        incoming-damage block it injected — so you can SEE the belief/physics sharpen across the transformer
-        layers. Sets the PROBER-ONLY ``capture_refine_rounds`` flag (default False on the extractor → ZERO
-        training cost), runs ONE clean forward, reads ``last_refine_rounds``, then clears the flag. Returns
-        a list of ``{round, move_logits[n_moves], damage[6,4]}`` (the opp-active row of the per-round belief
-        + the lean ``[phys_high,spec_high,phys_pko,spec_pko]`` per our mon), or ``None`` when the run trained
-        ``--damage-refine-rounds 0`` (no refine loop). The decode (entropy decay etc.) lives in the engine."""
-        import torch
-
-        extractor = getattr(self._policy, "features_extractor", None)
-        if extractor is None or int(getattr(extractor, "damage_refine_rounds", 0)) <= 0:
-            return None
-        ot = torch.as_tensor(obs).unsqueeze(0)
-        mt = torch.as_tensor(mask).unsqueeze(0)
-        had = bool(getattr(extractor, "capture_refine_rounds", False))
-        try:
-            extractor.capture_refine_rounds = True
-            with torch.no_grad():
-                self._policy.extract_features({"observation": ot, "action_mask": mt})
-            rounds = getattr(extractor, "last_refine_rounds", None)
-        finally:
-            extractor.capture_refine_rounds = had
-        if not rounds:
-            return None
-        opp_local = None
-        ex_ctx = getattr(extractor, "last_opp_active_local", None)
-        if ex_ctx is not None:
-            opp_local = int(ex_ctx[0].item()) if hasattr(ex_ctx, "__len__") else int(ex_ctx)
-        out = []
-        for (layer_idx, move_logits, dmg) in rounds:
-            ml = move_logits[0].detach().cpu().numpy()              # [6, n_moves]
-            row = ml[opp_local] if (opp_local is not None and 0 <= opp_local < ml.shape[0]) else ml.max(axis=0)
-            out.append({"round": int(layer_idx),
-                        "move_logits": row,
-                        "damage": dmg[0].detach().cpu().numpy()})    # [6, 4]
-        return out
 
     def value_grad(self, obs: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Return |d V(s) / d obs| as a per-dim array — the CRITIC's input sensitivity.

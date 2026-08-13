@@ -268,7 +268,7 @@ def test_op_has_no_hp_type_source_of_its_own():
 
 def test_op_candidate_sites_agree():
     """REGRESSION (the divergence the old design allowed): `forward` used to be handed the learned
-    posterior while `refine_candidates` was not, so the between-layers refine kernels priced Hidden
+    posterior while `refine_candidates` was not, so the candidate-selection consumers priced Hidden
     Power off a different belief than the head block. Both now read the same composed posterior, so the
     typed candidates they select must carry identical weights."""
     head = _head()

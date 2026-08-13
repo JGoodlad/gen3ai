@@ -33,11 +33,11 @@ _mappings = load_mappings()
 _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _SIG = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
 
-# The E4-capable toggle stack (the production prefuse lineage): prefuse needs move_belief_prefuse
-# needs a belief mode; move_latent supplies the seat identity latents.
+# The E4-capable toggle stack: the belief + op run pre-transformer unconditionally
+# (gen3_tiered_pipeline_v1); move_latent supplies the seat identity latents.
 _E4_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="both",
-                   move_belief_prefuse=True, damage_op=True, damage_outgoing=True,
-                   damage_op_prefuse=True, move_latent=True)
+                   damage_op=True, damage_outgoing=True,
+                   move_latent=True)
 
 
 def _make(**kw):
@@ -76,7 +76,7 @@ def test_e4_requires_the_prefuse_stack():
 # ------------------------------------------------------- seat-layout stability (the crux)
 def test_team_and_extra_slices_are_position_stable():
     """The transformer's team/history/global slices must be the SAME positions with and without
-    extra seats — every downstream consumer (CLS pools, refine callback, re-attend) slices by
+    extra seats — every downstream consumer (CLS pools, re-attend) slices by
     absolute index. Feed marker tokens and check the extras land strictly after `_total_tokens`
     and the team outputs keep their seat count."""
     fe = _make().eval()

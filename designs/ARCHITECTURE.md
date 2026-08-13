@@ -176,12 +176,34 @@ pre_proj_norm · projection · value_pre_norm · value_projection · activation
 ```
 
 Notably **absent** (their flags are off): `belief_slots`, `belief_head`, `spread_belief`,
-`hidden_opp_belief`, `refine_proj`, `outgoing_proj`, `status_in_proj` / `status_out_proj`,
-`reattend_*`, `zarch_encoder` / `film_*`, `win_head`, `pubval_head`, `value_dist_head`.
+`hidden_opp_belief`, `zarch_encoder` / `film_*`, `win_head`, `pubval_head`, `value_dist_head`.
 
-### 2.1 Order of operations
+### 2.1 Order of operations — the TIER ORDER, and the only order
 
-Because `damage_op_prefuse` is on, the belief + physics stack runs **once, before attention**:
+The belief + physics stack runs **once, before attention**, on every config. There is no flag: the
+forward resolves the game in the order the game resolves in, and the four tiers are an **asserted
+invariant** (`tier_contract.py`, `tier_contract_test.py`) rather than a property of how the code
+happens to be written.
+
+| tier | question | modules |
+|---|---|---|
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief` |
+| **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head`, `seed_quantile_head` |
+
+The contract asserts two things per forward: tier-declared entry points are entered in
+**non-decreasing** tier order, and no entry point receives a tensor whose storage was produced by a
+strictly **later** tier (checked across two forwards, so a stale stash counts). It is a check on
+data flow, not on meaning — it cannot see a T0 leg *recomputing* something intent-like from raw
+tokens. Every `nn.Module` child of the extractor must declare a tier or be listed as untiered, so a
+new phase cannot escape it.
+
+`BeliefSlots` (T0, injects unknown-mon tokens pre-trunk) and `BeliefHead` (T2, reads refined tokens)
+are the one deliberate split: `BeliefHead` is a **training-only side readout** whose output is
+stashed for the aux loss and never fed forward, which is exactly what its T2 declaration records.
+
+The concrete steps:
 
 1. **`ObsUnpack`** — slices the 2669-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
@@ -193,7 +215,7 @@ Because `damage_op_prefuse` is on, the belief + physics stack runs **once, befor
    ACTIVE mon's row, bench rows zero (the §6-audited entity home; the global-token/projection
    routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
-3. **`MoveBelief`** (pre-fuse) — reads the opp **role** tokens, predicts each opp slot's moveset,
+3. **`MoveBelief`** (T0) — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset
    into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]`.
    The prior buffer `[n_species, n_moves]` is **learnset-gated unconditionally**: a move the species
@@ -219,9 +241,6 @@ Because `damage_op_prefuse` is on, the belief + physics stack runs **once, befor
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy) and
     `value_pre_norm`/`value_projection`/ReLU (value), both emitting `PROJECTION_DIM` = 512.
-
-There is **no between-layers refine loop** in this config (`damage_refine_rounds` = 0, mutually
-exclusive with the pre-fuse). Consequences: §6.
 
 ### 2.2 Dims that flow between phases
 
@@ -539,7 +558,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 |---|---|
 | d1, s1, c1, c2 | `damage_op` **and** `damage_outgoing` |
 | c3, c4, c5, d2, d4, g, t, v | `damage_op` |
-| x | `damage_op` **and** `damage_op_prefuse` |
+| x | `damage_op` |
 | d3, s3 | `entity_topk_seats > 0` (the bias rows *are* the E4 seats) |
 
 All are satisfied in the production config.
@@ -609,11 +628,9 @@ raises at build time.
 
 | Flag / config field | Production value | Status |
 |---|---|---|
-| `damage_op` | true | ACTIVE — the 660-dim block, both heads + pointer cells |
-| `damage_op_prefuse` | true | ACTIVE — the whole belief+physics stack runs once, pre-attention |
+| `damage_op` | true | ACTIVE — the 660-dim block, both heads + pointer cells. Its placement is the TIER ORDER (§2.1) and no longer a flag: the whole belief+physics stack runs once, pre-attention, on every config |
 | `damage_outgoing` | true | ACTIVE — outgoing block + status landing; also gates the pointer **move** cells and edges d1/s1/c1/c2 |
 | `move_belief_mode` | `"revealed"` | ACTIVE — predicts a *seen* mon's unrevealed moves |
-| `move_belief_prefuse` | true | ACTIVE — required by `damage_op_prefuse` |
 | `move_prior_fusion` | true | ACTIVE — posterior = Smogon log-odds prior ⊕ learned delta, revealed pinned |
 | `move_latent` | true | ACTIVE — `MoveLatentEncoder`; required by `damage_matrices_incoming` |
 | `hp_belief_mode` | `"composed"` | ACTIVE — the factorised presence × type head |
@@ -626,22 +643,17 @@ raises at build time.
 | `attend_unrevealed_opponents` | true | ACTIVE — hidden opp slots stay attendable |
 | `use_popart` | true | ACTIVE — with the mandatory `--clip-range-vf none` |
 | `belief_grad_mode` | `"shaping"` | ACTIVE — belief heads read the live trunk |
-| **`move_belief_single_compute`** | **true** | **INERT** — its only effect is to make the between-layers refine callback reuse the frozen posterior. `damage_refine_rounds` = 0 ⇒ **no callback is built** ⇒ nothing reads it. Under the pre-fuse the belief is computed once by construction. |
 | `damage_matrices_outgoing` | false | OFF — the 126-dim `outgoing_matrix` does not exist |
 | `damage_matrices_outgoing_all` | false | OFF — the 108-dim OAX block does not exist; the **pointer switch cell is 15 wide, not 33** (§3.3) |
-| `damage_refine_rounds` | 0 | OFF — mutually exclusive with `damage_op_prefuse` |
 | `damage_candidate_k` | 0 | OFF — the full candidate sweep, no truncation |
-| `damage_reattend` | false | OFF |
 | `opp_belief_aux_coef` | 0.0 | OFF ⇒ `opp_belief_slots` false ⇒ **no `BeliefHead`, no species posterior** |
 | `species_prior_fusion` | false | OFF ⇒ `BeliefHead.species_head`'s output IS the whole species prediction. ON makes it a learned log-prob DELTA on a TEAM-COMPOSITION prior — `log P(species | the opponent's already-revealed mons)`, naive Bayes over pairwise pool co-occurrence with Species Clause as a hard constraint — computed on-GPU from two non-persistent `[S]`/`[S,S]` buffers (one `[B,S]@[S,S]` matmul, no gather). The delta head is zero-init, so the cold-start posterior EQUALS the prior. Adds **no parameters** (identical state_dict) — which is exactly why it is version-gated: nothing in the weights would catch the flip, and it re-means every species logit. Requires `opp_belief_aux_coef > 0` |
+| `t0_species_prior` | false | OFF ⇒ the `DamageOperator` prices every UNREVEALED opponent defender from the STATIC `SPECIES_USAGE_PRIOR` gen3ou frequency table (Species-Clause masked). ON re-homes the SAME team-composition belief `species_prior_fusion` uses — `log P(species \| the opponent's already-revealed mons)` — to **T0**, where the T1 physics can consume it, and hands the one resolved `[B, n_species]` tensor to **every** unrevealed-defender site (the op block, the `d1` cells, `pairwise_boost`) so the edge bias and the op block cannot disagree on a value. The two flags are independent: `species_prior_fusion` fuses the prior into the T2 aux READOUT, this feeds the T1 PHYSICS. Parameter-free (two non-persistent buffers, identical state_dict) — hence version-gated, since nothing in the weights would catch a flip that re-means every damage number against a hidden slot. Shape stays 2-D (`[B, S]`, a team-level property): the `[B,6,S]` per-slot form is what mis-vectorized under Inductor CPU and took down gen-4's launch prewarm |
 | `opp_belief_latent` | false | OFF |
 | `opp_belief_cls_k` | 0 | OFF |
 | `spread_belief` | false | OFF — the op prices REVEALED opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief. UNREVEALED defender slots (since `gen3_unrevealed_outgoing_prior_v1`, v60) are priced against the Species-Clause-filtered usage prior's E[def/spd]/E[maxhp] + E[type-mult], P(KO) nulled, `revealed` channel 0 |
 | `spread_belief_nature` | false | OFF |
-| **`threat_refine_outgoing`** | false | **UNREACHABLE** — hard-requires `damage_refine_rounds > 0`, which is mutually exclusive with `damage_op_prefuse`. Setting it raises `ValueError` at extractor build. |
-| **`threat_unrevealed_outgoing`** | false | **UNREACHABLE** — requires `threat_refine_outgoing` (above), *and* a `BeliefHead` for `species_posterior`, which does not exist (`opp_belief_aux_coef` = 0). Two independent blockers. Its expected-latent MATH is no longer dead, though: `gen3_unrevealed_outgoing_prior_v1` (v60) re-homed it onto the live outgoing kernel at a usage prior — this flag's refine-loop delivery stays unreachable. |
 | `threat_prob_outspeed` | false | OFF — `p_outspeed` uses the fixed logistic scale, not the believed-speed std |
-| **`threat_status_refine`** | false | **UNREACHABLE** — same refine-loop dependency as `threat_refine_outgoing` |
 | `win_prob_mode` | `"none"` | OFF |
 | `pubval_mode` | `"none"` | OFF |
 | `value_dist_mode` / `value_dist_bins` | `"none"` / 0 | OFF |

@@ -2597,3 +2597,49 @@ given a switch, which of their mons comes in.
 - Drive-by fix: `--help` crashed with `ValueError: unsupported format character 't'` — the
   `--team-pfsp` help had an unescaped `%` in "sub-50% team". argparse `%`-formats help strings, so
   the whole CLI's `--help` was dead for anyone who ran it without `2>/dev/null`.
+
+### v72 — `gen3_t0_species_prior_v1`: the species belief the physics could never read
+
+`--t0-species-prior`. The model already formed a conditional belief about which species sits in a
+hidden opponent slot, and the `DamageOperator` already accepted an override for exactly that. They
+were never connected, and the reason was the tier ordering rather than any missing machinery.
+
+- **The defect.** `BeliefHead.species_prior_logits` (v69) is a naive-Bayes read over the revealed
+  opponent team — the difference between "the average gen3ou mon" and "the fifth slot on a team that
+  has already shown Tyranitar + Skarmory + Cloyster". But `BeliefHead` is **T2 DECIDE**
+  (post-transformer, a training-only side readout) while the `DamageOperator` is **T1 REASON**
+  (pre-transformer). A T1 consumer cannot read a T2 output, so the op fell back to
+  `SPECIES_USAGE_PRIOR`, a static frequency table masked only by Species Clause. Every damage
+  number against a hidden slot was computed against a population average while the model's own
+  belief sat one tier too late to be used.
+- **Two things already existed and had never met.** `unrevealed_species_probs`'s `species_probs`
+  argument has been in the tree since `gen3_unrevealed_outgoing_prior_v1`, documented verbatim as
+  "the future-learned-belief seam", with **zero** callers passing it. And `species_prior_logits`
+  reads only `opp_species_ids` and `opp_believed_mask` — **no tokens at all** — so it was already
+  T0-legal and nothing but its host module's tier kept it out of the physics.
+- **The change is a re-homing, not new modelling.** The naive-Bayes math moves to
+  `t0_species.species_team_prior_logits`, which `BeliefHead` now also calls, so there is ONE
+  implementation rather than two that could drift. `T0SpeciesPrior` is parameter-free (two
+  non-persistent buffers): the state_dict is identical, and no optimizer parameter position moves.
+- **One belief, every site.** The seam existed only on `pairwise_outgoing`; the op's own `forward`
+  and `pairwise_boost` both priced unrevealed defenders with no way to be told. Both now take the
+  argument, and the extractor resolves the belief ONCE in `forward_internal` and hands the same
+  tensor to all three. The gate asserts tensor IDENTITY, not equality — `pairwise_outgoing`'s
+  docstring already promises the bias and the head concat can never disagree on a value, and two
+  equal-but-separately-computed tensors is how that promise quietly stops holding.
+- **Shape is 2-D on purpose.** `[B, n_species]`, not `[B, 6, n_species]`: the belief is a property
+  of the opponent's TEAM, not of which hidden slot you ask about, so every slot's row would be
+  identical anyway. It also lands exactly on the static branch's existing broadcast-the-RESULTS
+  contract — the `[B,6,S]` expand is what mis-vectorized under Inductor CPU and took down gen-4's
+  launch prewarm. A learned per-slot delta re-enters that shape and must not be added without a
+  compile gate.
+- **No learned delta at T0 (deliberate, v1).** A T0 read sees PRE-attention tokens, so a delta here
+  is strictly weaker than the one `BeliefHead` gets at T2 — while the PRIOR half loses nothing at
+  T0, because it never touched tokens. The informative half moves down a tier for free; the weak
+  half is not built.
+- Structural + version-checked, `MODEL_CONFIG_VERSION` 71 → 72; OFF routes `None` to every site and
+  is byte-identical. No `ARCH_SIGNATURE` bump (OFF reproduces the previous forward exactly). The
+  resume check is the only thing that can reject a mid-run flip — the state_dict is identical
+  either way, so no shape check would ever fire.
+- Independent of `species_prior_fusion`: that fuses the prior into the T2 aux readout, this feeds
+  the T1 physics. Either is useful without the other, and they share the one implementation.

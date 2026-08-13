@@ -112,8 +112,15 @@ def test_move_belief_loss_backprops_to_head_and_trunk():
     """A loss on the stashed move logits (the supervised path the PPO loop reads) must deposit gradient
     on BOTH the MoveBelief head AND the shared trunk — the move belief is trained in-lineup, not as a
     detached side-head. (Backprop on the stash, mirroring the species aux test; the heads→pooling path
-    is exercised separately by the off-vs-on projection-dim test + the module-level reinject grad test —
-    an all-zero unit obs key-masks every team slot, so pi/vf carry no trunk grad here.)"""
+    is exercised separately by the module-level reinject grad test — an all-zero unit obs key-masks
+    every team slot, so pi/vf carry no trunk grad here.)
+
+    ⚠️ WHICH trunk, precisely. Under `gen3_tiered_pipeline_v1` the move head reads the T0 role tokens,
+    so the BCE gradient reaches `pokemon_encoder` and NOT `team_transformer` — attention runs after the
+    belief and is downstream of it, not upstream. That was already true of the production config (which
+    ran the belief pre-transformer); what changed at v71 is that it is now true of EVERY config, since
+    the POST-transformer placement is gone. Asserting the transformer here would be asserting an
+    ordering the codebase no longer has."""
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="both")
     model.train()
     model.forward_internal(_obs(layout))
@@ -121,5 +128,9 @@ def test_move_belief_loss_backprops_to_head_and_trunk():
     assert ml.requires_grad
     ml.sum().backward()
     assert model.move_belief.move_head.weight.grad.abs().sum() > 0
-    trunk_grad = sum(p.grad.abs().sum() for p in model.team_transformer.parameters() if p.grad is not None)
-    assert trunk_grad > 0
+    trunk_grad = sum(p.grad.abs().sum() for p in model.pokemon_encoder.parameters()
+                     if p.grad is not None)
+    assert trunk_grad > 0, "the move belief must be trained in-lineup, not as a detached side-head"
+    tt_grad = sum(p.grad.abs().sum() for p in model.team_transformer.parameters()
+                  if p.grad is not None)
+    assert tt_grad == 0, "the transformer is DOWNSTREAM of the belief now — no gradient may flow back"

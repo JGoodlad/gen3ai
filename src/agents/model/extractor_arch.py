@@ -27,17 +27,13 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "value_active_readout": "value_active_readout",
     "move_belief_mode": "move_belief_mode",
     "damage_op": "damage_op",
-    "damage_reattend": "damage_reattend",                                   # v31
     "damage_outgoing": "damage_outgoing",                                   # v23
     "move_candidate_floor": "move_candidate_floor",                         # v23
     "move_latent": "move_latent",                                           # v24
     "spread_belief": "spread_belief",                                       # v25
     "spread_belief_nature": "spread_belief_nature",                         # v40
     "move_prior_fusion": "move_prior_fusion",                               # v20
-    "move_belief_prefuse": "move_belief_prefuse",                           # v32
-    "move_belief_single_compute": "move_belief_single_compute",             # v47
     "damage_candidate_k": "damage_candidate_k",                             # v49
-    "damage_op_prefuse": "damage_op_prefuse",                               # v50 (v51 pointer-native: no key — unconditional)
     "entity_topk_seats": "entity_topk_seats",
     "consequence_topk": "consequence_topk",                                 # v59 (C1b/C2/C3 k_cand + D4 k_bench)                               # v54 (E3 unconditional; this is the E4 K)
     "edge_bias_families": "edge_bias_families",                             # v56 (layer swap unconditional; this is the family set)
@@ -49,14 +45,10 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "value_dist_vmin": "value_dist_vmin",
     "value_dist_vmax": "value_dist_vmax",
     "damage_topk_k": "damage_topk_k",                                       # v30
-    "damage_refine_rounds": "damage_refine_rounds",                         # v33
     "damage_matrices_outgoing": "damage_matrices_outgoing",                 # v34
     "damage_matrices_incoming": "damage_matrices_incoming",                 # v35
     "damage_matrices_outgoing_all": "damage_matrices_outgoing_all",         # v39
-    "threat_refine_outgoing": "threat_refine_outgoing",                     # v36
-    "threat_unrevealed_outgoing": "threat_unrevealed_outgoing",             # v36
     "threat_prob_outspeed": "threat_prob_outspeed",                         # v36
-    "threat_status_refine": "threat_status_refine",                         # v37
     "hp_belief_mode": "hp_belief_mode",                                     # v53
     "belief_grad_mode": "belief_grad_mode",                                 # v41
     "zarch_film": "zarch_film",                                             # v44
@@ -65,6 +57,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "zarch_lut_init_std": "zarch_lut_init_std",
     "value_threat_inject": "value_threat_inject",                           # v64
     "species_prior_fusion": "species_prior_fusion",                         # v68
+    "t0_species_prior": "t0_species_prior",                                 # v72
 }
 
 # Kwargs that are NOT a plain attribute read. Each is a callable over `args`.

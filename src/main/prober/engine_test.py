@@ -1547,32 +1547,6 @@ def test_build_spread_belief_none_when_off():
     assert build_spread_belief(None, [{"species": "tauros"}]) is None
 
 
-def test_build_refine_trajectory_entropy_decays_monotone():
-    """Sharpening logits round→round ⇒ falling Bernoulli entropy, flagged monotone; physics maxima read."""
-    from main.prober.engine import build_refine_trajectory
-    rounds = [
-        {"round": 0, "move_logits": np.array([1.0, 1.0, -1.0, -1.0]), "damage": np.zeros((6, 4))},
-        {"round": 1, "move_logits": np.array([4.0, 4.0, -4.0, -4.0]),
-         "damage": np.array([[0.3, 0.1, 0.2, 0.0]] + [[0, 0, 0, 0]] * 5, dtype=float)},
-    ]
-    rt = build_refine_trajectory(rounds)
-    assert rt is not None and len(rt.rounds) == 2
-    assert rt.rounds[1].entropy < rt.rounds[0].entropy and rt.entropy_monotone
-    assert abs(rt.rounds[1].max_phys_high - 0.3) < 1e-6
-    assert abs(rt.rounds[1].max_pko - 0.2) < 1e-6     # max over the [phys_pko, spec_pko] columns
-
-
-def test_build_refine_trajectory_nonmonotone_flagged_and_none():
-    from main.prober.engine import build_refine_trajectory
-    rounds = [
-        {"round": 0, "move_logits": np.array([4.0, 4.0, -4.0, -4.0]), "damage": np.zeros((6, 4))},
-        {"round": 1, "move_logits": np.array([0.1, 0.1, 0.0, 0.0]), "damage": np.zeros((6, 4))},
-    ]
-    rt = build_refine_trajectory(rounds)
-    assert rt is not None and not rt.entropy_monotone   # entropy ROSE
-    assert build_refine_trajectory(None) is None and build_refine_trajectory([]) is None
-
-
 def test_build_belief_trajectory_scores_correctness_with_truth():
     """Axis B: per-decision top-1 confidence + ✓ correctness vs the privileged team, model-free from the
     summary belief blocks. With no opp_team correctness stays 0 but confidence is still populated."""

@@ -329,3 +329,67 @@ scope gap is real on structural grounds and the injection arm remains the right 
 **The durable lesson (mine): an instrument upgrade is not a licence to over-read it.** I corrected
 a resolution problem and immediately introduced a precision error in the same breath — quoting a
 standard error as a confidence interval, on the very metric I had just promoted to primary.
+
+---
+
+### G3 (2026-08-13): the c2 arm is a DEAD DISCRIMINATOR — and the reason indicts the whole gate
+
+`design_conditional_execution.md` priced its entire consequence line on one gate: re-deliver `c2`
+(the "least dead" consequence family) through the move cell with `α`, and if it stays at zero,
+declare the line dead. **That gate cannot answer the question it was written for**, and the
+measurements say so three ways. Scripts: `tmp/g3_c2_coverage.py`, `tmp/g3_c2_audit.py`,
+`tmp/g3_c2_alpha_delta.py`.
+
+1. **`c2`'s headline 1.20% was partly a COVERAGE artifact — but that does not rescue it.** `c2` can
+   only fire on 24.0% of decisions (n=133082, CI [23.80, 24.26]). Stratified on its own row gate,
+   `flip_ON` is **3.57%** [2.74, 4.62] vs `flip_OFF` 0.40% — a ratio of 8.9, so the flips do track
+   content rather than the ablation's constant-bias offset (which had to be measured, since
+   `_ablate` zeroes the bias too). But `d1`/`d2` barely move under the same stratification, so the
+   gap narrows only 10.1× → **3.7×**, CIs still disjoint.
+2. **An ENVELOPE result, which is stronger than a null.** Moving `c2` into the move cell forces a
+   collapse of its opponent-mon axis, and `α`/`β` is the principled collapse. Measured
+   `j_envelope` = **0.00000 at the median on all six channels** — an envelope over the FULL
+   simplex, so no `α`/`β`, learned or oracle or perfect, can move that axis. The mechanism: `c2`'s
+   own `att_gate` keeps only REVEALED+ALIVE opponents, and on **85.4%** of eligible decisions that
+   set has exactly ONE member. There is nothing to choose between.
+3. **`c2` was selected on "least dead", never DIAGNOSED as mis-conditioned.** §0 indicts `c4`
+   (Protect's mechanical `p_success`) and `x` (Pursuit's `pursuit_p` = P(they CARRY it), not
+   P(they click it)). It makes no such claim about `c2`, whose `land` is a genuinely mechanical `p`
+   correctly used. **The lesson, and it is the same one as the LUT arm's: a gate must be chosen for
+   what it can DISCRIMINATE, not for where the number is largest.**
+
+**What this does NOT establish:** that the consequence line is dead. G3 as specified cannot support
+that conclusion in either direction. A valid discriminator needs a live `α` axis — on the measured
+evidence that is `x`/Pursuit (100% support, so its 1.05% has no coverage excuse) or `c4`/Protect
+(ratio 1.9 ⇒ near-decorative). Both are §0's own diagnoses; `c2` never was.
+
+**Independent and bug-shaped: `β` predicts what `c2` structurally cannot see.** `β`'s switch mass
+sits at a median of **100%** on UNREVEALED slots, which `_believed_attackers`' gate zeroes. Every
+consequence family sharing that gate is blind to unrevealed opponents — i.e. to nearly all of `β`'s
+mass. That is worth a decision on its own, whatever happens to the document.
+
+**Also unresolved, and stated rather than proxied:** whether a TRAINED head extracts more from a
+per-action absolute than from a softmax-normalised edge bias (H_B) is a claim about learnability
+with no offline answer. It needs a fork. I did not build a proxy for it.
+
+### v72 (2026-08-13): the species belief the physics could never read — and the bug that shipped with it
+
+`gen3_t0_species_prior_v1`. `BeliefHead` (T2) and the `DamageOperator` (T1) each held half of the
+same idea for several versions: the model formed a conditional species belief for hidden opponent
+slots, the op accepted a `species_probs` override documented verbatim as "the future-learned-belief
+seam", and **nothing ever passed it** — the op priced every unrevealed defender from a static
+frequency table. The blocker was purely the tier ordering; `species_prior_logits` reads no tokens
+and was already T0-legal. Re-homing it took no new modelling.
+
+**The durable part is the near-miss.** The flag was added to argparse, `ModelVersion`, the
+migration, the resume check and `current_model_version` — but not to `extractor_arch.ARCH_ARG_KEYS`,
+the mapping that builds the real `features_extractor_kwargs`. It therefore parsed, was recorded,
+was version-checked, and **built nothing**. The full 4435-test suite passed, because every test that
+exercises the feature constructs the extractor directly and bypasses the mapping; no shape check can
+fire, since the state_dict is identical either way. Only the end-to-end smoke caught it, and only by
+reading the saved config back. Now guarded generically by
+`extractor_arch_coverage_test.py` (any field both recorded in `ModelVersion` and accepted by
+`Gen3FeaturesExtractor.__init__` must be reachable from `args`), proved falsifiable by re-planting
+the exact bug — 3 of its 6 tests fail. **This is the "default branch nothing tests" lesson from the
+rust seed defects, in a second place: a green suite is not evidence about a path the suite does not
+take.**

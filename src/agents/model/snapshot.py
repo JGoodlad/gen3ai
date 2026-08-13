@@ -675,9 +675,9 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
     of the call sites, and would have silently blinded the learner's GPU the first time anyone called
     this from the main process before CUDA was touched. It is now the caller's explicit declaration.
 
-    NOTE ON `suppress_errors`: this deliberately does NOT set it. It used to, because
-    `--threat-unrevealed-outgoing` crashed Inductor codegen — that was a real bug in ONE op
-    (`BeliefHead.species_posterior`, now fixed), and globally suppressing backend errors to work
+    NOTE ON `suppress_errors`: this deliberately does NOT set it. It used to, because ONE op
+    crashed Inductor codegen (`BeliefHead.species_posterior`, now fixed) — and globally
+    suppressing backend errors to work
     around it meant every OTHER compile failure also became a silent per-frame eager fallback. A
     failure here should be loud, caught, and reported. Late failures are handled by
     `_eager_fallback_on_error`, which degrades that one model instead of the whole process.
@@ -816,8 +816,65 @@ def _compile_warmup_obs(fe) -> dict:
     return {"observation": torch.zeros(1, dim)}
 
 
+# Extractor kwargs that `_migrate_config` strips from `model_config.json` but which are ALSO
+# pickled into every checkpoint zip's `policy_kwargs["features_extractor_kwargs"]`. SB3 rebuilds the
+# extractor from the ZIP, not from the config, so migrating only the config leaves the zip carrying
+# arguments `Gen3FeaturesExtractor.__init__` no longer accepts -> `TypeError: got an unexpected
+# keyword argument`. That breaks every READ path (prober, ELO, offline probes, frozen pool
+# opponents, eval workers) and the training-RESUME path alike.
+#
+# Split in two because the two migrations have different SAFETY properties, and collapsing them
+# would silently undo the v71 refusal:
+#   * INERT (v70) — the refine loop was unreachable in production (0 rounds, and mutually exclusive
+#     with the shipped prefuse placement), so these selected nothing. Pop unconditionally.
+#   * JUDGED (v71) — `move_belief_prefuse` was a pure FORWARD-BEHAVIOR toggle with a byte-identical
+#     state_dict, so popping a non-supported value would let a post-ordering checkpoint load into
+#     the pre-ordering forward and be quietly wrong forever, with no shape check anywhere to catch
+#     it. Mirror `_migrate_config`'s v71 rule exactly: refuse loudly, never default.
+# Agreement with `_migrate_config` is pinned by `dead_kwargs_sanitize_test.py` rather than by
+# sharing a constant, so the two cannot drift apart unnoticed.
+_DEAD_FEK_INERT = (
+    "damage_refine_rounds", "threat_refine_outgoing", "threat_unrevealed_outgoing",
+    "threat_status_refine", "move_belief_single_compute",
+)
+_DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
+                    ("damage_reattend", False))
+
+
+def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
+    """Drop v70/v71-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
+
+    Raises `ModelVersionError` — exactly as `_migrate_config` does — when a JUDGED field records a
+    value the surviving forward pass cannot reproduce.
+    """
+    changed = False
+    for dead, supported in _DEAD_FEK_JUDGED:
+        if dead in fek:
+            if bool(fek[dead]) is not supported:
+                raise ModelVersionError(
+                    f"{dead}={fek[dead]!r} is no longer supported (gen3_tiered_pipeline_v1): the "
+                    f"only supported value is {supported}.\nThis checkpoint trained under a forward "
+                    "pass that no longer exists in the codebase and cannot be reproduced from HEAD."
+                )
+            fek.pop(dead)
+            changed = True
+    for dead in _DEAD_FEK_INERT:
+        if dead in fek:
+            fek.pop(dead)
+            changed = True
+    return changed
+
+
 def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
-    """Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
+    """Sanitize a saved `policy_kwargs` so an older checkpoint can be RECONSTRUCTED.
+
+    Two independent fixes share this hook because both are "the zip records something the live
+    constructor no longer accepts", and both are read from the same one zip read:
+
+    1. `move_candidate_floor` (below).
+    2. Extractor kwargs deleted at config v70/v71 (`sanitize_dead_extractor_kwargs`).
+
+    --- 1. Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
 
     Before `gen3_unconditional_move_legality_v1`, `move_candidate_floor: 0.0` was how a config said
     "legality gate OFF" — the value was a SWITCH, not a probability. v65 gave it a validated range,
@@ -839,11 +896,17 @@ def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
         return                                  # unreadable here → let SB3's own load report it
     pk = (data or {}).get("policy_kwargs") or {}
     fek = pk.get("features_extractor_kwargs")
-    if not isinstance(fek, dict) or "move_candidate_floor" not in fek:
+    if not isinstance(fek, dict):
         return
-    before = fek["move_candidate_floor"]
-    sanitize_historical_move_floor(fek)
-    if fek["move_candidate_floor"] != before:
+    changed = False
+    if "move_candidate_floor" in fek:
+        before = fek["move_candidate_floor"]
+        sanitize_historical_move_floor(fek)
+        changed = fek["move_candidate_floor"] != before
+    # `|=` not `or`: short-circuiting would skip the dead-kwarg strip whenever the floor already
+    # needed patching, which is precisely the pre-v65 checkpoints that ALSO carry the dead keys.
+    changed |= sanitize_dead_extractor_kwargs(fek)
+    if changed:
         kwargs.setdefault("custom_objects", {})["policy_kwargs"] = pk
 
 
@@ -922,7 +985,6 @@ def current_model_version(
     opp_belief_latent: bool = False,
     opp_belief_latent_coef: float = 0.0,
     damage_op: bool = False,
-    damage_reattend: bool = False,
     damage_outgoing: bool = False,
     move_candidate_floor: float = _PRIOR_FLOOR,
     move_latent: bool = False,
@@ -931,10 +993,7 @@ def current_model_version(
     spread_belief_nature: bool = False,
     spread_belief_coef: float = 0.0,
     move_prior_fusion: bool = False,
-    move_belief_prefuse: bool = False,
-    move_belief_single_compute: bool = False,
     damage_candidate_k: int = 0,
-    damage_op_prefuse: bool = False,
     entity_topk_seats: int = 0,
     consequence_topk: int = 6,
     edge_bias_families: str = "off",
@@ -950,15 +1009,12 @@ def current_model_version(
     value_threat_inject: bool = False,
     opp_intent: bool = False,
     species_prior_fusion: bool = False,
+    t0_species_prior: bool = False,
     damage_topk_k: int = 0,
-    damage_refine_rounds: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
     damage_matrices_outgoing_all: bool = False,
-    threat_refine_outgoing: bool = False,
-    threat_unrevealed_outgoing: bool = False,
     threat_prob_outspeed: bool = False,
-    threat_status_refine: bool = False,
     hp_type_belief_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
@@ -1005,17 +1061,13 @@ def current_model_version(
     ext_kwargs["move_belief_mode"] = move_belief_mode
     ext_kwargs["opp_belief_latent"] = opp_belief_latent
     ext_kwargs["damage_op"] = damage_op
-    ext_kwargs["damage_reattend"] = damage_reattend
     ext_kwargs["damage_outgoing"] = damage_outgoing
     ext_kwargs["move_candidate_floor"] = move_candidate_floor
     ext_kwargs["move_latent"] = move_latent
     ext_kwargs["spread_belief"] = spread_belief
     ext_kwargs["spread_belief_nature"] = spread_belief_nature
     ext_kwargs["move_prior_fusion"] = move_prior_fusion
-    ext_kwargs["move_belief_prefuse"] = move_belief_prefuse
-    ext_kwargs["move_belief_single_compute"] = move_belief_single_compute
     ext_kwargs["damage_candidate_k"] = damage_candidate_k
-    ext_kwargs["damage_op_prefuse"] = damage_op_prefuse
     ext_kwargs["entity_topk_seats"] = entity_topk_seats
     ext_kwargs["consequence_topk"] = consequence_topk
     ext_kwargs["zarch_lut_init_std"] = zarch_lut_init_std
@@ -1030,15 +1082,12 @@ def current_model_version(
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
+    ext_kwargs["t0_species_prior"] = t0_species_prior
     ext_kwargs["damage_topk_k"] = damage_topk_k
-    ext_kwargs["damage_refine_rounds"] = damage_refine_rounds
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
     ext_kwargs["damage_matrices_outgoing_all"] = damage_matrices_outgoing_all
-    ext_kwargs["threat_refine_outgoing"] = threat_refine_outgoing
-    ext_kwargs["threat_unrevealed_outgoing"] = threat_unrevealed_outgoing
     ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
-    ext_kwargs["threat_status_refine"] = threat_status_refine
     ext_kwargs["hp_belief_mode"] = hp_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
     ext_kwargs["pubval_mode"] = pubval_mode
@@ -1078,23 +1127,19 @@ def arch_toggles_from_model(model) -> dict:
         "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
         "opp_belief_latent": bool(getattr(fe, "opp_belief_latent", False)),
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
-        "damage_reattend": bool(getattr(fe, "damage_reattend_enabled", False)),
         "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
         "move_candidate_floor": float(getattr(fe, "move_candidate_floor", _PRIOR_FLOOR)),
         "move_latent": bool(getattr(fe, "move_latent", False)),
         "spread_belief": bool(getattr(fe, "spread_belief_enabled", False)),
         "spread_belief_nature": bool(getattr(fe, "spread_belief_nature", False)),
         "move_prior_fusion": bool(getattr(fe, "move_prior_fusion", False)),
-        "move_belief_prefuse": bool(getattr(fe, "move_belief_prefuse", False)),
-        "move_belief_single_compute": bool(getattr(fe, "move_belief_single_compute", False)),
         "damage_candidate_k": int(getattr(fe, "damage_candidate_k", 0)),
         # v51 gen3_pointer_native_v1: no pointer toggle — the pointer head is unconditional (the
         # cross-era break rides ARCH_SIGNATURE, not a kwarg).
-        # v50 gen3_damage_op_prefuse_v1: STRUCTURAL bool gated in check_compatible (prefuse_proj is
-        # a saved param), so it must reach the worker's gate.
-        "damage_op_prefuse": bool(getattr(fe, "damage_op_prefuse", False)),
+        # v71 gen3_tiered_pipeline_v1: no prefuse/reattend toggles either — the PRE-transformer
+        # placement is unconditional, so there is nothing for a worker to gate on.
         # v54 gen3_entity_move_seats_v1: STRUCTURAL int (threat_seat_proj + seat count), gated in
-        # check_compatible — must reach the worker's gate like damage_op_prefuse.
+        # check_compatible — must reach the worker's gate.
         "entity_topk_seats": int(getattr(fe, "entity_topk_seats", 0)),
         "consequence_topk": int(getattr(fe, "consequence_topk", 6)),
         # v56 gen3_edge_bias_trunk_v1: STRUCTURAL str (per-family bias maps + attention biases),
@@ -1133,12 +1178,12 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_species_prior_fusion_v1 (v68): the state_dict is identical either way, so this toggle is
         # the ONLY carrier of what the species head's output MEANS — a frozen opponent's gate must see it.
         "species_prior_fusion": bool(getattr(fe, "species_prior_fusion", False)),
+        # gen3_t0_species_prior_v1 (v72): same shape of toggle — no state_dict delta, so the
+        # recorded value is the only thing a resume can compare.
+        "t0_species_prior": bool(getattr(fe, "t0_species_prior", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
-        # gen3_iterative_damage_v1 (v31): the iterative-refinement round count (0 = off) — STRUCTURAL int,
-        # gated in check_compatible (0↔N a state_dict change, N↔M a forward change), so it must reach the gate.
-        "damage_refine_rounds": int(getattr(fe, "damage_refine_rounds", 0)),
         # gen3_per_move_matrices_v1 (v32): the outgoing per-move damage matrix — STRUCTURAL bool (widens the
         # op out_dim), gated in check_compatible, so it must reach the worker's gate.
         "damage_matrices_outgoing": bool(getattr(fe, "damage_matrices_outgoing", False)),
@@ -1147,14 +1192,9 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons → opp active) —
         # STRUCTURAL bool (widens the op out_dim), gated in check_compatible, so it must reach the worker's gate.
         "damage_matrices_outgoing_all": bool(getattr(fe, "damage_matrices_outgoing_all", False)),
-        # gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field — threat_refine_outgoing
-        # is STRUCTURAL (adds outgoing_proj), the other two forward-behavior; all version-gated, so all must
-        # reach the worker's gate (else a threat-ON self-play snapshot FATALs the toggle-OFF "current").
-        "threat_refine_outgoing": bool(getattr(fe, "threat_refine_outgoing", False)),
-        "threat_unrevealed_outgoing": bool(getattr(fe, "threat_unrevealed_outgoing", False)),
+        # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) — a version-gated
+        # forward-behavior bool, so it must reach the worker's check_compatible gate.
         "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
-        # gen3_status_trunk_v1 (v37): STRUCTURAL bool (adds status projections), gated → must reach the gate.
-        "threat_status_refine": bool(getattr(fe, "threat_status_refine", False)),
         # gen3_hp_belief_ablation_v1 (v53): 'composed' vs 'flat' changes both the state_dict (the
         # HPTypeBelief head) and the forward, so it must reach the worker's check_compatible gate.
         "hp_belief_mode": str(getattr(fe, "hp_belief_mode", "composed")),

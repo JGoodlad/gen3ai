@@ -25,14 +25,48 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 ## Phase module structure
 
-`forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator:
+`forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator, in ONE
+order — the TIER ORDER (`gen3_tiered_pipeline_v1`). There is no placement flag and no second chain:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief? (prefuse)]` →
-`[SpreadBelief+HPTypeBelief+DamageOperator? (damage_op_prefuse)]` → `TeamTransformer` →
-`[BeliefHead?]` → `[MoveBelief? (default, post)]` → `[SpreadBelief+HPTypeBelief+DamageOperator?
-(default, post)]` → `CLSPool` → `[damage_reattend? → re-attend + RE-POOL]` → `ProjectionAssembler`,
-then **two** root heads
+`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief?]` → `[SpreadBelief?]` →
+`[HPTypeBelief?]` → `[DamageOperator?]` → `prefuse_proj` residual → `EntityMoveSeats` → edge cells →
+`TeamTransformer` → `[BeliefHead?]` → `CLSPool` → `[α/β?]` → `[side readouts?]` →
+`ProjectionAssembler`, then **two** root heads
 (`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
+
+Grouped into the four tiers the contract asserts:
+
+| tier | question | modules |
+|---|---|---|
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief` |
+| **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head`, `seed_quantile_head` |
+
+**The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
+module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
+entries are non-decreasing within a forward and (b) no entry point receives a tensor whose STORAGE
+was produced by a strictly later tier (checked over two forwards, so a stale stash counts; keyed on
+storage so `.detach()` and views do not hide it). Every `nn.Module` child must declare a tier or be
+listed in `UNTIERED_CHILDREN`, so a new phase cannot escape the contract by omission. Both checks
+are proved falsifiable by planted-violation tests. **What it cannot catch:** a T0 leg *recomputing*
+something intent-like from raw tokens — that is a semantic judgement, and the contract is a
+data-flow check. It buys that such a head could not then be FED the real α, and could not run out
+of order.
+
+**`t0_species_prior` (v72) is the case that shows why the tier map earns its keep.** The SAME
+team-composition species belief exists in two places, and the tier is the entire difference between
+useful and unreachable. At T2, inside `BeliefHead`, it is a training-only readout the physics cannot
+see — which is why the `DamageOperator` priced every unrevealed opponent from the static
+`SPECIES_USAGE_PRIOR` frequency table for as long as it did, with the op's own `species_probs`
+override sitting unused since the day it was added. Declared T0, the same computation is a resolve
+step the op consumes directly. The math lives once, in `t0_species.species_team_prior_logits`, which
+`BeliefHead.species_prior_logits` also calls. When the flag is on, the belief is resolved ONCE in
+`forward_internal` and the same tensor goes to all three unrevealed-defender sites (the op block,
+the `d1` cells, `pairwise_boost`) — the gate asserts tensor identity, because two
+equal-but-separately-computed tensors is exactly how the "bias and concat can never disagree"
+invariant stops holding without anything failing. Parameter-free, so OFF is byte-identical and the
+version check is the only thing that can reject a mid-run flip.
 
 `BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
 `MoveBelief` only when `move_belief_mode != off`, `DamageOperator` only when `damage_op` (which requires
@@ -40,10 +74,15 @@ then **two** root heads
 PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. `BeliefSlots` swaps the
 un-revealed opp role-tokens for learned unknown-mon tokens *before* the transformer (so the belief is
 refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
-species/moves aux logits (a side readout — does NOT feed forward); `MoveBelief` predicts + **reinjects**
-the moveset into `their_team_out` *before* the CLS pools (so it DOES flow to the heads); `DamageOperator`
+species/moves aux logits (a side readout — does NOT feed forward). **That T0/T2 split of the species
+belief is deliberate and stays**: `BeliefHead` is a training-only side readout, not a second resolve
+path, and its T2 declaration is what records the fact — if it ever started feeding a T0/T1 consumer
+the provenance check would fail. `MoveBelief` predicts + **reinjects** the moveset into the opp
+**role** tokens *before* the transformer (so the believed moves co-refine through attention, and every
+T1 consumer reads one posterior computed once); `DamageOperator`
 runs *after* `MoveBelief` and consumes its predicted-move logits to compute the believed-move incoming
-damage to each of our mons. **`MoveBelief`'s Smogon prior is LEGALITY-GATED unconditionally**
+damage to each of our mons. Its per-our-mon incoming rows are added to our role tokens through the
+zero-init `prefuse_proj` (built whenever `damage_op` is), so attention reasons over the physics. **`MoveBelief`'s Smogon prior is LEGALITY-GATED unconditionally**
 (`gen3_unconditional_move_legality_v1`, v65): `build_move_prior_logits` drives every
 `(species, move)` the species cannot learn to `_ILLEGAL_PROB` 1e-6, so the belief can no longer
 invent "this special attacker might be holding Explosion". Three cases, and keeping them apart is
@@ -147,12 +186,7 @@ so they stay correct when the architecture changes with no manual update.
    use_reentrant=False)` during the backward-needing pass — **bit-exact** (dropout=0.0), trading
    one extra forward on the otherwise-idle GPU for the layers' ~5 GB of activation VRAM at
    batch 16384. A no-op under inference (gated on `torch.is_grad_enabled()`), so eval / the
-   self-play opponent forward pay nothing. **Optional iterative damage refinement**
-   (`--damage-refine-rounds N`): a `between_layers(tokens, i)` callback runs BEFORE each of the first N
-   encoder layers to recompute the DamageOperator's lean discrete incoming damage from the being-enriched
-   opp tokens and inject it (via the extractor's zero-init `refine_proj`) onto our-mon token positions — so
-   each layer attends over physics from the freshest belief. `None` (off) ⇒ the loop is byte-identical.
-   (Built by the extractor; mutually exclusive with the pre-attention op — the production config runs the latter, so this loop does not exist there.)
+   self-play opponent forward pay nothing.
 5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team
    tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also
    extracts `our_active_refined` = the transformer output of our active slot. A **third learned
@@ -209,9 +243,9 @@ physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All 
 
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
-`BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender
-(`--threat-unrevealed-outgoing`). It is written as **`log_softmax(...).exp()`, not
-`torch.softmax(...)`, and that is deliberate** — do not "simplify" it.
+`BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written
+as **`log_softmax(...).exp()`, not `torch.softmax(...)`, and that is deliberate** — do not
+"simplify" it.
 
 `torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a
 `[B,6,1]` denominator, and the Inductor **CPU** scheduler then trips `AssertionError: buf<N>` trying to
@@ -239,10 +273,10 @@ re-initialised by SB3 when the policy is built.** `ActorCriticPolicy._build()` r
 finds, and `ortho_init` defaults **True**.
 
 Until 2026-08-01 this silently falsified the identity-at-init contract for **13** Linears in every
-real training run — `refine_proj`, `outgoing_proj`, `status_in_proj`/`status_out_proj`,
-`film_pi`/`film_vf`, plus the belief heads (`MoveBelief.move_head`, `SpreadBelief.*`,
-`HPTypeBelief.type_head`) whose zero-init is what makes the **cold-start posterior equal the Smogon
-prior**. Measured max|W| before the fix: 0.19–0.47. See `designs/research_state/ledger.md` → **M1**
+real training run — the zero-init physics projections (`prefuse_proj` and, in the configs of the
+day, the between-layers refine loop's), `film_pi`/`film_vf`, plus the belief heads
+(`MoveBelief.move_head`, `SpreadBelief.*`, `HPTypeBelief.type_head`) whose zero-init is what makes
+the **cold-start posterior equal the Smogon prior**. Measured max|W| before the fix: 0.19–0.47. See `designs/research_state/ledger.md` → **M1**
 for the standing caveat this puts on the K10 and D4 result families.
 
 **The guard.** `Gen3FeaturesExtractor.restore_identity_init()` re-zeros them, and

@@ -452,28 +452,6 @@ class SpreadBeliefView:
 
 
 @dataclass(frozen=True)
-class RefineRoundView:
-    """One WITHIN-FORWARD iterative-refinement round (axis A): the opp-active move-belief entropy + the lean
-    per-OUR-mon incoming-damage `[phys_high, spec_high, phys_pko, spec_pko]` the round computed and injected.
-    `entropy` (nats over the believed move posterior) should DECAY round→round as attention sharpens the
-    belief; `max_pko` is the worst P(KO) across our mons that round (should track the physics tightening)."""
-    round: int
-    entropy: float
-    max_phys_high: float
-    max_spec_high: float
-    max_pko: float
-
-
-@dataclass(frozen=True)
-class RefineTrajectoryView:
-    """The `--damage-refine-rounds N` per-round sharpening for the selected decision (axis A). `rounds` is
-    ordered round 0..N−1; `entropy_monotone` is True iff the move-belief entropy is non-increasing across
-    rounds (the expected physics-in-the-loop signature). `None` unless the run trained refine rounds on."""
-    rounds: "tuple[RefineRoundView, ...]"
-    entropy_monotone: bool = False
-
-
-@dataclass(frozen=True)
 class BeliefTrajectoryPoint:
     """One decision in a battle's belief REFINEMENT TRAJECTORY (axis B, across-battle turns): the per-hidden-
     slot top-1 species confidence + whether the model's top-1 was the true species, at turn `turn`. Built
@@ -538,7 +516,6 @@ class InvocationAnalysis:
     damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
     move_belief: "MoveBeliefView | None" = None     # what the model thinks the revealed opp's UNSEEN moves are; None unless --move-belief-mode
     spread_belief: "SpreadBeliefView | None" = None  # believed vs true opp DERIVED stats; None unless --spread-belief
-    refine_trajectory: "RefineTrajectoryView | None" = None  # within-forward refine rounds (axis A); None unless --damage-refine-rounds
     switch_in_outgoing: "SwitchInOutgoingView | None" = None  # forced-switch: each alive candidate's best move vs the opp active (📋); None off a forced switch / w/o recon
     opp_switched_to: "str | None" = None             # species the opp VOLUNTARILY pivoted in this turn (our move resolved vs it, not the active)
 
@@ -1680,39 +1657,15 @@ def build_switch_in_outgoing(board, our_team_details, opp_team_details) -> "Swit
 
 
 # ---------------------------------------------------------------------------
-# Within-forward refine rounds (axis A — gen3_iterative_damage_v1)
+# Move-belief entropy helper
 # ---------------------------------------------------------------------------
 
 def _entropy_bits(logits: np.ndarray) -> float:
-    """Bernoulli entropy (nats) summed over a multi-label move-belief logit row — the per-round uncertainty
-    of the believed moveset. Decays as attention sharpens the belief (the physics-in-the-loop signature)."""
+    """Bernoulli entropy (nats) summed over a multi-label move-belief logit row — the uncertainty
+    of the believed moveset. Should DECAY across a battle as reveals accumulate."""
     p = 1.0 / (1.0 + np.exp(-np.asarray(logits, dtype=np.float64)))
     p = np.clip(p, 1e-9, 1.0 - 1e-9)
     return float(-(p * np.log(p) + (1.0 - p) * np.log(1.0 - p)).sum())
-
-
-def build_refine_trajectory(rounds) -> "RefineTrajectoryView | None":
-    """Decode `ProbeModel.refine_rounds_view`'s raw per-round list → a `RefineTrajectoryView`: per round the
-    opp-active move-belief entropy + the lean per-our-mon incoming-damage maxima. `None` when the run trained
-    `--damage-refine-rounds 0` (raw is `None`/empty). The per-round `damage` is `[6, 4]` =
-    `[phys_high, spec_high, phys_pko, spec_pko]` (the lean refine kernel's output)."""
-    if not rounds:
-        return None
-    out, prev_ent = [], None
-    monotone = True
-    for r in rounds:
-        ml = np.asarray(r.get("move_logits"), dtype=np.float64)
-        dmg = np.asarray(r.get("damage"), dtype=np.float64)          # [6, 4]
-        ent = _entropy_bits(ml)
-        ph = float(dmg[:, 0].max()) if dmg.size else 0.0
-        sh = float(dmg[:, 1].max()) if dmg.size else 0.0
-        pko = float(dmg[:, 2:4].max()) if dmg.size else 0.0
-        out.append(RefineRoundView(round=int(r.get("round", len(out))), entropy=ent,
-                                   max_phys_high=ph, max_spec_high=sh, max_pko=pko))
-        if prev_ent is not None and ent > prev_ent + 1e-6:
-            monotone = False
-        prev_ent = ent
-    return RefineTrajectoryView(rounds=tuple(out), entropy_monotone=monotone)
 
 
 # ---------------------------------------------------------------------------
@@ -2255,16 +2208,6 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         except Exception:  # noqa: BLE001 — never break the analysis
             spread_belief = None
 
-    # Within-forward refine rounds (axis A): the per-round belief/physics sharpening. Best-effort; None on a
-    # --damage-refine-rounds 0 checkpoint.
-    refine_trajectory = None
-    rrfn = getattr(model, "refine_rounds_view", None)
-    if rrfn is not None:
-        try:
-            refine_trajectory = build_refine_trajectory(rrfn(obs, mask))
-        except Exception:  # noqa: BLE001 — never break the analysis
-            refine_trajectory = None
-
     # Rebuilt from the FINAL board (with the obs-decoded revealed moves), so a move shows revealed the
     # moment it fires.
     opp_full_team = build_opp_full_team(opp_team_details, board)
@@ -2277,7 +2220,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
         opp_intent=opp_intent,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
-        refine_trajectory=refine_trajectory, opp_full_team=opp_full_team,
+        opp_full_team=opp_full_team,
         switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
     )
 

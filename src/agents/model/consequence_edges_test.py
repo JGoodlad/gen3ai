@@ -25,9 +25,8 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _SIG = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
 
 _C1_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="both",
-                   move_belief_prefuse=True, move_belief_single_compute=True,
                    damage_op=True, damage_outgoing=True, move_latent=True,
-                   damage_op_prefuse=True, move_prior_fusion=True,
+                   move_prior_fusion=True,
                    entity_topk_seats=5, edge_bias_families="c1")
 
 _SD = gen3_data.moves.get("swordsdance").num

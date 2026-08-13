@@ -473,7 +473,33 @@ from typing import Any, Dict, List
 #   log-ELAPSED scalar gave the last 20 turns 1.5% of its range; log-REMAINING gives them 55.1%
 #   (37×), which is the link TD must fit FIRST before it can bootstrap value back down a
 #   200-turn episode.
-MODEL_CONFIG_VERSION = 69
+# v70: gen3_refine_loop_removed_v1 — the between-layers refine loop is DELETED, and with it FIVE
+#   fields: `damage_refine_rounds`, `threat_refine_outgoing`, `threat_unrevealed_outgoing`,
+#   `threat_status_refine`, `move_belief_single_compute`. The loop was 0 rounds in production, and
+#   0 rounds is exactly what made the three `threat_*` flags UNREACHABLE — each hard-requires
+#   damage_refine_rounds>0, which is itself mutually exclusive with `damage_op_prefuse` (the
+#   production placement), so setting any of them RAISED at extractor build.
+#   `move_belief_single_compute` only chose which posterior the refine callback re-read; with no
+#   callback it was INERT (production recorded it True and it did nothing).
+#   The expected-latent OUTGOING math is NOT deleted — it was re-homed onto the live outgoing kernel
+#   at a usage prior (gen3_unrevealed_outgoing_prior_v1) and runs unconditionally there.
+#   Forward BIT-IDENTICAL on the production config; NO ARCH_SIGNATURE bump (no module built, no
+#   weight shape moved, no forward value changed). Stale keys are POPped by the v70 migration.
+# v71: gen3_tiered_pipeline_v1 — the TIER ORDER becomes the ONLY order. `move_belief_prefuse` and
+#   `damage_op_prefuse` selected between a PRE- and a POST-transformer placement for the move belief
+#   and for the spread/HP-type + DamageOperator group; production ran PRE for both. The POST call
+#   sites are DELETED and the PRE placement is unconditional, so the two flags no longer select
+#   anything and are removed. `damage_reattend` (v31) goes with them: it re-attended the physics onto
+#   the team tokens AFTER the pools, which is a compensation for computing the physics post-attention
+#   — the thing this step removes — and it was off in production.
+#   `prefuse_proj` is now built whenever `damage_op` is on (it was gated on `damage_op_prefuse`,
+#   which required `damage_op`), so the production state_dict is UNCHANGED.
+#   Forward BIT-IDENTICAL on the production config; NO ARCH_SIGNATURE bump.
+#   ⚠️ This BREAKS every non-prefuse config BY DESIGN, and the v71 migration REFUSES them with a
+#   clear error rather than popping the key — `move_belief_prefuse` changed no weight shape, so a
+#   silent pop would load a post-ordering checkpoint into a pre-ordering forward with nothing
+#   downstream able to notice.
+MODEL_CONFIG_VERSION = 72
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1019,12 +1045,7 @@ class ModelVersion:
     # baseline byte-for-byte (NO ARCH_SIGNATURE bump). Forward-only → no training-only coefficient.
     # Requires move_belief_mode in {revealed, both} (enforced at extractor build + CLI).
     damage_op: bool = False
-    # v31 STRUCTURAL toggle (like opp_belief_slots — adds modules, NOT weight-shape): re-attend the team
-    # tokens to the computed damage. ON adds a damage→token projection + LayerNorm + one TransformerEncoder
-    # layer; the CLS pools are re-derived from the re-attended tokens (same pooled shapes ⇒ projection widths
-    # UNCHANGED). State_dict change only via the 3 modules → gated in check_compatible (bool); OFF =
-    # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op (the incoming block is the source signal).
-    damage_reattend: bool = False
+    # (v31 `damage_reattend` is DELETED at v71 — see the v71 note above `MODEL_CONFIG_VERSION`.)
     # v20 FORWARD-BEHAVIOR toggle (NOT weight-shape, like attend_unrevealed_opponents): the unified
     # two-part move belief. ON fuses the Smogon move-frequency prior into the MoveBelief head as a
     # log-odds residual (+ pins revealed moves certain), so the stashed move-belief logits carry a
@@ -1032,19 +1053,7 @@ class ModelVersion:
     # identical), but the forward differs, so it is gated in check_compatible. Requires move_belief_mode
     # != off. OFF = the from-scratch head byte-for-byte (NO ARCH_SIGNATURE bump).
     move_prior_fusion: bool = False
-    # v32 FORWARD-BEHAVIOR toggle (NOT weight-shape, like move_prior_fusion): move the MoveBelief
-    # reinjection from POST-transformer to PRE-transformer. ON predicts + reinjects the opp moveset into
-    # the opp ROLE tokens BEFORE the team transformer, so the believed moves co-refine with the
-    # species/team belief through the 2 attention layers (instead of being grafted on afterwards). Same
-    # MoveBelief module, same params → state_dict identical; only the call timing differs, so it is gated
-    # in check_compatible. Requires move_belief_mode != off. OFF = byte-for-byte (NO ARCH_SIGNATURE bump).
-    move_belief_prefuse: bool = False
-    # v47 FORWARD-BEHAVIOR toggle (gen3_belief_single_compute_v1): the refine callback reuses the
-    # PRE-transformer move-belief posterior instead of re-reading the head between layers, so the
-    # belief is computed once per forward and attention cannot revise it. Same MoveBelief params →
-    # state_dict identical; only which posterior the refine kernels consume differs, so it is gated in
-    # check_compatible. Requires move_belief_prefuse. OFF = byte-for-byte (NO ARCH_SIGNATURE bump).
-    move_belief_single_compute: bool = False
+    # (v32 `move_belief_prefuse` is DELETED at v71 — the PRE-transformer placement is unconditional.)
     # v49 FORWARD-BEHAVIOR (gen3_topk_candidates_v1): cap the op's incoming candidate sweep at the K
     # most-believed opponent moves (0 = full sweep, byte-identical). No tail bound — dropped mass is
     # dropped. No new params, so the state_dict is identical; only the forward's VALUES differ.
@@ -1052,16 +1061,13 @@ class ModelVersion:
     # v51 (gen3_pointer_native_v1): the v49 `pointer_head` bool is GONE — the pointer head is THE
     # action head, unconditionally (no flat action_net exists), so there is nothing to gate. The
     # ARCH_SIGNATURE bump carries the cross-era break; _migrate_config POPs the dead key.
-    # v50 STRUCTURAL (gen3_damage_op_prefuse_v1): run the beliefs + the FULL DamageOperator ONCE,
-    # PRE-transformer, injecting the per-our-mon incoming rows onto our tokens via a zero-init
-    # `prefuse_proj` (a new param → state_dict change) instead of recomputing a lean op between layers.
-    # The head concat is unchanged in width; only the belief it is computed from is pre- vs post-attention.
-    damage_op_prefuse: bool = False
+    # (v50 `damage_op_prefuse` is DELETED at v71 — the PRE-transformer placement is unconditional, and
+    # `prefuse_proj` is built whenever `damage_op` is on.)
     # v54 STRUCTURAL int (gen3_entity_move_seats_v1, the damage_topk_k gating pattern): the E4
     # threat-move SEAT count — the opp active's top-K believed candidate moves entering the trunk as
     # attention seats. >0 adds `entity_seats.threat_seat_proj` (state_dict) and K seats to every
     # attention pass (forward); 0 = E3-only (our 4 move seats, which are UNCONDITIONAL — their break
-    # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op_prefuse + move_latent.
+    # rides the ARCH_SIGNATURE bump, not this field). Requires damage_op + move_latent.
     entity_topk_seats: int = 0
     # consequence_topk (v59): the CONSEQUENCE kernels' believed-candidate axis (C1b/C2/C3's
     # k_cand + D4's k_bench — one knob, the coverage of the belief-weighted worst-case max).
@@ -1172,6 +1178,15 @@ class ModelVersion:
     # compared with a bool like move_prior_fusion. OFF (default) reproduces the from-scratch head
     # byte-for-byte (NO ARCH_SIGNATURE bump).
     species_prior_fusion: bool = False
+
+    # v72 STRUCTURAL (gen3_t0_species_prior_v1): feed the T1 physics the model's OWN team-composition
+    # species belief instead of the static `SPECIES_USAGE_PRIOR` frequency table. The belief itself is
+    # v69's naive-Bayes read, re-homed to T0 so the DamageOperator (T1, pre-transformer) can consume
+    # it — `BeliefHead` computes the same thing at T2 and the op could never reach it. Parameter-free
+    # (two non-persistent buffers), so the state_dict is IDENTICAL either way; but every
+    # unrevealed-defender damage number changes, so a resume may not flip it — hence the dedicated
+    # check below rather than reliance on a shape mismatch that would never fire.
+    t0_species_prior: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1189,13 +1204,6 @@ class ModelVersion:
     # an unconditional int compare (like opp_belief_cls_k / value_dist_bins). OFF (0) reproduces baseline
     # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent (enforced at the extractor).
     damage_topk_k: int = 0
-    # v31 STRUCTURAL (gen3_iterative_damage_v1): the number of transformer layers before which the
-    # DamageOperator's LEAN discrete incoming damage is recomputed (from the being-enriched opp tokens) and
-    # injected back onto our-mon tokens. 0 = off (no refine_proj module — baseline forward byte-for-byte).
-    # The module's SHAPE is N-independent (refine_proj is weight-tied across rounds), but every distinct N is
-    # a state_dict (0↔N) or forward-behavior (N↔M) change → gated in check_compatible with an unconditional
-    # int compare (like opp_belief_cls_k). Requires damage_op (the op physics + a move_belief to re-read).
-    damage_refine_rounds: int = 0
     # v32 STRUCTURAL (gen3_per_move_matrices_v1): the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp
     # active + REVEALED bench). Widens both projections via the op out_dim. OFF byte-for-byte (no module
     # output). Gated in check_compatible (bool, like damage_op). Requires damage_op.
@@ -1211,25 +1219,9 @@ class ModelVersion:
     # projections via the op out_dim. OFF byte-for-byte (no module output). Gated in check_compatible (bool,
     # like damage_op). Requires damage_op.
     damage_matrices_outgoing_all: bool = False
-    # v36 STRUCTURAL (gen3_bidir_threat_trunk_v1): the OUTGOING half of the in-trunk threat field — a
-    # zero-init `outgoing_proj` injects a per-opp-mon outgoing-threat residual onto the OPP tokens via the
-    # SAME between-layers refine loop (so it adds a Linear; OFF byte-for-byte, gated bool like damage_op).
-    # Requires damage_op + damage_refine_rounds>0.
-    threat_refine_outgoing: bool = False
-    # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the EXPECTED-LATENT defender — price the outgoing
-    # residual's UNREVEALED columns by marginalizing P(species) through SPECIES_EXP_MULT / SPECIES_SPREAD_PRIOR
-    # (P(KO) nulled). No new params (reuses BeliefHead.species_logits + non-persistent buffers), so a forward
-    # toggle; gated bool. Requires threat_refine_outgoing.
-    threat_unrevealed_outgoing: bool = False
     # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the UNCERTAINTY-AWARE P(outspeed) — divide the speed
     # gap by the believed speed std instead of a fixed scale. No new params (values only), gated bool.
     threat_prob_outspeed: bool = False
-    # v37 STRUCTURAL (gen3_status_trunk_v1): STATUS-LANDING into the trunk (the last CPU-obs deprecation gap).
-    # Adds two zero-init Linears (status_in_proj onto OUR tokens = incoming "will I be statused"; status_out_proj
-    # onto OPP tokens = outgoing "can I status this opp mon", revealed-gated) riding the refine loop. Status
-    # immunity is a computed MECHANICS fact (like type effectiveness) — handed over, not learned. OFF
-    # byte-identical (gated bool like threat_refine_outgoing). Requires damage_op + damage_refine_rounds>0.
-    threat_status_refine: bool = False
     # v38 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_opp_hp_type_belief_v1, like win_prob_mode): the
     # opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate fix. 'off' = legacy (the bare typeless
     # HP num-237 candidate out-ranked the 16 typed rows → the opp's Hidden Power read 0-damage/"immune").
@@ -1389,9 +1381,6 @@ class ModelVersion:
             damage_op=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
             ),
-            damage_reattend=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_reattend", False)
-            ),
             damage_outgoing=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_outgoing", False)
             ),
@@ -1410,17 +1399,8 @@ class ModelVersion:
             move_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_prior_fusion", False)
             ),
-            move_belief_prefuse=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_prefuse", False)
-            ),
-            move_belief_single_compute=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_single_compute", False)
-            ),
             damage_candidate_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_candidate_k", 0)
-            ),
-            damage_op_prefuse=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op_prefuse", False)
             ),
             consequence_topk=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("consequence_topk", 6)
@@ -1452,6 +1432,9 @@ class ModelVersion:
             opp_intent=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_intent", False)
             ),
+            t0_species_prior=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("t0_species_prior", False)
+            ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
             ),
@@ -1464,9 +1447,6 @@ class ModelVersion:
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),
-            damage_refine_rounds=int(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_refine_rounds", 0)
-            ),
             damage_matrices_outgoing=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_outgoing", False)
             ),
@@ -1476,17 +1456,8 @@ class ModelVersion:
             damage_matrices_outgoing_all=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_outgoing_all", False)
             ),
-            threat_refine_outgoing=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_refine_outgoing", False)
-            ),
-            threat_unrevealed_outgoing=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_unrevealed_outgoing", False)
-            ),
             threat_prob_outspeed=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_prob_outspeed", False)
-            ),
-            threat_status_refine=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_status_refine", False)
             ),
             hp_belief_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("hp_belief_mode", "composed")
@@ -1668,17 +1639,6 @@ class ModelVersion:
                 "Resume with the matching --damage-op setting, or start a fresh training run."
             )
 
-        # v31 STRUCTURAL toggle (like opp_belief_slots): re-attending the team tokens to the damage adds a
-        # projection + LayerNorm + a TransformerEncoder layer, so toggling it changes the state_dict (even
-        # though the projection WIDTHS are unchanged — re-pooling preserves the pooled shapes).
-        if self.damage_reattend != saved.damage_reattend:
-            raise ModelVersionError(
-                f"damage_reattend mismatch: saved={saved.damage_reattend}, current={self.damage_reattend}.\n"
-                "The damage re-attend layer (damage→token projection + encoder layer) changes the state_dict "
-                "and cannot be toggled on an existing model.\n"
-                "Resume with the matching --damage-reattend setting, or start a fresh training run."
-            )
-
         # Structural toggle (weight-shape, like damage_op): the OUTGOING per-move block widens both
         # projection Linears, so toggling it changes the state_dict.
         if self.damage_outgoing != saved.damage_outgoing:
@@ -1760,31 +1720,10 @@ class ModelVersion:
                 "Resume with the matching --move-prior-fusion setting, or start a fresh training run."
             )
 
-        # Forward-behavior toggle (no weight-shape change, like move_prior_fusion): moving the MoveBelief
-        # reinjection before the transformer changes the forward the policy/value/op trained under (the
-        # believed moves now co-refine through attention), so a resume flip would feed a different forward.
-        # Same MoveBelief params → state_dict identical, so this is a train/eval-consistency gate.
-        if self.move_belief_prefuse != saved.move_belief_prefuse:
-            raise ModelVersionError(
-                f"move_belief_prefuse mismatch: saved={saved.move_belief_prefuse}, current={self.move_belief_prefuse}.\n"
-                "Reinjecting the move belief before vs after the transformer changes the forward the policy "
-                "trained under, so it cannot be toggled on a resumed model.\n"
-                "Resume with the matching --move-belief-prefuse setting, or start a fresh training run."
-            )
-
-        # Forward-behavior toggle (no weight-shape change, like move_belief_prefuse): freezing the
-        # belief means the refine kernels consume the PRE-attention posterior rather than a re-read of
-        # the being-enriched tokens, so the physics the policy/value/op trained under differs. Same
-        # MoveBelief params → state_dict identical, so this is a train/eval-consistency gate.
-        if self.move_belief_single_compute != saved.move_belief_single_compute:
-            raise ModelVersionError(
-                f"move_belief_single_compute mismatch: saved={saved.move_belief_single_compute}, "
-                f"current={self.move_belief_single_compute}.\n"
-                "Freezing the move belief (reusing the pre-transformer posterior in the refine loop) vs "
-                "re-reading it between layers changes the forward the policy trained under, so it cannot "
-                "be toggled on a resumed model.\n"
-                "Resume with the matching --move-belief-single-compute setting, or start a fresh run."
-            )
+        # (v32 `move_belief_prefuse` and v50 `damage_op_prefuse` had gates here. Both are DELETED at
+        # v71: the PRE-transformer placement is the only one, so there is no longer a second forward to
+        # be inconsistent with. A saved config that recorded either at a non-production value is
+        # REFUSED by the v71 migration, which is louder than this gate was.)
 
         # v49 gen3_topk_candidates_v1 — FORWARD-BEHAVIOR (no weight-shape change): truncating the
         # op's candidate axis changes the damage the policy/value trained under. Unconditional int
@@ -1800,19 +1739,6 @@ class ModelVersion:
 
         # v51 gen3_pointer_native_v1: the pointer head is unconditional (no gate) — a pre-generation
         # checkpoint fails the ARCH_SIGNATURE family check above, which is the intended loud break.
-
-        # v50 gen3_damage_op_prefuse_v1 — STRUCTURAL: `prefuse_proj` is a saved parameter, so a mismatch
-        # is a state_dict mismatch on EVERY load (eval / pool / distill included), not just a resume. It
-        # ALSO changes the forward: the beliefs + op read pre- rather than post-attention tokens.
-        if self.damage_op_prefuse != saved.damage_op_prefuse:
-            raise ModelVersionError(
-                f"damage_op_prefuse mismatch: saved={saved.damage_op_prefuse}, "
-                f"current={self.damage_op_prefuse}.\n"
-                "Running the DamageOperator once PRE-attention adds a projection (prefuse_proj) and feeds "
-                "both heads a block computed from an un-refined belief, so the weights are not "
-                "interchangeable.\n"
-                "Load with the matching --damage-op-prefuse, or start a fresh training run."
-            )
 
         # v54 gen3_entity_move_seats_v1 — STRUCTURAL int (the damage_topk_k pattern): >0 adds
         # `threat_seat_proj` (state_dict) and K threat seats to every attention pass (forward), so
@@ -1967,6 +1893,21 @@ class ModelVersion:
                 "changes the state_dict.\n"
                 "Resume with the matching --opp-intent-coef setting, or start a fresh training run."
             )
+        # gen3_t0_species_prior_v1 (v72): the state_dict is IDENTICAL either way (the co-occurrence
+        # tables are non-persistent buffers and the module has no parameters), so — exactly as with
+        # species_prior_fusion below — this compare is the ONLY thing that can reject a mid-run flip.
+        # Nothing about the shapes would ever complain, while every unrevealed-defender damage number
+        # the policy and critic were trained against would silently change under them.
+        if self.t0_species_prior != saved.t0_species_prior:
+            raise ModelVersionError(
+                f"t0_species_prior mismatch: saved={saved.t0_species_prior}, "
+                f"current={self.t0_species_prior}.\n"
+                "The T0 species belief is fixed for a run's lifetime: it decides whether the physics "
+                "prices an unrevealed opponent from the model's own team-composition belief or from "
+                "the static gen3ou usage prior. Flipping it re-means every damage number against a "
+                "hidden slot.\n"
+                "Resume with the matching --t0-species-prior setting, or start a fresh training run."
+            )
         # gen3_species_prior_fusion_v1 (v69): the state_dict is IDENTICAL either way (the co-occurrence
         # tables are non-persistent buffers), so this compare is the ONLY thing standing between a
         # resume and a silently re-meant species head — ON reads the head's output as a DELTA on the
@@ -2007,18 +1948,6 @@ class ModelVersion:
                 "mismatch.\n"
                 "Resume with the matching --damage-topk setting, or start a fresh training run."
             )
-        # gen3_iterative_damage_v1 (v31): the iterative refinement's round count. 0↔N adds/removes the
-        # refine_proj module (a state_dict change); N↔M keeps the same params but changes how many times the
-        # damage is recomputed between layers (a forward-behavior change). Either way a mid-run flip is
-        # unsafe → a single unconditional int compare gates it (like opp_belief_cls_k).
-        if self.damage_refine_rounds != saved.damage_refine_rounds:
-            raise ModelVersionError(
-                f"damage_refine_rounds mismatch: saved={saved.damage_refine_rounds}, "
-                f"current={self.damage_refine_rounds}.\n"
-                "The iterative-refinement round count adds/removes the refine_proj module (0↔N) or changes "
-                "the forward (N↔M), so any change is incompatible with a saved checkpoint.\n"
-                "Resume with the matching --damage-refine-rounds setting, or start a fresh training run."
-            )
         # gen3_per_move_matrices_v1 (v32): the outgoing per-move damage matrix widens the op out_dim → both
         # projection in_features. Toggling it is a weight-shape change (like damage_op).
         if self.damage_matrices_outgoing != saved.damage_matrices_outgoing:
@@ -2050,38 +1979,14 @@ class ModelVersion:
                 "a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices-outgoing-all setting, or start a fresh training run."
             )
-        # gen3_bidir_threat_trunk_v1 (v36): the outgoing in-trunk residual adds outgoing_proj (a weight) →
-        # state_dict change; the expected-latent + prob-outspeed are forward-behavior toggles. All three are
-        # version-gated (the first STRUCTURAL, the latter two value-changing) — fresh-only.
-        if self.threat_refine_outgoing != saved.threat_refine_outgoing:
-            raise ModelVersionError(
-                f"threat_refine_outgoing mismatch: saved={saved.threat_refine_outgoing}, "
-                f"current={self.threat_refine_outgoing}.\n"
-                "It adds a zero-init outgoing_proj (a saved weight), so toggling it is incompatible with a "
-                "saved checkpoint. Resume with the matching --threat-refine-outgoing, or start a fresh run."
-            )
-        if self.threat_unrevealed_outgoing != saved.threat_unrevealed_outgoing:
-            raise ModelVersionError(
-                f"threat_unrevealed_outgoing mismatch: saved={saved.threat_unrevealed_outgoing}, "
-                f"current={self.threat_unrevealed_outgoing}.\n"
-                "It changes the outgoing residual's forward (expected-latent unrevealed defenders), a "
-                "version-checked forward-behavior change. Resume with the matching flag, or start a fresh run."
-            )
+        # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) is a version-gated
+        # forward-behavior toggle — fresh-only.
         if self.threat_prob_outspeed != saved.threat_prob_outspeed:
             raise ModelVersionError(
                 f"threat_prob_outspeed mismatch: saved={saved.threat_prob_outspeed}, "
                 f"current={self.threat_prob_outspeed}.\n"
                 "It changes the P(outspeed) forward (uncertainty-aware scale), a version-checked "
                 "forward-behavior change. Resume with the matching flag, or start a fresh run."
-            )
-        # gen3_status_trunk_v1 (v37): adds status_in_proj + status_out_proj (saved weights) → state_dict change.
-        if self.threat_status_refine != saved.threat_status_refine:
-            raise ModelVersionError(
-                f"threat_status_refine mismatch: saved={saved.threat_status_refine}, "
-                f"current={self.threat_status_refine}.\n"
-                "It adds the two zero-init status-landing projections (saved weights), so toggling it is "
-                "incompatible with a saved checkpoint. Resume with the matching --threat-status-refine, or "
-                "start a fresh run."
             )
 
     def check_opponent_compatible(self, foreign: "ModelVersion") -> None:
@@ -2476,14 +2381,12 @@ def _migrate_config(data: dict) -> dict:
         data["config_version"] = 30
     if version < 31:
         # v31: added `damage_reattend` (off). Old models had no damage→token re-attend layer.
-        # STRUCTURAL toggle (adds modules; gated in check_compatible). OFF = baseline byte-for-byte.
-        data.setdefault("damage_reattend", False)
+        # (the field is DELETED at v71 — no setdefault, so an ABSENT key stays absent and the v71
+        # block below has nothing to validate. Only a config that RECORDED a value is judged.)
         data["config_version"] = 31
     if version < 32:
         # v32: added `move_belief_prefuse` (off). Old models reinjected the move belief AFTER the
-        # transformer. FORWARD-BEHAVIOR toggle (no weight-shape change; gated in check_compatible).
-        # OFF = baseline byte-for-byte.
-        data.setdefault("move_belief_prefuse", False)
+        # transformer. (the field is DELETED at v71 — no setdefault; see the v31 note above.)
         data["config_version"] = 32
     if version < 33:
         # v33: gen3_iterative_damage_v1 — ITERATIVE damage refinement. `damage_refine_rounds` (0 = off) is
@@ -2492,7 +2395,7 @@ def _migrate_config(data: dict) -> dict:
         # zero-init). 0 = no module → baseline forward byte-for-byte (NO ARCH_SIGNATURE bump). Requires
         # damage_op. Gated in check_compatible with an unconditional int compare (0↔N a state_dict change,
         # N↔M a forward change).
-        data.setdefault("damage_refine_rounds", 0)
+        # (the field is DELETED at v70 — the v70 pop below removes it again)
         data["config_version"] = 33
     if version < 34:
         # v34: gen3_per_move_matrices_v1 — the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active +
@@ -2510,14 +2413,13 @@ def _migrate_config(data: dict) -> dict:
     if version < 36:
         # v36: gen3_bidir_threat_trunk_v1 — the bidirectional in-trunk threat field. All three OFF
         # reproduce the v35 forward byte-for-byte (no outgoing_proj, legacy outgoing-gating + p_outspeed).
-        data.setdefault("threat_refine_outgoing", False)
-        data.setdefault("threat_unrevealed_outgoing", False)
+        # (threat_refine_outgoing / threat_unrevealed_outgoing are DELETED at v70)
         data.setdefault("threat_prob_outspeed", False)
         data["config_version"] = 36
     if version < 37:
         # v37: gen3_status_trunk_v1 — status-landing into the trunk. OFF reproduces the v36 forward
         # byte-for-byte (no status_in_proj/status_out_proj, refine loop unchanged).
-        data.setdefault("threat_status_refine", False)
+        # (the field is DELETED at v70 — the v70 pop below removes it again)
         data["config_version"] = 37
     if version < 38:
         # v38: gen3_opp_hp_type_belief_v1 — the opp HIDDEN-POWER-TYPE belief + the typed-HP candidate fix.
@@ -2583,7 +2485,7 @@ def _migrate_config(data: dict) -> dict:
         # re-read move_logits inside the between-layers refine callback, so the belief was recomputed
         # per round. FORWARD-BEHAVIOR toggle (no weight-shape change; gated in check_compatible).
         # OFF = baseline byte-for-byte.
-        data.setdefault("move_belief_single_compute", False)
+        # (the field is DELETED at v70 — the v70 pop below removes it again)
         data["config_version"] = 47
     if version < 48:
         # v48: gen3_cpu_damage_deleted_v1 — the three `--unified-obs` ablation FIELDS are removed
@@ -2603,7 +2505,7 @@ def _migrate_config(data: dict) -> dict:
     if version < 50:
         # v50: the pre-attention unified damage op — OFF on any older model (they ran the op twice:
         # the lean between-layers recompute + the full post-transformer block).
-        data.setdefault("damage_op_prefuse", False)
+        # (the field is DELETED at v71 — no setdefault; see the v31 note above.)
         data["config_version"] = 50
     if version < 51:
         # v51: gen3_pointer_native_v1 — the pointer head is THE action head, unconditionally, and the
@@ -2727,4 +2629,59 @@ def _migrate_config(data: dict) -> dict:
         # from scratch, so reading its output as a delta-on-prior would silently re-mean it.
         data.setdefault("species_prior_fusion", False)
         data["config_version"] = 69
+    if version < 70:
+        # v70: gen3_refine_loop_removed_v1 — the between-layers refine loop and its three dependent
+        # flags are DELETED, not defaulted off. `--damage-refine-rounds` was 0 in the production
+        # config, and 0 rounds is what made `--threat-refine-outgoing`,
+        # `--threat-unrevealed-outgoing` and `--threat-status-refine` UNREACHABLE: each hard-requires
+        # damage_refine_rounds>0, which is itself mutually exclusive with `--damage-op-prefuse` (the
+        # production placement), so any config that set one of them RAISED at extractor build.
+        # `--move-belief-single-compute` went with them: its only effect was making the refine
+        # callback reuse the frozen pre-attention posterior, and with no callback there was nothing
+        # to reuse — it was INERT even at True (which the production config recorded).
+        # NOT deleted: the expected-latent OUTGOING math those flags used to deliver. It was
+        # re-homed onto the live outgoing kernel at a usage prior (gen3_unrevealed_outgoing_prior_v1)
+        # and is unconditional there; only this loop's DELIVERY of it was unreachable.
+        # `from_json_file` does `cls(**data)`, so stale keys would raise TypeError — POP, not
+        # setdefault.
+        for _dead in ("damage_refine_rounds", "threat_refine_outgoing",
+                      "threat_unrevealed_outgoing", "threat_status_refine",
+                      "move_belief_single_compute"):
+            data.pop(_dead, None)
+        data["config_version"] = 70
+    if version < 71:
+        # v71: gen3_tiered_pipeline_v1 — the PRE-transformer placement is the ONLY placement, so
+        # `move_belief_prefuse` and `damage_op_prefuse` no longer select anything, and
+        # `damage_reattend` (a compensation for the POST ordering) is deleted with the branch it
+        # compensated for. All three fields go.
+        #
+        # ⚠️ This is the one migration that REFUSES instead of defaulting, and the reason is
+        # specific: `move_belief_prefuse=False` was a pure FORWARD-BEHAVIOR toggle — the state_dict
+        # is byte-identical either way — so silently popping it would let a post-ordering checkpoint
+        # load cleanly into a pre-ordering forward and produce quietly wrong numbers forever. There
+        # is no shape check anywhere that would catch it. So: a config that RECORDED a value judges
+        # itself against the one placement that survives, and a mismatch is a loud error.
+        # A config that never had the field (pre-v31/32/50) is NOT judged here — it predates the
+        # flag entirely and is rejected, if at all, by the ARCH_SIGNATURE family check, which gives
+        # the better message for a cross-era checkpoint.
+        for _dead, _supported in (("move_belief_prefuse", True),
+                                  ("damage_op_prefuse", True),
+                                  ("damage_reattend", False)):
+            if _dead in data and bool(data[_dead]) is not _supported:
+                raise ModelVersionError(
+                    f"{_dead}={data[_dead]!r} is no longer supported (gen3_tiered_pipeline_v1, "
+                    f"config v71): the only supported value is {_supported}.\n"
+                    "The belief + DamageOperator run PRE-transformer unconditionally (T0 RESOLVE → "
+                    "T1 REASON) and the POST-transformer call sites — and the `damage_reattend` "
+                    "layer that compensated for them — are DELETED.\n"
+                    "This checkpoint trained under a forward pass that no longer exists in the "
+                    "codebase and cannot be reproduced from HEAD. Start a fresh training run."
+                )
+            data.pop(_dead, None)
+        data["config_version"] = 71
+    if version < 72:
+        # v72: gen3_t0_species_prior_v1 — the T0 species belief feeding the T1 physics. Absent on
+        # every older config; OFF reproduces the static-usage-prior physics byte-for-byte.
+        data.setdefault("t0_species_prior", False)
+        data["config_version"] = 72
     return data

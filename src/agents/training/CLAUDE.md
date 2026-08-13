@@ -1273,11 +1273,12 @@ fused graph: `torch._dynamo.explain` reports **0 graph breaks / 1 graph**, and B
 with **0/16 argmax flips**.
 
 **`suppress_errors` is GONE — the crash it hid was ONE op (2026-08-03).** The helper used to set
-`torch._dynamo.config.suppress_errors = True` globally, because `--threat-unrevealed-outgoing` (v36 #2)
-crashed the Inductor CPU backend (`AssertionError: buf307`). That made the LITERAL production config
+`torch._dynamo.config.suppress_errors = True` globally, because the expected-latent-defender read
+(`BeliefHead.species_posterior`, then reached via `--threat-unrevealed-outgoing`) crashed the
+Inductor CPU backend (`AssertionError: buf307`). That made the LITERAL production config
 compile only PARTIALLY — dynamo falling back to eager per FRAME for the failing region, measured
 6.48 → 1.78 ms = 3.6× — and made every OTHER backend failure in the process silent too.
-`tmp/inductor_crash_repro.py` narrowed it to a single op: the softmax over species logits in the v36
+`tmp/inductor_crash_repro.py` narrowed it to a single op: the softmax over species logits in the
 expected-latent-defender read, which lowers to a `[B,6,n_species]` numerator + a `[B,6,1]` denominator
 that the CPU scheduler asserts on while fusing. `BeliefHead.species_posterior` now spells the identical
 math as `log_softmax(...).exp()`, which lowers cleanly. **The literal production arch now compiles
@@ -1290,8 +1291,8 @@ via `GEN3AI_COMPILE_TESTS=1`, a real ~20 s compile — verified to FAIL if the o
 **Measured end-to-end on the LITERAL production arch (`tmp/literal_arch_ab.sh`, 2026-08-03):**
 marginal FPS **406.5 -> 541.8 = +33.3%** at `--n-envs 48`, 4 samples per arm, **ranges disjoint**
 (off max 417 < on min 512), 48/48 workers compiled, 0 reverts. This arm is the one the earlier A/B
-could not run: `--threat-unrevealed-outgoing` used to crash Inductor, so that measurement had to drop
-it plus the refine loop.
+could not run: the `species_posterior` softmax used to crash Inductor, so that measurement had to
+drop the expected-latent read plus the between-layers refine loop.
 
 **READ THE TWO NUMBERS TOGETHER — the per-forward win has SATURATED.** Fixing the softmax doubled the
 per-forward speedup (3.6x -> 6.53x), but end-to-end moved only 31.0% -> 33.3% (and those are
@@ -1895,7 +1896,7 @@ supervision.
   extended `poke_env_gaps/belief_labels_fuzz_test.py` validates `hp_type_label` == each revealed HP-mon's true
   type, the TYPED move labels == the real opponent movesets, mask 0 on revealed-no-HP / believed / pad slots
   (no leak), and the OFF env declaring no HP-type keys. End-to-end smoke (`--debug --use-bridge=node
-  --unified-moves both --spread-belief --move-belief-prefuse --damage-op-prefuse --hp-type-belief-coef 0.05`)
+  --unified-moves both --spread-belief --hp-type-belief-coef 0.05`)
   confirms the roundtrip + `belief/hptype_*`.
 
 ## Win-probability head (`--win-prob-mode` / `--win-prob-coef`)

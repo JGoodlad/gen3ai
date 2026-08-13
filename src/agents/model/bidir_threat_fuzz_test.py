@@ -1,12 +1,11 @@
-"""Fuzz test for gen3_bidir_threat_trunk_v1 (v36) — real bridge battles, no server.
+"""Fuzz test for the DamageOperator's discrete OUTGOING + STATUS kernels — real bridge battles,
+no server.
 
-Runs the FULL v36 extractor (outgoing-in-trunk + expected-latent + prob-outspeed, all ON) over the
-REAL live-battle state distribution the hand-built unit ctxs can't cover — partially-revealed opp
-teams, mid-battle switches, faints, statuses, boosts, screens, weather — and asserts, every decision:
+Runs the extractor over the REAL live-battle state distribution the hand-built unit ctxs can't
+cover — partially-revealed opp teams, mid-battle switches, faints, statuses, boosts, screens,
+weather — and asserts, every decision:
 
-  (1) the full pi/vf forward is FINITE (no NaN/Inf) — the v36 refine_cb (discrete_outgoing +
-      BeliefHead.species_logits + the expected-latent matmuls + prob-outspeed) never blows up on a
-      real board;
+  (1) the full pi/vf forward is FINITE (no NaN/Inf) on a real board;
   (2) on the live ctx, discrete_outgoing is FINITE, correctly GATED (0 when our active is fainted /
       no opp active), and — the owner invariant — its P(KO) channels are EXACTLY 0 for every
       UNREVEALED opp slot, for ANY species_probs (the magnitude survives, the OHKO bit is nulled);
@@ -39,15 +38,13 @@ BATTLE_FORMAT = "gen3ou"
 
 _TOGGLES = dict(
     attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
-    move_prior_fusion=True, damage_op=True, move_latent=True, damage_refine_rounds=2,
-    threat_refine_outgoing=True, threat_unrevealed_outgoing=True, threat_prob_outspeed=True,
-    threat_status_refine=True,   # v37: status-landing into the trunk (both directions)
+    move_prior_fusion=True, damage_op=True, move_latent=True, threat_prob_outspeed=True,
 )
 
 
 class _ThreatFuzzPlayer(Gen3Player):
-    """Random-policy player that runs the v36 extractor + the discrete_outgoing invariants on every
-    LIVE decision. Any violation raises immediately (the fuzz contract)."""
+    """Random-policy player that runs the extractor + the discrete_outgoing/status invariants on
+    every LIVE decision. Any violation raises immediately (the fuzz contract)."""
 
     def __init__(self, *, rng_seed, **kwargs):
         super().__init__(battle_class=Gen3Battle, **kwargs)
@@ -106,7 +103,7 @@ class _ThreatFuzzPlayer(Gen3Player):
                 self.n_unrevealed_priced += 1
 
     def _check_status(self, ctx, battle):
-        """v37 status-landing invariants on the LIVE ctx, both directions. The kernels' invariants hold for
+        """Status-landing invariants on the LIVE ctx, both directions. The kernels' invariants hold for
         ANY belief input, so incoming uses a synthetic per-move belief (a small random logit) — we're
         validating finiteness / [0,1] bounds / immobilize⊆major / revealed-gating, not specific values."""
         op = self._fx.damage_op
@@ -141,7 +138,7 @@ async def _run(n_battles: int, seed: int) -> int:
         server_configuration=LocalhostServerConfiguration, start_listening=False,
         max_concurrent_battles=1,
     )
-    print(f"bidir-threat fuzz — {n_battles} real bridge battles (v36 all-on)", flush=True)
+    print(f"bidir-threat fuzz — {n_battles} real bridge battles", flush=True)
     await run_local_battles(trainee, opp, n_battles, concurrency=1)
     print(f"  decisions checked: {trainee.n_decisions}; priced an unrevealed defender: "
           f"{trainee.n_unrevealed_priced}; priced a status-landing: {trainee.n_status_priced}", flush=True)

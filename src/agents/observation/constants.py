@@ -141,7 +141,7 @@ REACTIVE_SCALAR_DIM = 5
 # status_will_land_known/cures_self_status/cures_team_status) is GONE. GPU homes, all live:
 #   * the static per-move mechanics  -> MoveLatentEncoder's MOVE_ATTR latent (--move-latent, v24)
 #   * board-conditional status_will_land -> DamageOperator._status_landing (--damage-outgoing, v27)
-#     and, in-trunk, discrete_{in,out}going_status (--threat-status-refine, v37)
+#     and, as the S1/S3 edge families, discrete_{in,out}going_status
 #   * pp_fraction -> the per-mon move slot (unchanged)
 # `--unified-obs` had merely MASKED this from the model while the CPU rebuilt all 44 dims per
 # decision; this deletes the producer. Honest residual: the Rest-cure coarsening noted in the v37

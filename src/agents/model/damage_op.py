@@ -533,8 +533,8 @@ class DamageOperator(torch.nn.Module):
 
         This replaces the old in-op scatter (`w[237]` × a locally-sourced type distribution). That version
         had two defects this removes structurally: the type SOURCE was chosen per call site — ``forward``
-        passed the learned posterior while ``refine_candidates`` did not, so the between-layers refine
-        kernels silently priced HP off the Smogon prior while the head block priced it off the learned
+        passed the learned posterior while ``refine_candidates`` did not, so the candidate-selection
+        consumers silently priced HP off the Smogon prior while the head block priced it off the learned
         belief — and in the (then default) `off` mode the source was the obs ``hp_probs``, which is
         all-zero until the opponent actually FIRES Hidden Power, so a REVEALED HP was priced as
         nonexistent. There is now exactly one HP posterior per forward and every consumer reads it.
@@ -1414,9 +1414,9 @@ class DamageOperator(torch.nn.Module):
     def refine_candidates(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
                           k: Optional[int] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        """The SHARED candidate selection for the between-layers refine kernels → `(topk_idx, w_topk)`.
+        """The SHARED candidate selection over the move belief → `(topk_idx, w_topk)`.
 
-        `discrete_incoming` and `discrete_incoming_status` are called from the same refine round with the
+        `discrete_incoming` and `discrete_incoming_status` are called with the
         SAME `move_belief_logits` object, so each was independently rebuilding an identical `[B, n_moves]`
         sigmoid + typed-HP scatter and an identical top-K — 4 redundant candidate builds and 2 redundant
         top-Ks per forward in the production config. Hoisting it here lets the caller compute once and
@@ -1575,7 +1575,8 @@ class DamageOperator(torch.nn.Module):
 
     def pairwise_boost(self, ctx: 'ExtractorContext',
                        spread_belief: Optional[torch.Tensor] = None,
-                       base: Optional[torch.Tensor] = None) -> torch.Tensor:
+                       base: Optional[torch.Tensor] = None,
+                       species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """gen3_edge_bias_trunk_v1 (C1): the first DAMAGE-consequence edge — "what does clicking the
         setup move at request slot k DO for me". Re-runs the validated `_outgoing_matrix` kernel
         under the HYPOTHETICAL post-boost stat stages (the C4-over-G composition pattern scaled to
@@ -1611,7 +1612,7 @@ class DamageOperator(torch.nn.Module):
         deltas, is_boost, hp_cost = self._setup_deltas(ctx)                          # [B,4,5], [B,4], [B,4]
         # gen3_unrevealed_outgoing_prior_v1: compute the Species-Clause marginal ONCE and hand it to
         # every kernel re-run below (pure function of ctx — byte-identical, just not recomputed 5×).
-        sp_probs = self.unrevealed_species_probs(ctx)
+        sp_probs = self.unrevealed_species_probs(ctx, species_probs)
         if base is None:
             base = self.pairwise_outgoing(ctx, spread_belief, species_probs=sp_probs)   # [B,4,6,6]
         base_high = base[..., 1].amax(dim=1)                                         # [B,6]
@@ -2612,7 +2613,8 @@ class DamageOperator(torch.nn.Module):
 
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
-                move_latent_all: Optional[torch.Tensor] = None) -> torch.Tensor:
+                move_latent_all: Optional[torch.Tensor] = None,
+                species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2830,7 +2832,8 @@ class DamageOperator(torch.nn.Module):
         # gen3_per_move_matrices_v1: the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active+revealed
         # bench). Appended LAST so the existing incoming/outgoing offsets are untouched.
         if self.matrices_outgoing:
-            block = torch.cat([block, self._outgoing_matrix(ctx, spread_belief)], dim=1)  # [B, out_dim]
+            block = torch.cat([block, self._outgoing_matrix(ctx, spread_belief,
+                                                           species_probs=species_probs)], dim=1)
         # gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX — the op's ONLY discrete
         # incoming move-space block since gen3_op_block_trim_v1 deleted the lean top-K it superseded.
         # Appended LAST. Reuses the already-computed rolls (low/high/crit/ko_ramp) + the candidate latent table.

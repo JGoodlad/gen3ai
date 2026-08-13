@@ -1,8 +1,8 @@
 """Regression guard for the ONE op that Inductor could not codegen.
 
 BACKGROUND. `--compile-extractor` used to set `torch._dynamo.config.suppress_errors = True`. That
-looked like defensive hygiene but was actually working around a single failure: with
-`--threat-unrevealed-outgoing` (v36 #2) on, the softmax over species logits lowered to a
+looked like defensive hygiene but was actually working around a single failure: on the
+`BeliefHead.species_posterior` path, the softmax over species logits lowered to a
 `[B,6,n_species]` numerator plus a `[B,6,1]` denominator and the Inductor CPU scheduler asserted
 (`AssertionError: buf<N>`) trying to fuse the division. Suppression converted that into a per-frame
 eager fallback, so the production config compiled only PARTIALLY (3.6x instead of 6.5x) — and every
@@ -61,8 +61,8 @@ def test_species_posterior_is_stable_for_large_logits():
 
 
 # ⚠️ THE PRODUCTION ARCH IS LOADED, NEVER HAND-PINNED. This test used to carry a literal
-# `_PRODUCTION_ARCH = dict(...)` frozen at the ai_v8_03 shape (refine_rounds=2, no prefuse, no
-# edge families) — and it ROTTED silently: for three generations the default-on compile gate
+# `_PRODUCTION_ARCH = dict(...)` frozen at the ai_v8_03 shape (the between-layers refine loop, no
+# prefuse, no edge families) — and it ROTTED silently: for three generations the default-on compile gate
 # faithfully compiled a DEAD graph while the real production graph drifted, which is exactly how
 # the gen-4 launch's CompilePrewarm failure (`gen3_unrevealed_outgoing_prior_v1`'s [B,6,S]
 # expand mis-vectorizing on Inductor CPU) shipped past a green suite. The kwargs now come from
@@ -103,9 +103,9 @@ def _build_production_extractor():
 
 @_skip_compile
 def test_production_arch_compiles_without_suppression():
-    """THE regression. `--threat-unrevealed-outgoing` is what crashed Inductor; with suppression OFF
-    a reintroduced bad spelling raises `BackendCompilerFailed` here instead of silently costing half
-    the speedup in production."""
+    """THE regression. The `species_posterior` softmax spelling is what crashed Inductor; with
+    suppression OFF a reintroduced bad spelling raises `BackendCompilerFailed` here instead of
+    silently costing half the speedup in production."""
     torch.set_num_threads(1)
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False

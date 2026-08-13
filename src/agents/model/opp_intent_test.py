@@ -136,10 +136,8 @@ def test_render_alpha_names_every_option_and_never_invents_one():
 def _intent_kwargs(**over):
     """The minimum config the heads need: alpha POINTS AT the E4 seats, which need the prefuse op."""
     base = dict(opp_intent=True, entity_topk_seats=6, entity_tail_seats=True, damage_op=True,
-                damage_op_prefuse=True, move_latent=True, move_belief_mode="revealed",
-                move_belief_prefuse=True, attend_unrevealed_opponents=True, damage_refine_rounds=0,
-                threat_refine_outgoing=False, threat_status_refine=False,
-                threat_unrevealed_outgoing=False)
+                move_latent=True, move_belief_mode="revealed",
+                attend_unrevealed_opponents=True)
     base.update(over)
     return base
 

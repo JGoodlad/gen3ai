@@ -63,7 +63,7 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     args.value_dist_mode = "none"
     args.zarch_film = "off"
     args.zarch_lut = "off"
-    for attr in ("opp_belief_cls_k", "value_dist_bins", "damage_topk_k", "damage_refine_rounds",
+    for attr in ("opp_belief_cls_k", "value_dist_bins", "damage_topk_k",
                  "damage_candidate_k", "zarch_dim"):
         setattr(args, attr, 0)
     for attr in ("move_candidate_floor", "value_dist_vmin", "value_dist_vmax",
@@ -102,4 +102,4 @@ def test_plain_form_is_json_serialisable_and_drops_unpicklables():
     assert "layout" not in plain
     json.dumps(plain)                                  # must not raise
     # the toggles that actually change the traced graph DO survive
-    assert "damage_op" in plain and "threat_unrevealed_outgoing" in plain
+    assert "damage_op" in plain and "threat_prob_outspeed" in plain

@@ -232,7 +232,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            note="[p_tail, worst_phys, worst_spec, revealed] — beyond-top-K mass"))
 
     # Residual injections onto existing seats.
-    if fe.damage_op_prefuse:
+    if fe.prefuse_proj is not None:
         for i in range(T):
             edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_PER_MON,
                                "_DMG_PER_MON", via="prefuse_proj", zero_init=True,
@@ -252,23 +252,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         for j in range(T):
             edges.append(_edge("spread_belief", f"opp_mon[{j}]", "content", D,
                                "D_MODEL", via="SpreadBelief.reinject"))
-    if fe.refine_proj is not None:
-        for i in range(T):
-            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_REFINE_FEATS,
-                               "_DMG_REFINE_FEATS", via="refine_proj", zero_init=True,
-                               rounds=fe.damage_refine_rounds))
-    if fe.outgoing_proj is not None:
-        for j in range(T):
-            edges.append(_edge("damage_op", f"opp_mon[{j}]", "content", dop._DMG_OUT_REFINE,
-                               "_DMG_OUT_REFINE", via="outgoing_proj", zero_init=True))
-    if fe.status_in_proj is not None:
-        for i in range(T):
-            edges.append(_edge("damage_op", f"our_mon[{i}]", "content", dop._DMG_STATUS_REFINE,
-                               "_DMG_STATUS_REFINE", via="status_in_proj", zero_init=True))
-    if fe.status_out_proj is not None:
-        for j in range(T):
-            edges.append(_edge("damage_op", f"opp_mon[{j}]", "content", dop._DMG_STATUS_REFINE,
-                               "_DMG_STATUS_REFINE", via="status_out_proj", zero_init=True))
 
     # The belief the op consumes (differentiable in w — this is the gradient path that trains the
     # move belief in a config where its BCE coefficient is zero).

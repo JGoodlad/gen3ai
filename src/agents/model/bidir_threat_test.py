@@ -1,21 +1,22 @@
-"""Unit tests for gen3_bidir_threat_trunk_v1 (v36): the bidirectional in-trunk threat field.
+"""Unit tests for the DamageOperator's discrete OUTGOING + STATUS kernels
+(gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1) and `threat_prob_outspeed`.
 
-  #1 threat_refine_outgoing  — discrete_outgoing kernel + zero-init outgoing_proj onto OPP tokens
-  #2 threat_unrevealed_outgoing — expected-LATENT defender (E[mult] via SPECIES_EXP_MULT, P(KO) nulled)
-  #3 threat_prob_outspeed    — uncertainty-aware P(outspeed) (÷ believed speed std)
+  * `discrete_outgoing` — per-opp-mon outgoing threat, with the expected-LATENT defender read
+    (E[mult] via SPECIES_EXP_MULT, P(KO) nulled) when `species_probs` is supplied
+  * `discrete_incoming_status` / `discrete_outgoing_status` — per-defender
+    [P(major), P(immobilize)] (the physics the S1/S3 edge families deliver)
+  * `threat_prob_outspeed` — uncertainty-aware P(outspeed) (÷ believed speed std)
 
-The kernel correctness is exercised on hand-built ctxs (controllable revealed/unrevealed slots +
-belief); identity-at-init / gradient-flow / OFF-byte-identical on the full Gen3FeaturesExtractor.
+Correctness is exercised on hand-built ctxs (controllable revealed/unrevealed slots + belief),
+so the kernels are pinned independently of which consumer happens to read them.
 """
 import types
 
-import numpy as np
-import gymnasium as gym
 import torch
 
 from agents import gen3_data
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, TEAM_SIZE, _DMG_OUT_REFINE, _DMG_SPEED_SCALE,
+    DamageOperator, TEAM_SIZE, _DMG_OUT_REFINE, _DMG_SPEED_SCALE,
     _DMG_STATUS_REFINE, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX,
 )
 from agents.observation.constants import (
@@ -214,50 +215,14 @@ def test_prob_outspeed_bounds_and_differs():
     assert abs(tie.item() - 0.5) < 1e-5
 
 
-# --------------------------------------------------------------------- full-extractor: safety + grad
-def _make_model(**kwargs):
-    mappings = load_mappings()
-    layout = Gen3ObservationEncoder(mappings).get_layout()
-    obs_space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    return Gen3FeaturesExtractor(obs_space, layout=layout, mappings=mappings, **kwargs), layout
-
-
-_REFINE_BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True,
-                    move_belief_mode="both", move_prior_fusion=True, damage_op=True, move_latent=True,
-                    damage_refine_rounds=2)
-
-
-def test_threat_identity_at_init():
-    """Identity-at-init: the zero-init outgoing_proj makes the outgoing residual EXACTLY 0, so the threat-ON
-    forward equals the SAME model with the outgoing branch bypassed (outgoing_proj=None → refine_cb's
-    else-path). Compared on one model (not two seeded builds — the extra Linear shifts the RNG stream)."""
-    threat, layout = _make_model(**_REFINE_BASE, threat_refine_outgoing=True,
-                                 threat_unrevealed_outgoing=True, threat_prob_outspeed=True)
-    threat.eval()
-    obs = {"observation": torch.rand(4, layout["total_dim"])}
-    with torch.no_grad():
-        pi_on, vf_on = threat(obs)
-        saved = threat.outgoing_proj
-        threat.outgoing_proj = None             # bypass the outgoing branch (residual was 0 anyway)
-        pi_off, vf_off = threat(obs)
-        threat.outgoing_proj = saved
-    assert torch.equal(pi_on, pi_off) and torch.equal(vf_on, vf_off)
-
-
-def test_threat_outgoing_proj_zero_init():
-    threat, _ = _make_model(**_REFINE_BASE, threat_refine_outgoing=True)
-    assert threat.outgoing_proj is not None
-    assert threat.outgoing_proj.weight.abs().sum().item() == 0.0
-    assert threat.outgoing_proj.bias.abs().sum().item() == 0.0
-
-
-def test_threat_grad_flows_to_outgoing_proj_and_species_belief():
-    """The outgoing residual is differentiable: a backward through outgoing_proj(discrete_outgoing) reaches
-    BOTH outgoing_proj's weight AND P(species) (so the policy/value loss sharpens the species belief — the
-    whole point of the expected-latent read). Uses a hand-built ctx with a REAL move (BP>0) so out_feats is
-    non-zero (a fully-random obs gives BP-0 move ids → no signal)."""
+# ------------------------------------------------------------------------ gradient flow
+def test_threat_grad_flows_to_a_consumer_and_the_species_belief():
+    """`discrete_outgoing` is differentiable: a backward through a consumer projection reaches BOTH the
+    projection's weight AND P(species) (so a loss reading it sharpens the species belief — the whole point
+    of the expected-latent read). Uses a hand-built ctx with a REAL move (BP>0) so out_feats is non-zero
+    (a fully-random obs gives BP-0 move ids → no signal)."""
     op, layout = _op()
-    proj = torch.nn.Linear(_DMG_OUT_REFINE, 128)        # stand-in for the extractor's outgoing_proj (non-zero init)
+    proj = torch.nn.Linear(_DMG_OUT_REFINE, 128)        # stand-in consumer (non-zero init)
     eq = _eq()
     ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
                    our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
@@ -269,14 +234,6 @@ def test_threat_grad_flows_to_outgoing_proj_and_species_belief():
     proj(out_feats).sum().backward()
     assert proj.weight.grad is not None and proj.weight.grad.abs().sum().item() > 0.0
     assert sp.grad is not None and sp.grad.abs().sum().item() > 0.0   # gradient reaches P(species)
-
-
-def test_threat_requires_refine_rounds():
-    import pytest
-    with pytest.raises(ValueError):
-        _make_model(attend_unrevealed_opponents=True, damage_op=True, move_belief_mode="both",
-                    move_prior_fusion=True, move_latent=True, damage_refine_rounds=0,
-                    threat_refine_outgoing=True)
 
 
 # ===================================================================== v37 status-landing into the trunk
@@ -376,34 +333,9 @@ def test_outgoing_status_type_immunity_and_revealed_gate():
     assert out2[0, 1, 0].item() > 0.0 and out2[0, 1, 1].item() > 0.0   # revealed Water: para lands
 
 
-_STATUS_BASE = dict(attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
-                    move_prior_fusion=True, damage_op=True, move_latent=True, damage_refine_rounds=2)
-
-
-def test_status_identity_at_init():
-    """Zero-init status projections ⇒ threat_status_refine ON == the same model with the status branch
-    bypassed, at init (the residuals are exactly 0)."""
-    m, layout = _make_model(**_STATUS_BASE, threat_status_refine=True)
-    m.eval()
-    obs = {"observation": torch.rand(4, layout["total_dim"])}
-    with torch.no_grad():
-        pi_on, vf_on = m(obs)
-        si, so = m.status_in_proj, m.status_out_proj
-        m.status_in_proj = None; m.status_out_proj = None
-        pi_off, vf_off = m(obs)
-        m.status_in_proj, m.status_out_proj = si, so
-    assert torch.equal(pi_on, pi_off) and torch.equal(vf_on, vf_off)
-
-
-def test_status_projections_zero_init():
-    m, _ = _make_model(**_STATUS_BASE, threat_status_refine=True)
-    for p in (m.status_in_proj, m.status_out_proj):
-        assert p is not None and p.weight.abs().sum().item() == 0.0 and p.bias.abs().sum().item() == 0.0
-
-
 def test_status_grad_flows():
-    """A backward through outgoing_status/incoming_status reaches both status projections (the trunk
-    learns to value the computed status fact)."""
+    """A backward through outgoing_status/incoming_status reaches both consumer projections (a trunk
+    consumer can learn to value the computed status fact)."""
     op, layout = _op()
     twave = gen3_data.moves.get("thunderwave").num
     ctx = _ctx_status(our_defenders=[(_num("zapdos"), _T2I["ELECTRIC"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
@@ -416,11 +348,3 @@ def test_status_grad_flows():
     (proj_in(fi).sum() + proj_out(fo).sum()).backward()
     assert proj_in.weight.grad.abs().sum().item() > 0.0
     assert proj_out.weight.grad.abs().sum().item() > 0.0
-
-
-def test_status_requires_refine_rounds():
-    import pytest
-    with pytest.raises(ValueError):
-        _make_model(attend_unrevealed_opponents=True, damage_op=True, move_belief_mode="both",
-                    move_prior_fusion=True, move_latent=True, damage_refine_rounds=0,
-                    threat_status_refine=True)

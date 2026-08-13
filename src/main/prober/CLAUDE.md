@@ -312,13 +312,6 @@ checkpoint shows one "belief heads not enabled" note):
   runs), it ALSO draws the opp-active **move-belief entropy** (`Hmv`, should decay) + believed opp-active
   **Atk** (`bAtk`) sparklines — the move/spread analog, decoded WITHOUT re-running. The "watch the belief
   sharpen as reveals accumulate" view.
-- **within-forward refine ROUNDS (axis A)** — `ProbeModel.refine_rounds_view` → `engine.build_refine_trajectory`
-  → `RefineTrajectoryView`: per `--damage-refine-rounds` round the move-belief Bernoulli **entropy** (should
-  DECAY, flagged `entropy_monotone`) + the lean per-our-mon incoming-damage maxima the round injected — the
-  physics-in-the-loop sharpening across the transformer layers. Driven by a **prober-only** capture
-  (`features_extractor.capture_refine_rounds`, default False → `last_refine_rounds` None → zero training cost;
-  `refine_rounds_view` sets it, runs one clean forward, RESTORES it in a `finally`). Bounded by
-  `TRANSFORMER_N_LAYERS` (the cb fires once per layer).
 - **value-dist × belief cross-read** — does critic bimodality co-occur with low belief confidence?
 
 The **Threats** section (`6`, was *Matchups*) is reordered **GPU-first** (`_render_matchups`, still the
@@ -329,8 +322,8 @@ usage-prior `incoming P(KO)`) render below into `#matchups-table`/`#matchups-thr
 present (it subsumes them) and **full-styled** when there's no op (the demote only applies when the op is
 present — the graceful-degradation contract). The **Flow** diagram flags the learned belief/physics phases
 (`BeliefSlots`/`BeliefHead`/`MoveBelief`/`SpreadBelief`/`DamageOperator`) with a `🔷 GPU-computed` callout
-(`_FLOW_GPU_PHASES`). New `analyze`-JSON fields (`asdict`): `spread_belief`, `refine_trajectory` (+ the
-existing `belief`/`belief_truth`/`move_belief`/`damage_op`); `None` when the head is off.
+(`_FLOW_GPU_PHASES`). New `analyze`-JSON fields (`asdict`): `spread_belief` (+ the existing
+`belief`/`belief_truth`/`move_belief`/`damage_op`); `None` when the head is off.
 
 **Switch-in OUTGOING panel (`a.switch_in_outgoing`, `engine.build_switch_in_outgoing` → `SwitchInOutgoingView`,
 rendered in `_render_matchups` right after the op's "our damage (out)").** On a FORCED SWITCH the op's outgoing
@@ -406,9 +399,10 @@ LIVE **attention** layer (`PokemonEncoder` move self-attn, `TeamTransformer`, `C
 its role (the `attn` flag rides each `architecture()` phase) — so the reader sees WHERE the network
 attends at a glance. Roles render **full width-aware** (`role_w` from the live panel width via
 `_flow_width`, so descriptions aren't needlessly cut) and are live-interpolated (`DamageOperator` gains
-`+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion` + `· PRE-transformer` under
-`move_belief_prefuse` (v32 — the reinjection ran BEFORE the transformer; the band still draws it in
-BELIEF, the label carries the timing), `BeliefHead` `+ latent`). The
+`+ outgoing` under `damage_outgoing`, `MoveBelief` `+ prior-fusion`, `BeliefHead` `+ latent`). The
+belief + physics rows carry `· T0 RESOLVE, PRE-transformer` / `· T1 REASON, PRE-transformer, once`
+UNCONDITIONALLY and are drawn AHEAD of `TeamTransformer` (`gen3_tiered_pipeline_v1`: one placement,
+no flag). The
 **CLSPool fork** then SPLITS the rail
 (`├──┐` + two `▼`) into two **side-by-side lanes** (`_flow_combine_lanes` zips them with a full-height
 gutter, `_pad`-ing each left line to `LANE_W`): `π POLICY` (cyan, `chose <move> (<prob>%)`) and `V VALUE`

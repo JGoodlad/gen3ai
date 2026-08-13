@@ -32,9 +32,8 @@ _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _SIG = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
 
 _D1_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="both",
-                   move_belief_prefuse=True, move_belief_single_compute=True,
                    damage_op=True, damage_outgoing=True, move_latent=True,
-                   damage_op_prefuse=True, move_prior_fusion=True,
+                   move_prior_fusion=True,
                    entity_topk_seats=5, edge_bias_families="d1")
 
 _BODYSLAM = gen3_data.moves.get("bodyslam")
