@@ -412,3 +412,153 @@ p.critic .cmd { margin-left: auto; }
   p.critic { gap: 4px 12px; }
   a.jump, a.pagelink { padding: 5px 10px; }   /* tap targets, not text links */
 }
+
+/* /analyze — one decision, all the way down --------------------------------------------
+ *
+ * Appended, never woven into the rules above: everything here is scoped to markup that exists
+ * only on this view, so nothing that already renders can shift. The layout borrows the battle
+ * replay's vocabulary on purpose (.board/.mon/.log/.dist/.panel/.moregrid are all reused as-is) —
+ * a decision read here and the same decision read in the replay should look like the same thing.
+ */
+
+/* Banners: the three "everything below is suspect" states. Loud enough to stop a reader who was
+   about to quote a number, and above the fold rather than a footnote. */
+p.banner { margin: 0 0 12px; padding: 9px 12px; border-radius: 6px; font-size: 13px;
+           line-height: 1.5; background: var(--surface); border-left: 3px solid var(--warn); }
+p.banner.warn { border-left-color: var(--warn); }
+p.banner.bad { border-left-color: var(--bad); color: var(--text); }
+
+/* Provenance. The TUI's 🔷 GPU / 📋 CPU distinction is load-bearing, not decoration: a LEARNED
+   signal the model computed for itself and a decode the prober did from the observation answer
+   different questions, and a panel that mixes them without saying so reads as one. */
+.prov { font-size: 10px; letter-spacing: 0.3px; padding: 0 4px; border-radius: 4px;
+        vertical-align: 1px; }
+.prov.gpu { color: var(--accent); }
+.prov.cpu { color: var(--dim); }
+
+/* The CPU obs decodes go DIM when the DamageOperator is present, because it subsumes them — and
+   back to full strength when there is no operator (the graceful-degradation contract). */
+.cpudecodes { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.cpudecodes.dim { opacity: 0.55; }
+.cpudecodes h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+                 color: var(--dim); margin: 0 0 6px; }
+
+p.fieldline { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0; font-size: 12px; }
+p.fieldline .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+                   color: var(--dim); }
+.fv .k { color: var(--dim); }
+
+/* A rendered ENGINE sentence (the TD gloss, the α/β line). Set apart from the numbers it explains
+   so the pairing reads as one statement rather than as a caption. */
+p.sentence { margin: 6px 0; font-size: 13.5px; background: var(--surface-2); border-radius: 6px;
+             padding: 7px 10px; }
+
+.badge.agree { color: var(--good); }
+.badge.disagree { color: var(--warn); }
+.badge.phase { color: var(--dim); }
+
+tr.chosenrow td { font-weight: 600; }
+tr.invalidrow { opacity: 0.5; }
+
+/* Beliefs: species / move guesses with the TUI's ✓ ≈ ✗ marker semantics kept exactly — top-1
+   right, in the belief but not top-1, and not in the top-k at all are three different findings. */
+ul.beliefs { list-style: none; margin: 0; padding: 0; }
+ul.beliefs li { padding: 3px 0; font-size: 12.5px; display: flex; flex-wrap: wrap;
+                gap: 4px 8px; align-items: baseline; border-bottom: 1px solid var(--line); }
+ul.beliefs .species { font-weight: 600; min-width: 9ch; }
+ul.beliefs .marker { font-family: var(--mono); width: 1.4em; display: inline-block; }
+ul.beliefs .marker.hit { color: var(--good); }
+ul.beliefs .marker.near { color: var(--warn); }
+ul.beliefs .marker.miss { color: var(--bad); }
+ul.beliefs .marker.seen { color: var(--dim); }
+ul.beliefs .guess { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+ul.beliefs .g { font-family: var(--mono); font-size: 11.5px; color: var(--dim); }
+ul.beliefs .g.istrue { color: var(--text); font-weight: 700; }
+ul.beliefs .g.seenmove { color: var(--good); }
+
+/* The incoming heatmap — opponent candidate move × our mon. The tint is an inline
+   rgba(<--bad-ish>, P(KO)) so it reads the same in both palettes without re-declaring a scale;
+   the text colour is untouched so a dark cell stays legible. */
+table.heat td.cell { white-space: nowrap; font-size: 11.5px; }
+table.heat th { white-space: nowrap; }
+
+/* Raw protocol tinting: the line text is untouched, only coloured by kind. */
+pre.proto .pl { display: block; }
+pre.proto .pl.move { color: var(--text); }
+pre.proto .pl.dmg { color: var(--bad); }
+pre.proto .pl.crit { color: var(--warn); font-weight: 600; }
+pre.proto .pl.miss { color: var(--accent); }
+pre.proto .pl.swap { color: var(--accent); }
+pre.proto .pl.faint { color: var(--bad); font-weight: 600; }
+
+@media (max-width: 720px) {
+  /* Same rule as everywhere else on this site: the PAGE never scrolls sideways. The heat matrix
+     and every forensic table keep their columns and scroll inside their own .scroll-x box. */
+  ul.beliefs li { font-size: 12px; }
+  ul.beliefs .species { min-width: 0; flex: 1 1 100%; }
+  p.banner { font-size: 12.5px; }
+}
+
+/* The nav gained an EIGHTH tab (/analyze) and tipped onto an extra wrapped row, taking the phone
+ * header from 160px to 179px — MEASURED, by `render_integration_test`'s `headerh` reading, which
+ * is exactly the gate that catches this class of drift.
+ *
+ * The fix makes the tabs narrower rather than hiding one behind a menu or a horizontal strip:
+ * rule 2 of the responsive block above is that nothing hides behind a scroll nobody can see (the
+ * arch viewer shipped that strip and five of its six controls were invisible). Appended rather
+ * than folded into the block above so no existing rule is edited; equal specificity, later wins.
+ */
+@media (max-width: 720px) {
+  nav.tabs { gap: 3px; }
+  nav.tabs a { padding: 3px 7px; font-size: 13px; }
+}
+
+/* /analyze § counterfactual — the three re-roll probes -----------------------------------
+ *
+ * Appended, and scoped to markup that exists only in this section, so nothing already on the page
+ * can shift. Three launch forms + one result box; the results themselves reuse the existing
+ * vocabulary (.stats / .interp / .banner / .pill / tables / .caveats) on purpose, because a
+ * candidate table here and a candidate table above it should read as the same kind of thing.
+ */
+.cf-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px; margin: 10px 0 14px; }
+/* Each launch form is a CARD, not another row of the page's filter bar: the three are alternatives
+   to one another, and one wrapped strip of a dozen controls hides which knob belongs to which
+   probe. */
+form.filters.cf { display: block; background: var(--surface); border: 1px solid var(--line);
+                  border-radius: 8px; padding: 10px 12px; }
+form.filters.cf h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+                     color: var(--dim); margin: 0 0 4px; }
+form.filters.cf label { display: inline-flex; flex-direction: column; gap: 3px;
+                        margin: 0 10px 8px 0; vertical-align: top; }
+form.filters.cf label.check { flex-direction: row; align-items: center; gap: 6px; }
+form.filters.cf label.check input { width: auto; }
+form.filters.cf select, form.filters.cf input[type="number"] { max-width: 100%; }
+/* The lookahead → replay handoff: ruled off, because it is a NEW submission sitting inside a
+   finished result and must not read as part of the table it follows. */
+form.filters.cf-handoff { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+                          margin-top: 12px; padding-top: 10px;
+                          border-top: 1px dashed var(--line); }
+
+td.mark { width: 1.6em; text-align: center; font-family: var(--mono); }
+ol.log.pv li { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; }
+
+/* A rollout's play-by-play is long and is not the finding — the win rate is. So it collapses. */
+details.traj { margin-top: 10px; border-left: 3px solid var(--line); padding-left: 12px; }
+details.traj > summary { cursor: pointer; font-size: 12px; color: var(--accent); }
+details.traj .turnno { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+                       color: var(--dim); }
+details.traj ul.events { list-style: none; margin: 2px 0 8px; padding: 0 0 0 10px;
+                         border-left: 1px solid var(--line); }
+details.traj ul.events li { font-family: var(--mono); font-size: 12px; line-height: 1.6;
+                            overflow-wrap: anywhere; }
+
+@media (max-width: 720px) {
+  /* Same rule as the rest of the site: a control gets its own full-width row at >=16px, or iOS
+     zooms the page when it takes focus and does not zoom back out. */
+  .cf-forms { grid-template-columns: 1fr; }
+  form.filters.cf label { display: flex; margin-right: 0; width: 100%; }
+  form.filters.cf label.check { width: auto; }
+  form.filters.cf select, form.filters.cf input { width: 100%; font-size: 16px; }
+  form.filters.cf label.check input { width: auto; }
+}

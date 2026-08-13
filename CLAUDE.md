@@ -62,9 +62,9 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/agents/battle/` | Event-sourced battle layer (Gen3Battle, BattleEvent log, LiveView/TurnView/LegalActions, StrictBattleView, TurnDelta fold) |
 | `src/agents/training/` | Bot-eval subprocess architecture + Showdown-port (`server_config`) threading |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
-| `src/main/prober/` | Forensic-replay inspector (Textual TUI) + the pure probe engine `probe_replay.py` shares; trace discovery; worker-thread model |
+| `src/main/prober/` | Forensic-replay inspector: the analysis ENGINE + the `ProbeSession` facade, the JSON CLI, and trace discovery. The human surface is `web/` |
 | `src/main/prober/web/` | The prober's browser front end — FastAPI over `ProbeSession`, Jinja2+HTMX, vendored JS, the committed `openapi.json` contract |
-| `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — shared by the prober + launcher UIs |
+| `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — the LAUNCHER's UI (the prober's TUI is retired) |
 | `designs/` | Which `ai_vN` folder is relevant; version map |
 
 **Two non-`CLAUDE.md` docs carry the same always-current obligation:**
@@ -684,15 +684,26 @@ Requires the Showdown server to be running (see below).
 
 ## Prober (forensic-replay inspector)
 
-An interactive Textual TUI that browses the `eval_traces` a run writes and
-analyzes each saved decision point (faithfulness, type matchups, an intervention
-sweep, gradient saliency). No server needed — it reads saved traces and a
-checkpoint. Point it at a run dir; it auto-discovers the trace tree and resolves
-the checkpoint (best_model → latest; override with `--ckpt`):
+Browses the `eval_traces` a run writes and analyzes each saved decision point (faithfulness,
+beliefs, threat tables, an intervention sweep, gradient saliency). No Showdown server needed — it
+reads saved traces and a checkpoint, auto-discovering the trace tree and resolving the checkpoint
+per battle (exact → nearest → recent).
+
+**The interface is the browser.** The Textual TUI was retired 2026-08-13 — one analysis engine
+deserves one renderer, and two meant every new signal had to be drawn twice for a single reader.
+`python -m main.prober` starts the web app; its two TUI-only flags (`--ckpt`, `--inv`) explain what
+replaced them rather than erroring.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober models/run_<timestamp>
 ```
+
+⚠ **A model-loading view only works on a run at the CURRENT architecture.** Measured over
+`models/`: 79 of 79 archived runs cannot be re-loaded, so `analyze` / `lookahead` / `better-line` /
+`replay-counterfactual` / `probe` return an `ArchDriftError` diagnosis there (naming the obs-dim and
+`arch_signature` drift and the `git checkout` to re-probe from). Everything model-free — `scan`,
+`triage`, `turns`, `falsify`, `calibration` — works on every run regardless. See
+`src/main/prober/CLAUDE.md` → Architecture drift.
 
 The same analysis is available headless for one invocation via the
 `probe_replay.py` CLI (`python -m main.probe_replay <ckpt> <summary.json>
@@ -732,14 +743,16 @@ agent API — are in `src/main/prober/CLAUDE.md`.
 
 ### Web front end (`src/main/prober/web/`)
 
-A **third sibling** over the same engine (the TUI and the JSON CLI are the other two — none is a
-layer on another). Read-only browser views for the analyses a terminal renders worst, adapting
+One of TWO surfaces over the engine (the JSON CLI is the other — neither is a layer on the other). Read-only browser views for the analyses a terminal renders worst, adapting
 `ProbeSession` and nothing else: run summary · battles · `scan` · `triage` · the **turn-by-turn
 battle replay** (`/battle` — board, what the model EXPECTED the opponent to do (the v67 α/β heads),
-battle log and critic per game turn; reached from a `scan` row's
+battle log and critic per game turn) · **`/analyze`** (one decision all the way down —
+faithfulness, beliefs, threat tables, intervention, saliency; the ONE view that loads a checkpoint,
+so it works on a current-architecture run and DIAGNOSES the drift on every other; reached from a `scan` row's
 **turns** link, which lands on the losing turn) · the `falsify_scan` crater bracket · the
-`calibration` reliability curve. `analyze` / `lookahead` / `better-line` / `replay-counterfactual`
-stay TUI+CLI.
+`calibration` reliability curve, and the counterfactual tier (`lookahead` / `better-line` /
+`replay-counterfactual`) as password-gated background jobs off `/analyze`. **The Textual TUI is
+retired** — one engine deserves one renderer, and two were costing every new signal twice.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober.web models/   # :6008, pick any run
@@ -863,10 +876,10 @@ src/
     launcher/          # Restart loop + Textual TUI (preferred for long runs) — has CLAUDE.md
                      #   core: checkpoint.py, worktree.py, child.py, input.py, state.py, ipc.py
                      #   UI: app.py + launcher.tcss · run loop: run.py · format.py · tui.py (alias)
-    prober/            # Forensic-replay inspector (Textual TUI) — has CLAUDE.md
+    prober/            # Forensic-replay inspector (engine + session + JSON CLI) — has CLAUDE.md
                      #   web/ — browser front end (FastAPI + Jinja2/HTMX over ProbeSession) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
-    tui/               # Shared Textual base (Gen3App, theme, colors) — has CLAUDE.md
+    tui/               # Shared Textual base (Gen3App, theme, colors) — launcher UI — has CLAUDE.md
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
     train_rl_agent.py  # Training entry point (also callable directly)
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units

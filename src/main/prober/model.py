@@ -7,17 +7,188 @@ call. Tests substitute a fake exposing the same three members
 zero torch.
 
 We deliberately use raw ``MaskablePPO.load`` (no env, no
-``ModelVersion.check_compatible``) to match the legacy ``probe_replay.py`` CLI: a
-checkpoint whose architecture no longer matches the current obs layout surfaces
-as a torch shape error on the first ``action_dist`` call, which the TUI catches
-and renders as an analysis error rather than crashing.
+``ModelVersion.check_compatible``) to match the legacy ``probe_replay.py`` CLI —
+this tool's job is to open ARCHIVED runs, and a compatibility gate that refuses
+them is the opposite of what a forensic tool wants.
+
+**But "no gate" was not the same as "a good failure", and that gap is what
+`ArchDriftError` closes.** This project iterates the architecture continuously
+(root `CLAUDE.md`: *"checkpoint compatibility is not a concern"*), so a
+checkpoint older than the last arch change cannot be re-run under current code.
+Measured across the 84 archived runs on this box, that surfaced three ways, none
+of which said what was wrong:
+
+1. a flag the code DELETED is still baked into the zip's
+   ``features_extractor_kwargs`` → ``TypeError: __init__() got an unexpected
+   keyword argument 'spread_belief_nature_marginalize'`` (59 runs). **Recovered
+   here** — unknown kwargs are dropped, and which ones is reported, because a
+   dropped flag means the rebuilt extractor is not the one that played.
+2. a value the code now VALIDATES → e.g. ``move_candidate_floor=0.0``, legal
+   when trained, rejected since the v65 legality guard (14 runs). Not recovered:
+   the guard is correct, and silently relaxing it for a probe would answer with a
+   different model than the one being probed.
+3. weight SHAPES that no longer fit → ``RuntimeError: mat1 and mat2 shapes cannot
+   be multiplied (12x380 and 386x256)``. Not recoverable in principle.
+
+All three now raise ``ArchDriftError`` naming the drift (saved obs dim vs the
+encoder's, saved ``arch_signature`` vs the code's, the dropped kwargs, and the
+``git_hash`` to check out), instead of a raw torch error from four frames inside
+SB3. The failure is the same; the reader's next step is no longer a mystery.
 """
 
 from __future__ import annotations
 
+import inspect
+import json
+import os
+import zipfile
 from dataclasses import dataclass
 
 import numpy as np
+
+
+class ArchDriftError(RuntimeError):
+    """A checkpoint that cannot be re-run under the CURRENT code.
+
+    Carries the drift itself (`dropped_kwargs`, `saved_obs_dim`, `current_obs_dim`,
+    `saved_arch`, `current_arch`, `git_hash`) so a surface can render it as a
+    diagnosis rather than re-parsing the message."""
+
+    def __init__(self, message: str, *, dropped_kwargs=(), saved_obs_dim=None,
+                 current_obs_dim=None, saved_arch=None, current_arch=None, git_hash=None):
+        super().__init__(message)
+        self.dropped_kwargs = tuple(dropped_kwargs)
+        self.saved_obs_dim = saved_obs_dim
+        self.current_obs_dim = current_obs_dim
+        self.saved_arch = saved_arch
+        self.current_arch = current_arch
+        self.git_hash = git_hash
+
+
+def peek_checkpoint(ckpt_path: str) -> dict:
+    """The checkpoint's saved ARCH fingerprint, without deserializing it.
+
+    SB3 stores its `data` block as a plain JSON zip member, so this reads in ~5 ms where
+    `MaskablePPO.load` spends seconds on ~27 MB — which is what lets a drift be DIAGNOSED before
+    (and explained after) a failed load. Best-effort by design: a checkpoint this cannot parse just
+    yields `{}` and the caller proceeds to the normal load path.
+
+    NOTE the returned `extractor_kwargs` is the JSON *rendering* of the saved kwargs — fine for
+    asking "which names are in here", useless for reconstruction, since SB3 renders class refs as
+    `:serialized:` markers. Rebuilding real kwargs needs `load_from_zip_file` (see `_real_policy_kwargs`).
+    """
+    out: dict = {}
+    try:
+        with zipfile.ZipFile(ckpt_path) as z:
+            data = json.loads(z.read("data").decode())
+    except Exception:  # noqa: BLE001 — a peek NEVER blocks the real load
+        return out
+    pk = data.get("policy_kwargs")
+    if isinstance(pk, str):
+        try:
+            pk = json.loads(pk)
+        except Exception:  # noqa: BLE001
+            pk = None
+    fek = (pk or {}).get("features_extractor_kwargs")
+    if isinstance(fek, dict):
+        out["extractor_kwargs"] = fek
+        layout = fek.get("layout")
+        parts = (layout or {}).get("parts") if isinstance(layout, dict) else None
+        if isinstance(parts, dict):
+            ends = [p.get("end") for p in parts.values() if isinstance(p, dict) and p.get("end")]
+            if ends:
+                out["obs_dim"] = int(max(ends))
+    return out
+
+
+def _accepted_extractor_kwargs() -> "set[str] | None":
+    """The kwarg names the CURRENT `Gen3FeaturesExtractor.__init__` accepts — or `None` if it takes
+    `**kwargs` (then nothing can be called unknown and no filtering is safe)."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    params = inspect.signature(Gen3FeaturesExtractor.__init__).parameters
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return None
+    return set(params) - {"self"}
+
+
+def _sidecar(ckpt_path: str, name: str) -> dict:
+    """A checkpoint's `model_config.json` / `metadata.json`, searching its own dir then UP to the run
+    root. `{}` when absent (an archived run may have neither).
+
+    THREE levels, not the two `load_model_snapshot` needs: an eval snapshot sits at
+    `<run>/eval_traces/step_<N>/snapshot.zip`, so the run-level `metadata.json` — the only place the
+    `git_hash` lives, i.e. the one thing that tells a reader which commit to check out — is a full
+    grandparent away. Measured: with two levels the drift message silently lost the git hash on
+    every retained eval snapshot, which is exactly the case the message exists for."""
+    d = os.path.dirname(os.path.abspath(ckpt_path))
+    for _ in range(3):
+        cand = os.path.join(d, name)
+        if os.path.exists(cand):
+            try:
+                with open(cand) as f:
+                    return json.load(f)
+            except Exception:  # noqa: BLE001 — provenance is best-effort
+                return {}
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return {}
+
+
+def _current_obs_dim() -> "int | None":
+    try:
+        from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+        return int(Gen3ObservationEncoder(load_mappings()).dimension)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _arch_drift_error(ckpt_path: str, peek: dict, dropped: "tuple[str, ...]",
+                      exc: Exception) -> ArchDriftError:
+    """Turn a failed load into a DIAGNOSIS — what drifted, and what to do about it."""
+    saved_obs = peek.get("obs_dim")
+    cur_obs = _current_obs_dim()
+    cfg = _sidecar(ckpt_path, "model_config.json")
+    meta = _sidecar(ckpt_path, "metadata.json")
+    saved_arch = cfg.get("arch_signature")
+    try:
+        from agents.model.model_version import ARCH_SIGNATURE as cur_arch
+    except Exception:  # noqa: BLE001
+        cur_arch = None
+    git_hash = meta.get("git_hash") or cfg.get("git_hash")
+
+    lines = [f"This checkpoint cannot be re-run under the current code:\n  {ckpt_path}", ""]
+    if saved_obs and cur_obs and saved_obs != cur_obs:
+        lines.append(f"  obs dim        trained {saved_obs}  ·  code builds {cur_obs}")
+    if saved_arch and cur_arch and saved_arch != cur_arch:
+        lines.append(f"  arch_signature trained {saved_arch}  ·  code is {cur_arch}")
+    if dropped:
+        lines.append("  dropped flags  " + ", ".join(dropped)
+                     + "   (deleted since; the rebuilt extractor is NOT the one that played)")
+    lines += [
+        # Collapsed to ONE line: these carry embedded newlines (the legality guard's message is a
+        # paragraph), and truncating a multi-line string mid-sentence produced a ragged fragment
+        # that read as a broken message rather than a quoted cause.
+        f"  underlying     {type(exc).__name__}: {' '.join(str(exc).split())[:180]}…",
+        "",
+        "The prober re-runs the model under CURRENT code, so a run trained before an",
+        "architecture change is not re-runnable — by design (see the root CLAUDE.md:",
+        '"checkpoint compatibility is not a concern"). Options:',
+    ]
+    if git_hash:
+        lines.append(f"  · probe from the commit it was trained on:  git checkout {git_hash}")
+    else:
+        lines.append("  · probe from the commit it was trained on (metadata.json records git_hash)")
+    lines += [
+        "  · or probe a run trained at the current architecture",
+        "",
+        "MODEL-FREE views need none of this and work on every archived run:",
+        "  scan · triage · turns · overview · find (except `disagree`) · falsify · calibration",
+    ]
+    return ArchDriftError("\n".join(lines), dropped_kwargs=dropped, saved_obs_dim=saved_obs,
+                          current_obs_dim=cur_obs, saved_arch=saved_arch, current_arch=cur_arch,
+                          git_hash=git_hash)
 
 
 @dataclass(frozen=True)
@@ -113,9 +284,14 @@ class ProbeModel:
     def __init__(self, policy, offsets: ObsOffsets,
                  global_encoder=None, global_off: int = 0, global_dim: int = 0,
                  pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0,
-                 turn_delta_encoder=None) -> None:
+                 turn_delta_encoder=None, dropped_kwargs=()) -> None:
         self._policy = policy
         self.offsets = offsets
+        # Extractor kwargs the CURRENT code no longer accepts, dropped so the load could proceed
+        # (see the module docstring). NON-EMPTY means the rebuilt extractor is not bit-identical to
+        # the one that played, so faithfulness is approximate — a surface must SAY so, exactly as
+        # it does for `obs_mismatch`. Empty on a clean load, which is the common case.
+        self.dropped_kwargs = tuple(dropped_kwargs)
         # For decoding the field state (weather/spikes/screens) out of the obs.
         self._global_encoder = global_encoder
         self._global_off = global_off
@@ -137,7 +313,31 @@ class ProbeModel:
 
         import agents.observation.constants as C
 
-        model = MaskablePPO.load(ckpt_path, device=device)
+        # ARCH-DRIFT RECOVERY (see the module docstring). Peek at the saved kwargs (~5 ms) and drop
+        # any the current extractor no longer accepts, so a checkpoint whose only problem is a
+        # DELETED flag still loads. Anything else — a value the code now rejects, weight shapes that
+        # no longer fit — is re-raised as an ArchDriftError that names the drift.
+        peek = peek_checkpoint(ckpt_path)
+        dropped: "tuple[str, ...]" = ()
+        custom_objects = None
+        accepted = _accepted_extractor_kwargs()
+        saved_kwargs = peek.get("extractor_kwargs")
+        if accepted is not None and isinstance(saved_kwargs, dict):
+            dropped = tuple(sorted(k for k in saved_kwargs if k not in accepted))
+            if dropped:
+                # Only NOW pay the full deserialize: the JSON peek renders class refs as
+                # `:serialized:` markers, so real kwargs have to come from SB3's own loader.
+                from stable_baselines3.common.save_util import load_from_zip_file
+                data, _, _ = load_from_zip_file(ckpt_path, device=device)
+                pk = dict(data.get("policy_kwargs") or {})
+                fek = dict(pk.get("features_extractor_kwargs") or {})
+                pk["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k in accepted}
+                custom_objects = {"policy_kwargs": pk}
+
+        try:
+            model = MaskablePPO.load(ckpt_path, device=device, custom_objects=custom_objects)
+        except Exception as exc:  # noqa: BLE001 — every failure becomes a DIAGNOSIS, not a stack trace
+            raise _arch_drift_error(ckpt_path, peek, dropped, exc) from exc
         policy = model.policy
         policy.set_training_mode(False)
         # A checkpoint trained with --log-level periodic carries an ObservationDebugger
@@ -154,7 +354,8 @@ class ProbeModel:
                    global_off=gp["start"], global_dim=gp["dim"],
                    pokemon_encoder=enc.pokemon_encoder,
                    our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM,
-                   turn_delta_encoder=enc.turn_delta_encoder)
+                   turn_delta_encoder=enc.turn_delta_encoder,
+                   dropped_kwargs=dropped)
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
         """Decode the field state (weather, spikes, screens, turn, pending Wish) from the obs."""

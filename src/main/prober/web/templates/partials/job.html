@@ -1,8 +1,297 @@
 {% import "_macros.html" as m %}
-{# One fragment for both heavy probes. While pending/running it re-requests ITSELF every 2s
-   (hx-swap-oob is not needed — the poller replaces the whole #job block, including this trigger),
-   and the trigger disappears the moment the job reaches a terminal state, so a finished page
-   stops hitting the server. #}
+{# One fragment for EVERY probe that runs off the request thread. While pending/running it
+   re-requests ITSELF every 2s (hx-swap-oob is not needed — the poller replaces the whole #job
+   block, including this trigger), and the trigger disappears the moment the job reaches a terminal
+   state, so a finished page stops hitting the server.
+
+   The two RUN-LEVEL probes (falsify_scan, calibration) render from their own partials. The three
+   PER-DECISION counterfactual probes render from the macros below — they live here rather than in
+   siblings of their own because their results are small and they share the same vocabulary (a
+   candidate table, a marked chosen row, a caveats block).
+
+   FAILURE IS A RESULT HERE, not an accident: all three counterfactuals need the trace's
+   `*_reconstruction.json` sibling (websocket / older traces have none) and all three load the
+   checkpoint (`ArchDriftError` on any run that is not at the current architecture — measured
+   79/79 archived runs). Both arrive as `status == "error"`, and the message is printed WHOLE:
+   `.err` is `white-space: pre-wrap` and the drift diagnosis is multi-line, ending in the exact
+   `git checkout` to re-probe from. Collapsing it to "job failed" throws away the only line that
+   says what to do next. #}
+
+{# ── lookahead: one ply, one number per legal action ──────────────────────────────────── #}
+{% macro cf_lookahead(r, job) %}
+  {% set best = (r.candidates | rejectattr("is_chosen") | first) %}
+  <div class="stats">
+    <div class="stat"><div class="k">turn</div><div class="v mono">{{ r.turn }}</div></div>
+    <div class="stat"><div class="k">played</div><div class="v mono">{{ r.chosen.label }}</div></div>
+    <div class="stat"><div class="k">baseline V(s′)</div>
+         <div class="v mono">{{ m.num(r.baseline_value) }}</div></div>
+    <div class="stat"><div class="k">best alternative</div>
+         <div class="v mono">{{ r.best_alternative or "—" }}</div></div>
+    <div class="stat"><div class="k">its ΔV</div>
+         <div class="v mono">{{ m.signed(r.best_delta_v) }}</div></div>
+  </div>
+
+  <p class="muted small">
+    Every legal action was re-rolled through this turn with the opponent playing its
+    <strong>recorded</strong> move and the realized dice held fixed (common random numbers), so
+    <strong>ΔV isolates the action</strong> rather than the luck. The chosen action's re-roll
+    reproduces the real next state, so its V(s′) should land on the trace's recorded next value
+    ({{ m.num(r.recorded_next_value) }}) — a built-in consistency anchor. A candidate whose turn
+    <strong>ended</strong> the battle has no numeric V and is reported as a terminal win/loss
+    instead.
+    {% if r.n_seeds %}
+    Alongside the CRN headline, V(s′) is also averaged over {{ r.n_seeds }} fresh dice seeds.
+    {% else %}
+    This is the realized-dice reading only (seeds = 0); it says what would have happened on
+    <em>these</em> dice, not on average.
+    {% endif %}
+  </p>
+
+  <div class="scroll-x">
+  <table>
+    <thead><tr>
+      <th></th><th>action</th>
+      <th class="num" title="the critic's value of the state this action leads to, on the realized dice">V(s′) CRN</th>
+      <th class="num" title="V(s′) minus the chosen line's V(s′)">ΔV vs played</th>
+      {% if r.n_seeds %}<th class="num">dice mean ± std</th>{% endif %}
+      <th class="num">P(win|s′)</th><th>terminal</th>
+    </tr></thead>
+    <tbody>
+    {% for c in r.candidates %}
+      <tr data-row class="{{ 'chosenrow' if c.is_chosen }}">
+        <td class="mark">
+          {%- if c.is_chosen %}<span title="the action the model actually played">▶</span>
+          {%- elif best and c.action == best.action %}<span title="best non-chosen alternative">★</span>
+          {%- endif %}</td>
+        <td class="mono">{{ c.label }}</td>
+        <td class="num">{{ m.num(c.value_crn) }}</td>
+        <td class="num">{{ m.signed(c.delta_v) }}</td>
+        {% if r.n_seeds %}
+        <td class="num">{{ m.num(c.value_mean) }} <span class="muted">± {{ m.num(c.value_std) }}</span></td>
+        {% endif %}
+        <td class="num">{{ m.pct(c.win_prob_crn, 0) }}</td>
+        <td>{% if c.terminal %}
+            <span class="pill {{ 'pos' if c.terminal == 'win' else 'neg' }}">{{ c.terminal }}</span>
+            {% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if best and job and job.params %}
+  {# The handoff the TUI's `L` → `C` gives you: the replay-to-end below is PRE-FILLED with this
+     lookahead's best non-chosen alternative, so "and would that actually have won?" is one click
+     rather than a second reading of the action indices. #}
+  <form class="filters cf-handoff" hx-post="/partials/job/replay-counterfactual" hx-target="#job">
+    <input type="hidden" name="run" value="{{ job.params.run or '' }}">
+    <input type="hidden" name="battle" value="{{ job.params.battle }}">
+    <input type="hidden" name="inv" value="{{ job.params.inv }}">
+    <input type="hidden" name="action" value="{{ best.action }}">
+    <input type="hidden" name="narrate" value="on">
+    <label>rollouts
+      <input type="number" name="rollouts" value="1" min="1" max="16" size="3"
+             title="1 is a single realized-dice line, not a probability; each rollout is a full game (seconds)">
+    </label>
+    <button class="primary" type="submit">replay “{{ best.label }}” to a win/loss →</button>
+  </form>
+  {% endif %}
+
+  {{ m.caveats(r.caveats) }}
+{% endmacro %}
+
+
+{# ── better-line: the contrastive trajectory ──────────────────────────────────────────── #}
+{% macro cf_better_line(r, job) %}
+  {% set b = r.best_alternative %}
+  {% if not b %}
+    <p class="empty">the beam found no alternative to the line that was played</p>
+  {% else %}
+  <p class="interp">
+    <strong>turn {{ r.turn }}: you played <span class="mono">{{ r.chosen.label }}</span> → better
+    line <span class="mono">{{ b.label }}</span></strong>{% if b.terminal %} — and that line ends in
+    a <strong>{{ b.terminal }}</strong>{% endif %}.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><div class="k">ΔV at the divergence</div>
+         <div class="v mono">{{ m.signed(b.delta_v) }}</div></div>
+    <div class="stat"><div class="k">P(win) — better line</div>
+         <div class="v mono">{{ m.pct(b.win_prob, 1) }}</div></div>
+    {% set chosen_row = (r.candidates | selectattr("is_chosen") | first) %}
+    <div class="stat"><div class="k">P(win) — as played</div>
+         <div class="v mono">{{ m.pct(chosen_row.win_prob if chosen_row else None, 1) }}</div></div>
+    <div class="stat"><div class="k">backup (max over our continuations)</div>
+         <div class="v mono">{{ m.num(b.backup) }}</div></div>
+    <div class="stat"><div class="k">search</div>
+         <div class="v mono">depth {{ r.depth }} · beam {{ r.beam }} · top-k {{ r.top_k }}</div></div>
+  </div>
+
+  <p class="muted small">
+    Provenance: the opponent plays its <strong>recorded</strong> move at the divergence ply (so
+    depth 1 is faithful regardless), and at interior plies it is
+    <span class="mono">{{ r.opp_model_used or r.interior_opponent or "—" }}</span>.
+    The two P(win) figures above are the head's readings of the two lines; they are printed side by
+    side rather than subtracted.
+  </p>
+
+  {% if r.depth > 1 and "self_model_approx" in (r.opp_model_used or "") %}
+  <p class="banner warn">
+    ⚠ <strong>interior opponent is a SELF-PROXY</strong> — past the first ply the opponent is the
+    trainee's own reloaded policy standing in for the real one, a flagged self-play approximation.
+    Depth 1 does not lean on it; everything deeper does.
+  </p>
+  {% endif %}
+
+  <h3>principal variation</h3>
+  <ol class="log pv">
+    {% for p in b.principal_variation %}
+    {% set lbl = (r.candidates | selectattr("action", "equalto", p.action) | map(attribute="label") | first) %}
+    <li>
+      <span class="muted">ply {{ p.depth }}</span>
+      <span class="mono">{{ lbl if (p.depth == 1 and lbl) else "action " ~ p.action }}</span>
+      <span class="muted">V {{ m.num(p.value) }}</span>
+      {% if p.terminal %}<span class="pill {{ 'pos' if p.terminal == 'win' else 'neg' }}">{{ p.terminal }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="muted small">
+    Only the first ply is one of our recorded actions, so only it carries a move label; a deeper ply
+    is a different decision and is named by its action index.
+  </p>
+
+  <h3>candidates at the divergence</h3>
+  <div class="scroll-x">
+  <table>
+    <thead><tr><th></th><th>action</th><th class="num">V(s′)</th>
+      <th class="num" title="max over our continuations below this action">backup</th>
+      <th class="num">ΔV</th><th class="num">P(win)</th><th>terminal</th></tr></thead>
+    <tbody>
+    {% for c in r.candidates %}
+      <tr data-row class="{{ 'chosenrow' if c.is_chosen }}">
+        <td class="mark">
+          {%- if c.is_chosen %}<span title="the action the model actually played">▶</span>
+          {%- elif c.action == b.action %}<span title="the search's recommendation">★</span>
+          {%- endif %}</td>
+        <td class="mono">{{ c.label }}</td>
+        <td class="num">{{ m.num(c.value) }}</td>
+        <td class="num">{{ m.num(c.backup) }}</td>
+        <td class="num">{{ m.signed(c.delta_v) }}</td>
+        <td class="num">{{ m.pct(c.win_prob, 0) }}</td>
+        <td>{% if c.terminal %}
+            <span class="pill {{ 'pos' if c.terminal == 'win' else 'neg' }}">{{ c.terminal }}</span>
+            {% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if r.confirm %}
+  <h3>rollout confirm — the ground-truth check on the critic's claim</h3>
+    {% if r.confirm.error %}
+    <p class="err">{{ r.confirm.error }}</p>
+    {% else %}
+    <div class="stats">
+      <div class="stat"><div class="k">win rate</div>
+           <div class="v mono">{{ m.pct(r.confirm.win_rate, 0) }}</div></div>
+      {% if r.confirm.ci %}
+      <div class="stat"><div class="k">Wilson CI</div>
+           <div class="v mono">{{ m.pct(r.confirm.ci[0], 0) }} – {{ m.pct(r.confirm.ci[1], 0) }}</div></div>
+      {% endif %}
+      <div class="stat"><div class="k">rollouts</div>
+           <div class="v mono">{{ r.confirm.n_rollouts }}</div></div>
+      <div class="stat"><div class="k">opponent</div>
+           <div class="v mono">{{ r.confirm.opponent_source or "—" }}</div></div>
+    </div>
+    {{ m.caveats(r.confirm.caveats, "rollout-confirm caveats") }}
+    {% endif %}
+  {% else %}
+  <p class="muted small">
+    No rollout confirm was requested — these numbers are the <em>critic's</em> claim about the line,
+    not a played-out result. Re-run with confirm rollouts &gt; 0 (each is a full game) to check it.
+  </p>
+  {% endif %}
+
+  {{ m.caveats(r.caveats) }}
+  {% endif %}
+{% endmacro %}
+
+
+{# ── replay-to-end: could it actually have won? ───────────────────────────────────────── #}
+{% macro cf_trajectory(t, title) %}
+  {% if t %}
+  <details class="traj">
+    <summary>{{ title }} — {{ t | length }} turns</summary>
+    <ol class="log">
+      {% for tn in t %}
+      <li><span class="turnno">turn {{ tn.turn }}</span>
+        <ul class="events">{% for e in tn.events %}<li>{{ e }}</li>{% endfor %}</ul>
+      </li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% endif %}
+{% endmacro %}
+
+{% macro cf_replay(r, job) %}
+  <p class="interp">
+    <strong>turn {{ r.turn }}: instead of <span class="mono">{{ r.chosen.label }}</span>, play
+    <span class="mono">{{ r.substitute.label }}</span></strong> — then the trainee's greedy policy
+    plays the rest of the game live against the reloaded opponent, to a win or a loss.
+    {% if r.recorded_result %}(The game as played was a <strong>{{ r.recorded_result }}</strong>.){% endif %}
+  </p>
+
+  {% if r.deterministic_line %}
+  <p class="banner warn">
+    ⚠ <strong>ONE realized-dice line — this is an outcome, NOT a probability.</strong>
+    A single rollout says what happened on one draw of the dice. Raise the rollouts to resample the
+    post-divergence dice for a Monte-Carlo win rate ± CI.
+  </p>
+  {% endif %}
+
+  <div class="stats">
+    <div class="stat"><div class="k">{{ "outcome" if r.deterministic_line else "win rate" }}</div>
+         <div class="v mono">
+           {%- if r.deterministic_line %}{{ (r.outcomes.keys() | list | first) or "—" }}
+           {%- else %}{{ m.pct(r.win_rate, 0) }}{% endif %}</div></div>
+    {% if not r.deterministic_line and r.win_rate_ci %}
+    <div class="stat"><div class="k">Wilson CI</div>
+         <div class="v mono">{{ m.pct(r.win_rate_ci[0], 0) }} – {{ m.pct(r.win_rate_ci[1], 0) }}</div></div>
+    {% endif %}
+    <div class="stat"><div class="k">wins / losses</div>
+         <div class="v mono">{{ r.wins }} / {{ r.losses }}</div></div>
+    <div class="stat"><div class="k">rollouts</div><div class="v mono">{{ r.n_rollouts }}</div></div>
+    <div class="stat"><div class="k">opponent</div>
+         <div class="v mono">{{ r.opponent_source or "—" }}</div></div>
+  </div>
+
+  {% if r.outcomes %}
+  <p class="muted small">outcomes:
+    {% for k, v in r.outcomes.items() %}<span class="pill">{{ k }} × {{ v }}</span> {% endfor %}
+  </p>
+  {% endif %}
+
+  {{ cf_trajectory(r.winning_trajectory, "a recovered WIN, move by move") }}
+  {{ cf_trajectory(r.losing_trajectory, "a LOSS on the same substitution, move by move") }}
+  {% if not r.winning_trajectory and not r.losing_trajectory %}
+  <p class="muted small">
+    No play-by-play was captured for this run (it is recorded only with narration on, and only for
+    the first win and the first loss).
+  </p>
+  {% endif %}
+
+  {{ m.caveats(r.caveats) }}
+{% endmacro %}
+
+
+{% if not job %}
+{# A submit that could not name what to run. The counterfactual replay has no default action, and
+   an HTMX swap would drop a 400 on the floor — so the reason is rendered where the result goes. #}
+<div data-job-status="invalid">
+  <p class="err">{{ message or "nothing to run" }}</p>
+</div>
+{% else %}
 <div {% if not job.done %}hx-get="/partials/job/{{ job.id }}" hx-trigger="every 2s"
      hx-target="#job"{% endif %} data-job-status="{{ job.status }}" data-job-id="{{ job.id }}">
 
@@ -26,6 +315,13 @@
       {% include "partials/falsify_result.html" %}
     {% elif job.kind == "calibration" %}
       {% include "partials/calibration_result.html" %}
+    {% elif job.kind == "lookahead" %}
+      {{ cf_lookahead(r, job) }}
+    {% elif job.kind == "better_line" %}
+      {{ cf_better_line(r, job) }}
+    {% elif job.kind == "replay_counterfactual" %}
+      {{ cf_replay(r, job) }}
     {% endif %}
   {% endif %}
 </div>
+{% endif %}

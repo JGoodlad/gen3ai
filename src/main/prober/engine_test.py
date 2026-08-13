@@ -1398,14 +1398,22 @@ def test_timeline_does_not_infer_a_miss_against_a_switch_in():
     assert next(e for e in plain if e.get("move") == "meteormash")["no_effect"] == "missed"
 
 
-def test_timeline_text_and_the_tui_renderer_share_one_vocabulary():
-    """The regression this guards: the TUI used to own private copies of the `cant` and
-    `no effect` wordings, so teaching one surface a new reason left the other printing a raw code."""
-    from main.prober import app as tui
-    from main.prober.engine import CANT_PHRASE, NO_EFFECT_TEXT
-    assert tui._NO_EFFECT_TEXT is NO_EFFECT_TEXT
-    assert tui._cant_phrase("frz") == CANT_PHRASE["frz"] == "frozen"
-    assert tui._cant_phrase("something_new") == "something_new"      # unknown code passes through
+def test_the_rendered_line_draws_its_words_from_the_engines_vocabulary():
+    """The regression this guards: a renderer owning PRIVATE copies of the `cant` / `no effect`
+    wordings, so teaching one surface a new reason leaves another printing a raw code.
+
+    It used to assert this against the TUI's copies; the TUI is gone and the web renders
+    `timeline_entry_text` directly, so the guard is now that the rendered SENTENCE is built from the
+    shared tables — a new `cant` code added to `CANT_PHRASE` must appear in the text with no
+    renderer change, and an unknown code must pass through rather than vanish."""
+    from main.prober.engine import CANT_PHRASE, NO_EFFECT_TEXT, cant_phrase, timeline_entry_text
+    assert cant_phrase("frz") == CANT_PHRASE["frz"] == "frozen"
+    assert cant_phrase("something_new") == "something_new"      # unknown code passes through
+    frozen = timeline_entry_text({"side": "we", "kind": "move", "move": "icebeam", "cant": "frz"})
+    assert CANT_PHRASE["frz"] in frozen, "the line must read the shared table, not a private copy"
+    immune = timeline_entry_text({"side": "we", "kind": "move", "move": "seismictoss",
+                                  "no_effect": "immune"})
+    assert NO_EFFECT_TEXT["immune"] in immune
 
 
 # ── raw Showdown protocol (replay.html → per-turn slice) ──────────────────────────────────────────

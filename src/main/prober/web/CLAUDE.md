@@ -15,7 +15,10 @@ python -m main.prober.web --openapi                       # regenerate the commi
 python -m main.prober.web --check-openapi                 # the staleness gate (exit 1 if stale)
 ```
 
-**`ProbeSession` is unmodified and the TUI is untouched.** Nothing here imports `main.prober.app`.
+**This is the only human-facing surface** — the Textual TUI (`main.prober.app`) was retired
+2026-08-13. The rule it was built under still holds and matters more now: nothing here contains
+analysis. Every number comes from `ProbeSession`, so the browser and `query.py` cannot disagree
+about a run.
 
 ## How to actually look at it
 
@@ -194,8 +197,19 @@ produced it.
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
 | `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic (model-free) |
+| `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below) |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
+| (on `/analyze`) | `lookahead()` · `better_line()` · `replay_counterfactual()` | the counterfactual tier — **background jobs**, password-gated |
+
+⚠ **An HTMX `<form hx-post>` sends its fields in the BODY — declare them `Form(...)`, never
+`Query(...)`.** `/falsify` and `/calibration` shipped with `Query`, so every control on both pages
+was silently ignored and the probes ran at their defaults: a submit of
+`outcome=win/limit=3/seeds=7/concurrency=4` reached the session as `loss/20/32/1`. The `outcome`
+one made it a CORRECTNESS bug rather than an inconvenience — asking for wins quietly scanned losses
+and returned a confident answer to a question nobody asked. Fixed, and pinned by
+`test_the_page_form_fields_actually_reach_the_probe` (verified to fail on the reverted code).
+`run` stays a `Query` on purpose: it rides the URL, because the run picker is a link.
 
 ### `/battle` — the turn-by-turn replay
 
@@ -238,6 +252,16 @@ Three things about it are deliberate:
 - **It renders server-side on first paint** — measured **17–20 ms** for `battle_turns()` on that
   249-turn battle, ~110 ms for the whole page. Nothing here needs to be async.
 
+**A run with no traces is an EMPTY STATE, not a 404.** Both battle-addressed pages (`/battle`,
+`/analyze`) resolve a battle before rendering, and a run that has captured nothing has none — which
+surfaced as a 404, indistinguishable from a bad link on a perfectly healthy run. It is also not an
+edge case: the app opens the NEWEST run by default and a freshly-launched run has no traces until
+its first eval cycle (gen-9 sat exactly there for hours on 2026-08-13). `_NoBattles` is caught by
+the two page handlers and rendered as a message pointing at the run summary; the JSON API still
+returns the status code, and an unknown battle token is still a real 404 that never echoes the
+token. Pinned by `test_a_run_with_no_traces_is_an_empty_state_not_a_404` +
+`test_a_battle_that_does_not_exist_is_still_a_404`.
+
 **A battle is named by its `short_id`, and the name is checked for MEMBERSHIP** — `runs.py`'s rule
 one level down, and load-bearing for the same reason: `ProbeSession._battle` falls back to
 `build_trace_tree(battle_id)` for an id it does not recognise, which will happily open a
@@ -246,10 +270,55 @@ against the run's own battle listing and passes the session a path the *server* 
 reversion test proved it: without that check a pinned single-run instance served a sibling run's
 trace with a **200**.
 
-**Deferred, on purpose:** `analyze`, `lookahead`, `better_line`, `replay_counterfactual`. Those
-load a checkpoint and hold expensive per-decision state; they are the stateful tier and want a
-different session model than "one cached `ProbeSession` per run". The TUI remains the surface for
-them.
+### `/analyze` — the one view that loads a checkpoint
+
+The per-decision forensic read, ported here as part of retiring the TUI. Page shell + an HTMX
+fragment (`hx-trigger="load"`, the `/scan` pattern) because it deserializes a checkpoint; the
+battle and `inv` stay plain GET params, because "look at this decision" is a thing you link to.
+
+**Read the arch-drift section in `src/main/prober/CLAUDE.md` before trusting anything here.**
+Re-running the model needs a checkpoint at the CURRENT architecture, and measured over `models/`,
+**79 of 79 archived runs cannot load**. So this view's ordinary output on an old run is an
+`ArchDriftError` diagnosis — obs dim, `arch_signature`, dropped flags, and the exact `git checkout`
+— which the fragment renders whole (`white-space: pre-wrap`) rather than collapsing to "analysis
+failed". Every other view is model-free and unaffected; that asymmetry is why they were built first.
+
+Two faithfulness banners are load-bearing and must never be dropped: `obs_mismatch` (every
+obs-offset decode below is reading past a divergence) and `model_resolution.dropped_kwargs` (flags
+the current code no longer accepts were dropped to make the load possible, so the rebuilt extractor
+is not the one that played). The panels self-hide per flag-gated head, so an absent panel reads as
+"that head was off", never as a broken probe.
+
+**The genuine upgrades over the terminal**, both because a browser can draw: the distributional
+critic's return distribution is a real **chart** (the TUI could only manage a one-line eighth-block
+sparkline, where "sharp vs wide vs bimodal" — the entire point of the head — was a judgement call
+about eight characters), and the operator's `incoming_matrix` is a real **heatmap table** (opp
+candidate move × our mon), where the terminal had to fake a 2-D grid as an indented list.
+
+**The counterfactual tier rides `/analyze`** — `lookahead`, `better_line` and
+`replay_counterfactual` are per-DECISION probes, so they launch from the bottom of this page
+pre-filled with the current battle + inv, rather than getting a page of their own. They spawn Node
+and run for seconds to minutes, so they go through the **job registry** exactly like `falsify_scan`
+(submit → job id → poll `/partials/job/{id}`) and they are **password-gated** by the same rule:
+reading is anonymous, spending CPU is not.
+
+Two handoffs are ported from the TUI's `L`→`C` flow: a finished `lookahead` offers its best
+non-chosen alternative straight to the replay probe, and `better_line` renders the interior-opponent
+provenance with a **self-proxy banner** at depth ≥ 2 (the trainee standing in for the opponent is an
+approximation, and a contrastive line that does not say so reads as fact). `replay_counterfactual`
+at `n_rollouts=1` is a single realized-dice line and **not** a probability — the session says so in
+its `caveats` and the page renders them.
+
+`interior_opponent="ckpt"` is deliberately NOT exposed: it takes a filesystem path from the client,
+which is the one thing `runs.py`'s membership rule exists to prevent. CLI-only.
+
+⚠ **A COVERAGE HOLE, stated rather than papered over.** `/analyze` is in the headless render test's
+page list, but the fixture run has no loadable checkpoint, so what the browser actually measures is
+the page shell and the **arch-drift error state**. The POPULATED markup — the incoming-matrix
+heatmap and the wide faithfulness/threat tables, i.e. exactly the widest things on the site — is
+covered by unit tests (strings in the HTML) and by an eyeball, **not** by the measured layout gate
+(`overflowby` / `scrollers` / `monstack`). Closing it needs a fixture checkpoint at the current
+architecture; until one exists, treat "the heatmap does not overflow on a phone" as unproven.
 
 ## The session cache is BOUNDED (`_MAX_CACHED_SESSIONS`)
 

@@ -182,7 +182,7 @@ def _probe(binary: str, base: str, path: str, size=DESKTOP, dark: bool = False) 
 
 # -- the gate ---------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle",
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/analyze",
                                   "/falsify", "/calibration"])
 def test_every_page_boots_with_its_vendored_libraries(server, path):
     """Both bundles must define their globals with the network taken away.
@@ -276,7 +276,7 @@ def test_the_pages_reference_no_remote_asset(server):
 # defined after the query that showed it, so `display:none` won and the sheet had no way out) —
 # only asking the laid-out page catches that.
 
-@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle",
+@pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/analyze",
                                   "/falsify", "/calibration"])
 def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, path):
     """The single rule the whole responsive layout serves.

@@ -17,6 +17,466 @@
         "title": "Body_do_login_login_post",
         "type": "object"
       },
+      "Body_partial_submit_better_line_partials_job_better_line_post": {
+        "properties": {
+          "battle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battle"
+          },
+          "beam": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "3",
+            "title": "Beam"
+          },
+          "confirm_rollouts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "0",
+            "title": "Confirm Rollouts"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "2",
+            "title": "Depth"
+          },
+          "interior_opponent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "self",
+            "title": "Interior Opponent"
+          },
+          "inv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "0",
+            "title": "Inv"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "4",
+            "title": "Top K"
+          }
+        },
+        "title": "Body_partial_submit_better_line_partials_job_better_line_post",
+        "type": "object"
+      },
+      "Body_partial_submit_calibration_partials_job_calibration_post": {
+        "properties": {
+          "alts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "2",
+            "title": "Alts"
+          },
+          "bins": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "10",
+            "title": "Bins"
+          },
+          "concurrency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "8",
+            "title": "Concurrency"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "20",
+            "title": "Limit"
+          },
+          "opponent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opponent"
+          },
+          "outcome": {
+            "default": "loss",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "overvalue_tau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "5.0",
+            "title": "Overvalue Tau"
+          },
+          "seeds": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "32",
+            "title": "Seeds"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "2",
+            "title": "Worst"
+          }
+        },
+        "title": "Body_partial_submit_calibration_partials_job_calibration_post",
+        "type": "object"
+      },
+      "Body_partial_submit_falsify_partials_job_falsify_scan_post": {
+        "properties": {
+          "alts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "2",
+            "title": "Alts"
+          },
+          "concurrency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "1",
+            "title": "Concurrency"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "20",
+            "title": "Limit"
+          },
+          "opponent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opponent"
+          },
+          "outcome": {
+            "default": "loss",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "seeds": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "32",
+            "title": "Seeds"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "2",
+            "title": "Worst"
+          }
+        },
+        "title": "Body_partial_submit_falsify_partials_job_falsify_scan_post",
+        "type": "object"
+      },
+      "Body_partial_submit_lookahead_partials_job_lookahead_post": {
+        "properties": {
+          "battle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battle"
+          },
+          "followup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "random",
+            "title": "Followup"
+          },
+          "inv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "0",
+            "title": "Inv"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          },
+          "seeds": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "0",
+            "title": "Seeds"
+          }
+        },
+        "title": "Body_partial_submit_lookahead_partials_job_lookahead_post",
+        "type": "object"
+      },
+      "Body_partial_submit_replay_counterfactual_partials_job_replay_counterfactual_post": {
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "battle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battle"
+          },
+          "inv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "0",
+            "title": "Inv"
+          },
+          "narrate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrate"
+          },
+          "opponent_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "auto",
+            "title": "Opponent Source"
+          },
+          "rollouts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "1",
+            "title": "Rollouts"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          }
+        },
+        "title": "Body_partial_submit_replay_counterfactual_partials_job_replay_counterfactual_post",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -330,6 +790,173 @@
         ]
       }
     },
+    "/analyze": {
+      "get": {
+        "operationId": "page_analyze_analyze_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "battle short_id; default = the newest",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "battle short_id; default = the newest",
+              "title": "Battle"
+            }
+          },
+          {
+            "description": "invocation index (the Nth decision)",
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "invocation index (the Nth decision)",
+              "title": "Inv"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One decision, fully analyzed: faithfulness, beliefs, threats, saliency",
+        "tags": [
+          "pages"
+        ]
+      }
+    },
+    "/api/analyze": {
+      "get": {
+        "operationId": "api_analyze_api_analyze_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); default = the newest checkpoint's first captured battle",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); default = the newest checkpoint's first captured battle",
+              "title": "Battle"
+            }
+          },
+          {
+            "description": "invocation index \u2014 the Nth recorded decision",
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "invocation index \u2014 the Nth recorded decision",
+              "minimum": 0,
+              "title": "Inv",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Api Analyze Api Analyze Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "ProbeSession.analyze() \u2014 one decision, fully analyzed (LOADS THE CHECKPOINT)",
+        "tags": [
+          "read-only"
+        ]
+      }
+    },
     "/api/battle-turns": {
       "get": {
         "operationId": "api_battle_turns_api_battle_turns_get",
@@ -538,6 +1165,149 @@
           }
         },
         "summary": "Every submitted job, newest first (no results \u2014 those are per-id)",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/jobs/better-line": {
+      "post": {
+        "operationId": "api_job_better_line_api_jobs_better_line_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "battle short_id; default = the newest",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "battle short_id; default = the newest",
+              "title": "Battle"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Inv",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "OUR plies searched; 1 == lookahead",
+            "in": "query",
+            "name": "depth",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "description": "OUR plies searched; 1 == lookahead",
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Depth",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "beam",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "maximum": 8,
+              "minimum": 1,
+              "title": "Beam",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "top_k",
+            "required": false,
+            "schema": {
+              "default": 4,
+              "maximum": 11,
+              "minimum": 1,
+              "title": "Top K",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "who reacts at INTERIOR plies: the trainee as a flagged self-proxy, or the sim default. ('ckpt' needs a path \u2014 CLI only.)",
+            "in": "query",
+            "name": "interior_opponent",
+            "required": false,
+            "schema": {
+              "default": "self",
+              "description": "who reacts at INTERIOR plies: the trainee as a flagged self-proxy, or the sim default. ('ckpt' needs a path \u2014 CLI only.)",
+              "pattern": "^(self|none)$",
+              "title": "Interior Opponent",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ground-truth Monte-Carlo confirm of the recommendation; each rollout is a full game",
+            "in": "query",
+            "name": "confirm_rollouts",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "ground-truth Monte-Carlo confirm of the recommendation; each rollout is a full game",
+              "maximum": 16,
+              "minimum": 0,
+              "title": "Confirm Rollouts",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit ProbeSession.better_line() \u2014 a CRN-anchored beam over the critic",
         "tags": [
           "jobs"
         ]
@@ -866,6 +1636,239 @@
           }
         },
         "summary": "Submit ProbeSession.falsify_scan() \u2014 minutes; needs the shared password",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/jobs/lookahead": {
+      "post": {
+        "operationId": "api_job_lookahead_api_jobs_lookahead_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "battle short_id; default = the newest",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "battle short_id; default = the newest",
+              "title": "Battle"
+            }
+          },
+          {
+            "description": "invocation index (the Nth decision)",
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "invocation index (the Nth decision)",
+              "minimum": 0,
+              "title": "Inv",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "0 = the CRN headline alone (the session default); >0 also dice-averages V(s\u2032) \u00b1 std over that many fresh seeds",
+            "in": "query",
+            "name": "seeds",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "0 = the CRN headline alone (the session default); >0 also dice-averages V(s\u2032) \u00b1 std over that many fresh seeds",
+              "maximum": 64,
+              "minimum": 0,
+              "title": "Seeds",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "followup",
+            "required": false,
+            "schema": {
+              "default": "random",
+              "pattern": "^(random|default)$",
+              "title": "Followup",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit ProbeSession.lookahead() \u2014 one-ply V(s\u2032) per legal action",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/jobs/replay-counterfactual": {
+      "post": {
+        "operationId": "api_job_replay_counterfactual_api_jobs_replay_counterfactual_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "description": "battle short_id; default = the newest",
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "battle short_id; default = the newest",
+              "title": "Battle"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Inv",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "the action INDEX to substitute for ours at this decision (the position in `analyze`'s `actions` list)",
+            "in": "query",
+            "name": "action",
+            "required": true,
+            "schema": {
+              "description": "the action INDEX to substitute for ours at this decision (the position in `analyze`'s `actions` list)",
+              "maximum": 10,
+              "minimum": 0,
+              "title": "Action",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "1 = the single realized-dice line, which is NOT a probability; >1 resamples the post-divergence dice",
+            "in": "query",
+            "name": "rollouts",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1 = the single realized-dice line, which is NOT a probability; >1 resamples the post-divergence dice",
+              "maximum": 32,
+              "minimum": 1,
+              "title": "Rollouts",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "opponent_source",
+            "required": false,
+            "schema": {
+              "default": "auto",
+              "pattern": "^(auto|bot|self)$",
+              "title": "Opponent Source",
+              "type": "string"
+            }
+          },
+          {
+            "description": "capture the first recovered win/loss play-by-play",
+            "in": "query",
+            "name": "narrate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "capture the first recovered win/loss play-by-play",
+              "title": "Narrate",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit ProbeSession.replay_counterfactual() \u2014 substitute an action, play the rest to a win/loss",
         "tags": [
           "jobs"
         ]
@@ -1557,6 +2560,88 @@
         ]
       }
     },
+    "/partials/analyze": {
+      "get": {
+        "operationId": "partial_analyze_partials_analyze_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "in": "query",
+            "name": "battle",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Battle"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inv",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "0",
+              "title": "Inv"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One decision's full analysis (HTMX target; loads the checkpoint)",
+        "tags": [
+          "partials"
+        ]
+      }
+    },
     "/partials/battles": {
       "get": {
         "operationId": "partial_battles_partials_battles_get",
@@ -1654,6 +2739,46 @@
         ]
       }
     },
+    "/partials/job/better-line": {
+      "post": {
+        "operationId": "partial_submit_better_line_partials_job_better_line_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_partial_submit_better_line_partials_job_better_line_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit a better-line search from /analyze (needs the shared password)",
+        "tags": [
+          "partials"
+        ]
+      }
+    },
     "/partials/job/calibration": {
       "post": {
         "operationId": "partial_submit_calibration_partials_job_calibration_post",
@@ -1673,169 +2798,17 @@
               ],
               "title": "Run"
             }
-          },
-          {
-            "in": "query",
-            "name": "outcome",
-            "required": false,
-            "schema": {
-              "default": "loss",
-              "title": "Outcome",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "opponent",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Opponent"
-            }
-          },
-          {
-            "in": "query",
-            "name": "step",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Step"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "20",
-              "title": "Limit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "worst",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "2",
-              "title": "Worst"
-            }
-          },
-          {
-            "in": "query",
-            "name": "seeds",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "32",
-              "title": "Seeds"
-            }
-          },
-          {
-            "in": "query",
-            "name": "alts",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "2",
-              "title": "Alts"
-            }
-          },
-          {
-            "in": "query",
-            "name": "concurrency",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "8",
-              "title": "Concurrency"
-            }
-          },
-          {
-            "in": "query",
-            "name": "bins",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "10",
-              "title": "Bins"
-            }
-          },
-          {
-            "in": "query",
-            "name": "overvalue_tau",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "5.0",
-              "title": "Overvalue Tau"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_partial_submit_calibration_partials_job_calibration_post"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -1883,135 +2856,17 @@
               ],
               "title": "Run"
             }
-          },
-          {
-            "in": "query",
-            "name": "outcome",
-            "required": false,
-            "schema": {
-              "default": "loss",
-              "title": "Outcome",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "opponent",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Opponent"
-            }
-          },
-          {
-            "in": "query",
-            "name": "step",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Step"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "20",
-              "title": "Limit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "worst",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "2",
-              "title": "Worst"
-            }
-          },
-          {
-            "in": "query",
-            "name": "seeds",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "32",
-              "title": "Seeds"
-            }
-          },
-          {
-            "in": "query",
-            "name": "alts",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "2",
-              "title": "Alts"
-            }
-          },
-          {
-            "in": "query",
-            "name": "concurrency",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": "1",
-              "title": "Concurrency"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_partial_submit_falsify_partials_job_falsify_scan_post"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -2035,6 +2890,86 @@
           }
         },
         "summary": "Submit a falsify_scan from the page (needs the shared password)",
+        "tags": [
+          "partials"
+        ]
+      }
+    },
+    "/partials/job/lookahead": {
+      "post": {
+        "operationId": "partial_submit_lookahead_partials_job_lookahead_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_partial_submit_lookahead_partials_job_lookahead_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit a one-ply lookahead from /analyze (needs the shared password)",
+        "tags": [
+          "partials"
+        ]
+      }
+    },
+    "/partials/job/replay-counterfactual": {
+      "post": {
+        "operationId": "partial_submit_replay_counterfactual_partials_job_replay_counterfactual_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_partial_submit_replay_counterfactual_partials_job_replay_counterfactual_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Substitute an action and replay to a win/loss (needs the shared password)",
         "tags": [
           "partials"
         ]

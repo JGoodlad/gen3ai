@@ -12,6 +12,18 @@
   <code>python -m main.prober.query analyze &lt;id&gt; &lt;inv&gt;</code> or the TUI.
 </p>
 
+{% if empty %}
+{# The ordinary state of a run whose first eval cycle has not run yet — and the newest run is the
+   default, so this is the first thing a fresh run shows. It used to be a 404. #}
+<section class="card empty-state">
+  <h2>no battles captured yet</h2>
+  <p>{{ empty }}</p>
+  <p class="muted">Forensic traces are written per eval cycle. Until the first one,
+    <a class="rowlink" href="/?run={{ run | urlencode }}">the run summary</a> is the view with
+    something to show.</p>
+</section>
+{% else %}
+
 {# A plain GET form, not HTMX: this page is one you read and LINK to ("look at turn 47"), so every
    view of it must be a shareable URL that also works with JavaScript off. #}
 <section class="card">
@@ -79,5 +91,6 @@
 
 {% elif not error %}
 <section class="card"><p class="empty">this battle recorded no decisions</p></section>
+{% endif %}
 {% endif %}
 {% endblock %}

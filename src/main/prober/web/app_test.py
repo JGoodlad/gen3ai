@@ -12,6 +12,7 @@ already owns and which needs Node).
 
 from __future__ import annotations
 
+import json
 import os
 import time
 
@@ -306,6 +307,43 @@ def test_a_job_runs_off_the_request_and_its_result_renders(client):
     assert "a synthetic interpretation line" in html
     assert "a synthetic caveat" in html
     assert "hx-trigger=\"every 2s\"" not in html, "a finished job must stop polling the server"
+
+
+@pytest.mark.parametrize("path,method,extra", [
+    ("falsify-scan", "falsify_scan", {}),
+    ("calibration", "calibration", {"bins": "4"}),
+])
+def test_the_page_form_fields_actually_reach_the_probe(client, path, method, extra):
+    """REGRESSION, and it shipped broken: an HTMX `<form hx-post>` serializes its fields into the
+    request BODY, but these handlers declared them as `Query(...)` — which reads the URL. So every
+    control on /falsify and /calibration was silently ignored and the probe ran at its defaults.
+
+    Measured before the fix: a submit of outcome=win/limit=3/seeds=7/concurrency=4 arrived as
+    loss/20/32/1. `outcome` is the one that makes this a correctness bug rather than an
+    inconvenience — asking for WINS quietly scanned LOSSES and returned a confident answer to a
+    question nobody asked."""
+    _unlock(client)
+    seen = {}
+
+    def spy(**kw):
+        seen.update(kw)
+        return _FAKE_FALSIFY if method == "falsify_scan" else _FAKE_CALIBRATION
+
+    setattr(_the_session(client), method, spy)
+    client.post(f"/partials/job/{path}",
+                data=dict({"outcome": "win", "limit": "3", "seeds": "7", "alts": "5",
+                           "concurrency": "4", "opponent": "heuristic2", "worst": "6"}, **extra))
+    for _ in range(100):
+        if seen:
+            break
+        time.sleep(0.05)
+
+    assert seen, "the job never ran"
+    assert seen["outcome"] == "win"            # the dangerous one: not silently 'loss'
+    assert seen["opponent"] == "heuristic2"
+    assert seen["limit"] == 3 and seen["worst"] == 6
+    assert seen["n_seeds"] == 7 and seen["n_alts"] == 5
+    assert seen["concurrency"] == 4
 
 
 def test_a_running_job_renders_a_poller_that_stops_when_done(client):
@@ -1031,3 +1069,784 @@ def test_the_most_recently_used_run_survives_eviction(tmp_path_factory):
 
         cached = {p.rsplit("/", 1)[-1] for p in app.state.sessions}
         assert keep in cached, "the just-used run was evicted — that is FIFO, not LRU"
+
+
+# -- /analyze: the one model-loading view ------------------------------------------------------
+#
+# Two things make this view different from every other page here, and both are tested rather than
+# assumed. (1) It LOADS A CHECKPOINT, so its normal outcome on an archived run is `ArchDriftError`
+# — measured 79/79 runs — and that error is a multi-line DIAGNOSIS ending in the exact
+# `git checkout` to re-probe from, which the page has to render WHOLE. (2) Everything it shows is
+# flag-gated: most panels are `None` unless the run trained the head, so "absent" must mean "that
+# head was off", never a silently swallowed failure.
+#
+# The populated cases run against a monkeypatched `session.analyze`, exactly as the job tests
+# replace `falsify_scan`: the fixture run has no loadable checkpoint (by design — see
+# `fixture_run.py`), and re-running a real policy is `engine_test.py`'s job, not this file's.
+
+_ANALYZE_BATTLE = "step_4000000/heuristic2/loss_003"
+
+_TIMELINE = [
+    {"side": "we", "kind": "move", "order_certain": True,
+     "text": "we thunderbolt did 31% (tyranitar 100% → 69%)"},
+    {"side": "opp", "kind": "move", "order_certain": True,
+     "text": "opp earthquake did 22% (zapdos 100% → 78%) ⚡CRIT"},
+]
+
+_FULL_ANALYSIS = {
+    "meta": {"step": 4000000, "battle_id": "b1", "result": "LOSS", "turns": 12,
+             "n_invocations": 3, "summary_path": "/x/s.json", "npz_path": "/x/s.npz"},
+    "inv_index": 1, "turn": 7, "phase": "move_selection",
+    "our_species": "zapdos", "opp_species": "tyranitar", "chosen": "thunderbolt",
+    "has_state": True,
+    # DELIBERATELY not in probability order: the recorded order IS the action order and the table
+    # must pass it through (see the "do NOT re-sort move labels" gotcha in prober/CLAUDE.md).
+    "actions": [
+        {"label": "switch:blissey", "valid": True, "recorded": 0.10, "rerun": 0.14,
+         "is_chosen": False},
+        {"label": "thunderbolt", "valid": True, "recorded": 0.70, "rerun": 0.55, "is_chosen": True},
+        {"label": "hiddenpower", "valid": False, "recorded": 0.20, "rerun": 0.31,
+         "is_chosen": False},
+    ],
+    "matchups": {"multipliers": [2.0, 1.0, 2.0, 4.0],
+                 "move_labels": ["thunderbolt", "hiddenpower", "spikes", "roar"],
+                 "applicable": [True, True, False, False]},
+    "sweep": {"chosen_label": "thunderbolt", "request_slot": 0, "baseline_p_switches": 0.22,
+              "rows": [{"multiplier": 0.0, "p_chosen": 0.1, "p_switches": 0.4},
+                       {"multiplier": 4.0, "p_chosen": 0.9, "p_switches": 0.05}]},
+    "saliency": {"overall_mean_abs": 0.01,
+                 "blocks": [{"name": "our_team(696)", "mean_abs": 0.03, "total_abs": 20.9},
+                            {"name": "turn_history(1113)", "mean_abs": 0.004, "total_abs": 4.4}]},
+    "value_saliency": {"overall_mean_abs": 0.02,
+                       "blocks": [{"name": "our_team(696)", "mean_abs": 0.05, "total_abs": 34.8}]},
+    "threats": {"present": True, "revealed_frac": 0.33, "max_incoming": 4.0,
+                "per_our_slot_max": [4.0, 1.0, 0.5, 0.0, 0.0, 0.0]},
+    "incoming": {"present": True, "max_pko": 0.81, "active_pko": 0.62, "active_exp": 0.44,
+                 "active_outspeed": 0.9, "per_slot_pko": [0.62, 0.1, 0.0, 0.0, 0.0, 0.0],
+                 "recovery_rate": 0.2, "cures_status": 0.05, "recovery_known": 1.0,
+                 "active_pko_nocrit": 0.5, "threat_revealed": 1.0},
+    "warnings": [],
+    "outcome": {"our": {"action": "thunderbolt", "hp_delta": "-22%"},
+                "opp": {"action": "earthquake", "hp_delta": "-31%"},
+                "reward": {"total": -1.5, "hp": -1.0, "faint": -0.5},
+                "events": ["our:zapdos:fainted"], "timeline": _TIMELINE},
+    "value": {"recorded": 3.5, "rerun": 3.2, "next_recorded": -4.0, "delta": -7.5,
+              "popart_mu": -3.6, "popart_sigma": 4.0, "normalized_recorded": 1.77,
+              "normalized_rerun": 1.7, "td_residual": -9.0,
+              "td_phrase": "much worse than the critic expected"},
+    "win_prob": {"recorded": 0.61, "next_recorded": 0.2, "delta": -0.41},
+    "value_dist": {"probs": [0.1, 0.4, 0.5], "support": [-10.0, 0.0, 10.0], "mean": 2.0,
+                   "std": 3.0, "p10": -10.0, "p50": 0.0, "p90": 10.0, "entropy": 0.94,
+                   "bimodality": 0.35, "mean_real": 4.4},
+    "rerun_argmax": "switch:blissey", "agrees": False,
+    "flags": ["switch", "faint"], "cure_options": ["refresh"],
+    "board": {"ours": {"active_species": "zapdos", "active_hp": "78%", "status": "PAR",
+                       "boosts": "spa:+1", "moves": ["thunderbolt"], "bench": [],
+                       "item": "leftovers"},
+              "opp": {"active_species": "tyranitar", "active_hp": "69%", "status": "",
+                      "boosts": "", "moves": [], "bench": [], "item": ""}},
+    "next_board": None,
+    "obs_mismatch": [2667, 2669],
+    "field": {"weather": "sandstorm", "spikes_opp": 1, "wish_our": True},
+    "belief": None,
+    "opp_intent": {"alpha": [{"name": "earthquake", "p": 0.5, "is_switch": False},
+                             {"name": "SWITCH", "p": 0.3, "is_switch": True}],
+                   "beta": [{"slot": 2, "p": 0.6, "species": "blissey"},
+                            {"slot": 4, "p": 0.2, "species": None}],
+                   "top": {"name": "earthquake", "p": 0.5, "is_switch": False},
+                   "switch_p": 0.3, "text": "it expected earthquake (50%)"},
+    "belief_truth": {"mons": [
+        {"species": "tyranitar", "revealed": True, "guess": [], "guessed_right": False,
+         "true_rank": -1},
+        {"species": "blissey", "revealed": False, "guess": [["blissey", 0.5], ["snorlax", 0.2]],
+         "guessed_right": True, "true_rank": 1},
+        {"species": "skarmory", "revealed": False,
+         "guess": [["forretress", 0.4], ["skarmory", 0.3]], "guessed_right": False,
+         "true_rank": 2},
+        {"species": "gengar", "revealed": False, "guess": [["misdreavus", 0.4]],
+         "guessed_right": False, "true_rank": -1}], "n_hidden": 3, "n_correct": 1},
+    "opp_full_team": None,
+    "damage_op": {
+        "incoming": [{"phys": {"low": 0.3, "high": 0.4, "crit": 0.06, "pko": 0.2, "acc": 1.0},
+                      "spec": {"low": 0.1, "high": 0.2, "crit": 0.06, "pko": 0.0, "acc": 1.0},
+                      "p_outspeed": 0.9, "provenance": 1.0}] * 6,
+        "choice_band": {"phys_high_cb": [0.6] * 6, "phys_pko_cb": [0.4] * 6, "p_cb": 0.18},
+        "outgoing": {"moves": [{"low": 0.5, "high": 0.6, "crit": 0.07, "pko": 0.55}] * 4,
+                     "p_outspeed": 0.9, "secondary": [{"par": 0.1}] * 4},
+        "status_landing": [{"p_land": 0.75, "known": 1.0}] * 4,
+        "outgoing_matrix": None,
+        "incoming_matrix": {
+            "moves": [{"move": "earthquake", "belief": 0.9, "accuracy": 1.0, "is_phys": 1.0,
+                       "effect": [], "secondary": []},
+                      {"move": "icebeam", "belief": 0.6, "accuracy": 0.9, "is_phys": 0.0,
+                       "effect": [], "secondary": []}],
+            # per OUR mon (6) × per candidate move (2). Slot 0 is immune to earthquake — the cell
+            # must read "safe", not a damage range.
+            "per_defender": [[{"low": 0.0, "high": 0.0, "crit": 0.0, "pko": 0.0, "type_mult": 0.0,
+                               "status_lands": 0.0},
+                              {"low": 0.2, "high": 0.3, "crit": 0.1, "pko": 0.05,
+                               "type_mult": 1.0, "status_lands": 0.0}]] * 6},
+        "outgoing_matrix_all": None},
+    "move_belief": {"opp": [{"slot": 0, "species": "tyranitar",
+                             "revealed": [["earthquake", 0.99]],
+                             "believed": [["rockslide", 0.55]]}],
+                    "our_labels": [[0, "zapdos", True], [1, "blissey", False],
+                                   [2, "skarmory", False], [3, "gengar", False],
+                                   [4, "swampert", False], [5, "jynx", False]]},
+    "spread_belief": {"slots": [{"slot": 0, "species": "tyranitar",
+                                 "rows": [{"stat": "atk", "believed": 385.0, "true": 305.0,
+                                           "prior": 320.0}],
+                                 "nature": "adamant", "ev_note": "atk252/hp4", "matched": True}],
+                      "n_slots": 1, "mean_abs_err": 40.5},
+    "refine_trajectory": None,
+    "switch_in_outgoing": {"opp_species": "tyranitar", "opp_hp": "69%",
+                           "rows": [{"species": "swampert", "hp": "100%", "move": "earthquake",
+                                     "low": 42.0, "high": 50.0, "pko": 0.6, "type_mult": 2.0,
+                                     "outspeed": 0.2}]},
+    "opp_switched_to": "skarmory",
+    "model_resolution": {"path": "/x/ck.zip", "tier": "nearest", "detail": "checkpoint 3.2M",
+                         "manifest": {"git_hash": "deadbeef", "arch_signature": "gen3_fixture_v1"},
+                         "dropped_kwargs": ["spread_belief_nature_marginalize"]},
+    "protocol": ["|move|p1a: Zapdos|Thunderbolt|p2a: Tyranitar",
+                 "|-damage|p2a: Tyranitar|69/100"],
+}
+
+# The same decision with every optional head OFF — which is what most runs actually look like.
+_BARE_ANALYSIS = dict(
+    _FULL_ANALYSIS,
+    matchups=None, sweep=None, saliency=None, value_saliency=None, threats=None, incoming=None,
+    value_dist=None, win_prob=None, opp_intent=None, belief=None, belief_truth=None,
+    damage_op=None, move_belief=None, spread_belief=None, switch_in_outgoing=None,
+    obs_mismatch=None, opp_switched_to=None, cure_options=[], protocol=[],
+    model_resolution={"path": None, "tier": "exact", "detail": "eval snapshot",
+                      "manifest": None, "dropped_kwargs": []},
+)
+
+
+def _stub_analyze(client, payload):
+    sess = _the_session(client)
+    sess.analyze = lambda *a, **kw: payload
+    return sess
+
+
+def _fragment(client, **params):
+    params.setdefault("battle", _ANALYZE_BATTLE)
+    params.setdefault("inv", "1")
+    r = client.get("/partials/analyze", params=params)
+    assert r.status_code == 200, r.text[:400]
+    return r.text
+
+
+@pytest.mark.parametrize("path", ["/battle", "/analyze"])
+def test_a_run_with_no_traces_is_an_empty_state_not_a_404(tmp_path, path):
+    """The FIRST thing a fresh run shows, so it must not look broken.
+
+    Both battle-addressed pages resolve a battle before rendering, and a run that has captured
+    nothing yet has none — which used to surface as a 404, i.e. indistinguishable from a bad link on
+    a perfectly healthy run. And it is not an edge case: the app opens the NEWEST run by default,
+    and a newly-launched run has no traces until its first eval cycle (gen-9 sat in exactly this
+    state for hours). A real 404 is still a real 404 — that is the next test."""
+    run = os.path.join(str(tmp_path), "run_empty")
+    os.makedirs(os.path.join(run, "eval_traces"))
+    with open(os.path.join(run, "metadata.json"), "w") as fh:
+        json.dump({"gamma": 0.99}, fh)
+
+    app = create_app(run)
+    with TestClient(app) as c:
+        r = c.get(path)
+        assert r.status_code == 200, f"{path} on a traceless run: {r.status_code}"
+        assert "captured no battle traces yet" in r.text
+        assert "run summary" in r.text, "it must point somewhere that DOES have something to show"
+        assert "Traceback" not in r.text
+
+
+def test_a_battle_that_does_not_exist_is_still_a_404(client):
+    """The empty-state branch must not have swallowed the real one: an unknown battle token is a
+    genuine 404, and the message never echoes the token back (a rendered error must not become an
+    oracle for what exists)."""
+    r = client.get("/analyze", params={"battle": "step_9/nope/loss_999"})
+    assert r.status_code == 404
+    assert "nope" not in r.text and "loss_999" not in r.text
+
+
+def test_the_analyze_page_renders_and_defers_the_work_to_a_fragment(client):
+    """Unlike `/battles` and `/triage` this one may NOT arrive populated: it deserializes a
+    checkpoint. Same answer as `/scan` — arrive, then fill in, and say what is being waited on."""
+    html = client.get("/analyze").text
+    assert html.lstrip().startswith("<!DOCTYPE html>")
+    assert "Decision analysis" in html
+    assert 'hx-get="/partials/analyze' in html and 'hx-trigger="load"' in html
+    assert "Loading the checkpoint" in html, "the waiting state must explain the wait"
+    assert "faithfulness" not in html, "the analysis itself must not be on the first paint"
+
+
+def test_the_analyze_page_is_a_linkable_get_form(client):
+    """"Look at this decision" is a thing you send someone, so the battle and the inv are plain GET
+    params — no HTMX on the selection, and the URL survives a reload."""
+    html = client.get("/analyze", params={"battle": _ANALYZE_BATTLE, "inv": "1"}).text
+    assert 'action="/analyze"' in html and 'method="get"' in html
+    assert f'value="{_ANALYZE_BATTLE}" selected' in html
+    assert 'name="inv"' in html and 'value="1"' in html
+
+
+def test_a_bad_inv_value_does_not_break_the_analyze_page(client):
+    """A hand-edited URL is a browser control by another name."""
+    for inv in ("", "abc", "-3"):
+        r = client.get("/analyze", params={"battle": _ANALYZE_BATTLE, "inv": inv})
+        assert r.status_code == 200, f"inv={inv!r} broke the page"
+
+
+def test_api_analyze_returns_the_session_result_unreshaped(client):
+    """The package's one rule at this endpoint: the handler is a pass-through, not a renderer."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    got = client.get("/api/analyze", params={"battle": _ANALYZE_BATTLE, "inv": 1}).json()
+    assert got == _FULL_ANALYSIS
+
+
+@pytest.mark.parametrize("attack", [
+    "../../../etc/passwd",
+    "/etc/passwd",
+    "%2e%2e%2fetc%2fpasswd",
+    "step_4000000/heuristic2/../../../loss_003",
+    "step_1/nope/loss_999",
+])
+def test_an_analyze_battle_token_is_never_joined_to_a_path(client, attack):
+    """`runs.py`'s membership rule, repeated one level down — the same reason `/battle` needs it:
+    `ProbeSession._battle` falls back to `build_trace_tree(battle_id)` for an unrecognised id and
+    will happily open a `*_summary.json` belonging to another run."""
+    api = client.get("/api/analyze", params={"battle": attack, "inv": 0})
+    assert api.status_code == 404
+    assert "passwd" not in api.text and "etc" not in api.json().get("error", "")
+    for path in ("/analyze", "/partials/analyze"):
+        assert client.get(path, params={"battle": attack}).status_code == 404, path
+
+
+def test_the_real_analyze_on_this_fixture_renders_a_diagnosis_not_a_500(client):
+    """The fixture has no loadable checkpoint (by design), and neither does any archived run:
+    measured 2026-08-13, 79 of 79 fail to load under current code. So a failed model load is an
+    ordinary state of the data and must READ as one."""
+    body = _fragment(client, inv="0")
+    assert 'data-analysis="error"' in body
+    assert "cannot be re-run under the current code" in body
+    # ...and it points at the views that DO work on this run rather than dead-ending.
+    assert "/scan?run=" in body and "/triage?run=" in body
+
+
+def test_the_arch_drift_message_renders_whole_including_its_git_checkout_line(client):
+    """The message is a multi-line diagnosis written for a human whose LAST useful line is the
+    exact commit to re-probe from. Collapsing it to "analysis failed" throws away the only part
+    that says what to do next — so this pins the whole thing through, newlines included."""
+    from main.prober.model import ArchDriftError
+
+    message = ("This checkpoint cannot be re-run under the current code:\n"
+               "  /models/run_x/checkpoints/checkpoint_1_steps.zip\n"
+               "\n"
+               "  obs dim        trained 2667  ·  code builds 2669\n"
+               "  · probe from the commit it was trained on:  git checkout abc123def\n"
+               "\n"
+               "MODEL-FREE views need none of this and work on every archived run:\n"
+               "  scan · triage · turns · overview · find · falsify · calibration")
+
+    def boom(*a, **kw):
+        raise ArchDriftError(message, saved_obs_dim=2667, current_obs_dim=2669,
+                             git_hash="abc123def")
+
+    _the_session(client).analyze = boom
+    body = _fragment(client)
+    assert "git checkout abc123def" in body, "the one actionable line was dropped"
+    assert "obs dim        trained 2667" in body
+    # The line breaks have to SURVIVE — `.err` is `white-space: pre-wrap` and the message is
+    # rendered as one text node, so a browser lays it out as written.
+    assert 'class="err"' in body
+    assert body.count("\n", body.index("cannot be re-run"), body.index("git checkout")) >= 4
+
+
+def test_analyze_panels_self_hide_when_their_head_was_off(client):
+    """Most of this view is flag-gated (`--damage-op`, `--move-belief-mode`, `--spread-belief`,
+    `--value-dist-mode`, `--win-prob-mode`, `--opp-intent-coef`). An absent panel must mean "that
+    head was off", never an empty box that reads as a broken probe."""
+    _stub_analyze(client, _BARE_ANALYSIS)
+    bare = _fragment(client)
+    for gone in ("beliefs", "threats", "saliency", "intervention", "P(win)",
+                 "predicted return distribution", "OBS MISMATCH", "DROPPED FLAGS",
+                 "opp pivoted", "raw Showdown protocol"):
+        assert gone not in bare, f"{gone!r} rendered on a run whose head was off"
+    # ...while the always-present parts still do.
+    assert "faithfulness" in bare and "what happened" in bare and "the critic" in bare
+
+    _stub_analyze(client, _FULL_ANALYSIS)
+    full = _fragment(client)
+    for shown in ("beliefs", "threats", "saliency", "intervention", "P(win)",
+                  "predicted return distribution"):
+        assert shown in full, f"{shown!r} missing on a run that trained it"
+
+
+def test_the_timeline_prints_the_engines_own_sentence_verbatim(client):
+    """`engine.timeline_entry_text` exists so no second surface re-derives the battle-log line from
+    the structured fields — the drift the engine/renderer split is there to prevent."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    for entry in _TIMELINE:
+        assert entry["text"] in body, entry["text"]
+
+
+def test_an_unrecorded_move_order_is_never_rendered_as_a_sequence(client):
+    """`order_certain=False` means both sides moved and the recorder never captured who went
+    first, so a numbered list would be a quiet lie about the sequence."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    ordered = _fragment(client)
+    assert '<ol class="log">' in ordered
+    assert "move order not recorded" not in ordered
+
+    unordered_timeline = [dict(e, order_certain=False) for e in _TIMELINE]
+    payload = dict(_FULL_ANALYSIS,
+                   outcome=dict(_FULL_ANALYSIS["outcome"], timeline=unordered_timeline))
+    _stub_analyze(client, payload)
+    body = _fragment(client)
+    assert '<ol class="log">' not in body, "an unordered log must not be a numbered list"
+    assert "log unordered" in body
+    assert "(move order not recorded)" in body
+    for entry in unordered_timeline:
+        assert entry["text"] in body
+
+
+def test_the_faithfulness_table_keeps_the_recorded_action_order(client):
+    """The recorded `actions` are ALREADY in action-index order (the recorder keys move slot m on
+    `legal.move_ids[m]`). A re-sort onto the per-mon moveset order once transposed the labels and
+    produced a spurious `disagree` — see the gotcha in src/main/prober/CLAUDE.md."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    positions = [body.index(r["label"] + "</td>") for r in _FULL_ANALYSIS["actions"]]
+    assert positions == sorted(positions), "the action rows were re-ordered for display"
+    # The signed delta is what makes recorded-vs-rerun readable at a glance.
+    assert "-0.150" in body, "no signed re-run − recorded delta"
+
+
+def test_a_phantom_type_multiplier_renders_as_a_dash(client):
+    """The obs computes a multiplier for EVERY request slot, including non-damaging ones, where it
+    is an artefact — a confident "2.00×" on Spikes is a misreading waiting to happen."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    # spikes/roar are `applicable=False` and carry 2.0 / 4.0 in the same array.
+    spikes = body.index("spikes")
+    assert "—" in body[spikes:spikes + 300]
+    assert "2.00×" not in body[spikes:spikes + 300]
+
+
+def test_the_intervention_says_so_when_the_chosen_action_is_not_a_move(client):
+    """`InterventionSweep.applicable` is a @property, so `asdict` DROPS it — the test has to be
+    `request_slot >= 0`, not a missing key that would silently read as False forever."""
+    _stub_analyze(client, dict(_FULL_ANALYSIS,
+                               sweep=dict(_FULL_ANALYSIS["sweep"], request_slot=-1, rows=[])))
+    body = _fragment(client)
+    assert "not a move" in body
+    assert "0.0×" not in body
+
+
+def test_the_switch_in_percentages_are_not_scaled_twice(client):
+    """`switch_in_outgoing` rows are ALREADY percentages (0–100) while the operator's own
+    low/high are FRACTIONS (0–1). A uniform ×100 across the panel turns 42% into 4200%."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "42–50%" in body
+    assert "4200" not in body
+
+
+def test_the_cpu_decodes_dim_only_when_the_operator_subsumes_them(client):
+    """The graceful-degradation contract: the observation decodes go secondary when the
+    DamageOperator is present and back to full strength when there is no operator."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    assert 'class="cpudecodes dim"' in _fragment(client)
+
+    _stub_analyze(client, dict(_FULL_ANALYSIS, damage_op=None, switch_in_outgoing=None))
+    no_op = _fragment(client)
+    assert "cpudecodes" in no_op
+    assert "dim" not in no_op.split('class="cpudecodes')[1][:40]
+
+
+def test_the_incoming_matrix_is_a_real_heatmap_and_marks_immunity(client):
+    """The biggest win over the terminal: which opponent move threatens which of our mons, as a
+    grid tinted by P(KO). A type-immune cell must read `safe`, not a damage range."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert 'class="heat"' in body
+    assert "earthquake" in body and "icebeam" in body
+    # Our mons label the columns from the move-belief's own our_labels, active marked.
+    assert "▶ zapdos" in body and "swampert" in body
+    assert ">safe<" in body, "a type-immune cell rendered a damage number"
+    assert "rgba(208, 128, 106," in body, "the P(KO) tint is what makes it a heatmap"
+
+
+def test_the_td_residual_never_appears_without_its_plain_language_gloss(client):
+    """The rule this view inherits from the TUI: the ML term is always paired with the engine's
+    own sentence, so the number is self-explaining."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "much worse than the critic expected" in body
+    assert "TD δ" in body
+
+
+def test_the_three_unreliability_banners_render(client):
+    """Each of these means "stop before quoting a number below", so none of them may be a
+    footnote: an obs-dim mismatch, a dropped extractor flag, and an opponent pivot that makes the
+    damage tables be about the wrong defender."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "OBS MISMATCH" in body and "2667" in body and "2669" in body
+    assert "DROPPED FLAGS" in body and "spread_belief_nature_marginalize" in body
+    assert "opp pivoted tyranitar → skarmory" in body
+    assert "RESOLVED against <strong>skarmory" in body
+
+
+def test_the_belief_markers_keep_their_three_way_meaning(client):
+    """✓ top-1 right · ≈ the true mon is in the belief but not top-1 · ✗ not in the top-k at all.
+    Collapsing the middle case into "wrong" loses the near-miss, which is the whole signal in a
+    belief that is sharpening."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "marker hit" in body and "marker near" in body and "marker miss" in body
+    assert "1/3 hidden mons" in body
+    assert "(#2)" in body, "the true species' rank is the near-miss's magnitude"
+
+
+def test_the_gpu_cpu_provenance_distinction_survives_from_the_tui(client):
+    """A signal the model computed for itself and a decode the prober did from the observation
+    answer different questions; a panel that mixes them without saying so reads as one."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "🔷 GPU" in body and "📋 CPU" in body
+
+
+def test_analyze_is_in_the_nav_and_the_where_to_start_card(client):
+    """We are retiring the TUI, so this view has to be reachable without knowing it exists."""
+    from main.prober.web.app import _NAV
+    assert ("/analyze", "analyze") in _NAV
+    html = client.get("/").text
+    assert "/analyze" in html
+    assert "Why did it choose that" in html
+
+
+def test_the_analyze_view_carries_the_run_into_its_links(models_client):
+    html = models_client.get("/analyze", params={"run": "run_other"}).text
+    assert "run=run_other" in html
+    assert "ctxstrip" in html and "run_other" in html
+
+
+# -- /analyze § counterfactual: lookahead · better-line · replay-to-end ------------------------
+#
+# The three probes that re-PLAY the decision rather than read it. Everything here is exercised with
+# the session method REPLACED, exactly as the falsify/calibration job tests are: the re-roll
+# machinery needs Node and belongs to `falsifier_integration_test.py` / `better_line_integration_test.py`.
+# What these pin is what this package actually owns — the gate, the job lifecycle, the FIELDS
+# reaching the session, and whether the rendered page carries each number's MEANING and its caveat.
+
+_CF_PATHS = ["/partials/job/lookahead", "/partials/job/better-line",
+             "/partials/job/replay-counterfactual"]
+_CF_API = ["/api/jobs/lookahead", "/api/jobs/better-line", "/api/jobs/replay-counterfactual"]
+
+_FAKE_LOOKAHEAD = {
+    "inv": 1, "turn": 7, "side": "p1",
+    "chosen": {"action": 7, "label": "thunderbolt", "choice": "move 2"},
+    "recorded_value": 3.5, "recorded_next_value": -4.0, "baseline_value": -4.0, "n_seeds": 0,
+    # Already ranked best-first by the session — the renderer must NOT re-sort.
+    "candidates": [
+        {"action": 1, "label": "switch:swampert", "choice": "switch 2", "is_chosen": False,
+         "value_crn": 1.25, "value_mean": None, "value_std": None, "n_evaluated": 1,
+         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.55, "value_dist_crn": None,
+         "delta_v": 5.25},
+        {"action": 7, "label": "thunderbolt", "choice": "move 2", "is_chosen": True,
+         "value_crn": -4.0, "value_mean": None, "value_std": None, "n_evaluated": 1,
+         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.2, "value_dist_crn": None,
+         "delta_v": 0.0},
+        {"action": 8, "label": "explosion", "choice": "move 3", "is_chosen": False,
+         "value_crn": None, "value_mean": None, "value_std": None, "n_evaluated": 0,
+         "terminal_frac": 1.0, "terminal": "loss", "win_prob_crn": None, "value_dist_crn": None,
+         "delta_v": None},
+    ],
+    "best_alternative": "switch:swampert", "best_delta_v": 5.25,
+}
+
+_FAKE_BETTER_LINE = {
+    "inv": 1, "turn": 7, "side": "p1", "depth": 2, "beam": 3, "top_k": 4,
+    "opp_model_used": "reloaded:self_model_approx (+1 interior plies → sim default)",
+    "interior_opponent": "reloaded:self_model_approx",
+    "chosen": {"action": 7, "label": "thunderbolt", "choice": "move 2"},
+    "recorded_value": 3.5, "recorded_next_value": -4.0, "baseline_value": -4.0,
+    "candidates": [
+        {"action": 1, "label": "switch:swampert", "choice": "switch 2", "is_chosen": False,
+         "value": 1.25, "backup": 2.75, "terminal": None, "delta_v": 5.25, "win_prob": 0.61,
+         "principal_variation": [{"depth": 1, "action": 1, "value": 1.25, "terminal": None},
+                                 {"depth": 2, "action": 6, "value": 2.75, "terminal": None}]},
+        {"action": 7, "label": "thunderbolt", "choice": "move 2", "is_chosen": True,
+         "value": -4.0, "backup": -3.1, "terminal": None, "delta_v": 0.0, "win_prob": 0.2,
+         "principal_variation": [{"depth": 1, "action": 7, "value": -4.0, "terminal": None}]},
+    ],
+    "best_alternative": {
+        "action": 1, "label": "switch:swampert", "choice": "switch 2", "backup": 2.75,
+        "terminal": None, "delta_v": 5.25, "win_prob": 0.61,
+        "principal_variation": [{"depth": 1, "action": 1, "value": 1.25, "terminal": None},
+                                {"depth": 2, "action": 6, "value": 2.75, "terminal": None}]},
+}
+
+_FAKE_REPLAY_ONE = {
+    "inv": 1, "turn": 7, "trainee_side": "p1", "recorded_result": "loss",
+    "chosen": {"action": 7, "label": "thunderbolt", "choice": "move 2"},
+    "substitute": {"action": 1, "label": "switch:swampert", "choice": "switch 2"},
+    "opponent_source": "self_model_approx", "n_rollouts": 1, "wins": 1, "losses": 0,
+    "win_rate": 1.0, "win_rate_ci": [0.2065, 1.0], "outcomes": {"win": 1},
+    "deterministic_line": True,
+    "winning_trajectory": [{"turn": 7, "events": ["we switch to swampert",
+                                                  "opp earthquake did 12%"]},
+                           {"turn": 8, "events": ["we icebeam — opp salamence fainted"]}],
+    "losing_trajectory": None,
+    "caveats": [
+        "The opponent plays its policy FRESH past the divergence; the recorded opponent's logged "
+        "choices are invalid once our move changes.",
+        "Single realized-dice line (n_rollouts=1) — NOT a probability. Raise --rollouts for a "
+        "Monte-Carlo win-rate ± CI over resampled post-divergence dice.",
+    ],
+}
+
+
+def _cf_forms(client):
+    """The three launch forms, rendered on a POPULATED analyze fragment. They live in the branch
+    that has an analysis — on an arch-drift run there is no model to re-roll with either."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    return _fragment(client)
+
+
+def test_the_counterfactual_probes_are_launchable_from_the_decision_they_are_about(client):
+    """They are PER-DECISION, so they belong where the battle, the inv and the legal actions
+    already are — not on a page of their own that would ask for all three again."""
+    body = _cf_forms(client)
+    for path in _CF_PATHS:
+        assert f'hx-post="{path}"' in body, path
+    # ...pre-filled with THIS decision, and pointed at the box the job poller targets.
+    assert f'name="battle" value="{_ANALYZE_BATTLE}"' in body
+    assert 'name="inv" value="1"' in body
+    assert 'hx-target="#job"' in body and 'id="job"' in body
+    # Nothing starts on its own: each of these spends real CPU.
+    assert "nothing run yet" in body
+
+
+def test_the_replay_action_picker_is_the_decisions_own_action_list(client):
+    """`replay_counterfactual` needs an action INDEX, and the only honest source for it is the
+    recorded action list this page already renders — in action-index order, illegal ones disabled
+    rather than hidden, and with no default, because "replay something else" has to say what."""
+    body = _cf_forms(client)
+    assert 'name="action" required' in body
+    assert "— pick an action —" in body
+    for i, act in enumerate(_FULL_ANALYSIS["actions"]):
+        assert f'value="{i}"' in body
+        assert act["label"] in body
+    # The third fixture action is illegal; it is offered as context but cannot be picked.
+    assert "disabled>" in body and "— illegal" in body
+    assert "(played)" in body, "the action that WAS played has to be distinguishable"
+
+
+@pytest.mark.parametrize("path", _CF_PATHS)
+def test_a_counterfactual_submit_is_locked_without_the_password(client, path):
+    """Reading is anonymous; spending CPU is not. Each of these spawns Node for seconds to
+    minutes beside a live trainer, so the rule that gates falsify/calibration gates them too."""
+    r = client.post(path, data={"battle": _ANALYZE_BATTLE, "inv": "1", "action": "1"})
+    assert r.status_code == 200, "a locked visitor gets a way in, not an error"
+    assert 'data-job-status="locked"' in r.text
+    assert "shared password" in r.text
+    assert "/login?next=" in r.text
+
+
+@pytest.mark.parametrize("path", _CF_API)
+def test_the_counterfactual_job_api_is_403_without_the_password(client, path):
+    r = client.post(path, params={"battle": _ANALYZE_BATTLE, "inv": 1, "action": 1})
+    assert r.status_code == 403
+    assert "password" in r.json()["error"]
+
+
+def _run_cf(client, path, method, payload, **fields):
+    """Submit one counterfactual from the page, wait for it, and return (rendered html, kwargs the
+    session was called with)."""
+    _unlock(client)
+    seen = {}
+
+    def stub(*a, **kw):
+        seen["args"], seen["kwargs"] = a, kw
+        return payload
+
+    setattr(_the_session(client), method, stub)
+    data = {"battle": _ANALYZE_BATTLE, "inv": "1", **fields}
+    r = client.post(path, data=data)
+    assert r.status_code == 200, r.text[:400]
+    assert "data-job-id" in r.text
+    job_id = r.text.split('data-job-id="')[1].split('"')[0]
+    _await_job(client, job_id)
+    return client.get(f"/partials/job/{job_id}").text, seen
+
+
+def test_lookahead_submits_polls_and_renders_its_per_action_value_delta(client):
+    """The port of the TUI's `L`: per legal action, V(s′) on the realized dice, ΔV against the line
+    that was played, and a terminal win/loss where the action ends the battle."""
+    html, seen = _run_cf(client, "/partials/job/lookahead", "lookahead", _FAKE_LOOKAHEAD,
+                         seeds="4")
+    assert 'data-job-status="done"' in html
+    assert 'hx-trigger="every 2s"' not in html, "a finished job must stop polling"
+    # The form's fields REACHED the session — an HTMX POST carries them in the body, and a
+    # parameter that read the URL only would silently probe with the defaults.
+    assert seen["kwargs"]["n_seeds"] == 4 and seen["kwargs"]["inv"] == 1
+
+    for c in _FAKE_LOOKAHEAD["candidates"]:
+        assert c["label"] in html
+    assert "5.25" in html, "the best alternative's ΔV is the headline"
+    assert "▶" in html and "★" in html, "the chosen action and the best alternative must differ"
+    assert ">loss<" in html, "an action that ENDS the battle has no V — it has a winner"
+    assert "common random numbers" in html, "ΔV without the CRN framing is not interpretable"
+
+
+def test_better_line_renders_the_contrastive_trajectory_and_its_provenance(client):
+    """The port of `B`: "turn T: you played X → better line Y", the headline ΔV / P(win), the
+    principal variation ply by ply, and WHO played the interior plies."""
+    html, seen = _run_cf(client, "/partials/job/better-line", "better_line", _FAKE_BETTER_LINE,
+                         depth="2", beam="3", confirm_rollouts="0")
+    assert seen["kwargs"]["depth"] == 2 and seen["args"][1] == 1
+    assert "turn 7: you played" in html and "thunderbolt" in html
+    assert "switch:swampert" in html
+    assert "5.25" in html and "61.0%" in html
+    assert "principal variation" in html and "ply 2" in html
+    assert "depth 2 · beam 3 · top-k 4" in html
+    # The interior opponent is a flagged SELF-PROXY at depth ≥ 2 — the load-bearing caveat, since
+    # only the divergence ply is played by the recorded opponent.
+    assert "SELF-PROXY" in html
+    assert "self_model_approx" in html
+    # No rollout was requested, so the page must say these are the CRITIC's numbers, not a result.
+    assert "not a played-out result" in html
+
+
+def test_a_replay_counterfactual_says_a_single_rollout_is_not_a_probability(client):
+    """`n_rollouts == 1` is one realized-dice line. The payload says so in its own caveats, and a
+    win rate of 100% printed without it is the single most misreadable number these probes emit."""
+    html, seen = _run_cf(client, "/partials/job/replay-counterfactual", "replay_counterfactual",
+                         _FAKE_REPLAY_ONE, action="1", rollouts="1", narrate="on")
+    assert seen["args"][1:] == (1, 1) and seen["kwargs"]["n_rollouts"] == 1
+    assert seen["kwargs"]["narrate"] is True
+    assert "NOT a probability" in html, "the payload's own caveat never reached the page"
+    assert "realized-dice line" in html
+    assert "self_model_approx" in html, "which opponent played it is part of the claim"
+    # narrate=True produced a play-by-play: the trajectory is rendered, collapsed.
+    assert "a recovered WIN" in html
+    assert "we icebeam — opp salamence fainted" in html
+
+
+def test_an_unchecked_play_by_play_box_actually_turns_narration_off(client):
+    """An unchecked checkbox sends NO field, so a default of "on" would keep capturing it."""
+    _, seen = _run_cf(client, "/partials/job/replay-counterfactual", "replay_counterfactual",
+                      _FAKE_REPLAY_ONE, action="1")
+    assert seen["kwargs"]["narrate"] is False
+
+
+def test_a_lookahead_result_hands_its_best_alternative_to_the_replay(client):
+    """The TUI's `L` → `C` handoff: `replay_counterfactual` has no default action, so the way to
+    get one is to have just looked ahead."""
+    html, _ = _run_cf(client, "/partials/job/lookahead", "lookahead", _FAKE_LOOKAHEAD)
+    assert "/partials/job/replay-counterfactual" in html
+    assert 'name="action" value="1"' in html, "the best NON-CHOSEN alternative, pre-filled"
+    assert "replay “switch:swampert” to a win/loss" in html
+
+
+def test_a_replay_without_an_action_is_a_message_not_a_500(client):
+    """There is no sensible default alternative, and an HTMX swap would drop a 400 on the floor."""
+    _unlock(client)
+    r = client.post("/partials/job/replay-counterfactual",
+                    data={"battle": _ANALYZE_BATTLE, "inv": "1"})
+    assert r.status_code == 200
+    assert 'data-job-status="invalid"' in r.text
+    assert "pick which action to substitute" in r.text
+
+
+@pytest.mark.parametrize("path,method,fields", [
+    ("/partials/job/lookahead", "lookahead", {}),
+    ("/partials/job/better-line", "better_line", {}),
+    ("/partials/job/replay-counterfactual", "replay_counterfactual", {"action": "1"}),
+])
+def test_a_trace_without_a_reconstruction_record_reads_as_a_message(client, path, method, fields):
+    """All three need the `*_reconstruction.json` sibling that only bridge-eval traces carry — and
+    the fixture, like every websocket-era run, has none. That is an ordinary state of the data."""
+    _unlock(client)
+    message = ("no reconstruction record next to this trace (/x/b_reconstruction.json) — "
+               "lookahead needs the re-roll layer's replay data, which only bridge-eval traces carry")
+
+    def boom(*a, **kw):
+        raise FileNotFoundError(message)
+
+    setattr(_the_session(client), method, boom)
+    r = client.post(path, data={"battle": _ANALYZE_BATTLE, "inv": "1", **fields})
+    job_id = r.text.split('data-job-id="')[1].split('"')[0]
+    body = _await_job(client, job_id)
+    assert body["status"] == "error"
+
+    html = client.get(f"/partials/job/{job_id}")
+    assert html.status_code == 200, "a probe that cannot run is not a 500"
+    assert "reconstruction record" in html.text
+    assert "bridge-eval traces carry" in html.text
+
+
+def test_a_counterfactual_on_an_archived_run_renders_the_drift_diagnosis_whole(client):
+    """These three LOAD THE CHECKPOINT, so `ArchDriftError` is their ordinary outcome on an
+    archived run (79/79 measured). Its message is a multi-line diagnosis whose last useful line is
+    the exact commit to re-probe from — the job box renders it whole, like `/analyze` does."""
+    from main.prober.model import ArchDriftError
+
+    _unlock(client)
+    message = ("This checkpoint cannot be re-run under the current code:\n"
+               "  /models/run_x/checkpoints/checkpoint_1_steps.zip\n"
+               "\n"
+               "  obs dim        trained 2667  ·  code builds 2669\n"
+               "  · probe from the commit it was trained on:  git checkout abc123def\n"
+               "\n"
+               "MODEL-FREE views need none of this and work on every archived run:\n"
+               "  scan · triage · turns · overview · find · falsify · calibration")
+
+    def boom(*a, **kw):
+        raise ArchDriftError(message, saved_obs_dim=2667, current_obs_dim=2669,
+                             git_hash="abc123def")
+
+    _the_session(client).better_line = boom
+    r = client.post("/partials/job/better-line", data={"battle": _ANALYZE_BATTLE, "inv": "1"})
+    job_id = r.text.split('data-job-id="')[1].split('"')[0]
+    _await_job(client, job_id)
+
+    html = client.get(f"/partials/job/{job_id}").text
+    assert "git checkout abc123def" in html, "the one actionable line was dropped"
+    assert "obs dim        trained 2667" in html
+    assert 'class="err"' in html      # `.err` is white-space: pre-wrap, so the newlines survive
+    assert html.count("\n", html.index("cannot be re-run"), html.index("git checkout")) >= 4
+
+
+@pytest.mark.parametrize("path,fields", [
+    ("/api/jobs/lookahead", {}),
+    ("/api/jobs/better-line", {}),
+    ("/api/jobs/replay-counterfactual", {"action": 1}),
+])
+def test_the_counterfactual_api_twins_submit_the_same_jobs(client, path, fields):
+    """The JSON surface an agent uses. Same registry, same gate — only the transport differs."""
+    _unlock(client)
+    for name, payload in (("lookahead", _FAKE_LOOKAHEAD), ("better_line", _FAKE_BETTER_LINE),
+                          ("replay_counterfactual", _FAKE_REPLAY_ONE)):
+        setattr(_the_session(client), name, lambda *a, _p=payload, **kw: _p)
+    r = client.post(path, params={"battle": _ANALYZE_BATTLE, "inv": 1, **fields})
+    assert r.status_code == 202, r.text[:300]
+    body = _await_job(client, r.json()["id"])
+    assert body["status"] == "done"
+    assert body["params"]["battle"] == _ANALYZE_BATTLE
+
+
+@pytest.mark.parametrize("path,fields", [
+    ("/partials/job/lookahead", {}),
+    ("/partials/job/better-line", {}),
+    ("/partials/job/replay-counterfactual", {"action": "1"}),
+])
+def test_a_counterfactual_battle_token_is_never_joined_to_a_path(client, path, fields):
+    """`runs.py`'s membership rule again, one level down: an unrecognised battle id would send
+    `ProbeSession._battle` off to `build_trace_tree`, which opens whatever it is handed."""
+    _unlock(client)
+    r = client.post(path, data={"battle": "../../../etc/passwd", "inv": "0", **fields})
+    assert r.status_code == 404
+    assert "passwd" not in r.text

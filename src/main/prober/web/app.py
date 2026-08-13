@@ -94,6 +94,19 @@ class JobState(JobRef):
     elapsed_sec: float
 
 
+class _NoBattles(HTTPException):
+    """The run is fine, it just has no captured traces yet.
+
+    Distinct from "no such battle" (a bad token, a real 404) because it is the ORDINARY state of the
+    newest run — the one the app opens by default — until its first eval cycle writes a trace. As a
+    bare 404 the two battle-addressed pages greeted a fresh run with what looked like a broken link;
+    the page handlers turn this into an empty state instead, and only the JSON API still sees a
+    status code."""
+
+    def __init__(self) -> None:
+        super().__init__(status_code=404, detail="this run has captured no battle traces yet")
+
+
 def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                password: "str | None" = None, open_access: bool = False,
                impl: str = "node") -> FastAPI:
@@ -189,7 +202,11 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         if err:
             raise HTTPException(status_code=400, detail=err)
         if not rows:
-            raise HTTPException(status_code=404, detail="this run captured no battle traces")
+            # A run with no traces is a NORMAL state, not a bad URL — and it is the state of the
+            # run this app opens by DEFAULT, because the default is the newest run and a fresh one
+            # has captured nothing until its first eval cycle. The page handlers catch this and
+            # render an empty state; only the API surfaces it as a status code.
+            raise _NoBattles()
         if not token:
             # The NEWEST checkpoint's first battle. `battles()` is ordered by step ASCENDING, so
             # `rows[0]` is the oldest eval cycle in the run — landing a visitor on a battle played
@@ -292,6 +309,27 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         sess = session(pick(run))
         return sess.battle_turns(battle_row(sess, battle)["id"])
 
+    @app.get("/api/analyze", tags=["read-only"], response_model=dict,
+             summary="ProbeSession.analyze() — one decision, fully analyzed (LOADS THE CHECKPOINT)")
+    def api_analyze(
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(
+            None, description="the battle's short_id (step_<N>/<opponent>/<outcome>_<idx>); "
+                              "default = the newest checkpoint's first captured battle"),
+        inv: int = Query(0, ge=0, description="invocation index — the Nth recorded decision"),
+    ) -> dict:
+        # THE ONE MODEL-LOADING VIEW. It raises `ArchDriftError` on any run that is not at the
+        # current architecture (measured 2026-08-13: 79/79 archived runs), which is an ordinary
+        # state of the data, not a server fault — so it comes back as the usual `{"error": ...}`
+        # envelope carrying the diagnosis VERBATIM (multi-line, ending in the `git checkout` to
+        # re-probe from), which is the same text the CLI prints and the page renders.
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        data, err = guarded(lambda: sess.analyze(row["id"], inv))
+        if err:
+            raise HTTPException(status_code=400, detail=err)
+        return data
+
     @app.get("/api/scan", tags=["read-only"], response_model=list,
              summary="ProbeSession.scan() — each battle's worst turning point, ranked (model-free)")
     def api_scan(
@@ -374,6 +412,101 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                      worst=worst, n_seeds=seeds, n_alts=alts,
                                      concurrency=concurrency, n_bins=bins,
                                      overvalue_tau=overvalue_tau))
+        return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
+
+    # -- JSON API: the three PER-DECISION counterfactual probes (PASSWORD REQUIRED) -------
+    #
+    # Same registry, same gate, and for the same reason as the two run-level probes above: each of
+    # these spawns Node and runs for seconds to minutes (≈2 s for a depth-1 search, ≈4 s at depth 2,
+    # seconds per replay rollout), so they are WORK, not reading. They differ only in being anchored
+    # on ONE decision — hence `battle` + `inv`, and the battle token goes through `battle_row`, so a
+    # client string is matched against the run's own listing rather than joined to a path.
+    #
+    # All three ALSO need the trace's `*_reconstruction.json` sibling and load the checkpoint, so
+    # their two ordinary failures — a websocket/older trace, and `ArchDriftError` on any run that is
+    # not at the current architecture (measured 79/79 archived runs) — arrive as `status="error"`
+    # with the message intact. `partials/job.html` renders that message whole; see the note there.
+
+    @app.post("/api/jobs/lookahead", tags=["jobs"], response_model=JobRef, status_code=202,
+              summary="Submit ProbeSession.lookahead() — one-ply V(s′) per legal action")
+    def api_job_lookahead(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None, description="battle short_id; default = the newest"),
+        inv: int = Query(0, ge=0, description="invocation index (the Nth decision)"),
+        seeds: int = Query(0, ge=0, le=64,
+                           description="0 = the CRN headline alone (the session default); >0 also "
+                                       "dice-averages V(s′) ± std over that many fresh seeds"),
+        followup: str = Query("random", pattern="^(random|default)$"),
+    ) -> JobRef:
+        require_unlocked(request)
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": inv, "seeds": seeds,
+                  "followup": followup}
+        job = app.state.jobs.submit(
+            "lookahead", params,
+            lambda: sess.lookahead(row["id"], inv=inv, n_seeds=seeds, followup=followup))
+        return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
+
+    @app.post("/api/jobs/better-line", tags=["jobs"], response_model=JobRef, status_code=202,
+              summary="Submit ProbeSession.better_line() — a CRN-anchored beam over the critic")
+    def api_job_better_line(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None, description="battle short_id; default = the newest"),
+        inv: int = Query(0, ge=0),
+        depth: int = Query(2, ge=1, le=4, description="OUR plies searched; 1 == lookahead"),
+        beam: int = Query(3, ge=1, le=8),
+        top_k: int = Query(4, ge=1, le=11),
+        interior_opponent: str = Query("self", pattern="^(self|none)$",
+                                       description="who reacts at INTERIOR plies: the trainee as a "
+                                                   "flagged self-proxy, or the sim default. "
+                                                   "('ckpt' needs a path — CLI only.)"),
+        confirm_rollouts: int = Query(0, ge=0, le=16,
+                                      description="ground-truth Monte-Carlo confirm of the "
+                                                  "recommendation; each rollout is a full game"),
+    ) -> JobRef:
+        require_unlocked(request)
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": inv, "depth": depth, "beam": beam,
+                  "top_k": top_k, "interior_opponent": interior_opponent,
+                  "confirm_rollouts": confirm_rollouts}
+        job = app.state.jobs.submit(
+            "better_line", params,
+            lambda: sess.better_line(row["id"], inv, depth=depth, beam=beam, top_k=top_k,
+                                     interior_opponent=interior_opponent,
+                                     confirm_rollouts=confirm_rollouts))
+        return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
+
+    @app.post("/api/jobs/replay-counterfactual", tags=["jobs"], response_model=JobRef,
+              status_code=202,
+              summary="Submit ProbeSession.replay_counterfactual() — substitute an action, "
+                      "play the rest to a win/loss")
+    def api_job_replay_counterfactual(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None, description="battle short_id; default = the newest"),
+        inv: int = Query(0, ge=0),
+        action: int = Query(..., ge=0, le=10,
+                            description="the action INDEX to substitute for ours at this decision "
+                                        "(the position in `analyze`'s `actions` list)"),
+        rollouts: int = Query(1, ge=1, le=32,
+                             description="1 = the single realized-dice line, which is NOT a "
+                                         "probability; >1 resamples the post-divergence dice"),
+        opponent_source: str = Query("auto", pattern="^(auto|bot|self)$"),
+        narrate: bool = Query(True, description="capture the first recovered win/loss play-by-play"),
+    ) -> JobRef:
+        require_unlocked(request)
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": inv, "action": action,
+                  "rollouts": rollouts, "opponent_source": opponent_source, "narrate": narrate}
+        job = app.state.jobs.submit(
+            "replay_counterfactual", params,
+            lambda: sess.replay_counterfactual(row["id"], inv, action, n_rollouts=rollouts,
+                                               opponent_source=opponent_source, narrate=narrate))
         return JobRef(**{k: job.as_dict()[k] for k in ("id", "kind", "status", "done")})
 
     @app.get("/api/jobs", tags=["jobs"], response_model=list,
@@ -462,12 +595,41 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # and leaves it fully working with JavaScript off.
         name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
         sess = session(pick(run))
-        row = battle_row(sess, battle)
+        try:
+            row = battle_row(sess, battle)
+        except _NoBattles as empty:
+            return page(request, "battle.html", "battle", name, summary=data, error=err,
+                        battles=[], selected=None, turns=None, window=[],
+                        first_turn=None, last_turn=None, empty=empty.detail)
         turns, terr = guarded(lambda: sess.battle_turns(row["id"]))
         window, first, last = _turn_window(turns, _form_int(start))
         return page(request, "battle.html", "battle", name, summary=data, error=err or terr,
                     battles=_picker_rows(sess.battles(), row), selected=row,
                     turns=turns, window=window, first_turn=first, last_turn=last)
+
+    @app.get("/analyze", response_class=HTMLResponse, tags=["pages"],
+             summary="One decision, fully analyzed: faithfulness, beliefs, threats, saliency")
+    def page_analyze(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None, description="battle short_id; default = the newest"),
+        inv: "str | None" = Query(None, description="invocation index (the Nth decision)"),
+    ) -> HTMLResponse:
+        # The battle + decision are PLAIN GET params, like `/battle` and unlike the filter tables:
+        # "look at this decision" is a thing you link to and send someone, and it must survive a
+        # reload. But the ANALYSIS itself arrives via HTMX (`hx-trigger="load"`, the `/scan`
+        # pattern) because it loads a checkpoint — 0.5–3 s on a run that loads at all, and a
+        # checkpoint load is not something to spend a white page on.
+        name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
+        sess = session(pick(run))
+        try:
+            row = battle_row(sess, battle)
+        except _NoBattles as empty:
+            return page(request, "analyze.html", "analyze", name, summary=data, error=err,
+                        battles=[], selected=None, inv=0, empty=empty.detail)
+        return page(request, "analyze.html", "analyze", name, summary=data, error=err,
+                    battles=_picker_rows(sess.battles(), row), selected=row,
+                    inv=_form_int(inv, 0))
 
     @app.get("/scan", response_class=HTMLResponse, tags=["pages"],
              summary="Cross-battle worst-turning-point scan")
@@ -550,6 +712,28 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return fragment(request, "partials/scan_table.html", rows=rows or [], error=err,
                         spec=spec, metric=metric, run=run)
 
+    @app.get("/partials/analyze", response_class=HTMLResponse, tags=["partials"],
+             summary="One decision's full analysis (HTMX target; loads the checkpoint)")
+    def partial_analyze(
+        request: Request,
+        run: "str | None" = Query(None),
+        battle: "str | None" = Query(None),
+        inv: "str | None" = Query("0"),
+    ) -> HTMLResponse:
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        i = _form_int(inv, 0) or 0
+        data, err = guarded(lambda: sess.analyze(row["id"], i))
+        # `ArchDriftError` is the EXPECTED outcome on an archived run (79/79 measured), and its
+        # message is a multi-line DIAGNOSIS written for a human that ends with the exact
+        # `git checkout` to re-probe from. `guarded` hands it over verbatim and `.err` is
+        # `white-space: pre-wrap`, so the page renders the whole thing rather than collapsing it
+        # to "analysis failed" — which would throw away the only part that says what to do next.
+        dist = (data or {}).get("value_dist")
+        return fragment(request, "partials/analyze_result.html", a=data, error=err,
+                        spec=_value_dist_spec(dist) if dist else None,
+                        run=run, battle=row["short_id"], battle_path=row["id"], inv=i)
+
     @app.get("/partials/triage", response_class=HTMLResponse, tags=["partials"],
              summary="Triage table + lever chart fragment (HTMX target)")
     def partial_triage(
@@ -577,15 +761,21 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
               summary="Submit a falsify_scan from the page (needs the shared password)")
     def partial_submit_falsify(
         request: Request,
+        # FORM, not Query. An HTMX `<form hx-post>` serializes its fields into the request BODY, so
+        # `Query(...)` here read the (empty) URL and every control on the page was silently ignored:
+        # measured, a submit of outcome=win/limit=3/seeds=7/concurrency=4 reached the session as
+        # loss/20/32/1. The `outcome` one is the dangerous member — asking for WINS quietly scanned
+        # LOSSES and returned a confident answer to a question nobody asked. `run` stays a Query
+        # because it rides the URL (the run picker is a link, not a field).
         run: "str | None" = Query(None),
-        outcome: str = Query("loss"),
-        opponent: "str | None" = Query(None),
-        step: "str | None" = Query(None),
-        limit: "str | None" = Query("20"),
-        worst: "str | None" = Query("2"),
-        seeds: "str | None" = Query("32"),
-        alts: "str | None" = Query("2"),
-        concurrency: "str | None" = Query("1"),
+        outcome: str = Form("loss"),
+        opponent: "str | None" = Form(None),
+        step: "str | None" = Form(None),
+        limit: "str | None" = Form("20"),
+        worst: "str | None" = Form("2"),
+        seeds: "str | None" = Form("32"),
+        alts: "str | None" = Form("2"),
+        concurrency: "str | None" = Form("1"),
     ) -> HTMLResponse:
         if not unlocked(request):
             return fragment(request, "partials/locked.html", next_url="/falsify")
@@ -607,17 +797,17 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
               summary="Submit a calibration from the page (needs the shared password)")
     def partial_submit_calibration(
         request: Request,
-        run: "str | None" = Query(None),
-        outcome: str = Query("loss"),
-        opponent: "str | None" = Query(None),
-        step: "str | None" = Query(None),
-        limit: "str | None" = Query("20"),
-        worst: "str | None" = Query("2"),
-        seeds: "str | None" = Query("32"),
-        alts: "str | None" = Query("2"),
-        concurrency: "str | None" = Query("8"),
-        bins: "str | None" = Query("10"),
-        overvalue_tau: "str | None" = Query("5.0"),
+        run: "str | None" = Query(None),      # rides the URL; see the note on the falsify submit
+        outcome: str = Form("loss"),
+        opponent: "str | None" = Form(None),
+        step: "str | None" = Form(None),
+        limit: "str | None" = Form("20"),
+        worst: "str | None" = Form("2"),
+        seeds: "str | None" = Form("32"),
+        alts: "str | None" = Form("2"),
+        concurrency: "str | None" = Form("8"),
+        bins: "str | None" = Form("10"),
+        overvalue_tau: "str | None" = Form("5.0"),
     ) -> HTMLResponse:
         if not unlocked(request):
             return fragment(request, "partials/locked.html", next_url="/calibration")
@@ -636,6 +826,115 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                      n_alts=params["alts"], concurrency=params["concurrency"],
                                      n_bins=params["bins"],
                                      overvalue_tau=params["overvalue_tau"]))
+        return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
+
+    # -- the three PER-DECISION counterfactual probes, submitted from /analyze ------------
+    #
+    # WHY THESE READ `Form` AND THE TWO ABOVE READ `Query`. They are submitted by real <form>s in
+    # `analyze_result.html`, and an HTMX POST puts the form's fields in the request BODY — a
+    # `Query(...)` parameter reads the URL only. For a run-level scan a field that silently falls
+    # back to its default is a wrong knob; here `action` says WHICH move to substitute, so the same
+    # slip would probe a different decision than the one the reader asked about. Every field,
+    # `run`/`battle`/`inv` included, therefore rides the body (the forms carry them as hidden
+    # inputs), and the JSON `/api/jobs/...` twins above stay the query-string surface for scripts.
+
+    def _cf_locked(request: Request) -> HTMLResponse:
+        # Deliberately NOT echoing the run/battle back into the login `next`: this branch runs
+        # BEFORE any membership check, so those are still raw client strings.
+        return fragment(request, "partials/locked.html", next_url="/analyze")
+
+    @app.post("/partials/job/lookahead", response_class=HTMLResponse, tags=["partials"],
+              summary="Submit a one-ply lookahead from /analyze (needs the shared password)")
+    def partial_submit_lookahead(
+        request: Request,
+        run: "str | None" = Form(None),
+        battle: "str | None" = Form(None),
+        inv: "str | None" = Form("0"),
+        seeds: "str | None" = Form("0"),
+        followup: "str | None" = Form("random"),
+    ) -> HTMLResponse:
+        if not unlocked(request):
+            return _cf_locked(request)
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": _form_int(inv, 0) or 0,
+                  "seeds": _form_int(seeds, 0) or 0,
+                  "followup": followup if followup in ("random", "default") else "random"}
+        job = app.state.jobs.submit(
+            "lookahead", params,
+            lambda: sess.lookahead(row["id"], inv=params["inv"], n_seeds=params["seeds"],
+                                   followup=params["followup"]))
+        return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
+
+    @app.post("/partials/job/better-line", response_class=HTMLResponse, tags=["partials"],
+              summary="Submit a better-line search from /analyze (needs the shared password)")
+    def partial_submit_better_line(
+        request: Request,
+        run: "str | None" = Form(None),
+        battle: "str | None" = Form(None),
+        inv: "str | None" = Form("0"),
+        depth: "str | None" = Form("2"),
+        beam: "str | None" = Form("3"),
+        top_k: "str | None" = Form("4"),
+        interior_opponent: "str | None" = Form("self"),
+        confirm_rollouts: "str | None" = Form("0"),
+    ) -> HTMLResponse:
+        if not unlocked(request):
+            return _cf_locked(request)
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": _form_int(inv, 0) or 0,
+                  "depth": _form_int(depth, 2) or 2, "beam": _form_int(beam, 3) or 3,
+                  "top_k": _form_int(top_k, 4) or 4,
+                  "interior_opponent": interior_opponent if interior_opponent in ("self", "none")
+                  else "self",
+                  "confirm_rollouts": _form_int(confirm_rollouts, 0) or 0}
+        job = app.state.jobs.submit(
+            "better_line", params,
+            lambda: sess.better_line(row["id"], params["inv"], depth=params["depth"],
+                                     beam=params["beam"], top_k=params["top_k"],
+                                     interior_opponent=params["interior_opponent"],
+                                     confirm_rollouts=params["confirm_rollouts"]))
+        return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
+
+    @app.post("/partials/job/replay-counterfactual", response_class=HTMLResponse, tags=["partials"],
+              summary="Substitute an action and replay to a win/loss (needs the shared password)")
+    def partial_submit_replay_counterfactual(
+        request: Request,
+        run: "str | None" = Form(None),
+        battle: "str | None" = Form(None),
+        inv: "str | None" = Form("0"),
+        action: "str | None" = Form(None),
+        rollouts: "str | None" = Form("1"),
+        opponent_source: "str | None" = Form("auto"),
+        # An UNCHECKED checkbox sends no field at all, so the default has to be "absent", not "on"
+        # — otherwise un-ticking the play-by-play would silently keep capturing it.
+        narrate: "str | None" = Form(None),
+    ) -> HTMLResponse:
+        if not unlocked(request):
+            return _cf_locked(request)
+        act = _form_int(action)
+        if act is None or act < 0:
+            # There is no sensible default here — "replay something else" has to say WHAT. The form
+            # marks the picker `required`, so this is the hand-rolled-request path; it renders as a
+            # message rather than a 400 the HTMX swap would drop on the floor.
+            return fragment(request, "partials/job.html", job=None, specs=[],
+                            kind="replay_counterfactual",
+                            message="pick which action to substitute — the counterfactual replay "
+                                    "has no default alternative to run.")
+        sess = session(pick(run))
+        row = battle_row(sess, battle)
+        params = {"run": run, "battle": row["short_id"], "inv": _form_int(inv, 0) or 0,
+                  "action": act, "rollouts": _form_int(rollouts, 1) or 1,
+                  "opponent_source": opponent_source if opponent_source in ("auto", "bot", "self")
+                  else "auto",
+                  "narrate": narrate is not None}
+        job = app.state.jobs.submit(
+            "replay_counterfactual", params,
+            lambda: sess.replay_counterfactual(row["id"], params["inv"], params["action"],
+                                               n_rollouts=params["rollouts"],
+                                               opponent_source=params["opponent_source"],
+                                               narrate=params["narrate"]))
         return fragment(request, "partials/job.html", job=job.as_dict(), **_job_view(job.kind, None))
 
     # Registered on STARLETTE's HTTPException, not FastAPI's. Starlette dispatches by walking
@@ -664,7 +963,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
 # 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
 _NAV = [("/", "run"), ("/triage", "triage"), ("/scan", "scan"), ("/battles", "battles"),
-        ("/battle", "battle"), ("/falsify", "falsify"), ("/calibration", "calibration")]
+        ("/battle", "battle"), ("/analyze", "analyze"),
+        ("/falsify", "falsify"), ("/calibration", "calibration")]
 
 # What each view ANSWERS, in recipe order. Rendered as the "where to start" card on `/` and as the
 # one-line subtitle on each page, so a newcomer never has to guess which tab holds their question.
@@ -677,6 +977,10 @@ VIEW_QUESTIONS = [
      "The raw trace list, filterable — the ids you hand to the CLI or the TUI."),
     ("/battle", "battle", "How did one game actually go?",
      "Turn by turn: the board, what each side did, and what the critic made of it. Model-free."),
+    ("/analyze", "analyze", "Why did it choose that, and what did it believe?",
+     "One decision, all the way down — faithfulness, beliefs, threat tables, saliency. The only "
+     "view that LOADS the checkpoint, so it works on a current-architecture run and diagnoses "
+     "the drift on every other."),
     ("/falsify", "falsify", "Was that crater bad luck or a reducible mistake?",
      "Re-rolls the dice on the worst craters. Minutes of work; needs the shared password."),
     ("/calibration", "calibration", "Was the critic wrong, or was the position lost?",
@@ -695,6 +999,38 @@ def _load(pick, session, guarded, run, store, fn):
     name = run or store().default_run()
     data, err = guarded(lambda: fn(session(path)))
     return name, data, err
+
+
+def _value_dist_spec(dist: dict) -> dict:
+    """The distributional critic's predicted RETURN DISTRIBUTION as a real chart.
+
+    This is the single biggest thing a browser buys over the terminal on this view: the TUI can
+    only draw the histogram as a one-line eighth-block sparkline, where "sharp vs wide vs BIMODAL"
+    — the whole interpretability point of the head — is a judgement call about eight characters.
+    Plotted, the shape IS the reading.
+
+    The spec is built from `charts`' own base so it carries the same transparent background and
+    fit-autosize as every other chart on the site (`charts.py` is the one place chart encoding
+    lives and it is not editable in this change; duplicating its constants here would be the drift
+    that module exists to prevent). Pure: dict in, dict out.
+    """
+    values = [{"z": z, "p": p} for z, p in zip(dist.get("support") or [], dist.get("probs") or [])]
+    return charts._spec(
+        title=charts._title(
+            "Critic's predicted return distribution",
+            "sharp = confident · wide = uncertain · two humps = the critic sees a coinflip"),
+        data={"values": values},
+        width="container", height=150,
+        mark={"type": "area", "interpolate": "step-after", "tooltip": True,
+              "color": "#2a6f97", "opacity": 0.85},
+        encoding={
+            "x": {"field": "z", "type": "quantitative",
+                  "axis": {"title": "return (head support space)"}},
+            "y": {"field": "p", "type": "quantitative", "axis": {"title": "probability"}},
+            "tooltip": [{"field": "z", "type": "quantitative", "title": "return"},
+                        {"field": "p", "type": "quantitative", "title": "P", "format": ".3f"}],
+        },
+    )
 
 
 def _safe_next(target: str) -> str:

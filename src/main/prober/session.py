@@ -39,8 +39,8 @@ from main.prober.discovery import (
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, build_board, build_opp_intent, build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, opp_intent_text, parse_pct,
-    parse_protocol_log, protocol_for_turn, summary_flags, timeline_entry_text, SETUP_MOVES,
-    WP_EVEN_DEFAULT, _npz_win_prob, _pct as _hp_pct, _timeline_for,
+    parse_protocol_log, protocol_for_turn, summary_flags, surprise_phrase, timeline_entry_text,
+    SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob, _pct as _hp_pct, _timeline_for,
 )
 
 
@@ -100,6 +100,11 @@ def _opp_intent_dict(inv: dict) -> "dict | None":
 def _r(x, n=3):
     """round-or-None — compact numbers in JSON output."""
     return round(float(x), n) if isinstance(x, (int, float)) else None
+
+# How many loaded ProbeModels one session keeps. Two lets the common "compare this step against a
+# neighbour" walk stay instant without pinning a whole run's worth of checkpoints in RAM; a third
+# would cost ~27 MB more for a pattern nobody performs.
+_MAX_CACHED_MODELS = 2
 
 _DEFAULT_GAMMA = 0.99
 
@@ -753,6 +758,11 @@ class ProbeSession:
         b = self._battle(battle_id)
         model, choice = self._model_for(b)
         opp = self._opp_team_details(b)
+        # Extractor kwargs the current code no longer accepts, dropped so this checkpoint could load
+        # at all (`ProbeModel.load`). Non-empty ⇒ the rebuilt extractor is NOT bit-identical to the
+        # one that played, so faithfulness is approximate — it rides `model_resolution` because that
+        # is already the block a surface reads to say WHICH model produced these numbers.
+        dropped = tuple(getattr(model, "dropped_kwargs", ()) or ())
         a = analyze_invocation(model, self._summary(b), self._npz(b), inv_index,
                                summary_path=b.summary_path, npz_path=b.npz_path,
                                our_hp_types=self._our_hp_types(b),
@@ -760,13 +770,29 @@ class ProbeSession:
                                opp_team_details=(opp[1] if opp else None),
                                our_team_details=self._our_team_details(b))
         d = asdict(a)
-        d["model_resolution"] = _choice_dict(choice)
+        d["model_resolution"] = dict(_choice_dict(choice), dropped_kwargs=list(dropped))
         d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn
         if d.get("value"):  # add the TD residual the engine (γ-agnostic) can't
             reward = (d.get("outcome") or {}).get("reward")
             rtotal = reward.get("total") if isinstance(reward, dict) else reward
             d["value"]["td_residual"] = self._td(
                 rtotal, d["value"]["recorded"], d["value"]["next_recorded"])
+            # ...and its plain-language gloss. The rule is that the ML term never appears without
+            # it, so the pairing has to live where the number is produced, not in each renderer.
+            if d["value"]["td_residual"] is not None:
+                d["value"]["td_phrase"] = surprise_phrase(d["value"]["td_residual"])
+        # The engine's RENDERED sentences, attached exactly as `battle_turns` attaches them.
+        # `asdict` alone hands a consumer only the structured fields, so a second renderer would
+        # re-derive the battle-log line and the α/β sentence — the drift the engine/renderer split
+        # exists to prevent, and what `timeline_entry_text`'s own docstring says it exists to stop.
+        # (The TUI got away without this by rendering its own Rich version from the same vocabulary;
+        # a plain-text surface has no such excuse.)
+        tl = (d.get("outcome") or {}).get("timeline")
+        if tl:
+            d["outcome"]["timeline"] = [dict(e, text=timeline_entry_text(e)) for e in tl]
+        if d.get("opp_intent"):
+            d["opp_intent"]["text"] = opp_intent_text(build_opp_intent(self._summary(b)
+                                                                      ["invocations"][inv_index]))
         return d
 
     def find(self, battle_id: str, criterion: str, limit: "int | None" = None) -> "list[int]":
@@ -2058,4 +2084,13 @@ class ProbeSession:
                 from main.prober.model import ProbeModel
                 model = ProbeModel.load(choice.path)
             self._models[choice.path] = model
+            # BOUNDED, oldest-first. One ProbeModel is a full MaskablePPO (~27 MB of weights plus
+            # its graph), and this cache is keyed by CHECKPOINT — a run retains up to
+            # `--keep-eval-trace-steps` (20) eval snapshots, so walking a run's steps used to pin
+            # twenty of them. Unbounded was survivable for the TUI (one human, one process); it is
+            # not for the web front end, where an anonymous request picks the step and the same
+            # "anything an anonymous request can grow must have a bound" rule already governs the
+            # session cache and the auth failure map (see `web/CLAUDE.md`).
+            while len(self._models) > _MAX_CACHED_MODELS:
+                self._models.pop(next(iter(self._models)))
         return model, choice

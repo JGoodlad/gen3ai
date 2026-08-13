@@ -1078,6 +1078,21 @@ def cant_phrase(cant: str) -> str:
     return CANT_PHRASE.get(str(cant).lower(), str(cant))
 
 
+def surprise_phrase(td: float) -> str:
+    """Plain-language reading of the TD-surprise δ = r + γV(s′) − V(s), so the ML term is
+    self-explaining wherever it is shown: negative δ = the turn went worse than the critic predicted.
+
+    Lives HERE, beside `timeline_entry_text` and `CANT_PHRASE`, for the same reason they do — it is
+    VOCABULARY, and every surface must say it the same way. (It began as a TUI-local helper; a web
+    view re-wording "much worse than the critic expected" is precisely the drift the engine/renderer
+    split exists to prevent.)"""
+    mag = abs(td)
+    if mag < 0.5:
+        return "about what the critic expected"
+    much = "much " if mag >= 3.0 else ""
+    return f"{much}{'better' if td > 0 else 'worse'} than the critic expected"
+
+
 def timeline_entry_text(e: dict) -> str:
     """One :func:`build_result_timeline` entry as a PLAIN-TEXT battle-log line — the unstyled
     sibling of the TUI's Rich renderer (``app._append_timeline_entry``), with the same wording:

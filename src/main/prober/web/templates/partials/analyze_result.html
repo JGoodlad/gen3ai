@@ -1,0 +1,888 @@
+{% import "_macros.html" as m %}
+{# ONE decision, rendered from ONE `ProbeSession.analyze()` dict. Nothing here recomputes an
+   analysis: every number is a field of that dict, and the two arithmetic exceptions are marked
+   where they happen (the faithfulness Δ, and a bar WIDTH normalized to its own head's peak —
+   presentation, not a claim).
+
+   Panels self-hide. Most of these blocks are `None` unless the run trained the corresponding head
+   (`--damage-op`, `--move-belief-mode`, `--spread-belief`, `--value-dist-mode`, `--win-prob-mode`,
+   `--opp-intent-coef`), so an absent panel means "that head was off", never "the probe failed". #}
+
+{% macro prov(gpu) %}
+  {# The TUI's provenance distinction, kept: a LEARNED signal the model actually computed reads
+     differently from a CPU decode of the observation the prober did itself. #}
+  {% if gpu %}<span class="prov gpu" title="GPU — computed by the model's own head/operator on this forward">🔷 GPU</span>
+  {% else %}<span class="prov cpu" title="CPU — decoded by the prober from the observation / the privileged record">📋 CPU</span>{% endif %}
+{% endmacro %}
+
+{% macro side(s, who) %}
+  <div class="mon {{ who }}">
+    <span class="who">{{ "we" if who == "our" else "opp" }}</span>
+    <span class="species">{{ s.active_species or "—" }}</span>
+    <span class="hp">{{ s.active_hp }}</span>
+    {% if s.status %}<span class="badge status">{{ s.status }}</span>{% endif %}
+    {% if s.boosts %}<span class="badge boost">{{ s.boosts }}</span>{% endif %}
+    {% if s.item %}<span class="badge item">@{{ s.item }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro chan(c) %}
+  <span class="mono">{{ m.pct(c.low, 0) }}–{{ m.pct(c.high, 0) }}</span>
+  <span class="muted mono" title="P(this KOs)">→KO {{ m.pct(c.pko, 0) }}</span>
+{% endmacro %}
+
+{% if error %}
+  {# The ArchDriftError path, and it is the COMMON one: measured 2026-08-13, 79 of 79 archived
+     runs fail to load under current code. Its message is a multi-line diagnosis ending in the
+     exact `git checkout <hash>` to re-probe from, so it is printed WHOLE (`.err` is pre-wrap) —
+     collapsing it to "analysis failed" would throw away the only part that says what to do. #}
+  <p class="err" data-analysis="error">{{ error }}</p>
+  <p class="muted small">
+    Loading a checkpoint is the one thing this view does that the others do not. Every
+    <strong>model-free</strong> view works on this run regardless:
+    <a href="/scan?run={{ (run or '') | urlencode }}">scan</a> ·
+    <a href="/triage?run={{ (run or '') | urlencode }}">triage</a> ·
+    <a href="/battle?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}">turns</a>.
+  </p>
+{% elif not a %}
+  <p class="empty" data-analysis="empty">the probe returned nothing</p>
+{% else %}
+<div data-analysis="ok" data-inv="{{ a.inv_index }}">
+
+{# ── banners: everything below is suspect ──────────────────────────────────────────────── #}
+
+{% if a.obs_mismatch %}
+<p class="banner bad">
+  ⚠ <strong>OBS MISMATCH</strong> — this trace's observation is {{ a.obs_mismatch[0] }} dims and the
+  current encoder builds {{ a.obs_mismatch[1] }}. Every obs-OFFSET decode below (the incoming
+  belief, threats, matchups, intervention, saliency) is reading past the divergence and is
+  <strong>unreliable</strong>. The board and the recorded distributions are unaffected.
+</p>
+{% endif %}
+
+{% if a.model_resolution and a.model_resolution.dropped_kwargs %}
+<p class="banner warn">
+  ⚠ <strong>DROPPED FLAGS</strong> —
+  <span class="mono">{{ a.model_resolution.dropped_kwargs | join(", ") }}</span>
+  are baked into this checkpoint but the current code no longer accepts them; they were dropped to
+  make it load at all. The rebuilt extractor is <strong>not</strong> the one that played, so the
+  re-run column and the faithfulness table below are approximate.
+</p>
+{% endif %}
+
+{% if a.opp_switched_to %}
+<p class="banner warn">
+  ⇄ <strong>opp pivoted {{ a.opp_species }} → {{ a.opp_switched_to }}</strong> — the damage tables
+  below were computed against <strong>{{ a.opp_species }}</strong> (the pre-switch active), but our
+  move RESOLVED against <strong>{{ a.opp_switched_to }}</strong>. A net result sitting next to a
+  table computed vs the wrong defender is easy to misread as "the model attacked the switch-in".
+</p>
+{% endif %}
+
+{% for w in (a.warnings or []) %}
+<p class="banner warn">{{ w }}</p>
+{% endfor %}
+
+{# ── header: the position this decision was made in ───────────────────────────────────── #}
+
+<section class="card">
+  <p class="battlehead">
+    <span class="pill">turn {{ a.turn }}</span>
+    <span class="pill">inv {{ a.inv_index }}</span>
+    {% if a.phase and a.phase != "move_selection" %}<span class="badge phase">{{ a.phase }}</span>{% endif %}
+    {% if a.meta %}<span class="{{ 'win' if a.meta.result == 'WIN' else 'loss' }}">{{ a.meta.result }}</span>
+    <span class="muted small">{{ a.meta.turns }} turns · {{ a.meta.n_invocations }} decisions</span>{% endif %}
+    {% for f in (a.flags or []) %}<span class="badge flag {{ f }}">{{ f }}</span>{% endfor %}
+  </p>
+
+  {% if a.board %}
+  <div class="board">
+    {{ side(a.board.ours, "our") }}
+    <span class="vs">vs</span>
+    {{ side(a.board.opp, "opp") }}
+  </div>
+  {% endif %}
+
+  {% if a.field %}
+  {# ITERATED, not a hardcoded key list: the global block gains scalars (the Wish flag, the
+     deadline clock) and a fixed list would silently stop showing the newest one. #}
+  <p class="fieldline">
+    <span class="who">field</span>
+    {% for k, v in a.field.items() %}
+    <span class="fv"><span class="k">{{ k }}</span> <span class="mono">{{ v }}</span></span>
+    {% endfor %}
+  </p>
+  {% endif %}
+
+  {% if a.cure_options %}
+  <p class="muted small">
+    ☣ <strong>a status cure was on the table</strong>:
+    <span class="mono">{{ a.cure_options | join(" · ") }}</span> — legal here AND with something to
+    cure. Recover/Soft-Boiled/Wish restore HP only; in Gen 3 only Refresh and Heal Bell /
+    Aromatherapy clear a status.
+  </p>
+  {% endif %}
+
+  {% if a.model_resolution %}
+  <p class="muted small">
+    model: <span class="pill">{{ a.model_resolution.tier }}</span>
+    {{ a.model_resolution.detail }}
+    {% if a.model_resolution.manifest %}
+      · trace git <span class="mono">{{ a.model_resolution.manifest.git_hash }}</span>
+      · arch <span class="mono">{{ a.model_resolution.manifest.arch_signature }}</span>
+    {% endif %}
+    {% if a.model_resolution.tier not in ("exact", "override") %}
+      — <strong>not the checkpoint that played this trace</strong>, so recorded ≠ re-run is
+      expected drift, not unfaithfulness.
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+
+{# ── the decision ─────────────────────────────────────────────────────────────────────── #}
+
+<section class="card">
+  <h2>the decision</h2>
+  {% set chosen_row = (a.actions | selectattr("is_chosen") | first) %}
+  <p class="chose">
+    chose <strong>{{ a.chosen }}</strong>
+    {% if chosen_row %}<span class="muted">({{ m.pct(chosen_row.recorded, 1) }} recorded confidence)</span>{% endif %}
+    {% if a.rerun_argmax %}
+      {% if a.agrees %}
+        <span class="badge agree" title="the reloaded model still picks this action">✓ still prefers it</span>
+      {% else %}
+        <span class="badge disagree" title="the reloaded model's argmax over the valid actions">⚠ now prefers {{ a.rerun_argmax }}</span>
+      {% endif %}
+    {% endif %}
+  </p>
+
+  {% if a.opp_intent %}
+  <div class="panel">
+    <h3>{{ prov(true) }} what it expected THEM to do — α / β</h3>
+    {# The engine already RENDERED this sentence (`engine.opp_intent_text`); printing it is the
+       whole point of the engine/renderer split — a second surface re-deriving it is how two
+       surfaces end up disagreeing about the same decision. #}
+    {% if a.opp_intent.text %}<p class="sentence">{{ a.opp_intent.text }}</p>{% endif %}
+    <ul class="dist">
+      {% for o in a.opp_intent.alpha %}
+      <li class="{{ 'switch' if o.is_switch }}">
+        <span class="bar"><span style="width: {{ (o.p * 100) | round(1) }}%"></span></span>
+        <span class="lbl">{{ o.name }}</span>
+        <span class="p">{{ m.pct(o.p, 1) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if a.opp_intent.beta %}
+    <h3>β — if they switch, who comes in</h3>
+    <ul class="dist">
+      {% for c in a.opp_intent.beta %}
+      <li>
+        <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
+        <span class="lbl">{{ c.species or "slot " ~ c.slot }}</span>
+        <span class="p">{{ m.pct(c.p, 1) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="muted small">
+      β points at a SLOT; the name is the model's own species posterior for it, so it is a belief
+      about who is there, not a reading of the board.
+      {% if a.opp_intent.switch_p is not none %}P(they switch) {{ m.pct(a.opp_intent.switch_p, 0) }}.{% endif %}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+{# ── what then happened ───────────────────────────────────────────────────────────────── #}
+
+{% set out = a.outcome or {} %}
+<section class="card">
+  <h2>what happened</h2>
+
+  {% if out.timeline %}
+    {# `order_certain` rides the MOVE entries only, and it is false when both sides moved and the
+       recorder never captured who went first. Then a numbered list would be a quiet lie about the
+       sequence, so the list becomes unordered and says so. #}
+    {% set unordered = out.timeline | selectattr("order_certain", "defined")
+                                    | rejectattr("order_certain") | list %}
+    {% if unordered %}
+    <ul class="log unordered"
+        title="Both sides moved and the move order was not recorded — these happened on this turn, but not necessarily in this order.">
+      {# PRINT the engine's own sentence. `engine.timeline_entry_text` exists precisely so no
+         second surface re-derives it from the structured fields. #}
+      {% for e in out.timeline %}<li class="{{ e.side }}">{{ e.text }}</li>{% endfor %}
+      <li class="muted orderq">(move order not recorded)</li>
+    </ul>
+    {% else %}
+    <ol class="log">
+      {% for e in out.timeline %}<li class="{{ e.side }}">{{ e.text }}</li>{% endfor %}
+    </ol>
+    {% endif %}
+  {% elif out.events %}
+    <ul class="log"><li class="muted">{{ out.events | join(" · ") }}</li></ul>
+  {% else %}
+    <p class="empty">nothing recorded for this decision</p>
+  {% endif %}
+
+  <div class="moregrid">
+    {% if out.reward is mapping %}
+    <div class="panel">
+      <h3>reward {{ m.signed(out.reward.total) }}</h3>
+      <ul class="kv">
+        {% for k, v in out.reward.items() if k != "total" %}
+        <li><span class="k">{{ k }}</span> <span class="mono">{{ v }}</span></li>
+        {% else %}
+        <li class="muted">no component breakdown recorded</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% elif out.reward is defined and out.reward is not none %}
+    {# An older recorder wrote the reward as a bare scalar rather than a component dict. Show it
+       rather than dropping the whole panel — a missing reward reads as "no reward", which is a
+       different claim. #}
+    <div class="panel">
+      <h3>reward</h3>
+      <p class="mono">{{ out.reward }}</p>
+    </div>
+    {% endif %}
+
+    {% if out.events %}
+    <div class="panel">
+      <h3>events</h3>
+      <ul class="kv">{% for e in out.events %}<li class="mono">{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if a.protocol %}
+    <div class="panel wide">
+      <h3>raw Showdown protocol — turn {{ a.turn }}</h3>
+      {# The mechanics the summary collapses: per-hit damage, a miss, an immunity, the switch-in.
+         Tinted by line KIND so the eye finds the damage lines; the text itself is untouched. #}
+      <pre class="proto">{% for line in a.protocol %}{% if "|-crit" in line %}<span class="pl crit">{{ line }}</span>
+{% elif "|-damage" in line or "|-heal" in line %}<span class="pl dmg">{{ line }}</span>
+{% elif "|-miss" in line or "|-immune" in line or "|-fail" in line %}<span class="pl miss">{{ line }}</span>
+{% elif line.startswith("|move") %}<span class="pl move">{{ line }}</span>
+{% elif line.startswith("|switch") or line.startswith("|drag") %}<span class="pl swap">{{ line }}</span>
+{% elif line.startswith("|faint") %}<span class="pl faint">{{ line }}</span>
+{% else %}<span class="pl">{{ line }}</span>
+{% endif %}{% endfor %}</pre>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ── the critic ───────────────────────────────────────────────────────────────────────── #}
+
+{% if a.value or a.win_prob or a.value_dist %}
+<section class="card">
+  <h2>the critic</h2>
+
+  {% if a.value %}
+  <div class="stats">
+    <div class="stat"><div class="k" title="the value recorded at capture time">V recorded</div>
+      <div class="v">{{ m.num(a.value.recorded) }}</div></div>
+    <div class="stat"><div class="k" title="the reloaded model's V(s) — critic faithfulness">V re-run</div>
+      <div class="v">{{ m.num(a.value.rerun) }}</div></div>
+    <div class="stat"><div class="k" title="V at the NEXT captured decision">V next</div>
+      <div class="v">{{ m.num(a.value.next_recorded) }}</div></div>
+    <div class="stat"><div class="k" title="how far the value moved — the cliff a loss is diagnosed by">ΔV</div>
+      <div class="v">{{ m.signed(a.value.delta) }}</div></div>
+    <div class="stat"><div class="k" title="TD residual δ = r + γV(s′) − V(s)">TD δ</div>
+      <div class="v">{{ m.signed(a.value.td_residual) }}</div></div>
+  </div>
+  {% if a.value.td_phrase %}
+  {# The rule this view inherits from the TUI: the ML term NEVER appears without its
+     plain-language gloss, and the gloss comes from the engine so both surfaces say it the same way. #}
+  <p class="sentence">TD δ {{ m.signed(a.value.td_residual) }} — <strong>{{ a.value.td_phrase }}</strong></p>
+  {% endif %}
+  {% if a.value.normalized_recorded is not none %}
+  <p class="muted small">
+    PopArt: normalized V(s) {{ m.num(a.value.normalized_recorded) }} · re-run
+    {{ m.num(a.value.normalized_rerun) }} (μ {{ m.num(a.value.popart_mu) }}, σ
+    {{ m.num(a.value.popart_sigma) }}) — the critic's OWN learning scale; the numbers above are
+    de-normalized real return.
+  </p>
+  {% endif %}
+  {% endif %}
+
+  {% if a.win_prob %}
+  <div class="stats">
+    <div class="stat"><div class="k" title="the win-probability head's calibrated P(win|s)">P(win)</div>
+      <div class="v">{{ m.pct(a.win_prob.recorded, 1) }}</div></div>
+    <div class="stat"><div class="k">P(win) next</div>
+      <div class="v">{{ m.pct(a.win_prob.next_recorded, 1) }}</div></div>
+    <div class="stat"><div class="k" title="how much this move moved the win odds">ΔP(win)</div>
+      <div class="v">{{ m.signed(a.win_prob.delta, 3) }}</div></div>
+  </div>
+  {% endif %}
+
+  {% if a.value_dist %}
+  {{ m.chart("valuedist", spec) }}
+  <p class="muted small">
+    E[Z] {{ m.num(a.value_dist.mean) }}{% if a.value_dist.mean_real is not none %}
+    (real return {{ m.num(a.value_dist.mean_real) }}){% endif %} ·
+    σ {{ m.num(a.value_dist.std) }} · p10 {{ m.num(a.value_dist.p10) }} ·
+    p50 {{ m.num(a.value_dist.p50) }} · p90 {{ m.num(a.value_dist.p90) }} ·
+    entropy {{ m.num(a.value_dist.entropy) }} ·
+    <span title="mass outside the dominant peak's ±2-bin neighbourhood — high means the critic sees a coinflip">bimodality
+    {{ m.num(a.value_dist.bimodality) }}</span>
+  </p>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── faithfulness ─────────────────────────────────────────────────────────────────────── #}
+
+<section class="card">
+  <h2>faithfulness — recorded vs re-run</h2>
+  <p class="muted small">
+    The distribution the trace recorded against the one the reloaded model produces now. Exact only
+    on the <strong>exact</strong> model tier; on <em>nearest</em>/<em>recent</em> the weights differ
+    from the ones that played, so a gap is drift.
+  </p>
+  <div class="scroll-x">
+  <table>
+    {# NOT re-sorted. `summary.actions` is already in ACTION-INDEX order (the recorder keys move
+       slot m on `legal.move_ids[m]`, the same request order the mask, the op's per-move blocks and
+       the policy logits use). A former re-sort onto the per-mon moveset order transposed the
+       labels and produced a spurious `disagree` — see the gotcha in src/main/prober/CLAUDE.md. #}
+    <thead><tr>
+      <th class="num" title="Action index — the row order IS the action order; it is never re-sorted">#</th>
+      <th>action</th>
+      <th title="Was this action legal at this decision?">valid</th>
+      <th class="num" title="Probability recorded in the trace at capture time">recorded</th>
+      <th class="num" title="Probability the reloaded model gives it now">re-run</th>
+      <th class="num" title="re-run − recorded">Δ</th>
+    </tr></thead>
+    <tbody>
+      {% for r in a.actions %}
+      <tr data-row class="{{ 'chosenrow' if r.is_chosen }} {{ '' if r.valid else 'invalidrow' }}">
+        <td class="num">{{ loop.index0 }}</td>
+        <td class="mono">{{ "▶ " if r.is_chosen }}{{ r.label }}</td>
+        <td>{% if r.valid %}✓{% else %}<span class="muted">illegal</span>{% endif %}</td>
+        <td class="num">{{ m.pct(r.recorded, 1) }}</td>
+        <td class="num">{{ m.pct(r.rerun, 1) }}</td>
+        {# The one arithmetic this template does, and only for display. #}
+        <td class="num">{{ m.signed(r.rerun - r.recorded, 3) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+{# ── beliefs: the model's world-model vs the truth ────────────────────────────────────── #}
+
+{% if a.belief_truth or a.belief or a.move_belief or a.spread_belief %}
+<section class="card">
+  <h2>beliefs {{ prov(true) }}</h2>
+
+  {% if a.belief_truth %}
+  <div class="panel">
+    <h3>species belief vs the TRUE team
+      <span class="muted">— {{ a.belief_truth.n_correct }}/{{ a.belief_truth.n_hidden }} hidden mons
+      guessed right</span> {{ prov(false) }}<span class="muted small"> truth from the reconstruction record</span>
+    </h3>
+    <ul class="beliefs">
+      {% for mon in a.belief_truth.mons %}
+      <li>
+        {% if mon.revealed %}
+          <span class="marker seen" title="already revealed on the field">👁</span>
+          <span class="species">{{ mon.species }}</span>
+          <span class="muted small">revealed</span>
+        {% else %}
+          {% if mon.guessed_right %}
+            <span class="marker hit" title="the model's top-1 guess for this slot IS this mon">✓</span>
+          {% elif mon.true_rank > 0 %}
+            <span class="marker near" title="the true species is in the belief, but not top-1">≈</span>
+          {% else %}
+            <span class="marker miss" title="the true species is not in the top-k at all">✗</span>
+          {% endif %}
+          <span class="species">{{ mon.species }}</span>
+          {% if mon.true_rank > 0 and not mon.guessed_right %}<span class="muted small">(#{{ mon.true_rank }})</span>{% endif %}
+          <span class="guess">
+            {% for sp, p in mon.guess %}<span class="g {{ 'istrue' if sp == mon.species }}">{{ sp }} {{ m.pct(p, 0) }}</span>{% endfor %}
+          </span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% elif a.belief %}
+  <div class="panel">
+    <h3>species belief — anonymous slots</h3>
+    <p class="muted small">
+      No <code>reconstruction.json</code> sibling on this trace, so there is no privileged team to
+      match against: these are the per-hidden-slot guesses with no truth column.
+    </p>
+    <ul class="beliefs">
+      {% for s in a.belief.slots %}
+      <li><span class="species">slot {{ s.slot }}</span>
+        <span class="guess">{% for sp, p in s.top %}<span class="g">{{ sp }} {{ m.pct(p, 0) }}</span>{% endfor %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if a.move_belief %}
+  <div class="panel">
+    <h3>move belief — <span class="marker hit">✓</span> revealed ·
+      <span class="marker near">≈</span> believed unseen</h3>
+    <ul class="beliefs">
+      {% for mb in a.move_belief.opp %}
+      <li>
+        <span class="species">{{ mb.species }}</span>
+        <span class="guess">
+          {% for mv, p in mb.revealed %}<span class="g seenmove">✓ {{ mv }} {{ m.pct(p, 0) }}</span>{% endfor %}
+          {% for mv, p in mb.believed %}<span class="g">≈ {{ mv }} {{ m.pct(p, 0) }}</span>{% endfor %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="muted small">
+      The unseen list is capped at the mon's OPEN move slots — a mon with k revealed moves has at
+      most 4−k more, which the multi-label head does not itself enforce.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if a.spread_belief %}
+  <div class="panel wide">
+    <h3>believed SPREAD vs true
+      {% if a.spread_belief.mean_abs_err is not none %}
+      <span class="muted">— mean |believed − true| {{ m.num(a.spread_belief.mean_abs_err, 1) }}</span>
+      {% endif %}
+    </h3>
+    <p class="muted small">
+      These are the derived stats the <code>DamageOperator</code> actually consumes, so a wrong Atk
+      or SpA here mis-prices every hit in the threat tables below — an otherwise invisible
+      root-cause.
+    </p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr>
+        <th>mon</th><th>stat</th>
+        <th class="num">believed {{ prov(true) }}</th>
+        <th class="num">true {{ prov(false) }}</th>
+        <th class="num">usage prior {{ prov(false) }}</th>
+      </tr></thead>
+      <tbody>
+        {% for slot in a.spread_belief.slots %}
+        {% for r in slot.rows %}
+        <tr data-row>
+          <td>{% if loop.first %}{{ slot.species }}
+            {% if slot.nature %}<span class="muted small">{{ slot.nature }} {{ slot.ev_note }}</span>{% endif %}
+            {% endif %}</td>
+          <td class="mono">{{ r.stat }}</td>
+          <td class="num">{{ m.num(r.believed, 0) }}</td>
+          <td class="num">{{ m.num(r.true, 0) }}</td>
+          <td class="num">{{ m.num(r.prior, 0) }}</td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── threats ──────────────────────────────────────────────────────────────────────────── #}
+
+{% set dop = a.damage_op %}
+{% if dop or a.switch_in_outgoing or a.matchups or a.threats or a.incoming %}
+<section class="card">
+  <h2>threats</h2>
+
+  {% if dop %}
+  {% set labels = (a.move_belief.our_labels if a.move_belief else []) %}
+  <div class="panel wide">
+    <h3>{{ prov(true) }} DamageOperator — incoming, per OUR mon (team-slot order)</h3>
+    <div class="scroll-x">
+    <table>
+      <thead><tr>
+        <th>our mon</th><th>physical</th><th>special</th>
+        <th class="num" title="P(our mon moves first)">P(outspeed)</th>
+        <th class="num" title="1.0 = the dominant threat is a REVEALED move; below that it is a prior guess">provenance</th>
+      </tr></thead>
+      <tbody>
+        {% for row in dop.incoming %}
+        <tr data-row>
+          <td>{% set lbl = (labels | selectattr("0", "equalto", loop.index0) | first) %}
+            {% if lbl %}{{ "▶ " if lbl[2] }}{{ lbl[1] }}{% else %}slot {{ loop.index0 }}{% endif %}</td>
+          <td>{{ chan(row.phys) }}</td>
+          <td>{{ chan(row.spec) }}</td>
+          <td class="num">{{ m.pct(row.p_outspeed, 0) }}</td>
+          <td class="num">{{ m.num(row.provenance) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if dop.choice_band %}
+    <p class="muted small">
+      Choice Band belief: P(opp holds one) {{ m.pct(dop.choice_band.p_cb, 0) }} — the physical
+      tail above is re-priced under it.
+    </p>
+    {% endif %}
+  </div>
+
+  {% if dop.outgoing %}
+  <div class="panel wide">
+    {# ACTION order. Since gen3_op_move_align_v1 the op's outgoing blocks read the request-ordered
+       obs slice, so they line up with `matchups.move_labels`, the faithfulness rows and the policy
+       logits (action 6+k) — the same axis. (The older "op move order ≠ action order" caveat
+       described a model bug that has since been fixed; there is nothing left to warn about.) #}
+    <h3>{{ prov(true) }} DamageOperator — our outgoing damage, per move (action order)</h3>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>move</th><th>damage</th><th class="num">crit</th>
+        <th class="num" title="P(a dedicated status move lands)">status lands</th></tr></thead>
+      <tbody>
+        {% for mv in dop.outgoing.moves %}
+        <tr data-row>
+          <td class="mono">{% if a.matchups and loop.index0 < a.matchups.move_labels | length %}{{ a.matchups.move_labels[loop.index0] }}{% else %}slot {{ loop.index0 }}{% endif %}</td>
+          <td>{{ chan(mv) }}</td>
+          <td class="num">{{ m.pct(mv.crit, 0) }}</td>
+          <td class="num">
+            {% set sl = (dop.status_landing[loop.index0] if dop.status_landing and loop.index0 < dop.status_landing | length else None) %}
+            {% if sl %}{{ m.pct(sl.p_land, 0) }} <span class="muted">{{ "✓" if sl.known >= 0.5 else "?" }}</span>{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if dop.incoming_matrix %}
+  <div class="panel wide">
+    <h3>{{ prov(true) }} which opponent move threatens which of our mons</h3>
+    <p class="muted small">
+      Rows are the opponent's candidate moves (the model's own belief over them); columns are our
+      six team slots. The cell is <span class="mono">low–high %HP · →KO</span> and the tint is
+      P(KO) — the discrete read the scalar "worst incoming" collapses. <strong>This is the view a
+      terminal cannot draw.</strong>
+    </p>
+    <div class="scroll-x">
+    <table class="heat">
+      <thead><tr>
+        <th>opp move</th>
+        <th class="num" title="the move-belief's P(they have it)">belief</th>
+        <th class="num">acc</th>
+        <th>class</th>
+        {% for i in range(dop.incoming | length) %}
+        {% set lbl = (labels | selectattr("0", "equalto", i) | first) %}
+        <th>{% if lbl %}{{ "▶ " if lbl[2] }}{{ lbl[1] }}{% else %}slot {{ i }}{% endif %}</th>
+        {% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for mv in dop.incoming_matrix.moves %}
+        {# `k` is bound OUTSIDE the defender loop on purpose: `loop.index0` inside it is the
+           DEFENDER's index, and using it to subscript would transpose the whole matrix. #}
+        {% set k = loop.index0 %}
+        <tr data-row>
+          <td class="mono">{{ mv.move or "?" }}</td>
+          <td class="num">{{ m.pct(mv.belief, 0) }}</td>
+          <td class="num">{{ m.pct(mv.accuracy, 0) }}</td>
+          <td class="muted small">{{ "phys" if mv.is_phys >= 0.5 else "spec" }}</td>
+          {% for defender in dop.incoming_matrix.per_defender %}
+          {% set cell = defender[k] %}
+          <td class="cell" style="background: rgba(208, 128, 106, {{ "%.3f" % (0.75 * ([cell.pko, 0.0] | max)) }})">
+            {% if cell.type_mult <= 0 %}<span class="muted" title="type immunity — this move cannot touch that mon">safe</span>
+            {% else %}<span class="mono">{{ m.pct(cell.low, 0) }}–{{ m.pct(cell.high, 0) }}</span>
+              <span class="muted mono">→KO {{ m.pct(cell.pko, 0) }}</span>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if a.switch_in_outgoing %}
+  <div class="panel wide">
+    <h3>{{ prov(false) }} on the way in — what each candidate would DO to
+      {{ a.switch_in_outgoing.opp_species }} ({{ a.switch_in_outgoing.opp_hp }})</h3>
+    <p class="muted small">
+      On a forced switch the operator's outgoing block prices only the fainted active, so the model
+      picks its switch-in from incoming threat alone. This is the missing half, computed by the
+      prober from the privileged true spreads — <strong>the model does not see it</strong>.
+    </p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>candidate</th><th class="num">hp</th><th>best move</th>
+        <th class="num">damage</th><th class="num">→KO</th><th class="num">×mult</th>
+        <th class="num">P(outspeed)</th></tr></thead>
+      <tbody>
+        {% for r in a.switch_in_outgoing.rows %}
+        <tr data-row>
+          <td>{{ r.species }}</td><td class="num">{{ r.hp }}</td><td class="mono">{{ r.move }}</td>
+          {# ALREADY percentages here (0–100), unlike the operator's fractions above — so no ×100. #}
+          <td class="num">{{ m.num(r.low, 0) }}–{{ m.num(r.high, 0) }}%</td>
+          <td class="num">{{ m.pct(r.pko, 0) }}</td>
+          <td class="num">{{ m.num(r.type_mult, 2) }}×</td>
+          <td class="num">{{ m.pct(r.outspeed, 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if a.matchups or a.threats or a.incoming %}
+  {# The CPU obs decodes. DIMMED when the operator is present, because it subsumes them (it prices
+     base power × Atk·Def × HP × roll; these are effectiveness and a prior-fed belief); at FULL
+     strength when there is no operator, which is the graceful-degradation contract. #}
+  <div class="cpudecodes {{ 'dim' if dop }}">
+    <h3>{{ prov(false) }} observation decodes{% if dop %}
+      <span class="muted small">— subsumed by the operator above; kept for cross-checking</span>{% endif %}</h3>
+
+    {% if a.matchups %}
+    <p class="benchline"><span class="who">type ×</span>
+      {% for lbl in a.matchups.move_labels %}
+      <span class="fv"><span class="mono">{{ lbl }}</span>
+        {# A non-damaging move gets a phantom multiplier in the obs; showing "2.00×" on Spikes is a
+           misleading artefact, so an inapplicable slot renders as an em dash, never a number. #}
+        {% if a.matchups.applicable[loop.index0] %}{{ m.num(a.matchups.multipliers[loop.index0]) }}×
+        {% else %}<span class="muted">—</span>{% endif %}</span>
+      {% endfor %}
+    </p>
+    {% endif %}
+
+    {% if a.threats %}
+    <p class="muted small">
+      incoming effectiveness: worst on board {{ m.num(a.threats.max_incoming) }}× ·
+      opponent coverage revealed {{ m.pct(a.threats.revealed_frac, 0) }}
+      {% if not a.threats.present %}<em>(nothing revealed — the policy is flying on priors here)</em>{% endif %}
+    </p>
+    {% endif %}
+
+    {% if a.incoming %}
+    <p class="muted small">
+      incoming P(KO) belief: active {{ m.pct(a.incoming.active_pko, 0) }} ·
+      expected chip {{ m.pct(a.incoming.active_exp, 0) }} ·
+      P(we outspeed) {{ m.pct(a.incoming.active_outspeed, 0) }} ·
+      worst on team {{ m.pct(a.incoming.max_pko, 0) }} ·
+      opp recovery belief {{ m.pct(a.incoming.recovery_rate, 0) }}
+      {% if a.incoming.recovery_known >= 0.5 %}(revealed){% endif %}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── intervention ─────────────────────────────────────────────────────────────────────── #}
+
+{% if a.sweep %}
+<section class="card">
+  <h2>intervention — sweep the chosen move's type multiplier</h2>
+  {# `InterventionSweep.applicable` is a @PROPERTY, so `asdict` drops it: the test is
+     `request_slot >= 0`, not a missing key that would read as False forever. #}
+  {% if a.sweep.request_slot >= 0 %}
+  <p class="muted small">
+    Overwrite the observation's type multiplier for <strong>{{ a.sweep.chosen_label }}</strong> and
+    watch the policy move. Baseline P(any switch) {{ m.pct(a.sweep.baseline_p_switches, 1) }}. A flat
+    response means the policy is not reading this input for this decision.
+  </p>
+  <div class="scroll-x">
+  <table>
+    <thead><tr><th class="num">multiplier</th><th class="num">P(chosen)</th>
+      <th class="num">P(any switch)</th></tr></thead>
+    <tbody>
+      {% for r in a.sweep.rows %}
+      <tr data-row><td class="num">{{ m.num(r.multiplier, 1) }}×</td>
+        <td class="num">{{ m.pct(r.p_chosen, 1) }}</td>
+        <td class="num">{{ m.pct(r.p_switches, 1) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="empty">the chosen action is not a move, so there is no multiplier to sweep</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── saliency ─────────────────────────────────────────────────────────────────────────── #}
+
+{% macro salpanel(sal, title, hint) %}
+  {% if sal and sal.blocks %}
+  <div class="panel">
+    <h3>{{ title }}</h3>
+    <p class="muted small">{{ hint }}</p>
+    {% set peak = (sal.blocks | map(attribute="mean_abs") | max) %}
+    <ul class="dist">
+      {% for b in sal.blocks %}
+      <li>
+        {# The bar WIDTH is normalized to this head's own peak — presentation only. The numbers
+           printed beside it are the session's. #}
+        <span class="bar"><span style="width: {{ ((b.mean_abs / peak * 100) if peak else 0) | round(1) }}%"></span></span>
+        <span class="lbl">{{ b.name }}</span>
+        <span class="p" title="|grad| per obs dim · summed |grad|">{{ "%.3g" | format(b.mean_abs) }}
+          <span class="muted">/ {{ "%.3g" | format(b.total_abs) }}</span></span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% if a.saliency or a.value_saliency %}
+<section class="card">
+  <h2>saliency — which parts of the observation each head read</h2>
+  <p class="muted small">
+    <strong>Each head is normalized to its OWN peak, so the π bars and the V bars are not
+    comparable across the two panels</strong> — read within a panel, not across. And this is
+    SENSITIVITY (|∂output/∂obs|), not proof of causal use.
+  </p>
+  <div class="moregrid">
+    {{ salpanel(a.saliency, "π — policy logit of the chosen action",
+                "what moved the action the model actually took") }}
+    {{ salpanel(a.value_saliency, "V — the critic",
+                "where value-head tail-blindness would show up: does V read the threat blocks at all?") }}
+  </div>
+</section>
+{% endif %}
+
+{# ── counterfactual: what if it had played something else? ────────────────────────────── #}
+{#
+   The three re-roll/clone-powered probes, ported from the TUI's `L` / `B` / `C`. They belong HERE
+   rather than on a page of their own because each is anchored on ONE decision, and this view
+   already holds the battle, the inv and the legal actions they need.
+
+   They are the only thing on this page that is NOT a read: each spawns Node and runs for seconds
+   to minutes, so they go through the job registry (submit → poll → render, exactly like
+   `/falsify`) and they need the shared password — the package's rule is that reading is anonymous
+   and spending CPU is not.
+
+   All three also need the trace's `*_reconstruction.json` sibling, which only bridge-eval traces
+   carry. On a websocket / older trace they fail with that explanation, and the failure renders as
+   a message in the result box below.
+#}
+<section class="card" id="counterfactual">
+  <h2>counterfactual — what if it had played something else?</h2>
+  <p class="muted small">
+    Everything above is a reading of the decision as it happened. These three <em>re-play</em> it.
+    They run in the background (submit, then this box polls), they need the shared password, and
+    they only work on a bridge-eval trace — the one with a
+    <code>*_reconstruction.json</code> sibling.
+  </p>
+
+  <div class="cf-forms">
+    <form class="filters cf" hx-post="/partials/job/lookahead" hx-target="#job">
+      <h3>lookahead — one ply</h3>
+      <p class="muted small">
+        Re-roll this turn under <strong>every</strong> legal action (the opponent plays its recorded
+        move, the dice held fixed) and read the critic's V(s′) for each. Answers “was there a better
+        move <em>this turn</em>, by the critic's own reckoning?”. ≈2 s at 0 extra seeds; each extra
+        seed re-rolls the whole sweep again.
+      </p>
+      <input type="hidden" name="run" value="{{ run or '' }}">
+      <input type="hidden" name="battle" value="{{ battle }}">
+      <input type="hidden" name="inv" value="{{ inv }}">
+      <label>dice seeds
+        <input type="number" name="seeds" value="0" min="0" max="64" size="3"
+               title="0 = the realized-dice (CRN) headline alone, which is the session default. Above 0 also dice-averages V(s′) ± std — and costs one extra re-roll per candidate per seed.">
+      </label>
+      <button class="primary" type="submit">look ahead</button>
+    </form>
+
+    <form class="filters cf" hx-post="/partials/job/better-line" hx-target="#job">
+      <h3>better line — search</h3>
+      <p class="muted small">
+        The depth-≥2 generalization: a CRN-anchored beam over the critic that clones mid-battle
+        states, returning one contrastive trajectory (“at turn T do X instead”). ≈2 s at depth 1,
+        ≈4 s at depth 2, ≈5 s at depth 3. A confirm rollout is a whole game on top — seconds each.
+      </p>
+      <input type="hidden" name="run" value="{{ run or '' }}">
+      <input type="hidden" name="battle" value="{{ battle }}">
+      <input type="hidden" name="inv" value="{{ inv }}">
+      <label>depth
+        <input type="number" name="depth" value="2" min="1" max="4" size="2"
+               title="OUR plies searched. 1 is exactly the lookahead above. Only depth 1 is fully faithful — deeper plies need a stand-in opponent.">
+      </label>
+      <label>beam<input type="number" name="beam" value="3" min="1" max="8" size="2"></label>
+      <label>top-k<input type="number" name="top_k" value="4" min="1" max="11" size="2"></label>
+      <label>interior opponent
+        <select name="interior_opponent"
+                title="Who reacts past the first ply. 'self' reloads the trainee as a flagged self-play proxy; 'none' lets the sim pick its default move.">
+          <option value="self">self (flagged proxy)</option>
+          <option value="none">sim default</option>
+        </select>
+      </label>
+      <label>confirm rollouts
+        <input type="number" name="confirm_rollouts" value="0" min="0" max="16" size="2"
+               title="0 = report the critic's claim only. Above 0 plays the recommendation out to a win/loss that many times — the ground-truth check, seconds per rollout.">
+      </label>
+      <button class="primary" type="submit">search</button>
+    </form>
+
+    <form class="filters cf" hx-post="/partials/job/replay-counterfactual" hx-target="#job">
+      <h3>replay to a win/loss</h3>
+      <p class="muted small">
+        Substitute one action here and play the <strong>rest of the game</strong> live against the
+        reloaded opponent: “could it have won if it hadn't choked this turn?”. Each rollout is a
+        full game — seconds. One rollout is a single realized-dice line and <strong>not</strong> a
+        probability.
+      </p>
+      <input type="hidden" name="run" value="{{ run or '' }}">
+      <input type="hidden" name="battle" value="{{ battle }}">
+      <input type="hidden" name="inv" value="{{ inv }}">
+      <label>substitute
+        {# The choices ARE this decision's recorded action list, in action-index order — the same
+           order the mask, the logits and `query replay-counterfactual <id> <inv> <action>` use, so
+           the index sent is the index meant. There is deliberately no default: "replay something
+           else" has to say what. Run the lookahead first and its result box hands its best
+           alternative straight to this probe. #}
+        <select name="action" required
+                title="The action index to play instead. Illegal actions are listed but disabled — the sim would refuse them.">
+          <option value="" selected disabled>— pick an action —</option>
+          {% for act in a.actions %}
+          <option value="{{ loop.index0 }}" {% if not act.valid %}disabled{% endif %}>
+            {{ loop.index0 }} · {{ act.label }}{% if act.is_chosen %} (played){% endif %}{% if not act.valid %} — illegal{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>rollouts
+        <input type="number" name="rollouts" value="1" min="1" max="16" size="3"
+               title="1 is the single realized-dice line (an outcome, not a probability). Above 1 resamples the post-divergence dice for a win-rate ± Wilson CI.">
+      </label>
+      <label class="check"><input type="checkbox" name="narrate" checked> play-by-play</label>
+      <button class="primary" type="submit">replay</button>
+    </form>
+  </div>
+
+  {# The poller in `partials/job.html` targets `#job`, so this box carries that id. #}
+  <div id="job">
+    <p class="empty">nothing run yet — each of these spends real CPU, so none of them starts on its own.</p>
+  </div>
+</section>
+
+{# ── where to go next ─────────────────────────────────────────────────────────────────── #}
+
+<p class="muted small">
+  {% if a.meta %}decision {{ a.inv_index }} of {{ a.meta.n_invocations }} ·{% endif %}
+  {% if a.inv_index > 0 %}
+  <a class="pagelink" href="/analyze?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index - 1 }}">← previous decision</a>
+  {% endif %}
+  {% if a.meta and a.inv_index + 1 < a.meta.n_invocations %}
+  <a class="pagelink" href="/analyze?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;inv={{ a.inv_index + 1 }}">next decision →</a>
+  {% endif %}
+  <a class="pagelink" href="/battle?run={{ (run or '') | urlencode }}&amp;battle={{ battle | urlencode }}&amp;start={{ a.turn }}#inv-{{ a.inv_index }}">read the game around turn {{ a.turn }}</a>
+  <button class="linky copybtn" type="button"
+          data-copy="python -m main.prober.query analyze {{ battle_path }} {{ a.inv_index }}"
+          title="Copy the equivalent CLI invocation">copy cmd</button>
+</p>
+
+</div>
+{% endif %}

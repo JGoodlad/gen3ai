@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}analyze{% endblock %}
+
+{% block content %}
+<h1>Decision analysis</h1>
+<p class="lede">
+  <code>ProbeSession.analyze()</code> — one decision, all the way down: what the policy did and
+  whether it still would, what it BELIEVED about the hidden half of the board, what the
+  <code>DamageOperator</code> priced, what the critic thought, and which parts of the observation
+  the two heads actually read. <strong>This is the only view that loads the checkpoint</strong>,
+  so it re-runs the model under <em>current</em> code — which means it works on a run trained at
+  the current architecture and, on every older one, prints the drift diagnosis instead.
+</p>
+
+{% if empty %}
+{# A run with no traces is an ORDINARY state — it is what the NEWEST run looks like until its first
+   eval cycle writes one, and the newest run is what this app opens by default. Saying so beats the
+   404 this used to be, which read as a broken link on a perfectly healthy run. #}
+<section class="card empty-state">
+  <h2>nothing to analyze yet</h2>
+  <p>{{ empty }}</p>
+  <p class="muted">Eval writes its first forensic traces at the first eval cycle. Until then
+    <a class="rowlink" href="/?run={{ run | urlencode }}">the run summary</a> is the view with
+    something to show — it reads <code>metadata.json</code>, not traces.</p>
+</section>
+{% else %}
+
+<section class="card">
+  {# A PLAIN GET FORM, like /battle and unlike the filter tables: "look at this decision" is a
+     thing you link to and hand to someone, so every position here is a shareable URL that also
+     works with JavaScript off. Only the ANALYSIS below arrives over HTMX. #}
+  <form class="filters" method="get" action="/analyze">
+    <input type="hidden" name="run" value="{{ run or '' }}">
+    <label>battle
+      <select name="battle">
+        {% for b in battles %}
+        <option value="{{ b.short_id }}" {% if b.short_id == selected.short_id %}selected{% endif %}>
+          {{ b.short_id }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>decision (inv)
+      <input type="number" name="inv" min="0" step="1" value="{{ inv }}"
+             title="Invocation index — the Nth recorded decision of this battle. This is the same
+                    number `scan` reports and `python -m main.prober.query analyze` takes.">
+    </label>
+    <button class="primary" type="submit">analyze</button>
+  </form>
+</section>
+
+<section class="card">
+  {# Deliberately NOT server-rendered. Every other slow page here is slow because it opens a lot
+     of files; this one is slow because it DESERIALIZES A CHECKPOINT and runs forward/backward
+     passes (0.5–3 s on a run that loads at all). Same answer as /scan: arrive, then fill in — and
+     say what is being waited on rather than "loading…". #}
+  <div id="analysis"
+       hx-get="/partials/analyze?run={{ run | urlencode }}&amp;battle={{ selected.short_id | urlencode }}&amp;inv={{ inv }}"
+       hx-trigger="load" hx-indicator="#analyze-busy">
+    <p class="empty">
+      <span class="spinner" style="display:inline-block;vertical-align:-1px"></span>
+      Loading the checkpoint for step {{ "{:,}".format(selected.step) }} and re-running decision
+      {{ inv }} through it — a second or three.
+    </p>
+  </div>
+  <span id="analyze-busy" class="htmx-indicator muted">re-running the model…</span>
+</section>
+{% endif %}
+{% endblock %}
