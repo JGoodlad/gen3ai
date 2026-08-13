@@ -463,7 +463,17 @@ from typing import Any, Dict, List
 #   loud, and NOT migrated up (rewriting 0.0→0.02 would let an incompatible belief load silently).
 #   NO ARCH_SIGNATURE bump: the prior buffer is non-persistent and unchanged in shape, and every
 #   floor > 0 config produces a bit-identical buffer before and after (only floor == 0.0 changes).
-MODEL_CONFIG_VERSION = 66
+# v67 is the gen3_deadline_clock_v1 STAMP — the obs CLOCK group goes 1 → 3 scalars (log-elapsed +
+#   remaining-linear + log-remaining), so GLOBAL_ENV_DIM 18 → 20 and the obs 2667 → 2669, and the
+#   move/global context widths that read `_gl['clock']['dim']` move with it. Obs width + weight
+#   shapes change together, so no migration is possible — the ARCH_SIGNATURE carries the break.
+#   Motivation (measured on 14/14 timeout losses at ai_v9_09 step 16M): the critic reported a
+#   POSITIVE V on the last decision before a −30 forfeit in 13 of 14 games (mean +9.33, mean
+#   terminal TD surprise −39.3) and was RISING into the forfeit in 10 of 14. The single
+#   log-ELAPSED scalar gave the last 20 turns 1.5% of its range; log-REMAINING gives them 55.1%
+#   (37×), which is the link TD must fit FIRST before it can bootstrap value back down a
+#   200-turn episode.
+MODEL_CONFIG_VERSION = 67
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -863,7 +873,13 @@ MODEL_CONFIG_VERSION = 66
 #     evidence (53ef270): net policy dependence +0.00%, flips half of the acceptance clause met
 #     by training, act_threat decodable concat-zeroed. state_dict changes (projection widths +
 #     the new module) → the signature carries the break; fresh lineage (gen-5).
-ARCH_SIGNATURE = "gen3_no_concat_v1"
+#   gen3_deadline_clock_v1 (config v67): the obs CLOCK group is 3 scalars, not 1 — log-ELAPSED
+#     (opening structure) plus remaining-LINEAR and log-REMAINING (deadline structure). The old
+#     single log-elapsed scalar put 58.6% of its range on turns 1–50 and 4.0% on turns 200–250,
+#     i.e. it had almost no resolution at the forfeit cap the trainee actually loses on. Obs
+#     2667 → 2669 (GLOBAL_ENV_DIM 18 → 20) and the move/global context projections widen with
+#     `_gl['clock']['dim']` → state_dict changes; fresh lineage.
+ARCH_SIGNATURE = "gen3_deadline_clock_v1"
 
 
 class ModelVersionError(Exception):
@@ -2650,4 +2666,13 @@ def _migrate_config(data: dict) -> dict:
         # The stale key is DROPPED so an old config does not carry a field nothing reads.
         data.pop("spread_belief_nature_marginalize", None)
         data["config_version"] = 66
+    if version < 67:
+        # v67: gen3_deadline_clock_v1 — the obs CLOCK group 1 -> 3 scalars (GLOBAL_ENV_DIM 18 -> 20,
+        # obs 2667 -> 2669). Adds NO model_config FIELD, so this is a pure version stamp: the break
+        # is in the obs width + weight shapes, which `ARCH_SIGNATURE` ("gen3_deadline_clock_v1")
+        # carries — a pre-v67 checkpoint is REFUSED by check_compatible on the signature, which is
+        # the intended behaviour (its weights were trained against a 2667-dim obs and there is no
+        # meaningful way to migrate them). Stamping the version keeps the schema monotonic so an
+        # old config still round-trips through load/save rather than tripping the version check.
+        data["config_version"] = 67
     return data

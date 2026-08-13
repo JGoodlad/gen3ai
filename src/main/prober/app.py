@@ -168,8 +168,9 @@ _DEFAULT_GAMMA = 0.99   # used to compute the Outcome panel's TD residual when m
 # visible in the "switch:…" label). n/N jumps to the discrete, selective events
 # (faints, switches); "uncertain" is shown as a glyph but not jumped to — for a
 # low-confidence policy it's the norm, not a needle worth jumping to.
-_FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠", "opp-switch": "⇄"}
-_JUMP_FLAGS = ("faint", "switch", "opp-switch")
+_FLAG_GLYPH = {"uncertain": "?", "faint": "✗", "disagree": "≠", "opp-switch": "⇄",
+               "cure-skipped": "☣"}
+_JUMP_FLAGS = ("faint", "switch", "opp-switch", "cure-skipped")
 # User manual-review annotations (distinct from the auto summary_flags above).
 _REVIEW_FLAG_GLYPH = "⚑"
 _REVIEW_NOTE_GLYPH = "✎"
@@ -839,6 +840,12 @@ class ProberApp(Gen3App):
             # "computed-vs ≠ resolved-vs" trap is obvious no matter which panel is open.
             if a.opp_switched_to:
                 hdr.append(f"  ⇄ opp→{a.opp_switched_to}", style="bold yellow")
+            # ☣ statused with a LEGAL cure on the table that we didn't take. Recover/Soft-Boiled heal HP
+            # and NEVER clear status (only Refresh / Heal Bell do), a distinction the move list hides —
+            # so a Toxic that keeps escalating through a heal loop reads as a bug until you see this.
+            if "cure-skipped" in (a.flags or ()):
+                hdr.append(f"  ☣ statused · {' / '.join(a.cure_options)} legal, not used",
+                           style="bold yellow")
             self.query_one("#battle-header", Static).update(hdr)
         self._render_summary(a)
         self._render_team(a)

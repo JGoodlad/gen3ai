@@ -728,6 +728,42 @@ Current `MODEL_CONFIG_VERSION` = **57**, `ARCH_SIGNATURE` = **`gen3_edge_bias_tr
 
 ---
 
+### v67 — `gen3_deadline_clock_v1` (the deadline clock)
+
+The observation CLOCK group goes **1 → 3 scalars**, so `GLOBAL_ENV_DIM` 18 → 20 and the obs
+**2667 → 2669**. The group is `[log_elapsed, remaining_linear, log_remaining]`, all on the shared
+`log(1 + MAX_TURNS)` denominator; `MAX_TURNS` (250) is now imported by `StallConfig.threshold` so
+the obs normaliser and the turn the trainee actually forfeits on are one number.
+
+**Why.** A forensic sweep of `ai_v9_09_gen8_beliefs_threat_inject_0811` at step 16,000,032 found
+the critic reporting a **POSITIVE V(s) on the last decision before a −30 forfeit in 13 of 14**
+timeout losses (mean **+9.33**, mean terminal TD surprise **−39.3**), and V *rising* over the
+final 10 decisions in **10 of 14**. Over a 208-turn stall V moved −4.6 against a 60-point terminal
+span, while the measured win probability fell 0.80 → 0.05 (20-rollout `replay_counterfactual` at
+turns 41 / 121 / 208).
+
+The single log-ELAPSED scalar is the mechanism: it spends **58.6%** of its range on turns 1–50 and
+**4.0%** on turns 200–250, with the last 20 turns at **1.5%** — per-turn sensitivity at turn 249 is
+**125× lower** than at turn 1. It is the right transform for "how far into the game am I" and the
+inverse of what a deadline needs, since value near a cap is a function of turns REMAINING. The new
+log-REMAINING channel gives those last 20 turns **55.1%** of its range (**37×** the old
+resolution). That matters for credit assignment specifically: with `gae_lambda = 0.80` the terminal
+reward reaches ~5 steps directly, so everything else arrives through the TD bootstrap chain — and
+that chain must be anchored at the deadline link FIRST. A feature with no resolution there leaves
+the chain with nothing to propagate.
+
+Both remaining forms (linear + log) are supplied as raw facts rather than picking one — which the
+model uses is its to learn. Remaining is clamped at 0 so an over-cap turn saturates instead of
+going negative (linear) or NaN (log). Obs width and weight shapes move together (the move/global
+context projections read `_gl['clock']['dim']`, replacing two hardcoded `1  # turn` literals), so
+no migration is possible and the signature carries the break.
+
+Obs-build gate: **3462.0 → 3463.0 calls/encode (+1, +0.03%)**, same session, `--reps 300`.
+
+Current `MODEL_CONFIG_VERSION` = **67**, `ARCH_SIGNATURE` = **`gen3_deadline_clock_v1`**.
+
+---
+
 ## 2. Superseded prose — root `CLAUDE.md` § Observation Vector
 
 Moved verbatim from root `CLAUDE.md` (lines 740–802 of the pre-split file). The block table at the

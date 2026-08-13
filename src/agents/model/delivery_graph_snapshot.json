@@ -4020,7 +4020,7 @@
       "source_constant": "GLOBAL_ENV_DIM + board scalars",
       "src": "non_matchup_rest",
       "type": "concat",
-      "width": 23
+      "width": 25
     },
     {
       "dst": "vf_projection",
@@ -4028,7 +4028,7 @@
       "source_constant": "GLOBAL_ENV_DIM + board scalars",
       "src": "non_matchup_rest",
       "type": "concat",
-      "width": 23
+      "width": 25
     },
     {
       "dst": "pi_projection",
@@ -4766,10 +4766,10 @@
     }
   ],
   "meta": {
-    "arch_signature": "gen3_no_concat_v1",
+    "arch_signature": "gen3_deadline_clock_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 61,
+    "config_version": 67,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -4796,10 +4796,10 @@
     ],
     "extra_seats": 16,
     "n_tokens": 36,
-    "obs_dim": 2667,
+    "obs_dim": 2669,
     "op_out_dim": 660,
-    "pi_projection_in": 471,
-    "vf_projection_in": 471
+    "pi_projection_in": 473,
+    "vf_projection_in": 473
   },
   "nodes": [
     {
@@ -4824,13 +4824,13 @@
     },
     {
       "id": "pi_projection",
-      "in_features": 471,
+      "in_features": 473,
       "kind": "head",
       "out_features": 512
     },
     {
       "id": "vf_projection",
-      "in_features": 471,
+      "in_features": 473,
       "kind": "head",
       "out_features": 512
     },

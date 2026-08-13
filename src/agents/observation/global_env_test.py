@@ -70,6 +70,59 @@ def test_global_env_clock():
     assert vec[ck] == pytest.approx(math.log(1 + 10) / math.log(1 + MAX_TURNS))
 
 
+# --------------------------------------------------------------------------- #
+# gen3_deadline_clock_v1 — the CLOCK group is [log_elapsed, remaining_linear, log_remaining]
+# --------------------------------------------------------------------------- #
+def test_clock_group_carries_turns_remaining():
+    """The two REMAINING channels encode `MAX_TURNS - turn` (the forfeit deadline), linearly and
+    log-scaled, and both round-trip through describe_vector."""
+    ck = WEATHER_ONEHOT_DIM + 4
+    enc = GlobalEnvEncoder()
+    for turn in (1, 50, 200, 240, 249):
+        rem = MAX_TURNS - turn
+        vec = enc.encode(_view(turn=turn))
+        assert vec[ck] == pytest.approx(math.log(1 + turn) / math.log(1 + MAX_TURNS))
+        assert vec[ck + 1] == pytest.approx(rem / MAX_TURNS)
+        assert vec[ck + 2] == pytest.approx(math.log(1 + rem) / math.log(1 + MAX_TURNS))
+        d = enc.describe_vector(vec)
+        assert d["turns_remaining"] == pytest.approx(rem, abs=0.1)
+        assert d["turns_remaining_log"] == pytest.approx(rem, abs=0.1)
+
+
+def test_clock_clamps_at_and_past_the_deadline():
+    """At the cap both remaining channels are exactly 0, and an OVER-cap turn saturates there
+    rather than going negative (a linear channel) or NaN (log of a non-positive remaining)."""
+    ck = WEATHER_ONEHOT_DIM + 4
+    for turn in (MAX_TURNS, MAX_TURNS + 5, MAX_TURNS + 100):
+        vec = GlobalEnvEncoder().encode(_view(turn=turn))
+        assert vec[ck + 1] == 0.0
+        assert vec[ck + 2] == 0.0
+        assert np.isfinite(vec).all()
+
+
+def test_log_remaining_has_resolution_AT_the_deadline():
+    """The POINT of the channel: the last 20 turns must occupy a large share of log-remaining's
+    range, where they occupy ~1.5% of log-elapsed's. Without this the critic has no resolution on
+    the cliff TD has to fit first — the measured ai_v9_09 failure (13/14 timeouts had a POSITIVE
+    V on the last decision before a -30 forfeit)."""
+    ck = WEATHER_ONEHOT_DIM + 4
+    enc = GlobalEnvEncoder()
+    at230, at250 = enc.encode(_view(turn=230)), enc.encode(_view(turn=MAX_TURNS))
+    elapsed_share = abs(at250[ck] - at230[ck]) / at250[ck]
+    log_rem_share = abs(at230[ck + 2] - at250[ck + 2]) / enc.encode(_view(turn=0))[ck + 2]
+    assert elapsed_share < 0.03                      # the old feature: ~1.5% over the last 20 turns
+    assert log_rem_share > 0.50                      # the new one: ~55%
+    assert log_rem_share > 20 * elapsed_share        # >=20x more resolution where it matters
+
+
+def test_max_turns_is_the_forfeit_deadline():
+    """The obs clock normaliser and the turn the trainee actually FORFEITS on are ONE number.
+    They were independently-written 250s in two files; moving the stall threshold would have
+    silently mis-scaled the `turns_remaining` scalars the critic prices the deadline with."""
+    from agents.training.stall import StallConfig
+    assert StallConfig().threshold == MAX_TURNS
+
+
 def test_global_env_screens():
     # LiveView.side_conditions key on SideCondition.name.lower() → "light_screen"
     vec = GlobalEnvEncoder().encode(_view(

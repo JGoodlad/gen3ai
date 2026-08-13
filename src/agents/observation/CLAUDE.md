@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2667-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2669-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
@@ -284,6 +284,23 @@ The 5 scalars sit BEFORE `active_req_moves`, so the extractor picks them up in
   `encode()` like the HP tracker. The reward's `no_progress_tax` keys on the SAME clock instance, so
   obs and reward-key are one value. Lets the model state-condition on the penalty it is about to be
   charged.
+**Do not confuse `turns_since_progress` with the DEADLINE clock** — they answer different
+questions and live in different blocks. `turns_since_progress` (board block, above) is a
+*resettable* stall counter: it measures how long since anything productive happened and it goes
+back to 0 the moment it does. The forfeit deadline is the GLOBAL block's `clock` group
+(`gen3_deadline_clock_v1`, `CLOCK_DIM` = 3): `[log_elapsed, remaining_linear, log_remaining]`,
+where `remaining = MAX_TURNS − turn` clamped at 0 and `MAX_TURNS` (250) is the turn the trainee
+actually forfeits on (`StallConfig.threshold` imports it — pinned by
+`global_env_test.py::test_max_turns_is_the_forfeit_deadline`). Only the global group tells the
+model how much game is LEFT; a reset progress clock says nothing about the cap.
+
+The log-REMAINING channel exists because the old lone log-ELAPSED scalar put **58.6%** of its
+range on turns 1–50 and **1.5%** across the last 20 — a 125× sensitivity gap at exactly the cliff
+the critic has to price. Measured consequence before the fix (`ai_v9_09` @16M): a POSITIVE V(s)
+on the final decision before a −30 forfeit in **13 of 14** timeout losses. log-remaining gives
+those last 20 turns 55.1% of its range. Both remaining forms are raw facts, not a choice made for
+the model.
+
 - `wish_floating` — the pending-Wish heal: a flat `WISH_HEAL_FRACTION` (≈0.5; gen3 Wish heals the
   RECIPIENT's maxhp/2, so the fraction is constant and GIGO-proof) when a Wish cast last turn
   resolves at the end of this turn, else 0. Slot-keyed, so it survives faint / Roar-phaze / switch.

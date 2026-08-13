@@ -245,6 +245,42 @@ def test_opp_voluntary_switch_flag():
     assert opp_voluntary_switch({"outcome": {}}) is None      # no opp action → None (no crash)
 
 
+def test_status_cure_taxonomy_is_data_driven():
+    """Only Refresh (self) and Heal Bell / Aromatherapy (team) CLEAR status. Recover heals HP and
+    Rest cures by INFLICTING sleep — neither is a cure, and conflating them is exactly the confusion
+    the `cure-skipped` flag exists to prevent."""
+    from main.prober.engine import has_curable_status, is_status_cure
+    assert is_status_cure("refresh") and is_status_cure("healbell") and is_status_cure("aromatherapy")
+    assert not is_status_cure("recover") and not is_status_cure("rest") and not is_status_cure("toxic")
+    assert not is_status_cure("") and not is_status_cure(None)
+    # Recorder bundles status+volatiles into one string; only the real statuses are curable.
+    assert has_curable_status("TOX(2)") and has_curable_status("TOX(5)|SUB") and has_curable_status("PAR")
+    assert not has_curable_status("TAUNT") and not has_curable_status("SUB|TAUNT")
+    assert not has_curable_status("") and not has_curable_status(None)
+
+
+def test_cure_skipped_flag():
+    """Statused + a LEGAL cure available + we picked something else → `cure-skipped`. Taking the cure,
+    an ILLEGAL cure (Taunted / no PP), and 'statused with no cure in the moveset' all clear it — and so
+    does an un-statused mon whose Refresh would be a no-op."""
+    from main.prober.engine import self_cure_options, summary_flags
+
+    def inv(status, chosen, acts):
+        return {"chosen": chosen, "our": {"species": "milotic", "status": status},
+                "actions": {k: {"prob": "10.0%", "valid": v} for k, v in acts.items()}}
+
+    skipped = inv("TOX(1)", "recover", {"recover": True, "refresh": True, "surf": True})
+    assert self_cure_options(skipped) == ("refresh",) and "cure-skipped" in summary_flags(skipped)
+    took = inv("TOX(1)", "refresh", {"recover": True, "refresh": True})
+    assert "cure-skipped" not in summary_flags(took)
+    taunted = inv("TOX(1)|TAUNT", "surf", {"refresh": False, "surf": True})
+    assert self_cure_options(taunted) == () and "cure-skipped" not in summary_flags(taunted)
+    healthy = inv("", "recover", {"recover": True, "refresh": True})
+    assert self_cure_options(healthy) == () and "cure-skipped" not in summary_flags(healthy)
+    no_cure = inv("TOX(1)", "surf", {"recover": True, "surf": True})
+    assert self_cure_options(no_cure) == () and "cure-skipped" not in summary_flags(no_cure)
+
+
 def test_recorded_actions_are_action_index_aligned():
     """REGRESSION (move-slot-misalignment class, FIXED): the recorded `actions` dict is ALREADY in
     action-index order (`BattleRecorder._all_action_labels` keys move slot m on `legal.move_ids[m]` at action
@@ -601,8 +637,11 @@ def test_offsets_resolve_matches_layout():
     assert off.incoming_dim == 0
     assert off.pokemon_full_dim == 116  # rehome: 109 + 3 recency + 1 protect + 2 trapping + 1 active
     # gen3_wish_wired_v1 → rehome: the pending-Wish scalars ride the lean board block.
-    assert off.wish_our_off == 1529   # OFFSET_REACTIVE(1526) + wish_floating_our offset(3)
-    assert off.wish_opp_off == 1530   # OFFSET_REACTIVE(1526) + wish_floating_opp offset(4)
+    # gen3_deadline_clock_v1: the global CLOCK group went 1 -> 3 scalars, so GLOBAL_ENV_DIM is 20
+    # and everything after the global block shifted +2 (OFFSET_REACTIVE 1526 -> 1528).
+    assert off.wish_our_off == 1531   # OFFSET_REACTIVE(1528) + wish_floating_our offset(3)
+    assert off.wish_opp_off == 1532   # OFFSET_REACTIVE(1528) + wish_floating_opp offset(4)
+    assert off.total_dim == 2669      # 2667 + the 2 new clock scalars
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

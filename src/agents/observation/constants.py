@@ -98,10 +98,22 @@ ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
 # Global env (event-sourced via LiveView, gen3ou-relevant only):
 #   weather one-hot (5: none/sun/rain/sand/hail — gen4+ slots dropped) +
 #   weather_permanent (1) + weather_turns_remaining (1) +
-#   spikes ×2 + log-turn (1) +
+#   spikes ×2 + CLOCK (3) +
 #   per-side screens/safeguard/mist: reflect ×2 + light_screen ×2 + safeguard ×2 + mist ×2
+#
+# gen3_deadline_clock_v1 — the CLOCK group is 3 scalars, not 1. It used to be the single
+# log-ELAPSED scalar `log(1+turn)/log(1+MAX_TURNS)`, which is the right shape for "how far into
+# the game am I" (opening structure) and the WRONG shape for "how close am I to the forfeit".
+# Measured on that encoding: turns 1-50 occupy 58.6% of the feature's range while turns 200-250
+# — the deadline window — occupy 4.0%, and the last 20 turns just 1.5%; per-turn sensitivity at
+# turn 249 is 125x lower than at turn 1. The trainee FORFEITS at MAX_TURNS (see StallConfig,
+# which now reads this constant), so value near the cap is a function of turns REMAINING, and a
+# critic cannot price a deadline it has no resolution on. Both remaining forms are provided as
+# RAW FACTS (linear + log-remaining) alongside the elapsed scalar; which one matters is the
+# model's to learn.
 WEATHER_ONEHOT_DIM = 5
-GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + 1 + 8  # = 18
+CLOCK_DIM = 3            # [log_elapsed, remaining_linear, log_remaining]
+GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + CLOCK_DIM + 8  # = 20
 
 # gen3_entity_rehome_v1 (Stage 3, the re-home): the two 144-dim MATCHUP MATRICES ARE GONE from
 # the observation — the roadmap §3 Stage-3 delete, executed after the gen-3 40M audit confirmed
@@ -175,7 +187,10 @@ OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1284
 OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1400
 OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1418
 
-# Max values for normalization
+# Max values for normalization.
+# MAX_TURNS is ALSO the forfeit deadline: `StallConfig.threshold` defaults to it (training/stall.py
+# imports it) so the obs clock and the turn at which the trainee actually forfeits cannot drift
+# apart. Pinned by `global_env_test.py::test_max_turns_is_the_forfeit_deadline`.
 MAX_TURNS = 250
 MAX_SPIKES = 3
 MAX_STATS = 255

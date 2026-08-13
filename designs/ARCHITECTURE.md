@@ -43,7 +43,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2667** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2669** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -54,12 +54,12 @@ Every number below comes from `agents/observation/constants.py` and
 | Our team — 6 × per-mon slot | 0 | 696 | 696 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
 | Opp team — 6 × per-mon slot | 696 | 1392 | 696 | `OFFSET_OPP_TEAM` |
 | Active context ×2 (ours, theirs) | 1392 | 1508 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
-| Global env | 1508 | 1526 | 18 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
-| Board (reactive) | 1526 | 1543 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
-| *(= `base_dim`)* | | 1543 | | |
-| Prev-turn action mask | 1543 | 1554 | 11 | `ACTION_SPACE_SIZE` |
-| Turn history — 7 × TurnDelta | 1554 | 2667 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
-| **Total** | | **2667** | | `Gen3ObservationEncoder.dimension` |
+| Global env | 1508 | 1528 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
+| Board (reactive) | 1528 | 1545 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
+| *(= `base_dim`)* | | 1545 | | |
+| Prev-turn action mask | 1545 | 1556 | 11 | `ACTION_SPACE_SIZE` |
+| Turn history — 7 × TurnDelta | 1556 | 2669 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
+| **Total** | | **2669** | | `Gen3ObservationEncoder.dimension` |
 
 `gen3_entity_rehome_v1` (Stage 3): the two 144-dim matchup matrices and 6 of the 11 reactive
 scalars are **deleted** — the D/V edge families compute a strict superset of the matchup signal
@@ -122,12 +122,32 @@ therefore order-sensitive. Both orders are live simultaneously — that is the r
 head permutes by move-num identity (§3).
 
 `non_matchup_rest` — the raw-scalar tail the global token and both projection heads read — is
-`GLOBAL_ENV_DIM (18) + the 5 board scalars = 23` dims. It stops at the `active_req_moves` offset,
+`GLOBAL_ENV_DIM (20) + the 5 board scalars = 25` dims. It stops at the `active_req_moves` offset,
 so the embedding-ID block is excluded from it by construction.
 
-### 1.4 Global env — 18 dims
+### 1.4 Global env — 20 dims
 
-`weather` 7 · `hazards` (spikes ×2) 2 · `clock` 1 · `screens` 8. (`global_env.py`)
+`weather` 7 · `hazards` (spikes ×2) 2 · `clock` **3** · `screens` 8. (`global_env.py`)
+
+**The clock group is 3 scalars** (`CLOCK_DIM`), all sharing the `log(1 + MAX_TURNS)` denominator:
+
+| idx | scalar | formula | where its resolution sits |
+|---|---|---|---|
+| 0 | log-ELAPSED | `log(1+turn) / log(1+MAX_TURNS)` | the OPENING — turns 1–50 are 58.6% of its range |
+| 1 | remaining LINEAR | `(MAX_TURNS − turn) / MAX_TURNS` | uniform — the proportional budget left |
+| 2 | log-REMAINING | `log(1 + MAX_TURNS − turn) / log(1+MAX_TURNS)` | the DEADLINE — the last 20 turns are 55.1% of its range |
+
+`MAX_TURNS` (250) is **also the forfeit deadline**: `StallConfig.threshold` imports it, so the
+turn the trainee actually loses on and the clock's normaliser cannot drift apart
+(`global_env_test.py::test_max_turns_is_the_forfeit_deadline`). Remaining is clamped at 0, so an
+over-cap turn saturates rather than going negative or NaN.
+
+Why three and not one: value near a forfeit cap is a function of turns REMAINING, and the
+log-elapsed scalar alone gave the last 20 turns **1.5%** of its range (per-turn sensitivity at
+turn 249 is 125× lower than at turn 1). A critic cannot price a cliff it has no resolution on,
+and that cliff is the link TD must fit FIRST before it can bootstrap value back down a 200-turn
+episode. Both remaining forms are provided as raw facts; which one matters is the model's to
+learn.
 
 ### 1.5 Active context — 58 dims per side
 
@@ -163,7 +183,7 @@ Notably **absent** (their flags are off): `belief_slots`, `belief_head`, `spread
 
 Because `damage_op_prefuse` is on, the belief + physics stack runs **once, before attention**:
 
-1. **`ObsUnpack`** — slices the 2667-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2669-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
@@ -245,9 +265,9 @@ the table changes every model's state_dict).
 This section is the canonical answer to "what does head X read". Widths verified by forward pass,
 2026-08-08.
 
-### 3.1 `pi_projection` — 471 → 512
+### 3.1 `pi_projection` — 473 → 512
 
-`Linear(471, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. **The op head-concat is DEAD (`gen3_no_concat_v1`, v61)** — the 660-dim flat block enters neither head; the op reaches the policy via the pointer cells (lossless per-action), the prefuse token injection, and the edge cells. Input concat, in order:
+`Linear(473, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. **The op head-concat is DEAD (`gen3_no_concat_v1`, v61)** — the 660-dim flat block enters neither head; the op reaches the policy via the pointer cells (lossless per-action), the prefuse token injection, and the edge cells. Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -256,18 +276,18 @@ This section is the canonical answer to "what does head X read". Widths verified
 | `our_active_refined` | 128 | our active slot's refined token |
 | `active_ctx_enc` (ours) | 32 | `active_ctx_encoder` (shared with vf) |
 | `active_ctx_enc` (theirs) | 32 | " |
-| `non_matchup_rest` | 23 | global env 18 + board scalars 5 |
-| **total** | **471** | |
+| `non_matchup_rest` | 25 | global env 20 + board scalars 5 |
+| **total** | **473** | |
 
-### 3.2 `vf_projection` — 471 → 512
+### 3.2 `vf_projection` — 473 → 512
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
 | `active_ctx_enc` ×2 | 64 | shared with pi |
-| `non_matchup_rest` | 23 | |
+| `non_matchup_rest` | 25 | global env 20 + board scalars 5 |
 | **seed readout** | **256** | `MultiSeedValueReadout` — k=4 × 64 (`VALUE_SEED_K`/`VALUE_SEED_DIM`) |
-| **total** | **471** | |
+| **total** | **473** | |
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
@@ -714,7 +734,8 @@ not re-derive them.
    offset **6**, protect at **7**/**8**, wish at **9**/**10**. The summary table 60 lines above it
    was correct — the table and the prose contradicted each other in the same section.
 2. **`src/agents/observation/CLAUDE.md` opens with "2889-dim"**; the live obs at audit time
-   was **2925** — since `gen3_entity_rehome_v1` it is **2667** (the
+   was **2925**; since `gen3_entity_rehome_v1` it was **2667**, and since
+   `gen3_deadline_clock_v1` it is **2669** (the
    per-mon recency block added 12 × 3). Its per-block reference section then describes the
    pre-deletion 414-dim reactive layout and the 51-dim incoming-damage / 44-dim move-effect blocks
    as if present. Its own inline banner says to treat the deletion note as authoritative — i.e. the
@@ -729,7 +750,7 @@ not re-derive them.
    speed-stat GIGO stamp, 59 = `consequence_topk`; now 60 = the re-home stamp). Neither v58 nor
    v59 was described anywhere in the root file.
 5. **`src/agents/model/CLAUDE.md` describes `ObsUnpack` as peeling "the flat 3390-dim
-   observation"** — obs-layout generations out of date (live is now 2667).
+   observation"** — obs-layout generations out of date (live is now 2669).
 6. **`PointerNativeActionHead`'s docstring says the move cell is `[low,high,crit,pko,p_land,known,
    sec×10]`.** It is `sec×7` (`_PTR_MOVE_CELL` = 13, not 16) since the outgoing slp/psn/tox columns
    were dropped. `pointer_cells`' own docstring, 900 lines away, says 7 correctly.

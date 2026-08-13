@@ -506,7 +506,8 @@ class PokemonEncoder(torch.nn.Module):
         self.move_remnant_dim = _rem1 + _rem2 + _rem3 + _rem4
         _gl = layout['global_layout']
         _rl = layout['reactive_layout']
-        _move_ctx_dim = (1 + 1                       # hp + turn
+        _move_ctx_dim = (1 + _gl['clock']['dim']     # hp + CLOCK (gen3_deadline_clock_v1: 3, not 1 —
+                         #                             read the layout, never hardcode the width)
                          + _gl['weather']['dim']     # weather
                          + _rl['fainted']['dim']     # fainted
                          + _gl['hazards']['dim'])    # spikes
@@ -538,7 +539,7 @@ class PokemonEncoder(torch.nn.Module):
         _condition_dim = _pk_layout['moves']['offset'] - (_abilities_info['offset'] + _abilities_info['dim'])
         _hp_and_active_dim = POKEMON_FULL_DIM - _pk_layout['hp']['offset']
         _global_ctx_dim = (
-            1                          # turn
+            _gl['clock']['dim']        # clock (gen3_deadline_clock_v1: log-elapsed + 2 remaining)
             + _gl['weather']['dim']
             + _rl['fainted']['dim']
             + _gl['hazards']['dim']

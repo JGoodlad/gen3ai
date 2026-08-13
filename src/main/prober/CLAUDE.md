@@ -393,11 +393,24 @@ JSON CLI carries the same slice as a `protocol` list.
 Per-invocation **flags** (`engine.summary_flags`, model-free): `switch`,
 `uncertain` (top recorded prob < `UNCERTAIN_THRESHOLD`=0.34 — a genuine tossup),
 `faint` (a faint in this turn's events), **`opp-switch`** (the OPPONENT voluntarily
-pivoted this turn — `engine.opp_voluntary_switch`, glyph `⇄`); plus `disagree`
+pivoted this turn — `engine.opp_voluntary_switch`, glyph `⇄`), **`cure-skipped`**
+(glyph `☣` — see below); plus `disagree`
 (added per-analysis when the loaded model's argmax ≠ chosen). The list shows
-`?`/`✗`/`⇄` glyphs; `n`/`N` jump to the **discrete** flags (faint/switch/opp-switch —
+`?`/`✗`/`⇄`/`☣` glyphs; `n`/`N` jump to the **discrete** flags (faint/switch/opp-switch/cure-skipped —
 `uncertain` is the norm for a low-confidence policy, so it's a glyph, not a jump
 target). `f` cycles a battle-outcome filter (all → loss → win), rebuilding the tree.
+
+**The "heal ≠ cure" trap (`cure-skipped`).** Recover / Soft-Boiled / Wish restore **HP and nothing
+else** — in Gen 3 only Refresh (self) and Heal Bell / Aromatherapy (team) CLEAR a status, and Rest
+"cures" by *inflicting* sleep. A move list shows all of them side by side, so a Toxic that keeps
+escalating through a heal loop reads as a sim bug when it is correct mechanics plus a policy choice.
+Three pure engine helpers make that legible: `is_status_cure(move_id)` (data-driven off the facade's
+`curesSelfStatus`/`curesTeamStatus` — never a hardcoded id list), `has_curable_status(status)` (splits
+the recorder's bundled `"TOX(2)|TAUNT"` — a volatile is not curable), and **`self_cure_options(inv)`**
+→ the cures that were **legal AND would have done something** (a Taunted cure and a cure with nothing
+to cure are both non-options). The flag fires when a cure was on the table and we did something else;
+`InvocationAnalysis.cure_options` carries the labels so the TUI header (`☣ statused · refresh legal,
+not used`) and the `analyze` JSON read ONE engine output. `query find <battle> cure-skipped` lists them.
 
 **The "computed-vs ≠ resolved-vs" guard (`opp-switch`).** When the opponent voluntarily switches, our
 move RESOLVES against the switch-IN, not the active we computed damage against — and the net result
@@ -777,13 +790,23 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   aggregate proxy, knowingly confounded on a quota-captured sample.
 - `decision_table(steps=, opponents=, outcomes=, categories=, max_battles=)` — a complementary
   MODEL-FREE per-decision FORENSIC TABLE (`forensics.py`): one row per captured decision with `cat`
-  (`move_category`: selfko/recovery/setup/stall/status/switch/attack_or_other), our/opp species+HP,
+  (`move_category`: selfko/recovery/**cure**/setup/stall/status/switch/attack_or_other — `cure` is
+  its own bucket because clearing status, healing HP and inflicting status are three different acts,
+  and it is derived from the move data, not a hardcoded set), our/opp species+HP,
   policy `conf` (`softmax(logits)[chosen]` — learned vs exploration-tail), `reward`, critic `dV`
   (`V[i+1]−V[i]`, the self-KO over-valuation signal), incoming-KO `pko` belief, faint flags, outcome.
   The single source for the softmax/dV/`decode_incoming_belief` plumbing every behavioural-hypothesis
   check reuses (the shipped self-KO finding used the `selfko` `dV_med`). Distinct from `falsify_scan`
   (the luck/mistake bracket) — this is the raw per-decision table. `move_category` /
-  `decision_table_digest` are pure (unit-tested). See `designs/research_state/` for the hypothesis ledger.
+  `decision_table_digest` are pure (unit-tested). Each row also carries `our_status` / `cure_avail` /
+  `cure_prob` / `chose_cure`, and the digest a **`cure_uptake`** block — over the decisions where a
+  status cure was genuinely available (statused AND legal), how often the policy took it, the median
+  probability it put there, and what it did `instead`. That is the run-level form of the `cure-skipped`
+  flag; pair it with the `cure` category count, since a cure chosen with **no** `cure_avail` is a
+  WASTED self-cure (the same NO_OP `progress_clock._is_wasted_self_cure` charges). Measured on
+  `ai_v9_09 @16M`: uptake **32/474 = 6.8%** (median P(cure) 0.036, `instead` led by `recover` ×127)
+  while **104 of 136** cure uses (76%) had nothing to cure — the policy is picking these moves close
+  to independently of whether it is statused. See `designs/research_state/` for the hypothesis ledger.
 
 CLI mirror — prints JSON to stdout (and `{"error": …}` + exit 1 on failure, so an
 agent always gets parseable output). `--help` carries a worked example sequence:

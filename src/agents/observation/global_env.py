@@ -1,7 +1,7 @@
 import numpy as np
 import math
 from .base import ObservationEncoder
-from .constants import GLOBAL_ENV_DIM, WEATHER_ONEHOT_DIM, MAX_TURNS, MAX_SPIKES
+from .constants import GLOBAL_ENV_DIM, WEATHER_ONEHOT_DIM, MAX_TURNS, MAX_SPIKES, CLOCK_DIM
 from poke_env.battle.side_condition import SideCondition
 from typing import Any, Dict
 
@@ -18,6 +18,10 @@ _WEATHER_IDX = {
 _WEATHER_NAMES = ["NONE", "SUN", "RAIN", "SAND", "HAIL"]
 # gen3 move-set weather lasts 5 turns; used to normalise turns-remaining.
 _WEATHER_MAX_TURNS = 5
+
+# Shared denominator for BOTH clock log scalars, so elapsed and remaining are on ONE scale
+# (log(1+MAX_TURNS)); precomputed because encode() is the hot per-decision path.
+_LOG_MAX_TURNS = math.log(1 + MAX_TURNS)
 
 # Per-side side-conditions encoded as presence bits (gen3ou). Spikes is a 0-3 count
 # handled separately.
@@ -63,9 +67,22 @@ class GlobalEnvEncoder(ObservationEncoder):
         vec[cur + 1] = float(opp.get("spikes", 0)) / MAX_SPIKES
         cur += 2
 
-        # 4. Turn clock (1, log-normalised)
-        vec[cur] = math.log(1 + live_view.turn) / math.log(1 + MAX_TURNS)
-        cur += 1
+        # 4. Turn clock (CLOCK_DIM=3) — gen3_deadline_clock_v1.
+        #    [0] log-ELAPSED: resolution in the OPENING (how far into the game am I).
+        #    [1] remaining LINEAR: constant sensitivity, the proportional budget left.
+        #    [2] log-REMAINING: the mirror of [0] — resolution at the DEADLINE, where the
+        #        forfeit lives. Over the last 20 turns this spans 55% of its range where [0]
+        #        spans 1.5%, which is the whole point: a critic cannot learn a cliff it has no
+        #        resolution on, and TD has to fit that cliff FIRST before it can bootstrap the
+        #        value back down the episode.
+        #    All three are clamped at the deadline so an over-cap turn saturates rather than
+        #    going negative / NaN (log of a non-positive remaining).
+        turn = float(live_view.turn)
+        remaining = max(0.0, float(MAX_TURNS) - turn)
+        vec[cur] = math.log(1 + turn) / _LOG_MAX_TURNS
+        vec[cur + 1] = remaining / MAX_TURNS
+        vec[cur + 2] = math.log(1 + remaining) / _LOG_MAX_TURNS
+        cur += CLOCK_DIM
 
         # 5. Per-side screens / Safeguard / Mist (8): for each condition, [ours, opp]
         for cond in _SCREEN_CONDITIONS:
@@ -83,8 +100,8 @@ class GlobalEnvEncoder(ObservationEncoder):
         return {
             "weather": {"offset": 0, "dim": WEATHER_ONEHOT_DIM + 2},
             "hazards": {"offset": WEATHER_ONEHOT_DIM + 2, "dim": 2},
-            "clock": {"offset": WEATHER_ONEHOT_DIM + 4, "dim": 1},
-            "screens": {"offset": WEATHER_ONEHOT_DIM + 5, "dim": 8},
+            "clock": {"offset": WEATHER_ONEHOT_DIM + 4, "dim": CLOCK_DIM},
+            "screens": {"offset": WEATHER_ONEHOT_DIM + 4 + CLOCK_DIM, "dim": 8},
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
@@ -99,9 +116,11 @@ class GlobalEnvEncoder(ObservationEncoder):
         hz = WEATHER_ONEHOT_DIM + 2
         our_spikes = int(round(vector[hz] * MAX_SPIKES))
         opp_spikes = int(round(vector[hz + 1] * MAX_SPIKES))
-        turn = math.exp(vector[hz + 2] * math.log(1 + MAX_TURNS)) - 1
+        turn = math.exp(vector[hz + 2] * _LOG_MAX_TURNS) - 1
+        turns_remaining = round(float(vector[hz + 3]) * MAX_TURNS, 1)
+        turns_remaining_log = round(math.exp(float(vector[hz + 4]) * _LOG_MAX_TURNS) - 1, 1)
 
-        sc = hz + 3
+        sc = hz + 2 + CLOCK_DIM
         screens = {}
         for j, cond in enumerate(_SCREEN_CONDITIONS):
             cid = cond.name.lower()
@@ -115,5 +134,10 @@ class GlobalEnvEncoder(ObservationEncoder):
             "our_spikes": our_spikes,
             "opp_spikes": opp_spikes,
             "turn": round(turn, 1),
+            # gen3_deadline_clock_v1: both decode back to the SAME quantity (turns left before the
+            # forfeit) from the linear and the log-remaining channel — a cheap cross-check that the
+            # two are consistent, and the prober's FIELD line reads `turns_remaining`.
+            "turns_remaining": turns_remaining,
+            "turns_remaining_log": turns_remaining_log,
             **screens,
         }

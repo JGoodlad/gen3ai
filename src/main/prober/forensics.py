@@ -20,7 +20,7 @@ import json
 import numpy as np
 
 from agents.training.turn_delta import SELF_KO_MOVES
-from main.prober.engine import decode_incoming_belief
+from main.prober.engine import decode_incoming_belief, is_status_cure, parse_pct, self_cure_options
 from main.prober.model import ObsOffsets
 
 # --------------------------------------------------------------------------- #
@@ -35,10 +35,9 @@ _STALL = frozenset({"protect", "detect", "endure", "substitute"})
 _STATUS = frozenset({"toxic", "willowisp", "thunderwave", "spore", "sleeppowder",
                      "stunspore", "glare", "hypnosis", "lovelykiss", "sing", "yawn",
                      "confuseray", "leechseed", "spikes", "reflect", "lightscreen", "haze",
-                     "roar", "whirlwind", "encore", "taunt", "torment", "disable",
-                     "aromatherapy", "healbell"})
+                     "roar", "whirlwind", "encore", "taunt", "torment", "disable"})
 
-CATEGORIES = ("selfko", "recovery", "setup", "stall", "status", "switch",
+CATEGORIES = ("selfko", "recovery", "cure", "setup", "stall", "status", "switch",
               "attack_or_other", "unknown")
 
 
@@ -52,6 +51,11 @@ def move_category(chosen: "str | None") -> str:
     m = c.split(":")[0]
     if m in SELF_KO_MOVES:
         return "selfko"
+    # BEFORE recovery/status: Refresh + Heal Bell/Aromatherapy CLEAR status, which is a different act
+    # from healing HP (Recover) or inflicting it (Toxic) — and the distinction is the whole point of
+    # the `cure-skipped` flag. Data-driven (`curesSelfStatus`/`curesTeamStatus`), not a hardcoded set.
+    if is_status_cure(m):
+        return "cure"
     if m in _RECOVERY:
         return "recovery"
     if m in _SETUP:
@@ -137,11 +141,18 @@ def build_decision_table(
             except Exception:
                 pko = None
             rt = (inv.get("outcome", {}).get("reward") or {}).get("total")
+            # Was a status CURE a real option here (statused + a legal cure), and did the policy take it?
+            cures = self_cure_options(inv)
+            cure_prob = max((parse_pct(inv["actions"][c].get("prob", "0%")) for c in cures), default=None)
             rows.append(dict(
                 opp=b["opponent"], step=b["step"], outcome=b["outcome"],
                 battle=b.get("short_id"), turn=inv.get("turn"), inv=i,
                 chosen=chosen, cat=cat,
                 our=our.get("species"), our_hp=_hp_pct(our.get("hp")),
+                our_status=(our.get("status") or "") or None,
+                cure_avail=(cures[0] if cures else None),
+                cure_prob=round(cure_prob, 3) if cure_prob is not None else None,
+                chose_cure=(bool(cures) and is_status_cure(chosen)) if cures else None,
                 oppmon=opp_.get("species"), opp_hp=_hp_pct(opp_.get("hp")),
                 conf=round(_softmax_chosen(L[i], int(A[i])), 3),
                 reward=round(float(rt), 3) if rt is not None else None,
@@ -168,8 +179,22 @@ def decision_table_digest(rows: "list[dict]") -> dict:
             n=len(sub), conf_med=med([r["conf"] for r in sub]),
             reward_med=med([r["reward"] for r in sub]), dV_med=med([r["dV"] for r in sub]),
         )
+    # Cure UPTAKE — over the decisions where a status cure was genuinely available (our active carried a
+    # curable status AND a cure was legal), how often did the policy take it, and how much mass did it
+    # put there? A low uptake with a high `alt_*` count is the "heals HP but never clears status" pattern.
+    offered = [r for r in rows if r.get("cure_avail")]
+    cure = None
+    if offered:
+        took = [r for r in offered if r.get("chose_cure")]
+        cure = dict(
+            n_offered=len(offered), n_taken=len(took),
+            uptake=round(len(took) / len(offered), 3),
+            cure_prob_med=med([r.get("cure_prob") for r in offered]),
+            instead=dict(Counter(r["chosen"] for r in offered if not r.get("chose_cure")).most_common(8)),
+        )
     return dict(
         n_decisions=len(rows),
         outcomes=dict(Counter(r["outcome"] for r in rows)),
         by_category=by_cat,
+        cure_uptake=cure,
     )

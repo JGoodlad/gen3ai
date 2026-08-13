@@ -34,7 +34,7 @@ import argparse
 import json
 import sys
 
-_FIND_CRITERIA = ["switch", "uncertain", "faint", "disagree",
+_FIND_CRITERIA = ["switch", "uncertain", "faint", "opp-switch", "cure-skipped", "disagree",
                   "value_drop", "low_value", "high_value"]
 
 _EXAMPLES = """\

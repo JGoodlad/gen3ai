@@ -901,7 +901,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) § Observation.** That file is derived from the
 code and the live run config; this summary is the orientation only.
 
-The observation is a flat **2667-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
+The observation is a flat **2669-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
 11-dim `action_mask`, delivered as a Dict obs. (`gen3_entity_rehome_v1`: the 288-dim matchup
 matrices and the derived reactive scalars are DELETED — pair physics is GPU-side in the D/V edge
 families; protect/trapped/maybe_trapped ride the per-mon slots.)
@@ -911,14 +911,21 @@ families; protect/trapped/maybe_trapped ride the per-mon slots.)
 | Our team (6 × `POKEMON_FULL_DIM` 116) | 696 | 0 |
 | Opp team (6 × 116) | 696 | 696 |
 | Active context ×2 (boosts 14 + volatiles `VOLATILE_DIM` 44) | 116 | 1392 |
-| Global env (`GLOBAL_ENV_DIM`) | 18 | 1508 |
-| Board (5 raw scalars + 12 active-req-moves) | 17 | 1526 |
-| Prev-turn action mask | 11 | 1543 |
-| Turn history (`N_HISTORY_TURNS` 7 × `TURN_DELTA_DIM` 159) | 1113 | 1554 |
-| **Total** | **2667** | |
+| Global env (`GLOBAL_ENV_DIM`) | 20 | 1508 |
+| Board (5 raw scalars + 12 active-req-moves) | 17 | 1528 |
+| Prev-turn action mask | 11 | 1545 |
+| Turn history (`N_HISTORY_TURNS` 7 × `TURN_DELTA_DIM` 159) | 1113 | 1556 |
+| **Total** | **2669** | |
 
 Every offset is computed from named constants in `agents/observation/constants.py` — **never
 hardcode an index**; read `Gen3ObservationEncoder.get_layout()`.
+
+`gen3_deadline_clock_v1`: the global block's CLOCK group is **3** scalars (`CLOCK_DIM`) —
+log-ELAPSED plus remaining-LINEAR and log-REMAINING. `MAX_TURNS` (250) is also the forfeit
+deadline (`StallConfig.threshold` imports it). The old single log-elapsed scalar had ~1.5% of its
+range across the last 20 turns, so the critic had almost no resolution on the cap it actually
+loses on — measured: a POSITIVE V on the final decision in 13 of 14 timeout losses. See
+[`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) § 1.4.
 
 Per-block detail (the per-mon slot, the move slot, the TurnDelta fold, the embedded-ID manifest) and
 the **mandatory obs-build performance gate** live in `src/agents/observation/CLAUDE.md`. Historical

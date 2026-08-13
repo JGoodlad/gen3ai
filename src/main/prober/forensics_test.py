@@ -27,6 +27,11 @@ class TestMoveCategory(unittest.TestCase):
         self.assertEqual(forensics.move_category("substitute"), "stall")
         self.assertEqual(forensics.move_category("toxic"), "status")
         self.assertEqual(forensics.move_category("leechseed"), "status")
+        # CURE ≠ recovery ≠ status: Refresh/Heal Bell CLEAR status, Recover heals HP, Toxic inflicts it.
+        self.assertEqual(forensics.move_category("refresh"), "cure")
+        self.assertEqual(forensics.move_category("healbell"), "cure")
+        self.assertEqual(forensics.move_category("aromatherapy"), "cure")
+        self.assertEqual(forensics.move_category("rest"), "recovery")   # cures by INFLICTING sleep
         self.assertEqual(forensics.move_category("switch:gengar"), "switch")
         self.assertEqual(forensics.move_category("rockslide"), "attack_or_other")
         self.assertEqual(forensics.move_category(""), "unknown")
@@ -117,6 +122,65 @@ class TestBuildDecisionTable(unittest.TestCase):
         self.assertEqual(dig["outcomes"], {"loss": 2})
         self.assertIn("selfko", dig["by_category"])
         self.assertEqual(dig["by_category"]["selfko"]["n"], 1)
+        self.assertIsNone(dig["cure_uptake"])            # no statused-with-a-legal-cure decision here
+
+
+class TestCureUptake(unittest.TestCase):
+    """The cure columns + digest block: over decisions where a status cure was genuinely available
+    (statused AND legal), how often the policy took it — the 'heals HP but never clears status' read."""
+    def _rows(self, td):
+        import pathlib
+        invs = [
+            # statused + a legal Refresh, took Recover instead → offered, not taken
+            {"turn": 1, "phase": "move_selection", "chosen": "recover",
+             "our": {"species": "milotic", "hp": "83%", "status": "TOX(1)"},
+             "opp": {"species": "swampert", "hp": "94%"},
+             "actions": {"recover": {"prob": "48.6%", "valid": True},
+                         "refresh": {"prob": "2.1%", "valid": True}},
+             "outcome": {"reward": {"total": 0.3}, "events": []}},
+            # statused + took the cure → offered AND taken
+            {"turn": 2, "phase": "move_selection", "chosen": "refresh",
+             "our": {"species": "milotic", "hp": "88%", "status": "TOX(2)"},
+             "opp": {"species": "swampert", "hp": "88%"},
+             "actions": {"recover": {"prob": "20.0%", "valid": True},
+                         "refresh": {"prob": "70.0%", "valid": True}},
+             "outcome": {"reward": {"total": 0.1}, "events": []}},
+            # TAUNTED: the cure is illegal, so it was never on the table → NOT offered
+            {"turn": 3, "phase": "move_selection", "chosen": "surf",
+             "our": {"species": "milotic", "hp": "88%", "status": "TOX(2)|TAUNT"},
+             "opp": {"species": "skarmory", "hp": "100%"},
+             "actions": {"surf": {"prob": "90.0%", "valid": True},
+                         "refresh": {"prob": "0.0%", "valid": False}},
+             "outcome": {"reward": {"total": 0.0}, "events": []}},
+        ]
+        npz = dict(
+            obs=np.zeros((3, _OBS_W), dtype=np.float32),
+            logits=np.zeros((3, 11), dtype=np.float32),
+            values=np.zeros(3, dtype=np.float32),
+            has_state=np.array([1, 1, 1], dtype=np.int8),
+            actions=np.array([0, 0, 0], dtype=np.int16),
+        )
+        smf = _write_trace(pathlib.Path(td), invs, npz)
+        sess = _FakeSession([{"id": smf, "short_id": "step_100/random/loss_0",
+                              "step": 100, "opponent": "random", "outcome": "loss"}])
+        return forensics.build_decision_table(sess)
+
+    def test_columns_and_digest(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            rows = self._rows(td)
+        self.assertEqual([r["cat"] for r in rows], ["recovery", "cure", "attack_or_other"])
+        self.assertEqual(rows[0]["cure_avail"], "refresh")
+        self.assertAlmostEqual(rows[0]["cure_prob"], 0.021)
+        self.assertFalse(rows[0]["chose_cure"])
+        self.assertEqual(rows[0]["our_status"], "TOX(1)")
+        self.assertTrue(rows[1]["chose_cure"])
+        self.assertIsNone(rows[2]["cure_avail"])         # Taunted → the cure was never legal
+        self.assertIsNone(rows[2]["chose_cure"])
+        cure = forensics.decision_table_digest(rows)["cure_uptake"]
+        self.assertEqual((cure["n_offered"], cure["n_taken"]), (2, 1))
+        self.assertAlmostEqual(cure["uptake"], 0.5)
+        self.assertEqual(cure["instead"], {"recover": 1})
 
 
 if __name__ == "__main__":

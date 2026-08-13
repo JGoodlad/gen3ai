@@ -60,7 +60,10 @@ def test_active_ctx_lands_on_the_active_rows_only(fe_and_layout):
     x = captured["x"].reshape(1, 2 * TEAM_SIZE, -1)[0]          # [12, role_input_dim]
     gl = layout["global_layout"]
     tail_after_inject = (
-        1 + gl["weather"]["dim"] + layout["reactive_layout"]["fainted"]["dim"]
+        # gen3_deadline_clock_v1: the clock is 3 scalars, not 1 — read the WIDTH from the layout
+        # (this literal used to be a hardcoded `1`, which silently mis-sliced the window by 2 the
+        # moment the group grew; the extractor's matching literals were removed in the same pass).
+        gl["clock"]["dim"] + gl["weather"]["dim"] + layout["reactive_layout"]["fainted"]["dim"]
         + gl["hazards"]["dim"] + gl["screens"]["dim"]           # global_context
         + 1 + 1                                                  # switch_validity + struggle
     )
