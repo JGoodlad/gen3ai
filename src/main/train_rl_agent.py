@@ -2753,6 +2753,34 @@ async def main():
                   f"must be less than --steps ({args.steps:,})")
             sys.exit(1)
 
+    if args.hp_type_belief_coef and args.move_belief_mode == "off":
+        # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits), and the head is built
+        # only alongside a move belief (it composes P(HP present) from the move posterior's 237 channel).
+        # EXPLICIT coef + no belief = a real contradiction → error. But the coef DEFAULTS to 0.05
+        # (_resolve), so on the DEPRECATED `--unified-moves off` ablation baseline the un-passed default
+        # would make the flag fail out of the box — the same shape as the `--hp-belief-mode flat` case
+        # below, resolved the same way: AUTO-ZERO with a loud note (the --zarch-recon-coef precedent).
+        if _hp_coef_explicit:
+            parser.error(
+                "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
+                "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
+                "or set --hp-type-belief-coef 0."
+            )
+        print("[HPBelief] no move belief (--unified-moves off): auto-zeroing the default "
+              "--hp-type-belief-coef (the HP-type head is built only alongside a move belief).")
+        args.hp_type_belief_coef = 0.0
+    if args.hp_type_belief_coef and args.hp_belief_mode == "flat":
+        # The `flat` ablation builds NO HPTypeBelief head, so there is no posterior for the CE to
+        # supervise. AUTO-ZERO with a loud note rather than erroring (the --zarch-recon-coef
+        # single-team precedent above): --hp-type-belief-coef defaults to 0.05, so erroring would make
+        # `--hp-belief-mode flat` fail out of the box — a hostile flag to run an ablation with. The
+        # note keeps it from being a SILENT no-op, which is the failure that actually matters here.
+        print("[HPBelief] --hp-belief-mode flat: auto-zeroing --hp-type-belief-coef (the ablation "
+              "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
+              "typed HP channels are still predicted + supervised by the move-belief BCE.")
+        args.hp_type_belief_coef = 0.0
+    log_level = LogLevel[args.log_level.upper()]
+
     # Automatically enable deep traces if --debug is set
     if args.debug:
         log_level = LogLevel.DEBUG
