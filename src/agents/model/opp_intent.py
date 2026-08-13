@@ -232,6 +232,18 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 if int((~is_sw).sum()):
                     metrics["opp_intent/alpha_acc_move"] = float(
                         (pred[~is_sw] == tgt[~is_sw]).float().mean())
+                    # THE BASELINE alpha exists to beat, and the ONLY number that makes
+                    # `alpha_acc_move` interpretable. Seats are `topk(w)` DESCENDING, so seat 0 IS
+                    # argmax(w) — "the belief's own top-ranked move" — and the fraction of supervised
+                    # MOVE rows whose target is seat 0 is exactly how often that free guess is right.
+                    # Without it a reader cannot tell IMPROVEMENT from REPRODUCTION, and reproduction
+                    # is the likely default: `w` rides in the E4 seat header the alpha head reads, so
+                    # the head can recover argmax(w) from its own input almost by construction.
+                    # Compare LIKE FOR LIKE: this is measured on the SAME supervised-and-covered
+                    # subset as `alpha_acc_move`, so it is NOT the 51.8% whole-population figure
+                    # (that one divides by every move row, covered or not).
+                    metrics["opp_intent/alpha_acc_move_baseline_argmax_w"] = float(
+                        (tgt[~is_sw] == 0).float().mean())
                 metrics["opp_intent/alpha_switch_rate"] = float(is_sw.float().mean())
 
     if beta_logits is not None and beta_target is not None:

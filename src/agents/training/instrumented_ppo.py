@@ -1315,8 +1315,16 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 from agents.training.opp_intent_labels import (KIND_UNKNOWN, SWITCH_SLOT_NONE,
                                                                align_labels_to_predictions)
                 _starts = self.rollout_buffer.episode_starts
+                # EVERY one-ahead intent key must be shifted, including `opp_switch_species`.
+                # It was omitted originally, so beta's CONTENT-ADDRESSED target read the species of
+                # decision t-1 against the kind/slot of decision t. That is not merely wrong, it is
+                # INVISIBLE: on most rows the stale species is 0 -> resolve_believed_slot_by_content
+                # returns INTENT_IGNORE and the path silently no-ops, which reads exactly like the
+                # documented "the belief is too cold to clear the floor" case below. Two consecutive
+                # switch-ins is the one shape where it resolves — to the PREVIOUS switch-in's slot.
                 for _k, _fill in (("opp_action_kind", KIND_UNKNOWN), ("opp_action_num", 0),
-                                  ("opp_switch_slot", SWITCH_SLOT_NONE)):
+                                  ("opp_switch_slot", SWITCH_SLOT_NONE),
+                                  ("opp_switch_species", 0)):
                     _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
 
         # Compute current clip range

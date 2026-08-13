@@ -21,7 +21,7 @@ from agents.observation.belief_labels import (
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
-from agents.model.damage_tables import invert_nature_evs
+from agents.model.damage_tables import invert_nature_evs, _hp_typed_nums, HIDDEN_POWER_NUM
 from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
@@ -563,12 +563,60 @@ class Gen3Env(SinglesEnv):
                 return getattr(self, "_opp_slot_map_prev", {}).get(
                     to_id_str(species) if species else "")
             kind, num, slot, sp = build_opp_intent_label(
-                delta, lambda mid: self._move_num.get(to_id_str(mid)), _slot_of,
+                delta, self._intent_move_num_resolver(delta), _slot_of,
                 lambda species: self._species_num.get(to_id_str(species)) if species else None)
         return {"opp_action_kind": np.array([kind], dtype=np.int64),
                 "opp_action_num": np.array([num], dtype=np.int64),
                 "opp_switch_slot": np.array([slot], dtype=np.int64),
                 "opp_switch_species": np.array([sp], dtype=np.int64)}
+
+    def _intent_move_num_resolver(self, delta):
+        """`move_id -> num` for the intent label, with the opponent's Hidden Power resolved to its
+        TYPED num (`gen3_typed_hidden_power_ids_v1`, 355-370) instead of the bare typeless 237.
+
+        WHY THIS IS NOT OPTIONAL. The alpha seats come from `refine_candidates`, which masks the bare
+        237 out of the candidate axis entirely (`HP_CAND_MASK[237] = 0.0`) because 237 is the
+        PRESENCE channel at BP 0 — the op reasons only over the typed nums. The label, meanwhile, is
+        whatever poke-env saw the opponent click, and gen 3 NEVER reveals an opponent's HP type, so
+        it arrives as bare `hiddenpower` -> 237. `match_seats_to_move_num` compares raw ints, so a
+        bare 237 label can match NO seat, ever. That silently deletes every opponent Hidden Power
+        from alpha's supervision — 43.2% of `data/teams/` mons carry one — and deletes precisely the
+        surprise-coverage move alpha exists to anticipate. It also shows up as a higher
+        `alpha_mask_rate` attributable to nothing.
+
+        The type comes from the PRIVILEGED source, not from our own belief: agent2's own team keeps
+        the type suffix on `Move._id` (`hiddenpowerice`), exactly as `_hp_type_labels` reads it.
+        Typing the label off `HPTypeBelief`'s argmax instead would supervise alpha against the
+        model's own guess — circular, and it would bake this belief's 9% error straight into the
+        target. A label must be ground truth or absent.
+
+        Falls back to the raw num when the true type cannot be recovered (no b2 yet, or the attacker
+        genuinely runs no HP), so an unresolvable case stays masked rather than becoming a wrong seat.
+        """
+        raw = lambda mid: self._move_num.get(to_id_str(mid))
+        b2 = getattr(self, "battle2", None)
+        if b2 is None:
+            return raw
+        attacker = getattr(delta, "opp_prev_active", None)   # the mon that MADE this decision
+        if not attacker:
+            return raw
+
+        def _resolve(mid):
+            num = raw(mid)
+            if num != HIDDEN_POWER_NUM:
+                return num
+            key = to_id_str(attacker)
+            for m in b2.team.values():
+                if to_id_str(m.species) != key:
+                    continue
+                for mv in m.moves.values():
+                    t = hp_type_idx_from_move_id(mv.id)
+                    if t is not None:
+                        return int(_hp_typed_nums()[t])
+                break
+            return num                                        # no HP found → leave bare (stays masked)
+
+        return _resolve
 
     def _hp_type_labels(self, obs_vec) -> dict:
         """HP-TYPE-belief label (gen3_opp_hp_type_belief_v1) — INDEPENDENT of the other belief legs. For each
