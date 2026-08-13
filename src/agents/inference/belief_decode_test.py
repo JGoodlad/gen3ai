@@ -65,3 +65,34 @@ def test_default_num_map_round_trips_real_species():
     out = decode_species_belief(logits, mask, top_k=1)
     name = out[0]["top"][0]["species"]
     assert species.species_data(name).num == 1
+
+
+# ── top_species_per_slot (what NAMES a β slot) ────────────────────────────────
+
+def test_top_species_per_slot_names_every_slot_including_revealed():
+    """Unlike the belief decode, this is UNMASKED on purpose: β's candidate mask is
+    alive-and-not-active, which includes revealed bench mons, so a masked helper would leave exactly
+    the slots β can point at unnamed."""
+    from agents.inference.belief_decode import top_species_per_slot
+
+    logits = np.zeros((6, 10), dtype=np.float32)
+    logits[0, 5] = 9.0      # a revealed slot — still decoded here
+    logits[3, 2] = 4.0
+    out = top_species_per_slot(logits, num_to_name=_names())
+    assert [r["slot"] for r in out] == [0, 1, 2, 3, 4, 5]
+    assert out[0]["species"] == "sp5" and out[3]["species"] == "sp2"
+    # A calibrated posterior, so a surface can say how confident the naming is.
+    assert 0.0 < out[3]["prob"] <= 1.0 and out[3]["prob"] > out[1]["prob"]
+
+
+def test_top_species_per_slot_agrees_with_the_belief_decode_on_a_believed_slot():
+    """The two must not disagree about the same slot — β naming a mon the Beliefs panel ranks second
+    would be a contradiction the reader has no way to resolve."""
+    from agents.inference.belief_decode import top_species_per_slot
+
+    logits = np.zeros((6, 10), dtype=np.float32)
+    logits[2, 7] = 5.0; logits[2, 3] = 3.0
+    mask = np.array([False, False, True, False, False, False])
+    belief = decode_species_belief(logits, mask, top_k=1, num_to_name=_names())
+    named = top_species_per_slot(logits, num_to_name=_names())
+    assert belief[0]["top"][0]["species"] == named[2]["species"]

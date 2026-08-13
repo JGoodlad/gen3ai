@@ -138,7 +138,14 @@ a `💧wish: our/opp` tag when a Wish is floating — `gen3_wish_wired_v1`, the 
 the same `_field_text` the Board shows) · **THREAT** (STACKED, so the Summary is self-sufficient —
 line 1 incoming P(KO)·outspeed·worst-on-team·opp-recovery, line 2 the incoming type-**effectiveness**
 `worst N× · revealed X%` folded in from Matchups; P(KO) reds with danger in BOTH places —
-`gradient_color(1 − pko)`) · **CHOSE** chosen+confidence [+ a `⚠ now prefers X` on disagree] ·
+`gradient_color(1 − pko)`) · **EXPECT** (the LAST line of SITUATION, only on an
+`--opp-intent-coef>0` run) the v67 `α` head's ranked NAMED options for what the OPPONENT was about to
+do — their believed moves plus `SWITCH`, with `β`'s named switch-in appended *only* when `α` actually
+leads with the switch. It sits in SITUATION, not DECISION, because it is part of the position as the
+model read it; and it is the ONE line that distinguishes a turn the model played AROUND a threat from
+one where it never saw the move coming — the board, the log and the critic's numbers are identical in
+both (`a.opp_intent`, `engine.build_opp_intent`, model-free) · **CHOSE** chosen+confidence [+ a
+`⚠ now prefers X` on disagree] ·
 **RESULT** what actually happened — an **ordered, one-line-per-action battle log**
 (`engine.build_result_timeline`, a pure list-of-dicts attached to `outcome["timeline"]`, so the CLI
 `analyze` JSON carries it too). The recorder stores each side's action + that mon's OWN net HP change,
@@ -543,7 +550,10 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   ordered **`timeline`** of what then happened (`engine.build_result_timeline` entries, each with a
   `text` field rendered by `engine.timeline_entry_text` so no surface re-derives the sentence),
   `order_certain` (false ⇒ both sides moved and `move_order` wasn't recorded, so top-to-bottom is
-  NOT the real sequence — say so, never guess), and the critic's read (`value` · `delta_v` ·
+  NOT the real sequence — say so, never guess), **`opp_intent`** (the v67 `α`/`β` read — `alpha`
+  ranked NAMED options + `SWITCH`, `beta` the named candidate switch-ins, `top`, `switch_p`, and a
+  `text` rendered by `engine.opp_intent_text` so no surface re-derives the sentence; `None` on a run
+  without the heads, which is every trace before v67), and the critic's read (`value` · `delta_v` ·
   `td_residual` · `reward_total` + components · `events` · `flags`), plus the per-decision DETAIL a
   deeper read wants — the full recorded **`actions`** distribution (`label`/`prob`/`valid`/`chosen`,
   passed through in the recorder's action-index order, NEVER re-sorted — see the move-label gotcha
@@ -577,6 +587,14 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   panel renders it as a one-line **eighth-block histogram** + the shape stats (`_append_dist_hist`;
   sharp = confident, wide = uncertain, `⑂ bimodal` = the critic sees a coinflip) below the CRITIC /
   WIN-PROB lines — the interpretability read the scalar V collapses. Engine: `engine.build_value_dist`.
+  Also an **`opp_intent`** block (`OppIntentView`, v67 — `None` unless the run trained
+  `--opp-intent-coef>0`): what the model expected the OPPONENT to do — `alpha` (ranked NAMED believed
+  moves + `SWITCH`, each carrying `is_switch` so no surface compares a magic string itself), `beta`
+  (candidate switch-ins, each named by the model's own species posterior), `top`, `switch_p`. It is
+  **model-free and stays that way** — unlike `belief`, which prefers a re-computed read, `α`/`β` are
+  supervised against what the opponent then DID, so the honest question is what *this* decision's
+  model expected, not what a later checkpoint would. Rendered as the Summary's `EXPECT` line and the
+  web replay's per-turn *expect* line. Engine: `engine.build_opp_intent` / `opp_intent_text`.
   Carries two incoming-threat decodes — **distinguish them**:
   - `threats` (model-free, from `their_matchups`): raw type-*effectiveness* —
     `present`, `revealed_frac` (how much opp coverage is revealed), `max_incoming`

@@ -164,10 +164,11 @@ def _turns_run(tmp_path):
     acts = {"icebeam": {"prob": "70.0%", "valid": True},
             "switch:m0": {"prob": "30.0%", "valid": True}}
 
-    def inv(turn, phase, chosen, our_hp, opp_hp, out):
+    def inv(turn, phase, chosen, our_hp, opp_hp, out, opp_intent=None):
         return {"i": turn, "turn": turn, "phase": phase, "chosen": chosen,
                 "our": {"species": "milotic", "hp": our_hp},
                 "opp": {"species": "swampert", "hp": opp_hp},
+                **({"opp_intent": opp_intent} if opp_intent else {}),
                 "actions": acts, "outcome": out}
 
     invs = [
@@ -176,7 +177,11 @@ def _turns_run(tmp_path):
             {"reward": {"total": 0.5, "base": "pbrs_material=+0.50"},
              "our": {"action": "icebeam", "hp_delta": "-18%"},
              "opp": {"action": "earthquake", "hp_delta": "-42%"},
-             "events": [], "move_order": "we_first"}),
+             "events": [], "move_order": "we_first"},
+            # Only the FIRST decision carries the v67 α/β block: a run with the heads off writes it
+            # nowhere, so both the present and the absent case have to survive the fold.
+            {"alpha": [{"name": "earthquake", "p": 0.52}, {"name": "SWITCH", "p": 0.21}],
+             "beta": [{"slot": 3, "p": 0.44, "species": "blissey"}]}),
         inv(2, "move_selection", "icebeam", "82%", "58%",
             {"reward": {"total": -3.0},
              "our": {"action": "icebeam", "hp_delta": "-100%"},
@@ -226,6 +231,23 @@ def test_battle_turns_carries_the_board_and_a_rendered_battle_log(tmp_path):
     # Components are every key BESIDE `total` — the recorder emits no nested "components" key, and
     # reading one gave a silently-always-empty breakdown.
     assert d0["reward_components"] == {"base": "pbrs_material=+0.50"}
+
+
+def test_battle_turns_carries_what_it_expected_the_opponent_to_do(tmp_path):
+    """The v67 α/β read, per decision. It is the only per-decision fact that distinguishes a turn
+    the model played AROUND a threat from one where it never saw the move coming — the board, the
+    timeline and the critic's numbers read identically in both."""
+    run, summ = _turns_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)
+    oi = t["turns"][0]["decisions"][0]["opp_intent"]
+    assert [o["name"] for o in oi["alpha"]] == ["earthquake", "SWITCH"]
+    assert oi["top"]["name"] == "earthquake" and oi["switch_p"] == 0.21
+    assert oi["beta"][0]["species"] == "blissey"
+    # The sentence is the ENGINE's, so the web replay and the TUI cannot word it differently.
+    assert oi["text"] == "expects earthquake 52% · SWITCH 21%"
+    # A decision the recorder wrote no block for reads as None — "no data", not "expected nothing".
+    assert t["turns"][1]["decisions"][0]["opp_intent"] is None
+    json.dumps(t)
 
 
 def test_battle_turns_hp_pct_survives_a_faint_and_a_missing_hp(tmp_path):

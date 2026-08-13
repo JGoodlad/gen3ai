@@ -193,7 +193,7 @@ produced it.
 | `/battles` | `battles()` | outcome / opponent / step filters |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
-| `/battle` | `battle_turns()` | **one game, turn by turn** — board · battle log · critic (model-free) |
+| `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic (model-free) |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
 
@@ -217,10 +217,21 @@ Three things about it are deliberate:
 - **Each decision has a collapsed drop-down** carrying the TUI's per-decision detail, restricted to
   what needs **no checkpoint**: the full recorded action distribution (bars, chosen marked, illegal
   actions *grey* — never red, mirroring the TUI's `_DISABLED_GREY`: "unavailable" must not read as
-  "dangerous"), both benches with items/movesets, the reward component breakdown, the events, and
-  the **raw Showdown protocol for that turn**. The footer names what is missing and where it lives,
-  rather than leaving the reader to wonder — beliefs, threat tables, saliency and the re-run
-  distribution all need the model, so they stay in `analyze` / the TUI.
+  "dangerous"), the full `α`/`β` distributions, both benches with items/movesets, the reward
+  component breakdown, the events, and the **raw Showdown protocol for that turn**. The footer names
+  what is missing and where it lives, rather than leaving the reader to wonder — beliefs, threat
+  tables, saliency and the re-run distribution all need the model, so they stay in `analyze` / the
+  TUI.
+- **The card carries what the model expected the OPPONENT to do** (`opp_intent`, the v67 `α`/`β`
+  heads), between the board and our choice. That placement is the whole point: it is the only line
+  separating a turn the model played AROUND a Fire Blast from one where it never saw the move
+  coming — the board, the battle log and the critic's numbers read identically in both. `α`'s top
+  four sit on the card (`SWITCH` in the accent every switch on this page already uses); the full
+  distribution and `β` — *if they switch, who comes in* — live in the drop-down beside our own
+  policy distribution, which is the honest pairing: two distributions, ours over our actions and
+  `α` over theirs. `β` names a slot by the model's own species posterior, and the panel SAYS so
+  rather than letting a believed mon read as the board. Absent entirely on a run without the heads
+  (every trace before v67) — no line, never an empty one and never a fabricated 0%.
 - **The default battle, and the picker, are NEWEST-first** (`_newest_first`). `ProbeSession.battles()`
   is ordered by step *ascending*, so a naive `rows[0]` default landed visitors on a battle played by
   the run's oldest checkpoint.
@@ -428,7 +439,12 @@ was applied to a copy of the tree and the matching test confirmed red):
 - `render_integration_test.py` — `@integration`; the headless-browser gate above.
 - `fixture_run.py` — the synthetic run both the unit and the render test build, so they cannot end
   up testing different data. It has **no `reconstruction.json`**, so the heavy probes are expected
-  to fail on it — and `app_test.py` asserts that failure renders.
+  to fail on it — and `app_test.py` asserts that failure renders. Its `opp_intent` blocks come in
+  **two shapes on purpose** (one decision where `α` expects an ATTACK, one where it expects a SWITCH
+  so `β`'s named mon is promoted onto the card) and on only ONE of its battles — a fixture carrying
+  a single shape would leave the `β` path and the heads-off path ungated. Because the fixture
+  carries them, the measured layout gate (`overflowby` / `scrollers` / `monstack`) covers the new
+  markup with no new assertion.
 
 ## Gotchas
 

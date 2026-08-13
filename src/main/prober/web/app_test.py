@@ -932,6 +932,39 @@ def test_the_turn_dropdown_carries_the_model_free_detail(client):
     assert "need the" in html and "main.prober.query analyze" in html
 
 
+def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
+    """The v67 α/β read on the card itself, between the board and our choice. That placement is the
+    point: it is the only line separating a turn the model played AROUND a threat from one where it
+    never saw the move coming, and the board / log / critic numbers are identical in both."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert 'class="expect"' in html
+    # Rendered from the session's own numbers, not re-derived here.
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    top = raw["turns"][0]["decisions"][0]["opp_intent"]["alpha"][0]
+    assert f'{top["name"]} <span class="p">{top["p"] * 100:.0f}%' in html
+    # β is promoted onto the card ONLY on the decision where α actually expects the switch — the
+    # fixture's second decision — and the slot is named by the species posterior, not left an index.
+    sw = raw["turns"][1]["decisions"][0]["opp_intent"]
+    assert sw["top"]["is_switch"] is True
+    assert "→ in: blissey" in html
+    # The full distribution + β live in the drop-down, next to our own policy distribution.
+    assert "opponent intent — what it expected THEM to do" in html
+    assert "if they switch, who comes in" in html
+
+
+def test_a_run_without_the_intent_heads_renders_no_expectation(client, run):
+    """Every trace written before v67 carries no `opp_intent` block at all. The card must simply not
+    have the line — never an empty one, and never a fabricated 0%."""
+    turns = client.get("/api/battle-turns",
+                       params={"battle": "step_2000000/aggressive_v2/loss_001"}).json()
+    assert all(d["opp_intent"] is None
+               for t in turns["turns"] for d in t["decisions"])
+    html = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
+    assert 'class="expect"' not in html
+    assert "opponent intent" not in html
+
+
 def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):
     """An unavailable action must read as grey/dimmed, never as a red danger value — the same
     distinction the TUI draws with _DISABLED_GREY."""

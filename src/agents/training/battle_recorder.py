@@ -113,6 +113,13 @@ class BattleRecorder:
         # belief is on AND a slot is unrevealed; see RLPlayer._decode_belief). Sits right after `opp`
         # — "the board, then what we believe is still hidden" — and is omitted entirely otherwise.
         belief = (state or {}).get("belief")
+        # What the model expects the opponent to DO this turn — `α` (a ranked, NAMED distribution over
+        # their believed moves + SWITCH) and `β` (given a switch, which mon comes in), from the v67
+        # opponent-intent heads (`RLPlayer._opp_intent`; only when `--opp-intent-coef>0`). It sits
+        # after `belief` because that is the reading order: the board, what we think is hidden, then
+        # what we think they will do with it. Omitted entirely when the heads are off, so an
+        # intent-off run's trace is byte-unchanged.
+        opp_intent = (state or {}).get("opp_intent")
         entry = {
             "i": len(self._invocations) + 1,
             "turn": curr_ctx.turn,
@@ -121,6 +128,7 @@ class BattleRecorder:
             "our": our_section,
             "opp": opp_section,
             **({"belief": belief} if belief else {}),
+            **({"opp_intent": opp_intent} if opp_intent else {}),
             "outcome": None,
             "actions": self._all_action_labels(live, probs, mask, legal),
         }
@@ -543,6 +551,16 @@ def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, ste
         text = re.sub(
             r'\{\s*"species":\s*"([^"]+)",\s*"prob":\s*"([^"]+)"\s*\}',
             r'{"species": "\1", "prob": "\2"}', text,
+        )
+        # Opponent-intent leaves: one expected option per line ({"name": "fireblast", "p": 0.41}),
+        # and one β candidate per line ({"slot": 4, "p": 0.22, "species": "blissey"}).
+        text = re.sub(
+            r'\{\s*"name":\s*"([^"]+)",\s*"p":\s*([-0-9.eE]+)\s*\}',
+            r'{"name": "\1", "p": \2}', text,
+        )
+        text = re.sub(
+            r'\{\s*"slot":\s*(\d+),\s*"p":\s*([-0-9.eE]+),\s*"species":\s*("[^"]*"|null)\s*\}',
+            r'{"slot": \1, "p": \2, "species": \3}', text,
         )
         f.write(text)
 

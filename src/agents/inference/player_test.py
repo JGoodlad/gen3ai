@@ -525,3 +525,66 @@ def test_value_dist_none_when_head_off():
     fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(
         features_extractor=SimpleNamespace(last_value_dist_logits=None))))
     assert RLPlayer._value_dist(fake) is None
+
+
+# ── RLPlayer._opp_intent (v67 α/β capture — the interpretability payload) ─────
+# Same shape as the two above: the method only reads the extractor stash, so a mock `self`
+# exercises it. What it produces is what lands in the trace and therefore in the prober.
+
+def _intent_self(*, alpha=None, seat_nums=None, beta=None, species=None):
+    import torch
+    from types import SimpleNamespace
+    ex = SimpleNamespace(last_alpha_logits=alpha, last_alpha_seat_nums=seat_nums,
+                         last_beta_logits=beta,
+                         last_belief_logits=({"species": species} if species is not None else None))
+    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(features_extractor=ex)))
+    # `_opp_intent` calls the sibling helper on `self`; bind the real one so the mock exercises the
+    # REAL naming path rather than a stub of it.
+    fake._slot_species = lambda: RLPlayer._slot_species(fake)
+    return fake
+
+
+def test_opp_intent_none_when_heads_off():
+    assert RLPlayer._opp_intent(_intent_self()) is None
+
+
+def test_opp_intent_names_every_option_and_rounds_for_disk():
+    """The owner constraint: the model may only point at things it can NAME. A seat the belief did
+    not fill (num 0) is DROPPED rather than shown as an anonymous index."""
+    import torch
+    # Two real seats (Tackle=33, Thunder=87) + one unfilled, then the SWITCH column.
+    alpha = torch.tensor([[2.0, 0.0, 0.0, 1.0]])
+    seats = torch.tensor([[33, 87, 0]])
+    out = RLPlayer._opp_intent(_intent_self(alpha=alpha, seat_nums=seats))
+    names = [r["name"] for r in out["alpha"]]
+    assert "SWITCH" in names and len(out["alpha"]) == 3, "the empty seat must be dropped"
+    assert all(not n.startswith("move#") for n in names), "every option is named through the dex"
+    assert out["alpha"][0]["p"] > out["alpha"][-1]["p"], "ranked highest-first"
+    # Rounded on the way to disk — these ride every captured decision of every captured battle.
+    assert all(r["p"] == round(r["p"], 4) for r in out["alpha"])
+    assert "beta" not in out, "no β head → no β key, rather than an empty one"
+
+
+def test_opp_intent_beta_is_named_by_the_species_posterior():
+    """β points at a SLOT, and a believed slot is an anonymous query — the model's own species
+    posterior is what makes 'they will switch to X' refer to anything. An illegal candidate (-inf,
+    i.e. fainted or already active) is not listed at all."""
+    import torch
+    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
+    beta = torch.tensor([[0.0, 5.0, float("-inf")]])
+    species = torch.zeros(1, 3, 400)
+    species[0, 1, 143] = 10.0          # slot 1 → snorlax (dex 143)
+    out = RLPlayer._opp_intent(_intent_self(alpha=alpha, seat_nums=seats, beta=beta,
+                                            species=species))
+    assert [r["slot"] for r in out["beta"]] == [1, 0], "ranked, and the -inf candidate excluded"
+    assert out["beta"][0]["species"] == "snorlax"
+
+
+def test_opp_intent_beta_slot_stays_a_bare_index_without_a_species_head():
+    """No species head means nothing in the model can say what that slot holds. A bare index is the
+    honest answer; inventing a name would be worse than the index."""
+    import torch
+    out = RLPlayer._opp_intent(_intent_self(
+        alpha=torch.tensor([[1.0, 0.5]]), seat_nums=torch.tensor([[33]]),
+        beta=torch.tensor([[1.0, 0.0]])))
+    assert [r["species"] for r in out["beta"]] == [None, None]

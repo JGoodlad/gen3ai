@@ -388,7 +388,11 @@ snapshot is promoted by copy, not re-saved). Forensic traces land under
 `battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump —
 each invocation also carries a **`belief`** block, the model's top-`BELIEF_TOPK` (3) most-likely species
 per still-HIDDEN opp slot, present ONLY when the hidden-opponent belief is on and a slot is un-revealed;
-`RLPlayer._decode_belief` → `inference/belief_decode`, see `src/agents/model/CLAUDE.md`) +
+`RLPlayer._decode_belief` → `inference/belief_decode`, see `src/agents/model/CLAUDE.md` — and an
+**`opp_intent`** block, the v67 `α`/`β` heads' read of what the OPPONENT was about to do: `α` a ranked
+list of NAMED believed moves plus `SWITCH`, `β` the candidate switch-ins each named by the model's own
+species posterior. Present only under `--opp-intent-coef>0`, so an intent-off run's trace is unchanged;
+it is what the prober's `EXPECT` line and the web replay's per-turn *expect* line read) +
 `<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values **+ the chosen `actions`** for the prober
 and offline obs replay) +
 **`<outcome>_s<shard>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown replay of

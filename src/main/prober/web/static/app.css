@@ -260,6 +260,21 @@ h2.turnhead { font-size: 12px; margin: 0 0 8px; color: var(--dim); text-transfor
 .badge.flag.faint { color: var(--bad); }
 .badge.flag.switch, .badge.flag.opp-switch { color: var(--accent); }
 
+/* What the model expected the OPPONENT to do (α). Deliberately quieter than `chose` and tinted
+   with the opponent's colour: it sits between the board and our choice, and it must read as a
+   prediction about them, not as another thing we did. Wraps like the board rather than scrolling —
+   the whole point of this view is that it reflows on a phone. */
+p.expect { margin: 2px 0 4px; font-size: 12.5px; display: flex; flex-wrap: wrap;
+           gap: 4px 8px; align-items: baseline; color: var(--dim); }
+p.expect .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+                color: var(--bad); min-width: 2.2em; }
+p.expect .opt { font-family: var(--mono); }
+p.expect .opt .p { font-variant-numeric: tabular-nums; color: var(--dim); }
+/* SWITCH is the "none of these moves" option, and the mon β then names — both are about a PIVOT,
+   so they share the accent that every switch on this page already uses. */
+p.expect .opt.switch, p.expect .opt.inmon { color: var(--accent); }
+ul.dist li.switch .lbl { color: var(--accent); }
+
 p.chose { margin: 4px 0 6px; font-size: 14px; display: flex; flex-wrap: wrap;
           gap: 6px; align-items: baseline; }
 

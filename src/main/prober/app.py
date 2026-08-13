@@ -1199,6 +1199,23 @@ class ProberApp(Gen3App):
                 else:
                     head.append(f"worst {th.max_incoming:.2f}×", style=_mult_color(th.max_incoming))
                     head.append(f"   ·   revealed {th.revealed_frac * 100:.0f}%", style="dim")
+        # EXPECT — α: what the model expected the OPPONENT to click (v67 opponent-intent head), the
+        # last line of the SITUATION group because it is part of the position as the model read it,
+        # not part of our decision. It is the only place a turn the model played AROUND a Fire Blast
+        # differs from one where it never saw the move coming. Absent on a run without the heads.
+        if a.opp_intent is not None:
+            head.append("\nEXPECT  ", style="dim")
+            for i, opt in enumerate(a.opp_intent.alpha[:4]):
+                if i:
+                    head.append("   ·   ", style="dim")
+                head.append(opt.name, style=("bold cyan" if opt.is_switch else "bold"))
+                head.append(f" {opt.p * 100:.0f}%", style=gradient_color(opt.p))
+            # β only earns the line when α actually expects the switch.
+            if a.opp_intent.top is not None and a.opp_intent.top.is_switch and a.opp_intent.beta:
+                best = a.opp_intent.beta[0]
+                head.append("   →  in: ", style="dim")
+                head.append(best.species or f"slot {best.slot}", style="bold cyan")
+                head.append(f" {best.p * 100:.0f}%", style="dim")
         # DECISION group (blank line above) — what it chose + confidence (+ a disagree flag).
         chosen_p = _chosen_prob(a)
         head.append("\n\nCHOSE   ", style="dim")

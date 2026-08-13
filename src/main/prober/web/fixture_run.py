@@ -24,10 +24,12 @@ STEPS = (2000000, 4000000)
 
 
 def _inv(turn: int, chosen: str, reward_total: float, *, faint: bool = False,
-         species=("zapdos", "jynx"), hp=None, outcome=None) -> dict:
+         species=("zapdos", "jynx"), hp=None, outcome=None, opp_intent=None) -> dict:
     """One recorded decision. `hp` is `(our, opp)` display strings and `outcome` the recorded
     per-side `{action, hp_delta}` pair — both optional, because most views only need the board and
-    the reward, and only the turn-by-turn replay reads them.
+    the reward, and only the turn-by-turn replay reads them. `opp_intent` is the v67 α/β block,
+    present on only SOME decisions here on purpose: it is absent from every pre-v67 trace, so the
+    views have to render both cases.
     """
     our, opp = {"species": species[0]}, {"species": species[1]}
     if hp:
@@ -37,8 +39,26 @@ def _inv(turn: int, chosen: str, reward_total: float, *, faint: bool = False,
     out.update(outcome or {})
     return {"i": turn, "turn": turn, "phase": "move_selection", "chosen": chosen,
             "our": our, "opp": opp,
+            **({"opp_intent": opp_intent} if opp_intent else {}),
             "actions": {chosen: {"prob": "80.0%", "valid": True}},
             "outcome": out}
+
+
+# Two shapes of the opponent-intent block, because they render differently: one where α expects an
+# ATTACK (β is irrelevant and stays in the drop-down) and one where α expects a SWITCH (β's named
+# mon is promoted onto the card). A fixture carrying only the first would leave the β path ungated.
+_INTENT_ATTACK = {
+    "alpha": [{"name": "earthquake", "p": 0.52}, {"name": "SWITCH", "p": 0.21},
+              {"name": "icebeam", "p": 0.18}, {"name": "toxic", "p": 0.09}],
+    "beta": [{"slot": 3, "p": 0.44, "species": "blissey"},
+             {"slot": 4, "p": 0.31, "species": "skarmory"}],
+}
+_INTENT_SWITCH = {
+    "alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "earthquake", "p": 0.24},
+              {"name": "toxic", "p": 0.15}],
+    "beta": [{"slot": 2, "p": 0.58, "species": "blissey"},
+             {"slot": 5, "p": 0.22, "species": None}],
+}
 
 
 def _write_battle(run: str, step: int, opponent: str, name: str, invs, values) -> None:
@@ -85,10 +105,10 @@ def build(root: str) -> str:
     # a battle log — without them every view still works but the log is empty, and a render test
     # over an empty log proves nothing about the feature it is meant to gate.
     _write_battle(run, STEPS[1], OPPONENTS[1], "loss_003",
-                  [_inv(1, "icebeam", -0.5, hp=("100%", "100%"),
+                  [_inv(1, "icebeam", -0.5, hp=("100%", "100%"), opp_intent=_INTENT_ATTACK,
                         outcome={"our": {"action": "icebeam", "hp_delta": "-22%"},
                                  "opp": {"action": "earthquake", "hp_delta": "-31%"}}),
-                   _inv(2, "roost", -2.0, faint=True, hp=("78%", "69%"),
+                   _inv(2, "roost", -2.0, faint=True, hp=("78%", "69%"), opp_intent=_INTENT_SWITCH,
                         outcome={"our": {"action": "roost", "hp_delta": "-100%"},
                                  "opp": {"action": "earthquake", "hp_delta": "0%"}})],
                   [7.0, 5.0, 1.0])

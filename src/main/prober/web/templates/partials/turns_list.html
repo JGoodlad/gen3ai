@@ -62,6 +62,24 @@
       {{ side(d.opp, "opp") }}
     </div>
 
+    {% if d.opp_intent %}
+    {# WHAT IT EXPECTED THEM TO DO, between the board and our choice — that is the reading order of
+       the turn, and it is the one fact no other line on this card carries: a turn where the model
+       played AROUND a Fire Blast and one where it never saw the move coming have the same board,
+       the same log and the same critic numbers. Top four only; the drop-down has the full α/β. #}
+    <p class="expect" title="α — the opponent-intent head's distribution over the opponent's believed moves plus SWITCH. A BELIEF, not the board: it can only name moves the move-belief holds.">
+      <span class="who">expect</span>
+      {% for o in d.opp_intent.alpha[:4] %}
+      <span class="opt {{ 'switch' if o.is_switch }}">{{ o.name }} <span class="p">{{ m.pct(o.p, 0) }}</span></span>
+      {% endfor %}
+      {% if d.opp_intent.top and d.opp_intent.top.is_switch and d.opp_intent.beta %}
+      {# β only earns space up here when α actually expects the switch. #}
+      <span class="opt inmon">→ in: {{ d.opp_intent.beta[0].species or "slot " ~ d.opp_intent.beta[0].slot }}
+        <span class="p">{{ m.pct(d.opp_intent.beta[0].p, 0) }}</span></span>
+      {% endif %}
+    </p>
+    {% endif %}
+
     <p class="chose">
       {% if d.phase and d.phase != "move_selection" %}<span class="badge phase">{{ d.phase }}</span>{% endif %}
       chose <strong>{{ d.chosen }}</strong>
@@ -126,6 +144,41 @@
           </ul>
           {% else %}<p class="empty">no action distribution recorded</p>{% endif %}
         </div>
+
+        {% if d.opp_intent %}
+        <div class="panel">
+          <h3>opponent intent — what it expected THEM to do</h3>
+          {# The full α distribution (the card above shows the top four), then β. Same bar shape as
+             the policy panel next to it, deliberately: these are the two distributions the decision
+             was made from — ours over our actions, α over theirs. #}
+          <ul class="dist">
+            {% for o in d.opp_intent.alpha %}
+            <li class="{{ 'switch' if o.is_switch }}">
+              <span class="bar"><span style="width: {{ (o.p * 100) | round(1) }}%"></span></span>
+              <span class="lbl">{{ o.name }}</span>
+              <span class="p">{{ m.pct(o.p, 1) }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% if d.opp_intent.beta %}
+          <h3>β — if they switch, who comes in</h3>
+          <ul class="dist">
+            {% for c in d.opp_intent.beta %}
+            <li>
+              <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
+              <span class="lbl">{{ c.species or "slot " ~ c.slot }}</span>
+              <span class="p">{{ m.pct(c.p, 1) }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          <p class="muted small">
+            β points at a SLOT; the name is the model's own species posterior for that slot — the
+            same content-addressing β is trained against, so it is a belief about who is there, not
+            a reading of the board.
+          </p>
+          {% endif %}
+        </div>
+        {% endif %}
 
         <div class="panel">
           <h3>board</h3>

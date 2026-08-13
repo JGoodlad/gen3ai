@@ -735,7 +735,8 @@ agent API — are in `src/main/prober/CLAUDE.md`.
 A **third sibling** over the same engine (the TUI and the JSON CLI are the other two — none is a
 layer on another). Read-only browser views for the analyses a terminal renders worst, adapting
 `ProbeSession` and nothing else: run summary · battles · `scan` · `triage` · the **turn-by-turn
-battle replay** (`/battle` — board, battle log and critic per game turn; reached from a `scan` row's
+battle replay** (`/battle` — board, what the model EXPECTED the opponent to do (the v67 α/β heads),
+battle log and critic per game turn; reached from a `scan` row's
 **turns** link, which lands on the losing turn) · the `falsify_scan` crater bracket · the
 `calibration` reliability curve. `analyze` / `lookahead` / `better-line` / `replay-counterfactual`
 stay TUI+CLI.

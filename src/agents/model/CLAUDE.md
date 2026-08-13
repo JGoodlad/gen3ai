@@ -450,3 +450,14 @@ would otherwise hide behind the attack-heavy base rate.
 **Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
 `opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
 only ever point at options it can name, and rendering is where that becomes checkable.
+
+**The path from the head to a human is WHOLE**, and it is worth naming because for one commit it was
+not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it, so the payload was
+computed on every decision and dropped on the floor:
+
+`α`/`β` logits → `RLPlayer._opp_intent` (`render_alpha`, plus `belief_decode.top_species_per_slot`
+to NAME `β`'s slots) → the summary invocation's `opp_intent` block → `engine.build_opp_intent` /
+`opp_intent_text` → the prober's Summary **EXPECT** line, `analyze`'s `opp_intent`, and the web
+replay's per-turn *expect* line (`src/main/prober/CLAUDE.md`). `β` names a slot by the model's OWN
+species posterior — the same content-addressing its training target uses — so the head and the
+sentence refer to one object.

@@ -370,7 +370,13 @@ class RLPlayer(Gen3Player):
 
         The owner constraint — the model may only ever point at options it can NAME — is enforced
         here by construction: every entry is rendered through the move dex, and a seat the belief
-        did not fill is dropped rather than shown as an anonymous index.
+        did not fill is dropped rather than shown as an anonymous index. `β` obeys the same rule via
+        `belief_decode.top_species_per_slot`: a slot is named by the model's OWN species posterior,
+        the same content-addressing `β`'s target uses, so "slot 4" reads as a mon rather than an
+        index (`species: None` when there is no species head to name it with).
+
+        The block lands in the trace verbatim (`BattleRecorder.record` → the summary invocation's
+        `opp_intent`), which is what the prober's `/battle` replay and `analyze` read.
         """
         extractor = getattr(self.model.policy, "features_extractor", None)
         alogits = getattr(extractor, "last_alpha_logits", None)
@@ -385,15 +391,31 @@ class RLPlayer(Gen3Player):
         except Exception:
             _by_num = {}
         probs = torch.softmax(alogits[0], dim=-1)
-        out = {"alpha": render_alpha(probs, seat_nums[0], lambda n: _by_num.get(int(n)))}
+        alpha = render_alpha(probs, seat_nums[0], lambda n: _by_num.get(int(n)))
+        # Rounded on the way to disk: these ride EVERY captured decision of every captured battle,
+        # and 15 significant figures of a display probability is trace weight with no reader.
+        out = {"alpha": [{"name": r["name"], "p": round(float(r["p"]), 4)} for r in alpha]}
         blogits = getattr(extractor, "last_beta_logits", None)
         if blogits is not None:
             bp = torch.softmax(blogits[0], dim=-1)
-            rows = [{"slot": i, "p": float(bp[i])} for i in range(bp.shape[0])
-                    if torch.isfinite(blogits[0, i])]
+            named = self._slot_species()
+            rows = [{"slot": i, "p": round(float(bp[i]), 4), "species": named.get(i)}
+                    for i in range(bp.shape[0]) if torch.isfinite(blogits[0, i])]
             rows.sort(key=lambda r: -r["p"])
             out["beta"] = rows[:4]
         return out
+
+    def _slot_species(self) -> dict:
+        """`{opp slot -> species name}` from the model's OWN species posterior — what NAMES a `β`
+        slot. Empty when the checkpoint has no species-belief head (then `β` rows carry a bare
+        index, which is honest: nothing in the model can say what that slot holds)."""
+        extractor = getattr(self.model.policy, "features_extractor", None)
+        logits = getattr(extractor, "last_belief_logits", None)
+        if logits is None or "species" not in logits:
+            return {}
+        from agents.inference.belief_decode import top_species_per_slot
+        rows = top_species_per_slot(logits["species"][0].detach().cpu().numpy())
+        return {int(r["slot"]): r["species"] for r in rows}
 
     def _value_dist(self) -> Optional[list]:
         """The distributional value head's predicted return distribution (forensic trace only) — the

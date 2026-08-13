@@ -143,7 +143,7 @@ class _FakeModel:
         return {"our_crit": False, "opp_crit": False, "our_cant": None, "opp_cant": None}
 
 
-def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
+def _write_trace(tmp_path, chosen="thunderbolt", has_state=1, opp_intent=None):
     actions = {f"switch:m{i}": {"prob": "1.0%", "valid": True} for i in range(6)}
     actions.update({
         "thunderbolt": {"prob": "92.1%", "valid": True},
@@ -158,6 +158,7 @@ def _write_trace(tmp_path, chosen="thunderbolt", has_state=1):
             "i": 1, "turn": 3, "phase": "move_selection", "chosen": chosen,
             "our": {"species": "zapdos", "hp": "80%"},
             "opp": {"species": "jynx", "hp": "55%"}, "actions": actions,
+            **({"opp_intent": opp_intent} if opp_intent else {}),
             "outcome": {"our": {"action": chosen, "hp_delta": "-10%"},
                         "opp": {"action": "switch:gengar", "hp_delta": "+0%"},
                         "reward": {"total": -1.4, "base": "hp_ours=-1.2"},
@@ -455,6 +456,38 @@ async def test_summary_renders_win_prob(tmp_path):
         head = str(app.query_one("#summary-head", Static).render())
         assert "WIN-PROB" in head and "P(win)" in head and "62%" in head
         assert head.index("CRITIC") < head.index("WIN-PROB")   # appended after the critic line
+
+
+async def test_summary_renders_the_opponent_intent(tmp_path):
+    """EXPECT — α as NAMED ranked options, the last line of the SITUATION group (part of the position
+    as the model read it, before CHOSE). β is promoted onto the line only when α leads with SWITCH."""
+    run = _write_trace(tmp_path, opp_intent={
+        "alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "icebeam", "p": 0.24}],
+        "beta": [{"slot": 2, "p": 0.58, "species": "blissey"}]})
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        head = str(app.query_one("#summary-head", Static).render())
+        assert "EXPECT" in head and "SWITCH" in head and "61%" in head and "icebeam" in head
+        assert "blissey" in head, "α expects the switch, so β names who comes in"
+        assert head.index("EXPECT") < head.index("CHOSE"), "the situation reads before the decision"
+
+
+async def test_summary_has_no_expect_line_without_the_intent_heads(tmp_path):
+    """Every trace before v67 carries no block. No line at all — never an empty or zeroed one."""
+    run = _write_trace(tmp_path)
+    app = ProberApp(root=run, injected_model=_FakeModel())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._select_battle(app._tree_model.all_battles()[0])
+        await pilot.pause()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert "EXPECT" not in str(app.query_one("#summary-head", Static).render())
 
 
 async def test_switch_decision_has_no_sweep(tmp_path):

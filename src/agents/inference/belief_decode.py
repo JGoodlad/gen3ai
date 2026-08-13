@@ -43,6 +43,41 @@ def _num_to_species_id() -> Dict[int, str]:
     return _num_to_id_cache
 
 
+def top_species_per_slot(
+    species_logits: np.ndarray,
+    num_to_name: Optional[Dict[int, str]] = None,
+) -> List[dict]:
+    """Per opponent slot, the model's single most-likely species — the CONTENT of that slot.
+
+    The unmasked, top-1 sibling of :func:`decode_species_belief`, and it exists for `β` (the
+    opponent-intent switch head, `gen3_opp_intent_v1`): `β` points at a SLOT, and a believed slot is
+    an anonymous DETR query, so "β says slot 4" means nothing on its own. The model's own species
+    posterior is what names it — the SAME content-addressing `β`'s training target uses
+    (`opp_intent.resolve_believed_slot_by_content`), which is what makes the rendered sentence
+    *"they will switch to Blissey"* refer to the object the head actually pointed at.
+
+    Every slot is decoded, not just the believed ones: `β`'s candidate mask is alive-and-not-active,
+    which includes REVEALED bench mons. On a revealed slot the posterior is un-supervised (the
+    species aux only scores believed slots), so it is the model's read rather than a certainty —
+    surfaces should say so rather than presenting it as the board.
+
+    Returns ``[{"slot": int, "species": name, "prob": float}, ...]`` in slot order.
+    """
+    if num_to_name is None:
+        num_to_name = _num_to_species_id()
+    logits = np.asarray(species_logits, dtype=np.float64)
+    out: List[dict] = []
+    for slot in range(logits.shape[0]):
+        row = logits[slot]
+        probs = np.exp(row - row.max())
+        probs /= probs.sum()
+        best = int(np.argmax(probs))
+        out.append({"slot": int(slot),
+                    "species": num_to_name.get(best, f"num_{best}"),
+                    "prob": float(probs[best])})
+    return out
+
+
 def decode_species_belief(
     species_logits: np.ndarray,
     believed_mask: np.ndarray,

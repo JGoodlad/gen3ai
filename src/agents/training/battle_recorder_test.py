@@ -540,6 +540,63 @@ def test_record_omits_belief_when_absent_or_empty():
         assert "belief" not in rec._pending_entry
 
 
+# ---------------------------------------------------------------------------
+# Opponent-intent field (α/β from RLPlayer._opp_intent, passed through via `state`)
+# ---------------------------------------------------------------------------
+
+_OPP_INTENT = {"alpha": [{"name": "earthquake", "p": 0.52}, {"name": "SWITCH", "p": 0.21}],
+               "beta": [{"slot": 3, "p": 0.44, "species": "blissey"}]}
+
+
+def test_record_includes_opp_intent_when_state_carries_it():
+    """The v67 α/β read reaches DISK. Without this the interpretability payload the intent heads are
+    justified on is computed on every decision and then dropped on the floor — nothing downstream
+    (prober, `/battle`, `analyze`) could ever see it. Placed after `belief`: the board, what we think
+    is hidden, then what we think they will do with it."""
+    zapdos = _FakeMon("zapdos", 1.0)
+    opp = _FakeMon("tyranitar", 1.0)
+    b1 = _battle([zapdos], [opp], "zapdos", "tyranitar", turn=1, move_ids=["thunderbolt"])
+
+    rec = _rec()
+    rec.record(b1, 6, _probs(), _mask(6), state={"belief": [], "opp_intent": _OPP_INTENT})
+    entry = rec._pending_entry
+
+    assert entry["opp_intent"] == _OPP_INTENT
+    keys = list(entry.keys())
+    assert keys.index("opp_intent") > keys.index("opp")
+    assert keys.index("opp_intent") < keys.index("actions")
+
+
+def test_record_omits_opp_intent_when_the_heads_are_off():
+    """No key at all on an intent-off run, so its traces stay byte-identical to a pre-v67 trace."""
+    zapdos = _FakeMon("zapdos", 1.0)
+    opp = _FakeMon("tyranitar", 1.0)
+    b1 = _battle([zapdos], [opp], "zapdos", "tyranitar", turn=1, move_ids=["thunderbolt"])
+
+    for state in (None, {"opp_intent": None}, {"opp_intent": {}}):
+        rec = _rec()
+        rec.record(b1, 6, _probs(), _mask(6), state=state)
+        assert "opp_intent" not in rec._pending_entry
+
+
+def test_write_battle_record_collapses_opp_intent_leaves(tmp_path):
+    """One expected option per line, like the action/belief leaves — a turn stays readable
+    top-to-bottom rather than spending twelve lines on four probabilities."""
+    import json
+    from agents.training.battle_recorder import write_battle_record
+
+    summary = {"meta": {"result": "LOSS"}, "invocations": [{"opp_intent": _OPP_INTENT}]}
+    prefix = str(tmp_path / "loss_004")
+    write_battle_record(prefix, _StubRecorder(summary, {}), _ReplayBattle(), step=5)
+
+    with open(prefix + "_summary.json") as f:
+        text = f.read()
+    data = json.loads(text)
+    assert data["invocations"][0]["opp_intent"]["alpha"][0]["name"] == "earthquake"
+    assert '{"name": "earthquake", "p": 0.52}' in text
+    assert '{"slot": 3, "p": 0.44, "species": "blissey"}' in text
+
+
 def test_write_battle_record_collapses_belief_leaves(tmp_path):
     """Each species-guess leaf is collapsed onto one line, like the action/prob leaves."""
     import json

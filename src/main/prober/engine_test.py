@@ -935,6 +935,74 @@ def test_analyze_belief_present_without_captured_state():
 
 
 # ---------------------------------------------------------------------------
+# Opponent intent — α/β (build_opp_intent + opp_intent_text + analyze wiring), model-free
+# ---------------------------------------------------------------------------
+
+_INTENT = {
+    "alpha": [{"name": "earthquake", "p": 0.52}, {"name": "SWITCH", "p": 0.21},
+              {"name": "icebeam", "p": 0.18}],
+    "beta": [{"slot": 3, "p": 0.44, "species": "blissey"},
+             {"slot": 4, "p": 0.31, "species": None}],
+}
+
+
+def test_build_opp_intent_parses_alpha_and_beta():
+    from main.prober.engine import build_opp_intent, OppIntentView
+    v = build_opp_intent({"opp_intent": _INTENT})
+    assert isinstance(v, OppIntentView)
+    # The recorder already ranked α; the order is passed through, NOT re-derived.
+    assert [o.name for o in v.alpha] == ["earthquake", "SWITCH", "icebeam"]
+    assert v.top.name == "earthquake" and abs(v.top.p - 0.52) < 1e-9
+    # SWITCH is identified structurally, so no surface has to compare a magic string itself.
+    assert [o.is_switch for o in v.alpha] == [False, True, False]
+    assert abs(v.switch_p - 0.21) < 1e-9
+    assert [c.slot for c in v.beta] == [3, 4]
+    assert v.beta[0].species == "blissey"
+    # A slot with no species head to name it stays an honest bare index, not a fabricated mon.
+    assert v.beta[1].species is None
+
+
+def test_build_opp_intent_absent_or_empty_is_none():
+    """Every trace written before the v67 heads has no block at all — that must read as 'no data',
+    which is a different thing from 'the model expected nothing'."""
+    from main.prober.engine import build_opp_intent
+    assert build_opp_intent({}) is None                             # heads off (no block)
+    assert build_opp_intent({"opp_intent": {}}) is None             # block present but empty
+    assert build_opp_intent({"opp_intent": {"alpha": []}}) is None  # no named option → nothing to say
+
+
+def test_build_opp_intent_without_beta():
+    """β is built only when the head is on; α alone is a complete, renderable view."""
+    from main.prober.engine import build_opp_intent
+    v = build_opp_intent({"opp_intent": {"alpha": [{"name": "fireblast", "p": 0.7}]}})
+    assert v.beta == () and v.switch_p is None and v.top.name == "fireblast"
+
+
+def test_opp_intent_text_is_the_shared_sentence():
+    from main.prober.engine import build_opp_intent, opp_intent_text
+    assert opp_intent_text(None) == ""
+    text = opp_intent_text(build_opp_intent({"opp_intent": _INTENT}))
+    assert text == "expects earthquake 52% · SWITCH 21% · icebeam 18%"
+    # β is appended ONLY when α actually leads with the switch — otherwise it is noise on the line.
+    assert "in:" not in text
+    sw = {"alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "toxic", "p": 0.39}],
+          "beta": [{"slot": 2, "p": 0.58, "species": "blissey"}]}
+    assert opp_intent_text(build_opp_intent({"opp_intent": sw})) == \
+        "expects SWITCH 61% · toxic 39% → in: blissey 58%"
+
+
+def test_analyze_includes_opp_intent_with_and_without_state():
+    """Model-free, so it survives an invocation with no captured state — same contract as belief."""
+    model = FakeProbeModel(_OFF)
+    summary = _summary()
+    summary["invocations"][0]["opp_intent"] = _INTENT
+    assert analyze_invocation(model, summary, _npz(), 0).opp_intent.top.name == "earthquake"
+    a = analyze_invocation(model, summary, _npz(has_state=0), 0)
+    assert a.has_state is False and a.opp_intent.top.name == "earthquake"
+    assert analyze_invocation(model, _summary(), _npz(), 0).opp_intent is None
+
+
+# ---------------------------------------------------------------------------
 # Privileged belief-vs-truth (build_belief_truth + slot-matching + analyze wiring)
 # ---------------------------------------------------------------------------
 

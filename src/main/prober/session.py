@@ -37,10 +37,10 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.engine import (
-    analyze_invocation, attribute_turning_point, build_board, build_our_hp_types,
-    decode_incoming_belief, fit_probe, history_slot_saliency, parse_pct, parse_protocol_log,
-    protocol_for_turn, summary_flags, timeline_entry_text, SETUP_MOVES, WP_EVEN_DEFAULT,
-    _npz_win_prob, _pct as _hp_pct, _timeline_for,
+    analyze_invocation, attribute_turning_point, build_board, build_opp_intent, build_our_hp_types,
+    decode_incoming_belief, fit_probe, history_slot_saliency, opp_intent_text, parse_pct,
+    parse_protocol_log, protocol_for_turn, summary_flags, timeline_entry_text, SETUP_MOVES,
+    WP_EVEN_DEFAULT, _npz_win_prob, _pct as _hp_pct, _timeline_for,
 )
 
 
@@ -74,6 +74,27 @@ def _side_dict(side) -> dict:
         "item": side.item, "moves": list(side.moves),
         "bench": [_mon_dict(m) for m in side.bench],
     }
+
+
+def _opp_intent_dict(inv: dict) -> "dict | None":
+    """The decision's α/β block as JSON — `{alpha, beta, top, switch_p, text}` — or `None` when the
+    trace carries no `opp_intent` (the heads were off, i.e. every trace before v67).
+
+    The probabilities are passed through as the recorder wrote them (already rounded at capture);
+    `text` is `engine.opp_intent_text`, so the sentence the web replay prints is the one the TUI and
+    the CLI print.
+
+    The sequences are LISTS, not the view's tuples: this dict is served as JSON and also compared
+    against the API's response, and a tuple survives `json.dumps` but comes back a list — so an
+    `asdict` here would make the session and its own HTTP endpoint disagree on a value they share."""
+    view = build_opp_intent(inv)
+    if view is None:
+        return None
+    out = asdict(view)
+    out["alpha"] = list(out["alpha"])
+    out["beta"] = list(out["beta"])
+    out["text"] = opp_intent_text(view)
+    return out
 
 
 def _r(x, n=3):
@@ -584,6 +605,12 @@ class ProbeSession:
                 "top_prob": _chosen_prob(inv),
                 "our": _side_dict(boards[i].ours),
                 "opp": _side_dict(boards[i].opp),
+                # What the model expected THEM to do (the v67 α/β heads) — the one per-decision fact
+                # that separates "played around the Fire Blast" from "never saw it coming", which
+                # the board, the timeline and the critic's numbers all read identically. `text` is
+                # the engine's rendering of the same view, so no surface re-derives the sentence
+                # (the `timeline` rule). None on any run that did not train the heads.
+                "opp_intent": _opp_intent_dict(inv),
                 # Each entry keeps its structured fields AND the engine's rendering of them, so a
                 # surface prints `text` rather than re-deriving the sentence (see the module rule in
                 # `web/app.py`: a view reshapes nothing).

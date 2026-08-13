@@ -319,6 +319,50 @@ class BeliefView:
 
 
 @dataclass(frozen=True)
+class OppIntentOption:
+    """One option `α` put mass on: a NAMED believed move of the opponent's, or the `SWITCH` option.
+
+    `is_switch` is carried rather than left for a caller to infer by comparing the name, because two
+    surfaces comparing a magic string against a move dex is how one of them ends up wrong."""
+    name: str
+    p: float
+    is_switch: bool
+
+
+@dataclass(frozen=True)
+class OppIntentCandidate:
+    """One `β` candidate: a slot the opponent could bring in, and how much mass `β` puts there.
+
+    `species` is the model's OWN species posterior for that slot (`belief_decode.top_species_per_slot`
+    at capture time) — the same content-addressing `β`'s target uses, so the slot reads as a mon. It
+    is `None` on a checkpoint with no species head, and it is a BELIEF even when the slot is
+    revealed: `β`'s candidate mask is alive-and-not-active, which includes mons already seen, and
+    the species aux only supervises the believed slots."""
+    slot: int
+    p: float
+    species: "str | None"
+
+
+@dataclass(frozen=True)
+class OppIntentView:
+    """What the model expected the OPPONENT to do at this decision — the v67 `α`/`β` heads
+    (`gen3_opp_intent_v1`), model-free from the trace's `opp_intent` block.
+
+    This is the whole interpretability case for the intent heads, and it is the one thing no other
+    view carries: a turn where the model played AROUND a Fire Blast and one where it never saw the
+    move coming are identical in the board, the timeline and the critic's numbers.
+
+    `alpha` is the ranked distribution over [their believed moves] + SWITCH — already sorted by the
+    recorder (`opp_intent.render_alpha`), and NOT re-sorted here. `beta` answers the follow-up: if
+    they do switch, who comes in. `None` on any run that did not train the heads
+    (`--opp-intent-coef 0`), which is every trace written before v67."""
+    alpha: "tuple[OppIntentOption, ...]"
+    beta: "tuple[OppIntentCandidate, ...]"
+    top: "OppIntentOption | None"       # the single most-expected option
+    switch_p: "float | None"            # P(they SWITCH) — None when α did not carry the option
+
+
+@dataclass(frozen=True)
 class OppMoveBelief:
     """One REVEALED opponent mon's MOVE belief, each entry `(move, P(in set))` from the multi-label
     move-belief posterior: `revealed` = the moves it has already shown (their belief should be pinned
@@ -488,6 +532,7 @@ class InvocationAnalysis:
     #                                                 panels (incoming/threat/crit/saliency) are UNRELIABLE
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
     belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
+    opp_intent: "OppIntentView | None" = None      # α/β: what the model expected THEM to do; None unless --opp-intent-coef>0
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
     opp_full_team: "OppFullTeamView | None" = None  # WHOLE opp team + revealed-or-not tags (None w/o reconstruction)
     damage_op: "dict | None" = None                # unified DamageOperator view (incoming + outgoing); None unless --damage-op
@@ -1089,6 +1134,54 @@ def build_belief(inv: dict) -> "BeliefView | None":
         if top:
             slots.append(BeliefSlotView(slot=int(entry.get("slot", -1)), top=top))
     return BeliefView(slots=tuple(slots)) if slots else None
+
+
+# The name `α` uses for "none of these moves" — set by `opp_intent.render_alpha`, matched here.
+SWITCH_OPTION = "SWITCH"
+
+
+def build_opp_intent(inv: dict) -> "OppIntentView | None":
+    """What the model expected the OPPONENT to do — model-free, from the summary invocation's
+    `opp_intent` block (`RLPlayer._opp_intent` → `BattleRecorder.record`).
+
+    `None` when the block is absent (the `α`/`β` heads were off, i.e. every trace before v67) or
+    holds no named option. **The `alpha` order is the recorder's** — `render_alpha` already sorted it
+    highest-first, and re-sorting a list that is already ordered is how the action-label scramble
+    (see this package's CLAUDE.md gotcha) happened; the entries are passed through as given."""
+    raw = inv.get("opp_intent")
+    if not raw:
+        return None
+    alpha = []
+    for entry in raw.get("alpha") or []:
+        name = str(entry.get("name", "?"))
+        alpha.append(OppIntentOption(name=name, p=float(entry.get("p", 0.0)),
+                                     is_switch=name == SWITCH_OPTION))
+    if not alpha:
+        return None
+    beta = tuple(
+        OppIntentCandidate(slot=int(e.get("slot", -1)), p=float(e.get("p", 0.0)),
+                           species=(str(e["species"]) if e.get("species") else None))
+        for e in (raw.get("beta") or [])
+    )
+    switch = next((o.p for o in alpha if o.is_switch), None)
+    return OppIntentView(alpha=tuple(alpha), beta=beta, top=alpha[0], switch_p=switch)
+
+
+def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:
+    """The one-line rendering of `α` (+ `β` when a switch is expected) — the shared vocabulary, so
+    the TUI, the JSON CLI and the web replay all say the same sentence about the same numbers.
+
+    `expects fireblast 41% · SWITCH 22% · icebeam 12%`, and when SWITCH leads, the `β` follow-up:
+    `expects SWITCH 52% · fireblast 20% → in: blissey 61%`. Empty string on `None`."""
+    if view is None or not view.alpha:
+        return ""
+    parts = [f"{o.name} {o.p * 100:.0f}%" for o in view.alpha[:top_n]]
+    text = "expects " + " · ".join(parts)
+    if view.beta and view.top is not None and view.top.is_switch:
+        best = view.beta[0]
+        who = best.species or f"slot {best.slot}"
+        text += f" → in: {who} {best.p * 100:.0f}%"
+    return text
 
 
 _SPECIES_MAPS = None
@@ -1969,6 +2062,10 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                   if inv_index + 1 < len(invs) else None)
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
     belief_truth = None
+    # α/β — model-free from the trace, and it STAYS model-free (unlike `belief`, which prefers a
+    # re-computed read): the intent heads are supervised against what the opponent then did, so the
+    # honest question is what THIS decision's model expected, not what a later checkpoint would.
+    opp_intent = build_opp_intent(inv)
     outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}   # model-free RESULT lines
     opp_full_team = build_opp_full_team(opp_team_details, board)   # model-free; available without state
     # Forced-switch panel: what each ALIVE candidate would DO to the opp active (the op's outgoing is
@@ -1985,7 +2082,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             saliency=None, value_saliency=None, threats=None, incoming=None,
             warnings=(f"invocation {inv_index} has no captured state",), opp_full_team=opp_full_team,
             outcome=outcome, flags=summary_flags(inv), cure_options=self_cure_options(inv),
-            board=board, next_board=next_board, belief=belief,
+            board=board, next_board=next_board, belief=belief, opp_intent=opp_intent,
             switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
         )
 
@@ -2163,6 +2260,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, cure_options=self_cure_options(inv),
         board=board, next_board=next_board,
         obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
+        opp_intent=opp_intent,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
         refine_trajectory=refine_trajectory, opp_full_team=opp_full_team,
         switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
