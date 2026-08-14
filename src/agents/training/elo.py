@@ -206,12 +206,31 @@ def _row_from_block(block: dict, n_games: int = 100) -> "EvalRow | None":
     step = block.get("step")
     if step is None:
         return None
-    bots = {name: float(d["win_rate"])
-            for name, d in (block.get("opponents") or {}).items()
-            if isinstance(d, dict) and "win_rate" in d}
+    # TWO SHAPES, one reader. The `latest_eval` block in metadata.json nests bot results under
+    # `opponents` as {name: {"win_rate": ...}} with sentinels under `pool.sentinels`; the rows the
+    # eval pipeline appends to `eval_results.jsonl` use a flatter `bots` = {name: win_rate} with a
+    # TOP-LEVEL `sentinels`. Both are real, both are on disk, and reading only the first is what
+    # silently produced no ELO for a whole run: `fit_from_block` returned None on every jsonl row,
+    # inside a best-effort `try` that swallowed it. Accept both.
+    bots = {}                                          # {opponent name: win rate}
+    for name, d in (block.get("opponents") or {}).items():
+        if isinstance(d, dict) and "win_rate" in d:
+            bots[name] = float(d["win_rate"])
+    if not bots:
+        for name, v in (block.get("bots") or {}).items():
+            if isinstance(v, dict) and "win_rate" in v:
+                bots[name] = float(v["win_rate"])
+            elif isinstance(v, (int, float)):
+                bots[name] = float(v)
+    raw_sent = ((block.get("pool") or {}).get("sentinels")
+                or block.get("sentinels") or [])
     sentinels = [(int(s["step"]), float(s["win_rate"]))
-                 for s in ((block.get("pool") or {}).get("sentinels") or [])
-                 if "step" in s and "win_rate" in s]
+                 for s in raw_sent
+                 if isinstance(s, dict) and "step" in s and "win_rate" in s]
+    # Prefer the row's OWN game count over the caller's default: `n_games=100` is an assumption,
+    # and a row that records what it actually played should not be re-weighted by a guess.
+    n = block.get("n_games")
+    n_games = int(n) if isinstance(n, (int, float)) and n > 0 else n_games
     return EvalRow(int(step), n_games, bots, sentinels)
 
 
