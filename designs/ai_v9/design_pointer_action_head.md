@@ -1,7 +1,9 @@
 # Full pointer action head — making the pointer WORK for mons (switches) and moves
 
 **Status:** design, REVISED for the fresh-generation reset (2026-08-03). The v49 delta head
-(`gen3_pointer_head_v1`) is BUILT and shipped; §0 below is the operative plan. Companion
+(`gen3_pointer_head_v1`) is BUILT and shipped; §0 below is the operative plan — **§0 SHIPPED
+2026-08-03 as v51 `gen3_pointer_native_v1`** (the flat `action_net` is deleted; the pointer
+head is THE action head, with no off state). Companion
 concept doc: `designs/learning/entity_tokens_biases_pointers.md`; the end-state inventory is
 `design_entity_graph.md` §3 (Readout heads); the deprecation motive is
 `designs/ai_v8/next_run_plan.md` → "Op head-concat deprecation".

@@ -1,5 +1,9 @@
 # design — CONDITIONAL EXECUTION: the moves whose value is a function of what they do
 
+> **[STATE 2026-08-14]** The α/β belief this doc consumes is BUILT (v68) and consumed on the
+> CRITIC side (v74 `intent_value_reduce`, live in gen-9). This doc's move-cell route — the
+> POLICY-side consumer — is still the open piece, unchanged.
+
 > **What this document is.** A per-mechanic specification of every gen3 move whose value cannot be
 > computed without a belief over the opponent's action, the exact conditional each one needs, and
 > what exists today. It is the **outgoing** consumer of the `α`/`β` intent belief that

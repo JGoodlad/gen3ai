@@ -2772,3 +2772,55 @@ legal-value set now lives in one place, `features_extractor.BELIEF_GRAD_MODES`, 
   carried PARAMETERS, so such a checkpoint's state_dict holds keys the live extractor has no home
   for. `sanitize_dead_extractor_kwargs` applies the same rule to a saved zip's
   `features_extractor_kwargs`. No `ARCH_SIGNATURE` bump — a config that had it OFF is byte-identical.
+### `gen3_op_tensors_views_v1` (2026-08-14, no version bump — byte-identical): the op's flat layout gets ONE slicer
+
+`design_op_tensors.md` steps 1–2. `DamageOperator.tensors_from_block()` becomes the single walk
+of the 660-dim flat block's layout, returning **`OpTensors`** — named zero-copy views
+(`incoming_rows`, the CB tail, the outgoing/status groups, the opaque matrix renders) — and
+raising if the walk doesn't tile `out_dim` (a region added without a view is unrepresentable).
+Consumers re-pointed: `pointer_cells` assembles from the views; the prefuse injection and the
+assembler's critic seed window read `damage_op.last_tensors.incoming_rows` (the assembler's
+parameter is now the typed `seed_rows`, not the flat block). The flat block stays the
+serialization for `decode_damage_block` / `last_raw_block` / the prober; dropping it from the
+forward is step 3 (retrain-class — it shrinks `out_gain`). Also fixed en route: the delivery
+graph still drew the **dead 660-dim op→both-heads concat edges** (stale since v61, pinned by its
+own test) — replaced with the true routes (seed readout, intent reduce, hidden-opp pool), and the
+two ablation-audit tools' assembler hooks re-anchored to the typed rows with a fired-assertion so
+a future signature drift fails loud instead of silently measuring nothing.
+
+Gate: unchanged state_dict keys + bitwise-identical pi/vf/raw-block/pointer-cells/α/β on 64 real
+gen-9 eval states across three config arms (gen-9 prod, gen-9+intent_value_reduce, minimal), the
+constructed-scenario physics oracle 22/22, the full model suite, and the real-compile test.
+
+### v76 — `gen3_ctx_dedup_v1` (2026-08-14): the duplicated active-ctx head concat is deleted; the migration floor
+
+Two changes, one landing:
+
+- **The per-side ENCODED active contexts leave both heads.** `ProjectionAssembler` no longer
+  builds `active_ctx_encoder` (`ACTIVE_CTX_HIDDEN` deleted from `arch_constants`, the
+  `active_ctx_hidden` ModelVersion field retired); pi loses `our_ctx_enc + opp_ctx_enc` (64) and
+  vf the same — both projection inputs narrow by 64. Rationale: duplicated delivery with a 1:1
+  entity-native replacement already live — the E2 injection scatters each side's FULL raw 58-dim
+  boosts+volatiles block onto its ACTIVE mon's role token, and the global token carries both raw
+  blocks as a second route, so every scalar the encoder saw still reaches both heads through the
+  trunk, entity-attached. **`non_matchup_rest` deliberately stays** (its only token route is the
+  global token, which no pool reads directly — no 1:1 replacement exists) and so does the
+  hidden-opp pool concat. state_dict keys + widths change → `ARCH_SIGNATURE` carries the break;
+  fresh lineage.
+- **`_migrate_config` grows a FLOOR** (`MIGRATION_FLOOR`, paired to the signature via
+  `SIGNATURE_FIRST_VERSION` and pinned by `migration_floor_test.py`): configs older than the
+  current signature's first stamped version are REFUSED with a diagnosis (naming the floor, the
+  signature, and the metadata.json git_hash re-probe path) instead of walking migration branches
+  whose output the arch gate would reject a moment later. The 63 pre-v67 branches and, with this
+  bump, the v68–v75 branches (including v75's SimSiam-deletion pops, which landed concurrently —
+  the zip-kwargs sanitizer keeps that judgment) are deleted — their setdefault/pop history is preserved as
+  documentation inside `_migrate_config`. `model_version.py` shrinks ~2,700 → ~2,300 lines.
+  When `ARCH_SIGNATURE` next changes, raise the floor in the same commit — the test fails
+  otherwise.
+
+`designs/production_config.json` is now the gen-9 run's config **carried forward to the v76
+schema by hand** (the v70–v74 defaults applied, `active_ctx_hidden` dropped) — it stops being a
+byte-identical run-config copy until the first v75 run launches, and exists so the compile gate,
+the delivery graph and the viewer keep deriving from the real production feature set (which
+surfaced a latent `NameError` in the graph generator's `belief_slots` branch the moment the real
+config exercised it).

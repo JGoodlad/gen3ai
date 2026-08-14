@@ -163,8 +163,7 @@ def test_support_is_resume_only_not_in_check_compatible():
 
 
 def test_migration_v28_to_v29():
-    from agents.model.model_version import MODEL_CONFIG_VERSION
-    d = _migrate_config({"config_version": 28})
-    assert d["value_dist_mode"] == "none" and d["value_dist_bins"] == 0
-    assert d["value_dist_vmin"] == 0.0 and d["value_dist_vmax"] == 0.0
-    assert d["config_version"] == MODEL_CONFIG_VERSION
+    """The v29 default-injection branch is pre-floor (MIGRATION_FLOOR): a v28 config is a
+    pre-generation checkpoint and is refused outright."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 28})

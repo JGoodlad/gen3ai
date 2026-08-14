@@ -23,7 +23,7 @@ own privileged label key, its own loss, its own masking convention, and its own 
 | which moves a mon holds | `MoveBelief` | `belief_moves`, `known_moves` | reinjected into the opp token; `w` into the op |
 | the EV/nature spread | `SpreadBelief` | `belief_spread`, `belief_nature`, `belief_ev` | `sb` stats into the op |
 | the Hidden Power type | `HPTypeBelief` | `hp_type_label` | composed into the typed channels |
-| what they will DO this turn | `α` / `β` (v67) | `opp_action_*` | **none** |
+| what they will DO this turn | `α` / `β` (v68 in code; earlier prose said v67) | `opp_action_*` | ~~none~~ **[UPDATE 2026-08-14: `intent_value_reduce` (v74) — α-weighted pair-cell rows into vf; the policy-side consumer stays open]** |
 
 Five heads. Eight label keys. **No shared object.** So:
 
@@ -60,7 +60,10 @@ things are missing:
 1. **The tiering is accidental, not enforced.** Nothing prevents a future head from reading α at T0,
    or from computing an intent-like quantity off raw tokens. It should be a stated contract with a
    test, the way leak-safety is.
-2. **The loop is open.** α's OUTPUT reaches nothing (§2.2). A T2 object that no decision consumes is
+2. **The loop is open.** **[UPDATE 2026-08-14: half-closed — v74 `gen3_intent_value_reduce_v1`
+   feeds `Σ_k α_k · pair_in[k,·,:]` to the CRITIC (vf-only, zero-init concat; live in gen-9).
+   The POLICY-side consumer (`design_conditional_execution.md`'s move-cell route) remains the
+   open half.]** α's OUTPUT reaches nothing (§2.2). A T2 object that no decision consumes is
    a measurement, not an architecture.
 
 ### 0b.1 "Near equilibrium" — what the third tier actually is

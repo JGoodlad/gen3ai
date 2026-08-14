@@ -507,10 +507,19 @@ from typing import Any, Dict, List
 #   +349 ms `opp_belief_cls_k=6` that DOES feed both projections), and its own role-geometry probe
 #   concluded decodable != helps. Predicting the opponent's unrevealed mons is untouched: the
 #   species CE, the moves BCE and the T0 species prior all remain.
-#   ⚠️ The v75 migration REFUSES a config that recorded `opp_belief_latent=True` — unlike v71's
+#   ⚠️ The v75 migration REFUSED a config that recorded `opp_belief_latent=True` — unlike v71's
 #   forward-only flags, this one carried PARAMETERS, so such a checkpoint's state_dict holds keys
-#   the live extractor has no home for.
-MODEL_CONFIG_VERSION = 75
+#   the live extractor has no home for. (That branch is now below the v76 floor — the blanket
+#   pre-generation refusal subsumes it; the zip-kwargs sanitizer keeps the per-field judgment.)
+# v76 (gen3_ctx_dedup_v1): the per-side ENCODED active contexts are DELETED from both projection
+#   heads — `ProjectionAssembler.active_ctx_encoder` no longer exists and both projection input
+#   widths shrink by 2·32. The content was duplicated delivery with a 1:1 entity-native
+#   replacement already live (the E2 injection scatters each side's FULL raw ctx block onto its
+#   active token; the global token is a second route). The `active_ctx_hidden` ModelVersion
+#   field goes with the module (no migration branch needed: the floor rises to 76 with the
+#   signature, so no pre-v76 config is ever migrated). state_dict changes → the signature
+#   carries the break; fresh lineage.
+MODEL_CONFIG_VERSION = 76
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -927,7 +936,29 @@ _BELIEF_GRAD_MODE_EFFECT = {
 #     i.e. it had almost no resolution at the forfeit cap the trainee actually loses on. Obs
 #     2667 → 2669 (GLOBAL_ENV_DIM 18 → 20) and the move/global context projections widen with
 #     `_gl['clock']['dim']` → state_dict changes; fresh lineage.
-ARCH_SIGNATURE = "gen3_deadline_clock_v1"
+#   gen3_ctx_dedup_v1 (config v76): the assembler's per-side encoded active contexts are DELETED
+#     from both heads (duplicated delivery — the E2 injection + the global token already carry
+#     the full raw ctx blocks into the trunk). `active_ctx_encoder` state_dict keys removed,
+#     both projection inputs narrow by 64 → the signature carries the break; fresh lineage.
+ARCH_SIGNATURE = "gen3_ctx_dedup_v1"
+
+# The migration floor: the first MODEL_CONFIG_VERSION stamped with the current ARCH_SIGNATURE.
+# Every `if version < N` migration branch with N <= this floor could only ever produce a config
+# that the arch_signature gate — run by every consumer immediately after migration (snapshot.py's
+# load paths, the fixed-opponent pool, train resume) — rejects anyway, so `_migrate_config`
+# refuses pre-floor configs outright instead of walking dead branches.
+# ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
+# version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
+# migration_floor_test.py fails if the two drift apart.
+MIGRATION_FLOOR = 76
+
+# The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
+# new signature's row when it lands. migration_floor_test.py asserts
+# MIGRATION_FLOOR == SIGNATURE_FIRST_VERSION[ARCH_SIGNATURE].
+SIGNATURE_FIRST_VERSION = {
+    "gen3_deadline_clock_v1": 67,
+    "gen3_ctx_dedup_v1": 76,
+}
 
 
 class ModelVersionError(Exception):
@@ -959,7 +990,6 @@ class ModelVersion:
     projection_dim: int
     move_net_hidden: List[int]
     role_encoder_hidden: List[int]
-    active_ctx_hidden: List[int]
     n_history_turns: int
 
     # From policy_kwargs in train_rl_agent.py
@@ -1352,7 +1382,6 @@ class ModelVersion:
             PROJECTION_DIM,
             MOVE_NET_HIDDEN,
             ROLE_ENCODER_HIDDEN,
-            ACTIVE_CTX_HIDDEN,
             NET_ARCH,
             N_HISTORY_TURNS,
         )
@@ -1375,7 +1404,6 @@ class ModelVersion:
             projection_dim=PROJECTION_DIM,
             move_net_hidden=list(MOVE_NET_HIDDEN),
             role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
-            active_ctx_hidden=list(ACTIVE_CTX_HIDDEN),
             n_history_turns=N_HISTORY_TURNS,
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
             vf_coef=vf_coef,
@@ -1564,7 +1592,7 @@ class ModelVersion:
             "ability_embedding_dim", "max_abilities",
             "type_embedding_dim", "max_types",
             "role_token_size", "projection_dim",
-            "move_net_hidden", "role_encoder_hidden", "active_ctx_hidden",
+            "move_net_hidden", "role_encoder_hidden",
             "n_history_turns",
             "net_arch",
         }
@@ -1717,6 +1745,10 @@ class ModelVersion:
         # height of this floor is a choice, and changing it changes the belief the policy/value/op trained
         # under. A pre-v65 checkpoint recorded 0.0 (which used to mean "legality OFF") and will land here
         # against the current 0.02 default: that rejection is the POINT, not a bug to migrate away.
+        # NOTE (MIGRATION_FLOOR): every pre-v65 config is now refused at _migrate_config's floor
+        # before it can reach this check, so the saved==0.0 message below is reachable only from a
+        # hand-built v67+ config (the extractor itself refuses floors below _MIN_PRIOR_FLOOR).
+        # Kept as defence in depth — behavior deliberately unchanged.
         if self.move_candidate_floor != saved.move_candidate_floor:
             raise ModelVersionError(
                 f"move_candidate_floor mismatch: saved={saved.move_candidate_floor}, "
@@ -2260,496 +2292,176 @@ class ModelVersion:
 
 
 def _migrate_config(data: dict) -> dict:
-    """Apply incremental forward-migrations to bring an old config up to the current schema."""
+    """Apply incremental forward-migrations to bring an old config up to the current schema.
+
+    Configs older than MIGRATION_FLOOR (v67 — the first version stamped with the current
+    ARCH_SIGNATURE) are REFUSED outright rather than migrated: every loader that consumes a
+    migrated config gates on `arch_signature` immediately afterwards (snapshot.py's load paths,
+    the fixed-opponent pool, train resume), so a pre-floor migration could only ever produce a
+    config that check_compatible rejects a moment later. The v2..v66 branches that used to live
+    here were therefore dead code; the history they recorded is preserved in the comment block
+    below (and, in narrative form, in the version-history comments above MODEL_CONFIG_VERSION
+    and in designs/CHANGELOG.md).
+    """
     version = data.get("config_version", 1)
-    if version < 2:
-        # v2: added n_history_turns. Old models used a single TurnDelta (N=1).
-        data.setdefault("n_history_turns", 1)
-        data["config_version"] = 2
-    if version < 3:
-        # v3: added vf_coef. Every pre-flag run trained with the SB3 default 0.5.
-        data.setdefault("vf_coef", 0.5)
-        data["config_version"] = 3
-    if version < 4:
-        # v4: added reward-config hparams. Pre-flag runs used the single-variable defaults.
-        data.setdefault("bias_additivity", 1.0)
-        data.setdefault("mat_alive_weight", 1.25)
-        data.setdefault("bias_redesign", False)
-        data["config_version"] = 4
-    if version < 5:
-        # v5: added the switch-bias lever. Pre-flag runs had it absent (OFF).
-        data.setdefault("switch_bias_weight", 0.0)
-        data["config_version"] = 5
-    if version < 6:
-        # v6: added use_popart. Old models did not use PopArt value normalization.
-        data.setdefault("use_popart", False)
-        data["config_version"] = 6
-    if version < 7:
-        # v7: added draw_penalty. Old runs scored a tie/timeout as a decisive loss (-VICTORY_VALUE).
-        data.setdefault("draw_penalty", -30.0)
-        data["config_version"] = 7
-    if version < 8:
-        # v8: added attend_unrevealed_opponents. Old models key-masked unrevealed opp slots.
-        data.setdefault("attend_unrevealed_opponents", False)
-        data["config_version"] = 8
-    if version < 9:
-        # v9: added the hidden-opponent belief toggle (k=0 = no belief module). Old models had none.
-        data.setdefault("opp_belief_cls_k", 0)
-        data.pop("opp_belief_cls", None)  # never shipped; drop the interim bool if a dev config has it
-        data["config_version"] = 9
-    if version < 10:
-        # v10: added value_active_readout. Old models' value head did not read the active-mon token.
-        data.setdefault("value_active_readout", False)
-        data["config_version"] = 10
-    if version < 11:
-        # v11: added value_tail_weight. Old runs used a plain MSE value loss (β=0).
-        data.setdefault("value_tail_weight", 0.0)
-        data["config_version"] = 11
-    if version < 12:
-        # v12: added self_ko_hp_penalty. Old runs had no self-KO penalty (the symmetric material PBRS
-        # priced a healthy Explosion/Self-Destruct trade at ~0).
-        data.setdefault("self_ko_hp_penalty", 0.0)
-        data["config_version"] = 12
-    if version < 13:
-        # v13: added the de-bias cleanup flags. Old runs kept every BIAS term (== False).
-        data.setdefault("drop_redundant_bias", False)
-        data.setdefault("drop_switch_bias", False)
-        data["config_version"] = 13
-    if version < 14:
-        # v14: end-state PBRS switch (off) + no_progress_penalty now recorded (default 0.15 = prior).
-        data.setdefault("all_shaping_pbrs", False)
-        data.setdefault("no_progress_penalty", 0.15)
-        data["config_version"] = 14
-    if version < 15:
-        # v15: added the `stall_pbrs` companion switch (off = prior behavior).
-        data.setdefault("stall_pbrs", False)
-        data["config_version"] = 15
-    if version < 16:
-        # v16: added the in-place hidden-opponent belief-aux toggle (off) + its training-only loss
-        # coefficient (0.0). Old models had neither module nor aux loss.
-        data.setdefault("opp_belief_slots", False)
-        data.setdefault("opp_belief_aux_coef", 0.0)
-        data["config_version"] = 16
-    if version < 17:
-        # v17: added the move-belief reinjection toggle (off) + its training-only loss coefficient (0.0).
-        # Old models had no MoveBelief module and no move-belief loss.
-        data.setdefault("move_belief_mode", "off")
-        data.setdefault("move_belief_coef", 0.0)
-        data["config_version"] = 17
-    if version < 18:
-        # v18: added the latent-belief toggle (off) + its training-only loss coefficient (0.0).
-        # Old models had no BeliefHead latent predictor and no latent loss.
-        data["config_version"] = 18
-    if version < 19:
-        # v19: added the differentiable damage-operator toggle (off). Old models had no DamageOperator.
-        data.setdefault("damage_op", False)
-        data["config_version"] = 19
-    if version < 20:
-        # v20: added the unified-move-belief prior-fusion toggle (off). Old models had no prior fusion.
-        data.setdefault("move_prior_fusion", False)
-        data["config_version"] = 20
-    if version < 21:
-        # v21: added the incoming-damage-obs ablation toggle (off). Old models always saw the obs block.
-        data["config_version"] = 21
-    if version < 22:
-        # v22: added the tri-state win-probability head (off) + its training-only loss coef (1.0).
-        # Old models had no WinProbHead and no win-prob loss.
-        data.setdefault("win_prob_mode", "none")
-        data.setdefault("win_prob_coef", 1.0)
-        data["config_version"] = 22
-    if version < 23:
-        # v23: added the outgoing per-move damage direction (off) + the learnset/rarity move-prior gate
-        # (0.0 = legacy floor). Old models had incoming-only and the un-gated 0.02-floor prior.
-        data.setdefault("damage_outgoing", False)
-        data.setdefault("move_candidate_floor", 0.0)
-        data["config_version"] = 23
-    if version < 24:
-        # v24: added the MoveLatentEncoder toggle (off) + its training-only latent-grading coef (0.0).
-        # Old models had no per-move latent and no latent-grading loss.
-        data.setdefault("move_latent", False)
-        data.setdefault("move_belief_latent_coef", 0.0)
-        data["config_version"] = 24
-    if version < 25:
-        # v25: the spread belief (off) + its training-only speed-supervision coef (0.0), and the two
-        # disable-redundant obs masks (off). Old models had no spread belief and saw every obs region.
-        data.setdefault("spread_belief", False)
-        data.setdefault("spread_belief_coef", 0.0)
-        data["config_version"] = 25
-    if version < 26:
-        # v26: gen3_unified_op_physics_v1 — op physics parity (boosts/burn/weather/para/fixed-damage),
-        # intrinsic to damage_op. Values-only, no new field — a bare version marker.
-        data["config_version"] = 26
-    if version < 27:
-        # v27: gen3_unified_status_landing_v1 — the op's OUTGOING direction gains the per-OUR-move
-        # status-landing block (the GPU home for the masked move-effect `status_will_land`), Leech Seed's
-        # Grass immunity (the v26-deferred item), Sleep Clause, and Substitute-blocks-status. INTRINSIC to
-        # damage_outgoing (no new field); it grows the op's outgoing output dim → a v26 damage_outgoing
-        # checkpoint won't load. The catch is the SB3 MaskablePPO.load / load_state_dict shape mismatch on the
-        # projection Linear's in_features (the projection input dim is RUNTIME-discovered, NOT a ModelVersion
-        # field, so check_compatible passes — the safety is the weight-shape load failure). OFF (no
-        # damage_outgoing) byte-identical. Bare marker.
-        data["config_version"] = 27
-    if version < 28:
-        # v28: gen3_unified_choice_band_v1 — the op prices Choice Band (×1.5 physical Atk). OUTGOING: our own
-        # CB (known item) ×1.5 our physical Atk deterministically (values-only). INCOMING: a CB-CONDITIONAL
-        # physical tail (per our 6 mons: phys_high_cb + P(OHKO|CB)) + a shared p_cb (P(opp holds CB), a species
-        # usage prior collapsed to 0/1 on item reveal), DECORRELATED so the head weights them — OHKO is a
-        # nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur. INTRINSIC to damage_op (the incoming CB
-        # block grows the incoming output dim → a v27 damage_op checkpoint won't load via the SB3 load_state_dict
-        # projection in_features mismatch); OFF (no damage_op) byte-identical. Bare marker.
-        data["config_version"] = 28
-    if version < 29:
-        # v29: the distributional VALUE head (Phase A interpretability side readout off value_pooled) —
-        # the tri-state mode (off), the atom count (0 = off), and the support [vmin, vmax] (0/0 = unset).
-        # Old models had no value-dist head. OFF = baseline byte-for-byte (NO ARCH_SIGNATURE bump).
-        data.setdefault("value_dist_mode", "none")
-        data.setdefault("value_dist_bins", 0)
-        data.setdefault("value_dist_vmin", 0.0)
-        data.setdefault("value_dist_vmax", 0.0)
-        data.setdefault("value_dist_coef", 1.0)
-        data["config_version"] = 29
-    if version < 30:
-        # v30: gen3_unified_topk_incoming_v1 — the DamageOperator's DISCRETE top-K incoming block. K =
-        # `damage_topk_k` (0 = off) is the number of the opp active's most-believed candidate moves surfaced
-        # individually (each with its move LATENT identity + per-OUR-mon damage + immunity-folded
-        # status-landing — the discrete-move / safe-switch read the worst-case `_chan_max` collapse can't
-        # give). out_dim scales with K → STRUCTURAL int (gated in check_compatible, like opp_belief_cls_k);
-        # OFF (0) byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent.
-        data.setdefault("damage_topk_k", 0)
-        data["config_version"] = 30
-    if version < 31:
-        # v31: added `damage_reattend` (off). Old models had no damage→token re-attend layer.
-        # (the field is DELETED at v71 — no setdefault, so an ABSENT key stays absent and the v71
-        # block below has nothing to validate. Only a config that RECORDED a value is judged.)
-        data["config_version"] = 31
-    if version < 32:
-        # v32: added `move_belief_prefuse` (off). Old models reinjected the move belief AFTER the
-        # transformer. (the field is DELETED at v71 — no setdefault; see the v31 note above.)
-        data["config_version"] = 32
-    if version < 33:
-        # v33: gen3_iterative_damage_v1 — ITERATIVE damage refinement. `damage_refine_rounds` (0 = off) is
-        # the number of transformer layers before which the DamageOperator's lean discrete incoming damage is
-        # recomputed from the being-enriched opp tokens and injected back onto our-mon tokens (refine_proj,
-        # zero-init). 0 = no module → baseline forward byte-for-byte (NO ARCH_SIGNATURE bump). Requires
-        # damage_op. Gated in check_compatible with an unconditional int compare (0↔N a state_dict change,
-        # N↔M a forward change).
-        # (the field is DELETED at v70 — the v70 pop below removes it again)
-        data["config_version"] = 33
-    if version < 34:
-        # v34: gen3_per_move_matrices_v1 — the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active +
-        # REVEALED bench). `damage_matrices_outgoing` (bool) is a STRUCTURAL toggle like damage_op (it widens
-        # both projections via the op's out_dim). OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires
-        # damage_op. Gated in check_compatible (bool compare).
-        data.setdefault("damage_matrices_outgoing", False)
-        data["config_version"] = 34
-    if version < 35:
-        # v35: gen3_per_move_matrices_v1 — the INCOMING per-move DAMAGE MATRIX (enriched top-K). Bool toggle
-        # like damage_matrices_outgoing; OFF byte-for-byte. Requires damage_op + move_latent; reuses
-        # damage_topk_k as its K (the lean top-K it replaced is gone — gen3_op_block_trim_v1).
-        data.setdefault("damage_matrices_incoming", False)
-        data["config_version"] = 35
-    if version < 36:
-        # v36: gen3_bidir_threat_trunk_v1 — the bidirectional in-trunk threat field. All three OFF
-        # reproduce the v35 forward byte-for-byte (no outgoing_proj, legacy outgoing-gating + p_outspeed).
-        # (threat_refine_outgoing / threat_unrevealed_outgoing are DELETED at v70)
-        data.setdefault("threat_prob_outspeed", False)
-        data["config_version"] = 36
-    if version < 37:
-        # v37: gen3_status_trunk_v1 — status-landing into the trunk. OFF reproduces the v36 forward
-        # byte-for-byte (no status_in_proj/status_out_proj, refine loop unchanged).
-        # (the field is DELETED at v70 — the v70 pop below removes it again)
-        data["config_version"] = 37
-    if version < 38:
-        # v38: gen3_opp_hp_type_belief_v1 — the opp HIDDEN-POWER-TYPE belief + the typed-HP candidate fix.
-        # The tri-state mode (off = legacy: bare-237 unmasked → opp HP reads "immune") + its training-only
-        # CE coef. OFF reproduces the v37 forward byte-for-byte (NO ARCH_SIGNATURE bump).
-        data.setdefault("hp_type_belief_coef", 0.0)   # the v38 mode key is POPped by the v52 migration
-        data["config_version"] = 38
-    if version < 39:
-        # v39: gen3_per_move_matrices_v1 — the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active).
-        # `damage_matrices_outgoing_all` (bool) is a STRUCTURAL toggle like damage_op (it widens both
-        # projections via the op's out_dim). OFF byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op.
-        # Gated in check_compatible (bool compare).
-        data.setdefault("damage_matrices_outgoing_all", False)
-        data["config_version"] = 39
-    if version < 40:
-        # v40: gen3_nature_ev_belief_v1 — the SpreadBelief's NATURE/EV generative head (prior-fusion → compute
-        # the derived stat). `spread_belief_nature` (bool) is a STRUCTURAL toggle (different SpreadBelief params
-        # than the additive head). OFF byte-for-byte (the additive head, NO ARCH_SIGNATURE bump). Requires
-        # spread_belief. Gated in check_compatible (bool compare). Marginalization (--spread-belief-nature-
-        # marginalize, op-side) is a forward-behavior toggle.
-        data.setdefault("spread_belief_nature", False)
-        data["config_version"] = 40
-    if version < 41:
-        # v41: gen3_belief_grad_mode_v1 — the {shaping, detached} belief-trunk-gradient knob. detach() is
-        # value-preserving, so 'shaping' (default) reproduces the v40 forward AND backward byte-for-byte;
-        # it is a RESUME-IMMUTABLE training hparam (enforced via check_belief_grad_mode, NOT check_compatible).
-        data.setdefault("belief_grad_mode", "shaping")
-        data["config_version"] = 41
-    if version < 42:
-        # v42: turn-history depth cut N_HISTORY_TURNS 10 → 7 — a retrain-class obs-DIM change (total obs
-        # 3469 → 2992). No new field: n_history_turns/total_dim are already weight fields, so check_compatible
-        # auto-rejects a pre-v42 checkpoint via the obs-dim weight-field check (NO ARCH_SIGNATURE bump). This
-        # block only advances the version marker so the migration chain reaches the current version.
-        data["config_version"] = 42
-    if version < 43:
-        # v43: gen3_pubval_aux_v1 — the tri-state PUBLIC-information value aux head (off) + its
-        # training-only loss coef (0.0). Old models had no PubValHead and no pubval loss.
-        data.setdefault("pubval_mode", "none")
-        data.setdefault("pubval_coef", 0.0)
-        data["config_version"] = 43
-    if version < 44:
-        # v44: gen3_zarch_film_v1 — the team-archetype latent + head FiLM (off/0) + its training-only
-        # recon/vicreg coefs (0.0). Old models had no ZArchEncoder and no FiLM generators.
-        data.setdefault("zarch_film", "off")
-        data.setdefault("zarch_dim", 0)
-        data.setdefault("zarch_recon_coef", 0.0)
-        data.setdefault("zarch_vicreg_coef", 0.0)
-        data["config_version"] = 44
-    if version < 45:
-        # v45: gen3_dist_critic_v1 (Phase B) — the distributional value head becomes the critic
-        # (GAE reads E[Z], the CE is the primary value loss). Old models used the scalar value_net.
-        # Resume-immutable (check_value_from_dist), excluded from check_compatible. No new module.
-        data.setdefault("value_from_dist", False)
-        data["config_version"] = 45
-    if version < 46:
-        # v46: gen3_zarch_lut_v1 — the free per-team LUT on z_arch (off/0). Old models had no
-        # per-team embedding, no roster table, and conditioned only on the compositional DeepSets z.
-        data.setdefault("zarch_lut", "off")
-        data.setdefault("zarch_lut_teams", 0)
-        data["config_version"] = 46
-    if version < 47:
-        # v47: gen3_belief_single_compute_v1 — the frozen pre-attention move belief (off). Old models
-        # re-read move_logits inside the between-layers refine callback, so the belief was recomputed
-        # per round. FORWARD-BEHAVIOR toggle (no weight-shape change; gated in check_compatible).
-        # OFF = baseline byte-for-byte.
-        # (the field is DELETED at v70 — the v70 pop below removes it again)
-        data["config_version"] = 47
-    if version < 48:
-        # v48: gen3_cpu_damage_deleted_v1 — the three `--unified-obs` ablation FIELDS are removed
-        # along with the obs blocks they masked (incoming-damage 51, move-effects 44, active-move
-        # scalars 8). `from_json_file` does `cls(**data)`, so a stale key would raise TypeError —
-        # POP rather than setdefault. Any such checkpoint is already rejected by the obs-dim
-        # weight-field check (2992 -> 2889); this just makes the failure the CLEAR arch error
-        # instead of a constructor crash.
-        for _dead in ("mask_incoming_damage_obs", "mask_active_move_scalars_obs",
-                      "mask_move_effects_obs"):
-            data.pop(_dead, None)
-        data["config_version"] = 48
-    if version < 49:
-        # v49: the op candidate cap (the pointer_head bool it also added is deleted at v51 below).
-        data.setdefault("damage_candidate_k", 0)
-        data["config_version"] = 49
-    if version < 50:
-        # v50: the pre-attention unified damage op — OFF on any older model (they ran the op twice:
-        # the lean between-layers recompute + the full post-transformer block).
-        # (the field is DELETED at v71 — no setdefault; see the v31 note above.)
-        data["config_version"] = 50
-    if version < 51:
-        # v51: gen3_pointer_native_v1 — the pointer head is THE action head, unconditionally, and the
-        # v49 `pointer_head` FIELD is removed. POP rather than setdefault (`from_json_file` does
-        # `cls(**data)`, so a stale key would raise TypeError — the v48 lesson): any pre-generation
-        # checkpoint is rejected by the ARCH_SIGNATURE family check, and this makes that failure the
-        # CLEAR arch error instead of a constructor crash.
-        data.pop("pointer_head", None)
-        data["config_version"] = 51
-    if version < 52:
-        # v52: gen3_typed_hp_belief_v1 — the opponent's Hidden Power is composed into the 16 typed
-        # move-nums inside the BELIEF, so the tri-state `hp_type_belief_mode` has nothing left to gate and
-        # is DELETED. POP it (not setdefault): `from_json_file` does `cls(**data)`, so a stale key would
-        # raise a bare TypeError instead of the clear arch error the ARCH_SIGNATURE bump gives. Every
-        # pre-v52 checkpoint is rejected by that bump anyway (the belief's forward math changed while the
-        # projection widths did not, so nothing shape-based would catch it).
-        data.pop("hp_type_belief_mode", None)
-        data["config_version"] = 52
-    if version < 53:
-        # v53: gen3_hp_belief_ablation_v1 — how the 16 typed HP channels are produced. 'composed' (the
-        # factorised default) reproduces the v52 forward exactly, so an existing v52 model migrates to
-        # it; 'flat' is the opt-in ablation.
-        data.setdefault("hp_belief_mode", "composed")
-        data["config_version"] = 53
-    if version < 54:
-        # v54: gen3_entity_move_seats_v1 — E4 threat seats OFF on any older config (E3 is
-        # unconditional and carried by the ARCH_SIGNATURE, not a field).
-        data.setdefault("entity_topk_seats", 0)
-        data["config_version"] = 54
-    if version < 55:
-        # v55: gen3_op_block_trim_v1 — NO field added or removed; the op's OUTPUT shrinks by 28 dims
-        # (the opp-active effect + incoming-secondary collapses, the outgoing slp/psn/tox columns) and
-        # the deleted lean top-K block re-means `damage_topk_k`. Nothing to migrate: the ARCH_SIGNATURE
-        # bump rejects every pre-v55 checkpoint outright, so this is a version stamp only.
-        data["config_version"] = 55
-    if version < 56:
-        # v56: gen3_edge_bias_trunk_v1 — edge families OFF on any older config (the layer swap is
-        # unconditional and carried by the ARCH_SIGNATURE, not a field).
-        data.setdefault("edge_bias_families", "off")
-        data["config_version"] = 56
-    if version < 57:
-        # v57: gen3_entity_tail_seats_v1 — the E5 tail seats OFF on any older config.
-        data.setdefault("entity_tail_seats", False)
-        data["config_version"] = 57
-    if version < 58:
-        # v58: the SpD-as-speed GIGO fix (pairwise_speed / pairwise_boost read stat index 4 as
-        # "speed"). NO field — a values-only forward-math fix; the stamp records that a pre-v58
-        # checkpoint's v_map/c1_map trained against the buggy feature (the v55 stamp convention).
-        data["config_version"] = 58
-    if version < 59:
-        # v59: consequence_topk — pre-v59 models trained with the hardcoded k_cand/k_bench = 4.
-        data.setdefault("consequence_topk", 4)
-        data["config_version"] = 59
-    if version < 60:
-        # v60: gen3_entity_rehome_v1 STAMP (no field). The ARCH_SIGNATURE change carries the
-        # actual break — every pre-v60 checkpoint has the old signature and fails that check;
-        # this stamp only keeps config_version monotone (the v55/v58 convention).
-        data["config_version"] = 60
-    if version < 61:
-        # v61: gen3_no_concat_v1 STAMP (no field) — the head-concat deletion + the multi-seed
-        # critic readout. The signature carries the break; no migration is possible.
-        data["config_version"] = 61
-    if version < 62:
-        # v62: gen3_seed_vicreg_v1 — the VICReg variance+covariance floor on the multi-seed
-        # critic readout's outputs (resume-immutable training hparam, the vf_coef class).
-        # 0.0 = OFF, byte-identical: every pre-v62 run trained without it.
-        data.setdefault("value_seed_vicreg_coef", 0.0)
-        data["config_version"] = 62
-    if version < 63:
-        # v63: gen3_seed_quantile_v1 — the per-seed quantile head (structural, one shared Linear).
-        # False = OFF, byte-identical: every pre-v63 run trained without it.
-        data.setdefault("seed_quantile", False)
-        data["config_version"] = 63
-    if version < 64:
-        # v64: gen3_value_threat_inject_v1 — the critic's per-entity magnitude route (structural,
-        # one shared zero-init Linear on the value pool's copy of our tokens).
-        # False = OFF, byte-identical: every pre-v64 run trained without it.
-        data.setdefault("value_threat_inject", False)
-        data["config_version"] = 64
-    if version < 65:
-        # v65: gen3_unconditional_move_legality_v1 — the move-belief legality gate became UNCONDITIONAL.
-        # STAMP-ONLY (the v60/v61 pattern): there is no new field because there is nothing to toggle.
-        # `move_candidate_floor` is left EXACTLY as recorded (0.0 for every pre-v65 run) on purpose — it
-        # is no longer a valid value, so check_compatible fails loudly against the new 0.02 default
-        # instead of silently loading a checkpoint whose policy trained on a prior that gave phantom
-        # mass to moves its opponents could not learn. Do NOT "fix" this by migrating 0.0 → 0.02.
-        data["config_version"] = 65
-    if version < 66:
-        # v66: gen3_nature_marginalize_removed_v1 — `--spread-belief-nature-marginalize` and its kernel
-        # (`DamageOperator._nature_marg_ko`) are DELETED, not defaulted off. MEASURED on gen-8's own
-        # checkpoint over 1,075,200 ALIVE (defender, candidate) cells: |ΔP(KO)| vs mean-field was
-        # p50/p90/p95 = 0.00000, p99 = 0.00047, mean 0.0003, and only 0.39% of cells moved by >0.02.
-        # The nature posterior is peaked (top-1 mass 0.75, entropy 0.64 of 3.22 nats), so integrating
-        # over it ≈ evaluating at its mode — ledger K1's shape exactly: sound theory, absent magnitude.
-        # It also computed a WRONG answer on empty slots: `dmg.clamp(min=eps)` turned zero damage into
-        # 1e-6, and with cur_hp also 0 the ramp gave 1e-6/(0.15e-6+1e-6) = 1/1.15 = 0.8696 — a spurious
-        # 87% KO on a slot with nothing in it (gated downstream, so believed harmless, but a trap).
-        # The KEPT half is `--spread-belief-nature`, the generative nature/EV head: that is the actual
-        # correctness fix (it makes the largest-EV order-statistic bias structurally unrepresentable),
-        # and it is why `belief/spread_largest_bias` is closing -26 -> -12.8 on gen-8.
-        # The stale key is DROPPED so an old config does not carry a field nothing reads.
-        data.pop("spread_belief_nature_marginalize", None)
-        data["config_version"] = 66
-    if version < 67:
-        # v67: gen3_deadline_clock_v1 — the obs CLOCK group 1 -> 3 scalars (GLOBAL_ENV_DIM 18 -> 20,
-        # obs 2667 -> 2669). Adds NO model_config FIELD, so this is a pure version stamp: the break
-        # is in the obs width + weight shapes, which `ARCH_SIGNATURE` ("gen3_deadline_clock_v1")
-        # carries — a pre-v67 checkpoint is REFUSED by check_compatible on the signature, which is
-        # the intended behaviour (its weights were trained against a 2667-dim obs and there is no
-        # meaningful way to migrate them). Stamping the version keeps the schema monotonic so an
-        # old config still round-trips through load/save rather than tripping the version check.
-        data["config_version"] = 67
-    if version < 68:
-        # v68: gen3_opp_intent_v1 — the alpha/beta intent heads (structural, two pointer scorers).
-        # False = OFF, byte-identical: every pre-v68 run trained without them.
-        data.setdefault("opp_intent", False)
-        data["config_version"] = 68
-    if version < 69:
-        # v69: gen3_species_prior_fusion_v1 — the team-composition species prior fused into the
-        # belief head. False = OFF, byte-identical: every pre-v69 run trained the species head
-        # from scratch, so reading its output as a delta-on-prior would silently re-mean it.
-        data.setdefault("species_prior_fusion", False)
-        data["config_version"] = 69
-    if version < 70:
-        # v70: gen3_refine_loop_removed_v1 — the between-layers refine loop and its three dependent
-        # flags are DELETED, not defaulted off. `--damage-refine-rounds` was 0 in the production
-        # config, and 0 rounds is what made `--threat-refine-outgoing`,
-        # `--threat-unrevealed-outgoing` and `--threat-status-refine` UNREACHABLE: each hard-requires
-        # damage_refine_rounds>0, which is itself mutually exclusive with `--damage-op-prefuse` (the
-        # production placement), so any config that set one of them RAISED at extractor build.
-        # `--move-belief-single-compute` went with them: its only effect was making the refine
-        # callback reuse the frozen pre-attention posterior, and with no callback there was nothing
-        # to reuse — it was INERT even at True (which the production config recorded).
-        # NOT deleted: the expected-latent OUTGOING math those flags used to deliver. It was
-        # re-homed onto the live outgoing kernel at a usage prior (gen3_unrevealed_outgoing_prior_v1)
-        # and is unconditional there; only this loop's DELIVERY of it was unreachable.
-        # `from_json_file` does `cls(**data)`, so stale keys would raise TypeError — POP, not
-        # setdefault.
-        for _dead in ("damage_refine_rounds", "threat_refine_outgoing",
-                      "threat_unrevealed_outgoing", "threat_status_refine",
-                      "move_belief_single_compute"):
-            data.pop(_dead, None)
-        data["config_version"] = 70
-    if version < 71:
-        # v71: gen3_tiered_pipeline_v1 — the PRE-transformer placement is the ONLY placement, so
-        # `move_belief_prefuse` and `damage_op_prefuse` no longer select anything, and
-        # `damage_reattend` (a compensation for the POST ordering) is deleted with the branch it
-        # compensated for. All three fields go.
-        #
-        # ⚠️ This is the one migration that REFUSES instead of defaulting, and the reason is
-        # specific: `move_belief_prefuse=False` was a pure FORWARD-BEHAVIOR toggle — the state_dict
-        # is byte-identical either way — so silently popping it would let a post-ordering checkpoint
-        # load cleanly into a pre-ordering forward and produce quietly wrong numbers forever. There
-        # is no shape check anywhere that would catch it. So: a config that RECORDED a value judges
-        # itself against the one placement that survives, and a mismatch is a loud error.
-        # A config that never had the field (pre-v31/32/50) is NOT judged here — it predates the
-        # flag entirely and is rejected, if at all, by the ARCH_SIGNATURE family check, which gives
-        # the better message for a cross-era checkpoint.
-        for _dead, _supported in (("move_belief_prefuse", True),
-                                  ("damage_op_prefuse", True),
-                                  ("damage_reattend", False)):
-            if _dead in data and bool(data[_dead]) is not _supported:
-                raise ModelVersionError(
-                    f"{_dead}={data[_dead]!r} is no longer supported (gen3_tiered_pipeline_v1, "
-                    f"config v71): the only supported value is {_supported}.\n"
-                    "The belief + DamageOperator run PRE-transformer unconditionally (T0 RESOLVE → "
-                    "T1 REASON) and the POST-transformer call sites — and the `damage_reattend` "
-                    "layer that compensated for them — are DELETED.\n"
-                    "This checkpoint trained under a forward pass that no longer exists in the "
-                    "codebase and cannot be reproduced from HEAD. Start a fresh training run."
-                )
-            data.pop(_dead, None)
-        data["config_version"] = 71
-    if version < 72:
-        # v72: gen3_t0_species_prior_v1 — the T0 species belief feeding the T1 physics. Absent on
-        # every older config; OFF reproduces the static-usage-prior physics byte-for-byte.
-        data.setdefault("t0_species_prior", False)
-        data["config_version"] = 72
-    if version < 73:
-        # v73: gen3_intent_grad_mode_v1 — every older run was pure supervision.
-        data.setdefault("opp_intent_grad_mode", "detached")
-        data["config_version"] = 73
-    if version < 74:
-        # v74: gen3_intent_value_reduce_v1 — step 6. Absent on every older config.
-        data.setdefault("intent_value_reduce", False)
-        data["config_version"] = 74
-    if version < 75:
-        # v75: the SimSiam LATENT belief is DELETED — `opp_belief_latent` + its coefficient.
-        # It was never fed forward (an aux-loss side readout, unlike the cls_k belief that appends
-        # to both projections), its own probe concluded decodable != helps, and it cost ~13% of the
-        # train step (marginal +341 ms at the production shape).
-        #
-        # Judged, not popped, for the same reason as the v71 block above — but the failure mode here
-        # is the opposite one: `opp_belief_latent=True` PUT PARAMETERS in the state_dict (the
-        # predictor MLP). Those keys have no home in the live extractor, so such a checkpoint cannot
-        # be reproduced from HEAD and says so, rather than being quietly accepted.
-        if bool(data.get("opp_belief_latent", False)):
-            raise ModelVersionError(
-                "opp_belief_latent=True is no longer supported (config v75): the SimSiam "
-                "latent-belief predictor is DELETED.\n"
-                "It carried its own parameters, so this checkpoint's state_dict holds keys the "
-                "current extractor cannot accept. Start a fresh training run.\n"
-                "Nothing about predicting the opponent's unrevealed mons is lost: the species CE, "
-                "the moves BCE and the T0 species prior all remain."
-            )
-        data.pop("opp_belief_latent", None)
-        data.pop("opp_belief_latent_coef", None)
-        data["config_version"] = 75
+    if version < MIGRATION_FLOOR:
+        raise ModelVersionError(
+            f"config_version {version} is a PRE-GENERATION checkpoint: it predates "
+            f"v{MIGRATION_FLOOR}, the first MODEL_CONFIG_VERSION stamped with the current "
+            f"ARCH_SIGNATURE ({ARCH_SIGNATURE!r}). A checkpoint from an earlier generation "
+            "cannot be loaded by this code — its weights were trained against an architecture "
+            "this codebase no longer contains, and no config migration can bridge that.\n"
+            "To re-probe it, use the git_hash recorded in the checkpoint's own metadata.json "
+            "(git checkout <git_hash> and probe from there — the prober prints exactly this "
+            "diagnosis, with the hash, for archived runs)."
+        )
+    # ----------------------------------------------------------------------------------------
+    # PRE-FLOOR MIGRATION HISTORY (v2–v66) — documentation, not code. The executable branches
+    # were deleted when MIGRATION_FLOOR landed. What each one injected (setdefault) or removed
+    # (POP), verbatim from the deleted code:
+    #   v2:  n_history_turns=1 (old models used a single TurnDelta).
+    #   v3:  vf_coef=0.5 (the SB3 default every pre-flag run trained with).
+    #   v4:  reward-config hparams — bias_additivity=1.0, mat_alive_weight=1.25,
+    #        bias_redesign=False (pre-flag runs used the single-variable defaults).
+    #   v5:  switch_bias_weight=0.0 (the switch-bias lever; absent = OFF).
+    #   v6:  use_popart=False.
+    #   v7:  draw_penalty=-30.0 (old runs scored a tie/timeout as a decisive loss).
+    #   v8:  attend_unrevealed_opponents=False (old models key-masked unrevealed opp slots).
+    #   v9:  opp_belief_cls_k=0 (no belief module); POPped the interim never-shipped
+    #        `opp_belief_cls` bool.
+    #   v10: value_active_readout=False (old value heads did not read the active-mon token).
+    #   v11: value_tail_weight=0.0 (plain MSE value loss).
+    #   v12: self_ko_hp_penalty=0.0 (the symmetric material PBRS priced a healthy
+    #        Explosion/Self-Destruct trade at ~0).
+    #   v13: drop_redundant_bias=False, drop_switch_bias=False (old runs kept every BIAS term).
+    #   v14: all_shaping_pbrs=False, no_progress_penalty=0.15 (end-state PBRS switch).
+    #   v15: stall_pbrs=False (the companion switch).
+    #   v16: opp_belief_slots=False, opp_belief_aux_coef=0.0 (in-place hidden-opp belief-aux).
+    #   v17: move_belief_mode="off", move_belief_coef=0.0 (no MoveBelief module).
+    #   v18: opp_belief_latent=False, opp_belief_latent_coef=0.0 (BeliefHead latent predictor).
+    #   v19: damage_op=False (no DamageOperator).
+    #   v20: move_prior_fusion=False (no unified-move-belief prior fusion).
+    #   v21: stamp — the incoming-damage-obs ablation toggle (its field went at v48).
+    #   v22: win_prob_mode="none", win_prob_coef=1.0 (the tri-state win-probability head).
+    #   v23: damage_outgoing=False, move_candidate_floor=0.0 (incoming-only op + the un-gated
+    #        0.02-floor-less legacy prior).
+    #   v24: move_latent=False, move_belief_latent_coef=0.0 (MoveLatentEncoder).
+    #   v25: spread_belief=False, spread_belief_coef=0.0.
+    #   v26: stamp — gen3_unified_op_physics_v1 (op physics parity: boosts/burn/weather/para/
+    #        fixed-damage, intrinsic to damage_op; values-only).
+    #   v27: stamp — gen3_unified_status_landing_v1: the op's OUTGOING direction gained the
+    #        per-OUR-move status-landing block, Leech Seed's Grass immunity, Sleep Clause and
+    #        Substitute-blocks-status. Intrinsic to damage_outgoing (out_dim grew, so a v26
+    #        damage_outgoing checkpoint failed the SB3 load_state_dict projection in_features —
+    #        the projection input dim is runtime-discovered, not a ModelVersion field).
+    #   v28: stamp — gen3_unified_choice_band_v1: the op priced Choice Band (our known CB ×1.5
+    #        physical Atk deterministically OUTGOING; a DECORRELATED CB-conditional physical tail
+    #        [phys_high_cb + P(OHKO|CB)] + shared p_cb INCOMING — OHKO is a nonlinear threshold a
+    #        mean-field ×(1+0.5·p_cb) would blur). Intrinsic to damage_op.
+    #   v29: value_dist_mode="none", value_dist_bins=0, value_dist_vmin=0.0, value_dist_vmax=0.0,
+    #        value_dist_coef=1.0 (the distributional value head, Phase A).
+    #   v30: damage_topk_k=0 (gen3_unified_topk_incoming_v1 — the discrete top-K incoming block;
+    #        STRUCTURAL int gated in check_compatible).
+    #   v31: stamp — `damage_reattend` added (deleted at v71; no setdefault, so an ABSENT key
+    #        stayed absent and the v71 judge only saw RECORDED values).
+    #   v32: stamp — `move_belief_prefuse` added (same v71 treatment).
+    #   v33: stamp — gen3_iterative_damage_v1: `damage_refine_rounds` (deleted at v70).
+    #   v34: damage_matrices_outgoing=False (gen3_per_move_matrices_v1, our 4 moves × opp active
+    #        + revealed bench).
+    #   v35: damage_matrices_incoming=False (the incoming per-move matrix over the enriched
+    #        top-K; reuses damage_topk_k as its K).
+    #   v36: threat_prob_outspeed=False (gen3_bidir_threat_trunk_v1; its siblings
+    #        threat_refine_outgoing / threat_unrevealed_outgoing were deleted at v70).
+    #   v37: stamp — gen3_status_trunk_v1: `threat_status_refine` (deleted at v70).
+    #   v38: hp_type_belief_coef=0.0 (gen3_opp_hp_type_belief_v1; the v38 mode key was POPped by
+    #        the v52 migration).
+    #   v39: damage_matrices_outgoing_all=False (the TRANSPOSED outgoing matrix — our 6 mons'
+    #        moves → opp active).
+    #   v40: spread_belief_nature=False (the SpreadBelief nature/EV generative head).
+    #   v41: belief_grad_mode="shaping" (gen3_belief_grad_mode_v1; detach() is value-preserving,
+    #        so 'shaping' reproduced the v40 forward AND backward byte-for-byte).
+    #   v42: stamp — turn-history depth cut N_HISTORY_TURNS 10 → 7 (obs 3469 → 2992); the
+    #        obs-dim weight-field check carried the rejection.
+    #   v43: pubval_mode="none", pubval_coef=0.0 (gen3_pubval_aux_v1).
+    #   v44: zarch_film="off", zarch_dim=0, zarch_recon_coef=0.0, zarch_vicreg_coef=0.0
+    #        (gen3_zarch_film_v1).
+    #   v45: value_from_dist=False (gen3_dist_critic_v1 Phase B; resume-immutable via
+    #        check_value_from_dist, excluded from check_compatible).
+    #   v46: zarch_lut="off", zarch_lut_teams=0 (gen3_zarch_lut_v1).
+    #   v47: stamp — gen3_belief_single_compute_v1: `move_belief_single_compute` (deleted at v70).
+    #   v48: gen3_cpu_damage_deleted_v1 — POPped the three `--unified-obs` ablation fields
+    #        (mask_incoming_damage_obs, mask_active_move_scalars_obs, mask_move_effects_obs)
+    #        along with the obs blocks they masked (obs 2992 → 2889). POP rather than setdefault:
+    #        `from_json_file` does `cls(**data)`, so a stale key would TypeError before the clear
+    #        obs-dim rejection.
+    #   v49: damage_candidate_k=0 (the op candidate cap; the `pointer_head` bool it also added
+    #        was deleted at v51).
+    #   v50: stamp — `damage_op_prefuse` added (deleted at v71).
+    #   v51: gen3_pointer_native_v1 — POPped `pointer_head` (the pointer head became THE action
+    #        head, unconditionally; POP for the v48 reason).
+    #   v52: gen3_typed_hp_belief_v1 — POPped `hp_type_belief_mode` (the opponent's Hidden Power
+    #        is composed into the 16 typed move-nums inside the belief, so the tri-state had
+    #        nothing left to gate; the belief's forward math changed while projection widths did
+    #        not, so the ARCH_SIGNATURE bump was the only rejection).
+    #   v53: hp_belief_mode="composed" (gen3_hp_belief_ablation_v1; 'flat' is the opt-in
+    #        ablation, 'composed' reproduced the v52 forward exactly).
+    #   v54: entity_topk_seats=0 (gen3_entity_move_seats_v1; E3 rode the ARCH_SIGNATURE).
+    #   v55: stamp — gen3_op_block_trim_v1 (the op's output shrank by 28 dims; the deleted lean
+    #        top-K block re-meant `damage_topk_k`; signature carried the break).
+    #   v56: edge_bias_families="off" (gen3_edge_bias_trunk_v1; the layer swap itself rode the
+    #        ARCH_SIGNATURE).
+    #   v57: entity_tail_seats=False (gen3_entity_tail_seats_v1).
+    #   v58: stamp — the SpD-as-speed GIGO fix (pairwise_speed/pairwise_boost read stat index 4
+    #        as "speed"; values-only — a pre-v58 checkpoint's v_map/c1_map trained against the
+    #        buggy feature).
+    #   v59: consequence_topk=4 (pre-v59 models trained with the hardcoded k_cand/k_bench = 4).
+    #   v60: stamp — gen3_entity_rehome_v1 (signature carried the break).
+    #   v61: stamp — gen3_no_concat_v1 (the head-concat deletion + the multi-seed critic
+    #        readout; signature carried the break).
+    #   v62: value_seed_vicreg_coef=0.0 (gen3_seed_vicreg_v1; resume-immutable, the vf_coef
+    #        class).
+    #   v63: seed_quantile=False (gen3_seed_quantile_v1; structural, one shared Linear).
+    #   v64: value_threat_inject=False (gen3_value_threat_inject_v1; structural, one shared
+    #        zero-init Linear on the value pool's copy of our tokens).
+    #   v65: stamp — gen3_unconditional_move_legality_v1. `move_candidate_floor` was deliberately
+    #        left EXACTLY as recorded (0.0 on every pre-v65 run): 0.0 used to mean "legality
+    #        OFF", is no longer a valid value, and check_compatible rejects it against the new
+    #        0.02 default with a dedicated message rather than silently migrating 0.0 → 0.02
+    #        (which would load a checkpoint whose policy trained on a prior that gave phantom
+    #        mass to unlearnable moves).
+    #   v66: gen3_nature_marginalize_removed_v1 — POPped `spread_belief_nature_marginalize`.
+    #        The kernel (`DamageOperator._nature_marg_ko`) was DELETED, not defaulted off:
+    #        measured on gen-8's own checkpoint over 1,075,200 ALIVE (defender, candidate)
+    #        cells, |ΔP(KO)| vs mean-field was p50/p90/p95 = 0.00000, p99 = 0.00047, mean
+    #        0.0003, and only 0.39% of cells moved by >0.02 — the nature posterior is peaked
+    #        (top-1 mass 0.75, entropy 0.64 of 3.22 nats), so integrating over it ≈ evaluating
+    #        at its mode (ledger K1's shape: sound theory, absent magnitude). It also computed a
+    #        WRONG answer on empty slots: `dmg.clamp(min=eps)` turned zero damage into 1e-6, and
+    #        with cur_hp also 0 the ramp gave 1e-6/(0.15e-6+1e-6) = 0.8696 — a spurious 87% KO on
+    #        a slot with nothing in it (gated downstream, believed harmless, but a trap). The
+    #        KEPT half is `--spread-belief-nature`, the generative nature/EV head — the actual
+    #        correctness fix (it makes the largest-EV order-statistic bias structurally
+    #        unrepresentable), and why `belief/spread_largest_bias` closed -26 → -12.8 on gen-8.
+    #   v67: stamp — gen3_deadline_clock_v1: the obs CLOCK group 1 → 3 scalars (GLOBAL_ENV_DIM
+    #        18 → 20, obs 2667 → 2669). No model_config field — the break is in the obs width +
+    #        weight shapes, which ARCH_SIGNATURE carries. The first version of the
+    #        gen3_deadline_clock_v1 generation (the gen-8/gen-9 world).
+    #   v68: gen3_opp_intent_v1 — opp_intent=False (the alpha/beta intent heads).
+    #   v69: gen3_species_prior_fusion_v1 — species_prior_fusion=False.
+    #   v70: gen3_refine_loop_removed_v1 — POPped the refine loop's five dead fields
+    #        (damage_refine_rounds, threat_refine_outgoing, threat_unrevealed_outgoing,
+    #        threat_status_refine, move_belief_single_compute — 0-rounds/unreachable/INERT in
+    #        every production config; the expected-latent outgoing math itself was re-homed,
+    #        unconditional, by gen3_unrevealed_outgoing_prior_v1).
+    #   v71: gen3_tiered_pipeline_v1 — the PRE-transformer placement became the only one;
+    #        POPped move_belief_prefuse/damage_op_prefuse/damage_reattend, REFUSING (not
+    #        defaulting) any config that recorded the deleted POST placement, because that
+    #        toggle changed no weight shape and nothing downstream could catch a silent pop.
+    #   v72: gen3_t0_species_prior_v1 — t0_species_prior=False.
+    #   v73: gen3_intent_grad_mode_v1 — opp_intent_grad_mode="detached".
+    #   v74: gen3_intent_value_reduce_v1 — intent_value_reduce=False.
+    #   v75: SimSiam latent belief DELETED — POPped opp_belief_latent/opp_belief_latent_coef,
+    #        REFUSING a config that recorded opp_belief_latent=True (it carried PARAMETERS the
+    #        live extractor has no home for; the zip-kwargs sanitizer keeps that judgment).
+    # ----------------------------------------------------------------------------------------
     return data

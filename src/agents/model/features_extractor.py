@@ -57,7 +57,6 @@ from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_F
     MOVE_LATENT_HIDDEN,
     MOVE_LATENT_DIM,
     ROLE_ENCODER_HIDDEN,
-    ACTIVE_CTX_HIDDEN,
     NET_ARCH,
     N_HISTORY_TURNS,
     ZARCH_DIM,
@@ -1920,6 +1919,7 @@ from agents.model.t0_species import T0SpeciesPrior
 from agents.model.intent_value_reduce import IntentValueReduce
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
+    OpTensors,
     _COND_BRN_IDX,
     _COND_PAR_IDX,
     _COND_SLP_IDX,
@@ -2243,12 +2243,18 @@ class MultiSeedValueReadout(torch.nn.Module):
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
-    Policy input: team pools + our active token + per-side encoded active contexts + the
-    non-matchup scalar tail (unchanged from the single-head design).
-    Value input: the value-dedicated pool + the same per-side encoded active contexts +
-    non-matchup scalar tail. The active-context encoder and the raw global scalars are
-    shared inputs (not the contested body representation), so reusing them for both heads
-    is parameter-efficient; the value head's distinct signal comes from `value_pooled`.
+    Policy input: team pools + our active token + the non-matchup scalar tail.
+    Value input: the value-dedicated pool + the same scalar tail (+ the critic's seed window).
+
+    gen3_ctx_dedup_v1: the per-side ENCODED active contexts (`active_ctx_encoder` on the raw
+    58-dim boosts+volatiles blocks) are DELETED from both heads. They were duplicated delivery
+    with a 1:1 entity-native replacement already live: the E2 injection scatters each side's
+    FULL raw ctx block onto its ACTIVE mon's role token (`gen3_entity_rehome_v1`, pinned by
+    `e2_ctx_injection_test.py`), and the global token carries both raw blocks as a second
+    route — so every scalar the encoder saw reaches both heads through the trunk, entity-
+    attached instead of positionally concatenated. `non_matchup_rest` STAYS: its only token
+    route is the global token, which no pool reads directly, so the concat is currently its
+    one direct path to the heads (no 1:1 replacement — its re-home is a separate decision).
     """
 
     def __init__(self, layout: Dict[str, Any], value_active_readout: bool = False,
@@ -2258,12 +2264,6 @@ class ProjectionAssembler(torch.nn.Module):
         # then there are no our_mon rows to read and vf keeps its pooled-only shape).
         self._seed_per_mon = seed_per_mon
         self.seed_readout = MultiSeedValueReadout(seed_per_mon) if seed_per_mon > 0 else None
-        active_ctx_dim = layout['active_context_dim']
-        self.active_ctx_encoder = torch.nn.Sequential(
-            torch.nn.Linear(active_ctx_dim, ACTIVE_CTX_HIDDEN[0]),
-            torch.nn.ReLU(),
-            torch.nn.Linear(ACTIVE_CTX_HIDDEN[0], ACTIVE_CTX_HIDDEN[1]),
-        )
         # When True, the value head ALSO reads our_active_refined (the active mon's refined token).
         # The dual-head (Option C) value readout pools the whole board (value_pooled) but DROPS the
         # active-mon view the policy head keeps — a probe on a real checkpoint found the value rep
@@ -2276,12 +2276,10 @@ class ProjectionAssembler(torch.nn.Module):
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
                 ctx: ExtractorContext,
                 hidden_opp_belief: Optional[torch.Tensor] = None,
-                damage_block: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        our_ctx_enc = self.active_ctx_encoder(ctx.our_ctx_raw)                      # [B, 32]
-        opp_ctx_enc = self.active_ctx_encoder(ctx.opp_ctx_raw)                      # [B, 32]
+                seed_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
-                    our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
-        vf_parts = [value_pooled, our_ctx_enc, opp_ctx_enc, ctx.non_matchup_rest]
+                    ctx.non_matchup_rest]
+        vf_parts = [value_pooled, ctx.non_matchup_rest]
         # gen3_no_concat_v1 (v61): THE OP HEAD-CONCAT IS DEAD. The 660-dim flat block no longer
         # enters either head — its measured end-state (gen-4, stratified, 53ef270): net policy
         # dependence +0.00%, all-edges-off ABOVE the concat arm on flips, and the critic's
@@ -2299,14 +2297,12 @@ class ProjectionAssembler(torch.nn.Module):
         if hidden_opp_belief is not None:
             pi_parts.append(hidden_opp_belief)
             vf_parts.append(hidden_opp_belief)
-        # gen3_no_concat_v1: the multi-seed critic readout over the op's per-our-mon rows —
-        # sliced from the flat block (its first TEAM_SIZE*per_mon dims are the ① incoming
-        # per-mon rows) until the typed OpTensors views land. vf ONLY.
-        if damage_block is not None and self.seed_readout is not None:
-            rows = damage_block[:, :TEAM_SIZE * self._seed_per_mon].reshape(
-                damage_block.shape[0], TEAM_SIZE, self._seed_per_mon)
+        # gen3_no_concat_v1 / gen3_op_tensors_views_v1: the multi-seed critic readout over the
+        # op's per-our-mon rows — now handed in as the TYPED view (`OpTensors.incoming_rows`,
+        # post-gain), so the assembler holds no flat-block offsets. vf ONLY.
+        if seed_rows is not None and self.seed_readout is not None:
             alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
-            vf_parts.append(self.seed_readout(rows, alive))
+            vf_parts.append(self.seed_readout(seed_rows, alive))
         pi_combined = torch.cat(pi_parts, dim=1)
         vf_combined = torch.cat(vf_parts, dim=1)
         return pi_combined, vf_combined
@@ -3623,8 +3619,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # case there is nothing to inject (and `prefuse_proj` was never built).
         opp_role, damage_block = self._spread_hp_damage(role_tokens[:, TEAM_SIZE:], ctx)
         if damage_block is not None:
-            inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(
-                ctx.batch_size, TEAM_SIZE, _DMG_PER_MON)                      # per-OUR-mon incoming rows
+            # gen3_op_tensors_views_v1: the op's typed views (set by the forward that just ran)
+            # replace every flat-offset slice on the consumer side.
+            inc = self.damage_op.last_tensors.incoming_rows               # per-OUR-mon incoming rows
             role_tokens = torch.cat(
                 [role_tokens[:, :TEAM_SIZE] + self.prefuse_proj(inc), opp_role], dim=1)  # residual (0 at init)
         else:
@@ -3850,7 +3847,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
             belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
         out = self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
-                             ctx, belief, damage_block)
+                             ctx, belief,
+                             self.damage_op.last_tensors.incoming_rows
+                             if damage_block is not None else None)
         # gen3_seed_quantile_v1: read the seed outputs the assembler just stashed and emit one
         # prediction per seed through the SHARED head. Stashed only (never in pi/vf) — the aux loss
         # in instrumented_ppo regresses these onto the rollout return at the per-seed taus, which is

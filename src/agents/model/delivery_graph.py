@@ -281,9 +281,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                 "conditions every pointer score"))
 
     # --- CONCAT EDGES: the head inputs ---------------------------------------------------------
-    # `pooled` distinguishes the attention-collapsed routes from the op block, which is the
-    # unpooled absolute one.
-    ac = fx.ACTIVE_CTX_HIDDEN[-1]
+    # `pooled` distinguishes the attention-collapsed routes from the unpooled absolute ones.
     nmr = fe.team_transformer._non_matchup_rest_dim
     for i in range(T):
         edges.append(_edge(f"our_mon[{i}]", "pi_projection", "concat", D, "D_MODEL",
@@ -303,14 +301,29 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         edges.append(_edge("our_active_refined", "vf_projection", "concat", D, "D_MODEL",
                            pooled=False))
     for head in FORWARD_SINKS:
-        edges.append(_edge("active_context", head, "concat", 2 * ac, "2 * ACTIVE_CTX_HIDDEN[-1]",
-                           via="ProjectionAssembler.active_ctx_encoder", pooled=False))
+        # gen3_ctx_dedup_v1: the active-context concat is DELETED from both heads — the ctx
+        # rides the active tokens (E2 injection) + the global token. The op's flat block is
+        # likewise NOT a head input since gen3_no_concat_v1; its per-head routes are below.
         edges.append(_edge("non_matchup_rest", head, "concat", nmr,
-                           "GLOBAL_ENV_DIM + board scalars", pooled=False))
-        edges.append(_edge("damage_op", head, "concat", op.out_dim, "DamageOperator.out_dim",
-                           pooled=False,
-                           note="the unpooled ABSOLUTE route — the only channel that can carry "
-                                "a magnitude to the heads"))
+                           "GLOBAL_ENV_DIM + board scalars", pooled=False,
+                           note="the one head input with NO token route a pool reads — its "
+                                "only other delivery is the global token"))
+    if fe.assembler.seed_readout is not None:
+        edges.append(_edge("damage_op", "vf_projection", "concat",
+                           fx.VALUE_SEED_K * fx.VALUE_SEED_DIM, "VALUE_SEED_K * VALUE_SEED_DIM",
+                           via="MultiSeedValueReadout (k seed queries over the per-our-mon "
+                               "incoming rows, OpTensors.incoming_rows)", pooled=True,
+                           note="the critic's magnitude window after the concat's death"))
+    if fe.intent_value_reduce is not None:
+        edges.append(_edge("damage_op", "vf_projection", "concat",
+                           fx.INTENT_VALUE_REDUCE_DIM, "INTENT_VALUE_REDUCE_DIM",
+                           via="IntentValueReduce (alpha-weighted pair-cell rows)", pooled=True,
+                           zero_init=True))
+    if fe.hidden_opp_belief is not None:
+        for head in FORWARD_SINKS:
+            edges.append(_edge("hidden_opp_belief", head, "concat",
+                               fe.opp_belief_cls_k * fx.D_MODEL, "opp_belief_cls_k * D_MODEL",
+                               via="HiddenOppBeliefPool", pooled=True))
 
     # --- CELL EDGES: per-action physics --------------------------------------------------------
     if op.pointer_move_cell_dim:
@@ -436,7 +449,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         nodes.append(_node("belief_slots", "phase", stage="T0",
                            note="swaps unrevealed opp role tokens for learned unknown-mon queries"))
         for j in range(T):
-            edges.append(_edge("belief_slots", f"opp_mon[{j}]", "content", d_model,
+            edges.append(_edge("belief_slots", f"opp_mon[{j}]", "content", D,
                                "D_MODEL", note="in-place; pre-transformer"))
     if fe.move_belief is not None:
         for j in range(T):

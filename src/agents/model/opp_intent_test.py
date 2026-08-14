@@ -175,11 +175,17 @@ def test_enabling_without_entity_seats_fails_loud():
         _build_real_policy(**_intent_kwargs(entity_topk_seats=0, entity_tail_seats=False))
 
 
-def test_v67_migration_defaults_off():
-    from agents.model.model_version import _migrate_config, MODEL_CONFIG_VERSION
-    assert MODEL_CONFIG_VERSION >= 67
-    out = _migrate_config({"config_version": 66})
-    assert out["opp_intent"] is False and out["config_version"] >= 67
+def test_pre_v68_configs_are_below_the_floor():
+    """The v68 opp_intent default branch is pre-floor since gen3_ctx_dedup_v1 raised
+    MIGRATION_FLOOR: any config old enough to lack the field is a pre-generation checkpoint
+    and is refused outright, and a config at the floor already records it."""
+    from agents.model.model_version import (
+        _migrate_config, MIGRATION_FLOOR, MODEL_CONFIG_VERSION, ModelVersionError)
+    assert MODEL_CONFIG_VERSION >= 68
+    assert _migrate_config({"config_version": MIGRATION_FLOOR,
+                            "opp_intent": True})["opp_intent"] is True
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 67})
 
 
 def test_version_gate_rejects_a_toggle_flip():

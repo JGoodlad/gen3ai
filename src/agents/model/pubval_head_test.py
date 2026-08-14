@@ -115,7 +115,7 @@ def test_coef_not_version_locked():
 
 
 def test_migration_v42_to_v43():
-    from agents.model.model_version import MODEL_CONFIG_VERSION
-    d = _migrate_config({"config_version": 42})
-    assert d["pubval_mode"] == "none" and d["pubval_coef"] == 0.0
-    assert d["config_version"] == MODEL_CONFIG_VERSION
+    """The v43 default-injection branch is pre-floor (MIGRATION_FLOOR): a v42 config is a
+    pre-generation checkpoint and is refused outright."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 42})

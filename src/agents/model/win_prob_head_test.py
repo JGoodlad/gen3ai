@@ -113,10 +113,7 @@ def test_coef_not_version_locked():
 
 
 def test_migration_v21_to_v22():
-    # Migration runs the full chain to the current version; the v22 fields are injected en route.
-    from agents.model.model_version import MODEL_CONFIG_VERSION
-    d = _migrate_config({"config_version": 21})
-    assert d["win_prob_mode"] == "none" and d["win_prob_coef"] == 1.0
-    assert d["config_version"] == MODEL_CONFIG_VERSION
-    # v23 fields are injected too (damage_outgoing off, learnset gate off = legacy floor).
-    assert d["damage_outgoing"] is False and d["move_candidate_floor"] == 0.0
+    """The v22/v23 default-injection branches are pre-floor (MIGRATION_FLOOR): a v21 config is a
+    pre-generation checkpoint and is refused outright."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 21})

@@ -33,7 +33,7 @@ from agents.model.features_extractor import (
     _request_order_move_tokens,
 )
 from agents.model.model_version import (
-    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, _migrate_config,
+    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -363,7 +363,7 @@ def test_version_constants_and_migration():
     # pre-generation checkpoints, so pin "not a pre-generation signature", not one literal value.
     assert ARCH_SIGNATURE not in ("gen3_opp_hp_typed_candidates_v1", "gen3_typed_hidden_power_ids_v1")
     assert "pointer_head" not in {f.name for f in dataclasses.fields(ModelVersion)}
-    migrated = _migrate_config({"config_version": 49, "pointer_head": True})
-    assert "pointer_head" not in migrated and migrated["config_version"] >= 54
-    # v54: the E4 seat count defaults 0 on any older config.
-    assert migrated["entity_topk_seats"] == 0
+    # the v51 pointer_head POP and the v54 seat default are pre-floor branches (MIGRATION_FLOOR):
+    # a v49 config is a pre-generation checkpoint and is refused outright.
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 49, "pointer_head": True})

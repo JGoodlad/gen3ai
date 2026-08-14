@@ -1,5 +1,12 @@
 # design — OPPONENT INTENT: from pair physics to "what will they do", and from that to our answer
 
+> **[STATE 2026-08-14]** α/β are **BUILT** (v68 `gen3_opp_intent_v1` — supervised pointer heads,
+> canonical-id matching, mask-rate diagnostics, the whole render path to the prober) and α is
+> **CONSUMED on the critic side** (v74 `gen3_intent_value_reduce_v1`). The schedule this doc
+> pre-registered happened: gen-8 (foundation: beliefs + threat-inject, launched 2026-08-11) then
+> gen-9 (α + the distributional critic, launched 2026-08-13, live). The OUTGOING/policy-side
+> consumer (`design_conditional_execution.md`) remains open. See `designs/CHANGELOG.md`.
+
 > **What this document is.** The build for one sentence the model cannot currently express:
 > *"they are likely to click **this**, so **this** is my answer."*
 >

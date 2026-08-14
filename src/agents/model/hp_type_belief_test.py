@@ -31,7 +31,8 @@ from agents.observation.belief_labels import (
     HP_TYPE_NAMES, N_HP_TYPES_LABEL, hp_type_idx_from_move_id, build_hp_type_labels, zero_hp_type_labels,
 )
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
-from agents.model.model_version import ModelVersion, MODEL_CONFIG_VERSION, _migrate_config
+from agents.model.model_version import (
+    ModelVersion, ModelVersionError, MODEL_CONFIG_VERSION, _migrate_config)
 from agents import gen3_data
 from agents.model import damage_op_test as _DT  # reuse its proven _fake_ctx / _make_layout / _logits_hp_only
 
@@ -452,16 +453,13 @@ def test_build_hp_type_labels():
 
 # ------------------------------------------------------------------ versioning
 def test_hp_type_belief_mode_is_gone_and_migrated_away():
-    """v52 DELETES `hp_type_belief_mode`. `_migrate_config` must POP it, not default it: `from_json_file`
-    does `cls(**data)`, so a stale key on an old config would raise a bare TypeError instead of the clear
-    architecture error the ARCH_SIGNATURE bump produces."""
+    """v52 DELETED `hp_type_belief_mode` from the schema. With MIGRATION_FLOOR the v52 POP branch
+    is gone too: a pre-v67 config carrying the stale key is refused with the clear pre-generation
+    error — still never a bare TypeError out of `cls(**data)`."""
     assert "hp_type_belief_mode" not in ModelVersion.__dataclass_fields__
     stale = {"config_version": 38, "hp_type_belief_mode": "learned", "hp_type_belief_coef": 0.05}
-    migrated = _migrate_config(dict(stale))
-    assert "hp_type_belief_mode" not in migrated
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION
-    # the training-only CE coef survives (provenance + flagless-resume read-back)
-    assert migrated["hp_type_belief_coef"] == 0.05
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(dict(stale))
 
 
 # ------------------------------------------------------------------ the `flat` ablation (v53)
@@ -539,7 +537,9 @@ def test_hp_belief_mode_is_version_gated():
     with pytest.raises(Exception, match="hp_belief_mode mismatch"):
         composed.check_compatible(flat)
     composed.check_compatible(composed)
-    assert _migrate_config({"config_version": 52})["hp_belief_mode"] == "composed"
+    # the v53 'composed' default branch is pre-floor (MIGRATION_FLOOR): a v52 config is refused.
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 52})
 
 
 def test_invalid_hp_belief_mode_raises():

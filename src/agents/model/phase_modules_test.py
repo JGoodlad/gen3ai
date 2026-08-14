@@ -20,7 +20,6 @@ from agents.model.features_extractor import (
     turn_delta_embed_dim,
     ROLE_TOKEN_SIZE,
     D_MODEL,
-    ACTIVE_CTX_HIDDEN,
     N_HISTORY_TURNS,
 )
 import pytest
@@ -443,10 +442,12 @@ def test_projection_assembler_width_and_passthrough():
         non_matchup_rest=non_matchup,
     )
     pi_combined, vf_combined = model.assembler(our_pool, their_pool, active, value_pool, ctx)
-    # Policy input: our/their pools + active + 2 encoded ctxs + non-matchup tail.
-    pi_width = 3 * D_MODEL + 2 * ACTIVE_CTX_HIDDEN[1] + K
-    # Value input: value pool + 2 encoded ctxs + non-matchup tail (no team pools / active).
-    vf_width = D_MODEL + 2 * ACTIVE_CTX_HIDDEN[1] + K
+    # gen3_ctx_dedup_v1: the encoded active-ctx pair is DELETED from both heads (its content
+    # rides the active tokens via the E2 injection + the global token).
+    # Policy input: our/their pools + active + non-matchup tail.
+    pi_width = 3 * D_MODEL + K
+    # Value input: value pool + non-matchup tail (no team pools / active).
+    vf_width = D_MODEL + K
     assert pi_combined.shape == (B, pi_width)
     assert vf_combined.shape == (B, vf_width)
     # The non-matchup tail is concatenated verbatim into both heads.
@@ -477,13 +478,13 @@ def test_projection_assembler_concat_is_dead_and_seeds_ride_vf_only():
     from agents.model.features_extractor import ProjectionAssembler
     asm = ProjectionAssembler(layout, seed_per_mon=per_mon)
     pi0, vf0 = asm(*args, ctx)
-    block = torch.randn(B, TEAM_SIZE * per_mon + 30)            # rows + a tail beyond them
-    pi1, vf1 = asm(*args, ctx, damage_block=block)
-    assert pi1.shape[1] == pi0.shape[1], "the block must NEVER widen pi (the concat is dead)"
+    rows = torch.randn(B, TEAM_SIZE, per_mon)                   # the typed incoming-rows view
+    pi1, vf1 = asm(*args, ctx, seed_rows=rows)
+    assert pi1.shape[1] == pi0.shape[1], "the rows must NEVER widen pi (the concat is dead)"
     assert vf1.shape[1] - vf0.shape[1] == VALUE_SEED_K * VALUE_SEED_DIM
-    assert torch.equal(pi1, pi0), "pi must be bit-identical with and without the block"
-    # And an op-less assembler ignores the block on vf too.
+    assert torch.equal(pi1, pi0), "pi must be bit-identical with and without the rows"
+    # And an op-less assembler ignores the rows on vf too.
     asm0 = ProjectionAssembler(layout, seed_per_mon=0)
-    pi2, vf2 = asm0(*args, ctx, damage_block=block)
+    pi2, vf2 = asm0(*args, ctx, seed_rows=rows)
     pi3, vf3 = asm0(*args, ctx)
     assert torch.equal(pi2, pi3) and torch.equal(vf2, vf3)

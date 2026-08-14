@@ -2,7 +2,18 @@
 
 **Status:** OPERATIVE planning doc (2026-08-03, owner + assistant session). This is the doc
 that ALIGNS the fresh-generation reset, the shipped v51 pointer-native head, the entity-graph
-inventory, and the history-representation decision into one sequenced plan. It does not
+inventory, and the history-representation decision into one sequenced plan.
+
+> **[STATE 2026-08-14 — read before the staged narrative below; `designs/CHANGELOG.md` is the
+> authoritative sequence.]** Since this doc's last owner amendment: the op head-concat **died
+> 2026-08-09 (v61, on gen-4's stratified evidence — the two-route precondition in §3.8 was
+> RESOLVED, not satisfied; `designs/CLAUDE.md`'s ai_v9 row records how)**; the tiered pipeline
+> landed (v70/71 — prefuse unconditional, refine loop + placement toggles deleted, tier contract
+> asserted); α/β shipped (v68) and α is CONSUMED on the critic side (v74 `intent_value_reduce`);
+> the SimSiam latent belief is deleted (v75); the active-ctx head concat is deleted + the
+> migration floor landed (v76 `gen3_ctx_dedup_v1`); and `design_op_tensors.md` steps 1–2 shipped
+> byte-identical (`gen3_op_tensors_views_v1`). The seed-multiplicity line closed after gen-6/7
+> measured both pressures capping at ~1-D. Live run: gen-9 (intent + distributional critic). It does not
 duplicate the inventory — `design_entity_graph.md` owns *what* the entities and edges are;
 this doc owns *what order they land in, what each stage deletes, and what gates it*.
 
@@ -517,9 +528,9 @@ derivable from the event log per decision window.
 | spike (§2.5) | token-budget benchmark; biased-MHA proof; then the minimal Stage-1 slice | — | B=1/B=256 numbers vs budget; fullgraph compile; short-run training sanity |
 | 1 | E3/E4/E5 move tokens, per-type projections | — | B=1 CPU gate, pointer tests, probe-sized K |
 | 2 | D/S/C/V/T/X edge biases, D4, custom MHA | refine-loop residuals (**NOT** the op head-concat — §3.8) | gen-vs-gen ELO + per-family bias ablation |
-| 3 | declarative schema, obs re-home, history's MINIMAL port (7 opaque history tokens) | flat 2889 vector, OFFSET arithmetic, matchup/reactive blocks | schema-generated tests, obs benchmark (refund), roundtrip fuzz |
-| post-3 | **the two-route concat precondition** — OA1 (policy) + a CRITIC route (PV *or* generalized token-content injection); `design_conditional_opponent_cells.md` | — | coverage probe chooses the critic route; then the 40M re-audit |
-| last | op head-concat deletion (mask → A/B → delete), then the Stage-3 CPU refund | op head-concat (807 dims off both projections) | concat arm < all-edges-off on **flips AND `\|dV\|`** at 40M |
+| 3 | declarative schema, obs re-home, history's MINIMAL port (7 opaque history tokens) — ◐ **HALF-LANDED as v60 `gen3_entity_rehome_v1`** (declarative schema + matchup/reactive deletion + per-entity re-home + E2 injection; the flat vector, the OFFSET expressions and the positional history block remain) | flat 2889 vector, OFFSET arithmetic, matchup/reactive blocks | schema-generated tests, obs benchmark (refund), roundtrip fuzz |
+| post-3 | ~~**the two-route concat precondition**~~ **RESOLVED 2026-08-09 without either route** — the flips half was met by training alone on gen-4, net policy dependence was +0.00%, and the critic route that shipped was `MultiSeedValueReadout` (neither candidate); OA1/OA2/PV survive as forward designs on their own merits (`designs/CLAUDE.md` ai_v9 row records the resolution) | — | gen-4 stratified end-of-run audits |
+| last | ~~op head-concat deletion~~ ✅ **DONE 2026-08-09 (v61 `gen3_no_concat_v1`)** — mask→A/B→delete collapsed to delete-on-evidence; the Stage-3 CPU refund's remaining piece is `design_op_tensors.md` step 3 (drop the flat render + trim `out_gain`, gen-10) | op head-concat (660 dims off both projections) | gen-5 trained at ELO parity with gen-4 (the deletion cost nothing) |
 | later | E9 proper: recency features → turn tokens → entity-linked event tokens iff usage audit pays | 7×159 TurnDelta frames | attention-usage audit |
 
 Each stage is retrain-class; the generation's checkpoints stay compatible WITHIN a stage via

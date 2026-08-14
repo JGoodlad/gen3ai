@@ -54,16 +54,14 @@ def test_phase_b_falls_back_to_scalar_if_logits_missing():
 
 
 def test_value_from_dist_migrates_and_gates():
-    d = _migrate_config({"config_version": 44})
-    # The migration chain always advances to the LATEST version, not just to v45 — assert against
-    # MODEL_CONFIG_VERSION so a later bump doesn't false-fail this v45 default check.
-    assert d["config_version"] == MODEL_CONFIG_VERSION and d["value_from_dist"] is False
+    # The v45 default-injection branch is pre-floor (MIGRATION_FLOOR): a v44 config is a
+    # pre-generation checkpoint and is refused outright.
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 44})
     assert "value_from_dist" in ModelVersion.__dataclass_fields__
 
 
 def test_check_value_from_dist_resume_gate(capsys):
-    # build a minimal version via migrate → construct
-    base = _migrate_config({"config_version": 44})
     # only need the field for the check; use a lightweight object with the method bound
     v = types.SimpleNamespace(value_from_dist=False)
     v.check_value_from_dist = ModelVersion.check_value_from_dist.__get__(v)

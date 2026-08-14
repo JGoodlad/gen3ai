@@ -1,10 +1,19 @@
 # design — `OpTensors`: one home per fact, arity as the type
 
-**Status:** forward design, not built. Written 2026-08-08 off the 40M gen-3 measurements below.
+**Status:** steps 1–2 **SHIPPED 2026-08-14** (`gen3_op_tensors_views_v1`, byte-identical — see
+`designs/CHANGELOG.md`): `DamageOperator.tensors_from_block()` is the flat block's ONE layout
+walk, returning the typed `OpTensors` views; `pointer_cells`, the prefuse injection and the
+critic's seed window read named fields, never offsets, and a region added without a view raises.
+The flat block survives only as the serialization (`decode_damage_block` / `last_raw_block` /
+the prober). Steps 3–5 remain open (step 3 is retrain-class: it trims `out_gain`). Written
+2026-08-08 off the 40M gen-3 measurements below.
 **Owner decision:** ✅ ADOPTED 2026-08-08 (late) — "no more concat" is the next major goal,
 execution starts when gen-4 (`run_20260808_212910`) completes; the §9.1 discriminating arms run
 on gen-4's final checkpoint before step 3+. Recorded beside the superseded two-route
-precondition in `design_generation_roadmap.md` §3.8.
+precondition in `design_generation_roadmap.md` §3.8. **[UPDATE 2026-08-14: the concat itself
+died 2026-08-09 (v61, on gen-4's stratified evidence) — before this doc's steps ran; §3.3's
+"must land WITH the concat's removal" was therefore overtaken, and the critic's seed read
+landed with the removal instead.]**
 
 **Written to be evaluated by someone without the originating conversation.** Every measured
 number carries its provenance and its caveats inline; every inference is labelled as one.
@@ -350,13 +359,13 @@ versions' reported gains largely failed to replicate.
 
 ## 4. Migration
 
-| step | what | provable? |
-|---|---|---|
-| 1 | `OpTensors` becomes the op's internal return; `damage_block = flatten(OpTensors)` kept as a derived serialization. Nothing downstream changes. | **byte-identical** — same gate the op-split refactor used (pi/vf + raw block byte-identity, unchanged `state_dict` keys, the constructed-scenario physics oracle, full suite) |
-| 2 | Re-point consumers to views one at a time. **E4 first** — biggest duplication and provably the same tensor. Then d3/s3 (`pair_in` computed once). | byte-identical, or explicitly not, per consumer |
-| 3 | Drop the flat serialization from the **forward**; keep it only for `decode_damage_block` / prober. | the concat is gone *by construction*, not by decision |
-| 4 | Land the head-input contract (§3.3 critic seed reads). | same generation as 3 |
-| 5 | Turn the reduction knob — A/B `how` (§3.2). | one flag, one site |
+| step | what | provable? | status |
+|---|---|---|---|
+| 1 | `OpTensors` becomes the op's internal return; `damage_block = flatten(OpTensors)` kept as a derived serialization. Nothing downstream changes. | **byte-identical** — same gate the op-split refactor used (pi/vf + raw block byte-identity, unchanged `state_dict` keys, the constructed-scenario physics oracle, full suite) | ✅ **SHIPPED 2026-08-14** (`gen3_op_tensors_views_v1`; gate held bitwise on 64 real gen-9 eval states × 3 config arms) |
+| 2 | Re-point consumers to views one at a time. **E4 first** — biggest duplication and provably the same tensor. Then d3/s3 (`pair_in` computed once). | byte-identical, or explicitly not, per consumer | ✅ **SHIPPED 2026-08-14** for the flat-slice consumers (`pointer_cells`, prefuse rows, the critic's seed rows). The E4/d3/s3 *recompute-dedup* half remains open — those consumers were never flat-slicers |
+| 3 | Drop the flat serialization from the **forward**; keep it only for `decode_damage_block` / prober. | the concat is gone *by construction*, not by decision | open — retrain-class (trims `out_gain` [660]→[138]); gen-10 boundary |
+| 4 | Land the head-input contract (§3.3 critic seed reads). | same generation as 3 | ✅ landed EARLY, with the v61 concat removal itself (`MultiSeedValueReadout`) |
+| 5 | Turn the reduction knob — A/B `how` (§3.2). | one flag, one site | R1 `belief_mean` is live in production only via `--value-threat-inject` (gen-8/9); the op's own reduction stays R0 (`design_pair_reduction.md` owns the ladder) |
 
 Steps 1–2 are **provable refactors**, so every speculative risk is isolated to 3–5. That is the
 attribution discipline `design_generation_roadmap.md` §1 asks for, and it is the opposite of

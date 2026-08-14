@@ -135,11 +135,12 @@ def test_shape_guards():
 
 # ------------------------------------------------ v63 wiring: version gate + structural isolation
 def test_v63_migration_defaults_off():
-    from agents.model.model_version import _migrate_config, MODEL_CONFIG_VERSION
+    """The v63 default-injection branch is pre-floor (MIGRATION_FLOOR): a v62 config is a
+    pre-generation checkpoint and is refused outright instead of migrating to OFF."""
+    from agents.model.model_version import _migrate_config, MODEL_CONFIG_VERSION, ModelVersionError
     assert MODEL_CONFIG_VERSION >= 63
-    out = _migrate_config({"config_version": 62})
-    assert out["seed_quantile"] is False, "a pre-v63 config must migrate to OFF"
-    assert out["config_version"] >= 63
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 62})
 
 
 def test_version_gate_rejects_a_toggle_flip():

@@ -269,30 +269,26 @@ def test_the_deleted_flags_are_not_model_version_fields(flag):
     assert flag not in {f.name for f in __import__("dataclasses").fields(ModelVersion)}
 
 
-def test_v71_migration_pops_a_production_valued_config():
-    """A config that recorded the SURVIVING placement migrates cleanly — the keys just go away."""
-    out = _migrate_config({"config_version": 70, "move_belief_prefuse": True,
-                           "damage_op_prefuse": True, "damage_reattend": False})
-    assert out["config_version"] >= 71
-    for flag in _DELETED_FLAGS:
-        assert flag not in out
-
-
 @pytest.mark.parametrize("flag,bad", [("move_belief_prefuse", False),
                                       ("damage_op_prefuse", False),
                                       ("damage_reattend", True)])
-def test_v71_migration_REFUSES_a_config_that_recorded_the_deleted_placement(flag, bad):
-    """⚠️ The load-bearing one. `move_belief_prefuse` changed NO weight shape, so popping it would
-    let a post-ordering checkpoint load into a pre-ordering forward and be quietly wrong forever —
-    nothing downstream has a shape to disagree about. The migration must REFUSE."""
-    with pytest.raises(ModelVersionError, match=flag):
+def test_any_config_recording_a_deleted_placement_flag_is_below_the_floor(flag, bad):
+    """The v71 REFUSE-not-pop branch is pre-floor since gen3_ctx_dedup_v1 raised
+    MIGRATION_FLOOR: every config old enough to carry one of the deleted placement flags is a
+    pre-generation checkpoint, so the blanket floor refusal subsumes the per-flag judgment —
+    a post-ordering checkpoint still cannot load into the pre-ordering forward, it just gets
+    the generation-level message. Either value of the flag is refused alike."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
         _migrate_config({"config_version": 70, flag: bad})
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 70, flag: not bad})
 
 
-def test_v71_migration_does_not_judge_a_config_that_never_had_the_field():
-    """A pre-v31/32/50 config predates the flag entirely; the ARCH_SIGNATURE family check owns it,
-    and giving it a placement error here would be a worse message, not a better one."""
-    out = _migrate_config({"config_version": 30})
-    assert out["config_version"] >= 71
+def test_a_current_config_never_carries_the_deleted_flags():
+    """The fields must not resurface in a current ModelVersion — the forward they selected
+    between no longer exists."""
+    import dataclasses as _dc
+    from agents.model.model_version import ModelVersion
+    fields = {f.name for f in _dc.fields(ModelVersion)}
     for flag in _DELETED_FLAGS:
-        assert flag not in out
+        assert flag not in fields

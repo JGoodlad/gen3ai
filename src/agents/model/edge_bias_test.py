@@ -29,7 +29,7 @@ from agents.model.features_extractor import (
     _EDGE_S1_CELL, _EDGE_D4_CELL, _EDGE_S3_CELL, _EDGE_V_CELL, _KEY_PAD_NEG,
 )
 from agents.model.model_version import (
-    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, _migrate_config,
+    ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -229,9 +229,14 @@ def test_d4_zeroes_the_active_column_and_unrevealed_attackers():
 # ------------------------------------------------------- versioning
 def test_version_constants_gate_and_migration():
     assert MODEL_CONFIG_VERSION >= 55
-    # gen3_deadline_clock_v1 (v65) supersedes gen3_no_concat_v1; the biased trunk rides inside it.
-    assert ARCH_SIGNATURE == "gen3_deadline_clock_v1"
+    # The biased trunk rides inside every post-gen3_no_concat_v1 signature — pin "current
+    # signature has a SIGNATURE_FIRST_VERSION row", not one literal value (the literal pin is
+    # what went stale here twice).
+    from agents.model.model_version import SIGNATURE_FIRST_VERSION
+    assert ARCH_SIGNATURE in SIGNATURE_FIRST_VERSION
     fields = {f.name for f in dataclasses.fields(ModelVersion)}
     assert "edge_bias_families" in fields
-    migrated = _migrate_config({"config_version": 50})
-    assert migrated["edge_bias_families"] == "off" and migrated["config_version"] >= 55
+    # the v56 default-injection branch is pre-floor (MIGRATION_FLOOR): a v50 config is a
+    # pre-generation checkpoint and is refused outright.
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 50})

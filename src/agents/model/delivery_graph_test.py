@@ -163,17 +163,35 @@ def test_pointer_logits_are_fed_by_their_own_entity(graph):
             f"switch logit {j} reads another mon's token: {srcs}")
 
 
-def test_the_op_block_reaches_both_heads_at_full_width(graph):
-    """The op's head concat is the only channel that can deliver an absolute MAGNITUDE to the heads
-    (a bias is a softmax-normalised ratio). Both heads must read it, unpooled, at the op's full
-    out_dim — narrowing it silently would be a capability change, not a refactor."""
-    op_dim = graph["meta"]["op_out_dim"]
+def test_the_op_reaches_the_heads_by_its_post_concat_routes_only(graph):
+    """gen3_no_concat_v1 (v61): the op's flat block enters NEITHER head — the graph previously
+    still drew the dead 660-dim op->head concat edges (stale since the deletion; this test pinned
+    them). The true routes now: pi gets the op ONLY via pointer cells / prefuse / edge biases
+    (no op->pi concat at all), and vf's window is the MultiSeedValueReadout over the typed
+    per-our-mon rows (pooled, k*dim wide) — the critic's magnitude read after the concat's
+    death."""
+    from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
+    pi_concat = [e for e in graph["edges"]
+                 if e["type"] == "concat" and e["src"] == "damage_op"
+                 and e["dst"] == "pi_projection"]
+    assert pi_concat == [], f"the op->pi concat is DEAD (v61); the graph draws {pi_concat}"
+    vf_concat = [e for e in graph["edges"]
+                 if e["type"] == "concat" and e["src"] == "damage_op"
+                 and e["dst"] == "vf_projection"]
+    assert len(vf_concat) >= 1, "the critic lost its op window — no op->vf route in the graph"
+    seed = [e for e in vf_concat if "MultiSeedValueReadout" in e.get("via", "")]
+    assert len(seed) == 1, f"expected the seed-readout route, got {vf_concat}"
+    assert seed[0]["width"] == VALUE_SEED_K * VALUE_SEED_DIM
+    assert seed[0]["pooled"] is True, "the seed readout is an attention pool, not a raw slice"
+
+
+def test_the_active_ctx_concat_is_dead(graph):
+    """gen3_ctx_dedup_v1: the per-side encoded active contexts no longer enter either head —
+    the ctx rides the active tokens (E2 injection) + the global token."""
     for head in FORWARD_SINKS:
-        concat = [e for e in graph["edges"]
-                  if e["type"] == "concat" and e["src"] == "damage_op" and e["dst"] == head]
-        assert len(concat) == 1, f"expected exactly one op->{head} concat edge, got {concat}"
-        assert concat[0]["width"] == op_dim
-        assert concat[0]["pooled"] is False
+        stale = [e for e in graph["edges"]
+                 if e["src"] == "active_context" and e["dst"] == head]
+        assert stale == [], f"active_context->{head} survived the dedup: {stale}"
 
 
 def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):

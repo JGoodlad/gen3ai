@@ -1,5 +1,12 @@
 # design — THE TIERED PIPELINE: resolve → reason → decide → deliver
 
+> **[STATE 2026-08-14]** §5 steps 1–5 SHIPPED (v70/71, byte-identical as designed); step 6's
+> critic half shipped (v74 `intent_value_reduce`); step 7 open. §1's "the untiered order also
+> exists" duplication table describes the PRE-v70/71 world it motivated deleting — read it as
+> the record of what was removed. The flag surface it measured has since also lost the SimSiam
+> latent belief (v75), the ctx concat + `active_ctx_hidden` (v76), and ~70 dead migration
+> branches (the v76 floor).
+
 **Owner-constrained, 2026-08-13. Goal: REDUCE architectural complexity while improving robustness.
 Acceptance is NON-INFERIORITY, not gain** — "okay if it doesn't make it meaningfully better so long
 as it doesn't make it meaningfully worse, as long as we're trending towards a more universal
@@ -36,7 +43,8 @@ parallel, selected by flag:
 So the work is mostly **deletion**: collapse to the one order that production already uses, and
 close the one loop that is open (α has no consumer).
 
-**Scale of the surface being reduced: 183 CLI flags, 52 version-checked arch toggles.**
+**Scale of the surface being reduced: 183 CLI flags, 52 version-checked arch toggles** (as
+measured 2026-08-13; 177 CLI flags after the v70–v76 deletions).
 
 ---
 
@@ -133,19 +141,19 @@ Deliberately small — three things:
 
 ## 5. Migration — smallest safe steps, each independently shippable
 
-| # | step | risk | gate |
-|---|---|---|---|
-| 1 | Delete the 3 UNREACHABLE flags (#4) | **zero** — they raise today | suite |
-| 2 | Delete the refine loop + `single_compute` (#2,#3) | zero in production (0 rounds) | suite + byte-identical forward |
-| 3 | Make prefuse unconditional; delete the POST call sites (#1) | zero in production; **breaks non-prefuse configs by design** | forward bit-identity vs production config |
-| 4 | Delete `--damage-reattend` (#5) | off in production | suite |
-| 5 | Land the tier-ordering contract + test | zero | new test fails on a violation |
-| 6 | **α → the reduction** (`how=` at `_chan_max`) | **the real change** | A/B at the one call site; retrain-class |
-| 7 | Unify delivery (T3) | largest | non-inferiority on the ladder |
+| # | step | risk | gate | status |
+|---|---|---|---|---|
+| 1 | Delete the 3 UNREACHABLE flags (#4) | **zero** — they raise today | suite | ✅ SHIPPED v70 (`gen3_refine_loop_removed_v1`) |
+| 2 | Delete the refine loop + `single_compute` (#2,#3) | zero in production (0 rounds) | suite + byte-identical forward | ✅ SHIPPED v70 |
+| 3 | Make prefuse unconditional; delete the POST call sites (#1) | zero in production; **breaks non-prefuse configs by design** | forward bit-identity vs production config | ✅ SHIPPED v71 (`gen3_tiered_pipeline_v1` — recorded-POST configs are REFUSED, not popped) |
+| 4 | Delete `--damage-reattend` (#5) | off in production | suite | ✅ SHIPPED v71 |
+| 5 | Land the tier-ordering contract + test | zero | new test fails on a violation | ✅ SHIPPED v70/71 (`tier_contract.py` + planted-violation tests) |
+| 6 | **α → the reduction** (`how=` at `_chan_max`) | **the real change** | A/B at the one call site; retrain-class | ◐ PARTIAL — the CRITIC-side consumer landed as v74 `intent_value_reduce` (α-weighted pair-cell rows, vf-only zero-init concat; live in gen-9). The op's own reduction stays R0 `hard_max`; the POLICY-side consumption (the pointer move cell, `design_conditional_execution.md`) remains open |
+| 7 | Unify delivery (T3) | largest | non-inferiority on the ladder | open |
 
-**Steps 1–5 are pure deletion and are byte-identical on the production config.** They can ship
-before gen-9 finishes and be validated by the existing forward-identity gates. Step 6 is the first
-behavioural change and the first that needs a generation.
+**Steps 1–5 shipped as v70/71** (pure deletion, byte-identical on the production config,
+validated by the forward-identity gates as planned). Step 6's critic half shipped as v74; the
+remaining behavioural work — its policy half and step 7 — is the open tail.
 
 ---
 

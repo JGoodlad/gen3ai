@@ -3,6 +3,12 @@
 **Status:** forward design, not built. Written 2026-08-07 off the gen-3 @9.6M measurements below.
 **Owner decision needed:** none to start Part 0/1; Part 2 has a hard prerequisite (§4.1).
 
+> **[UPDATE 2026-08-14: the amendment below is HISTORY.]** The two-route precondition was
+> RESOLVED 2026-08-09 without either route — the concat died on gen-4's stratified evidence
+> (v61), and the critic route that shipped was `MultiSeedValueReadout`, neither candidate.
+> OA1/OA2 and PV survive as forward designs on their own merits, no longer as preconditions
+> (`designs/CLAUDE.md`'s ai_v9 row records the resolution). PV's "promotion" is therefore void.
+
 > **⚠️ AMENDED 2026-08-08 — PV is no longer an optional tail item.** The owner amendment in
 > `design_generation_roadmap.md` §3.8 makes the op head-concat's deletion conditional on a
 > **TWO-ROUTE** precondition: **OA1 (policy) + a CRITIC route (this doc's PV *or* generalized

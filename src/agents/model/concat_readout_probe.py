@@ -56,22 +56,21 @@ def _assembler_arm(fe, mode: str, hdr: "tuple[int, int] | None" = None):
         return
     orig = fe.assembler.forward
 
-    def patched(our_p, their_p, our_act, val_p, ctx, hidden_opp_belief=None, damage_block=None):
-        if damage_block is None:
+    def patched(our_p, their_p, our_act, val_p, ctx, hidden_opp_belief=None, seed_rows=None):
+        # gen3_op_tensors_views_v1: the assembler consumes the TYPED incoming-rows view. The
+        # imx headers therefore never reach this site at all — `headers_off` is structurally a
+        # no-op here (it already was post-gen3_no_concat_v1, when the headers fell outside the
+        # rows), kept only so historical report shapes still render.
+        if seed_rows is None or mode == "headers_off":
             return orig(our_p, their_p, our_act, val_p, ctx,
-                        hidden_opp_belief=hidden_opp_belief, damage_block=None)
-        if mode == "headers_off":
-            db = damage_block.clone()
-            db[:, hdr[0]:hdr[1]] = 0.0
-            return orig(our_p, their_p, our_act, val_p, ctx,
-                        hidden_opp_belief=hidden_opp_belief, damage_block=db)
-        z = torch.zeros_like(damage_block)
+                        hidden_opp_belief=hidden_opp_belief, seed_rows=seed_rows)
+        z = torch.zeros_like(seed_rows)
         pi_z, vf_z = orig(our_p, their_p, our_act, val_p, ctx,
-                          hidden_opp_belief=hidden_opp_belief, damage_block=z)
+                          hidden_opp_belief=hidden_opp_belief, seed_rows=z)
         if mode == "off_both":
             return pi_z, vf_z
         pi_r, vf_r = orig(our_p, their_p, our_act, val_p, ctx,
-                          hidden_opp_belief=hidden_opp_belief, damage_block=damage_block)
+                          hidden_opp_belief=hidden_opp_belief, seed_rows=seed_rows)
         return (pi_z, vf_r) if mode == "off_pi" else (pi_r, vf_z)
 
     fe.assembler.forward = patched

@@ -179,13 +179,15 @@ ACTIVE_REQ_MOVES_OFFSET = REACTIVE_SCALAR_DIM                            # 5 —
 
 REACTIVE_DIM = REACTIVE_SCALAR_DIM + ACTIVE_REQ_MOVES_DIM                # 17
 
-# Top-level Offsets — all derived from the named constants (only the constants are load-bearing;
-# these comments are the post-gen3_markovian_progress_v1 values: base dim = 1790, full obs = 3391).
+# Top-level Offsets — all derived from the named constants. ONLY the expressions are
+# load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated
+# values misleading readers who grepped by eye — read `Gen3ObservationEncoder.get_layout()`
+# for the live offsets instead).
 OFFSET_OUR_TEAM = 0
-OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM                     # 642
-OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM                       # 1284
-OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)  # 1400
-OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM            # 1418
+OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM
+OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM
+OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)
+OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM
 
 # Max values for normalization.
 # MAX_TURNS is ALSO the forfeit deadline: `StallConfig.threshold` defaults to it (training/stall.py

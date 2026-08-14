@@ -1,5 +1,13 @@
 # design — the PAIR REDUCTION: replacing the hard max with a typed, learned, swappable operator
 
+> **[STATE 2026-08-14]** The R1 `belief_mean` rung is LIVE in production, earlier than the
+> window below expected — via `--value-threat-inject` (v64, on in gen-8/9), which forces R1 for
+> its α-weighted row; the op's own reduction stays R0 `hard_max`. The named prerequisite chain
+> resolved differently than scheduled: seed VICReg (gen-6) and seed quantile (gen-7) both
+> measured the k=4 readout capping at ~1-D, closing the seed-multiplicity line; the critic route
+> that then shipped is v74 `intent_value_reduce` (α-weighted `pair_in` rows, vf-only). OpTensors
+> steps 1–2 shipped 2026-08-14, so "one call site, typed views" is now literal in code.
+
 > **Window this occupies — UPDATED 2026-08-09, and the update is not cosmetic.** This document was
 > written to occupy the gap *after* the op head-concat is removed and *before* the next generation
 > launches. **Both events have now happened**: the concat died in `6aac795`

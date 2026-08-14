@@ -53,7 +53,6 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
     MOVE_LATENT_HIDDEN,
     MOVE_LATENT_DIM,
     ROLE_ENCODER_HIDDEN,
-    ACTIVE_CTX_HIDDEN,
     NET_ARCH,
     N_HISTORY_TURNS,
     ZARCH_DIM,
@@ -297,6 +296,45 @@ _DMG_STATUS_REFINE = 2
 _IMMOBILIZE_STATUS_CATS = (1, 3, 4)   # MOVE_STATUS_CAT values for paralysis / freeze / sleep (action-denying)
 
 
+@dataclass
+class OpTensors:
+    """Typed, named VIEWS over the op's flat output block (`gen3_op_tensors_views_v1`,
+    design_op_tensors.md steps 1-2).
+
+    ONE place slices the layout (`DamageOperator.tensors_from_block`); every consumer reads a
+    named field instead of re-deriving offsets — the slice-offset bug class becomes
+    unrepresentable at the consumer. Zero-copy: every field is a view/reshape of the SAME
+    storage `flat` owns, so gradients and post-`out_gain` scaling are untouched and the flat
+    block remains the serialization (`decode_damage_block` / the prober keep reading it).
+
+    Region inventory (widths under the production config):
+      * `incoming_rows` + the CB tail — the per-OUR-mon incoming physics (dims 0..84);
+        consumed by the prefuse injection, the pointer SWITCH cells and the critic's seed
+        readout.
+      * the outgoing + status-landing groups (dims 85..137, `None` when `outgoing` is off) —
+        consumed by the pointer MOVE cells.
+      * `incoming_matrix` / `outgoing_matrix` / OAX — opaque render regions kept ONLY as the
+        serialization tail (no forward consumer since the head-concat's deletion,
+        `gen3_no_concat_v1`); dropping them from the forward is design_op_tensors.md step 3
+        (retrain-class: it shrinks `out_gain`).
+    """
+    flat: torch.Tensor                          # [B, out_dim] — post-gain serialization
+    incoming_rows: torch.Tensor                 # [B, 6, per_mon]
+    cb_high: torch.Tensor                       # [B, 6]
+    cb_pko: torch.Tensor                        # [B, 6]
+    p_cb: torch.Tensor                          # [B, 1] (shared scalar)
+    out_per_move: Optional[torch.Tensor]        # [B, 4, 4] [low,high,crit,pko], request order
+    out_p_outspeed: Optional[torch.Tensor]      # [B, 1]
+    out_secondary: Optional[torch.Tensor]       # [B, 4, 7] (_OUT_SEC_COLS order)
+    status_p_land: Optional[torch.Tensor]       # [B, 4]
+    status_known: Optional[torch.Tensor]        # [B, 4]
+    outgoing_matrix: Optional[torch.Tensor]     # [B, 126] opaque render (off in production)
+    incoming_matrix: Optional[torch.Tensor]     # [B, imx_dim] opaque render
+    oax_cells: Optional[torch.Tensor]           # [B, 6, 16] (off in production)
+    oax_p_outspeed: Optional[torch.Tensor]      # [B, 6]
+    oax_alive: Optional[torch.Tensor]           # [B, 6]
+
+
 class DamageOperator(torch.nn.Module):
     """Fixed, differentiable gen3 damage calculator run in the GPU forward pass, fed by the
     move-belief head's PREDICTED moves — the "compute the physics, learn the belief" op
@@ -371,6 +409,8 @@ class DamageOperator(torch.nn.Module):
         # when a downstream alpha consumer asked for them. Off => None and zero extra work.
         self.stash_pair_cells: bool = False
         self.last_pair_cells: Optional[torch.Tensor] = None
+        # gen3_op_tensors_views_v1: the typed views over the last forward's post-gain block.
+        self.last_tensors: Optional[OpTensors] = None
         self.last_topk_cand_idx: Optional[torch.Tensor] = None
         self.last_pair_gate: Optional[torch.Tensor] = None
         # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
@@ -1171,10 +1211,65 @@ class DamageOperator(torch.nn.Module):
         """Per-candidate-mon cell width for the pointer SWITCH scorer."""
         return _PTR_SWITCH_CELL_IN + (_PTR_SWITCH_CELL_OAX if self.matrices_outgoing_all else 0)
 
+    def tensors_from_block(self, damage_block: torch.Tensor) -> OpTensors:
+        """THE single slicer of the flat block's layout (`gen3_op_tensors_views_v1`) — every
+        region as a named zero-copy view (see `OpTensors`). A pure function of the passed
+        tensor: it serves the post-gain forward output, constructed test rows, and the
+        offset-parity gates alike (`decode_damage_block` stays the human-readable mirror)."""
+        B = damage_block.shape[0]
+        inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(B, TEAM_SIZE, _DMG_PER_MON)
+        cb0 = TEAM_SIZE * _DMG_PER_MON
+        cb_high = damage_block[:, cb0:cb0 + TEAM_SIZE]                                   # [B,6]
+        cb_pko = damage_block[:, cb0 + TEAM_SIZE:cb0 + 2 * TEAM_SIZE]                    # [B,6]
+        p_cb = damage_block[:, cb0 + 2 * TEAM_SIZE:cb0 + 2 * TEAM_SIZE + 1]              # [B,1] shared
+        out_per_move = out_p_outspeed = out_secondary = None
+        status_p_land = status_known = None
+        pos = self.incoming_dim
+        if self.outgoing:
+            out_per_move = damage_block[:, pos:pos + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE].reshape(
+                B, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE)                                  # move-major [B,4,4]
+            sp0 = pos + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE
+            out_p_outspeed = damage_block[:, sp0:sp0 + 1]                                # [B,1]
+            out_secondary = damage_block[:, sp0 + 1:sp0 + 1 + _DMG_OUT_SEC].reshape(
+                B, _DMG_OUT_N_MOVES, _N_OUT_SECONDARY)                                   # [B,4,7]
+            st0 = pos + _DMG_OUTGOING
+            status_p_land = damage_block[:, st0:st0 + _DMG_STATUS_N_MOVES]               # [B,4]
+            status_known = damage_block[
+                :, st0 + _DMG_STATUS_N_MOVES:st0 + 2 * _DMG_STATUS_N_MOVES]              # [B,4]
+            pos += _DMG_OUTGOING + _DMG_STATUS
+        outgoing_matrix = None
+        if self.matrices_outgoing:
+            outgoing_matrix = damage_block[:, pos:pos + _DMG_OMX]
+            pos += _DMG_OMX
+        incoming_matrix = None
+        if self.matrices_incoming:
+            imx_dim = _dmg_imx_dim(self.matrices_incoming_k)
+            incoming_matrix = damage_block[:, pos:pos + imx_dim]
+            pos += imx_dim
+        oax_cells = oax_p_outspeed = oax_alive = None
+        if self.matrices_outgoing_all:
+            oax_cells = damage_block[:, pos:pos + TEAM_SIZE * _DMG_OAX_PER_MON].reshape(
+                B, TEAM_SIZE, _DMG_OAX_PER_MON)
+            posp0 = pos + TEAM_SIZE * _DMG_OAX_PER_MON
+            oax_p_outspeed = damage_block[:, posp0:posp0 + TEAM_SIZE]                    # [B,6]
+            oax_alive = damage_block[:, posp0 + TEAM_SIZE:posp0 + 2 * TEAM_SIZE]         # [B,6]
+            pos += _DMG_OAX
+        if pos != self.out_dim:
+            raise RuntimeError(
+                f"OpTensors layout walk ended at {pos}, out_dim is {self.out_dim} — a region "
+                "was added to the flat block without a view here (the layout has ONE owner).")
+        return OpTensors(
+            flat=damage_block, incoming_rows=inc, cb_high=cb_high, cb_pko=cb_pko, p_cb=p_cb,
+            out_per_move=out_per_move, out_p_outspeed=out_p_outspeed,
+            out_secondary=out_secondary, status_p_land=status_p_land,
+            status_known=status_known, outgoing_matrix=outgoing_matrix,
+            incoming_matrix=incoming_matrix, oax_cells=oax_cells,
+            oax_p_outspeed=oax_p_outspeed, oax_alive=oax_alive)
+
     def pointer_cells(self, damage_block: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """gen3_pointer_native_v1: slice the flat damage block into PER-ACTION cells for the pointer head —
-        the op owns its layout, so the offsets live here (mirroring `decode_damage_block`, the SoT mirror)
-        and the consumer never hardcodes an index.
+        """gen3_pointer_native_v1: the flat damage block as PER-ACTION cells for the pointer head.
+        Since `gen3_op_tensors_views_v1` the slicing lives in `tensors_from_block` (the layout's
+        one owner); this just assembles the per-action concats from the named views.
 
         Returns ``(move_cells [B,4,pointer_move_cell_dim], switch_cells [B,6,pointer_switch_cell_dim])``:
           * move cell k (REQUEST-slot order == action logit 6+k, the `gen3_op_move_align_v1` guarantee —
@@ -1183,38 +1278,21 @@ class DamageOperator(torch.nn.Module):
             (the 7 live secondary columns — see `_OUT_SEC_COLS`).
           * switch cell j: the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` +
             (when `matrices_outgoing_all`) the OAX attacker row `[cells×16, p_outspeed_j, alive_j]`.
-        Pure slicing of the SAME tensor the projection heads consume (post-gain), so the pointer path and
-        the flat concat can never disagree on a value."""
+        Pure slicing of the SAME tensor the seed readout consumes (post-gain), so the pointer path and
+        the critic's window can never disagree on a value."""
         B = damage_block.shape[0]
+        t = self.tensors_from_block(damage_block)
         # --- switch cells: incoming per-mon rows + the CB tail (+ the OAX attacker rows) ---
-        inc = damage_block[:, :TEAM_SIZE * _DMG_PER_MON].reshape(B, TEAM_SIZE, _DMG_PER_MON)
-        cb0 = TEAM_SIZE * _DMG_PER_MON
-        high_cb = damage_block[:, cb0:cb0 + TEAM_SIZE]                                   # [B,6]
-        pko_cb = damage_block[:, cb0 + TEAM_SIZE:cb0 + 2 * TEAM_SIZE]                    # [B,6]
-        p_cb = damage_block[:, cb0 + 2 * TEAM_SIZE:cb0 + 2 * TEAM_SIZE + 1]              # [B,1] shared
-        switch_parts = [inc, high_cb[:, :, None], pko_cb[:, :, None],
-                        p_cb[:, None, :].expand(B, TEAM_SIZE, 1)]
+        switch_parts = [t.incoming_rows, t.cb_high[:, :, None], t.cb_pko[:, :, None],
+                        t.p_cb[:, None, :].expand(B, TEAM_SIZE, 1)]
         if self.matrices_outgoing_all:
-            oax0 = self.out_dim - _DMG_OAX                    # OAX is appended LAST (the v39 contract)
-            cells = damage_block[:, oax0:oax0 + TEAM_SIZE * _DMG_OAX_PER_MON].reshape(
-                B, TEAM_SIZE, _DMG_OAX_PER_MON)
-            posp0 = oax0 + TEAM_SIZE * _DMG_OAX_PER_MON
-            p_outspeed = damage_block[:, posp0:posp0 + TEAM_SIZE]                        # [B,6]
-            alive = damage_block[:, posp0 + TEAM_SIZE:posp0 + 2 * TEAM_SIZE]             # [B,6]
-            switch_parts += [cells, p_outspeed[:, :, None], alive[:, :, None]]
+            switch_parts += [t.oax_cells, t.oax_p_outspeed[:, :, None], t.oax_alive[:, :, None]]
         switch_cells = torch.cat(switch_parts, dim=2)                                    # [B,6,Cs]
         # --- move cells: the outgoing damage stack + status landing + per-move secondaries ---
         if not self.outgoing:
             return damage_block.new_zeros(B, _DMG_OUT_N_MOVES, 0), switch_cells
-        ob = self.incoming_dim
-        per_move = damage_block[:, ob:ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE].reshape(
-            B, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE)                                      # move-major [B,4,4]
-        sec0 = ob + _DMG_OUT_N_MOVES * _DMG_OUT_PER_MOVE + 1                             # skip p_outspeed
-        sec = damage_block[:, sec0:sec0 + _DMG_OUT_SEC].reshape(B, _DMG_OUT_N_MOVES, _N_OUT_SECONDARY)
-        st0 = ob + _DMG_OUTGOING                                                         # the status block
-        p_land = damage_block[:, st0:st0 + _DMG_STATUS_N_MOVES]                          # [B,4]
-        known = damage_block[:, st0 + _DMG_STATUS_N_MOVES:st0 + 2 * _DMG_STATUS_N_MOVES]  # [B,4]
-        move_cells = torch.cat([per_move, p_land[:, :, None], known[:, :, None], sec], dim=2)
+        move_cells = torch.cat([t.out_per_move, t.status_p_land[:, :, None],
+                                t.status_known[:, :, None], t.out_secondary], dim=2)
         return move_cells, switch_cells                                                  # [B,4,13], [B,6,Cs]
 
     def _status_landing(self, ctx: 'ExtractorContext') -> torch.Tensor:
@@ -2892,7 +2970,12 @@ class DamageOperator(torch.nn.Module):
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
         self.last_raw_block = block.detach()
-        return block * self.out_gain                                    # learnable per-channel adapter (×only)
+        gained = block * self.out_gain                                  # learnable per-channel adapter (×only)
+        # gen3_op_tensors_views_v1: the typed named views over the post-gain block, computed ONCE
+        # here so every same-forward consumer (prefuse injection, seed readout) reads a field
+        # instead of an offset. Zero-copy — `gained` is still the returned serialization.
+        self.last_tensors = self.tensors_from_block(gained)
+        return gained
 
 
 # Effect-column order (== damage_tables.MOVE_EFFECT_COLS) — the layout of the INCOMING MATRIX's per-move

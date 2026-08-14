@@ -4,19 +4,20 @@
 *mechanics* live in `src/agents/model/CLAUDE.md`. If a claim here disagrees with the code, the code
 wins and this file is a bug — fix it in the same change.
 
-**"Current" means the production configuration**, which is the live gen-3 self-play run:
+**"Current" means the production configuration as HEAD resolves it.** Two objects, deliberately
+distinct — a generation now turns over every ~2 days, so conflating them is how this file went
+stale twice:
 
 | | |
 |---|---|
-| Run | `models/run_20260807_135637_gen3/` |
-| Started | 2026-08-07, git `e60a1e1` |
-| Config | `model_config.json` (`config_version` **59**, `arch_signature` **`gen3_edge_bias_trunk_v1`**) |
-| Invocation | `command.txt` (also `metadata.json` → `original_command`) |
-| Progress at time of writing | step 32,000,016 of 40,000,000; bots 0.911, anchored ELO 2094 (`metadata.json` → `latest_eval`, 2026-08-08) |
+| Production run | `models/ai_v9_10_gen9_intent_distcritic_0813/` (gen-9, launched 2026-08-13) — `model_config.json` `config_version` **69**, `arch_signature` **`gen3_deadline_clock_v1`**; trains on its own pinned worktree |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 76 / `gen3_ctx_dedup_v1`) |
+| `designs/production_config.json` | the gen-9 run's config **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
-Everything below was derived on **2026-08-08** by instantiating that config against the code, not
-by reading prose. `designs/production_config.json` is a verbatim copy of that run's
-`model_config.json`, committed so this file is reproducible without reaching into `models/`.
+Everything below describes what HEAD builds under `designs/production_config.json`. The
+machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
+`arch_tables_test.py`) — regenerate them in the same commit as any architecture change; the prose
+is hand-written and the generator never touches it.
 
 **The companion artifact is [`architecture_graph.dot`](architecture_graph.dot)** — a *generated*
 delivery digraph (seats and sinks as nodes; edges typed by what they physically carry: `bias` = a
@@ -68,9 +69,9 @@ GPU-side, `active_status` was byte-redundant with the per-mon condition one-hot,
 `protect_odds`, `trapped` and `maybe_trapped` moved **onto the per-mon slots** (the facts ride
 the entities they describe).
 
-> The `OFFSET_*` values in the comments inside `constants.py` (642 / 1284 / 1400 / 1418) are stale
-> arithmetic from an older per-mon width. The **expressions** are correct and are what runs; only
-> the trailing `# 642`-style comments are wrong. Listed in §8.
+> The `OFFSET_*` trailing comments inside `constants.py` used to carry stale evaluated numbers
+> (642 / 1284 / …). They are deleted (2026-08-14) — only the expressions remain, with a comment
+> forbidding evaluated values there; read `get_layout()` for live offsets.
 
 ### 1.2 Per-Pokémon slot — 116 dims (`POKEMON_FULL_DIM`)
 
@@ -167,16 +168,18 @@ routes raw ids to embedding tables, live in `src/agents/observation/CLAUDE.md`. 
 `Gen3DualHeadMaskablePolicy` (`policy.py`) — the extractor returns a `(pi_features, vf_features)`
 tuple, which stock SB3 policies cannot consume.
 
-Modules actually built under the production config (`named_children()`, verified 2026-08-08):
+Modules actually built under the production config (`named_children()`) — GENERATED:
 
+<!-- BEGIN GENERATED: modules -->
 ```
-embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer ·
-cls_pool · move_belief · hp_type_belief_head · damage_op · prefuse_proj · assembler ·
-pre_proj_norm · projection · value_pre_norm · value_projection · activation
+embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
+hidden_opp_belief · belief_slots · belief_head · move_belief · spread_belief ·
+hp_type_belief_head · damage_op · prefuse_proj · assembler · value_dist_head · pre_proj_norm ·
+projection · value_pre_norm · value_projection · activation · alpha_head · beta_head
 ```
 
-Notably **absent** (their flags are off): `belief_slots`, `belief_head`, `spread_belief`,
-`hidden_opp_belief`, `zarch_encoder` / `film_*`, `win_head`, `pubval_head`, `value_dist_head`.
+Notably **absent** (`None` on the instance): `win_head`, `pubval_head`, `zarch_encoder`, `intent_value_reduce`, `seed_quantile_head`.
+<!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
 
@@ -284,29 +287,40 @@ the table changes every model's state_dict).
 This section is the canonical answer to "what does head X read". Widths verified by forward pass,
 2026-08-08.
 
-### 3.1 `pi_projection` — 473 → 512
+### 3.1 / 3.2 The head inputs — GENERATED
 
-`Linear(473, 512)` after `pre_proj_norm` (LayerNorm), then ReLU. **The op head-concat is DEAD (`gen3_no_concat_v1`, v61)** — the 660-dim flat block enters neither head; the op reaches the policy via the pointer cells (lossless per-action), the prefuse token injection, and the edge cells. Input concat, in order:
+**The op head-concat is DEAD (`gen3_no_concat_v1`, v61)** — the flat block enters neither head;
+the op reaches the policy via the pointer cells (lossless per-action), the prefuse token
+injection, and the edge cells. **The active-ctx concat is DEAD too (`gen3_ctx_dedup_v1`, v76)** —
+the per-side encoded ctx pair was duplicated delivery (the E2 injection carries each side's full
+raw ctx block on its active token; the global token is a second route). `non_matchup_rest` stays:
+its only token route is the global token, which no pool reads directly.
+
+The exact concat composition and widths of both projections, under the production config on
+HEAD, are generated below — never hand-edit inside the markers.
+
+<!-- BEGIN GENERATED: head-inputs -->
+**`pi_projection` — `Linear(1177, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
 | `our_team_pooled` | 128 | `CLSPool.our_cls` over our 6 refined tokens |
-| `their_team_pooled` | 128 | `CLSPool.their_cls` over their 6 refined tokens |
+| `their_team_pooled` | 128 | `CLSPool.their_cls` over their 6 |
 | `our_active_refined` | 128 | our active slot's refined token |
-| `active_ctx_enc` (ours) | 32 | `active_ctx_encoder` (shared with vf) |
-| `active_ctx_enc` (theirs) | 32 | " |
-| `non_matchup_rest` | 25 | global env 20 + board scalars 5 |
-| **total** | **473** | |
+| `non_matchup_rest` | 25 | global env + board scalars (`_non_matchup_rest_dim`) |
+| `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
+| **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-### 3.2 `vf_projection` — 473 → 512
+**`vf_projection` — `Linear(1177, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
-| `active_ctx_enc` ×2 | 64 | shared with pi |
-| `non_matchup_rest` | 25 | global env 20 + board scalars 5 |
-| **seed readout** | **256** | `MultiSeedValueReadout` — k=4 × 64 (`VALUE_SEED_K`/`VALUE_SEED_DIM`) |
-| **total** | **473** | |
+| `non_matchup_rest` | 25 | shared with pi |
+| `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
+| seed readout | 256 | `MultiSeedValueReadout` — k=4 × 64 over `OpTensors.incoming_rows` |
+| **total** | **1177** | == `value_projection.in_features`, asserted at generation |
+<!-- END GENERATED: head-inputs -->
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
@@ -406,11 +420,10 @@ logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 **The pointer route is POLICY-ONLY.** `pointer_head` is reached solely through
 `_get_action_dist_from_latent(latent_pi)`; every value path is
 `forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
-channel exists for the actor and **not** for the critic — the critic's only route to the op's
-physics is the `concat` edge in §3.2. That asymmetry is measurable: zeroing the op head-concat
-moves the critic by |dV| **5.67** against **1.86** for the whole 15-family edge system
-(§5.4) — i.e. the concat is the critic's dominant physics dependency, and no amount of
-pointer-cell work re-homes it.
+channel exists for the actor and **not** for the critic — the critic's op-physics routes are the
+`MultiSeedValueReadout` window over the typed `incoming_rows`, `--value-threat-inject`'s token
+content on the value pool's copy, and (when on) the `intent_value_reduce` term — all vf-only,
+all reading the op through `OpTensors` views rather than flat offsets.
 
 ### 3.4 Side readouts
 
@@ -618,67 +631,71 @@ gen-2 `v` rows were measured on the speed-stat GIGO bug** (§8) and describe the
 
 ## 6. Flags — production value and status
 
-Read from `models/run_20260807_135637_gen3/model_config.json` + `command.txt`, 2026-08-08.
+The flag/status and loss-coefficient tables are GENERATED from `designs/production_config.json`
+resolved against HEAD (`python -m agents.model.arch_tables`; drift pinned by
+`arch_tables_test.py`) — a hand-derived version of this table went stale twice within one week of
+generation turnover, and its stale rows are precisely what mis-briefed downstream readers.
 
 **Status legend** — `ACTIVE`: on and doing work. `OFF`: not enabled. `INERT`: nominally set but
-does nothing given another setting. `UNREACHABLE`: cannot be enabled in this config — turning it on
-raises at build time.
+does nothing given another setting.
 
-### 6.1 Architecture toggles
-
-| Flag / config field | Production value | Status |
+<!-- BEGIN GENERATED: flag-table -->
+| Flag | Production value | Status |
 |---|---|---|
-| `damage_op` | true | ACTIVE — the 660-dim block, both heads + pointer cells. Its placement is the TIER ORDER (§2.1) and no longer a flag: the whole belief+physics stack runs once, pre-attention, on every config |
-| `damage_outgoing` | true | ACTIVE — outgoing block + status landing; also gates the pointer **move** cells and edges d1/s1/c1/c2 |
-| `move_belief_mode` | `"revealed"` | ACTIVE — predicts a *seen* mon's unrevealed moves |
-| `move_prior_fusion` | true | ACTIVE — posterior = Smogon log-odds prior ⊕ learned delta, revealed pinned |
-| `move_latent` | true | ACTIVE — `MoveLatentEncoder`; required by `damage_matrices_incoming` |
-| `hp_belief_mode` | `"composed"` | ACTIVE — the factorised presence × type head |
-| `damage_matrices_incoming` | true | ACTIVE — 522 of the op's 660 dims |
-| `damage_topk_k` | 6 | ACTIVE — sizes the incoming matrix (and nothing else) |
-| `consequence_topk` | 6 | ACTIVE — k_cand for c1b/c2/c3, k_bench for d4 |
-| `entity_topk_seats` | 6 | ACTIVE — E4 seats; also the precondition for edges d3/s3 |
-| `entity_tail_seats` | true | ACTIVE — E5 seats |
-| `edge_bias_families` | all 15 | ACTIVE (§5) |
-| `attend_unrevealed_opponents` | true | ACTIVE — hidden opp slots stay attendable |
-| `use_popart` | true | ACTIVE — with the mandatory `--clip-range-vf none` |
-| `belief_grad_mode` | `"shaping"` | ACTIVE — nothing cut: the belief heads read the live trunk (so their supervised loss reshapes it) AND the policy/value gradient trains them through their reinjections. The two alternatives cut OPPOSITE arrows: **`detached`** stop-grads the heads' trunk READ, so no belief gradient reshapes the trunk; **`label_only`** publishes the heads' OUTPUT stop-grad to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the belief is trained by its supervised labels alone (the read stays live, so the label loss still teaches the trunk). Applies to the four forward-consumed supervised heads — `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and `AlphaIntentHead` (whose only forward route is `intent_value_reduce`). The pure-readout heads (`BeliefHead`, `WinProbHead`, `PubValHead`, `BetaSwitchHead`, `SeedQuantileHead`) are structurally label-only in every mode. `detach()` is value-preserving ⇒ the forward is bit-identical in all three, so this is resume-immutable rather than weight-shape (no `ARCH_SIGNATURE` bump) |
-| `damage_matrices_outgoing` | false | OFF — the 126-dim `outgoing_matrix` does not exist |
-| `damage_matrices_outgoing_all` | false | OFF — the 108-dim OAX block does not exist; the **pointer switch cell is 15 wide, not 33** (§3.3) |
-| `damage_candidate_k` | 0 | OFF — the full candidate sweep, no truncation |
-| `opp_belief_aux_coef` | 0.0 | OFF ⇒ `opp_belief_slots` false ⇒ **no `BeliefHead`, no species posterior** |
-| `species_prior_fusion` | false | OFF ⇒ `BeliefHead.species_head`'s output IS the whole species prediction. ON makes it a learned log-prob DELTA on a TEAM-COMPOSITION prior — `log P(species | the opponent's already-revealed mons)`, naive Bayes over pairwise pool co-occurrence with Species Clause as a hard constraint — computed on-GPU from two non-persistent `[S]`/`[S,S]` buffers (one `[B,S]@[S,S]` matmul, no gather). The delta head is zero-init, so the cold-start posterior EQUALS the prior. Adds **no parameters** (identical state_dict) — which is exactly why it is version-gated: nothing in the weights would catch the flip, and it re-means every species logit. Requires `opp_belief_aux_coef > 0` |
-| `t0_species_prior` | false | OFF ⇒ the `DamageOperator` prices every UNREVEALED opponent defender from the STATIC `SPECIES_USAGE_PRIOR` gen3ou frequency table (Species-Clause masked). ON re-homes the SAME team-composition belief `species_prior_fusion` uses — `log P(species \| the opponent's already-revealed mons)` — to **T0**, where the T1 physics can consume it, and hands the one resolved `[B, n_species]` tensor to **every** unrevealed-defender site (the op block, the `d1` cells, `pairwise_boost`) so the edge bias and the op block cannot disagree on a value. The two flags are independent: `species_prior_fusion` fuses the prior into the T2 aux READOUT, this feeds the T1 PHYSICS. Parameter-free (two non-persistent buffers, identical state_dict) — hence version-gated, since nothing in the weights would catch a flip that re-means every damage number against a hidden slot. Shape stays 2-D (`[B, S]`, a team-level property): the `[B,6,S]` per-slot form is what mis-vectorized under Inductor CPU and took down gen-4's launch prewarm |
-| `opp_belief_cls_k` | 0 | OFF |
-| `spread_belief` | false | OFF — the op prices REVEALED opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief. UNREVEALED defender slots (since `gen3_unrevealed_outgoing_prior_v1`, v60) are priced against the Species-Clause-filtered usage prior's E[def/spd]/E[maxhp] + E[type-mult], P(KO) nulled, `revealed` channel 0 |
-| `spread_belief_nature` | false | OFF |
-| `threat_prob_outspeed` | false | OFF — `p_outspeed` uses the fixed logistic scale, not the believed-speed std |
-| `win_prob_mode` | `"none"` | OFF |
+| `attend_unrevealed_opponents` | `true` | ACTIVE |
+| `belief_grad_mode` | `"shaping"` | ACTIVE |
+| `consequence_topk` | `6` | ACTIVE |
+| `damage_candidate_k` | `0` | OFF |
+| `damage_matrices_incoming` | `true` | ACTIVE |
+| `damage_matrices_outgoing` | `false` | OFF |
+| `damage_matrices_outgoing_all` | `false` | OFF |
+| `damage_op` | `true` | ACTIVE |
+| `damage_outgoing` | `true` | ACTIVE |
+| `damage_topk_k` | `6` | ACTIVE |
+| `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5"` | ACTIVE |
+| `entity_tail_seats` | `true` | ACTIVE |
+| `entity_topk_seats` | `6` | ACTIVE |
+| `hp_belief_mode` | `"composed"` | ACTIVE |
+| `intent_value_reduce` | `false` | OFF |
+| `move_belief_mode` | `"both"` | ACTIVE |
+| `move_candidate_floor` | `0.02` | ACTIVE |
+| `move_latent` | `true` | ACTIVE |
+| `move_prior_fusion` | `true` | ACTIVE |
+| `opp_belief_cls_k` | `6` | ACTIVE |
+| `opp_belief_slots` | `true` | ACTIVE |
+| `opp_intent` | `true` | ACTIVE |
+| `opp_intent_grad_mode` | `"detached"` | ACTIVE |
 | `pubval_mode` | `"none"` | OFF |
-| `value_dist_mode` / `value_dist_bins` | `"none"` / 0 | OFF |
-| `value_from_dist` | false | OFF — the critic is the scalar `value_net` |
-| `value_active_readout` | false | OFF — vf does not read `our_active_refined` |
-| `zarch_film` / `zarch_dim` / `zarch_lut` | `"off"` / 0 / `"off"` | OFF — no team-archetype conditioning |
-| `move_candidate_floor` | 0.02 | ACTIVE — the **legal-but-unobserved** base probability of the move prior. Not a switch: learnset **legality is unconditional** (a move a species cannot learn always gets `logit(1e-6)` ≈ 0 mass). This float only sets how high a *legal* move with no recorded Smogon usage starts, so in-battle evidence can lift it. Must be ≥ `1e-3`; `0.0` is rejected (it would collapse legal-unobserved onto impossible, and `logit(0)` = −inf) |
-| `opp_intent` | false | OFF — no `α`/`β` heads. ON adds two POINTER scorers (α over the E4 believed-threat seats + SWITCH; β over their six team tokens), supervised against what the opponent actually did, reading a DETACHED input so they cannot perturb the policy. Requires `entity_topk_seats>0` |
-| `value_threat_inject` | false | OFF — the critic reads no per-entity threat magnitude; the op stays on the R0 `hard_max` reduction and builds no `PairReducer`. Turning it on forces the R1 `belief_mean` rung and adds one shared zero-init `Linear(13, 128)` on the **value pool's** copy of our tokens; `pi` is unaffected at any weight (§3.2) |
-
-**No flag exists for the pointer-native action head.** It is unconditional — there is no off state,
-and there is no flat `action_net` to fall back to.
-
-### 6.2 Training-loss coefficients (recorded, not weight-shape)
-
-| Field | Value | Effect |
-|---|---|---|
-| `hp_type_belief_coef` | 0.05 | ACTIVE — CE on the HP-type posterior |
-| `move_belief_latent_coef` | 0.05 | ACTIVE — cosine latent grading + VICReg |
-| **`move_belief_coef`** | **0.0** | **INERT** — the per-move BCE is off. The move belief is trained **only** by the damage-operator / edge / seat gradients flowing back through `w`, plus the HP-type CE. |
-| `spread_belief_coef` | 0.0 | INERT — no `SpreadBelief` module exists anyway |
-| `opp_belief_aux_coef` | 0.0 | INERT — no `BeliefHead` |
-| `win_prob_coef` / `pubval_coef` / `value_dist_coef` | 1.0 / 0.1 / 1.0 | INERT — the corresponding heads are not built |
-| `vf_coef` | 0.5 | ACTIVE — resume-immutable |
-| `value_tail_weight` | 0.0 | OFF — plain MSE value loss |
-| `zarch_recon_coef` / `zarch_vicreg_coef` | 1.0 / 0.1 | INERT — no `ZArchEncoder` |
+| `seed_quantile` | `false` | OFF |
+| `species_prior_fusion` | `true` | ACTIVE |
+| `spread_belief` | `true` | ACTIVE |
+| `spread_belief_nature` | `true` | ACTIVE |
+| `t0_species_prior` | `false` | OFF |
+| `threat_prob_outspeed` | `false` | OFF |
+| `value_active_readout` | `false` | OFF |
+| `value_dist_bins` | `51` | ACTIVE |
+| `value_dist_mode` | `"shaping"` | ACTIVE |
+| `value_dist_vmax` | `12.0` | ACTIVE |
+| `value_dist_vmin` | `-12.0` | ACTIVE |
+| `value_threat_inject` | `true` | ACTIVE |
+| `win_prob_mode` | `"none"` | OFF |
+| `zarch_dim` | `0` | OFF |
+| `zarch_film` | `"off"` | OFF |
+| `zarch_lut` | `"off"` | OFF |
+| `hp_type_belief_coef` | `0.05` | ACTIVE |
+| `move_belief_coef` | `0.05` | ACTIVE |
+| `move_belief_latent_coef` | `0.05` | ACTIVE |
+| `opp_belief_aux_coef` | `0.05` | ACTIVE |
+| `pubval_coef` | `0.1` | INERT — no `pubval_head` |
+| `spread_belief_coef` | `0.05` | ACTIVE |
+| `value_dist_coef` | `1.0` | ACTIVE |
+| `value_seed_vicreg_coef` | `0.0` | INERT — coef 0, `assembler.seed_readout` built |
+| `value_tail_weight` | `0.3` | ACTIVE |
+| `vf_coef` | `0.5` | ACTIVE |
+| `win_prob_coef` | `1.0` | INERT — no `win_head` |
+| `zarch_recon_coef` | `1.0` | INERT — no `zarch_encoder` |
+| `zarch_vicreg_coef` | `0.1` | INERT — no `zarch_encoder` |
+<!-- END GENERATED: flag-table -->
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 
@@ -735,6 +752,15 @@ terminates at `pi_projection`, `vf_projection`, or any pointer logit.
 ---
 
 ## 8. Known contradictions between the old prose and the code
+
+> **Update 2026-08-14:** several entries below are FIXED by the ctx-dedup / OpTensors /
+> generated-tables pass: this file's header and flag/head tables no longer hand-state config
+> values (generated from `production_config.json`), the delivery graph no longer draws the dead
+> op→head concat edges (it drew them for five days after the v61 deletion, pinned by its own
+> test — the exact rot class it exists to prevent), and `designs/CLAUDE.md`'s state table was
+> brought to gen-9/v76, and the `constants.py` stale offset comments are deleted. (The
+> observation leaf's opening had already been fixed separately — item 2 below is resolved.)
+> The list below is kept as found (2026-08-08) for the record.
 
 Found while deriving this file (2026-08-08). Each is a place where a doc asserted something the
 code does not do. None are fixed in `src/` by this pass — they are recorded so the next reader does

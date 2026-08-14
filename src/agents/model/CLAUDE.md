@@ -14,7 +14,6 @@ MOVE_NET_HIDDEN = [96, 32]
 MOVE_LATENT_HIDDEN = 64      # MoveLatentEncoder MLP hidden
 MOVE_LATENT_DIM = 32         # per-move latent dim (the similarity-grading space)
 ROLE_ENCODER_HIDDEN = [256, 128]
-ACTIVE_CTX_HIDDEN = [64, 32]
 ```
 
 **Change them in `arch_constants.py` and nowhere else.** The phase modules' `__init__` read from these constants; `ModelVersion` imports them so `model_config.json` always reflects the live values. Do not hardcode these numbers anywhere else in the codebase.
@@ -246,12 +245,15 @@ so they stay correct when the architecture changes with no manual update.
    key-mask) → a `[B, k·D_MODEL]` hidden-opponent belief. `None` when `k=0`. See the v9 toggle note
    under *Model versioning* and `designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
 6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128)
-   + their_pool(128) + our_active_refined(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
-   non_matchup_rest`. Value: `value_pooled(128) + active_ctx_enc(32) + opp_ctx_enc(32) +
-   non_matchup_rest`. When the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to
-   **both** (last), widening each projection input by `k·D_MODEL`. `active_ctx_encoder`
-   (Linear→ReLU→Linear, `ACTIVE_CTX_HIDDEN`) is shared by both heads — it encodes inputs, not the
-   contested body representation.
+   + their_pool(128) + our_active_refined(128) + non_matchup_rest`. Value: `value_pooled(128) +
+   non_matchup_rest` (+ the seed readout over the op's typed `incoming_rows` when the op is on).
+   **`gen3_ctx_dedup_v1`: the per-side encoded active contexts are DELETED from both heads** —
+   they were duplicated delivery with a 1:1 entity-native replacement already live (the E2
+   injection puts each side's FULL raw ctx block on its active token; the global token is a
+   second route). `non_matchup_rest` stays: the global token is its only other route and no
+   pool reads that token directly, so the concat is currently its one direct head path. When
+   the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to **both** (last),
+   widening each projection input by `k·D_MODEL`.
 7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`
    heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
    `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
@@ -287,6 +289,19 @@ _SB_ATK`) still resolves — the prober, `model_version`, `snapshot` and the tes
 **The gate for a refactor claiming to change nothing is proof, not review:** byte-identity on pi/vf +
 the raw op block (`tmp/damage_op_equiv_probe.py`), unchanged `state_dict` keys, the constructed-scenario
 physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All four held.
+
+## The op's flat layout has ONE slicer (`gen3_op_tensors_views_v1`)
+
+`DamageOperator.tensors_from_block()` is the only place the flat block's offsets are walked; it
+returns **`OpTensors`** — named zero-copy views (`incoming_rows`, the CB tail, the outgoing/status
+groups, the opaque matrix renders). Every same-forward consumer reads a field off
+`damage_op.last_tensors` (prefuse injection, the assembler's `seed_rows`) or goes through
+`pointer_cells` (which itself now assembles from the views); **never re-derive an offset at a
+consumer** — the layout walk raises if a region is added to the block without a view. The flat
+block remains the serialization: `decode_damage_block` (the prober's human-readable mirror) and
+`last_raw_block` still read it, and dropping it from the forward is `design_op_tensors.md` step 3
+(retrain-class — it shrinks `out_gain`). Landed as a byte-identical refactor under the proof
+bundle above, on 64 real gen-9 eval states across three config arms.
 
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 

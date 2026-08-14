@@ -10,11 +10,38 @@
       "width": null
     },
     {
+      "dst": "loss.move_belief_bce",
+      "label_key": "known_moves",
+      "note": "privileged label; never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "move_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
       "dst": "loss.move_latent_grading",
       "label_key": "known_moves",
       "note": "privileged label; never enters the forward",
       "source_constant": "training-only obs Dict key",
       "src": "move_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
+      "dst": "loss.belief_aux",
+      "label_key": "belief_species/belief_moves",
+      "note": "privileged label; never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "species_belief",
+      "type": "aux",
+      "width": null
+    },
+    {
+      "dst": "loss.spread_belief",
+      "label_key": "belief_spread",
+      "note": "privileged label; never enters the forward",
+      "source_constant": "training-only obs Dict key",
+      "src": "spread_belief",
       "type": "aux",
       "width": null
     },
@@ -3979,43 +4006,36 @@
       "width": 15
     },
     {
-      "dst": "pi_projection",
-      "pooled": false,
-      "source_constant": "2 * ACTIVE_CTX_HIDDEN[-1]",
-      "src": "active_context",
+      "dst": "vf_projection",
+      "note": "the critic's magnitude window after the concat's death",
+      "pooled": true,
+      "source_constant": "VALUE_SEED_K * VALUE_SEED_DIM",
+      "src": "damage_op",
       "type": "concat",
-      "via": "ProjectionAssembler.active_ctx_encoder",
-      "width": 64
+      "via": "MultiSeedValueReadout (k seed queries over the per-our-mon incoming rows, OpTensors.incoming_rows)",
+      "width": 256
+    },
+    {
+      "dst": "pi_projection",
+      "pooled": true,
+      "source_constant": "opp_belief_cls_k * D_MODEL",
+      "src": "hidden_opp_belief",
+      "type": "concat",
+      "via": "HiddenOppBeliefPool",
+      "width": 768
     },
     {
       "dst": "vf_projection",
-      "pooled": false,
-      "source_constant": "2 * ACTIVE_CTX_HIDDEN[-1]",
-      "src": "active_context",
+      "pooled": true,
+      "source_constant": "opp_belief_cls_k * D_MODEL",
+      "src": "hidden_opp_belief",
       "type": "concat",
-      "via": "ProjectionAssembler.active_ctx_encoder",
-      "width": 64
+      "via": "HiddenOppBeliefPool",
+      "width": 768
     },
     {
       "dst": "pi_projection",
-      "note": "the unpooled ABSOLUTE route \u2014 the only channel that can carry a magnitude to the heads",
-      "pooled": false,
-      "source_constant": "DamageOperator.out_dim",
-      "src": "damage_op",
-      "type": "concat",
-      "width": 660
-    },
-    {
-      "dst": "vf_projection",
-      "note": "the unpooled ABSOLUTE route \u2014 the only channel that can carry a magnitude to the heads",
-      "pooled": false,
-      "source_constant": "DamageOperator.out_dim",
-      "src": "damage_op",
-      "type": "concat",
-      "width": 660
-    },
-    {
-      "dst": "pi_projection",
+      "note": "the one head input with NO token route a pool reads \u2014 its only other delivery is the global token",
       "pooled": false,
       "source_constant": "GLOBAL_ENV_DIM + board scalars",
       "src": "non_matchup_rest",
@@ -4024,6 +4044,7 @@
     },
     {
       "dst": "vf_projection",
+      "note": "the one head input with NO token route a pool reads \u2014 its only other delivery is the global token",
       "pooled": false,
       "source_constant": "GLOBAL_ENV_DIM + board scalars",
       "src": "non_matchup_rest",
@@ -4289,6 +4310,54 @@
       "src": "E3_move[3]",
       "type": "content",
       "via": "PointerNativeActionHead.move_proj",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[0]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "note": "in-place; pre-transformer",
+      "source_constant": "D_MODEL",
+      "src": "belief_slots",
+      "type": "content",
       "width": 128
     },
     {
@@ -4989,13 +5058,69 @@
       "src": "pokemon_encoder.role_encoder",
       "type": "content",
       "width": 128
+    },
+    {
+      "dst": "damage_op",
+      "note": "believed opp spread; without it the op prices a fictional maximally-invested opponent",
+      "source_constant": "5 stats",
+      "src": "spread_belief",
+      "type": "content",
+      "width": 5
+    },
+    {
+      "dst": "opp_mon[0]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "source_constant": "D_MODEL",
+      "src": "spread_belief",
+      "type": "content",
+      "via": "SpreadBelief.reinject",
+      "width": 128
     }
   ],
   "meta": {
-    "arch_signature": "gen3_deadline_clock_v1",
+    "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 67,
+    "config_version": 76,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -5024,19 +5149,34 @@
     "n_tokens": 36,
     "obs_dim": 2669,
     "op_out_dim": 660,
-    "pi_projection_in": 473,
-    "vf_projection_in": 473
+    "pi_projection_in": 1177,
+    "vf_projection_in": 1177
   },
   "nodes": [
+    {
+      "id": "loss.belief_aux",
+      "kind": "aux_loss",
+      "label_key": "belief_species/belief_moves"
+    },
     {
       "id": "loss.hp_type_ce",
       "kind": "aux_loss",
       "label_key": "hp_type_label"
     },
     {
+      "id": "loss.move_belief_bce",
+      "kind": "aux_loss",
+      "label_key": "known_moves"
+    },
+    {
       "id": "loss.move_latent_grading",
       "kind": "aux_loss",
       "label_key": "known_moves"
+    },
+    {
+      "id": "loss.spread_belief",
+      "kind": "aux_loss",
+      "label_key": "belief_spread"
     },
     {
       "id": "hp_type_belief",
@@ -5049,19 +5189,27 @@
       "out_dim": 400
     },
     {
+      "id": "species_belief",
+      "kind": "belief_head"
+    },
+    {
+      "id": "spread_belief",
+      "kind": "belief_head"
+    },
+    {
       "id": "pi_projection",
-      "in_features": 473,
+      "in_features": 1177,
       "kind": "head",
       "out_features": 512
     },
     {
       "id": "vf_projection",
-      "in_features": 473,
+      "in_features": 1177,
       "kind": "head",
       "out_features": 512
     },
     {
-      "id": "active_context",
+      "id": "hidden_opp_belief",
       "kind": "input"
     },
     {
@@ -5266,6 +5414,12 @@
       "incoming_dim": 85,
       "kind": "operator",
       "out_dim": 660
+    },
+    {
+      "id": "belief_slots",
+      "kind": "phase",
+      "note": "swaps unrevealed opp role tokens for learned unknown-mon queries",
+      "stage": "T0"
     },
     {
       "id": "obs_unpack",

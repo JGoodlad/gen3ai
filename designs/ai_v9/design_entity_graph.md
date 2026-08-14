@@ -182,8 +182,9 @@ harness at any future Rust boundary).
 | active-req-moves (12) | E3 ordered tokens (alignment by construction) |
 | prev-turn action mask (11) | E7 summary |
 | turn history (7×159) | E9 (open) |
-| op head-concat blocks (all) | D/S/C/V/T/X edges + marginals; deleted per the
-deprecation playbook (build home → mask → A/B → delete) |
+| op head-concat blocks (all) | D/S/C/V/T/X edges + marginals; ✅ **deleted 2026-08-09 (v61
+`gen3_no_concat_v1`)** — on gen-4's stratified evidence rather than the full mask→A/B ladder;
+the critic's window became `MultiSeedValueReadout` over the per-our-mon rows |
 
 ## 7. Open questions
 1. E2 separate vs folded into E1 (addressability vs token count).

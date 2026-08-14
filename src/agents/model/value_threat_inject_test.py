@@ -260,11 +260,12 @@ def test_v0_real_policy_survives_sb3_ortho_init():
 
 
 def test_v64_migration_defaults_off():
-    from agents.model.model_version import _migrate_config, MODEL_CONFIG_VERSION
+    """The v64 default-injection branch is pre-floor (MIGRATION_FLOOR): a v63 config is a
+    pre-generation checkpoint and is refused outright instead of migrating to OFF."""
+    from agents.model.model_version import _migrate_config, MODEL_CONFIG_VERSION, ModelVersionError
     assert MODEL_CONFIG_VERSION >= 64
-    out = _migrate_config({"config_version": 63})
-    assert out["value_threat_inject"] is False, "a pre-v64 config must migrate to OFF"
-    assert out["config_version"] >= 64
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 63})
 
 
 def test_v3_version_gate_rejects_a_toggle_flip():

@@ -515,16 +515,17 @@ def test_c1_on_is_bitwise_identical_at_init():
 
 
 def test_consequence_topk_versioned_and_threaded():
-    """v59: the one consequence-candidate knob — stored on the extractor (default 6), migrated
-    to 4 for pre-v59 checkpoints (they trained with the hardcoded k), version-stamped."""
-    from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config
+    """v59: the one consequence-candidate knob — stored on the extractor (default 6),
+    version-stamped. The old pre-v59 → 4 migration is now BELOW the floor (MIGRATION_FLOOR):
+    a v58 config is a pre-generation checkpoint and is refused outright."""
+    import pytest
+    from agents.model.model_version import ModelVersionError, _migrate_config
     fe = _make(**_C1_TOGGLES)
     assert fe.consequence_topk == 6, "the future-run default is K=6 (owner 2026-08-06)"
     fe4 = _make(**dict(_C1_TOGGLES, consequence_topk=4))
     assert fe4.consequence_topk == 4
-    out = _migrate_config({"config_version": 58})
-    assert out["consequence_topk"] == 4, "pre-v59 models trained at the hardcoded 4"
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 60
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 58})
 
 
 def test_every_arch_toggle_is_a_current_model_version_param():

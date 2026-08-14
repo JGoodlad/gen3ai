@@ -127,9 +127,17 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
         pa = fe.assembler
 
         def _zero_db_hook(_module, args):
-            if args and args[-1] is not None and args[-1] is fe.last_damage_block:
+            # gen3_op_tensors_views_v1: the assembler receives the TYPED incoming-rows view
+            # (`OpTensors.incoming_rows`), not the flat block — match it by identity against
+            # the op's own stash so a signature drift here fails the identity check loudly
+            # (the arm asserts it fired, below) instead of silently measuring nothing.
+            _rows = (fe.damage_op.last_tensors.incoming_rows
+                     if fe.damage_op.last_tensors is not None else None)
+            if args and args[-1] is not None and args[-1] is _rows:
+                _zero_db_hook.fired = True
                 return args[:-1] + (torch.zeros_like(args[-1]),)
             return args
+        _zero_db_hook.fired = False
 
         def _measure_with(zero_cells: bool):
             h = pa.register_forward_pre_hook(_zero_db_hook)
@@ -138,7 +146,12 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
                 fe.damage_op.pointer_cells = lambda db: tuple(
                     torch.zeros_like(t) for t in orig_cells(db))
             try:
+                _zero_db_hook.fired = False
                 p, v = _forward_all()
+                if not _zero_db_hook.fired:
+                    raise RuntimeError(
+                        "the concat-arm assembler hook never matched its argument — the "
+                        "assembler's seed-rows identity drifted and the arm measured nothing.")
             finally:
                 h.remove()
                 fe.damage_op.pointer_cells = orig_cells

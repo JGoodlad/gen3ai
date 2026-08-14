@@ -69,7 +69,7 @@ def test_model_version_all_fields_present(version):
         "type_embedding_dim", "max_types",
         "total_dim", "active_context_dim",
         "role_token_size", "projection_dim",
-        "move_net_hidden", "role_encoder_hidden", "active_ctx_hidden",
+        "move_net_hidden", "role_encoder_hidden",
         "n_history_turns",
         "net_arch",
         "vf_coef",
@@ -211,15 +211,13 @@ def test_belief_grad_mode_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v41_adds_belief_grad_mode_default(version):
-    """Pre-v41 configs lack belief_grad_mode — migration injects 'shaping' (byte-identical legacy
-    behaviour) and bumps to current."""
+    """The v41 belief_grad_mode injection branch is pre-floor (MIGRATION_FLOOR): a v40 config is
+    a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("belief_grad_mode", None)
     data["config_version"] = 40
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["belief_grad_mode"] == "shaping"
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 def test_check_value_tail_weight_match_and_mismatch(version):
@@ -325,15 +323,14 @@ def test_check_compatible_ignores_debias_flags(version, field):
 
 
 def test_migrate_v11_adds_debias_flags_default(version):
-    """Pre-v12 configs lack the de-bias flags — migration injects False (prior behavior) and bumps."""
+    """The v13 de-bias-flags injection branch is pre-floor (MIGRATION_FLOOR): a v11 config is a
+    pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("drop_redundant_bias", None)
     data.pop("drop_switch_bias", None)
     data["config_version"] = 11
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["drop_redundant_bias"] is False and result["drop_switch_bias"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # ---------------------------------------------------------------------------
@@ -376,17 +373,14 @@ def test_all_shaping_pbrs_recorded_and_config_version(layout):
 
 
 def test_migrate_v12_adds_v13_fields_default(version):
-    """Pre-v13 configs lack all_shaping_pbrs + no_progress_penalty — migration injects the prior
-    defaults (False / 0.15) and bumps the version."""
+    """The v14 all_shaping_pbrs/no_progress_penalty injection branch is pre-floor
+    (MIGRATION_FLOOR): a v12 config is a pre-generation checkpoint and is refused outright."""
     data = json.loads(version.to_json())
     data.pop("all_shaping_pbrs", None)
     data.pop("no_progress_penalty", None)
     data["config_version"] = 12
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["all_shaping_pbrs"] is False
-    assert result["no_progress_penalty"] == 0.15
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # ---------------------------------------------------------------------------
@@ -420,14 +414,13 @@ def test_stall_pbrs_recorded_and_config_version(layout):
 
 
 def test_migrate_v13_adds_stall_pbrs_default(version):
-    """Pre-v14 configs lack stall_pbrs — migration injects False (prior behavior) and bumps the version."""
+    """The v15 stall_pbrs injection branch is pre-floor (MIGRATION_FLOOR): a v13 config is a
+    pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("stall_pbrs", None)
     data["config_version"] = 13
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["stall_pbrs"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # ---------------------------------------------------------------------------
@@ -562,16 +555,14 @@ def test_check_compatible_ignores_move_belief_coef(version):
 
 
 def test_migrate_pre_v17_adds_move_belief_defaults(version):
-    """Pre-v17 configs lack the move-belief fields — migration injects mode='off' / coef=0.0 and bumps
-    to the current version. The migrated dict must build a valid ModelVersion."""
+    """The v17 move-belief injection branch is pre-floor (MIGRATION_FLOOR): a v16 config is a
+    pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("move_belief_mode", None)
     data.pop("move_belief_coef", None)
     data["config_version"] = 16
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["move_belief_mode"] == "off" and result["move_belief_coef"] == 0.0
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- damage_op: a structural bool toggle (the differentiable damage operator, v18) -----------------
@@ -603,14 +594,13 @@ def test_damage_op_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v18_adds_damage_op_default(version):
-    """Pre-v18 configs lack damage_op — migration injects False and bumps to the current version."""
+    """The v19 damage_op injection branch is pre-floor (MIGRATION_FLOOR): a v17 config is a
+    pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("damage_op", None)
     data["config_version"] = 17
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["damage_op"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- damage_reattend / move_belief_prefuse / damage_op_prefuse: DELETED at v71 ----------------------
@@ -651,45 +641,37 @@ def test_damage_topk_k_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v30_adds_damage_topk_k_default(version):
-    """Pre-v30 configs lack damage_topk_k — migration injects 0 (off) and bumps to the current version."""
+    """The v30 damage_topk_k injection branch is pre-floor (MIGRATION_FLOOR): a v29 config is a
+    pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("damage_topk_k", None)
     data["config_version"] = 29
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["damage_topk_k"] == 0
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- v70: the refine loop's five fields are DELETED, and a stale config must still migrate ----------
 
 
-def test_migrate_v70_pops_the_deleted_refine_loop_fields(version):
-    """A pre-v70 config carries damage_refine_rounds / the three threat_* refine flags /
-    move_belief_single_compute. `from_json_file` does `cls(**data)`, so a surviving key would raise
-    TypeError — the v70 migration must POP all five and still construct."""
+def test_a_config_carrying_the_refine_loop_fields_is_below_the_floor(version):
+    """The v70 POP branch is pre-floor since gen3_ctx_dedup_v1 raised MIGRATION_FLOOR — any
+    config old enough to carry the refine-loop fields is a pre-generation checkpoint and is
+    refused before `cls(**data)` could ever see a stale key."""
     data = json.loads(version.to_json())
     data["config_version"] = 69
-    for k, v in (("damage_refine_rounds", 2), ("threat_refine_outgoing", True),
-                 ("threat_unrevealed_outgoing", True), ("threat_status_refine", True),
-                 ("move_belief_single_compute", True)):
-        data[k] = v
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    for k in ("damage_refine_rounds", "threat_refine_outgoing", "threat_unrevealed_outgoing",
-              "threat_status_refine", "move_belief_single_compute"):
-        assert k not in result, k
-    ModelVersion(**result)
+    data["damage_refine_rounds"] = 2
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 def test_migrate_pre_v31_config_survives_the_refine_field_deletion(version):
-    """A genuinely ancient config (pre-v31, before the refine fields existed) must walk the whole
-    migration chain — including the v33/v36/v37/v47 blocks the fields used to live in — and construct."""
+    """FORMERLY: a pre-v31 config had to walk the whole chain past the deleted refine-field
+    blocks. With MIGRATION_FLOOR that walk no longer exists — an ancient config is refused
+    outright as a pre-generation checkpoint."""
     data = json.loads(version.to_json())
     data["config_version"] = 30
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- damage_matrices_outgoing: a structural BOOL toggle (the outgoing per-move damage matrix, v32) --------
@@ -719,14 +701,13 @@ def test_damage_matrices_outgoing_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v32_adds_damage_matrices_outgoing_default(version):
-    """Pre-v32 configs lack damage_matrices_outgoing — migration injects False and bumps to current."""
+    """The v34 damage_matrices_outgoing injection branch is pre-floor (MIGRATION_FLOOR): a v31
+    config is a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("damage_matrices_outgoing", None)
     data["config_version"] = 31
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["damage_matrices_outgoing"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- damage_matrices_outgoing_all: the TRANSPOSED outgoing matrix, a structural BOOL toggle (v39) ----------
@@ -756,14 +737,13 @@ def test_damage_matrices_outgoing_all_read_from_features_extractor_kwargs(layout
 
 
 def test_migrate_pre_v39_adds_damage_matrices_outgoing_all_default(version):
-    """Pre-v39 configs lack damage_matrices_outgoing_all — migration injects False and bumps to current."""
+    """The v39 damage_matrices_outgoing_all injection branch is pre-floor (MIGRATION_FLOOR): a
+    v38 config is a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("damage_matrices_outgoing_all", None)
     data["config_version"] = 38
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["damage_matrices_outgoing_all"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- damage_matrices_incoming: a structural BOOL toggle (the incoming per-move damage matrix, v33) --------
@@ -791,14 +771,13 @@ def test_damage_matrices_incoming_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v33_adds_damage_matrices_incoming_default(version):
-    """Pre-v33 configs lack damage_matrices_incoming — migration injects False and bumps to current."""
+    """The v35 damage_matrices_incoming injection branch is pre-floor (MIGRATION_FLOOR): a v32
+    config is a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("damage_matrices_incoming", None)
     data["config_version"] = 32
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["damage_matrices_incoming"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 # --- move_prior_fusion: a forward-behavior bool toggle (the unified two-part move belief, v20) -------
@@ -828,14 +807,13 @@ def test_move_prior_fusion_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_pre_v20_adds_move_prior_fusion_default(version):
-    """Pre-v20 configs lack move_prior_fusion — migration injects False and bumps to the current version."""
+    """The v20 move_prior_fusion injection branch is pre-floor (MIGRATION_FLOOR): a v19 config is
+    a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("move_prior_fusion", None)
     data["config_version"] = 19
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["move_prior_fusion"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 def test_check_compatible_rejects_value_active_readout_mismatch(version):
@@ -857,26 +835,24 @@ def test_value_active_readout_read_from_features_extractor_kwargs(layout):
 
 
 def test_migrate_v9_adds_value_active_readout_default(version):
-    """Pre-v10 configs lack value_active_readout — migration injects False and bumps the version."""
+    """The v10 value_active_readout injection branch is pre-floor (MIGRATION_FLOOR): a v9 config
+    is a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("value_active_readout", None)
     data.pop("value_tail_weight", None)
     data["config_version"] = 9
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["value_active_readout"] is False
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 def test_migrate_v10_adds_value_tail_weight_default(version):
-    """Pre-v11 configs lack value_tail_weight — migration injects 0.0 (plain MSE) and bumps the version."""
+    """The v11 value_tail_weight injection branch is pre-floor (MIGRATION_FLOOR): a v10 config is
+    a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
     data.pop("value_tail_weight", None)
     data["config_version"] = 10
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["value_tail_weight"] == 0.0
-    ModelVersion(**result)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(data)
 
 
 def test_opp_belief_cls_survives_save_load_and_rebuilds_module(layout, mappings):
@@ -1565,146 +1541,33 @@ def test_migrate_config_noop_on_current(version):
     assert migrated == data
 
 
-def test_migrate_v1_adds_n_history_turns_with_default_1():
-    """v1 configs lack n_history_turns (single-TurnDelta era). Migration must inject 1."""
-    data = {
-        "config_version": 1,
-        "arch_signature": ARCH_SIGNATURE,
-        "species_embedding_dim": 32, "max_species": 400,
-        "move_embedding_dim": 16, "max_moves": 400,
-        "item_embedding_dim": 16, "max_items": 600,
-        "ability_embedding_dim": 16, "max_abilities": 100,
-        "type_embedding_dim": 16, "max_types": 20,
-        "total_dim": 1000, "active_context_dim": 22,
-        "role_token_size": 128, "projection_dim": 512,
-        "move_net_hidden": [64, 32],
-        "role_encoder_hidden": [256, 128],
-        "active_ctx_hidden": [64, 32],
-        "net_arch": [512, 512],
-    }
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["n_history_turns"] == 1
+@pytest.mark.parametrize("old_version", [1, 2, 6, 7, 8, 66])
+def test_migrate_pre_floor_versions_are_refused(old_version):
+    """The v2..v66 branches are DELETED (MIGRATION_FLOOR): the ancient versions that used to
+    exercise specific default-injections here (n_history_turns@v1, vf_coef@v2, draw_penalty@v6,
+    attend_unrevealed_opponents@v7, opp_belief_cls_k@v8) are pre-generation checkpoints now and
+    must be refused outright — their arch_signature would have been rejected immediately after
+    migration anyway. A minimal dict must get the clear floor error, never a TypeError out of
+    cls(**data)."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": old_version})
 
 
-def test_migrate_v2_adds_vf_coef_default():
-    """v2 configs predate the vf_coef flag — migration must inject the SB3 default 0.5
-    (the value every pre-flag run was trained with) and bump to the current version."""
-    data = {
-        "config_version": 2,
-        "arch_signature": ARCH_SIGNATURE,
-        "species_embedding_dim": 32, "max_species": 400,
-        "move_embedding_dim": 16, "max_moves": 400,
-        "item_embedding_dim": 16, "max_items": 600,
-        "ability_embedding_dim": 16, "max_abilities": 100,
-        "type_embedding_dim": 16, "max_types": 20,
-        "total_dim": 1000, "active_context_dim": 22,
-        "role_token_size": 128, "projection_dim": 512,
-        "move_net_hidden": [64, 32],
-        "role_encoder_hidden": [256, 128],
-        "active_ctx_hidden": [64, 32],
-        "n_history_turns": 10,
-        "net_arch": [512, 512],
-    }
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["vf_coef"] == pytest.approx(0.5)
-    # The migrated dict must construct a valid ModelVersion (no unexpected keys).
-    ModelVersion(**result)
+def test_migrate_pre_floor_stale_keys_still_get_the_clear_error():
+    """Even a config carrying the never-shipped interim opp_belief_cls bool (formerly POPped by
+    the v9 branch) gets the floor diagnosis, not a constructor crash."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 8, "opp_belief_cls": True})
 
 
-def test_migrate_v6_adds_draw_penalty_default(version):
-    """Pre-v7 configs lack draw_penalty — migration injects -30.0 (== the prior tie==loss behavior)
-    and bumps to the current version. The migrated dict must construct a valid ModelVersion."""
-    data = json.loads(version.to_json())
-    data.pop("draw_penalty", None)
-    data["config_version"] = 6
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["draw_penalty"] == pytest.approx(-30.0)
-    ModelVersion(**result)
-
-
-def test_migrate_v7_adds_attend_unrevealed_opponents_default(version):
-    """Pre-v8 configs lack attend_unrevealed_opponents — migration injects False (baseline masking)
-    and bumps to the current version. The migrated dict must construct a valid ModelVersion."""
-    data = json.loads(version.to_json())
-    data.pop("attend_unrevealed_opponents", None)
-    data.pop("opp_belief_cls_k", None)
-    data["config_version"] = 7
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["attend_unrevealed_opponents"] is False
-    ModelVersion(**result)
-
-
-def test_migrate_v8_adds_opp_belief_cls_k_default(version):
-    """Pre-v9 configs lack the hidden-opponent belief toggle — migration injects k=0 (no belief
-    module) and bumps to the current version. The migrated dict must build a valid ModelVersion."""
-    data = json.loads(version.to_json())
-    data.pop("opp_belief_cls_k", None)
-    data["config_version"] = 8
-    result = _migrate_config(data)
-    assert result["config_version"] == MODEL_CONFIG_VERSION
-    assert result["opp_belief_cls_k"] == 0
-    ModelVersion(**result)
-
-
-def test_migrate_v8_drops_interim_opp_belief_cls_bool(version):
-    """A dev config from the interim two-field design (opp_belief_cls bool) must have the bool
-    DROPPED by migration so it doesn't break ModelVersion(**result) (no such field any more)."""
-    data = json.loads(version.to_json())
-    data["opp_belief_cls"] = True          # interim field that never shipped
-    data.pop("opp_belief_cls_k", None)
-    data["config_version"] = 8
-    result = _migrate_config(data)
-    assert "opp_belief_cls" not in result and result["opp_belief_cls_k"] == 0
-    ModelVersion(**result)                 # must not raise on an unexpected kwarg
-
-
-def test_migrate_does_not_overwrite_existing_vf_coef():
-    """A config that already carries vf_coef must keep its value through migration."""
-    data = {
-        "config_version": 2,
-        "arch_signature": ARCH_SIGNATURE,
-        "species_embedding_dim": 32, "max_species": 400,
-        "move_embedding_dim": 16, "max_moves": 400,
-        "item_embedding_dim": 16, "max_items": 600,
-        "ability_embedding_dim": 16, "max_abilities": 100,
-        "type_embedding_dim": 16, "max_types": 20,
-        "total_dim": 1000, "active_context_dim": 22,
-        "role_token_size": 128, "projection_dim": 512,
-        "move_net_hidden": [64, 32],
-        "role_encoder_hidden": [256, 128],
-        "active_ctx_hidden": [64, 32],
-        "n_history_turns": 10,
-        "net_arch": [512, 512],
-        "vf_coef": 0.25,
-    }
-    result = _migrate_config(data)
-    assert result["vf_coef"] == pytest.approx(0.25)
-
-
-def test_migrate_v1_does_not_overwrite_existing_n_history_turns():
-    """If a v1 config somehow already has n_history_turns, migration must not clobber it."""
-    data = {
-        "config_version": 1,
-        "arch_signature": ARCH_SIGNATURE,
-        "species_embedding_dim": 32, "max_species": 400,
-        "move_embedding_dim": 16, "max_moves": 400,
-        "item_embedding_dim": 16, "max_items": 600,
-        "ability_embedding_dim": 16, "max_abilities": 100,
-        "type_embedding_dim": 16, "max_types": 20,
-        "total_dim": 1000, "active_context_dim": 22,
-        "role_token_size": 128, "projection_dim": 512,
-        "move_net_hidden": [64, 32],
-        "role_encoder_hidden": [256, 128],
-        "active_ctx_hidden": [64, 32],
-        "net_arch": [512, 512],
-        "n_history_turns": 3,   # already present — must survive migration
-    }
-    result = _migrate_config(data)
-    assert result["n_history_turns"] == 3
+def test_migrate_does_not_overwrite_an_existing_value():
+    """setdefault semantics on any LIVE (post-floor) branch: a config that already carries a
+    field keeps its value through migration. With the floor at the current version there are
+    no branches, so migration must be a pure pass-through."""
+    from agents.model.model_version import MIGRATION_FLOOR
+    out = _migrate_config({"config_version": MIGRATION_FLOOR, "opp_intent": True})
+    assert out["opp_intent"] is True
+    assert out["config_version"] == MODEL_CONFIG_VERSION
 
 
 # ---------------------------------------------------------------------------

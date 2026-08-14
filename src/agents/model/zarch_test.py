@@ -271,14 +271,10 @@ def test_version_gate_mode_and_dim(ek_and_space):
 
 
 def test_migration_defaults_off():
-    """A pre-v44 config migrates to zarch off/0 with zero coefs (old models had no modules)."""
-    data = {"config_version": 43}
-    out = _migrate_config(dict(data))
-    assert out["zarch_film"] == "off" and out["zarch_dim"] == 0
-    assert out["zarch_recon_coef"] == 0.0 and out["zarch_vicreg_coef"] == 0.0
-    # the migration chain always advances to the latest version (v45+ append value_from_dist etc.)
-    from agents.model.model_version import MODEL_CONFIG_VERSION
-    assert out["config_version"] == MODEL_CONFIG_VERSION
+    """The v44 default-injection branch is pre-floor (MIGRATION_FLOOR): a v43 config is a
+    pre-generation checkpoint and is refused outright."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 43})
 
 
 # ---------------------------------------------------------------- per-group grad accumulation

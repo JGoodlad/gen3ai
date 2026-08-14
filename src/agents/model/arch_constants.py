@@ -19,7 +19,6 @@ MOVE_NET_HIDDEN = [96, 32]        # [hidden, output] of shared move processor
 MOVE_LATENT_HIDDEN = 64           # hidden width of the MoveLatentEncoder MLP
 MOVE_LATENT_DIM = 32              # output dim of the per-move latent (grading is cosine in this space)
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
-ACTIVE_CTX_HIDDEN = [64, 32]      # [hidden, output] of active context encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
 N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the observation
 # gen3_zarch_film_v1 (v44): the team-archetype latent z_arch + head FiLM. ZARCH_DIM is the DEFAULT

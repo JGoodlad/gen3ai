@@ -162,13 +162,21 @@ def main():
 
         hook = None
         if cols is not None and a.site == "assembler":
-            # LEGACY SITE (pre-v61 semantics): patch the assembler's damage_block ARGUMENT. Under
-            # gen3_no_concat_v1 the assembler consumes only the per-mon rows (the seed readout),
-            # so this site measures the CRITIC route alone and reads structural zeros for every
-            # arm outside dims [0, TEAM_SIZE*per_mon) — the gen-5 step-0 run that motivated --site.
+            # LEGACY SITE (pre-v61 semantics): patch what the assembler consumes of the block.
+            # Under gen3_no_concat_v1 that is only the per-mon rows (the seed readout), so this
+            # site measures the CRITIC route alone and reads structural zeros for every arm
+            # outside dims [0, TEAM_SIZE*per_mon) — the gen-5 step-0 run that motivated --site.
+            # gen3_op_tensors_views_v1: the assembler now receives the TYPED rows view, so the
+            # perturbation runs in FLAT col coordinates on a clone of the block and the rows
+            # view of THAT clone is substituted — same semantics, same col-space.
             def _pre(_module, args):
-                if args and args[-1] is not None and args[-1] is fe.last_damage_block:
-                    return args[:-1] + (_perturb(args[-1]),)
+                _rows = (fe.damage_op.last_tensors.incoming_rows
+                         if fe.damage_op.last_tensors is not None else None)
+                if args and args[-1] is not None and args[-1] is _rows:
+                    flat = _perturb(fe.last_damage_block.clone())
+                    rows = flat[:, :TEAM_SIZE * op.per_mon].reshape(
+                        flat.shape[0], TEAM_SIZE, op.per_mon)
+                    return args[:-1] + (rows,)
                 return args
             hook = fe.assembler.register_forward_pre_hook(_pre)
         elif cols is not None:

@@ -1669,5 +1669,7 @@ def test_candidate_k_version_gate_and_migration():
         with _pytest.raises(ModelVersionError, match="damage_candidate_k"):
             mv(a).check_compatible(mv(b))
     mv(16).check_compatible(mv(16))
-    migrated = _migrate_config({"config_version": 48})
-    assert migrated["damage_candidate_k"] == 0 and migrated["config_version"] >= 49
+    # the v49 default-injection branch is pre-floor (MIGRATION_FLOOR): a v48 config is a
+    # pre-generation checkpoint and is refused outright.
+    with _pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 48})

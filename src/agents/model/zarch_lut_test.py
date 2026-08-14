@@ -309,9 +309,12 @@ def test_version_gate_rejects_a_lut_mode_or_team_count_change(ek_and_space):
 
 
 def test_old_configs_migrate_to_lut_off():
-    from agents.model.model_version import _migrate_config
-    out = _migrate_config({"config_version": 45})
-    assert out["zarch_lut"] == "off" and out["zarch_lut_teams"] == 0
+    """The v46 default-injection branch is pre-floor (MIGRATION_FLOOR): a v45 config is a
+    pre-generation checkpoint and is refused outright."""
+    import pytest
+    from agents.model.model_version import _migrate_config, ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 45})
 
 
 def test_attach_zarch_lut_builds_the_modules_on_a_lut_less_extractor(ek_and_space):

@@ -229,10 +229,12 @@ def test_species_prior_fusion_requires_the_belief_slots():
                               opp_belief_slots=False, species_prior_fusion=True)
 
 
-def test_a_pre_v68_config_migrates_to_off():
-    out = _migrate_config({"config_version": 67})
-    assert out["species_prior_fusion"] is False
-    assert out["config_version"] >= 68
+def test_a_pre_v69_config_is_below_the_floor():
+    # The v69 default branch is pre-floor since gen3_ctx_dedup_v1 raised MIGRATION_FLOOR.
+    from agents.model.model_version import ModelVersionError
+    import pytest
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 67})
 
 
 def test_flipping_species_prior_fusion_is_a_fatal_resume_mismatch():

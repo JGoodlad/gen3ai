@@ -59,8 +59,11 @@ def test_judged_field_with_unsupported_value_refuses(field, supported):
 def test_zip_sanitizer_agrees_with_migrate_config(field, supported):
     """Pin the two code paths together — they hold the same rule in two places and could drift.
 
-    `_migrate_config` owns the JSON config; `sanitize_dead_extractor_kwargs` owns the zip. Both must
-    refuse the same values and accept the same values.
+    `_migrate_config` owns the JSON config; `sanitize_dead_extractor_kwargs` owns the zip. Since
+    gen3_ctx_dedup_v1 raised MIGRATION_FLOOR past the v70/v71 branches, migration's half of the
+    rule is the blanket floor refusal (any config old enough to carry these keys is
+    pre-generation); the sanitizer keeps the per-field judgment for the pickled kwargs, which
+    carry no config_version of their own.
     """
     bad = {"config_version": 69, field: not supported}
     with pytest.raises(ModelVersionError):
@@ -68,9 +71,10 @@ def test_zip_sanitizer_agrees_with_migrate_config(field, supported):
     with pytest.raises(ModelVersionError):
         sanitize_dead_extractor_kwargs({field: not supported})
 
+    # The supported value: migration refuses on AGE (pre-floor), the sanitizer pops cleanly.
     good = {"config_version": 69, field: supported}
-    migrated = _migrate_config(dict(good))
-    assert field not in migrated
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(dict(good))
     fek = {field: supported}
     assert sanitize_dead_extractor_kwargs(fek) is True
     assert field not in fek
