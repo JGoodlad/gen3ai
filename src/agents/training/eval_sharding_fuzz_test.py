@@ -87,7 +87,7 @@ def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False
             "snapshot": ckpt, "port": None, "use_showdown_bridge": True,
             "model_dir": None, "step": 0, "claim_dir": claim_dir, "result_dir": run_dir,
             "concurrency": 1, "device": "cpu", "cycle_tag": "fz", "worker_id": 0, "gamma": 0.99,
-            # --compile-extractor coverage: the worker torch.compiles the frozen TRAINEE (which plays
+            # --compile-opponents coverage: the worker torch.compiles the frozen TRAINEE (which plays
             # every eval game) and each cached opponent. Value-preserving, so the SAME exactness
             # assertions below apply unchanged — that is the point of running the fuzz both ways.
             "compile_extractor": compile_extractor,

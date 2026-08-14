@@ -205,7 +205,7 @@ def main() -> None:
     ap.add_argument("--skip-compile", action="store_true")
     args = ap.parse_args()
     # threads=1: the env-worker reality — at --n-envs 48 every opponent forward runs on an
-    # oversubscribed core (the same convention as the compile-extractor B=1 measurements).
+    # oversubscribed core (the same convention as the compile-opponents B=1 measurements).
     torch.set_num_threads(1)
     spike2_correctness_and_compile(args.skip_compile)
     spike1_token_budget([int(s) for s in args.sizes.split(",")], args.reps,

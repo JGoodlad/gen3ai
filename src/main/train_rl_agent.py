@@ -554,6 +554,23 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
           f"(bit-exact; trades idle-GPU compute for ~5GB activation VRAM)")
 
 
+def _maybe_compile_trainer(model, args) -> None:
+    """Apply `--compile-trainer` to the LEARNER, or die trying (see `agents.model.compile_trainer`).
+
+    Placed BEFORE `_run_roundtrip_test` on purpose: that test is a save -> reload -> forward, so
+    running it after the compile turns it into a free gate on the one thing that would silently
+    corrupt every checkpoint of the run — a compiled callable leaking into the saved state_dict.
+    """
+    from agents.model.compile_trainer import CompileTrainerError, compile_trainer_extractor
+    try:
+        compile_trainer_extractor(model, getattr(args, "compile_trainer", False),
+                                  emit=emit)
+    except CompileTrainerError as exc:
+        print(f"\n[CompileTrainer] FATAL: {exc}", file=sys.stderr, flush=True)
+        emit(f"[CompileTrainer] FATAL: {exc}")
+        sys.exit(TrainExitCode.FATAL_CONFIG)
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 
@@ -1104,25 +1121,36 @@ async def main():
                              "are non-persistent buffers), but STRUCTURAL + version-checked all the "
                              "same: flipping it re-means every species logit. REQUIRES "
                              "--opp-belief-aux-coef>0. Off by default (byte-identical).")
-    parser.add_argument("--compile-extractor", "--compile_extractor", dest="compile_extractor",
+    parser.add_argument("--compile-opponents", "--compile_opponents", dest="compile_opponents",
                         action="store_true", default=False,
-                        help="torch.compile each SELF-PLAY OPPONENT's feature extractor in the env "
-                             "workers (CPU, B=1 — the measured 68%% of rollout worker time). Measured "
-                             "5.3x on the real get_distribution path; value-preserving to ~1e-6 with "
-                             "0/16 argmax flips. RUNTIME PERF KNOB: not versioned, not in "
-                             "check_compatible, NOT inherited on resume — re-pass it each launch. "
-                             "Hides CUDA in the (CPU) workers first, because compiling in a "
-                             "CUDA-visible process costs ~252 MiB of card per worker. The compile "
-                             "itself happens ONCE in the forkserver and every env worker inherits it "
-                             "by fork (measured 9.6s once + 0.12s per worker).")
-    parser.add_argument("--compile-extractor-strict", "--compile_extractor_strict",
-                        dest="compile_extractor_strict", action="store_true", default=False,
-                        help="Turn a failed or ineffective opponent compile into a HARD ERROR instead "
-                             "of a warning. Without --compile-extractor this does nothing. Falling "
+                        help="torch.compile each frozen SELF-PLAY OPPONENT's feature extractor in the "
+                             "env workers (CPU, B=1 — the measured 68%% of rollout worker time). "
+                             "Measured 6.53x on the real forward; value-preserving to ~5e-7 with 0/16 "
+                             "argmax flips. This is the CPU/ROLLOUT half; --compile-trainer is the "
+                             "GPU/LEARNER half and they are independent. RUNTIME PERF KNOB: not "
+                             "versioned, not in check_compatible, NOT inherited on resume — re-pass it "
+                             "each launch. Hides CUDA in the (CPU) workers first, because compiling in "
+                             "a CUDA-visible process costs ~252 MiB of card per worker.")
+    parser.add_argument("--compile-opponents-strict", "--compile_opponents_strict",
+                        dest="compile_opponents_strict", action="store_true", default=False,
+                        help="Turn a failed or ineffective OPPONENT compile into a hard error instead "
+                             "of a warning. Without --compile-opponents this does nothing. Falling "
                              "back to eager is a ~6.5x regression on the opponent forward that is "
                              "otherwise invisible (the run just produces fewer steps/hour forever), so "
                              "use this when you would rather fail at startup than discover it in the "
-                             "FPS graph a day later.")
+                             "FPS graph a day later. (--compile-trainer needs no such flag: it is "
+                             "ALWAYS fail-loud, see its help.)")
+    parser.add_argument("--compile-trainer", "--compile_trainer", dest="compile_trainer",
+                        action="store_true", default=False,
+                        help="torch.compile the LEARNER's feature extractor — the GPU forward AND "
+                             "backward that the PPO train step runs. Measured on v76 at the production "
+                             "shape (batch 4096, PopArt on, real MaskablePPO path): "
+                             "155.1 -> 88.5 ms per minibatch = 1.75x, i.e. ~+62%% end-to-end FPS at the "
+                             "~89%% train share. CUDA ONLY and FAIL-LOUD by design — a silent fall back "
+                             "to eager would be an invisible 1.75x regression, and the CPU backward "
+                             "provably does not lower (Inductor's C++ backend refuses an atomic_add "
+                             "scatter). RUNTIME PERF KNOB: not versioned, NOT inherited on resume — "
+                             "re-pass it each launch, like --grad-checkpointing.")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,
                         help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "
@@ -3042,9 +3070,9 @@ async def main():
                         device=opponent_device,
                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                         pool_spread=getattr(args, "pool_spread", False),
-                        compile_extractor=args.compile_extractor,
+                        compile_extractor=args.compile_opponents,
                         compile_hide_cuda=True,       # spawned env worker — never take a CUDA context
-                        compile_strict=args.compile_extractor_strict,
+                        compile_strict=args.compile_opponents_strict,
                     )
                     # model=None placeholder — the wrapper swaps in a sampled snapshot before
                     # ever using it. Stochastic + temperature so the learner trains against the
@@ -3074,9 +3102,9 @@ async def main():
                             device=opponent_device, config_path=e.config_path)
                         # hide_cuda=True: this runs in a spawned env worker, where a CUDA context
                         # would cost ~252 MiB of card per worker (the June 48× OOM).
-                        maybe_compile_extractor(opp_model, args.compile_extractor,
+                        maybe_compile_extractor(opp_model, args.compile_opponents,
                                                 label=f"stable:{e.label}", hide_cuda=True,
-                                                strict=args.compile_extractor_strict)
+                                                strict=args.compile_opponents_strict)
                         # Fold-back: a specialist opponent pilots ITS OWN pinned team (entry
                         # team_str from its run's metadata); the wrapper switches agent2._team to
                         # this builder on the episodes it plays. None = pool pilot (generalist).
@@ -3105,9 +3133,9 @@ async def main():
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,
                         device=opponent_device, config_path=exploiter_entry.config_path)
-                    maybe_compile_extractor(_ex_model, args.compile_extractor,
+                    maybe_compile_extractor(_ex_model, args.compile_opponents,
                                             label="exploiter-target", hide_cuda=True,
-                                            strict=args.compile_extractor_strict)
+                                            strict=args.compile_opponents_strict)
                     # Fold-back: an exploiter-of-a-specialist faces the target ON ITS OWN pinned team.
                     exploiter_team = (_G3TB(list(exploiter_entry.team_strs))
                                       if exploiter_entry.team_strs else None)
@@ -3198,7 +3226,7 @@ async def main():
     emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})"
          + (" — non-barrier async rollout" if _async_rollout else ""))
 
-    # --compile-extractor: warm the SHARED on-disk Inductor cache in THIS process before any env
+    # --compile-opponents: warm the SHARED on-disk Inductor cache in THIS process before any env
     # worker exists, so the workers all hit it warm instead of racing on a cold one (measured
     # 59.6 s -> 30.1 s wall for 16 workers). Uses the same arch table as the model build below, so
     # the cached codegen is for the graph the workers will actually run.
@@ -3212,7 +3240,7 @@ async def main():
     # poke-env dependency. A 48-env run with that preload forked 2 workers instead of 48 and hung
     # forever, parent blocked in `unix_stream_data_wait`, box at 0.2 load. Guarded by
     # `compile_prewarm_test.py`.
-    if args.compile_extractor and not args.debug:
+    if args.compile_opponents and not args.debug:
         prewarm_extractor_compile(build_extractor_arch_kwargs(args), mappings)
 
     _shutdown_event = threading.Event()
@@ -3542,7 +3570,7 @@ async def main():
             server_config=server_config,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
-            compile_extractor=args.compile_extractor,
+            compile_extractor=args.compile_opponents,
             bridge_impl=args.bridge_impl,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             promote_threshold=_promote_threshold,
@@ -3603,7 +3631,7 @@ async def main():
             eval_shard_games=args.eval_shard_games,
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
-            compile_extractor=args.compile_extractor,
+            compile_extractor=args.compile_opponents,
             bridge_impl=args.bridge_impl,
             resume_eval_metadata=_resume_meta,
             keep_eval_snapshots=args.keep_eval_snapshots,
@@ -3916,6 +3944,7 @@ async def main():
                 print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
                 sys.exit(TrainExitCode.COMPLETE)
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
+            _maybe_compile_trainer(model, args)
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
@@ -4107,6 +4136,7 @@ async def main():
             f"PBRS_GAMMA ({_PBRS_GAMMA}) / reward_config.gamma ({reward_config.gamma}) must equal "
             f"model.gamma ({model.gamma}) — PBRS is only policy-invariant when they match."
         )
+        _maybe_compile_trainer(model, args)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path

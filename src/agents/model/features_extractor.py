@@ -1371,7 +1371,7 @@ class BeliefHead(torch.nn.Module):
         ⚠️ THE SPELLING IS LOAD-BEARING — do not "simplify" this back to `torch.softmax`.
 
         This one op was the ONLY thing in the whole extractor that Inductor could not codegen, and
-        therefore the ONLY reason `--compile-extractor` ever set
+        therefore the ONLY reason `--compile-opponents` ever set
         `torch._dynamo.config.suppress_errors`. `torch.softmax` lowers to a `[B,6,n_species]`
         numerator buffer plus a `[B,6,1]` denominator, and the CPU scheduler then trips
         `AssertionError: buf<N>` trying to fuse the division. Reproduced by

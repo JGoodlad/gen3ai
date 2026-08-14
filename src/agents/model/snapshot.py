@@ -647,7 +647,7 @@ def _inductor_cache_dir() -> str:
 
 
 class CompileExtractorError(RuntimeError):
-    """Raised under `--compile-extractor-strict` when a compile does not deliver its speedup."""
+    """Raised under `--compile-opponents-strict` when a compile does not deliver its speedup."""
 
 
 def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",

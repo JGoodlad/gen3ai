@@ -707,7 +707,7 @@ false.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--compile-extractor` (on in this run) · `--grad-accum-steps 4` · `--grad-checkpointing` ·
+`--compile-opponents` (on in this run) · `--grad-accum-steps 4` · `--grad-checkpointing` ·
 `--async-rollout` · `--use-bridge {off,node,rust}` (this run: `node`). These do not appear in
 `model_config.json` and are **not** inherited on resume.
 

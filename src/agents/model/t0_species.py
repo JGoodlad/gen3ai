@@ -107,7 +107,7 @@ class T0SpeciesPrior(torch.nn.Module):
         ⚠️ `log_softmax(...).exp()`, never `torch.softmax` — the `gen3_species_posterior_spelling_v1`
         rule. `torch.softmax` over the last dim is the one op Inductor's CPU scheduler cannot codegen
         (`AssertionError: buf<N>` fusing the division), and it was the sole reason
-        `--compile-extractor` ever needed `suppress_errors`. Mathematically identical, same
+        `--compile-opponents` ever needed `suppress_errors`. Mathematically identical, same
         max-subtraction stability.
         """
         return species_team_prior_logits(

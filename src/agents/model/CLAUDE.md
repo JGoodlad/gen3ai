@@ -311,16 +311,21 @@ as **`log_softmax(...).exp()`, not `torch.softmax(...)`, and that is deliberate*
 
 `torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a
 `[B,6,1]` denominator, and the Inductor **CPU** scheduler then trips `AssertionError: buf<N>` trying to
-fuse the division. That single op was the reason `--compile-extractor` used to set
+fuse the division. That single op was the reason `--compile-opponents` used to set
 `torch._dynamo.config.suppress_errors = True`, which in turn meant the production config compiled only
 partially (3.6× instead of 6.53×) and every other backend failure in the process went silent.
 
 `tmp/softmax_variant_probe.py` measured the alternatives: `.contiguous()`, `.clone()`, a 2-D
 reshape and a hand-rolled `exp / sum` **all still fail**; only the `log_softmax().exp()` factoring
 lowers cleanly. It is mathematically identical and keeps the same max-subtraction stability (measured
-max|Δ| vs eager 5.07e-07). Guarded by `species_posterior_compiles_test.py` — the fast tests pin the
-math, and `GEN3AI_COMPILE_TESTS=1` runs a real compile of the literal production arch with
-suppression OFF (verified to fail if the old spelling returns). Repro: `tmp/inductor_crash_repro.py`.
+max|Δ| vs eager 5.07e-07). Guarded by `extractor_compiles_test.py`, which owns the whole compile
+matrix: the fast tests pin the math, and the compile cells run a real compile of the literal
+production arch with suppression OFF (verified to fail if the old spelling returns) across
+CPU/CUDA x forward/backward — `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1` is
+needed for the CUDA cells (the root conftest hides the GPU from the suite). Repro:
+`tmp/inductor_crash_repro.py`. Note the CPU **backward** does NOT lower — an `atomic_add` scatter
+the C++ backend refuses — which is why the compiled-opponent artifact is inference-only; that is
+pinned as a limitation test that fails if it ever lifts.
 
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
 architecture. Before reaching for a global suppression flag, bisect to the op — see

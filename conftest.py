@@ -28,3 +28,25 @@ if not os.environ.get("GEN3AI_TEST_ALLOW_GPU"):
     # CUDA_VISIBLE_DEVICES can't silently re-expose the GPU; GEN3AI_TEST_ALLOW_GPU is the one
     # opt-out.
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+# --- BLAS thread pinning: what makes `pytest -n` a speedup instead of a 6.5x SLOWDOWN ---
+#
+# Measured on this 16-core box, full unit suite:
+#
+#     serial, unpinned      167 s
+#     serial, pinned        147 s
+#     -n 8,   UNPINNED      389 s   <-- 6.5x slower than pinned; `user` time 68 min vs 3 min
+#     -n 4,   pinned         56 s
+#
+# Same cliff, same cause as the one `src/main/thread_pinning_test.py` defends for env workers: at
+# the library default of one BLAS thread per core, N pytest workers spawn N x 16 competing threads
+# and the box thrashes. Nothing in the suite wants multi-threaded BLAS, and someone trying `-n auto`
+# would otherwise measure a slowdown and conclude parallelism does not work here — so this is set
+# for them rather than written in a doc they have to find first.
+#
+# Set before torch is imported (BLAS reads these at init, so setting them later is a no-op) — the
+# root conftest is imported by pytest at startup, which is early enough. Escape hatch:
+# GEN3AI_TEST_ALLOW_THREADS=1.
+if not os.environ.get("GEN3AI_TEST_ALLOW_THREADS"):
+    for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+        os.environ[_var] = "1"

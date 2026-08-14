@@ -197,6 +197,37 @@ puts you.
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
 ```
 
+**Add `-n 2` — it is ~1.8x faster** and costs the box only two cores, which matters because a
+training run normally shares this machine. `pytest-xdist` is in `environment.yml`.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q -n 2
+```
+
+Measured 2026-08-14, 16-core box, whole unit suite, same 4527 passed. **The two columns are not
+comparable to each other** — a benchmark on this box is meaningless while a production run shares
+it, so the idle and under-load figures are reported separately rather than blended:
+
+| | idle box | beside a live training run |
+|---|---|---|
+| serial | 147 s | 160-168 s |
+| **`-n 2`** | — | **90.4 / 90.9 s** |
+| `-n 4` | 56 s | 72.1 / 73.9 s |
+| `-n 8` / `-n 12` / `-n 16` | 59 / 57 / 59 s | — |
+
+`-n 4` is the floor: past it the wall is one long-pole file (the `torch.compile` gates), so more
+workers buy nothing. Under real conditions `-n 4` saves only ~17 s over `-n 2` while taking twice
+the cores from the run — hence `-n 2` as the default and `-n 4` when the box is yours. Use plain
+serial when you need `-s`, a debugger, or a readable single failure.
+
+> ⚠️ **The parallel speedup depends entirely on BLAS thread pinning, and the root `conftest.py` now
+> does it for you** (`OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS=1`; escape hatch
+> `GEN3AI_TEST_ALLOW_THREADS=1`). Unpinned, `-n 8` measured **389 s — 6.5x SLOWER than pinned
+> serial**, with `user` time at 68 min vs 3 min: N workers x 16 BLAS threads on 16 cores thrashes the
+> box. It is the same ~38x cliff `src/main/thread_pinning_test.py` defends for env workers. Without
+> the conftest pin, anyone trying `-n auto` would measure a slowdown and conclude parallelism does
+> not work here.
+
 ### Unit + integration (requires symlinked deps/pokemon-showdown)
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
@@ -621,7 +652,20 @@ Default stays websocket (opt-in): the end-to-end training-FPS gain at scale is o
 is operational — no server — not throughput). See `src/utils/bridge/README.md` and
 `designs/ai_v5/design_local_sim_bridge_transport.md`.
 
-### Compiled CPU opponents (`--compile-extractor`, opt-in)
+### The two compile flags — CPU opponents vs GPU trainer
+
+`torch.compile` is applied at two independent sites, split by WHO and WHERE. They were one flag
+(`--compile-extractor`) until 2026-08-14, which named neither half:
+
+| flag | what | device | on failure |
+|---|---|---|---|
+| `--compile-opponents` | each frozen self-play OPPONENT's extractor, in the env workers | **CPU** | warn + fall back to eager; `--compile-opponents-strict` opts into raising |
+| `--compile-trainer` | the LEARNER's extractor — the fwd **and bwd** of the PPO step | **CUDA** | **always FATAL** |
+
+Orthogonal — a run can take either, both, or neither. Both are runtime perf knobs: never versioned,
+never in `check_compatible`, NOT inherited on resume, so re-pass them each launch.
+
+### Compiled CPU opponents (`--compile-opponents`, opt-in)
 
 `torch.compile`s each frozen self-play OPPONENT's feature extractor in the env workers — the measured
 **68% of rollout-worker time**, run on CPU at B=1 where the graph is dispatch-bound. A **runtime perf
@@ -640,12 +684,31 @@ any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 work
 a `set_forkserver_preload` that compiles ONCE and lets workers inherit it (0.12 s each) — **was built
 and HUNG a 48-env run**; forking is only safe from a single-threaded process and the extractor import
 starts poke-env's global asyncio loop thread. See the training leaf before retrying it.
-Failure is loud on stderr + the launcher event stream, and `--compile-extractor-strict` promotes it to
+Failure is loud on stderr + the launcher event stream, and `--compile-opponents-strict` promotes it to
 a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
-**default-on test** (`species_posterior_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
+**default-on test** (`extractor_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
 
 Full detail — the four guards, the Inductor crash root-caused to one op, and the startup-cost table —
 is in `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+
+### Compiled GPU trainer (`--compile-trainer`, opt-in)
+
+The other half, and the bigger one. **Measured on v76 at the production shape** (batch 4096, PopArt
+on, the real `MaskablePPO` path, arms interleaved on an idle box): `policy.evaluate_actions`
+forward+backward **155.1 → 88.5 ms = 1.75×**, i.e. **~+62% end-to-end FPS** at the ~89% train share.
+Compiling the whole policy instead of just the extractor measured the same to within 0.004×, so the
+extractor is what ships — same win, less graph.
+
+**CUDA only, and fail-loud by design.** A silent fall back to eager would be a 1.75× regression that
+no metric surfaces (the run trains correctly, just ~38% fewer steps/hour, forever), so a failed,
+slower, or numerically-divergent compile is a hard `FATAL_CONFIG` exit rather than a warning — and
+`--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
+backend refuses the damage op's `atomic_add` scatter).
+
+**⚠️ It drops the ObservationDebugger**, which dynamo cannot trace; that debugger is on in
+production, so this is a real trade and it announces itself at startup. Full detail — the four
+refusals, the `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` →
+Compiled GPU trainer.
 
 ### Non-barrier async rollout (`--async-rollout`, opt-in)
 

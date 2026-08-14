@@ -55,22 +55,43 @@ def test_negative_is_a_noop():
 # --- the applying cases ---
 
 def test_raises_to_target():
+    """Target ABOVE the inherited niceness ⇒ raise to exactly it.
+
+    The target is computed from the child's OWN starting level rather than hardcoded, because
+    `os.nice()` is an INCREMENT and niceness is inherited: a hardcoded expectation silently
+    encodes "whoever runs pytest is at nice 0", and fails the day someone runs the suite under
+    `nice` (or from a session that already drifted). That is an ambient-state dependency, not a
+    property of `_apply_nice`.
+    """
     out = _in_subprocess(
+        "import os;"
+        "base = os.nice(0);"
         "from main.launcher.run import _apply_nice;"
-        "print(_apply_nice(10))"
+        "target = base + 7;"
+        "print(_apply_nice(target), os.nice(0), target)"
     )
-    assert out == "10"
+    got, now, target = out.split()
+    assert got == now == target, f"expected _apply_nice to raise to {target}, got {got}/{now}"
 
 
 def test_never_lowers_priority_below_current():
-    """Already niced further than the target ⇒ leave it alone (and never raise)."""
+    """Already niced further than the target ⇒ leave it alone (and never raise).
+
+    Asserts the INVARIANT — reported == before == after — instead of a literal level. `os.nice(12)`
+    is an increment applied on top of whatever the child inherited, so the old `== "12 12"` only
+    held when the pytest session itself sat at nice 0; running the suite from a session at nice 5
+    made the child land on 17 and failed a test about `_apply_nice`, which had done nothing wrong.
+    """
     out = _in_subprocess(
         "import os;"
-        "os.nice(12);"
+        "os.nice(12);"                      # +12 on whatever was inherited
+        "before = os.nice(0);"
         "from main.launcher.run import _apply_nice;"
-        "print(_apply_nice(5), os.nice(0))"
+        "print(_apply_nice(before - 5), os.nice(0), before)"   # a target BELOW current
     )
-    assert out == "12 12", "must report and keep the existing, higher niceness"
+    got, after, before = out.split()
+    assert got == after == before, "must report and keep the existing, higher niceness"
+    assert int(before) >= 12, f"fixture did not actually raise niceness: {before}"
 
 
 def test_children_inherit_the_nice_level():
@@ -82,11 +103,15 @@ def test_children_inherit_the_nice_level():
     out = _in_subprocess(
         "import os, subprocess, sys;"
         "from main.launcher.run import _apply_nice;"
-        "_apply_nice(10);"
-        "print(subprocess.run([sys.executable, '-c', 'import os; print(os.nice(0))'],"
-        "                     capture_output=True, text=True).stdout.strip())"
+        "target = os.nice(0) + 10;"          # ABOVE whatever this session inherited (see above)
+        "applied = _apply_nice(target);"
+        "print(applied, subprocess.run([sys.executable, '-c', 'import os; print(os.nice(0))'],"
+        "                              capture_output=True, text=True).stdout.strip())"
     )
-    assert out == "10", "a grandchild of the launcher must inherit the nice level"
+    applied, grandchild = out.split()
+    assert applied == grandchild, (
+        f"a grandchild of the launcher must inherit the nice level: launcher at {applied}, "
+        f"grandchild at {grandchild}")
 
 
 # --- the flag must not leak into train_rl_agent.py ---

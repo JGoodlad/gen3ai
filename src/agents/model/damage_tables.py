@@ -1062,7 +1062,7 @@ def sanitize_historical_move_floor(kwargs: dict) -> dict:
     v65 gave the floor a validated range, so those configs now raise — which is correct for a
     training RESUME (a silently-changed prior is exactly what the version gate exists to catch) but
     wrong for the OFFLINE tooling that instantiates an extractor purely to read its structure:
-    `delivery_graph`, the architecture viewer, and `species_posterior_compiles_test` all build from
+    `delivery_graph`, the architecture viewer, and `extractor_compiles_test` all build from
     the committed `designs/production_config.json`.
 
     That file is a VERBATIM copy of a real run and must keep its 0.0 — editing it to satisfy a

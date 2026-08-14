@@ -112,7 +112,7 @@ def run(cfg_path: str) -> None:
     seq = 0
     read_fails = 0
     timeout = float(cfg.get("timeout", 300.0))
-    # Follows the run's --compile-extractor; this worker is pure frozen-model inference.
+    # Follows the run's --compile-opponents; this worker is pure frozen-model inference.
     compile_extractor = bool(cfg.get("compile_extractor", False))
     recycle_every = int(cfg.get("recycle_every", 2000))   # Node V8-heap backstop (launcher 3h owns the rest)
     # Which sim engine every child of this worker runs: the battle GENERATION (run_local_battles),
@@ -145,7 +145,7 @@ def run(cfg_path: str) -> None:
                     time.sleep(1.0); continue
                 _silence(model)
                 # Frozen trainee, CPU, B=1 — the same shape as a training opponent, and this worker
-                # does nothing BUT forwards. Compile is gated on the run's --compile-extractor,
+                # does nothing BUT forwards. Compile is gated on the run's --compile-opponents,
                 # threaded through the control file so the worker follows the parent's setting.
                 maybe_compile_extractor(model, compile_extractor, label=f"searchteacher{wid}:trainee",
                                         hide_cuda=True)

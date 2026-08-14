@@ -1,6 +1,6 @@
 """The eval worker must compile BOTH the trainee and its neural opponents.
 
-Why this file exists. `--compile-extractor` was wired into `eval_worker` and looked verified by a
+Why this file exists. `--compile-opponents` was wired into `eval_worker` and looked verified by a
 bridge-backed fuzz run — but that plan contained only SCRIPTED BOTS, so the opponent half of the
 wiring (`_get_opponent_model` -> `maybe_compile_extractor`) never executed. Bots are the default in
 every quick check, so that half is exactly the part that stays silently uncovered.

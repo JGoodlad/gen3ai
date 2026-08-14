@@ -1258,9 +1258,15 @@ FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `Subp
 under `--debug`. Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
 production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
 
-## Compiled CPU opponents (`--compile-extractor`) + BLAS thread pinning
+## Compiled CPU opponents (`--compile-opponents`) + BLAS thread pinning
 
-**`--compile-extractor`** `torch.compile`s each frozen OPPONENT's feature extractor in the env workers
+> **Two independent compile flags, split by WHO and WHERE** (renamed 2026-08-14 from the
+> single `--compile-extractor`, which said neither): **`--compile-opponents`** is the
+> CPU/ROLLOUT half documented in this section — frozen opponents in the env workers.
+> **`--compile-trainer`** is the GPU/LEARNER half, documented below. They are orthogonal;
+> a run can take either, both, or neither.
+
+**`--compile-opponents`** `torch.compile`s each frozen OPPONENT's feature extractor in the env workers
 (pool / stable / exploiter loads, via `agents.model.snapshot.maybe_compile_extractor`). It is a
 **runtime PERF knob** — never versioned, never in `check_compatible`, NOT inherited on resume; re-pass
 it each launch, like `--grad-checkpointing`.
@@ -1285,8 +1291,8 @@ math as `log_softmax(...).exp()`, which lowers cleanly. **The literal production
 WHOLE with suppression OFF: 6.371 → 0.976 ms = 6.53×**, 1 graph / 0 breaks, max|Δ| vs eager 5.07e-07 —
 nearly double the per-forward win, and backend failures are loud again. `tmp/softmax_variant_probe.py`
 records that `.contiguous()`, `.clone()`, a 2-D reshape and a hand-rolled `exp / sum` **all still
-FAIL**, so the spelling is load-bearing; it is pinned by `species_posterior_compiles_test.py` (opt-in
-via `GEN3AI_COMPILE_TESTS=1`, a real ~20 s compile — verified to FAIL if the old spelling returns).
+FAIL**, so the spelling is load-bearing; it is pinned by `extractor_compiles_test.py` (default-ON,
+a real compile — `GEN3AI_SKIP_COMPILE_TESTS=1` opts out; verified to FAIL if the old spelling returns).
 
 **Measured end-to-end on the LITERAL production arch (`tmp/literal_arch_ab.sh`, 2026-08-03):**
 marginal FPS **406.5 -> 541.8 = +33.3%** at `--n-envs 48`, 4 samples per arm, **ranges disjoint**
@@ -1387,17 +1393,105 @@ one-time compile: **30.1 s -> 20.4 s (~1.5x)** at 16 workers, and maybe ~75 s ->
 imports `poke_env.player`, so ANY `from poke_env.x import y` starts the loop thread. Worth doing as
 an ARCHITECTURE cleanup (the model layer should not import a battle client), not as a perf lever.
 
-**Failure is LOUD (`--compile-extractor-strict`).** Falling back to eager is a ~6.5× regression on the
+**Failure is LOUD (`--compile-opponents-strict`).** Falling back to eager is a ~6.5× regression on the
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and
 looks healthy. Every failure path (`DISABLED`, `REVERTED`, mid-run `FELL BACK`, mis-declared
 `hide_cuda`) goes through `_compile_warn`: stderr **and** the launcher event stream, so it surfaces in
-the TUI. `--compile-extractor-strict` promotes all of them to a `CompileExtractorError` for anyone who
+the TUI. `--compile-opponents-strict` promotes all of them to a `CompileExtractorError` for anyone who
 would rather fail at startup than find it in the FPS graph a day later.
 
-**Caught at CODE time.** `species_posterior_compiles_test.py` compiles the literal production arch with
-suppression OFF and asserts 1 graph / 0 breaks + value equality. It runs **by default** (~10 s on a
-warm cache; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out), so "the model stopped compiling" fails the suite
-instead of silently costing throughput.
+**Caught at CODE time — and for all FOUR compile targets, not just this one.**
+`src/agents/model/extractor_compiles_test.py` owns the device x grad matrix, because Inductor's CPU
+backend emits C++ and its CUDA backend emits **Triton** — different lowering paths with different
+bugs, so a green CPU-forward test is not evidence about any other cell:
+
+| | forward | forward + backward |
+|---|---|---|
+| **CPU** | ✅ the frozen self-play OPPONENT (this section) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter (`codegen/cpp.py`: `assert mode is None`) |
+| **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step — measured 150.85 → 86.21 ms fwd+bwd at batch 4096 (**1.75x**), i.e. ~+60% end-to-end FPS at the ~89% train share. NOT wired up; the test keeps the lever available |
+
+The ❌ cell is a **limitation PIN** (`test_cpu_backward_still_does_not_compile`) and it FAILS IF THE
+LIMITATION LIFTS — three things assume it holds, starting with `maybe_compile_extractor` routing
+every grad-enabled call to eager. It matches the TRACEBACK, not the message: torch raises a bare
+unannotated `AssertionError` whose `str()` is empty, so `str(exc)` has nothing to match on.
+
+Each compile cell runs **by default** (~10 s each on a warm cache; `GEN3AI_SKIP_COMPILE_TESTS=1`
+opts out), so "the model stopped compiling" fails the suite instead of silently costing throughput.
+
+⚠️ **The CUDA cells SKIP under a normal `pytest` run** — the root `conftest.py` hard-sets
+`CUDA_VISIBLE_DEVICES=""` for the whole suite so a stray `device="auto"` can never steal VRAM from
+a live training run. **You cannot compile FOR cuda ON the cpu** (measured 2026-08-14, torch 2.5.1 /
+triton 3.1.0: with the device hidden, an Inductor cuda compile dies `RuntimeError: No CUDA GPUs are
+available` — the backend queries live device properties, so codegen is not a blind AOT
+source→PTX step; and a `FakeTensorMode` trace only exercises **dynamo**, which is device-agnostic
+anyway and never reaches the backend where the device-specific bugs live). So the CUDA cells need
+the real card:
+
+```bash
+GEN3AI_TEST_ALLOW_GPU=1 pytest src/agents/model/extractor_compiles_test.py -q   # 8 passed
+```
+
+Even unhidden they refuse to run when the card is BUSY (a free-VRAM floor read via `nvidia-smi`, so
+the *check* creates no CUDA context either) — a compile test must never be what OOMs a 20-hour run.
+Every skip NAMES the cause and the knob rather than saying "no CUDA device", because a silent skip
+on a box that is always training would turn the gate into a no-op that still reads green.
+
+## Compiled GPU trainer (`--compile-trainer`, opt-in)
+
+`torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step
+runs. The other half of the pair above, and the larger of the two.
+
+**Measured** (2026-08-14, v76 `gen3_ctx_dedup_v1`, RTX 3080 Ti, the real
+`MaskablePPO -> ActorCriticPolicy._build()` path, gen-9's own `cli_args`: batch 4096, PopArt on;
+`policy.evaluate_actions` fwd+bwd, arms interleaved, 3 pairs, idle box):
+
+| scope | eager | compiled | speedup |
+|---|---|---|---|
+| extractor only (**what ships**) | 155.1 ms | 88.5 ms | **1.753x** |
+| whole `evaluate_actions` | 155.5 ms | 88.5 ms | 1.757x |
+
+**~+62% end-to-end FPS** at the ~89% train share. **We compile the EXTRACTOR, and the second row is
+why**: the two scopes measure the same to within 0.004x — the mlp_extractor, the pointer head and
+the value head contribute nothing — so the whole-policy scope buys nothing for strictly more graph
+(and more surface for SB3's distribution objects and the mask path to break on). Same win, smaller
+blast radius. Also confirmed: rollout 2048x48 / batch 4096 = **exactly 24 minibatches, no
+remainder**, so one graph and no per-epoch recompile.
+
+**FAIL-LOUD BY DESIGN, and deliberately asymmetric with `--compile-opponents`.** The opponent path
+warns and falls back to eager (`--compile-opponents-strict` opts into raising) because it prints a
+`[CompileExtractor]` line either way. Here there is nothing to notice: a silent fallback trains
+perfectly correctly and just produces ~38% fewer steps/hour forever. So every failure is fatal
+(`CompileTrainerError` -> `TrainExitCode.FATAL_CONFIG`, so the launcher gives up instead of
+restart-looping), and the flag has no `strict` variant because there is nothing to opt into. Four
+refusals, each guarding an otherwise-invisible outcome:
+
+| refusal | why |
+|---|---|
+| `--device cpu` | The CPU BACKWARD provably does not lower — Inductor's C++ backend asserts on the damage op's `atomic_add` scatter. Pinned as a measured fact by `extractor_compiles_test::test_cpu_backward_still_does_not_compile`, and the error names it rather than just saying no |
+| compile raised | bisect the op — the whole "torch cannot compile our model" story was ONE op (see `src/agents/model/CLAUDE.md`, the `species_posterior` precedent) |
+| compiled is not faster (< 1.05x) | the graph fragmented or the backend fell back per-frame; the measured figure is ~1.75x, so parity is a defect |
+| compiled disagrees with eager (> 1e-4) | a faster wrong model is not a win |
+
+Every rejection **uninstalls** the compiled callable before raising, so the process never keeps
+running something it just declared unacceptable.
+
+**⚠️ It DROPS the ObservationDebugger, and that is a production-visible trade.** Dynamo cannot trace
+the debugger's numpy asserts at all (it dies building a guard over a numpy bool), so this is
+compile-or-debugger, not both. The debugger attaches at `log_level >= PERIODIC` — i.e. it is ON in
+production — so enabling this flag costs you the per-forward obs-integrity check for that run. It
+gets its own startup line rather than happening quietly.
+
+**Mechanics.** Patches the BOUND `fe.forward`, never the module: `torch.compile(module)` returns an
+`OptimizedModule` and prefixes every `state_dict` key with `_orig_mod.`, which would land in every
+checkpoint of the run and make them unloadable by anything else. It runs immediately BEFORE
+`_run_roundtrip_test`, which turns that existing save -> reload -> forward gate into a free check on
+exactly that hazard. **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
+inherited on resume — re-pass it each launch, like `--grad-checkpointing`.
+
+Tests: `agents/model/compile_trainer_test.py` (the verdicts are pure functions so every refusal is
+testable without a GPU — a contract that needs a free card is a contract that gets checked rarely;
+plus a CUDA test that the `state_dict` keys and a save/reload survive) and the compile itself in
+`agents/model/extractor_compiles_test.py`.
 
 ### Every non-training model can use it
 
@@ -1409,7 +1503,7 @@ inference-only), and the prober backprops through this same extractor for gradie
 
 | consumer | what is compiled | gate |
 |---|---|---|
-| training env workers | pool / stable / exploiter opponents | `--compile-extractor` (+ forkserver preload) |
+| training env workers | pool / stable / exploiter opponents | `--compile-opponents` (+ forkserver preload) |
 | `eval_worker` | **the trainee** (plays every eval game) + sentinel + fixed opponents | `compile_extractor` cfg key, threaded from both eval callbacks |
 | `search_teacher_persistent_worker` | trainee (per re-freeze) + opponent (per iteration) | `compile_extractor` cfg key |
 | `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
@@ -1457,7 +1551,7 @@ BLAS reads them at init), and each env worker additionally pins `torch.set_num_t
 explicit learner-side override can't silently un-pin the workers. Pinned by
 `src/main/thread_pinning_test.py`; the compile guards by `src/agents/model/compile_extractor_test.py`
 (incl. a regression that the global `suppress_errors` never comes back) and the uncompilable-op
-regression by `src/agents/model/species_posterior_compiles_test.py`.
+regression by `src/agents/model/extractor_compiles_test.py`.
 
 `tmp/production_cmd.py` reconstructs a runnable command from any run's `metadata.json` `cli_args`,
 diffing against the live parser's defaults and REPORTING (never silently dropping) flags the tree no

@@ -1,4 +1,4 @@
-"""Unit tests for `maybe_compile_extractor` — the `--compile-extractor` runtime perf knob.
+"""Unit tests for `maybe_compile_extractor` — the `--compile-opponents` runtime perf knob.
 
 It is a PERF knob, so its contract is mostly about what it must NOT do: never crash a run, never
 silently claim a win it didn't get, never change the state_dict, never create a CUDA context in a
@@ -112,7 +112,7 @@ def test_exception_is_swallowed_and_forward_restored(monkeypatch):
 
 def test_does_not_set_global_suppress_errors(monkeypatch):
     """REGRESSION. The helper used to set `torch._dynamo.config.suppress_errors = True` globally to
-    work around ONE uncompilable op (see `species_posterior_compiles_test.py`). That turned every
+    work around ONE uncompilable op (see `extractor_compiles_test.py`). That turned every
     OTHER backend failure — anywhere in the process, forever — into a silent per-frame eager
     fallback. The op is fixed; the global suppression must not come back."""
     fe = _FE(cost_ms=2.0)

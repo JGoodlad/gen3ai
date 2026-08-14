@@ -126,7 +126,7 @@ class SnapshotPool:
         # say so and keep its GPU.
         self._compile_extractor = bool(compile_extractor)
         self._compile_hide_cuda = bool(compile_hide_cuda)
-        # --compile-extractor-strict: turn a failed/ineffective compile into a hard error instead of
+        # --compile-opponents-strict: turn a failed/ineffective compile into a hard error instead of
         # a silent ~6.5x-slower opponent forward. Off by default (a perf knob must not kill a run),
         # on for anyone who would rather find out at startup than in the FPS graph a day later.
         self._compile_strict = bool(compile_strict)

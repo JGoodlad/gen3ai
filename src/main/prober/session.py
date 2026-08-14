@@ -1011,7 +1011,7 @@ class ProbeSession:
                         mod._debugger = None
                 # These models are used ONLY for no-grad rollouts (better-line's beam,
                 # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands
-                # of B=1 CPU forwards, the exact shape --compile-extractor targets. Gated on
+                # of B=1 CPU forwards, the exact shape --compile-opponents targets. Gated on
                 # `compile_extractor` because a one-off `summary`/`list` query should not pay a
                 # ~10-20s compile it will never amortize. Grad-enabled calls (saliency) are routed
                 # to eager inside the helper, so this cannot break the gradient paths.

@@ -208,7 +208,7 @@ def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample
     def _player(step, tag):
         model, _ = load_foreign_opponent(_snapshot_zip(run_dir, step), current_version=cv,
                                          device="cpu", config_path=cfg)
-        # Pure frozen CPU inference over many games — exactly the shape --compile-extractor targets.
+        # Pure frozen CPU inference over many games — exactly the shape --compile-opponents targets.
         # On by default here (unlike training) because this is an offline analysis tool: nothing is
         # racing it, and the ~10-20s compile is repaid within the first ladder rung.
         maybe_compile_extractor(model, compile_extractor, label=f"ladder:{step}", hide_cuda=True)
