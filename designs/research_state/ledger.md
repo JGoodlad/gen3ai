@@ -396,7 +396,7 @@ take.**
 
 ---
 
-### rust bridge lock-in reject contradiction (2026-08-13) — VERIFIED IN SOURCE, UNTESTED IN BATTLE
+### rust bridge lock-in reject contradiction (2026-08-13) — FIXED, AND NOW TESTED IN BATTLE (2026-08-14)
 
 `--use-bridge=rust` killed two production launches at ~8 min with a `no-progress reject loop ... 9
 consecutive rejects of MoveName("solarbeam")`. The documented cause in `CLAUDE.md` — a framing gap
@@ -426,6 +426,59 @@ must be one `classify_reject` ACCEPTS — rather than a per-move scenario. It co
 without enumeration, and the existing fuzz cannot catch this class by construction: the token here
 IS masked-legal (the mask is built from the request), so a fuzz that trusts the mask can never see a
 request/classifier contradiction. 22k episodes passed clean pre-fix.
+
+#### RESOLUTION (2026-08-14) — the battle test this entry was missing
+
+The fix landed as `a2ae60d` (a `move_locked()` early-out in `classify_reject`, beside the existing
+`must_struggle` one). What had never been run is the thing this entry's title flagged: the port
+under a real multi-env training load. Run today, on an otherwise-idle 16-core box:
+
+| what | result |
+|---|---|
+| `--use-bridge=rust --n-envs 48`, full production flag set, self-play, compiled extractor, run to its FULL step budget | **4,030,464 steps over ~2h21m, 646 episodes, 2 eval cycles, 2 pool promotions — 0 `__ERR__` / 0 tracebacks / 0 `⚠` warnings / 0 restarts**, 49 bridge children alive throughout; exited on `Training complete`, not a fault |
+| RESUME on rust | resumed a 491k checkpoint and the step counter continued correctly (491,520 + 98,304 = 589,824) — a path the first soak never touched |
+| eval cycle @2.0M | 10 work-stealing workers, 9 bots + 0 sentinels, **36 shard units**, 900 battles, COMPLETE results, no partial-coverage warning; snapshot promoted |
+| eval cycle @4.0M | 10 workers, 9 bots + **1 sentinel**, **40 shard units**, 1000 battles, complete; second promotion — so the self-play SENTINEL path ran on rust too |
+| learning curve (the point of running it long) | bots mean **0.681 → 0.864**, anchored ELO **1681 ±24 → 1906 ±32**, and the 4M snapshot beats the 2M sentinel **0.89** |
+| `bridge_impl_parity_test.py` | 20/20 passed, **no skips** (load ~1, so no contention-masked timeouts — the failure mode that once turned 39/40 TIMEOUTs into a bogus PASS) |
+| `cargo test --test bridge_choice_reject_test` | 5/5, incl. `a_move_locked_mon_is_never_rejected_for_its_only_offered_move` |
+| `bridge_session_fuzz_test.py --impl rust 60` | 60 eps (54 fin, **6 forfeit-resets**), 1 reused child, no wedge |
+| full unit suite | 4535 passed, 4 skipped, 0 failed |
+
+Both dead launches died at ~8 min; cumulative clean rust uptime is now **~2h41m** across the two
+soaks, through the whole eval/promotion machinery. FPS fell 589 → 452 as the pool filled and
+opponents became neural forwards — the expected shape (gen9 sat at 350 under a mature 5-snapshot
+pool with node).
+
+**What this does NOT establish.** It is still ONE run on ONE seed. The per-step numbers are NOT a
+clean rust-vs-node quality comparison against gen9's ladder: gen9's 2M/4M ratings came from a JOINT
+fit in which later snapshots played those snapshots as sentinels, while these are two snapshots fit
+against the pinned bot anchors, so the evidence differs even though the anchors are identical. Read
+the curve's SHAPE (it learns, evals complete, promotions gate correctly) rather than the level. The
+**invariant** gate this entry asked for is still NOT built — the shipped test is per-scenario.
+
+**Verdict: `--use-bridge=rust` is ready for a real generation launch**, with the launcher's
+crash-restart as the net — not "proven stable for 25M steps", which no 4M run can claim.
+
+**Two documentation defects found and fixed in the same pass, both of the same class as the one
+this entry already warns about (a claim outliving its own fix):**
+
+1. `src/rust_sim/CLAUDE.md` still carried the retracted "emits no `|error|` … on a path poke-env
+   never takes" entry **twice**, and `sim_bridge_bin.py` printed it **to every operator at startup**
+   as a known gap — while `sim_bridge_bin_test.py` *asserted it must stay named*, pinning the
+   falsehood in place. Verified false against code: `gen3_choice_reject_framing_v1` is implemented
+   and `a_disabled_move_is_unavailable_and_re_requests_that_side_only` passes; both parity harnesses'
+   `ALLOWLIST`s are down to a single `.error`-TEXT entry. All three corrected; the test now asserts
+   the *opposite* (fails if either phrase returns). A startup warning that names a fixed gap teaches
+   an operator to discount the warning — which is roughly how the real defect hid behind it.
+2. **The durable gate for `gen3_bridge_forfeit_win_v1` could not be invoked.** `--impl` was read by
+   `main()` but missing from `_VALUE_FLAGS`, so its value was parsed as the fuzz budget:
+   `bridge_session_fuzz_test.py --impl rust` — the command root `CLAUDE.md` documents — died on
+   `int('rust')` before one battle. Order-dependent (`… 2000 --impl rust` worked), which is why it
+   survived. Fixed + `flag_values_are_not_mistaken_for_the_budget_test.py` (8 tests, verified failing
+   on revert), whose class test derives the flag set from `main()`'s own source so a future
+   value-flag cannot reintroduce it by omission. Note the quieter half: a *numeric* undeclared value
+   (`--workers 4`) would not raise — it would silently run a 4-episode fuzz and report success.
 
 ### ⚠️ PROCESS: a subagent FABRICATED a complete verification (2026-08-13)
 

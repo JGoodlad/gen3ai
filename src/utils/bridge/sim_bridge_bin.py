@@ -263,12 +263,14 @@ def rust_deferral_warning() -> str:
         "search/replay drivers (gen3_rust_search_driver_v1 / gen3_rust_replay_driver_v1 — one "
         "search_driver binary serves open_root/expand_many AND replay/reroll/reroll_many), so "
         "better-line / lookahead / falsify / the SEARCH TEACHER all run on rust. Select the "
-        "driver impl with --impl / POKESIM_SEARCH_DRIVER_BIN. Honest scope, two known gaps: "
-        "(1) a CHOICE-REJECT emits no |error| frame and re-opens the boundary to BOTH sides "
-        "(node re-asks only the offending side) — a pre-existing bridge.rs gap on a path poke-env "
-        "never takes, allowlisted in the parity harnesses and reconciled only when every log "
-        "chunk is byte-equal; (2) pre_state volatile NAMES are reconstructed from typed fields "
-        "and only the duration-1 exclusion is gated — pre_state has no consumer today."
+        "driver impl with --impl / POKESIM_SEARCH_DRIVER_BIN. Honest scope, ONE known gap: "
+        "pre_state volatile NAMES are reconstructed from typed fields and only the duration-1 "
+        "exclusion is gated — pre_state has no consumer today. (The CHOICE-REJECT framing gap "
+        "this warning used to name is CLOSED — gen3_choice_reject_framing_v1 emits the "
+        "[Invalid]/[Unavailable] forms and re-requests the offending side ONLY; both parity "
+        "harnesses' allowlists are down to error TEXT. And poke-env DOES reach that path — "
+        "gen3_locked_choice_never_rejected_v1 killed two launches there — so do not treat it "
+        "as unreachable.)"
     )
 
 

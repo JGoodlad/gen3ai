@@ -138,9 +138,14 @@ def test_deferral_warning_states_the_current_rust_scope():
       (``gen3_rust_search_driver_v1`` = ``open_root``/``expand_many``,
       ``gen3_rust_replay_driver_v1`` = ``replay``/``reroll``/``reroll_many``) are supported, so
       better-line / lookahead / falsify / the search-teacher all work.
-    * **Over-claiming** hides a real divergence. Two gaps remain and must stay named: the
-      CHOICE-REJECT framing (no ``|error|`` frame; the boundary re-opens to both sides) and the
+    * **Over-claiming** hides a real divergence. ONE gap remains and must stay named: the
       reconstructed ``pre_state`` volatile names.
+    * **Stale-gap claiming** is the third failure mode, and it is the one that actually bit.
+      The warning named the CHOICE-REJECT framing as an open gap "on a path poke-env never
+      takes" long after ``gen3_choice_reject_framing_v1`` closed the framing — and that
+      "never takes" was itself false: poke-env takes it, and
+      ``gen3_locked_choice_never_rejected_v1`` killed two production launches there at ~8
+      minutes. A warning that names a fixed gap teaches an operator to discount the warning.
 
     It must ALSO not resurrect the retracted reason. The warning once blamed the record's
     ``input_log`` byte-identity for the search-teacher's node requirement; that was false —
@@ -154,11 +159,21 @@ def test_deferral_warning_states_the_current_rust_scope():
     assert "gen3_rust_search_driver_v1" in msg and "gen3_rust_replay_driver_v1" in msg, (
         "both offline verb families must be named — an operator reading only 'search' would "
         "still think reroll/falsify needs node")
-    # The honest-scope half: the two known divergences stay visible.
-    assert "REJECT" in msg.upper(), "the choice-reject framing gap must stay named"
+    # The honest-scope half: the ONE remaining divergence stays visible.
     assert "pre_state" in msg, "the reconstructed volatile-name gap must stay named"
     # ...and the retracted input_log reason must never come back as the cause.
     assert "byte-identical" not in msg
+    # The CHOICE-REJECT framing gap is CLOSED (`gen3_choice_reject_framing_v1`), and this
+    # warning named it as OPEN long after the fix landed — the same "an allowlist entry
+    # outlives its own fix" failure the root CLAUDE.md warns about, except printed to every
+    # operator at startup. Pin the retraction from both sides so it cannot come back:
+    assert "never takes" not in msg, (
+        "the 'a path poke-env never takes' claim is FALSIFIED — poke-env takes it, and "
+        "gen3_locked_choice_never_rejected_v1 killed two production launches there")
+    assert "emits no |error|" not in msg, (
+        "the port DOES emit the |error| frame — bridge_choice_reject_test::"
+        "a_disabled_move_is_unavailable_and_re_requests_that_side_only pins the "
+        "re-request-that-side-only behaviour this text claimed was missing")
 
 
 def test_rust_bridge_emits_a_parseable_recon_record(tmp_path):

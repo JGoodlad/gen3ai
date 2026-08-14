@@ -150,12 +150,19 @@ def _play_episode(w, rng, expected_dim, early_reset_at):
     return result, stats
 
 
-_VALUE_FLAGS = {"--workers", "--slow-ms"}
+# Every flag that takes a SEPARATE value token. `--impl` was missing here while `main()` read
+# it, so its value was consumed as the budget instead: the documented gate command
+# `bridge_session_fuzz_test.py --impl rust` died on `int('rust')` before running one battle —
+# and that command is the durable end-to-end gate for `gen3_bridge_forfeit_win_v1`, the bug
+# that wedged `--use-bridge=rust` training and read as a "multi-env stall" for months. A gate
+# that cannot be invoked is not a gate. Keep this set in sync with every `sys.argv.index(...)`
+# read in `main()`; `flag_values_are_not_mistaken_for_the_budget_test.py` pins that.
+_VALUE_FLAGS = {"--workers", "--slow-ms", "--impl"}
 
 
 def _parse_budget(argv):
     # First bare (non-flag) token is the budget: "2000" → 2000 episodes, "90m"/"30s" → time.
-    # Skip tokens that are VALUES of --workers / --slow-ms (also bare numbers).
+    # Skip tokens that are VALUES of a _VALUE_FLAGS flag (also bare, also non-numeric).
     skip = {i + 1 for i, a in enumerate(argv) if a in _VALUE_FLAGS}
     arg = next((a for i, a in enumerate(argv)
                 if not a.startswith("-") and i not in skip), None)

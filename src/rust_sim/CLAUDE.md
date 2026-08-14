@@ -196,20 +196,31 @@ documented emission exception) and prints its allowlist + coverage notes on ever
 FAULT-INJECTION PROVEN: a one-line off-by-one in `pick_uniform` produces 2716 divergences (and the
 illegal-move allowlist below correctly REFUSES to reconcile, hits 0 → 1 → 0).
 
-**THE ONE OPEN DIVERGENCE (allowlisted, pre-existing, NOT the search layer).** When an arm feeds
-an explicit move the request marks `disabled` (the golden hits a Choice-locked Aerodactyl), Node
-emits `|error|[Unavailable choice] Can't move: X's Y is disabled` + a re-request **to that side
-only**, whose disabled slot gains `"disabledSource":""` (`Side.chooseMove`'s
-`updateRequestForPokemon`, which is also what makes the error `[Unavailable]` rather than
-`[Invalid]`). `bridge.rs`'s reject path models only the trapped-SWITCH case, so the port emits no
-`|error|`, no `disabledSource`, and re-opens the boundary with a request to BOTH sides. Everything
-else about that arm matches — `outcome`, `choices_used`, `requests`, and every LOG chunk byte-for-
-byte — so the kernels' re-pick logic is right; only the reject's chunk framing differs. It is a
-PRODUCTION bridge-layer gap on a path poke-env never takes (poke-env always picks from the
-request's legal set), and closing it changes `bridge.rs`'s emitted bytes, so it needs its own
-probe + the bridge's own byte gates (`bridge_test.rs` / `bridge_corpus_test.rs` /
-`gen_sim_bridge_diff.js`) rather than a drive-by edit here. The harness reconciles it ONLY when
-every LOG chunk is byte-equal on both sides.
+**THE CHOICE-REJECT DIVERGENCE IS CLOSED — the only live allowlist entry is `.error` TEXT**
+(Node returns a JS `e.stack`, the port a plain message; the ok/`ok:false` VERDICT is still compared
+strictly). When an arm feeds an explicit move the request marks `disabled` (the golden hits a
+Choice-locked Aerodactyl), Node emits `|error|[Unavailable choice] Can't move: X's Y is disabled` +
+a re-request **to that side only**, whose disabled slot gains `"disabledSource":""`
+(`Side.chooseMove`'s `updateRequestForPokemon`, which is also what makes the error `[Unavailable]`
+rather than `[Invalid]`) — and `bridge.rs` now emits exactly that
+(`gen3_choice_reject_framing_v1`: `serialize_active_with_disabled_source`, the
+`[Invalid]`/`[Unavailable]` split on whether there is a request to re-issue, gated by
+`tests/bridge_choice_reject_test.rs`).
+
+⚠️ **The old entry here claimed the port "emits no `|error|` … on a path poke-env never takes".
+BOTH halves were false, and it is retracted — do not re-derive a plan from it.** The framing half
+was closed by `gen3_choice_reject_framing_v1` and *this note survived its own fix*. The "never
+takes" half was falsified by poke-env taking it and killing **two production launches at ~8
+minutes** — root-caused as `gen3_locked_choice_never_rejected_v1` (a move-LOCKED mon gets a
+single-entry `trapped:true` request, and `classify_reject` never consulted `move_locked()`, so the
+port could REFUSE the only move offered — it contradicted ITSELF; fixed with a `move_locked()`
+early-out beside `must_struggle`, gated by
+`bridge_choice_reject_test::a_move_locked_mon_is_never_rejected_for_its_only_offered_move`). The
+existing fuzz could not catch it by construction: it drives masked-LEGAL tokens, and there the
+token IS masked-legal because the mask is built FROM the request. **The durable lesson is that an
+allowlist entry can outlive its own fix and then mislead every reader after** — see the root
+`CLAUDE.md`. Verify an allowlist claim against the harness (`tmp/search_impl_parity.py::ALLOWLIST`)
+and the code, never against this prose alone.
 
 **HONEST SCOPE — `pre_state`.** It mirrors Node's `preState` and has NO consumer today. `turn`,
 `weather`, the per-mon species/hp/maxhp/status/fainted/position, boosts, item, ability, the
@@ -307,17 +318,20 @@ copy, which also drives `replay`'s not-ended path. STILL NOT EXERCISED and print
 NON-EMPTY `pre_state` volatile list, and an Intimidate `|-hint|` inside a re-rolled turn (the one
 `split_log_lines` case whose owner attribution is a heuristic).
 
-**THE OPEN DIVERGENCE (allowlisted, pre-existing, the SAME bridge gap as the search half's).** An
-arm that feeds a choice the sim refuses — here `switch N` into a FAINTED slot — diverges in TWO
-places, both traceable to `bridge.rs` modelling only the trapped-SWITCH reject. (1) FRAMING: Node
-emits `|error|[Invalid choice] …` to that side only; the port emits no `|error|` and re-opens the
-boundary with a request to BOTH sides (4 hits). (2) `choices_used`: because the port rebuilds the
-whole boundary, the UNREJECTED side is asked again and its follow-up pick is RECORDED — never
-executed (1 hit). The harness reconciles (1) only when every remaining LOG chunk is byte-equal on
-both sides, and (2) only on an arm where (1) already reconciled AND node's list is a SUBSEQUENCE
-of the port's — so a genuinely different pick still fails. Closing this properly changes
-`bridge.rs`'s emitted bytes and so needs its own probe plus the bridge's own byte gates, exactly
-as the search half's note says.
+**THE CHOICE-REJECT DIVERGENCE IS CLOSED here too — the only live allowlist entry is `.error`
+TEXT** (the VERDICT, the process EXIT CODE that `reconstruction.py` actually branches on, and the
+error CLASS are all compared STRICTLY). An arm that feeds a choice the sim refuses — here
+`switch N` into a FAINTED slot — used to diverge in the framing (`|error|[Invalid choice]` to the
+offending side only vs no `|error|` and a re-opened boundary to BOTH sides) and, downstream of
+that, in `choices_used`. `bridge.rs` now models every reject class, not just the trapped-SWITCH one
+(`gen3_choice_reject_framing_v1`), so neither entry remains in
+`tmp/replay_impl_parity.py::ALLOWLIST`.
+
+⚠️ **Retracted, same as the search half's note — do not re-derive a plan from the old text.** It
+described the port as "modelling only the trapped-SWITCH reject" on a path poke-env never takes;
+that path killed two production launches at ~8 minutes
+(`gen3_locked_choice_never_rejected_v1`). Read the search half's note above for the root cause and
+the lesson, and verify against the harness + the code rather than this prose.
 
 ## PRNG: the bit-for-bit gate (level-1 differential test)
 
