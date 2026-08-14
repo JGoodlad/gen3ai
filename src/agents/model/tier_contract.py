@@ -86,6 +86,13 @@ TIER_OF: Dict[str, int] = {
     "cls_pool": 2,
     "alpha_head": 2,
     "beta_head": 2,
+    # gen3_intent_move_cell_v1: the POLICY-side alpha consumer — weights the op's T1 c2 operand
+    # stash by the T2 alpha publication into the pointer MOVE cell. T2 by the same logic as
+    # `alpha_head` itself: it answers "what are my moves worth", post-attention.
+    "intent_move_cell": 2,
+    # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
+    # (the first point where both operands exist) — a DELIVER-stage readout.
+    "intent_value_reduce": 3,
     # T3 DELIVER — the pooled contract and the readouts taken off it.
     "hidden_opp_belief": 3,
     "assembler": 3,
@@ -116,7 +123,8 @@ _NAMED_ENTRY_POINTS: Dict[str, Tuple[str, ...]] = {
     "move_belief": ("move_logits", "reinject_moves"),
     "hp_type_belief_head": ("compose_typed_hp", "reinject"),
     "spread_belief": (),
-    "damage_op": ("refine_candidates", "discrete_outgoing_status", "discrete_incoming_status"),
+    "damage_op": ("refine_candidates", "discrete_outgoing_status", "discrete_incoming_status",
+                  "pointer_intent_status_operands"),
 }
 
 

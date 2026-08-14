@@ -332,6 +332,17 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                op.pointer_move_cell_dim, "_PTR_MOVE_CELL",
                                note="[low, high, crit, pko, p_land, known, sec x"
                                     f"{dop._N_OUT_SECONDARY}] for THIS request slot"))
+    if getattr(fe, "intent_move_cell", None) is not None:
+        # gen3_intent_move_cell_v1 (G3): the alpha-conditioned c2 re-delivery — a per-action
+        # ABSOLUTE on the move logits, weighted by the T2 alpha publication (OFF in production
+        # until the G3 gate run).
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.INTENT_MOVE_CELL_DIM, "INTENT_MOVE_CELL_DIM",
+                               via="IntentMoveCell (published alpha × c2 operands)",
+                               zero_init=True,
+                               note="alpha-expected burn/sleep consequence + raw c2 columns "
+                                    "+ alpha_stay, for THIS request slot"))
     if op.pointer_switch_cell_dim:
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",

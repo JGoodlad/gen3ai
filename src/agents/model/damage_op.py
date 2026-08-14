@@ -1909,6 +1909,104 @@ class DamageOperator(torch.nn.Module):
                              d_in_all, e_slp_free], dim=-1)
         return cells * row_gate[..., None]                                           # [B,4,6,7]
 
+    def pointer_intent_status_operands(self, ctx: 'ExtractorContext',
+                                       move_belief_logits: torch.Tensor,
+                                       spread_belief: Optional[torch.Tensor] = None,
+                                       k_cand: int = 6,
+                                       c2_cells: Optional[torch.Tensor] = None):
+        """gen3_intent_move_cell_v1 (G3): the RAW operands for the alpha-conditioned c2
+        re-delivery through the pointer MOVE cell (`agents.model.intent_move_cell` weights them
+        by the published alpha at T2 — alpha does not exist when this runs, the same
+        T2-object/T1-producer split as `last_pair_cells`).
+
+        Returns ``(base [B,4,4], d_burn_k [B,K], d_slp_k [B,K], is_brn [B,4], is_slp [B,4])``:
+
+          * ``base`` — the k-INDEPENDENT c2 consequence columns, gathered at the opp ACTIVE (the
+            mon our status move hits when they stay): `[is_status, d_their_outspeed, d_sched,
+            e_slp_free_turns]`. `land` is deliberately absent — the move cell already carries the
+            richer unified `_status_landing` p_land/known vs the same recipient. Reuses the c2
+            edge grid when the caller already built it (`c2_cells`), else computes it fresh —
+            the identical function either way.
+          * ``d_burn_k`` — per seat-candidate k, the burn damage-control delta on OUR active:
+            `high_k(atk × 0.5) − high_k(atk)` (≤ 0; exactly 0 for special/fixed candidates since
+            only the physical attack stat moves). Computed by the SAME `_damage_rolls` kernel and
+            the SAME attacker pricing as the op's incoming block (believed spread when on, else
+            de-timid; offensive boosts; an existing burn), so the delta is consistent with the
+            `high` the model already reads.
+          * ``d_slp_k`` — per candidate k, sleep's suspended threat: `−high_k` (any category).
+          * ``is_brn`` / ``is_slp`` — our request slots' status-category masks (c2's definitions).
+
+        The candidate axis is the op's OWN top-K (`last_topk_idx`, real move nums) — the axis
+        `intent_axis_alignment_test` pins element-wise to alpha's seats — so alignment is by
+        construction rather than by convention. Fails loud when the top-K stash is missing (no
+        `damage_matrices_incoming`/`damage_topk_k`): silently substituting a different candidate
+        selection would mis-weight every term (the named `op move-order` bug class)."""
+        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        ar = torch.arange(B, device=device)
+        nums = self.last_topk_idx                                                    # [B,K] move NUMS
+        if nums is None:
+            raise RuntimeError(
+                "pointer_intent_status_operands needs the op's top-K candidate stash "
+                "(last_topk_idx) to align with alpha's seats, and none was recorded. "
+                "intent_move_cell requires damage_topk_k>0 (and the incoming matrix that "
+                "computes it).")
+        has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()  # [B]
+        our_alive = (ctx.hp_and_active[ar, ctx.our_active_idx, 0] > 0).float()          # [B]
+        # --- the k-independent c2 columns vs the opp ACTIVE (c2's own row_gate already folds
+        # our_alive + the active's revealed/alive gate; has_opp guards the no-active gather) ---
+        c2 = c2_cells if c2_cells is not None else self.pairwise_status_consequence(
+            ctx, move_belief_logits, spread_belief, k_cand=k_cand)
+        row = c2[ar, :, ctx.opp_active_local, :]                                     # [B,4,7]
+        base = torch.stack([row[..., 0], row[..., 2], row[..., 4], row[..., 6]],
+                           dim=-1) * has_opp[:, None, None]                          # [B,4,4]
+        # --- our request slots' status categories (c2's definitions) ---
+        ids = ctx.our_active_req_move_ids                                            # [B,4]
+        sidx = self.MOVE_STATUS_CAT[ids]
+        is_brn = (sidx == 2).float()
+        is_slp = (sidx == _SLP_STATUS_CAT).float()
+        # --- attacker = opp active, priced EXACTLY as the incoming block prices it (believed
+        # spread when on, else de-timid ×1.1; offensive stages; an existing burn) ---
+        opp_act = TEAM_SIZE + ctx.opp_active_local                                   # [B]
+        sb = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None
+        a_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]                       # [B,6]
+        off_const = 31.0 + 252.0 / 4.0 + 5.0
+        atk = sb[:, _SB_ATK] if sb is not None else (2.0 * a_base[:, 1] + off_const) * 1.1
+        spa = sb[:, _SB_SPA] if sb is not None else (2.0 * a_base[:, 3] + off_const) * 1.1
+        opp_b_atk, _obd, opp_b_spa, _obs2, _obe = self._boost_stages(ctx.opp_ctx_raw)
+        atk = atk * self._boost_mult(opp_b_atk)
+        spa = spa * self._boost_mult(opp_b_spa)
+        opp_burn = ctx.pokemon_part[ar, opp_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]
+        atk = atk * torch.where(opp_burn > 0.5, atk.new_tensor(0.5), atk.new_tensor(1.0))
+        at1 = ctx.type1_ids[ar, opp_act]
+        at2 = ctx.type2_ids[ar, opp_act]
+        # --- defender = OUR ACTIVE (real spread, current def/spd stages folded) ---
+        def_c, spd_c, maxhp, cur_hp, d_t1, d_t2, _amul = self._active_defender(ctx)
+        our_abl = ctx.ability1_ids[ar, ctx.our_active_idx]                           # [B]
+        # --- the seat candidates' move data (fixed-damage recategorised like the forward) ---
+        bp_k = self.MOVE_BP[nums]                                                    # [B,K]
+        mty_k = self.MOVE_TYPE_IDX[nums]
+        phys_k = self.MOVE_PHYS[nums]
+        acc_k = self.MOVE_ACCURACY[nums]
+        fixed_k = self.MOVE_FIXED_DAMAGE[nums]
+        phys_k = torch.where(fixed_k > 0, self.TYPE_IS_PHYS[mty_k], phys_k)
+        weather_k = self._weather_mult(ctx.weather_feature,
+                                       (mty_k == _WATER_TIDX).float(),
+                                       (mty_k == _FIRE_TIDX).float())                # [B,K]
+        reflect = ctx.screen_feature[:, 0:1]                                         # [B,1] OUR side
+        light_screen = ctx.screen_feature[:, 2:3]
+        def _high(atk_x: torch.Tensor) -> torch.Tensor:
+            return self._damage_rolls(
+                atk_x, spa, at1, at2, def_c[:, None], spd_c[:, None], maxhp[:, None],
+                cur_hp[:, None], d_t1[:, None], d_t2[:, None], our_abl[:, None],
+                reflect, light_screen, bp_k, mty_k, phys_k, acc_k, fixed_k,
+                weather_k, eps)[0][:, 0, :]                                          # [B,K]
+        high_full = _high(atk)
+        high_half = _high(atk * 0.5)
+        gate = (has_opp * our_alive)[:, None]                                        # [B,1]
+        d_burn_k = (high_half - high_full) * gate                                    # [B,K] ≤ 0
+        d_slp_k = -high_full * gate                                                  # [B,K] ≤ 0
+        return base, d_burn_k, d_slp_k, is_brn, is_slp
+
     def pairwise_boost_incoming(self, ctx: 'ExtractorContext',
                                 move_belief_logits: torch.Tensor,
                                 k_cand: int = 6) -> torch.Tensor:

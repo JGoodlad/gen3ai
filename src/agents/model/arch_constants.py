@@ -51,3 +51,11 @@ VALUE_SEED_DIM = 64
 # `cells_pr` stack (low/high/crit/ko_ramp/acc/phys_mask) — change one and the other must follow.
 INTENT_VALUE_REDUCE_DIM = 64
 _INTENT_CELL_FEATURES = 6
+
+# gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the alpha-conditioned c2
+# status-consequence channels appended to the pointer MOVE cell. `_INTENT_MOVE_CELL_RAW` is the
+# raw channel stack [is_status, d_their_outspeed, e_burn_alpha, d_sched, e_slp_alpha,
+# e_slp_free_turns, alpha_stay]; `INTENT_MOVE_CELL_DIM` is the zero-init projection's output width
+# (what the pointer move scorer's in_features grow by when the flag is on).
+INTENT_MOVE_CELL_DIM = 7
+_INTENT_MOVE_CELL_RAW = 7

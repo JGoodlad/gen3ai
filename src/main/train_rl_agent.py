@@ -384,6 +384,7 @@ def _run_arch_toggles(args) -> dict:
         t0_species_prior=bool(getattr(args, 't0_species_prior', False)),
         opp_intent_grad_mode=str(getattr(args, 'opp_intent_grad_mode', 'detached') or 'detached'),
         intent_value_reduce=bool(getattr(args, 'intent_value_reduce', False)),
+        intent_move_cell=bool(getattr(args, 'intent_move_cell', False)),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
@@ -1389,6 +1390,16 @@ async def main():
                              "untouched (still hard-max) — alpha is scored downstream of it and "
                              "cannot weight its internal reduction. Requires --opp-intent-coef>0 "
                              "and --damage-op. STRUCTURAL, version-checked.")
+    parser.add_argument("--intent-move-cell", "--intent_move_cell",
+                        dest="intent_move_cell", action=BoolFlag, default=None,
+                        help="G3 (gen3_intent_move_cell_v1, design_conditional_execution.md): the "
+                             "POLICY-side alpha consumer — the c2 status-consequence family "
+                             "re-delivered through the pointer MOVE cell as a per-action absolute, "
+                             "alpha-conditioned (burn/sleep channels become unrenormalized "
+                             "alpha-expectations over the op's top-K seat candidates; the seat "
+                             "mass rides as a decorrelated alpha_stay channel). Zero-init "
+                             "projection => identity at init. Requires --opp-intent-coef>0, "
+                             "--damage-op and --damage-topk-k>0. STRUCTURAL, version-checked.")
     parser.add_argument("--opp-intent-grad-mode", "--opp_intent_grad_mode",
                         dest="opp_intent_grad_mode", choices=["detached", "shaping"], default=None,
                         help="Whether alpha/beta's gradient reaches the shared trunk "
@@ -2118,6 +2129,7 @@ async def main():
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
     _resolve("intent_value_reduce", False)     # v74 structural, version-checked (step 6)
+    _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

@@ -519,7 +519,17 @@ from typing import Any, Dict, List
 #   field goes with the module (no migration branch needed: the floor rises to 76 with the
 #   signature, so no pre-v76 config is ever migrated). state_dict changes → the signature
 #   carries the break; fresh lineage.
-MODEL_CONFIG_VERSION = 76
+# v77 STRUCTURAL (gen3_intent_move_cell_v1, the G3 gate of design_conditional_execution.md):
+#   `intent_move_cell` — the POLICY-side alpha consumer. The c2 status-consequence family is
+#   re-delivered through the pointer MOVE cell as a per-action ABSOLUTE, alpha-conditioned: the
+#   burn/sleep consequence channels become UNRENORMALIZED alpha-expectations over the op's own
+#   top-K seat candidates (`f(m, SWITCH)=0` is exact — a switching active neither attacks nor
+#   receives the status), the k-independent c2 columns ride raw vs the opp ACTIVE with the seat
+#   mass `alpha_stay` as a decorrelated channel. ON widens the pointer move scorer's in_features
+#   by INTENT_MOVE_CELL_DIM through a zero-init projection (identity at init, M1-guarded); OFF
+#   builds no module and is byte-identical → NO ARCH_SIGNATURE bump. Requires opp_intent +
+#   damage_op (+ damage_topk_k>0 at runtime, fail-loud). Old configs migrate to False.
+MODEL_CONFIG_VERSION = 77
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1243,6 +1253,13 @@ class ModelVersion:
     # mismatch WOULD be shape-caught — the check is here anyway so the failure names the cause
     # instead of surfacing as an opaque size error deep in a load.
     intent_value_reduce: bool = False
+
+    # v77 STRUCTURAL (gen3_intent_move_cell_v1, G3): the POLICY-side alpha consumer — the c2
+    # status-consequence family re-delivered through the pointer MOVE cell, alpha-conditioned.
+    # WIDENS the pointer move scorer's in_features (a state_dict change on the POLICY, not the
+    # extractor), so a mismatch would be shape-caught — the check is here anyway so the failure
+    # names the cause instead of surfacing as an opaque size error deep in a load.
+    intent_move_cell: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1499,6 +1516,10 @@ class ModelVersion:
             intent_value_reduce=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "intent_value_reduce", False)
+            ),
+            intent_move_cell=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "intent_move_cell", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -1963,6 +1984,16 @@ class ModelVersion:
                 f"current={self.intent_value_reduce}.\n"
                 "Step 6 widens the critic's pre-projection features, so it is fixed for a run's "
                 "lifetime.\nResume with the matching --intent-value-reduce, or start a fresh run."
+            )
+        # gen3_intent_move_cell_v1 (v77): widens the pointer move scorer's in_features (a policy
+        # state_dict change), so a mismatch would be shape-caught — this names the cause instead.
+        if self.intent_move_cell != saved.intent_move_cell:
+            raise ModelVersionError(
+                f"intent_move_cell mismatch: saved={saved.intent_move_cell}, "
+                f"current={self.intent_move_cell}.\n"
+                "The G3 alpha-conditioned c2 move-cell channels widen the pointer move scorer, "
+                "so the flag is fixed for a run's lifetime.\n"
+                "Resume with the matching --intent-move-cell, or start a fresh run."
             )
         if self.opp_intent_grad_mode != saved.opp_intent_grad_mode:
             raise ModelVersionError(
@@ -2464,4 +2495,10 @@ def _migrate_config(data: dict) -> dict:
     #        REFUSING a config that recorded opp_belief_latent=True (it carried PARAMETERS the
     #        live extractor has no home for; the zip-kwargs sanitizer keeps that judgment).
     # ----------------------------------------------------------------------------------------
+    if version < 77:
+        # gen3_intent_move_cell_v1: the G3 alpha-conditioned c2 move-cell channels. Post-floor
+        # (the floor stays 76 — OFF is byte-identical, so the flag alone gates it), legal to
+        # migrate: absent means the run predates the flag, i.e. OFF.
+        data.setdefault("intent_move_cell", False)
+        data["config_version"] = 77
     return data

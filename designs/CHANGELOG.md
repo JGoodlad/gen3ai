@@ -2824,3 +2824,37 @@ byte-identical run-config copy until the first v75 run launches, and exists so t
 the delivery graph and the viewer keep deriving from the real production feature set (which
 surfaced a latent `NameError` in the graph generator's `belief_slots` branch the moment the real
 config exercised it).
+
+### v77 — `gen3_intent_move_cell_v1` (2026-08-14): G3 — α consumed on the POLICY side
+
+The G3 gate of `design_conditional_execution.md`, built: the `c2` status-consequence family
+re-delivered through the pointer MOVE cell as a per-action ABSOLUTE, α-conditioned —
+`--intent-move-cell`, structural + version-checked, fresh-only, OFF (default) builds nothing.
+
+- **The operator** (`agents/model/intent_move_cell.py` + `DamageOperator.
+  pointer_intent_status_operands`): per request slot m, the k-dependent c2 channels become the
+  exact α-expectation over the op's OWN top-K seat candidates — `e_burn_alpha = Σ_k α_k ·
+  (high_k(atk×0.5) − high_k(atk))`, `e_slp_alpha = Σ_k α_k · (−high_k)` — on the
+  **UNRENORMALIZED** move slice (`f(m, SWITCH) = 0` is exact: a switching active neither
+  attacks nor stands to be statused, so α_SWITCH mass shrinks the terms toward zero rather
+  than being renormalized into "they attacked"). The k-independent columns (Δ-outspeed, the
+  residual tick, sleep's expected free turns) ride raw vs their active with the seat mass
+  `alpha_stay` as a decorrelated channel; the SWITCH-branch value needs β and is deliberately
+  deferred to the class-B mechanics. Contract W holds: ONE α, softmaxed once from the
+  PUBLISHED logits, board-only, shared across channels.
+- **Delivery**: the 7 raw channels pass a ZERO-INIT `Linear(7,7)` and concat onto the 13-dim
+  move cell (pointer scorer in_features widen — the version gate names the cause). Identity at
+  init on a REAL MaskablePPO build (M1-captured); reads `last_alpha_logits` = the v75
+  PUBLICATION, so `label_only` keeps cutting the PPO→α route here exactly as at
+  `intent_value_reduce` (gradient-gated both ways in `intent_move_cell_test.py`).
+- **Alignment**: the operand axis is the op's `last_topk_idx` — the same axis
+  `intent_axis_alignment_test` pins element-wise to α's seats — and a width mismatch raises
+  (the `op move-order` bug class), never broadcasts. Missing α / missing operands at runtime
+  raise; only the construction-time width probe contributes shaped zeros.
+- **Gates run**: model suite 1156 green; ON-arm `torch.compile(fullgraph=True)` clean
+  (max|Δ| 5.4e-07); seat-permutation invariance, SWITCH-mass shrinkage, OFF-builds-nothing,
+  fail-loud arms all pinned; delivery graph gains the cell edge (OFF in production, so the
+  committed snapshot is unchanged apart from provenance); bridge smoke with the flag ON.
+- **What this does NOT decide**: the G3 VERDICT — whether the re-delivered family comes alive
+  — needs a trained run's per-arm audit. The instrument ships OFF; the first flag-on run is
+  the gate.

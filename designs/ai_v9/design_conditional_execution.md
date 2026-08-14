@@ -1,8 +1,14 @@
 # design — CONDITIONAL EXECUTION: the moves whose value is a function of what they do
 
 > **[STATE 2026-08-14]** The α/β belief this doc consumes is BUILT (v68) and consumed on the
-> CRITIC side (v74 `intent_value_reduce`, live in gen-9). This doc's move-cell route — the
-> POLICY-side consumer — is still the open piece, unchanged.
+> CRITIC side (v74 `intent_value_reduce`, live in gen-9). **The G3 gate slice is BUILT (v77
+> `gen3_intent_move_cell_v1`, same day):** `c2` re-delivered through the pointer MOVE cell,
+> α-conditioned per §1's operator (`--intent-move-cell`, fresh-only, OFF byte-identical;
+> unrenormalized α with `f(m, SWITCH)=0` exact; the SWITCH branch's β-weighted value
+> deliberately deferred to the class-B step). The G3 **VERDICT** — does the re-delivered
+> family come alive on a trained run's per-arm audit — is still open; the instrument ships
+> OFF and the first flag-on run is the gate. The remaining per-mechanic specs below
+> (`p_thresh`, Focus Punch/Sub/Endure/DB/Endeavor, class B) stay unbuilt pending that verdict.
 
 > **What this document is.** A per-mechanic specification of every gen3 move whose value cannot be
 > computed without a belief over the opponent's action, the exact conditional each one needs, and

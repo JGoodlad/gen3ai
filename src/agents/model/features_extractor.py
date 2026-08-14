@@ -48,6 +48,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
+    INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
       # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
@@ -1917,6 +1918,7 @@ class HPTypeBelief(torch.nn.Module):
 # `from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_*`).
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.intent_value_reduce import IntentValueReduce
+from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     OpTensors,
@@ -2394,6 +2396,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  t0_species_prior: bool = False,
                  opp_intent_grad_mode: str = "detached",
                  intent_value_reduce: bool = False,
+                 intent_move_cell: bool = False,
                  damage_topk_k: int = 0,
                  damage_candidate_k: int = 0,
                  entity_topk_seats: int = 0,
@@ -2570,6 +2573,24 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 raise ValueError(
                     "intent_value_reduce=True requires damage_op=True — it reduces the operator's "
                     "un-reduced per-(our mon, believed move) cells, which nothing else produces.")
+        # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the POLICY-side alpha
+        # consumer — the c2 status-consequence family re-delivered through the pointer MOVE cell,
+        # alpha-conditioned. Same fail-loud requirement shape as intent_value_reduce: no alpha =>
+        # nothing to weight with; no op => no c2 physics to deliver. Declared BEFORE the
+        # projection-discovery forward (which runs while `alpha_head` is still unbuilt — the
+        # discovery pass appends correctly-shaped ZEROS to the pointer move cells instead).
+        self.intent_move_cell = None
+        if intent_move_cell:
+            self.intent_move_cell = IntentMoveCell(INTENT_MOVE_CELL_DIM)
+            if not opp_intent:
+                raise ValueError(
+                    "intent_move_cell=True requires opp_intent=True — the c2 re-delivery is "
+                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
+                    "weight with.")
+            if not damage_op:
+                raise ValueError(
+                    "intent_move_cell=True requires damage_op=True — it re-delivers the "
+                    "operator's c2 status-consequence physics, which nothing else produces.")
         if opp_intent_grad_mode not in ("detached", "shaping"):
             raise ValueError(
                 f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
@@ -3278,7 +3299,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
     @property
     def pointer_move_cell_dim(self) -> int:
-        return self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
+        # gen3_intent_move_cell_v1: the alpha-conditioned c2 channels widen the move cell when on
+        # (the policy sizes the pointer move scorer's in_features from this at build time).
+        base = self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
+        return base + (INTENT_MOVE_CELL_DIM if self.intent_move_cell is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
         return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
@@ -3706,6 +3730,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _opp_oh[torch.arange(ctx.batch_size, device=ctx.device), ctx.opp_active_local] = 1.0
             _base = self.team_transformer._total_tokens
             _edge_fn = lambda bias: self.edge_bias(bias, _base, _cells, _opp_oh)  # noqa: E731
+            _c2_edge_cells = _cells.get("c2")
+        else:
+            _c2_edge_cells = None
+        # gen3_intent_move_cell_v1 (G3): the RAW c2-for-the-move-cell operands, computed HERE —
+        # still T1, where every other op kernel runs (alpha is T2 and does not exist yet; the
+        # weighting happens at the pointer stash below, the same T1-producer/T2-consumer split as
+        # `last_pair_cells`). Reuses the c2 edge grid when the edge family already built it this
+        # forward — identical function, so the value is the same either way.
+        _imc_ops = None
+        if self.intent_move_cell is not None and damage_block is not None:
+            _imc_ops = self.damage_op.pointer_intent_status_operands(
+                ctx, self.last_move_belief_logits, self.last_spread_belief,
+                k_cand=self.consequence_topk, c2_cells=_c2_edge_cells)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad),
@@ -3800,6 +3837,28 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         else:
             _mcells = _tok_req.new_zeros(ctx.batch_size, _tok_req.shape[1], 0)
             _scells = our_team_out.new_zeros(ctx.batch_size, TEAM_SIZE, 0)
+        # gen3_intent_move_cell_v1 (G3): alpha consumed on the POLICY side — the c2 re-delivery
+        # channels join the pointer MOVE cell HERE, the first point where both operands exist
+        # (the op's T1 operand stash from above, and alpha, T2, scored from the seats and pools).
+        # The consumer reads `last_alpha_logits` — the PUBLICATION, stop-grad under
+        # `belief_grad_mode=label_only` — never a raw stash, so label_only keeps cutting the
+        # PPO→alpha_head route through this path exactly as it does for intent_value_reduce.
+        if self.intent_move_cell is not None:
+            if self._intent_reduce_discovering and (self.last_alpha_logits is None
+                                                    or _imc_ops is None):
+                # Construction-time width probe only: alpha does not exist yet (the head is built
+                # after the discovery forward), so contribute a correctly-shaped ZERO rather than
+                # a value. Deliberately NOT a runtime fallback — the raise below stays reachable.
+                _mcells = torch.cat([_mcells, _mcells.new_zeros(
+                    ctx.batch_size, _tok_req.shape[1], INTENT_MOVE_CELL_DIM)], dim=2)
+            elif self.last_alpha_logits is None or _imc_ops is None:
+                raise RuntimeError(
+                    "intent_move_cell is on but alpha produced no logits or the op stashed no c2 "
+                    "operands — the cell would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT.")
+            else:
+                _mcells = torch.cat([_mcells, self.intent_move_cell(
+                    self.last_alpha_logits, *_imc_ops)], dim=2)
         self.last_pointer_inputs = (_tok_req, _move_valid, our_team_out, _mcells, _scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation

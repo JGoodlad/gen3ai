@@ -11,7 +11,7 @@ stale twice:
 | | |
 |---|---|
 | Production run | `models/ai_v9_10_gen9_intent_distcritic_0813/` (gen-9, launched 2026-08-13) — `model_config.json` `config_version` **69**, `arch_signature` **`gen3_deadline_clock_v1`**; trains on its own pinned worktree |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 76 / `gen3_ctx_dedup_v1`) |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 77 / `gen3_ctx_dedup_v1`) |
 | `designs/production_config.json` | the gen-9 run's config **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
@@ -656,6 +656,7 @@ does nothing given another setting.
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
+| `intent_move_cell` | `false` | OFF |
 | `intent_value_reduce` | `false` | OFF |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |

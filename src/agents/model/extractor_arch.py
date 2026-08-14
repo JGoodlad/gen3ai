@@ -60,6 +60,7 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "t0_species_prior": "t0_species_prior",                                 # v72
     "opp_intent_grad_mode": "opp_intent_grad_mode",                         # v73
     "intent_value_reduce": "intent_value_reduce",                           # v74
+    "intent_move_cell": "intent_move_cell",                                 # v77
 }
 
 # Kwargs that are NOT a plain attribute read. Each is a callable over `args`.
