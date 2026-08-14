@@ -4,7 +4,7 @@ import collections
 import threading
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
 
 @dataclass
@@ -60,6 +60,10 @@ class LauncherState:
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
         self.run_dir: Optional[str] = None
+        # Optional plain-text echo for every event, set by run.py in headless mode.
+        # Headless has no screen, so without this a detached run reports nothing at all
+        # about restarts, checkpoints or crashes. Called outside the lock; see add_event.
+        self.event_sink: Optional[Callable[[str], None]] = None
 
     def mark_activity(self) -> None:
         """Record a sign of life from the child (resets the staleness-indicator clock).
@@ -79,11 +83,20 @@ class LauncherState:
 
     def add_event(self, msg: str) -> None:
         ts = time.strftime("%H:%M:%S")
+        line = f"[{ts}] {msg}"
         with self._lock:
-            self._events.append(f"[{ts}] {msg}")
+            self._events.append(line)
             if len(self._events) > 30:
                 self._events = self._events[-30:]
             self._last_activity_ts = time.monotonic()
+            sink = self.event_sink
+        # Outside the lock: the sink does I/O, and a slow/blocked write must never
+        # stall the supervisor or a reader thread that is only reporting an event.
+        if sink is not None:
+            try:
+                sink(line)
+            except Exception:
+                pass  # an unwritable sink is never worth failing a run over
 
     def update_metrics(self, payload: dict) -> None:
         step = int(payload.get("_step", 0))

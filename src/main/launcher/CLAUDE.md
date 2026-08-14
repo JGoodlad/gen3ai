@@ -72,6 +72,32 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   a closed terminal never costs a checkpoint or orphans the run.
 - **No orphan child:** on any exit `run()`'s `finally` sets a `shutdown` Event and `_reap`s the
   tracked child (SIGTERM → 10s grace → SIGKILL), narrating progress on stderr.
+- **🚨 Headless when stdin is not a TTY (`run.headless_mode()`).** A detached launch
+  (`nohup … < /dev/null &`, systemd, cron, an agent's background shell) leaves stdin on
+  /dev/null, and Textual's input thread then **busy-loops a whole core forever**: an fd at EOF
+  is *permanently* readable, so `selector.select(0.1)` returns instantly, `os.read` yields
+  `b""`, and the `if not unicode_data: break` inside `linux_driver.run_input_thread` breaks
+  only the inner `for` — the outer `while` spins at full speed. Measured on a live 15 h run
+  (2026-08-14): **96% of a core** (83% user), **13 h 34 m** of CPU burned by one thread, plus a
+  **982 MB** launcher log of full-screen ANSI repaints growing at **17 KB/s**, because the
+  "screen" was a redirected file. A standalone A/B of a two-line Textual app isolated the cause
+  to stdin alone — /dev/null **98%** of a core, a real pty **0%**, headless **0%** and 0 bytes
+  of stdout.
+  So `run()` passes `app.run(headless=headless_mode())`: `HeadlessDriver` starts no input
+  thread and writes nothing. **Nothing is lost** — with stdin on /dev/null there is no keyboard
+  to serve, and the repaints were going somewhere no one could read as a screen; the supervisor
+  worker, restarts, events, metrics and checkpointing are all driver-independent. A TTY on
+  stdin keeps the full interactive TUI (the normal foreground case).
+  Because headless has no screen, `LauncherState.event_sink` echoes every event as a plain
+  `[HH:MM:SS] …` line so a detached run stays followable by `tail -f` — wired **before**
+  `_prepare_session` so the setup events (worktree pin, run dir, transport) are captured too,
+  and bound to the **real** `sys.stdout` captured before `app.run()`, since Textual replaces
+  `sys.stdout` for the duration of the run and a plain `print()` from the supervisor thread
+  would be swallowed by its capture. The sink is called *outside* the state lock (a slow write
+  must never stall a reader thread) and its exceptions are swallowed.
+  Measured after: **1.8% of a core**, and a **1.5 KB** log with **0** escape sequences for a
+  full run. Gate: `headless_test.py` — including an end-to-end CPU assertion that fails at
+  96.7% if the fix is reverted (bound: <30%).
 - **Stdout discipline:** the child's stdout only reaches `state.add_log` + `launcher_child.log`
   (never the terminal), and the launcher's own stderr prints fire via `atexit` after the screen
   closes — so a stray `print()` never corrupts the Textual screen.

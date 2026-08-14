@@ -597,6 +597,34 @@ def _reap(proc_box: "list | None") -> None:
         pass
 
 
+def headless_mode(stream=None) -> bool:
+    """True when there is no keyboard attached and the TUI must not drive a terminal.
+
+    Detached launches (`nohup … < /dev/null &`, systemd, cron, an agent's background
+    shell) leave stdin on /dev/null. Textual's input thread then busy-loops a whole core
+    forever: an fd at EOF is *permanently* readable, so `selector.select(0.1)` returns
+    instantly, `os.read` yields b"", and the `if not unicode_data: break` inside
+    `run_input_thread` breaks only the inner `for` — the outer `while` spins at full
+    speed. Measured 2026-08-14 on a live 15 h run: 96% of a core (83% user), 13 h 34 m of
+    CPU burned by one thread, plus a 982 MB launcher log of full-screen ANSI repaints
+    growing at 17 KB/s, because the "screen" was a redirected file.
+
+    Headless drops the input thread (`HeadlessDriver` starts none) and writes nothing —
+    measured 98% of a core → 0%, and 0 bytes of stdout. Nothing is lost: with stdin on
+    /dev/null there is no keyboard to serve, and the repaints were going to a log file no
+    one could read as a screen. Everything else (supervisor worker, restarts, events,
+    metrics, checkpointing) is driver-independent and unaffected.
+
+    A TTY on stdin keeps the full interactive TUI, which is the normal foreground case.
+    """
+    stream = sys.stdin if stream is None else stream
+    try:
+        return not stream.isatty()
+    except Exception:
+        # A closed/absent stdin can raise — that is the detached case too.
+        return True
+
+
 # Default scheduling niceness for the launcher and everything it spawns. Non-zero by
 # design: an unattended multi-day run should yield to interactive work by default rather
 # than needing a flag to remember. Only matters under contention.
@@ -646,6 +674,32 @@ def run(
     from main.launcher.app import LauncherApp  # local import: keep textual off the import path until launch
 
     state = LauncherState(interval_hours=interval_hours)
+
+    # Decide and wire this BEFORE _prepare_session, so the setup events (worktree pin,
+    # run dir, transport) reach a detached run's log too — they are the ones that explain
+    # a launch that fails immediately.
+    headless = headless_mode()
+    if headless:
+        # Bind the real stdout NOW: Textual replaces sys.stdout for the duration of
+        # app.run(), so a plain print() from the supervisor thread would be swallowed by
+        # its capture and the log would go silent exactly when it matters.
+        out = sys.stdout
+
+        def _echo(line: str) -> None:
+            # Defensive: this is the unattended path, so a broken/closed redirect target
+            # must degrade to "no echo", never take down a training run at startup.
+            try:
+                out.write(line + "\n")
+                out.flush()
+            except Exception:
+                pass
+
+        state.event_sink = _echo
+        _echo(
+            "🖥  No TTY on stdin — launcher running HEADLESS (TUI disabled, events echoed "
+            "below). Start it from a terminal for the interactive dashboard."
+        )
+
     ctx = _prepare_session(
         state,
         child_args,
@@ -687,7 +741,7 @@ def run(
 
     app.supervisor = _supervisor
     try:
-        app.run()
+        app.run(headless=headless)
     finally:
         # Teardown safety net — never orphan the child, even if the app errors out
         # (a Textual startup/runtime fault after the supervisor worker spawned a child).

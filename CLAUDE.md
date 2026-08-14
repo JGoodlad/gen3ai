@@ -323,6 +323,13 @@ The UI is **Textual** (built on the shared `src/main/tui/` base), launched with
 terminal (SIGHUP) or external `kill` (SIGTERM) is caught and turned into a clean,
 checkpoint-saving shutdown rather than a lost checkpoint.
 
+**A detached launch (`nohup … < /dev/null &`, systemd, cron) runs HEADLESS automatically** — with
+no TTY on stdin, Textual's input thread would otherwise busy-loop a whole core forever (measured
+on a live run: 96% of a core for 13 h, plus a 982 MB log of full-screen ANSI repaints growing at
+17 KB/s into a redirected file). Headless drops the input thread and the repaints, and events are
+echoed as plain `[HH:MM:SS] …` lines instead, so `tail -f` on the redirect target still follows
+the run. A TTY keeps the full interactive TUI. Detail: `src/main/launcher/CLAUDE.md`.
+
 **Internals — how the UI reconciles the restart loop with Textual's event loop, the
 quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
 (`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
