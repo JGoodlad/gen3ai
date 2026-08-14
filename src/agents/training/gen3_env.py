@@ -230,6 +230,7 @@ class Gen3Env(SinglesEnv):
             # loss time against the model's own believed-slot posterior (there is no valid slot
             # index for an anonymous query — see opp_intent_labels).
             base_obs["opp_switch_species"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
+            base_obs["opp_class"] = spaces.Box(low=0, high=3, shape=(1,), dtype=np.int64)
         if self._emit_spread_labels:
             # SPREAD-belief label (gen3_unified_spread_belief_v1): the TRUE derived stats {atk,def,spa,spd,spe}
             # of each REVEALED opp mon + a per-slot mask (1 = supervised). float32 (real stat VALUES, the same
@@ -568,7 +569,11 @@ class Gen3Env(SinglesEnv):
         return {"opp_action_kind": np.array([kind], dtype=np.int64),
                 "opp_action_num": np.array([num], dtype=np.int64),
                 "opp_switch_slot": np.array([slot], dtype=np.int64),
-                "opp_switch_species": np.array([sp], dtype=np.int64)}
+                "opp_switch_species": np.array([sp], dtype=np.int64),
+                # gen3_opp_class_v1: WHICH KIND of opponent produced this label (bot / pool /
+                # stable / exploiter). Set by the wrapper at episode reset; 0 when unwrapped, which
+                # is the honest default since a bare env has no opponent rotation to report.
+                "opp_class": np.array([getattr(self, "_opponent_class", 0)], dtype=np.int64)}
 
     def _intent_move_num_resolver(self, delta):
         """`move_id -> num` for the intent label, with the opponent's Hidden Power resolved to its

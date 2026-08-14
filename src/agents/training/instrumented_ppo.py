@@ -1324,7 +1324,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # switch-ins is the one shape where it resolves — to the PREVIOUS switch-in's slot.
                 for _k, _fill in (("opp_action_kind", KIND_UNKNOWN), ("opp_action_num", 0),
                                   ("opp_switch_slot", SWITCH_SLOT_NONE),
-                                  ("opp_switch_species", 0)):
+                                  ("opp_switch_species", 0),
+                                  # `opp_class` is CONSTANT within an episode, so the shift is a
+                                  # semantic no-op — included anyway so every intent label is
+                                  # row-aligned by the same rule. A reader should never have to
+                                  # remember which of these keys was shifted and which was not;
+                                  # that asymmetry is what produced the bug documented above.
+                                  ("opp_class", 0)):
                     _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
 
         # Compute current clip range
@@ -1708,12 +1714,28 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             _safe = _btgt.clamp(min=0, max=_bl.shape[-1] - 1)
                             _reach = th.isfinite(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
                             _btgt = th.where(_reach, _btgt, th.full_like(_btgt, INTENT_IGNORE))
-                        oi_loss, oi_m = intent_losses(_al, _atgt, _bl, _btgt)
+                        _ocls = _obs.get("opp_class")
+                        oi_loss, oi_m = intent_losses(
+                            _al, _atgt, _bl, _btgt,
+                            opp_class=(_ocls.long() if _ocls is not None else None))
                         # THE number that says whether content-addressing recovered anything.
                         # Without it, a no-op looks identical to a working feature (the same
                         # blindness that let a zero-supervision alpha pass a green smoke).
                         oi_m["opp_intent/beta_believed_targets"] = oi_extra_believed
                         oi_m["opp_intent/beta_wanted_content"] = oi_wanted_content
+                        # SPLIT `beta_mask_rate`, which conflates two failures with opposite
+                        # meanings. Its denominator is every row, so it is dominated by "this
+                        # decision was not a switch at all" — expected, uninteresting, and roughly
+                        # constant. Buried inside it is the one a reader actually wants: of the
+                        # switches that NEEDED the belief, how often was the belief too cold to
+                        # name the mon? That is the BELIEF's failure, not beta's, and it must stay
+                        # attributable to the belief. (Measured on gen-9: 356 resolved of 390
+                        # wanted => 0.087. Recoverable from the two counters above, but nobody
+                        # computes a ratio off a dashboard, so a rate nobody reports is a rate
+                        # nobody reads.)
+                        if oi_wanted_content > 0:
+                            oi_m["opp_intent/beta_belief_miss_rate"] = (
+                                1.0 - oi_extra_believed / oi_wanted_content)
                         loss = loss + self.opp_intent_coef * oi_loss
                         for _ok, _ov in oi_m.items():
                             seed_vicreg_metrics.setdefault(_ok, []).append(_ov)

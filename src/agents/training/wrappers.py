@@ -322,6 +322,18 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             return self._pick_stable(stable)          # no pool seeded yet → stable IS the challenge
         return None
 
+    # gen3_opp_class_v1 — WHICH KIND of opponent this episode faces, tagged at the one place that
+    # decides it. The opponent-intent metrics (`opp_intent/*`) pool over an opponent mix spanning a
+    # RANDOM bot, several heuristics and frozen selves, and "predict their move" means something
+    # different in each: against random it is impossible BY CONSTRUCTION (and worthless if achieved),
+    # against a heuristic it is easy but models a decision tree rather than a player, and only
+    # against the pool does it measure the thing we care about. One pooled accuracy averages over
+    # all three, so it cannot be read. Tagging the row is what lets the metric be split.
+    OPP_CLASS_BOT = 0          # heuristic / random floor bots — near-deterministic or unpredictable
+    OPP_CLASS_POOL = 1         # frozen selves — the distribution that actually matters
+    OPP_CLASS_STABLE = 2       # cross-run stable opponents
+    OPP_CLASS_EXPLOITER = 3    # the exploiter's target
+
     def _select_episode_opponent(self) -> None:
         """Pick this episode's opponent.
 
@@ -335,16 +347,24 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                 # keep-bots: a per-episode slice faces a floor/heuristic bot instead of the target,
                 # so a from-scratch specialist keeps a bot floor while learning to beat the target.
                 self.opponent = self._pick_floor_opponent()
+                self._opponent_class = self.OPP_CLASS_BOT
             else:
                 self.opponent = self._exploiter_player   # exploiter target (sole-opponent default)
+                self._opponent_class = self.OPP_CLASS_EXPLOITER
             return
         if self._rng.random() < self._self_play_fraction:
             opp = self._pick_challenge_opponent()
             if opp is not None:
                 self.opponent = opp
+                # The challenge bucket is pool + un-mastered STABLE; distinguish them so a stable
+                # opponent's rows are not silently counted as self-play.
+                self._opponent_class = (self.OPP_CLASS_STABLE
+                                        if opp in self._stable_players
+                                        else self.OPP_CLASS_POOL)
                 return
         # Floor bucket — also the fallthrough when the challenge bucket has no ready opponent.
         self.opponent = self._pick_floor_opponent()
+        self._opponent_class = self.OPP_CLASS_BOT
 
     def _apply_opponent_team(self) -> None:
         """The opponent's REAL team follows the selected opponent (fold-back): its own pin when it
@@ -359,6 +379,10 @@ class MaskableAgentWrapper(SingleAgentWrapper):
     def reset(self, *, seed=None, options=None):
         self._select_episode_opponent()
         self._apply_opponent_team()
+        # Push the class down for the intent metrics. Same direction as `_apply_opponent_team`
+        # (the wrapper reaches into the env, which owns the obs) and set at the same point in the
+        # episode, so the label can never describe the PREVIOUS opponent.
+        setattr(self.env, "_opponent_class", getattr(self, "_opponent_class", 0))
         return super().reset(seed=seed, options=options)
 
     def step(self, action):

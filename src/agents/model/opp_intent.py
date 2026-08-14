@@ -196,8 +196,54 @@ def resolve_believed_slot_by_content(
     return torch.where(ok, best_j, torch.full_like(best_j, INTENT_IGNORE))
 
 
+def info_gain_nats(logits: torch.Tensor, target: torch.Tensor) -> float:
+    """`H(empirical marginal) − CE(model)` in nats, over the rows given. THE headline number.
+
+    Accuracy is the wrong instrument for a belief about an opponent, and the reason is not
+    fastidiousness — it is that accuracy conflates two different things a reader needs kept apart:
+
+    * **Irreducible entropy.** Against a uniform-random opponent the Bayes-OPTIMAL prediction IS
+      uniform, and its accuracy is 1/n. A perfectly calibrated model scores 1/n there and looks
+      terrible. Under a proper scoring rule it scores ~0 gain — which is the honest reading:
+      *nothing here was learnable.* Our opponent pool spans a random bot, several heuristics and
+      frozen selves, so the same accuracy number means something different per opponent; a scoring
+      rule makes them comparable, and comparable is the whole point.
+    * **Confident guessing.** Accuracy rewards a peaked wrong answer exactly as much as it punishes
+      a hedged right one. Log-loss does not.
+
+    The reference is the **empirical marginal of the targets in this batch** — "predict the base
+    rate and nothing else". Chosen because it needs no extra plumbing (it is a function of `target`
+    alone) and it is the honest floor: a head that has learned only *how often* they switch, and
+    nothing about *when*, scores ~0.
+
+    **It CAN go negative**, and that is a real signal rather than a bug: the model is doing worse
+    than the base rate. `alpha_acc_move` sitting below its `argmax(w)` baseline is exactly the
+    situation where that matters, since both of those numbers move during training and their
+    difference is not interpretable on its own.
+
+    NOTE this is deliberately NOT gain over `w`, the belief's own move ranking, which would be the
+    stronger reference. `w` is not passed here and threading it is a separate change; the
+    `alpha_acc_move_baseline_argmax_w` accuracy comparison remains the (imperfect) stand-in for it.
+    """
+    tgt = target.reshape(-1)
+    n_classes = logits.shape[-1]
+    counts = torch.bincount(tgt, minlength=n_classes).float()
+    p = counts / counts.sum().clamp_min(1.0)
+    nz = p > 0
+    h_marginal = float(-(p[nz] * p[nz].log()).sum())
+    ce_model = float(torch.nn.functional.cross_entropy(logits, tgt))
+    return h_marginal - ce_model
+
+
+#: `opp_class` code -> the suffix its stratified metrics carry. Mirrors
+#: `MaskableAgentWrapper.OPP_CLASS_*`; kept as a plain table here so the model package does not
+#: import the training package.
+OPP_CLASS_NAMES = {0: "bot", 1: "pool", 2: "stable", 3: "exploiter"}
+
+
 def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[torch.Tensor],
                   beta_logits: Optional[torch.Tensor], beta_target: Optional[torch.Tensor],
+                  opp_class: Optional[torch.Tensor] = None,
                   ) -> Tuple[torch.Tensor, Dict[str, float]]:
     """Cross-entropy on both axes, each over only its supervised rows, plus the diagnostics.
 
@@ -245,6 +291,37 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                     metrics["opp_intent/alpha_acc_move_baseline_argmax_w"] = float(
                         (tgt[~is_sw] == 0).float().mean())
                 metrics["opp_intent/alpha_switch_rate"] = float(is_sw.float().mean())
+                # THE HEADLINE. See `info_gain_nats`: a proper scoring rule, so an unpredictable
+                # opponent scores ~0 instead of scoring "wrong", and the number is comparable
+                # across opponents and over time in a way an accuracy delta between two moving
+                # quantities is not. Reported on the SAME supervised subset as the accuracies.
+                metrics["opp_intent/alpha_info_gain_nats"] = info_gain_nats(
+                    alpha_logits[sup], tgt)
+                # Split it the same way the accuracy is split, and for the same reason: pooling
+                # the (easy, base-rate-dominated) switch axis with the (hard) move axis produces a
+                # number that moves when the SWITCH RATE moves, which is not a fact about alpha.
+                if int((~is_sw).sum()) > 1:
+                    metrics["opp_intent/alpha_info_gain_nats_move"] = info_gain_nats(
+                        alpha_logits[sup][~is_sw], tgt[~is_sw])
+                # STRATIFY BY OPPONENT KIND. The pooled number averages over populations where
+                # "predict their move" is a different problem: against the RANDOM bot the optimal
+                # prediction is uniform and the achievable gain is ~0 BY CONSTRUCTION; against a
+                # heuristic it is high but measures a decision tree; only `pool` (frozen selves)
+                # measures the thing high-quality opponent reasoning is for. Reporting one mean over
+                # all three is how a real deficit and a favourable mix become indistinguishable.
+                # A near-zero `bot` gain is the EXPECTED reading, not a failure.
+                if opp_class is not None:
+                    oc = opp_class.reshape(-1)[sup]
+                    for _code, _name in OPP_CLASS_NAMES.items():
+                        m = oc == _code
+                        n_m = int(m.sum())
+                        if n_m < 2:                       # a 1-row marginal has zero entropy
+                            continue
+                        metrics[f"opp_intent/alpha_info_gain_nats_{_name}"] = info_gain_nats(
+                            alpha_logits[sup][m], tgt[m])
+                        metrics[f"opp_intent/alpha_acc_{_name}"] = float(
+                            (pred[m] == tgt[m]).float().mean())
+                        metrics[f"opp_intent/alpha_n_supervised_{_name}"] = float(n_m)
 
     if beta_logits is not None and beta_target is not None:
         sup = beta_target != INTENT_IGNORE
@@ -259,6 +336,10 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 metrics["opp_intent/beta_loss"] = float(lb.detach())
                 metrics["opp_intent/beta_acc"] = float(
                     (beta_logits[sup].argmax(dim=-1) == beta_target[sup]).float().mean())
+                # The base rate beta must beat is "switch to whichever bench slot is most common",
+                # which is far from uniform — so raw accuracy flatters it. Same instrument as alpha.
+                metrics["opp_intent/beta_info_gain_nats"] = info_gain_nats(
+                    beta_logits[sup], beta_target[sup])
 
     if total is None:
         total = torch.zeros((), device=(alpha_logits.device if alpha_logits is not None
