@@ -622,6 +622,16 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
 _ABORT_EVAL_DRAIN_SEC = 600.0
 
 
+# gen3_smoke_eval_scale_v1: a short run is a SMOKE, and a smoke's final eval is a formality.
+# Measured: the final eval is 9 opponents x --eval-battles games; at 100 that is ~900 battles and
+# ran past a 300s timeout on a loaded box, printing "Training complete" BEFORE it started — which
+# reads exactly like a hang and cost real debugging time. Scaling it for short runs removes the
+# tax; the honest banner below removes the confusion.
+SMOKE_STEPS = 100_000
+SMOKE_EVAL_BATTLES = 5
+DEFAULT_EVAL_BATTLES = 100
+
+
 def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr_fn, current_epochs_fn, handoff_lr_fn=None, eval_drain_fn=None):
     """Wire SIGINT/SIGTERM/SIGHUP/SIGUSR1/SIGUSR2. Returns the abort_training closure so it
     can be passed to eval callbacks as their canonical "die cleanly" path.
@@ -807,7 +817,12 @@ async def main():
              "which would otherwise OOM the GPU at high --n-envs. Opponent inference is batch-1 "
              "no_grad, so CPU is plenty fast. Pass --no-self-play-use-cpu to load them on --device.",
     )
-    parser.add_argument("--eval-battles", type=int, default=100, help="Battles per evaluation opponent")
+    parser.add_argument("--eval-battles", type=int, default=None,
+                        help="Battles per FINAL-evaluation opponent. Default 100, but AUTO-SCALED "
+                             f"down to {SMOKE_EVAL_BATTLES} when --steps < {SMOKE_STEPS:,} (a smoke "
+                             "run), because a 9-opponent x 100-battle final eval costs many minutes "
+                             "and a 2k-step policy produces no signal worth that. An explicit value "
+                             "always wins.")
     parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--log-level", type=str, default="periodic", choices=["quiet", "periodic", "detailed", "debug"], help="Logging verbosity level")
@@ -3286,7 +3301,14 @@ async def main():
         # Bridge eval: build every player start_listening=False and play in-process via
         # run_local_battles (no server). Same flag as training; lets --debug + bridge run serverless.
         _eval_sl = not args.use_showdown_bridge
+        _n_opp = 9
         print(f"\nFinal Evaluation (Session {ts}, Battles: {n}, Concurrency: {args.eval_concurrency})...")
+        # Say the QUANTITY of work out loud. "Training complete" is printed by the caller BEFORE
+        # this runs, so without a line here a still-working process is indistinguishable from a hung
+        # one — six timeouts were spent proving exactly that.
+        print(f"  ~{_n_opp * n} battles ({_n_opp} opponents x {n}). Training IS finished and the "
+              f"model is saved; this is the post-training measurement and it can take minutes.",
+              flush=True)
 
         rl_player = RLPlayer(
             model=model,
@@ -3485,6 +3507,17 @@ async def main():
     # final win-rate eval — so it needs no eval opponents / Showdown eval connection and stays
     # light on CPU. --debug-eval opts back in. Real (non-debug) runs are unaffected (always True).
     _run_eval = (not args.debug) or args.debug_eval
+    # gen3_smoke_eval_scale_v1: resolve --eval-battles. An explicit value ALWAYS wins; otherwise a
+    # short run gets the smoke count. Keyed on --steps rather than on a new --smoke flag so it needs
+    # nothing remembered at the call site, and it cannot quietly weaken a real run: at 15M steps the
+    # condition is false and the default stays 100.
+    if args.eval_battles is None:
+        _smoke = int(getattr(args, "steps", 0) or 0) < SMOKE_STEPS
+        args.eval_battles = SMOKE_EVAL_BATTLES if _smoke else DEFAULT_EVAL_BATTLES
+        if _smoke and _run_eval:
+            print(f"[SmokeEval] --steps {args.steps:,} < {SMOKE_STEPS:,}: final eval scaled to "
+                  f"{SMOKE_EVAL_BATTLES} battles/opponent (pass --eval-battles N to override). "
+                  f"These win rates are NOT a measurement — they only prove the eval path runs.")
 
     # On resume, the last eval lives in the resumed checkpoint's metadata.json (a different
     # dir from this fresh run) — point the eval callback at it so the TUI shows the most
