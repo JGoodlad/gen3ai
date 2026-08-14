@@ -70,7 +70,6 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
                  "zarch_lut_init_std"):
         setattr(args, attr, 0.0)
     args.opp_belief_aux_coef = 0.0
-    args.opp_belief_latent_coef = 0.0
 
     kwargs = EA.build_extractor_arch_kwargs(args)
     assert set(kwargs) <= params, sorted(set(kwargs) - params)
@@ -82,7 +81,7 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
 def test_log_level_is_omitted_unless_given():
     import types
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
-    args.opp_belief_aux_coef = args.opp_belief_latent_coef = 0.0
+    args.opp_belief_aux_coef = 0.0
     assert "log_level" not in EA.build_extractor_arch_kwargs(args)
     assert EA.build_extractor_arch_kwargs(args, log_level="periodic")["log_level"] == "periodic"
 
@@ -92,7 +91,7 @@ def test_plain_form_is_json_serialisable_and_drops_unpicklables():
     must not try to carry the numpy layout tables or the zarch roster table."""
     import types
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
-    args.opp_belief_aux_coef = args.opp_belief_latent_coef = 0.0
+    args.opp_belief_aux_coef = 0.0
     args._zarch_lut_rosters = {"some": ["unpicklable-ish", object()]}
     kwargs = EA.build_extractor_arch_kwargs(args, base={"layout": {"np": object()}},
                                             log_level="periodic")

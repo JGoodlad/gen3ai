@@ -499,7 +499,18 @@ from typing import Any, Dict, List
 #   clear error rather than popping the key — `move_belief_prefuse` changed no weight shape, so a
 #   silent pop would load a post-ordering checkpoint into a pre-ordering forward with nothing
 #   downstream able to notice.
-MODEL_CONFIG_VERSION = 74
+# v75: the SimSiam LATENT belief is DELETED — `opp_belief_latent` and `opp_belief_latent_coef` go,
+#   along with the predictor MLP, the `belief_target_slots` training-only obs key that fed it, and
+#   the env work that built that key every decision. It was a side readout: the latent never
+#   entered pi or vf, so removing it changes no forward value on any config that had it off.
+#   It cost ~13% of the train step (marginal +341 ms at the production batch, measured against a
+#   +349 ms `opp_belief_cls_k=6` that DOES feed both projections), and its own role-geometry probe
+#   concluded decodable != helps. Predicting the opponent's unrevealed mons is untouched: the
+#   species CE, the moves BCE and the T0 species prior all remain.
+#   ⚠️ The v75 migration REFUSES a config that recorded `opp_belief_latent=True` — unlike v71's
+#   forward-only flags, this one carried PARAMETERS, so such a checkpoint's state_dict holds keys
+#   the live extractor has no home for.
+MODEL_CONFIG_VERSION = 75
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1041,14 +1052,6 @@ class ModelVersion:
     move_belief_mode: str = "off"
     # v17 TRAINING-ONLY loss coefficient for the move belief (like opp_belief_aux_coef). 0.0 = no aux.
     move_belief_coef: float = 0.0
-    # v18 STRUCTURAL toggle (weight-shape via the BeliefHead latent predictor MLP): the LATENT belief.
-    # ON adds an asymmetric SimSiam predictor that regresses each believed slot's refined token toward
-    # the stop-grad pokemon_encoder role-token of the true hidden mon (graded identity supervision).
-    # A state_dict change, gated in check_compatible like opp_belief_slots; OFF = baseline byte-for-byte
-    # (NO ARCH_SIGNATURE bump). Requires opp_belief_slots (the BeliefHead it attaches to).
-    opp_belief_latent: bool = False
-    # v18 TRAINING-ONLY loss coefficient for the latent belief (like opp_belief_aux_coef). 0.0 = no aux.
-    opp_belief_latent_coef: float = 0.0
     # v19 STRUCTURAL toggle (weight-shape via the DamageOperator's wider projections): the
     # differentiable GPU damage operator. ON consumes the move belief's predicted moves for the opp
     # active and appends a per-our-mon believed-damage block to BOTH heads (widening both projection
@@ -1334,7 +1337,6 @@ class ModelVersion:
         value_tail_weight: float = 0.0,
         opp_belief_aux_coef: float = 0.0,
         move_belief_coef: float = 0.0,
-        opp_belief_latent_coef: float = 0.0,
         win_prob_coef: float = 1.0,
         move_belief_latent_coef: float = 0.0,
         spread_belief_coef: float = 0.0,
@@ -1404,9 +1406,6 @@ class ModelVersion:
             ),
             move_belief_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_belief_mode", "off")
-            ),
-            opp_belief_latent=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_latent", False)
             ),
             damage_op=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_op", False)
@@ -1527,7 +1526,6 @@ class ModelVersion:
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
-            opp_belief_latent_coef=float(opp_belief_latent_coef),
             win_prob_coef=float(win_prob_coef),
             move_belief_latent_coef=float(move_belief_latent_coef),
             spread_belief_coef=float(spread_belief_coef),
@@ -1653,17 +1651,6 @@ class ModelVersion:
                 "The move-belief module (predict+reinject the opp moveset) changes the state_dict and the "
                 "forward, so the mode cannot change on an existing model.\n"
                 "Resume with the matching --move-belief-mode setting, or start a fresh training run."
-            )
-
-        # Structural toggle — ON adds the BeliefHead latent predictor MLP to the state_dict (the
-        # latent-belief escalation). Like opp_belief_slots it gates EVERY load; the training-only
-        # opp_belief_latent_coef is deliberately NOT checked (it touches no forward pass).
-        if self.opp_belief_latent != saved.opp_belief_latent:
-            raise ModelVersionError(
-                f"opp_belief_latent mismatch: saved={saved.opp_belief_latent}, current={self.opp_belief_latent}.\n"
-                "The latent-belief predictor (the SimSiam head on the BeliefHead) changes the state_dict, "
-                "so it cannot be toggled on an existing model.\n"
-                "Resume with the matching --opp-belief-latent-coef setting, or start a fresh training run."
             )
 
         # Structural toggle — the DamageOperator appends a believed-damage block to BOTH projection
@@ -2352,8 +2339,6 @@ def _migrate_config(data: dict) -> dict:
     if version < 18:
         # v18: added the latent-belief toggle (off) + its training-only loss coefficient (0.0).
         # Old models had no BeliefHead latent predictor and no latent loss.
-        data.setdefault("opp_belief_latent", False)
-        data.setdefault("opp_belief_latent_coef", 0.0)
         data["config_version"] = 18
     if version < 19:
         # v19: added the differentiable damage-operator toggle (off). Old models had no DamageOperator.
@@ -2745,4 +2730,26 @@ def _migrate_config(data: dict) -> dict:
         # v74: gen3_intent_value_reduce_v1 — step 6. Absent on every older config.
         data.setdefault("intent_value_reduce", False)
         data["config_version"] = 74
+    if version < 75:
+        # v75: the SimSiam LATENT belief is DELETED — `opp_belief_latent` + its coefficient.
+        # It was never fed forward (an aux-loss side readout, unlike the cls_k belief that appends
+        # to both projections), its own probe concluded decodable != helps, and it cost ~13% of the
+        # train step (marginal +341 ms at the production shape).
+        #
+        # Judged, not popped, for the same reason as the v71 block above — but the failure mode here
+        # is the opposite one: `opp_belief_latent=True` PUT PARAMETERS in the state_dict (the
+        # predictor MLP). Those keys have no home in the live extractor, so such a checkpoint cannot
+        # be reproduced from HEAD and says so, rather than being quietly accepted.
+        if bool(data.get("opp_belief_latent", False)):
+            raise ModelVersionError(
+                "opp_belief_latent=True is no longer supported (config v75): the SimSiam "
+                "latent-belief predictor is DELETED.\n"
+                "It carried its own parameters, so this checkpoint's state_dict holds keys the "
+                "current extractor cannot accept. Start a fresh training run.\n"
+                "Nothing about predicting the opponent's unrevealed mons is lost: the species CE, "
+                "the moves BCE and the T0 species prior all remain."
+            )
+        data.pop("opp_belief_latent", None)
+        data.pop("opp_belief_latent_coef", None)
+        data["config_version"] = 75
     return data

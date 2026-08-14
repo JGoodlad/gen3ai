@@ -1503,7 +1503,7 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     signal: <0 ⟹ the two RL heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
   - **Per-aux breakout** (each present only when ITS head is active this minibatch — passed as the
-    `aux_terms` dict): `grad/{species_belief, move_belief, latent, move_latent, win_prob, value_dist}_*`,
+    `aux_terms` dict): `grad/{species_belief, move_belief, move_latent, win_prob, value_dist}_*`,
     each with `_share` (on the common `T`), `_norm_shared`, and `_policy_cosine` (<0 = that aux fights
     the policy). So the species CE, move BCE, SimSiam latent, move-latent grading, win-prob and value-dist
     pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
@@ -1780,51 +1780,30 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   per-mode wiring + off byte-identical), `belief_labels_test.py` (`build_known_move_labels`),
   `snapshot_test.py` (version gate + threading).
 
-## Latent-belief loss (`--opp-belief-latent-coef`)
+## Latent-belief loss — DELETED (v75)
 
-The training half of the latent-belief escalation (model side: `src/agents/model/CLAUDE.md` → LATENT
-belief, v18). The species head predicts a hidden mon's IDENTITY discretely (CE); the latent head predicts
-it in **role-token space** — graded supervision the CE can't give. REQUIRES `--opp-belief-aux-coef>0`
-(it rides the species head's believed slots + Hungarian assignment).
-- **Target (`gen3_env.py`).** When `--opp-belief-latent-coef>0` (threaded as `emit_belief_target`),
-  `Gen3Env` emits a THIRD privileged training-only Dict-obs key `belief_target_slots` [6,107]: the FRESH
-  per-mon obs encode (`pokemon_encoder.encode(mon, battle2, is_own=True)` + active=0) of each hidden mon
-  at its believed slot, the SAME `assign_hidden_to_slots` assignment as `belief_species` (one mon per
-  slot across both heads — no conflicting pulls), per-battle cached by species (a hidden mon is untouched
-  → its fresh encode is stable while it is a target). Read ONLY by the loss; the model forward reads only
-  `obs["observation"]`, so it can't leak.
-- **Loss (`instrumented_ppo.py` `_belief_aux_loss`, the latent term).** The extractor stashed the
-  prediction (`last_belief_logits["latent"]`) + the stop-grad target (`last_belief_target_latent`, the
-  `pokemon_encoder` role-tokens of the true mons — a SimSiam stop-grad, the encoder is task-anchored so no
-  EMA/collapse). On the **same species-CE Hungarian assignment**, the latent loss is the mean cosine
-  distance over matched pairs + a **VICReg variance floor** on the predictions (collapse guard). Returned
-  as the 3rd element of `_belief_aux_loss` and folded at `opp_belief_latent_coef`; its trunk gradient
-  is broken out separately as `grad/latent_share` (passed in the `grad_balance_metrics(aux_terms=…)`
-  dict as `"latent"`, on the common trunk-pull total) so the latent pull is attributable on its own.
-- **Metrics (`belief/latent_*`).** `cosine` (similarity, higher = better identity match), `std`
-  (the collapse monitor — **NO-GO if it →0 while `cosine`→1**), `vicreg`, `loss`, plus the
-  **interpretability anchor** `cosine_baseline` (the cosine each prediction scores against a MISMATCHED
-  true target — the non-zero null of the task-anchored, non-orthogonal role-token manifold) and
-  `cosine_above_chance` = `cosine − cosine_baseline` (the *discriminative* signal, the latent analog of
-  `species_acc_above_chance`). A small-but-positive `above_chance` with a healthy `std` is the
-  "predicts the SET's mean role, not the per-mon identity" failure that `std` alone can miss.
-  **Balance:** the latent term's trunk pull is broken out as **`grad/latent_share`** (+
-  `grad/latent_norm_shared` / `grad/latent_policy_cosine`), on the common trunk-pull total alongside
-  `grad/species_belief_share` / `grad/move_belief_share` (so the species CE, move BCE and latent are
-  each separately attributable) — when tuning `--opp-belief-latent-coef` you can see whether the LATENT
-  term specifically is the one swamping / fighting the policy. Watch it sit small (a few %); a spike with
-  a degrading policy = lower the coef.
-- **Versioning.** `opp_belief_latent` (bool) is the version-checked structural toggle (the predictor MLP;
-  fresh-only; hard-requires `opp_belief_slots`); `opp_belief_latent_coef` is training-only, **read back on
-  a flagless resume**. Threaded into `current_model_version` / `arch_toggles_from_model` so a latent-ON
-  self-play run doesn't FATAL on its own sentinels (the 4 opp-load sites).
-- **Tests.** Unit: `belief_aux_loss_test.py` (latent cosine + VICReg + grad + rides-species-matching
-  order-invariance), `agents/model/belief_slots_test.py` (latent head shape, target-only-with-key,
-  stop-grad, the **no-leak gate** `test_latent_target_is_no_leak`, off byte-identical projections).
-  **Fuzz** (real bridge battles, no server): `poke_env_gaps/belief_target_fuzz_test.py` validates
-  `belief_target_slots == an INDEPENDENT fresh encode` of the actual hidden mon the species label names,
-  PAD slots zero, and the no-leak obs width, over thousands of live decisions:
-  `python src/agents/training/poke_env_gaps/belief_target_fuzz_test.py [n_battles]`.
+`--opp-belief-latent-coef`, the `opp_belief_latent` arch toggle, the `BeliefHead` SimSiam predictor,
+the `belief_target_slots` training-only obs key and the env work that built it are **gone**. Recorded
+here because the reasoning generalises to every aux head on this trunk:
+
+- **It was never fed forward.** The latent was a side readout — stashed for the loss, never
+  concatenated into `pi` or `vf`. Contrast `--opp-belief-cls-k`, which appends its pooled belief to
+  BOTH projections and therefore buys the policy something at inference time.
+- **It cost ~13% of the train step.** Measured per-flag on an idle box with interleaved arms:
+  marginal **+341 ms** of train time at the production batch, against a `cls_k=6` costing +349 ms
+  that *does* feed forward, and a `spread_belief` costing +72 ms. The train step is ~89% of
+  production wall at 10 epochs, so this was real throughput.
+- **Its own probe had already concluded decodable ≠ helps** (the belief latent/BYOL role-geometry
+  probe: species geometry decodes strongly, and nothing downstream was shown to use it).
+
+**Predicting the opponent's unrevealed mons is untouched.** `BeliefSlots` still fills the hidden opp
+slots with learned tokens, the species CE and moves BCE still supervise them, and the T0 species
+prior still feeds the physics. What is gone is the *second, graded* way of saying the same thing.
+
+Migration: `MODEL_CONFIG_VERSION` 75 REFUSES a config that recorded `opp_belief_latent=True` (the
+predictor carried parameters, so such a state_dict has keys the live extractor cannot accept) and
+pops it when false. `sanitize_dead_extractor_kwargs` applies the same rule to a saved zip's
+`features_extractor_kwargs`.
 
 ## Spread-belief supervision loss (`--spread-belief-coef`)
 

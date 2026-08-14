@@ -649,7 +649,6 @@ raises at build time.
 | `opp_belief_aux_coef` | 0.0 | OFF ⇒ `opp_belief_slots` false ⇒ **no `BeliefHead`, no species posterior** |
 | `species_prior_fusion` | false | OFF ⇒ `BeliefHead.species_head`'s output IS the whole species prediction. ON makes it a learned log-prob DELTA on a TEAM-COMPOSITION prior — `log P(species | the opponent's already-revealed mons)`, naive Bayes over pairwise pool co-occurrence with Species Clause as a hard constraint — computed on-GPU from two non-persistent `[S]`/`[S,S]` buffers (one `[B,S]@[S,S]` matmul, no gather). The delta head is zero-init, so the cold-start posterior EQUALS the prior. Adds **no parameters** (identical state_dict) — which is exactly why it is version-gated: nothing in the weights would catch the flip, and it re-means every species logit. Requires `opp_belief_aux_coef > 0` |
 | `t0_species_prior` | false | OFF ⇒ the `DamageOperator` prices every UNREVEALED opponent defender from the STATIC `SPECIES_USAGE_PRIOR` gen3ou frequency table (Species-Clause masked). ON re-homes the SAME team-composition belief `species_prior_fusion` uses — `log P(species \| the opponent's already-revealed mons)` — to **T0**, where the T1 physics can consume it, and hands the one resolved `[B, n_species]` tensor to **every** unrevealed-defender site (the op block, the `d1` cells, `pairwise_boost`) so the edge bias and the op block cannot disagree on a value. The two flags are independent: `species_prior_fusion` fuses the prior into the T2 aux READOUT, this feeds the T1 PHYSICS. Parameter-free (two non-persistent buffers, identical state_dict) — hence version-gated, since nothing in the weights would catch a flip that re-means every damage number against a hidden slot. Shape stays 2-D (`[B, S]`, a team-level property): the `[B,6,S]` per-slot form is what mis-vectorized under Inductor CPU and took down gen-4's launch prewarm |
-| `opp_belief_latent` | false | OFF |
 | `opp_belief_cls_k` | 0 | OFF |
 | `spread_belief` | false | OFF — the op prices REVEALED opponent stats with its hand-coded de-timid / neutral-0-EV constants, not a learned belief. UNREVEALED defender slots (since `gen3_unrevealed_outgoing_prior_v1`, v60) are priced against the Species-Clause-filtered usage prior's E[def/spd]/E[maxhp] + E[type-mult], P(KO) nulled, `revealed` channel 0 |
 | `spread_belief_nature` | false | OFF |
@@ -675,7 +674,7 @@ and there is no flat `action_net` to fall back to.
 | `move_belief_latent_coef` | 0.05 | ACTIVE — cosine latent grading + VICReg |
 | **`move_belief_coef`** | **0.0** | **INERT** — the per-move BCE is off. The move belief is trained **only** by the damage-operator / edge / seat gradients flowing back through `w`, plus the HP-type CE. |
 | `spread_belief_coef` | 0.0 | INERT — no `SpreadBelief` module exists anyway |
-| `opp_belief_aux_coef` / `opp_belief_latent_coef` | 0.0 | INERT — no `BeliefHead` |
+| `opp_belief_aux_coef` | 0.0 | INERT — no `BeliefHead` |
 | `win_prob_coef` / `pubval_coef` / `value_dist_coef` | 1.0 / 0.1 / 1.0 | INERT — the corresponding heads are not built |
 | `vf_coef` | 0.5 | ACTIVE — resume-immutable |
 | `value_tail_weight` | 0.0 | OFF — plain MSE value loss |
@@ -707,7 +706,6 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `belief_species` | int64 `[6]` | `BeliefHead` species CE | `opp_belief_aux_coef > 0` **or** `move_belief_mode != off` | ✅ **emitted** (via the move-belief clause) — but **unconsumed**: no `BeliefHead` exists |
 | `belief_moves` | int64 `[6,4]` | `BeliefHead` moves BCE (Hungarian) | " | ✅ emitted, unconsumed |
 | `known_moves` | int64 `[6,4]` | `MoveBelief` BCE | `move_belief_mode` ∈ {revealed, both} | ✅ emitted; **unconsumed** — `move_belief_coef` = 0.0 |
-| `belief_target_slots` | f32 `[6,113]` | SimSiam latent belief | `opp_belief_latent_coef > 0` | ❌ |
 | `belief_spread` / `belief_spread_mask` | f32 `[6,5]` / `[6]` | `SpreadBelief` regression | `spread_belief` **and** `spread_belief_coef > 0` | ❌ |
 | `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE | " | ❌ |
 | `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 | " | ❌ |

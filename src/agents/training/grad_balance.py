@@ -98,7 +98,7 @@ def grad_balance_metrics(
     enter the combined loss — ``policy_term = policy_loss + ent_coef*entropy_loss`` and
     ``value_term = vf_coef*value_loss``. ``aux_terms`` maps a short name → that auxiliary's
     **weighted** contribution (``coef * aux_loss``) exactly as it entered the loss, e.g.
-    ``{"species_belief": …, "move_belief": …, "latent": …, "move_latent": …, "win_prob": …,
+    ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …,
     "value_dist": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
     dict means "RL heads only", the upstream-identical 2-way case).
 

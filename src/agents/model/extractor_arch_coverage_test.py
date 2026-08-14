@@ -88,7 +88,7 @@ def test_the_mapping_actually_produces_the_kwarg_from_args():
     ns = Namespace(**{attr: False for attr in ARCH_ARG_KEYS.values()})
     for attr in _DERIVED:
         setattr(ns, attr, False)
-    for extra in ("opp_belief_aux_coef", "move_belief_coef", "opp_belief_latent_coef",
+    for extra in ("opp_belief_aux_coef", "move_belief_coef",
                   "opp_intent_coef", "seed_quantile_coef", "damage_refine_rounds"):
         setattr(ns, extra, 0.0)
     ns.t0_species_prior = True

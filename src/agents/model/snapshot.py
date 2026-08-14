@@ -838,11 +838,14 @@ _DEAD_FEK_INERT = (
     "threat_status_refine", "move_belief_single_compute",
 )
 _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
-                    ("damage_reattend", False))
+                    ("damage_reattend", False),
+                    # v75: the SimSiam latent-belief predictor is deleted. True is REFUSED because
+                    # it put parameters in the state_dict; False pops silently (nothing built).
+                    ("opp_belief_latent", False))
 
 
 def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
-    """Drop v70/v71-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
+    """Drop v70/v71/v75-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
 
     Raises `ModelVersionError` — exactly as `_migrate_config` does — when a JUDGED field records a
     value the surviving forward pass cannot reproduce.
@@ -872,7 +875,7 @@ def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
     constructor no longer accepts", and both are read from the same one zip read:
 
     1. `move_candidate_floor` (below).
-    2. Extractor kwargs deleted at config v70/v71 (`sanitize_dead_extractor_kwargs`).
+    2. Extractor kwargs deleted at config v70/v71/v75 (`sanitize_dead_extractor_kwargs`).
 
     --- 1. Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
 
@@ -982,8 +985,6 @@ def current_model_version(
     opp_belief_aux_coef: float = 0.0,
     move_belief_mode: str = "off",
     move_belief_coef: float = 0.0,
-    opp_belief_latent: bool = False,
-    opp_belief_latent_coef: float = 0.0,
     damage_op: bool = False,
     damage_outgoing: bool = False,
     move_candidate_floor: float = _PRIOR_FLOOR,
@@ -1061,7 +1062,6 @@ def current_model_version(
     ext_kwargs["opp_belief_slots"] = opp_belief_slots
     ext_kwargs["value_active_readout"] = value_active_readout
     ext_kwargs["move_belief_mode"] = move_belief_mode
-    ext_kwargs["opp_belief_latent"] = opp_belief_latent
     ext_kwargs["damage_op"] = damage_op
     ext_kwargs["damage_outgoing"] = damage_outgoing
     ext_kwargs["move_candidate_floor"] = move_candidate_floor
@@ -1108,7 +1108,7 @@ def current_model_version(
     return ModelVersion.from_layout_and_policy_kwargs(
         ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
         value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
-        move_belief_coef=move_belief_coef, opp_belief_latent_coef=opp_belief_latent_coef,
+        move_belief_coef=move_belief_coef,
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
         hp_type_belief_coef=hp_type_belief_coef, pubval_coef=pubval_coef,
@@ -1129,7 +1129,6 @@ def arch_toggles_from_model(model) -> dict:
         "opp_belief_slots": bool(getattr(fe, "opp_belief_slots", False)),
         "value_active_readout": bool(getattr(fe, "value_active_readout", False)),
         "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
-        "opp_belief_latent": bool(getattr(fe, "opp_belief_latent", False)),
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
         "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
         "move_candidate_floor": float(getattr(fe, "move_candidate_floor", _PRIOR_FLOOR)),

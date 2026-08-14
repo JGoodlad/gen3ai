@@ -67,7 +67,6 @@ _DERIVED = {
     # coef>0 is the enable signal for these three; the COEF itself is a training hparam set on the
     # model, but the BOOL is the version-checked arch toggle.
     "opp_belief_slots": lambda a: getattr(a, "opp_belief_aux_coef", 0.0) > 0.0,
-    "opp_belief_latent": lambda a: getattr(a, "opp_belief_latent_coef", 0.0) > 0.0,
     # v63 gen3_seed_quantile_v1 — same shape: the COEF is the training hparam, the BOOL is the
     # version-checked structural toggle that builds the shared per-seed quantile Linear.
     "seed_quantile": lambda a: getattr(a, "seed_quantile_coef", 0.0) > 0.0,

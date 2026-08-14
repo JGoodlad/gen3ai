@@ -43,7 +43,7 @@ _PRODUCTION_CONFIG = os.path.join(_REPO, "designs", "production_config.json")
 # Every optional phase the contract tiers, switched on together — so the trace exercises all four
 # tiers rather than only the ones production happens to build.
 _ALL_ON = dict(
-    opp_belief_slots=True, opp_belief_latent=True, opp_belief_cls_k=2,
+    opp_belief_slots=True, opp_belief_cls_k=2,
     spread_belief=True, opp_intent=True, species_prior_fusion=True,
     win_prob_mode="read_only", pubval_mode="read_only",
     value_dist_mode="read_only", value_dist_bins=51,

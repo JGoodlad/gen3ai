@@ -362,7 +362,6 @@ def _run_arch_toggles(args) -> dict:
         value_active_readout=args.value_active_readout,
         use_popart=args.use_popart,
         move_belief_mode=args.move_belief_mode,
-        opp_belief_latent=(args.opp_belief_latent_coef > 0.0),
         damage_op=args.damage_op,
         damage_outgoing=args.damage_outgoing,
         move_candidate_floor=args.move_candidate_floor,
@@ -415,7 +414,6 @@ def _model_hparams(model) -> dict:
         "move_belief_latent_coef": float(getattr(model, "move_belief_latent_coef", 0.0)),
         "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
-        "opp_belief_latent_coef": float(getattr(model, "opp_belief_latent_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "pubval_coef": float(getattr(model, "pubval_coef", 0.0)),
         "zarch_recon_coef": float(getattr(model, "zarch_recon_coef", 0.0)),
@@ -571,7 +569,6 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
         opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
         move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
-        opp_belief_latent_coef=float(getattr(model, "opp_belief_latent_coef", 0.0)),
         win_prob_coef=float(getattr(model, "win_prob_coef", 1.0)),
         move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
@@ -1025,17 +1022,6 @@ async def main():
                              "opp slots), like --opp-belief-aux-coef. 0.0 = no supervised pull (the module "
                              "still reinjects, but only RL gradient shapes it). TRAINING-only (not version-"
                              "locked). Ignored when --move-belief-mode off.")
-    parser.add_argument("--opp-belief-latent-coef", "--opp_belief_latent_coef",
-                        dest="opp_belief_latent_coef", type=float, default=None,
-                        help="LATENT-belief escalation. 0.0 = OFF (default). >0 turns ON opp_belief_latent "
-                             "(adds an asymmetric SimSiam predictor to the BeliefHead) and adds "
-                             "coef*(cosine-to-encoder-role-token + VICReg) over the believed slots: each "
-                             "slot's refined token is regressed toward the STOP-GRAD pokemon_encoder "
-                             "role-token of the TRUE hidden mon — graded identity supervision the hard "
-                             "species CE can't give. REQUIRES --opp-belief-aux-coef>0 (the believed slots + "
-                             "species head + Hungarian assignment it rides). The predictor is weight-shape "
-                             "(version-checked, fresh-only); the coef is TRAINING-only like --opp-belief-aux-"
-                             "coef. The privileged belief_target_slots obs key exists only when >0.")
     parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
                         action=BoolFlag, default=None,
                         help="Route the active mon's refined token (our_active_refined) into the VALUE "
@@ -2103,7 +2089,6 @@ async def main():
     _resolve("opp_belief_aux_coef", 0.0)
     _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
     _resolve("move_belief_coef", 0.0)          # training-only (inherited like opp_belief_aux_coef)
-    _resolve("opp_belief_latent_coef", 0.0)    # training-only (inherited like opp_belief_aux_coef)
     _resolve("damage_op", False)               # v19 structural (version-checked, fresh-only)
     _resolve("damage_outgoing", False)         # v23 structural (version-checked, fresh-only)
     _resolve("move_candidate_floor", _PRIOR_FLOOR)  # v65 forward-behavior (version-checked, fresh-only)
@@ -2396,17 +2381,6 @@ async def main():
             f"--move-belief-mode {args.move_belief_mode} scores the opponent's HIDDEN slots, which are "
             "only filled with learned unknown-mon tokens when the species-belief head is on. Add "
             "--opp-belief-aux-coef <coef> (>0), or use --move-belief-mode revealed (seen mons only)."
-        )
-    if args.opp_belief_latent_coef is not None and args.opp_belief_latent_coef < 0.0:
-        parser.error("--opp-belief-latent-coef must be >= 0 (0 = off)")
-    if args.opp_belief_latent_coef > 0.0 and not (args.opp_belief_aux_coef > 0.0):
-        # The latent head attaches to the BeliefHead over the believed slots AND rides the species-CE
-        # Hungarian assignment (computed only when --opp-belief-aux-coef>0). Without it there is no
-        # species head, no believed-slot fill, and no per-minibatch assignment to match the latent on.
-        parser.error(
-            "--opp-belief-latent-coef > 0 requires --opp-belief-aux-coef > 0 — the latent predictor "
-            "attaches to the BeliefHead and reuses its Hungarian slot↔mon assignment. Enable "
-            "--opp-belief-aux-coef <coef> (>0), or set --opp-belief-latent-coef 0."
         )
     if args.damage_op and args.move_belief_mode not in ("revealed", "both"):
         # FAIL LOUD: the damage operator reads the opp ACTIVE slot's PREDICTED move logits, which are
@@ -3002,7 +2976,6 @@ async def main():
                     # via RLPlayer, not Gen3Env, so they never emit them.
                     emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                     move_belief_mode=args.move_belief_mode,
-                    emit_belief_target=(args.opp_belief_latent_coef > 0.0),
                     emit_win_target=(args.win_prob_mode != "none"),
                     emit_pubval_target=(args.pubval_mode != "none"),
                     # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
@@ -3699,7 +3672,6 @@ async def main():
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
-            opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
             pubval_coef=args.pubval_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
@@ -3792,7 +3764,6 @@ async def main():
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
-        model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
         model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE weight (training-only; resume-mutable)
@@ -4046,7 +4017,6 @@ async def main():
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
-        model.opp_belief_latent_coef = args.opp_belief_latent_coef  # latent-belief loss (0.0 = off)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
         model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE (mode off = off)
@@ -4107,7 +4077,6 @@ async def main():
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
-            opp_belief_latent_coef=args.opp_belief_latent_coef,
             win_prob_coef=args.win_prob_coef,
             pubval_coef=args.pubval_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,

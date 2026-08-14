@@ -468,7 +468,7 @@ def test_outgoing_legality_mask_and_immunity():
 def test_op_is_leak_free_of_privileged_keys():
     """No-leak gate: the unified op (incoming + outgoing) reads ONLY public obs (via ctx) + the model's own
     predicted belief — never a training-only privileged label. Its output is bit-identical whether or not
-    belief_species / belief_moves / known_moves / belief_target_slots are present in the obs dict."""
+    belief_species / belief_moves / known_moves are present in the obs dict."""
     # spread_belief=True so the SpreadBelief leg (its reinjection + the op's consumption of last_spread_belief)
     # is exercised by the clean-vs-poisoned bit-identity check too (v25).
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
@@ -483,8 +483,7 @@ def test_op_is_leak_free_of_privileged_keys():
         poisoned = {"observation": obs_t,
                     "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
                     "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
-                    "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
-                    "belief_target_slots": torch.rand(4, TEAM_SIZE, 107)}
+                    "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
         ctx2 = model.unpack(poisoned); model.forward(poisoned)
         poisoned_out = model.damage_op(ctx2, model.last_move_belief_logits)
     assert torch.equal(clean, poisoned_out)
@@ -723,8 +722,7 @@ def test_topk_leak_free():
     poisoned = {"observation": obs_t,
                 "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
                 "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
-                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
-                "belief_target_slots": torch.rand(4, TEAM_SIZE, 107)}
+                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
     with torch.no_grad():
         clean_pi, clean_vf = model.forward({"observation": obs_t})
         clean_pi, clean_vf = clean_pi.clone(), clean_vf.clone()

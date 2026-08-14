@@ -2727,3 +2727,48 @@ identically. It rides the existing resume-immutable `belief_grad_mode` check
 (`--allow-belief-grad-mode-change` for an intentional migration on a converged checkpoint), and the
 legal-value set now lives in one place, `features_extractor.BELIEF_GRAD_MODES`, which the CLI
 `choices=` and the migration-notice table are pinned to agree with.
+
+---
+
+### v75 — the SimSiam LATENT belief is deleted
+
+`opp_belief_latent`, `--opp-belief-latent-coef`, the `BeliefHead` latent predictor, the stop-grad
+`last_belief_target_latent` stash, the `belief_target_slots` training-only obs key, and the
+`Gen3Env` work that built that key every decision are all **removed**.
+
+- **It was never fed forward.** The latent logits were stashed for the aux loss and nothing else —
+  no path into `pi` or `vf`, no pointer logit, no head concat. That is what separates it from
+  `--opp-belief-cls-k`, whose pooled hidden-opponent belief is appended to BOTH projections and so
+  changes what the policy can compute at inference time. Deleting a side readout removes a training
+  signal; it removes no capability.
+- **It cost ~13% of the train step.** Per-flag marginal cost, measured on an idle box with the arms
+  interleaved so drift cancels (each leg includes `--opp-belief-aux-coef 0.05`):
+
+  | leg | train ms | marginal | rollout ms |
+  |---|---|---|---|
+  | baseline (belief stack off) | 2662.3 | — | 1673 |
+  | `opp_belief_slots` | 2915.2 | (base) | 1693 |
+  | `opp_belief_cls_k=6` | 3264.0 | **+348.7** | 1778 |
+  | **`opp_belief_latent`** | **3256.3** | **+341.1** | 1697 |
+  | `move_belief_mode=both` | 3033.5 | +118.3 | 1686 |
+  | `spread_belief` | 2987.5 | +72.2 | 1695 |
+
+  The train step is ~89% of production wall at 10 epochs (the root docs' "rollout is ~86% of wall"
+  describes a different configuration and does not hold here — measured train share was 61% at 5
+  epochs on this box). So this was real throughput, spent on a head the policy could not read.
+- **Its own probe had already said so.** The belief latent/BYOL role-geometry probe found species
+  geometry decodes strongly and the move-id table not at all, and concluded decodable ≠ helps.
+- **What is NOT lost.** `BeliefSlots` still swaps learned unknown-mon tokens into the hidden
+  opponent slots; the species CE and the moves BCE still supervise them (order-invariantly, via the
+  same Hungarian assignment); `t0_species_prior` still hands the team-composition species belief to
+  the T1 physics. The model's ability to predict the opponent's unrevealed mons is unchanged — what
+  is gone is the second, graded way of expressing it.
+- `_belief_aux_loss` now returns `(aux, metrics)` instead of a 3-tuple. `_LATENT_STD_TARGET` /
+  `_LATENT_VICREG_WEIGHT` SURVIVE — they are shared with `_move_belief_latent_loss`, a different
+  live feature (`--move-belief-latent-coef`), which is also why `move_latent` and every
+  `movelatent_*` metric are untouched.
+- `MODEL_CONFIG_VERSION` 74 → 75. The migration **REFUSES** a config recording
+  `opp_belief_latent=True` rather than popping it: unlike the v71 forward-only flags, this one
+  carried PARAMETERS, so such a checkpoint's state_dict holds keys the live extractor has no home
+  for. `sanitize_dead_extractor_kwargs` applies the same rule to a saved zip's
+  `features_extractor_kwargs`. No `ARCH_SIGNATURE` bump — a config that had it OFF is byte-identical.

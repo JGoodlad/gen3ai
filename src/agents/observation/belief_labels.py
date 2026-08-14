@@ -37,9 +37,9 @@ def assign_hidden_to_slots(
     normalize: Callable[[str], str],
 ) -> List[Tuple[int, int]]:
     """The CANONICAL believed-slot → hidden-mon assignment, the SINGLE source of truth shared by
-    `build_belief_labels` (species/moves int labels) and `build_belief_target_index` (the latent
-    target's fresh per-mon encode). Returning one assignment guarantees the species-CE label and the
-    encoder-role-token latent target can NEVER name a different mon for the same believed slot.
+    `build_belief_labels` (species/moves int labels) and any future consumer that must name the same
+    mon for the same believed slot. One assignment is what guarantees two labels can never disagree
+    about which hidden mon a slot stands for.
 
     Returns a list of (encoder_opp_slot, team_index) pairs in believed-slot order — `team_index` is
     the index into `team_species` (and the caller's parallel team/mon lists) of the hidden mon
@@ -69,25 +69,6 @@ def assign_hidden_to_slots(
     return assignment
 
 
-def build_belief_target_index(
-    team_species: Sequence[str],
-    revealed_species: Sequence[str],
-    species_known: Sequence[float],
-    species_to_num: Dict[str, int],
-    normalize: Callable[[str], str],
-) -> np.ndarray:
-    """Per opp-slot index (int64[TEAM_SIZE]) into the FULL team of the hidden mon assigned to that
-    believed slot; PAD (-1) for revealed / non-target slots. Same assignment as `build_belief_labels`
-    (both call `assign_hidden_to_slots`), so the latent-belief target encode and the species-CE label
-    reference the identical mon per slot. The caller encodes `team[idx]` fresh for the latent target."""
-    target_idx = np.full(TEAM_SIZE, PAD, dtype=np.int64)
-    for slot, team_idx in assign_hidden_to_slots(
-        team_species, revealed_species, species_known, species_to_num, normalize
-    ):
-        target_idx[slot] = team_idx
-    return target_idx
-
-
 def build_belief_labels(
     team_species: Sequence[str],
     team_moves: Sequence[Sequence[str]],
@@ -110,9 +91,8 @@ def build_belief_labels(
     belief_species = np.full(TEAM_SIZE, PAD, dtype=np.int64)
     belief_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
 
-    # Single source of truth for which hidden mon fills which believed slot (shared with the latent
-    # target via `assign_hidden_to_slots`). The species num + moveset are then derived from the
-    # assigned team index — byte-identical to the prior inline build.
+    # Single source of truth for which hidden mon fills which believed slot
+    # (`assign_hidden_to_slots`). The species num + moveset are derived from the assigned team index.
     for slot, team_idx in assign_hidden_to_slots(
         team_species, revealed_species, species_known, species_to_num, normalize
     ):

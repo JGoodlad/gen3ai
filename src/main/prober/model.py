@@ -613,7 +613,6 @@ class ProbeModel:
         vd = getattr(ex, "value_dist_mode", "none")     # v29 distributional value head (side readout)
         # move_latent_encoder is ABSENT (not None) when off → its own getattr guard, not on().
         has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
-        latent_belief = bool(getattr(ex, "opp_belief_latent", False))   # belief SimSiam latent sub-head
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
         dmg_out = bool(getattr(ex, "damage_outgoing", False))           # DamageOperator outgoing direction
         # (name, active, optional, stage, role, attn) — TRUE forward order (forward_internal). `attn`
@@ -645,7 +644,7 @@ class ProbeModel:
             ("TeamTransformer", True, False, "trunk",
              f"SELF-ATTENTION over {tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)", True),
             ("BeliefHead", on("belief_head"), True, "side",
-             "aux: predict hidden species/moves" + (" + latent" if latent_belief else "") + " (side readout)", False),
+             "aux: predict hidden species/moves (side readout)", False),
             ("CLSPool", True, False, "fork",
              "CLS queries CROSS-ATTEND the team tokens → our/their/value pools — FORKS → π · V", True),
             ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})", False),

@@ -161,7 +161,7 @@ def test_aux_loss_backprops_through_stash_to_belief_and_trunk():
     sp = torch.full((2, TEAM_SIZE), -1)
     sp[:, 3] = 10; sp[:, 4] = 22; sp[:, 5] = 5    # 3 believed slots with valid species labels
     mv = torch.full((2, TEAM_SIZE, 4), -1); mv[:, 3, 0] = 2
-    aux, _, _ = InstrumentedMaskablePPO._belief_aux_loss(bl, sp, mv)
+    aux, _ = InstrumentedMaskablePPO._belief_aux_loss(bl, sp, mv)
     aux.backward()
     # belief-specific params
     assert model.belief_slots.unknown_slot_emb.grad is not None
@@ -182,82 +182,3 @@ def test_belief_on_forward_works_without_labels_opponent_and_eval_path():
     pi, vf = model.forward_internal(obs)
     assert pi.shape[0] == 3 and vf.shape[0] == 3                  # usable action/value readout
     assert model.last_belief_logits is not None                  # belief runs in-trunk (stashed, unused)
-
-
-# --------------------------------------------------------------------------- latent belief (v18)
-
-
-def _latent_model(layout=None):
-    return _make_model(attend_unrevealed_opponents=True, opp_belief_slots=True, opp_belief_latent=True)
-
-
-def test_belief_head_latent_shape():
-    head = BeliefHead(n_species=400, n_moves=400, latent_dim=D_MODEL)
-    out = head(torch.randn(3, TEAM_SIZE, D_MODEL))
-    assert out["latent"].shape == (3, TEAM_SIZE, D_MODEL)
-    # without latent_dim, no latent key (banked-fallback species head only)
-    assert "latent" not in BeliefHead(400, 400)(torch.randn(3, TEAM_SIZE, D_MODEL))
-
-
-def test_latent_requires_belief_slots():
-    with pytest.raises(ValueError, match="opp_belief_latent"):
-        _make_model(attend_unrevealed_opponents=True, opp_belief_latent=True)  # no opp_belief_slots
-
-
-def test_latent_off_no_latent_key():
-    model, layout = _make_model(attend_unrevealed_opponents=True, opp_belief_slots=True)
-    model.forward_internal(_obs(layout))
-    assert "latent" not in model.last_belief_logits
-    assert model.last_belief_target_latent is None
-
-
-def test_latent_on_emits_prediction():
-    model, layout = _latent_model()
-    model.forward_internal(_obs(layout))
-    assert model.last_belief_logits["latent"].shape == (2, TEAM_SIZE, D_MODEL)
-
-
-def test_latent_target_computed_only_with_target_key():
-    model, layout = _latent_model()
-    model.eval()
-    # no key → no target
-    model.forward_internal(_obs(layout))
-    assert model.last_belief_target_latent is None
-    # with key → stop-grad target [B, 6, D] (constant-fill = valid small embedding IDs, real encodes
-    # carry valid IDs too — random floats would index past the embedding vocab)
-    obs = _obs(layout)
-    obs["belief_target_slots"] = torch.ones(2, TEAM_SIZE, POKEMON_FULL_DIM)
-    model.forward_internal(obs)
-    tgt = model.last_belief_target_latent
-    assert tgt.shape == (2, TEAM_SIZE, D_MODEL)
-    assert not tgt.requires_grad   # stop-grad (SimSiam target)
-    # Rollout/eval skip: under no_grad (the action-selection path) the target encode is NOT run — it
-    # is only consumed by train()'s grad-enabled evaluate_actions, so the second encoder pass is saved.
-    with torch.no_grad():
-        model.forward_internal(obs)
-    assert model.last_belief_target_latent is None
-
-
-def test_latent_target_is_no_leak():
-    """THE leak gate: the privileged belief_target_slots key must NOT change the policy/value output.
-    The target is computed and stashed for the loss only — never concatenated into pi/vf."""
-    model, layout = _latent_model()
-    model.eval()
-    x = torch.zeros(2, layout["total_dim"])    # valid obs (zero IDs); the key is what we're isolating
-    pi_a, vf_a = model.forward_internal({"observation": x})
-    pi_b, vf_b = model.forward_internal({
-        "observation": x.clone(),
-        "belief_target_slots": torch.ones(2, TEAM_SIZE, POKEMON_FULL_DIM),  # valid non-trivial target
-    })
-    assert torch.equal(pi_a, pi_b) and torch.equal(vf_a, vf_b)
-    assert model.last_belief_target_latent is not None   # but the target WAS computed (for the loss)
-
-
-def test_latent_off_path_projection_dims_unchanged():
-    """The latent predictor is a side head — it must not widen either projection input."""
-    off, layout = _make_model(attend_unrevealed_opponents=True, opp_belief_slots=True)
-    on, _ = _latent_model()
-    pi_off, vf_off = off.forward_internal(_obs(layout))
-    pi_on, vf_on = on.forward_internal(_obs(layout))
-    assert pi_off.shape[1] == pi_on.shape[1]
-    assert vf_off.shape[1] == vf_on.shape[1]

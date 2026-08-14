@@ -98,10 +98,11 @@ _VALUE_TAIL_FRAC = 0.1
 # margin ∈ [−1,1] = Φ_mat/bound; bound ≈ 19.5, so 0.25 ≈ a material lead of up to ~1.5 mons.
 _WIN_CONTESTED_TAU = 0.25
 
-# Latent-belief VICReg variance floor: a hinge `relu(_LATENT_STD_TARGET - std)` per latent dim pushes
-# the predicted latents to stay spread (≈unit std), the belt-and-braces collapse guard on top of the
-# stop-grad + task-anchored target. Weighted by _LATENT_VICREG_WEIGHT inside the latent loss. The
-# `belief_latent_std` metric (mean per-dim std) is the NO-GO monitor: std→0 while cosine→1 is collapse.
+# MOVE-latent VICReg variance floor (the belief-latent leg that also used it is DELETED, v75): a
+# hinge `relu(_LATENT_STD_TARGET - std)` per latent dim pushes the predicted latents to stay spread
+# (≈unit std), the belt-and-braces collapse guard on top of the stop-grad + task-anchored target.
+# Weighted by _LATENT_VICREG_WEIGHT inside the move-latent loss. The `movelatent_std` metric (mean
+# per-dim std) is the NO-GO monitor: std→0 while cosine→1 is collapse.
 _LATENT_STD_TARGET = 1.0
 _LATENT_VICREG_WEIGHT = 1.0
 
@@ -269,12 +270,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # move_latent arch toggle.
     move_belief_latent_coef: float = 0.0
 
-    # Set by train_rl_agent (like opp_belief_aux_coef). The LATENT-belief loss weight: opp_belief_latent_coef
-    # * (cosine-to-encoder-role-token + VICReg variance floor) over the believed opp slots, matched on the
-    # SAME Hungarian assignment as the species CE. 0.0 = OFF (no term; byte-identical loss). Training-only
-    # (scales the loss, never a forward pass) → NOT version-locked. The latent PREDICTOR (a state_dict
-    # change) is gated by the version-checked opp_belief_latent arch toggle, not this coef.
-    opp_belief_latent_coef: float = 0.0
 
     # Set by train_rl_agent (gen3_defensive_entropy_v1). STATE-CONDITIONED entropy boost: on decisions the env
     # flags `defensive_opportunity`=1 (a productive recovery/cure move is legal), the per-decision entropy bonus
@@ -1055,8 +1050,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         ``[B,6,4]`` (move nums, -1 PAD). Returns (loss, metrics) or None (off / labels absent / nothing
         scorable). Pure + static (unit-testable without a full PPO).
 
-        COLLAPSE NOTE (differs from the species latent head): unlike `_belief_aux_loss`, whose target is an
-        EXTERNAL stop-grad (the pokemon_encoder role-token), here the target is derived from the SAME
+        COLLAPSE NOTE: the target here is derived from the SAME
         `latent_table` whose params the prediction gradient updates (the `.detach()` only severs the
         per-step path, not the shared table). So the cosine could in principle be gamed by collapsing the
         table rows to one DIRECTION. The VICReg term below is NOT the guard against that — it floors per-dim
@@ -1095,11 +1089,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
         return loss, metrics
 
     @staticmethod
-    def _belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0, latent_target=None):
+    def _belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
         """Order-invariant (Hungarian / DETR-style) hidden-opponent belief aux loss.
 
-        bl = {"species": [B,6,S], "moves": [B,6,M], ["latent": [B,6,D]]} (the stashed BeliefHead
-        logits); sp_labels [B,6] and mv_labels [B,6,4] are the privileged int labels (-1 = revealed/pad).
+        bl = {"species": [B,6,S], "moves": [B,6,M]} (the stashed BeliefHead logits); sp_labels [B,6]
+        and mv_labels [B,6,4] are the privileged int labels (-1 = revealed/pad).
         The k believed-slot predictions of each sample are matched to its k hidden-mon targets by
         **per-sample min-cost assignment** (so the anonymous slot tokens collectively cover the hidden
         SET instead of each chasing a reveal-shifting fixed slot↔mon target), then species cross-entropy
@@ -1107,17 +1101,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
         the k! permutations are enumerated and the min-CE-cost one chosen (vectorised per distinct k — no
         per-sample Python loop, no scipy).
 
-        **Latent term (`latent_target` [B,6,D] given AND bl carries "latent").** On the SAME species-CE
-        Hungarian assignment (one mon per slot across all heads — no conflicting pulls), a cosine loss
-        regresses each believed slot's predicted latent toward the STOP-GRAD encoder role-token of its
-        matched true hidden mon, plus a VICReg variance floor on the predictions (collapse guard). It is
-        returned SEPARATELY (third tuple element) so the caller weights it by its own coef.
-
         Perf: the species log-softmax is taken on the GATHERED believed slots ([n,k,S]) not the full
         [B,6,S] (the non-believed slots are never read); the moves branch is skipped entirely when
         moves_weight==0; accuracy + moves P/R are diagnostics computed under no_grad.
 
-        Returns (aux_tensor, metrics_dict, latent_loss_or_None) or None when nothing to score (belief
+        Returns (aux_tensor, metrics_dict) or None when nothing to score (belief
         off / labels absent / a minibatch with zero believed slots — the None guard keeps an empty
         minibatch from NaN-poisoning the loss). FAILS LOUD on an out-of-vocab label id (impossible on
         real data → a corrupt embedding-num pipeline), rather than silently dropping it. Pure + static so
@@ -1150,13 +1138,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 "the embedding-num pipeline is corrupt (real Gen-3 nums are all < 400)."
             )
         do_moves = moves_weight != 0.0
-        latent_pred = bl.get("latent")
-        do_latent = latent_pred is not None and latent_target is not None
-        if do_latent:
-            latent_target = latent_target.to(device)
         ce_terms, bce_terms = [], []
-        # latent: per-slot cosine distance + matched preds (VICReg) + matched targets (above-chance anchor)
-        cos_terms, lat_pred_terms, lat_tgt_terms = [], [], []
         n_correct = th.zeros((), device=device)
         n_slots = 0
         mv_tp = mv_pred_pos = mv_true_pos = 0  # moves precision/recall accumulators (diagnostic)
@@ -1181,17 +1163,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
             with th.no_grad():
                 n_correct = n_correct + (pred_logp.argmax(-1) == matched_sp).sum()
             n_slots += n * k
-            if do_moves or do_latent:
+            if do_moves:
                 matched_label_slot = th.gather(slot_idx, 1, best_perm)             # [n, k] matched label slot
-            if do_latent:
-                # Same assignment as species: pred at believed slot i ↔ target role-token at the
-                # matched believed slot. Cosine distance (1 − cos) + collect preds for the VICReg floor.
-                pred_l = latent_pred[rows, slot_idx]                               # [n, k, D] predictions
-                tgt_l = latent_target[rows, matched_label_slot]                    # [n, k, D] matched targets
-                cos = (F.normalize(pred_l, dim=-1) * F.normalize(tgt_l, dim=-1)).sum(-1)  # [n, k]
-                cos_terms.append((1.0 - cos).reshape(-1))
-                lat_pred_terms.append(pred_l.reshape(-1, pred_l.shape[-1]))        # [n*k, D]
-                lat_tgt_terms.append(tgt_l.reshape(-1, tgt_l.shape[-1]))           # [n*k, D] matched targets
             if do_moves:
                 mv_pred = mv_logits[rows, slot_idx]                                # [n, k, M] predictions
                 mv_ids = mv_labels[rows, matched_label_slot]                      # [n, k, 4] matched move ids
@@ -1230,34 +1203,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "k_mean": n_slots / max(1, n_samples),
             "coverage": n_samples / sp_labels.shape[0],
         }
-        # Latent-belief: mean cosine distance to the matched stop-grad role-token + a VICReg variance
-        # floor on the predictions. Returned separately so the caller scales it by opp_belief_latent_coef.
-        latent_loss = None
-        if do_latent and cos_terms:
-            cos_dist = th.cat(cos_terms).mean()
-            lat_pred = th.cat(lat_pred_terms, dim=0)                               # [N, D] matched preds
-            lat_std = th.sqrt(lat_pred.var(dim=0, unbiased=False) + 1e-4)          # [D] per-dim std
-            vicreg = th.relu(_LATENT_STD_TARGET - lat_std).mean()
-            latent_loss = cos_dist + _LATENT_VICREG_WEIGHT * vicreg
-            similarity = float(1.0 - cos_dist.item())
-            metrics["latent_cosine"] = similarity                                 # similarity (higher better)
-            metrics["latent_loss"] = float(latent_loss.item())
-            metrics["latent_std"] = float(lat_std.mean().item())                  # collapse monitor (→0 = NO-GO)
-            metrics["latent_vicreg"] = float(vicreg.item())
-            # Interpretability anchor (the latent analog of `species_acc_above_chance`): role-tokens are
-            # task-anchored, NOT orthogonal, so the raw cosine has a non-zero null. The baseline is the
-            # cosine each prediction scores against a MISMATCHED true target (the within-batch roll-by-1
-            # "background" a predictor would get by regressing to a typical role-token). `above_chance` =
-            # matched − mismatched is the discriminative signal — small-but-positive with a healthy
-            # `latent_std` means the head predicts the SET's mean role, not the per-mon identity.
-            with th.no_grad():
-                lat_tgt = th.cat(lat_tgt_terms, dim=0)                            # [N, D] matched targets
-                pn = F.normalize(lat_pred, dim=-1)
-                tn = F.normalize(lat_tgt, dim=-1)
-                baseline = float((pn * th.roll(tn, 1, 0)).sum(-1).mean().item())  # cos to a non-matched target
-            metrics["latent_cosine_baseline"] = baseline
-            metrics["latent_cosine_above_chance"] = similarity - baseline
-        return aux, metrics, latent_loss
+        return aux, metrics
 
     def _value_loss_from_se(self, se: "th.Tensor") -> "th.Tensor":
         """Tail-weighted value loss from per-sample squared errors `se` (in whatever space the branch
@@ -1361,7 +1307,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
-        latent_belief_on = self.opp_belief_latent_coef > 0.0  # +LATENT belief (rides the species aux call)
         move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
         spread_belief_on = self.spread_belief_coef > 0.0  # +SPREAD-belief supervision (gen3_unified_spread_belief_v1)
         hp_type_belief_on = self.hp_type_belief_coef > 0.0  # +HP-TYPE belief CE (gen3_opp_hp_type_belief_v1)
@@ -1574,26 +1519,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # the privileged labels ride the same obs dict (training-only keys). Masked to the
                 # believed slots, folded in at opp_belief_aux_coef. OFF → skipped (loss byte-identical).
                 belief_aux_term = None  # the WEIGHTED aux contribution, for the grad-balance probe
-                latent_belief_term = None  # the WEIGHTED latent contribution (rides the same probe)
                 if belief_aux_on:
                     aux_out = self._belief_aux_loss(
                         self.policy.features_extractor.last_belief_logits,
                         rollout_data.observations.get("belief_species"),
                         rollout_data.observations.get("belief_moves"),
                         moves_weight=self.opp_belief_moves_weight,
-                        # The latent target (stop-grad encoder role-tokens) the extractor stashed this
-                        # minibatch; passed only when the latent term is on (else no latent loss computed).
-                        latent_target=(self.policy.features_extractor.last_belief_target_latent
-                                       if latent_belief_on else None),
                     )
                     if aux_out is not None:
-                        aux, belief_m, latent_loss = aux_out
+                        aux, belief_m = aux_out
                         belief_aux_term = self.opp_belief_aux_coef * aux
                         loss = loss + belief_aux_term
                         belief_m["aux_loss"] = float(aux.item())
-                        if latent_loss is not None and latent_belief_on:
-                            latent_belief_term = self.opp_belief_latent_coef * latent_loss
-                            loss = loss + latent_belief_term
                         for _bk, _bv in belief_m.items():
                             belief_metrics.setdefault(_bk, []).append(float(_bv))
 
@@ -2091,7 +2028,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 aux_probe_terms: dict[str, th.Tensor] = {}
                 if belief_aux_term is not None:    aux_probe_terms["species_belief"] = belief_aux_term
                 if move_belief_term is not None:   aux_probe_terms["move_belief"] = move_belief_term
-                if latent_belief_term is not None: aux_probe_terms["latent"] = latent_belief_term
                 if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
                 if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
                 if nature_ev_term is not None:     aux_probe_terms["nature_ev"] = nature_ev_term
@@ -2108,13 +2044,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # under `shaping`, which is precisely when you need to know.
                 if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
                 if opd_term is not None:           aux_probe_terms["opd"] = opd_term
-                aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
+                aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
                 # spread_belief scores on REVEALED slots (near-always present) so it does NOT gate this —
                 # it rides whichever minibatch the probe samples (incl. the first, for a spread-only run).
                 belief_present = any(
-                    k in aux_probe_terms for k in ("species_belief", "move_belief", "latent", "move_latent")
+                    k in aux_probe_terms for k in ("species_belief", "move_belief", "move_latent")
                 )
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
@@ -2134,7 +2070,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         (value_dist_term if (value_from_dist and value_dist_term is not None)
                          else self.vf_coef * value_loss),
                         shared_trunk,
-                        # Each ACTIVE scaffold broken out on the trunk: species/move/latent/move-latent
+                        # Each ACTIVE scaffold broken out on the trunk: species/move/move-latent
                         # belief + win-prob (≈0 under read_only) + value-dist. Empty → RL-heads-only.
                         aux_terms=aux_probe_terms or None,
                     )

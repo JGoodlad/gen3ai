@@ -485,3 +485,88 @@ worker, i.e. ON the rollout path, which is the ~86% of wall the two measured nul
 Next step: time `_belief_labels` against `state_encoder.encode` per decision with the flags on vs
 off. If it is not there either, the next suspects are worker RAM/GC pressure from the larger obs
 Dict, and the launcher-vs-direct confound (gens 5-7 ran directly; gen-8/9 under the launcher).
+
+#### ⚠️ CORRECTION (2026-08-14) to the FPS entry above — the train-step number is on the WRONG DEVICE
+
+`tmp/fps_paired.py` ran with `torch.set_num_threads(1)` on **CPU**. Production trains on **CUDA**
+(`device=cuda` in every gen-5..gen-9 `cli_args`). So the paired **1.221x is the CPU cost of a step
+the trainer pays on GPU** and does not transfer: GPU parallelism can absorb added width very
+differently from a single CPU thread. Read that number as "the belief stack adds ~22% of CPU work to
+a forward+backward", not as "the training step got 22% slower".
+
+**What survives unchanged:** the **B=1 opponent forward ~1.00x** null. That one IS measured on the
+device that runs it — CPU, single-threaded, inside the env workers — and it is the measurement that
+matters most, because the opponent forward is the documented 68% of rollout-worker time.
+
+**What this does to the conclusion.** "The regression is not in the model's compute" was reasoned
+from two nulls, and one of them is now unsupported rather than refuted. The honest state is:
+the ROLLOUT-side model forward is ruled out; the TRAIN-side is UNMEASURED on the real device.
+`time/fps` is the only timing scalar the run logs — there is no rollout/train split in TensorBoard —
+so the 86%/14% split used in the earlier arithmetic came from project docs, not from these runs, and
+should not be leaned on either.
+
+**Next experiment, in priority order.**
+1. **Measure the rollout/train split for real.** Everything else is arithmetic on top of it, and it
+   is currently an assumption. Instrument one short run, or time `collect_rollouts` vs `train`.
+2. **The env's per-decision label build** (`gen3_env._belief_labels`) on a live bridge battle. Only
+   the raw ALLOCATION has been measured (3.5 us/decision — negligible). The real cost is the lookups
+   plus emitting `belief_target_slots`, a `[6, POKEMON_FULL_DIM]` block that is effectively a second
+   per-mon encode. `trainer_turn_benchmark.py` does NOT construct `Gen3Env` with the belief flags,
+   so it needs extending before it can answer this.
+3. Only then: worker RAM/GC from the larger obs Dict, and the launcher-vs-direct confound.
+
+**Owner instruction (2026-08-14): gen-10 does NOT launch until this is understood.**
+
+### ✅ SOLVED (2026-08-14): the gen-7 -> gen-8 FPS regression is the TRAIN step, and two flags own it
+
+Measured on an IDLE box (gen-9 stopped), arms interleaved, each run twice. Rep-to-rep agreement is
+within **1.5%** even though load drifted 0.67 -> 3.96 during the second pass — which is what the
+interleaved design buys and why the earlier loaded-box attempts were worthless.
+
+| | rollout | train | total |
+|---|---|---|---|
+| gen7 | 1693.3 ms (38.8%) | 2670.1 ms (61.2%) | 4363.4 |
+| gen8 | 1826.5 ms (33.0%) | 3702.8 ms (67.0%) | 5529.3 |
+| **ratio** | **1.079x** | **1.387x** | 1.267x |
+
+**⚠️ THE DOCS' "rollout is ~86% of wall" IS WRONG FOR THIS CONFIGURATION, and believing it is what
+sent this investigation sideways for hours.** Measured train share is **61%** at
+(n_envs=8, n_steps=128, 2 epochs) and rises with epochs: at production's **10** epochs it is ~89%.
+That is what makes a 1.387x train step produce the observed regression —
+`0.11*1.079 + 0.89*1.387 = 1.35x` against an observed `458/331 = 1.383x`. I had dismissed the train
+step precisely BECAUSE of the 86/14 figure; the null I reported earlier ("not in the model's
+compute") was an artifact of an imported assumption I never measured.
+
+**Per-flag marginal TRAIN cost** (each arm includes `--opp-belief-aux-coef 0.05`; roughly additive —
+predicted 3796 ms vs measured 3703):
+
+| leg | train ms | vs baseline | marginal | rollout |
+|---|---|---|---|---|
+| baseline | 2662.3 | — | — | 1673 |
+| `opp_belief_slots` | 2915.2 | +252.9 | (base leg) | 1693 |
+| **`opp_belief_cls_k=6`** | 3264.0 | +601.6 | **+348.7** | 1778 |
+| **`opp_belief_latent`** | 3256.3 | +594.0 | **+341.1** | 1697 |
+| `move_belief=both` | 3033.5 | +371.2 | +118.3 | 1686 |
+| `spread_belief` | 2987.5 | +325.1 | +72.2 | 1695 |
+
+**Two flags own ~70% of the regression, each ~13% of train time.** `cls_k=6` is a whole
+`TransformerDecoderLayer` (k=6 queries) and is the ONLY leg that also moves rollout (+6%), since it
+widens both projections. `move_belief` and `spread_belief` are CHEAP (+118 / +72 ms) and carry the
+physics corrections — they are not the problem and should not be touched for throughput.
+
+**RECOMMENDATION — the latent half is DONE (v75, 2026-08-14).** `--opp-belief-latent-coef` and the
+whole SimSiam leg are DELETED: ~13% of train time for a benefit that was explicitly unproven — the
+prior probe found species geometry decodable and concluded **decodable != helps**
+(`project_belief_latent_role_probe`) — and, decisively, the latent was **never fed forward** (an aux
+stash, never in pi/vf), so removing it removes a training signal and no capability. The
+`belief_target_slots` obs key and its per-decision env encode went with it. `cls_k=6` costs the same
+but IS read by both projections, so it wants an ABLATION (does the policy use it?) rather than
+removal on principle — still open. Together they were ~25% of train time ~= 22% of production wall;
+about half of that is now reclaimed, pending the gen-10 FPS confirmation.
+
+**Harnesses:** `tmp/split_ab.py` (+ `tmp/_split_child.py`) times `collect_rollouts` vs `train`
+separately by patching the two methods at CLASS level — instance-attribute closures make the model
+unpicklable and SubprocVecEnv/eval workers pickle it. `tmp/perflag.sh` is the per-flag ladder.
+Two traps worth remembering: argparse PREFIX MATCHING silently turned a bare `--opp-belief-latent`
+(which does not exist) into `--opp-belief-latent-coef` and ate its value; and any benchmark on this
+box is meaningless while a production run shares it.

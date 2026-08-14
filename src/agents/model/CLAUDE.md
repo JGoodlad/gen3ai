@@ -125,10 +125,11 @@ bit-identical at ANY weight — gated against a large random projection, not jus
 in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
 is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
 is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
-Under `--opp-belief-latent-coef>0` `BeliefHead` ALSO carries an asymmetric SimSiam latent predictor
-(the `latent` logits key) and `forward_internal` stashes a stop-grad `last_belief_target_latent` (the
-`pokemon_encoder` role-tokens of the true hidden mons, from the training-only `belief_target_slots` obs
-key) — also a side readout, never fed forward (leak-safe). See `designs/CHANGELOG.md` for how these landed.
+(`BeliefHead` also carried an asymmetric SimSiam **latent** predictor until v75, regressing each
+believed slot toward the stop-grad `pokemon_encoder` role-token of the true hidden mon. It is DELETED —
+it was never fed forward, its own role-geometry probe concluded decodable != helps, and it cost ~13% of
+the train step. Predicting the opponent's unrevealed mons is unaffected: the species CE, the moves BCE
+and the T0 species prior all remain. See `designs/CHANGELOG.md` for how these landed.)
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
 a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so projection dims are unchanged),
 read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains

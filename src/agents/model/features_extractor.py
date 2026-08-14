@@ -1,7 +1,7 @@
 import torch
 from torch.utils.checkpoint import checkpoint
 import numpy as np
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from gymnasium import spaces
 from typing import Callable, Dict, Any, Optional, Sequence, Tuple
 from agents.observation.constants import (
@@ -1271,15 +1271,6 @@ class BeliefHead(torch.nn.Module):
     encoded token) can be added as another key without touching the call sites — the agreed clean
     escalation path off the species+moves v1.
 
-    **Latent escalation (`latent_dim` set, `--opp-belief-latent-coef>0`).** Adds an asymmetric
-    SimSiam-style predictor MLP that maps the refined believed-slot token into the `pokemon_encoder`
-    role-token space. A cosine loss (`instrumented_ppo`) regresses it toward the STOP-GRAD encoder
-    role-token of the TRUE hidden mon — GRADED identity supervision (a "similar wall" is less wrong)
-    the hard species CE can't give, in the role geometry a representation probe found the encoder
-    amplifies ~7.5×. The discrete species head stays as the banked fallback; the predictor's asymmetry
-    + the target encoder being TASK-ANCHORED (shared `pokemon_encoder`, stop-grad) defuses collapse
-    without an EMA (a VICReg variance floor + a `latent_std` monitor are the belt-and-braces).
-
     **Species prior fusion (`species_prior_fusion`, gen3_species_prior_fusion_v1).** Every OTHER belief
     leg in this extractor fuses a PRIOR with a learned DELTA (`MoveBelief.prior_fusion`, plus the
     spread / HP-type / ability legs); the SPECIES head was the one exception — a bare
@@ -1297,7 +1288,7 @@ class BeliefHead(torch.nn.Module):
     no host round-trip, no numpy). The delta head is ZERO-INIT, so the cold-start posterior EQUALS the
     prior exactly; OFF reproduces the from-scratch head byte-for-byte."""
 
-    def __init__(self, n_species: int, n_moves: int, latent_dim: "Optional[int]" = None,
+    def __init__(self, n_species: int, n_moves: int,
                  species_prior_fusion: bool = False):
         super().__init__()
         self.norm = torch.nn.LayerNorm(D_MODEL)
@@ -1317,15 +1308,6 @@ class BeliefHead(torch.nn.Module):
             # fusion; the from-scratch (no-fusion) path keeps the default init unchanged.
             torch.nn.init.zeros_(self.species_head.weight)
             torch.nn.init.zeros_(self.species_head.bias)
-        self.latent_head = None
-        if latent_dim is not None:
-            # Asymmetric predictor (own LayerNorm → bottleneck MLP) onto the role-token space.
-            self.latent_head = torch.nn.Sequential(
-                torch.nn.LayerNorm(D_MODEL),
-                torch.nn.Linear(D_MODEL, D_MODEL),
-                torch.nn.ReLU(),
-                torch.nn.Linear(D_MODEL, latent_dim),
-            )
 
     def species_prior_logits(self, opp_species_ids: torch.Tensor,
                              opp_believed_mask: "Optional[torch.Tensor]" = None) -> torch.Tensor:
@@ -1407,8 +1389,7 @@ class BeliefHead(torch.nn.Module):
     def forward(self, their_team_out: torch.Tensor,
                 opp_species_ids: "Optional[torch.Tensor]" = None,
                 opp_believed_mask: "Optional[torch.Tensor]" = None) -> Dict[str, torch.Tensor]:
-        """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves],
-        ["latent": [B,6,latent_dim]]}. The latent key is present only when the predictor is built.
+        """their_team_out [B, 6, D] → {"species": [B,6,n_species], "moves": [B,6,n_moves]}.
         `opp_species_ids` / `opp_believed_mask` are consumed only under `species_prior_fusion`."""
         # gen3_belief_grad_mode_v1: BeliefHead is a pure readout (no reinject), so `detached` simply stops the
         # aux-supervision gradient (species/moves/latent) from reaching the trunk — train the head only.
@@ -1417,10 +1398,7 @@ class BeliefHead(torch.nn.Module):
         species = self.species_head(h)
         if self.species_prior_fusion and opp_species_ids is not None:
             species = species + self.species_prior_logits(opp_species_ids, opp_believed_mask)
-        out = {"species": species, "moves": self.moves_head(h)}
-        if self.latent_head is not None:
-            out["latent"] = self.latent_head(read)
-        return out
+        return {"species": species, "moves": self.moves_head(h)}
 
 
 class WinProbHead(torch.nn.Module):
@@ -2408,7 +2386,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
                  value_active_readout: bool = False, opp_belief_slots: bool = False,
-                 move_belief_mode: str = "off", opp_belief_latent: bool = False,
+                 move_belief_mode: str = "off",
                  damage_op: bool = False, move_prior_fusion: bool = False,
                  win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = _PRIOR_FLOOR,
@@ -2550,19 +2528,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "belief tokens fill the un-revealed opp slots, which are key-masked out of the "
                 "transformer unless the unmask flag is on. Enable --attend-unrevealed-opponents."
             )
-        # Latent-belief escalation (the BYOL/SimSiam target): adds an asymmetric predictor to
-        # BeliefHead that regresses each believed slot's refined token toward the STOP-GRAD
-        # pokemon_encoder role-token of the TRUE hidden mon (computed in forward_internal from the
-        # training-only `belief_target_slots` obs key). A state_dict change (extra predictor params),
-        # gated in check_compatible like opp_belief_slots; OFF = byte-for-byte baseline. Requires
-        # opp_belief_slots (the believed slots + BeliefHead must exist to attach the predictor).
-        self.opp_belief_latent = opp_belief_latent
-        if opp_belief_latent and not opp_belief_slots:
-            raise ValueError(
-                "opp_belief_latent=True requires opp_belief_slots=True — the latent predictor attaches "
-                "to the BeliefHead over the in-place believed slots. Enable --opp-belief-aux-coef>0 "
-                "(which turns on opp_belief_slots), or set --opp-belief-latent-coef 0."
-            )
         # gen3_species_prior_fusion_v1: fuse the TEAM-COMPOSITION species prior into the belief head, so
         # the species posterior starts at the pool base rate conditioned on the opponent's revealed mons
         # instead of ~uniform over the num axis. Two non-persistent buffers + a zero-init delta head, so
@@ -2619,17 +2584,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
         self.belief_head = (
             BeliefHead(layout['max_species'], layout['max_moves'],
-                       latent_dim=(D_MODEL if opp_belief_latent else None),
                        species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
         )
         # Stashed each forward when belief is on (the species/moves[/latent] logits dict, or None);
         # read by the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
         # backward graph as the forward that produced it (per minibatch). See instrumented_ppo.
         self.last_belief_logits: Optional[Dict[str, torch.Tensor]] = None
-        # Stashed STOP-GRAD latent target [B,6,D] (encoder role-tokens of the true hidden mons) when
-        # opp_belief_latent is on AND the privileged `belief_target_slots` key is present (training
-        # only). None otherwise. Read ONLY by the latent aux loss — NEVER fed into pi/vf (no leak).
-        self.last_belief_target_latent: Optional[torch.Tensor] = None
         # Stashed each forward [B,6] bool: which opponent team slots are un-revealed (believed) — the
         # single-sourced `ctx.opp_believed_mask`. A read-only side stash (does NOT change the forward
         # output, so the off/baseline path stays byte-identical) so eval/forensic tooling can decode
@@ -3332,26 +3292,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         """Back-compat shim — delegates to the module-level `locate_active_slot`."""
         return locate_active_slot(active_flags)
 
-    def _belief_target_role_tokens(self, ctx: ExtractorContext, target_slots: torch.Tensor) -> torch.Tensor:
-        """The latent head's regression TARGET: run the model's OWN `pokemon_encoder` over a privileged
-        12-slot block = [live our-team, true hidden-opp-team] and return the opp-half role tokens
-        [B, 6, D], DETACHED.
-
-        SimSiam stop-grad: the target encoder IS the shared, task-anchored `pokemon_encoder` (no EMA,
-        no collapse — the main losses keep Aero≠Blissey distinct). `target_slots` [B,6,POKEMON_FULL_DIM]
-        are the env's fresh per-mon identity encodes (PAD slots zeros). The live ctx supplies the
-        context (global / matchups / masks); a believed opp slot's live matchups are already neutral
-        (it is hidden), so its target role-token is a clean identity encode. The result is read ONLY by
-        the latent aux loss — it is never concatenated into pi/vf, so the privileged future cannot
-        reach the policy/value output (leak-safe)."""
-        our_part = ctx.pokemon_part[:, :TEAM_SIZE, :]                      # [B, 6, FULL] live our team
-        priv_part = torch.cat([our_part, target_slots.to(our_part.dtype)], dim=1)   # [B, 12, FULL]
-        ids = slice_pokemon_categoricals(priv_part, self.layout)
-        priv_ctx = replace(ctx, pokemon_part=priv_part, **ids)
-        with torch.no_grad():
-            priv_role = self.pokemon_encoder(priv_ctx, self.embeddings)   # [B, 12, D]
-        return priv_role[:, TEAM_SIZE:, :].detach()                       # [B, 6, D] opp half (targets)
-
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the
         pointer stash / the prober). Under `label_only` this is a STOP-GRAD copy — gen3_belief_label_only_v1.
@@ -3779,20 +3719,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.belief_head(their_team_out, ctx.species_ids[:, TEAM_SIZE:], ctx.opp_believed_mask)
             if self.belief_head is not None else None
         )
-        # Latent-belief target: the STOP-GRAD pokemon_encoder role-tokens of the TRUE hidden mons,
-        # computed only when the latent head is on AND the privileged `belief_target_slots` key is in
-        # the obs (training only; absent in the __init__ dummy forward + eval/inference). A side branch
-        # — its result is stashed for the loss and NEVER concatenated into pi/vf, so the future cannot
-        # reach the policy/value output.
-        # Gated on torch.is_grad_enabled() so the second pokemon_encoder pass runs ONLY in the
-        # backward-needing path (train()'s evaluate_actions), where the latent loss consumes it — not
-        # during no-grad rollout/eval/inference action selection (a free per-step saving; the same
-        # is_grad_enabled gate the grad-checkpointing path uses).
-        self.last_belief_target_latent = None
-        if self.opp_belief_latent and self.belief_head is not None and torch.is_grad_enabled():
-            target_slots = obs.get("belief_target_slots")
-            if target_slots is not None:
-                self.last_belief_target_latent = self._belief_target_role_tokens(ctx, target_slots)
         # (The move belief, the spread/HP-type legs and the DamageOperator all ran PRE-transformer —
         # gen3_tiered_pipeline_v1. `damage_block` and `last_move_belief_logits` were set there and
         # there only; there is no second call site to skip.)

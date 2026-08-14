@@ -1942,7 +1942,7 @@ def test_arch_toggles_from_model_extracts_flags():
     # Note: the fe attribute for the damage op is `damage_op_enabled`, the emitted key is `damage_op`.
     fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
                                opp_belief_slots=True, value_active_readout=False,
-                               move_belief_mode="revealed", opp_belief_latent=True,
+                               move_belief_mode="revealed",
                                damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
                                move_latent=True, move_prior_fusion=True,
                                win_prob_mode="read_only",

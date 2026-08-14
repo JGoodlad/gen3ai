@@ -32,7 +32,7 @@ per-slot override re-enters that shape and must not be added without a compile g
 
 Leak-safe by construction: the inputs are the revealed nums and the hidden-slot mask — the same two
 tensors `MoveBelief.move_logits` takes. The true opponent team reaches the model only as a training
-TARGET via `belief_target_slots`, and is not read here.
+LABEL (`belief_species` / `belief_moves`), read by the aux loss and never here.
 """
 from typing import Optional
 
