@@ -499,7 +499,7 @@ from typing import Any, Dict, List
 #   clear error rather than popping the key — `move_belief_prefuse` changed no weight shape, so a
 #   silent pop would load a post-ordering checkpoint into a pre-ordering forward with nothing
 #   downstream able to notice.
-MODEL_CONFIG_VERSION = 72
+MODEL_CONFIG_VERSION = 74
 
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
@@ -1187,6 +1187,18 @@ class ModelVersion:
     # unrevealed-defender damage number changes, so a resume may not flip it — hence the dedicated
     # check below rather than reliance on a shape mismatch that would never fire.
     t0_species_prior: bool = False
+
+    # v73 (gen3_intent_grad_mode_v1): whether alpha/beta's gradient reaches the shared trunk.
+    # "detached" = pure supervision (a null indicts the head); "shaping" = the intent objective also
+    # shapes the representation. No weight shapes change, so nothing else would ever catch a flip —
+    # and a flip mid-run silently changes WHAT THE TRUNK IS BEING TRAINED TO DO.
+    opp_intent_grad_mode: str = "detached"
+
+    # v74 STRUCTURAL (gen3_intent_value_reduce_v1, step 6): alpha-weighted expected incoming threat
+    # appended to the critic's features. WIDENS vf_projection, so unlike the other intent toggles a
+    # mismatch WOULD be shape-caught — the check is here anyway so the failure names the cause
+    # instead of surfacing as an opaque size error deep in a load.
+    intent_value_reduce: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1434,6 +1446,14 @@ class ModelVersion:
             ),
             t0_species_prior=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("t0_species_prior", False)
+            ),
+            opp_intent_grad_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "opp_intent_grad_mode", "detached")
+            ),
+            intent_value_reduce=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "intent_value_reduce", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -1898,6 +1918,22 @@ class ModelVersion:
         # species_prior_fusion below — this compare is the ONLY thing that can reject a mid-run flip.
         # Nothing about the shapes would ever complain, while every unrevealed-defender damage number
         # the policy and critic were trained against would silently change under them.
+        # gen3_intent_grad_mode_v1 (v73): flipping this mid-run changes what the shared trunk is
+        # being trained to do, with no shape anywhere to notice.
+        if self.intent_value_reduce != saved.intent_value_reduce:
+            raise ModelVersionError(
+                f"intent_value_reduce mismatch: saved={saved.intent_value_reduce}, "
+                f"current={self.intent_value_reduce}.\n"
+                "Step 6 widens the critic's pre-projection features, so it is fixed for a run's "
+                "lifetime.\nResume with the matching --intent-value-reduce, or start a fresh run."
+            )
+        if self.opp_intent_grad_mode != saved.opp_intent_grad_mode:
+            raise ModelVersionError(
+                f"opp_intent_grad_mode mismatch: saved={saved.opp_intent_grad_mode!r}, "
+                f"current={self.opp_intent_grad_mode!r}.\n"
+                "Whether the opponent-intent objective shapes the trunk is fixed for a run's "
+                "lifetime.\nResume with the matching --opp-intent-grad-mode, or start a fresh run."
+            )
         if self.t0_species_prior != saved.t0_species_prior:
             raise ModelVersionError(
                 f"t0_species_prior mismatch: saved={saved.t0_species_prior}, "
@@ -2684,4 +2720,12 @@ def _migrate_config(data: dict) -> dict:
         # every older config; OFF reproduces the static-usage-prior physics byte-for-byte.
         data.setdefault("t0_species_prior", False)
         data["config_version"] = 72
+    if version < 73:
+        # v73: gen3_intent_grad_mode_v1 — every older run was pure supervision.
+        data.setdefault("opp_intent_grad_mode", "detached")
+        data["config_version"] = 73
+    if version < 74:
+        # v74: gen3_intent_value_reduce_v1 — step 6. Absent on every older config.
+        data.setdefault("intent_value_reduce", False)
+        data["config_version"] = 74
     return data

@@ -47,7 +47,8 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # gen3_arch_constants_v1: the architecture constants now live in `arch_constants.py` so
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
-from agents.model.arch_constants import (  # noqa: F401  (re-export
+from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
+      # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
     ROLE_TOKEN_SIZE,
@@ -1895,6 +1896,7 @@ class HPTypeBelief(torch.nn.Module):
 # historical import path still resolves (the prober, model_version, snapshot and the tests all do
 # `from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_*`).
 from agents.model.t0_species import T0SpeciesPrior
+from agents.model.intent_value_reduce import IntentValueReduce
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     _COND_BRN_IDX,
@@ -2373,6 +2375,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  seed_quantile: bool = False, value_threat_inject: bool = False,
                  opp_intent: bool = False, species_prior_fusion: bool = False,
                  t0_species_prior: bool = False,
+                 opp_intent_grad_mode: str = "detached",
+                 intent_value_reduce: bool = False,
                  damage_topk_k: int = 0,
                  damage_candidate_k: int = 0,
                  entity_topk_seats: int = 0,
@@ -2518,6 +2522,33 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # is computed against a different distribution. Independent of `species_prior_fusion`: that
         # flag fuses the prior into the T2 aux READOUT, this one feeds the T1 physics, and either is
         # useful without the other.
+        # gen3_intent_value_reduce_v1 (step 6). Requires BOTH operands to exist, and both
+        # requirements are fail-loud rather than silently degrading: no alpha => nothing to weight
+        # with; no op => nothing to weight. `stash_pair_cells` is what makes the op keep the
+        # un-reduced tensor at all, so an off run pays nothing.
+        # Declared BEFORE the projection-discovery forward, which runs while `alpha_head` is still
+        # unbuilt. Without this the discovery pass raises AttributeError on a name that does not
+        # exist yet — the term's WIDTH must be measurable before alpha exists, even though its VALUE
+        # cannot be.
+        self.last_alpha_logits: Optional[torch.Tensor] = None
+        self._intent_reduce_discovering = False
+        self.intent_value_reduce = None
+        if intent_value_reduce:
+            self.intent_value_reduce = IntentValueReduce(
+                TEAM_SIZE, _INTENT_CELL_FEATURES, INTENT_VALUE_REDUCE_DIM)
+            if not opp_intent:
+                raise ValueError(
+                    "intent_value_reduce=True requires opp_intent=True — the reduction is WEIGHTED "
+                    "BY alpha, and with no alpha head there is no distribution to weight with.")
+            if not damage_op:
+                raise ValueError(
+                    "intent_value_reduce=True requires damage_op=True — it reduces the operator's "
+                    "un-reduced per-(our mon, believed move) cells, which nothing else produces.")
+        if opp_intent_grad_mode not in ("detached", "shaping"):
+            raise ValueError(
+                f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
+                f"{opp_intent_grad_mode!r}")
+        self.opp_intent_grad_mode = opp_intent_grad_mode
         self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
                                  if t0_species_prior else None)
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
@@ -2727,6 +2758,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
+        # gen3_intent_value_reduce_v1 (step 6): ask the op to KEEP its un-reduced cells. Set here,
+        # after the op exists, because the flag lives on the op but is owned by a consumer built
+        # before it. Without this the consumer sees `last_pair_cells is None` and — by design —
+        # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
+        if self.intent_value_reduce is not None:
+            self.damage_op.stash_pair_cells = True
         # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
         if self.value_threat_inject:
             _built = self.damage_op.pair_reducer.extra_dim
@@ -3042,9 +3079,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # Discover the policy/value projection-input dims via a dummy forward through the
         # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).
+        self._intent_reduce_discovering = True
         with torch.no_grad():
             dummy_obs = torch.zeros((1, layout['total_dim']))
             pi_sample, vf_sample = self.forward_internal({"observation": dummy_obs})
+            self._intent_reduce_discovering = False
             self.projection_input_dim = pi_sample.shape[1]
             self.value_projection_input_dim = vf_sample.shape[1]
 
@@ -3642,8 +3681,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 raise RuntimeError(
                     "opp_intent is on but the E4 seat builder stashed no candidate selection — "
                     "alpha's seats and its move-num labels would come from different selections.")
-            _seat_feats = _seat_out[:, 4:4 + _K, :].detach()                       # [B,K,D]
-            _ictx = torch.cat([our_team_pooled, their_team_pooled], dim=-1).detach()
+            # gen3_intent_grad_mode_v1. `detached` (default) keeps alpha/beta pure SUPERVISION:
+            # a null then says "the head cannot predict the opponent", not "predicting the opponent
+            # perturbed the policy" — two very different findings, and the detach is what keeps
+            # them apart. `shaping` lets the intent gradient into the trunk, which is the regime
+            # step 6 needs (a reduction weighted by alpha is only as good as alpha's read of THIS
+            # board) and buys the opposite risk: the aux objective can now fight the RL one. That
+            # is why `grad/opp_intent_policy_cosine` ships WITH this flag rather than after it — a
+            # persistently negative cosine means the two objectives disagree about the trunk, and
+            # without the number a shaping run would just look like a slow one.
+            _keep = self.opp_intent_grad_mode == "shaping"
+            _seat_feats = _seat_out[:, 4:4 + _K, :]                                # [B,K,D]
+            _ictx = torch.cat([our_team_pooled, their_team_pooled], dim=-1)
+            if not _keep:
+                _seat_feats, _ictx = _seat_feats.detach(), _ictx.detach()
             _seat_nums = _cand[0]                                                  # [B,K] move NUMS
             self.last_alpha_seat_nums = _seat_nums.detach()
             self.last_alpha_logits = self.alpha_head(
@@ -3729,6 +3780,32 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_seed_quantile_preds = self.seed_quantile_head(_seeds)
         else:
             self.last_seed_quantile_preds = None
+        # gen3_intent_value_reduce_v1 (STEP 6): alpha finally CONSUMED. Applied HERE — after the
+        # assembler — because it is the first point where both operands exist: the op's un-reduced
+        # cells (T1) and alpha (T2, scored from the seats and pools the op precedes). Added to the
+        # VALUE half only, through a zero-init projection, so `pi` is untouched at ANY weight rather
+        # than merely at init.
+        if self.intent_value_reduce is not None:
+            _cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
+            if self._intent_reduce_discovering and (_cells is None
+                                                    or self.last_alpha_logits is None):
+                # Construction-time width probe only: alpha does not exist yet, so contribute a
+                # correctly-shaped ZERO rather than a value. Deliberately NOT a fallback at
+                # runtime — see the raise below, which must stay reachable.
+                _pi, _vf = out
+                return (_pi, torch.cat(
+                    [_vf, _vf.new_zeros(_vf.shape[0], INTENT_VALUE_REDUCE_DIM)], dim=1))
+            if _cells is None or self.last_alpha_logits is None:
+                raise RuntimeError(
+                    "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
+                    "produced no logits — the term would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT.")
+            _pi, _vf = out
+            # CONCAT rather than add: the value half's width is auto-discovered by a dummy forward
+            # in __init__, so a fixed-width extra part is measured correctly; an additive term would
+            # need to match a width that does not exist yet at construction time.
+            out = (_pi, torch.cat([_vf, self.intent_value_reduce(
+                self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)], dim=1))
         return out
 
     def forward(self, obs):

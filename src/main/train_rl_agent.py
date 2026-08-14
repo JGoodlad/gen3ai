@@ -383,6 +383,8 @@ def _run_arch_toggles(args) -> dict:
         opp_intent=bool(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
         species_prior_fusion=bool(getattr(args, 'species_prior_fusion', False)),
         t0_species_prior=bool(getattr(args, 't0_species_prior', False)),
+        opp_intent_grad_mode=str(getattr(args, 'opp_intent_grad_mode', 'detached') or 'detached'),
+        intent_value_reduce=bool(getattr(args, 'intent_value_reduce', False)),
         value_dist_bins=args.value_dist_bins,
         value_dist_vmin=args.value_dist_vmin,
         value_dist_vmax=args.value_dist_vmax,
@@ -1377,6 +1379,31 @@ async def main():
                              "steps (so long-lived workers track the moving policy). Default 500k.")
     parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
                         type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
+    parser.add_argument("--intent-value-reduce", "--intent_value_reduce",
+                        dest="intent_value_reduce", action=BoolFlag, default=None,
+                        help="STEP 6 (gen3_intent_value_reduce_v1): CONSUME alpha. Reduces the "
+                             "operator's un-reduced per-(our mon, believed move) cells by alpha "
+                             "into an expected-incoming-threat row per mon, appended to the "
+                             "CRITIC's features through a zero-init projection. The op itself is "
+                             "untouched (still hard-max) — alpha is scored downstream of it and "
+                             "cannot weight its internal reduction. Requires --opp-intent-coef>0 "
+                             "and --damage-op. STRUCTURAL, version-checked.")
+    parser.add_argument("--opp-intent-grad-mode", "--opp_intent_grad_mode",
+                        dest="opp_intent_grad_mode", choices=["detached", "shaping"], default=None,
+                        help="Whether alpha/beta's gradient reaches the shared trunk "
+                             "(gen3_intent_grad_mode_v1). 'detached' (default) = pure supervision, "
+                             "so a null indicts the HEAD rather than the policy. 'shaping' lets the "
+                             "intent objective shape the representation — watch "
+                             "grad/opp_intent_policy_cosine: persistently negative means it is "
+                             "FIGHTING the RL objective for the trunk. STRUCTURAL, version-checked.")
+    parser.add_argument("--beta-setvalued-coef", "--beta_setvalued_coef",
+                        dest="beta_setvalued_coef", type=float, default=None,
+                        help="SET-VALUED partial credit for beta on switch-ins we did not believe "
+                             "(gen3_beta_setvalued_v1). Today those rows are MASKED, discarding a "
+                             "true fact: they brought a mon we had not revealed. This grades the "
+                             "coarse call -log(sum of believed-slot mass) without asserting WHICH "
+                             "member, which is the part we cannot label. Scales on top of "
+                             "--opp-intent-coef. 0.0 = OFF (byte-identical). Training-only.")
     parser.add_argument("--opp-intent-coef", "--opp_intent_coef", dest="opp_intent_coef",
                         type=float, default=0.0,
                         help="OPPONENT-INTENT aux (gen3_opp_intent_v1, v67): supervise ALPHA — a "
@@ -2079,6 +2106,9 @@ async def main():
     _resolve("seed_quantile_coef", 0.0)        # v63 training-only coef; the HEAD itself is structural
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
+    _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
+    _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
+    _resolve("intent_value_reduce", False)     # v74 structural, version-checked (step 6)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
@@ -3743,6 +3773,7 @@ async def main():
         # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
         model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
+        model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)
@@ -3995,6 +4026,7 @@ async def main():
         # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
         model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
+        model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
         if args.value_seed_vicreg_coef > 0.0:
             from agents.model.seed_vicreg import assert_seed_vicreg_wirable
             assert_seed_vicreg_wirable(model.policy)

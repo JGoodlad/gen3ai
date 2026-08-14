@@ -46,3 +46,9 @@ TRANSFORMER_FFN_DIM = 256
 # (seed_diagnostics.py) and the pre-registered VICReg trigger.
 VALUE_SEED_K = 4
 VALUE_SEED_DIM = 64
+
+# gen3_intent_value_reduce_v1 (step 6): the alpha-weighted threat term appended to the CRITIC's
+# pre-projection features. `_INTENT_CELL_FEATURES` is the F axis of the operator's un-reduced
+# `cells_pr` stack (low/high/crit/ko_ramp/acc/phys_mask) — change one and the other must follow.
+INTENT_VALUE_REDUCE_DIM = 64
+_INTENT_CELL_FEATURES = 6

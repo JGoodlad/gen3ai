@@ -364,6 +364,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # is a structural version-checked toggle, so an off run builds no module at all.
     seed_quantile_coef: float = 0.0
     opp_intent_coef: float = 0.0
+    # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
+    # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
+    # 0.0 = OFF and the loss is byte-identical; training-only, resume-mutable (no module changes).
+    beta_setvalued_coef: float = 0.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
@@ -1652,6 +1656,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # (the env can only see their turn-t action while building the obs for t+1), so the
                 # buffer's label block was shifted back by one — and pairs spanning an episode
                 # boundary DROPPED — before `get()` shuffled it. See `align_labels_to_predictions`.
+                # Initialised HERE, not beside the other `*_term` locals ~370 lines below:
+                # the intent block runs FIRST in this minibatch, so a later `= None` would wipe it
+                # and the gradient probe would silently see no intent term.
+                opp_intent_term = None
                 if self.opp_intent_coef > 0.0:
                     _al = getattr(self.policy.features_extractor, "last_alpha_logits", None)
                     _bl = getattr(self.policy.features_extractor, "last_beta_logits", None)
@@ -1683,7 +1691,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                                         "last_belief_logits", None)
                         if _sp is not None and _bel is not None and _blog is not None \
                                 and "species" in _blog:
-                            from agents.model.opp_intent import resolve_believed_slot_by_content
+                            from agents.model.opp_intent import (resolve_believed_slot_by_content,
+                                                                set_valued_switch_loss)
                             _content = resolve_believed_slot_by_content(
                                 _blog["species"].detach(), _bel.float(),
                                 _sp.long().flatten())
@@ -1703,6 +1712,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         else:
                             oi_extra_believed = 0.0
                             oi_wanted_content = 0.0
+                            # Defined on BOTH paths: the set-valued term below reads them, and a
+                            # name that exists on only one branch is a NameError waiting for the
+                            # first run whose belief head is off.
+                            _content = None
+                            _need = None
                         # beta v1 supervises only switch-ins the head could actually POINT AT.
                         # The label's slot is resolved on the board at t+1; the logits come from the
                         # board at t. A mon UNREVEALED at t has no addressable slot there, so its
@@ -1714,6 +1728,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             _safe = _btgt.clamp(min=0, max=_bl.shape[-1] - 1)
                             _reach = th.isfinite(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
                             _btgt = th.where(_reach, _btgt, th.full_like(_btgt, INTENT_IGNORE))
+                        # SET-VALUED partial credit for a switch to a mon we did not believe.
+                        # These rows are the ones `_content` could not name, so today they are
+                        # dropped entirely — yet they carry a true fact (`they brought someone
+                        # UNSEEN`) that beta should be graded on. Off (coef 0.0) leaves the loss
+                        # byte-identical.
+                        _sv, oi_m_extra_rows = None, 0.0
+                        if self.beta_setvalued_coef > 0.0 and _bl is not None \
+                                and _bel is not None and _need is not None \
+                                and _content is not None:
+                            _miss = _need & (_content < 0)
+                            _sv = set_valued_switch_loss(_bl, _bel.float(), _miss)
+                            oi_m_extra_rows = float(_miss.float().sum())
                         _ocls = _obs.get("opp_class")
                         oi_loss, oi_m = intent_losses(
                             _al, _atgt, _bl, _btgt,
@@ -1736,7 +1762,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         if oi_wanted_content > 0:
                             oi_m["opp_intent/beta_belief_miss_rate"] = (
                                 1.0 - oi_extra_believed / oi_wanted_content)
-                        loss = loss + self.opp_intent_coef * oi_loss
+                        if _sv is not None:
+                            loss = loss + self.opp_intent_coef * self.beta_setvalued_coef * _sv
+                            oi_m["opp_intent/beta_setvalued_loss"] = float(_sv.detach())
+                            oi_m["opp_intent/beta_setvalued_rows"] = oi_m_extra_rows
+                        opp_intent_term = self.opp_intent_coef * oi_loss
+                        loss = loss + opp_intent_term
                         for _ok, _ov in oi_m.items():
                             seed_vicreg_metrics.setdefault(_ok, []).append(_ov)
 
@@ -2066,6 +2097,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if pubval_term is not None:        aux_probe_terms["pubval"] = pubval_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
+                # THE FIGHT DETECTOR. Registering the intent term here is what produces
+                # `grad/opp_intent_policy_cosine` — the angle between the intent objective's pull on
+                # the shared trunk and the policy's. Under `--opp-intent-grad-mode detached` the
+                # intent gradient cannot reach the trunk at all and this reads ~0 BY CONSTRUCTION,
+                # which is the correct and expected value, not a bug. It only becomes informative
+                # under `shaping`, which is precisely when you need to know.
+                if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
                 if opd_term is not None:           aux_probe_terms["opd"] = opd_term
                 aux_on = belief_aux_on or move_belief_on or latent_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;

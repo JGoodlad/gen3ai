@@ -241,6 +241,40 @@ def info_gain_nats(logits: torch.Tensor, target: torch.Tensor) -> float:
 OPP_CLASS_NAMES = {0: "bot", 1: "pool", 2: "stable", 3: "exploiter"}
 
 
+def set_valued_switch_loss(beta_logits: torch.Tensor, believed_mask: torch.Tensor,
+                           rows: torch.Tensor) -> Optional[torch.Tensor]:
+    """`−log Σ_{j believed} p_j` over `rows` — PARTIAL CREDIT for "someone we have not seen".
+
+    The gap this closes. `β`'s target is the believed slot whose species posterior holds the mon
+    that came in (`resolve_believed_slot_by_content`). When no slot clears the floor — we did not
+    believe that mon was there — the row is MASKED and contributes nothing. But we still know
+    something true and useful about it: **they switched to a mon we had not revealed**, and `β`
+    should have put mass on the believed set rather than on the revealed bench.
+
+    A set-valued target says exactly that and no more. It grades the coarse call — *"you were right
+    that it would be someone unseen"* — without asserting which member, which is the part we
+    genuinely cannot label. Sharpening within the set is left to the species belief, whose job that
+    is; this term must not smear a fake per-slot target across it.
+
+    This is the one concrete thing the flat-11 redesign would have bought, obtained additively
+    instead: the loss is a proper log-loss on the aggregated probability of a SET, so it is the
+    same object a flat head's set-valued loss would optimize, applied to the head we already have.
+
+    Rows with no believed-AND-legal slot are dropped rather than scored: their target set is empty,
+    so `−log 0` would charge an unbounded loss for a constraint no parameter setting can satisfy.
+    Returns None when no row qualifies (the caller must not add a zero — see the NaN note in
+    `BetaSwitchHead`).
+    """
+    finite = torch.isfinite(beta_logits)
+    avail = (believed_mask > 0.5) & finite                       # [B,6] believed AND legal
+    rows = rows & (avail.sum(dim=-1) > 0)
+    if not bool(rows.any()):
+        return None
+    p = torch.softmax(beta_logits[rows].float(), dim=-1)         # illegal slots are -inf -> 0
+    mass = (p * avail[rows].float()).sum(dim=-1)
+    return -(mass.clamp_min(1e-8).log()).mean()
+
+
 def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[torch.Tensor],
                   beta_logits: Optional[torch.Tensor], beta_target: Optional[torch.Tensor],
                   opp_class: Optional[torch.Tensor] = None,
@@ -340,6 +374,23 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 # which is far from uniform — so raw accuracy flatters it. Same instrument as alpha.
                 metrics["opp_intent/beta_info_gain_nats"] = info_gain_nats(
                     beta_logits[sup], beta_target[sup])
+                # THE FALSIFIER for keeping the alpha/beta split (2026-08-13). The split imposes a
+                # HIERARCHY the game does not: it factors P(switch to j) = P(SWITCH)·P(j | SWITCH),
+                # which is exact for disjoint outcomes and therefore loses nothing IN PRINCIPLE. The
+                # way it could still cost something in PRACTICE is if beta only works when alpha has
+                # already decided — i.e. beta is riding alpha's confidence rather than reading the
+                # board. Then the hierarchy is doing harm and a flat head over the true action space
+                # gets a real argument. Bucket beta's accuracy by alpha's switch confidence: the two
+                # numbers should be COMPARABLE. A large gap is the signal to revisit the decision.
+                if alpha_logits is not None:
+                    with torch.no_grad():
+                        p_sw = torch.softmax(alpha_logits.float(), dim=-1)[:, -1]   # [B]
+                        b_ok = beta_logits[sup].argmax(dim=-1) == beta_target[sup]
+                        conf = p_sw[sup] >= 0.5
+                        for _name, _m in (("alpha_confident", conf), ("alpha_unsure", ~conf)):
+                            if int(_m.sum()) > 1:
+                                metrics[f"opp_intent/beta_acc_{_name}"] = float(
+                                    b_ok[_m].float().mean())
 
     if total is None:
         total = torch.zeros((), device=(alpha_logits.device if alpha_logits is not None

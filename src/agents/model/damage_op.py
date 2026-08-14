@@ -367,6 +367,12 @@ class DamageOperator(torch.nn.Module):
         self.reduce_how = reduce_how
         self.pair_reducer = build_pair_reducer(reduce_how, n_channels=_PAIR_REDUCE_N_CHANNELS)
         self.last_reduced_extra: Optional[torch.Tensor] = None
+        # Step 6's seam: the UN-reduced [B,6,C,F] cells + their alive/has-opp gate, stashed only
+        # when a downstream alpha consumer asked for them. Off => None and zero extra work.
+        self.stash_pair_cells: bool = False
+        self.last_pair_cells: Optional[torch.Tensor] = None
+        self.last_topk_cand_idx: Optional[torch.Tensor] = None
+        self.last_pair_gate: Optional[torch.Tensor] = None
         # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
         # moves (0 = the full ~400-wide sweep, byte-identical). No tail-risk bound — the truncated
         # mass is simply dropped, which is the tradeoff under test.
@@ -1374,6 +1380,11 @@ class DamageOperator(torch.nn.Module):
         # the REAL move-num. None ⇒ no truncation ⇒ the reduced index IS the move-num.
         real_idx = topk_idx if cand_nums is None else cand_nums.gather(-1, topk_idx)   # [B,K] move-nums
         self.last_topk_idx = real_idx.detach()                                     # prober: exact move names
+        # The CANDIDATE-AXIS index (not the move num) — what a consumer must gather with to line a
+        # [B,J,C,F] cells tensor up with alpha's K seats. `last_topk_idx` holds move NUMS, which
+        # name the seats but cannot index the candidate axis; using it as an index would silently
+        # read the wrong columns.
+        self.last_topk_cand_idx = topk_idx.detach()
         self.last_topk_w = w_topk.detach()
         # --- per-move header: latent (→ MoveLatentEncoder grad) + belief + accuracy + is_phys + effect + secondary ---
         latent_topk = move_latent_all[real_idx]                                    # [B,K,32] differentiable
@@ -2791,14 +2802,28 @@ class DamageOperator(torch.nn.Module):
         # tensors the hard max just reduced — [low, high, crit, ko, acc, is_phys] per (j, c) — plus
         # the belief w, and stash their per-defender rows. None (production 'hard_max') skips
         # entirely; nothing below this block changes at any `reduce_how`.
-        if self.pair_reducer is not None:
+        # gen3_intent_value_reduce_v1 (step 6): the SAME un-reduced cells the pair-reducer consumes
+        # are stashed so a LATER tier can reduce them by alpha. This is the only shape step 6 can
+        # take: alpha is scored from the E4 seats and the CLS pools, both computed DOWNSTREAM of
+        # this operator, so it cannot weight a reduction that happens here — the design doc's
+        # "swap `_chan_max`'s how=" is unbuildable for that reason, not for want of a knob.
+        # Stashing is free (no math, no gradient path) and the op's own reduction is untouched.
+        if self.pair_reducer is not None or self.stash_pair_cells:
             cells_pr = torch.stack([
                 low_frac, high_frac, crit_frac, ko_ramp,
                 acc_exp, phys_mask.expand(-1, TEAM_SIZE, -1)], dim=-1)                            # [B,6,C,6]
-            self.last_reduced_extra = (self.pair_reducer(w_all, cells_pr)
-                                       * defender_alive[:, :, None] * has_opp[:, None, None])
+            _gate = defender_alive[:, :, None] * has_opp[:, None, None]
+            # The alignment CANNOT happen here: `cells_pr`'s C axis is the FULL candidate move
+            # space, alpha's seats are the TOP-K, and the top-K index is not computed until
+            # `_incoming_matrix` runs further down this same forward. Hold the raw cells and align
+            # after it — pairing the two axes positionally would mis-weight every term while every
+            # shape check still passed (`op move-order` bug class).
+            _pr_cells_raw, _pr_gate_raw = (cells_pr, _gate) if self.stash_pair_cells else (None, None)
+            self.last_reduced_extra = ((self.pair_reducer(w_all, cells_pr) * _gate)
+                                       if self.pair_reducer is not None else None)
         else:
             self.last_reduced_extra = None
+            self.last_pair_cells = self.last_pair_gate = None
 
         # gen3_op_block_trim_v1: the opp-active-level believed-EFFECT scalars (6) and per-STATUS SECONDARY
         # scalars (10) that used to sit here are DELETED. Both were belief-weighted maxes with NO DEFENDER
@@ -2844,6 +2869,22 @@ class DamageOperator(torch.nn.Module):
             block = torch.cat([block, self._incoming_matrix(
                 ctx, w_all, low_frac, high_frac, crit_frac, ko_ramp, acc_all, phys_all, move_latent_all,
                 has_opp, defender_alive, self.matrices_incoming_k, cand_nums=cand_nums)], dim=1)  # [B, out_dim]
+        # gen3_intent_value_reduce_v1 (step 6): NOW the top-K candidate index exists, so the held
+        # cells can be gathered onto alpha's seat axis. Done in the op because the op owns both
+        # objects; a consumer doing it would be guessing at an internal ordering.
+        if self.stash_pair_cells and _pr_cells_raw is not None:
+            _ci = self.last_topk_cand_idx
+            if _ci is None:
+                raise RuntimeError(
+                    "stash_pair_cells is on but no top-K candidate index was recorded — the cells "
+                    "cannot be aligned to alpha's seats. Step 6 requires damage_topk_k>0 (and the "
+                    "incoming matrix that computes it).")
+            _idx = _ci[:, None, :, None].expand(
+                _pr_cells_raw.shape[0], _pr_cells_raw.shape[1], _ci.shape[-1],
+                _pr_cells_raw.shape[-1])
+            self.last_pair_cells = _pr_cells_raw.gather(2, _idx)               # [B,J,K,F]
+            self.last_pair_gate = _pr_gate_raw
+
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
         # switch-in offense read). Appended LAST so every existing offset is untouched.
         if self.matrices_outgoing_all:

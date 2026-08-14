@@ -58,6 +58,8 @@ ARCH_ARG_KEYS: Dict[str, str] = {
     "value_threat_inject": "value_threat_inject",                           # v64
     "species_prior_fusion": "species_prior_fusion",                         # v68
     "t0_species_prior": "t0_species_prior",                                 # v72
+    "opp_intent_grad_mode": "opp_intent_grad_mode",                         # v73
+    "intent_value_reduce": "intent_value_reduce",                           # v74
 }
 
 # Kwargs that are NOT a plain attribute read. Each is a callable over `args`.

@@ -1010,6 +1010,8 @@ def current_model_version(
     opp_intent: bool = False,
     species_prior_fusion: bool = False,
     t0_species_prior: bool = False,
+    opp_intent_grad_mode: str = "detached",
+    intent_value_reduce: bool = False,
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
@@ -1083,6 +1085,8 @@ def current_model_version(
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
     ext_kwargs["t0_species_prior"] = t0_species_prior
+    ext_kwargs["opp_intent_grad_mode"] = opp_intent_grad_mode
+    ext_kwargs["intent_value_reduce"] = intent_value_reduce
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
@@ -1181,6 +1185,8 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_t0_species_prior_v1 (v72): same shape of toggle — no state_dict delta, so the
         # recorded value is the only thing a resume can compare.
         "t0_species_prior": bool(getattr(fe, "t0_species_prior", None) is not None),
+        "opp_intent_grad_mode": str(getattr(fe, "opp_intent_grad_mode", "detached")),
+        "intent_value_reduce": bool(getattr(fe, "intent_value_reduce", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),
