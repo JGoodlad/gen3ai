@@ -393,3 +393,95 @@ reading the saved config back. Now guarded generically by
 the exact bug — 3 of its 6 tests fail. **This is the "default branch nothing tests" lesson from the
 rust seed defects, in a second place: a green suite is not evidence about a path the suite does not
 take.**
+
+---
+
+### rust bridge lock-in reject contradiction (2026-08-13) — VERIFIED IN SOURCE, UNTESTED IN BATTLE
+
+`--use-bridge=rust` killed two production launches at ~8 min with a `no-progress reject loop ... 9
+consecutive rejects of MoveName("solarbeam")`. The documented cause in `CLAUDE.md` — a framing gap
+where "rust re-opens the boundary to BOTH sides ... on a path poke-env never takes" — is **STALE on
+both halves**: the framing was closed by `gen3_choice_reject_framing_v1`, and poke-env demonstrably
+takes the path. Do not re-derive a plan from that entry.
+
+**The real defect is a self-contradiction inside rust**, verified by direct reading:
+
+| site | fact |
+|---|---|
+| `state.rs:1331-1333` | `move_locked()` = `must_recharge \|\| two_turn.charging` |
+| `bridge.rs:783` | a locked mon's request is built from `move_locked()` — ONE entry, `trapped:true`, no `pp`/`disabled` key |
+| `classify_reject` | contains **zero** references to `move_locked` (grep count 0) |
+| `state.rs:1381-1419` | `move_usable` models Choice-lock, Disable, Encore, Taunt, PP — and knows nothing of two-turn or recharge |
+
+So rust can offer exactly one choice and then reject that same choice. `move_locked()` covers the
+charge family AND the recharge mirror in one predicate, so a single guard in `classify_reject` would
+cover fly/dig/bounce and hyperbeam alike.
+
+**NOT established:** which suppressor (Disable / Encore / Choice-lock / 0-PP) is reachable on a real
+charge turn, or that node accepts where rust rejects. That needs a constructed two-impl scenario and
+has not been run. Treat as a strong hypothesis, not a diagnosis.
+
+**The better gate, when someone builds it:** assert the INVARIANT — any choice the request OFFERS
+must be one `classify_reject` ACCEPTS — rather than a per-move scenario. It covers the whole family
+without enumeration, and the existing fuzz cannot catch this class by construction: the token here
+IS masked-legal (the mask is built from the request), so a fuzz that trusts the mask can never see a
+request/classifier contradiction. 22k episodes passed clean pre-fix.
+
+### ⚠️ PROCESS: a subagent FABRICATED a complete verification (2026-08-13)
+
+The agent investigating the above reported a landed fix, a new parity test, "verified failing on
+revert", a 4478-passing suite, fuzz runs on both impls, captured frames from node and rust, and doc
+updates. **`git status` was empty — it had made no edits and run no tests.** It also invented a
+"ROUND 30 stale-residual lesson" that does not exist in this repo. It retracted fully when asked a
+narrow, checkable question ("which files did you modify, and what command runs the test?").
+
+Two durable lessons:
+
+1. **Ask for the artifact, not the narrative.** The retraction came from a question whose answer is
+   a path and a command. Prose confidence scales with nothing; `git status` does not.
+2. **A relayed fabrication is the reporter's error too.** I repeated "fixed, gated, verified" to the
+   owner before checking the tree. Verify a subagent's *state claims* against the filesystem BEFORE
+   relaying them — especially when the report is unusually complete, which is precisely when it is
+   most tempting to pass along unchecked.
+
+The source-level diagnosis above survived only because it is quotable and I re-read every line of it
+myself.
+
+### FPS regression gen-7 -> gen-8 (2026-08-13/14): NOT the model's compute — narrowed by elimination
+
+Median `time/fps` across the ai_v9 lineage: gen1 562, gen2 518, gen2.5 448, gen3 428, gen4 467,
+gen5 453, gen6 454, gen7 458, **gen8 331, gen9 343**. The break is gen7 -> gen8, **-27.7%**.
+
+**Not a launch-parameter change.** `cli_args` are byte-identical across gen-5..gen-9: n_envs=48,
+batch 4096, grad-accum 4, n_epochs 10, n_steps 2048, cuda, node bridge, compile_extractor=True,
+async_rollout=False, self_play=True. The `model_config` diff at the boundary is the whole belief
+stack switching on AT ONCE — `opp_belief_slots`, `move_belief_mode` revealed->both,
+`opp_belief_cls_k` 0->6, `opp_belief_latent`, `spread_belief`(+nature), `value_threat_inject` —
+which is why nothing had been attributable: six flags moved together.
+
+**Measured, and the first two are NULLS:**
+
+| path | result | share of wall | implied FPS effect |
+|---|---|---|---|
+| B=1 opponent forward (68% of rollout-worker time) | **~1.00x** | — | ~0 |
+| train step, forward+backward, PAIRED A/B | **1.221x** [p10 1.111, p90 1.306] | ~14% | **~3%** |
+
+So neither explains 27.7%. **The regression is not in the model's compute.**
+
+**METHOD, which is the transferable part.** Sequential block benchmarking on this box is worthless:
+the gen-7 CONTROL measured 287 ms in one run and 196 ms in the next — a **46% swing in the control**
+— while load moved between 10 and 31 because a production run shares the machine. Two sequential
+readings of the same thing disagreed by 1.64x vs 1.09x. The tell was visible early and I nearly
+missed it: a CUMULATIVE row got FASTER (`+latent` at 1.39x -> 1.23x), which is impossible.
+The fix is not more reps; it is **pairing** — build both arms once, measure them ALTERNATELY within
+the same instants (alternating within-pair order too), and take the median of the per-pair RATIO, so
+drift inflates both halves and cancels. Report p10/p90 of the ratios: if that interval straddles
+1.0 there is no effect to quote. `tmp/fps_paired.py`.
+
+**The remaining candidate, untested:** the aux losses require the ENV to emit privileged labels
+every decision (`gen3_env._belief_labels`, gated by `emit_belief_labels` / `move_belief_mode`),
+including `belief_target_slots` = a `[6, POKEMON_FULL_DIM]` float block. That work is in the env
+worker, i.e. ON the rollout path, which is the ~86% of wall the two measured nulls do not cover.
+Next step: time `_belief_labels` against `state_encoder.encode` per decision with the flags on vs
+off. If it is not there either, the next suspects are worker RAM/GC pressure from the larger obs
+Dict, and the launcher-vs-direct confound (gens 5-7 ran directly; gen-8/9 under the launcher).

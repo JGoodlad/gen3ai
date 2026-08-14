@@ -1496,6 +1496,28 @@ fn classify_reject(
             if mon.must_struggle(dex) {
                 return None;
             }
+            // LOCK-IN is the same shape of substitution, and omitting it cost two production
+            // launches. When `move_locked()` (a two-turn move CHARGING, or `must_recharge`) the
+            // request builder emits a SINGLE entry with `trapped:true` and no `pp`/`disabled` key
+            // — the sim's hardLocked shape. So the request offers exactly one action. Falling
+            // through to `move_disabled` below lets the classifier REFUSE that one action, because
+            // `move_usable` models the Choice lock, Disable, Encore, Taunt and PP and knows
+            // nothing about `two_turn`/`must_recharge` (`state.rs`). Disable landing on the
+            // charging slot is enough to trip it.
+            //
+            // The failure is not a stricter parser, it is rust contradicting ITSELF: it offers X
+            // and then rejects X. poke-env re-picks from the same single-entry request, sends the
+            // same token, and `REJECT_STREAK_CAP` fires `__ERR__` — which is not in-band, so it
+            // retires the reader and crashes the whole run. Observed as "9 consecutive rejects of
+            // MoveName(\"solarbeam\")" at ~8 minutes, twice, at load 31 and at load 5 alike.
+            //
+            // A forced choice is not a refusable one. `resolve_choice` already maps the wire name
+            // to `Move(0)` for a locked mon, so the accepted path was always there; only the
+            // classifier was cutting it off. One predicate covers the charge family AND the
+            // recharge mirror, so this also closes fly/dig/bounce and hyperbeam.
+            if mon.move_locked() {
+                return None;
+            }
             // An out-of-range slot: report the number the CLIENT sent, not the internal
             // out-of-range fallback `resolve_choice` substitutes.
             if *k >= mon.set.moves.len() {

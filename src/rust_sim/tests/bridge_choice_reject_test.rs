@@ -177,3 +177,64 @@ fn a_forced_struggle_substitutes_rather_than_rejecting() {
         );
     }
 }
+
+// ---------------------------------------------------------------------------------------------
+// `gen3_locked_choice_never_rejected_v1` — the request may not offer what the classifier refuses.
+//
+// This one is NOT a framing question, which is why it survived `gen3_choice_reject_framing_v1`
+// above and then killed two production launches at ~8 minutes. It is rust contradicting ITSELF:
+//
+//   * `build_request` branches on `move_locked()` and emits a SINGLE entry with `trapped:true`
+//     and no `pp` / `disabled` key — the sim's hardLocked shape. The request offers ONE action.
+//   * `classify_reject`'s `Choice::Move` arm fell through to `move_disabled` -> `!move_usable`,
+//     which models the Choice lock, Disable, Encore, Taunt and PP and knows NOTHING about
+//     `two_turn` / `must_recharge`. So it could refuse that one offered action.
+//
+// poke-env then re-picks from the same single-entry request, sends the same token, and
+// `REJECT_STREAK_CAP` fires `__ERR__` — which is not an in-band error: it retires the reader,
+// trips `_signal_transport_dead()` and raises in every in-flight `step()`. Observed as
+// "9 consecutive rejects of MoveName(\"solarbeam\")".
+//
+// WHY THE EXISTING FUZZ CANNOT CATCH THIS CLASS: `bridge_session_fuzz_test` drives only
+// masked-LEGAL tokens — and here the token IS masked-legal, because the mask is built FROM the
+// request. A fuzz that trusts the mask can never see a request/classifier contradiction. 22k
+// episodes passed clean while this was live. So the assertion below is the INVARIANT itself
+// (offered => accepted), not a scenario that hopes to stumble into it.
+
+/// Two-turn charge user opposite a Disable carrier, so Disable can land on the charging slot.
+const LOCK_P1: &str = "Venusaur||leftovers|overgrow|solarbeam,sludgebomb,leechseed,sleeppowder|||||100|]\
+                       Snorlax||leftovers|immunity|bodyslam,earthquake,rest,curse|||||100|";
+const LOCK_P2: &str = "Umbreon||leftovers|synchronize|disable,bodyslam,toxic,rest|||||100|]\
+                       Blissey||leftovers|naturalcure|seismictoss,softboiled,toxic,icebeam|||||100|";
+
+fn lock_opts() -> BattleOptions {
+    BattleOptions {
+        format_id: "gen3customgame".to_string(),
+        seed: Some("7,11,13,17".to_string()),
+        p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(LOCK_P1.to_string()) },
+        p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(LOCK_P2.to_string()) },
+    }
+}
+
+#[test]
+fn a_move_locked_mon_is_never_rejected_for_its_only_offered_move() {
+    let dex = Dex::for_gen(3);
+    let mut s = BridgeSession::new_construct_turn0(&lock_opts(), &dex).expect("session");
+    // Turn 1: Venusaur starts charging Solar Beam; Umbreon Disables.
+    s.feed_cmd(mv(0, 0), &dex);
+    s.feed_cmd(mv(1, 0), &dex);
+    assert!(!s.is_ended(), "fixture faulted: battle ended before the locked boundary");
+
+    // Turn 2: the mon is LOCKED, so its request offers exactly one move. Send it.
+    let before = s.chunks().chunks.len();
+    s.feed_cmd(mv(0, 0), &dex);
+    s.feed_cmd(mv(1, 1), &dex);
+    let p1 = since(&s, 0, before).join("\n");
+
+    assert!(
+        !p1.contains("[Unavailable choice]") && !p1.contains("[Invalid choice]"),
+        "a move-LOCKED mon was rejected for the ONLY move its own request offered — the \
+         request/classifier contradiction that wedges a whole run:\n{p1}"
+    );
+    assert!(s.fatal().is_none(), "the locked boundary raised __ERR__: {:?}", s.fatal());
+}

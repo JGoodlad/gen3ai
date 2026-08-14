@@ -376,24 +376,46 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         nodes.append(_node(f"obs.{name}", "obs_group", offset=sl.start,
                            width=sl.stop - sl.start, parent=f"obs.{parent}", stage="T0", leaf=leaf))
 
-    nodes.append(_node("obs_unpack", "phase", stage="T0",
+    # Phase nodes are DERIVED from the live module tree, not listed. An earlier cut hardcoded these
+    # names and their tier, which would have kept drawing a structure that no longer existed the
+    # moment anyone renamed a submodule — precisely the rot a generated artifact exists to prevent.
+    # Now: the attribute must be a real child of the live `PokemonEncoder`, and the tier is read
+    # from `tier_contract.TIER_OF` rather than asserted, so the graph and the enforced tier ordering
+    # cannot disagree.
+    from agents.model.tier_contract import TIER_OF, UNTIERED_CHILDREN
+
+    def _tier(owner: str) -> str:
+        """The stage label, read from the enforced contract — never asserted here.
+
+        `pre-T0` is not a fudge: `unpack` is DELIBERATELY in `UNTIERED_CHILDREN` because it
+        "produces the tier-0 INPUT, ahead of every tier". Distinguishing that from an unknown
+        module matters — an unrecognised owner should look wrong, and a deliberately untiered one
+        should not.
+        """
+        t = TIER_OF.get(owner)
+        if t is not None:
+            return f"T{t}"
+        return "pre-T0" if owner in UNTIERED_CHILDREN else "UNDECLARED"
+
+    nodes.append(_node("obs_unpack", "phase", stage=_tier("unpack"),
                        note="stateless; peels the flat vector into the ExtractorContext tensors"))
-    # PokemonEncoder's three internal stages. These are separate MODULES with separate weights and
-    # the collapsed single node hid the move pathway entirely — which is where the per-move features
-    # that the pointer head ultimately scores are actually built.
-    for nid, note in (
-        ("pokemon_encoder.move_processor",
-         "shared MLP over EVERY move slot (MOVE_NET_HIDDEN)"),
-        ("pokemon_encoder.move_self_attn",
-         "within-Pokemon move attention (MHA + LayerNorm residual)"),
-        ("pokemon_encoder.role_encoder",
-         "ROLE_ENCODER_HIDDEN MLP -> the 12 role tokens"),
+    _pe = fe.pokemon_encoder
+    for attr, note in (
+        ("move_network", "shared MLP over EVERY move slot (MOVE_NET_HIDDEN)"),
+        ("move_self_attn", "within-Pokemon move attention (MHA + LayerNorm residual)"),
+        ("role_encoder", "ROLE_ENCODER_HIDDEN MLP -> the 12 role tokens"),
     ):
-        nodes.append(_node(nid, "phase", stage="T0", note=note))
-    edges.append(_edge("obs_unpack", "pokemon_encoder.move_processor", "content",
+        if not hasattr(_pe, attr):
+            raise AssertionError(
+                f"PokemonEncoder has no `{attr}` — the delivery graph names a submodule that no "
+                "longer exists. Update the phase list rather than letting the picture describe a "
+                "structure the code does not have.")
+        nodes.append(_node(f"pokemon_encoder.{attr}", "phase",
+                           stage=_tier("pokemon_encoder"), note=note))
+    edges.append(_edge("obs_unpack", "pokemon_encoder.move_network", "content",
                        layout["move_slot_dim"] if "move_slot_dim" in layout else MOVE_NET_HIDDEN[0],
                        "per-move slot width", note="per-move slots"))
-    edges.append(_edge("pokemon_encoder.move_processor", "pokemon_encoder.move_self_attn",
+    edges.append(_edge("pokemon_encoder.move_network", "pokemon_encoder.move_self_attn",
                        "content", MOVE_NET_HIDDEN[-1], "MOVE_NET_HIDDEN[-1]"))
     edges.append(_edge("pokemon_encoder.move_self_attn", "pokemon_encoder.role_encoder",
                        "content", MOVE_NET_HIDDEN[-1], "MOVE_NET_HIDDEN[-1]"))

@@ -517,11 +517,24 @@ tree + binary 2026-08-04). Kept as history because the *coverage-hole lesson* is
   reason + child stderr tail immediately. (And `race_trace.dump_recent()` is a no-op unless
   `GEN3_RACE_TRACE=1`; an empty dump means the buffer was off, not that nothing happened.)
 
-  **Two honest gaps, allowlisted and printed by both harnesses, never silent:** (1) a CHOICE-REJECT
-  (an explicit move the request marks `disabled`, or a switch into a fainted slot) emits no
-  `|error|` frame and re-opens the boundary to BOTH sides where node re-asks only the offending
-  side — a pre-existing `bridge.rs` gap on a path poke-env never takes, reconciled only when every
-  log chunk is byte-equal; (2) `pre_state` volatile NAMES are reconstructed from the port's typed
+  **⚠️ The old CHOICE-REJECT allowlist entry was FALSE ON BOTH HALVES and is DELETED — do not
+  re-derive a plan from it.** It claimed rust "emits no `|error|` frame and re-opens the boundary to
+  BOTH sides ... on a path poke-env never takes". The framing half was closed by
+  `gen3_choice_reject_framing_v1` (the entry survived its own fix); the "never takes" half was
+  falsified by poke-env taking it and killing **two production launches** at ~8 minutes. The real
+  defect was `gen3_locked_choice_never_rejected_v1`: a MOVE-LOCKED mon (two-turn charging, or
+  `must_recharge`) gets a single-entry request with `trapped:true`, and `classify_reject` — which
+  never consulted `move_locked()` — could then REFUSE the only move that request offered, because
+  `move_usable` models Choice-lock/Disable/Encore/Taunt/PP and knows nothing of lock-in. Rust
+  contradicted ITSELF; it was not a stricter parser. Fixed with a `move_locked()` early-out beside
+  the existing `must_struggle` one (same principle: **a forced choice is not a refusable one**), and
+  one predicate covers the charge family and the recharge mirror, so fly/dig/bounce and hyperbeam go
+  with it. Gated by `bridge_choice_reject_test::a_move_locked_mon_is_never_rejected_for_its_only_offered_move`
+  — VERIFIED failing on revert. **The existing fuzz cannot catch this class by construction**: it
+  drives masked-LEGAL tokens, and here the token IS masked-legal (the mask is built FROM the
+  request), so 22k episodes passed clean while it was live. **The durable lesson: an allowlist entry
+  can outlive its own fix and then mislead every reader after — including a subagent briefed from
+  it.** One honest gap remains, allowlisted and printed by both harnesses, never silent: (2) `pre_state` volatile NAMES are reconstructed from the port's typed
   fields, and the golden verifies exactly one fact about them (duration-1 volatiles must not leak
   into a move boundary — that one really did diverge and was fixed). `pre_state` has no consumer.
 

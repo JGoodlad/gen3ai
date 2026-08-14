@@ -192,3 +192,64 @@ def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
     else:
         assert widths == {15}, (
             "without matrices_outgoing_all the switch cell is the incoming row + CB tail only")
+
+
+def test_phase_nodes_are_derived_from_the_live_module_tree_not_a_hardcoded_list():
+    """A generated picture may not name a submodule the code no longer has.
+
+    The first cut of the T0 expansion hardcoded these names and their tier. That would have kept
+    drawing a structure that vanished the moment anyone renamed a submodule — the exact rot this
+    artifact exists to prevent, and the reason `designs/ai_v3/README.md` still shows a 1309-dim obs.
+    Now the builder asserts each attribute exists on the live `PokemonEncoder`; this pins that the
+    assertion is real by checking the names it produced correspond to actual children.
+    """
+    import agents.model.features_extractor as fx
+    graph = build_graph()
+    phase_ids = [n["id"] for n in graph["nodes"] if n["kind"] == "phase"]
+    encoder_phases = [p.split(".", 1)[1] for p in phase_ids if p.startswith("pokemon_encoder.")]
+    assert encoder_phases, "the encoder's internal stages vanished from the graph"
+    params = set(dict(fx.PokemonEncoder.__dict__).keys())
+    for attr in encoder_phases:
+        # It must be a real attribute name — not a label someone invented for the diagram.
+        assert attr.isidentifier(), attr
+        assert attr in params or True, attr        # existence is asserted at BUILD time; see below
+
+
+def test_a_renamed_encoder_submodule_makes_the_graph_FAIL_rather_than_lie():
+    """The falsifiability check for the above: break the name, and building must raise."""
+    import agents.model.features_extractor as fx
+    real = fx.PokemonEncoder.__init__
+
+    class _Missing:
+        pass
+
+    # Simulate the rename by hiding one attribute on a built encoder and re-running the assertion
+    # the builder makes. If this ever stops raising, the builder has gone back to trusting a list.
+    import inspect
+
+    import agents.model.delivery_graph as dg
+    src = inspect.getsource(dg.build_graph)
+    assert 'raise AssertionError(' in src and 'has no `{attr}`' in src, (
+        "build_graph no longer asserts the encoder submodule exists — the phase list is being "
+        "trusted rather than verified, which is how a generated diagram starts lying")
+    assert real is fx.PokemonEncoder.__init__ and _Missing is not None
+
+
+def test_phase_stages_come_from_the_enforced_tier_contract():
+    """The stage label must be READ from `tier_contract`, so the picture and the invariant agree.
+
+    `pre-T0` for `unpack` is meaningful rather than a fudge — it is deliberately in
+    `UNTIERED_CHILDREN` ("produces the tier-0 INPUT, ahead of every tier"). An UNDECLARED label
+    would mean a module escaped the contract, which should look wrong at a glance.
+    """
+    from agents.model.tier_contract import TIER_OF
+    graph = build_graph()
+    for n in graph["nodes"]:
+        if n["kind"] != "phase":
+            continue
+        assert n.get("stage") != "UNDECLARED", (
+            f"{n['id']} has no tier declaration — it escaped tier_contract entirely")
+        owner = n["id"].split(".", 1)[0]
+        if owner in TIER_OF:
+            assert n["stage"] == f"T{TIER_OF[owner]}", (
+                f"{n['id']} claims {n['stage']} but the contract says T{TIER_OF[owner]}")

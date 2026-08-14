@@ -4688,7 +4688,7 @@
       "width": 1113
     },
     {
-      "dst": "pokemon_encoder.move_processor",
+      "dst": "pokemon_encoder.move_network",
       "note": "per-move slots",
       "source_constant": "per-move slot width",
       "src": "obs_unpack",
@@ -4859,7 +4859,7 @@
     {
       "dst": "pokemon_encoder.move_self_attn",
       "source_constant": "MOVE_NET_HIDDEN[-1]",
-      "src": "pokemon_encoder.move_processor",
+      "src": "pokemon_encoder.move_network",
       "type": "content",
       "width": 32
     },
@@ -5271,10 +5271,10 @@
       "id": "obs_unpack",
       "kind": "phase",
       "note": "stateless; peels the flat vector into the ExtractorContext tensors",
-      "stage": "T0"
+      "stage": "pre-T0"
     },
     {
-      "id": "pokemon_encoder.move_processor",
+      "id": "pokemon_encoder.move_network",
       "kind": "phase",
       "note": "shared MLP over EVERY move slot (MOVE_NET_HIDDEN)",
       "stage": "T0"
