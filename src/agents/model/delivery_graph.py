@@ -106,6 +106,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     seats = fe.entity_seats
     T = fx.TEAM_SIZE
     D = fx.D_MODEL
+    MOVE_NET_HIDDEN = fx.MOVE_NET_HIDDEN
+    N_HP_TYPES = 16                                  # the typed-Hidden-Power axis
 
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
@@ -346,6 +348,92 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            label_key=label,
                            note="privileged label; never enters the forward"))
 
+    # ---------------------------------------------------------------- T0: the front of the pipeline
+    # Until now this graph began at the ROLE TOKENS and everything upstream collapsed into a handful
+    # of auto-created `input` pseudo-nodes — 4 nodes for the entire obs -> encoder -> belief stack,
+    # while the seat/edge half carried 50+. That is backwards relative to where the pipeline's
+    # complexity actually lives, and it made the T0 tier (which the tier contract now enforces)
+    # invisible in the one picture people read.
+    #
+    # Everything here is DERIVED, not asserted: the blocks come from the schema's validated tiling
+    # (`build_schema(layout).slices()`, whose construction already proves the slices tile the vector
+    # exactly), and each leg appears only when the live config actually builds it. So the graph
+    # cannot drift from the obs layout without the snapshot diff showing it.
+    from agents.observation.schema import build_schema
+    _slices = build_schema(layout).slices()
+    _tops = [(k, v) for k, v in _slices.items() if "." not in k]
+    for name, sl in _tops:
+        nodes.append(_node(f"obs.{name}", "obs_block", offset=sl.start,
+                           width=sl.stop - sl.start, stage="T0"))
+        edges.append(_edge(f"obs.{name}", "obs_unpack", "content", sl.stop - sl.start,
+                           f"schema.slices()['{name}']",
+                           note="validated tiling — the slice map is proven exact at construction"))
+    # Sub-slices of a block, so the global/reactive groups are legible rather than one opaque width.
+    for name, sl in _slices.items():
+        if "." not in name:
+            continue
+        parent, _, leaf = name.partition(".")
+        nodes.append(_node(f"obs.{name}", "obs_group", offset=sl.start,
+                           width=sl.stop - sl.start, parent=f"obs.{parent}", stage="T0", leaf=leaf))
+
+    nodes.append(_node("obs_unpack", "phase", stage="T0",
+                       note="stateless; peels the flat vector into the ExtractorContext tensors"))
+    # PokemonEncoder's three internal stages. These are separate MODULES with separate weights and
+    # the collapsed single node hid the move pathway entirely — which is where the per-move features
+    # that the pointer head ultimately scores are actually built.
+    for nid, note in (
+        ("pokemon_encoder.move_processor",
+         "shared MLP over EVERY move slot (MOVE_NET_HIDDEN)"),
+        ("pokemon_encoder.move_self_attn",
+         "within-Pokemon move attention (MHA + LayerNorm residual)"),
+        ("pokemon_encoder.role_encoder",
+         "ROLE_ENCODER_HIDDEN MLP -> the 12 role tokens"),
+    ):
+        nodes.append(_node(nid, "phase", stage="T0", note=note))
+    edges.append(_edge("obs_unpack", "pokemon_encoder.move_processor", "content",
+                       layout["move_slot_dim"] if "move_slot_dim" in layout else MOVE_NET_HIDDEN[0],
+                       "per-move slot width", note="per-move slots"))
+    edges.append(_edge("pokemon_encoder.move_processor", "pokemon_encoder.move_self_attn",
+                       "content", MOVE_NET_HIDDEN[-1], "MOVE_NET_HIDDEN[-1]"))
+    edges.append(_edge("pokemon_encoder.move_self_attn", "pokemon_encoder.role_encoder",
+                       "content", MOVE_NET_HIDDEN[-1], "MOVE_NET_HIDDEN[-1]"))
+    edges.append(_edge("obs_unpack", "pokemon_encoder.role_encoder", "content",
+                       layout["pokemon_full_dim"] if "pokemon_full_dim" in layout else D,
+                       "POKEMON_FULL_DIM",
+                       note="species/item/ability/type embeddings + the E2 active-ctx injection"))
+    for i in range(T):
+        edges.append(_edge("pokemon_encoder.role_encoder", f"our_mon[{i}]", "content",
+                           D, "D_MODEL"))
+        edges.append(_edge("pokemon_encoder.role_encoder", f"opp_mon[{i}]", "content",
+                           D, "D_MODEL"))
+
+    # The T0 belief legs, with the distinction that matters: a leg either REINJECTS into the tokens
+    # the transformer will refine, or it is a side READOUT that never enters the forward. Collapsing
+    # those two into one arrow is what made "is this belief actually used?" unanswerable by eye.
+    if fe.belief_slots is not None:
+        nodes.append(_node("belief_slots", "phase", stage="T0",
+                           note="swaps unrevealed opp role tokens for learned unknown-mon queries"))
+        for j in range(T):
+            edges.append(_edge("belief_slots", f"opp_mon[{j}]", "content", d_model,
+                               "D_MODEL", note="in-place; pre-transformer"))
+    if fe.move_belief is not None:
+        for j in range(T):
+            edges.append(_edge("move_belief", f"opp_mon[{j}]", "content", D, "D_MODEL",
+                               note="REINJECT — the believed moveset co-refines through attention"))
+    if getattr(fe, "t0_species_prior", None) is not None:
+        nodes.append(_node("t0_species_prior", "belief_head", stage="T0",
+                           note="team-composition species belief; parameter-free"))
+        edges.append(_edge("t0_species_prior", "damage_op", "content",
+                           layout["max_species"], "layout['max_species']",
+                           note="P(species | revealed team) — replaces the STATIC usage prior"))
+    if fe.spread_belief is not None:
+        edges.append(_edge("spread_belief", "damage_op", "content", 5, "5 stats",
+                           note="believed opp spread; without it the op prices a fictional "
+                                "maximally-invested opponent"))
+    if getattr(fe, "hp_type_belief_head", None) is not None:
+        edges.append(_edge("hp_type_belief", "move_belief", "content", N_HP_TYPES, "16 HP types",
+                           note="composes the typed Hidden Power posterior"))
+
     # Input pseudo-nodes referenced above but not yet declared.
     declared = {n["id"] for n in nodes}
     for nid in sorted({e["src"] for e in edges} | {e["dst"] for e in edges}):
@@ -387,6 +475,12 @@ _KIND_SHAPE = {
     "logit": 'shape=ellipse, style=filled, fillcolor="#fce8e6"',
     "aux_loss": 'shape=note, style=filled, fillcolor="#eeeeee"',
     "input": 'shape=plaintext',
+    # T0 front-of-pipeline kinds. Distinct shapes so the obs SUBSTRATE reads differently from the
+    # modules that consume it — the point of expanding this region was to make the early stage
+    # legible, and drawing it in the seat palette would defeat that.
+    "obs_block": 'shape=folder, style=filled, fillcolor="#dbeddb"',
+    "obs_group": 'shape=folder, style="filled,dashed", fillcolor="#eef7ee"',
+    "phase": 'shape=component, style=filled, fillcolor="#e8eef7"',
 }
 
 

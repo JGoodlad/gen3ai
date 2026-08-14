@@ -4460,6 +4460,14 @@
       "zero_init": true
     },
     {
+      "dst": "move_belief",
+      "note": "composes the typed Hidden Power posterior",
+      "source_constant": "16 HP types",
+      "src": "hp_type_belief",
+      "type": "content",
+      "width": 16
+    },
+    {
       "dst": "opp_mon[0]",
       "note": "presence-gated expected typed-HP embedding",
       "source_constant": "D_MODEL",
@@ -4523,11 +4531,27 @@
     },
     {
       "dst": "opp_mon[0]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[0]",
       "note": "soft-embedded believed moveset",
       "source_constant": "D_MODEL",
       "src": "move_belief",
       "type": "content",
       "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
       "width": 128
     },
     {
@@ -4541,11 +4565,27 @@
     },
     {
       "dst": "opp_mon[2]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
       "note": "soft-embedded believed moveset",
       "source_constant": "D_MODEL",
       "src": "move_belief",
       "type": "content",
       "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
       "width": 128
     },
     {
@@ -4559,6 +4599,14 @@
     },
     {
       "dst": "opp_mon[4]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
       "note": "soft-embedded believed moveset",
       "source_constant": "D_MODEL",
       "src": "move_belief",
@@ -4568,11 +4616,91 @@
     },
     {
       "dst": "opp_mon[5]",
+      "note": "REINJECT \u2014 the believed moveset co-refines through attention",
+      "source_constant": "D_MODEL",
+      "src": "move_belief",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
       "note": "soft-embedded believed moveset",
       "source_constant": "D_MODEL",
       "src": "move_belief",
       "type": "content",
       "via": "MoveBelief.reinject",
+      "width": 128
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['active_context']",
+      "src": "obs.active_context",
+      "type": "content",
+      "width": 116
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['global_env']",
+      "src": "obs.global_env",
+      "type": "content",
+      "width": 20
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['opp_team']",
+      "src": "obs.opp_team",
+      "type": "content",
+      "width": 696
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['our_team']",
+      "src": "obs.our_team",
+      "type": "content",
+      "width": 696
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['prev_action_mask']",
+      "src": "obs.prev_action_mask",
+      "type": "content",
+      "width": 11
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['reactive']",
+      "src": "obs.reactive",
+      "type": "content",
+      "width": 17
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['turn_history']",
+      "src": "obs.turn_history",
+      "type": "content",
+      "width": 1113
+    },
+    {
+      "dst": "pokemon_encoder.move_processor",
+      "note": "per-move slots",
+      "source_constant": "per-move slot width",
+      "src": "obs_unpack",
+      "type": "content",
+      "width": 96
+    },
+    {
+      "dst": "pokemon_encoder.role_encoder",
+      "note": "species/item/ability/type embeddings + the E2 active-ctx injection",
+      "source_constant": "POKEMON_FULL_DIM",
+      "src": "obs_unpack",
+      "type": "content",
       "width": 128
     },
     {
@@ -4729,6 +4857,20 @@
       "width": 512
     },
     {
+      "dst": "pokemon_encoder.move_self_attn",
+      "source_constant": "MOVE_NET_HIDDEN[-1]",
+      "src": "pokemon_encoder.move_processor",
+      "type": "content",
+      "width": 32
+    },
+    {
+      "dst": "pokemon_encoder.role_encoder",
+      "source_constant": "MOVE_NET_HIDDEN[-1]",
+      "src": "pokemon_encoder.move_self_attn",
+      "type": "content",
+      "width": 32
+    },
+    {
       "dst": "E3_move[0]",
       "note": "request-slot order \u2014 seat k IS action logit 6+k",
       "source_constant": "MOVE_NET_HIDDEN[1]",
@@ -4763,6 +4905,90 @@
       "type": "content",
       "via": "EntityMoveSeats.move_seat_proj",
       "width": 32
+    },
+    {
+      "dst": "opp_mon[0]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[1]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[2]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[3]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[4]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "opp_mon[5]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[0]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[1]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[2]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[3]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[4]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
+    },
+    {
+      "dst": "our_mon[5]",
+      "source_constant": "D_MODEL",
+      "src": "pokemon_encoder.role_encoder",
+      "type": "content",
+      "width": 128
     }
   ],
   "meta": {
@@ -4906,10 +5132,164 @@
       "kind": "logit"
     },
     {
+      "id": "obs.active_context",
+      "kind": "obs_block",
+      "offset": 1392,
+      "stage": "T0",
+      "width": 116
+    },
+    {
+      "id": "obs.global_env",
+      "kind": "obs_block",
+      "offset": 1508,
+      "stage": "T0",
+      "width": 20
+    },
+    {
+      "id": "obs.opp_team",
+      "kind": "obs_block",
+      "offset": 696,
+      "stage": "T0",
+      "width": 696
+    },
+    {
+      "id": "obs.our_team",
+      "kind": "obs_block",
+      "offset": 0,
+      "stage": "T0",
+      "width": 696
+    },
+    {
+      "id": "obs.prev_action_mask",
+      "kind": "obs_block",
+      "offset": 1545,
+      "stage": "T0",
+      "width": 11
+    },
+    {
+      "id": "obs.reactive",
+      "kind": "obs_block",
+      "offset": 1528,
+      "stage": "T0",
+      "width": 17
+    },
+    {
+      "id": "obs.turn_history",
+      "kind": "obs_block",
+      "offset": 1556,
+      "stage": "T0",
+      "width": 1113
+    },
+    {
+      "id": "obs.global_env.clock",
+      "kind": "obs_group",
+      "leaf": "clock",
+      "offset": 1517,
+      "parent": "obs.global_env",
+      "stage": "T0",
+      "width": 3
+    },
+    {
+      "id": "obs.global_env.hazards",
+      "kind": "obs_group",
+      "leaf": "hazards",
+      "offset": 1515,
+      "parent": "obs.global_env",
+      "stage": "T0",
+      "width": 2
+    },
+    {
+      "id": "obs.global_env.screens",
+      "kind": "obs_group",
+      "leaf": "screens",
+      "offset": 1520,
+      "parent": "obs.global_env",
+      "stage": "T0",
+      "width": 8
+    },
+    {
+      "id": "obs.global_env.weather",
+      "kind": "obs_group",
+      "leaf": "weather",
+      "offset": 1508,
+      "parent": "obs.global_env",
+      "stage": "T0",
+      "width": 7
+    },
+    {
+      "id": "obs.reactive.active_req_moves",
+      "kind": "obs_group",
+      "leaf": "active_req_moves",
+      "offset": 1533,
+      "parent": "obs.reactive",
+      "stage": "T0",
+      "width": 12
+    },
+    {
+      "id": "obs.reactive.fainted",
+      "kind": "obs_group",
+      "leaf": "fainted",
+      "offset": 1528,
+      "parent": "obs.reactive",
+      "stage": "T0",
+      "width": 2
+    },
+    {
+      "id": "obs.reactive.turns_since_progress",
+      "kind": "obs_group",
+      "leaf": "turns_since_progress",
+      "offset": 1530,
+      "parent": "obs.reactive",
+      "stage": "T0",
+      "width": 1
+    },
+    {
+      "id": "obs.reactive.wish_floating_opp",
+      "kind": "obs_group",
+      "leaf": "wish_floating_opp",
+      "offset": 1532,
+      "parent": "obs.reactive",
+      "stage": "T0",
+      "width": 1
+    },
+    {
+      "id": "obs.reactive.wish_floating_our",
+      "kind": "obs_group",
+      "leaf": "wish_floating_our",
+      "offset": 1531,
+      "parent": "obs.reactive",
+      "stage": "T0",
+      "width": 1
+    },
+    {
       "id": "damage_op",
       "incoming_dim": 85,
       "kind": "operator",
       "out_dim": 660
+    },
+    {
+      "id": "obs_unpack",
+      "kind": "phase",
+      "note": "stateless; peels the flat vector into the ExtractorContext tensors",
+      "stage": "T0"
+    },
+    {
+      "id": "pokemon_encoder.move_processor",
+      "kind": "phase",
+      "note": "shared MLP over EVERY move slot (MOVE_NET_HIDDEN)",
+      "stage": "T0"
+    },
+    {
+      "id": "pokemon_encoder.move_self_attn",
+      "kind": "phase",
+      "note": "within-Pokemon move attention (MHA + LayerNorm residual)",
+      "stage": "T0"
+    },
+    {
+      "id": "pokemon_encoder.role_encoder",
+      "kind": "phase",
+      "note": "ROLE_ENCODER_HIDDEN MLP -> the 12 role tokens",
+      "stage": "T0"
     },
     {
       "id": "E3_move[0]",

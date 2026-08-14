@@ -118,17 +118,23 @@ dashes();
 const SEAT_BANDS = [['our_mon', 'opp_mon'],
                     ['E3_move', 'E4_threat', 'E5_tail'],
                     ['global', 'history']];
-const MISC_BAND = 7;
+const MISC_BAND = 9;
 const seatGroup = id => id.replace(/\[\d+\]$/, '');
+/* Bands read LEFT-TO-RIGHT in pipeline order. The two leading bands are the T0 front end: the obs
+   SUBSTRATE (the schema's validated tiling) and then the phases that consume it. They were added
+   when the early stage was expanded from 4 nodes to 20 — before that the picture began at the role
+   tokens, which made the tier the contract now enforces invisible in the one diagram people read. */
 function bandOf(n) {
-  if (n.kind === 'input' || n.kind === 'belief_head') return 0;
-  if (n.kind === 'operator') return 1;
+  if (n.kind === 'obs_block' || n.kind === 'obs_group') return 0;
+  if (n.kind === 'phase') return 1;
+  if (n.kind === 'input' || n.kind === 'belief_head') return 2;
+  if (n.kind === 'operator') return 3;
   if (n.kind === 'seat') {
     const i = SEAT_BANDS.findIndex(b => b.includes(seatGroup(n.id)));
-    return i < 0 ? MISC_BAND : 2 + i;
+    return i < 0 ? MISC_BAND : 4 + i;
   }
-  if (n.kind === 'head') return 5;
-  if (n.kind === 'logit' || n.kind === 'aux_loss') return 6;
+  if (n.kind === 'head') return 7;
+  if (n.kind === 'logit' || n.kind === 'aux_loss') return 8;
   return MISC_BAND;
 }
 const BANDS = Array.from({length: MISC_BAND + 1}, () => []);
