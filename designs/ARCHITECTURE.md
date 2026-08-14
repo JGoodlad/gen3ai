@@ -642,7 +642,7 @@ raises at build time.
 | `edge_bias_families` | all 15 | ACTIVE (§5) |
 | `attend_unrevealed_opponents` | true | ACTIVE — hidden opp slots stay attendable |
 | `use_popart` | true | ACTIVE — with the mandatory `--clip-range-vf none` |
-| `belief_grad_mode` | `"shaping"` | ACTIVE — belief heads read the live trunk |
+| `belief_grad_mode` | `"shaping"` | ACTIVE — nothing cut: the belief heads read the live trunk (so their supervised loss reshapes it) AND the policy/value gradient trains them through their reinjections. The two alternatives cut OPPOSITE arrows: **`detached`** stop-grads the heads' trunk READ, so no belief gradient reshapes the trunk; **`label_only`** publishes the heads' OUTPUT stop-grad to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the belief is trained by its supervised labels alone (the read stays live, so the label loss still teaches the trunk). Applies to the four forward-consumed supervised heads — `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and `AlphaIntentHead` (whose only forward route is `intent_value_reduce`). The pure-readout heads (`BeliefHead`, `WinProbHead`, `PubValHead`, `BetaSwitchHead`, `SeedQuantileHead`) are structurally label-only in every mode. `detach()` is value-preserving ⇒ the forward is bit-identical in all three, so this is resume-immutable rather than weight-shape (no `ARCH_SIGNATURE` bump) |
 | `damage_matrices_outgoing` | false | OFF — the 126-dim `outgoing_matrix` does not exist |
 | `damage_matrices_outgoing_all` | false | OFF — the 108-dim OAX block does not exist; the **pointer switch cell is 15 wide, not 33** (§3.3) |
 | `damage_candidate_k` | 0 | OFF — the full candidate sweep, no truncation |

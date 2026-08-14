@@ -1605,7 +1605,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 move_belief_term = None
                 if move_belief_on:
                     mb_out = self._move_belief_loss(
-                        self.policy.features_extractor.last_move_belief_logits,
+                        self.policy.features_extractor.belief_supervision("move_belief_logits"),
                         rollout_data.observations.get("known_moves"),
                         rollout_data.observations.get("belief_moves"),
                         self.policy.features_extractor.move_belief_mode,
@@ -1661,7 +1661,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # and the gradient probe would silently see no intent term.
                 opp_intent_term = None
                 if self.opp_intent_coef > 0.0:
-                    _al = getattr(self.policy.features_extractor, "last_alpha_logits", None)
+                    # gen3_belief_label_only_v1: alpha's LIVE logits — `last_alpha_logits` is the
+                    # stop-grad publication under label_only (it feeds the critic under
+                    # --intent-value-reduce), so the intent loss must read the supervision view.
+                    _al = self.policy.features_extractor.belief_supervision("alpha_logits")
                     _bl = getattr(self.policy.features_extractor, "last_beta_logits", None)
                     _sn = getattr(self.policy.features_extractor, "last_alpha_seat_nums", None)
                     _obs = rollout_data.observations
@@ -1779,7 +1782,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 move_latent_term = None
                 if move_latent_on:
                     ml_out = self._move_belief_latent_loss(
-                        self.policy.features_extractor.last_move_belief_logits,
+                        self.policy.features_extractor.belief_supervision("move_belief_logits"),
                         self.policy.features_extractor.last_move_latent_table,
                         rollout_data.observations.get("known_moves"),
                     )
@@ -1799,7 +1802,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 spread_belief_term = None
                 if spread_belief_on:
                     sb_out = self._spread_belief_loss(
-                        self.policy.features_extractor.last_spread_belief,
+                        self.policy.features_extractor.belief_supervision("spread_belief"),
                         rollout_data.observations.get("belief_spread"),
                         rollout_data.observations.get("belief_spread_mask"),
                     )
@@ -1819,8 +1822,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 nature_ev_term = None
                 if spread_belief_on:
                     ne_out = self._nature_ev_belief_loss(
-                        self.policy.features_extractor.last_spread_nature_logits,
-                        self.policy.features_extractor.last_spread_ev,
+                        self.policy.features_extractor.belief_supervision("spread_nature_logits"),
+                        self.policy.features_extractor.belief_supervision("spread_ev"),
                         rollout_data.observations.get("belief_nature"),
                         rollout_data.observations.get("belief_nature_mask"),
                         rollout_data.observations.get("belief_ev"),
@@ -1842,7 +1845,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 hp_type_term = None
                 if hp_type_belief_on:
                     hp_out = self._hp_type_belief_loss(
-                        self.policy.features_extractor.last_hp_type_logits,
+                        self.policy.features_extractor.belief_supervision("hp_type_logits"),
                         rollout_data.observations.get("hp_type_label"),
                         rollout_data.observations.get("hp_type_mask"),
                     )

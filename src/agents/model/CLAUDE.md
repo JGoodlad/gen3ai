@@ -134,6 +134,52 @@ a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so proj
 read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains
 its own params only); `shaping` feeds it live (the win objective also shapes the trunk).
 
+### `--belief-grad-mode` — which arrow gets cut (`gen3_belief_grad_mode_v1` / `gen3_belief_label_only_v1`)
+
+**The two non-default modes cut OPPOSITE arrows, and the flag name does not say so** — read this
+table before reasoning about either. Four routes exist between a state-prediction belief head and
+the rest of the network:
+
+| | route | `shaping` | `detached` | `label_only` |
+|---|---|---|---|---|
+| A | label loss → belief head params | on | on | on |
+| B | label loss → shared trunk (the head's READ) | on | **CUT** | on |
+| C | PPO loss → belief head params (the WRITE) | on | on | **CUT** |
+| D | PPO loss → shared trunk (normal training) | on | on | on |
+
+`detached` stop-grads the head's trunk **read** (`detach_read`), so the belief cannot reshape the
+trunk. It does **not** stop PPO training the heads — the reinject write stays live, deliberately
+(`belief_grad_mode_test::test_detached_preserves_normal_trunk_training`). `label_only` stop-grads
+the head's **output** at its publish boundary (`publish_detach` inside a head, `_publish_belief` on
+the extractor), so the belief is trained by its labels alone while the policy still reads it. The
+read stays live under `label_only`, because cutting B and C together leaves a probe on a trunk with
+no incentive to encode hidden state — still feeding the policy. That combination is not offered.
+
+**Two rules when touching this:**
+
+1. **A supervised loss reads `belief_supervision(name)`, never the `last_*` attribute.** Under
+   `label_only` the attribute is the stop-grad publication, so a loss reading it trains *nothing*
+   — silently, since the loss value and every metric derived from it look normal. The accessor
+   raises on an unknown key so a typo cannot degrade into that.
+2. **Detach the LOGITS, never the matmul output.** `soft_emb = sigmoid(logits) @ move_embedding.weight`
+   — detaching `logits` keeps `move_embedding.weight`'s gradient, detaching `soft_emb` kills it.
+   That table also trains from `PokemonEncoder`, so the damage would be an invisible slowdown, not
+   a dead parameter. Same shape in `HPTypeBelief.reinject` (`hp_soft_type` → `type_embedding`). The
+   reinjection adapters have no supervised loss, so PPO is their ONLY gradient source.
+
+Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
+`AlphaIntentHead` (reachable only under `--intent-value-reduce`, published unconditionally so
+enabling that flag later cannot reopen the route). `BeliefHead`, `WinProbHead`, `PubValHead`,
+`BetaSwitchHead` and `SeedQuantileHead` are structurally label-only in every mode — asserted in
+`belief_label_only_gate_test.py`, not assumed, so a head that starts feeding forward fails a test
+instead of quietly rejoining the PPO objective.
+
+`detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a
+resume-immutable training hparam (the `vf_coef` class), NOT weight-shape: no `ARCH_SIGNATURE` bump,
+excluded from `check_compatible`, enforced resume-only by `check_belief_grad_mode`
+(`--allow-belief-grad-mode-change` for an intentional migration). `BELIEF_GRAD_MODES` in
+`features_extractor.py` is the single source for the legal set.
+
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
 over all 12 team tokens to produce `value_pooled`; `ProjectionAssembler.forward` returns a

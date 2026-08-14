@@ -501,6 +501,17 @@ from typing import Any, Dict, List
 #   downstream able to notice.
 MODEL_CONFIG_VERSION = 74
 
+# The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
+# as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
+# pinned to agree by `belief_grad_mode_test.py::test_every_mode_has_a_migration_notice`, so a fourth
+# mode cannot ship with a silently generic notice.
+_BELIEF_GRAD_MODE_EFFECT = {
+    "shaping": "the belief-aux gradient now SHAPES the shared trunk, and PPO trains the heads.",
+    "detached": "the belief-aux gradient now STOPS at the heads (the trunk is stop-grad on the read).",
+    "label_only": "the belief heads are now trained by their SUPERVISED LABELS ALONE — no policy/value "
+                  "gradient reaches them (their outputs are published stop-grad to every consumer).",
+}
+
 # Change this when the neural architecture changes structurally in a way that makes
 # weights from a different signature incompatible (e.g. adding LSTM, replacing attention).
 # Same-family dim changes (role_token_size 128→256) don't need a new signature —
@@ -1253,13 +1264,20 @@ class ModelVersion:
     # TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
     # Recorded for provenance + flagless-resume read-back. Only meaningful under 'composed'.
     hp_type_belief_coef: float = 0.0
-    # gen3_belief_grad_mode_v1 (config v41): 'detached' makes the state-prediction belief heads READ a
-    # stop-grad trunk, so their gradient can't reshape it (the belief stays computed/reinjected/consumed).
-    # detach() is value-preserving → the FORWARD (eval/inference/frozen-opponent) is bit-identical; only the
-    # TRAINING gradient differs. So it is a RESUME-IMMUTABLE training hparam (the vf_coef class): recorded
-    # here, enforced ONLY on the training-resume path via check_belief_grad_mode, and EXCLUDED from
-    # check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is identical, so
-    # gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
+    # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
+    # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
+    # `Gen3FeaturesExtractor.__init__` for the four-route table:
+    #   'shaping'    — nothing cut (the belief loss reshapes the trunk; PPO trains the heads).
+    #   'detached'   — the heads READ a stop-grad trunk: no belief gradient reshapes the trunk.
+    #   'label_only' — (gen3_belief_label_only_v1) the heads' outputs are PUBLISHED stop-grad to every
+    #                  forward consumer: no POLICY/VALUE gradient reaches a belief head's parameters, so
+    #                  the belief is trained by its supervised labels ALONE. The read stays LIVE, so the
+    #                  label loss still shapes the trunk.
+    # detach() is value-preserving → the FORWARD (eval/inference/frozen-opponent) is bit-identical in every
+    # mode; only the TRAINING gradient differs. So it is a RESUME-IMMUTABLE training hparam (the vf_coef
+    # class): recorded here, enforced ONLY on the training-resume path via check_belief_grad_mode, and
+    # EXCLUDED from check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is
+    # identical, so gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
     belief_grad_mode: str = "shaping"
     # gen3_dist_critic_v1 (config v45, Phase B): the distributional value head IS the critic — GAE /
     # bootstrap / deployment read E[Z] (policy._critic_value) and the HL-Gauss CE is the primary value
@@ -2127,9 +2145,8 @@ class ModelVersion:
             if allow_change:
                 print(
                     f"[ModelVersion] NOTICE: belief_grad_mode MIGRATION {self.belief_grad_mode!r} -> "
-                    f"{requested!r} (--allow-belief-grad-mode-change). Forward is bit-identical; the "
-                    "belief-aux gradient now "
-                    + ("SHAPES the shared trunk." if requested == "shaping" else "STOPS at the heads.")
+                    f"{requested!r} (--allow-belief-grad-mode-change). Forward is bit-identical; "
+                    + _BELIEF_GRAD_MODE_EFFECT.get(requested, "the belief gradient routing changed.")
                     + " The next checkpoint save records the new mode."
                 )
                 return

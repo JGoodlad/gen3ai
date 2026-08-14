@@ -1683,6 +1683,24 @@ math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_si
 matches a manual sum, and `_logged_only_when_accumulating` (real `train()`: skipped at accum=1, EMA
 updated + scalar emitted at accum=2).
 
+## ⚠️ Reading a belief target: `belief_supervision(...)`, never `last_*`
+
+Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`). Under
+`--belief-grad-mode label_only` the extractor's `last_move_belief_logits` / `last_spread_belief` /
+`last_hp_type_logits` / `last_spread_nature_logits` / `last_spread_ev` / `last_alpha_logits` stashes
+are **stop-grad publications** — that is how the mode stops the policy/value gradient reaching a
+belief head through any of its forward consumers. A supervised loss must therefore read its target
+through **`self.policy.features_extractor.belief_supervision("<key>")`**, which returns the LIVE
+tensor (and the identical object under `shaping`/`detached`).
+
+A loss that reads the `last_*` attribute instead trains **nothing** under `label_only`, and does so
+**silently** — the loss value, its gradient norm and every `belief/*` metric look completely normal,
+because the loss is still computed; only the graph behind it is gone. The accessor raises a
+`KeyError` on an unknown key so a typo cannot degrade into that, and
+`agents/model/belief_label_only_gate_test.py::test_every_belief_loss_still_trains_its_head` is the
+guard that each key still deposits gradient on its own head. The full four-route table is in
+`src/agents/model/CLAUDE.md` → `--belief-grad-mode`.
+
 ## Hidden-opponent belief aux loss (`--opp-belief-aux-coef`)
 
 The training half of the in-place belief feature (model side in `src/agents/model/CLAUDE.md` →

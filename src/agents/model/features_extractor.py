@@ -1525,6 +1525,33 @@ class ValueDistHead(torch.nn.Module):
         return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)
 
 
+# The legal `--belief-grad-mode` values — the SINGLE SOURCE for the CLI `choices=`, the extractor's
+# ValueError, and `model_version._BELIEF_GRAD_MODE_EFFECT` (pinned to agree by a test). What each one
+# cuts is the four-route table in `Gen3FeaturesExtractor.__init__`.
+BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
+
+# gen3_belief_label_only_v1 — the stashes of the FORWARD-CONSUMED belief heads. These are exactly the
+# supervised heads whose output reaches pi/vf, and therefore the only ones a policy/value gradient can
+# reach BACKWARD: MoveBelief (reinject + the op + the edge cells + the seats), SpreadBelief (reinject +
+# the op + the cells), HPTypeBelief (the typed composition + its own type-embedding reinject), and
+# AlphaIntentHead (only under `--intent-value-reduce`, which appends an alpha-weighted threat term to
+# the CRITIC half — alpha is a pure readout without it, but the flag is what makes it reachable).
+#
+# THE RULE, and it is per-HEAD rather than per-stash so there is nothing to look up: under `label_only`
+# every one of these `last_*` stashes is a STOP-GRAD publication, and a supervised loss must read its
+# target through `Gen3FeaturesExtractor.belief_supervision(...)` instead.
+#
+# The other supervised heads — BeliefHead (species/moves/latent), WinProbHead, PubValHead,
+# BetaSwitchHead, SeedQuantileHead, the ZArch recon head — are STRUCTURALLY label-only already: they are
+# side readouts whose output never re-enters the forward, so no policy gradient can reach them in ANY
+# mode and there is nothing here to cut. `belief_label_only_gate_test.py` asserts that rather than
+# trusting it, so a head that starts feeding forward fails a test instead of quietly rejoining PPO.
+_BELIEF_SUPERVISION_KEYS = frozenset({
+    "move_belief_logits", "hp_type_logits",
+    "spread_belief", "spread_nature_logits", "spread_ev",
+    "alpha_logits",
+})
+
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
 _REVEAL_LOGIT = 10.0
 
@@ -1649,7 +1676,14 @@ class MoveBelief(torch.nn.Module):
         Fed the COMPOSED posterior it instead injects `Σ_t P(HP_t)·move_emb[355+t]`, i.e. the believed
         Hidden Power as a mixture over real typed moves. The enrichment is gated to the selected slots,
         so unselected slots pass through unchanged."""
-        soft_emb = torch.sigmoid(move_logits) @ move_embedding.weight             # [B, 6, move_emb]
+        # gen3_belief_label_only_v1: under `label_only` the belief is PUBLISHED stop-grad into its own
+        # reinjection, so the policy/value gradient cannot reach `move_head` through the token it enriches.
+        # Detaching the LOGITS (not `soft_emb`) is deliberate: `move_embedding.weight` is on the far side
+        # of the matmul and is NOT a belief parameter, so it keeps learning from the consumer — only the
+        # head that PREDICTED the moveset is isolated. `self.reinject` (the consumer-side adapter) likewise
+        # trains normally. `getattr` default-False ⇒ unset == byte-identical.
+        logits = move_logits.detach() if getattr(self, "publish_detach", False) else move_logits
+        soft_emb = torch.sigmoid(logits) @ move_embedding.weight                  # [B, 6, move_emb]
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
         return self.norm(enriched)
 
@@ -1732,10 +1766,14 @@ class SpreadBelief(torch.nn.Module):
         # gen3_belief_grad_mode_v1: `detached` READS a stop-grad trunk for the head(s); reinject below keeps
         # the LIVE `opp_tokens` identity term (so normal policy training still shapes the trunk).
         read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
+        # gen3_belief_label_only_v1: the reinjection is the ONE forward path that leaves this module from
+        # the inside (the returned `believed` is published by the caller), so `label_only` cuts it here.
+        # `self.reinject` itself still trains — only the heads that PREDICTED the spread are isolated.
+        pub = (lambda t: t.detach()) if getattr(self, "publish_detach", False) else (lambda t: t)
         if not self.nature:
             delta = self.stat_head(read)                            # [B,6,5] (std units; cold == 0)
             believed = (mean + delta * std).clamp(min=1.0)          # [B,6,5] the stat VALUE the op consumes
-            enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
+            enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(pub(delta))
             return self.norm(enriched), believed, None, None
         # NATURE/EV generative path (gen3_nature_ev_belief_v1): posterior nature ⊕ EV → COMPUTE the derived stat.
         nat_logits = self.nature_logprior[opp_species_ids] + self.nature_head(read)         # [B,6,25] prior⊕delta
@@ -1745,7 +1783,7 @@ class SpreadBelief(torch.nn.Module):
         base = self.base_nonhp[opp_species_ids]                                             # [B,6,5]
         believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)           # [B,6,5] DERIVED stat
         delta = (believed - mean) / std.clamp(min=1.0)                                      # std-unit residual
-        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(delta)
+        enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(pub(delta))
         return self.norm(enriched), believed, nat_logits, ev
 
 
@@ -1869,6 +1907,11 @@ class HPTypeBelief(torch.nn.Module):
         reveal; gates the signal to ≈0 when HP is unlikely), `apply_mask` [B,6] float (which slots to
         enrich — revealed). `embeddings.hp_soft_type(posterior)` = Σ_t P(t)·type_emb[t], the expected type
         embedding. Small-init residual → starts ≈0; LayerNorm'd. Returns the enriched [B,6,D]."""
+        # gen3_belief_label_only_v1: both inputs are belief outputs — `posterior` from this head, `presence`
+        # from the MOVE head via compose_typed_hp — so `label_only` cuts both, isolating each predictor from
+        # the policy gradient. `reinject_proj` (the adapter) still trains.
+        if getattr(self, "publish_detach", False):
+            posterior, presence = posterior.detach(), presence.detach()
         soft = embeddings.hp_soft_type(posterior)                          # [B,6,type_emb] expected type emb
         gated = presence.unsqueeze(-1) * soft                              # ≈0 when HP unlikely (no spurious)
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject_proj(gated)
@@ -2419,16 +2462,38 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # grading aux (the loss reads its latent_table).
         self.move_latent = move_latent
 
-        # gen3_belief_grad_mode_v1: 'detached' makes the STATE-prediction belief heads (move / spread /
-        # hp-type / the species-moves-latent aux) READ a stop-grad trunk — so neither their supervised
-        # loss nor the op/policy gradient through them can reshape the shared trunk. The belief stays
-        # computed, reinjected into the forward, and consumed by the op (fully "in the system"); only the
-        # trunk-shaping gradient is cut. The flag is applied per-head via `detach_read` (set just before
-        # the dummy forward, once all heads exist). 'shaping' (default) = current behavior, byte-identical.
-        if belief_grad_mode not in ("shaping", "detached"):
-            raise ValueError(f"belief_grad_mode must be shaping|detached, got {belief_grad_mode!r}")
+        # gen3_belief_grad_mode_v1 / gen3_belief_label_only_v1 — WHICH gradient arrow between the
+        # STATE-prediction belief heads (move / spread / hp-type / the species-moves-latent aux) and the
+        # rest of the network is cut. There are FOUR routes, and the modes cut DIFFERENT ones:
+        #
+        #   route                                              shaping   detached   label_only
+        #   A  label loss  -> belief head params                  on         on          on
+        #   B  label loss  -> shared trunk (via the head's READ)  on        CUT          on
+        #   C  PPO loss    -> belief head params (via the WRITE)  on         on         CUT
+        #   D  PPO loss    -> shared trunk (normal training)      on         on          on
+        #
+        # `detached` cuts B: the heads READ a stop-grad trunk, so no belief gradient reshapes it.
+        # `label_only` cuts C: the heads' outputs are PUBLISHED stop-grad to every forward consumer
+        # (reinject, the DamageOperator, the edge cells, the seats), so the belief is trained by its
+        # SUPERVISED LABELS ALONE — it stays computed, reinjected and consumed exactly as before, but the
+        # return can no longer drag it off-calibration. Its read stays LIVE, so the label loss still
+        # teaches the trunk to encode hidden state — which is the point: cutting BOTH B and C would leave
+        # a probe on a trunk with no incentive to carry the information, still feeding the policy. That
+        # fourth combination is deliberately NOT offered.
+        #
+        # B is applied per-head via `detach_read`, C via `publish_detach` on the extractor (a stop-grad at
+        # the ONE publish boundary per head, so a future consumer is cut by construction rather than by
+        # remembering). detach() is value-preserving ⇒ the FORWARD is bit-identical in all three modes.
+        if belief_grad_mode not in BELIEF_GRAD_MODES:
+            raise ValueError(f"belief_grad_mode must be one of {'|'.join(BELIEF_GRAD_MODES)}, "
+                             f"got {belief_grad_mode!r}")
         self.belief_grad_mode = belief_grad_mode
         self._belief_detach = (belief_grad_mode == "detached")
+        self._belief_label_only = (belief_grad_mode == "label_only")
+        # The LIVE (graph-carrying) belief outputs, for the SUPERVISED aux losses only — see
+        # `belief_supervision`. Under shaping/detached these are the identical objects the `last_*`
+        # stashes hold; under label_only the `last_*` stashes are their stop-grad publications.
+        self._belief_supervision: Dict[str, Optional[torch.Tensor]] = {}
 
         # Phase modules (constructed before the dummy forward below).
         self.embeddings = Embeddings(layout)
@@ -3073,9 +3138,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # exists (before the dummy forward — shapes are identical in either mode, so auto-sizing is
         # unaffected). 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
         # swaps in learned tokens pre-transformer), so it is intentionally NOT in this list.
-        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head, self.belief_head):
-            if _bh is not None:
-                _bh.detach_read = self._belief_detach
+        self._stamp_belief_grad_flags()
 
         # Discover the policy/value projection-input dims via a dummy forward through the
         # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).
@@ -3198,18 +3261,40 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         incident: the migration notice printed but the loaded extractor kept 'detached' —
         grad/*_norm_shared stayed exactly 0). The mode lives in THREE places (this attr,
         `_belief_detach`, and the `detach_read` flag stamped on each belief head); this is the ONE
-        setter that updates them all — call it post-load on the resume path (a no-op when unchanged)."""
-        if mode not in ("shaping", "detached"):
-            raise ValueError(f"belief_grad_mode must be shaping|detached, got {mode!r}")
+        setter that updates them all — call it post-load on the resume path (a no-op when unchanged).
+
+        gen3_belief_label_only_v1 widened that to FOUR places (`_belief_label_only` and the heads'
+        `publish_detach` join the list) — which is exactly why the stamping is now a single
+        `_stamp_belief_grad_flags()` shared with `__init__`, rather than a loop duplicated in two
+        methods that a future mode could update in only one of."""
+        if mode not in BELIEF_GRAD_MODES:
+            raise ValueError(f"belief_grad_mode must be one of {'|'.join(BELIEF_GRAD_MODES)}, "
+                             f"got {mode!r}")
         changed = mode != getattr(self, "belief_grad_mode", None)
         self.belief_grad_mode = mode
         self._belief_detach = (mode == "detached")
+        self._belief_label_only = (mode == "label_only")
+        self._stamp_belief_grad_flags()
+        if changed:
+            print(f"[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> {mode!r} "
+                  f"(detach_read={'on' if self._belief_detach else 'off'}, "
+                  f"publish_detach={'on' if self._belief_label_only else 'off'} across the belief heads)")
+
+    def _stamp_belief_grad_flags(self) -> None:
+        """Push `belief_grad_mode` down onto the heads — the ONE place either per-head flag is set.
+
+        `detach_read` (cut route B, the trunk read) goes on all four state-prediction heads.
+        `publish_detach` (cut route C, the head's own reinjection) goes on the three that HAVE a
+        reinjection; `BeliefHead` is a pure readout with nothing to publish, and the extractor-level
+        `_publish_belief` covers every consumer that reads a stash rather than being handed the tensor
+        by the head. BeliefSlots has no predictive read at all and is intentionally absent.
+        """
         for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head, self.belief_head):
             if _bh is not None:
                 _bh.detach_read = self._belief_detach
-        if changed:
-            print(f"[Gen3FeaturesExtractor] belief_grad_mode APPLIED at runtime -> {mode!r} "
-                  f"(detach_read={'on' if self._belief_detach else 'off'} across the belief heads)")
+        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head):
+            if _bh is not None:
+                _bh.publish_detach = self._belief_label_only
 
     # Read-only forwarders for the shared embedding tables — they are a model-level concept
     # and several tests/inspectors reach for them by name. Properties add no state_dict keys.
@@ -3267,6 +3352,41 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             priv_role = self.pokemon_encoder(priv_ctx, self.embeddings)   # [B, 12, D]
         return priv_role[:, TEAM_SIZE:, :].detach()                       # [B, 6, D] opp half (targets)
 
+    def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the
+        pointer stash / the prober). Under `label_only` this is a STOP-GRAD copy — gen3_belief_label_only_v1.
+
+        The cut lives at the ONE publish boundary per head rather than at each consumer, and that is the
+        whole design: `last_move_belief_logits` alone has eleven downstream readers, so a per-consumer
+        rule would be one forgotten site away from silently reopening the route. Publishing instead
+        isolates a consumer added TOMORROW by construction.
+
+        Returns the identical object under shaping/detached (and for `None`), so those modes stay
+        byte-identical — `detach()` never changes a value, only the graph, so even under `label_only` the
+        FORWARD is bit-identical and only the backward differs.
+        """
+        return t.detach() if (self._belief_label_only and t is not None) else t
+
+    def belief_supervision(self, name: str) -> Optional[torch.Tensor]:
+        """The LIVE (graph-carrying) belief output `name`, for the SUPERVISED aux losses ONLY.
+
+        ⚠️ **An aux loss MUST read its target through here, never off the `last_*` attribute.** Under
+        `label_only` that attribute is a stop-grad publication (`_publish_belief`), so a loss reading it
+        would train nothing at all — and would do so SILENTLY, since the loss value and every metric
+        derived from it look exactly the same. The gate test that would catch it is
+        `belief_label_only_gate_test.py::test_every_belief_loss_still_trains_its_head`.
+
+        Returns the identical object the `last_*` stash holds under shaping/detached, and `None` for a
+        head that is not built (the caller's existing `is None` guards are unchanged).
+        """
+        if name not in _BELIEF_SUPERVISION_KEYS:
+            raise KeyError(
+                f"unknown belief supervision key {name!r}; expected one of "
+                f"{sorted(_BELIEF_SUPERVISION_KEYS)}. Add the key to _BELIEF_SUPERVISION_KEYS and "
+                "register the LIVE tensor where the head's stash is published."
+            )
+        return self._belief_supervision.get(name)
+
     def _typed_hp_posterior(self, opp_tokens, ctx, raw_move_logits):
         """Compose the raw move posterior into the TYPED-Hidden-Power one → `(typed_logits, presence,
         hp_type_posterior)` (gen3_typed_hp_belief_v1).
@@ -3313,8 +3433,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             opp_tokens,
             ctx.species_ids[:, TEAM_SIZE:],                                  # [B, 6]
             ctx.all_move_ids[:, TEAM_SIZE:, :])                              # [B, 6, 4]
-        logits, presence, hp_post, self.last_hp_type_logits = self._typed_hp_posterior(
-            opp_tokens, ctx, raw)
+        logits, presence, hp_post, hp_logits = self._typed_hp_posterior(opp_tokens, ctx, raw)
+        # gen3_belief_label_only_v1: register the LIVE tensors for the supervised losses BEFORE
+        # publishing. `logits` is the TYPED posterior, so it carries BOTH the move head's and the
+        # HP-type head's gradient — which is why the move BCE and the HP CE both keep training under
+        # `label_only` while every forward consumer downstream reads the stop-grad publication.
+        self._belief_supervision["move_belief_logits"] = logits
+        self._belief_supervision["hp_type_logits"] = hp_logits
+        self.last_hp_type_logits = self._publish_belief(hp_logits)
+        logits = self._publish_belief(logits)
         self._last_hp_type_post = hp_post                     # stashed for the typed-HP recompose
         enriched = self.move_belief.reinject_moves(
             opp_tokens, mb_mask, self.embeddings.move_embedding, logits)
@@ -3346,13 +3473,27 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # CLS pools, like MoveBelief. Hidden slots aren't enriched (their species num 0 → flat prior) and the
         # op only reads the (revealed) active slot.
         if self.spread_belief is not None:
-            (opp_tokens, self.last_spread_belief,
-             self.last_spread_nature_logits, self.last_spread_ev) = self.spread_belief(
+            (opp_tokens, _believed, _nat_logits, _ev) = self.spread_belief(
                 opp_tokens, ~ctx.opp_believed_mask, ctx.species_ids[:, TEAM_SIZE:])
+            # gen3_belief_label_only_v1: the LIVE tensors for the supervised losses, then publish.
+            # Cutting `believed` cuts `nature_head`/`ev_head` too — in the generative arm they reach the
+            # forward ONLY through it (nat_logits → e_mult → believed → the op; and delta, which the
+            # reinject takes, is itself derived from believed). So the nature/EV stashes need no
+            # publication of their own; they are registered here for the ONE rule ("a forward-consumed
+            # belief head's stashes are published") rather than because a consumer reads them.
+            self._belief_supervision["spread_belief"] = _believed
+            self._belief_supervision["spread_nature_logits"] = _nat_logits
+            self._belief_supervision["spread_ev"] = _ev
+            self.last_spread_belief = self._publish_belief(_believed)
+            self.last_spread_nature_logits = self._publish_belief(_nat_logits)
+            self.last_spread_ev = self._publish_belief(_ev)
         else:
             self.last_spread_belief = None
             self.last_spread_nature_logits = None
             self.last_spread_ev = None
+            self._belief_supervision["spread_belief"] = None
+            self._belief_supervision["spread_nature_logits"] = None
+            self._belief_supervision["spread_ev"] = None
         # gen3_typed_hp_belief_v1: the opp-HP-TYPE head + its typed composition + its token reinjection all
         # moved UP into `_apply_move_belief`, where the move head reads the same tokens at the same time —
         # so `last_move_belief_logits` is ALREADY typed by the time it reaches here and the op needs no
@@ -3469,6 +3610,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
+        # gen3_belief_label_only_v1: drop the previous forward's LIVE supervision views, mirroring the
+        # `self.last_* = None` resets below. These hold graph-carrying tensors, so a stale one is worse
+        # than a stale stash: a loss reading it would backprop through a FREED graph (a confusing
+        # "backward through the graph a second time" error) or, worse, through activations from a
+        # different minibatch. Clearing is what makes "the key is absent ⇒ the head did not run this
+        # forward" true, which is the property `belief_supervision`'s None return relies on.
+        self._belief_supervision.clear()
         ctx = self.unpack(obs)
         # gen3_t0_species_prior_v1: resolve the hidden opponent slots to a DISCRETE species
         # distribution HERE — still T0, before any T1 consumer — and hand the same tensor to every
@@ -3697,8 +3845,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _seat_feats, _ictx = _seat_feats.detach(), _ictx.detach()
             _seat_nums = _cand[0]                                                  # [B,K] move NUMS
             self.last_alpha_seat_nums = _seat_nums.detach()
-            self.last_alpha_logits = self.alpha_head(
-                _seat_feats, _ictx, seat_valid=(_seat_nums > 0).float())
+            _alpha = self.alpha_head(_seat_feats, _ictx, seat_valid=(_seat_nums > 0).float())
+            # gen3_belief_label_only_v1: alpha is a pure readout UNTIL `--intent-value-reduce`, which
+            # appends an alpha-weighted threat term to the CRITIC half (below) — that flag is what makes
+            # the value gradient able to reach `alpha_head`, and therefore what puts alpha in the
+            # label_only set. Publishing unconditionally keeps the one rule: a forward-consumed belief
+            # head's stash IS the publication, so turning the flag on later cannot reopen the route.
+            self._belief_supervision["alpha_logits"] = _alpha
+            self.last_alpha_logits = self._publish_belief(_alpha)
             # BETA's candidates: every slot they could legally bring in. Legality is a MASK, never
             # something the head has to learn — an illegal switch-in must be unrepresentable.
             #

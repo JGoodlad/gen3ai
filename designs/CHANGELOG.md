@@ -2643,3 +2643,87 @@ were never connected, and the reason was the tier ordering rather than any missi
   either way, so no shape check would ever fire.
 - Independent of `species_prior_fusion`: that fuses the prior into the T2 aux readout, this feeds
   the T1 physics. Either is useful without the other, and they share the one implementation.
+
+### `gen3_belief_label_only_v1` (2026-08-14): the belief the policy may read but not corrupt
+
+A third `--belief-grad-mode`, **`label_only`** — and the point of the entry is that it cuts the
+**opposite arrow** from `detached`, which the flag's existing name had made easy to misread.
+
+There are four gradient routes between a state-prediction belief head and the rest of the network:
+
+| | route | `shaping` | `detached` | `label_only` |
+|---|---|---|---|---|
+| A | label loss → belief head params | on | on | on |
+| B | label loss → shared trunk (via the head's READ) | on | **CUT** | on |
+| C | PPO loss → belief head params (via the WRITE) | on | on | **CUT** |
+| D | PPO loss → shared trunk (normal training) | on | on | on |
+
+`detached` (v41) cuts **B**: the heads read a stop-grad trunk, so the belief cannot drag the trunk
+toward predicting hidden state at the policy's expense. It does **not** stop PPO from training the
+heads — measured on a real extractor at the time of this change, a pure `pi+vf` loss under
+`detached` deposited gradient mass 2113.7 on `move_belief.move_head`, 96.5 on
+`spread_belief.stat_head` and 52.2 on `hp_type_belief_head.type_head`. `label_only` cuts **C**: the
+belief is trained by its supervised labels alone.
+
+**Why that is worth having.** The only fixed point of a supervised loss is the conditional
+expectation, so a label-only head's output is a calibrated `P(hidden state | features)`. With PPO
+gradient in it, the head is really an extra hidden layer of the policy that happens to carry a
+label, free to drift off-calibration toward whatever value makes the preferred action look good.
+Two consumers here depend on it being the former: the `DamageOperator` reads these posteriors **as
+probabilities** (top-K weights, expected-latent marginalization), and the prober presents them to a
+human as "what the model believes". It also closes the belief → op → policy → belief loop, which is
+the standard way value-aware model learning produces self-fulfilling beliefs.
+
+**And what it costs.** Pure MLE spends a fixed-capacity head uniformly over the label distribution;
+the PPO gradient was the only signal saying *be precise about the 4× threat, not the filler move*.
+`HPTypeBelief`'s own docstring records that the op's damage gradient is what sharpens the type head
+— `label_only` turns that off deliberately. This is an experiment arm, not a strict improvement.
+
+**The read stays live.** `label_only` cuts C but not B, so the label loss still teaches the trunk to
+encode hidden state. Cutting both would leave a probe on a trunk with no incentive to carry the
+information, still feeding the policy — a strictly worse estimator with a live consumer. That fourth
+combination is deliberately not offered, which is also why this is a third value on the existing
+flag rather than a second flag whose 2×2 would include it.
+
+**Scope — the four heads with a forward path.** `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
+`AlphaIntentHead`. Alpha is the one that would have been missed: it is a pure readout *until*
+`--intent-value-reduce`, which appends an alpha-weighted threat term to the critic half. It is
+published unconditionally so that turning that flag on later cannot silently reopen the route. The
+remaining supervised heads — `BeliefHead` (species/moves/latent), `WinProbHead`, `PubValHead`,
+`BetaSwitchHead`, `SeedQuantileHead`, the ZArch recon head — are side readouts whose output never
+re-enters the forward, so no policy gradient can reach them in any mode; that is now asserted rather
+than assumed.
+
+**The cut is at the PUBLISH BOUNDARY, not at the consumers.** `last_move_belief_logits` alone has
+eleven forward readers (the op, `d3`/`d4`/`c1b`/`c2`/`c3`/`x`/`s3`, the E4/E5 seats, the reinject),
+so a per-consumer rule is one forgotten site away from silently reopening the route. Instead each
+head's `last_*` stash IS the stop-grad publication (`_publish_belief`), and the supervised losses
+read the live tensor through a new `belief_supervision(name)` accessor. A consumer added tomorrow is
+isolated by construction. The inverse hazard — a future loss reading the published stash and
+training nothing, silently, since the loss value looks normal — is what the accessor's unknown-key
+`KeyError` and the gate test below exist for.
+
+**Detach the LOGITS, never the matmul output.** In `reinject_moves`,
+`soft_emb = sigmoid(logits) @ move_embedding.weight`. Detaching `logits` leaves
+`move_embedding.weight` its full gradient; detaching `soft_emb` would kill it — and since that table
+also trains from `PokemonEncoder`, the loss would be silent rather than a visibly dead parameter.
+Same trap in `HPTypeBelief.reinject` with `type_embedding` via `hp_soft_type`. The reinjection
+adapters (`MoveBelief.reinject`, `SpreadBelief.reinject`, `HPTypeBelief.reinject_proj`) have no
+supervised loss at all, so PPO is their only gradient source and they must keep training.
+
+**Gate:** `belief_label_only_gate_test.py`, verified failing on revert. It builds a REAL
+`MaskablePPO` (ledger M1 — SB3's ortho-init makes a bare-extractor assertion an assertion about a
+construction path production never uses) and backprops from `evaluate_actions`, i.e. from the ACTION
+LOGITS as well as the value — under `gen3_pointer_native_v1` there is no flat `action_net`, so a
+test that summed `pi_features` would miss the entire pointer route and pass while the real PPO loss
+still trained the heads. It asserts the supervised direction too. `SpreadBelief` needed a dedicated
+direct test: with a random obs the species is unknown and its prior std is 0, so
+`believed = mean + delta·std` carries no gradient in ANY mode, and `sum(LayerNorm(x))` is a constant
+— two independent ways for the whole-policy assertion to look like it passed while testing nothing.
+
+**Versioning.** No new field and no `ARCH_SIGNATURE` bump: `detach()` is value-preserving, so the
+forward is bit-identical in all three modes and a frozen eval/pool/distill opponent plays
+identically. It rides the existing resume-immutable `belief_grad_mode` check
+(`--allow-belief-grad-mode-change` for an intentional migration on a converged checkpoint), and the
+legal-value set now lives in one place, `features_extractor.BELIEF_GRAD_MODES`, which the CLI
+`choices=` and the migration-notice table are pinned to agree with.

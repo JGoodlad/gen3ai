@@ -45,7 +45,7 @@ from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 
-from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
+from agents.model.features_extractor import BELIEF_GRAD_MODES, Gen3FeaturesExtractor, NET_ARCH
 # The move prior's LEGAL-BUT-UNOBSERVED base (--move-candidate-floor default) and its lower bound.
 # Move legality itself is unconditional — these only set how high a legal-unobserved move starts.
 from agents.model.damage_tables import _PRIOR_FLOOR, _MIN_PRIOR_FLOOR
@@ -1644,16 +1644,25 @@ async def main():
                              "gradients change. Prints a loud notice; the next checkpoint save records "
                              "the new mode, so this flag is needed once per migration.")
     parser.add_argument("--belief-grad-mode", "--belief_grad_mode", dest="belief_grad_mode",
-                        choices=["shaping", "detached"], default=None,
-                        help="gen3_belief_grad_mode_v1: how the STATE-prediction belief heads (move / spread / "
-                             "hp-type / the species-moves-latent aux) couple to the shared trunk. 'shaping' "
-                             "(default) = they READ the live trunk, so their supervised + reinject gradients "
-                             "reshape it (current behavior). 'detached' = they READ a STOP-GRAD trunk, so NO "
-                             "belief gradient reshapes the trunk — the belief is still computed, reinjected into "
-                             "the forward, and consumed by the op (fully 'in the system'), it just can't drag the "
-                             "trunk toward predicting hidden state at the policy's expense (eliminates the "
-                             "belief↔policy gradient interference). detach() is value-preserving so the FORWARD is "
-                             "bit-identical; only the training gradient differs. RESUME-IMMUTABLE (like --vf-coef, "
+                        choices=list(BELIEF_GRAD_MODES), default=None,
+                        help="gen3_belief_grad_mode_v1: WHICH gradient arrow between the STATE-prediction "
+                             "belief heads (move / spread / hp-type / the species-moves-latent aux) and the "
+                             "rest of the net is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS. "
+                             "'shaping' (default) = nothing cut: the heads READ the live trunk, so their "
+                             "supervised + reinject gradients reshape it, and PPO trains the heads. "
+                             "'detached' = they READ a STOP-GRAD trunk, so NO belief gradient reshapes the "
+                             "trunk — it can't drag the trunk toward predicting hidden state at the policy's "
+                             "expense (eliminates belief->trunk interference). "
+                             "'label_only' (gen3_belief_label_only_v1) = the opposite cut: the heads' outputs "
+                             "are PUBLISHED stop-grad to every forward consumer, so NO policy/value gradient "
+                             "reaches a belief head's PARAMETERS and the belief is trained by its supervised "
+                             "labels ALONE. The belief is still computed, reinjected and consumed by the op — "
+                             "the policy reads it, it just can't push it off-calibration. Its trunk READ stays "
+                             "live, so the label loss still teaches the trunk to encode hidden state (cutting "
+                             "both would leave a probe on a trunk with no reason to carry the information, "
+                             "still feeding the policy — that combination is deliberately not offered). "
+                             "In ALL modes detach() is value-preserving, so the FORWARD is bit-identical and "
+                             "only the training gradient differs. RESUME-IMMUTABLE (like --vf-coef, "
                              "version-checked on resume only — a frozen opponent's forward is unaffected). The "
                              "win-aligned heads (--win-prob-mode / --value-dist-mode) keep their own read_only.")
     parser.add_argument("--n-steps", type=int, default=2048, help="Steps per environment per rollout")
