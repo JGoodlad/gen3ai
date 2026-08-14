@@ -327,8 +327,14 @@ checkpoint-saving shutdown rather than a lost checkpoint.
 quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
 (`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
 arch/config mismatch instead of looping), the full flag table (`--restart-interval-hours`,
-`--restart-grace-minutes`, `--max-crash-restarts`, `--no-pin`, `--sync-to-main`), the resume
-contract, and the `:8001` Showdown-port default — live in `src/main/launcher/CLAUDE.md`.**
+`--restart-grace-minutes`, `--max-crash-restarts`, `--nice`, `--no-pin`, `--sync-to-main`), the
+resume contract, and the `:8001` Showdown-port default — live in `src/main/launcher/CLAUDE.md`.**
+
+**The launcher and everything it spawns run at `--nice 10` by default** (`0` disables). A run holds
+~940 processes; at nice 0 it competes on equal terms with interactive work sharing the box.
+Niceness is inherited across fork/exec, so one call before the first child covers the trainer, its
+SubprocVecEnv workers and every eval worker, across periodic and crash restarts alike. **On an idle
+box this changes nothing** — niceness only arbitrates under contention.
 
 ### Starting a fresh run via launcher
 ```bash

@@ -286,6 +286,10 @@ def _strip_launcher_args(argv: list) -> list:
             i += 2
         elif argv[i].startswith("--max-crash-restarts="):
             i += 1
+        elif argv[i] == "--nice":
+            i += 2
+        elif argv[i].startswith("--nice="):
+            i += 1
         elif argv[i] == "--no-pin":
             i += 1
         elif argv[i] == "--sync-to-main":

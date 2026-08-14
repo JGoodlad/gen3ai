@@ -597,6 +597,38 @@ def _reap(proc_box: "list | None") -> None:
         pass
 
 
+# Default scheduling niceness for the launcher and everything it spawns. Non-zero by
+# design: an unattended multi-day run should yield to interactive work by default rather
+# than needing a flag to remember. Only matters under contention.
+DEFAULT_NICE = 10
+
+
+def _apply_nice(target: int) -> "int | None":
+    """Raise this process's scheduling niceness to ``target``; return the level, or None.
+
+    The launcher and every training subprocess must never compete on equal terms with
+    interactive work on the same box: a run holds ~940 processes at load 20+ on 16 cores,
+    and at nice 0 an interactive client sharing the box measured 2.1 s of run-queue wait
+    per 1 s of CPU. Children inherit niceness across fork/exec, so setting it once here
+    covers the training child, its SubprocVecEnv workers and every eval worker — including
+    the ones spawned by later periodic/crash restarts.
+
+    Only ever RAISES (lowers priority): a negative nice needs CAP_SYS_NICE, which an
+    unprivileged launcher does not have, so a lower target is a no-op rather than an error.
+    """
+    if target <= 0:
+        return None
+    try:
+        current = os.nice(0)
+        if current >= target:
+            return current
+        return os.nice(target - current)
+    except (AttributeError, OSError):
+        # No os.nice (non-POSIX) or the kernel refused — never fatal, training is fine
+        # at whatever priority it already has.
+        return None
+
+
 def run(
     child_args: list,
     interval_hours: float,
@@ -703,6 +735,17 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--nice",
+        type=int,
+        default=DEFAULT_NICE,
+        help=(
+            "Run the launcher and every training subprocess at this scheduling niceness so a "
+            "long run never competes on equal terms with interactive work on the same box. "
+            "Children inherit it, including across periodic/crash restarts. On an idle box "
+            "this changes nothing — niceness only arbitrates under contention. 0 disables."
+        ),
+    )
+    parser.add_argument(
         "--no-pin",
         action="store_true",
         default=False,
@@ -739,6 +782,10 @@ def main() -> None:
 
     if known.pin_to_hash and known.no_pin:
         parser.error("--pin-to-hash and --no-pin are mutually exclusive")
+
+    # Deprioritise the whole run before anything is spawned, so the training child and
+    # every worker it forks inherits it (see _apply_nice).
+    _apply_nice(known.nice)
 
     child_args = _strip_launcher_args(sys.argv[1:])
     # Launcher sessions are long-lived: default to the dedicated training server (8001)
