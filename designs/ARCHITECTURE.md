@@ -173,10 +173,10 @@ Modules actually built under the production config (`named_children()`) — GENE
 <!-- BEGIN GENERATED: modules -->
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
-hidden_opp_belief · intent_value_reduce · intent_move_cell · belief_slots · belief_head ·
-move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj · assembler ·
-value_dist_head · pre_proj_norm · projection · value_pre_norm · value_projection · activation ·
-alpha_head · beta_head
+hidden_opp_belief · intent_value_reduce · intent_move_cell · t0_species_prior · belief_slots ·
+belief_head · move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj ·
+assembler · value_dist_head · pre_proj_norm · projection · value_pre_norm · value_projection ·
+activation · alpha_head · beta_head
 ```
 
 Notably **absent** (`None` on the instance): `win_head`, `pubval_head`, `zarch_encoder`, `seed_quantile_head`.
@@ -673,7 +673,7 @@ does nothing given another setting.
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
-| `t0_species_prior` | `false` | OFF |
+| `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
 | `value_active_readout` | `false` | OFF |
 | `value_dist_bins` | `51` | ACTIVE |

@@ -72,7 +72,7 @@
   "spread_belief_nature": true,
   "stall_pbrs": false,
   "switch_bias_weight": 0.0,
-  "t0_species_prior": false,
+  "t0_species_prior": true,
   "threat_prob_outspeed": false,
   "total_dim": 2669,
   "type_embedding_dim": 16,

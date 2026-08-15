@@ -17,6 +17,9 @@ busy.
 import pytest
 import torch
 
+# Captured BEFORE any monkeypatch swaps torch.zeros out, so a patched test can still make a tensor.
+_real_zeros = torch.zeros
+
 from agents.model.compile_trainer import (CompileTrainerError, check_numerics, check_shape_stability,
                                           check_speedup, compile_trainer_extractor, resolve_device)
 from agents.model.extractor_compiles_test import _cuda_skip_reason
@@ -165,8 +168,8 @@ def test_a_failing_compile_is_fatal_and_leaves_the_model_untouched(monkeypatch):
     monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
                         lambda f: torch.device("cuda"))
     monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: 10.0)
-    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
-                        lambda *a, **k: torch.zeros(2, 32))          # no real cuda alloc
+    monkeypatch.setattr("agents.model.compile_trainer.torch.zeros",
+                        lambda *a, **k: _real_zeros(2, 32))      # no real cuda alloc
     monkeypatch.setattr("agents.model.compile_trainer.torch.compile",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("backend exploded")))
     with pytest.raises(CompileTrainerError) as e:
@@ -185,8 +188,8 @@ def test_a_rejected_compile_is_uninstalled_not_left_running(monkeypatch):
     orig = fe.forward
     monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
                         lambda f: torch.device("cuda"))
-    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
-                        lambda *a, **k: torch.zeros(2, 32))
+    monkeypatch.setattr("agents.model.compile_trainer.torch.zeros",
+                        lambda *a, **k: _real_zeros(2, 32))
     monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
     monkeypatch.setattr("agents.model.compile_trainer._time_steps",
                         lambda *a, **k: 10.0)                # identical arms => 1.00x, rejected
@@ -217,8 +220,8 @@ def test_validation_uses_a_small_batch_NOT_the_models_batch_size(monkeypatch):
     m.batch_size = 4096
     monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
                         lambda f: torch.device("cuda"))
-    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
-                        lambda *a, **k: seen.setdefault("shape", a) and None or torch.zeros(2, 32))
+    monkeypatch.setattr("agents.model.compile_trainer.torch.zeros",
+                        lambda *a, **k: seen.setdefault("shape", a) and None or _real_zeros(2, 32))
     monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: 10.0)
     monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
     with pytest.raises(CompileTrainerError):        # 1.00x -> refused; we only want the shape
@@ -323,3 +326,45 @@ def test_compiled_learner_leaves_the_state_dict_and_a_save_reload_intact():
     torch.save(fe.state_dict(), buf)
     buf.seek(0)
     assert set(torch.load(buf, map_location="cuda", weights_only=True).keys()) == before
+
+@_skip_cuda
+def test_every_production_shape_agrees_with_eager():
+    """THE correctness gate, and the gap that made it necessary.
+
+    `torch.compile` compiles LAZILY PER SHAPE. The startup validation can only afford a small batch
+    (validating at the train batch needs more GPU memory than training does — it runs eager AND
+    compiled in one process, plus Inductor's workspace), so the graphs production actually trains
+    with are compiled at shapes the startup check never touches:
+
+        batch n_envs     the rollout forward
+        batch batch_size the train step
+
+    If a shape-specific kernel were wrong, nothing at startup would see it and the run would train on
+    quietly corrupt features — the exact GIGO this flag exists to prevent. So the per-shape agreement
+    is asserted HERE, where a GPU is free and memory is not contended.
+
+    Measured against the live gen-10 config on REAL observations off the rust bridge (a separate
+    one-off, since a bridge battle does not belong in the unit suite): batch 48 -> 9.5e-07,
+    batch 64 -> 7.2e-07, batch 4096 -> 3.6e-06, against a value scale of 2.111. Float32 rounding,
+    not a wrong kernel.
+    """
+    from agents.model.extractor_compiles_test import _build_production_extractor
+    fe, layout = _build_production_extractor()
+    fe = fe.cuda().eval()
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    compiled = torch.compile(fe.forward)
+
+    worst = {}
+    for batch in (1, 48, 512):          # inference, rollout, and a train-shaped minibatch
+        obs = {"observation": torch.zeros(batch, layout["total_dim"], device="cuda")}
+        with torch.no_grad():
+            e_pi, e_vf = fe(obs)
+            c_pi, c_vf = compiled(obs)
+        torch.cuda.synchronize()
+        worst[batch] = max(float((e_pi - c_pi).abs().max()), float((e_vf - c_vf).abs().max()))
+
+    bad = {b: d for b, d in worst.items() if not (d < 1e-4)}
+    assert not bad, (
+        f"a compiled PRODUCTION shape disagrees with eager: {bad} (all shapes: {worst}). A faster "
+        "wrong model is not a win — this is the silent-corruption case, not a performance nit.")

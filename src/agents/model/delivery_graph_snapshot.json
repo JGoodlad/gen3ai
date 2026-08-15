@@ -5164,6 +5164,14 @@
       "type": "content",
       "via": "SpreadBelief.reinject",
       "width": 128
+    },
+    {
+      "dst": "damage_op",
+      "note": "P(species | revealed team) \u2014 replaces the STATIC usage prior",
+      "source_constant": "layout['max_species']",
+      "src": "t0_species_prior",
+      "type": "content",
+      "width": 400
     }
   ],
   "meta": {
@@ -5245,6 +5253,12 @@
     {
       "id": "spread_belief",
       "kind": "belief_head"
+    },
+    {
+      "id": "t0_species_prior",
+      "kind": "belief_head",
+      "note": "team-composition species belief; parameter-free",
+      "stage": "T0"
     },
     {
       "id": "pi_projection",

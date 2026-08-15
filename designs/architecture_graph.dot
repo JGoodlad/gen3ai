@@ -17,6 +17,7 @@ digraph gen3_delivery {
   "move_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="move_belief"];
   "species_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="species_belief"];
   "spread_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="spread_belief"];
+  "t0_species_prior" [shape=box, style=filled, fillcolor="#e6dcf3", label="t0_species_prior"];
   "pi_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="pi_projection\n1177→512"];
   "vf_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="vf_projection\n1241→512"];
   "hidden_opp_belief" [shape=plaintext, label="hidden_opp_belief"];
@@ -122,4 +123,5 @@ digraph gen3_delivery {
   "spread_belief" -> "damage_op" [color="#2f6f3e", style=solid, label="content w=5", tooltip="ABS · 5 stats"];
   "spread_belief" -> "loss.spread_belief" [color="#8a8a8a", style=dotted, label="aux", tooltip="train-only · training-only obs Dict key"];
   "spread_belief" -> "opp_mon" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
+  "t0_species_prior" -> "damage_op" [color="#2f6f3e", style=solid, label="content w=400", tooltip="ABS · layout['max_species']"];
 }

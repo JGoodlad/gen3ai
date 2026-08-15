@@ -215,12 +215,14 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = No
 
     # VALIDATE AT A SMALL, SAFE BATCH — and label the number with the shape it was measured at.
     #
-    # This was `model.batch_size` for exactly one afternoon, on the reasoning that measuring at the
-    # shape training uses is more honest. It is, and it also BROKE STARTUP: at batch 4096 the real
-    # trainer dies with `CUDA error: invalid configuration argument` inside the compiled graph, while
-    # the identical arch compiles fine at 4096 in isolation (bare extractor AND a real MaskablePPO
-    # policy, both fine) — so it is an interaction with the live trainer process, not the arch. A
-    # gen-10 launch that had been running happily at 935 fps refused to start.
+    # This was `model.batch_size` for exactly one afternoon, and it BROKE STARTUP — a gen-10 launch
+    # that had been running happily at 935 fps refused to start. The cause is now KNOWN and it is not
+    # subtle: **validating at the train batch needs MORE GPU memory than training itself does.**
+    # Validation runs the arm eager AND compiled in one process, with Inductor's compile workspace on
+    # top; training only ever needs one of them. At batch 4096 that exceeds the card and the allocator
+    # fails — surfacing first as a mystifying `CUDA error: invalid configuration argument`, and as a
+    # plain `OutOfMemoryError` once the obs was valid enough to get further. So the small batch is not
+    # a shortcut around an unexplained bug; it is the only shape this check can afford.
     #
     # The validation exists to answer "did the compile WORK", not "how fast is it in production", and
     # a small batch answers that. The cost is one extra graph shape at startup, which is cheap:
@@ -280,7 +282,14 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = No
 
     was_training = fe.training
     fe.train()                                 # the backward path is what we are compiling
-    obs = {"observation": torch.rand(batch, obs_dim, device=device)}
+    # ZEROS, not `torch.rand` — matching `snapshot._zero_obs` on the opponent path, and for a reason
+    # this module learned the hard way. A random float vector is NOT a valid observation: the
+    # ObservationDebugger rejects it outright ("CRITICAL INTEGRITY FAILURE: multiple active Pokemon"),
+    # so it can drive the forward down branches no real battle reaches. An all-zero obs is the
+    # canonical "nothing known" state — every categorical id is 0, every flag clear — which is
+    # structurally legal, and it was ALSO what turned a mystifying `CUDA error: invalid configuration
+    # argument` into the honest `OutOfMemoryError` underneath it when this was being debugged.
+    obs = {"observation": torch.zeros(batch, obs_dim, device=device)}
 
     original = fe.forward
     try:

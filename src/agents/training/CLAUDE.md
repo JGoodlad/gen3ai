@@ -1497,10 +1497,32 @@ prevent. Two configs get there, both decidable before training starts, both now 
 Production is safe by arithmetic — 2048x48 = 98304 = 24 x 4096 exactly, so exactly two shapes — but
 that was luck of the config until these guards existed.
 
-⚠️ **The validation runs at `model.batch_size`, not a cheap throwaway batch**, and that matters
-twice. A small batch is far more launch-bound so the number FLATTERS (the first gen-10 launch logged
-**5.30x at batch 64** against the honest **1.75x at 4096**), and validating at a shape training never
-uses would force an extra compile at the first real minibatch.
+⚠️ **The validation runs at a SMALL batch on a ZERO observation, and both halves are load-bearing.**
+
+*Why not the train batch.* Because **validating at `batch_size` needs MORE GPU memory than training
+does** — validation runs the arm eager AND compiled in one process with Inductor's workspace on top,
+where training only ever needs one of them. At batch 4096 that exceeds the card. This was learned by
+shipping it: it took down a gen-10 launch that had been running at 935 fps, first as a mystifying
+`CUDA error: invalid configuration argument` and then, once the obs was valid enough to get further,
+as the plain `OutOfMemoryError` underneath. The small batch is not a shortcut around an unexplained
+bug; it is the only shape the check can afford. The honesty problem it was meant to solve — a
+batch-64 ratio reading as if it were the production figure — is fixed by NAMING the shape in the log
+line instead.
+
+*Why zeros and not `torch.rand`.* A random float vector is **not a valid observation** — the
+ObservationDebugger rejects it outright — so it can drive the forward down branches no real battle
+reaches. All-zero is the canonical "nothing known" state (every categorical id 0, every flag clear),
+structurally legal, and it is what `snapshot._zero_obs` has always used on the opponent path. The
+trainer path briefly diverged to `rand` for no reason and that is what disguised the OOM as a CUDA
+config error.
+
+*Where per-shape correctness IS checked.* `torch.compile` compiles lazily PER SHAPE, so the graphs
+production trains with (batch `n_envs` for rollout, batch `batch_size` for train) are never the one
+the startup check compiles. That gap is closed by
+`compile_trainer_test::test_every_production_shape_agrees_with_eager`, which asserts compiled ==
+eager at each shape on a free GPU where memory is not contended. Measured once against the live
+gen-10 config on REAL observations off the rust bridge: **batch 48 -> 9.5e-07, batch 64 -> 7.2e-07,
+batch 4096 -> 3.6e-06**, against a value scale of 2.111 — float32 rounding, not a wrong kernel.
 
 **⚠️ It DROPS the ObservationDebugger, and that is a production-visible trade.** Dynamo cannot trace
 the debugger's numpy asserts at all (it dies building a guard over a numpy bool), so this is
