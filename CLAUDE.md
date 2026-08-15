@@ -877,6 +877,13 @@ making snapshot ELOs **comparable across runs**. Offline: `python -m main.elo <r
 ladder and plots an Elo-vs-step curve (and can backfill a running run from TensorBoard with
 `--source tb`). Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
 
+🚨 **Reporting an ELO has three rules — read them before quoting a number.** The headline is
+`<run>/snapshot_ladder/ladder.json` (dense, ±10) rather than `eval/elo` (±29); a rating is only
+final once the run is, because BT re-solves every node on every add and the newest one is
+**systematically inflated** (gen-10's 12M fell 2089 → 2021 over 12 refits); and a cross-run
+comparison must be at matched snapshot COUNT, not matched step. The measured drift table and the
+worked example are in `src/agents/training/CLAUDE.md` → *Reading an ELO*.
+
 ---
 
 ## Playing / Evaluation

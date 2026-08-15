@@ -1234,6 +1234,43 @@ QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-sci
 matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
 measure-once contract, fit-recovers-ordering, sidecar read).
 
+#### 🚨 Reading an ELO: `ladder.json`, at matched SNAPSHOT COUNT, never mid-run
+
+**Read `<run>/snapshot_ladder/ladder.json` — not `eval/elo`, not the per-cycle TB scalar.** On
+gen-10's completed ladder the two agree at the end (24M: dense 2079 vs sparse 2102) but the dense
+CI is **±10 vs ±29**. Precision is the reason to prefer it; it is *not* immune to the drift below.
+
+**A snapshot's rating keeps moving until it stops gaining opponents.** Anchored BT is a GLOBAL
+BATCH fit — every added player re-solves every rating — and the movement is a **systematic
+downward bias on the newest node**, not noise. Measured over gen-10's 12 successive refits
+(`snapshot_ladder/updater.log` records each one):
+
+| snapshot | first fit | final fit (n=12) | drift |
+|---|---|---|---|
+| 2M | 1790 | 1705 | **−85** |
+| 4M | 1945 | 1844 | **−101** |
+| 12M | 2089 | 2021 | **−68** |
+| 14M | 2088 | 2044 | **−44** |
+
+Mechanism, and the SE is the tell (12M: 25.9 → 18.4 as it fell 2089 → 2021): a fresh snapshot's
+only edges are ~90% wins over the bots. A saturated edge says *"≥380 Elo above"* with a likelihood
+that is **flat upward**, so the MLE is inflated and under-constrained. The near-50% frozen-vs-frozen
+edges are sharply informative, and as they accumulate they pull the chain down onto the anchor.
+Dense measurement buys resolution; it does not buy an early answer.
+
+**Therefore, two rules:**
+
+1. **Never narrate a mid-run ELO or a mid-run delta.** The gen-10 12M delta read +108, +82, +73,
+   +64 before settling at **+11** — four reported "results", all artifacts. Wait for the run to end.
+2. **Cross-run comparison must be at matched snapshot count `n`, not matched step.** Both runs'
+   node at n=k carries the same inflation, so it cancels; a live run's newest node against a
+   finished run's *final* value does not. Worked example — gen-11 at n=7 vs gen-10's **n=7** fit
+   (recoverable from `updater.log`) reads 14M: 2082 vs 2088 = **−6, tied**; against gen-10's n=12
+   final it reads **+38**, which is the drift and nothing else.
+
+`n_frozen_pairs_measured` / `n_pairs_possible` in `ladder.json` is the completeness check — a fit
+at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what the bias tracks.
+
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
 The default `SubprocVecEnv.step()` is a **per-step barrier** — the trainer waits for the slowest of
