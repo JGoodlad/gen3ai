@@ -3989,7 +3989,15 @@ async def main():
 
             _attach_run_tb_logger(model, model_dir)  # TB → <model_dir>/tb/ (resumes append to it)
             try:
-                model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
+                # `remaining_steps`, NOT `args.steps`. SB3's `_setup_learn` does
+                # `total_timesteps += self.num_timesteps` whenever `reset_num_timesteps=False`, so
+                # passing the ABSOLUTE target here re-adds the steps already trained and silently
+                # doubles the budget: a resume at 24.08M with --steps 25M retargeted to ~49M. The run
+                # printed "915,520 remaining of 25,000,000" and kept going 1M steps past the target —
+                # the message was computed correctly and then not used. gen-9 hit this too (it was at
+                # 26M against a 25M budget and had to be killed by hand); gen-10 reached 26.05M.
+                model.learn(total_timesteps=remaining_steps, callback=callbacks,
+                            reset_num_timesteps=False)
             except Exception as e:
                 # A genuine training error (NOT the graceful restart — that path os._exit(15)s and
                 # never reaches here). Print the FULL traceback so the crash is diagnosable, save the
@@ -4183,6 +4191,9 @@ async def main():
             if log_level >= LogLevel.DETAILED:
                 from sb3_contrib.common.maskable.utils import is_masking_supported
                 print(f"✅ [DEBUG] Masking supported for env: {is_masking_supported(env)}")
+            # FRESH run: `num_timesteps` is 0, so SB3's `total_timesteps += num_timesteps` is a
+            # no-op and the absolute target is correct here. The RESUME site must pass the REMAINING
+            # budget instead — see the note there.
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
             print("\n" + "🛑" * 30)
