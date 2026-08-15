@@ -217,13 +217,16 @@ def info_gain_nats(logits: torch.Tensor, target: torch.Tensor) -> float:
     nothing about *when*, scores ~0.
 
     **It CAN go negative**, and that is a real signal rather than a bug: the model is doing worse
-    than the base rate. `alpha_acc_move` sitting below its `argmax(w)` baseline is exactly the
-    situation where that matters, since both of those numbers move during training and their
+    than the base rate. `alpha_move_recall_top1` sitting below its `argmax(w)` baseline is exactly
+    the situation where that matters, since both of those numbers move during training and their
     difference is not interpretable on its own.
 
     NOTE this is deliberately NOT gain over `w`, the belief's own move ranking, which would be the
     stronger reference. `w` is not passed here and threading it is a separate change; the
-    `alpha_acc_move_baseline_argmax_w` accuracy comparison remains the (imperfect) stand-in for it.
+    `alpha_move_baseline_argmax_w` comparison remains the (imperfect) stand-in for it — and it is
+    only meaningful against `alpha_move_recall_top1`, which is restricted to the MOVE classes and so
+    asks the same question the baseline does. Comparing it against a number that also had to decide
+    move-vs-switch is what produced a wrong read once.
     """
     tgt = target.reshape(-1)
     n_classes = logits.shape[-1]
@@ -302,28 +305,58 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 tgt = alpha_target[sup]
                 metrics["opp_intent/alpha_loss"] = float(la.detach())
                 metrics["opp_intent/alpha_acc"] = float((pred == tgt).float().mean())
-                # SWITCH is the last class; split the accuracy so a head that only learns
-                # "they attack" cannot hide behind the attack-heavy base rate.
+                # NAMING. Everything below that conditions on the TRUE class is a RECALL and is
+                # named one; `alpha_acc` above is the only genuine ACCURACY here (exact class over
+                # all K+1, conditioned on nothing).
+                #
+                # PRECISION is added for the KIND decision and ONLY there, because that is the only
+                # place it carries information. Kind is binary, so "when we say switch, how often is
+                # it a switch" is a different question from "of the switches, how many did we
+                # catch" — and a switch-biased head scores well on the second while failing the
+                # first. The TARGET metrics are single-label top-1 over 6 slots / K seats, where
+                # exactly one class is predicted per row, so micro-precision, micro-recall and
+                # accuracy are the SAME NUMBER; emitting a "precision" there would be a duplicate
+                # column wearing a different name.
                 k = alpha_logits.shape[-1] - 1
                 is_sw = tgt == k
+                said_sw = pred == k
+
+                # --- axis 1 + 2: the KIND decision, both directions -------------------------
                 if int(is_sw.sum()):
-                    metrics["opp_intent/alpha_acc_switch"] = float(
-                        (pred[is_sw] == tgt[is_sw]).float().mean())
+                    metrics["opp_intent/alpha_switch_recall"] = float(
+                        (pred[is_sw] == k).float().mean())
+                if int(said_sw.sum()):
+                    metrics["opp_intent/alpha_switch_precision"] = float(
+                        (tgt[said_sw] == k).float().mean())
                 if int((~is_sw).sum()):
-                    metrics["opp_intent/alpha_acc_move"] = float(
-                        (pred[~is_sw] == tgt[~is_sw]).float().mean())
-                    # THE BASELINE alpha exists to beat, and the ONLY number that makes
-                    # `alpha_acc_move` interpretable. Seats are `topk(w)` DESCENDING, so seat 0 IS
-                    # argmax(w) — "the belief's own top-ranked move" — and the fraction of supervised
-                    # MOVE rows whose target is seat 0 is exactly how often that free guess is right.
-                    # Without it a reader cannot tell IMPROVEMENT from REPRODUCTION, and reproduction
-                    # is the likely default: `w` rides in the E4 seat header the alpha head reads, so
-                    # the head can recover argmax(w) from its own input almost by construction.
-                    # Compare LIKE FOR LIKE: this is measured on the SAME supervised-and-covered
-                    # subset as `alpha_acc_move`, so it is NOT the 51.8% whole-population figure
-                    # (that one divides by every move row, covered or not).
-                    metrics["opp_intent/alpha_acc_move_baseline_argmax_w"] = float(
-                        (tgt[~is_sw] == 0).float().mean())
+                    metrics["opp_intent/alpha_move_kind_recall"] = float(
+                        (pred[~is_sw] != k).float().mean())
+                if int((~said_sw).sum()):
+                    metrics["opp_intent/alpha_move_kind_precision"] = float(
+                        (tgt[~said_sw] != k).float().mean())
+                metrics["opp_intent/alpha_pred_switch_rate"] = float(said_sw.float().mean())
+
+                # --- axis 4: WHICH move, given they moved -----------------------------------
+                if int((~is_sw).sum()):
+                    mv = ~is_sw
+                    move_logits = alpha_logits[sup][mv][:, :k]
+                    mv_tgt = tgt[mv]
+                    metrics["opp_intent/alpha_move_recall_top1"] = float(
+                        (move_logits.argmax(dim=-1) == mv_tgt).float().mean())
+                    # TOP-2: "nearly had it" is a different state from "no idea", and with K seats
+                    # the two are indistinguishable in top-1 alone. A head whose top-2 covers the
+                    # truth is one a consumer can use as a DISTRIBUTION even when its argmax is
+                    # wrong — which is exactly how --intent-value-reduce and --intent-move-cell
+                    # consume alpha (as weights, not as a decision).
+                    if move_logits.shape[-1] >= 2:
+                        top2 = move_logits.topk(2, dim=-1).indices
+                        metrics["opp_intent/alpha_move_recall_top2"] = float(
+                            (top2 == mv_tgt[:, None]).any(dim=-1).float().mean())
+                    # The baseline this must beat: seats are topk(w) DESCENDING, so seat 0 IS the
+                    # belief's own top-ranked move, and this is how often that free guess is right.
+                    # Compared LIKE FOR LIKE with top1 above — both are "given they moved".
+                    metrics["opp_intent/alpha_move_baseline_argmax_w"] = float(
+                        (mv_tgt == 0).float().mean())
                 metrics["opp_intent/alpha_switch_rate"] = float(is_sw.float().mean())
                 # THE HEADLINE. See `info_gain_nats`: a proper scoring rule, so an unpredictable
                 # opponent scores ~0 instead of scoring "wrong", and the number is comparable
@@ -368,12 +401,23 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
             total = lb if total is None else total + lb
             with torch.no_grad():
                 metrics["opp_intent/beta_loss"] = float(lb.detach())
-                metrics["opp_intent/beta_acc"] = float(
-                    (beta_logits[sup].argmax(dim=-1) == beta_target[sup]).float().mean())
+                # RECALL, not "accuracy": conditioned on the TRUE class (a supervised switch).
+                # Single-label top-1 over 6 slots, so micro-precision == micro-recall == accuracy
+                # here — a separate "precision" column would be the same number twice. Precision
+                # only earns its place on the binary KIND decision (see the alpha block).
+                _bl, _bt = beta_logits[sup], beta_target[sup]
+                metrics["opp_intent/beta_recall_top1"] = float(
+                    (_bl.argmax(dim=-1) == _bt).float().mean())
+                # TOP-2 for the same reason alpha gets one: with 6 slots, "narrowed it to two" and
+                # "no idea" are indistinguishable in top-1, and they mean very different things for
+                # a reader deciding whether the head has learned anything.
+                if _bl.shape[-1] >= 2:
+                    _b2 = _bl.topk(2, dim=-1).indices
+                    metrics["opp_intent/beta_recall_top2"] = float(
+                        (_b2 == _bt[:, None]).any(dim=-1).float().mean())
                 # The base rate beta must beat is "switch to whichever bench slot is most common",
                 # which is far from uniform — so raw accuracy flatters it. Same instrument as alpha.
-                metrics["opp_intent/beta_info_gain_nats"] = info_gain_nats(
-                    beta_logits[sup], beta_target[sup])
+                metrics["opp_intent/beta_info_gain_nats"] = info_gain_nats(_bl, _bt)
                 # THE FALSIFIER for keeping the alpha/beta split (2026-08-13). The split imposes a
                 # HIERARCHY the game does not: it factors P(switch to j) = P(SWITCH)·P(j | SWITCH),
                 # which is exact for disjoint outcomes and therefore loses nothing IN PRINCIPLE. The
@@ -385,11 +429,11 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 if alpha_logits is not None:
                     with torch.no_grad():
                         p_sw = torch.softmax(alpha_logits.float(), dim=-1)[:, -1]   # [B]
-                        b_ok = beta_logits[sup].argmax(dim=-1) == beta_target[sup]
+                        b_ok = _bl.argmax(dim=-1) == _bt
                         conf = p_sw[sup] >= 0.5
                         for _name, _m in (("alpha_confident", conf), ("alpha_unsure", ~conf)):
                             if int(_m.sum()) > 1:
-                                metrics[f"opp_intent/beta_acc_{_name}"] = float(
+                                metrics[f"opp_intent/beta_recall_{_name}"] = float(
                                     b_ok[_m].float().mean())
 
     if total is None:

@@ -115,8 +115,10 @@ def test_switch_and_move_accuracy_are_reported_separately():
     logits[:, 0] = 10.0                       # always predicts seat 0
     tgt = torch.tensor([0, 0, 2, 2])          # two moves, two switches
     _, m = intent_losses(logits, tgt, None, None)
-    assert m["opp_intent/alpha_acc_move"] == pytest.approx(1.0)
-    assert m["opp_intent/alpha_acc_switch"] == pytest.approx(0.0)
+    # Always predicting seat 0 gets the KIND right on every move row and every switch row wrong.
+    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(1.0)
+    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0)
+    assert m["opp_intent/alpha_switch_recall"] == pytest.approx(0.0)
     assert m["opp_intent/alpha_acc"] == pytest.approx(0.5)
 
 
@@ -282,3 +284,97 @@ def test_content_addressing_is_INVARIANT_to_permuting_the_believed_slots():
     perm = torch.tensor([0, 1, 2, 5, 3, 4])
     moved = int(resolve_believed_slot_by_content(lg[:, perm], mask[:, perm], torch.tensor([77]))[0])
     assert perm[moved] == base, "the target must track the mon, not the index"
+
+
+def test_move_accuracy_is_not_charged_for_the_switch_decision_its_baseline_never_faces():
+    """`alpha_acc_move` vs `alpha_acc_move_baseline_argmax_w` is NOT a like-for-like comparison, and
+    reading it as one produced a wrong conclusion on a live run ("alpha is below its own baseline").
+
+    `pred` is an argmax over all K+1 classes, so on a MOVE row where alpha's top mass sits on SWITCH
+    it scores zero. The baseline is `(tgt == 0)` — a property of the TARGETS that never chooses
+    between moving and switching, so it cannot make that error at all.
+
+    This plants the pathological case: alpha ranks the moves PERFECTLY but always prefers SWITCH.
+    The raw metric reads 0.0 (looks like a head that cannot rank moves); the restricted metric reads
+    1.0 (the truth); and the switch-rate diagnostic reads 1.0, naming which defect it actually is.
+    """
+    k = 4                                     # 4 move seats + SWITCH at index 4
+    n = 6
+    logits = torch.full((n, k + 1), -5.0)
+    tgt = torch.tensor([0, 1, 2, 3, 0, 1])    # every row is a MOVE row
+    for i, t in enumerate(tgt):
+        logits[i, int(t)] = 1.0               # correct move is the best MOVE...
+    logits[:, k] = 9.0                        # ...but SWITCH always outranks it
+    _, m = intent_losses(logits, tgt, None, None)
+
+    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(0.0), \
+        "axis 2 must show the pathology: it never once said 'a move'"
+    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0), \
+        "axis 4 must show the truth: given they moved, it ranks the moves perfectly"
+    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(1.0), \
+        "and this names the defect: it over-predicts switching"
+    # THE POINT: a single fused number cannot say both of those at once, which is why the old
+    # `alpha_acc_move` (kind AND target together) read 0.0 here and was mistaken for a head that
+    # could not rank moves.
+
+
+def test_the_restricted_metric_equals_the_raw_one_when_switch_is_never_predicted():
+    """No double-counting: with SWITCH ranked last the two metrics must agree, so `_restricted` is
+    a strict refinement rather than a different measurement."""
+    k = 4
+    logits = torch.full((5, k + 1), -5.0)
+    tgt = torch.tensor([0, 2, 1, 3, 2])
+    for i, t in enumerate(tgt):
+        logits[i, int(t)] = 1.0
+    logits[:, k] = -9.0                       # SWITCH never wins
+    _, m = intent_losses(logits, tgt, None, None)
+    # With SWITCH never predicted the kind decision is trivially right on every move row, so the
+    # two axes decouple cleanly: kind recall saturates and the target metric carries all the signal.
+    assert m["opp_intent/alpha_move_kind_recall"] == pytest.approx(1.0)
+    assert m["opp_intent/alpha_move_recall_top1"] == pytest.approx(1.0)
+    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(0.0)
+
+
+def test_all_four_prediction_axes_are_reported():
+    """The opponent's action is a KIND (move vs switch) and a TARGET given that kind, so there are
+    four things to be right about. Each needs its own number — a fused metric hides which one broke,
+    which is precisely what `alpha_acc_move` did before it was split."""
+    k = 4
+    logits = torch.randn(8, k + 1)
+    tgt = torch.tensor([0, 1, k, 2, k, 3, 0, k])          # a mix of moves and switches
+    beta_logits = torch.randn(8, 6)
+    beta_tgt = torch.tensor([INTENT_IGNORE, INTENT_IGNORE, 2, INTENT_IGNORE,
+                             4, INTENT_IGNORE, INTENT_IGNORE, 1])
+    _, m = intent_losses(logits, tgt, beta_logits, beta_tgt)
+    for axis, key in (("they switched -> KIND", "opp_intent/alpha_switch_recall"),
+                      ("they moved    -> KIND", "opp_intent/alpha_move_kind_recall"),
+                      ("they switched -> TARGET", "opp_intent/beta_recall_top1"),
+                      ("they moved    -> TARGET", "opp_intent/alpha_move_recall_top1")):
+        assert key in m, f"no metric for the axis '{axis}' ({key})"
+        assert 0.0 <= m[key] <= 1.0
+
+
+def test_move_kind_and_switch_prediction_rate_are_complements():
+    """`alpha_acc_move_kind` and `alpha_pred_switch_on_move_rows` partition the move rows, so they
+    must sum to 1 — a cheap invariant that catches either being computed on the wrong subset."""
+    k = 4
+    torch.manual_seed(3)
+    logits = torch.randn(12, k + 1)
+    tgt = torch.tensor([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3])   # all MOVE rows
+    _, m = intent_losses(logits, tgt, None, None)
+    assert (m["opp_intent/alpha_move_kind_recall"]
+            + m["opp_intent/alpha_pred_switch_rate"]) == pytest.approx(1.0)
+
+
+def test_switch_precision_is_not_the_same_as_switch_recall():
+    """A head that shouts SWITCH at everything has PERFECT switch recall and terrible precision.
+    Only logging recall makes those indistinguishable — and the consumers act on what alpha ASSERTS,
+    so precision is the number that decides whether acting on it helps."""
+    k = 4
+    logits = torch.full((10, k + 1), -5.0)
+    logits[:, k] = 9.0                                   # always predicts SWITCH
+    tgt = torch.tensor([k, k, 0, 1, 2, 3, 0, 1, 2, 3])   # only 2 of 10 are real switches
+    _, m = intent_losses(logits, tgt, None, None)
+    assert m["opp_intent/alpha_switch_recall"] == pytest.approx(1.0), "caught every switch"
+    assert m["opp_intent/alpha_switch_precision"] == pytest.approx(0.2), "but cried switch 5x too often"
+    assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(1.0)

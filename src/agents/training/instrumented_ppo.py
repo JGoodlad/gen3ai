@@ -1702,6 +1702,27 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         if oi_wanted_content > 0:
                             oi_m["opp_intent/beta_belief_miss_rate"] = (
                                 1.0 - oi_extra_believed / oi_wanted_content)
+                        # THE SWITCH-COVERAGE MATRIX. Every voluntary switch falls in exactly one of
+                        # three buckets, and only the third is a failure — but with just a mask rate
+                        # and a miss rate a reader cannot tell their SIZES, and "beta is masked 73%
+                        # of the time" reads as a crisis when ~62 of those points are simply "they
+                        # attacked". These are fractions of VOLUNTARY SWITCHES, so they sum to 1.
+                        #
+                        #   revealed      the mon was already on the board -> exact slot, no belief
+                        #                 needed. The easiest label, and previously invisible.
+                        #   hidden_found  still hidden, and the species posterior placed it -> the
+                        #                 content-addressed target. This is what that path BUYS.
+                        #   hidden_missed the belief could not name it -> masked. The BELIEF's
+                        #                 failure, and the only bucket that is lost supervision.
+                        _n_sw = float((_kind == 1).float().sum())
+                        if _n_sw > 0:
+                            oi_m["opp_intent/beta_switch_n"] = _n_sw
+                            oi_m["opp_intent/beta_switch_to_revealed"] = (
+                                (_n_sw - oi_wanted_content) / _n_sw)
+                            oi_m["opp_intent/beta_switch_to_hidden_found"] = (
+                                oi_extra_believed / _n_sw)
+                            oi_m["opp_intent/beta_switch_to_hidden_missed"] = (
+                                (oi_wanted_content - oi_extra_believed) / _n_sw)
                         if _sv is not None:
                             loss = loss + self.opp_intent_coef * self.beta_setvalued_coef * _sv
                             oi_m["opp_intent/beta_setvalued_loss"] = float(_sv.detach())

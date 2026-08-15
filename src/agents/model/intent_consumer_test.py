@@ -92,8 +92,8 @@ def test_beta_accuracy_is_bucketed_by_alpha_switch_confidence():
     beta_logits = torch.randn(n, 6)
     beta_target = torch.randint(0, 6, (n,))
     _, m = intent_losses(alpha_logits, alpha_target, beta_logits, beta_target)
-    assert "opp_intent/beta_acc_alpha_confident" in m
-    assert "opp_intent/beta_acc_alpha_unsure" in m
+    assert "opp_intent/beta_recall_alpha_confident" in m
+    assert "opp_intent/beta_recall_alpha_unsure" in m
 
 
 def test_the_bucketing_does_not_change_beta_accuracy_overall():
@@ -104,7 +104,7 @@ def test_the_bucketing_does_not_change_beta_accuracy_overall():
     _, without = intent_losses(None, None, beta_logits, beta_target)
     _, with_a = intent_losses(torch.zeros(n, 4), torch.randint(0, 4, (n,)),
                               beta_logits, beta_target)
-    assert with_a["opp_intent/beta_acc"] == pytest.approx(without["opp_intent/beta_acc"])
+    assert with_a["opp_intent/beta_recall_top1"] == pytest.approx(without["opp_intent/beta_recall_top1"])
 
 
 # --------------------------------------------------------------- the grad mode
