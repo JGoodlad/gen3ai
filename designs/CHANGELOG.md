@@ -2858,3 +2858,79 @@ re-delivered through the pointer MOVE cell as a per-action ABSOLUTE, α-conditio
 - **What this does NOT decide**: the G3 VERDICT — whether the re-delivered family comes alive
   — needs a trained run's per-arm audit. The instrument ships OFF; the first flag-on run is
   the gate.
+
+### v78 — `gen3_flag_surface_p1_v1` (2026-08-14): the flag registry, and the first deletions it enables
+
+Phase 1 of the CLI flag-surface cleanup. `train_rl_agent.py` carried ~170 long-form flags, and
+every model-relevant one had to be spelled out by hand in **five** places. Nothing enforced the
+five agreeing, and every historical failure in the class was silent — a toggle that reaches the
+extractor but not the recorded config version-checks a resume against an architecture it does not
+build; one with an argparse entry but no `_resolve` line silently reverts to OFF on a flagless
+resume.
+
+**The enabler — `agents/model/flag_registry.py`.** One declarative row per extractor toggle
+(name · default · TIER · CLASS · `since` · one-line meaning). From it, two of the five surfaces are
+now **GENERATED** (`extractor_arch.ARCH_ARG_KEYS` / `FROZEN_ARCH_KWARGS`, and
+`current_model_version`'s toggle dict via `arch_toggles_from_args` — `_run_arch_toggles` was a
+second hand-kept list of the same toggles and is now derived), and the other three are
+**VALIDATED** by `flag_registry_test.py`, which fails naming the missing site. It earned its keep
+on the first run: **three rows whose flag name is not `--<field>`** — `--damage-topk` writes
+`damage_topk_k`, and the `--damage-matrices` MODE flag desugars into both `damage_matrices_*`
+bools. `designs/flag_registry.md` is generated from the same table (`--check` is the gate).
+
+The TIER axis is the reusable part. A flag has three roles — SELECT (choose it at launch), RECORD
+(write it into `model_config.json`), GATE (refuse a mismatched resume) — and only SELECT needs
+argparse, so a **settled** toggle can lose its flag with no loss of explicitness: `config_only`
+keeps the recorded field, the version gate and the extractor CONSTRUCTOR kwarg, and freezes the
+launch value at the registry default. Pinned end-to-end by `config_only_pattern_test.py`.
+
+**Deleted (8 fields, 2 modules, 1 module family), all OFF in production:**
+
+- **The ZARCH family** — `zarch_film` / `zarch_dim` / `zarch_lut` / `zarch_lut_teams` /
+  `zarch_recon_coef` / `zarch_vicreg_coef`, with `ZArchEncoder`, both FiLM generators, the per-team
+  LUT Embedding, `team_signature.py` + its roster table + fuzz, `attach_zarch_lut`, the
+  `--film-grad-accum-steps` group accumulator and the `film/*` + `zarch/*` TB families. **The line
+  it existed to test is closed and the result was NULL twice over**: the LUT arm — a FREE per-team
+  code, the sharpest possible removal of a conditioning-signal limit — moved the N=20 multi-team
+  ceiling by **+0.024, CI [−0.016, +0.064]**, and the orthogonal 2×2 measured team COUNT (20→10,
+  **+0.077 SIG**) dominating conditioning (**+0.027 n.s.**).
+- **The SEED-PRESSURE pair** — `seed_quantile` (v63) and `value_seed_vicreg_coef` (v62), with
+  `seed_quantile.py` and `seed_vicreg.py`. **Both cap at ~1-D differentiation of the k=4 value
+  seeds, from opposite directions**: gen-6's VICReg satisfied every term at
+  `out_effective_rank` 1.05 (three seeds identical, one breakaway); gen-7's quantile arm drove
+  `crossing_rate` to 0.000 and `quantile_spread` to 1.016 — the seeds genuinely predict four
+  ordered quantiles — at `out_effective_rank` **1.157 of 4**. A SHARED readout can only constrain
+  each seed along its own weight vector; every orthogonal direction stays free, so no coefficient
+  reaches it. `seed_diagnostics.py` (the MEASUREMENT) stays; only the pressures go.
+- **`--use-showdown-bridge`**, the deprecated `--use-bridge=node` alias (see below).
+
+**Migration.** POP for a config recording them OFF; **REFUSE** for `zarch_film != 'off'` or
+`seed_quantile=True` — those named PARAMETERS, so a silent pop would load a `state_dict` with keys
+nothing can place (the v75 `opp_belief_latent` precedent). Both the config JSON (`_migrate_config`)
+and the zip's pickled kwargs (`sanitize_dead_extractor_kwargs`) handle them, because they are read
+at different moments by different code. The judged loop's `bool(recorded) is not supported` test
+had to be typed first — **`bool("off")` is True**, so a truthiness compare would have refused every
+OFF production config, i.e. every checkpoint that exists; pinned by a named test.
+
+**NO `ARCH_SIGNATURE` bump and the MIGRATION FLOOR stays 76.** Verified rather than asserted: the
+extractor built from `designs/production_config.json` before and after has **200 identical
+`state_dict` keys** (same digest), identical shapes, and `max|Δ| = 0.000e+00` on both `pi` and `vf`.
+
+**Demoted to `config_only` (3, fields and gates deliberately UNCHANGED — a demotion removes the
+SELECT role only):** `attend_unrevealed_opponents` frozen **ON** (a hard prerequisite of
+`opp_belief_cls_k>0` / `opp_belief_slots` / `move_belief_mode != off`; no run since v16 turned it
+off, and freezing it removes two auto-enable branches and one `parser.error`),
+`value_active_readout` and `damage_matrices_outgoing_all` frozen OFF (never enabled in a gen-8/9/10
+run).
+
+**Bridge default → `rust`** (no field consequence; the flag is a runtime knob). Serverless is now
+the normal way to run training AND eval: `node` stays an explicit value for the A/B arm and the
+parity harness, `off` is the websocket/ladder path. The launcher's `child_uses_bridge` inverts with
+it — an ABSENT `--use-bridge` is now a BRIDGE run, so no phantom `--showdown-port` is injected;
+`default_port_test.py` now exists to catch a drift between the two defaults.
+
+**One gate bug fixed on the way.** The rust soak (`bridge_session_fuzz_test.py --impl rust`) failed
+on all 4 workers at exactly episode 5001 — the intended `recycle_every=5000` HEALTHY-child swap,
+reported as a crash by a flat `len(pids) > 1` assertion. The bound is `1 + n_recycles`; as written
+the gate could not run past 5000 episodes at all, which is precisely the multi-hour regime it
+exists for. 20,000 rust episodes / ~1.69M steps clean before it tripped.

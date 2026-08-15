@@ -18,7 +18,6 @@ from agents.observation.constants import (
     POKEMON_SLEEP_BELIEF_OFFSET,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
 from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
@@ -60,8 +59,6 @@ from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_F
     ROLE_ENCODER_HIDDEN,
     NET_ARCH,
     N_HISTORY_TURNS,
-    ZARCH_DIM,
-    ZARCH_ATOM_HIDDEN,
     POINTER_HIDDEN,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
@@ -1520,7 +1517,7 @@ BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
 # target through `Gen3FeaturesExtractor.belief_supervision(...)` instead.
 #
 # The other supervised heads — BeliefHead (species/moves/latent), WinProbHead, PubValHead,
-# BetaSwitchHead, SeedQuantileHead, the ZArch recon head — are STRUCTURALLY label-only already: they are
+# BetaSwitchHead — are STRUCTURALLY label-only already: they are
 # side readouts whose output never re-enters the forward, so no policy gradient can reach them in ANY
 # mode and there is nothing here to cut. `belief_label_only_gate_test.py` asserts that rather than
 # trusting it, so a head that starts feeding forward fails a test instead of quietly rejoining PPO.
@@ -2310,62 +2307,6 @@ class ProjectionAssembler(torch.nn.Module):
         return pi_combined, vf_combined
 
 
-class ZArchEncoder(torch.nn.Module):
-    """Team-archetype latent z_arch from the INVARIANT parts of OUR team (gen3_zarch_film_v1, v44).
-
-    The amortization-gap storage fix's conditioning signal (designs/learning/
-    amortization_gap_and_conditioning.md): a TEAM-STATIC, permutation-invariant DeepSets code over
-    OUR 6 mons' invariant facts — species ⊕ item ⊕ ability ⊕ moves (mean of the 4 move embeddings)
-    ⊕ the 18-dim spread block (IVs/EVs/nature — our own side, known + invariant all battle). Each
-    mon → a shared atom MLP → MEAN over the 6 → LayerNorm → z [B, dim].
-
-    Design properties (each aimed at a measured failure mode):
-      - TEAM-STATIC by construction — every input is invariant within a battle, so z cannot
-        per-decision "flip" archetype (the composition_robustness_probe's 0.092 per-decision vs
-        0.030 static flip rate). Deterministic (no VIB sampling — v1 is the LUT-first operating
-        point; per-forward sampling would also break PPO's ratio recompute + eval determinism).
-      - DeepSets mean — order-free (a team is a SET) and a one-mon swap moves 1/6 of the sum
-        (a twist, not a flip; no single salient mon can dominate the code).
-      - DETACHED embedding reads — the shared species/move/item/ability tables are consumed
-        value-only, so the z-aux (recon/VICReg) and FiLM gradients cannot reshape the trunk's
-        embeddings (the belief_grad_mode='detached' philosophy: fully decoupled from the trunk,
-        zero gradient interference).
-      - recon_head — species multi-hot reconstruction logits (the day-0 anti-collapse anchor:
-        a constant z cannot reconstruct different teams; Species Clause ⇒ multi-hot is lossless).
-        A side readout for the aux loss only — never fed forward.
-
-    Leak-trivial: reads OUR OWN team only (fully public to us)."""
-
-    def __init__(self, layout: Dict[str, Any], dim: int):
-        super().__init__()
-        atom_in = (layout['species_embedding_dim'] + layout['item_embedding_dim']
-                   + layout['ability_embedding_dim'] + layout['move_embedding_dim']
-                   + POKEMON_SPREAD_DIM)
-        self.atom_mlp = torch.nn.Sequential(
-            torch.nn.Linear(atom_in, ZARCH_ATOM_HIDDEN),
-            torch.nn.ReLU(),
-            torch.nn.Linear(ZARCH_ATOM_HIDDEN, dim),
-        )
-        self.norm = torch.nn.LayerNorm(dim)
-        self.recon_head = torch.nn.Linear(dim, layout['max_species'])
-
-    def forward(self, ctx: ExtractorContext, embeddings: Embeddings) -> torch.Tensor:
-        # Invariant inputs only (our side = slots 0..5): no HP / status / boosts / PP.
-        # .detach() on every table read — see the class docstring (zero trunk interference).
-        sp = embeddings.species_embedding(ctx.species_ids[:, :TEAM_SIZE]).detach()      # [B,6,S]
-        it = embeddings.item_embedding(ctx.item_ids[:, :TEAM_SIZE]).detach()            # [B,6,I]
-        ab = embeddings.ability_embedding(ctx.ability1_ids[:, :TEAM_SIZE]).detach()     # [B,6,A]
-        mv = embeddings.move_embedding(ctx.all_move_ids[:, :TEAM_SIZE, :]).detach().mean(dim=2)  # [B,6,M]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE,
-                                  POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        atoms = self.atom_mlp(torch.cat([sp, it, ab, mv, spread], dim=-1))              # [B,6,dim]
-        return self.norm(atoms.mean(dim=1))                                             # [B,dim]
-
-    def recon_logits(self, z: torch.Tensor) -> torch.Tensor:
-        """Species multi-hot reconstruction logits [B, max_species] — aux-loss target only."""
-        return self.recon_head(z)
-
-
 class Gen3FeaturesExtractor(torch.nn.Module):
     """Orchestrates the phase modules. Data flow (bracketed phases are flag-gated; all off = the
     baseline ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler):
@@ -2391,7 +2332,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
                  value_dist_mode: str = "none", value_dist_bins: int = 0,
                  value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
-                 seed_quantile: bool = False, value_threat_inject: bool = False,
+                 value_threat_inject: bool = False,
                  opp_intent: bool = False, species_prior_fusion: bool = False,
                  t0_species_prior: bool = False,
                  opp_intent_grad_mode: str = "detached",
@@ -2408,9 +2349,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  pubval_mode: str = "none",
-                 zarch_film: str = "off", zarch_dim: int = 0,
-                 zarch_lut: str = "off", zarch_lut_rosters: Optional[Sequence[Sequence[int]]] = None,
-                 zarch_lut_init_std: float = 1.0):
+                 ):
         super().__init__()
         self.layout = layout
         self.mappings = mappings
@@ -2990,125 +2929,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
         self.last_value_dist_logits: Optional[torch.Tensor] = None
 
-        # gen3_seed_quantile_v1: per-seed QUANTILE assignment — seed k predicts quantile tau_k of the
-        # return through ONE SHARED Linear, so k different numbers require k different SEED reads
-        # (see agents/model/seed_quantile.py: the shared readout is what puts the pressure on the
-        # seeds instead of letting a per-seed head fake the spread). A SIDE readout: the preds are
-        # stashed for the aux loss and never enter pi/vf, so projection dims are unchanged. Built
-        # only alongside the multi-seed readout — a config without the op has no seeds to assign.
-        self.seed_quantile = bool(seed_quantile)
-        _seed_readout = getattr(self.assembler, "seed_readout", None)
-        if self.seed_quantile and _seed_readout is None:
-            raise ValueError(
-                "seed_quantile=True but this config has no MultiSeedValueReadout (the damage op is "
-                "off, so there are no value seeds to assign quantiles to). Enable the damage-op "
-                "config the readout requires, or drop --seed-quantile-coef.")
-        from agents.model.seed_quantile import SeedQuantileHead
-        self.seed_quantile_head = (
-            SeedQuantileHead(_seed_readout.dim, _seed_readout.k) if self.seed_quantile else None)
-        self.last_seed_quantile_preds: Optional[torch.Tensor] = None
-
-        # gen3_zarch_film_v1 (v44): the team-archetype latent + head FiLM — the amortization-gap
-        # STORAGE fix. 'off' = no modules (byte-identical baseline). 'heads' = build the ZArchEncoder
-        # (a team-static DeepSets code over OUR team's invariant facts) + two zero-init FiLM
-        # generators, one per root head; forward() then applies `h·(1+Δγ(z)) + Δβ(z)` to each head's
-        # post-projection pre-ReLU features. Zero-init ⇒ Δγ=Δβ=0 at init ⇒ ON starts byte-identical
-        # to the baseline forward (identity-at-init, the prefuse_proj convention); the modulation is
-        # rank-zarch_dim by construction (low-rank conditioning). STRUCTURAL toggle gated in
-        # check_compatible (string + int, the value_dist_mode/bins pattern); NO ARCH_SIGNATURE bump.
-        if zarch_film not in ("off", "heads"):
-            raise ValueError(f"zarch_film must be off|heads, got {zarch_film!r}")
-        if zarch_film != "off" and zarch_dim <= 0:
-            raise ValueError(
-                f"zarch_film={zarch_film!r} requires zarch_dim > 0 (the latent width), got {zarch_dim}")
-        if zarch_film == "off" and zarch_dim != 0:
-            raise ValueError(f"zarch_dim must be 0 when zarch_film == 'off', got {zarch_dim}")
-        self.zarch_film = zarch_film
-        self.zarch_dim = int(zarch_dim)
-        if zarch_film != "off":
-            self.zarch_encoder = ZArchEncoder(layout, self.zarch_dim)
-            # One FiLM generator per head (separate γ/β maps, shared z): Linear(z) → [Δγ ‖ Δβ],
-            # both chunks over PROJECTION_DIM. Zero-init weight AND bias → exact identity at init.
-            self.film_pi = torch.nn.Linear(self.zarch_dim, 2 * PROJECTION_DIM)
-            self.film_vf = torch.nn.Linear(self.zarch_dim, 2 * PROJECTION_DIM)
-            for _g in (self.film_pi, self.film_vf):
-                torch.nn.init.zeros_(_g.weight)
-                torch.nn.init.zeros_(_g.bias)
-        else:
-            self.zarch_encoder = None
-            self.film_pi = None
-            self.film_vf = None
-
-        # gen3_zarch_lut_v1 (v46): the per-team LUT — a FREE, unconstrained code per pinned team,
-        # added to (or replacing) the DeepSets z. It exists to test ONE thing: is the measured
-        # multi-team exploiter ceiling (N=1/3/10 distil cleanly, N=20 stalls) a conditioning-SIGNAL
-        # limit or a capacity limit? The DeepSets z is COMPOSITIONAL, so z-similar teams sit at
-        # z̄ + tiny ε_i and the FiLM generator's gradient is proportional to that tiny residual —
-        # ill-conditioned. A random-init LUT makes the per-team codes LARGE and ~orthogonal by
-        # construction, which is exactly the intervention that ill-conditioning story predicts should
-        # help. If N=20 still stalls with a free code, the ceiling is NOT signal.
-        #   'off'  = no modules (byte-identical).
-        #   'add'  = z = LN(z_deepsets + code) — the practical form: composition generalizes to
-        #            UNSEEN teams (code row 0 = zeros ⇒ z is exactly the DeepSets z), the code is a
-        #            free per-team correction on top.
-        #   'only' = z = LN(code) — the sharpest ablation (identity only, no composition).
-        # The team is identified from the OBSERVATION (agents.model.team_signature: sorted
-        # species(6) ⊕ moves(24)), so nothing in env / eval / prober / frozen-opponent plumbing
-        # changes. The table is a PERSISTENT buffer, so the team↔row mapping travels with the
-        # checkpoint. STRUCTURAL toggle gated in check_compatible; NO ARCH_SIGNATURE bump.
-        if zarch_lut not in ("off", "add", "only"):
-            raise ValueError(f"zarch_lut must be off|add|only, got {zarch_lut!r}")
-        if zarch_lut != "off" and zarch_film == "off":
-            raise ValueError("zarch_lut requires --zarch-film heads (the LUT conditions z, and z is "
-                             "only consumed by the FiLM generators)")
-        rosters = [list(r) for r in (zarch_lut_rosters or [])]
-        if zarch_lut != "off" and not rosters:
-            raise ValueError("zarch_lut requires zarch_lut_rosters (the pinned teams' signatures)")
-        if zarch_lut == "off" and rosters:
-            raise ValueError("zarch_lut_rosters given but zarch_lut == 'off'")
-        self.zarch_lut = zarch_lut
-        self.zarch_lut_teams = len(rosters)
-        if zarch_lut != "off":
-            if any(len(r) != TEAM_SIGNATURE_DIM for r in rosters):
-                raise ValueError(
-                    f"every zarch_lut roster signature must be {TEAM_SIGNATURE_DIM} ints, got "
-                    f"{sorted({len(r) for r in rosters})}")
-            # PERSISTENT (the team↔row mapping is learned-state-adjacent: a reload with a different
-            # table would re-key every code, so it must ride the checkpoint).
-            self.register_buffer("zarch_lut_table", torch.tensor(rosters, dtype=torch.long))
-            # Row 0 = UNKNOWN team (zeros ⇒ 'add' degrades to exactly the DeepSets z); rows 1..N are
-            # random-init so the per-team codes are distinct and ~orthogonal from step 0 — the whole
-            # point (a zero-init LUT would reproduce the ill-conditioned starting geometry).
-            self.zarch_lut_emb = torch.nn.Embedding(self.zarch_lut_teams + 1, self.zarch_dim)
-            # INIT SCALE is an experiment knob, not an architecture field (shapes are identical, and
-            # a resume loads saved weights, so it only ever matters at the initial fork — hence NOT
-            # version-gated). std>0 = the codes start large + ~orthogonal, which perturbs an already
-            # TRAINED FiLM head (arm 1 paid ~-0.04 at the fork and spent ~6M steps recovering).
-            # std=0 = identity-at-init: z is exactly the DeepSets z on step 0 and the codes GROW from
-            # zero. That does NOT inherit the ill-conditioning — a code is a FREE per-team parameter,
-            # so its gradient is the full dL/dz restricted to that team's samples, not something
-            # scaled by a tiny compositional residual.
-            self.zarch_lut_init_std = float(zarch_lut_init_std)
-            if self.zarch_lut_init_std > 0:
-                torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=self.zarch_lut_init_std)
-            else:
-                torch.nn.init.zeros_(self.zarch_lut_emb.weight)
-            with torch.no_grad():
-                self.zarch_lut_emb.weight[0].zero_()          # row 0 = unknown team, always zero
-            self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim)
-        else:
-            self.zarch_lut_emb = None
-            self.zarch_lut_norm = None
-        # Stashed each forward when on (else None): the live z [B, zarch_dim] (read by forward()'s
-        # FiLM application + the aux loss + probes), the recon logits [B, max_species] + our-side
-        # species ids [B, 6] (grad-gated — training epochs only; read ONLY by the recon BCE, so the
-        # public our-team composition never routes anywhere new in the forward), and the resolved
-        # LUT row [B] (a side read for metrics/probes — 0 = unmatched team).
-        self.last_zarch: Optional[torch.Tensor] = None
-        self.last_zarch_recon_logits: Optional[torch.Tensor] = None
-        self.last_zarch_species_ids: Optional[torch.Tensor] = None
-        self.last_zarch_lut_idx: Optional[torch.Tensor] = None
-
         self.role_token_size = ROLE_TOKEN_SIZE
 
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
@@ -3509,65 +3329,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_damage_block = damage_block
         return opp_tokens, damage_block
 
-    def attach_zarch_lut(self, mode: str, rosters: Sequence[Sequence[int]], init_std: float = 1.0):
-        """ATTACH the per-team LUT to an ALREADY-LOADED LUT-less extractor (the exploiter fork).
-
-        `gen3_zarch_lut_v1`. An exploiter always WARM-FORKS from the generalist (measured: 0.84 @2M
-        forked vs ~0.65 @20M from scratch), and the generalist never carries a LUT — so "add the LUT"
-        is inherently a fork operation, not a fresh-run one. SB3 rebuilds the extractor from the ZIP's
-        saved policy_kwargs, so the loaded module has no LUT; this builds it in place, exactly like
-        `set_belief_grad_mode` / `set_value_from_dist` apply their post-load migrations.
-
-        Returns the NEW parameters so the caller can hand them to the optimizer as a fresh param
-        GROUP — appending rather than reordering, so the existing params keep their positions (SB3
-        restores optimizer state BY POSITION; see the resume-optimizer-realign note in
-        `src/agents/model/CLAUDE.md`).
-        """
-        if mode == "off":
-            return []
-        if self.zarch_film == "off":
-            raise ValueError("attach_zarch_lut requires zarch_film != 'off'")
-        rosters = [list(r) for r in rosters]
-        if any(len(r) != TEAM_SIGNATURE_DIM for r in rosters):
-            raise ValueError(f"every roster signature must be {TEAM_SIGNATURE_DIM} ints")
-        device = next(self.parameters()).device
-        self.zarch_lut = mode
-        self.zarch_lut_teams = len(rosters)
-        self.register_buffer("zarch_lut_table", torch.tensor(rosters, dtype=torch.long, device=device))
-        self.zarch_lut_emb = torch.nn.Embedding(len(rosters) + 1, self.zarch_dim).to(device)
-        self.zarch_lut_init_std = float(init_std)
-        if self.zarch_lut_init_std > 0:                       # see the __init__ note on init scale
-            torch.nn.init.normal_(self.zarch_lut_emb.weight, mean=0.0, std=self.zarch_lut_init_std)
-        else:
-            torch.nn.init.zeros_(self.zarch_lut_emb.weight)
-        with torch.no_grad():
-            self.zarch_lut_emb.weight[0].zero_()
-        self.zarch_lut_norm = torch.nn.LayerNorm(self.zarch_dim).to(device)
-        return list(self.zarch_lut_emb.parameters()) + list(self.zarch_lut_norm.parameters())
-
-    def _zarch_lut_index(self, ctx: ExtractorContext) -> torch.Tensor:
-        """Resolve OUR team to its LUT row [B] (long) from the observation. 0 = no match.
-
-        `gen3_zarch_lut_v1`. The signature is the same sorted species(6) ⊕ moves(24) that
-        `agents.model.team_signature` builds offline from each pinned team's Showdown export — so
-        the extractor identifies the team with ZERO env/eval plumbing. Both blocks are sorted, so
-        the match is invariant to team order and move-slot order; both are within-battle invariant
-        (species never changes; our own moveset never changes — move-set mutators are rejected at
-        table-build time), so a battle's row can never flip mid-game.
-
-        An UNMATCHED team (the generalist's pool, or a probe on some other team) resolves to row 0,
-        whose embedding is zero-init'd — so `add` degrades to exactly the DeepSets z rather than
-        conditioning on a wrong team's code. Cost is a [B, n_teams, 30] bool compare: negligible.
-        """
-        species = ctx.species_ids[:, :TEAM_SIZE].sort(dim=1).values                       # [B, 6]
-        moves = ctx.all_move_ids[:, :TEAM_SIZE, :].reshape(species.shape[0], -1)
-        moves = moves[:, :TEAM_SIGNATURE_MOVES].sort(dim=1).values                        # [B, 24]
-        sig = torch.cat([species, moves], dim=1)                                          # [B, 30]
-        match = (sig[:, None, :] == self.zarch_lut_table[None, :, :]).all(dim=-1)          # [B, N]
-        # +1 because row 0 is the unknown-team slot; `any()` keeps unmatched teams at 0.
-        return torch.where(match.any(dim=1), match.long().argmax(dim=1) + 1,
-                           torch.zeros(sig.shape[0], dtype=torch.long, device=sig.device))
-
     def forward_internal(self, obs):
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
         # gen3_belief_label_only_v1: drop the previous forward's LIVE supervision views, mirroring the
@@ -3594,31 +3355,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # the forward itself, so the off/baseline output is unchanged.
         self.last_opp_believed_mask = ctx.opp_believed_mask
         self.last_opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
-        # gen3_zarch_film_v1: the team-archetype latent — computed from ctx's INVARIANT our-side
-        # facts only (team-static + deterministic ⇒ constant within a battle by construction).
-        # Stashed live for forward()'s FiLM application (same call) + the aux loss (same backward
-        # graph, the last_move_belief_logits pattern). The recon logits + species ids are grad-gated
-        # (training epochs only — rollout/eval pays only the tiny encoder forward FiLM needs).
-        self.last_zarch = None
-        self.last_zarch_recon_logits = None
-        self.last_zarch_species_ids = None
-        self.last_zarch_lut_idx = None
-        if self.zarch_encoder is not None:
-            self.last_zarch = self.zarch_encoder(ctx, self.embeddings)
-            if torch.is_grad_enabled():
-                # The recon aux always supervises the COMPOSITIONAL code (pre-LUT): it is the
-                # anti-collapse anchor on the DeepSets encoder, and reconstructing a roster from a
-                # free per-team code would be trivially satisfiable (zero pressure).
-                self.last_zarch_recon_logits = self.zarch_encoder.recon_logits(self.last_zarch)
-                self.last_zarch_species_ids = ctx.species_ids[:, :TEAM_SIZE].detach()
-            # gen3_zarch_lut_v1: fold in the free per-team code. AFTER the recon read (above) so the
-            # recon/VICReg aux keeps grading the compositional encoder, not the LUT.
-            if self.zarch_lut != "off":
-                idx = self._zarch_lut_index(ctx)
-                self.last_zarch_lut_idx = idx
-                code = self.zarch_lut_emb(idx)
-                base = self.last_zarch if self.zarch_lut == "add" else torch.zeros_like(code)
-                self.last_zarch = self.zarch_lut_norm(base + code)
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
@@ -3909,15 +3645,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                              ctx, belief,
                              self.damage_op.last_tensors.incoming_rows
                              if damage_block is not None else None)
-        # gen3_seed_quantile_v1: read the seed outputs the assembler just stashed and emit one
-        # prediction per seed through the SHARED head. Stashed only (never in pi/vf) — the aux loss
-        # in instrumented_ppo regresses these onto the rollout return at the per-seed taus, which is
-        # what makes four IDENTICAL seeds strictly loss-increasing rather than merely unpenalized.
-        if self.seed_quantile_head is not None:
-            _seeds = self.assembler.seed_readout.last_outputs          # [B, k, dim], WITH grad
-            self.last_seed_quantile_preds = self.seed_quantile_head(_seeds)
-        else:
-            self.last_seed_quantile_preds = None
         # gen3_intent_value_reduce_v1 (STEP 6): alpha finally CONSUMED. Applied HERE — after the
         # assembler — because it is the first point where both operands exist: the op's un-reduced
         # cells (T1) and alpha (T2, scored from the seats and pools the op precedes). Added to the
@@ -3958,16 +3685,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self._debugger.on_forward(obs["observation"])
         pi_pre = self.projection(self.pre_proj_norm(pi_combined))
         vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
-        # gen3_zarch_film_v1: FiLM the head features on the team-archetype latent — POST-projection,
-        # PRE-ReLU (after the LayerNorm+Linear so the norm can't wash the per-feature scale out;
-        # before the activation, the standard FiLM site). `h·(1+Δγ) + Δβ` with zero-init generators
-        # ⇒ exact identity at init; each head has its own generator (value is archetype-conditional
-        # in its own way — the same board is "winning" for stall, "losing" for offense).
-        if self.zarch_film == "heads":
-            dg_pi, db_pi = self.film_pi(self.last_zarch).chunk(2, dim=-1)
-            dg_vf, db_vf = self.film_vf(self.last_zarch).chunk(2, dim=-1)
-            pi_pre = pi_pre * (1.0 + dg_pi) + db_pi
-            vf_pre = vf_pre * (1.0 + dg_vf) + db_vf
         pi_features = self.activation(pi_pre)
         vf_features = self.activation(vf_pre)
         return pi_features, vf_features

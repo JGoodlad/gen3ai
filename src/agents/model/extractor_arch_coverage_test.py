@@ -22,7 +22,7 @@ import inspect
 
 import pytest
 
-from agents.model.extractor_arch import ARCH_ARG_KEYS, _DERIVED
+from agents.model.extractor_arch import ARCH_ARG_KEYS, FROZEN_ARCH_KWARGS, _DERIVED
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import ModelVersion
 
@@ -32,8 +32,13 @@ def _extractor_params() -> set:
 
 
 def _reachable_from_args() -> set:
-    """Kwargs `build_extractor_arch_kwargs` can produce — plain reads plus derived callables."""
-    return set(ARCH_ARG_KEYS.values()) | set(_DERIVED)
+    """Kwargs `build_extractor_arch_kwargs` can produce.
+
+    Three sources, all generated from or pinned to `agents.model.flag_registry`: plain `args` reads
+    (`ARCH_ARG_KEYS`), derived callables (`_DERIVED`), and the config_only tier's frozen values
+    (`FROZEN_ARCH_KWARGS`) — the last has no CLI flag at all but still reaches the extractor and is
+    still recorded + resume-gated, so it belongs in this set exactly like the other two."""
+    return set(ARCH_ARG_KEYS.values()) | set(_DERIVED) | set(FROZEN_ARCH_KWARGS)
 
 
 def test_every_arch_mapping_target_is_a_real_extractor_kwarg():
@@ -88,8 +93,7 @@ def test_the_mapping_actually_produces_the_kwarg_from_args():
     ns = Namespace(**{attr: False for attr in ARCH_ARG_KEYS.values()})
     for attr in _DERIVED:
         setattr(ns, attr, False)
-    for extra in ("opp_belief_aux_coef", "move_belief_coef",
-                  "opp_intent_coef", "seed_quantile_coef", "damage_refine_rounds"):
+    for extra in ("opp_belief_aux_coef", "move_belief_coef", "opp_intent_coef"):
         setattr(ns, extra, 0.0)
     ns.t0_species_prior = True
     out = build_extractor_arch_kwargs(ns, base={})

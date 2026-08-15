@@ -31,43 +31,6 @@ from gymnasium import spaces
 from stable_baselines3.common.utils import explained_variance
 
 
-class _GroupGradAccumulator:
-    """Per-param-GROUP gradient accumulation across OPTIMIZER steps (--film-grad-accum-steps).
-
-    ``gate(k)`` is called at each optimizer-step boundary (after clipping, before ``step()``): it
-    adds the group's current post-clip grads into a persistent buffer; on the k-th capture it
-    writes the AVERAGED accumulated grad back into ``p.grad`` (one clean large-batch update for the
-    group); on non-apply steps it sets ``p.grad = None`` — torch optimizers SKIP None-grad params,
-    so Adam takes no stale-momentum step and its moment state is untouched between applies.
-    Capturing POST-clip keeps the global clip semantics identical to baseline (the group's grads
-    participate in the global norm every step) and bounds the average by construction. k<=1 is a
-    pure passthrough (never touches grads — byte-identical)."""
-
-    def __init__(self, params):
-        self.params = list(params)
-        self.buf = None
-        self.count = 0
-
-    def gate(self, k: int) -> bool:
-        if k <= 1:
-            return True
-        import torch as th
-        if self.buf is None:
-            self.buf = [th.zeros_like(p) for p in self.params]
-        for b, p in zip(self.buf, self.params):
-            if p.grad is not None:
-                b.add_(p.grad)
-        self.count += 1
-        if self.count >= k:
-            for b, p in zip(self.buf, self.params):
-                b.div_(self.count)
-                p.grad = b
-            self.buf = None
-            self.count = 0
-            return True
-        for p in self.params:
-            p.grad = None
-        return False
 from torch.nn import functional as F
 
 from sb3_contrib import MaskablePPO
@@ -192,8 +155,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # local (reset to None on a launcher restart → re-converges in a few hundred calls); not saved.
     _noise_ema_s: float = None    # EMA of tr(Σ)  (per-example gradient-variance trace)
     _noise_ema_g2: float = None   # EMA of |G|²   (true-gradient squared norm)
-    _noise_film_ema_s: float = None   # film-group EMA of tr(Σ)  (+FILM-NOISE-SCALE)
-    _noise_film_ema_g2: float = None  # film-group EMA of |G|²
 
     @staticmethod
     def _global_grad_sq(params) -> float:
@@ -294,20 +255,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # (pubval_mode); the loss is added whenever the mode is on AND this coef != 0.
     pubval_coef: float = 0.0
 
-    # Set by train_rl_agent (gen3_zarch_film_v1, like spread_belief_coef). The z_arch aux weights:
-    # zarch_recon_coef * BCE(recon_logits, our-team species multi-hot) — the ANTI-COLLAPSE anchor (a
-    # constant z cannot reconstruct different teams; Species Clause ⇒ multi-hot is lossless) — plus
-    # zarch_vicreg_coef * relu(1 − std(z, batch)).mean() — the VICReg per-dim variance floor. Both READ
-    # the extractor's last_zarch/last_zarch_recon_logits/last_zarch_species_ids stashes (grad-gated,
-    # training epochs only). The gradients touch ONLY the ZArchEncoder's own params (the encoder reads
-    # DETACHED embedding tables + raw obs slices — zero shared-trunk pull, so no grad-balance entry).
-    # 0.0/0.0 = OFF (byte-identical loss). Training-only → NOT version-locked; the ZArchEncoder + FiLM
-    # modules are gated by the version-checked zarch_film/zarch_dim arch toggles. NOTE: auto-zeroed by
-    # train_rl_agent on a single-team (pinned --trainee-team) run — z is a constant there, so the
-    # cross-batch variance floor is degenerate and the recon target is constant (harmless but useless).
-    zarch_recon_coef: float = 0.0
-    zarch_vicreg_coef: float = 0.0
-
     # Set by train_rl_agent (like win_prob_coef). The DISTRIBUTIONAL value head's HL-Gauss cross-entropy
     # loss weight: value_dist_coef * CE(value_dist_logits, return) over the rollout. Training-only (scales
     # the loss, never a forward pass) → NOT version-locked (recorded for provenance + flagless-resume
@@ -343,21 +290,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
     opd_beta: float = 1.0
 
-    # SEED VICReg (gen3_seed_vicreg_v1, v62): the variance+COVARIANCE floor on the multi-seed critic
-    # readout's outputs (agents/model/seed_vicreg.py) — the pre-registered collapse trigger in
-    # seed_diagnostics.py FIRED on gen-5 (seeds/out_effective_rank 1.0 sustained: the k=4 seeds pay
-    # for 4 reads and deliver 1). 0.0 = OFF (loss byte-identical, stash never read). UNLIKE the
-    # training-only coefs above this one is resume-IMMUTABLE (the vf_coef class — recorded in
-    # ModelVersion, enforced by check_value_seed_vicreg on the training-resume path only).
-    value_seed_vicreg_coef: float = 0.0
-
-    # PER-SEED QUANTILE (gen3_seed_quantile_v1, v63): seed k of the MultiSeedValueReadout predicts
-    # quantile tau_k of the return through ONE SHARED Linear, so k different predictions REQUIRE k
-    # different seed READS — the positive counterpart to the VICReg repulsion above (which gen-6
-    # measured as 1-D spread with three seeds still identical). Regressed against the SAME rollout
-    # return the critic sees, in the critic's own (PopArt-normalized) frame. 0.0 = OFF, and the HEAD
-    # is a structural version-checked toggle, so an off run builds no module at all.
-    seed_quantile_coef: float = 0.0
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
@@ -404,12 +336,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
         # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
         # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
-        # `_film_grad_accumulator` holds CUDA gradient clones: pickled into the zip's data section they
-        # deserialize WITHOUT map_location, so any process that loads the snapshot (env/eval workers,
-        # device="cpu") silently initializes a 252 MiB GPU context — dozens of workers ≈ the whole card
-        # (the 2026-07-20 OOM cascade). Transient like the rollout buffer; train() lazily recreates it.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
-                                                  "_distill_teachers", "_film_grad_accumulator"]
+                                                  "_distill_teachers"]
 
     @staticmethod
     def _searchteacher_loss(logits, action_mask, better_action, advantage,
@@ -653,25 +581,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
     _nsr_warn_last: dict = None
     _nsr_samples: int = 0
 
-    # Set by train_rl_agent (--film-grad-accum-steps; 1 = off, byte-identical). Per-GROUP gradient
-    # accumulation for the FiLM generators: their grads are accumulated across N consecutive
-    # OPTIMIZER steps and applied once, averaged — so each film update is computed from N× the
-    # effective batch while every other parameter updates normally. The precision counter to the
-    # residual film-group noise (film/noise_scale_ratio): pick N ≈ that ratio so each film update
-    # lands at the group's critical batch. Training-only, NOT version-locked, resume-forwarded.
-    film_grad_accum_steps: int = 1
-    _film_grad_accumulator = None      # persistent across train() calls (partial groups carry over)
-
     @staticmethod
-    def _noise_scale_advice(global_ratio, film_ratio, film_accum, b_eff):
+    def _noise_scale_advice(global_ratio, b_eff):
         """PURE advisory logic for the noise-scale ratios → list of (key, warning) pairs; [] when
         healthy. The TUI-warning half of the McCandlish instrumentation: a ratio ≫ 1 means updates
         are noise-dominated (each step's direction is mostly sideways — and under Adam the noise
         still moves params at full speed, so spurious content gets WRITTEN, not just slowed); ≪ 1
         means samples are being spent polishing an already-clean gradient instead of taking more
-        steps. Each warning names the concrete fix. The film check accounts for the CONFIGURED
-        --film-grad-accum-steps (applied film updates see film_accum× the batch), so a covered
-        ratio warns nothing."""
+        steps. Each warning names the concrete fix."""
         import math
         out = []
         if global_ratio is not None:
@@ -686,17 +603,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     f"⚠️ [NOISE] train/noise_scale_ratio {global_ratio:.2f} — OVER-BATCHED (effective "
                     f"{b_eff / 1000:.0f}k is ≫ the critical batch; samples polish an already-clean gradient). "
                     f"Fix: lower --grad-accum-steps for more update steps per sample.")))
-        if film_ratio is not None:
-            applied = film_ratio / max(1, int(film_accum))
-            if applied > 2.0:
-                out.append(("film_high", (
-                    f"⚠️ [NOISE] film/noise_scale_ratio {film_ratio:.1f} with --film-grad-accum-steps "
-                    f"{int(film_accum)} → APPLIED film updates still {applied:.1f}× under the FiLM group's "
-                    f"critical batch (conditioning grads mostly noise → spurious per-team content). Fix: "
-                    f"set --film-grad-accum-steps ~{math.ceil(film_ratio)}.")))
         return out
 
-    def _emit_noise_scale_warnings(self, global_ratio, film_ratio, b_eff):
+    def _emit_noise_scale_warnings(self, global_ratio, b_eff):
         """Rate-limited (30 min per key) Events-panel emit of _noise_scale_advice, after an EMA
         warm-up (first ~20 samples are settling and would false-alarm)."""
         import time
@@ -705,8 +614,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
             return
         if self._nsr_warn_last is None:
             self._nsr_warn_last = {}
-        advice = self._noise_scale_advice(
-            global_ratio, film_ratio, getattr(self, "film_grad_accum_steps", 1), b_eff)
+        advice = self._noise_scale_advice(global_ratio, b_eff)
         now = time.time()
         for key, msg in advice:
             if now - self._nsr_warn_last.get(key, 0.0) >= 1800.0:
@@ -716,65 +624,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     emit(msg)
                 except Exception:
                     print(msg, flush=True)
-
-    @staticmethod
-    def _zarch_participation_ratio(z):
-        """Effective #axes of the batch z_arch cloud — the LIVE LUT-vs-style dial
-        (gen3_zarch_film_v1; the archetype-latent note's `rank/archetype_cls_*` TODO). PR =
-        (Σλ)²/Σλ² over the covariance eigenvalues of the minibatch z rows: near zarch_dim = the
-        teams spread toward orthogonal identity codes (LUT-leaning — linear FiLM can then treat
-        them independently); low-but-alive = compressed shared style axes; →1 = collapse. A
-        batch-sampled estimate of the offline 719-team probe (tmp/zarch_neighbors_probe.py
-        machinery). Returns None on a degenerate batch (too few rows / zero variance)."""
-        if z is None or z.shape[0] < 3:
-            return None
-        zc = z - z.mean(dim=0, keepdim=True)
-        cov = (zc.T @ zc) / (z.shape[0] - 1)
-        lam = th.linalg.eigvalsh(cov).clamp(min=0)
-        s = lam.sum()
-        if float(s) <= 1e-9:
-            return None
-        return float((s * s / (lam * lam).sum()).item())
-
-    @staticmethod
-    def _zarch_loss(z, recon_logits, species_ids):
-        """The z_arch aux terms (gen3_zarch_film_v1): species multi-hot reconstruction BCE (the
-        anti-collapse anchor) + the VICReg per-dim variance floor, returned SEPARATELY so the caller
-        folds each at its own coef.
-
-        ``z`` [B, D] = the team-archetype latent; ``recon_logits`` [B, n_species] = the
-        ZArchEncoder.recon_head output; ``species_ids`` [B, 6] = OUR team's species ids (public —
-        our own roster, no privileged label). The multi-hot target is exact under Species Clause
-        (no duplicate species on a legal team); row 0 (the pad/sentinel species) is zeroed out of
-        the target so a placeholder id never trains a spurious positive. The variance floor is the
-        latent-belief convention: relu(1 − std(z, dim=0)).mean() — a per-dim hinge across the batch
-        (z is LayerNorm'd per-sample, which does NOT prevent cross-batch collapse). Returns
-        ``(recon_loss, vicreg_loss, metrics)`` or ``None``. Pure + static → unit-testable."""
-        if z is None or recon_logits is None or species_ids is None:
-            return None
-        if z.shape[0] < 2:
-            return None                                  # a 1-row batch has no cross-batch variance
-        target = th.zeros_like(recon_logits)
-        target.scatter_(1, species_ids.long(), 1.0)
-        target[:, 0] = 0.0                               # pad/sentinel row — never a real team member
-        recon = F.binary_cross_entropy_with_logits(recon_logits, target)
-        std = z.std(dim=0)
-        vicreg = F.relu(1.0 - std).mean()
-        with th.no_grad():
-            # Recon health: does the true species rank in the top-6 logits? (multi-label top-k acc)
-            k = species_ids.shape[1]
-            topk = recon_logits.topk(k, dim=1).indices                      # [B, 6]
-            hits = (topk.unsqueeze(2) == species_ids.long().unsqueeze(1)).any(dim=1)  # [B, 6]
-            valid = species_ids.long() != 0
-            n_valid = valid.sum().clamp(min=1)
-            recon_acc = (hits & valid).sum().float() / n_valid.float()
-        metrics = {
-            "recon_bce": float(recon.item()),
-            "recon_topk_acc": float(recon_acc.item()),   # → 1 as z reconstructs the roster
-            "std": float(std.mean().item()),             # the collapse monitor (→0 = collapsed)
-            "vicreg": float(vicreg.item()),
-        }
-        return recon, vicreg, metrics
 
     @staticmethod
     def _value_dist_loss(logits, target, atoms):
@@ -1300,10 +1149,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pubval_metrics: dict[str, list[float]] = {}    # +PUBVAL: per-minibatch diagnostics (dict of lists)
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
-        seed_vicreg_metrics: dict[str, list[float]] = {}  # +SEED-VICREG: per-minibatch var/cov terms
+        # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
+        # key (`value_seeds/*` from the seed-collapse contract, `opp_intent/*`), so they are recorded
+        # verbatim rather than under a prefix.
+        aux_metrics: dict[str, list[float]] = {}
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
-        zarch_metrics: dict[str, list[float]] = {}       # +ZARCH: recon/VICReg diagnostics (gen3_zarch_film_v1)
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
         move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
@@ -1323,13 +1174,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pubval_on = (
             getattr(self.policy.features_extractor, "pubval_mode", "none") != "none"
             and self.pubval_coef != 0.0
-        )
-        # +ZARCH (gen3_zarch_film_v1): the z_arch recon + VICReg aux. On when the extractor built the
-        # encoder AND either coef is non-zero. Gradients reach ONLY the ZArchEncoder's own params
-        # (detached embedding reads) — no trunk pull, hence no grad-balance entry. OFF → skipped.
-        zarch_on = (
-            getattr(self.policy.features_extractor, "zarch_film", "off") != "off"
-            and (self.zarch_recon_coef != 0.0 or self.zarch_vicreg_coef != 0.0)
         )
         # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
         # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
@@ -1400,30 +1244,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # epoch 0) so |G_small|² and |G_big|² come from the SAME data; folded into the EMAs after the epochs.
         noise_g_small_sq = None   # ‖single micro-batch gradient‖²  (B = batch_size)
         noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
-        # +FILM-NOISE-SCALE (gen3_zarch_film_v1 follow-up): the SAME two-point estimator restricted
-        # to the FiLM generator params — the per-GROUP critical batch size. The global noise scale
-        # cannot resolve whether the ~33k-param conditioning gradient is signal or noise (it is
-        # drowned by the ~10M-param total); B_simple(film) ≫ B_simple(global) ≫ effective batch would
-        # say the per-team RL gradient into the conditioners sits below its noise floor at our batch —
-        # the quantitative form of the sample-starvation/"persistent net cost" hypothesis.
-        noise_film_small_sq = None
-        noise_film_big_sq = None
-        _fe_ns = self.policy.features_extractor
-        film_noise_params = (
-            list(_fe_ns.film_pi.parameters()) + list(_fe_ns.film_vf.parameters())
-            if getattr(_fe_ns, "zarch_film", "off") != "off" else []
-        )
-        # +FILM-GRAD-ACCUM (--film-grad-accum-steps): per-group accumulation for the FiLM
-        # generators — see _GroupGradAccumulator. Persistent on self so partial groups carry
-        # across train() calls; None (off / no film group) ⇒ every step site is byte-identical.
-        _film_accum_k = int(getattr(self, "film_grad_accum_steps", 1) or 1)
-        film_grad_accum = None
-        if film_noise_params and _film_accum_k > 1:
-            if self._film_grad_accumulator is None:
-                self._film_grad_accumulator = _GroupGradAccumulator(film_noise_params)
-            film_grad_accum = self._film_grad_accumulator
-
-        # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
@@ -1554,39 +1374,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         mb_m["loss"] = float(mb_loss.item())
                         for _mk, _mv in mb_m.items():
                             belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
-
-                # +SEED-VICREG (gen3_seed_vicreg_v1): variance+covariance floor on the multi-seed
-                # critic readout's [B,k,D] outputs — reads the LIVE (grad-carrying) stash the
-                # evaluate_actions forward above just wrote, so the gradient flows into the seed
-                # queries/kv_proj via the vf path. coef 0 → never entered (byte-identical). A coef>0
-                # with no readout was already rejected at startup (assert_seed_vicreg_wirable).
-                if self.value_seed_vicreg_coef > 0.0:
-                    _svo = getattr(getattr(getattr(self.policy.features_extractor, "assembler", None),
-                                           "seed_readout", None), "last_outputs", None)
-                    if _svo is not None:
-                        from agents.model.seed_vicreg import seed_vicreg_loss
-                        svr_loss, svr_m = seed_vicreg_loss(_svo)
-                        loss = loss + self.value_seed_vicreg_coef * svr_loss
-                        for _sk, _sv in svr_m.items():
-                            seed_vicreg_metrics.setdefault(_sk, []).append(_sv)
-                        seed_vicreg_metrics.setdefault("value_seeds/vicreg_loss", []).append(
-                            float(svr_loss.detach()))
-
-                # +SEED-QUANTILE: the per-seed pinball fold. `last_seed_quantile_preds` [B,k] is the
-                # shared head's read of THIS minibatch's seed outputs (grad-carrying). The target is
-                # the rollout return in the critic's frame — PopArt-normalized when the critic is, so
-                # the taus land in the same units the value head learns in.
-                if self.seed_quantile_coef > 0.0:
-                    _sqp = getattr(self.policy.features_extractor, "last_seed_quantile_preds", None)
-                    _sqh = getattr(self.policy.features_extractor, "seed_quantile_head", None)
-                    if _sqp is not None and _sqh is not None:
-                        from agents.model.seed_quantile import seed_quantile_loss
-                        _tgt = (popart.normalize(rollout_data.returns) if popart is not None
-                                else rollout_data.returns)
-                        sq_loss, sq_m = seed_quantile_loss(_sqp, _tgt.flatten(), _sqh.taus)
-                        loss = loss + self.seed_quantile_coef * sq_loss
-                        for _qk, _qv in sq_m.items():
-                            seed_vicreg_metrics.setdefault(_qk, []).append(_qv)
 
                 # +OPPONENT INTENT (gen3_opp_intent_v1): supervise ALPHA/BETA against what the
                 # opponent actually did. The label lives in the obs, one row AHEAD of the prediction
@@ -1730,7 +1517,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         opp_intent_term = self.opp_intent_coef * oi_loss
                         loss = loss + opp_intent_term
                         for _ok, _ov in oi_m.items():
-                            seed_vicreg_metrics.setdefault(_ok, []).append(_ov)
+                            aux_metrics.setdefault(_ok, []).append(_ov)
 
                 # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
                 # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.
@@ -1880,22 +1667,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             loss = loss + value_dist_term
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
-
-                # +ZARCH (gen3_zarch_film_v1): the z_arch recon BCE + VICReg variance floor. The
-                # evaluate_actions forward above stashed last_zarch + the grad-gated recon
-                # logits/species ids for THIS minibatch; each term folds at its own coef. Touches
-                # only the ZArchEncoder's params (detached embedding reads → zero trunk gradient).
-                # OFF → skipped (loss byte-identical).
-                if zarch_on:
-                    _fe = self.policy.features_extractor
-                    z_out = self._zarch_loss(
-                        _fe.last_zarch, _fe.last_zarch_recon_logits, _fe.last_zarch_species_ids)
-                    if z_out is not None:
-                        z_recon, z_vicreg, z_m = z_out
-                        loss = loss + (self.zarch_recon_coef * z_recon
-                                       + self.zarch_vicreg_coef * z_vicreg)
-                        for _zk, _zv in z_m.items():
-                            zarch_metrics.setdefault(_zk, []).append(float(_zv))
 
                 # +DISTILL (gen3_exploiter_distill_v1): ON-POLICY KL toward a frozen per-team SPECIALIST,
                 # masked to the rollout states where the trainee pilots the teacher's team (`distill_mask`).
@@ -2136,15 +1907,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # micro-batch (B=batch_size) sample for the noise-scale estimate.
                 if accum >= 2 and epoch == 0 and micro_in_group == 1 and noise_g_small_sq is None:
                     noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
-                    if film_noise_params:
-                        noise_film_small_sq = (accum ** 2) * self._global_grad_sq(film_noise_params)
                 if micro_in_group == accum:
-                    # +FILM-NOISE-SCALE: the film-group accumulated norm must be read BEFORE
-                    # clip_grad_norm_ (which rescales grads IN PLACE when the global norm trips the
-                    # clip — the global path is safe because clip returns the PRE-clip value).
-                    if (accum >= 2 and epoch == 0 and noise_film_big_sq is None
-                            and noise_film_small_sq is not None):
-                        noise_film_big_sq = self._global_grad_sq(film_noise_params)
                     grad_norm = float(  # +INSTRUMENTATION: pre-clip total grad norm (per step)
                         th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                     )
@@ -2153,10 +1916,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # from clip_grad_norm_. Captured on group 0 (same data as the micro-batch above).
                     if accum >= 2 and epoch == 0 and noise_g_big_sq is None:
                         noise_g_big_sq = grad_norm * grad_norm
-                    # +FILM-GRAD-ACCUM: gate the film group's grads (accumulate-or-apply) after the
-                    # clip (baseline-identical clip semantics) and before the optimizer step.
-                    if film_grad_accum is not None:
-                        film_grad_accum.gate(_film_accum_k)
                     self.policy.optimizer.step()
                     self.policy.optimizer.zero_grad()
                     micro_in_group = 0
@@ -2180,9 +1939,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 grad_norms.append(float(
                     th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 ))
-                # +FILM-GRAD-ACCUM: same gate at the trailing-group step site.
-                if film_grad_accum is not None:
-                    film_grad_accum.gate(_film_accum_k)
                 self.policy.optimizer.step()
                 self.policy.optimizer.zero_grad()
                 micro_in_group = 0
@@ -2237,7 +1993,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # diminishing returns (could shrink for more update steps). Only when accumulating (needs two
         # batch sizes) AND both norms were captured (a full first group formed).
         _nsr_global = None   # +NSR-ADVISOR: this call's smoothed ratios (None until EMAs positive)
-        _nsr_film = None
         if accum >= 2 and noise_g_small_sq is not None and noise_g_big_sq is not None:
             b_small = float(self.batch_size)
             b_big = b_small * accum
@@ -2250,33 +2005,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 self.logger.record("train/noise_scale", float(b_simple))
                 self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
                 _nsr_global = float(b_simple / b_big)
-        # +FILM-NOISE-SCALE: the FiLM-generator-group critical batch, same EMA treatment. Compare
-        # `film/noise_scale` to `train/noise_scale` AND the effective batch: film ≫ global means the
-        # conditioning gradient is far more noise-dominated than the aggregate — the direct
-        # sample-starvation read for the per-team routing.
-        if accum >= 2 and noise_film_small_sq is not None and noise_film_big_sq is not None:
-            b_small = float(self.batch_size)
-            b_big = b_small * accum
-            tr_f, g2_f = self._noise_scale_estimate(noise_film_small_sq, noise_film_big_sq, b_small, b_big)
-            d = _NOISE_SCALE_EMA_DECAY
-            self._noise_film_ema_s = tr_f if self._noise_film_ema_s is None else d * self._noise_film_ema_s + (1 - d) * tr_f
-            self._noise_film_ema_g2 = g2_f if self._noise_film_ema_g2 is None else d * self._noise_film_ema_g2 + (1 - d) * g2_f
-            if self._noise_film_ema_g2 > 1e-12 and self._noise_film_ema_s > 0.0:
-                b_film = self._noise_film_ema_s / self._noise_film_ema_g2
-                self.logger.record("film/noise_scale", float(b_film))
-                self.logger.record("film/noise_scale_ratio", float(b_film / b_big))
-                _nsr_film = float(b_film / b_big)
-                # The APPLIED-update view: each film update the optimizer actually takes is computed
-                # from film_grad_accum_steps× the effective batch, so this is the ratio a FiLM step
-                # really experiences — readable without the accumulation factor in your head.
-                # ≈1 = at the group's critical batch; >2 = raise --film-grad-accum-steps.
-                self.logger.record("film/noise_scale_ratio_applied",
-                                   float(b_film / b_big) / max(1, int(getattr(self, "film_grad_accum_steps", 1) or 1)))
         # +NSR-ADVISOR: rate-limited TUI Events warnings when a smoothed noise-scale ratio is out
         # of band, with the concrete fix in the message (see _noise_scale_advice). Only on the
         # accumulating path (the estimator needs two batch sizes).
-        if accum >= 2 and (_nsr_global is not None or _nsr_film is not None):
-            self._emit_noise_scale_warnings(_nsr_global, _nsr_film, float(self.batch_size) * accum)
+        if accum >= 2 and _nsr_global is not None:
+            self._emit_noise_scale_warnings(_nsr_global, float(self.batch_size) * accum)
 
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`
@@ -2316,71 +2049,6 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if value_dist_metrics:
             for _vk, _vvals in value_dist_metrics.items():
                 self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
-
-        # +ZARCH (gen3_zarch_film_v1): z_arch diagnostics under their OWN `zarch/` TB prefix.
-        # `recon_topk_acc` → 1 as z carries the roster; `std` is the collapse monitor (→0 = collapsed
-        # — the NO-GO signal); the `film/*` generator norms are the deviation-from-identity read
-        # ("is FiLM alive or dead" — 0 at init, grows as conditioning is used; per-head so the
-        # policy-vs-value routing is separately attributable).
-        if zarch_metrics:
-            for _zk, _zvals in zarch_metrics.items():
-                self.logger.record(f"zarch/{_zk}", float(np.mean(_zvals)))
-        _zfe = self.policy.features_extractor
-        if getattr(_zfe, "zarch_film", "off") != "off":
-            with th.no_grad():
-                _z = _zfe.last_zarch                      # last minibatch's z [B, zdim] (many teams)
-                # The LIVE LUT-vs-style dial: participation ratio of the minibatch z cloud (see
-                # _zarch_participation_ratio). Watch the TREND — drifting toward zarch_dim =
-                # LUT-ward identity spread; falling = style compression; →1 = collapse (pair
-                # with zarch/std, the VICReg floor monitor).
-                _pr = self._zarch_participation_ratio(_z)
-                if _pr is not None:
-                    self.logger.record("zarch/pr", _pr)
-                # +LUT (gen3_zarch_lut_v1, v46): the GIGO CANARY. The per-team code is keyed by a
-                # species⊕moves signature computed from the OBSERVATION, so a signature that fails to
-                # match sends the decision to row 0 (unconditioned) — silently turning the whole
-                # experiment into a no-op. On a --trainee-teams run this MUST sit at ~1.0; anything
-                # lower means the lookup is broken, not that the LUT "didn't help".
-                _lut_idx = getattr(_zfe, "last_zarch_lut_idx", None)
-                if _lut_idx is not None:
-                    self.logger.record("zarch/lut_hit_frac", float((_lut_idx > 0).float().mean()))
-                    self.logger.record("zarch/lut_teams_seen",
-                                       float(th.unique(_lut_idx[_lut_idx > 0]).numel()))
-                    # Per-team code SPREAD — the LUT's analogue of film/*_team_std: the mean pairwise
-                    # cosine DISTANCE between the learned rows. Random-init starts near 1.0
-                    # (~orthogonal, the intended large-ε geometry); collapsing toward 0 would mean the
-                    # codes merged and the conditioning went back to one shared direction.
-                    _W = _zfe.zarch_lut_emb.weight[1:]
-                    # Guard the ZERO-INIT case: normalizing all-zero rows yields cos=0, which would
-                    # print code_dist=1.0 (MAXIMUM spread) for codes that have no spread at all —
-                    # an actively misleading reading at exactly the moment we would be watching them
-                    # grow. Report the raw norm alongside so "0 = not grown yet" is unambiguous.
-                    self.logger.record("zarch/lut_code_norm", float(_W.norm(dim=1).mean()))
-                    if _W.shape[0] > 1 and float(_W.norm(dim=1).mean()) > 1e-6:
-                        _Wn = _W / (_W.norm(dim=1, keepdim=True) + 1e-8)
-                        _cos = _Wn @ _Wn.T
-                        _off = ~th.eye(_Wn.shape[0], dtype=th.bool, device=_Wn.device)
-                        self.logger.record("zarch/lut_code_dist",
-                                           float(1.0 - _cos[_off].mean().item()))
-                for _side, _gen in (("pi", _zfe.film_pi), ("vf", _zfe.film_vf)):
-                    _P = _gen.out_features // 2
-                    self.logger.record(f"film/{_side}_gamma_norm",
-                                       float(_gen.weight[:_P].norm().item()))
-                    self.logger.record(f"film/{_side}_beta_norm",
-                                       float(_gen.weight[_P:].norm().item()))
-                    # GENERIC vs CONDITIONING split: the generators can grow by exploiting the SHARED
-                    # component of z (a team-generic scale/shift = free capacity, not routing) while
-                    # the per-team DIFFERENTIAL stays weak — the norms alone can't tell. `*_dev` =
-                    # mean |modulation| (deviation-from-identity, generic + differential); `*_team_std`
-                    # = per-dim std of the modulation ACROSS the minibatch's teams (the true
-                    # conditioning signal — ≈0 while dev grows = the lazy generic mode; distillation
-                    # pressure is the lever that sharpens it).
-                    if _z is not None and _z.shape[0] > 1:
-                        _mod = _gen(_z)                   # [B, 2P] = [Δγ ‖ Δβ]
-                        self.logger.record(f"film/{_side}_dev",
-                                           float(_mod.abs().mean().item()))
-                        self.logger.record(f"film/{_side}_team_std",
-                                           float(_mod.std(dim=0).mean().item()))
 
         # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
         # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of
@@ -2436,5 +2104,5 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # +SEED-VICReg terms (only when the regularizer is active): watch vicreg_var_term fall as
         # seeds/out_effective_rank rises toward k — the un-collapse confirmation the gen-6 enable
         # is judged by.
-        for _sk, _svals in seed_vicreg_metrics.items():
+        for _sk, _svals in aux_metrics.items():
             self.logger.record(_sk, float(np.mean(_svals)))

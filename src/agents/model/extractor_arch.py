@@ -12,69 +12,45 @@ There is now a third consumer that made the duplication untenable: the forkserve
 (`agents.model.compile_preload`) must build the SAME extractor the env workers will, in a fresh
 interpreter that never parsed argv, so it needs this mapping as DATA rather than as inline statements.
 
-`ARCH_ARG_KEYS` is that data: extractor-kwarg name → the `args` attribute it reads. Anything needing a
-derivation (a coef>0 enable signal, a private computed field) lives in `_DERIVED`.
+`ARCH_ARG_KEYS` is that data: extractor-kwarg name -> the `args` attribute it reads. It is now
+**GENERATED from `agents.model.flag_registry`** rather than hand-kept — the registry is the single
+declaration of every model-relevant toggle and of which of the five hand-synced surfaces it belongs
+on (`flag_registry_test.py` validates the other four). Anything needing a derivation (a coef>0 enable
+signal, a private computed field) lives in `_DERIVED`, which stays hand-written because its values
+are callables; the registry still declares those rows (`derived=True`) so the key SET is checked.
+
+`FROZEN_ARCH_KWARGS` is the config-only tier: toggles with no argparse entry at all, frozen at the
+registry's `default` for every CLI-launched run. They are still recorded in `model_config.json` and
+still resume-gated — only the SELECT role is gone (see `flag_registry`'s tier table). The extractor
+constructor kwarg survives, so each stays reachable for an experiment.
 """
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-# extractor kwarg -> args attribute. Straight pass-throughs; keep alphabetical within a version group
-# so a new toggle is obvious in review.
+from agents.model.flag_registry import REGISTRY, Tier
+
+# extractor kwarg -> args attribute. Straight pass-throughs, GENERATED from the registry in
+# declaration order (which is `since` order, so a new toggle appends).
 ARCH_ARG_KEYS: Dict[str, str] = {
-    "attend_unrevealed_opponents": "attend_unrevealed_opponents",
-    "opp_belief_cls_k": "opp_belief_cls_k",
-    "value_active_readout": "value_active_readout",
-    "move_belief_mode": "move_belief_mode",
-    "damage_op": "damage_op",
-    "damage_outgoing": "damage_outgoing",                                   # v23
-    "move_candidate_floor": "move_candidate_floor",                         # v23
-    "move_latent": "move_latent",                                           # v24
-    "spread_belief": "spread_belief",                                       # v25
-    "spread_belief_nature": "spread_belief_nature",                         # v40
-    "move_prior_fusion": "move_prior_fusion",                               # v20
-    "damage_candidate_k": "damage_candidate_k",                             # v49
-    "entity_topk_seats": "entity_topk_seats",
-    "consequence_topk": "consequence_topk",                                 # v59 (C1b/C2/C3 k_cand + D4 k_bench)                               # v54 (E3 unconditional; this is the E4 K)
-    "edge_bias_families": "edge_bias_families",                             # v56 (layer swap unconditional; this is the family set)
-    "entity_tail_seats": "entity_tail_seats",                               # v57 (the E5 tail-threat seats)
-    "win_prob_mode": "win_prob_mode",                                       # v22
-    "pubval_mode": "pubval_mode",                                           # v43
-    "value_dist_mode": "value_dist_mode",                                   # v29
-    "value_dist_bins": "value_dist_bins",
-    "value_dist_vmin": "value_dist_vmin",
-    "value_dist_vmax": "value_dist_vmax",
-    "damage_topk_k": "damage_topk_k",                                       # v30
-    "damage_matrices_outgoing": "damage_matrices_outgoing",                 # v34
-    "damage_matrices_incoming": "damage_matrices_incoming",                 # v35
-    "damage_matrices_outgoing_all": "damage_matrices_outgoing_all",         # v39
-    "threat_prob_outspeed": "threat_prob_outspeed",                         # v36
-    "hp_belief_mode": "hp_belief_mode",                                     # v53
-    "belief_grad_mode": "belief_grad_mode",                                 # v41
-    "zarch_film": "zarch_film",                                             # v44
-    "zarch_dim": "zarch_dim",
-    "zarch_lut": "zarch_lut",                                               # v46
-    "zarch_lut_init_std": "zarch_lut_init_std",
-    "value_threat_inject": "value_threat_inject",                           # v64
-    "species_prior_fusion": "species_prior_fusion",                         # v68
-    "t0_species_prior": "t0_species_prior",                                 # v72
-    "opp_intent_grad_mode": "opp_intent_grad_mode",                         # v73
-    "intent_value_reduce": "intent_value_reduce",                           # v74
-    "intent_move_cell": "intent_move_cell",                                 # v77
+    f.name: f.arg for f in REGISTRY if f.tier is Tier.CLI and not f.derived
 }
 
-# Kwargs that are NOT a plain attribute read. Each is a callable over `args`.
+# Config-only kwarg -> its FROZEN value. No argparse entry reads these; the registry default IS
+# the value every CLI-launched run gets.
+FROZEN_ARCH_KWARGS: Dict[str, Any] = {
+    f.name: f.default for f in REGISTRY if f.tier is Tier.CONFIG_ONLY
+}
+
+# Kwargs that are NOT a plain attribute read. Each is a callable over `args`. The registry declares
+# these rows with `derived=True`; `flag_registry_test` pins the key set to it, so one can neither
+# appear here without a registry row nor be dropped from here while the row survives.
 _DERIVED = {
-    # coef>0 is the enable signal for these three; the COEF itself is a training hparam set on the
+    # coef>0 is the enable signal for these two; the COEF itself is a training hparam set on the
     # model, but the BOOL is the version-checked arch toggle.
     "opp_belief_slots": lambda a: getattr(a, "opp_belief_aux_coef", 0.0) > 0.0,
-    # v63 gen3_seed_quantile_v1 — same shape: the COEF is the training hparam, the BOOL is the
-    # version-checked structural toggle that builds the shared per-seed quantile Linear.
-    "seed_quantile": lambda a: getattr(a, "seed_quantile_coef", 0.0) > 0.0,
     # v67 gen3_opp_intent_v1 — same shape: the COEF is the training hparam, the BOOL builds the heads.
     "opp_intent": lambda a: getattr(a, "opp_intent_coef", 0.0) > 0.0,
-    # Computed upstream by the --zarch-lut validation (a roster table, not a CLI value).
-    "zarch_lut_rosters": lambda a: getattr(a, "_zarch_lut_rosters", None),
 }
 
 
@@ -92,23 +68,40 @@ def build_extractor_arch_kwargs(args, base: Optional[Dict[str, Any]] = None,
         kwargs[kwarg] = getattr(args, attr)
     for kwarg, fn in _DERIVED.items():
         kwargs[kwarg] = fn(args)
+    # The config-only tier LAST and unconditionally: there is no `args` attribute to read, and a
+    # frozen value must not be overridable by one that happens to be lying around on the namespace.
+    kwargs.update(FROZEN_ARCH_KWARGS)
     if log_level is not None:
         kwargs["log_level"] = log_level
     return kwargs
+
+
+def arch_toggles_from_args(args) -> Dict[str, Any]:
+    """Every registry toggle's value for THIS run, keyed by name — the `current_model_version`
+    half of `build_extractor_arch_kwargs`.
+
+    Same three sources, no layout: a plain attribute read, a `_DERIVED` callable, or the frozen
+    config-only value. `train_rl_agent._run_arch_toggles` builds on this so the version gate and
+    the extractor cannot be fed a different toggle set (they were two hand-kept lists).
+    """
+    toggles: Dict[str, Any] = {kwarg: getattr(args, attr) for kwarg, attr in ARCH_ARG_KEYS.items()}
+    toggles.update({kwarg: fn(args) for kwarg, fn in _DERIVED.items()})
+    toggles.update(FROZEN_ARCH_KWARGS)
+    return toggles
 
 
 def arch_kwargs_to_plain(kwargs: Dict[str, Any]) -> Dict[str, Any]:
     """The JSON-serialisable subset, for handing an arch across a process boundary.
 
     The forkserver preload receives its config through the environment, so anything unpicklable or
-    huge (the layout's numpy mapping tables, the zarch roster table) is dropped — the preload only
-    needs the toggles that change the traced GRAPH. Dropping a key means the preload builds a
-    slightly different extractor and the worker's guards miss, which costs a recompile but is never
-    incorrect, so this errs toward dropping.
+    huge (the layout's numpy mapping tables) is dropped — the preload only needs the toggles that
+    change the traced GRAPH. Dropping a key means the preload builds a slightly different extractor
+    and the worker's guards miss, which costs a recompile but is never incorrect, so this errs
+    toward dropping.
     """
     plain: Dict[str, Any] = {}
     for k, v in kwargs.items():
-        if k in ("zarch_lut_rosters", "log_level"):
+        if k in ("log_level",):
             continue
         if isinstance(v, (bool, int, float, str)) or v is None:
             plain[k] = v

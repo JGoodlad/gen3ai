@@ -233,19 +233,26 @@ run uses the same code as the original — unless `--sync-to-main` is passed.
 
 ## Showdown port default
 
-The launcher **defaults `--showdown-port` to 8001** (`DEFAULT_TRAINING_SHOWDOWN_PORT` in
-`launcher/checkpoint.py`, injected in `launcher/__init__.main()` via
-`_apply_default_showdown_port`) so a long session never rides on the shared dev server (8000),
-where a routine dev `npm run stop` would drop every worker's connection at once and the
-connection guard would crash the run. An explicit `--showdown-port` (any spelling) always wins;
-the resolved port shows in the TUI events panel (`🔌 Showdown server :8001`). This default lives
-**only** here — `train_rl_agent.py` run directly still defaults to 8000.
+⚠️ **The port default is now MOSTLY UNREACHABLE, because the transport default inverted.**
+`--use-bridge` defaults to `rust`, so a launcher run with no transport flag is a BRIDGE run and
+gets no port at all. The port logic below applies only to an explicit `--use-bridge off`.
 
-**Bridge mode is port-free.** When `--use-showdown-bridge` is in the child args,
-`_apply_default_showdown_port` injects **no** default port and the events panel shows
-`🌉 Transport: in-process bridge (no Showdown server)` instead of a port — the bridge connects to
-no server at all (training AND eval run in-process), so any `--showdown-port` passed alongside it
-is inert (built into `server_config` but never connected to, so it can't even disturb the live
-:8001 server). Guarded by `default_port_test.py::test_bridge_mode_*`. See the root
-`CLAUDE.md` → Showdown Server, and the port-threading detail in
-`src/agents/training/CLAUDE.md`.
+**Bridge mode is port-free, and it is the default.** `child_uses_bridge` treats an ABSENT
+`--use-bridge` as a bridge run (matching `train_rl_agent`'s own default — a drift between the two
+is what `default_port_test.py` now exists to catch), so `_apply_default_showdown_port` injects
+**no** default port and the events panel shows `🌉 Transport: in-process bridge [rust] (no Showdown
+server)` instead of a port. The bridge connects to no server at all (training AND eval run
+in-process), so any `--showdown-port` passed alongside it is inert — built into `server_config` but
+never connected to, so it cannot even disturb the live :8001 server.
+
+**When `--use-bridge off` IS passed**, the launcher **defaults `--showdown-port` to 8001**
+(`DEFAULT_TRAINING_SHOWDOWN_PORT` in `launcher/checkpoint.py`, injected in
+`launcher/__init__.main()` via `_apply_default_showdown_port`) so a long websocket session never
+rides on the shared dev server (8000), where a routine dev `npm run stop` would drop every worker's
+connection at once and the connection guard would crash the run. An explicit `--showdown-port` (any
+spelling) always wins; the resolved port shows in the TUI events panel (`🔌 Showdown server :8001`).
+This default lives **only** here — `train_rl_agent.py` run directly still defaults to 8000.
+
+Guarded by `default_port_test.py` (both directions: absent flag ⇒ bridge ⇒ no port; explicit `off`
+⇒ the 8001 injection). See the root `CLAUDE.md` → In-process bridge transport, and the
+port-threading detail in `src/agents/training/CLAUDE.md`.

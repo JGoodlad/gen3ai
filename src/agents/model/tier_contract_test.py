@@ -48,7 +48,7 @@ _ALL_ON = dict(
     win_prob_mode="read_only", pubval_mode="read_only",
     value_dist_mode="read_only", value_dist_bins=51,
     value_dist_vmin=-30.0, value_dist_vmax=30.0,
-    seed_quantile=True, value_threat_inject=True,
+    value_threat_inject=True,
 )
 
 

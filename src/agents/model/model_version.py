@@ -529,7 +529,37 @@ from typing import Any, Dict, List
 #   by INTENT_MOVE_CELL_DIM through a zero-init projection (identity at init, M1-guarded); OFF
 #   builds no module and is byte-identical → NO ARCH_SIGNATURE bump. Requires opp_intent +
 #   damage_op (+ damage_topk_k>0 at runtime, fail-loud). Old configs migrate to False.
-MODEL_CONFIG_VERSION = 77
+# v78: gen3_flag_surface_p1_v1 — the TIER-1 flag-surface cleanup. EIGHT fields are DELETED with the
+#   modules behind them; nothing is added.
+#   (1) The ZARCH family — `zarch_film`, `zarch_dim`, `zarch_lut`, `zarch_lut_teams`,
+#       `zarch_recon_coef`, `zarch_vicreg_coef` — goes with `ZArchEncoder`, the two FiLM generators,
+#       the per-team LUT Embedding + its `team_signature` roster table, and `attach_zarch_lut`. The
+#       line it existed to test is CLOSED and the result was NULL twice over: the LUT arm — a FREE
+#       per-team code, i.e. the sharpest possible removal of the conditioning-signal limit — moved the
+#       N=20 multi-team ceiling by +0.024 with CI [-0.016, +0.064], and the orthogonal 2x2 measured
+#       COUNT (N 20->10, +0.077 SIG) dominating CONDITIONING (+0.027 n.s.). Every gen-8/9/10 run
+#       recorded it OFF, so deleting it changes no production forward.
+#   (2) The SEED-PRESSURE pair — `seed_quantile` (v63) + `value_seed_vicreg_coef` (v62) — goes with
+#       `seed_quantile.py` and `seed_vicreg.py`. BOTH cap at ~1-D differentiation of the k=4 value
+#       seeds and the two measurements meet in the middle: gen-6's VICReg satisfied every term with
+#       out_effective_rank 1.05 (three seeds identical, one breakaway), and gen-7's quantile arm drove
+#       crossing_rate to 0.000 with out_effective_rank 1.157 of 4. A SHARED readout can only constrain
+#       each seed along its own weight vector, so no coefficient reaches the orthogonal directions —
+#       multiplicity is not the missing axis. `seed_diagnostics.py` (the MEASUREMENT) stays.
+#   MIGRATION: POP for a config that recorded them OFF; REFUSE one that recorded zarch_film != 'off'
+#   or seed_quantile=True, on the v75 principle — those carried PARAMETERS the live extractor has no
+#   home for, so a silent pop would load a state_dict with keys nothing can place.
+#   `value_seed_vicreg_coef` and the two zarch coefs are training-only, so any value pops silently.
+#   NO ARCH_SIGNATURE bump and the MIGRATION FLOOR stays 76: every deleted module was OFF in
+#   production, so the production forward AND state_dict are bit-identical across this change
+#   (verified: same state_dict keys, max|delta| 0.0 on pi/vf under designs/production_config.json).
+#   Also in v78, with no field consequence: `--use-showdown-bridge` (the deprecated `--use-bridge=node`
+#   alias) is deleted and `--use-bridge` now DEFAULTS to `rust`; and three settled toggles are DEMOTED
+#   to the config_only tier (`attend_unrevealed_opponents` frozen ON, `value_active_readout` and
+#   `damage_matrices_outgoing_all` frozen OFF) — their FIELDS and check_compatible gates are
+#   deliberately UNCHANGED, because a demotion removes the SELECT role only. See
+#   `agents.model.flag_registry` and designs/flag_registry.md.
+MODEL_CONFIG_VERSION = 78
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1204,12 +1234,6 @@ class ModelVersion:
     # change (gated in check_compatible with an unconditional int compare, like opp_belief_cls_k). 0 = off
     # (forced when mode == none).
     value_dist_bins: int = 0
-    # v63 STRUCTURAL (gen3_seed_quantile_v1): per-seed QUANTILE assignment — one shared
-    # Linear(VALUE_SEED_DIM, 1) mapping each value seed to its target quantile of the return.
-    # Adding/removing it changes the state_dict, so it is gated in check_compatible with a bool
-    # compare. OFF (default) builds no module and is byte-for-byte baseline (NO ARCH_SIGNATURE bump).
-    # Its COEFFICIENT (--seed-quantile-coef) is training-only, like value_dist_coef.
-    seed_quantile: bool = False
     # v64 STRUCTURAL (gen3_value_threat_inject_v1): the critic-side magnitude route — one shared
     # zero-init Linear(reducer.extra_dim, D_MODEL) adding the op's alpha-weighted incoming row to
     # each of OUR mons' tokens on the VALUE POOL's copy only. Adding/removing changes the
@@ -1348,31 +1372,6 @@ class ModelVersion:
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
     pubval_coef: float = 0.0
-    # v44 STRUCTURAL toggle (gen3_zarch_film_v1): the team-archetype latent + head FiLM. 'off' = no
-    # modules (baseline byte-for-byte); 'heads' = ZArchEncoder + two zero-init FiLM generators on the
-    # root heads (identity-at-init). STRING-gated in check_compatible (a state_dict + forward change).
-    zarch_film: str = "off"
-    # v44 STRUCTURAL int: the z_arch latent width (= the FiLM generators' in_features = the conditioning
-    # rank). Every distinct value is a weight-shape mismatch → unconditional int compare (the
-    # value_dist_bins pattern). 0 when zarch_film == 'off'.
-    zarch_dim: int = 0
-    # v46 STRUCTURAL toggle (gen3_zarch_lut_v1): the FREE per-team code layered on z_arch. 'off' = no
-    # modules (baseline byte-for-byte); 'add' = LN(z_deepsets + code); 'only' = LN(code).
-    zarch_lut: str = "off"
-    # v46 STRUCTURAL int: the LUT table height (n pinned teams; the Embedding is n+1 rows, row 0 =
-    # unknown). A weight-shape field → unconditional int compare, like zarch_dim.
-    zarch_lut_teams: int = 0
-    # v44 TRAINING-ONLY loss coefs (like spread_belief_coef — recorded, NOT version-locked, inherited on
-    # a flagless resume): the species multi-hot reconstruction BCE (the anti-collapse anchor) + the
-    # VICReg per-dim variance floor on z across the batch.
-    zarch_recon_coef: float = 0.0
-    zarch_vicreg_coef: float = 0.0
-
-    # v62 resume-immutable VALUE-meaning hparam (the vf_coef class — NOT weight-shape): the VICReg
-    # variance+covariance floor on the MultiSeedValueReadout seed outputs (seed_vicreg.py). 0.0 =
-    # OFF (byte-identical loss). Enforced ONLY on the training-resume path via check_value_seed_vicreg
-    # (excluded from check_compatible — frozen eval/pool/distill opponents never touch it).
-    value_seed_vicreg_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -1390,9 +1389,6 @@ class ModelVersion:
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
         pubval_coef: float = 0.0,
-        zarch_recon_coef: float = 0.0,
-        zarch_vicreg_coef: float = 0.0,
-        value_seed_vicreg_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1497,9 +1493,6 @@ class ModelVersion:
             value_dist_bins=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_bins", 0)
             ),
-            seed_quantile=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("seed_quantile", False)
-            ),
             value_threat_inject=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_threat_inject", False)
             ),
@@ -1555,21 +1548,6 @@ class ModelVersion:
             pubval_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("pubval_mode", "none")
             ),
-            zarch_film=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_film", "off")
-            ),
-            zarch_dim=int(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_dim", 0)
-            ),
-            zarch_lut=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_lut", "off")
-            ),
-            zarch_lut_teams=len(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("zarch_lut_rosters") or []
-            ),
-            zarch_recon_coef=float(zarch_recon_coef),
-            zarch_vicreg_coef=float(zarch_vicreg_coef),
-            value_seed_vicreg_coef=float(value_seed_vicreg_coef),
             pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
             value_tail_weight=float(value_tail_weight),
@@ -1900,57 +1878,11 @@ class ModelVersion:
                 "Resume with the matching --pubval-mode setting, or start a fresh training run."
             )
 
-        # v44 z_arch/FiLM (gen3_zarch_film_v1): the MODE gates off↔heads (the ZArchEncoder + FiLM
-        # generator params, a state_dict change — AND the forward the policy trained under); the DIM
-        # is the generators' in_features (weight-shape). Both FATAL on any load mismatch. The
-        # training-only recon/vicreg coefs are NOT checked.
-        if self.zarch_film != saved.zarch_film:
-            raise ModelVersionError(
-                f"zarch_film mismatch: saved={saved.zarch_film!r}, current={self.zarch_film!r}.\n"
-                "The team-archetype latent + head FiLM is fixed for a run's lifetime: adding/removing "
-                "it changes the state_dict AND the forward the policy trained under.\n"
-                "Resume with the matching --zarch-film setting, or start a fresh training run."
-            )
-        if self.zarch_dim != saved.zarch_dim:
-            raise ModelVersionError(
-                f"zarch_dim mismatch: saved={saved.zarch_dim}, current={self.zarch_dim}.\n"
-                "The z_arch latent width is the FiLM generators' input dim — a different value is a "
-                "weight-shape change.\n"
-                "Resume with the matching --zarch-dim setting, or start a fresh training run."
-            )
-
-        # v46 per-team LUT (gen3_zarch_lut_v1): the MODE gates off↔add/only (the Embedding +
-        # LayerNorm + roster-table buffer, a state_dict change) AND add↔only (the forward the policy
-        # trained under); the TEAM COUNT is the Embedding's height (weight-shape).
-        if self.zarch_lut != saved.zarch_lut:
-            raise ModelVersionError(
-                f"zarch_lut mismatch: saved={saved.zarch_lut!r}, current={self.zarch_lut!r}.\n"
-                "The per-team LUT is fixed for a run's lifetime: adding/removing it changes the "
-                "state_dict, and add↔only changes the conditioning the policy trained under.\n"
-                "Resume with the matching --zarch-lut setting, or start a fresh training run."
-            )
-        if self.zarch_lut_teams != saved.zarch_lut_teams:
-            raise ModelVersionError(
-                f"zarch_lut_teams mismatch: saved={saved.zarch_lut_teams}, "
-                f"current={self.zarch_lut_teams}.\n"
-                "The LUT table height is the per-team embedding's row count — a different value is a "
-                "weight-shape change, AND it would re-key every learned per-team code.\n"
-                "Resume with the SAME --trainee-teams set, or start a fresh training run."
-            )
-
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
         # ValueDistHead params) AND read_only↔shaping (grad-flow); the BIN COUNT is the head's output
         # Linear width. Both are weight-shape/forward changes → FATAL on a resume mismatch. The support
         # (vmin/vmax) is value-meaning → resume-only check_value_dist, not here.
-        # gen3_seed_quantile_v1 (v63): the per-seed quantile head is one shared Linear — adding or
-        # removing it changes the state_dict, so it is fixed for a run's lifetime.
-        if self.seed_quantile != saved.seed_quantile:
-            raise ModelVersionError(
-                f"seed_quantile mismatch: saved={saved.seed_quantile}, current={self.seed_quantile}.\n"
-                "The per-seed quantile head is fixed for a run's lifetime: adding/removing it changes "
-                "the state_dict, and its aux loss is what gives each value seed a distinct job.\n"
-                "Resume with the matching --seed-quantile-coef setting, or start a fresh training run."
-            )
+        # (gen3_seed_quantile_v1's `seed_quantile` gate is DELETED at v78 with the head itself.)
         # gen3_value_threat_inject_v1 (v64): the injection projection is a state_dict-changing
         # module, AND the flag switches the op's reducer on, so a flip is doubly incompatible.
         if self.value_threat_inject != saved.value_threat_inject:
@@ -2153,26 +2085,6 @@ class ModelVersion:
                 "resume silently alters the value head's gradient scale.\n"
                 f"Fix: resume with --vf-coef {self.vf_coef!r}, or start a fresh training run to use "
                 f"{requested!r}."
-            )
-
-    def check_value_seed_vicreg(self, requested: float) -> None:
-        """Raise ModelVersionError if `requested` (the resume `--value-seed-vicreg-coef`) differs from
-        this saved config's value_seed_vicreg_coef.
-
-        Same treatment as check_vf_coef: a training-loss coefficient (the VICReg floor on the
-        multi-seed critic readout's outputs, seed_vicreg.py), not weight-shape, so it is
-        deliberately NOT part of check_compatible() — that gates every frozen eval / self-play /
-        distill opponent load, whose forward never touches it. Invoked ONLY on the
-        training-resume path: silently toggling the regularizer mid-run would drift the value
-        objective, so a resume with a different value is a hard error.
-        """
-        if not math.isclose(self.value_seed_vicreg_coef, requested, rel_tol=1e-9, abs_tol=1e-12):
-            raise ModelVersionError(
-                f"value_seed_vicreg_coef mismatch: saved={self.value_seed_vicreg_coef!r}, requested={requested!r}.\n"
-                "The seed-VICReg coefficient is fixed for the lifetime of a run — changing it on "
-                "resume silently alters the critic-readout objective.\n"
-                f"Fix: resume with --value-seed-vicreg-coef {self.value_seed_vicreg_coef!r}, or start a fresh "
-                f"training run to use {requested!r}."
             )
 
     def check_belief_grad_mode(self, requested: str, allow_change: bool = False) -> None:
@@ -2501,4 +2413,32 @@ def _migrate_config(data: dict) -> dict:
         # migrate: absent means the run predates the flag, i.e. OFF.
         data.setdefault("intent_move_cell", False)
         data["config_version"] = 77
+    if version < 78:
+        # gen3_flag_surface_p1_v1: the zarch family + the seed-pressure pair are DELETED. Two of the
+        # eight keys are JUDGED rather than popped — they built MODULES, so a config that recorded
+        # them ON names a state_dict the live extractor cannot place, and popping would turn that
+        # into an opaque "unexpected key" deep inside SB3's load (the v75 opp_belief_latent
+        # precedent). Every gen-8/9/10 production config recorded both OFF, so this refuses only a
+        # checkpoint from one of the closed research arms.
+        for judged, dead_value in (("zarch_film", "off"), ("seed_quantile", False)):
+            recorded = data.get(judged, dead_value)
+            if recorded != dead_value:
+                raise ModelVersionError(
+                    f"{judged}={recorded!r} is no longer supported (gen3_flag_surface_p1_v1, config "
+                    f"v78): the module behind it is DELETED, so this checkpoint's weights include "
+                    f"parameters the current extractor has no home for.\n"
+                    + ("The z_arch/FiLM conditioning line is closed — the free-per-team-code (LUT) "
+                       "arm moved the N=20 multi-team ceiling by +0.024, CI [-0.016, +0.064], and "
+                       "the orthogonal 2x2 measured team COUNT dominating conditioning.\n"
+                       if judged == "zarch_film" else
+                       "Both seed-differentiation pressures capped at ~1-D of k=4 "
+                       "(out_effective_rank 1.157 with crossing_rate 0.000), so the shared readout, "
+                       "not the coefficient, was the binding constraint.\n")
+                    + "To re-read this checkpoint, use the git_hash in its own metadata.json."
+                )
+        for dead in ("zarch_film", "zarch_dim", "zarch_lut", "zarch_lut_teams",
+                     "zarch_recon_coef", "zarch_vicreg_coef",
+                     "seed_quantile", "value_seed_vicreg_coef"):
+            data.pop(dead, None)      # POP, not setdefault: `cls(**data)` TypeErrors on a stale key
+        data["config_version"] = 78
     return data

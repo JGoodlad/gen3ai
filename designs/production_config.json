@@ -7,7 +7,7 @@
   "belief_grad_mode": "shaping",
   "bias_additivity": 1.0,
   "bias_redesign": false,
-  "config_version": 77,
+  "config_version": 78,
   "consequence_topk": 6,
   "damage_candidate_k": 0,
   "damage_matrices_incoming": true,
@@ -63,7 +63,6 @@
     128
   ],
   "role_token_size": 128,
-  "seed_quantile": false,
   "self_ko_hp_penalty": 0.0,
   "species_embedding_dim": 32,
   "species_prior_fusion": true,
@@ -84,16 +83,9 @@
   "value_dist_vmax": 12.0,
   "value_dist_vmin": -12.0,
   "value_from_dist": true,
-  "value_seed_vicreg_coef": 0.0,
   "value_tail_weight": 0.3,
   "value_threat_inject": true,
   "vf_coef": 0.5,
   "win_prob_coef": 1.0,
-  "win_prob_mode": "none",
-  "zarch_dim": 0,
-  "zarch_film": "off",
-  "zarch_lut": "off",
-  "zarch_lut_teams": 0,
-  "zarch_recon_coef": 1.0,
-  "zarch_vicreg_coef": 0.1
+  "win_prob_mode": "none"
 }

@@ -21,12 +21,6 @@ MOVE_LATENT_DIM = 32              # output dim of the per-move latent (grading i
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
 N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the observation
-# gen3_zarch_film_v1 (v44): the team-archetype latent z_arch + head FiLM. ZARCH_DIM is the DEFAULT
-# latent width (the CLI `--zarch-dim` records the run's actual value in model_config.json — the FiLM
-# modulation is rank-z_dim by construction, so this is the conditioning-capacity knob). Flag-gated
-# (`zarch_film != off`); OFF builds no modules (byte-identical baseline).
-ZARCH_DIM = 32                    # default z_arch latent dim (= the FiLM conditioning rank)
-ZARCH_ATOM_HIDDEN = 64            # hidden width of the per-mon static-atom MLP
 # gen3_pointer_native_v1: the pointer action head's shared scorer hidden width (the ONLY action head —
 # no flat action_net exists in this generation; see Gen3DualHeadMaskablePolicy._build).
 POINTER_HIDDEN = 64               # hidden width of the pointer move/switch/struggle scorers

@@ -33,7 +33,6 @@ from agents.observation.constants import (
     POKEMON_SLEEP_BELIEF_OFFSET,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-from agents.model.team_signature import TEAM_SIGNATURE_DIM, TEAM_SIGNATURE_MOVES
 from agents.model.damage_tables import (N_SECONDARY as _N_SECONDARY,
                                         SECONDARY_COLS as _SECONDARY_COLS, LEECH_SEED_CAT,
                                         _SLP_CAT as _SLP_STATUS_CAT)
@@ -55,8 +54,6 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
     ROLE_ENCODER_HIDDEN,
     NET_ARCH,
     N_HISTORY_TURNS,
-    ZARCH_DIM,
-    ZARCH_ATOM_HIDDEN,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,

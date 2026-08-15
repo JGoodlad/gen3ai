@@ -179,7 +179,7 @@ assembler · value_dist_head · pre_proj_norm · projection · value_pre_norm ·
 activation · alpha_head · beta_head
 ```
 
-Notably **absent** (`None` on the instance): `win_head`, `pubval_head`, `zarch_encoder`, `seed_quantile_head`.
+Notably **absent** (`None` on the instance): `win_head`, `pubval_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -194,7 +194,7 @@ happens to be written.
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head`, `seed_quantile_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
 **non-decreasing** tier order, and no entry point receives a tensor whose storage was produced by a
@@ -332,39 +332,28 @@ incoming rows — the critic's magnitude read after the concat's death, MULTIPLI
 (`agents/model/seed_diagnostics.py`: query/output cosine, uncentered effective rank, the VICReg
 variance target) with the VICReg trigger pre-registered in that module — the z_arch lesson,
 mechanized. **The trigger FIRED on gen-5** (`value_seeds/out_effective_rank` 1.0 sustained
-196k→15.7M steps — the k=4 outputs identical), so the wiring now exists:
-`--value-seed-vicreg-coef` (v62, `agents/model/seed_vicreg.py`) folds a VICReg
-variance+**covariance** floor on the seed outputs into the PPO loss (`value_seeds/vicreg_*`
-terms logged beside the contract). **Both targets are SCALE-RELATIVE** — the variance hinge is on
-cross-seed std ÷ the dim's own RMS (target 0.25) and the covariance term is a cross-seed
-*correlation* — because the first cut's absolute γ=1.0 was ~7× the readout's entire signal RMS
-(0.207) and unreachable by construction: a seed output is a convex combination of the six kv rows,
-whose spread is 0.141. `value_seeds/out_rms` is logged as the watchdog for the relative target's
-one degenerate response (shrinking the feature instead of differentiating it).
+196k→15.7M steps — the k=4 outputs identical).
 
-**`--seed-quantile-coef` (v63) is the POSITIVE alternative to that repulsion, and the two are
-different mechanisms.** Gen-6 measured VICReg's ceiling: every term moved (std_rel 0.002 → 0.53,
-correlation → 0.19) yet effective rank stayed 1.05, because the deviations occupy **less than one
-direction** (centered PR 0.846) — seeds 0/1/2 kept near-identical attention while seed 3 alone
-broke away. Repulsion buys spread, not multiplicity. Under `--seed-quantile-coef`, seed k instead
-predicts **quantile τ_k** of the return through **one shared** `Linear(dim,1)`, so k different
-predictions require k different seed reads and collapse becomes loss-increasing (measured +45.9%).
-Structural + version-checked (fresh runs only); off = no module. Read
-`value_seeds/quantile_{spread,crossing_rate}` — ascending τ implies ascending predictions, so a
-collapsed readout shows spread → 0 and crossing → 1. 0.0 (the production value — OFF for every run so far, gen-5
-included) is byte-identical; resume-immutable (the vf_coef class, `check_value_seed_vicreg`);
-fail-loud at startup if enabled on a config without the seed readout. Intended ON at the gen-6
-launch, judged by `out_effective_rank` rising toward k.
+**Two pressures were then applied to those seeds, and BOTH are deleted (v78). The measurement is
+why.** `--value-seed-vicreg-coef` (v62) was the repulsive one — a scale-relative
+variance+**covariance** floor on the seed outputs. Gen-6 ran it and every term moved (std_rel
+0.002 → 0.53, correlation → 0.19) while effective rank stayed **1.05**, because the deviations
+occupy **less than one direction** (centered PR 0.846): seeds 0/1/2 kept near-identical attention
+while seed 3 alone broke away. Repulsion buys spread, not multiplicity. `--seed-quantile-coef`
+(v63) was the positive counterpart — seed k predicts **quantile τ_k** of the return through **one
+shared** `Linear(dim,1)`, so k different predictions require k different seed reads. Gen-7 ran it
+and it worked on its own terms (`quantile_crossing_rate` 0.456 → **0.000**, `quantile_spread`
+0.007 → **1.016** at 10.6M steps — the four seeds do predict four ordered quantiles) yet
+`out_effective_rank` reached only **1.157** against a ceiling of k=4.
 
-**Both seed pressures produce ~1-D differentiation, which is what `--value-threat-inject` (v64)
-responds to.** Gen-7 ran the quantile arm and it worked on its own terms — `quantile_crossing_rate`
-0.456 → **0.000** and `quantile_spread` 0.007 → **1.016** at 10.6M steps, so the four seeds do
-predict four ordered quantiles — yet `out_effective_rank` reached only **1.157** against a ceiling
-of k=4. Gen-6's repulsion arm landed in the same place from the opposite direction (centered PR
-0.846). The structural reason is shared between them: a **shared** readout constrains only each
-seed output's component along its own weight vector, leaving every orthogonal direction free. Seed
-MULTIPLICITY is therefore not the axis the critic was missing, and no coefficient on either term
-changes that.
+**The structural reason is shared, which is what closed the line**: a **shared** readout constrains
+only each seed output's component along its own weight vector, leaving every orthogonal direction
+free. Seed MULTIPLICITY is therefore not the axis the critic was missing, and no coefficient on
+either term reaches it — so both flags and both modules were deleted rather than retuned.
+`seed_diagnostics.py`, the MEASUREMENT that produced these numbers, **stays** and still logs the
+`value_seeds/*` contract every `train()`.
+
+**That null is what `--value-threat-inject` (v64) responds to.**
 
 `--value-threat-inject` takes the third route instead — **magnitude as token content, per entity**.
 For each of OUR mons `j`, the op's α-weighted incoming row (`Σ_k α_k · pair_in[k, j, :]`, α = the R1
@@ -669,7 +658,6 @@ does nothing given another setting.
 | `opp_intent` | `true` | ACTIVE |
 | `opp_intent_grad_mode` | `"detached"` | ACTIVE |
 | `pubval_mode` | `"none"` | OFF |
-| `seed_quantile` | `false` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
@@ -682,9 +670,6 @@ does nothing given another setting.
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"none"` | OFF |
-| `zarch_dim` | `0` | OFF |
-| `zarch_film` | `"off"` | OFF |
-| `zarch_lut` | `"off"` | OFF |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
@@ -692,12 +677,9 @@ does nothing given another setting.
 | `pubval_coef` | `0.1` | INERT — no `pubval_head` |
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `value_dist_coef` | `1.0` | ACTIVE |
-| `value_seed_vicreg_coef` | `0.0` | INERT — coef 0, `assembler.seed_readout` built |
 | `value_tail_weight` | `0.3` | ACTIVE |
 | `vf_coef` | `0.5` | ACTIVE |
 | `win_prob_coef` | `1.0` | INERT — no `win_head` |
-| `zarch_recon_coef` | `1.0` | INERT — no `zarch_encoder` |
-| `zarch_vicreg_coef` | `0.1` | INERT — no `zarch_encoder` |
 <!-- END GENERATED: flag-table -->
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)

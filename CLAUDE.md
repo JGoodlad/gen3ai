@@ -342,9 +342,6 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py,
 #                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable),
 #                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak),
-#                                  poke_env_gaps/team_signature_fuzz_test.py (the --zarch-lut team signature is
-#                                      CONSTANT within a battle AND matches the offline table — a drifting signature would
-#                                      re-condition the policy mid-game; a mismatched one silently makes the LUT a no-op),
 #                                  poke_env_gaps/damage_op_probe_fuzz_test.py (AUTHORITATIVE DamageOperator physics gate — CONSTRUCTED single-turn
 #                                      scenarios via the OMNISCIENT BattleStream `utils/bridge/damage_probe.js`: exact both-side HP + the sim's OWN
 #                                      stats, zero measurement confounds; one modifier per scenario [type/STAB/SE/resist/4×/immunity/Thick Fat/
@@ -417,12 +414,11 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 `--debug` defaults to **CPU** (so a smoke never contends with a live GPU training run — an
 explicit `--device cuda` still wins) and **skips all eval** by default — both the periodic eval
-callback and the final win-rate eval. So the plain smoke above needs **no eval opponents / eval
-server connection**; add `--use-bridge=node` (or `--use-bridge=rust`) to make it fully serverless
-(the in-process sim runs the training battles too, no Showdown server at all). To also exercise the
-eval pipeline (final win-rate eval, and the self-play seed → pool eval → promotion path under
-`--self-play`), add `--debug-eval` — that path needs a server (default `:8000`) or
-`--use-bridge={node,rust}`.
+callback and the final win-rate eval. It is also **serverless out of the box**: `--use-bridge`
+defaults to `rust`, so the in-process sim runs the training battles and no Showdown server is
+involved at all. To also exercise the eval pipeline (final win-rate eval, and the self-play
+seed → pool eval → promotion path under `--self-play`), add `--debug-eval` — still serverless
+on the default; only an explicit `--use-bridge off` needs a server (default `:8000`).
 
 What to look for:
 - `[ModelVersion] Round-trip smoke test PASSED` — serialization and reload are healthy (printed early, before training begins)
@@ -541,21 +537,27 @@ Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
 / `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.
 
-### In-process bridge transport (`--use-bridge {off,node,rust}`, opt-in)
+### In-process bridge transport (`--use-bridge {off,node,rust}`, **default `rust`**)
 
-`--use-bridge` (default `off` = websocket) swaps **both training and eval** from a websocket
-Showdown server to an in-process `BattleStream` subprocess — no server, no port, no
-`/challenge` connection storm, deterministic delivery (poke-env issue #907). **A run needs no
-Showdown server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged.
+`--use-bridge` swaps **both training and eval** between a websocket Showdown server and an
+in-process `BattleStream` subprocess — no server, no port, no `/challenge` connection storm,
+deterministic delivery (poke-env issue #907). **THE DEFAULT IS `rust`, so a run needs no Showdown
+server at all.** It reuses the *entire* obs/reward/mask/wrapper stack unchanged.
 
-**Two bridge impls:** `--use-bridge=node` is the Node `local_sim_bridge.js` (the original bridge
-behavior). `--use-bridge=rust` swaps the child binary for the std-only pokesim
-`src/rust_sim/src/bin/sim_bridge.rs` — a byte-for-byte protocol-compatible drop-in (validated by
+**The three values:**
+
+| value | transport | when |
+|---|---|---|
+| **`rust`** | the std-only pokesim `src/rust_sim/src/bin/sim_bridge.rs` | **the DEFAULT** — fastest, smallest child, serverless |
+| `node` | the Node `local_sim_bridge.js` | the explicit A/B arm; the parity harness and `gen_sim_bridge_diff.js` need it |
+| `off` | websocket to a Showdown server on `--showdown-port` | the ladder / live-server path |
+
+`rust` is a byte-for-byte protocol-compatible drop-in for `node` (validated by
 `src/rust_sim/harness/gen_sim_bridge_diff.js`), so nothing above the transport changes. The
-`--use-showdown-bridge` boolean flag is a **DEPRECATED back-compat alias for `--use-bridge=node`**
-(kept because the launcher + existing scripts pass it); both resolve into one internal
-`bridge_enabled: bool` + `bridge_impl: "node"|"rust"`, and if both are passed they must agree.
-`bridge_impl` is threaded to `attach_bridge_transport(env, …, impl=…)` (training),
+DEPRECATED `--use-showdown-bridge` boolean alias is **DELETED**: it meant `--use-bridge=node`,
+which is no longer the default, so keeping it would have made the legacy spelling silently select
+the slower impl. The flag resolves into one internal `bridge_enabled: bool` + `bridge_impl:
+"node"|"rust"`; `bridge_impl` is threaded to `attach_bridge_transport(env, …, impl=…)` (training),
 `run_local_battles(…, impl=…)` (eval driver), and the eval-worker shard config
 (`bridge_impl` alongside `use_showdown_bridge`). The binary is resolved by
 `src/utils/bridge/sim_bridge_bin.py::resolve_sim_bridge_bin()`: `$POKESIM_SIM_BRIDGE_BIN`
@@ -747,9 +749,16 @@ fires under the launcher; it only caps marathon / no-launcher runs. A child that
 **crashes** the env (no in-place recovery → launcher restart; resuming risks a corrupted PPO
 transition).
 
-Default stays websocket (opt-in): the end-to-end training-FPS gain at scale is only ~5% (the win
-is operational — no server — not throughput). See `src/utils/bridge/README.md` and
-`designs/ai_v5/design_local_sim_bridge_transport.md`.
+**The default is `rust` (changed 2026-08-14; it was `off` = websocket).** The case was never
+throughput — at production `n_envs` the end-to-end FPS gain over websocket is ~5% — it is
+**operational**: no server to start, no port to tune, no connection storm, no RAM-creep, and
+deterministic delivery. Those hold on every run, whereas the websocket path's costs land exactly
+when a run is long. `rust` over `node` is the measured half (1.41x at `--n-envs 48`, a ~25x smaller
+child); `node` stays a first-class explicit value because the parity harness and the A/B arm need
+it, and `off` stays for the ladder. **The launcher agrees**: `child_uses_bridge` treats an ABSENT
+`--use-bridge` as a bridge run, so it no longer injects a phantom `--showdown-port` (pinned by
+`default_port_test.py` — a drift between the two defaults is what that file now catches). See
+`src/utils/bridge/README.md` and `designs/ai_v5/design_local_sim_bridge_transport.md`.
 
 ### The two compile flags — CPU opponents vs GPU trainer
 

@@ -7,7 +7,9 @@ THE BUG THIS PINS. SB3's `ActorCriticPolicy._build()` runs
 2026-08-01 every deliberate zero-init INSIDE the extractor was destroyed the moment the policy was
 built — in every real training run. Measured before the fix: the zero-init physics projections read
 0.355-0.470 and `film_pi` / `film_vf` 0.211 / 0.185, plus the belief heads whose zero-init is what
-makes the cold-start posterior EQUAL the Smogon prior.
+makes the cold-start posterior EQUAL the Smogon prior. (The two FiLM generators went with the zarch
+family at config v78; the measurement is kept because it is the evidence, and the CONTRACT it
+motivated covers every zero-init Linear the extractor still builds.)
 
 WHY IT SURVIVED SO LONG — and the rule this file enforces. Every existing test builds the module, or
 a bare `Gen3FeaturesExtractor`, DIRECTLY. The zero-init survives there; only SB3-wrapped construction
@@ -29,13 +31,12 @@ from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 # The toggles that OWN the documented zero-init modules — the pre-attention physics injection
-# `prefuse_proj`, FiLM (v44), and the belief heads whose cold-start is supposed to equal
-# the prior.
+# `prefuse_proj` and the belief heads whose cold-start is supposed to equal the prior.
+# (The v44 FiLM generators were the third member until v78 deleted the zarch family.)
 _ZERO_INIT_TOGGLES = dict(
     attend_unrevealed_opponents=True, opp_belief_slots=True,
     move_belief_mode="revealed", move_prior_fusion=True, move_latent=True,
     damage_op=True, damage_outgoing=True, spread_belief=True,
-    zarch_film="heads", zarch_dim=32,
 )
 
 
@@ -90,10 +91,10 @@ def test_zero_init_modules_are_still_zero_after_policy_build():
     model, _ = _build_real_policy()
     fe = model.policy.features_extractor
     tracked = fe._identity_init_zeroed
-    assert len(tracked) >= 6, (
-        f"only {len(tracked)} identity-init Linears tracked — expected at least prefuse_proj, "
-        f"film_pi, film_vf and the belief heads. Did the snapshot in __init__ move before the "
-        f"modules are built?"
+    assert len(tracked) >= 4, (
+        f"only {len(tracked)} identity-init Linears tracked — expected at least prefuse_proj and "
+        f"the belief heads (MoveBelief.move_head, SpreadBelief.*, HPTypeBelief.type_head). Did the "
+        f"snapshot in __init__ move before the modules are built?"
     )
     mods = dict(fe.named_modules())
     nonzero = {n: float(mods[n].weight.abs().max()) for n in tracked
@@ -104,7 +105,7 @@ def test_zero_init_modules_are_still_zero_after_policy_build():
     )
 
 
-@pytest.mark.parametrize("name", ["prefuse_proj", "film_pi", "film_vf"])
+@pytest.mark.parametrize("name", ["prefuse_proj"])
 def test_each_documented_zero_init_module_by_name(name):
     """Name the modules whose docs explicitly promise identity-at-init, so a rename or a dropped
     zero-init is caught by NAME rather than only by the generic sweep above."""
@@ -144,4 +145,4 @@ def test_restore_is_idempotent_and_reports_its_work():
     fe = model.policy.features_extractor
     n1 = fe.restore_identity_init()
     n2 = fe.restore_identity_init()
-    assert n1 == n2 >= 6, f"restore reported {n1}/{n2} modules — expected >= 6 and stable"
+    assert n1 == n2 >= 4, f"restore reported {n1}/{n2} modules — expected >= 4 and stable"

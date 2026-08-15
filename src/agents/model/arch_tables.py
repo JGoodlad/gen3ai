@@ -47,11 +47,9 @@ _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
     ("win_head", "win_head"),
     ("pubval_head", "pubval_head"),
     ("value_dist_head", "value_dist_head"),
-    ("zarch_encoder", "zarch_encoder"),
     ("alpha_head", "alpha_head"),
     ("beta_head", "beta_head"),
     ("intent_value_reduce", "intent_value_reduce"),
-    ("seed_quantile_head", "seed_quantile_head"),
     ("value_threat_inject", "cls_pool.value_threat_proj"),
 )
 
@@ -82,10 +80,6 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "value_dist_vmax": "value_dist_head",
     "value_threat_inject": "cls_pool.value_threat_proj",
     "intent_value_reduce": "intent_value_reduce",
-    "seed_quantile": "seed_quantile_head",
-    "zarch_dim": "zarch_encoder",
-    "zarch_film": "zarch_encoder",
-    "zarch_lut": "zarch_encoder",
     "value_active_readout": "assembler",  # effect checked via the bool below, module always built
 }
 
@@ -102,9 +96,6 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "win_prob_coef": "win_head",
     "pubval_coef": "pubval_head",
     "value_dist_coef": "value_dist_head",
-    "zarch_recon_coef": "zarch_encoder",
-    "zarch_vicreg_coef": "zarch_encoder",
-    "value_seed_vicreg_coef": "assembler.seed_readout",
     "vf_coef": None,
     "value_tail_weight": None,
 }

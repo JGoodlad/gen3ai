@@ -99,7 +99,6 @@ TIER_OF: Dict[str, int] = {
     "win_head": 3,
     "pubval_head": 3,
     "value_dist_head": 3,
-    "seed_quantile_head": 3,
 }
 
 #: Children that own no tier: embedding tables, the obs unpacker, and the root projections that
@@ -109,8 +108,6 @@ UNTIERED_CHILDREN = frozenset({
     "unpack",               # ObsUnpack: produces the tier-0 INPUT, ahead of every tier
     "prefuse_proj",         # the T1->trunk residual, owned by the root rather than by a phase
     "pre_proj_norm", "projection", "value_pre_norm", "value_projection", "activation",
-    "film_pi", "film_vf",   # the zarch FiLM modulation of the root heads
-    "zarch_encoder", "zarch_lut_emb", "zarch_lut_norm",
     "value_threat_proj",    # lives under cls_pool in production; listed for the LUT-fork paths
 })
 

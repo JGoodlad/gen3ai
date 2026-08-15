@@ -408,6 +408,31 @@ def test_noise_scale_estimate_recovers_known_values(G2, S, b_small, b_big):
     assert (tr_sigma / g2) == pytest.approx(S / G2, rel=1e-9)   # B_simple
 
 
+def test_noise_scale_advice_bands_and_fixes():
+    """The advisor's PURE decision logic: which band fires, and does the message name the fix.
+
+    Re-homed here at v78 — it lived in `zarch_test.py`, which was deleted with the zarch family, and
+    the FiLM half of the advisor went with it. The GLOBAL half still ships and still writes into the
+    launcher Events panel, so it keeps a test rather than inheriting the deletion by accident.
+    """
+    advise = InstrumentedMaskablePPO._noise_scale_advice
+
+    assert advise(None, 16384.0) == []                  # nothing measured yet
+    assert advise(1.0, 16384.0) == []                   # in band
+    assert advise(2.0, 16384.0) == []                   # boundary is EXCLUSIVE
+    assert advise(0.5, 16384.0) == []
+
+    high = advise(6.0, 16384.0)
+    assert [k for k, _ in high] == ["global_high"]
+    assert "--grad-accum-steps" in high[0][1] and "6" in high[0][1], (
+        "a noise-limited warning must name the flag AND the multiple to raise it by — the whole "
+        "point is that the reader does not have to derive the fix")
+
+    low = advise(0.1, 16384.0)
+    assert [k for k, _ in low] == ["global_low"]
+    assert "OVER-BATCHED" in low[0][1] and "--grad-accum-steps" in low[0][1]
+
+
 def test_noise_scale_smaller_batch_is_noisier_sign():
     """Sanity: a noisier (smaller) batch has the larger squared-norm estimate, so tr(Σ) and |G|² both
     come out POSITIVE for a sane (g_small_sq > g_big_sq) input."""
@@ -659,18 +684,20 @@ def test_opd_skips_awr_only_buffer():
 
 
 # --------------------------------------------------------------------------------------
-# Save-exclusion of transient CUDA-bearing state. `_film_grad_accumulator` holds CUDA grad
-# clones; if pickled into a snapshot's data section it deserializes WITHOUT map_location, so
-# every env/eval worker that loads the snapshot (device="cpu") silently initializes a ~252 MiB
-# GPU context — dozens of workers exhausted the card (the 2026-07-20 OOM cascade). The
-# accumulator is transient (train() lazily recreates it) and must NEVER be saved.
+# Save-exclusion of transient CUDA-bearing state. Anything holding CUDA tensors that is pickled
+# into a snapshot's data section deserializes WITHOUT map_location, so every env/eval worker that
+# loads the snapshot (device="cpu") silently initializes a ~252 MiB GPU context — dozens of workers
+# exhausted the card (the 2026-07-20 OOM cascade). `_film_grad_accumulator` was the case that
+# taught it; it went with the FiLM generators at config v78, and the survivors are pinned here so
+# the LESSON outlives the module that motivated it.
 # --------------------------------------------------------------------------------------
 
 
-def test_film_grad_accumulator_excluded_from_save():
-    """The FiLM grad accumulator (CUDA tensors) must be in _excluded_save_params — a snapshot
-    carrying it poisons every CPU worker that loads it with a GPU context."""
+def test_transient_cuda_bearing_state_excluded_from_save():
+    """The transient train()-owned attachments must be in _excluded_save_params — a snapshot
+    carrying one poisons every CPU worker that loads it with a GPU context (or, for the correction
+    buffer, fails to pickle at all on its threading.Lock)."""
     excluded = InstrumentedMaskablePPO._excluded_save_params(
         InstrumentedMaskablePPO.__new__(InstrumentedMaskablePPO))
-    assert "_film_grad_accumulator" in excluded
-    assert "_correction_buffer" in excluded  # the pre-existing transient exclusions survive
+    for name in ("_correction_buffer", "_distill_teacher", "_distill_teachers"):
+        assert name in excluded, f"{name} would be pickled into every checkpoint"

@@ -164,7 +164,7 @@ def _load_saved_version(model_path: str):
     Returns the ModelVersion, or **None** when the config is missing/unreadable — so a caller can
     distinguish "could not determine" from a real value (rather than silently fail-safe to a default
     and then FATAL at the version check). Used to let a flagless resume INHERIT every version-checked
-    structural toggle (use_popart / value_active_readout / opp_belief_cls_k / attend_unrevealed_opponents)
+    structural toggle (use_popart / opp_belief_cls_k / move_belief_mode / damage_op)
     + the belief coef, so the documented `--model … --steps …` resume works uniformly."""
     try:
         from agents.model.snapshot import _resolve_paths
@@ -354,52 +354,15 @@ def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
 def _run_arch_toggles(args) -> dict:
     """The architecture TOGGLES of THIS run, for current_model_version so the version gate compares
     like-for-like against the run's own (toggle-ON) pool/stable-opponent snapshots. Without these, a
-    belief-ON / popart / attend-unrevealed run would FATAL on every snapshot it is meant to protect."""
-    return dict(
-        attend_unrevealed_opponents=args.attend_unrevealed_opponents,
-        opp_belief_cls_k=args.opp_belief_cls_k,
-        opp_belief_slots=(args.opp_belief_aux_coef > 0.0),
-        value_active_readout=args.value_active_readout,
-        use_popart=args.use_popart,
-        move_belief_mode=args.move_belief_mode,
-        damage_op=args.damage_op,
-        damage_outgoing=args.damage_outgoing,
-        move_candidate_floor=args.move_candidate_floor,
-        move_latent=args.move_latent,
-        spread_belief=args.spread_belief,
-        spread_belief_nature=args.spread_belief_nature,
-        move_prior_fusion=args.move_prior_fusion,
-        damage_candidate_k=args.damage_candidate_k,
-        entity_topk_seats=args.entity_topk_seats,
-        consequence_topk=args.consequence_topk,
-        edge_bias_families=args.edge_bias_families,
-        entity_tail_seats=args.entity_tail_seats,
-        win_prob_mode=args.win_prob_mode,
-        pubval_mode=args.pubval_mode,
-        value_dist_mode=args.value_dist_mode,
-        seed_quantile=bool(args.seed_quantile_coef and args.seed_quantile_coef > 0),
-        value_threat_inject=bool(getattr(args, 'value_threat_inject', False)),
-        opp_intent=bool(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
-        species_prior_fusion=bool(getattr(args, 'species_prior_fusion', False)),
-        t0_species_prior=bool(getattr(args, 't0_species_prior', False)),
-        opp_intent_grad_mode=str(getattr(args, 'opp_intent_grad_mode', 'detached') or 'detached'),
-        intent_value_reduce=bool(getattr(args, 'intent_value_reduce', False)),
-        intent_move_cell=bool(getattr(args, 'intent_move_cell', False)),
-        value_dist_bins=args.value_dist_bins,
-        value_dist_vmin=args.value_dist_vmin,
-        value_dist_vmax=args.value_dist_vmax,
-        damage_topk_k=args.damage_topk_k,
-        damage_matrices_outgoing=args.damage_matrices_outgoing,
-        damage_matrices_incoming=args.damage_matrices_incoming,
-        damage_matrices_outgoing_all=args.damage_matrices_outgoing_all,
-        threat_prob_outspeed=args.threat_prob_outspeed,
-        hp_belief_mode=args.hp_belief_mode,
-        belief_grad_mode=args.belief_grad_mode,
-        zarch_film=args.zarch_film,
-        zarch_dim=args.zarch_dim,
-        zarch_lut=args.zarch_lut,
-        zarch_lut_rosters=getattr(args, "_zarch_lut_rosters", None),
-    )
+    belief-ON / popart / attend-unrevealed run would FATAL on every snapshot it is meant to protect.
+
+    Sourced from `agents.model.flag_registry` via `arch_toggles_from_args`, NOT hand-listed: this
+    dict and `build_extractor_arch_kwargs` used to be two independently maintained lists of the same
+    toggles, and a toggle added to one and not the other means the gate compares an architecture the
+    run does not build. `use_popart` is appended by hand because it is a policy_kwarg rather than an
+    extractor kwarg, so it is out of the registry's scope."""
+    from agents.model.extractor_arch import arch_toggles_from_args
+    return {**arch_toggles_from_args(args), "use_popart": args.use_popart}
 
 
 def _model_hparams(model) -> dict:
@@ -417,8 +380,6 @@ def _model_hparams(model) -> dict:
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "pubval_coef": float(getattr(model, "pubval_coef", 0.0)),
-        "zarch_recon_coef": float(getattr(model, "zarch_recon_coef", 0.0)),
-        "zarch_vicreg_coef": float(getattr(model, "zarch_vicreg_coef", 0.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
         "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
@@ -606,9 +567,6 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
         pubval_coef=float(getattr(model, "pubval_coef", 0.0)),
-        zarch_recon_coef=float(getattr(model, "zarch_recon_coef", 0.0)),
-        zarch_vicreg_coef=float(getattr(model, "zarch_vicreg_coef", 0.0)),
-        value_seed_vicreg_coef=float(getattr(model, "value_seed_vicreg_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -817,13 +775,16 @@ async def main():
                         help="Local Showdown server port (default 8000). Sets the port for the trainee, "
                              "eval, and self-play clients. Start the server on the matching port, "
                              "e.g. npm run showdown -- <port>.")
-    parser.add_argument("--use-bridge", type=str, default="off",
+    parser.add_argument("--use-bridge", type=str, default="rust",
                         choices=["off", "node", "rust"],
                         help="In-process BattleStream bridge transport for BOTH training AND eval "
                              "(no Showdown server, no port, no /challenge storm, deterministic). "
-                             "'off' (default) = websocket. 'node' = the Node local_sim_bridge.js "
-                             "(current bridge behavior). 'rust' = the byte-compatible src/rust_sim "
-                             "sim_bridge binary (built via cargo; override with POKESIM_SIM_BRIDGE_BIN). "
+                             "'rust' (DEFAULT) = the byte-compatible src/rust_sim sim_bridge binary "
+                             "(built via cargo; override with POKESIM_SIM_BRIDGE_BIN) — measured "
+                             "1.41x node's throughput at --n-envs 48 with a ~25x smaller child "
+                             "(9 MB RSS vs ~224 MB). 'node' = the Node local_sim_bridge.js, kept as "
+                             "the explicit A/B arm and for the parity harness. 'off' = the websocket "
+                             "transport, which needs a running Showdown server on --showdown-port. "
                              "NOTE: 'rust' now emits __RECON__ (gen3_bridge_recon_record_v1, on a "
                              "seedless battle too) and supports resumeReseed "
                              "(gen3_bridge_resume_reseed_v1), so the forensic reconstruction and "
@@ -833,10 +794,6 @@ async def main():
                              "verb families), so --search-teacher no longer requires 'node'; the "
                              "run's impl is threaded into the teacher workers. 'rust' also "
                              "fail-louds on an unmodeled move.")
-    parser.add_argument("--use-showdown-bridge", action=BoolFlag, default=None,
-                        help="DEPRECATED alias for --use-bridge=node (kept for the launcher + "
-                             "existing scripts). Enables the in-process Node BattleStream bridge for "
-                             "BOTH training and eval. Prefer --use-bridge={off,node,rust}.")
     parser.add_argument(
         "--self-play-use-cpu",
         action=BoolFlag,
@@ -900,15 +857,6 @@ async def main():
                              "different value is a FATAL error (it silently rescales the value head's "
                              "gradient on the shared trunk — tune it on a fresh run). Watch "
                              "grad/value_policy_logratio (the aux-independent value-vs-policy balance).")
-    parser.add_argument("--value-seed-vicreg-coef", "--value_seed_vicreg_coef", dest="value_seed_vicreg_coef",
-                        type=float, default=0.0,
-                        help="VICReg variance+covariance floor on the MultiSeedValueReadout seed "
-                             "outputs (gen3_seed_vicreg_v1 — the pre-registered collapse trigger "
-                             "FIRED on gen-5: seeds/out_effective_rank 1.0 sustained). 0.0 = OFF "
-                             "(byte-identical). Resume-IMMUTABLE like --vf-coef (recorded in "
-                             "model_config.json, FATAL to change on resume); requires a config with "
-                             "the multi-seed readout (damage op on) — fail-loud otherwise. Watch "
-                             "value_seeds/vicreg_* + seeds/out_effective_rank rising toward k.")
     parser.add_argument("--value-tail-weight", "--value_tail_weight", dest="value_tail_weight",
                         type=float, default=0.0,
                         help="Tail-weighted value loss β∈[0,1] (default 0.0 = plain MSE, byte-identical). "
@@ -990,13 +938,6 @@ async def main():
                              "shared trunk). Requires an explicit --clip-range-vf none (value "
                              "clipping is unnecessary with normalization). Version-checked: cannot "
                              "be toggled on a resumed model.")
-    parser.add_argument("--attend-unrevealed-opponents", "--attend_unrevealed_opponents",
-                        dest="attend_unrevealed_opponents", action=BoolFlag, default=None,
-                        help="Keep the opponent's still-hidden party (unrevealed mons — Gen 3 has no "
-                             "team preview) ATTENDABLE in the transformer instead of key-masking them "
-                             "identically to fainted mons. Lets the body reason about the hidden team. "
-                             "No weight-shape change; version-checked, so it cannot be toggled on a "
-                             "resumed model. Off by default (clean A/B baseline).")
     parser.add_argument("--opp-belief-cls-k", "--opp_belief_cls_k", dest="opp_belief_cls_k",
                         type=int, default=None,
                         help="Hidden-opponent belief: number of distinct learned query tokens (DETR "
@@ -1054,14 +995,6 @@ async def main():
                              "opp slots), like --opp-belief-aux-coef. 0.0 = no supervised pull (the module "
                              "still reinjects, but only RL gradient shapes it). TRAINING-only (not version-"
                              "locked). Ignored when --move-belief-mode off.")
-    parser.add_argument("--value-active-readout", "--value_active_readout", dest="value_active_readout",
-                        action=BoolFlag, default=None,
-                        help="Route the active mon's refined token (our_active_refined) into the VALUE "
-                             "head's projection. The dual-head value readout pools the whole board but "
-                             "DROPS the active-mon view the policy head keeps — a probe found the critic "
-                             "predicts an incoming self-KO at AUC 0.79 vs the policy's 0.90, under-pricing "
-                             "the V-tail. Widens the value projection by D_MODEL (weight-shape, version-"
-                             "checked, cannot change on a resume). Off by default (clean A/B baseline).")
     parser.add_argument("--damage-op", "--damage_op", dest="damage_op",
                         action=BoolFlag, default=None,
                         help="Differentiable GPU damage operator: compute the believed-move incoming "
@@ -1254,72 +1187,6 @@ async def main():
                              "--win-prob-coef. Default 0.1. TRAINING-only (not version-locked; inherited on a "
                              "flagless resume). Ignored when --pubval-mode none. Lower it if 'shaping' fights "
                              "the policy (watch grad/pubval_share).")
-    parser.add_argument("--zarch-film", "--zarch_film", dest="zarch_film",
-                        choices=("off", "heads"), default=None,
-                        help="Team-archetype latent + head FiLM (gen3_zarch_film_v1, v44) — the "
-                             "amortization-gap STORAGE fix (designs/learning/amortization_gap_and_"
-                             "conditioning.md). 'heads' builds a TEAM-STATIC DeepSets latent z_arch over "
-                             "OUR team's INVARIANT facts (species/item/ability/moves/spread — deterministic, "
-                             "no VIB sampling; detached embedding reads = zero trunk interference) and "
-                             "modulates BOTH root heads post-projection pre-ReLU with zero-init FiLM "
-                             "generators (identity-at-init ⇒ ON starts byte-identical). Per-team gradients "
-                             "then land in different rank-z subspaces instead of cancelling in the shared "
-                             "heads. 'off' (default) = no modules (byte-for-byte). STRUCTURAL + "
-                             "resume-IMMUTABLE (version-checked).")
-    parser.add_argument("--zarch-dim", "--zarch_dim", dest="zarch_dim",
-                        type=int, default=None,
-                        help="z_arch latent width = the FiLM conditioning rank (default 32 when "
-                             "--zarch-film is on; must be 0 when off). STRUCTURAL int (the generators' "
-                             "in_features) — version-checked like --value-dist-bins.")
-    parser.add_argument("--zarch-lut", "--zarch_lut", dest="zarch_lut",
-                        choices=("off", "add", "only"), default=None,
-                        help="Per-team LUT on top of z_arch (gen3_zarch_lut_v1, v46) — a FREE, "
-                             "unconstrained code per pinned --trainee-teams team. The DeepSets z is "
-                             "COMPOSITIONAL, so z-similar teams sit at z-bar + a tiny residual and the "
-                             "FiLM generator's gradient is proportional to that residual "
-                             "(ill-conditioned); a random-init LUT makes the per-team codes large and "
-                             "~orthogonal from step 0. This is the test of whether the multi-team "
-                             "exploiter ceiling (N=1/3/10 distil cleanly, N=20 stalls) is a "
-                             "conditioning-SIGNAL limit. 'add' = LN(z_deepsets + code), keeping "
-                             "composition for unmatched teams (they hit the zero row => exactly the "
-                             "DeepSets z); 'only' = LN(code), the sharpest ablation. Requires "
-                             "--zarch-film heads + --trainee-teams. The team is resolved from the "
-                             "OBSERVATION (sorted species + moves), so eval / frozen opponents / the "
-                             "prober need no plumbing. STRUCTURAL + resume-IMMUTABLE (version-checked, "
-                             "fresh-only).")
-    parser.add_argument("--zarch-lut-init-std", "--zarch_lut_init_std", dest="zarch_lut_init_std",
-                        type=float, default=1.0,
-                        help="Init scale for the per-team LUT codes (default 1.0). >0 starts the codes "
-                             "LARGE and ~orthogonal — maximum conditioning signal from step 0, but it "
-                             "perturbs an already-TRAINED FiLM head, so a forked arm pays a small "
-                             "handicap it must recover (measured ~-0.04 at the fork on ai_v8_16). "
-                             "0 = IDENTITY-at-init: z is exactly the DeepSets z on step 0 and the codes "
-                             "grow from zero, removing that confound. Zero-init does NOT inherit the "
-                             "ill-conditioning the LUT exists to break — a code is a FREE per-team "
-                             "parameter, so its gradient is the full dL/dz on that team's samples, not "
-                             "something scaled by a tiny compositional residual. TRAINING-only and NOT "
-                             "version-gated (shapes are identical; a resume loads saved weights, so it "
-                             "only matters at the initial fork).")
-    parser.add_argument("--zarch-recon-coef", "--zarch_recon_coef", dest="zarch_recon_coef",
-                        type=float, default=None,
-                        help="Loss weight for the z_arch species multi-hot reconstruction BCE — the "
-                             "anti-collapse anchor (a constant z can't reconstruct different teams). "
-                             "Default 1.0 when --zarch-film is on. TRAINING-only (inherited on a flagless "
-                             "resume). Auto-zeroed on a single-team (pinned --trainee-team) run.")
-    parser.add_argument("--zarch-vicreg-coef", "--zarch_vicreg_coef", dest="zarch_vicreg_coef",
-                        type=float, default=None,
-                        help="Loss weight for the z_arch VICReg per-dim variance floor (relu(1−std) across "
-                             "the batch — the belt-and-suspenders collapse guard; watch zarch/std). Default "
-                             "0.1 when --zarch-film is on. TRAINING-only. Auto-zeroed on a single-team run.")
-    parser.add_argument("--film-grad-accum-steps", "--film_grad_accum_steps", dest="film_grad_accum_steps",
-                        type=int, default=1,
-                        help="Accumulate the FiLM generators' gradients across N consecutive optimizer "
-                             "steps and apply them once, averaged (1 = off, byte-identical) — a per-GROUP "
-                             "batch enlargement for exactly the params whose gradient is noise-starved "
-                             "(film/noise_scale_ratio >> 1) while everything else updates normally. Pick "
-                             "N ~ the measured film/noise_scale_ratio so each film update lands at the "
-                             "group's critical batch. Requires --zarch-film heads. Training-only, NOT "
-                             "version-locked, resume-forwarded.")
     # --- SEARCH-AS-TEACHER (offline ExIt plateau-breaker; designs/ai_v6/design_search_teacher.md) ---
     # All TRAINING-only (no version bump; coef 0 / flag absent = byte-identical). The coefs are
     # _resolve'd (flagless-resume-inherited); the operational knobs are forwarded by the launcher.
@@ -1481,17 +1348,6 @@ async def main():
                              "pair reduction to the R1 belief_mean rung (hard_max builds no reducer "
                              "and would leave nothing to inject). Zero-init => ON starts identical "
                              "to OFF. STRUCTURAL + version-checked: fixed for a run's lifetime.")
-    parser.add_argument("--seed-quantile-coef", "--seed_quantile_coef", dest="seed_quantile_coef",
-                        type=float, default=0.0,
-                        help="PER-SEED QUANTILE assignment (gen3_seed_quantile_v1): seed k of the "
-                             "MultiSeedValueReadout predicts quantile tau_k of the return through ONE "
-                             "SHARED Linear, so k different predictions REQUIRE k different seed reads "
-                             "— collapse becomes loss-INCREASING rather than merely unpenalized (the "
-                             "positive counterpart to --value-seed-vicreg-coef's repulsion, which was "
-                             "measured on gen-6 to buy 1-D spread with three seeds still identical). "
-                             "0.0 = OFF (no module, byte-identical). >0 builds the head, so it is "
-                             "STRUCTURAL + version-checked: fresh runs only. Watch "
-                             "value_seeds/quantile_{spread,crossing_rate} and out_effective_rank.")
     parser.add_argument("--value-dist-mode", "--value_dist_mode", dest="value_dist_mode",
                         choices=("none", "read_only", "shaping"), default=None,
                         help="Distributional VALUE head (v29): an interpretability readout off the value "
@@ -1584,18 +1440,6 @@ async def main():
                              "'both' = incoming + outgoing. Unrevealed opp slots zeroed (belief-driven = TODO). "
                              "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. 'off' (default) = "
                              "baseline byte-identical.")
-    parser.add_argument("--damage-matrices-outgoing-all", "--damage_matrices_outgoing_all",
-                        dest="damage_matrices_outgoing_all", action=BoolFlag, default=None,
-                        help="The TRANSPOSED outgoing matrix (gen3_per_move_matrices_v1, v39): OUR 6 MONS' 4 "
-                             "moves → the opp ACTIVE — per (attacker mon, move) [low,high,crit,pko] + a "
-                             "per-attacker p_outspeed + an alive bit. The transpose of --damage-matrices "
-                             "outgoing (which prices our ACTIVE's moves vs the opp's 6 mons): on a FORCED SWITCH "
-                             "the active is fainted so the single-active outgoing block zeroes and the policy "
-                             "picks switch-ins BLIND to offense — this prices every candidate switch-in's "
-                             "offense. The ACTIVE row reproduces the single-active block byte-for-byte (parity); "
-                             "bench rows reuse the SAME physics with NEUTRAL boosts (gen3 resets on switch). "
-                             "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. Default off "
-                             "(byte-identical).")
     # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed).
     parser.add_argument("--threat-prob-outspeed", "--threat_prob_outspeed", dest="threat_prob_outspeed",
                         action=BoolFlag, default=None,
@@ -1734,7 +1578,7 @@ async def main():
                              "per opponent). Each opponent's eval games split into chunks any idle worker can drain, "
                              "so one straggler no longer pins a whole opponent on a single worker — the long tail "
                              "collapses to one shard. Smaller = finer tail collapse but more player builds / (on "
-                             "websocket) more connection churn; the in-process bridge (--use-showdown-bridge) is "
+                             "websocket) more connection churn; the in-process bridge (--use-bridge, the default) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
     parser.add_argument("--eval-games", "--eval_games", dest="eval_games", type=int, default=None,
@@ -2006,8 +1850,7 @@ async def main():
                              "sampled UNIFORMLY per episode — a z-near multi-team exploiter (the "
                              "1-vs-3-team A/B). Opponents still draw the full pool. Mutually exclusive "
                              "with --trainee-team; under --exploiter EVERY member must be a sample team. "
-                             "Unlike a single pin, z_arch varies across the set so --zarch-film keeps its "
-                             "recon/VICReg aux ON. Default None.")
+                             "Default None.")
     parser.add_argument("--allow-nonsample-trainee", dest="allow_nonsample_trainee", action="store_true",
                         help="RESEARCH override: skip the exploiter vetted-SAMPLE gate so --trainee-team(s) "
                              "may pin NON-sample POOL teams (anchor on a sample, nearest neighbors from all "
@@ -2020,24 +1863,17 @@ async def main():
         parser.error("--trainee-teams (multi-team pin) is mutually exclusive with --trainee-team "
                      "(single-team pin) — use one or the other.")
 
-    # --- Resolve the bridge-transport flags into ONE internal state -----------------------------
-    # Two knobs feed it: the new `--use-bridge {off,node,rust}` and the DEPRECATED back-compat
-    # `--use-showdown-bridge` (bool; kept because the launcher + existing scripts pass it). Reconcile
-    # them into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at all the existing
-    # transport sites) + `args.bridge_impl` (the "node"|"rust" child selector, read only at spawn).
+    # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
+    # ONE knob now: `--use-bridge {off,node,rust}`, defaulting to `rust` (serverless training AND
+    # eval). It splits into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at
+    # every transport site) + `args.bridge_impl` (the "node"|"rust" child selector, read only at
+    # spawn). `off` keeps a bridge_impl of "node" so a websocket run still has a well-formed value
+    # for the offline/search paths that take one.
     #
-    # `--use-showdown-bridge` is an ALIAS FOR `--use-bridge=node`. Only an EXPLICIT-TRUE legacy flag
-    # asserts node; a legacy FALSE (`--no-use-showdown-bridge`) is just "not the legacy-on path" and
-    # defers entirely to `--use-bridge` (so `--use-bridge=rust --no-use-showdown-bridge` is rust, not a
-    # conflict). A legacy TRUE alongside a non-node `--use-bridge` (e.g. `=rust`) is a real conflict.
-    _use_bridge = getattr(args, "use_bridge", "off")
-    _legacy_bridge = args.use_showdown_bridge  # None = not passed, True/False = explicit
-    if _legacy_bridge is True:
-        if _use_bridge not in ("off", "node"):
-            parser.error(
-                f"--use-bridge={_use_bridge} conflicts with --use-showdown-bridge (the deprecated "
-                f"alias means --use-bridge=node). Pass only --use-bridge, or make them agree.")
-        _use_bridge = "node"  # legacy-on asserts node (wins over the 'off' default)
+    # The DEPRECATED `--use-showdown-bridge` boolean alias is DELETED. It meant `--use-bridge=node`,
+    # which is no longer the default, so keeping it would have made "the legacy flag" silently mean
+    # "the slower impl" — pass `--use-bridge=node` explicitly for that.
+    _use_bridge = getattr(args, "use_bridge", "rust")
     args.bridge_impl = "node" if _use_bridge == "off" else _use_bridge
     args.use_showdown_bridge = _use_bridge != "off"
 
@@ -2136,8 +1972,6 @@ async def main():
         if getattr(args, name) is None:
             setattr(args, name, getattr(_saved_ver, name, default) if _saved_ver is not None else default)
     _resolve("use_popart", False)
-    _resolve("value_active_readout", False)
-    _resolve("attend_unrevealed_opponents", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
     _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
@@ -2165,7 +1999,6 @@ async def main():
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
-    _resolve("seed_quantile_coef", 0.0)        # v63 training-only coef; the HEAD itself is structural
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
@@ -2186,7 +2019,6 @@ async def main():
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
     _resolve("damage_matrices_incoming", False)  # v33 structural (incoming damage matrix; version-checked, fresh-only)
-    _resolve("damage_matrices_outgoing_all", False)  # v39 structural (transposed outgoing matrix; version-checked, fresh-only)
     # gen3_op_block_trim_v1: --damage-topk K now sizes the INCOMING MATRIX and nothing else — the v30 LEAN
     # top-K block it used to select is DELETED (a strict subset of the matrix, which already suppressed it
     # in every production config; the ledger-P1 cProfile measured it at 0 calls/forward). So K>0 implies the
@@ -2203,12 +2035,6 @@ async def main():
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
     _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
-    _resolve("zarch_film", "off")              # v44 structural + resume-immutable (version-checked, fresh-only)
-    from agents.model.features_extractor import ZARCH_DIM as _ZARCH_DIM_DEFAULT
-    _resolve("zarch_dim", _ZARCH_DIM_DEFAULT if args.zarch_film != "off" else 0)  # v44 structural int
-    _resolve("zarch_lut", "off")               # v46 structural + resume-immutable (version-checked)
-    _resolve("zarch_recon_coef", 1.0)          # training-only (inherited like spread_belief_coef)
-    _resolve("zarch_vicreg_coef", 0.1)         # training-only (inherited like spread_belief_coef)
     # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
     if args.value_from_dist and args.value_dist_mode != "shaping":
         parser.error("--value-from-dist requires --value-dist-mode shaping (the distributional head must "
@@ -2236,46 +2062,6 @@ async def main():
             "normalizes the value targets so value clipping is unnecessary — and an active clip "
             "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none."
         )
-    if args.zarch_film == "off" and args.zarch_dim:
-        parser.error("--zarch-dim requires --zarch-film heads (the latent only exists when FiLM is on; "
-                     "it must be 0/unset when off).")
-    if args.zarch_lut != "off":
-        # The LUT conditions z, and z is consumed ONLY by the FiLM generators — without FiLM the code
-        # would be an unread parameter.
-        if args.zarch_film == "off":
-            parser.error("--zarch-lut requires --zarch-film heads (the per-team code only reaches the "
-                         "policy through the FiLM generators).")
-        # EXPLOITER-ONLY (owner constraint). The LUT is a per-team MEMORY: it exists to test the
-        # multi-team exploiter ceiling, and an exploiter is thrown away after its behaviour is
-        # DISTILLED back (function-space policy KL, which needs no code). Letting a generalist carry
-        # per-team codes would bake team-specific memorization into the model we actually keep — and
-        # a generalist plays ~700 pool teams, so all but the pinned few would ride row 0 anyway.
-        if not args.exploiter:
-            parser.error("--zarch-lut requires --exploiter. The per-team LUT is an EXPLOITER-ONLY "
-                         "probe: its per-team codes must never enter the generalist we keep (the "
-                         "exploiter's skill returns via --distill-teacher, which transfers behaviour "
-                         "in function space and needs no code).")
-        # The LUT needs a KNOWN, FIXED team set to key on. A pool run has ~700 teams and no pin, so
-        # every lookup would miss (row 0) and the LUT would be dead weight.
-        if not args.trainee_teams:
-            parser.error("--zarch-lut requires --trainee-teams (the fixed set of pinned teams the LUT "
-                         "keys on). A single --trainee-team run has one constant z already; a full-pool "
-                         "run has no fixed team set to build a table from.")
-    if args.film_grad_accum_steps > 1 and args.zarch_film == "off":
-        parser.error("--film-grad-accum-steps > 1 requires --zarch-film heads (there is no FiLM "
-                     "generator group to accumulate without the conditioning).")
-    # gen3_zarch_film_v1: on a SINGLE-TEAM run (pinned --trainee-team) z is one constant vector across
-    # the whole batch — the cross-batch VICReg variance floor is degenerate (std ≡ 0 regardless of
-    # weights) and the recon target is constant (nothing to learn). Auto-zero the aux coefs; FiLM
-    # itself stays on (z degenerates to a learned per-team bias — harmless, and arch-compatible with
-    # multi-team runs of the same config).
-    if (args.zarch_film != "off" and args.trainee_team
-            and (args.zarch_recon_coef > 0.0 or args.zarch_vicreg_coef > 0.0)):
-        print("[ZArch] single-team run (pinned --trainee-team): auto-zeroing --zarch-recon-coef / "
-              "--zarch-vicreg-coef (z_arch is constant across the batch — the variance floor is "
-              "degenerate and the recon target constant). FiLM stays on.")
-        args.zarch_recon_coef = 0.0
-        args.zarch_vicreg_coef = 0.0
     if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
         parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
     if args.exploiter and args.self_play:
@@ -2317,19 +2103,8 @@ async def main():
                      "temperature to ratchet down from — set it HIGH, e.g. 5.0).")
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
-    if args.opp_belief_cls_k > 0 and not args.attend_unrevealed_opponents:
-        parser.error(
-            "--opp-belief-cls-k > 0 requires --attend-unrevealed-opponents — the hidden-opponent belief "
-            "queries read the unrevealed opp slots, which are key-masked unless the unmask flag is on. "
-            "Add --attend-unrevealed-opponents (or set --opp-belief-cls-k 0)."
-        )
     if args.opp_belief_aux_coef < 0.0:
         parser.error("--opp-belief-aux-coef must be >= 0 (0 = off)")
-    if args.opp_belief_aux_coef > 0.0:
-        # coef>0 turns on the in-place BeliefHead (a weight-shape change) which REQUIRES the unmask
-        # flag (the believed slots must be attendable to be refined). Auto-enable it so a single flag
-        # suffices; the model side hard-gates opp_belief_slots on attend_unrevealed_opponents.
-        args.attend_unrevealed_opponents = True
     if args.move_belief_coef is not None and args.move_belief_coef < 0.0:
         parser.error("--move-belief-coef must be >= 0 (0 = off)")
     if args.win_prob_coef is not None and args.win_prob_coef < 0.0:
@@ -2420,11 +2195,6 @@ async def main():
                      "distillation biases the trainee toward the teacher team via --distill-team-bias "
                      "while keeping the pool for rehearsal; a hard pin would remove the rehearsal (and "
                      "cause forgetting)")
-    if args.move_belief_mode != "off":
-        # The MoveBelief module reads/refines the opp slots, so (like the BeliefHead) it requires the
-        # unrevealed slots to be attendable — auto-enable the unmask flag (the model side hard-gates
-        # move_belief_mode!=off on attend_unrevealed_opponents).
-        args.attend_unrevealed_opponents = True
     if args.move_belief_mode in ("unrevealed", "both") and not (args.opp_belief_aux_coef > 0.0):
         # FAIL LOUD on a nonsensical config: 'unrevealed'/'both' score the HIDDEN opp slots, but without
         # the species-belief head (--opp-belief-aux-coef>0) those slots are never filled with learned
@@ -2555,12 +2325,6 @@ async def main():
             "--damage-matrices outgoing requires --damage-op (the matrix is emitted by the damage operator). "
             "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-matrices off."
         )
-    if getattr(args, "damage_matrices_outgoing_all", False) and not args.damage_op:
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix is emitted by the DamageOperator.
-        parser.error(
-            "--damage-matrices-outgoing-all requires --damage-op (the matrix is emitted by the damage operator). "
-            "Use --unified-damage / --unified-moves, or add --damage-op, or drop --damage-matrices-outgoing-all."
-        )
     if getattr(args, "damage_matrices_incoming", False):
         # gen3_per_move_matrices_v1: the incoming matrix needs the op + the move latent, and SUPERSEDES top-K.
         if not args.damage_op:
@@ -2666,7 +2430,7 @@ async def main():
         # EXPLICIT coef + no belief = a real contradiction → error. But the coef DEFAULTS to 0.05
         # (_resolve), so on the DEPRECATED `--unified-moves off` ablation baseline the un-passed default
         # would make the flag fail out of the box — the same shape as the `--hp-belief-mode flat` case
-        # below, resolved the same way: AUTO-ZERO with a loud note (the --zarch-recon-coef precedent).
+        # below, resolved the same way: AUTO-ZERO with a loud note.
         if _hp_coef_explicit:
             parser.error(
                 "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
@@ -2678,8 +2442,8 @@ async def main():
         args.hp_type_belief_coef = 0.0
     if args.hp_type_belief_coef and args.hp_belief_mode == "flat":
         # The `flat` ablation builds NO HPTypeBelief head, so there is no posterior for the CE to
-        # supervise. AUTO-ZERO with a loud note rather than erroring (the --zarch-recon-coef
-        # single-team precedent above): --hp-type-belief-coef defaults to 0.05, so erroring would make
+        # supervise. AUTO-ZERO with a loud note rather than erroring:
+        # --hp-type-belief-coef defaults to 0.05, so erroring would make
         # `--hp-belief-mode flat` fail out of the box — a hostile flag to run an ablation with. The
         # note keeps it from being a SILENT no-op, which is the failure that actually matters here.
         print("[HPBelief] --hp-belief-mode flat: auto-zeroing --hp-type-belief-coef (the ablation "
@@ -2818,19 +2582,6 @@ async def main():
                 emit(f"   ⚠️ {_d}")
 
     mappings = load_mappings()
-
-    # gen3_zarch_lut_v1 (v46): build the per-team LUT's roster table from the DECLARED matchup's
-    # pinned teams (the spec is the single source of what the trainee pilots — never re-derived from
-    # raw args). `build_roster_table` THROWS on a duplicate signature (two teams the LUT couldn't
-    # tell apart would share one code, silently making it a per-PAIR code) or a move-set mutator
-    # (Mimic/Transform/Sketch break the within-battle invariance the lookup relies on).
-    args._zarch_lut_rosters = None
-    if args.zarch_lut != "off":
-        from agents.model.team_signature import build_roster_table
-        args._zarch_lut_rosters = build_roster_table(matchup.trainee_teams.pin_strs, mappings)
-        emit(f"🎰 [ZARCH-LUT] mode={args.zarch_lut}: free per-team code for "
-             f"{len(args._zarch_lut_rosters)} pinned teams (row 0 = unmatched → "
-             f"{'the DeepSets z' if args.zarch_lut == 'add' else 'unconditioned'})")
 
     # Training heuristic opponents — ALL eight archetype bots (both v1 and v2 of each).
     # They play differently and the extra playstyle diversity is the point. Random is NOT
@@ -3732,9 +3483,6 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
-            zarch_recon_coef=args.zarch_recon_coef,
-            zarch_vicreg_coef=args.zarch_vicreg_coef,
-            value_seed_vicreg_coef=args.value_seed_vicreg_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3745,7 +3493,6 @@ async def main():
                 current_version=current_version,
                 device=args.device,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
-                enforce_value_seed_vicreg_coef=args.value_seed_vicreg_coef,  # FATAL if the seed-VICReg floor drifts (v62)
                 enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
@@ -3753,9 +3500,6 @@ async def main():
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
                 enforce_value_from_dist=args.value_from_dist,  # FATAL if the Phase-B critic source drifts (v45)
                 allow_value_from_dist_change=args.allow_value_from_dist_change,
-                # gen3_zarch_lut_v1: an exploiter ALWAYS warm-forks from a LUT-less generalist, so
-                # "add the LUT" is inherently a fork. Only an ADD is permitted; a flip still FATALs.
-                allow_zarch_lut_add=(args.zarch_lut != "off"),
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
@@ -3766,35 +3510,6 @@ async def main():
             # is rebuilt from the ZIP's saved policy_kwargs (a pre-v45 checkpoint lacks value_from_dist),
             # so apply the requested source to the live policy post-load (no-op when unchanged).
             model.policy.set_value_from_dist(args.value_from_dist)
-            # gen3_zarch_lut_v1 (v46) FORK ATTACH: same migration class — SB3 rebuilt the extractor
-            # from the ZIP's saved (LUT-off) policy_kwargs, so the per-team LUT must be built onto the
-            # live extractor here. Its params are APPENDED to the existing optimizer group (never
-            # reordered — SB3 restores optimizer state by POSITION). No-op when it already has it.
-            _fe_lut = model.policy.features_extractor
-            if args.zarch_lut != "off" and getattr(_fe_lut, "zarch_lut", "off") == "off":
-                _new = _fe_lut.attach_zarch_lut(args.zarch_lut, args._zarch_lut_rosters,
-                                                init_std=args.zarch_lut_init_std)
-                if _new:
-                    # APPEND to the EXISTING group, not a new one. A fresh build (every launcher
-                    # restart from here on) constructs the optimizer with ONE group holding all
-                    # params, so a second group would make the saved optimizer state unloadable
-                    # ("different number of parameter groups"). Appending also puts the new params
-                    # LAST — the documented-safe position (SB3 restores optimizer state BY POSITION;
-                    # the resume path's _validate_or_reset_optimizer_state remaps BY NAME, which
-                    # absorbs the fork-order vs fresh-order difference).
-                    model.policy.optimizer.param_groups[0]["params"].extend(_new)
-                    # CRITICAL: the loaded model's `policy_kwargs` still say LUT-off (they came from
-                    # the forked checkpoint), so every subsequent save would record a config that
-                    # CANNOT rebuild what we just attached — SB3 reconstructs the extractor from the
-                    # saved policy_kwargs and would then hit unexpected state_dict keys. Point them at
-                    # the live (LUT-on) kwargs so checkpoints round-trip. Caught by the startup
-                    # `_run_roundtrip_test` (save -> reload -> forward), which is exactly why it runs.
-                    model.policy_kwargs = _load_policy_kwargs
-                    print(f"[ZArch-LUT] attached {len(args._zarch_lut_rosters)} per-team codes to the "
-                          f"forked checkpoint ({sum(p.numel() for p in _new):,} new params, "
-                          f"init_std={args.zarch_lut_init_std:g}"
-                          f"{' = IDENTITY-at-init' if args.zarch_lut_init_std == 0 else ''}, "
-                          "appended to the optimizer)")
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
@@ -3820,9 +3535,6 @@ async def main():
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
-        model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE weight (training-only; resume-mutable)
-        model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor weight (training-only; resume-mutable)
-        model.film_grad_accum_steps = args.film_grad_accum_steps  # FiLM per-group grad accumulation (1 = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -3834,16 +3546,8 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
-        # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
-        # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
-        model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
-        # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
-        model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
-        if args.value_seed_vicreg_coef > 0.0:
-            from agents.model.seed_vicreg import assert_seed_vicreg_wirable
-            assert_seed_vicreg_wirable(model.policy)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
@@ -4082,9 +3786,6 @@ async def main():
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
-        model.zarch_recon_coef = args.zarch_recon_coef  # z_arch recon BCE (mode off = off)
-        model.zarch_vicreg_coef = args.zarch_vicreg_coef  # z_arch VICReg floor (mode off = off)
-        model.film_grad_accum_steps = args.film_grad_accum_steps  # FiLM per-group grad accumulation (1 = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef
@@ -4095,16 +3796,8 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
-        # SEED VICReg (gen3_seed_vicreg_v1, v62): resume-immutable (enforced above on the resume
-        # path); a coef>0 on a config with no multi-seed readout is a startup FATAL, not a no-op.
-        model.value_seed_vicreg_coef = float(args.value_seed_vicreg_coef)
-        # v63: the per-seed quantile aux weight (training-only; the HEAD is the structural toggle).
-        model.seed_quantile_coef = float(args.seed_quantile_coef or 0.0)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
-        if args.value_seed_vicreg_coef > 0.0:
-            from agents.model.seed_vicreg import assert_seed_vicreg_wirable
-            assert_seed_vicreg_wirable(model.policy)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
         # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
         # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
@@ -4146,9 +3839,6 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
-            zarch_recon_coef=args.zarch_recon_coef,
-            zarch_vicreg_coef=args.zarch_vicreg_coef,
-            value_seed_vicreg_coef=args.value_seed_vicreg_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

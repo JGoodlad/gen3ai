@@ -225,11 +225,22 @@ def _run_single(idx, mode, budget, persistent, slow_ms, seed, prefix="", impl="n
             else:
                 early += 1
 
-            proc = w.env._bridge_session._proc
+            sess = w.env._bridge_session
+            proc = sess._proc
             if proc is not None:
                 pids.add(proc.pid)
-            if persistent and len(pids) > 1:
-                raise AssertionError(f"ep {ep}: persistent child respawned — PIDs {pids}")
+            # A persistent child must be REUSED across episodes — a respawn means it died and was
+            # silently replaced, the failure this soak exists to catch. The one legitimate new PID
+            # is the HEALTHY `recycle_every` swap (default 5000 battles), so the bound is
+            # `1 + n_recycles`, not 1. Asserting a flat 1 made the gate unable to run past 5000
+            # episodes at all: a 75-minute 4-worker rust soak failed on all four workers at exactly
+            # ep 5001, reporting the intended recycle as a crash.
+            allowed = 1 + int(getattr(sess, "_n_recycles", 0))
+            if persistent and len(pids) > allowed:
+                raise AssertionError(
+                    f"ep {ep}: persistent child respawned — {len(pids)} PIDs {pids} after "
+                    f"{getattr(sess, '_n_recycles', 0)} intentional recycle(s); expected at most "
+                    f"{allowed}")
 
             if ep % 200 == 0:
                 elapsed = time.perf_counter() - start

@@ -40,7 +40,7 @@ Grouped into the four tiers the contract asserts:
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head`, `seed_quantile_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head` |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
 module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
@@ -100,20 +100,20 @@ than merely unlikely, because a collapsed floor silently turns the legality gate
 prune that previously crippled surprise-move anticipation. **gen3_no_concat_v1 (v61): its flat block no longer enters either
 projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
 the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
-with the `value_seeds/*` TB collapse contract logged every train(); the VICReg floor on those outputs is `--value-seed-vicreg-coef`, v62 resume-immutable — its
-variance+covariance targets are **scale-relative** by design, since the first cut's absolute
-γ=1.0 was ~7× the readout's own signal RMS and left `out_effective_rank` pinned at 1.0 for 2M
-steps; see `seed_vicreg.py`. **And repulsion has a ceiling of its own** — gen-6 satisfied every
-VICReg term while rank stayed 1.05, because the deviations occupied <1 direction (three seeds
-identical, one breakaway). `--seed-quantile-coef` (v63, `seed_quantile.py`) is the positive
-alternative: seed k predicts quantile τ_k of the return through ONE SHARED Linear, so k different
-predictions require k different seed reads. Structural + version-checked, off = no module.
-**BOTH pressures cap at ~1-D differentiation, which is why the seed line stops here**: gen-7's
-quantile arm drove `crossing_rate` to 0.000 and `quantile_spread` to 1.016 — the seeds genuinely
-predict four ordered quantiles — while `out_effective_rank` reached only 1.157 of k=4, matching
-gen-6's centered PR 0.846 from the opposite direction. A SHARED readout can only constrain each
-seed's component along its own weight vector; every orthogonal direction stays free, so
-multiplicity is not the missing axis and no coefficient fixes it. The response is
+with the `value_seeds/*` TB collapse contract logged every train() by `seed_diagnostics.py`, which
+stays).
+**TWO PRESSURES WERE APPLIED TO THOSE SEEDS AND BOTH ARE NOW DELETED (v78)** — the record is kept
+because the finding is what closed the line, not the code. `--value-seed-vicreg-coef` (v62,
+`seed_vicreg.py`) was the repulsive one: gen-6 satisfied every VICReg term while
+`out_effective_rank` stayed 1.05, because the deviations occupied <1 direction (three seeds
+identical, one breakaway). `--seed-quantile-coef` (v63, `seed_quantile.py`) was the positive
+counterpart — seed k predicts quantile τ_k of the return through ONE SHARED Linear, so k different
+predictions require k different seed reads — and gen-7 drove `crossing_rate` to 0.000 with
+`quantile_spread` 1.016 (the seeds genuinely predict four ordered quantiles) while
+`out_effective_rank` reached only **1.157 of k=4**, matching gen-6's centered PR 0.846 from the
+opposite direction. **A SHARED readout can only constrain each seed's component along its own
+weight vector; every orthogonal direction stays free**, so multiplicity is not the missing axis and
+no coefficient reaches it — which is why both flags were deleted rather than retuned. The response is
 **`--value-threat-inject` (v64, `value_threat_inject.py`)** — magnitude as TOKEN CONTENT rather
 than as another readout seat: one shared zero-init `Linear(13, D_MODEL)` adds the op's α-weighted
 incoming row for our mon j (α = the R1 `belief_mean` rung, which the flag forces on since R0
@@ -170,7 +170,7 @@ no incentive to encode hidden state — still feeding the policy. That combinati
 Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
 `AlphaIntentHead` (reachable only under `--intent-value-reduce`, published unconditionally so
 enabling that flag later cannot reopen the route). `BeliefHead`, `WinProbHead`, `PubValHead`,
-`BetaSwitchHead` and `SeedQuantileHead` are structurally label-only in every mode — asserted in
+and `BetaSwitchHead` are structurally label-only in every mode — asserted in
 `belief_label_only_gate_test.py`, not assumed, so a head that starts feeding forward fails a test
 instead of quietly rejoining the PPO objective.
 
@@ -351,13 +351,73 @@ for the standing caveat this puts on the K10 and D4 result families.
 finished). The protected set is captured **by observation** at the end of `__init__` — any Linear
 whose weight is all-zero once construction finishes was zero-init'd on purpose — rather than a
 hand-kept list, so **a new zero-init module is protected automatically**. Embeddings (e.g.
-`zarch_lut_emb`) are untouched by SB3 and need no guard.
+the belief tables) are untouched by SB3 and need no guard.
 
 **The rule this leaves you with:** an invariant asserted only in a unit test that builds the module
 (or a bare extractor) **directly** is not an invariant — that construction path is not the one
 training uses. Assert "byte-identical / identity-at-init / cold-start == prior" claims on a REAL
 `MaskablePPO`-built policy. `identity_init_test.py` does exactly that, and fails 8/10 if the guard
 is removed.
+
+## The flag registry — one declaration, five surfaces (`flag_registry.py`)
+
+**Add a model-relevant toggle by adding a `ModelFlag` row to `agents/model/flag_registry.py`, then
+following where the tests send you.** That file is the single declaration of every extractor
+architecture toggle and of the five hand-synced places each one has to appear:
+
+| # | surface | what it buys | how it is kept honest |
+|---|---|---|---|
+| 1 | the `argparse` entry in `main.train_rl_agent` | a human can SET it | **validated** |
+| 2 | the `_resolve("name", default)` line beside it | a **flagless** resume INHERITS it | **validated** |
+| 3 | `extractor_arch.ARCH_ARG_KEYS` / `_DERIVED` / `FROZEN_ARCH_KWARGS` | it reaches the extractor | **generated** |
+| 4 | `snapshot.current_model_version()`'s keyword (via `_run_arch_toggles` → `arch_toggles_from_args`) | an eval/self-play WORKER rebuilds the SAME gate | **generated** + validated |
+| 5 | the `ModelVersion` dataclass field | it is RECORDED and version-GATED | **validated** |
+
+`flag_registry_test.py` fails with a message **naming the missing site**, which is the whole point:
+every historical failure in this class was silent. A toggle in `ARCH_ARG_KEYS` but not on
+`ModelVersion` means a resume version-checks against an architecture it does not build; one with an
+argparse entry but no `_resolve` line means a flagless resume reverts it to OFF. The test earned its
+keep on the first run — it found three rows whose flag name is not `--<field>`: `--damage-topk`
+writes `damage_topk_k`, and the `--damage-matrices` MODE flag desugars into both
+`damage_matrices_*` bools. Those name their flag with `cli_name=` rather than being exempted.
+
+**Read `designs/flag_registry.md`** for the current table (generated; `--check` is the gate).
+
+### The three TIERS — a flag can lose its CLI entry without losing explicitness
+
+A flag plays three independent roles — **SELECT** (choose it at launch), **RECORD** (write it into
+`model_config.json`), **GATE** (refuse a mismatched resume). Only SELECT needs argparse; RECORD and
+GATE live in `ModelVersion` and are reached whether or not argparse ever heard of the toggle.
+
+| tier | argparse | `_resolve` | recorded + gated | reachable for an experiment |
+|---|---|---|---|---|
+| `cli` | yes | yes | yes | via the flag |
+| `config_only` | **no** | **no** | yes | via the extractor **constructor kwarg** |
+| `constructor_only` | no | no | no | via the constructor only (`pair_reduce`'s `reduce_how`) |
+
+**A `config_only` toggle is FROZEN at its registry `default` for every CLI-launched run** — that is
+the only value the CLI can now produce, so the default must be the value production actually wants.
+Demote a toggle when it is *settled*: same value in every run, no live experiment. The extractor's
+own constructor default is deliberately left alone, so the OFF baseline stays constructible for a
+test or a probe; only the launch surface shrinks. `config_only_pattern_test.py` pins the contract
+end to end (recorded in a fresh `model_config.json` · rejected on a mismatched resume · no argparse
+entry). The three demoted at v78: `attend_unrevealed_opponents` (frozen **ON** — a hard prerequisite
+of the whole belief stack since v16), `value_active_readout` and `damage_matrices_outgoing_all`
+(frozen OFF — never enabled in a gen-8/9/10 run).
+
+### The four CLASSES — which gate a mismatch gets
+
+| class | a mismatch means | gate |
+|---|---|---|
+| `structural` | weights and/or the trained forward differ | `check_compatible` — runs on **every** load |
+| `resume_immutable` | the forward is bit-identical; only TRAINING differs | a dedicated `check_*`, **resume path only** |
+| `training_coef` | a loss weight moved | none; recorded for provenance |
+| `runtime` | a perf knob moved | none; never recorded, never inherited on resume |
+
+Getting this wrong hurts in **both** directions, so both are asserted: a `structural` toggle with no
+`check_compatible` compare lets a resume silently flip the architecture, and a `resume_immutable`
+toggle *inside* `check_compatible` makes a run FATAL while loading its own pool snapshots (that gate
+runs on frozen eval/pool/distill opponents too, whose forward is identical regardless).
 
 ## Model versioning (`model_version.py`, `snapshot.py`)
 

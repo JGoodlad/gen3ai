@@ -271,7 +271,7 @@ def _prepare_session(
 
     if child_uses_bridge(child_args):
         # In-process BattleStream transport for training AND eval — no server, the port is unused.
-        _impl = _peek_arg(child_args, "--use-bridge") or "node"
+        _impl = _peek_arg(child_args, "--use-bridge") or "rust"   # matches the trainer default
         state.add_event(f"🌉 Transport: in-process bridge [{_impl}] (no Showdown server)")
     else:
         showdown_port = _peek_arg(child_args, "--showdown-port", type_=int)

@@ -285,7 +285,7 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
   bias, `DEFAULT_TRAINEE_BIAS_PROB`), `pinned` (`--trainee-team`), `pin_multi` (`--trainee-teams` — a
   SMALL FIXED SET sampled uniformly, the z-near multi-team exploiter / 1-vs-3-team A/B; `pin_str`
   mirrors `pin_strs[0]` so single-team consumers keep working, and unlike a single pin z_arch VARIES
-  across the set so `--zarch-film` keeps its recon/VICReg aux on), `pin_biased` (the future
+  across the set), `pin_biased` (the future
   `--trainee-team-prob` shape — supported, no CLI yet). Each is byte-parity with the legacy
   construction (pinned by `matchup_spec_test.py`). **The two sides are independent BY CONSTRUCTION**
   (`trainee_teams` / `opponent_teams` → `Gen3Env(team=, opponent_team=)`) — the mirror-bug class is
@@ -406,7 +406,7 @@ The filename stem is built by the single helper **`trace_filename_stem(outcome, 
 didn't follow → every sharded trace parsed as outcome `"?"` and the **whole prober went blind**;
 `eval_callback_test.test_trace_naming_contract` now pins that `discovery` parses exactly what
 `trace_filename_stem` emits, so the producer↔consumer pair can't silently drift again.)
-On `--use-showdown-bridge` runs each trace also gets a fourth sibling,
+On a BRIDGE run each trace also gets a fourth sibling,
 `…_NNN_reconstruction.json` — the battle's **full-information reconstruction record** (resolved
 PRNG seed + both packed teams + the raw command log), captured at the bridge layer and joined to
 the trace by battle tag (`utils/bridge/reconstruction.py`). It makes the battle fully replayable
@@ -1094,13 +1094,15 @@ symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
   (`Gen3Teambuilder.set_block_episodes`; the WHOLE draw is held — bias branch, PFSP weights,
   tracking index — so weights apply at redraw and outcomes attribute to the blocked team for the
   whole block; each SubprocVecEnv worker unpickles its own builder copy ⇒ blocks are per-env). The
-  per-team gradient-DENSITY counter to the measured FiLM sample starvation (`film/noise_scale` ≈
-  8–9× the batch): per-episode redraw gives ~700 teams × ~4 episodes (~140 decisions) per rollout;
+  per-team gradient-DENSITY counter to the sample starvation the retired FiLM group measured
+  (`film/noise_scale` ran ≈ 8–9× the batch before the v78 zarch deletion took that metric with it;
+  the DENSITY argument stands on its own): per-episode redraw gives ~700 teams × ~4 episodes
+  (~140 decisions) per rollout;
   at ~64 (≈ `n_steps`/ep_len — the phase-transition value) each env carries ONE team per rollout at
   ~2k decisions (~15× density) AND the block spans an update boundary, so the env replays the team
   right after its gradient landed (the mini-exploiter learn-and-retest loop — the piece of the
-  exploiter regime per-episode redraw never provides). Acceptance: `film/noise_scale_ratio` falling
-  toward ~1, then the fixed-matchup ablation probe's intact-vs-ablated gap widening. Trainee side
+  exploiter regime per-episode redraw never provides). Acceptance: the fixed-matchup ablation
+  probe's intact-vs-ablated gap widening. Trainee side
   only (opponent draws stay per-episode); training-only, NOT version-locked, resume-forwarded.
 - **Self-play only, pool teams only.** The per-team win-rate is measured ONLY on self-play POOL battles
   (bots wash the signal out — we win ~0.99 vs bots): `MaskableAgentWrapper.step` records the outcome to
@@ -1703,8 +1705,11 @@ mean estimate and the GAE advantages the policy reads are unaffected — a weigh
 target. The hparam is set on the model after construction (like `_async_rollout`), **resume-immutable**
 (recorded in `model_config.json`, FATAL to change on resume via `ModelVersion.check_value_tail_weight`,
 `MODEL_CONFIG_VERSION` v11; excluded from `check_compatible` since a frozen opponent never runs the value
-loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). Pairs with the v10 `--value-active-readout`
-value-head fix (`src/agents/model/CLAUDE.md`); validate both by watching `eval/td_resid_tail` fall.
+loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). Paired with the v10
+`value_active_readout` value-head fix, which is now a **config_only** toggle frozen OFF (v78 — it was
+never enabled in a gen-8/9/10 run and the multi-seed readout / `--value-threat-inject` superseded it;
+the field and its gate are unchanged, only the CLI flag is gone). Validate by watching
+`eval/td_resid_tail` fall.
 Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
 
 ## Gradient accumulation (`--grad-accum-steps`)
@@ -1787,39 +1792,15 @@ Two scalars ride the standard logger → TensorBoard + launcher TUI (`format.py`
 - **`train/noise_scale_ratio`** = `B_simple / (batch_size·accum)` — the actionable read: **≫1 ⇒
   noise-limited** (enlarge the effective batch), **≪1 ⇒ diminishing returns** (you have more than
   enough; could shrink for more/cheaper update steps), **~1 ⇒ the sweet spot**.
-- **`film/noise_scale`(+`_ratio`)** — the SAME two-point estimator restricted to the **FiLM
-  generator param group** (emitted only when `--zarch-film` is on; the film-group big-batch norm is
-  read BEFORE `clip_grad_norm_`, which mutates grads in place). The global metric can't resolve
-  whether the ~33k-param conditioning gradient is signal or noise (drowned by the ~10M-param total);
-  **film ≫ global ≫ effective batch ⇒ the per-team RL gradient into the conditioners sits below its
-  noise floor at our batch** — the quantitative sample-starvation / "persistent net cost" read
-  (`designs/learning/amortization_gap_and_conditioning.md`).
-- **`film/noise_scale_ratio_applied`** = `film/noise_scale_ratio ÷ --film-grad-accum-steps` — the
-  ratio each APPLIED film update actually experiences (accumulated updates see accum× the batch),
-  readable without the accumulation factor in your head: ≈1 = the group's critical batch, >2 = raise
-  `--film-grad-accum-steps`. The raw `film/noise_scale_ratio` stays the per-step measurement the
-  accumulation K is set from.
-- **The NSR advisor (`_noise_scale_advice` / `_emit_noise_scale_warnings`)** — when a SMOOTHED ratio
-  is out of band, a `⚠️ [NOISE]` warning is emitted to the launcher **Events panel** (via
-  `main.launcher.ipc.emit`; plain print standalone) naming the concrete fix: global ratio > 2 →
-  "raise `--grad-accum-steps` ~ratio× (free)"; < 0.5 → "over-batched, lower it for more steps per
-  sample"; film ratio ÷ the CONFIGURED `--film-grad-accum-steps` > 2 → "set `--film-grad-accum-steps`
-  ~ceil(ratio)" (a covered ratio warns nothing). **Rate-limited to one warning per key per 30 min**,
+- **The NSR advisor (`_noise_scale_advice` / `_emit_noise_scale_warnings`)** — when the SMOOTHED
+  ratio leaves the band, a `⚠️ [NOISE]` warning goes to the launcher **Events panel** (via
+  `main.launcher.ipc.emit`; plain print standalone) naming the concrete fix: ratio > 2 → "raise
+  `--grad-accum-steps` ~ratio× (free — no VRAM/FPS cost, same rollout)"; < 0.5 → "over-batched,
+  lower it for more steps per sample". **Rate-limited to one warning per key per 30 min** and
   suppressed for the first ~20 EMA folds (warm-up false-alarm guard). Pure decision logic
-  unit-tested (`zarch_test.test_noise_scale_advice`).
-- **`--film-grad-accum-steps` (default 1 = off, byte-identical)** — the surgical response to a high
-  `film/noise_scale_ratio`: accumulate the FiLM generators' grads across N consecutive OPTIMIZER
-  steps and apply once, averaged (`_GroupGradAccumulator`: capture POST-clip so the global clip
-  semantics are baseline-identical; non-apply steps set the group's `p.grad = None`, which torch
-  optimizers SKIP — no Adam state decay, no stale-momentum step; partial groups persist across
-  train() calls). Each film update is then computed from N× the effective batch while everything
-  else updates normally — "a bigger batch, but only where the noise scale says it's needed". Pick
-  N ≈ the measured residual `film/noise_scale_ratio`. Requires `--zarch-film heads`; training-only,
-  NOT version-locked, resume-forwarded. (The live `rank/vf_feat_*` family — the participation
-  ratio/effrank of the POST-FiLM value features the critic MLP actually consumes, the in-training
-  version of `tmp/vf_rank_probe.py` — is the companion outcome read: `value_cls` measures the pool
-  BEFORE the vf FiLM, so only `vf_feat` can show the conditioning enriching vs thinning the
-  critic's real input.)
+  unit-tested (`instrumented_ppo_test.test_noise_scale_advice_bands_and_fixes`). A FiLM-group half
+  (`film/noise_scale*`, `--film-grad-accum-steps` and `_GroupGradAccumulator`) measured the same
+  thing for the conditioning params until v78 and was deleted with the zarch family.
 
 Tests: `instrumented_ppo_test.py` — `test_noise_scale_estimate_recovers_known_values` (the two-point
 math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_sign`, `_global_grad_sq`
@@ -1915,9 +1896,10 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
   `loss`. The move-loss gradient ALSO reaches the trunk via the reinjection, so it is broken out on its
   own as `grad/move_belief_share` (+ `_norm_shared`/`_policy_cosine`) on the common trunk-pull total.
 - **Versioning.** `move_belief_mode` (str) is the version-checked structural toggle (fresh-only;
-  auto-forces `--attend-unrevealed-opponents`; `unrevealed`/`both` additionally REQUIRE `--opp-belief-aux-coef>0`
-  so the hidden slots carry learned tokens); `move_belief_coef` is training-only, **read back on a
-  flagless resume**. The revealed-vs-unrevealed axis is the defensible-vs-omniscient A/B.
+  `unrevealed`/`both` additionally REQUIRE `--opp-belief-aux-coef>0` so the hidden slots carry
+  learned tokens); `move_belief_coef` is training-only, **read back on a flagless resume**. It used
+  to auto-force `--attend-unrevealed-opponents`; at v78 that toggle became **config_only frozen ON**,
+  so the prerequisite holds by construction and the auto-force branch is deleted. The revealed-vs-unrevealed axis is the defensible-vs-omniscient A/B.
 - **Tests.** Unit: `move_belief_loss_test.py` (direct-BCE, Hungarian order-invariance + min-cost match,
   mode gating, grad, fail-loud), `agents/model/move_belief_test.py` (module mask-gating + grad +
   per-mode wiring + off byte-identical), `belief_labels_test.py` (`build_known_move_labels`),
@@ -2092,7 +2074,7 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
 - **Tests.** Unit: `agents/training/win_prob_test.py` (loss masking + None guards + the callback MC-fill
   backward-propagation + in-progress masking + sync-capture-at-pos + async-skip), `agents/model/
   win_prob_head_test.py` (module build, off byte-identical projection dims, the read_only-stop-grad /
-  shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-showdown-bridge
+  shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-bridge=node
   --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
 
 ## Public-replay value aux — V_pub (`--pubval-mode` / `--pubval-coef`)
@@ -2143,71 +2125,6 @@ default; pieces:
   + the emitted `pubval_target` == the artifact's prediction (anti-vacuous-run guard; the capture hook
   must install BEFORE `attach_bridge_transport` — the bridge captures the bound handler at attach time).
 
-## z_arch aux — recon + VICReg (`--zarch-recon-coef` / `--zarch-vicreg-coef`)
-
-The training half of the team-archetype latent + head FiLM (model side:
-`src/agents/model/CLAUDE.md` → Team-archetype latent + head FiLM; design rationale:
-`designs/learning/amortization_gap_and_conditioning.md`). The `ZArchEncoder` is trunk-DECOUPLED
-(detached embedding reads) and its z conditions both heads via zero-init FiLM — so WITHOUT an aux the
-only pressure on z is the weak RL gradient through the FiLM path, and the simplicity-bias optimum is a
-collapsed constant z (= no conditioning, back to the amortized baseline). Two aux terms keep it alive:
-
-- **Loss (`instrumented_ppo._zarch_loss`).** Reads the extractor's grad-gated stashes
-  (`last_zarch` / `last_zarch_recon_logits` / `last_zarch_species_ids` — OUR public roster, no
-  privileged label, no env/obs change): `zarch_recon_coef · BCE(recon_logits, species multi-hot)` —
-  the ANTI-COLLAPSE anchor (a constant z cannot reconstruct different teams; Species Clause makes the
-  multi-hot lossless; the pad row 0 is zeroed) — plus `zarch_vicreg_coef · relu(1 − std(z, batch)).mean()`
-  — the per-dim variance floor (z is LayerNorm'd per-sample, which does NOT prevent cross-batch
-  collapse). Gradients reach ONLY the ZArchEncoder's own params → **no grad-balance entry** (zero
-  shared-trunk pull by construction, pinned by `zarch_test.py`).
-- **Metrics (`zarch/*` + `film/*`).** `recon_bce` falls / `recon_topk_acc` rises (→1) as z carries
-  the roster; `std` is the collapse monitor (**→0 = NO-GO**); `pr` (participation ratio of the
-  minibatch z cloud, `_zarch_participation_ratio`) is the LIVE LUT-vs-style dial — near `zarch_dim`
-  = identity-spread (LUT-leaning, the intended v1 operating point), falling = style compression, →1
-  = collapse (the 719-team offline read at 164M: PR 17.0/32, kNN archetype purity +0.20 — globally
-  LUT-leaning, locally style-coherent). FiLM: `film/{pi,vf}_{gamma,beta}_norm`
-  (aliveness — grows off zero under RL alone, since the generator gradient is an outer product with z
-  and per-team components don't cancel) **plus the GENERIC-vs-CONDITIONING split** — `film/{side}_dev`
-  = mean |modulation| vs `film/{side}_team_std` = the modulation's per-dim std ACROSS the minibatch's
-  teams. The distinction matters because supervision covers only the z SIGNAL (recon — z cannot
-  collapse), never the generators' USE of it: RL can grow FiLM on z's team-SHARED component (a generic
-  scale/shift = free capacity) while the per-team DIFFERENTIAL — the actual de-amortization — stays
-  weak (it is fed by the small extraction-limited per-team advantage). `team_std` ≈ 0 while `dev`
-  grows = that lazy generic mode; seed-anchor distillation (Phase 2) is the sharpening lever, not an
-  aliveness requirement.
-- **Single-team auto-zero.** On a pinned `--trainee-team` run z is ONE constant vector across the
-  batch — the variance floor is degenerate (std ≡ 0 regardless of weights) and the recon target is
-  constant. `train_rl_agent` auto-zeros both coefs with a printed note; FiLM itself stays on (z
-  degenerates to a learned per-team bias — harmless, arch-compatible with multi-team runs).
-- **Versioning.** The coefs are TRAINING-ONLY (flagless-resume-inherited, defaults 1.0 / 0.1); the
-  `zarch_film`/`zarch_dim` structure is version-checked (v44, `check_compatible`).
-- **Per-team LUT (v46, `--zarch-lut`).** Layers a FREE per-team code on z (model side:
-  `src/agents/model/CLAUDE.md` → Per-team LUT). It adds NO loss term — the recon/VICReg aux keeps
-  grading the COMPOSITIONAL encoder (pre-LUT), since reconstructing a roster from a free per-team code
-  is trivially satisfiable. What it adds here is the **GIGO canary `zarch/lut_hit_frac`**: the team is
-  identified by a signature computed from the OBSERVATION, so a lookup that misses falls through to
-  row 0 (unconditioned) and the experiment becomes a silent no-op that reads as "the LUT didn't help".
-  On a `--trainee-teams` run this MUST sit at ~1.0. Siblings `zarch/lut_teams_seen` (distinct teams per
-  minibatch) and `zarch/lut_code_dist` (mean pairwise cosine distance between the learned rows — ~1.0
-  at random init; collapsing toward 0 means the codes merged back into one shared direction, i.e. the
-  conditioning regressed to the geometry the LUT exists to break).
-- **Function-space steady state — the churn probe (`churn_probe.py`).** Weight metrics cannot decide
-  whether the FiLM system has settled: Adam gives any small-but-consistent gradient constant-speed
-  weight motion and PPO moves a clip-bounded amount per update forever, so `film/dev` can grow
-  linearly at full FUNCTIONAL convergence (gauge drift — FiLM magnitude trades off against the
-  downstream weights). The probe measures policy KL between two checkpoints on a FROZEN probe-state
-  set (`collect` once via bridge battles → npz; `compare` any two checkpoints), overall + grouped by
-  OUR roster: falling aggregate KL = the function converging; a heavy per-team KL tail under a quiet
-  aggregate = per-team conditioning still being rewritten (the noise-fitting signature). `python -m
-  agents.training.churn_probe {collect,compare} …`; the pure math (`masked_kl` —
-  legal-actions-only, later-policy-first; `roster_keys` — layout-driven) is unit-tested in
-  `churn_probe_test.py`.
-- **Tests.** `agents/model/zarch_test.py` — the aux math (recon/topk-acc/pad-row, the VICReg floor at
-  collapse vs diverse, grad flow, the 1-row + None guards) + identity-at-init / team-static /
-  permutation-invariance / gradient-isolation / the v44 gate. End-to-end `--debug --use-bridge=node
-  --zarch-film heads` smoke: roundtrip PASSED, `recon_bce` falls, `recon_topk_acc` rises, `std` rises,
-  `film/*` norms grow off zero.
-
 ## Distributional value head (`--value-dist-mode` / `--value-dist-coef`)
 
 The training half of the v29 interpretability side head (model side: `src/agents/model/CLAUDE.md` →
@@ -2244,7 +2161,7 @@ aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_c
   within-model PIT). "Learns ≠ helps" — validate calibration (PIT ≈ uniform), not win-rate.
 - **Tests.** Unit: `value_dist_loss_test.py` (HL-Gauss math + diagnostics), `agents/model/
   value_dist_head_test.py` (module build, off byte-identical, grad gating, the v29 version gate),
-  `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-showdown-bridge
+  `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-bridge=node
   --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
 
 ## Exploiter distillation (`--distill-teacher` / `--distill-coef` / `--distill-value-coef` / `--distill-value-feat-coef`)

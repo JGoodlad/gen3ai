@@ -445,9 +445,10 @@ single-env transport-latency A/B (`bridge_vs_websocket_latency_benchmark.py`, Ra
 opponent, no GPU) measured **~13.0 ms/step websocket → ~6.1 ms/step persistent bridge (~2.1×)**,
 while spawn-per-battle was only ~11.3 ms/step: re-loading the Showdown sim into a fresh Node
 process every episode eats nearly all the savings, so reusing the child is what unlocks the gain
-(matching issue #907's "reset/startup overhead is the bottleneck"). It is **flag-guarded**:
-`python -m main.launcher … --use-showdown-bridge` (or `train_rl_agent.py --use-showdown-bridge`),
-default off (websocket). Guarded by `bridge_session_test.py` (transport-swap contract, no server)
+(matching issue #907's "reset/startup overhead is the bottleneck"). **It is now the DEFAULT
+transport**: `--use-bridge` defaults to `rust`, so `python -m main.launcher …` (or
+`train_rl_agent.py`) with no transport flag runs serverless; `--use-bridge off` is the websocket
+opt-out. Guarded by `bridge_session_test.py` (transport-swap contract, no server)
 and `bridge_session_integration_test.py` (a real `Gen3Env` plays full episodes over the bridge).
 
 **Persistent-child lifecycle (two rules, both guarded):**
@@ -468,8 +469,9 @@ doesn't need the inversion-of-control machinery: the eval worker's `_play_unit` 
 `run_local_battles` instead of `battle_against` when `use_showdown_bridge` is set (players built
 `start_listening=False`). The flag threads as a `use_showdown_bridge` config key through
 `PerOpponentEvalCallback` / `SelfPlayCallback` → `eval_worker`, plus the end-of-training
-`evaluate_model_random`. So `--use-showdown-bridge` makes a whole run — training **and** eval —
-need no Showdown server.
+`evaluate_model_random`. So a bridge run — which is now the DEFAULT — needs no Showdown server for
+training **or** eval. (The config KEY keeps the name `use_showdown_bridge`; it is a cross-process
+worker-config contract, not a flag, and the deleted CLI alias of the same name is unrelated to it.)
 
 ### Battle reconstruction (capture + offline replay / re-roll)
 
@@ -670,7 +672,9 @@ env = Gen3Env(mappings, battle_format="gen3ou", team=teambuilder, start_listenin
 attach_bridge_transport(env, battle_format="gen3ou", impl="node")  # or impl="rust"
 # env now trains with no websocket / server — everything above the transport is unchanged.
 ```
-`train_rl_agent.py --use-bridge {off,node,rust}` (default `off` = websocket) selects the transport
-for BOTH training and eval; `--use-showdown-bridge` is a DEPRECATED back-compat alias for
-`--use-bridge=node` (the two must agree if both are passed). `run_local_battles(..., impl=…)` takes
-the same impl for the eval driver.
+`train_rl_agent.py --use-bridge {off,node,rust}` selects the transport for BOTH training and eval.
+**The default is `rust`** (changed 2026-08-14): serverless is the normal way to run, `node` stays an
+explicit value for the A/B arm and the parity harness, and `off` is the websocket/ladder path. The
+deprecated `--use-showdown-bridge` boolean alias is DELETED — it meant `--use-bridge=node`, which is
+no longer the default, so keeping it would have silently selected the slower impl.
+`run_local_battles(..., impl=…)` takes the same impl for the eval driver.

@@ -11,7 +11,6 @@ from sb3_contrib import MaskablePPO
 
 from agents.model.damage_tables import _PRIOR_FLOOR, sanitize_historical_move_floor
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.model.team_signature import TEAM_SIGNATURE_DIM as _TEAM_SIG_DIM
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from utils.git import get_git_hash
 
@@ -488,7 +487,6 @@ def load_model_snapshot(
     device: str = "auto",
     tensorboard_log: Optional[str] = None,
     enforce_vf_coef: Optional[float] = None,
-    enforce_value_seed_vicreg_coef: Optional[float] = None,
     enforce_reward_config=None,
     enforce_value_tail_weight: Optional[float] = None,
     enforce_value_dist: Optional[Tuple[float, float]] = None,
@@ -496,7 +494,6 @@ def load_model_snapshot(
     allow_belief_grad_mode_change: bool = False,
     enforce_value_from_dist: Optional[bool] = None,
     allow_value_from_dist_change: bool = False,
-    allow_zarch_lut_add: bool = False,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -531,30 +528,9 @@ def load_model_snapshot(
     arch_validated = False
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
-        gate_version = current_version
-        if (allow_zarch_lut_add and saved_version.zarch_lut == "off"
-                and current_version.zarch_lut != "off"):
-            # gen3_zarch_lut_v1 EXPLOITER FORK: adding the per-team LUT to a LUT-less generalist
-            # checkpoint is the ONLY way this feature is ever used — an exploiter always warm-forks
-            # (0.84 @2M forked vs ~0.65 @20M from scratch), and no generalist carries a LUT. The
-            # loaded policy is rebuilt from the ZIP's saved (LUT-off) policy_kwargs, so the state_dict
-            # still matches exactly; the caller attaches the freshly-initialized LUT modules
-            # post-load (`attach_zarch_lut`), the belief_grad_mode/value_from_dist migration pattern.
-            # ONLY an ADD is allowed here — a mode flip or a removal still FATALs.
-            import dataclasses as _dc
-            gate_version = _dc.replace(current_version, zarch_lut="off", zarch_lut_teams=0)
-            print("[ModelVersion] NOTE: adding the per-team LUT (--zarch-lut "
-                  f"{current_version.zarch_lut}, {current_version.zarch_lut_teams} teams) to a "
-                  "LUT-less checkpoint — the LUT modules start freshly initialized, everything else "
-                  "warm-starts from the checkpoint.")
-        gate_version.check_compatible(saved_version)
+        current_version.check_compatible(saved_version)
         if enforce_vf_coef is not None:
             saved_version.check_vf_coef(enforce_vf_coef)
-        if enforce_value_seed_vicreg_coef is not None:
-            # TRAINING-RESUME ONLY (the vf_coef pattern): the seed-VICReg coefficient is fixed for
-            # a run's lifetime — silently toggling it on resume would drift the critic-readout
-            # objective. Frozen-opponent loads leave this None (their forward never runs the loss).
-            saved_version.check_value_seed_vicreg(enforce_value_seed_vicreg_coef)
         if enforce_reward_config is not None:
             saved_version.check_reward_config(enforce_reward_config)
         if enforce_value_tail_weight is not None:
@@ -836,28 +812,49 @@ def _compile_warmup_obs(fe) -> dict:
 _DEAD_FEK_INERT = (
     "damage_refine_rounds", "threat_refine_outgoing", "threat_unrevealed_outgoing",
     "threat_status_refine", "move_belief_single_compute",
+    # v78 (gen3_flag_surface_p1_v1): the zarch family's non-module knobs. `zarch_dim` /
+    # `zarch_lut_init_std` only ever SIZED or INITIALISED the deleted modules, and
+    # `zarch_lut_rosters` is a lookup table, so none of them can be ON on their own — the two
+    # JUDGED mode strings below carry the whole decision.
+    "zarch_dim", "zarch_lut_init_std", "zarch_lut_rosters",
 )
 _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     ("damage_reattend", False),
                     # v75: the SimSiam latent-belief predictor is deleted. True is REFUSED because
                     # it put parameters in the state_dict; False pops silently (nothing built).
-                    ("opp_belief_latent", False))
+                    ("opp_belief_latent", False),
+                    # v78: the ZArchEncoder + FiLM generators, the per-team LUT Embedding, and the
+                    # per-seed quantile Linear are deleted. Each ON value named PARAMETERS, so it is
+                    # refused for the v75 reason rather than popped into an unplaceable state_dict.
+                    ("zarch_film", "off"), ("zarch_lut", "off"), ("seed_quantile", False))
 
 
 def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
-    """Drop v70/v71/v75-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
+    """Drop v70/v71/v75/v78-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
 
     Raises `ModelVersionError` — exactly as `_migrate_config` does — when a JUDGED field records a
     value the surviving forward pass cannot reproduce.
+
+    This is the ZIP-side twin of `_migrate_config`'s key handling and both are needed: the config
+    JSON drives the version GATE, while these kwargs are what SB3 splats into the extractor
+    constructor when it rebuilds the policy. A key dropped from one and not the other either fails
+    the gate for the wrong reason or TypeErrors inside the constructor.
     """
     changed = False
     for dead, supported in _DEAD_FEK_JUDGED:
         if dead in fek:
-            if bool(fek[dead]) is not supported:
+            # Compare on TYPE, not truthiness: the v78 entries are mode STRINGS, and `bool("off")`
+            # is True — a truthiness test would refuse every one of them, including the OFF configs
+            # this is meant to wave through.
+            recorded = fek[dead]
+            mismatch = (recorded != supported if isinstance(supported, str)
+                        else bool(recorded) is not supported)
+            if mismatch:
                 raise ModelVersionError(
-                    f"{dead}={fek[dead]!r} is no longer supported (gen3_tiered_pipeline_v1): the "
-                    f"only supported value is {supported}.\nThis checkpoint trained under a forward "
-                    "pass that no longer exists in the codebase and cannot be reproduced from HEAD."
+                    f"{dead}={recorded!r} is no longer supported: the only supported value is "
+                    f"{supported!r}.\nThis checkpoint trained under a forward pass that no longer "
+                    "exists in the codebase and cannot be reproduced from HEAD.\n"
+                    "To re-read it, use the git_hash recorded in its own metadata.json."
                 )
             fek.pop(dead)
             changed = True
@@ -1006,7 +1003,6 @@ def current_model_version(
     value_dist_vmin: float = 0.0,
     value_dist_vmax: float = 0.0,
     value_dist_coef: float = 1.0,
-    seed_quantile: bool = False,
     value_threat_inject: bool = False,
     opp_intent: bool = False,
     species_prior_fusion: bool = False,
@@ -1024,13 +1020,6 @@ def current_model_version(
     belief_grad_mode: str = "shaping",
     pubval_mode: str = "none",
     pubval_coef: float = 0.0,
-    zarch_film: str = "off",
-    zarch_dim: int = 0,
-    zarch_lut: str = "off",
-    zarch_lut_rosters=None,
-    zarch_lut_init_std: float = 1.0,
-    zarch_recon_coef: float = 0.0,
-    zarch_vicreg_coef: float = 0.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -1073,7 +1062,6 @@ def current_model_version(
     ext_kwargs["damage_candidate_k"] = damage_candidate_k
     ext_kwargs["entity_topk_seats"] = entity_topk_seats
     ext_kwargs["consequence_topk"] = consequence_topk
-    ext_kwargs["zarch_lut_init_std"] = zarch_lut_init_std
     ext_kwargs["edge_bias_families"] = edge_bias_families
     ext_kwargs["entity_tail_seats"] = entity_tail_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
@@ -1081,7 +1069,6 @@ def current_model_version(
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
     ext_kwargs["value_dist_vmax"] = value_dist_vmax
-    ext_kwargs["seed_quantile"] = seed_quantile
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1097,10 +1084,6 @@ def current_model_version(
     ext_kwargs["hp_belief_mode"] = hp_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
     ext_kwargs["pubval_mode"] = pubval_mode
-    ext_kwargs["zarch_film"] = zarch_film
-    ext_kwargs["zarch_dim"] = zarch_dim
-    ext_kwargs["zarch_lut"] = zarch_lut
-    ext_kwargs["zarch_lut_rosters"] = zarch_lut_rosters
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -1114,7 +1097,6 @@ def current_model_version(
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
         hp_type_belief_coef=hp_type_belief_coef, pubval_coef=pubval_coef,
-        zarch_recon_coef=zarch_recon_coef, zarch_vicreg_coef=zarch_vicreg_coef,
     )
 
 
@@ -1155,25 +1137,10 @@ def arch_toggles_from_model(model) -> dict:
         # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
         # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).
         "pubval_mode": str(getattr(fe, "pubval_mode", "none")),
-        # v44 z_arch/FiLM (gen3_zarch_film_v1): STRUCTURAL string + int gated in check_compatible
-        # (the encoder + generator params; the dim = generator in_features), so both must reach the
-        # worker's gate (a zarch-ON run's own pool/sentinel snapshots carry them).
-        "zarch_film": str(getattr(fe, "zarch_film", "off")),
-        "zarch_dim": int(getattr(fe, "zarch_dim", 0)),
-        # v46 per-team LUT (gen3_zarch_lut_v1): STRUCTURAL string + the table height. The ROSTERS
-        # themselves ride the persistent `zarch_lut_table` buffer in the state_dict, so a worker only
-        # needs the shape-relevant pair to reproduce the module before load_state_dict fills it.
-        "zarch_lut": str(getattr(fe, "zarch_lut", "off")),
-        "zarch_lut_rosters": (
-            [[0] * _TEAM_SIG_DIM for _ in range(int(getattr(fe, "zarch_lut_teams", 0)))]
-            if str(getattr(fe, "zarch_lut", "off")) != "off" else None),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),
         "value_dist_bins": int(getattr(fe, "value_dist_bins", 0)),
-        # gen3_seed_quantile_v1 (v63): the per-seed quantile head is a state_dict-changing module,
-        # so a frozen opponent's gate must see it (else a quantile-on run FATALs on its own sentinels).
-        "seed_quantile": bool(getattr(fe, "seed_quantile", False)),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).

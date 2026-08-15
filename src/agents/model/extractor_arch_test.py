@@ -61,15 +61,16 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     args.win_prob_mode = "none"
     args.pubval_mode = "none"
     args.value_dist_mode = "none"
-    args.zarch_film = "off"
-    args.zarch_lut = "off"
+    args.opp_intent_grad_mode = "detached"
+    args.hp_belief_mode = "composed"
+    args.edge_bias_families = "off"
     for attr in ("opp_belief_cls_k", "value_dist_bins", "damage_topk_k",
-                 "damage_candidate_k", "zarch_dim"):
+                 "damage_candidate_k", "consequence_topk", "entity_topk_seats"):
         setattr(args, attr, 0)
-    for attr in ("move_candidate_floor", "value_dist_vmin", "value_dist_vmax",
-                 "zarch_lut_init_std"):
+    for attr in ("move_candidate_floor", "value_dist_vmin", "value_dist_vmax"):
         setattr(args, attr, 0.0)
     args.opp_belief_aux_coef = 0.0
+    args.opp_intent_coef = 0.0
 
     kwargs = EA.build_extractor_arch_kwargs(args)
     assert set(kwargs) <= params, sorted(set(kwargs) - params)
@@ -88,17 +89,16 @@ def test_log_level_is_omitted_unless_given():
 
 def test_plain_form_is_json_serialisable_and_drops_unpicklables():
     """The forkserver preload receives the arch through the environment, so it must survive JSON and
-    must not try to carry the numpy layout tables or the zarch roster table."""
+    must not try to carry the numpy layout tables."""
     import types
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
     args.opp_belief_aux_coef = 0.0
-    args._zarch_lut_rosters = {"some": ["unpicklable-ish", object()]}
+    args.opp_intent_coef = 0.0
     kwargs = EA.build_extractor_arch_kwargs(args, base={"layout": {"np": object()}},
                                             log_level="periodic")
     plain = EA.arch_kwargs_to_plain(kwargs)
-    assert "zarch_lut_rosters" not in plain
-    assert "log_level" not in plain
     assert "layout" not in plain
+    assert "log_level" not in plain
     json.dumps(plain)                                  # must not raise
     # the toggles that actually change the traced graph DO survive
     assert "damage_op" in plain and "threat_prob_outspeed" in plain

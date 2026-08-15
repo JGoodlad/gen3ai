@@ -4,6 +4,10 @@ A from-scratch Rust reimplementation of the Pokémon Showdown battle simulator,
 scoped first to **Gen 3 OU singles**, whose hard requirement is **bit-for-bit
 identical** output to upstream Showdown given the same seed + teams + choices.
 
+**`sim_bridge` is now the DEFAULT training/eval transport** (`--use-bridge` defaults to `rust`,
+2026-08-14): every run is serverless unless it passes `--use-bridge node` (the A/B arm + the parity
+harness) or `--use-bridge off` (websocket). See the root `CLAUDE.md` → In-process bridge transport.
+
 The engine is **live and bit-for-bit through full battles**: every layer in the
 module map below is differentially validated against the real Showdown (PRNG →
 dex → team → stats → state → events → damage → turns → full battles with
