@@ -133,6 +133,187 @@ class RecencyTracker:
         return tuple(out)
 
 
+def _pair_sat_norm(n: int, sat: int = 10) -> float:
+    """The H-A log-saturation convention (design_history_entity.md §3):
+    ``log(1 + min(n, 10)) / log(11)`` — same curve the recency triplet and
+    ``turns_since_progress`` use."""
+    import math
+    return math.log1p(min(max(int(n), 0), sat)) / math.log(sat + 1.0)
+
+
+# Gen3 damaging moves the dex records at basePower 0 (fixed / variable / calculated power).
+# Without this set they would classify as "status clicks" in the H-A2 fold. Bare + typed
+# Hidden Power are handled by prefix (the bare dex entry also reads 0 BP).
+_ZERO_BP_DAMAGING = frozenset({
+    "seismictoss", "nightshade", "sonicboom", "dragonrage", "psywave", "superfang",
+    "counter", "mirrorcoat", "bide", "endeavor", "return", "frustration", "flail",
+    "reversal", "magnitude", "present", "lowkick", "spitup", "beatup",
+})
+
+
+def _move_is_damaging(move_id: "str | None") -> bool:
+    """Dex-based damaging-vs-status split for the H-A2 attack/status click counters.
+    ``gen3_data.moves.is_damaging`` (base_power > 0) plus the fixed/variable-power overlay
+    above — the dex records those at BP 0, and a Seismic Toss click is an attack, not a
+    status click."""
+    if not move_id:
+        return False
+    if move_id.startswith("hiddenpower") or move_id in _ZERO_BP_DAMAGING:
+        return True
+    from agents import gen3_data
+    return gen3_data.moves.is_damaging(move_id)
+
+
+class PairHistoryTracker:
+    """Tier H-A (gen3_pair_history_v1, `designs/ai_v9/design_history_entity.md` §3): the
+    compiled last-action facts (H-A1) and the pair-history counters (H-A2), folded from
+    the SAME per-decision event window the TurnDelta fold and the recency triplet read.
+    PUBLIC protocol events only; within-battle only.
+
+    **H-A1 — per-side last action.** A side's most recent MOVE or SWITCH/DRAG event:
+    ``last_action(side)`` → ``(move_id | None, was_switch, outcome | None, crit)``.
+    ``outcome`` mirrors ``TurnView.SideTurn.outcome`` exactly ("miss" > "fail" > "hit"
+    precedence; ``None`` when the last action was a switch). A DRAG (phaze) counts as a
+    switch, like ``TurnView.switched``. CANT windows do not replace the last action (a
+    fully-prevented turn leaves the previous action standing — recency's ``acted`` carries
+    staleness). MISS/FAIL/CRIT events attach to their side's current same-turn move (the
+    protocol emits them adjacent to the |move| line, attributed to the MOVER's side).
+    ``move_id`` is the protocol-reported EXECUTED move for both sides (delegation-aware:
+    the last |move| line wins, so Sleep Talk's called move replaces it) — our own typed
+    Hidden Power stays the bare wire id, matching what both sides observe.
+
+    **H-A2 — pair counters, per (their mon i, our mon j).** Keyed by SPECIES within the
+    battle (species ↔ team slot is a stable 1:1 within a battle — the species clause —
+    and the encoder joins values onto slots through the same team-list order the recency
+    block uses, so the obs cell (i, j) always names the same two entities all battle):
+
+      * switch_ins — chosen SWITCH events by their mon i while our mon j was on field
+        (DRAG — being phazed in — is not a choice and is not counted)
+      * attacks — damaging MOVE clicks by i while j was our active (dex damaging split)
+      * status_clicks — non-damaging MOVE clicks by i while j was our active
+      * shared_field_turns — distinct game turns i and j were observed sharing the field
+      * last paired turn — feeds ``recency_of_last_pairing`` (cur_turn − last, like
+        ``since_seen``; never-paired reads 1.0)
+
+    "While j active" is the event-ordered fold: the running actives are advanced by
+    SWITCH/DRAG events (the arriving mon), cleared by the active's FAINT, and resynced to
+    the decision-time LiveView actives each update. Pairings are observed at switch,
+    move, and decision points, counted once per distinct turn per pair.
+
+    **Idempotent by seq**: only events with ``seq > _max_seq`` are processed, so an
+    overlapping window or a rolled-back opponent RE-DECIDE can never double-count
+    (the counters are sums, unlike recency's max-anchored turns).
+
+    ``pair_values()`` log-saturates every cell over the 10 cap (`_pair_sat_norm`)."""
+
+    _SAT = 10
+
+    def __init__(self):
+        self._max_seq: int = -1
+        self._turn: int = 0
+        self._our_active: Optional[str] = None
+        self._opp_active: Optional[str] = None
+        self._last: dict = {}          # side -> last-action record (mutable dict)
+        self._switch_ins: dict = {}    # (opp_sp, our_sp) -> count
+        self._attacks: dict = {}
+        self._status_clicks: dict = {}
+        self._shared_count: dict = {}
+        self._shared_last_turn: dict = {}  # (opp_sp, our_sp) -> last turn counted
+
+    def _observe_pairing(self, t: int) -> None:
+        i, j = self._opp_active, self._our_active
+        if not i or not j:
+            return
+        key = (i, j)
+        last = self._shared_last_turn.get(key)
+        if last is None or t > last:
+            self._shared_count[key] = self._shared_count.get(key, 0) + 1
+            self._shared_last_turn[key] = t
+
+    def update(self, turn: int, events, our_active: Optional[str],
+               opp_active: Optional[str]) -> None:
+        from agents.battle.battle_event import OURS, OPP, EventKind
+        self._turn = max(self._turn, int(turn))
+        for e in events or []:
+            seq = getattr(e, "seq", None)
+            if seq is not None:
+                if seq <= self._max_seq:
+                    continue          # already folded (overlap / re-decide replay)
+                self._max_seq = seq
+            side = getattr(e, "side", None)
+            sp = getattr(e, "actor_species", None)
+            et = int(getattr(e, "turn", turn))
+            k = e.kind
+            if k is EventKind.MOVE and side is not None and sp:
+                self._last[side] = {"move_id": e.move_id, "was_switch": False,
+                                    "missed": False, "failed": False, "crit": False,
+                                    "turn": et}
+                if side == OPP and self._our_active:
+                    key = (sp, self._our_active)
+                    d = self._attacks if _move_is_damaging(e.move_id) else self._status_clicks
+                    d[key] = d.get(key, 0) + 1
+                self._observe_pairing(et)
+            elif k in (EventKind.SWITCH, EventKind.DRAG) and side is not None and sp:
+                if k is EventKind.SWITCH and side == OPP and self._our_active:
+                    key = (sp, self._our_active)
+                    self._switch_ins[key] = self._switch_ins.get(key, 0) + 1
+                self._last[side] = {"move_id": None, "was_switch": True,
+                                    "missed": False, "failed": False, "crit": False,
+                                    "turn": et}
+                if side == OURS:
+                    self._our_active = sp
+                else:
+                    self._opp_active = sp
+                self._observe_pairing(et)
+            elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side is not None:
+                la = self._last.get(side)
+                if la and not la["was_switch"] and la["turn"] == et:
+                    if k is EventKind.MISS:
+                        la["missed"] = True
+                    elif k is EventKind.FAIL:
+                        la["failed"] = True
+                    else:
+                        la["crit"] = True
+            elif k is EventKind.FAINT and side is not None and sp:
+                if side == OURS and self._our_active == sp:
+                    self._our_active = None
+                elif side == OPP and self._opp_active == sp:
+                    self._opp_active = None
+        # Decision-time resync: the LiveView actives are the same public fact the events
+        # advance; they also cover pairing on quiet windows (recency's `seen` precedent).
+        if our_active:
+            self._our_active = our_active
+        if opp_active:
+            self._opp_active = opp_active
+        self._observe_pairing(self._turn)
+
+    def last_action(self, side: str) -> tuple:
+        """→ ``(move_id | None, was_switch: float, outcome: str | None, crit: float)``."""
+        la = self._last.get(side)
+        if la is None:
+            return (None, 0.0, None, 0.0)
+        if la["was_switch"]:
+            return (None, 1.0, None, 0.0)
+        outcome = "miss" if la["missed"] else ("fail" if la["failed"] else "hit")
+        return (la["move_id"], 0.0, outcome, 1.0 if la["crit"] else 0.0)
+
+    def pair_values(self, opp_species: Optional[str], our_species: Optional[str]) -> tuple:
+        """→ the 5-cell ``h[i, j]`` for (their mon i, our mon j), each in [0, 1]:
+        ``(switch_ins, attacks, status_clicks, shared_field_turns, recency_of_last_pairing)``."""
+        if not opp_species or not our_species:
+            return (0.0, 0.0, 0.0, 0.0, 1.0)
+        key = (opp_species, our_species)
+        last = self._shared_last_turn.get(key)
+        rec = 1.0 if last is None else _pair_sat_norm(max(0, self._turn - last))
+        return (
+            _pair_sat_norm(self._switch_ins.get(key, 0)),
+            _pair_sat_norm(self._attacks.get(key, 0)),
+            _pair_sat_norm(self._status_clicks.get(key, 0)),
+            _pair_sat_norm(self._shared_count.get(key, 0)),
+            rec,
+        )
+
+
 class EpisodeTracker:
     """
     Tracks per-episode state needed to build observations and reward signals.
@@ -165,6 +346,8 @@ class EpisodeTracker:
         self._progress_clock = ProgressClock()
         # E9 step 1 (roadmap §3.9): per-entity recency, fed by the same decision window.
         self._recency = RecencyTracker()
+        # Tier H-A (gen3_pair_history_v1): last-action + pair-history counters, same window.
+        self._pair_history = PairHistoryTracker()
         # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
         # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
         # encoded vector never changes — we encode only the NEWEST delta each step and
@@ -187,6 +370,10 @@ class EpisodeTracker:
     @property
     def recency(self) -> RecencyTracker:
         return self._recency
+
+    @property
+    def pair_history(self) -> PairHistoryTracker:
+        return self._pair_history
 
     @property
     def last_ctx(self) -> Optional[BattleContext]:
@@ -422,6 +609,18 @@ class EpisodeTracker:
                 live.turn, _ev,
                 live.ours.active.species if live.ours.active else None,
                 live.opp.active.species if live.opp.active else None)
+            # Tier H-A: same window, ALIVE live actives only (seq-idempotent, so the shared
+            # window plumbing needs no extra bookkeeping here). The alive filter is load-
+            # bearing: at a FORCED-SWITCH decision poke-env still reports the fainted mon as
+            # active, and an unfiltered resync would RESURRECT an active the FAINT event
+            # correctly cleared — pairing the fresh replacement (or their next switch-in)
+            # against a dead mon. Caught by pair_history_fuzz_test on a double-KO Explosion.
+            _oa = live.ours.active
+            _pa = live.opp.active
+            self._pair_history.update(
+                live.turn, _ev,
+                _oa.species if (_oa is not None and not _oa.fainted) else None,
+                _pa.species if (_pa is not None and not _pa.fainted) else None)
         return delta
 
     def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
@@ -512,3 +711,9 @@ class EpisodeTracker:
         self._last_cursor = 0
         self._hidden_power_tracker.reset()
         self._progress_clock.reset()
+        # Cross-turn trackers are WITHIN-BATTLE only (design_history_entity.md §0.3). The
+        # recency tracker was missing here (a cross-episode leak on the env path, where one
+        # EpisodeTracker is reset per episode rather than recreated — the recency fuzz built
+        # fresh trackers per battle so it never saw it); fixed alongside pair-history.
+        self._recency = RecencyTracker()
+        self._pair_history = PairHistoryTracker()

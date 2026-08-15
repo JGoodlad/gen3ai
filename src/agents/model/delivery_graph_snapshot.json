@@ -4772,7 +4772,7 @@
       "source_constant": "schema.slices()['opp_team']",
       "src": "obs.opp_team",
       "type": "content",
-      "width": 696
+      "width": 732
     },
     {
       "dst": "obs_unpack",
@@ -4780,7 +4780,15 @@
       "source_constant": "schema.slices()['our_team']",
       "src": "obs.our_team",
       "type": "content",
-      "width": 696
+      "width": 732
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['pair_history']",
+      "src": "obs.pair_history",
+      "type": "content",
+      "width": 180
     },
     {
       "dst": "obs_unpack",
@@ -5178,7 +5186,7 @@
     "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 78,
+    "config_version": 79,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -5205,7 +5213,7 @@
     ],
     "extra_seats": 16,
     "n_tokens": 36,
-    "obs_dim": 2669,
+    "obs_dim": 2921,
     "op_out_dim": 660,
     "pi_projection_in": 1177,
     "vf_projection_in": 1241
@@ -5346,49 +5354,56 @@
     {
       "id": "obs.active_context",
       "kind": "obs_block",
-      "offset": 1392,
+      "offset": 1464,
       "stage": "T0",
       "width": 116
     },
     {
       "id": "obs.global_env",
       "kind": "obs_block",
-      "offset": 1508,
+      "offset": 1580,
       "stage": "T0",
       "width": 20
     },
     {
       "id": "obs.opp_team",
       "kind": "obs_block",
-      "offset": 696,
+      "offset": 732,
       "stage": "T0",
-      "width": 696
+      "width": 732
     },
     {
       "id": "obs.our_team",
       "kind": "obs_block",
       "offset": 0,
       "stage": "T0",
-      "width": 696
+      "width": 732
+    },
+    {
+      "id": "obs.pair_history",
+      "kind": "obs_block",
+      "offset": 1617,
+      "stage": "T0",
+      "width": 180
     },
     {
       "id": "obs.prev_action_mask",
       "kind": "obs_block",
-      "offset": 1545,
+      "offset": 1797,
       "stage": "T0",
       "width": 11
     },
     {
       "id": "obs.reactive",
       "kind": "obs_block",
-      "offset": 1528,
+      "offset": 1600,
       "stage": "T0",
       "width": 17
     },
     {
       "id": "obs.turn_history",
       "kind": "obs_block",
-      "offset": 1556,
+      "offset": 1808,
       "stage": "T0",
       "width": 1113
     },
@@ -5396,7 +5411,7 @@
       "id": "obs.global_env.clock",
       "kind": "obs_group",
       "leaf": "clock",
-      "offset": 1517,
+      "offset": 1589,
       "parent": "obs.global_env",
       "stage": "T0",
       "width": 3
@@ -5405,7 +5420,7 @@
       "id": "obs.global_env.hazards",
       "kind": "obs_group",
       "leaf": "hazards",
-      "offset": 1515,
+      "offset": 1587,
       "parent": "obs.global_env",
       "stage": "T0",
       "width": 2
@@ -5414,7 +5429,7 @@
       "id": "obs.global_env.screens",
       "kind": "obs_group",
       "leaf": "screens",
-      "offset": 1520,
+      "offset": 1592,
       "parent": "obs.global_env",
       "stage": "T0",
       "width": 8
@@ -5423,7 +5438,7 @@
       "id": "obs.global_env.weather",
       "kind": "obs_group",
       "leaf": "weather",
-      "offset": 1508,
+      "offset": 1580,
       "parent": "obs.global_env",
       "stage": "T0",
       "width": 7
@@ -5432,7 +5447,7 @@
       "id": "obs.reactive.active_req_moves",
       "kind": "obs_group",
       "leaf": "active_req_moves",
-      "offset": 1533,
+      "offset": 1605,
       "parent": "obs.reactive",
       "stage": "T0",
       "width": 12
@@ -5441,7 +5456,7 @@
       "id": "obs.reactive.fainted",
       "kind": "obs_group",
       "leaf": "fainted",
-      "offset": 1528,
+      "offset": 1600,
       "parent": "obs.reactive",
       "stage": "T0",
       "width": 2
@@ -5450,7 +5465,7 @@
       "id": "obs.reactive.turns_since_progress",
       "kind": "obs_group",
       "leaf": "turns_since_progress",
-      "offset": 1530,
+      "offset": 1602,
       "parent": "obs.reactive",
       "stage": "T0",
       "width": 1
@@ -5459,7 +5474,7 @@
       "id": "obs.reactive.wish_floating_opp",
       "kind": "obs_group",
       "leaf": "wish_floating_opp",
-      "offset": 1532,
+      "offset": 1604,
       "parent": "obs.reactive",
       "stage": "T0",
       "width": 1
@@ -5468,7 +5483,7 @@
       "id": "obs.reactive.wish_floating_our",
       "kind": "obs_group",
       "leaf": "wish_floating_our",
-      "offset": 1531,
+      "offset": 1603,
       "parent": "obs.reactive",
       "stage": "T0",
       "width": 1

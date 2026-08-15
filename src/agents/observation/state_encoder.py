@@ -10,6 +10,7 @@ from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .reactive import ReactiveEncoder
 from .sleep_belief import build_sleep_sources
+from agents.gen3_data import moves as gen3_movedex
 from .constants import (
     POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
@@ -23,6 +24,9 @@ from .constants import (
     OFFSET_GLOBAL,
     OFFSET_REACTIVE,
     REACTIVE_DIM,
+    OFFSET_PAIR_HISTORY,
+    PAIR_HISTORY_DIM,
+    PAIR_HISTORY_CELL_DIM,
     ACTIVE_CONTEXT_DIM,
     GLOBAL_ENV_DIM
 )
@@ -135,7 +139,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
     @property
     def base_dimension(self) -> int:
         """Raw encoder output dimension, before the previous-turn mask is appended."""
-        return OFFSET_REACTIVE + REACTIVE_DIM
+        # gen3_pair_history_v1: the H-A2 pair-history block sits after reactive, closing base.
+        return OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM
 
     @property
     def dimension(self) -> int:
@@ -145,7 +150,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
     def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None,
-               progress_clock=None, recency=None) -> np.ndarray:
+               progress_clock=None, recency=None, pair_history=None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
@@ -186,6 +191,26 @@ class Gen3ObservationEncoder(ObservationEncoder):
         )
         sleep_sources = build_sleep_sources(battle) if any_asleep else None
 
+        # Tier H-A1 (gen3_pair_history_v1): each side's LAST ACTION as the 6-tuple the active
+        # mon's slot carries — [move_num (embedding id; 0 = none/switch), was_switch,
+        # hit, miss, fail, crit] (outcome order = turn-delta's _OUTCOME_ORDER). The move id
+        # string→dex-num conversion uses the same gen3_movedex single source MovesEncoder uses.
+        def _last_action_tuple(side):
+            if pair_history is None:
+                return None
+            mid, was_switch, outcome, crit = pair_history.last_action(side)
+            num = 0.0
+            if mid:
+                md = gen3_movedex.get(mid)
+                num = float(md.num) if md is not None else 0.0
+            return (num, was_switch,
+                    1.0 if outcome == "hit" else 0.0,
+                    1.0 if outcome == "miss" else 0.0,
+                    1.0 if outcome == "fail" else 0.0,
+                    crit)
+        _la_ours = _last_action_tuple("ours")
+        _la_opp = _last_action_tuple("opp")
+
         # 1. Our Team — current-board per-mon facts read through the LiveView slot.
         our_team_list = self.get_team_list(battle, is_opponent=False)
         for i in range(TEAM_SIZE):
@@ -193,11 +218,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
             live_mon = live.ours.get(mon.species) if (live is not None and mon is not None) else None
             rec = (recency.values("ours", mon.species)
                    if (recency is not None and mon is not None) else None)
+            is_active = 1.0 if (mon and mon.active) else 0.0
             mon_vec = self.pokemon_encoder.encode(
                 mon, battle, is_own=True, live_mon=live_mon, sleep_sources=sleep_sources,
                 recency_vals=rec,
+                last_action_vals=(_la_ours if is_active > 0.5 else None),
             )
-            is_active = 1.0 if (mon and mon.active) else 0.0
 
             start = OFFSET_OUR_TEAM + (i * POKEMON_FULL_DIM)
             vec[start : start + POKEMON_VECTOR_DIM] = mon_vec
@@ -225,9 +251,16 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 hp_known = False
             rec = (recency.values("opp", mon.species)
                    if (recency is not None and mon is not None) else None)
+            # Active-ness hoisted above the encode call so the H-A1 last-action tuple can ride
+            # the ACTIVE slot's vector (same LiveView-first logic as the flag write below).
+            if live_mon is not None:
+                _opp_is_active = 1.0 if live_mon.active else 0.0
+            else:
+                _opp_is_active = 1.0 if (mon and mon is battle.opponent_active_pokemon) else 0.0
             mon_vec = self.pokemon_encoder.encode(
                 mon, battle, is_own=False, hp_probs=hp_probs, hp_known=hp_known,
                 live_mon=live_mon, sleep_sources=sleep_sources, recency_vals=rec,
+                last_action_vals=(_la_opp if _opp_is_active > 0.5 else None),
             )
             # Active flag through the LiveView slot (LivePokemon.active is set at fold time
             # from poke-env's opponent_active_pokemon accessor, so this is byte-identical to
@@ -262,7 +295,22 @@ class Gen3ObservationEncoder(ObservationEncoder):
         vec[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM] = \
             self.reactive_encoder.encode(battle, hp_tracker=hp_tracker, live=live, legal=legal,
                                          progress_clock=progress_clock)
-        
+
+        # 6. Tier H-A2 (gen3_pair_history_v1): the pair-history block — h[i, j] per (their mon
+        # i, our mon j), row-major (opp_slot, our_slot, cell), joined by the SAME team-list
+        # order the per-mon blocks use so cell (i, j) names the same two entities all battle.
+        # None (standalone/test path) leaves the block zero, like the other optional trackers.
+        if pair_history is not None:
+            for i in range(TEAM_SIZE):
+                _opp_mon = opponents[i] if i < len(opponents) else None
+                _opp_sp = _opp_mon.species if _opp_mon is not None else None
+                for j in range(TEAM_SIZE):
+                    _our_mon = our_team_list[j] if j < len(our_team_list) else None
+                    _our_sp = _our_mon.species if _our_mon is not None else None
+                    _b = OFFSET_PAIR_HISTORY + (i * TEAM_SIZE + j) * PAIR_HISTORY_CELL_DIM
+                    vec[_b : _b + PAIR_HISTORY_CELL_DIM] = \
+                        pair_history.pair_values(_opp_sp, _our_sp)
+
         return vec
 
     def get_observation(self, battle: AbstractBattle) -> Dict[str, Any]:
@@ -312,6 +360,11 @@ class Gen3ObservationEncoder(ObservationEncoder):
                     "start": OFFSET_REACTIVE, 
                     "end": self.dimension, 
                     "dim": self.reactive_encoder.dimension
+                },
+                "pair_history": {
+                    "start": OFFSET_PAIR_HISTORY,
+                    "end": OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM,
+                    "reshape": (TEAM_SIZE, TEAM_SIZE, PAIR_HISTORY_CELL_DIM)
                 }
             },
             "pokemon": pokemon_layout,
@@ -323,6 +376,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "turn_history_offset": self.base_dimension + 11,
             "turn_history_dim": _N_HIST * _TD_DIM,
             "active_context_dim": ACTIVE_CONTEXT_DIM,
+            "pair_history_offset": OFFSET_PAIR_HISTORY,
+            "pair_history_dim": PAIR_HISTORY_DIM,
+            "pair_history_cell_dim": PAIR_HISTORY_CELL_DIM,
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
             "max_species": 400,

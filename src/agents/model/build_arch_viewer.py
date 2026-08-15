@@ -151,6 +151,7 @@ FORWARD_SINKS = ("pi_projection", "vf_projection")
 # --------------------------------------------------------------------------------------------
 _EXTRACTOR = os.path.join(_HERE, "features_extractor.py")
 FAMILY_LABEL = {
+    "h": "pair-history tendencies (switch-ins / clicks into this mon, exposure, recency)",
     "d1": "our active's move vs each opp mon",
     "d2": "our bench's offense vs their ACTIVE",
     "d3": "their believed move vs each of our mons",

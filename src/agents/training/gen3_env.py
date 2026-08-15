@@ -334,6 +334,7 @@ class Gen3Env(SinglesEnv):
                 battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal,
                 progress_clock=self._tracker.progress_clock,
                 recency=self._tracker.recency,
+                pair_history=self._tracker.pair_history,
             )
             if self._emit_opp_intent_labels:
                 # beta's coordinate frame, snapshotted from the SAME obs vector the model reads

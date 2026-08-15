@@ -236,7 +236,7 @@ representation cannot express at any horizon.
 
 | Step | What | Class | Gates |
 |---|---|---|---|
-| 1 | **H-A1 + H-A2** (last-action fields, pair-history edge family) | retrain-class obs/edge addition; can ride the next generation alongside other work | poke_env_gaps fuzz (encoded counters == protocol reconstruction); obs-build benchmark; zero-init byte-identity; per-family ablation joins the edge audit |
+| 1 | **H-A1 + H-A2** (last-action fields, pair-history edge family) — ✅ **BUILT 2026-08-15 (v78 `gen3_pair_history_v1`)**; the fuzz caught a real fainted-active-resurrection bug in the resync before it shipped, and the leads-don't-count semantics were pinned by the same oracle | retrain-class obs/edge addition; can ride the next generation alongside other work | poke_env_gaps fuzz (encoded counters == protocol reconstruction); obs-build benchmark; zero-init byte-identity; per-family ablation joins the edge audit |
 | 2 | **H-B + the deletion** (event tokens in, 7×159 out) — one generation, nothing else behavioral beside it (attribution discipline) | retrain-class, the Stage-3-scale change | event-fold fuzz; obs-roundtrip fuzz ported to the event window; B=1 CPU benchmark at the real N; usage audit on the event seats; non-inferiority ladder with pre-fixed margin |
 | 3 | **H-C** reference edges | in-generation with 2 if cheap, else next | the audit decides whether references beat content-linking alone |
 | 4 | Prev-mask deletion | with 2 | the zero-arm audit above |

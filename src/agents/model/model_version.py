@@ -559,7 +559,16 @@ from typing import Any, Dict, List
 #   `damage_matrices_outgoing_all` frozen OFF) — their FIELDS and check_compatible gates are
 #   deliberately UNCHANGED, because a demotion removes the SELECT role only. See
 #   `agents.model.flag_registry` and designs/flag_registry.md.
-MODEL_CONFIG_VERSION = 78
+# v79 (gen3_pair_history_v1, Tier H-A of design_history_entity.md): the COMPILED history tier.
+#   Obs 2669 → 2921: per-mon LAST-ACTION fields (POKEMON_FULL_DIM 116 → 122 — the embedded
+#   last-move id is manifest-routed, its raw column zeroed at the slice) + the 180-dim
+#   pair-history block h[i,j] (6×6×5 tendency counters, EpisodeTracker-folded from PUBLIC
+#   events, log-saturated). New edge family "h" (obs-fed, zero-init, mon×mon) joins the
+#   edge_bias_families vocabulary — NOT in the production string, so the family is opt-in;
+#   the obs widening is unconditional (retrain-class). No new ModelVersion field and NO
+#   ARCH_SIGNATURE bump (the recency precedent): total_dim + the widened role-encoder shapes
+#   are weight-field-caught, and the family rides the recorded edge_bias_families string.
+MODEL_CONFIG_VERSION = 79
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -2441,4 +2450,9 @@ def _migrate_config(data: dict) -> dict:
                      "seed_quantile", "value_seed_vicreg_coef"):
             data.pop(dead, None)      # POP, not setdefault: `cls(**data)` TypeErrors on a stale key
         data["config_version"] = 78
+    if version < 79:
+        # gen3_pair_history_v1 (stamp only, the v67 pattern): the H-A obs widening carries the
+        # break in total_dim + the widened encoder shapes (weight-field-caught); no new config
+        # field, and the "h" edge family rides the recorded edge_bias_families string.
+        data["config_version"] = 79
     return data

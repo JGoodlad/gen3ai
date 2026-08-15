@@ -1855,7 +1855,14 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   `species_acc` + `species_acc_above_chance` (anchored to
   `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true
   moves rank high); `coverage` (fraction of decisions with ≥1 believed slot) + `k_mean` (so acc is
-  interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`. **Balance:** the
+  interpretable — k=1 vs k=5 differ); `species_ce`, `moves_bce`, `aux_loss`; plus `mask_rate` — the
+  **uniform per-head coverage key** (`gen3_belief_mask_rate_v1`): fraction of the B×6 slot grid the
+  head scored this minibatch. EVERY belief head emits it under its own prefix (`belief/mask_rate`
+  hidden-team, `belief/spread_mask_rate`, `belief/natureev_mask_rate`, `belief/hptype_mask_rate`),
+  comparable across heads and batch sizes where the older `n_slots` counts are not — the label-coverage
+  baseline the belief-unification consolidation will judge per-head non-inferiority against. Note the
+  conventions TILE: hidden-team masks HIDDEN slots, the spread/nature/hp-type heads mask REVEALED
+  ones. **Balance:** the
   shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/species_belief_share` (this CE's
   share of the common trunk-pull total) + `grad/species_belief_policy_cosine` — the principled "is the
   aux DOMINATING / fighting the policy" signal (and `grad/aux_share` for the COMBINED non-RL draw).
@@ -1956,13 +1963,14 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
   only here.
 - **Metrics (`belief/spread_*`).** `mae` (believed-vs-true error in RAW stat points — should fall),
   `largest_bias` (signed error on each mon's LARGEST true stat — the "over-estimates the largest EV"
-  diagnostic, → 0 as the head learns), `n_slots` (supervised slots/minibatch), `loss`.
+  diagnostic, → 0 as the head learns), `n_slots` (supervised slots/minibatch), `mask_rate` (the
+  uniform coverage key — see the `belief/*` metrics bullet above), `loss`.
 - **Nature/EV decomposition (`gen3_nature_ev_belief_v1`, v40, `--spread-belief-nature`).** The fix for the
   stuck `largest_bias`: the additive head predicts the DERIVED stat directly (a point estimate BETWEEN the
   nature ×1.1/×0.9 modes); the generative head predicts a NATURE categorical ⊕ Smogon prior + per-stat EVs ⊕
   prior and COMPUTES the derived stat, so the asymmetry + EV budget are structural. A SECOND loss term
   `_nature_ev_belief_loss` (nature CE + EV smooth_l1 over REVEALED slots, folded at the SAME
-  `spread_belief_coef`, metrics `belief/natureev_{nature_acc,nature_ce,ev_mae,n_slots}`) supervises the
+  `spread_belief_coef`, metrics `belief/natureev_{nature_acc,nature_ce,ev_mae,n_slots,mask_rate}`) supervises the
   decomposition DIRECTLY (the derived loss alone is many-to-one). Label: the TRUE (nature, EVs)
   **deterministically INVERTED** from agent2's `mon.stats` (`damage_tables.invert_nature_evs`, GIGO-guarded —
   gen3 hides them, so we invert the visible derived stats), emitted by `gen3_env._spread_labels` as
@@ -2009,7 +2017,8 @@ supervision.
   top". The default is **0.05**.
 - **Metrics (`belief/hptype_*`).** `acc` (top-1 HP-type accuracy — should climb well above the 1/16≈0.06
   chance; a short bridge smoke reaches ~0.8 quickly since the head cold-starts at the Smogon prior), `loss`,
-  `n_slots`. `hp_type_belief_coef` is **training-only** (inherited on a flagless resume, like
+  `n_slots`, `mask_rate` (the uniform coverage key — see the `belief/*` metrics bullet above).
+  `hp_type_belief_coef` is **training-only** (inherited on a flagless resume, like
   `spread_belief_coef`). The old version-checked `hp_type_belief_mode` is DELETED — the head is unconditional
   whenever there is a move belief, and it no longer requires `--damage-op`.
 - **Tests.** Unit: `model/hp_type_belief_test.py` (the Σ-typed-equals-presence constraint, both certain-fact

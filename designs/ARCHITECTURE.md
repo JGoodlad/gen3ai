@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | `models/ai_v9_10_gen9_intent_distcritic_0813/` (gen-9, launched 2026-08-13) — `model_config.json` `config_version` **69**, `arch_signature` **`gen3_deadline_clock_v1`**; trains on its own pinned worktree |
+| Production run | `models/ai_v9_13_gen11_labelonly_winprob_0815/` (gen-11, launched 2026-08-15) — `model_config.json` `config_version` **77**, `arch_signature` **`gen3_ctx_dedup_v1`**; trains on its own pinned worktree |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 77 / `gen3_ctx_dedup_v1`) |
 | `designs/production_config.json` | the **gen-11** run's config (`ai_v9_13_gen11_labelonly_winprob_0815`) **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -44,7 +44,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2669** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2921** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -52,15 +52,16 @@ Every number below comes from `agents/observation/constants.py` and
 
 | Block | Start | End | Dims | Constant |
 |---|---|---|---|---|
-| Our team — 6 × per-mon slot | 0 | 696 | 696 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
-| Opp team — 6 × per-mon slot | 696 | 1392 | 696 | `OFFSET_OPP_TEAM` |
-| Active context ×2 (ours, theirs) | 1392 | 1508 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
-| Global env | 1508 | 1528 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
-| Board (reactive) | 1528 | 1545 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
-| *(= `base_dim`)* | | 1545 | | |
-| Prev-turn action mask | 1545 | 1556 | 11 | `ACTION_SPACE_SIZE` |
-| Turn history — 7 × TurnDelta | 1556 | 2669 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
-| **Total** | | **2669** | | `Gen3ObservationEncoder.dimension` |
+| Our team — 6 × per-mon slot | 0 | 732 | 732 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
+| Opp team — 6 × per-mon slot | 732 | 1464 | 732 | `OFFSET_OPP_TEAM` |
+| Active context ×2 (ours, theirs) | 1464 | 1580 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
+| Global env | 1580 | 1600 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
+| Board (reactive) | 1600 | 1617 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
+| Pair history — 6×6×5 h[i,j] | 1617 | 1797 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
+| *(= `base_dim`)* | | 1797 | | |
+| Prev-turn action mask | 1797 | 1808 | 11 | `ACTION_SPACE_SIZE` |
+| Turn history — 7 × TurnDelta | 1808 | 2921 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
+| **Total** | | **2921** | | `Gen3ObservationEncoder.dimension` |
 
 `gen3_entity_rehome_v1` (Stage 3): the two 144-dim matchup matrices and 6 of the 11 reactive
 scalars are **deleted** — the D/V edge families compute a strict superset of the matchup signal
@@ -73,10 +74,10 @@ the entities they describe).
 > (642 / 1284 / …). They are deleted (2026-08-14) — only the expressions remain, with a comment
 > forbidding evaluated values there; read `get_layout()` for live offsets.
 
-### 1.2 Per-Pokémon slot — 116 dims (`POKEMON_FULL_DIM`)
+### 1.2 Per-Pokémon slot — 122 dims (`POKEMON_FULL_DIM`)
 
-`POKEMON_VECTOR_DIM` is 113; `state_encoder` appends the two OUR-side trapping bits and then the
-active flag → 116. The active flag stays the **last** dim of the slot on purpose — the model's
+`POKEMON_VECTOR_DIM` is 119; `state_encoder` appends the two OUR-side trapping bits and then the
+active flag → 122. The active flag stays the **last** dim of the slot on purpose — the model's
 `hp_and_active[:, :, -1]` convention is load-bearing (ObsUnpack / DamageOperator / entity seats).
 
 | Field | Offset | Dims | Constant |
@@ -95,9 +96,10 @@ active flag → 116. The active flag stays the **last** dim of the slot on purpo
 | sleep-wake belief | 106 | 3 | `POKEMON_SLEEP_BELIEF_OFFSET` |
 | recency `[since_seen, since_acted, since_hit]` | 109 | 3 | `POKEMON_RECENCY_OFFSET` |
 | protect-success odds | 112 | 1 | `POKEMON_PROTECT_OFFSET` |
-| trapped (our active only) | 113 | 1 | `POKEMON_TRAPPED_OFFSET`, appended by `state_encoder` |
-| maybe_trapped (our active only) | 114 | 1 | `POKEMON_MAYBE_TRAPPED_OFFSET`, appended |
-| active flag | 115 | 1 | `POKEMON_ACTIVE_OFFSET`, appended (LAST — load-bearing) |
+| last action `[move_id, was_switch, hit, miss, fail, crit]` (active only) | 113 | 6 | `POKEMON_LAST_ACTION_OFFSET` (`gen3_pair_history_v1` — the id is embedding-routed, its raw column zeroed at the slice) |
+| trapped (our active only) | 119 | 1 | `POKEMON_TRAPPED_OFFSET`, appended by `state_encoder` |
+| maybe_trapped (our active only) | 120 | 1 | `POKEMON_MAYBE_TRAPPED_OFFSET`, appended |
+| active flag | 121 | 1 | `POKEMON_ACTIVE_OFFSET`, appended (LAST — load-bearing) |
 
 Move slot (11, `moves.py`): `[id, power/200, has_secondary, has_recoil, type_id, category, known,
 current_pp, max_pp, accuracy, never_miss]`.
@@ -209,7 +211,7 @@ stashed for the aux loss and never fed forward, which is exactly what its T2 dec
 
 The concrete steps:
 
-1. **`ObsUnpack`** — slices the 2669-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2921-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
@@ -566,6 +568,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **d2** | our mon *i* × opp **ACTIVE** (one-hot column) | 4 | `[best_high, best_pko, p_outspeed, alive]` — our bench's offense vs their active |
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
+| **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **not in the production families string** — the opt-in H-A2 arm) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
 | **g** | each mon × **global** (both sides) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |

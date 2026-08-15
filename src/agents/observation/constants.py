@@ -80,17 +80,29 @@ POKEMON_RECENCY_DIM = 3
 # floor 1/8). A benched mon's counter is 0 → odds 1.0, which is TRUE (the stall counter resets on
 # switch) — the fact now rides the entity instead of a global slot.
 POKEMON_PROTECT_OFFSET = 112   # 109 + 3 (recency end)
-POKEMON_VECTOR_DIM = 113       # 71 + 18 (spread) + 17 (HP block) + 3 (sleep) + 3 (recency) + 1 (protect)
+# Tier H-A1 (gen3_pair_history_v1, design_history_entity.md §3): the side's LAST ACTION,
+# compiled onto its ACTIVE mon's slot (bench rows all-zero — the per-entity-fact-on-the-slot
+# convention, like trapped): [last_move_id (embedding id — the dex num of the side's most
+# recent EXECUTED move; 0 = none-yet / last action was a switch), last_was_switch,
+# outcome one-hot (hit, miss, fail — all-zero when the last action was a switch/none;
+# TurnView's miss > fail > hit precedence), last_was_crit]. Folded by the EpisodeTracker's
+# PairHistoryTracker from PUBLIC protocol events (MOVE / SWITCH / DRAG / MISS / FAIL / CRIT).
+# last_move_id is the protocol-reported executed id for BOTH sides (bare Hidden Power num for
+# ours too — the wire form both sides observe); it routes through the MOVE EMBEDDING
+# (slice_pokemon_categoricals), never the raw-scalar path.
+POKEMON_LAST_ACTION_OFFSET = 113   # 112 + 1 (protect end)
+POKEMON_LAST_ACTION_DIM = 6        # id + was_switch + outcome(3) + crit
+POKEMON_VECTOR_DIM = 119       # 71 + 18 (spread) + 17 (HP) + 3 (sleep) + 3 (recency) + 1 (protect) + 6 (last action)
 # state_encoder appends per-slot: the two OUR-side trapping bits, then the active flag — active
 # stays the LAST dim of the slot ON PURPOSE (the model's `hp_and_active[:, :, -1]` convention is
 # load-bearing across ObsUnpack / DamageOperator / entity seats; a reorder here would silently
 # repoint every one of those reads). The trapping bits are gen3_entity_rehome_v1 — old reactive
 # vec[4]/vec[5], now on the trapped ENTITY: nonzero only at our ACTIVE slot; server-authoritative
 # LegalActions facts, so they stay obs bits rather than becoming a T-edge belief.
-POKEMON_TRAPPED_OFFSET = POKEMON_VECTOR_DIM               # 113 (our active only; 0 elsewhere)
-POKEMON_MAYBE_TRAPPED_OFFSET = POKEMON_VECTOR_DIM + 1     # 114 (our active only; 0 elsewhere)
-POKEMON_ACTIVE_OFFSET = POKEMON_VECTOR_DIM + 2            # 115 — LAST in the slot (see above)
-POKEMON_FULL_DIM = POKEMON_VECTOR_DIM + 3                 # 116 = 113 + trapped + maybe_trapped + active
+POKEMON_TRAPPED_OFFSET = POKEMON_VECTOR_DIM               # 119 (our active only; 0 elsewhere)
+POKEMON_MAYBE_TRAPPED_OFFSET = POKEMON_VECTOR_DIM + 1     # 120 (our active only; 0 elsewhere)
+POKEMON_ACTIVE_OFFSET = POKEMON_VECTOR_DIM + 2            # 121 — LAST in the slot (see above)
+POKEMON_FULL_DIM = POKEMON_VECTOR_DIM + 3                 # 122 = 119 + trapped + maybe_trapped + active
 
 # Active context: boosts(14) + volatiles(VOLATILES_DIM)
 ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
@@ -179,6 +191,19 @@ ACTIVE_REQ_MOVES_OFFSET = REACTIVE_SCALAR_DIM                            # 5 —
 
 REACTIVE_DIM = REACTIVE_SCALAR_DIM + ACTIVE_REQ_MOVES_DIM                # 17
 
+# Tier H-A2 (gen3_pair_history_v1): the PAIR-HISTORY block — h[i, j] per (their mon i, our
+# mon j), 6×6×5 flattened row-major as (opp_slot, our_slot, cell). Cells (each log-saturated
+# log(1+min(n,10))/log(11), the recency convention):
+#   [switch_ins_i_while_j_active, attacks_i_on_j, status_clicks_i_on_j,
+#    shared_field_turns, recency_of_last_pairing]
+# Folded CPU-side by the EpisodeTracker's PairHistoryTracker from PUBLIC protocol events (the
+# GPU cannot reconstruct battle history); joined onto slots by the SAME team-list order the
+# per-mon blocks use, so cell (i, j) names the same two entities all battle (species ↔ slot is
+# stable within a battle). Consumed by ObsUnpack → ExtractorContext → the `h` edge family at
+# the mon×mon block (rows = opp seats, cols = our seats); never enters a raw-scalar projection.
+PAIR_HISTORY_CELL_DIM = 5
+PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
+
 # Top-level Offsets — all derived from the named constants. ONLY the expressions are
 # load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated
 # values misleading readers who grepped by eye — read `Gen3ObservationEncoder.get_layout()`
@@ -188,6 +213,7 @@ OFFSET_OPP_TEAM = 6 * POKEMON_FULL_DIM
 OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM
 OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)
 OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM
+OFFSET_PAIR_HISTORY = OFFSET_REACTIVE + REACTIVE_DIM     # the H-A2 block sits after reactive
 
 # Max values for normalization.
 # MAX_TURNS is ALSO the forfeit deadline: `StallConfig.threshold` defaults to it (training/stall.py

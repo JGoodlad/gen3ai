@@ -917,7 +917,7 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
+main.prober.query summary|list|scan|awareness|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
 exposes the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
 every loss across an opponent (model-free, ranked)**, digest one battle, **`turns` READ one battle as a
 GAME — decisions grouped by game turn, each with the board it was made on, an ordered battle log of what

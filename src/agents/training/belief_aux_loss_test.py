@@ -47,6 +47,7 @@ def test_finite_metrics_in_range():
     assert 0.0 <= m["species_acc"] <= 1.0
     assert 0.0 <= m["moves_precision"] <= 1.0 and 0.0 <= m["moves_recall"] <= 1.0
     assert m["k_mean"] >= 1.0 and 0.0 < m["coverage"] <= 1.0
+    assert m["mask_rate"] == pytest.approx(3 / 12)   # uniform coverage: 3 believed of B×6 slots
     assert m["species_acc_above_chance"] == pytest.approx(m["species_acc"] - 1.0 / S)
 
 

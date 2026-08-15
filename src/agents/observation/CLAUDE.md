@@ -196,8 +196,9 @@ and the per-mon slot layout, derived from the live constants. **This** is the pe
 what each field MEANS and where it is sourced from. All offsets are computed from named constants
 — never hardcode indices.
 
-**Per-Pokémon slot (116 dims):** the 110 below + the 3-dim recency block + the 1-dim
-protect-odds field + the 2 appended trapping bits + the appended active flag.
+**Per-Pokémon slot (122 dims):** the 110 below + the 3-dim recency block + the 1-dim
+protect-odds field + the 6-dim last-action block + the 2 appended trapping bits + the
+appended active flag.
 **Recency block** at `POKEMON_RECENCY_OFFSET` (109) — [turns_since_seen, turns_since_acted,
 turns_since_was_hit], TURN-ANCHORED (`cur_turn − event_turn`, clamped; on-field mon reads 0;
 never-tracked reads 1.0 max staleness), log-saturated over a 10-turn cap, BOTH sides (public —
@@ -209,11 +210,25 @@ decision-time active log, per mon per decision). **Protect-odds field** at
 `POKEMON_PROTECT_OFFSET` (112, gen3_entity_rehome_v1): P(a Protect/Detect/Endure by THIS mon
 succeeds now) under the gen3 floored-doubling stall rule (100/50/25/12.5, floor 1/8), from the
 LiveView `protect_counter` — EVERY mon owns its stall state (a benched mon truthfully reads 1.0;
-the counter resets on switch). Pinned by `protect_success_prob_fuzz_test.py`. **Appended tail**
-(state_encoder): `POKEMON_TRAPPED_OFFSET` (113) + `POKEMON_MAYBE_TRAPPED_OFFSET` (114) — the
+the counter resets on switch). Pinned by `protect_success_prob_fuzz_test.py`. **Last-action block** at
+`POKEMON_LAST_ACTION_OFFSET` (113, `gen3_pair_history_v1` — Tier H-A1 of
+`designs/ai_v9/design_history_entity.md`): the SIDE's most recent executed action on its
+ACTIVE mon's slot — `[last_move_id, was_switch, hit, miss, fail, crit]`, bench rows zero.
+The move id is an EMBEDDING id (the model's `slice_pokemon_categoricals` routes it to the
+move table and ZEROES its raw column — a dex num never reaches a Linear); outcome order
+matches the turn-delta `_OUTCOME_ORDER`; CANT windows leave the previous action standing;
+leads don't count (a placement, not an action). Folded by the EpisodeTracker-owned
+`PairHistoryTracker` (same decision window as recency), threaded via
+`encode(pair_history=…)`. Fuzz gate: `poke_env_gaps/pair_history_fuzz_test.py` (independent
+full-log oracle; it caught a fainted-active-resurrection resync bug pre-ship). The SAME
+tracker also feeds the **180-dim pair-history block** after reactive
+(`OFFSET_PAIR_HISTORY`, 6×6×5 `h[i,j]` tendency counters — switch-ins/attacks/status-clicks
+by their mon i while our mon j was active, shared-field turns, pairing recency; log-saturated
+over the 10 cap; consumed by the opt-in `h` edge family). **Appended tail**
+(state_encoder): `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the
 OUR-side LegalActions trapping bits, nonzero ONLY at our active slot (`maybe_trapped` is the
 high-value trap-risk bit; fuzz gate `action/trapping_signals_fuzz_test.py`, which also asserts
-bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (115), deliberately
+bench slots stay zero) — then the ACTIVE flag at `POKEMON_ACTIVE_OFFSET` (121), deliberately
 LAST in the slot (the model's `hp_and_active[:, :, -1]` convention is load-bearing).
 Original 110: species ID + 6 base stats, item ID + known + consumed, 2 type
 IDs, ability ID + known, 7-dim condition (status one-hot), 4 × 11-dim move slots, HP fraction,

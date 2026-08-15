@@ -52,10 +52,15 @@ def _real_obs(n=8):
     collapses onto SWITCH and every alpha-carried gradient/operand is structurally zero. The
     gradient-flow tests need boards where alpha has something to point at."""
     from agents.model.audit_states import collect_states
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     try:
         obs, _, _ = collect_states([_TRACES], n, seed=0)
     except FileNotFoundError:
         pytest.skip("no gen-9 eval traces on this machine (models/ lives in the main checkout)")
+    live_dim = Gen3ObservationEncoder(load_mappings()).dimension
+    if obs.shape[1] != live_dim:
+        pytest.skip(f"eval traces are a different obs layout ({obs.shape[1]} vs live {live_dim}) "
+                    "— re-enable when a current-layout run has traces")
     return {"observation": torch.from_numpy(obs)}
 
 

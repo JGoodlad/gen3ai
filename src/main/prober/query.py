@@ -9,6 +9,7 @@ A typical investigation:
     python -m main.prober.query summary  <run_dir>                         # orient
     python -m main.prober.query list     <run_dir> --outcome loss          # pick battles
     python -m main.prober.query scan     <run_dir> --outcome loss --opponent X  # worst turn per battle, ranked
+    python -m main.prober.query awareness <run_dir>                        # dist-head 'did it KNOW?' verdicts (model-free)
     python -m main.prober.query overview <summary.json>                    # model-free digest
     python -m main.prober.query turns    <summary.json>                    # model-free TURN-BY-TURN replay
     python -m main.prober.query find     <summary.json> value_drop --limit 5
@@ -149,6 +150,20 @@ def _build_parser() -> argparse.ArgumentParser:
     psc.add_argument("--limit", type=int, default=None, help="cap the number of battles returned")
     psc.add_argument("--metric", default="value_drop", choices=["value_drop", "td_residual"],
                      help="rank by most-negative ΔV (default) or critic TD surprise")
+
+    paw = sub.add_parser(
+        "awareness", help="MODEL-FREE 'did it KNOW?': dist-head loss-awareness verdicts over a run "
+                          "(knew_by_turn/lead_time/blind_loss + the stall signature)")
+    paw.add_argument("root", help="run dir / eval_traces dir")
+    paw.add_argument("--outcome", choices=["win", "loss"], default="loss")
+    paw.add_argument("--opponent")
+    paw.add_argument("--step", type=int)
+    paw.add_argument("--lead-bar", type=int, default=5,
+                     help="turns of warning that count as 'aware' in the aggregate (default 5)")
+    paw.add_argument("--cap-turn", type=int, default=240,
+                     help="last-decision turn ≥ this = a CAP loss (default 240; MAX_TURNS is 250)")
+    paw.add_argument("--stall-bar", type=float, default=0.25,
+                     help="mean_tail_divergence ≥ this flags the stall signature (default 0.25)")
 
     pt = sub.add_parser(
         "triage", help="loss attribution: rank failure CATEGORIES by recoverable win-rate (the lever order)")
@@ -351,6 +366,10 @@ def _run(args) -> object:
         return ProbeSession(args.root).scan(
             outcome=args.outcome, opponent=args.opponent, step=args.step,
             limit=args.limit, metric=args.metric)
+    if args.cmd == "awareness":
+        return ProbeSession(args.root).awareness_scan(
+            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            lead_bar=args.lead_bar, cap_turn=args.cap_turn, stall_bar=args.stall_bar)
     if args.cmd == "triage":
         return ProbeSession(args.root).triage(step=args.step, opponent=args.opponent,
                                               wp_even=args.wp_even, v_even=args.v_even)

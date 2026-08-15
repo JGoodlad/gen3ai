@@ -420,6 +420,7 @@ def test_hp_type_belief_loss_ce_and_masking():
     assert out is not None
     loss, m = out
     assert float(loss) >= 0 and m["acc"] == 1.0 and m["n_slots"] == B
+    assert abs(m["mask_rate"] - 1.0 / TEAM_SIZE) < 1e-6   # uniform coverage: 1 of 6 slots/sample
     assert InstrumentedMaskablePPO._hp_type_belief_loss(logits, label, torch.zeros(B, TEAM_SIZE)) is None
     assert InstrumentedMaskablePPO._hp_type_belief_loss(None, label, mask) is None
 

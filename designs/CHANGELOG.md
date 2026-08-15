@@ -2934,3 +2934,37 @@ on all 4 workers at exactly episode 5001 — the intended `recycle_every=5000` H
 reported as a crash by a flat `len(pids) > 1` assertion. The bound is `1 + n_recycles`; as written
 the gate could not run past 5000 episodes at all, which is precisely the multi-hour regime it
 exists for. 20,000 rust episodes / ~1.69M steps clean before it tripped.
+
+### v79 — `gen3_pair_history_v1` (2026-08-15): Tier H-A — the compiled history tier
+
+`design_history_entity.md` §3 H-A, the first landing of the history redesign. Obs **2669 → 2921**.
+
+- **H-A1 — last-action fields on the ACTIVE slots** (`POKEMON_FULL_DIM` 116 → 122): each side's
+  most recent executed action as `[last_move_id, was_switch, hit, miss, fail, crit]` on its
+  active mon's slot, bench rows zero (the protect/trapped per-entity-fact convention). The move
+  id is an EMBEDDING id: `slice_pokemon_categoricals` extracts it for the move table and ZEROES
+  its raw column inside `hp_and_active` (the manifest rule — a raw dex num never reaches a
+  Linear), and the role input widens by the embedded width. CANT windows leave the previous
+  action standing; MISS/FAIL/CRIT attach to their side's same-turn move; leads don't count
+  (a placement, not an action).
+- **H-A2 — the pair-history block + the `h` edge family**: per (their mon i, our mon j), the
+  5-cell `[switch_ins_i_while_j_active, attacks_i_on_j, status_clicks_i_on_j,
+  shared_field_turns, recency_of_last_pairing]`, log-saturated over the 10 cap, folded CPU-side
+  by the EpisodeTracker's `PairHistoryTracker` from PUBLIC events (seq-idempotent; species↔slot
+  joins are battle-stable), transported as a 180-dim obs block after reactive, and consumed by
+  the new **`h`** edge family at the mon×mon block — zero-init, obs-fed (the one family whose
+  cell IS compiled battle history), **not in the production families string** (opt-in arm; the
+  obs widening is unconditional). A ratio delivery is CORRECT for tendencies, unlike magnitudes.
+  The intended first consumers are α/β — their tendency inputs finally exist; watch
+  `opp_intent/alpha_acc` across the first run that carries this.
+- **The fuzz found a real bug before it shipped** (`pair_history_fuzz_test.py`, the recency-fuzz
+  pattern with a fully independent event-log oracle): at a FORCED-SWITCH decision poke-env still
+  reports the fainted mon as active, so the tracker's decision-time resync RESURRECTED an active
+  the FAINT event had correctly cleared — pairing replacements against a dead mon (reproduced on
+  a double-KO Explosion). Fixed with an alive-filter on the resync. The same pass also fixed a
+  pre-existing cross-episode leak: `RecencyTracker` was missing from the env-path episode reset.
+- Versioning: stamp-only branch (the v67 pattern) — total_dim + the widened role-encoder shapes
+  are weight-field-caught; NO ARCH_SIGNATURE bump (the recency precedent); the family rides the
+  recorded `edge_bias_families` string. Gate results recorded in the shipping commit.
+  (Written as v78 pre-rebase; renumbered v79 on landing — `gen3_flag_surface_p1_v1` took 78
+  concurrently, the v75/v76 renumbering precedent.)

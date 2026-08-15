@@ -36,6 +36,7 @@ from main.prober.discovery import (
     list_checkpoints,
     resolve_model_for_step,
 )
+from main.prober.awareness import awareness_from_npz
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, build_board, build_opp_intent, build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, opp_intent_text, parse_pct,
@@ -445,6 +446,7 @@ class ProbeSession:
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
+        self._dist_support_cache: object = "unset"   # model-free dist support (see _dist_support)
 
     def close(self) -> None:
         """Drop the cached models/summaries. A long-lived caller — the persistent search-teacher
@@ -668,8 +670,79 @@ class ProbeSession:
             # 37" into a link to a turn without doing arithmetic of its own.
             "notable": self._notable(flat),
             "decision_turns": [d["turn"] for d in flat],
+            # "Did it KNOW?" — the dist head's battle-level verdict (awareness.py): sustained
+            # P(loss)>0.5 onset (`knew_by_turn`/`lead_time`), `blind_loss`, and the stall
+            # signature (`mean_tail_divergence`: tail mass while the MEAN still read positive).
+            # Model-free (support from model_config.json, popart denorm fit from the trace's own
+            # values). None when the run has no dist head or the trace predates recording.
+            "awareness": self._awareness(b, invs),
             "turns": turns,
         }
+
+    def awareness_scan(self, *, outcome: "str | None" = "loss",
+                       opponent: "str | None" = None, step: "int | None" = None,
+                       lead_bar: int = 5, cap_turn: int = 240,
+                       stall_bar: float = 0.25) -> dict:
+        """RUN-LEVEL 'did it KNOW?' — the awareness verdict (awareness.py) over every matching
+        battle, aggregated. The deadline-clock regression readout the gen-11 runbook §3 names:
+        *fraction of cap losses where the model was tail-aware ≥ ``lead_bar`` turns early*, plus
+        the blind-loss fraction and the stall-signature battles (tail mass piling up while the
+        MEAN still read positive — `mean_tail_divergence` ≥ ``stall_bar``). Model-free, so it
+        runs on any run with a dist head regardless of architecture drift. A battle whose last
+        decision turn ≥ ``cap_turn`` counts as a CAP loss (MAX_TURNS is 250; the last recorded
+        decision sits a few turns shy). Battles without dist rows are counted, never judged."""
+        support = self._dist_support()
+        if support is None:
+            return {"error": "this run has no distributional value head "
+                             "(value_dist_mode none / no model_config.json)"}
+        rows, n_skipped = [], 0
+        for b in self.tree.all_battles():
+            if outcome and b.outcome != outcome:
+                continue
+            if opponent and b.opponent != opponent:
+                continue
+            if step is not None and b.step != step:
+                continue
+            invs = self._summary(b).get("invocations", [])
+            v = self._awareness(b, invs)
+            if v is None:
+                n_skipped += 1
+                continue
+            last_turn = v["turns"][-1] if v["turns"] else None
+            rows.append({
+                "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
+                "opponent": b.opponent, "outcome": b.outcome,
+                "last_turn": last_turn,
+                "cap_loss": (b.outcome == "loss" and last_turn is not None
+                             and last_turn >= cap_turn),
+                "knew_by_turn": v["knew_by_turn"], "lead_time": v["lead_time"],
+                "blind_loss": v["blind_loss"],
+                "mean_tail_divergence": v["mean_tail_divergence"],
+                "divergence_turn": v["divergence_turn"],
+            })
+        losses = [r for r in rows if r["outcome"] == "loss"]
+        caps = [r for r in losses if r["cap_loss"]]
+        leads = [r["lead_time"] for r in losses if r["lead_time"] is not None]
+
+        def _frac(part, whole):
+            return round(len(part) / len(whole), 3) if whole else None
+        agg = {
+            "n_battles": len(rows), "n_skipped_no_dist": n_skipped,
+            "n_losses": len(losses), "n_cap_losses": len(caps),
+            "blind_loss_fraction": _frac([r for r in losses if r["blind_loss"]], losses),
+            "aware_ge_bar_fraction": _frac(
+                [r for r in losses if (r["lead_time"] or -1) >= lead_bar], losses),
+            "cap_aware_ge_bar_fraction": _frac(
+                [r for r in caps if (r["lead_time"] or -1) >= lead_bar], caps),
+            "median_lead_time": (float(np.median(leads)) if leads else None),
+            "stall_signature_fraction": _frac(
+                [r for r in losses if r["mean_tail_divergence"] >= stall_bar], losses),
+            "params": {"lead_bar": lead_bar, "cap_turn": cap_turn, "stall_bar": stall_bar},
+        }
+        # blind + stall-flagged first — the battles a reader should open
+        rows.sort(key=lambda r: (not r["blind_loss"], -r["mean_tail_divergence"]))
+        return {"run_dir": self.run_dir, "support": list(support),
+                "aggregate": agg, "battles": rows}
 
     # -- deep analysis (loads the resolved model) ---------------------------
 
@@ -1587,6 +1660,36 @@ class ProbeSession:
 
     def _values(self, battle: BattleTrace):
         return self._npz(battle).get("values")
+
+    def _dist_support(self) -> "tuple[float, float, int] | None":
+        """The dist head's atom support ``(vmin, vmax, bins)`` read MODEL-FREE from the run
+        root's ``model_config.json`` — the same numbers ``value_dist_support()`` reads off a
+        loaded extractor, available without loading one (so `turns`/awareness stay ~20 ms and
+        work on archived runs the current code can't re-load). None when the run trained no
+        dist head or the config is absent. Cached (one file, immutable for a run)."""
+        if self._dist_support_cache != "unset":
+            return self._dist_support_cache
+        support = None
+        try:
+            with open(os.path.join(self.run_dir or "", "model_config.json")) as f:
+                cfg = json.load(f)
+            if cfg.get("value_dist_mode", "none") != "none":
+                support = (float(cfg["value_dist_vmin"]), float(cfg["value_dist_vmax"]),
+                           int(cfg["value_dist_bins"]))
+        except (OSError, KeyError, TypeError, ValueError):
+            support = None
+        self._dist_support_cache = support
+        return support
+
+    def _awareness(self, battle: BattleTrace, invs: "list[dict]") -> "dict | None":
+        """The battle's awareness verdict (awareness.py) as a JSON dict, or None when the run
+        has no dist head / the trace carries <2 dist rows. Model-free."""
+        support = self._dist_support()
+        if support is None:
+            return None
+        v = awareness_from_npz(self._npz(battle), [inv.get("turn") for inv in invs],
+                               battle.outcome or "?", support)
+        return asdict(v) if v is not None else None
 
     @staticmethod
     def _v(values, i: int) -> "float | None":

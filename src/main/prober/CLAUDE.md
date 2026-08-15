@@ -114,7 +114,7 @@ whole tool:
 
 | tier | works on | why |
 |---|---|---|
-| **model-free** — `scan` · `triage` · `turns` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
+| **model-free** — `scan` · `triage` · `turns` · `awareness` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
 | **model-loading** — `analyze` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
 
 So the durable surface is the model-free one, and it is not a coincidence that the web front end was
@@ -592,8 +592,28 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   below) and the raw Showdown **`protocol`** lines for that turn (parsed ONCE per battle, not once
   per decision). Plus the same `notable` block `battle_overview` returns and a
   `decision_turns[inv] → turn` lookup, so a surface can link "the worst drop" to a turn without
-  arithmetic of its own. No checkpoint: **17–20 ms** for the longest real battle measured (249
-  turns, 821 KB). CLI: `query turns <battle_id>`; the browser view is `/battle`.
+  arithmetic of its own. Also an **`awareness`** block (see `awareness_scan` below — the same
+  verdict for THIS battle; `None` on a run without a dist head). No checkpoint: **17–20 ms** for
+  the longest real battle measured (249 turns, 821 KB). CLI: `query turns <battle_id>`; the
+  browser view is `/battle`.
+- `awareness_scan(outcome="loss", opponent=, step=, lead_bar=5, cap_turn=240, stall_bar=0.25)` —
+  **model-free 'did it KNOW?'**: the distributional head's battle-level loss-awareness verdicts
+  (`main/prober/awareness.py`, pure + unit-tested) over every matching battle, aggregated. Per
+  battle: `knew_by_turn` (first game turn from which P(loss) > 0.5 holds SUSTAINED to the end),
+  `lead_time`, `blind_loss` (a loss it never saw coming), and `mean_tail_divergence` — the STALL
+  SIGNATURE (bottom-atom mass piling up while the distribution MEAN still reads positive; the
+  exact shape a scalar critic cannot surface, and the gen-9 pathology: positive V the turn
+  before a cap loss). Aggregate: `blind_loss_fraction`, `aware_ge_bar_fraction`,
+  **`cap_aware_ge_bar_fraction`** (the runbook's deadline-clock regression readout: fraction of
+  cap losses tail-aware ≥ `lead_bar` turns early), `median_lead_time`,
+  `stall_signature_fraction`. The atom support is read model-free from the run root's
+  `model_config.json` (`value_dist_vmin/vmax/bins`), and the PopArt denorm is FIT per battle
+  from the trace's own `(dist mean, recorded scalar V)` pairs (`fit_denorm` — exact under
+  `value_from_dist`, an adequate approximation under `shaping`; identity without PopArt), so it
+  runs on any dist-head run regardless of architecture drift. Battles ranked blind-first then by
+  divergence. Measured on gen-10 (1396 losses): 7.2% blind, median lead 7 turns, 12 cap losses
+  of which only 50% were aware ≥5 turns early — the top-ranked row is a turn-249 cap loss with
+  P(loss)=0.15 at its FINAL decision. CLI: `query awareness <run_dir>`.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`
@@ -870,6 +890,7 @@ python -m main.prober.query switch-vs-info <run_dir> [--step N] [--opponent X] [
 python -m main.prober.query summary  <run_dir>
 python -m main.prober.query list     <run_dir> --outcome loss --step 8000000
 python -m main.prober.query scan     <run_dir> --outcome loss --opponent X [--metric td_residual] [--limit K]
+python -m main.prober.query awareness <run_dir> [--outcome loss] [--opponent X] [--step N] [--lead-bar 5] [--cap-turn 240] [--stall-bar 0.25]
 python -m main.prober.query overview <battle_id>
 python -m main.prober.query turns    <battle_id>          # MODEL-FREE turn-by-turn replay of the game
 python -m main.prober.query find     <battle_id> value_drop --limit 5

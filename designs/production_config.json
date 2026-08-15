@@ -7,7 +7,7 @@
   "belief_grad_mode": "label_only",
   "bias_additivity": 1.0,
   "bias_redesign": false,
-  "config_version": 78,
+  "config_version": 79,
   "consequence_topk": 6,
   "damage_candidate_k": 0,
   "damage_matrices_incoming": true,

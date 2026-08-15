@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from gymnasium import spaces
 from typing import Callable, Dict, Any, Optional, Sequence, Tuple
 from agents.observation.constants import (
+    POKEMON_LAST_ACTION_OFFSET,
     TRACE_INTERVAL,
     TEAM_SIZE,
     GLOBAL_ENV_DIM,
@@ -153,12 +154,21 @@ def slice_pokemon_categoricals(pokemon_part: torch.Tensor, layout: Dict[str, Any
     hp_offset = pk_layout['hp']['offset']
     hp_and_active = pokemon_part[:, :, hp_offset:]                                          # [B, N, _]
 
+    # Tier H-A1 (gen3_pair_history_v1): the last-action MOVE ID is an embedding id living inside
+    # the raw tail — extract it for the move table and ZERO its column in the raw path (a raw
+    # dex num must never reach a Linear; the manifest rule). The clone is [B, N, tail] — cheap —
+    # and keeps hp_and_active's load-bearing conventions ([..., 0] = hp, [..., -1] = active).
+    last_move_ids = pokemon_part[:, :, POKEMON_LAST_ACTION_OFFSET].long()                   # [B, N]
+    hp_and_active = hp_and_active.clone()
+    hp_and_active[:, :, POKEMON_LAST_ACTION_OFFSET - hp_offset] = 0.0
+
     return {
         "species_ids": species_ids, "all_move_ids": all_move_ids,
         "all_move_type_ids": all_move_type_ids, "item_ids": item_ids,
         "ability1_ids": ability1_ids, "ability2_ids": ability2_ids,
         "type1_ids": type1_ids, "type2_ids": type2_ids,
         "hp_probs": hp_probs, "hp_and_active": hp_and_active,
+        "last_move_ids": last_move_ids,
     }
 
 
@@ -181,6 +191,11 @@ class ExtractorContext:
     type2_ids: torch.Tensor
     hp_probs: torch.Tensor
     hp_and_active: torch.Tensor
+    # Tier H-A1 (gen3_pair_history_v1): the per-mon LAST-ACTION move id [B, 12] — an EMBEDDING id
+    # (nonzero only on active slots; 0 = none/switch). Sliced out of the raw tail and routed
+    # through the move table; its raw column inside hp_and_active is ZEROED at the slice so the
+    # id can never reach a Linear (the embedded-ID manifest rule).
+    last_move_ids: torch.Tensor
     # Reactive / global feature slices. (gen3_entity_rehome_v1: matchups_all and
     # struggle_feature are GONE with their obs blocks — the D/V edges own pair physics.)
     move_mask: torch.Tensor
@@ -212,6 +227,15 @@ class ExtractorContext:
     # in-place belief-slot injection (BeliefSlots) and any future consumer agree on which slots
     # are believed vs revealed. Always computed (cheap); only consumed when belief is enabled.
     opp_believed_mask: torch.Tensor
+    # Per-opp-slot ADDRESSABILITY [B, 6] bool — "is this slot a legal object to point at":
+    # alive-and-revealed OR still-unrevealed. Single-sourced here because `hp == 0` means
+    # UNKNOWN, not dead, on an unrevealed opp slot (measured: 1033/1033 unrevealed slots
+    # encode hp exactly 0.0), and deriving aliveness from hp at a consumer silently deletes
+    # every hidden mon from its candidate set — the bug beta's mask shipped with. Consumers
+    # with the *addressable-candidate* semantic (beta; any future intent/target head) read
+    # THIS; the op's `alive_j = hp>0` gates are deliberately revealed-only (unrevealed
+    # defenders go through the usage-prior path) and must NOT migrate to it.
+    opp_addressable: torch.Tensor
     # Combined 12-token key-mask (= cat[ours, opp]), single-sourced here so the value-CLS pool and
     # the hidden-opp belief share ONE mask — they rely on the same "both actives force-unmasked ⇒ no
     # all-True row" NaN-safety invariant, which must not be able to drift between two call sites.
@@ -221,6 +245,10 @@ class ExtractorContext:
     our_ctx_raw: torch.Tensor
     opp_ctx_raw: torch.Tensor
     non_matchup_rest: torch.Tensor
+    # Tier H-A2 (gen3_pair_history_v1): the pair-history block [B, 6, 6, 5] in OBS order
+    # (opp mon i, our mon j, cell) — the `h` edge family permutes to the (our, opp) block
+    # convention at the call site. None on pre-pair layouts (never in production).
+    pair_history: "Optional[torch.Tensor]" = None
 
 
 class Embeddings(torch.nn.Module):
@@ -374,6 +402,15 @@ class ObsUnpack(torch.nn.Module):
         type2_ids = _ids["type2_ids"]
         hp_probs = _ids["hp_probs"]
         hp_and_active = _ids["hp_and_active"]
+        last_move_ids = _ids["last_move_ids"]
+
+        # Tier H-A2 (gen3_pair_history_v1): the pair-history block, reshaped to its layout order
+        # (opp mon i, our mon j, cell). The schema names the block, so a layout without it (never
+        # in production) simply has no slice and the field stays None.
+        pair_history = None
+        if 'pair_history' in sl:
+            _ph = sl['pair_history']
+            pair_history = x[:, _ph].reshape(batch_size, TEAM_SIZE, TEAM_SIZE, -1)
 
         # Active-slot indices + fainted masks (used by move-validity, transformer, and pool).
         active_flags = hp_and_active[:, :, -1]
@@ -393,6 +430,11 @@ class ObsUnpack(torch.nn.Module):
             # opponent's still-hidden party — let the transformer attend to them.
             fainted_mask_opp = fainted_mask_opp & (species_known_opp > 0.5)
         fainted_mask_opp[batch_idx, opp_active_local] = False
+        # Per-opp-slot addressability (see the ExtractorContext field doc): alive-and-revealed
+        # OR unrevealed. "A Pokemon cannot faint without being revealed, so an unrevealed mon
+        # is alive" — the exactness argument from the beta-mask fix, now single-sourced.
+        _opp_hp = hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0]
+        opp_addressable = (_opp_hp > 0.0) | opp_believed_mask
         # Combined 12-token key-mask, single-sourced (both actives are now force-unmasked, so it can
         # never be all-True per row — the NaN-safety invariant the value-CLS pool + belief both rely on).
         all_fainted = torch.cat([fainted_mask_ours, fainted_mask_opp], dim=1)
@@ -413,6 +455,7 @@ class ObsUnpack(torch.nn.Module):
             item_ids=item_ids, ability1_ids=ability1_ids, ability2_ids=ability2_ids,
             type1_ids=type1_ids, type2_ids=type2_ids,
             hp_probs=hp_probs, hp_and_active=hp_and_active,
+            last_move_ids=last_move_ids,
             move_mask=move_mask, switch_mask=switch_mask, struggle_mask=struggle_mask,
             our_active_req_move_ids=our_active_req_move_ids,
             our_active_req_move_type_ids=our_active_req_move_type_ids,
@@ -422,9 +465,11 @@ class ObsUnpack(torch.nn.Module):
             our_active_idx=our_active_idx, opp_active_local=opp_active_local,
             fainted_mask_ours=fainted_mask_ours, fainted_mask_opp=fainted_mask_opp,
             opp_believed_mask=opp_believed_mask,
+            opp_addressable=opp_addressable,
             all_fainted=all_fainted,
             turn_history_raw=turn_history_raw,
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
+            pair_history=pair_history,
         )
 
 
@@ -561,6 +606,7 @@ class PokemonEncoder(torch.nn.Module):
             + _condition_dim
             + MOVE_NET_HIDDEN[1] * self.num_moves       # processed moves
             + _hp_and_active_dim
+            + layout['move_embedding_dim']              # H-A1: embedded LAST-ACTION move (active slots)
             + self._active_ctx_dim                      # E2: own side's active ctx (active slot only)
             + _global_ctx_dim                           # broadcasted global context
             + 1                                         # switch_validity
@@ -709,6 +755,11 @@ class PokemonEncoder(torch.nn.Module):
         self.last_move_tokens = mv_out.reshape(batch_size, n_poke, num_moves, MOVE_NET_HIDDEN[1])
         processed_moves = mv_out.reshape(batch_size, n_poke, -1)
 
+        # Tier H-A1 (gen3_pair_history_v1): the side's last-action move, embedded through the
+        # SAME move table (id 0 — none/switch/bench — embeds like any padding id; the raw column
+        # was zeroed at the slice, so this is the id's ONLY route into the network).
+        embedded_last_move = embeddings.move_embedding(ctx.last_move_ids)                    # [B, 12, move_emb]
+
         pokemon_enriched = torch.cat([
             embedded_species,
             part_a,
@@ -723,6 +774,7 @@ class PokemonEncoder(torch.nn.Module):
             part_d,
             processed_moves,
             hp_and_active,
+            embedded_last_move,
         ], dim=2)
 
         # --- Role encoder ---
@@ -822,11 +874,20 @@ _EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sche
 _EDGE_C5_CELL = 4   # [is_bp, d_best_high, d_best_pko, d_outspeed] per (E3 Baton-Pass seat, OUR
                     # mon) — the receiver's offense inheriting the active's stages (the first
                     # family on the (E3, our-mon) route)
+_EDGE_H_CELL = 5    # [switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]
+                    # per (our mon j, opp mon i) — Tier H-A2 pair-history TENDENCY counts
+                    # (gen3_pair_history_v1): folded CPU-side from PUBLIC events by the
+                    # EpisodeTracker, log-saturated, delivered from the obs block (an obs-fed
+                    # family — the one family whose cell the GPU cannot recompute, since it IS
+                    # compiled battle history). A ratio delivery is CORRECT here: tendencies are
+                    # relative ("Blissey more than Skarmory"), unlike damage magnitudes.
+
 _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "d4": _EDGE_D4_CELL, "s1": _EDGE_S1_CELL, "s3": _EDGE_S3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
                   "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL,
-                  "c3": _EDGE_C3_CELL, "c2": _EDGE_C2_CELL, "c5": _EDGE_C5_CELL}
+                  "c3": _EDGE_C3_CELL, "c2": _EDGE_C2_CELL, "c5": _EDGE_C5_CELL,
+                  "h": _EDGE_H_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -944,6 +1005,10 @@ class EdgeBias(torch.nn.Module):
         if self.v_map is not None and cells.get("v") is not None:
             # V is the full mon↔mon block — both endpoint sets are static contiguous slices.
             self._write_block(bias, self.v_map(cells["v"]), our, opp)
+        if self.h_map is not None and cells.get("h") is not None:
+            # H (Tier H-A2) is mon↔mon like V/T — obs-fed pair-history tendencies; the two
+            # head-sets let "j reads i's habits" and "i pressures j" bias independently.
+            self._write_block(bias, self.h_map(cells["h"]), our, opp)
         if self.d2_map is not None and cells.get("d2") is not None:
             # D2 is mon↔mon with a BATCH-VARYING column (the opp ACTIVE slot) — deliver via the
             # one-hot outer product instead of a static slice.
@@ -3457,6 +3522,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _cells["t"] = self.damage_op.pairwise_trap(ctx)
             if "v" in _fams:
                 _cells["v"] = self.damage_op.pairwise_speed(ctx, _sb)
+            if "h" in _fams:
+                # Tier H-A2: the obs-fed pair-history TENDENCY cells — obs order is
+                # (opp i, our j); the mon×mon block convention is (our, opp), so permute.
+                if ctx.pair_history is None:
+                    raise RuntimeError(
+                        "edge family 'h' is on but the obs layout carries no pair_history "
+                        "block — the family would silently bias on nothing.")
+                _cells["h"] = ctx.pair_history.permute(0, 2, 1, 3)
             if "s3" in _fams:
                 _cells["s3"] = self.damage_op.discrete_incoming_status(
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)
@@ -3561,10 +3634,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             #
             # A believed slot is ALWAYS a legal target, and that is exact rather than heuristic:
             # a Pokemon cannot faint without being revealed, so an unrevealed mon is alive.
-            _opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, :]                # [B,6,2] (hp, active)
-            _revealed_ok = (_opp[..., 0] > 0.0) & (_opp[..., -1] < 0.5)            # alive, benched
-            _believed = ctx.opp_believed_mask.bool()                               # [B,6]
-            _beta_mask = (_revealed_ok | _believed).float()                        # [B,6]
+            # gen3_opp_addressable_v1: the ADDRESSABILITY half is single-sourced on the context
+            # (see ObsUnpack) — beta additionally excludes the current ACTIVE (you cannot switch
+            # to the mon already in). Same formula as before, one home for the hp-means-unknown
+            # rule.
+            _opp_active_flag = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1]   # [B,6]
+            _beta_mask = (ctx.opp_addressable & (_opp_active_flag < 0.5)).float()  # [B,6]
             self.last_beta_logits = self.beta_head(
                 their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
         _tok_req = _seat_out[:, :4, :]

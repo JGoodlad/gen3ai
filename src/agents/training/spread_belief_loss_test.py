@@ -45,6 +45,7 @@ def test_masks_and_metrics_and_grad():
     mask = th.zeros(B, 6); mask[:, 0] = 1.0; mask[:, 1] = 1.0   # 2 revealed slots/sample
     loss, m = P._spread_belief_loss(sb, target, mask)
     assert m["n_slots"] == 4                                   # 2 slots × 2 samples
+    assert abs(m["mask_rate"] - 4 / 12) < 1e-6                 # uniform coverage: 4 of B×6 slots
     assert abs(m["mae"] - 50.0) < 1e-3                         # raw stat points
     assert abs(m["largest_bias"] + 50.0) < 1e-3               # 200-250 = -50 (under here; sign correct)
     loss.backward()
@@ -63,6 +64,30 @@ def test_scale_normalised_smooth_l1():
     assert abs(float(loss) - 0.5) < 1e-3
     assert abs(m["mae"] - 100.0) < 1e-3
     assert _SPREAD_LOSS_SCALE == 100.0
+
+
+def test_nature_ev_loss_metrics_and_masking():
+    """First direct pin of `_nature_ev_belief_loss` (previously only integration-covered): the CE/EV
+    split, perfect-logit accuracy, the None guards, and the uniform `mask_rate` coverage key every
+    belief head now emits (gen3_belief_mask_rate_v1)."""
+    B = 2
+    nat_logits = th.zeros(B, 6, 25)
+    nat_true = th.full((B, 6), -1, dtype=th.long)
+    nmask = th.zeros(B, 6)
+    nat_true[:, 0] = 7
+    nat_logits[:, 0, 7] = 9.0                                   # confidently correct
+    nmask[:, 0] = 1.0
+    ev_pred = th.full((B, 6, 5), 100.0)
+    ev_true = th.full((B, 6, 5), 100.0)
+    out = P._nature_ev_belief_loss(nat_logits, ev_pred, nat_true, nmask, ev_true, nmask)
+    assert out is not None
+    loss, m = out
+    assert th.isfinite(loss)
+    assert m["nature_acc"] == 1.0 and m["ev_mae"] == 0.0
+    assert m["n_slots"] == B
+    assert abs(m["mask_rate"] - 1.0 / 6.0) < 1e-6              # uniform coverage: 1 of 6 slots/sample
+    assert P._nature_ev_belief_loss(None, ev_pred, nat_true, nmask, ev_true, nmask) is None
+    assert P._nature_ev_belief_loss(nat_logits, ev_pred, nat_true, th.zeros(B, 6), ev_true, nmask) is None
 
 
 def test_largest_bias_detects_overestimate_of_max_stat():

@@ -378,3 +378,40 @@ def test_switch_precision_is_not_the_same_as_switch_recall():
     assert m["opp_intent/alpha_switch_recall"] == pytest.approx(1.0), "caught every switch"
     assert m["opp_intent/alpha_switch_precision"] == pytest.approx(0.2), "but cried switch 5x too often"
     assert m["opp_intent/alpha_pred_switch_rate"] == pytest.approx(1.0)
+
+
+def test_opp_addressable_distinguishes_hidden_from_dead():
+    """gen3_opp_addressable_v1: `hp == 0` means UNKNOWN, not dead, on an unrevealed opp slot
+    (measured 1033/1033) — the single-sourced addressability mask must keep hidden slots
+    pointable while excluding revealed-and-fainted ones. Pinned on ObsUnpack directly so the
+    rule cannot silently drift back into a consumer's inline derivation."""
+    import numpy as np
+    import gymnasium as gym
+    import torch
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.observation.constants import (
+        OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_HP_OFFSET,
+        POKEMON_SPECIES_KNOWN_OFFSET, POKEMON_ACTIVE_OFFSET, OFFSET_OUR_TEAM)
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings)
+    obs = torch.zeros(1, layout["total_dim"])
+    # our active (slot 0) + opp active (slot 0) alive so locate_active_slot is well-defined
+    for base in (OFFSET_OUR_TEAM, OFFSET_OPP_TEAM):
+        obs[0, base + POKEMON_HP_OFFSET] = 1.0
+        obs[0, base + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+        obs[0, base + POKEMON_ACTIVE_OFFSET] = 1.0
+    # opp slot 1: revealed and FAINTED (species_known=1, hp=0)  -> NOT addressable
+    obs[0, OFFSET_OPP_TEAM + 1 * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+    # opp slot 2: UNREVEALED (species_known=0, hp=0)            -> addressable
+    # opp slot 3: revealed and alive                             -> addressable
+    obs[0, OFFSET_OPP_TEAM + 3 * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET] = 1.0
+    obs[0, OFFSET_OPP_TEAM + 3 * POKEMON_FULL_DIM + POKEMON_HP_OFFSET] = 0.6
+    ctx = fe.unpack({"observation": obs})
+    a = ctx.opp_addressable[0]
+    assert bool(a[0]) is True,  "alive active is addressable"
+    assert bool(a[1]) is False, "revealed-and-fainted must NOT be addressable"
+    assert bool(a[2]) is True,  "an UNREVEALED slot (hp encodes 0 = unknown) stays addressable"
+    assert bool(a[3]) is True,  "revealed alive bench is addressable"

@@ -635,13 +635,14 @@ def test_offsets_resolve_matches_layout():
     assert off.active_block_dim == 99
     assert off.incoming_off == 0      # incoming-damage block: DELETED from the obs (decoder no-ops)
     assert off.incoming_dim == 0
-    assert off.pokemon_full_dim == 116  # rehome: 109 + 3 recency + 1 protect + 2 trapping + 1 active
+    assert off.pokemon_full_dim == 122  # pair_history: 119 vector + 2 trapping + 1 active
     # gen3_wish_wired_v1 → rehome: the pending-Wish scalars ride the lean board block.
-    # gen3_deadline_clock_v1: the global CLOCK group went 1 -> 3 scalars, so GLOBAL_ENV_DIM is 20
-    # and everything after the global block shifted +2 (OFFSET_REACTIVE 1526 -> 1528).
-    assert off.wish_our_off == 1531   # OFFSET_REACTIVE(1528) + wish_floating_our offset(3)
-    assert off.wish_opp_off == 1532   # OFFSET_REACTIVE(1528) + wish_floating_opp offset(4)
-    assert off.total_dim == 2669      # 2667 + the 2 new clock scalars
+    # gen3_pair_history_v1: the per-mon slot widened 116 -> 122 (+6 last-action), so every
+    # top-level offset after the team blocks shifted +72, and the 180-dim pair block sits
+    # between reactive and base (OFFSET_REACTIVE 1528 -> 1600, total 2669 -> 2921).
+    assert off.wish_our_off == 1603   # OFFSET_REACTIVE(1600) + wish_floating_our offset(3)
+    assert off.wish_opp_off == 1604   # OFFSET_REACTIVE(1600) + wish_floating_opp offset(4)
+    assert off.total_dim == 2921      # 2669 + 72 last-action + 180 pair history
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

@@ -12,6 +12,8 @@ from .constants import (
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_COUNTER_OFFSET,
     POKEMON_RECENCY_OFFSET,
+    POKEMON_LAST_ACTION_OFFSET,
+    POKEMON_LAST_ACTION_DIM,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_HP_REVEALED_OFFSET,
@@ -87,6 +89,7 @@ class PokemonEncoder(ObservationEncoder):
         live_mon=None,
         sleep_sources=None,
         recency_vals=None,
+        last_action_vals=None,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 
@@ -183,6 +186,15 @@ class PokemonEncoder(ObservationEncoder):
             vec[POKEMON_RECENCY_OFFSET]     = recency_vals[0]
             vec[POKEMON_RECENCY_OFFSET + 1] = recency_vals[1]
             vec[POKEMON_RECENCY_OFFSET + 2] = recency_vals[2]
+
+        # Tier H-A1 (gen3_pair_history_v1): the side's LAST ACTION, on its ACTIVE mon's slot
+        # only — state_encoder threads a prepared 6-tuple [move_num, was_switch, hit, miss,
+        # fail, crit] for the active slot and None everywhere else (bench rows stay zero).
+        # move_num is an EMBEDDING id — the model routes it through the move table via
+        # slice_pokemon_categoricals, never the raw-scalar path.
+        if last_action_vals is not None:
+            for _k in range(POKEMON_LAST_ACTION_DIM):
+                vec[POKEMON_LAST_ACTION_OFFSET + _k] = last_action_vals[_k]
 
         # gen3_entity_rehome_v1: per-mon protect-success odds — P(a Protect/Detect/Endure by THIS
         # mon succeeds now) under the gen3 floored-doubling stall rule, from the LiveView

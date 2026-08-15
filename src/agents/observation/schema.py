@@ -115,7 +115,11 @@ def build_schema(layout: Dict) -> ObsSchema:
     n_mons, mon_dim = team["reshape"]
     ctx_dim = 2 * layout["active_context_dim"]
     global_dim = layout["parts"]["global"]["dim"]
-    reactive_dim = layout["base_dim"] - layout["parts"]["reactive"]["start"]
+    # gen3_pair_history_v1: the H-A2 block sits between reactive and base_dim, so the
+    # reactive span now ends where pair_history begins (absent = pre-pair layouts).
+    ph_off = layout.get("pair_history_offset", layout["base_dim"])
+    ph_dim = layout.get("pair_history_dim", 0)
+    reactive_dim = ph_off - layout["parts"]["reactive"]["start"]
     blocks = [
         Block("our_team", 0, n_mons * mon_dim, doc=f"{n_mons} × {mon_dim}-dim mon slots"),
         Block("opp_team", n_mons * mon_dim, n_mons * mon_dim),
@@ -124,6 +128,11 @@ def build_schema(layout: Dict) -> ObsSchema:
               children=_sub_blocks(layout.get("global_layout", {}))),
         Block("reactive", layout["parts"]["reactive"]["start"], reactive_dim,
               children=_sub_blocks(layout.get("reactive_layout", {}))),
+    ]
+    if ph_dim:
+        blocks.append(Block("pair_history", ph_off, ph_dim,
+                            doc="H-A2: 6×6×5 pair-history counters (opp i, our j, cell)"))
+    blocks += [
         Block("prev_action_mask", layout["base_dim"], layout["prev_mask_dim"]),
         Block("turn_history", layout["turn_history_offset"],
               layout["n_history_turns"] * layout["turn_delta_dim"],

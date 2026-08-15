@@ -816,7 +816,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
             rows = th.arange(tgt_sel.shape[0], device=device)
             largest_bias = (sb_sel[rows, amax] - tgt_sel[rows, amax]).mean()
         return loss, {"mae": float(mae.item()), "largest_bias": float(largest_bias.item()),
-                      "n_slots": int(mask.sum().item())}
+                      "n_slots": int(mask.sum().item()),
+                      # UNIFORM across every belief head (belief/<head>_mask_rate): fraction of the
+                      # B×6 slot grid this head scored — the label-coverage ceiling, comparable
+                      # across heads/batch sizes (n_slots is not). gen3_belief_mask_rate_v1.
+                      "mask_rate": float(mask.float().mean().item())}
 
     @staticmethod
     def _nature_ev_belief_loss(nat_logits, ev_pred, belief_nature, belief_nature_mask, belief_ev, belief_ev_mask):
@@ -854,7 +858,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         with th.no_grad():
             acc = (nl.argmax(dim=-1) == nt).float().mean()
         return loss, {"nature_acc": float(acc.item()), "nature_ce": float(nat_ce.item()),
-                      "ev_mae": float(ev_mae.item()), "n_slots": int(nmask.sum().item())}
+                      "ev_mae": float(ev_mae.item()), "n_slots": int(nmask.sum().item()),
+                      "mask_rate": float(nmask.float().mean().item())}   # uniform: see _spread_belief_loss
 
     @staticmethod
     def _hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
@@ -883,7 +888,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         loss = F.cross_entropy(sel_logits, sel_label)
         with th.no_grad():
             acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
-        return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item())}
+        return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item()),
+                      "mask_rate": float(mask.float().mean().item())}    # uniform: see _spread_belief_loss
 
     @staticmethod
     def _move_belief_latent_loss(ml, latent_table, known_moves):
@@ -1051,6 +1057,9 @@ class InstrumentedMaskablePPO(MaskablePPO):
             "moves_recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
             "k_mean": n_slots / max(1, n_samples),
             "coverage": n_samples / sp_labels.shape[0],
+            # uniform per-head coverage (see _spread_belief_loss): here believed = HIDDEN slots,
+            # so this is the flip side of the revealed-slot heads' rates — together they tile B×6.
+            "mask_rate": n_slots / believed.numel(),
         }
         return aux, metrics
 

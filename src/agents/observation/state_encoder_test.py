@@ -7,11 +7,12 @@ from unittest.mock import MagicMock
 from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 # Computed from live constants so they track architecture changes (no magic numbers).
-from agents.observation.constants import OFFSET_REACTIVE, REACTIVE_DIM
+from agents.observation.constants import OFFSET_PAIR_HISTORY, PAIR_HISTORY_DIM
 from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 
-EXPECTED_BASE_DIM = OFFSET_REACTIVE + REACTIVE_DIM
+# gen3_pair_history_v1: base ends after the H-A2 pair block.
+EXPECTED_BASE_DIM = OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM
 EXPECTED_OBS_DIM = EXPECTED_BASE_DIM + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
 
