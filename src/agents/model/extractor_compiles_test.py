@@ -195,7 +195,9 @@ _PRODUCTION_CONFIG = os.path.join(os.path.dirname(__file__), "..", "..", "..",
                                   "designs", "production_config.json")
 
 
-def _build_production_extractor():
+def _build_production_extractor(**overrides):
+    """The literal production arch. `overrides` pin a field the live config happens to sit at —
+    use it only where a test's SUBJECT is that field, and say why at the call site."""
     import json
 
     from agents.model.model_version import ARCH_SIGNATURE
@@ -214,6 +216,7 @@ def _build_production_extractor():
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kw = {a: b for a, b in cfg.items() if a in sig}
+    kw.update({a: b for a, b in overrides.items() if a in sig})
     # v65 (gen3_unconditional_move_legality_v1): the committed config is a VERBATIM pre-v65 run copy
     # and records move_candidate_floor 0.0, which the validated range now rejects. Reconcile at
     # construction — the same seam delivery_graph uses — rather than editing the historical record.
@@ -292,22 +295,31 @@ def _assert_real_gradient(fe, grads, where):
 @pytest.mark.slow
 @_skip_compile
 def test_cpu_backward_still_does_not_compile():
-    """CPU cell 2 — and it is a LIMITATION PIN, not a capability test, because the backward does NOT
-    lower on CPU and the codebase depends on that being known.
+    """CPU cell 2 — a LIMITATION PIN, not a capability test: the backward does NOT lower on CPU
+    and the codebase depends on that being known.
 
     `maybe_compile_extractor` wraps the compiled callable so that any GRAD-ENABLED call routes to
     eager. That looks like belt-and-braces until you know why it is there: AOTAutograd's CPU
-    backward for this model contains a `scatter` with `scatter_mode='atomic_add'` (the embedding /
-    index_add path in the damage op), and Inductor's C++ backend asserts on it —
-    `torch/_inductor/codegen/cpp.py: assert mode is None`. So the compiled artifact is
+    backward for this model contains a `scatter` with `scatter_mode='atomic_add'` (the belief
+    scatter, `[B, max_moves]` written over the 6 team slots), and Inductor's C++ backend asserts on
+    it — `torch/_inductor/codegen/cpp.py: assert mode is None`. So the compiled artifact is
     inference-only by necessity, which is also why the prober can still backprop through this same
     extractor for gradient saliency.
 
-    THIS TEST FAILS IF THE LIMITATION LIFTS, and that is the point. If a torch upgrade fixes the
-    atomic_add lowering, this raises no longer — at which point: the eager route for grad-enabled
-    calls stops being load-bearing, CPU training could compile, and the docs in
-    `src/agents/training/CLAUDE.md` -> Compiled CPU opponents need updating. Better to be told by a
-    red test than to keep an unnecessary restriction forever because nobody re-checked.
+    ⚠️ **The limitation is CONFIG-CONDITIONAL, and this test pins the config that reaches it.**
+    The scatter only has a backward when a gradient flows into the belief heads, so
+    `--belief-grad-mode label_only` — which publishes every belief output STOP-GRAD — deletes it
+    from the graph and the CPU backward then compiles cleanly. That is not the backend limitation
+    lifting; it is this config not containing the offending op. Measured 2026-08-15 when gen-11
+    took over `designs/production_config.json` and turned `label_only` on: `shaping` REFUSED,
+    `label_only` COMPILED, and `win_prob_mode` made no difference either way. So the override below
+    is the SUBJECT of the test, not a convenience — without it this pin silently stops testing
+    anything the moment production runs `label_only`, which is exactly what happened.
+
+    THIS TEST FAILS IF THE LIMITATION GENUINELY LIFTS, and that is the point. If a torch upgrade
+    fixes the atomic_add lowering, this raises no longer — at which point: the eager route for
+    grad-enabled calls stops being load-bearing, CPU training could compile, and the docs in
+    `src/agents/training/CLAUDE.md` -> Compiled CPU opponents need updating.
 
     It also asserts the REASON, not merely that something raised — an unrelated new backend failure
     must not silently satisfy this.
@@ -315,7 +327,8 @@ def test_cpu_backward_still_does_not_compile():
     torch.set_num_threads(1)
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
-    fe, layout = _build_production_extractor()
+    # `shaping` is the subject: it is the mode under which the atomic_add scatter HAS a backward.
+    fe, layout = _build_production_extractor(belief_grad_mode="shaping")
     fe.train()
     try:
         _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cpu")))
@@ -331,9 +344,11 @@ def test_cpu_backward_still_does_not_compile():
             f"widening the match:\n{tb[-1500:]}")
         return
     raise AssertionError(
-        "the CPU forward+BACKWARD now COMPILES. That is good news, and it invalidates three things "
-        "that currently assume otherwise: (1) `maybe_compile_extractor` routes grad-enabled calls "
-        "to eager because AOTAutograd's CPU backward could not lower — that route may now be "
+        "the CPU forward+BACKWARD now COMPILES under belief_grad_mode='shaping' — i.e. WITH the "
+        "belief scatter's backward in the graph, so this is the real limitation lifting rather "
+        "than the config dodging it. That is good news, and it invalidates three things that "
+        "currently assume otherwise: (1) `maybe_compile_extractor` routes grad-enabled calls to "
+        "eager because AOTAutograd's CPU backward could not lower — that route may now be "
         "unnecessary; (2) `src/agents/training/CLAUDE.md` states the compiled artifact is "
         "inference-only and gives this as the reason; (3) a CPU-side training compile becomes "
         "possible. Re-check all three, then delete this test.")

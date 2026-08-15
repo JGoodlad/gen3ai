@@ -4,7 +4,7 @@
   "all_shaping_pbrs": false,
   "arch_signature": "gen3_ctx_dedup_v1",
   "attend_unrevealed_opponents": true,
-  "belief_grad_mode": "shaping",
+  "belief_grad_mode": "label_only",
   "bias_additivity": 1.0,
   "bias_redesign": false,
   "config_version": 78,
@@ -86,6 +86,6 @@
   "value_tail_weight": 0.3,
   "value_threat_inject": true,
   "vf_coef": 0.5,
-  "win_prob_coef": 1.0,
-  "win_prob_mode": "none"
+  "win_prob_coef": 0.05,
+  "win_prob_mode": "shaping"
 }

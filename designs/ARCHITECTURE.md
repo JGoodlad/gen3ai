@@ -12,7 +12,7 @@ stale twice:
 |---|---|
 | Production run | `models/ai_v9_10_gen9_intent_distcritic_0813/` (gen-9, launched 2026-08-13) — `model_config.json` `config_version` **69**, `arch_signature` **`gen3_deadline_clock_v1`**; trains on its own pinned worktree |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 77 / `gen3_ctx_dedup_v1`) |
-| `designs/production_config.json` | the gen-9 run's config **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| `designs/production_config.json` | the **gen-11** run's config (`ai_v9_13_gen11_labelonly_winprob_0815`) **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -175,11 +175,11 @@ Modules actually built under the production config (`named_children()`) — GENE
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
 hidden_opp_belief · intent_value_reduce · intent_move_cell · t0_species_prior · belief_slots ·
 belief_head · move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj ·
-assembler · value_dist_head · pre_proj_norm · projection · value_pre_norm · value_projection ·
-activation · alpha_head · beta_head
+assembler · win_head · value_dist_head · pre_proj_norm · projection · value_pre_norm ·
+value_projection · activation · alpha_head · beta_head
 ```
 
-Notably **absent** (`None` on the instance): `win_head`, `pubval_head`.
+Notably **absent** (`None` on the instance): `pubval_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -418,9 +418,25 @@ all reading the op through `OpTensors` views rather than flat offsets.
 
 ### 3.4 Side readouts
 
-None are built in this config (`win_prob_mode`, `pubval_mode`, `value_dist_mode` all `none`;
-`value_from_dist` false). The critic is the scalar `value_net`, PopArt-normalized
-(`use_popart` true, `--clip-range-vf none`).
+A side readout hangs off `value_pooled` AFTER the pools and stashes its logits; none of them ever
+enters `pi` or `vf`, so none changes a projection width. Two are built in this config:
+
+| head | flag | grad flow |
+|---|---|---|
+| `win_head` | `win_prob_mode` **`shaping`** (coef 0.05) | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
+| `value_dist_head` | `value_dist_mode` **`shaping`**, 51 atoms over [−12, +12] | live — and `value_from_dist` **true**, so this head IS the critic |
+| `pubval_head` | `pubval_mode` `none` | not built |
+
+**`value_from_dist` true makes the distributional head load-bearing rather than diagnostic**: GAE,
+bootstrapping and deployment all read `E[Z]` (`policy._critic_value`), the HL-Gauss cross-entropy
+is the primary value loss at `vf_coef` weight, and the scalar `value_net` freezes as a fallback.
+So "the critic" in this config is the *categorical* head, not `value_net`. PopArt is still on
+(`use_popart` true, which forces `--clip-range-vf none`).
+
+Belief heads run under `belief_grad_mode` **`label_only`**: their outputs are published stop-grad
+to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the
+belief is trained by its supervised labels alone. The heads' trunk READ stays live, so the label
+loss still shapes the trunk — see `src/agents/model/CLAUDE.md` for the four-route table.
 
 ---
 
@@ -634,7 +650,7 @@ does nothing given another setting.
 | Flag | Production value | Status |
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
-| `belief_grad_mode` | `"shaping"` | ACTIVE |
+| `belief_grad_mode` | `"label_only"` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
@@ -669,7 +685,7 @@ does nothing given another setting.
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
-| `win_prob_mode` | `"none"` | OFF |
+| `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
@@ -679,7 +695,7 @@ does nothing given another setting.
 | `value_dist_coef` | `1.0` | ACTIVE |
 | `value_tail_weight` | `0.3` | ACTIVE |
 | `vf_coef` | `0.5` | ACTIVE |
-| `win_prob_coef` | `1.0` | INERT — no `win_head` |
+| `win_prob_coef` | `0.05` | ACTIVE |
 <!-- END GENERATED: flag-table -->
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)

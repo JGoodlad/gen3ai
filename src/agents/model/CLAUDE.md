@@ -324,7 +324,13 @@ production arch with suppression OFF (verified to fail if the old spelling retur
 CPU/CUDA x forward/backward — `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1` is
 needed for the CUDA cells (the root conftest hides the GPU from the suite). Repro:
 `tmp/inductor_crash_repro.py`. Note the CPU **backward** does NOT lower — an `atomic_add` scatter
-the C++ backend refuses — which is why the compiled-opponent artifact is inference-only; that is
+the C++ backend refuses — which is why the compiled-opponent artifact is inference-only. **That
+refusal is CONFIG-CONDITIONAL and the pin now says so**: the scatter only has a backward when a
+gradient reaches the belief heads, so `--belief-grad-mode label_only` (which publishes every belief
+output stop-grad) removes it and the CPU backward compiles cleanly. Measured 2026-08-15 —
+`shaping` REFUSED, `label_only` COMPILED, `win_prob_mode` irrelevant. The limitation test therefore
+builds at `belief_grad_mode="shaping"` explicitly, because production moved to `label_only` at
+gen-11 and the pin would otherwise have gone green while testing nothing; that is
 pinned as a limitation test that fails if it ever lifts.
 
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the

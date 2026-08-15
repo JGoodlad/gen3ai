@@ -1409,7 +1409,7 @@ bugs, so a green CPU-forward test is not evidence about any other cell:
 
 | | forward | forward + backward |
 |---|---|---|
-| **CPU** | ✅ the frozen self-play OPPONENT (this section) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter (`codegen/cpp.py`: `assert mode is None`) |
+| **CPU** | ✅ the frozen self-play OPPONENT (this section) | ❌ **does not lower** — Inductor's C++ backend asserts on an `atomic_add` scatter (`codegen/cpp.py`: `assert mode is None`). CONFIG-CONDITIONAL: the scatter has a backward only when a gradient reaches the belief heads, so `--belief-grad-mode label_only` removes it and the backward then compiles (measured 2026-08-15) |
 | **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step — measured 150.85 → 86.21 ms fwd+bwd at batch 4096 (**1.75x**), i.e. ~+60% end-to-end FPS at the ~89% train share. NOT wired up; the test keeps the lever available |
 
 The ❌ cell is a **limitation PIN** (`test_cpu_backward_still_does_not_compile`) and it FAILS IF THE
@@ -1469,7 +1469,7 @@ refusals, each guarding an otherwise-invisible outcome:
 
 | refusal | why |
 |---|---|
-| `--device cpu` | The CPU BACKWARD provably does not lower — Inductor's C++ backend asserts on the damage op's `atomic_add` scatter. Pinned as a measured fact by `extractor_compiles_test::test_cpu_backward_still_does_not_compile`, and the error names it rather than just saying no |
+| `--device cpu` | The CPU BACKWARD provably does not lower — Inductor's C++ backend asserts on the belief `atomic_add` scatter. Pinned as a measured fact by `extractor_compiles_test::test_cpu_backward_still_does_not_compile`, which builds at `belief_grad_mode="shaping"` ON PURPOSE: under `label_only` (production since gen-11) the scatter has no backward and the compile succeeds, so an unpinned test would have gone green while testing nothing. The error names the reason rather than just saying no |
 | compile raised | bisect the op — the whole "torch cannot compile our model" story was ONE op (see `src/agents/model/CLAUDE.md`, the `species_posterior` precedent) |
 | compiled is not faster (< 1.05x) | the graph fragmented or the backend fell back per-frame; the measured figure is ~1.75x, so parity is a defect |
 | compiled disagrees with eager (> 1e-4) | a faster wrong model is not a win |
