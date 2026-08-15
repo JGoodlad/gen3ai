@@ -61,6 +61,10 @@ _MIN_SPEEDUP = 1.05
 # the critical path, and the effect it checks for is a ~1.75x, not a 2% one.
 _VALIDATE_REPS = 3
 
+# The batch the startup validation compiles at. Small on purpose: see the note in
+# `compile_trainer_extractor`. NOT the production batch, and the log line says so.
+_VALIDATE_BATCH = 64
+
 # A compiled forward that disagrees with eager by more than this is a wrong kernel, not a speedup.
 _MAX_NUMERIC_DRIFT = 1e-4
 
@@ -209,15 +213,22 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = No
     if not enabled:
         return None
 
-    # VALIDATE AT THE SHAPE TRAINING WILL ACTUALLY USE. `torch.compile` keys on input shape, so
-    # validating at some cheap throwaway batch and then training at `batch_size` would (a) report a
-    # speedup measured at a shape nothing runs — small batches are far more launch-bound, so the
-    # number FLATTERS: 5.3x at 64 against a measured 1.75x at 4096 — and (b) force a recompile at the
-    # first real minibatch, with torch's automatic_dynamic_shapes then liable to mark the batch dim
-    # DYNAMIC on seeing a second size, which can be slower than the static graph we benchmarked.
-    # One compile, at the right shape, reporting the number that will actually hold.
+    # VALIDATE AT A SMALL, SAFE BATCH — and label the number with the shape it was measured at.
+    #
+    # This was `model.batch_size` for exactly one afternoon, on the reasoning that measuring at the
+    # shape training uses is more honest. It is, and it also BROKE STARTUP: at batch 4096 the real
+    # trainer dies with `CUDA error: invalid configuration argument` inside the compiled graph, while
+    # the identical arch compiles fine at 4096 in isolation (bare extractor AND a real MaskablePPO
+    # policy, both fine) — so it is an interaction with the live trainer process, not the arch. A
+    # gen-10 launch that had been running happily at 935 fps refused to start.
+    #
+    # The validation exists to answer "did the compile WORK", not "how fast is it in production", and
+    # a small batch answers that. The cost is one extra graph shape at startup, which is cheap:
+    # dynamo converges over repeated alternation and then stops recompiling (measured — see
+    # `check_shape_stability`). The honesty problem was never the batch; it was reporting a
+    # batch-64 ratio as if it were the production one. So the SHAPE IS NAMED in the log line.
     if batch is None:
-        batch = int(getattr(model, "batch_size", 0) or 0) or 64
+        batch = _VALIDATE_BATCH
 
     def _say(msg: str) -> None:
         print(msg, flush=True)
@@ -289,9 +300,15 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = No
         raise
     except Exception as exc:
         fe.forward = original
+        # Include the TRACEBACK, not just str(exc). "Bisect the op" is useless advice without a
+        # stack, and the one failure this has actually seen in the wild (a CUDA "invalid
+        # configuration argument") carries its whole diagnosis in the frames — `str(exc)` alone
+        # names no op, no shape and no file.
+        import traceback as _tb
+        _stack = "".join(_tb.format_exception(type(exc), exc, exc.__traceback__))[-3000:]
         raise CompileTrainerError(
             f"--compile-trainer: the learner's extractor FAILED to compile — "
-            f"{type(exc).__name__}: {exc}\n"
+            f"{type(exc).__name__}: {exc}\n\n--- traceback (last frames) ---\n{_stack}\n"
             "This is fatal by design: falling back to eager here is a ~1.75x throughput regression "
             "that nothing in the run would surface. Either fix the op that will not lower (bisect "
             "it — see `src/agents/model/CLAUDE.md`, the species_posterior precedent, where the whole "
@@ -310,8 +327,12 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = No
         fe.forward = original          # never leave a rejected compile installed
         raise
 
+    prod = int(getattr(model, "batch_size", 0) or 0)
+    shape_note = (f" — VALIDATION shape only; the production batch is {prod} and the measured "
+                  f"speedup there is ~1.75x, NOT this number"
+                  if prod and prod != batch else "")
     _say(f"[CompileTrainer] ON — learner fwd+bwd {eager_ms:.1f} -> {comp_ms:.1f} ms "
-         f"({speedup:.2f}x) at batch {batch} on {device}")
+         f"({speedup:.2f}x) at batch {batch} on {device}{shape_note}")
     if dropped_debugger:
         _say("[CompileTrainer] the ObservationDebugger was DROPPED to allow the compile — dynamo "
              "cannot trace its numpy asserts. You lose that per-forward obs-integrity check for "

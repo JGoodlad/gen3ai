@@ -199,15 +199,18 @@ def test_resolve_device_reads_the_models_real_device():
     assert resolve_device(_FakeFE("cpu")).type == "cpu"
 
 
-def test_validation_uses_the_models_real_batch_size(monkeypatch):
-    """The shape it validates at must be the shape training USES.
+def test_validation_uses_a_small_batch_NOT_the_models_batch_size(monkeypatch):
+    """A REGRESSION TEST, and the regression was mine.
 
-    Two failures ride on this, and the first one is the one that misleads a reader: a small batch is
-    far more launch-bound, so it FLATTERS — the live run logged 5.30x at batch 64 against a measured
-    1.75x at 4096. The second is functional: torch.compile keys on shape, so validating at a
-    throwaway batch forces a recompile at the first real minibatch, and torch's
-    automatic_dynamic_shapes may then mark the batch dim DYNAMIC on seeing a second size, which can
-    be slower than the static graph the 1.75x was measured on.
+    For one afternoon this validated at `model.batch_size`, reasoning that measuring at the shape
+    training uses is more honest. It broke startup: at batch 4096 the real trainer dies with
+    `CUDA error: invalid configuration argument` inside the compiled graph — while the same arch
+    compiles fine at 4096 in isolation, so it is an interaction with the live trainer process. A
+    running gen-10 refused to relaunch.
+
+    The validation answers "did the compile WORK", which a small batch answers just as well. The
+    honesty problem was never the batch — it was printing a batch-64 ratio as if it were the
+    production figure — and that is fixed by NAMING the shape (asserted below).
     """
     seen = {}
     m = _model("cpu")
@@ -220,21 +223,16 @@ def test_validation_uses_the_models_real_batch_size(monkeypatch):
     monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
     with pytest.raises(CompileTrainerError):        # 1.00x -> refused; we only want the shape
         compile_trainer_extractor(m, True)
-    assert seen["shape"][0] == 4096, f"validated at {seen['shape'][0]}, not the model's batch_size"
+    assert seen["shape"][0] == 64, (
+        f"validated at {seen['shape'][0]}; must be the small fixed batch, not model.batch_size "
+        "(that combination is what broke a live launch)")
 
 
-def test_validation_batch_falls_back_when_the_model_has_none(monkeypatch):
+def test_an_explicit_batch_still_wins():
+    """The CUDA property test passes batch=8 deliberately; the caller must stay in control."""
     seen = {}
-    m = _model("cpu")                                # no batch_size attribute
-    monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
-                        lambda f: torch.device("cuda"))
-    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
-                        lambda *a, **k: seen.setdefault("shape", a) and None or torch.zeros(2, 32))
-    monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: 10.0)
-    monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
-    with pytest.raises(CompileTrainerError):
-        compile_trainer_extractor(m, True)
-    assert seen["shape"][0] == 64
+    m = _model("cpu")
+    assert compile_trainer_extractor(m, False, batch=8) is None      # off short-circuits
 
 
 # --------------------------------------------------------------- shape stability (the real hazard)
