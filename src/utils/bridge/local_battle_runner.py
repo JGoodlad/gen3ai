@@ -35,26 +35,86 @@ from utils.bridge.battle_stream_client import BattleStreamClient
 from utils.bridge.seed_spec import validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
-from utils.contention import scale_timeout
+from contextlib import suppress
+
+from utils.contention import ProgressDeadline, scale_timeout
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
-_PER_BATTLE_TIMEOUT = 180.0  # generous; a fast in-process battle is seconds
+_PER_BATTLE_TIMEOUT = 180.0  # TOTAL backstop (livelock only) — the real detector is the idle gap
+
+# gen3_battle_progress_deadline_v1 — the max plausible gap between two protocol chunks of a
+# HEALTHY battle. This is the bound that actually decides, and it is sized to a property of the
+# protocol (one decision: a model forward + the sim's reply), not to how long a whole battle takes.
+# Deliberately generous: a contended eval forward is a few hundred ms, so 30 s is ~100x headroom
+# and still catches a true wedge in half a minute.
+_BATTLE_IDLE_BUDGET = 30.0
 
 
 def _per_battle_timeout() -> float:
-    """The per-battle bound, stretched to the CPU share actually available.
+    """The per-battle TOTAL backstop, stretched to the CPU share actually available.
 
-    A total-duration cap on a bridge battle measures the box as much as the code: this box
-    normally carries a production training run, and at ~35 load on 16 cpus a healthy battle
-    takes ~2.2x longer for reasons that have nothing to do with the sim. Read through this
-    helper (never the bare constant) so the bound tracks contention — see
-    ``utils.contention``.
-
-    Read at CALL time, not import time, because a run that starts while a trainer is
-    spinning up would otherwise bake in the idle-box factor for its whole life. Callers that
-    override ``_PER_BATTLE_TIMEOUT`` (the parity test) still get their value scaled.
+    Kept as a livelock guard, NOT as the primary detector — see ``_await_battle``. Read at CALL
+    time, not import time, because a run that starts while a trainer is spinning up would
+    otherwise bake in the idle-box factor for its whole life. Callers that override
+    ``_PER_BATTLE_TIMEOUT`` (the parity test) still get their value scaled.
     """
     return scale_timeout(_PER_BATTLE_TIMEOUT)
+
+
+async def _await_battle(coro, clients, what: str) -> None:
+    """Await one battle under an IDLE bound rather than a total-duration cap.
+
+    WHY THIS IS NOT A `wait_for`. A duration cap on a bridge battle measures the box as much as
+    the code, and contention scaling does not rescue it: the factor is `loadavg / cpus` (~1.4 at
+    load 22), while the actual slowdown of a starved subprocess is a multiple of that. MEASURED
+    2026-08-14, against the parity test's then-20 s cap, on a box saturated by a `cargo build
+    --release` (16 threads, nice 0): **8 of 12 battles "timed out" plus 1 transport error, and the
+    test FAILED** — none of them wedged, all still producing protocol chunks. The same test passed
+    on the warm tree with no code change. A cap cannot tell slow from stuck; an idle gap can.
+
+    HONEST SCOPE — this is insurance against SATURATION, not a fix for the steady state, and the
+    measurement says so. Beside the ordinary `--nice 10` trainer a real battle stays FAST: an A/B
+    of the two bounds over 10 real battles each, at **load 45 with contention scaling pinned OFF
+    and a 1.5 s budget**, timed out **0 of 10 in BOTH arms** — the battles simply finish in under
+    1.5 s, so neither bound is anywhere near firing. (At the shipped 20 s parity budget the
+    headroom is >10x.) The regime where the cap breaks is a core hog like `cargo build`, which is
+    not reproducible here without starving the live trainer. So the evidence for this change is
+    the recorded incident above plus the MECHANISM tests in `local_battle_runner_test.py`, not a
+    before/after rate — and the tests are written to say that rather than imply a rate exists.
+
+    So the detector is "no sign of life for `_BATTLE_IDLE_BUDGET`", where a sign of life is a
+    protocol chunk arriving at either side's `BattleStreamClient` (`feed` bumps `progress_count`).
+    That is roughly load-INVARIANT: contention stretches the gaps a little, a wedge stops them
+    entirely. `_PER_BATTLE_TIMEOUT` is retained as the `total_budget_s` backstop, because an idle
+    bound alone never expires against a component that chatters forever without converging
+    (`node_reject_bound_integration_test`'s pre-fix wedge emits `|error|` frames indefinitely).
+
+    Raises `ProgressTimeout`, which subclasses `TimeoutError` — so every existing
+    `except (asyncio.TimeoutError, TimeoutError)` handler keeps counting it as a timeout, and a
+    timeout still never becomes a semantic outcome.
+    """
+    task = asyncio.ensure_future(coro)
+    deadline = ProgressDeadline(_BATTLE_IDLE_BUDGET,
+                                total_budget_s=_PER_BATTLE_TIMEOUT, what=what)
+    seen = sum(c.progress_count for c in clients if c is not None)
+    try:
+        while True:
+            done, _ = await asyncio.wait({task}, timeout=_PROGRESS_POLL_S)
+            if done:
+                return task.result()
+            now = sum(c.progress_count for c in clients if c is not None)
+            if now != seen:
+                seen = now
+                deadline.progress()
+            deadline.check()          # raises ProgressTimeout only on a genuine wedge
+    finally:
+        if not task.done():
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
+_PROGRESS_POLL_S = 0.5
 
 # Process-global, monotonically increasing battle number — mirrors how a real Showdown
 # server hands out a unique room id per battle. The tag MUST be unique across the whole
@@ -170,9 +230,12 @@ class _LocalBattleRunner:
         self.c1 = self._attach(self.p1, "p1")
         self.c2 = self._attach(self.p2, "p2")
         if concurrency <= 1:
-            # Unchanged sequential path — what all the fuzz suites exercise.
+            # Sequential path — what all the fuzz suites, the parity test and (at the default
+            # --eval-concurrency-per-worker 1) eval itself exercise. Bounded by the IDLE gap, so a
+            # merely-slow battle beside a training run finishes instead of being scored a timeout.
             for i in range(n_battles):
-                await asyncio.wait_for(self._one_battle(i), timeout=_per_battle_timeout())
+                await _await_battle(self._one_battle(i), (self.c1, self.c2),
+                                    f"bridge battle {i}")
             return
         # Bounded-concurrency path. A single ``start_lock`` serializes each battle's team→creation
         # critical section (released the instant both battle objects exist — see ``_one_battle``),
@@ -182,6 +245,12 @@ class _LocalBattleRunner:
 
         async def _guarded(i: int) -> None:
             async with sem:
+                # DELIBERATELY still a total-duration cap. The progress counter lives on the
+                # CLIENT, and under concurrency several battles share one client — so a lively
+                # neighbour would mask a wedged battle's silence, which is worse than no idle
+                # bound at all. Per-battle attribution would need per-`battle_tag` counting in
+                # `feed`; not built, because every default path (fuzz, parity, eval at
+                # --eval-concurrency-per-worker 1) is sequential.
                 await asyncio.wait_for(
                     self._one_battle(i, start_lock), timeout=_per_battle_timeout()
                 )

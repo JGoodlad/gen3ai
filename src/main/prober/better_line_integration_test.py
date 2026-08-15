@@ -184,20 +184,42 @@ def test_better_line_node_and_rust_drivers_agree(record_impl):
 
         assert n["opp_model_used"] == r["opp_model_used"]
         assert len(n["candidates"]) == len(r["candidates"]), "candidate COUNT differs"
-        for cn, cr in zip(n["candidates"], r["candidates"]):
-            assert cn["action"] == cr["action"] and cn["choice"] == cr["choice"], (
-                f"candidate identity differs: node {cn['action']}/{cn['choice']} "
-                f"vs rust {cr['action']}/{cr['choice']}")
+
+        # Compare BY ACTION, not by position. The claim this test makes is about CONTENT — same
+        # actions, same choices, same terminal labels, same V — and `candidates` is not a ranked
+        # list (the caller reads it as a per-action mapping; `best_alternative` is computed
+        # separately). Position additionally encodes the order each driver happened to ENUMERATE
+        # the candidates it did not expand, which is not a property either driver promises.
+        #
+        # ⚠️ THIS WAS A ~35% FLAKE and the positional zip was the whole cause. Measured over 20
+        # random battles: 19 fully agreed, 1 returned the same actions with IDENTICAL values in a
+        # different order, 0 diverged on any value. The order differs only PAST the beam — the
+        # first `beam` entries are the expanded ones and always matched:
+        #     node [1, 5, 7 | 9, 8, 0, 6, 2]
+        #     rust [1, 5, 7 | 0, 6, 2, 8, 9]     (action 9 == 25043.0162 in BOTH)
+        # Keying by action keeps every assertion below at full strength — it is strictly STRONGER
+        # than the zip, since it also proves the two drivers returned the same action SET rather
+        # than merely the same number of rows.
+        nmap = {c["action"]: c for c in n["candidates"]}
+        rmap = {c["action"]: c for c in r["candidates"]}
+        assert set(nmap) == set(rmap), (
+            f"candidate ACTION SETS differ: node-only {sorted(set(nmap) - set(rmap))}, "
+            f"rust-only {sorted(set(rmap) - set(nmap))}")
+
+        for action in sorted(nmap):
+            cn, cr = nmap[action], rmap[action]
+            assert cn["choice"] == cr["choice"], (
+                f"action {action}: choice differs — node {cn['choice']!r} vs rust {cr['choice']!r}")
             assert cn["terminal"] == cr["terminal"], (
-                f"action {cn['action']}: terminal node {cn['terminal']} vs rust {cr['terminal']}")
+                f"action {action}: terminal node {cn['terminal']} vs rust {cr['terminal']}")
             if cn["value"] is None or cr["value"] is None:
                 assert cn["value"] == cr["value"], (
-                    f"action {cn['action']}: one driver scored it and the other did not")
+                    f"action {action}: one driver scored it and the other did not")
                 continue
             # V = obs.sum() over a 2667-dim float32 vector, so equality here is an obs-level
             # bit-identity claim, not a tolerance. The 1e-6 only absorbs float64 summation order.
             assert abs(cn["value"] - cr["value"]) < 1e-6, (
-                f"action {cn['action']}: V differs — node {cn['value']!r} vs rust {cr['value']!r} "
+                f"action {action}: V differs — node {cn['value']!r} vs rust {cr['value']!r} "
                 "(the drivers materialized DIFFERENT successor observations)")
 
 

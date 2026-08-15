@@ -14,6 +14,7 @@ Marked ``integration``: needs Node + ``deps/pokemon-showdown`` (no live server).
 import asyncio
 import os
 import signal
+from contextlib import suppress
 
 import numpy as np
 import pytest
@@ -179,7 +180,18 @@ def test_dead_persistent_child_crashes_no_recovery():
         assert session._proc.pid == first_pid
         assert session._n_recycles == 0
     finally:
-        wrapped.close()
+        # This test SIGKILLed the child on purpose, so the teardown is closing an already-broken
+        # session and `close()` re-raising the same "child exited unexpectedly" RuntimeError is
+        # the CORRECT behaviour, not a failure of anything asserted above.
+        #
+        # ⚠️ It was not suppressed, and that made this test FLAKY: every assertion passed and then
+        # the teardown failed the test from line 182, intermittently — whether `close()` raises
+        # depends on the state the killed child happened to leave, so it passed standalone (6/6 on
+        # this tree and on main) and failed inside the full suite. Caught 2026-08-15 by the routine
+        # gate. Scoped to `close()` alone: the contract under test (the next `reset()` raises, no
+        # respawn, no recycle) is verified ABOVE, and suppressing there would hide it.
+        with suppress(Exception):
+            wrapped.close()
 
 
 if __name__ == "__main__":

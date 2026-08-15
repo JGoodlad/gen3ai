@@ -71,6 +71,11 @@ class BattleStreamClient(PSClient):
         # the runner before it feeds a battle's first chunk; one client can hold
         # several concurrent battles, each on its own subprocess.
         self._procs: Dict[str, asyncio.subprocess.Process] = {}
+        # gen3_battle_progress_deadline_v1: a monotonic count of protocol blocks fed in. This is
+        # the SIGN OF LIFE the runner's per-battle bound watches — `feed` is the single inbound
+        # path, so every chunk the sim emits bumps it exactly once. A plain int on the hot path:
+        # no lock (POKE_LOOP is one thread), no timestamp (the reader stamps its own).
+        self.progress_count = 0
         # No auth handshake against a local sim.
         self._logged_in.set()
 
@@ -81,6 +86,7 @@ class BattleStreamClient(PSClient):
         Awaits full handling, so any choose_move + choice send triggered by a
         ``|request|`` in this block has completed by the time it returns.
         """
+        self.progress_count += 1
         await self._handle_message(framed_text)
 
     async def listen(self):  # pragma: no cover - never started (start_listening=False)

@@ -167,6 +167,23 @@ silent-stall watchdog all read `scale_timeout(...)` at CALL time, where the fact
   A total-duration cap conflates the two by construction. Keep the total as an opt-in
   **livelock** backstop: `node_reject_bound_integration_test`'s pre-fix wedge emits `|error|`
   frames *forever*, so an idle-only bound would never expire there.
+  **The per-battle bridge bound now works this way** (`gen3_battle_progress_deadline_v1`):
+  `BattleStreamClient.feed` counts protocol chunks as the sign of life and
+  `local_battle_runner._await_battle` bounds the gap between them, with `_PER_BATTLE_TIMEOUT`
+  demoted to the livelock backstop. It was a duration cap until 2026-08-15, and the failure it
+  produced is the canonical one: on a box saturated by a `cargo build --release`, the parity test
+  scored **8 of 12 battles as timeouts plus a transport error and FAILED**, none of them wedged,
+  all still emitting chunks — and passed warm with no code change. **Scaling does not rescue a
+  cap**: the factor is `loadavg / cpus`, and the real slowdown of a starved subprocess is a
+  multiple of it. *(Only the SEQUENTIAL path — under concurrency several battles share one client,
+  so a lively neighbour would mask a wedged battle's silence.)*
+- ⚠️ **A test that PRINTS a diagnostic must not print it in the format of a measurement.**
+  `bridge_impl_parity_test`'s threshold unit test fed `timed_out=4, attempted=12` into the real
+  warning function, so under `-s` it emitted `⚠️ small run: 4/12 battles TIMED OUT (33%)` into the
+  same stream as the live series lines — indistinguishable from a starvation reading, and taken
+  for one during this very investigation while every real series that run reported 0. Its label is
+  now `SYNTHETIC unit-test sample`. Same family as the benchmark rule above: a number that cannot
+  be told apart from a measurement will eventually be read as one.
 - **Benchmarks get the OPPOSITE treatment — warn, never stretch.** A benchmark's output IS the
   measurement, so scaling its bounds just buys a confidently-reported wrong number. All five
   (`obs_build`, `trainer_turn`, `bridge_impl_throughput`, `bridge_heap_growth`,

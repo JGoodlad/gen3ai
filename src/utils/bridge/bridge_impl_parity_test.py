@@ -80,11 +80,14 @@ BATTLE_FORMAT = "gen3ou"
 # one side but never deliver the other side's request → the demux blocks) is skipped in seconds,
 # not the 180s production default. A healthy in-process bridge battle is < 2s.
 #
-# This is the BASELINE; `local_battle_runner` scales it by the measured CPU contention, so a
-# 20s bound stays ~10x headroom over a healthy battle whether the box is idle or carrying a
-# training run. Without that scaling, 20s is under two seconds of real work at 12x
-# oversubscription and the whole series times out.
-_PARITY_BATTLE_TIMEOUT = 20.0
+# It bounds the IDLE GAP between protocol chunks, not the battle's duration — the distinction
+# that makes it survive a saturation event. The hang it exists to catch emits NO chunks, so 20s of
+# silence catches it just as fast as a 20s duration cap did, while a battle that is merely STARVED
+# keeps emitting and finishes. MEASURED 2026-08-14, as a duration cap, on a box saturated by a
+# `cargo build --release`: 8 of 12 battles scored as timeouts and the test FAILED, none wedged.
+# `local_battle_runner` still scales it by measured contention (`ProgressDeadline` re-scales at
+# every check), so a spike mid-battle widens the budget rather than manufacturing a failure.
+_PARITY_BATTLE_IDLE_BUDGET = 20.0
 
 # Above this fraction of timed-out battles the surviving sample is not worth a verdict.
 _TIMEOUT_INCONCLUSIVE_FRAC = 0.25
@@ -121,9 +124,13 @@ def _play_series(impl: str, n_battles: int, all_teams, tag: str):
     """
     p1, p2 = _build_pair(all_teams, tag)
     skipped = transport_err = timed_out = 0
-    # Use a short per-battle timeout so an unmodeled-move hang skips fast (restored after).
-    saved = local_battle_runner._PER_BATTLE_TIMEOUT
-    local_battle_runner._PER_BATTLE_TIMEOUT = _PARITY_BATTLE_TIMEOUT
+    # Bound the IDLE GAP so an unmodeled-move HANG skips fast (restored after). This used to
+    # shrink the TOTAL per-battle cap instead, which bounded the wrong thing: it also killed
+    # battles that were merely slow, and beside the live trainer that scored 4 of 12 (33%) as
+    # timeouts at ~1.4x contention. The hang it exists to catch produces NO protocol chunks, so
+    # the idle gap catches it just as fast without punishing a healthy starved battle.
+    saved = local_battle_runner._BATTLE_IDLE_BUDGET
+    local_battle_runner._BATTLE_IDLE_BUDGET = _PARITY_BATTLE_IDLE_BUDGET
     try:
         for _ in range(n_battles):
             try:
@@ -159,7 +166,7 @@ def _play_series(impl: str, n_battles: int, all_teams, tag: str):
                 timed_out += 1
                 continue
     finally:
-        local_battle_runner._PER_BATTLE_TIMEOUT = saved
+        local_battle_runner._BATTLE_IDLE_BUDGET = saved
     return p1.n_won_battles, p1.n_finished_battles, skipped, transport_err, timed_out
 
 
@@ -274,7 +281,7 @@ def test_rust_node_bridge_parity():
             "no pre-built rust sim_bridge binary (set POKESIM_SIM_BRIDGE_BIN or build "
             "src/rust_sim); skipping to avoid a cargo build in the unit suite")
     # A modest N keeps the unit-suite cost bounded (each battle spawns a fresh sim subprocess ~5s,
-    # and an unmodeled-move hang costs up to _PARITY_BATTLE_TIMEOUT); the tolerance widens to 2·SE
+    # and an unmodeled-move hang costs up to _PARITY_BATTLE_IDLE_BUDGET); the tolerance widens to 2·SE
     # for the small completed-N. The script default plays more for a tighter statistical bound.
     run(n_battles=12)
 
@@ -408,20 +415,32 @@ def test_starvation_verdict_refuses_a_starved_sample():
 
 def test_starvation_threshold_is_a_fraction_not_a_count():
     """Scaling with the attempted count is what keeps the rule meaningful at both n=12 (the
-    pytest entry) and n=60 (the script default)."""
-    _starvation_verdict("small run", timed_out=2, attempted=12)  # 17% — under the bar
+    pytest entry) and n=60 (the script default).
+
+    ⚠️ The label says SYNTHETIC because this test PRINTS. Under `-s` its warning lands in the same
+    stream as the real series lines, in the same format, and reads as a measurement of the run —
+    it cost a real investigation on 2026-08-15, where `⚠️ small run: 4/12 battles TIMED OUT (33%)`
+    was taken for a live starvation reading while every actual series that run reported 0. A
+    diagnostic that cannot be told apart from a measurement is a bad diagnostic.
+    """
+    _starvation_verdict("SYNTHETIC unit-test sample", timed_out=2, attempted=12)   # 17% — under
     with pytest.raises(AssertionError):
-        _starvation_verdict("small run", timed_out=4, attempted=12)  # 33% — over it
+        _starvation_verdict("SYNTHETIC unit-test sample", timed_out=4, attempted=12)  # 33% — over
 
 
 def test_parity_battle_timeout_is_scaled_by_contention(monkeypatch):
-    """The bound this file installs must go through the contention scaler, or a 20s cap is
-    under two seconds of real work on a loaded box and the entire series times out."""
+    """The TOTAL backstop must still go through the contention scaler.
+
+    It is no longer this file's primary bound — that is now the IDLE gap (`_BATTLE_IDLE_BUDGET`),
+    because a total cap cannot tell a starved battle from a wedged one. But the backstop survives
+    for livelock, so it must keep scaling: unscaled, 20 s is under two seconds of real work on a
+    loaded box.
+    """
     from utils import contention
 
     saved = local_battle_runner._PER_BATTLE_TIMEOUT
     try:
-        local_battle_runner._PER_BATTLE_TIMEOUT = _PARITY_BATTLE_TIMEOUT
+        local_battle_runner._PER_BATTLE_TIMEOUT = 20.0
         monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
         contention._cached = None
         assert local_battle_runner._per_battle_timeout() == pytest.approx(20.0)
