@@ -50,6 +50,21 @@ def test_a_contended_box_makes_the_guard_ADVISORY(conf, monkeypatch):
     assert conf._box_is_idle() is False
 
 
+def test_a_box_carrying_the_TRAINER_is_not_idle(conf, monkeypatch):
+    """THE regression, and it is a real one this guard shipped with.
+
+    The first cut reused `contention.py`'s 1.25 "looks idle" wording as its fail threshold. This
+    box runs a `--nice 10` trainer essentially always, which parks the load average around 16-25
+    on 16 cpus — straddling that line. A real gate run then FAILED at **factor 1.24**, on two
+    tests whose measured idle cost is a third of what they showed, while printing "box looks idle"
+    beside a load average of 19.9. Anything in that band must read as CONTENDED.
+    """
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1.24")
+    assert conf._box_is_idle() is False, (
+        "factor 1.24 is a box under a live training run, not an idle one — failing a duration "
+        "there is the knife-edge flake this guard exists to avoid")
+
+
 def test_the_budget_scales_with_contention(conf, monkeypatch):
     """The budget still stretches — the idle/busy split is on top of that, not instead of it."""
     monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")

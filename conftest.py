@@ -82,7 +82,18 @@ if not os.environ.get("GEN3AI_TEST_ALLOW_THREADS"):
 # gate. Exempting `sim` wholesale would put it back behind the same wall that hid three obs
 # regressions. What a test needs and what it costs are different questions; this guard asks the
 # second one.
-_TIER_BUDGET_BASE_S = 20.0
+# SIZED FROM THE MEASURED DISTRIBUTION, with clearance — not set to a round number and hoped for.
+# The default tier's slowest legitimate members on a quiet box cluster at 12-20 s
+# (`falsify_scan_end_to_end` 12.3/17.6/20.1, the two `watchdog` orphan tests ~15, the compile
+# gate 12.3). A 20 s budget therefore sat exactly ON the distribution and flapped: a quiet-box run
+# failed on a **0.1 s overshoot** (20.1 vs 20.0), which is noise being reported as a verdict.
+#
+# 30 s keeps ~50% clearance over that ceiling while still catching what this guard is FOR — a test
+# that is minutes long hiding in the routine gate. It would still have caught the case that
+# justified the guard (`test_cpu_backward_still_does_not_compile`, 37-59 s, now `slow`).
+# A threshold a legitimate test sits on produces flapping, not signal — the same lesson as the
+# 1.25 idle line below, learned twice in one day.
+_TIER_BUDGET_BASE_S = 30.0
 _COST_MARKERS = ("slow", "e2e", "benchmark")
 _over_budget: "list[tuple[str, float]]" = []
 
@@ -105,18 +116,35 @@ def pytest_runtest_logreport(report):
         _over_budget.append((report.nodeid, report.duration))
 
 
-def _box_is_idle():
-    """Was this run's timing trustworthy enough to FAIL on?
+# A duration is only worth FAILING on when the box was genuinely quiet. This bar is deliberately
+# much tighter than `contention.py`'s own 1.25 "looks idle" wording, and the first cut used that
+# 1.25 and was WRONG: this box carries a `--nice 10` trainer essentially always, which parks the
+# load average around 16-25 on 16 cpus, i.e. a factor of ~1.0-1.6 straddling 1.25. The guard
+# therefore flapped exactly where it should have been quiet — a real run failed at factor 1.24 on
+# two tests whose measured idle cost is a third of what they showed, while printing "box looks
+# idle" next to a load average of 19.9. A gate whose verdict hinges on which side of a knife edge
+# a permanent background load happens to land is the flakiness this whole change set exists to
+# remove.
+#
+# At <1.05 the box is unloaded in a way this one rarely is, so in practice the guard REPORTS here
+# and ENFORCES on a quiet box (CI, or a deliberate idle run). That asymmetry is the honest one:
+# you cannot take a trustworthy duration measurement on a machine that is always training.
+_IDLE_FACTOR_MAX = 1.05
 
-    Read fresh (`refresh=True`) rather than off the module's TTL cache: the cached factor is
-    whatever the load was up to a minute ago, and a verdict of "idle" printed next to a load
-    average of 22 is worse than no verdict at all — it happened, and it read as a bug in the guard.
-    """
+
+def _contention_factor():
+    """Read FRESH (not off the module's TTL cache): the cached value is up to a minute stale, and a
+    verdict printed next to a contradicting load average reads as a bug in the guard."""
     try:
         from utils.contention import cpu_contention_factor
-        return cpu_contention_factor(refresh=True) < 1.25
+        return cpu_contention_factor(refresh=True)
     except Exception:
-        return True        # can't measure ⇒ treat as idle, i.e. hold the guard to its promise
+        return 1.0         # can't measure ⇒ treat as idle, i.e. hold the guard to its promise
+
+
+def _box_is_idle():
+    """Was this run's timing trustworthy enough to FAIL on?"""
+    return _contention_factor() < _IDLE_FACTOR_MAX
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
@@ -140,12 +168,18 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         "Mark each one `slow` (and keep whatever capability marker it already has — `sim`, "
         "`browser`, `integration` say what it NEEDS, `slow` says what it COSTS), or make it "
         "faster. A slow test in the routine gate is how the routine gate stops being routine.")
-    if not idle:
-        terminalreporter.write_line(
-            "NOT failing the run: a duration measured on a contended box is not a measurement of "
-            "the test. Re-run on an idle box to get a verdict — the scaling factor tracks the load "
-            "average, and a compile-heavy test competing for every core slows by far more than "
-            "that (measured today: 12.3s idle -> 65.9s at load 22).")
+    # State OUR verdict and the number behind it FIRST. `describe_contention()` calls anything
+    # under 1.25 "box looks idle", so on its own it printed "load average 19.90 on 16 cpus (box
+    # looks idle)" underneath a failure caused by that very load — the guard appearing to
+    # contradict itself. Its load figures and the `ps` hint are still worth having, so it follows.
+    factor = _contention_factor()
+    terminalreporter.write_line(
+        f"contention factor {factor:.2f} (fail threshold <{_IDLE_FACTOR_MAX}) — "
+        + ("box quiet enough to judge a duration." if idle else
+           "NOT failing the run: a duration measured on a contended box is not a measurement of "
+           "the test. Re-run on a quiet box for a verdict — the factor tracks the load average, "
+           "and a compile-heavy test competing for every core slows by far more than that "
+           "(measured: 12.3s idle -> 65.9s at load 22)."))
     terminalreporter.write_line(diag)
 
 

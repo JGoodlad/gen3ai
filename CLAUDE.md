@@ -234,11 +234,13 @@ cannot be the marker that decides routine cost — `slow` is. That distinction i
 `run_local_battles` through a helper it imports — so neither a filename nor an import graph can
 classify it, and both were measured wrong here: 30 collected test files transitively reach the
 battle runner, nearly all millisecond unit tests. The root `conftest.py` enforces the other
-direction instead, on the only signal that is actually cost: **an unmarked test that overruns a 20 s
+direction instead, on the only signal that is actually cost: **an unmarked test that overruns a 30 s
 budget is reported and told which marker to take** (`GEN3AI_SKIP_TIER_BUDGET=1` opts out). Only the
-COST markers exempt — a `sim` test is not excused for being slow.
+COST markers exempt — a `sim` test is not excused for being slow. The 30 s is sized from the
+measured distribution with clearance: the tier's slowest legitimate members sit at 12-20 s on a
+quiet box, and a 20 s budget flapped on a **0.1 s** overshoot.
 
-⚠️ **It FAILS the run only on an IDLE box; on a busy one it is ADVISORY, and scaling the budget was
+⚠️ **It FAILS the run only on a QUIET box; on a busy one it is ADVISORY, and scaling the budget was
 NOT enough on its own.** The contention factor is `loadavg / cpus` (~1.4 at load 22), but a
 compile-heavy test competing for every core slows by multiples of that — **measured 2026-08-14:
 12.3 s idle → 65.9 s at load 22, a 5.4× slowdown against a 1.2× scaled budget.** A scaled-only guard
@@ -246,8 +248,16 @@ therefore goes red whenever a training run is live, which is most of the time, a
 already eaten that failure mode twice over (the starved parity run that reported 39/40 timeouts as a
 clean PASS; three investigations voided by wall-clock bounds measured beside a trainer). A duration
 measured under starvation is not a measurement of the test, so it cannot be a verdict on it.
-`tier_budget_guard_test.py` pins both halves — and that the guard may only ever ADD a failure, never
-clear one.
+
+**"Quiet" means factor < 1.05, NOT `contention.py`'s 1.25 "looks idle" wording** — and that
+distinction is itself a shipped-then-fixed bug. Reusing 1.25 put the threshold exactly where this
+box lives: a `--nice 10` trainer parks the load at ~16-25 on 16 cpus, so a gate run **failed at
+factor 1.24** on two tests whose idle cost is a third of what they showed, while printing "box looks
+idle" beside a load average of 19.9. On this machine the guard therefore REPORTS and enforces on a
+genuinely quiet box (CI, a deliberate idle run) — the honest asymmetry, since you cannot take a
+trustworthy duration measurement on a machine that is always training.
+`tier_budget_guard_test.py` pins all of it — the two halves, the 1.24 band reading as contended, and
+that the guard may only ever ADD a failure, never clear one.
 
 ### Test file naming conventions
 
