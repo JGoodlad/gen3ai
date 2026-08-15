@@ -65,6 +65,70 @@ _VALIDATE_REPS = 3
 _MAX_NUMERIC_DRIFT = 1e-4
 
 
+def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
+                          async_rollout: bool) -> None:
+    """Refuse a config that would feed the compiled extractor an UNBOUNDED set of batch shapes.
+
+    MEASURED BACKGROUND (2026-08-14), because the naive reading of this is wrong. Recompiles here
+    are NORMAL and must not be an error: `share_features_extractor=True` means one extractor serves
+    both paths, so `fe.forward` is called at batch=`n_envs` during rollout and batch=`batch_size`
+    during train, alternating forever. Dynamo handles that — alternating two shapes converges after
+    ~6 calls to a fixed set of graphs and then never recompiles again (17 graphs; steady state 8.8 ms
+    at batch 48 / 74 ms at 512). So `torch._dynamo.config.error_on_recompile = True` would crash a
+    perfectly healthy run on its second call, and `automatic_dynamic_shapes` is what makes the
+    two-shape case work at all rather than being the hazard.
+
+    THE ACTUAL HAZARD is dynamo's `cache_size_limit` (8). Exceed it for one code object and dynamo
+    silently falls back to EAGER — which is exactly the invisible ~1.75x regression this whole flag
+    exists to prevent, arriving with no error and no metric that would show it. Two configs get you
+    there, and both are decidable at startup:
+
+      * a REMAINDER minibatch — `n_steps*n_envs` not divisible by `batch_size` adds a third shape
+        (and every epoch replays it), for no benefit;
+      * `--async-rollout`, which forwards whatever set of envs is READY, so the rollout batch VARIES
+        by construction — an unbounded shape set, guaranteed to exhaust the cache.
+
+    Raises `CompileTrainerError`; pure, so both rules are testable without a GPU.
+    """
+    if async_rollout:
+        raise CompileTrainerError(
+            "--compile-trainer is incompatible with --async-rollout.\n"
+            "The async collector forwards whichever envs are READY, so the rollout batch size VARIES "
+            "every step. torch.compile keys on shape, so that is an unbounded set of graphs: dynamo "
+            f"blows its cache_size_limit ({_dynamo_cache_limit()}) and SILENTLY falls back to eager "
+            "— a ~1.75x regression with no error and nothing in any metric to show it.\n"
+            "Pick one: drop --async-rollout (measured +14% at n_envs=64) and keep --compile-trainer "
+            "(measured +62%), or drop --compile-trainer.")
+
+    rollout = int(n_steps) * int(n_envs)
+    if batch_size and rollout % int(batch_size) != 0:
+        raise CompileTrainerError(
+            f"--compile-trainer needs a rollout that divides evenly into minibatches, but "
+            f"n_steps*n_envs = {n_steps}*{n_envs} = {rollout} leaves a remainder of "
+            f"{rollout % int(batch_size)} against --batch-size {batch_size}.\n"
+            "That remainder minibatch is a THIRD batch shape, replayed every epoch, which spends "
+            f"dynamo's cache_size_limit ({_dynamo_cache_limit()}) faster and buys nothing — and "
+            "exhausting it makes dynamo fall back to eager SILENTLY.\n"
+            f"Adjust --batch-size to a divisor of {rollout} (e.g. "
+            f"{_largest_divisor_at_most(rollout, int(batch_size))}), or drop --compile-trainer.")
+
+
+def _dynamo_cache_limit() -> int:
+    try:
+        import torch._dynamo.config as _c
+        return int(getattr(_c, "cache_size_limit", 8))
+    except Exception:
+        return 8
+
+
+def _largest_divisor_at_most(n: int, cap: int) -> int:
+    """A concrete suggestion beats 'pick a divisor' — the error should not make you do arithmetic."""
+    for d in range(min(cap, n), 0, -1):
+        if n % d == 0:
+            return d
+    return 1
+
+
 def check_speedup(eager_ms: float, comp_ms: float) -> float:
     """Pure verdict: the compiled arm must actually be faster. Returns the speedup or raises.
 
@@ -125,7 +189,7 @@ def _time_steps(fe, obs, reps: int) -> float:
     return best * 1000.0
 
 
-def compile_trainer_extractor(model, enabled: bool, *, batch: int = 64,
+def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = None,
                               emit=None) -> Optional[float]:
     """Compile `model.policy.features_extractor.forward` in place. Returns the measured speedup.
 
@@ -144,6 +208,16 @@ def compile_trainer_extractor(model, enabled: bool, *, batch: int = 64,
     """
     if not enabled:
         return None
+
+    # VALIDATE AT THE SHAPE TRAINING WILL ACTUALLY USE. `torch.compile` keys on input shape, so
+    # validating at some cheap throwaway batch and then training at `batch_size` would (a) report a
+    # speedup measured at a shape nothing runs — small batches are far more launch-bound, so the
+    # number FLATTERS: 5.3x at 64 against a measured 1.75x at 4096 — and (b) force a recompile at the
+    # first real minibatch, with torch's automatic_dynamic_shapes then liable to mark the batch dim
+    # DYNAMIC on seeing a second size, which can be slower than the static graph we benchmarked.
+    # One compile, at the right shape, reporting the number that will actually hold.
+    if batch is None:
+        batch = int(getattr(model, "batch_size", 0) or 0) or 64
 
     def _say(msg: str) -> None:
         print(msg, flush=True)

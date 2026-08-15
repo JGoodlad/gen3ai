@@ -561,13 +561,27 @@ def _maybe_compile_trainer(model, args) -> None:
     running it after the compile turns it into a free gate on the one thing that would silently
     corrupt every checkpoint of the run — a compiled callable leaking into the saved state_dict.
     """
-    from agents.model.compile_trainer import CompileTrainerError, compile_trainer_extractor
+    from agents.model.compile_trainer import (CompileTrainerError, check_shape_stability,
+                                               compile_trainer_extractor)
     try:
+        if getattr(args, "compile_trainer", False):
+            # Decidable at startup, so decide it at startup: a config that would feed the compiled
+            # extractor an unbounded set of batch shapes ends in a SILENT eager fallback.
+            check_shape_stability(
+                n_steps=int(getattr(args, "n_steps", 0) or 0),
+                n_envs=int(getattr(args, "n_envs", 0) or 0),
+                batch_size=int(getattr(args, "batch_size", 0) or 0),
+                async_rollout=bool(getattr(args, "async_rollout", False)),
+            )
+        # `send_event`, NOT `emit`: emit() falls back to print() when there is no launcher pipe, and
+        # compile_trainer already prints to stdout — so passing emit duplicated every line in a
+        # standalone run. send_event is event-only, so the launcher panel still gets it and a
+        # standalone run says it once.
         compile_trainer_extractor(model, getattr(args, "compile_trainer", False),
-                                  emit=emit)
+                                  emit=send_event)
     except CompileTrainerError as exc:
         print(f"\n[CompileTrainer] FATAL: {exc}", file=sys.stderr, flush=True)
-        emit(f"[CompileTrainer] FATAL: {exc}")
+        send_event(f"[CompileTrainer] FATAL: {exc}")   # stderr above; this is the launcher panel
         sys.exit(TrainExitCode.FATAL_CONFIG)
 
 

@@ -1475,6 +1475,33 @@ refusals, each guarding an otherwise-invisible outcome:
 Every rejection **uninstalls** the compiled callable before raising, so the process never keeps
 running something it just declared unacceptable.
 
+**Two MORE refusals, decided at startup, and the reasoning behind them is counter-intuitive enough
+to be worth stating.** Recompiles here are NORMAL: `share_features_extractor=True` means one
+extractor serves both paths, so `fe.forward` is called at batch=`n_envs` during rollout and
+batch=`batch_size` during train, alternating forever. **Measured** (2026-08-14): alternating two
+shapes converges after ~6 calls to a fixed 17 graphs and then never recompiles again (steady state
+8.8 ms at batch 48 / 74 ms at 512). So `torch._dynamo.config.error_on_recompile = True` would crash
+a perfectly healthy run on its second call, and `automatic_dynamic_shapes` is what makes the
+two-shape case work rather than being the hazard.
+
+The actual hazard is dynamo's **`cache_size_limit` (8)**: exceed it for one code object and dynamo
+falls back to **eager SILENTLY** — precisely the invisible ~1.75x regression this flag exists to
+prevent. Two configs get there, both decidable before training starts, both now fatal
+(`check_shape_stability`, pure and unit-tested):
+
+| refused | why |
+|---|---|
+| `--async-rollout` | the async collector forwards whichever envs are READY, so the rollout batch VARIES every step — an unbounded shape set, guaranteed to exhaust the cache. The error prints both measured numbers (`--async-rollout` +14% at n_envs=64 vs `--compile-trainer` +62%) so the choice is informed, not blind |
+| `n_steps*n_envs` not divisible by `batch_size` | the remainder minibatch is a THIRD shape, replayed every epoch, for no benefit. The error names a concrete divisor to use instead rather than leaving you to do arithmetic |
+
+Production is safe by arithmetic — 2048x48 = 98304 = 24 x 4096 exactly, so exactly two shapes — but
+that was luck of the config until these guards existed.
+
+⚠️ **The validation runs at `model.batch_size`, not a cheap throwaway batch**, and that matters
+twice. A small batch is far more launch-bound so the number FLATTERS (the first gen-10 launch logged
+**5.30x at batch 64** against the honest **1.75x at 4096**), and validating at a shape training never
+uses would force an extra compile at the first real minibatch.
+
 **⚠️ It DROPS the ObservationDebugger, and that is a production-visible trade.** Dynamo cannot trace
 the debugger's numpy asserts at all (it dies building a guard over a numpy bool), so this is
 compile-or-debugger, not both. The debugger attaches at `log_level >= PERIODIC` — i.e. it is ON in

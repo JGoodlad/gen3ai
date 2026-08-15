@@ -17,8 +17,8 @@ busy.
 import pytest
 import torch
 
-from agents.model.compile_trainer import (CompileTrainerError, check_numerics, check_speedup,
-                                          compile_trainer_extractor, resolve_device)
+from agents.model.compile_trainer import (CompileTrainerError, check_numerics, check_shape_stability,
+                                          check_speedup, compile_trainer_extractor, resolve_device)
 from agents.model.extractor_compiles_test import _cuda_skip_reason
 
 _skip_cuda = pytest.mark.skipif(_cuda_skip_reason() is not None,
@@ -197,6 +197,95 @@ def test_a_rejected_compile_is_uninstalled_not_left_running(monkeypatch):
 
 def test_resolve_device_reads_the_models_real_device():
     assert resolve_device(_FakeFE("cpu")).type == "cpu"
+
+
+def test_validation_uses_the_models_real_batch_size(monkeypatch):
+    """The shape it validates at must be the shape training USES.
+
+    Two failures ride on this, and the first one is the one that misleads a reader: a small batch is
+    far more launch-bound, so it FLATTERS — the live run logged 5.30x at batch 64 against a measured
+    1.75x at 4096. The second is functional: torch.compile keys on shape, so validating at a
+    throwaway batch forces a recompile at the first real minibatch, and torch's
+    automatic_dynamic_shapes may then mark the batch dim DYNAMIC on seeing a second size, which can
+    be slower than the static graph the 1.75x was measured on.
+    """
+    seen = {}
+    m = _model("cpu")
+    m.batch_size = 4096
+    monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
+                        lambda f: torch.device("cuda"))
+    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
+                        lambda *a, **k: seen.setdefault("shape", a) and None or torch.zeros(2, 32))
+    monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: 10.0)
+    monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
+    with pytest.raises(CompileTrainerError):        # 1.00x -> refused; we only want the shape
+        compile_trainer_extractor(m, True)
+    assert seen["shape"][0] == 4096, f"validated at {seen['shape'][0]}, not the model's batch_size"
+
+
+def test_validation_batch_falls_back_when_the_model_has_none(monkeypatch):
+    seen = {}
+    m = _model("cpu")                                # no batch_size attribute
+    monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
+                        lambda f: torch.device("cuda"))
+    monkeypatch.setattr("agents.model.compile_trainer.torch.rand",
+                        lambda *a, **k: seen.setdefault("shape", a) and None or torch.zeros(2, 32))
+    monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: 10.0)
+    monkeypatch.setattr("agents.model.compile_trainer.torch.compile", lambda f, **k: f)
+    with pytest.raises(CompileTrainerError):
+        compile_trainer_extractor(m, True)
+    assert seen["shape"][0] == 64
+
+
+# --------------------------------------------------------------- shape stability (the real hazard)
+
+
+def _stable(**kw):
+    base = dict(n_steps=2048, n_envs=48, batch_size=4096, async_rollout=False)   # gen-10's config
+    base.update(kw)
+    return base
+
+
+def test_the_production_config_is_accepted():
+    """gen-10: 2048*48 = 98304 = 24 x 4096 exactly. Two shapes total, well under cache_size_limit."""
+    check_shape_stability(**_stable())
+
+
+def test_async_rollout_is_refused():
+    """The async collector forwards whichever envs are READY, so the batch VARIES by construction —
+    an unbounded shape set, which exhausts dynamo's cache and drops to eager SILENTLY."""
+    with pytest.raises(CompileTrainerError) as e:
+        check_shape_stability(**_stable(async_rollout=True))
+    msg = str(e.value)
+    assert "--async-rollout" in msg and "SILENTLY" in msg
+    assert "+14%" in msg and "+62%" in msg, "the error should let you pick, with the measured numbers"
+
+
+def test_a_remainder_minibatch_is_refused_with_a_concrete_suggestion():
+    """A remainder is a THIRD shape replayed every epoch, for no benefit. The error must not leave
+    the reader doing arithmetic — it names a batch size that actually divides."""
+    with pytest.raises(CompileTrainerError) as e:
+        check_shape_stability(**_stable(batch_size=5000))
+    msg = str(e.value)
+    assert "remainder" in msg
+    import re
+    m = re.search(r"e\.g\. (\d+)", msg)
+    assert m, f"no concrete suggestion in: {msg}"
+    suggested = int(m.group(1))
+    assert (2048 * 48) % suggested == 0, f"suggested {suggested} does not divide the rollout"
+    assert suggested <= 5000
+
+
+def test_the_suggestion_is_the_LARGEST_divisor_that_fits():
+    """Suggesting 1 would be technically correct and useless."""
+    with pytest.raises(CompileTrainerError) as e:
+        check_shape_stability(**_stable(batch_size=5000))
+    import re
+    assert int(re.search(r"e\.g\. (\d+)", str(e.value)).group(1)) == 4096
+
+
+def test_a_zero_batch_size_does_not_divide_by_zero():
+    check_shape_stability(**_stable(batch_size=0))     # unknown -> not our call to police
 
 
 # --------------------------------------------------------------------------- the CUDA property

@@ -18,7 +18,7 @@ digraph gen3_delivery {
   "species_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="species_belief"];
   "spread_belief" [shape=box, style=filled, fillcolor="#e6dcf3", label="spread_belief"];
   "pi_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="pi_projection\n1177→512"];
-  "vf_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="vf_projection\n1177→512"];
+  "vf_projection" [shape=box, style="filled,bold", fillcolor="#d7ead9", label="vf_projection\n1241→512"];
   "hidden_opp_belief" [shape=plaintext, label="hidden_opp_belief"];
   "non_matchup_rest" [shape=plaintext, label="non_matchup_rest"];
   "our_active_refined" [shape=plaintext, label="our_active_refined"];
@@ -70,8 +70,10 @@ digraph gen3_delivery {
   "damage_op" -> "E4_threat" [color="#2f6f3e", style=solid, label="content w=35 ×6", tooltip="ABS · MOVE_LATENT_DIM + 3"];
   "damage_op" -> "E5_tail" [color="#2f6f3e", style=solid, label="content w=4 ×6", tooltip="ABS · _EDGE_TAIL_CELL(4)"];
   "damage_op" -> "our_mon" [color="#2f6f3e", style=solid, label="content w=12 ×6", tooltip="ABS · _DMG_PER_MON"];
+  "damage_op" -> "pointer.move_logit" [color="#7d5bab", style=bold, label="cell w=7 ×4", tooltip="ABS/action · INTENT_MOVE_CELL_DIM"];
   "damage_op" -> "pointer.move_logit" [color="#7d5bab", style=bold, label="cell w=13 ×4", tooltip="ABS/action · _PTR_MOVE_CELL"];
   "damage_op" -> "pointer.switch_logit" [color="#7d5bab", style=bold, label="cell w=15 ×6", tooltip="ABS/action · _PTR_SWITCH_CELL_IN"];
+  "damage_op" -> "vf_projection" [color="#31538f", style=solid, label="concat w=64", tooltip="ABS · INTENT_VALUE_REDUCE_DIM"];
   "damage_op" -> "vf_projection" [color="#31538f", style=solid, label="concat w=256", tooltip="ABS · VALUE_SEED_K * VALUE_SEED_DIM"];
   "hidden_opp_belief" -> "pi_projection" [color="#31538f", style=solid, label="concat w=768", tooltip="ABS · opp_belief_cls_k * D_MODEL"];
   "hidden_opp_belief" -> "vf_projection" [color="#31538f", style=solid, label="concat w=768", tooltip="ABS · opp_belief_cls_k * D_MODEL"];

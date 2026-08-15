@@ -173,12 +173,13 @@ Modules actually built under the production config (`named_children()`) — GENE
 <!-- BEGIN GENERATED: modules -->
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
-hidden_opp_belief · belief_slots · belief_head · move_belief · spread_belief ·
-hp_type_belief_head · damage_op · prefuse_proj · assembler · value_dist_head · pre_proj_norm ·
-projection · value_pre_norm · value_projection · activation · alpha_head · beta_head
+hidden_opp_belief · intent_value_reduce · intent_move_cell · belief_slots · belief_head ·
+move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj · assembler ·
+value_dist_head · pre_proj_norm · projection · value_pre_norm · value_projection · activation ·
+alpha_head · beta_head
 ```
 
-Notably **absent** (`None` on the instance): `win_head`, `pubval_head`, `zarch_encoder`, `intent_value_reduce`, `seed_quantile_head`.
+Notably **absent** (`None` on the instance): `win_head`, `pubval_head`, `zarch_encoder`, `seed_quantile_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -311,7 +312,7 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-**`vf_projection` — `Linear(1177, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
+**`vf_projection` — `Linear(1241, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -319,7 +320,8 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `non_matchup_rest` | 25 | shared with pi |
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | seed readout | 256 | `MultiSeedValueReadout` — k=4 × 64 over `OpTensors.incoming_rows` |
-| **total** | **1177** | == `value_projection.in_features`, asserted at generation |
+| intent reduce | 64 | `IntentValueReduce` — α-weighted pair cells, appended AFTER the assembler |
+| **total** | **1241** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
@@ -656,8 +658,8 @@ does nothing given another setting.
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
-| `intent_move_cell` | `false` | OFF |
-| `intent_value_reduce` | `false` | OFF |
+| `intent_move_cell` | `true` | ACTIVE |
+| `intent_value_reduce` | `true` | ACTIVE |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |

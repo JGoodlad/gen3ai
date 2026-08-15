@@ -3934,12 +3934,32 @@
       "width": 13
     },
     {
+      "dst": "pointer.move_logit[0]",
+      "note": "alpha-expected burn/sleep consequence + raw c2 columns + alpha_stay, for THIS request slot",
+      "source_constant": "INTENT_MOVE_CELL_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "IntentMoveCell (published alpha \u00d7 c2 operands)",
+      "width": 7,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.move_logit[1]",
       "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
       "source_constant": "_PTR_MOVE_CELL",
       "src": "damage_op",
       "type": "cell",
       "width": 13
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "alpha-expected burn/sleep consequence + raw c2 columns + alpha_stay, for THIS request slot",
+      "source_constant": "INTENT_MOVE_CELL_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "IntentMoveCell (published alpha \u00d7 c2 operands)",
+      "width": 7,
+      "zero_init": true
     },
     {
       "dst": "pointer.move_logit[2]",
@@ -3950,12 +3970,32 @@
       "width": 13
     },
     {
+      "dst": "pointer.move_logit[2]",
+      "note": "alpha-expected burn/sleep consequence + raw c2 columns + alpha_stay, for THIS request slot",
+      "source_constant": "INTENT_MOVE_CELL_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "IntentMoveCell (published alpha \u00d7 c2 operands)",
+      "width": 7,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.move_logit[3]",
       "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
       "source_constant": "_PTR_MOVE_CELL",
       "src": "damage_op",
       "type": "cell",
       "width": 13
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "alpha-expected burn/sleep consequence + raw c2 columns + alpha_stay, for THIS request slot",
+      "source_constant": "INTENT_MOVE_CELL_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "IntentMoveCell (published alpha \u00d7 c2 operands)",
+      "width": 7,
+      "zero_init": true
     },
     {
       "dst": "pointer.switch_logit[0]",
@@ -4004,6 +4044,16 @@
       "src": "damage_op",
       "type": "cell",
       "width": 15
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "INTENT_VALUE_REDUCE_DIM",
+      "src": "damage_op",
+      "type": "concat",
+      "via": "IntentValueReduce (alpha-weighted pair-cell rows)",
+      "width": 64,
+      "zero_init": true
     },
     {
       "dst": "vf_projection",
@@ -5150,7 +5200,7 @@
     "obs_dim": 2669,
     "op_out_dim": 660,
     "pi_projection_in": 1177,
-    "vf_projection_in": 1177
+    "vf_projection_in": 1241
   },
   "nodes": [
     {
@@ -5204,7 +5254,7 @@
     },
     {
       "id": "vf_projection",
-      "in_features": 1177,
+      "in_features": 1241,
       "kind": "head",
       "out_features": 512
     },
