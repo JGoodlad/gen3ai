@@ -7,8 +7,9 @@ data layer, a green run proves the refactor (data facade, type-chart/natures sou
 ``data/`` instead of poke-env) changed **no observed value** — i.e. no ``ARCH_SIGNATURE`` bump
 is warranted.
 
-Bridge-backed (real in-process battles, no server), so it's an integration test. If an
-intentional obs-value change lands (with an ``ARCH_SIGNATURE`` bump), regenerate the fixture:
+Bridge-backed (real in-process battles, no server), so it carries the ``sim`` marker — but NOT
+``slow`` (measured 4.2 s), which is exactly why it stays in the routine gate. If an intentional
+obs-value change lands (with an ``ARCH_SIGNATURE`` bump), regenerate the fixture:
     python src/agents/training/golden_obs_capture.py --write
 
 **FIXTURE REGENERATED 2026-08-04 for v48** (`gen3_cpu_damage_deleted_v1`, obs 2992 -> 2889).
@@ -33,6 +34,24 @@ Regen 2026-08-08 (`gen3_entity_rehome_v1`, v60): the Stage-3 entity re-home — 
 6 reactive scalars deleted, protect/trapped/maybe_trapped re-homed per-mon, obs 2925 -> 2667.
 ARCH_SIGNATURE bumped in the same commit; the obs-roundtrip fuzz (627 decisions, bit-for-bit) and
 the trapping/protect fuzz gates all passed on the new layout before this regen was taken.
+
+**Regen 2026-08-14 for v65** (`gen3_deadline_clock_v1`, obs 2667 -> 2669). ⚠️ AND IT HAPPENED A
+THIRD TIME: the clock landed in `cbb0413` without regenerating the fixture, so this test was RED
+ON MAIN again — caught only because a full `pytest src/` was run before a ship, exactly as the v48
+note above predicted. That is now addressed structurally rather than by another warning: this file
+carries the `sim` marker (it plays 6 bridge battles via `golden_obs_capture`), and `sim` is IN the
+default developer gate — see the tier table in the root CLAUDE.md. The old gate,
+`-m "not integration and not e2e"`, is what let all three regressions hide.
+
+PROOF for this regen, by the same column-alignment method the v48 note establishes (a
+value-neutrality linchpin must never be regenerated on a dim mismatch alone — regen bakes in
+whatever is live): full vectors captured at `cbb0413^` (pre-clock) and at HEAD, aligned
+column-wise over all 991 decisions. Decision count UNCHANGED at 991, so the trajectory did not
+branch. Exactly 2 columns inserted, at HEAD indices **1518-1519** — inside the global-env block
+(`OFFSET_GLOBAL` 1508, `GLOBAL_ENV_DIM` 20), matching `CLOCK_DIM` 1 -> 3. Deleting precisely those
+two columns from the HEAD capture reproduces the pre-clock baseline **bit-for-bit across all 991 x
+2667 cells**. So nothing beyond v65 had altered the obs, and this regen encodes only the intended
+insertion.
 """
 import json
 import os
@@ -40,6 +59,11 @@ import os
 import pytest
 
 from agents.training.golden_obs_capture import capture_vectors, vector_hashes
+
+# gen3 test tiers (MEASURED 2026-08-14): 4.2 s — battle-backed but CHEAP, which is the whole
+# reason `sim` cannot be the marker that decides routine cost. It plays 6 bridge battles and
+# BELONGS in the routine gate; excluding it is what let three obs regressions reach main.
+pytestmark = pytest.mark.sim
 
 _FIXTURE = os.path.join(os.path.dirname(__file__), "golden_obs_fixture.json")
 

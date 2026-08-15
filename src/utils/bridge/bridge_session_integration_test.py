@@ -28,6 +28,9 @@ from utils.bridge.bridge_session import attach_bridge_transport
 from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
+# gen3 test tiers (MEASURED 2026-08-14): 17.0 s / 6 tests
+pytestmark = pytest.mark.sim
+
 
 def _teams():
     loader = TeamLoader()

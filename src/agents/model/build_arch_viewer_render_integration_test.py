@@ -34,7 +34,9 @@ import pytest
 
 from agents.model import build_arch_viewer as B
 
-pytestmark = pytest.mark.integration
+# MEASURED 2026-08-14: 147 s for 9 tests — a fresh headless chrome per test at ~25 s each. Second
+# only to the prober's own render suite. `browser` = what it needs, `slow` = what it costs.
+pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
 
 # Both themes' `--surface-2`, which is what a node is filled with. These are the literal values in
 # the template's `:root` / `html[data-theme=dark]` blocks; a palette change should update them

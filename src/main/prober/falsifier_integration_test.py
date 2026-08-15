@@ -22,6 +22,9 @@ from utils.bridge.reconstruction import ReconstructionRecord
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
+# gen3 test tiers (MEASURED 2026-08-14): 20.9 s / 3 tests
+pytestmark = pytest.mark.sim
+
 _SEEDS = 8   # small but enough for distribution structure; keep the test fast
 
 

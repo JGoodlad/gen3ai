@@ -28,6 +28,9 @@ from utils.bridge.reconstruction import ReconstructionRecord
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
+# gen3 test tiers (MEASURED 2026-08-14): 7.3 s / 2 tests
+pytestmark = pytest.mark.sim
+
 
 class _SumValueModel:
     """A fake ProbeModel exposing only the readouts the lookahead calls: ``value`` = obs.sum() (a

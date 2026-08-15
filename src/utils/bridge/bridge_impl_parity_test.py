@@ -256,6 +256,13 @@ def _prebuilt_rust_available() -> bool:
 
 import pytest
 
+# gen3 test tiers (MEASURED 2026-08-14): 72.6 s across 14 tests, and the most CONTENTION-FRAGILE
+# test in the tree — it plays 12 battles under per-battle timeouts, so a busy box turns it into a
+# wall of TIMEOUTs rather than a result (observed twice, both times a fresh worktree paying for a
+# cargo release build). `slow` is the honest statement of that: this is the rust/node STABILITY
+# gate, run deliberately — before a ship, in CI, or when touching the bridge — not on every edit.
+pytestmark = [pytest.mark.sim, pytest.mark.slow]
+
 
 @pytest.mark.integration
 def test_rust_node_bridge_parity():

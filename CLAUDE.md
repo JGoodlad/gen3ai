@@ -181,20 +181,91 @@ battles both arms): at a 2.0 s baseline, scaling OFF = **0 completed / 6 timed o
 exactly when the bound sits within ~2x of the real battle duration, which is where a loaded box
 puts you.
 
+### Test tiers — TWO AXES, and keeping them apart is the point
+
+A marker says **what a test NEEDS** (capability). A separate marker says **what it COSTS** (`slow`).
+Collapsing those into one axis is what the old single `integration` marker did, and it failed in
+**both** directions at once — read this before adding a marker to anything.
+
+| Marker | Answers | Values |
+|---|---|---|
+| capability | *can this run here?* | *(unmarked)* · `integration` · `sim` · `browser` · `e2e` |
+| **cost** | *should this run routinely?* | **`slow`** |
+
+| Tier | Needs | Measured 2026-08-14 |
+|---|---|---|
+| *(unmarked)* | nothing — pure in-process | 4536 tests, **127 s** serial (~56 s at `-n 4`) |
+| `integration` | an out-of-process dep, no battles, no browser | ~16 s total |
+| `sim` | real battles in-process via the bridge, no server | 45 tests, ~100 s total |
+| `browser` | headless chrome | 53 tests, **1426 s** — ALL of it also `slow` |
+| `e2e` | a live Showdown server | run directly as scripts |
+| `slow` | *(orthogonal)* minutes, not seconds | 71 tests |
+
+**MEASURE BEFORE YOU TIER — the intuitive answer was wrong.** The assumption going in was that the
+rust/node bridge parity was the expensive thing. It is not: the **browser** tests are **88% of the
+entire integration tier** (1426 s of 1623 s), because `_probe` launches a FRESH headless chrome per
+test at ~25 s of cold start, 53 times. Every bridge test *combined* is ~170 s. Tier by the profile
+(`pytest -m <tier> --durations=0`), not by which subsystem feels riskiest.
+
+**Cost tracks battle COUNT, not "does it battle".** The 6-battle obs-golden linchpin is 4.2 s; the
+12-battle rust/node parity is 72.6 s and is the most contention-fragile test in the tree. So `sim`
+cannot be the marker that decides routine cost — `slow` is. That distinction is not academic:
+`gen3_data_obs_parity` is battle-backed and CHEAP, and putting it behind the old
+`-m "not integration"` gate is precisely how it rode main RED **three separate times**.
+
+**A tier is DECLARED, never inferred.** Cost arrives transitively — the obs-golden test reaches
+`run_local_battles` through a helper it imports — so neither a filename nor an import graph can
+classify it, and both were measured wrong here: 30 collected test files transitively reach the
+battle runner, nearly all millisecond unit tests. The root `conftest.py` enforces the other
+direction instead, on the only signal that is actually cost: **an unmarked test that overruns a 20 s
+budget is reported and told which marker to take** (`GEN3AI_SKIP_TIER_BUDGET=1` opts out). Only the
+COST markers exempt — a `sim` test is not excused for being slow.
+
+⚠️ **It FAILS the run only on an IDLE box; on a busy one it is ADVISORY, and scaling the budget was
+NOT enough on its own.** The contention factor is `loadavg / cpus` (~1.4 at load 22), but a
+compile-heavy test competing for every core slows by multiples of that — **measured 2026-08-14:
+12.3 s idle → 65.9 s at load 22, a 5.4× slowdown against a 1.2× scaled budget.** A scaled-only guard
+therefore goes red whenever a training run is live, which is most of the time, and this tree has
+already eaten that failure mode twice over (the starved parity run that reported 39/40 timeouts as a
+clean PASS; three investigations voided by wall-clock bounds measured beside a trainer). A duration
+measured under starvation is not a measurement of the test, so it cannot be a verdict on it.
+`tier_budget_guard_test.py` pins both halves — and that the guard may only ever ADD a failure, never
+clear one.
+
 ### Test file naming conventions
 
 | Pattern | Requires | Marker |
 |---|---|---|
 | `*_test.py` | Nothing — pure unit tests with mocks | — |
-| `*_integration_test.py` | An out-of-process dependency, no live server: usually the `deps/pokemon-showdown` Node bridge (no battles) — but the two **`*_render_integration_test.py`** files instead need a headless **browser** (`build_arch_viewer_render_integration_test.py`, `prober/web/render_integration_test.py`), and skip naming that when there is none | `@pytest.mark.integration` |
+| `*_integration_test.py` | An out-of-process dependency, no live server. **The name is historical and no longer implies the tier** — these split across `integration` (light), `sim` (bridge battles) and `browser` (headless chrome, always `slow`). Read the file's `pytestmark`, not its name | `integration` and/or `sim` / `browser` / `slow` |
 | `*_fuzz_test.py` | `deps/pokemon-showdown` — runs **real battles in-process via the local BattleStream bridge** (`utils/bridge/local_battle_runner.py`); **no live server**. The default for fuzzing. | none — run directly as scripts (no `test_*` funcs, so `pytest` imports but collects nothing) |
 | `*_fuzz_e2e_test.py` | A **live Showdown server** — fuzz whose checks need real async-server timing (e.g. `effectiveness_fuzz_e2e_test`, whose TurnDelta-vs-BattleContext effectiveness window is decision-timing-sensitive) | run directly as scripts |
 | `*_e2e_test.py` | A **live Showdown server** on localhost:8000 | `@pytest.mark.e2e` (scripts only, run directly) |
 | `*_benchmark.py` | `deps/pokemon-showdown` bridge (no live server) — **performance profiling, not pass/fail**: plays a real battle in-process, then `cProfile`s a hot path | none — run directly as scripts (no `test_*` funcs → `pytest` collects nothing). Place in a dir with no stdlib-shadowing names (e.g. `training/`, not `observation/`) |
 
-### Unit tests only (default)
+### Which command to run
+
+| When | Command | Measured |
+|---|---|---|
+| **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 4536 tests, **127 s** (~56 s at `-n 4`) |
+| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 4634 tests, **4 m 36 s** |
+| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | **31 m** |
+| just the bridge | `-m sim` | ~100 s |
+| just the browser views | `-m browser` | ~24 m |
+
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
+# THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q
+```
+
+**Do not use the old `-m "not integration and not e2e"`.** It is what let the obs-golden linchpin
+rot on main three times: `integration` now spans a ~100x cost range, so excluding it throws away
+cheap, high-value coverage (bridge battles, data parity, mechanics) to avoid the browser suite. Cut
+on **`slow`** instead — that is the marker that means "expensive".
+
+### Unit tests only (the fast inner loop)
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
 ```
 
 **Add `-n 2` — it is ~1.8x faster** and costs the box only two cores, which matters because a
@@ -228,9 +299,20 @@ serial when you need `-s`, a debugger, or a readable single failure.
 > the conftest pin, anyone trying `-n auto` would measure a slowdown and conclude parallelism does
 > not work here.
 
-### Unit + integration (requires symlinked deps/pokemon-showdown)
+### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
+**Run this before a `/gen3ai-ship`, and in CI.** ~31 minutes, ~24 of them the browser suite.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
+```
+
+⚠️ **A FRESH WORKTREE pays for a `cargo build --release` on its first rust-backed test**, which
+saturates every core and can turn the contention-scaled per-battle timeouts into a wall of
+TIMEOUTs. Observed twice, both times misreading as a rust defect: `bridge_impl_parity` reported 8
+of 12 battles timed out and one transport error, and `better_line[rust]` reported a candidate
+divergence — **both passed on the warm tree with no code change.** Build the binaries first, or
+discount the first run in a new worktree:
+```bash
+cargo build --release --bin sim_bridge --bin search_driver --manifest-path src/rust_sim/Cargo.toml
 ```
 
 ### Fuzz tests (`*_fuzz_test.py`, run directly as scripts)

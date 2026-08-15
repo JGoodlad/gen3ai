@@ -22,6 +22,9 @@ from utils.bridge.local_battle_runner import run_local_battles
 from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
+# gen3 test tiers (MEASURED 2026-08-14): 13.0 s / 5 tests
+pytestmark = pytest.mark.sim
+
 _BRIDGE = str(Path(__file__).parent / "local_sim_bridge.js")
 
 

@@ -35,6 +35,9 @@ from utils.bridge.reconstruction import ReconstructionRecord
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
+# gen3 test tiers (MEASURED 2026-08-14): 38.8 s / 8 tests
+pytestmark = pytest.mark.sim
+
 
 class _SumModel:
     """V(s) = obs.sum() (a deterministic function of the obs, so a faithful materialization is

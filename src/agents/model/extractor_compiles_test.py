@@ -283,6 +283,13 @@ def _assert_real_gradient(fe, grads, where):
     assert trunk, f"{where}: no shared-trunk parameter received a gradient at all"
 
 
+# gen3 test tiers (MEASURED 2026-08-14): 37-59 s, by far the slowest test in the routine gate and
+# ~20% of it on its own. It is slow for a structural reason that will not improve — it drives a
+# compile that is SUPPOSED to fail, so it pays a full Inductor lowering attempt and then the error
+# path, warm cache or not. `slow` is the honest label; it still runs pre-ship and in CI, which is
+# where a lifted limitation would be noticed. The sibling compile tests (3.6 s / 14.6 s) stay in
+# the routine gate, so "the model stopped compiling" still fails fast.
+@pytest.mark.slow
 @_skip_compile
 def test_cpu_backward_still_does_not_compile():
     """CPU cell 2 — and it is a LIMITATION PIN, not a capability test, because the backward does NOT

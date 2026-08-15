@@ -60,7 +60,13 @@ import pytest
 from main.prober.web import fixture_run
 from utils.contention import describe_contention, scale_timeout
 
-pytestmark = pytest.mark.integration
+# MEASURED 2026-08-14: this file alone is 1280 s — 79% of the entire integration tier, and more
+# than the whole rest of the suite put together. Not because the assertions are heavy but because
+# `_probe` launches a FRESH headless chrome per test (deliberately — a clean browser per probe is
+# what makes the readback trustworthy), and a chrome cold start is ~25 s. 44 tests x ~25 s is
+# almost all of it. `slow` is what keeps that out of the routine gate; `browser` is what lets you
+# select or skip it by what it needs. See the root CLAUDE.md tier table.
+pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
 
 _REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 
