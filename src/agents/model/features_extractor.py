@@ -3804,25 +3804,33 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # than merely at init.
         if self.intent_value_reduce is not None:
             _cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
+            _pi, _vf = out
             if self._intent_reduce_discovering and (_cells is None
                                                     or self.last_alpha_logits is None):
                 # Construction-time width probe only: alpha does not exist yet, so contribute a
                 # correctly-shaped ZERO rather than a value. Deliberately NOT a fallback at
                 # runtime — see the raise below, which must stay reachable.
-                _pi, _vf = out
-                return (_pi, torch.cat(
-                    [_vf, _vf.new_zeros(_vf.shape[0], INTENT_VALUE_REDUCE_DIM)], dim=1))
-            if _cells is None or self.last_alpha_logits is None:
-                raise RuntimeError(
-                    "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
-                    "produced no logits — the term would silently contribute nothing, which is "
-                    "indistinguishable from a null RESULT.")
-            _pi, _vf = out
+                #
+                # ⚠️ This must FALL THROUGH, never `return`. It used to return the pair directly,
+                # which silently skipped every value part appended BELOW it — v80's
+                # `value_entity_pool` landed underneath and so was invisible to the very dummy
+                # forward that sizes `value_pre_norm`. The critic was then built 128 dims short and
+                # died at the first real forward with `normalized_shape=[1241] ... got [*, 1369]`.
+                # It only fires with BOTH --intent-value-reduce and --value-entity-pool on, so it
+                # was unreachable until the two met. Pinned by `value_entity_pool_test.py`.
+                _extra = _vf.new_zeros(_vf.shape[0], INTENT_VALUE_REDUCE_DIM)
+            else:
+                if _cells is None or self.last_alpha_logits is None:
+                    raise RuntimeError(
+                        "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
+                        "produced no logits — the term would silently contribute nothing, which is "
+                        "indistinguishable from a null RESULT.")
+                _extra = self.intent_value_reduce(
+                    self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)
             # CONCAT rather than add: the value half's width is auto-discovered by a dummy forward
             # in __init__, so a fixed-width extra part is measured correctly; an additive term would
             # need to match a width that does not exist yet at construction time.
-            out = (_pi, torch.cat([_vf, self.intent_value_reduce(
-                self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)], dim=1))
+            out = (_pi, torch.cat([_vf, _extra], dim=1))
         # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — vf ONLY, appended
         # after every other value part so the OFF layout is untouched. Zero-init out projection ⇒
         # a cold start contributes exactly 0; the policy half is untouched at ANY weight (the

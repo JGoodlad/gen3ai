@@ -208,6 +208,19 @@ by `ObsUnpack` carries the ~30 unpacked tensors downstream, keeping each phase's
 narrow. Both projection input dims are auto-discovered via a dummy forward pass in `__init__`,
 so they stay correct when the architecture changes with no manual update.
 
+> 🚨 **The discovery forward must reach EVERY value part — so a construction-time width probe may
+> only ever fall through, never `return`.** The tail of `forward_internal` appends optional parts
+> to `vf_combined` in sequence (`intent_value_reduce`, then v80's `value_entity_pool`, then
+> whatever comes next), and each has a discovery branch that contributes a correctly-shaped ZERO
+> because its real operand does not exist yet. `intent_value_reduce`'s branch **returned the pair
+> outright**, so every part appended below it was invisible to the very forward that sizes
+> `value_pre_norm` — v80 landed underneath and the critic was built `UVR_OUT_DIM` (128) short,
+> dying on the first real forward with `normalized_shape=[1241] … got [*, 1369]`. It fires only
+> with BOTH flags on, so it was unreachable until the two met, and production wanted both on the
+> next run. When you add a value part: append it at the tail, give it a fall-through discovery
+> branch, and add a both-flags-on build to `value_entity_pool_test.py` — **every flag in that tail
+> was individually tested and the intersection was not, which is the whole reason this shipped.**
+
 1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
    shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
    soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).

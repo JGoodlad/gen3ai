@@ -1,0 +1,119 @@
+{
+  "measurement": "gen11_label_only_winprob_verdict",
+  "date": "2026-08-15",
+  "git_hash": "cce290abcba453789414d829aeda8204a4c7c05a",
+  "question": "Did --belief-grad-mode label_only (+ --win-prob-mode shaping 0.05) cost strength, and did belief calibration improve?",
+  "arms": {
+    "gen-10": "ai_v9_12_gen10_t0prior_0814 (shaping, win_prob none)",
+    "gen-11": "ai_v9_13_gen11_labelonly_winprob_0815 (label_only, win_prob shaping 0.05)"
+  },
+  "confound": "TWO flags changed at once. The species regression below cannot be attributed to label_only alone; --win-prob-mode shaping adds a second trunk-shaping objective that competes for capacity. Not separable from these two runs.",
+  "elo": {
+    "method": "dense frozen-vs-frozen snapshot ladder, matched snapshot count n=12 (both runs 66/66 pairs, converged)",
+    "per_step": {
+      "2000016": {
+        "gen10": 1705.2,
+        "gen11": 1636.7,
+        "delta": -68.5
+      },
+      "4000032": {
+        "gen10": 1844.3,
+        "gen11": 1848.1,
+        "delta": 3.8
+      },
+      "6000000": {
+        "gen10": 1897.9,
+        "gen11": 1891.0,
+        "delta": -6.9
+      },
+      "8000016": {
+        "gen10": 1958.7,
+        "gen11": 1936.7,
+        "delta": -22.0
+      },
+      "10000032": {
+        "gen10": 2000.4,
+        "gen11": 1980.2,
+        "delta": -20.2
+      },
+      "12000000": {
+        "gen10": 2021.2,
+        "gen11": 1991.7,
+        "delta": -29.5
+      },
+      "14000016": {
+        "gen10": 2044.0,
+        "gen11": 2024.3,
+        "delta": -19.7
+      },
+      "16000032": {
+        "gen10": 2063.7,
+        "gen11": 2034.6,
+        "delta": -29.1
+      },
+      "18000000": {
+        "gen10": 2053.6,
+        "gen11": 2047.5,
+        "delta": -6.1
+      },
+      "20000016": {
+        "gen10": 2076.2,
+        "gen11": 2066.3,
+        "delta": -9.9
+      },
+      "22000032": {
+        "gen10": 2053.7,
+        "gen11": 2065.4,
+        "delta": 11.7
+      },
+      "24000000": {
+        "gen10": 2079.3,
+        "gen11": 2079.4,
+        "delta": 0.1
+      }
+    },
+    "final_24M": {
+      "gen10": 2079.3,
+      "gen11": 2079.4,
+      "delta": 0.1,
+      "ci95": [
+        -28.7,
+        28.9
+      ]
+    },
+    "last4_mean_delta": -1.0,
+    "verdict": "TIED \u2014 non-inferiority PASSES (within -15, CI excludes -40)"
+  },
+  "belief_calibration": {
+    "belief/species_acc": {
+      "note": "PERSISTENT regression, present from 4M on, not an endpoint artifact",
+      "trajectory_delta": {
+        "4M": -0.126,
+        "8M": -0.077,
+        "12M": -0.057,
+        "16M": -0.085,
+        "20M": -0.095,
+        "24M": -0.097
+      }
+    },
+    "belief/hptype_acc": {
+      "delta": 0.006
+    },
+    "opp_intent/alpha_acc": {
+      "delta": 0.013
+    },
+    "opp_intent/alpha_info_gain_nats": {
+      "delta": 0.011
+    },
+    "train/explained_variance": {
+      "delta": 0.017
+    }
+  },
+  "verdict": "Pre-registered \u00a71 rule requires non-inferior AND calibration flat-or-up to flip the default. Non-inferiority passes; species calibration FAILS (-7 to -10 pts). Therefore label_only does NOT become the registry default.",
+  "interpretation": "Cutting route C (PPO -> belief head params) LOWERED species accuracy. That inverts the motivating hypothesis: the policy gradient was HELPING that head, not corrupting it. Held with the confound caveat above.",
+  "step_budget": {
+    "num_timesteps_final": 25067520,
+    "target": 25000000,
+    "note": "First run carrying the resume step-budget fix. 0.27% overshoot = one partial rollout (48 envs x 2048). Gen-9 and gen-10 both ran to ~26M (a full extra 1M) and needed manual killing."
+  }
+}

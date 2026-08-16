@@ -96,3 +96,82 @@ def test_v80_migration_stamps_and_defaults_off():
     out = _migrate_config(dict(data))
     assert out["config_version"] == MODEL_CONFIG_VERSION == 80
     assert out["value_entity_pool"] is False
+
+
+# ---------------------------------------------------------------- the v80 x v74 interaction
+# The defect these pin: `forward_internal`'s intent-value-reduce DISCOVERY branch used to
+# `return` the pair outright. Every value part appended BELOW it was therefore invisible to the
+# dummy forward that sizes `value_pre_norm` — and v80's entity pool landed exactly there. The
+# critic was built UVR_OUT_DIM short and died on the first real forward with
+# `normalized_shape=[1241] ... got [*, 1369]`.
+#
+# Why nothing caught it: every test above builds `value_entity_pool=True` ALONE, and the intent
+# tests build `intent_value_reduce=True` alone. The bug lives only in the intersection, and an
+# intersection nobody constructs is an intersection nobody tests. Production wanted both on the
+# very next run.
+
+def _build_both():
+    """Both value parts on — the production gen-12 shape.
+
+    Reuses `intent_value_reduce_test._build`'s base, which is the known-good set for that half
+    (the reduce needs opp_intent for a distribution, the op's top-K cells to weight, and both
+    damage matrices to compute them), and adds the v80 pool on top. Borrowed rather than re-typed
+    so this test cannot drift from the config the intent tests prove.
+    """
+    from agents.model.intent_value_reduce_test import _build
+    return _build(intent_value_reduce=True, value_entity_pool=True)
+
+
+def test_the_vf_projection_is_sized_for_BOTH_value_parts():
+    """The direct assertion: the discovered width must equal what a real forward produces."""
+    model, enc = _build_both()
+    fe = model.policy.features_extractor
+    if fe.intent_value_reduce is None or fe.value_entity_pool is None:
+        pytest.skip("this build resolved without both value parts; nothing to intersect")
+    with torch.no_grad():
+        _pi, vf = fe.forward_internal(_obs(enc, n=3))
+    assert vf.shape[1] == fe.value_projection_input_dim, (
+        f"vf width {vf.shape[1]} != discovered {fe.value_projection_input_dim} "
+        f"(delta {vf.shape[1] - fe.value_projection_input_dim}); the discovery forward skipped a "
+        f"value part appended after the intent-reduce branch")
+    assert fe.value_pre_norm.normalized_shape[0] == vf.shape[1]
+
+
+def test_a_real_forward_through_the_policy_does_not_raise(model_and_enc):
+    """The end-to-end shape: whatever the discovery did, the built critic must actually run."""
+    model, enc = _build_both()
+    with torch.no_grad():
+        pi, vf = model.policy.features_extractor(_obs(enc, n=5))
+    assert pi.shape[0] == vf.shape[0] == 5
+    assert torch.isfinite(vf).all()
+
+
+def test_the_discovery_branch_falls_through_rather_than_returning():
+    """Pin the SHAPE of the fix, not just its effect — a future value part appended below the
+    intent-reduce branch must be reached too, and only a fall-through guarantees that.
+
+    Written this way after a first cut PASSED against the reintroduced bug: it split on `else:`
+    and, with no `else:` in the branch, silently took the whole window as the prefix. So the
+    `else:` is now REQUIRED to exist, which is the actual structural claim — an if/else, not an
+    early exit — and its absence fails instead of being absorbed.
+    """
+    import agents.model.features_extractor as fx
+    src = inspect.getsource(fx.Gen3FeaturesExtractor.forward_internal)
+    # Anchor on INTENT_VALUE_REDUCE_DIM, which appears only in this branch. `_intent_reduce_
+    # discovering` does NOT identify it — `intent_move_cell` guards on the same flag and comes
+    # FIRST, so an earlier cut of this test silently inspected that branch instead and passed
+    # against the reintroduced bug.
+    i = src.find("INTENT_VALUE_REDUCE_DIM")
+    assert i > 0, "the intent-value-reduce discovery branch moved; update this test"
+    i = src.rfind("_intent_reduce_discovering", 0, i)
+    # CODE only — the branch's own comment says the word "return" (it documents that it must not
+    # use one), and scanning raw text made the test fail against the very fix it guards.
+    window = "\n".join(ln for ln in src[i:i + 1600].splitlines()
+                       if not ln.lstrip().startswith("#"))
+    j = window.find("\n            else:")
+    assert j > 0, (
+        "the intent-reduce discovery branch is not an if/else — it must not exit early, or every "
+        "value part appended below it (v80's entity pool, and whatever comes next) is invisible "
+        "to the forward that sizes value_pre_norm")
+    assert "return" not in window[:j], (
+        "the discovery branch returns before its else; it must fall through")
