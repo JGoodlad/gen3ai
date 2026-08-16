@@ -36,9 +36,10 @@ from main.prober.discovery import (
     list_checkpoints,
     resolve_model_for_step,
 )
-from main.prober.awareness import awareness_from_npz, coverage_from_npz
+from main.prober.awareness import AWARENESS_BASELINES, awareness_from_npz, coverage_from_npz
 from main.prober.engine import (
-    analyze_invocation, attribute_turning_point, build_board, build_opp_intent, build_our_hp_types,
+    analyze_invocation, attribute_turning_point, awareness_text, build_board, build_opp_intent,
+    build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, opp_intent_text, parse_pct,
     parse_protocol_log, protocol_for_turn, summary_flags, surprise_phrase, timeline_entry_text,
     SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob, _pct as _hp_pct, _timeline_for,
@@ -589,9 +590,15 @@ class ProbeSession:
         """
         b = self._battle(battle_id)
         summary = self._summary(b)
-        values = self._values(b)
+        # ONE npz read for the whole replay: `_npz` re-opens the file on every call, and this view
+        # now wants three of its arrays (values, win_probs, value_dist).
+        npz = self._npz(b)
+        values = npz.get("values")
         invs = summary.get("invocations", [])
         meta = summary.get("meta", {})
+        # "Did it KNOW?" folded once for the battle, then joined onto each decision by INDEX.
+        awareness = self._awareness(b, invs, npz=npz)
+        aware_by_dec = self._awareness_by_decision(awareness)
 
         boards = [build_board(inv) for inv in invs]
         protocol = self._protocol_lines(b)      # parsed ONCE, sliced per turn below
@@ -602,6 +609,7 @@ class ProbeSession:
             reward = outcome.get("reward")
             rtotal = reward.get("total") if isinstance(reward, dict) else reward
             v, v_next = self._v(values, i), self._v(values, i + 1)
+            wp, wp_next = _npz_win_prob(npz, i), _npz_win_prob(npz, i + 1)
             next_board = boards[i + 1] if i + 1 < len(boards) else None
             entries = _timeline_for(inv, next_board, outcome)
             row = {
@@ -629,6 +637,19 @@ class ProbeSession:
                 "value": _r(v),
                 "delta_v": _r(v_next - v) if (v is not None and v_next is not None) else None,
                 "td_residual": _r(self._td(rtotal, v, v_next)),
+                # The win-prob head's calibrated P(win) beside V — the interpretable [0,1]
+                # complement to a shaped, discounted return whose zero is NOT "even". `analyze`
+                # has carried this since the head shipped; the replay is where a reader actually
+                # follows the game, so it belongs on the row too. None on a no-win-prob run.
+                "win_prob": _r(wp),
+                "delta_win_prob": _r(wp_next - wp) if (wp is not None and wp_next is not None)
+                                  else None,
+                # The distributional head's per-decision read of the SAME question the critic
+                # answers with one number: P(return < 0), and the catastrophic-band mass. A scalar
+                # V cannot show tail mass piling up while the mean still reads healthy — that is
+                # exactly the stall signature — so these ride beside V rather than replacing it.
+                # `knew` is true from the sustained-onset decision onward (see `_awareness_by_decision`).
+                **(aware_by_dec.get(i) or {"p_loss": None, "p_tail": None, "knew": False}),
                 "reward_total": _r(rtotal),
                 # `RewardBreakdown.to_dict()` is `{"total": …}` plus ONE STRING PER GROUP
                 # ("base": "pbrs_material=-0.44"), not a nested components dict — so the components
@@ -674,8 +695,10 @@ class ProbeSession:
             # P(loss)>0.5 onset (`knew_by_turn`/`lead_time`), `blind_loss`, and the stall
             # signature (`mean_tail_divergence`: tail mass while the MEAN still read positive).
             # Model-free (support from model_config.json, popart denorm fit from the trace's own
-            # values). None when the run has no dist head or the trace predates recording.
-            "awareness": self._awareness(b, invs),
+            # values). None when the run has no dist head or the trace predates recording. The
+            # per-decision `p_loss`/`p_tail`/`knew` on each row above are this same fold, joined
+            # by decision index — folded ONCE, above.
+            "awareness": awareness,
             "turns": turns,
         }
 
@@ -718,6 +741,7 @@ class ProbeSession:
                                     self._dist_support())
             if cov is not None:
                 all_pits.extend(cov.pop("pits"))
+                cov["denorm"] = list(cov["denorm"])       # JSON round-trip parity — see `_awareness`
             last_turn = v["turns"][-1] if v["turns"] else None
             rows.append({
                 "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
@@ -759,11 +783,29 @@ class ProbeSession:
                 "coverage80": round(float(np.mean([(0.10 <= p <= 0.90) for p in all_pits])), 4),
             } if all_pits else None),
             "params": {"lead_bar": lead_bar, "cap_turn": cap_turn, "stall_bar": stall_bar},
+            # What gen-10 measured, carried WITH the live numbers so neither surface has to keep a
+            # baseline of its own — and so a reading is never quoted without its reference point.
+            "baseline": dict(AWARENESS_BASELINES),
         }
+        caveats = [
+            f"Baselines are {AWARENESS_BASELINES['generation']}, measured "
+            f"{AWARENESS_BASELINES['measured']} ({AWARENESS_BASELINES['source']}) — a reference "
+            "point, NOT a target.",
+            f"cap_aware_ge_bar_fraction is over {len(caps)} cap loss(es) here and "
+            f"{AWARENESS_BASELINES['n_cap_losses']} in the baseline: at that n it moves in large "
+            "steps, so read it as a direction, not a rate.",
+            "SELECTION: quantile_coverage under an outcome filter is biased BY CONSTRUCTION "
+            f"(losses are the low-outcome tail; the baseline pit_mean/coverage80 were measured on "
+            f"{AWARENESS_BASELINES['coverage_scope']}). Judge calibration with outcome unset; use "
+            "a filtered read for direction only."
+            + ("" if outcome else "  [this scan is UNFILTERED, so coverage IS comparable]"),
+            "A battle with fewer than 2 recorded distributions is COUNTED (n_skipped_no_dist) and "
+            "never judged — it is not a blind loss.",
+        ]
         # blind + stall-flagged first — the battles a reader should open
         rows.sort(key=lambda r: (not r["blind_loss"], -r["mean_tail_divergence"]))
         return {"run_dir": self.run_dir, "support": list(support),
-                "aggregate": agg, "battles": rows}
+                "aggregate": agg, "caveats": caveats, "battles": rows}
 
     # -- deep analysis (loads the resolved model) ---------------------------
 
@@ -1548,8 +1590,15 @@ class ProbeSession:
         ``td_residual`` (most negative critic surprise δ = r + γV(s') − V(s)).
         Filters mirror ``battles()``. No checkpoint is loaded, so this is fast even
         across a whole run. Each row is ``{id, short_id, opponent, step, outcome,
-        turns, worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
+        turns, knew_by_turn, lead_time, blind_loss, awareness_text,
+        worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
         td_residual, reward_total, events, flags}}``.
+
+        The four ``awareness`` fields are the battle's "did it KNOW?" verdict
+        (``awareness_scan``'s per-battle fold) carried beside its worst turning point, because
+        the two answer one question together: a crater the model NEVER saw coming
+        (``blind_loss``) is a missed signal, while the same crater with 20 turns of warning is a
+        position it could not convert. ``None`` on a run with no distributional head.
         """
         if metric not in ("value_drop", "td_residual"):
             raise ValueError(f"metric must be 'value_drop' or 'td_residual', got {metric!r}")
@@ -1612,10 +1661,21 @@ class ProbeSession:
             worst["incoming_active_pko"] = belief.active_pko
             worst["incoming_max_pko"] = belief.max_pko
             worst["incoming_active_outspeed"] = belief.active_outspeed
+        # "Did it KNOW?" for the whole battle, beside the decision that lost it. A crater the model
+        # never saw coming reads completely differently from one it had been calling for 20 turns:
+        # the first is a missed signal, the second a position it could not convert. Folded from the
+        # npz already in hand, so the scan pays one numpy pass, not a second file read.
+        aw = self._awareness(battle, invs, npz=npz)
         return {
             "id": battle.summary_path, "short_id": _short_id(battle),
             "opponent": battle.opponent, "step": battle.step, "outcome": battle.outcome,
             "turns": (summary.get("meta") or {}).get("turns"),
+            "knew_by_turn": (aw or {}).get("knew_by_turn"),
+            "lead_time": (aw or {}).get("lead_time"),
+            # None (not False) when there is no verdict at all, so "this run has no dist head" stays
+            # distinguishable from "it did see this one coming".
+            "blind_loss": None if aw is None else bool(aw.get("blind_loss")),
+            "awareness_text": (aw or {}).get("text"),
             "worst": worst,
         }
 
@@ -1702,15 +1762,50 @@ class ProbeSession:
         self._dist_support_cache = support
         return support
 
-    def _awareness(self, battle: BattleTrace, invs: "list[dict]") -> "dict | None":
+    def _awareness(self, battle: BattleTrace, invs: "list[dict]",
+                   npz: "dict | None" = None) -> "dict | None":
         """The battle's awareness verdict (awareness.py) as a JSON dict, or None when the run
-        has no dist head / the trace carries <2 dist rows. Model-free."""
+        has no dist head / the trace carries <2 dist rows. Model-free.
+
+        `npz` lets a caller that has ALREADY loaded the trace's arrays (scan, triage) pass them in
+        — `_npz` re-opens and re-reads the file on every call, so folding awareness into a
+        whole-run sweep would otherwise double its file IO for data already in hand."""
         support = self._dist_support()
         if support is None:
             return None
-        v = awareness_from_npz(self._npz(battle), [inv.get("turn") for inv in invs],
+        v = awareness_from_npz(npz if npz is not None else self._npz(battle),
+                               [inv.get("turn") for inv in invs],
                                battle.outcome or "?", support)
-        return asdict(v) if v is not None else None
+        if v is None:
+            return None
+        # LISTS, not the dataclass's tuples. `ProbeSession` promises JSON-serializable dicts, and a
+        # tuple is serializable but does NOT round-trip — it comes back a list, so a caller
+        # comparing this dict to its own JSON form (which is exactly how `web/app_test.py` enforces
+        # "the page reshapes nothing") gets a spurious mismatch on every array here.
+        d = {k: (list(x) if isinstance(x, tuple) else x) for k, x in asdict(v).items()}
+        # The verdict's SENTENCE is rendered here, in the engine, exactly like `timeline`'s `text`:
+        # a surface prints it rather than re-deriving it, so the CLI and the browser cannot end up
+        # phrasing the same fold differently.
+        d["text"] = awareness_text(d)
+        return d
+
+    @staticmethod
+    def _awareness_by_decision(aw: "dict | None") -> dict:
+        """`{inv: {p_loss, p_tail, knew}}` from the battle-level verdict — the per-DECISION view of
+        the same fold, keyed by the decision index the verdict records (never by game turn: a
+        faint puts two decisions on one turn). `knew` marks the decisions at or after the sustained
+        onset, i.e. the stretch the model was already reading as lost — and it keys off the onset
+        DECISION rather than its turn, so a decision sharing that turn but preceding the crossing
+        is not swept in with it."""
+        if not aw:
+            return {}
+        onset = aw.get("knew_from_decision")
+        out = {}
+        for inv, pl, pt in zip(aw.get("decisions") or (),
+                               aw.get("p_loss") or (), aw.get("p_tail") or ()):
+            out[inv] = {"p_loss": pl, "p_tail": pt,
+                        "knew": onset is not None and inv >= onset}
+        return out
 
     @staticmethod
     def _v(values, i: int) -> "float | None":
@@ -1748,7 +1843,8 @@ class ProbeSession:
         invs = summary.get("invocations", [])
         if not invs:
             return None
-        values = self._npz(battle).get("values")
+        npz = self._npz(battle)          # ONE read: `_npz` reopens the file on every call
+        values = npz.get("values")
         best_i = best_dv = None
         for i in range(len(invs)):
             v, vn = self._v(values, i), self._v(values, i + 1)
@@ -1768,7 +1864,7 @@ class ProbeSession:
         v_at = self._v(values, best_i)
         # Recorded P(win) at the cliff — the CALIBRATED winning-vs-losing signal that re-centers the
         # grind/throw split (V's sign mis-centers it; see engine._was_winning). None on a no-win-prob run.
-        wp_at = _npz_win_prob(self._npz(battle), best_i)
+        wp_at = _npz_win_prob(npz, best_i)
         td = self._td(_rtotal, v_at, self._v(values, best_i + 1))
         board = build_board(inv)
         our = inv.get("our") or {}
@@ -1784,8 +1880,14 @@ class ProbeSession:
         chosen = str(inv.get("chosen", ""))
         is_switch = chosen.startswith("switch")
         move_id = "" if is_switch else chosen.lower().replace(" ", "")
-        belief = self._belief_at(self._npz(battle), best_i)
+        belief = self._belief_at(npz, best_i)
         psp = list(belief.per_slot_pko) if (belief is not None and belief.per_slot_pko) else None
+        # The battle's "did it KNOW?" verdict, carried on the turning-point feature so the taxonomy
+        # ranking can report what fraction of each category the model never saw coming. This does
+        # NOT feed `attribute_turning_point` — the categories stay exactly as they were; awareness
+        # is reported ALONGSIDE them, because "which lever" and "did it have warning" are two
+        # different questions and folding one into the other would silently redefine the taxonomy.
+        aw = self._awareness(battle, invs, npz=npz) or {}
         return {
             "short_id": _short_id(battle), "opponent": battle.opponent, "step": battle.step,
             "turns": (summary.get("meta") or {}).get("turns"),
@@ -1799,6 +1901,8 @@ class ProbeSession:
             "n_healthy_bench": sum(1 for m in board.ours.bench if not m.fainted),
             "min_other_pko": (min(psp) if psp else None),
             "delta_v": best_dv, "td": td, "v_at": v_at, "wp_at": wp_at,
+            "blind_loss": aw.get("blind_loss"), "knew_by_turn": aw.get("knew_by_turn"),
+            "lead_time": aw.get("lead_time"), "has_awareness": bool(aw),
         }
 
     def _win_rates(self, step: "int | None") -> dict:
@@ -1858,16 +1962,23 @@ class ProbeSession:
         cat_recover: dict = defaultdict(float)
         cat_by_opp: dict = defaultdict(lambda: defaultdict(int))
         cat_examples: dict = defaultdict(list)
+        cat_feats: dict = defaultdict(list)          # every feature per category, for the awareness split
         for opp, po in per_opp.items():
             for cat, feats in po["cats"].items():
                 cat_total[cat] += len(feats)
                 cat_by_opp[cat][opp] = len(feats)
+                cat_feats[cat].extend(feats)
                 for f in feats[:3]:
+                    # The awareness tag rides the example line itself: an example you can open is
+                    # exactly where "did it have warning?" is worth knowing before you open it.
+                    aware = ("" if not f.get("has_awareness") else
+                             (", BLIND" if f.get("blind_loss") else
+                              f", knew@t{f.get('knew_by_turn')} (+{f.get('lead_time')})"))
                     cat_examples[cat].append(
                         f"{f['short_id']} t{f.get('turn')}: {f.get('our_species')} chose "
                         f"{f.get('chosen')} (pko={_r(f.get('active_pko'),2)}, "
                         f"outspeed={_r(f.get('active_outspeed'),2)}, dHP={_r(f.get('our_hp_delta'),2)}, "
-                        f"healthy_bench={f.get('n_healthy_bench')})")
+                        f"healthy_bench={f.get('n_healthy_bench')}{aware})")
         for opp in bot_opps:
             n = per_opp[opp]["n"] or 1
             loss_rate = max(0.0, 1.0 - float(wr.get(opp, 0.0)))
@@ -1875,6 +1986,25 @@ class ProbeSession:
                 cat_recover[cat] += loss_rate * (len(feats) / n) / max(1, len(bot_opps))
 
         total = sum(cat_total.values())
+
+        def _cat_awareness(cat: str) -> dict:
+            """The 'did it KNOW?' split WITHIN one category (`awareness.py`), over the losses that
+            carry a verdict. Reported beside the lever rather than folded into it: the category
+            names WHAT to fix, this says whether the model had any warning to act on — a
+            `critic_blindspot` that is mostly blind is a different repair from one it saw coming
+            and mis-played. `None` throughout on a run with no distributional head."""
+            judged = [f for f in cat_feats[cat] if f.get("has_awareness")]
+            if not judged:
+                return {"n_judged": 0, "n_blind": None, "blind_fraction": None,
+                        "median_lead_time": None}
+            blind = [f for f in judged if f.get("blind_loss")]
+            leads = [f["lead_time"] for f in judged if f.get("lead_time") is not None]
+            return {
+                "n_judged": len(judged), "n_blind": len(blind),
+                "blind_fraction": round(len(blind) / len(judged), 3),
+                "median_lead_time": (float(np.median(leads)) if leads else None),
+            }
+
         # Rank by recoverable win-rate; break ties by raw volume so the order is stable AND meaningful
         # even when no bot win-rates exist (recover all 0 → fall back to "most losses first").
         cats = [{
@@ -1882,6 +2012,7 @@ class ProbeSession:
             "n": cat_total[c], "pct_of_sampled_losses": round(100 * cat_total[c] / max(1, total), 1),
             "est_recoverable_winrate_pct": round(100 * cat_recover.get(c, 0.0), 2),
             "by_opponent": dict(cat_by_opp[c]),
+            "awareness": _cat_awareness(c),
             "examples": cat_examples[c][:4],
         } for c in sorted(cat_total, key=lambda c: (-cat_recover.get(c, 0.0), -cat_total[c]))]
 
@@ -1899,6 +2030,10 @@ class ProbeSession:
             "per-opponent representative but raw counts are NOT the true loss volume — the recoverable "
             "estimate corrects for that via the true per-opponent win-rate.",
             "Each loss is attributed to its single worst-ΔV turning point; a loss can have several causes.",
+            "The per-category `awareness` split is REPORTED BESIDE the taxonomy, never folded into "
+            "it: the category names which lever to pull, the split says whether the model had any "
+            "warning to act on. It covers only the losses carrying a distributional verdict "
+            "(`n_judged`), which is 0 on a run with no dist head.",
             "Recoverable-winrate is over BOT opponents only (the ELO anchor); sentinel/ext losses are "
             "counted (pct_of_sampled_losses) but not rating-weighted (their win-rate is gate-pinned).",
             split_signal,

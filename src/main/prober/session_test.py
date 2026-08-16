@@ -1047,3 +1047,196 @@ def test_revealed_opp_count_handles_comma_inside_parens():
     # never exceeds a full team of 6
     big = {"opp": {"species": "x", "bench": "a(1%) b(1%) c(1%) d(1%) e(1%) f(1%) g(1%)"}}
     assert ProbeSession._revealed_opp_count(big) == 6
+
+
+# -- "did it KNOW?" — the awareness fold's SESSION seam ---------------------------------------
+#
+# `awareness.py` is unit-tested on synthetic distributions; these pin the layer above it — that a
+# verdict reaches `battle_turns` / `scan` / `triage` / `awareness_scan` at all, joined to the right
+# decision, and that the whole thing degrades to None (never to a wrong number) on the runs that
+# have no distributional head, which is most of them.
+
+_DIST_SUPPORT = (-12.0, 12.0, 51)
+
+
+def _dist_row(mean: float, sd: float = 3.0) -> np.ndarray:
+    z = np.linspace(*_DIST_SUPPORT[:2], _DIST_SUPPORT[2])
+    p = np.exp(-0.5 * ((z - mean) / sd) ** 2)
+    return (p / p.sum()).astype(np.float32)
+
+
+def _build_dist_run(tmp_path, *, values=(4.0, -5.0, -7.0), turns=(1, 2, 2),
+                    win_probs=None, dists=True):
+    """A one-battle LOSS whose critic values decline into negative territory.
+
+    `turns` defaults to (1, 2, 2) — two decisions on the SAME game turn, which is the shape a
+    faint produces and the reason the per-decision join is keyed by decision index rather than by
+    turn. `values` carries one entry per decision, and the distributions are centred on them so
+    the popart denorm fit recovers identity (a distribution that disagrees with its recorded V is
+    relocated by that fit, which is exactly how a first draft of this fixture read P(loss)=0).
+    """
+    run = tmp_path / "distrun"
+    bd = run / "eval_traces" / "step_1000000" / "staller"
+    os.makedirs(bd, exist_ok=True)
+    invs = [{"i": i, "turn": t, "phase": "move_selection", "chosen": "earthquake",
+             "our": {"species": "zapdos", "hp": "50%"}, "opp": {"species": "jynx"},
+             "actions": {"earthquake": {"prob": "80.0%", "valid": True}},
+             "outcome": {"reward": {"total": -1.0}, "events": []}}
+            for i, t in enumerate(turns)]
+    with open(bd / "loss_001_summary.json", "w") as f:
+        json.dump({"meta": {"step": 1000000, "result": "LOSS", "turns": max(turns),
+                            "invocations": len(invs)}, "invocations": invs}, f)
+    arrays = {"obs": np.zeros((len(invs), _OBS_LEN), dtype=np.float32),
+              "has_state": np.ones(len(invs), dtype=np.int8),
+              "values": np.array(values, dtype=np.float32)}
+    if dists:
+        arrays["value_dist"] = np.stack([_dist_row(v) for v in values])
+    if win_probs is not None:
+        arrays["win_probs"] = np.array(win_probs, dtype=np.float32)
+    np.savez(bd / "loss_001_states.npz", **arrays)
+    with open(bd.parent / "eval_manifest.json", "w") as f:
+        json.dump({"step": 1000000, "git_hash": "abc123", "arch_signature": "gen3_x",
+                   "snapshot": None}, f)
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.95}, f)
+    with open(run / "model_config.json", "w") as f:
+        json.dump({"value_dist_mode": "shaping", "value_dist_vmin": _DIST_SUPPORT[0],
+                   "value_dist_vmax": _DIST_SUPPORT[1], "value_dist_bins": _DIST_SUPPORT[2]}, f)
+    return str(run), str(bd / "loss_001_summary.json")
+
+
+def test_battle_turns_carries_the_awareness_verdict_and_its_per_decision_read(tmp_path):
+    run, summ = _build_dist_run(tmp_path)
+    t = ProbeSession(run).battle_turns(summ)
+
+    aw = t["awareness"]
+    assert aw["knew_by_turn"] == 2 and not aw["blind_loss"]
+    assert aw["text"].startswith("knew by turn 2")        # the ENGINE's sentence, not the view's
+
+    rows = [d for turn in t["turns"] for d in turn["decisions"]]
+    assert [d["p_loss"] for d in rows] == list(aw["p_loss"])
+    # The value crosses under water at decision 1, and `knew` marks from the onset onward.
+    assert rows[0]["p_loss"] < 0.5 < rows[1]["p_loss"]
+    assert [d["knew"] for d in rows] == [False, True, True]
+
+
+def test_awareness_joins_to_the_right_decision_when_a_turn_holds_two(tmp_path):
+    """Decisions 1 and 2 share game turn 2. Keyed by turn the pair collapses; keyed by decision
+    index — which is what the verdict records — each gets its own read."""
+    run, summ = _build_dist_run(tmp_path, values=(4.0, -5.0, -9.0), turns=(1, 2, 2))
+    t = ProbeSession(run).battle_turns(summ)
+    assert [turn["turn"] for turn in t["turns"]] == [1, 2]
+    second = t["turns"][1]["decisions"]
+    assert len(second) == 2
+    assert second[0]["inv"] == 1 and second[1]["inv"] == 2
+    assert second[0]["p_loss"] != second[1]["p_loss"]     # two distinct reads under one heading
+
+
+def test_the_knew_marker_starts_at_the_onset_DECISION_not_its_turn(tmp_path):
+    """Decisions 1 and 2 share turn 2 and the crossing is at decision 2, so decision 1 must NOT be
+    marked — its own P(loss) is still under the bar. Keying the marker off the onset's turn (which
+    two decisions carry) is what would sweep it in."""
+    run, summ = _build_dist_run(tmp_path, values=(6.0, 5.0, -6.0), turns=(1, 2, 2))
+    rows = [d for turn in ProbeSession(run).battle_turns(summ)["turns"]
+            for d in turn["decisions"]]
+    assert rows[1]["p_loss"] < 0.5 <= rows[2]["p_loss"]
+    assert [d["knew"] for d in rows] == [False, False, True]
+
+
+def test_battle_turns_carries_the_recorded_win_prob_beside_v(tmp_path):
+    run, summ = _build_dist_run(tmp_path, win_probs=(0.61, 0.30, 0.12))
+    rows = [d for turn in ProbeSession(run).battle_turns(summ)["turns"]
+            for d in turn["decisions"]]
+    assert [d["win_prob"] for d in rows] == [0.61, 0.3, 0.12]
+    assert rows[0]["delta_win_prob"] == pytest.approx(-0.31, abs=1e-6)
+    assert rows[-1]["delta_win_prob"] is None             # no next decision to compare against
+    # V and P(win) disagree about this position by construction: V is a shaped, discounted return
+    # whose zero is not "even", which is the whole reason both are shown.
+    assert rows[0]["value"] > 0 and rows[0]["win_prob"] < 1.0
+
+
+def test_a_run_without_the_heads_reports_none_never_a_number(tmp_path):
+    """The ordinary case. Absent heads must read as absent — a 0.0 P(loss) or a False blind_loss
+    would be a claim the trace does not support."""
+    run, summ = _build_dist_run(tmp_path, dists=False)
+    t = ProbeSession(run).battle_turns(summ)
+    assert t["awareness"] is None
+    rows = [d for turn in t["turns"] for d in turn["decisions"]]
+    assert all(d["p_loss"] is None and d["win_prob"] is None and not d["knew"] for d in rows)
+    row = ProbeSession(run).scan(outcome="loss")[0]
+    assert row["blind_loss"] is None and row["knew_by_turn"] is None
+    assert row["awareness_text"] is None
+
+
+def test_scan_rows_carry_the_battles_awareness_verdict(tmp_path):
+    run, _ = _build_dist_run(tmp_path)
+    row = ProbeSession(run).scan(outcome="loss")[0]
+    assert row["knew_by_turn"] == 2 and row["blind_loss"] is False
+    assert row["lead_time"] == 0
+    assert "knew by turn 2" in row["awareness_text"]
+
+
+def test_triage_splits_each_category_by_whether_it_saw_it_coming(tmp_path):
+    run, _ = _build_dist_run(tmp_path)
+    data = ProbeSession(run).triage()
+    cat = data["categories"][0]
+    assert cat["awareness"]["n_judged"] == 1
+    assert cat["awareness"]["blind_fraction"] == 0.0
+    # Reported BESIDE the taxonomy, and the caveats have to say so — the categories must not
+    # silently start meaning something else.
+    assert any("REPORTED BESIDE" in c for c in data["caveats"])
+    assert "knew@t2" in cat["examples"][0]
+
+
+def test_awareness_scan_carries_the_baseline_and_its_caveats(tmp_path):
+    run, _ = _build_dist_run(tmp_path)
+    got = ProbeSession(run).awareness_scan()
+    agg = got["aggregate"]
+    assert agg["n_battles"] == 1 and agg["blind_loss_fraction"] == 0.0
+    # The reference point ships WITH the numbers, so no surface keeps a baseline of its own.
+    assert agg["baseline"]["generation"] == "gen-10"
+    assert agg["baseline"]["blind_loss_fraction"] == 0.072
+    assert any("NOT a target" in c for c in got["caveats"])
+    # The coverage baseline was measured unfiltered, so a filtered read must say it is not comparable.
+    assert any("SELECTION" in c for c in got["caveats"])
+    unfiltered = ProbeSession(run).awareness_scan(outcome=None)
+    assert any("comparable" in c for c in unfiltered["caveats"])
+
+
+def test_awareness_output_round_trips_through_json_unchanged(tmp_path):
+    """`ProbeSession` promises JSON-serializable dicts, and a TUPLE is serializable without
+    round-tripping — it returns as a list. The web tests assert the JSON API equals the session
+    call verbatim, so a tuple here fails that comparison on every array."""
+    run, summ = _build_dist_run(tmp_path)
+    sess = ProbeSession(run)
+    for got in (sess.battle_turns(summ), sess.awareness_scan(), sess.scan(outcome="loss")):
+        assert json.loads(json.dumps(got)) == got
+
+
+def test_cli_awareness_can_ask_for_the_unfiltered_read(tmp_path):
+    """`--outcome all` is not a convenience. The probe's own caveat tells the reader to judge
+    quantile coverage UNFILTERED (a loss filter biases PIT low by construction), and with only
+    win/loss to choose from that instruction named a reading this CLI could not produce."""
+    import sys
+
+    import main.prober.query as q
+
+    run, _ = _build_dist_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "awareness", run, "--outcome", "all"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["aggregate"]["n_battles"] == 1
+    assert any("comparable" in c for c in parsed["caveats"])
+
+
+def test_a_run_with_no_dist_head_says_so_rather_than_scanning(tmp_path):
+    run, _ = _build_dist_run(tmp_path, dists=False)
+    os.remove(os.path.join(run, "model_config.json"))
+    got = ProbeSession(run).awareness_scan()
+    assert "no distributional value head" in got["error"]

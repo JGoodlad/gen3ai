@@ -24,6 +24,11 @@
 
 {% macro pct(v, digits=1) %}{% if v is none %}<span class="muted">—</span>{% else %}{{ "%.*f" | format(digits, v * 100) }}%{% endif %}{% endmacro %}
 
+{# A DIFFERENCE of two probabilities, in percentage POINTS — the honest unit for "P(win) moved by
+   this much" (a 2pp move from 0.50 and from 0.02 are not the same "%" and must not print alike).
+   Lives here, with `pct`, because the ×100 is a unit conversion and the pages do no arithmetic. #}
+{% macro signed_pp(v, digits=1) %}{% if v is none %}<span class="muted">—</span>{% else %}<span class="{{ 'neg' if v < 0 else 'pos' }}">{{ "%+.*f" | format(digits, v * 100) }}pp</span>{% endif %}{% endmacro %}
+
 {% macro step_options(summary, selected=None) %}
   <option value="">all steps</option>
   {% for s in (summary.steps if summary else []) %}

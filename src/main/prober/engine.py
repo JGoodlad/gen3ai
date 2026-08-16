@@ -1176,6 +1176,40 @@ def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:
     return text
 
 
+def awareness_text(aw: "dict | None") -> str:
+    """The one-line rendering of a battle's 'did it KNOW?' verdict (`main/prober/awareness.py`),
+    so the CLI and the web replay say the same sentence about the same fold.
+
+    `never saw it coming — P(loss) never held above 50% to the end` ·
+    `knew by turn 34 — 12 turns of warning` · and, when the stall signature fired, the clause that
+    names it: `· stall signature: 41% tail mass at turn 28 while the mean still read positive`.
+    Empty string on `None` (no dist head / fewer than 2 recorded distributions)."""
+    if not aw:
+        return ""
+    knew, lead = aw.get("knew_by_turn"), aw.get("lead_time")
+    if aw.get("blind_loss"):
+        text = "never saw it coming — P(loss) never held above 50% to the end"
+    elif knew is None:
+        # Not a loss, and P(loss) never sustained: the ordinary shape of a win.
+        text = "P(loss) never held above 50% to the end"
+    elif aw.get("outcome") == "loss":
+        turns = "turn" if lead == 1 else "turns"
+        text = f"knew by turn {knew} — {lead} {turns} of warning"
+    else:
+        text = f"P(loss) held above 50% from turn {knew} to the end"
+    div, div_turn = aw.get("mean_tail_divergence") or 0.0, aw.get("divergence_turn")
+    # ≥0.5% is a RENDERING floor, not a semantic threshold: below it the clause prints
+    # "0% tail mass", which reads as a finding when it is rounding noise. Which values count as
+    # "the signature" stays the caller's bar to set (`stall_bar`), and it sits far above this.
+    if div >= 0.005 and div_turn is not None:
+        # The stall signature: catastrophic-band mass piling up while the distribution MEAN — the
+        # only thing a scalar critic reads — still looked healthy. Reported as a FACT, with no
+        # judgement applied.
+        text += (f" · stall signature: {div * 100:.0f}% tail mass at turn {div_turn} "
+                 "while the mean still read positive")
+    return text
+
+
 _SPECIES_MAPS = None
 _MOVE_NUM_TO_ID = None
 _MOVE_ID_TO_NUM = None

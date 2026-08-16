@@ -94,6 +94,17 @@ def test_api_triage_matches_the_session(client, run):
     assert client.get("/api/triage").json() == ProbeSession(run).triage()
 
 
+def test_api_awareness_matches_the_session(client, run):
+    sess = ProbeSession(run)
+    assert client.get("/api/awareness").json() == sess.awareness_scan()
+    # An EMPTY outcome must reach the session as "every battle" — the quantile-coverage half of
+    # this probe is only comparable to the published baseline unfiltered, so "all" cannot be an
+    # unreachable option. (`""` is what an HTML select's "all" submits; the pattern allows it.)
+    assert client.get("/api/awareness", params={"outcome": ""}).json() == \
+        sess.awareness_scan(outcome=None)
+    assert client.get("/api/awareness", params={"outcome": "drawn"}).status_code == 422
+
+
 # -- errors are data, not 500s -------------------------------------------------------------
 
 def test_an_api_404_is_a_parseable_error_envelope(client):
@@ -1001,6 +1012,124 @@ def test_a_run_without_the_intent_heads_renders_no_expectation(client, run):
     html = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
     assert 'class="expect"' not in html
     assert "opponent intent" not in html
+
+
+# -- "did it KNOW?" — the awareness layer on the three views that carry it --------------------
+
+def test_the_replay_leads_with_whether_it_saw_the_loss_coming(client, run):
+    """The battle-level verdict above the replay, because it changes how the whole game reads: a
+    loss the model called 40 turns out is a position it could not convert; one it never saw coming
+    is a missed signal. The sentence is the ENGINE's, so this page cannot phrase it its own way."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    aw = raw["awareness"]
+    assert aw["knew_by_turn"] is not None, "fixture: this battle must be one it saw coming"
+    assert aw["text"] in html, "the page re-worded the engine's verdict instead of printing it"
+    assert f"knew @ turn {aw['knew_by_turn']}" in html
+    assert "badge blind" not in html
+
+
+def test_a_blind_loss_is_badged_and_carries_the_stall_signature(client, run):
+    """The other shape, and the one that matters: P(loss) never crossed the bar (so the badge says
+    BLIND) while catastrophic-band mass piled up under a still-positive mean — exactly what a
+    scalar critic cannot show, which is the reason the dist head is read at all."""
+    battle = "step_2000000/aggressive_v2/loss_001"
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == battle][0])
+    assert raw["awareness"]["blind_loss"] is True
+    assert raw["awareness"]["mean_tail_divergence"] >= 0.25
+    html = client.get("/battle", params={"battle": battle}).text
+    assert "badge blind" in html and "blind loss" in html
+    assert "stall signature" in html
+
+
+def test_every_decision_carries_the_distributions_own_read_under_the_critic_row(client, run):
+    """P(loss) per decision, marked from the sustained onset on — so scrolling the replay SHOWS
+    where the model started calling it rather than asking the reader to trust the badge."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    rows = [d for t in raw["turns"] for d in t["decisions"]]
+    assert 'class="ploss' in html
+    assert html.count('class="ploss') == len(rows), "a decision is missing its P(loss) strip"
+    assert "ploss knew" in html, "the onset marker never rendered"
+    assert html.count("ploss knew") == sum(1 for d in rows if d["knew"])
+
+
+def test_the_replay_shows_the_calibrated_win_prob_beside_v(client, run):
+    """P(win) BESIDE V, not instead of it: V is a shaped, discounted return whose zero is not
+    'even', so only the calibrated number reads as odds."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert "P(win)" in html and "ΔP" in html and "pp</span>" in html
+    # …and absent entirely on a trace with no win-prob head, which is the ordinary case.
+    other = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
+    assert "P(win)" not in other
+
+
+def test_a_run_with_no_dist_head_renders_no_awareness_rather_than_zeros(client, run):
+    """A 0% P(loss) or an un-badged 'not blind' would both be claims the trace cannot support."""
+    battle = "step_2000000/aggressive_v2/loss_002"       # the fixture trace with no value_dist
+    turns = client.get("/api/battle-turns", params={"battle": battle}).json()
+    assert turns["awareness"] is None
+    assert all(d["p_loss"] is None for t in turns["turns"] for d in t["decisions"])
+    html = client.get("/battle", params={"battle": battle}).text
+    assert 'class="ploss' not in html and "awarehead" not in html
+
+
+def test_scan_rows_say_whether_the_model_saw_each_crater_coming(client, run):
+    """The same crater reads completely differently with and without warning, so the verdict sits
+    in the row beside the decision that lost it — from the session's own scan output, not a join
+    performed here."""
+    body = client.get("/partials/scan", params={"outcome": "loss"}).text
+    rows = ProbeSession(run).scan(outcome="loss")
+    assert any(r["blind_loss"] for r in rows) and any(not r["blind_loss"] for r in rows), (
+        "the fixture must carry both shapes for this column to be worth rendering")
+    assert "knew @" in body and ">BLIND<" in body
+    knew = next(r for r in rows if r["knew_by_turn"] is not None)
+    assert f">{knew['knew_by_turn']}</span>" in body
+
+
+def test_triage_reports_the_awareness_split_beside_the_lever(client, run):
+    """Beside, never folded in: the category names WHICH lever to pull, the split says whether the
+    model had any warning to act on."""
+    body = client.get("/partials/triage").text
+    data = ProbeSession(run).triage()
+    assert any(c["awareness"]["n_judged"] for c in data["categories"]), "fixture has no verdicts"
+    assert ">blind</th>" in body and "median lead" in body
+    assert any("REPORTED BESIDE" in c for c in data["caveats"])
+
+
+def test_the_run_page_carries_the_awareness_panel_against_the_published_baseline(client, run):
+    """The run-level readout a generation is judged on — and never a bare number: the gen-10
+    baseline ships in the session's own payload so the CLI and this page cannot quote different
+    reference points."""
+    shell = client.get("/").text
+    assert 'hx-get="/partials/awareness' in shell, "the panel must load async, like /scan"
+    assert "Did it know?" in shell
+
+    body = client.get("/partials/awareness").text
+    agg = ProbeSession(run).awareness_scan()["aggregate"]
+    assert "gen-10 baseline" in body
+    assert f"{agg['baseline']['blind_loss_fraction'] * 100:.1f}%" in body
+    assert f"{agg['blind_loss_fraction'] * 100:.1f}%" in body
+    # The small-n and selection caveats are the difference between a reading and a claim.
+    assert "direction, not a rate" in body
+    assert "biased low" in body and "judge calibration" in body.lower()
+
+
+def test_the_awareness_panel_says_so_when_the_run_has_no_dist_head(tmp_path):
+    """Most runs have none. That is a note about the RUN, not a failure of the probe — and it must
+    not render as an empty table or as a row of zeros. Built on its own copy of the fixture rather
+    than mutating the shared one, so the state cannot leak into another test."""
+    import os as _os
+
+    headless = fixture_run.build(str(tmp_path))
+    _os.remove(_os.path.join(headless, "model_config.json"))
+    with TestClient(create_app(headless, password="test-only-password")) as c:
+        body = c.get("/partials/awareness").text
+    assert "no distributional value head" in body
+    assert "gen-10 baseline" not in body
 
 
 def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):

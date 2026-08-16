@@ -60,6 +60,28 @@
     <span class="muted">· {{ turns.n_turns }} turns / {{ turns.n_decisions }} decisions</span>
   </p>
 
+  {# DID IT KNOW? — the battle-level verdict from the distributional head, before the replay itself,
+     because it changes how the whole game reads: a loss the model called 40 turns out is a position
+     it could not convert, and one it never saw coming is a missed signal. The sentence is the
+     ENGINE's (`awareness_text`), so the CLI and this page cannot phrase the same fold differently.
+     Absent entirely on a run with no dist head — never an empty badge, never a fabricated 0%. #}
+  {% if turns.awareness %}
+  {% set aw = turns.awareness %}
+  <p class="awarehead">
+    {% if aw.blind_loss %}
+    <span class="badge blind" title="A LOSS whose P(loss) never held above 50% through to the end — the model never saw it coming.">blind loss</span>
+    {% elif aw.knew_by_turn is not none %}
+    <span class="badge knew" title="The first game turn from which P(loss) &gt; 50% held SUSTAINED to the end of the battle.">knew @ turn {{ aw.knew_by_turn }}</span>
+    {% endif %}
+    <span class="verdict">{{ aw.text }}</span>
+    <span class="muted small">
+      P(loss) is read off the distributional critic over {{ aw.n_decisions }} recorded
+      distribution{{ "" if aw.n_decisions == 1 else "s" }}, denormalized by a per-battle
+      ({{ "%.2f" | format(aw.denorm[0]) }}, {{ "%.2f" | format(aw.denorm[1]) }}) fit.
+    </span>
+  </p>
+  {% endif %}
+
   {# Jump targets. A 249-turn replay needs entry points, and these come back from the session's own
      `notable` block — the same one `battle_overview` returns — rather than being re-derived here.
      `decision_turns[inv]` is the session's own inv→turn lookup, so linking to a decision's turn

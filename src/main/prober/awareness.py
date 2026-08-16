@@ -43,14 +43,44 @@ from typing import Optional, Sequence
 import numpy as np
 
 
+#: What gen-10 measured, so a live number is never read without its reference point. Kept HERE
+#: rather than in a surface because both the CLI and the web must quote the same baseline — and a
+#: baseline without its provenance is a number someone will later mistake for a target.
+#: Source: `designs/research_state/gen11_endofrun_runbook.md` §3, measured 2026-08-15.
+AWARENESS_BASELINES = {
+    "generation": "gen-10",
+    "measured": "2026-08-15",
+    "n_losses": 1396,
+    "n_cap_losses": 12,
+    "blind_loss_fraction": 0.072,
+    "median_lead_time": 7.0,
+    "cap_aware_ge_bar_fraction": 0.50,
+    # Coverage was measured over ALL outcomes (109k decisions), NOT over losses — so it is only
+    # comparable at outcome=all. The loss filter biases PIT low by construction.
+    "coverage_scope": "all outcomes, 109k decisions",
+    "pit_mean": 0.396,
+    "coverage80": 0.44,
+    "source": "designs/research_state/gen11_endofrun_runbook.md §3",
+}
+
+
 @dataclass(frozen=True)
 class AwarenessVerdict:
     n_decisions: int                   # decisions that carried a distribution (the fold's rows)
     outcome: str                       # "win" | "loss" | "draw" | "?"
     turns: "tuple[int, ...]"           # game turn of each folded decision (parallel arrays below)
+    # The DECISION index (into the battle's invocations) of each folded row — parallel to `turns`
+    # and `p_loss`. `turns` cannot serve as the join key: a faint puts a `move_selection` and the
+    # `forced_switch` it caused on the SAME game turn, so keying by turn silently collapses two
+    # decisions into one. A surface that wants "this decision's P(loss)" needs this.
+    decisions: "tuple[int, ...]"
     p_loss: "tuple[float, ...]"
     p_tail: "tuple[float, ...]"
     knew_by_turn: Optional[int]
+    # The DECISION the onset happened at, not just its turn. Two decisions can share a turn, and
+    # only one of them is the crossing — marking "it was calling it from here" by turn would tag
+    # the earlier decision on that turn too, even when its own P(loss) is still under the bar.
+    knew_from_decision: Optional[int]
     lead_time: Optional[int]
     blind_loss: bool
     mean_tail_divergence: float
@@ -142,9 +172,12 @@ def build_awareness(dists: Sequence[Optional[np.ndarray]],
     return AwarenessVerdict(
         n_decisions=len(rows), outcome=outcome,
         turns=tuple(t for _j, t, _p in rows),
+        decisions=tuple(j for j, _t, _p in rows),
         p_loss=tuple(round(x, 4) for x in p_loss),
         p_tail=tuple(round(x, 4) for x in p_tail),
-        knew_by_turn=knew_by_turn, lead_time=lead,
+        knew_by_turn=knew_by_turn,
+        knew_from_decision=(rows[knew_idx][0] if knew_idx is not None else None),
+        lead_time=lead,
         blind_loss=(outcome == "loss" and knew_by_turn is None),
         mean_tail_divergence=float(round(max(div), 4)) if div else 0.0,
         divergence_turn=(rows[d_peak][1] if d_peak is not None else None),

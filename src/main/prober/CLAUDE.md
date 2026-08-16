@@ -557,7 +557,10 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   turning-point triage**: for every matching battle, its single worst decision
   (`metric="value_drop"`, the most negative ΔV(s→s'), default; or
   `"td_residual"`, the most negative critic surprise), ranked globally. Each row is
-  `{id, short_id, opponent, step, outcome, turns, worst:{inv, turn, chosen,
+  `{id, short_id, opponent, step, outcome, turns,`
+  **`knew_by_turn, lead_time, blind_loss, awareness_text`** (the battle's "did it KNOW?" verdict
+  beside the decision that lost it — a crater the model never saw coming is a missed signal; the
+  same crater with 20 turns of warning is a position it could not convert)`, worst:{inv, turn, chosen,
   our_active, opp_active, delta_v, td_residual, reward_total, events, flags,
   incoming_active_pko, incoming_max_pko, incoming_active_outspeed}}`. The
   `incoming_*` fields decode the incoming-damage / OHKO **belief** the obs HELD at
@@ -586,7 +589,12 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   ranked NAMED options + `SWITCH`, `beta` the named candidate switch-ins, `top`, `switch_p`, and a
   `text` rendered by `engine.opp_intent_text` so no surface re-derives the sentence; `None` on a run
   without the heads, which is every trace before v67), and the critic's read (`value` · `delta_v` ·
-  `td_residual` · `reward_total` + components · `events` · `flags`), plus the per-decision DETAIL a
+  `td_residual` · `reward_total` + components · `events` · `flags`) — now with the two readings the
+  scalar V cannot supply: the win-prob head's calibrated **`win_prob`/`delta_win_prob`** (V is a
+  shaped, discounted return whose zero is NOT "even", so only this one reads as odds) and the
+  distributional head's **`p_loss`/`p_tail`/`knew`** (the awareness fold, joined by decision index;
+  `knew` is true from the sustained onset onward). All `None`/`False` on a run without those heads.
+  Plus the per-decision DETAIL a
   deeper read wants — the full recorded **`actions`** distribution (`label`/`prob`/`valid`/`chosen`,
   passed through in the recorder's action-index order, NEVER re-sorted — see the move-label gotcha
   below) and the raw Showdown **`protocol`** lines for that turn (parsed ONCE per battle, not once
@@ -622,7 +630,28 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   only 50% were aware ≥5 turns early — the top-ranked row is a turn-249 cap loss with
   P(loss)=0.15 at its FINAL decision. Coverage (ALL outcomes, 109k decisions): pit_mean 0.396,
   **coverage80 0.44 vs nominal 0.80** — the head is optimistic AND over-confident (narrow);
-  losses-only pit_mean 0.085. CLI: `query awareness <run_dir>`.
+  losses-only pit_mean 0.085. CLI: `query awareness <run_dir>` — **`--outcome all` is the
+  unfiltered read** the coverage baseline is comparable to (win/loss were the only choices, which
+  made the probe's own "judge calibration unfiltered" caveat name a reading the CLI could not
+  produce). Those baselines are **not prose**: they live in `awareness.AWARENESS_BASELINES` and
+  ride the result as `aggregate.baseline`, so the CLI and the web quote ONE reference point and
+  neither keeps a copy. The result also carries `caveats` (baseline provenance · the cap-loss
+  small-n · the selection bias · counted-not-judged).
+  **The verdict's SENTENCE is `engine.awareness_text`** — same rule as `timeline`'s `text`: a
+  surface prints it, never re-derives it. Each folded row also records the **DECISION index** it
+  came from (`decisions`, parallel to `turns`/`p_loss`), because a faint puts two decisions on ONE
+  game turn and a turn-keyed join silently collapses them.
+
+  **The verdict is carried by the views that need it, not only by its own command:**
+  `battle_turns` puts `p_loss`/`p_tail`/`knew` on every decision row (beside the battle-level
+  `awareness` block); `scan` rows carry `knew_by_turn`/`lead_time`/`blind_loss`/`awareness_text`
+  beside the crater, because one value cliff means opposite things with and without warning;
+  `triage` gives each category an `awareness` split (`n_judged`/`n_blind`/`blind_fraction`/
+  `median_lead_time`) **reported BESIDE the taxonomy, never folded into it** — the category names
+  which lever to pull, the split says whether the model had warning to act on. Measured on
+  gen-11: `positional_grind` median lead **22** turns vs `attrition_death` **4** — a slow known
+  decline against a death that arrives fast. All `None` on a run with no dist head (never `0.0`,
+  never `False`: absent must not read as measured).
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`

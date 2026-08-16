@@ -41,6 +41,29 @@
   {{ m.chart("outcomes", spec) }}
 </section>
 
+{# DID IT KNOW? — the run-level fold, on the summary page because it is a property of the RUN, not
+   of any one battle, and because it is the readout a generation is judged on ("fraction of cap
+   losses tail-aware ≥5 turns early"). Loaded async like /scan: it reads every matching battle's
+   npz, so it must not sit in front of this page's first paint. #}
+<section class="card">
+  <h2>Did it know? — loss awareness</h2>
+  <p class="muted small">
+    <code>ProbeSession.awareness_scan()</code> — the distributional critic's own read of
+    <em>am I losing</em>, folded per battle: when P(loss) crossed 50% for good, how much warning
+    that gave, and the losses it never saw coming. Model-free, so it works on a run at any
+    architecture. Per-battle, this is the verdict at the top of
+    <a href="/battle{% if run %}?run={{ run | urlencode }}{% endif %}">battle</a>.
+  </p>
+  <div id="awareness"
+       hx-get="/partials/awareness?run={{ run | urlencode }}"
+       hx-trigger="load" hx-swap="innerHTML">
+    <p class="empty">
+      <span class="spinner" style="display:inline-block;vertical-align:-1px"></span>
+      Reading every captured loss's recorded distribution — a second or two.
+    </p>
+  </div>
+</section>
+
 <section class="card">
   <h2>Steps</h2>
   <div class="scroll-x">

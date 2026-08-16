@@ -25,6 +25,11 @@
     <th class="num" title="ΔV — how far the critic's value fell from this decision to the next. The most negative step is the turning point.">ΔV</th>
     <th class="num" title="TD residual δ = r + γV(s′) − V(s): how much worse the outcome was than the critic expected. Large negative = the critic was surprised.">TD δ</th>
     <th class="num" title="Environment reward for this step">reward</th>
+    {# The battle's "did it KNOW?" verdict beside the decision that lost it: the same crater reads
+       completely differently depending on whether the model had any warning. Session-provided
+       (scan rows carry it) — this table joins nothing. #}
+    <th class="num" title="knew_by_turn — the first game turn from which the distributional critic's P(loss) stayed above 50% to the end. Blank = the run has no dist head; BLIND = it never got there.">knew @</th>
+    <th class="num" title="lead_time — turns of warning between knew_by_turn and the last decision.">lead</th>
     <th title="Model-free flags on this decision">flags</th>
     <th>events</th>
     <th title="Copy the battle id for the CLI or the TUI">take it onward</th>
@@ -45,6 +50,12 @@
       <td class="num">{{ m.signed(w.delta_v) }}</td>
       <td class="num">{{ m.signed(w.td_residual) }}</td>
       <td class="num">{{ m.signed(w.reward_total) }}</td>
+      <td class="num">
+        {% if r.blind_loss %}<span class="badge blind" title="{{ r.awareness_text }}">BLIND</span>
+        {% elif r.knew_by_turn is not none %}<span title="{{ r.awareness_text }}">{{ r.knew_by_turn }}</span>
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>
+      <td class="num">{% if r.lead_time is not none %}{{ r.lead_time }}{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>{% for f in (w.flags or []) %}<span class="pill">{{ f }}</span> {% endfor %}</td>
       <td class="wrap mono">{{ (w.events or []) | join(", ") }}</td>
       {# The handoff. Without this the table is a dead end: it names the exact decision that lost

@@ -28,7 +28,14 @@
 <table>
   <thead><tr>
     <th>category</th><th class="num">est. recoverable pp</th><th class="num">n</th>
-    <th class="num">% of sampled losses</th><th>lever</th><th>what it means</th>
+    <th class="num">% of sampled losses</th>
+    {# REPORTED BESIDE the taxonomy, never folded into it (the session says so in its caveats): the
+       category names which lever to pull, these two say whether the model had any warning to act
+       on. A category that is mostly BLIND is a different repair from one it saw coming and
+       mis-played. #}
+    <th class="num" title="Share of this category's losses the model never saw coming — P(loss) never held above 50% to the end. Over the losses carrying a distributional verdict; blank on a run with no dist head.">blind</th>
+    <th class="num" title="Median lead_time within this category: turns of warning between knew_by_turn and the last decision.">median lead</th>
+    <th>lever</th><th>what it means</th>
   </tr></thead>
   <tbody>
   {% for c in data.categories %}
@@ -37,6 +44,12 @@
       <td class="num">{{ m.num(c.est_recoverable_winrate_pct, 2) }}</td>
       <td class="num">{{ c.n }}</td>
       <td class="num">{{ m.num(c.pct_of_sampled_losses, 1) }}</td>
+      <td class="num">
+        {% if c.awareness.blind_fraction is none %}<span class="muted">—</span>
+        {% else %}<span class="{{ 'neg' if c.awareness.blind_fraction > 0 }}"
+              title="{{ c.awareness.n_blind }} of {{ c.awareness.n_judged }} judged">{{ m.pct(c.awareness.blind_fraction, 0) }}</span>{% endif %}
+      </td>
+      <td class="num">{{ m.num(c.awareness.median_lead_time, 1) }}</td>
       <td class="wrap">{{ c.lever }}</td>
       <td class="wrap muted">{{ c.blurb }}</td>
     </tr>

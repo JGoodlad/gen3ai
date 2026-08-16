@@ -355,6 +355,25 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return session(pick(run)).triage(step=step, opponent=opponent,
                                          wp_even=wp_even, v_even=v_even)
 
+    @app.get("/api/awareness", tags=["read-only"], response_model=dict,
+             summary="ProbeSession.awareness_scan() — the 'did it KNOW?' verdicts (model-free)")
+    def api_awareness(
+        run: "str | None" = Query(None),
+        # An EMPTY outcome means "every battle", and it has to be reachable: the quantile-coverage
+        # half of this probe is only comparable to the published baseline unfiltered (the loss
+        # filter biases PIT low by construction, which the result's own caveats state).
+        outcome: "str | None" = Query("loss", pattern="^(win|loss|draw|)$"),
+        opponent: "str | None" = Query(None),
+        step: "int | None" = Query(None),
+        lead_bar: int = Query(5, ge=0, description="turns of warning that count as 'aware'"),
+        cap_turn: int = Query(240, ge=1, description="last decision turn ≥ this = a CAP loss"),
+        stall_bar: float = Query(0.25, ge=0.0, le=1.0,
+                                 description="tail-divergence that counts as the stall signature"),
+    ) -> dict:
+        return session(pick(run)).awareness_scan(
+            outcome=outcome or None, opponent=opponent, step=step,
+            lead_bar=lead_bar, cap_turn=cap_turn, stall_bar=stall_bar)
+
     # -- JSON API: the expensive probes, as jobs (PASSWORD REQUIRED) ----------------------
 
     @app.post("/api/jobs/falsify-scan", tags=["jobs"], response_model=JobRef, status_code=202,
@@ -733,6 +752,24 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         return fragment(request, "partials/analyze_result.html", a=data, error=err,
                         spec=_value_dist_spec(dist) if dist else None,
                         run=run, battle=row["short_id"], battle_path=row["id"], inv=i)
+
+    @app.get("/partials/awareness", response_class=HTMLResponse, tags=["partials"],
+             summary="Run-level 'did it KNOW?' panel (HTMX target)")
+    def partial_awareness(
+        request: Request,
+        run: "str | None" = Query(None),
+        outcome: "str | None" = Query("loss"),
+        step: "str | None" = Query(None),
+    ) -> HTMLResponse:
+        # Loaded async on `/`, like `/scan`: this reads every matching battle's npz, so it is
+        # seconds on a real run and must not sit in front of the run summary's first paint.
+        sess = session(pick(run))
+        data, err = guarded(lambda: sess.awareness_scan(
+            outcome=outcome or None, step=_form_int(step)))
+        # `awareness_scan` reports a missing dist head as an `error` KEY rather than by raising —
+        # an ordinary state of most runs, not a failure, so it renders as a note either way.
+        return fragment(request, "partials/awareness_panel.html", data=data, error=err,
+                        outcome=outcome, run=run)
 
     @app.get("/partials/triage", response_class=HTMLResponse, tags=["partials"],
              summary="Triage table + lever chart fragment (HTMX target)")

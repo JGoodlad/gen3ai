@@ -1,0 +1,107 @@
+{% import "_macros.html" as m %}
+{# RUN-LEVEL "did it KNOW?" — `ProbeSession.awareness_scan()`.
+
+   Every number here, INCLUDING the baseline column, comes back from the session: the gen-10
+   figures live in `awareness.AWARENESS_BASELINES` so the CLI and this page quote one reference
+   point, and so a baseline can never drift between the two surfaces. This template picks fields
+   and formats them; it computes nothing and compares nothing. #}
+
+{% if error %}
+  <p class="err">{{ error }}</p>
+{% elif not data %}
+  <p class="empty">no awareness data</p>
+{% elif data.error %}
+  {# The ordinary state of most runs: no distributional value head, so there is no distribution to
+     read a P(loss) off. A note, not an error — the run is fine, this probe just has nothing to
+     say about it. #}
+  <p class="empty">{{ data.error }}</p>
+{% else %}
+{% set a = data.aggregate %}
+{% set b = a.baseline %}
+
+<p class="muted small">
+  Over <strong>{{ a.n_battles }}</strong> {{ outcome or "battle" }}{{ "es" if outcome == "loss"
+  else ("s" if not outcome else "") }} with a recorded distribution
+  {%- if a.n_skipped_no_dist %}, plus {{ a.n_skipped_no_dist }} counted but not judged (fewer than
+  two recorded distributions){% endif %}. Support {{ data.support }}.
+</p>
+
+<div class="scroll-x">
+<table class="awaretable">
+  <thead><tr>
+    <th>reading</th>
+    <th class="num">this run</th>
+    <th class="num" title="{{ b.generation }}, measured {{ b.measured }} — {{ b.source }}">{{ b.generation }} baseline</th>
+    <th>what it means</th>
+  </tr></thead>
+  <tbody>
+    <tr data-row>
+      <td>blind losses</td>
+      <td class="num">{{ m.pct(a.blind_loss_fraction, 1) }}</td>
+      <td class="num muted">{{ m.pct(b.blind_loss_fraction, 1) }}</td>
+      <td class="wrap muted">Losses whose P(loss) never held above 50% through to the end — the
+        model never saw them coming. Lower is better.</td>
+    </tr>
+    <tr data-row>
+      <td>median lead time</td>
+      <td class="num">{{ m.num(a.median_lead_time, 1) }}</td>
+      <td class="num muted">{{ m.num(b.median_lead_time, 1) }}</td>
+      <td class="wrap muted">Turns of warning between the sustained onset and the last decision.</td>
+    </tr>
+    <tr data-row>
+      <td>cap-aware @{{ a.params.lead_bar }}</td>
+      <td class="num">{{ m.pct(a.cap_aware_ge_bar_fraction, 0) }}
+        <span class="muted small">n={{ a.n_cap_losses }}</span></td>
+      <td class="num muted">{{ m.pct(b.cap_aware_ge_bar_fraction, 0) }}
+        <span class="small">n={{ b.n_cap_losses }}</span></td>
+      <td class="wrap muted">The deadline-clock readout: of the losses that ran to the turn cap
+        (last decision ≥ turn {{ a.params.cap_turn }}), the share the model was tail-aware of at
+        least {{ a.params.lead_bar }} turns early. <strong>Small n on both sides</strong> — a
+        direction, not a rate.</td>
+    </tr>
+    <tr data-row>
+      <td>stall signature</td>
+      <td class="num">{{ m.pct(a.stall_signature_fraction, 1) }}</td>
+      <td class="num muted">—</td>
+      <td class="wrap muted">Losses where catastrophic-band mass reached
+        {{ a.params.stall_bar }} while the distribution's MEAN still read positive — the shape a
+        scalar critic structurally cannot show.</td>
+    </tr>
+    {% if a.quantile_coverage %}
+    {% set q = a.quantile_coverage %}
+    <tr data-row>
+      <td>coverage₈₀</td>
+      <td class="num">{{ m.pct(q.coverage80, 0) }}</td>
+      <td class="num muted">{{ m.pct(b.coverage80, 0) }}</td>
+      <td class="wrap muted">Share of realized returns landing inside the predicted 10–90 band
+        over {{ "{:,}".format(q.n_decisions) }} decisions; nominal is 80%. Below ⇒ the head is
+        over-confident (too narrow).</td>
+    </tr>
+    <tr data-row>
+      <td>PIT mean</td>
+      <td class="num">{{ m.num(q.pit_mean, 3) }}</td>
+      <td class="num muted">{{ m.num(b.pit_mean, 3) }}</td>
+      <td class="wrap muted">Where realized returns fall in the predicted CDF; calibrated is 0.5.
+        Persistently below ⇒ optimistic.</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+</div>
+
+{% if outcome %}
+{# The one comparison on this page that is NOT valid at the current filter, said where the number
+   is rather than only in the caveats: the published coverage baseline was measured over ALL
+   outcomes, and losses are the low-outcome tail by construction. #}
+<p class="interp">
+  <strong>The two coverage rows are filtered to <code>{{ outcome }}</code></strong>, and the
+  {{ b.generation }} baseline beside them was measured over {{ b.coverage_scope }}. Losses are the
+  low-outcome tail, so a filtered PIT is biased low <em>by construction</em> — read these two for
+  direction only, and
+  <a class="rowlink" href="/api/awareness?run={{ run | urlencode }}&amp;outcome=">judge calibration
+  unfiltered</a>. The awareness rows above are loss-scoped on both sides and compare cleanly.
+</p>
+{% endif %}
+
+{{ m.caveats(data.caveats) }}
+{% endif %}

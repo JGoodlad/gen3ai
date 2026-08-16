@@ -192,11 +192,11 @@ produced it.
 
 | View | Session call | Notes |
 |---|---|---|
-| `/` run | `run_summary()` | steps · per-step identity · opponents · checkpoints · γ |
+| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity · opponents · checkpoints · γ, **plus the "did it know?" panel** (async, see below) |
 | `/battles` | `battles()` | outcome / opponent / step filters |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
-| `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic (model-free) |
+| `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic · **P(win) and the P(loss) strip** (model-free) |
 | `/analyze` | `analyze()` | **one decision, all the way down** — faithfulness · beliefs · threats · intervention · saliency. **LOADS THE CHECKPOINT** (see below) |
 | `/falsify` | `falsify_scan()` | the crater bracket — **a background job** |
 | `/calibration` | `calibration()` | the reliability curve — **a background job** |
@@ -246,6 +246,22 @@ Three things about it are deliberate:
   `α` over theirs. `β` names a slot by the model's own species posterior, and the panel SAYS so
   rather than letting a believed mon read as the board. Absent entirely on a run without the heads
   (every trace before v67) — no line, never an empty one and never a fabricated 0%.
+- **It says whether the model SAW THE LOSS COMING, twice.** Above the replay, the battle-level
+  verdict — a `blind loss` / `knew @ turn N` badge and `engine.awareness_text`'s sentence,
+  printed, never re-worded here. Then under each decision's critic row, a **P(loss) strip** with
+  the 50% bar drawn on it, tinted and railed from the sustained onset on, so scrolling the replay
+  SHOWS where the read turned rather than asking the reader to trust the badge. The strip is a bar
+  and not a number because the fact is a CROSSING, which a column of percentages hides. Beside it
+  sits **`tail`** — the catastrophic-band mass — because tail mass piling up under a still-positive
+  mean is the stall signature, and it is precisely what the scalar V on the same line cannot show.
+  Both are suppressed below a **0.5% legibility floor**, the same one `awareness_text` applies:
+  "tail 0%" reads as a finding when it is rounding noise. Absent entirely on a run with no dist
+  head — never a 0%, which would be a claim the trace cannot support.
+- **P(win) sits beside V, not instead of it** (`win_prob`/`delta_win_prob`, in percentage POINTS
+  via the `signed_pp` macro — a difference of probabilities is not a "%"). V is a shaped,
+  discounted return whose zero is not "even" (a measured self-mirror 50/50 reads about −6.5), so
+  the two disagree in sign routinely and only the calibrated one reads as odds. Absent on the
+  great majority of traces, which have no such head.
 - **The default battle, and the picker, are NEWEST-first** (`_newest_first`). `ProbeSession.battles()`
   is ordered by step *ascending*, so a naive `rows[0]` default landed visitors on a battle played by
   the run's oldest checkpoint.
@@ -269,6 +285,43 @@ one level down, and load-bearing for the same reason: `ProbeSession._battle` fal
 against the run's own battle listing and passes the session a path the *server* produced. The
 reversion test proved it: without that check a pinned single-run instance served a sibling run's
 trace with a **200**.
+
+### "Did it know?" — the awareness layer, on three views
+
+One fold (`main/prober/awareness.py`), surfaced wherever it changes a reading. It is **model-free**,
+so unlike `/analyze` it works on every run at any architecture — and `None` throughout on the runs
+with no distributional head, which is most of them.
+
+| where | what it adds |
+|---|---|
+| `/battle` | the battle verdict above the replay + a per-decision **P(loss) strip** (see above) |
+| `/scan` | `knew @` and `lead` columns beside each crater — `BLIND` badged when it never saw it coming |
+| `/triage` | a `blind` / `median lead` column per category, **beside** the lever, never folded into it |
+| `/` | the run-level panel: the aggregate against the published **gen-10 baseline** |
+
+**The baseline is data, not copy.** The gen-10 figures live in `awareness.AWARENESS_BASELINES` and
+ride `awareness_scan()`'s own payload as `aggregate.baseline`, so this page renders them the same
+way it renders the live numbers — the one rule applied to a reference point. A baseline typed into
+a template is one the CLI would eventually disagree with.
+
+**Two honesty rules the panel enforces in the markup**, because a comparison table invites reading
+every row as a like-for-like verdict:
+
+- **cap-aware@5 prints its `n` on both sides** and says "a direction, not a rate". The baseline is
+  over **12** cap losses; at that n the fraction moves in quarter-steps.
+- **The two coverage rows are NOT comparable at the default filter.** The baseline was measured
+  over ALL outcomes; the panel defaults to losses, which are the low-outcome tail, so a filtered
+  PIT is biased low *by construction*. The page says so next to those rows and links the
+  unfiltered read, rather than leaving it in the caveats fold. Same fix landed in the CLI, where
+  `--outcome` had only `win`/`loss` — the probe's own caveat was prescribing a reading its
+  interface could not produce (`--outcome all` now does).
+
+It loads **async on `/`** (`hx-trigger="load"`, the `/scan` pattern): it reads every matching
+battle's npz, so the run summary must not sit behind it. Measured on a real run (gen-11, **1292
+losses**): `awareness_scan()` **5.4 s** cold, against `scan()`'s 2.0 s warm — the same order, and
+both taken on a box carrying a live trainer, so treat them as upper bounds.
+`render_integration_test.py` requires a completed swap there — a route returning 200 to a test
+client would not catch the panel spinning forever.
 
 ### `/analyze` — the one view that loads a checkpoint
 
@@ -514,6 +567,22 @@ was applied to a copy of the tree and the matching test confirmed red):
   a single shape would leave the `β` path and the heads-off path ungated. Because the fixture
   carries them, the measured layout gate (`overflowby` / `scrollers` / `monstack`) covers the new
   markup with no new assertion.
+
+  **Its distributions follow the same one-of-each rule**, and the `model_config.json` that declares
+  the atom support: one **blind** loss that also carries the **stall signature** (both recorded
+  values positive, so P(loss) never crosses the bar, while 30% of the second decision's mass sits
+  in the bottom atoms — the exact pathology the head exists to make visible), one loss it **called**
+  (values under water, so the onset marker and the `knew` strip render), one trace with **no
+  `value_dist` at all** (the counted-but-never-judged path), and win-prob on exactly one battle so
+  the far more common no-win-prob rendering stays gated.
+
+  ⚠ **A distribution must agree with its own recorded V.** The awareness fold denormalizes the
+  support by a least-squares fit over the trace's `(dist mean, recorded V)` pairs, so a row built
+  to a chosen P(loss) is silently relocated by that fit — a first draft did exactly that and read
+  back `p_loss = 0.00` on every decision. The rows are therefore built as a SHAPE centred on the
+  recorded value, and P(loss) falls out of `(V, spread)` the way it does in a real trace. A
+  requested tail mass the mean cannot carry is a hard error, never a quiet degradation: on
+  `[-12, 12]` no distribution with mean 10 holds 30% at −10.
 
 ## Gotchas
 

@@ -231,6 +231,19 @@ def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server):
     assert not data.get("htmx-error")
 
 
+def test_the_run_page_fetches_its_awareness_panel_over_htmx(server):
+    """The run summary paints server-side, but the 'did it know?' panel reads every captured
+    loss's npz — so it arrives the way /scan's table does, and the run summary is not held behind
+    it. Nothing in the panel exists in the page source; a completed swap is what proves the whole
+    chain (fragment, swap, render) rather than a route that merely returns 200 to a test client."""
+    data = _probe(_chrome(), server, "/")
+    assert int(data["swaps"]) >= 1, (
+        "the awareness panel's hx-trigger=load never completed a swap — the run page would show "
+        "its spinner forever")
+    assert not data.get("htmx-error")
+    assert int(data["rows"]) > 0
+
+
 def test_the_triage_page_arrives_already_populated(server):
     """Triage renders SERVER-SIDE on first paint (measured 436 ms on a real run) rather than
     landing empty and fetching, so the assertion inverts: the rows and the chart must be there

@@ -107,6 +107,14 @@
     <p class="critic">
       <span title="the critic's value of this state">V {{ m.num(d.value) }}</span>
       <span title="change in V to the next decision — the value cliff a loss is diagnosed by">ΔV {{ m.signed(d.delta_v) }}</span>
+      {% if d.win_prob is not none %}
+      {# P(win) beside V, not instead of it: V is a SHAPED, discounted return whose zero is not
+         "even" (a measured self-mirror 50/50 reads about −6.5), so the two disagree in sign all
+         the time and only the calibrated one is readable as odds. Absent on a run with no
+         win-prob head — the great majority of traces. #}
+      <span title="the win-prob head's calibrated P(win) for this state — the interpretable [0,1] complement to V, whose zero is NOT 'even'">P(win) {{ m.pct(d.win_prob, 0) }}</span>
+      <span title="change in the calibrated P(win) to the next decision: how much this move moved the odds, in percentage points">ΔP {{ m.signed_pp(d.delta_win_prob) }}</span>
+      {% endif %}
       <span title="TD residual r + γV(s′) − V(s): how SURPRISED the critic was">TD δ {{ m.signed(d.td_residual) }}</span>
       <span title="the env reward for this step{% for k, v in d.reward_components.items() %} · {{ k }}: {{ v }}{% endfor %}">
         r {{ m.signed(d.reward_total) }}{% if d.reward_components %}<span class="muted"> ⓘ</span>{% endif %}</span>
@@ -117,6 +125,31 @@
           analyze #{{ d.inv }}</button>
       </span>
     </p>
+
+    {% if d.p_loss is not none %}
+    {# THE DISTRIBUTION'S OWN READ, under the scalar it cannot be recovered from. V is one number;
+       this is P(return < 0) and the catastrophic-band mass beneath it, and the whole point of the
+       dist head is the case where those two disagree — tail mass piling up while the MEAN still
+       looks healthy is the stall signature a scalar critic structurally cannot show.
+       `knew` marks the sustained-onset stretch, so scrolling the replay shows exactly where the
+       model started calling it. #}
+    <p class="ploss {{ 'knew' if d.knew }}">
+      <span class="k" title="P(return &lt; 0) under this decision's predicted return distribution — the distributional head's own read of 'am I losing', in real return units.">P(loss)</span>
+      <span class="strip" role="img" aria-label="P(loss) {{ m.pct(d.p_loss, 0) }}">
+        {# Sized from the session's own p_loss; the 50% mark is where knew_by_turn's bar sits, so
+           the reader can see the crossing rather than take the badge's word for it. #}
+        <span class="fill" style="width: {{ (d.p_loss * 100) | round(1) }}%"></span>
+        <span class="bar50"></span>
+      </span>
+      <span class="v">{{ m.pct(d.p_loss, 0) }}</span>
+      {# The same 0.5% legibility floor `engine.awareness_text` applies to its stall clause: below
+         it this prints "tail 0%", which reads as a finding when it is rounding noise. #}
+      {% if d.p_tail and d.p_tail >= 0.005 %}
+      <span class="tail" title="P(return ≤ the catastrophic threshold — the bottom 10% of the support): the band a cap/stall loss lands in. Mass here while V still reads healthy is the stall signature.">tail {{ m.pct(d.p_tail, 0) }}</span>
+      {% endif %}
+      {% if d.knew %}<span class="knewmark" title="At or after knew_by_turn: from here P(loss) &gt; 50% held all the way to the end.">▸ calling it</span>{% endif %}
+    </p>
+    {% endif %}
 
     {# THE DROP-DOWN — the TUI's per-decision detail, restricted to what is MODEL-FREE.
        Collapsed by default because the point of the replay is reading the game; this is what you

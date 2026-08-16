@@ -349,6 +349,39 @@ p.critic { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 2px;
 p.critic span[title] { cursor: help; }
 p.critic .cmd { margin-left: auto; }
 
+/* "Did it KNOW?" — the distributional head's read, under the scalar critic row ---------------
+ *
+ * A strip rather than a number alone, because the fact being read is a CROSSING (P(loss) passing
+ * 50% and staying there) and a column of percentages hides exactly that. The 50% mark is drawn on
+ * the bar so the badge's `knew @ turn N` can be checked against the picture instead of trusted.
+ * Same reflow contract as the rest of the replay: it wraps, it never scrolls.
+ */
+p.ploss { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 4px;
+          font-family: var(--mono); font-size: 11.5px; color: var(--dim);
+          font-variant-numeric: tabular-nums; }
+p.ploss span[title] { cursor: help; }
+p.ploss .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+p.ploss .strip { position: relative; display: inline-block; width: 140px; max-width: 40vw;
+                 height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+p.ploss .fill { display: block; height: 100%; background: var(--warn); }
+/* The decision bar the verdict is defined by — dim, thin, and inside the strip so it cannot be
+   mistaken for data. */
+p.ploss .bar50 { position: absolute; left: 50%; top: 0; width: 1px; height: 100%;
+                 background: var(--line); }
+p.ploss .tail { color: var(--bad); }
+/* Past the sustained onset the model is already calling the game: the fill goes to the loss colour
+   and the row picks up a rail, so scrolling the replay SHOWS where the read turned. */
+p.ploss.knew .fill { background: var(--bad); }
+p.ploss.knew { border-left: 2px solid var(--bad); padding-left: 6px; margin-left: -8px; }
+p.ploss .knewmark { color: var(--bad); }
+
+/* The battle-level verdict, above the replay. */
+p.awarehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px;
+              margin: 0 0 8px; font-size: 12.5px; }
+p.awarehead .verdict { color: var(--text); }
+.badge.blind { color: var(--bad); font-weight: 600; }
+.badge.knew { color: var(--warn); }
+
 /* Narrow viewports ------------------------------------------------------------------------
  *
  * These are tables of forensic numbers, so the phone answer is NOT to reflow every table into

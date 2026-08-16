@@ -155,7 +155,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "awareness", help="MODEL-FREE 'did it KNOW?': dist-head loss-awareness verdicts over a run "
                           "(knew_by_turn/lead_time/blind_loss + the stall signature)")
     paw.add_argument("root", help="run dir / eval_traces dir")
-    paw.add_argument("--outcome", choices=["win", "loss"], default="loss")
+    # `all` is REQUIRED, not a convenience: the result's own caveat tells the reader to judge the
+    # quantile-coverage half unfiltered (a loss filter biases PIT low by construction), and with
+    # only win/loss to choose from that instruction named a reading this CLI could not produce.
+    paw.add_argument("--outcome", choices=["win", "loss", "draw", "all"], default="loss",
+                     help="filter battles (default loss); `all` is the UNFILTERED read the "
+                          "quantile-coverage baseline is comparable to")
     paw.add_argument("--opponent")
     paw.add_argument("--step", type=int)
     paw.add_argument("--lead-bar", type=int, default=5,
@@ -368,7 +373,8 @@ def _run(args) -> object:
             limit=args.limit, metric=args.metric)
     if args.cmd == "awareness":
         return ProbeSession(args.root).awareness_scan(
-            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            outcome=(None if args.outcome == "all" else args.outcome),
+            opponent=args.opponent, step=args.step,
             lead_bar=args.lead_bar, cap_turn=args.cap_turn, stall_bar=args.stall_bar)
     if args.cmd == "triage":
         return ProbeSession(args.root).triage(step=args.step, opponent=args.opponent,

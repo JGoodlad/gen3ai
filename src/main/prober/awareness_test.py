@@ -80,6 +80,10 @@ def test_skips_missing_rows_and_requires_two():
     dists = [None, _bump(6), None, _bump(-6)]
     v = build_awareness(dists, [1, 2, 3, 4], "loss", SUPPORT)
     assert v is not None and v.n_decisions == 2 and v.turns == (2, 4)
+    # THE JOIN KEY: which DECISION each folded row came from. Skipped rows must not shift it —
+    # a surface pairing p_loss to decisions by position would silently attribute row 1 to
+    # decision 1 here, when it is decision 3.
+    assert v.decisions == (1, 3)
     assert build_awareness([_bump(6), None, None], [1, 2, 3], "loss", SUPPORT) is None
     assert build_awareness([], [], "loss", SUPPORT) is None
 
@@ -157,6 +161,56 @@ def test_coverage_skips_missing_and_requires_two():
     c = coverage_stats(dists, [0.0, 0.0, 1.0], SUPPORT)
     assert c is not None and c["n"] == 2
     assert coverage_stats([_bump(0.0), None], [0.0, 0.0], SUPPORT) is None
+
+
+def test_a_decision_index_is_recorded_for_every_folded_row():
+    """Two decisions can share ONE game turn (a faint puts a move_selection and the forced_switch
+    it caused on the same turn), so `turns` cannot be the join key — keying a per-decision view by
+    turn collapses the pair. `decisions` is what makes the join exact."""
+    dists = [_bump(6), _bump(-6), _bump(-7)]
+    v = build_awareness(dists, [7, 8, 8], "loss", SUPPORT)
+    assert v.turns == (7, 8, 8)          # turn 8 twice — the collapse a turn-keyed join would hit
+    assert v.decisions == (0, 1, 2)      # …and three distinct decisions to hang the reads on
+    assert len(v.p_loss) == len(v.decisions)
+
+
+def test_the_onset_names_a_decision_not_only_a_turn():
+    """Decisions 1 and 2 share game turn 5, and the crossing happens at decision 2. A consumer
+    marking "it was calling it from here" by TURN would sweep decision 1 in with it — even though
+    decision 1's own P(loss) is still under the bar."""
+    dists = [_bump(6), _bump(6), _bump(-6), _bump(-7)]
+    v = build_awareness(dists, [4, 5, 5, 6], "loss", SUPPORT)
+    assert v.knew_by_turn == 5           # the turn is ambiguous: two decisions carry it…
+    assert v.knew_from_decision == 2     # …the decision is not
+    assert v.p_loss[1] < 0.5 <= v.p_loss[2]
+
+
+def test_verdict_text_says_what_the_fold_found():
+    """The sentence every surface prints (`engine.awareness_text`), so the CLI and the browser
+    cannot phrase one fold two ways."""
+    from dataclasses import asdict
+
+    from main.prober.engine import awareness_text
+
+    aware = asdict(build_awareness([_bump(6), _bump(-6), _bump(-7)], [1, 2, 3], "loss", SUPPORT))
+    assert awareness_text(aware) == "knew by turn 2 — 1 turn of warning"
+
+    blind = asdict(build_awareness([_bump(6)] * 3, [1, 2, 3], "loss", SUPPORT))
+    assert "never saw it coming" in awareness_text(blind)
+
+    stall = asdict(build_awareness(
+        [_bump(6), _mix([(7, 0.65), (-11.5, 0.35)])], [1, 2], "loss", SUPPORT))
+    assert "stall signature" in awareness_text(stall)
+    # 31%, not the mixture's 35%: `p_tail` is the mass at or below the catastrophic threshold
+    # (vmin + 10% of the support range = −9.6), and the bump centred at −11.5 spills a little
+    # above it. The sentence reports the fold's number, never the input's.
+    assert "31% tail mass at turn 2" in awareness_text(stall)
+
+    # A rounding floor, not a threshold: a divergence that would print "0% tail mass" says nothing
+    # and must not append a clause that reads as a finding.
+    assert "stall signature" not in awareness_text(
+        asdict(build_awareness([_bump(6)] * 3, [1, 2, 3], "loss", SUPPORT)))
+    assert awareness_text(None) == "" and awareness_text({}) == ""
 
 
 def test_from_npz_reads_the_trace_arrays():

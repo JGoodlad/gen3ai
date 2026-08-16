@@ -957,6 +957,147 @@
         ]
       }
     },
+    "/api/awareness": {
+      "get": {
+        "operationId": "api_awareness_api_awareness_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outcome",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(win|loss|draw|)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "loss",
+              "title": "Outcome"
+            }
+          },
+          {
+            "in": "query",
+            "name": "opponent",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Opponent"
+            }
+          },
+          {
+            "in": "query",
+            "name": "step",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Step"
+            }
+          },
+          {
+            "description": "turns of warning that count as 'aware'",
+            "in": "query",
+            "name": "lead_bar",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "description": "turns of warning that count as 'aware'",
+              "minimum": 0,
+              "title": "Lead Bar",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "last decision turn \u2265 this = a CAP loss",
+            "in": "query",
+            "name": "cap_turn",
+            "required": false,
+            "schema": {
+              "default": 240,
+              "description": "last decision turn \u2265 this = a CAP loss",
+              "minimum": 1,
+              "title": "Cap Turn",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "tail-divergence that counts as the stall signature",
+            "in": "query",
+            "name": "stall_bar",
+            "required": false,
+            "schema": {
+              "default": 0.25,
+              "description": "tail-divergence that counts as the stall signature",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "title": "Stall Bar",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Api Awareness Api Awareness Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "ProbeSession.awareness_scan() \u2014 the 'did it KNOW?' verdicts (model-free)",
+        "tags": [
+          "read-only"
+        ]
+      }
+    },
     "/api/battle-turns": {
       "get": {
         "operationId": "api_battle_turns_api_battle_turns_get",
@@ -2637,6 +2778,88 @@
           }
         },
         "summary": "One decision's full analysis (HTMX target; loads the checkpoint)",
+        "tags": [
+          "partials"
+        ]
+      }
+    },
+    "/partials/awareness": {
+      "get": {
+        "operationId": "partial_awareness_partials_awareness_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outcome",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "loss",
+              "title": "Outcome"
+            }
+          },
+          {
+            "in": "query",
+            "name": "step",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Step"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run-level 'did it KNOW?' panel (HTMX target)",
         "tags": [
           "partials"
         ]
