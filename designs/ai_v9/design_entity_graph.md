@@ -80,6 +80,10 @@ Decision (2026-08-03): land (b) first (the sufficient-statistic view — most hi
 compiled into entity state), then a short window of (a)-style turn tokens for the sequential
 residue, with entity-LINKED event tokens as the audited end-state; recurrence RULED OUT (the
 obs must stay a pure function of the event log — the forensic-stack invariant).
+**[2026-08-15] (b) is SHIPPED twice over**: the recency triplet (step 1) and the v79 compiled
+tier (`gen3_pair_history_v1` — last-action fields + the 6×6×5 pair-history block with its
+opt-in `h` edge family; `design_history_entity.md` Tier H-A). The turn-token window (H-B) and
+entity-linked event tokens (H-C) remain forward design, gated on H-A's trained verdict.
 
 ---
 
@@ -181,7 +185,7 @@ harness at any future Rust boundary).
 | matchups (288) | D/V edges |
 | active-req-moves (12) | E3 ordered tokens (alignment by construction) |
 | prev-turn action mask (11) | E7 summary |
-| turn history (7×159) | E9 (open) |
+| turn history (7×159) | E9 — the COMPILED tier shipped (recency + v79 last-action/pair-history + `h` family); the 7×159 positional frames themselves still stand until H-B/H-C replace their residue |
 | op head-concat blocks (all) | D/S/C/V/T/X edges + marginals; ✅ **deleted 2026-08-09 (v61
 `gen3_no_concat_v1`)** — on gen-4's stratified evidence rather than the full mask→A/B ladder;
 the critic's window became `MultiSeedValueReadout` over the per-our-mon rows |

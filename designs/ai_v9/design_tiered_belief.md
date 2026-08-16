@@ -148,8 +148,8 @@ Deliberately small — three things:
 | 3 | Make prefuse unconditional; delete the POST call sites (#1) | zero in production; **breaks non-prefuse configs by design** | forward bit-identity vs production config | ✅ SHIPPED v71 (`gen3_tiered_pipeline_v1` — recorded-POST configs are REFUSED, not popped) |
 | 4 | Delete `--damage-reattend` (#5) | off in production | suite | ✅ SHIPPED v71 |
 | 5 | Land the tier-ordering contract + test | zero | new test fails on a violation | ✅ SHIPPED v70/71 (`tier_contract.py` + planted-violation tests) |
-| 6 | **α → the reduction** (`how=` at `_chan_max`) | **the real change** | A/B at the one call site; retrain-class | ◐ PARTIAL — the CRITIC-side consumer landed as v74 `intent_value_reduce` (α-weighted pair-cell rows, vf-only zero-init concat; live in gen-9). The op's own reduction stays R0 `hard_max`; the POLICY-side consumption (the pointer move cell, `design_conditional_execution.md`) remains open |
-| 7 | Unify delivery (T3) | largest | non-inferiority on the ladder | open |
+| 6 | **α → the reduction** (`how=` at `_chan_max`) | **the real change** | A/B at the one call site; retrain-class | ◐ PARTIAL — BOTH head-side consumers landed: v74 `intent_value_reduce` (critic, live gen-9+) and v77 `intent_move_cell` (policy, G3 — TRAINING in gen-11). **The op's own reduction still runs R0 `hard_max`** — swapping the `how=` at `_chan_max` for an α-weighted rung is the remaining half (deprioritized behind the entity end-state per `project_oa_cells_path_forward`) |
+| 7 | Unify delivery (T3) | largest | non-inferiority on the ladder | ◐ PARTIAL — the CRITIC half is BUILT as v80 `gen3_unified_value_readout_v1` (`--value-entity-pool`, opt-in zero-init entity pool with its own `entity_pool` audit arm; the policy half IS the pointer head, already the contract). Enabling + condemning the routes it succeeds waits on the gen-11 critic-route audit |
 
 **Steps 1–5 shipped as v70/71** (pure deletion, byte-identical on the production config,
 validated by the forward-identity gates as planned). Step 6's critic half shipped as v74; the

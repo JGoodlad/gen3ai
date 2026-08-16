@@ -5,10 +5,12 @@
 > `gen3_intent_move_cell_v1`, same day):** `c2` re-delivered through the pointer MOVE cell,
 > α-conditioned per §1's operator (`--intent-move-cell`, fresh-only, OFF byte-identical;
 > unrenormalized α with `f(m, SWITCH)=0` exact; the SWITCH branch's β-weighted value
-> deliberately deferred to the class-B step). The G3 **VERDICT** — does the re-delivered
-> family come alive on a trained run's per-arm audit — is still open; the instrument ships
-> OFF and the first flag-on run is the gate. The remaining per-mechanic specs below
-> (`p_thresh`, Focus Punch/Sub/Endure/DB/Endeavor, class B) stay unbuilt pending that verdict.
+> deliberately deferred to the class-B step). **[UPDATE 2026-08-15] The flag-on run is IN
+> FLIGHT: gen-11 (`ai_v9_13_gen11_labelonly_winprob_0815`) trains with `intent_move_cell:
+> true` — the G3 VERDICT comes from its end-of-run per-arm audit
+> (`designs/research_state/gen11_endofrun_runbook.md` §4).** The remaining per-mechanic specs
+> below (`p_thresh`, Focus Punch/Sub/Endure/DB/Endeavor, class B) stay unbuilt pending that
+> verdict.
 
 > **What this document is.** A per-mechanic specification of every gen3 move whose value cannot be
 > computed without a belief over the opponent's action, the exact conditional each one needs, and

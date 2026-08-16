@@ -1,10 +1,15 @@
 # design — HISTORY IN THE ENTITY WORLD: E9 steps 2–3, the compiled tier, and the last-turn question
 
-**Status:** forward design, not built (2026-08-14). Elaborates `design_generation_roadmap.md` §4's
-decided direction (recency features → turn/event tokens → entity-linked event tokens; recurrence
-RULED OUT) into a buildable spec with the full mapping from today's history surfaces. E9 step 1
-(the per-mon recency triplet) is SHIPPED; this doc owns steps 2–3 plus a new compiled tier the
-inventory only gestured at. The concept frame is `designs/learning/entity_tokens_biases_pointers.md`
+**Status:** Tier **H-A BUILT and SHIPPED** (v79 `gen3_pair_history_v1`, 2026-08-15): the
+last-action fields (H-A1, `POKEMON_FULL_DIM` 116→122) and the pair-history block + `h` edge
+family (H-A2, obs 2669→2921; the family is opt-in, NOT in the production string — gen-12 is the
+intended first enable). The independent event-log fuzz caught two real bugs before ship (a
+fainted-active resurrection on forced-switch resync; a pre-existing recency cross-episode reset
+leak). **Tiers H-B (event tokens) and H-C (entity-reference edges) remain forward design**,
+gated on H-A's trained verdict per §6. Elaborates `design_generation_roadmap.md` §4's decided
+direction (recency features → turn/event tokens → entity-linked event tokens; recurrence RULED
+OUT) with the full mapping from today's history surfaces. E9 step 1 (the per-mon recency
+triplet) is SHIPPED; this doc owns the rest. The concept frame is `designs/learning/entity_tokens_biases_pointers.md`
 (history's job in a POMDP; §6.9 on what stays positional).
 
 ---

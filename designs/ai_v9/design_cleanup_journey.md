@@ -1,8 +1,16 @@
 # design — THE CLEANUP JOURNEY: flags, delivery, diagnostics-on, and what is deliberately spared
 
-**Status:** operational cleanup plan (2026-08-14, owner + assistant session). Phase 1 has been
-issued as a work prompt; this doc records the whole journey so each later phase starts from a
-decision record instead of a re-derivation. Owner decisions captured here: **diagnostic heads are
+**Status:** operational cleanup plan (2026-08-14, owner + assistant session; state refreshed
+2026-08-15). **Phase 1 EXECUTED** (v78 `gen3_flag_surface_p1_v1`: the flag registry + its
+five-surface validators, the zarch family + seed-pressure pair DELETED, three demotions,
+`--use-bridge` defaults rust — §2's decision landed with it). **Phase 3's instrument is BUILT
+and validated** (`critic_route_audit.py`: seed/threat/hidden_opp/all_off arms + the v80
+`entity_pool` arm; the §3 diagnostics verdict layer landed as `main/prober/awareness.py` —
+knew_by_turn/blind_loss + quantile coverage, gen-10 baselines recorded in the gen-11 runbook).
+**The Phase-3 critic-route consolidation now has a built successor route**: v80
+`gen3_unified_value_readout_v1` (`--value-entity-pool`, opt-in), so a condemnation and its
+replacement can land in one config change. This doc records the whole journey so each later
+phase starts from a decision record instead of a re-derivation. Owner decisions captured here: **diagnostic heads are
 instruments, not levers — they are exempt from strength-based deletion and DEFAULT ON** (§3);
 **the training-transport default moves to rust** (§2); the pair-reduction rungs are **spared**
 (§7). Companion docs: `design_history_entity.md` (the E9 build), `design_op_tensors.md` (step 3),
@@ -96,12 +104,14 @@ profiles rather than flags: the `exploiter-temp-*` sextet, the eval-worker famil
 
 ## 5. Phase 3 — the post-gen-9 audit deletions
 
-Blocked on gen-9's end-of-run measurements, executed with the concat-deletion playbook
-(pre-registered arms, then delete):
+Blocked on the current production run's end-of-run measurements (now **gen-11** — the
+pre-registered battery is `designs/research_state/gen11_endofrun_runbook.md`), executed with
+the concat-deletion playbook (pre-registered arms, then delete):
 
 1. **Critic-route consolidation** — zero each of seed readout / threat-inject / dist-as-critic
-   (`value_from_dist`) / (gen-10) intent-reduce; keep the winner, delete the losers.
-   `MultiSeedValueReadout` goes if any successor carries. *The dist HEAD is not in scope — §3.*
+   (`value_from_dist`) / intent-reduce; keep the winner, delete the losers.
+   `MultiSeedValueReadout` goes if any successor carries — and the successor is now BUILT
+   (v80 `--value-entity-pool`, with its own audit arm). *The dist HEAD is not in scope — §3.*
 2. **The 768-dim hidden-opp concat** and **`non_matchup_rest`** (needs a re-home first — no
    pool reads the global token) and the **prev-turn action mask** zero-arm.
 3. **OpTensors step 3** — drop the flat render, trim `out_gain` [660]→[138] (retrain-class).
@@ -133,9 +143,9 @@ generated-tables pattern to surviving hand tables).
 
 | When | What |
 |---|---|
-| now | Phase 1 (issued) + §2 rust-default with its soak gate + §3 diagnostics-on |
-| gen-9 finishes | the audit battery → Phase 3 deletions define gen-10's config alongside the G3 arm |
-| any quiet window | §6 structural debt; Phase 2 manifest launching (after the registry exists) |
+| ~~now~~ DONE | Phase 1 (v78) + §2 rust-default + the §3 verdict layer (awareness/coverage) |
+| **gen-11 finishes** | the audit battery (`gen11_endofrun_runbook.md`) → Phase 3 deletions + the v80 successor enable define gen-12's config alongside `h` |
+| any quiet window | §6 structural debt (ForwardScratch); Phase 2 manifest launching; the Phase-1b demotions (the registry now exists) |
 
 Standing gates for every phase: full unit suite; byte-identity on the production config for
 anything claiming OFF-equivalence; the artifact chain (`delivery_graph` → viewer → `arch_tables`)

@@ -1,6 +1,16 @@
 # design — magnitude in the entity world + the CONDITIONAL OPPONENT-ACTION cells (OA1 / OA2)
 
 **Status:** forward design, not built. Written 2026-08-07 off the gen-3 @9.6M measurements below.
+
+> **[UPDATE 2026-08-15]** A THIRD critic-route shape shipped: v80 `gen3_unified_value_readout_v1`
+> (`--value-entity-pool`) — a HEAD-side attention pool over the entity rows (the
+> MultiSeedValueReadout lineage generalized to the full row set), opt-in with its own
+> `critic_route_audit` arm. It is NOT PV: PV's distinctive claim — IN-TRUNK cross-pair
+> reasoning via Shaw-style value injection (§2b) — is untouched and remains this doc's own
+> case. What changes is the decision landscape: the gen-11 audit now adjudicates
+> seed/threat/hidden-opp WITH a built successor available, so "generalized token-content
+> injection" (the cheaper admissible route named below) has a concrete shipped form to be
+> compared against before PV's trunk mechanism is reached for.
 **Owner decision needed:** none to start Part 0/1; Part 2 has a hard prerequisite (§4.1).
 
 > **[UPDATE 2026-08-14: the amendment below is HISTORY.]** The two-route precondition was

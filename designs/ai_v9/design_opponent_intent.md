@@ -4,8 +4,13 @@
 > canonical-id matching, mask-rate diagnostics, the whole render path to the prober) and α is
 > **CONSUMED on the critic side** (v74 `gen3_intent_value_reduce_v1`). The schedule this doc
 > pre-registered happened: gen-8 (foundation: beliefs + threat-inject, launched 2026-08-11) then
-> gen-9 (α + the distributional critic, launched 2026-08-13, live). The OUTGOING/policy-side
-> consumer (`design_conditional_execution.md`) remains open. See `designs/CHANGELOG.md`.
+> gen-9 (α + the distributional critic, launched 2026-08-13, live). **[UPDATE 2026-08-15] The
+> OUTGOING/policy-side consumer is CLOSED as a build**: v77 `gen3_intent_move_cell_v1` (G3, the
+> c2 re-delivery through the pointer MOVE cell) — and gen-11 TRAINS it (`intent_move_cell:
+> true`), so α is now consumed on BOTH heads; the open question is the trained VERDICT
+> (gen-11 end-of-run audit). The α tendency INPUTS also finally exist: the v79 pair-history
+> `h` family (opt-in) carries the per-(their mon, our mon) click/switch-in counters this doc's
+> §appendix asked for. See `designs/CHANGELOG.md`.
 
 > **What this document is.** The build for one sentence the model cannot currently express:
 > *"they are likely to click **this**, so **this** is my answer."*

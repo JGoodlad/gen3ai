@@ -70,7 +70,9 @@ Arms: `seed` / `threat` / `hidden_opp_{both,pi,vf}` / `all_off`. Decision rules,
 
 ## Sequencing note
 
-Gen-12's config is decided by §§1–2 outputs + the G3 arm (`--intent-move-cell`, still unrun)
+Gen-12's config is decided by §§1–2 outputs + the G3 arm — **which gen-11 itself trains**
+(`intent_move_cell: true` in its model_config.json; the earlier "still unrun" note was stale,
+so §4's per-family audit should read the c2/move-cell routes as LIVE arms, not available-only)
 + the H-A `h` family (v79, built, opt-in). Per the attribution discipline, prefer: gen-12 =
 G3 + `h` (both zero-init, jointly ablatable) on whichever belief-grad default §1 selects,
 with Phase-3 deletions landing as pure code removals only for routes §2 condemned. **The §2

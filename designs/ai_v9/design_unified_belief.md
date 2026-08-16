@@ -270,6 +270,14 @@ solved at inference.
 
 ## 3. Stage 3 — DELIVERY: one contract, two pools
 
+> **[UPDATE 2026-08-15] The CRITIC half of this section is BUILT**: v80
+> `gen3_unified_value_readout_v1` (`--value-entity-pool`, opt-in, zero-init, vf-only — one
+> attention pool over the 12 team tokens + the op's incoming rows, with its own `entity_pool`
+> arm in `critic_route_audit`). The policy half needs no build — the pointer head IS the
+> per-action pool, as this section says. What remains of §3 is the ADOPTION: the gen-11 audit
+> condemns (or spares) the bolt-on routes below, and the enabling generation swaps them for
+> the contract in one config change.
+
 Today delivery is four mechanisms with different expressiveness, and the policy/critic asymmetry is
 **accidental** rather than designed:
 
@@ -341,8 +349,8 @@ Deliberately not a build order — a dependency order, cheapest-decisive-first:
 | 1 | ~~Does the coupling carry information?~~ **DONE 2026-08-15 — YES** (§1.3): T at 2.7–4.0× the marginal-preserving null, p≈0, on every n≥200 species; dominated by slot-EXCLUSION plus real archetype pairs (subpunch 6.1×/4.4×; the named Skarmory spikes→whirlwind is uninformative — spikes is in 203/203 sets, lift 1.0 by construction). The MaxEnt defense of the independent product is REFUTED as physics; the shippable-prior path is constrained to Smogon sources per the owner rule. | no | whether ANY of §1 is worth building |
 | 2 | **G3** from `design_conditional_execution.md` — one family (`c2`) re-delivered through the move cell with α. | no | whether the consequence line is alive AT ALL |
 | 3 | α's own gate — `alpha_acc_move` vs its `argmax(w)` baseline (both now logged, gen-9). | in flight | whether α beats the free guess |
-| 4 | the reduction's `how=` — swap `hard_max` for an α-weighted rung at the ONE call site. | no | §2 |
-| 5 | the delivery contract (§3) | retrain | §3 |
+| 4 | the reduction's `how=` — swap `hard_max` for an α-weighted rung at the ONE call site. **Still open** (both HEAD-side α consumers exist — v74 critic, v77 policy, gen-11 trains both — but the op's internal reduction remains R0 `hard_max`; deprioritized behind the entity end-state). | no | §2 |
+| 5 | the delivery contract (§3) — **critic half BUILT** (v80 `--value-entity-pool`, opt-in); adoption waits on the gen-11 critic-route audit | retrain | §3 |
 
 **Steps 0–2 are all offline and all cheap, and any of them can kill the line before a generation is
 spent.** Steps 0–1 are answered (2026-08-15): the coupling is real physics, and the prior budget

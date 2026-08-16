@@ -1,6 +1,12 @@
 # ai_v9 — Generation roadmap: pointer-native → the entity graph (the alignment doc)
 
-**Status:** OPERATIVE planning doc (2026-08-03, owner + assistant session). This is the doc
+**Status:** OPERATIVE planning doc (2026-08-03, owner + assistant session; state banner
+2026-08-15 — inline stage numbers below describe the plan AS WRITTEN; the landed reality:
+obs is **2921** (v79 pair history, not 2889/2669), E9 step 1 (recency) SHIPPED, the §4
+compiled-history tier SHIPPED as v79 H-A (`design_history_entity.md` owns it), α consumed on
+BOTH heads (v74 critic / v77 policy — gen-11 trains both), the T3 critic delivery contract
+BUILT opt-in as v80 `--value-entity-pool`, and the flag surface is registry-governed since
+v78). This is the doc
 that ALIGNS the fresh-generation reset, the shipped v51 pointer-native head, the entity-graph
 inventory, and the history-representation decision into one sequenced plan.
 
