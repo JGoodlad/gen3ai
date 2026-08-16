@@ -21,6 +21,13 @@ Gen-9's stack (intent + dist critic, `value_from_dist`) + `--belief-grad-mode la
 - **Calibration direction**: TB `belief/*` accs (species/moves/hp-type/spread) vs gen-9's
   curves — label_only predicts equal-or-better CALIBRATION with the PPO-corruption gradient
   gone. Also `opp_intent/alpha_acc` vs its argmax(w) baseline and vs gen-9.
+  ⚠️ **Read the `_pool` suffix, not the bare key** (2026-08-15). Every `opp_intent/*` metric is
+  now emitted per opponent class, and the bare key is a MIX whose composition MOVES: supervised
+  rows were 100% bot at 2M and ~7% from 6M on, and bot rows score differently (gen-11 info gain
+  0.124 nats vs pool 0.254). A pooled trend spanning the self-play ramp is uninterpretable, and
+  the gen-9 comparison must be `_pool`-to-`_pool` or it compares two different opponent mixes.
+  Gen-9 predates the split, so its bare keys are pool-dominated only after ITS ramp — check
+  `alpha_n_supervised_bot / alpha_n_supervised` at both endpoints before differencing.
 - Decision: non-inferior + calibration flat-or-up ⇒ **label_only becomes the default mode**
   (registry default flip, next config). Strength LOSS beyond margin ⇒ keep `shaping` default,
   and the loss size is the measured price of estimator purity — record it, don't re-litigate.

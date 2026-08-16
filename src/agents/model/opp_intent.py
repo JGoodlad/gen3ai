@@ -278,6 +278,148 @@ def set_valued_switch_loss(beta_logits: torch.Tensor, believed_mask: torch.Tenso
     return -(mass.clamp_min(1e-8).log()).mean()
 
 
+def _alpha_subset_metrics(logits: torch.Tensor, tgt: torch.Tensor, k: int,
+                          sfx: str = "") -> Dict[str, float]:
+    """Every `α` diagnostic over ONE row subset. `sfx` is `""` for the pooled read, `"_<class>"`
+    for a stratified one — so the pooled and per-opponent numbers are the SAME computation and
+    cannot drift apart, which is the failure a second hand-written copy would eventually produce.
+
+    Callers pass rows already selected (supervised, and optionally masked to one opponent class).
+    """
+    out: Dict[str, float] = {}
+    pred = logits.argmax(dim=-1)
+    out[f"opp_intent/alpha_acc{sfx}"] = float((pred == tgt).float().mean())
+    # NAMING. Everything below that conditions on the TRUE class is a RECALL and is named one;
+    # `alpha_acc` above is the only genuine ACCURACY here (exact class over all K+1, conditioned
+    # on nothing).
+    #
+    # PRECISION is added for the KIND decision and ONLY there, because that is the only place it
+    # carries information. Kind is binary, so "when we say switch, how often is it a switch" is a
+    # different question from "of the switches, how many did we catch" — and a switch-biased head
+    # scores well on the second while failing the first. The TARGET metrics are single-label top-1
+    # over 6 slots / K seats, where exactly one class is predicted per row, so micro-precision,
+    # micro-recall and accuracy are the SAME NUMBER; emitting a "precision" there would be a
+    # duplicate column wearing a different name.
+    is_sw = tgt == k
+    said_sw = pred == k
+
+    # --- axis 1 + 2: the KIND decision, both directions -----------------------------
+    if int(is_sw.sum()):
+        out[f"opp_intent/alpha_switch_recall{sfx}"] = float((pred[is_sw] == k).float().mean())
+    if int(said_sw.sum()):
+        out[f"opp_intent/alpha_switch_precision{sfx}"] = float((tgt[said_sw] == k).float().mean())
+    if int((~is_sw).sum()):
+        out[f"opp_intent/alpha_move_kind_recall{sfx}"] = float((pred[~is_sw] != k).float().mean())
+    if int((~said_sw).sum()):
+        out[f"opp_intent/alpha_move_kind_precision{sfx}"] = float(
+            (tgt[~said_sw] != k).float().mean())
+    out[f"opp_intent/alpha_pred_switch_rate{sfx}"] = float(said_sw.float().mean())
+
+    # --- axis 4: WHICH move, given they moved ---------------------------------------
+    if int((~is_sw).sum()):
+        mv = ~is_sw
+        move_logits = logits[mv][:, :k]
+        mv_tgt = tgt[mv]
+        out[f"opp_intent/alpha_move_recall_top1{sfx}"] = float(
+            (move_logits.argmax(dim=-1) == mv_tgt).float().mean())
+        # TOP-2: "nearly had it" is a different state from "no idea", and with K seats the two are
+        # indistinguishable in top-1 alone. A head whose top-2 covers the truth is one a consumer
+        # can use as a DISTRIBUTION even when its argmax is wrong — which is exactly how
+        # --intent-value-reduce and --intent-move-cell consume alpha (as weights, not a decision).
+        if move_logits.shape[-1] >= 2:
+            top2 = move_logits.topk(2, dim=-1).indices
+            out[f"opp_intent/alpha_move_recall_top2{sfx}"] = float(
+                (top2 == mv_tgt[:, None]).any(dim=-1).float().mean())
+        # The baseline this must beat: seats are topk(w) DESCENDING, so seat 0 IS the belief's own
+        # top-ranked move, and this is how often that free guess is right. Compared LIKE FOR LIKE
+        # with top1 above — both are "given they moved".
+        out[f"opp_intent/alpha_move_baseline_argmax_w{sfx}"] = float((mv_tgt == 0).float().mean())
+    out[f"opp_intent/alpha_switch_rate{sfx}"] = float(is_sw.float().mean())
+
+    # THE HEADLINE. See `info_gain_nats`: a proper scoring rule, so an unpredictable opponent
+    # scores ~0 instead of scoring "wrong", and the number is comparable across opponents and over
+    # time in a way an accuracy delta between two moving quantities is not.
+    out[f"opp_intent/alpha_info_gain_nats{sfx}"] = info_gain_nats(logits, tgt)
+    # Split it the same way the accuracy is split, and for the same reason: pooling the (easy,
+    # base-rate-dominated) switch axis with the (hard) move axis produces a number that moves when
+    # the SWITCH RATE moves, which is not a fact about alpha.
+    if int((~is_sw).sum()) > 1:
+        out[f"opp_intent/alpha_info_gain_nats_move{sfx}"] = info_gain_nats(
+            logits[~is_sw], tgt[~is_sw])
+    return out
+
+
+def _beta_subset_metrics(logits: torch.Tensor, tgt: torch.Tensor,
+                         sfx: str = "") -> Dict[str, float]:
+    """Every `β` diagnostic over ONE row subset — the `_alpha_subset_metrics` contract, other axis."""
+    out: Dict[str, float] = {}
+    # RECALL, not "accuracy": conditioned on the TRUE class (a supervised switch). Single-label
+    # top-1 over 6 slots, so micro-precision == micro-recall == accuracy here — a separate
+    # "precision" column would be the same number twice. Precision only earns its place on the
+    # binary KIND decision (see the alpha block).
+    out[f"opp_intent/beta_recall_top1{sfx}"] = float((logits.argmax(dim=-1) == tgt).float().mean())
+    # TOP-2 for the same reason alpha gets one: with 6 slots, "narrowed it to two" and "no idea"
+    # are indistinguishable in top-1, and they mean very different things for a reader deciding
+    # whether the head has learned anything.
+    if logits.shape[-1] >= 2:
+        b2 = logits.topk(2, dim=-1).indices
+        out[f"opp_intent/beta_recall_top2{sfx}"] = float((b2 == tgt[:, None]).any(dim=-1)
+                                                         .float().mean())
+    # The base rate beta must beat is "switch to whichever bench slot is most common", which is far
+    # from uniform — so raw accuracy flatters it. Same instrument as alpha.
+    out[f"opp_intent/beta_info_gain_nats{sfx}"] = info_gain_nats(logits, tgt)
+    return out
+
+
+def switch_coverage_metrics(kind: torch.Tensor, need: Optional[torch.Tensor],
+                            content: Optional[torch.Tensor],
+                            rows: Optional[torch.Tensor] = None,
+                            sfx: str = "") -> Dict[str, float]:
+    """THE SWITCH-COVERAGE MATRIX over one row subset. Every voluntary switch falls in exactly one
+    of three buckets, and only the third is a failure — but with just a mask rate and a miss rate a
+    reader cannot tell their SIZES, and "beta is masked 73% of the time" reads as a crisis when ~62
+    of those points are simply "they attacked". These are fractions of VOLUNTARY SWITCHES, so they
+    sum to 1.
+
+      revealed      the mon was already on the board -> exact slot, no belief needed. The easiest
+                    label, and previously invisible.
+      hidden_found  still hidden, and the species posterior placed it -> the content-addressed
+                    target. This is what that path BUYS.
+      hidden_missed the belief could not name it -> masked. The BELIEF's failure, and the only
+                    bucket that is lost supervision.
+
+    Module-level rather than a closure in the PPO loop so it can be tested at all: nothing covered
+    this matrix, and a metric with no test is a metric that can silently read zero.
+
+    `need`/`content` are None when the belief head is off — then every switch is `revealed` by
+    construction, which is the truth, not a fallback.
+    """
+    out: Dict[str, float] = {}
+    if rows is not None:
+        kind = kind[rows]
+        need = None if need is None else need[rows]
+        content = None if content is None else content[rows]
+    n_sw = float((kind == 1).float().sum())
+    if n_sw <= 0:
+        return out
+    want = 0.0 if need is None else float(need.float().sum())
+    got = 0.0 if (need is None or content is None) else float((need & (content >= 0)).float().sum())
+    out[f"opp_intent/beta_switch_n{sfx}"] = n_sw
+    out[f"opp_intent/beta_switch_to_revealed{sfx}"] = (n_sw - want) / n_sw
+    out[f"opp_intent/beta_switch_to_hidden_found{sfx}"] = got / n_sw
+    out[f"opp_intent/beta_switch_to_hidden_missed{sfx}"] = (want - got) / n_sw
+    # SPLIT `beta_mask_rate`, which conflates two failures with opposite meanings. Its denominator
+    # is every row, so it is dominated by "this decision was not a switch at all" — expected,
+    # uninteresting, roughly constant. Buried inside it is the one a reader wants: of the switches
+    # that NEEDED the belief, how often was the belief too cold to name the mon? That is the
+    # BELIEF's failure and must stay attributable to the belief. Sliced per opponent for the same
+    # reason as everything else here — a cold belief against ONE class is a different diagnosis
+    # from a uniformly cold one.
+    if want > 0:
+        out[f"opp_intent/beta_belief_miss_rate{sfx}"] = 1.0 - got / want
+    return out
+
+
 def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[torch.Tensor],
                   beta_logits: Optional[torch.Tensor], beta_target: Optional[torch.Tensor],
                   opp_class: Optional[torch.Tensor] = None,
@@ -301,82 +443,25 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                 alpha_logits, alpha_target, ignore_index=INTENT_IGNORE)
             total = la if total is None else total + la
             with torch.no_grad():
-                pred = alpha_logits[sup].argmax(dim=-1)
                 tgt = alpha_target[sup]
-                metrics["opp_intent/alpha_loss"] = float(la.detach())
-                metrics["opp_intent/alpha_acc"] = float((pred == tgt).float().mean())
-                # NAMING. Everything below that conditions on the TRUE class is a RECALL and is
-                # named one; `alpha_acc` above is the only genuine ACCURACY here (exact class over
-                # all K+1, conditioned on nothing).
-                #
-                # PRECISION is added for the KIND decision and ONLY there, because that is the only
-                # place it carries information. Kind is binary, so "when we say switch, how often is
-                # it a switch" is a different question from "of the switches, how many did we
-                # catch" — and a switch-biased head scores well on the second while failing the
-                # first. The TARGET metrics are single-label top-1 over 6 slots / K seats, where
-                # exactly one class is predicted per row, so micro-precision, micro-recall and
-                # accuracy are the SAME NUMBER; emitting a "precision" there would be a duplicate
-                # column wearing a different name.
                 k = alpha_logits.shape[-1] - 1
-                is_sw = tgt == k
-                said_sw = pred == k
-
-                # --- axis 1 + 2: the KIND decision, both directions -------------------------
-                if int(is_sw.sum()):
-                    metrics["opp_intent/alpha_switch_recall"] = float(
-                        (pred[is_sw] == k).float().mean())
-                if int(said_sw.sum()):
-                    metrics["opp_intent/alpha_switch_precision"] = float(
-                        (tgt[said_sw] == k).float().mean())
-                if int((~is_sw).sum()):
-                    metrics["opp_intent/alpha_move_kind_recall"] = float(
-                        (pred[~is_sw] != k).float().mean())
-                if int((~said_sw).sum()):
-                    metrics["opp_intent/alpha_move_kind_precision"] = float(
-                        (tgt[~said_sw] != k).float().mean())
-                metrics["opp_intent/alpha_pred_switch_rate"] = float(said_sw.float().mean())
-
-                # --- axis 4: WHICH move, given they moved -----------------------------------
-                if int((~is_sw).sum()):
-                    mv = ~is_sw
-                    move_logits = alpha_logits[sup][mv][:, :k]
-                    mv_tgt = tgt[mv]
-                    metrics["opp_intent/alpha_move_recall_top1"] = float(
-                        (move_logits.argmax(dim=-1) == mv_tgt).float().mean())
-                    # TOP-2: "nearly had it" is a different state from "no idea", and with K seats
-                    # the two are indistinguishable in top-1 alone. A head whose top-2 covers the
-                    # truth is one a consumer can use as a DISTRIBUTION even when its argmax is
-                    # wrong — which is exactly how --intent-value-reduce and --intent-move-cell
-                    # consume alpha (as weights, not as a decision).
-                    if move_logits.shape[-1] >= 2:
-                        top2 = move_logits.topk(2, dim=-1).indices
-                        metrics["opp_intent/alpha_move_recall_top2"] = float(
-                            (top2 == mv_tgt[:, None]).any(dim=-1).float().mean())
-                    # The baseline this must beat: seats are topk(w) DESCENDING, so seat 0 IS the
-                    # belief's own top-ranked move, and this is how often that free guess is right.
-                    # Compared LIKE FOR LIKE with top1 above — both are "given they moved".
-                    metrics["opp_intent/alpha_move_baseline_argmax_w"] = float(
-                        (mv_tgt == 0).float().mean())
-                metrics["opp_intent/alpha_switch_rate"] = float(is_sw.float().mean())
-                # THE HEADLINE. See `info_gain_nats`: a proper scoring rule, so an unpredictable
-                # opponent scores ~0 instead of scoring "wrong", and the number is comparable
-                # across opponents and over time in a way an accuracy delta between two moving
-                # quantities is not. Reported on the SAME supervised subset as the accuracies.
-                metrics["opp_intent/alpha_info_gain_nats"] = info_gain_nats(
-                    alpha_logits[sup], tgt)
-                # Split it the same way the accuracy is split, and for the same reason: pooling
-                # the (easy, base-rate-dominated) switch axis with the (hard) move axis produces a
-                # number that moves when the SWITCH RATE moves, which is not a fact about alpha.
-                if int((~is_sw).sum()) > 1:
-                    metrics["opp_intent/alpha_info_gain_nats_move"] = info_gain_nats(
-                        alpha_logits[sup][~is_sw], tgt[~is_sw])
-                # STRATIFY BY OPPONENT KIND. The pooled number averages over populations where
-                # "predict their move" is a different problem: against the RANDOM bot the optimal
-                # prediction is uniform and the achievable gain is ~0 BY CONSTRUCTION; against a
-                # heuristic it is high but measures a decision tree; only `pool` (frozen selves)
-                # measures the thing high-quality opponent reasoning is for. Reporting one mean over
-                # all three is how a real deficit and a favourable mix become indistinguishable.
-                # A near-zero `bot` gain is the EXPECTED reading, not a failure.
+                metrics["opp_intent/alpha_loss"] = float(la.detach())
+                metrics.update(_alpha_subset_metrics(alpha_logits[sup], tgt, k))
+                # STRATIFY BY OPPONENT KIND — EVERY axis, not just the headline. The pooled number
+                # averages over populations where "predict their move" is a different problem:
+                # against the RANDOM bot the optimal prediction is uniform and the achievable gain
+                # is ~0 BY CONSTRUCTION; against a heuristic it is high but measures a decision
+                # tree; only `pool` (frozen selves) measures the thing high-quality opponent
+                # reasoning is for. Reporting one mean over all three is how a real deficit and a
+                # favourable mix become indistinguishable. A near-zero `bot` gain is the EXPECTED
+                # reading, not a failure.
+                #
+                # The split used to cover only acc / info-gain / n, which left the four AXIS
+                # metrics — the ones a reader actually uses to locate a deficit — pooled. That is
+                # not a cosmetic gap: the bot share of supervised rows on gen-11 ran 100% at 2M and
+                # ~7% from 6M on, and bot rows score DIFFERENTLY (measured 2026-08-15: info gain
+                # 0.124 nats vs pool 0.254). So a pooled axis metric RISES as the mix shifts toward
+                # the pool, and that rise is indistinguishable from the head getting better.
                 if opp_class is not None:
                     oc = opp_class.reshape(-1)[sup]
                     for _code, _name in OPP_CLASS_NAMES.items():
@@ -384,11 +469,9 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
                         n_m = int(m.sum())
                         if n_m < 2:                       # a 1-row marginal has zero entropy
                             continue
-                        metrics[f"opp_intent/alpha_info_gain_nats_{_name}"] = info_gain_nats(
-                            alpha_logits[sup][m], tgt[m])
-                        metrics[f"opp_intent/alpha_acc_{_name}"] = float(
-                            (pred[m] == tgt[m]).float().mean())
                         metrics[f"opp_intent/alpha_n_supervised_{_name}"] = float(n_m)
+                        metrics.update(_alpha_subset_metrics(
+                            alpha_logits[sup][m], tgt[m], k, f"_{_name}"))
 
     if beta_logits is not None and beta_target is not None:
         sup = beta_target != INTENT_IGNORE
@@ -401,23 +484,20 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
             total = lb if total is None else total + lb
             with torch.no_grad():
                 metrics["opp_intent/beta_loss"] = float(lb.detach())
-                # RECALL, not "accuracy": conditioned on the TRUE class (a supervised switch).
-                # Single-label top-1 over 6 slots, so micro-precision == micro-recall == accuracy
-                # here — a separate "precision" column would be the same number twice. Precision
-                # only earns its place on the binary KIND decision (see the alpha block).
                 _bl, _bt = beta_logits[sup], beta_target[sup]
-                metrics["opp_intent/beta_recall_top1"] = float(
-                    (_bl.argmax(dim=-1) == _bt).float().mean())
-                # TOP-2 for the same reason alpha gets one: with 6 slots, "narrowed it to two" and
-                # "no idea" are indistinguishable in top-1, and they mean very different things for
-                # a reader deciding whether the head has learned anything.
-                if _bl.shape[-1] >= 2:
-                    _b2 = _bl.topk(2, dim=-1).indices
-                    metrics["opp_intent/beta_recall_top2"] = float(
-                        (_b2 == _bt[:, None]).any(dim=-1).float().mean())
-                # The base rate beta must beat is "switch to whichever bench slot is most common",
-                # which is far from uniform — so raw accuracy flatters it. Same instrument as alpha.
-                metrics["opp_intent/beta_info_gain_nats"] = info_gain_nats(_bl, _bt)
+                metrics.update(_beta_subset_metrics(_bl, _bt))
+                # Same stratification, same reason as alpha — and beta needs it MORE, because its
+                # supervised rows are only the switches, so one opponent class can dominate the
+                # subset even when it is a minority of decisions.
+                if opp_class is not None:
+                    _oc = opp_class.reshape(-1)[sup]
+                    for _code, _name in OPP_CLASS_NAMES.items():
+                        _m = _oc == _code
+                        _n_m = int(_m.sum())
+                        if _n_m < 2:
+                            continue
+                        metrics[f"opp_intent/beta_n_supervised_{_name}"] = float(_n_m)
+                        metrics.update(_beta_subset_metrics(_bl[_m], _bt[_m], f"_{_name}"))
                 # THE FALSIFIER for keeping the alpha/beta split (2026-08-13). The split imposes a
                 # HIERARCHY the game does not: it factors P(switch to j) = P(SWITCH)·P(j | SWITCH),
                 # which is exact for disjoint outcomes and therefore loses nothing IN PRINCIPLE. The

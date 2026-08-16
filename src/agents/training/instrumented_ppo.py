@@ -1402,8 +1402,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     _sn = getattr(self.policy.features_extractor, "last_alpha_seat_nums", None)
                     _obs = rollout_data.observations
                     if _al is not None and _sn is not None and "opp_action_kind" in _obs:
-                        from agents.model.opp_intent import (INTENT_IGNORE, intent_losses,
-                                                             match_seats_to_move_num)
+                        from agents.model.opp_intent import (INTENT_IGNORE, OPP_CLASS_NAMES,
+                                                             intent_losses,
+                                                             match_seats_to_move_num,
+                                                             switch_coverage_metrics)
                         _kind = _obs["opp_action_kind"].long().flatten()
                         _num = _obs["opp_action_num"].long().flatten()
                         _atgt = match_seats_to_move_num(_sn, _num, _kind, _sn.shape[-1])
@@ -1494,10 +1496,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         # attributable to the belief. (Measured on gen-9: 356 resolved of 390
                         # wanted => 0.087. Recoverable from the two counters above, but nobody
                         # computes a ratio off a dashboard, so a rate nobody reports is a rate
-                        # nobody reads.)
-                        if oi_wanted_content > 0:
-                            oi_m["opp_intent/beta_belief_miss_rate"] = (
-                                1.0 - oi_extra_believed / oi_wanted_content)
+                        # nobody reads.) EMITTED BY `_switch_coverage` below, which owns the
+                        # want/got counters for the pooled read and every opponent slice alike.
                         # THE SWITCH-COVERAGE MATRIX. Every voluntary switch falls in exactly one of
                         # three buckets, and only the third is a failure — but with just a mask rate
                         # and a miss rate a reader cannot tell their SIZES, and "beta is masked 73%
@@ -1510,15 +1510,15 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         #                 content-addressed target. This is what that path BUYS.
                         #   hidden_missed the belief could not name it -> masked. The BELIEF's
                         #                 failure, and the only bucket that is lost supervision.
-                        _n_sw = float((_kind == 1).float().sum())
-                        if _n_sw > 0:
-                            oi_m["opp_intent/beta_switch_n"] = _n_sw
-                            oi_m["opp_intent/beta_switch_to_revealed"] = (
-                                (_n_sw - oi_wanted_content) / _n_sw)
-                            oi_m["opp_intent/beta_switch_to_hidden_found"] = (
-                                oi_extra_believed / _n_sw)
-                            oi_m["opp_intent/beta_switch_to_hidden_missed"] = (
-                                (oi_wanted_content - oi_extra_believed) / _n_sw)
+                        oi_m.update(switch_coverage_metrics(_kind, _need, _content))
+                        if _ocls is not None:
+                            _ocf = _ocls.long().reshape(-1)
+                            for _code, _name in OPP_CLASS_NAMES.items():
+                                _rows = _ocf == _code
+                                if int(_rows.sum()) < 2:
+                                    continue
+                                oi_m.update(switch_coverage_metrics(
+                                    _kind, _need, _content, _rows, f"_{_name}"))
                         if _sv is not None:
                             loss = loss + self.opp_intent_coef * self.beta_setvalued_coef * _sv
                             oi_m["opp_intent/beta_setvalued_loss"] = float(_sv.detach())

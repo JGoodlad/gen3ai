@@ -633,9 +633,39 @@ drop splices one battle's first decision onto another's last board — invisible
 
 **Supervision only:** both heads read a DETACHED input, so a null indicts the head's predictive
 power, not the policy. Structural + version-checked; requires `--entity-topk-seats>0` (fail-loud);
-OFF builds neither head. Metrics ride `opp_intent/*` — watch `alpha_acc` against the **51.8%**
-`argmax(w)` baseline and `alpha_acc_switch` separately, since a head that only learns "they attack"
-would otherwise hide behind the attack-heavy base rate.
+OFF builds neither head.
+
+### 🚨 Reading `opp_intent/*` — take the `_pool` suffix, not the bare key
+
+Every metric is emitted **pooled AND per opponent class** (`_bot` / `_pool` / `_stable` /
+`_exploiter`, a class appearing only when it holds ≥2 supervised rows in the minibatch —
+`OPP_CLASS_NAMES`, mirroring `MaskableAgentWrapper.OPP_CLASS_*`). **`_pool` — frozen selves — is
+the one that measures the thing the head is for.** Against the random bot the optimal prediction is
+uniform and the achievable gain is ~0 BY CONSTRUCTION; against a heuristic it is easy but models a
+decision tree rather than a player. Measured on gen-11: bot info gain **0.124 nats** vs pool
+**0.254**, with bot accuracy flat at ~0.50 all run.
+
+**The bare key is a MIX, and the mix MOVES.** Supervised rows ran **100% bot at 2M and ~7% from 6M
+on** (self-play competence-gating), so a pooled metric rises as the mix shifts toward the pool and
+that rise is indistinguishable from the head improving. The pooled α accuracy at 2M read 0.580 —
+which was a pure bot measurement; the pool figure at the same step was 0.296. Any trend that spans
+the ramp is uninterpretable; a trend after ~6M happens to be safe, but read `_pool` and do not rely
+on that.
+
+The split covers **every** axis: the KIND decision both directions (`alpha_switch_recall` /
+`_precision`, `alpha_move_kind_recall` / `_precision`), the move axis (`alpha_move_recall_top1` /
+`_top2` against `alpha_move_baseline_argmax_w` — compared LIKE FOR LIKE, both "given they moved"),
+the β pointer (`beta_recall_top1` / `_top2`, `beta_info_gain_nats`), and the switch-coverage matrix
+(`beta_switch_to_revealed` / `_hidden_found` / `_hidden_missed`, which partition voluntary switches
+and sum to 1, plus `beta_belief_miss_rate` over the rows that ASKED). It used to cover only
+accuracy / info-gain / count, which left exactly the metrics a reader uses to LOCATE a deficit
+pooled. `alpha_mask_rate` stays whole-batch: it is the BELIEF's coverage failure, and folding it
+into "α was wrong" would hide which component to fix.
+
+One computation serves both reads — `_alpha_subset_metrics` / `_beta_subset_metrics` /
+`switch_coverage_metrics` take a row subset and a suffix — so a pooled and a stratified number can
+never drift apart. `switch_coverage_metrics` is module-level rather than a closure in the PPO loop
+because nothing tested that matrix at all, and a metric with no test can silently read zero.
 
 **Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
 `opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
