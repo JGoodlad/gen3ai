@@ -44,10 +44,12 @@ import numpy as np
 from agents.gen3_data import species as g3species
 
 # NOTE: poke-env is imported LAZILY inside `team_species` (the only consumer). Importing it at
-# module scope starts poke-env's global asyncio loop THREAD, and this module is reached from the
-# model layer (`agents.model.damage_tables.build_species_cooccur_prior`) — the same import-side
-# effect that made `set_forkserver_preload` hang a 48-env run. Reading the committed artifact must
-# not drag a background thread into every process that builds an extractor.
+# module scope starts poke-env's global asyncio loop THREAD — the same import-side effect that
+# made `set_forkserver_preload` hang a 48-env run. (Historically this module was also reached
+# from the model layer via `build_species_cooccur_prior`; since 2026-08-15 that prior is
+# SMOGON-sourced — owner rule: priors are never pool-based — and this module is a pool-ANALYSIS
+# tool only, e.g. the belief-coupling measurement. Its numpy estimator remains the pool's
+# naive-Bayes reference.)
 
 ARTIFACT_PATH = os.path.join("data", "teams", "gen3_species_priors.json")
 

@@ -326,6 +326,15 @@ HEAD, are generated below — never hand-edit inside the markers.
 | **total** | **1241** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
+**Available but OFF in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3
+T3-DELIVER of `design_unified_belief.md` §3). When on, ONE attention pool over the critic's
+entity-row set (the 12 post-transformer team tokens + the op's 6 per-our-mon incoming rows, each
+projected to `UVR_DIM`=64 with a per-source type embedding, `UVR_K`=4 queries, explicit NaN-safe
+softmax) appends a zero-init `UVR_OUT_DIM`=128 block to vf AFTER the assembler — the policy is
+untouched at any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below
+(seed readout, threat-inject): the gen-11 `critic_route_audit` (which carries an `entity_pool`
+arm) adjudicates those, and a condemned route's next generation enables this in the same config.
+
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
 learned queries cross-attend (explicit softmax, dead mons key-masked) over the op's per-our-mon
@@ -687,6 +696,7 @@ does nothing given another setting.
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
+| `value_entity_pool` | `false` | OFF |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |

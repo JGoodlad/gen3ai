@@ -152,6 +152,68 @@ def build_awareness(dists: Sequence[Optional[np.ndarray]],
     )
 
 
+def coverage_stats(dists: Sequence[Optional[np.ndarray]],
+                   returns: Sequence[float],
+                   support: "tuple[float, float, int]",
+                   values: "Optional[Sequence[float]]" = None) -> Optional[dict]:
+    """QUANTILE COVERAGE of the distributional head vs the realized outcome (runbook §3):
+    per decision, the PIT ``F(G_i)`` — the predicted CDF evaluated at the realized discounted
+    return ``G_i`` (the MC value target; real reward units, same denorm fit as
+    ``build_awareness``). A calibrated head has PIT ~ Uniform(0,1): ``pit_mean`` ≈ 0.5
+    (persistently < 0.5 ⇒ the head is OPTIMISTIC — outcomes land in its lower tail) and
+    ``coverage80`` ≈ 0.80 (fraction of realized returns inside the predicted 10–90 band;
+    below ⇒ over-confident/narrow, above ⇒ under-confident/wide). Returns None when fewer
+    than 2 decisions carry a distribution. Model-free, pure numpy."""
+    vmin, vmax, bins = float(support[0]), float(support[1]), int(support[2])
+    z = np.linspace(vmin, vmax, bins)
+    rows = []
+    for j, d in enumerate(dists):
+        if d is None or j >= len(returns) or returns[j] is None:
+            continue
+        probs = np.asarray(d, dtype=np.float64)
+        if probs.size != bins or np.isnan(probs).any():
+            continue
+        rows.append((j, probs / max(float(probs.sum()), 1e-8)))
+    if len(rows) < 2:
+        return None
+    means_norm = [float((p * z).sum()) for _j, p in rows]
+    if values is not None:
+        mu, sigma = fit_denorm(means_norm, [values[j] if j < len(values) else np.nan
+                                            for j, _p in rows])
+    else:
+        mu, sigma = 0.0, 1.0
+    z_real = z * sigma + mu
+    pits = []
+    for j, p in rows:
+        # mid-PIT (continuity correction for a discrete predictive dist): count HALF the mass
+        # of the atom the return lands on — the raw CDF would bias every PIT high by ~p(atom)/2,
+        # reading a perfectly-centered prediction as ≈0.5 + half the center atom.
+        mid_cdf = np.cumsum(p) - p / 2.0
+        pits.append(float(np.interp(float(returns[j]), z_real, mid_cdf, left=0.0, right=1.0)))
+    pits_a = np.asarray(pits)
+    return {
+        "n": len(pits),
+        "pits": tuple(round(x, 4) for x in pits),   # per-decision, for run-level pooling
+        "pit_mean": float(round(pits_a.mean(), 4)),
+        "pit_std": float(round(pits_a.std(), 4)),
+        "coverage80": float(round(float(((pits_a >= 0.10) & (pits_a <= 0.90)).mean()), 4)),
+        "denorm": (round(mu, 6), round(sigma, 6)),
+    }
+
+
+def coverage_from_npz(npz, returns: Sequence[float],
+                      support: "tuple[float, float, int]") -> Optional[dict]:
+    """Trace-file form of ``coverage_stats`` (mirrors ``awareness_from_npz``)."""
+    arr = npz.get("value_dist") if hasattr(npz, "get") else None
+    if arr is None:
+        return None
+    dists = [np.asarray(arr[i]) if i < len(arr) else None for i in range(len(returns))]
+    values = npz.get("values")
+    return coverage_stats(dists, returns, support,
+                          values=(list(np.asarray(values, dtype=np.float64))
+                                  if values is not None else None))
+
+
 def awareness_from_npz(npz, turns: Sequence[int], outcome: str,
                        support: "tuple[float, float, int]") -> Optional[AwarenessVerdict]:
     """Convenience: the trace-file form (`value_dist` [N, bins]; NaN rows = uncaptured; the

@@ -30,7 +30,7 @@ from agents.model.damage_tables import SPECIES_CLAUSE_LOGIT, build_species_coocc
 from agents.model.features_extractor import BeliefHead, Gen3FeaturesExtractor
 from agents.model.identity_init_test import _build_real_policy
 from agents.model.model_version import ModelVersionError, _migrate_config
-from agents.training.species_priors import species_prior_logits, species_prior_table
+from agents.training.species_priors import species_prior_table
 
 _N_SPECIES = 400
 _N_MOVES = 300
@@ -54,15 +54,17 @@ def _ids_and_mask(rows, tbl):
 
 # ── S1: the model's on-GPU prior == the offline numpy estimator ───────────────────────────────────
 
-def test_gpu_prior_matches_the_numpy_reference_up_to_normalization():
-    """The `[B,S] @ [S,S]` matmul must compute the SAME naive Bayes the offline estimator does.
+def test_gpu_prior_matches_a_plain_numpy_reference():
+    """The `[B,S] @ [S,S]` matmul + scatter + clause-floor must compute the SAME naive Bayes as
+    a slow, obviously-correct numpy walk over the SAME two tensors: per row, marginal + the sum
+    of each revealed teammate's lift column, revealed nums floored to the clause value, then
+    log_softmax. (Until 2026-08-15 the reference was `species_priors.species_prior_logits` —
+    the POOL estimator; the tables are Smogon-sourced now, so the reference is built from the
+    tables themselves and the test pins the vectorized MATH, not the data source.)"""
+    from agents.model.damage_tables import build_species_cooccur_prior
 
-    They normalize over different supports on purpose — numpy renormalizes over the CANDIDATE set
-    only, the model over the whole num axis (so the floored off-pool nums keep a small, liftable
-    mass instead of vanishing) — so equality is up to ONE additive constant per row. The residual
-    after removing that constant is what proves the math is identical; the constant itself is
-    irrelevant to a softmax."""
     tbl = species_prior_table()
+    log_marginal, log_lift = build_species_cooccur_prior(_N_SPECIES)
     rows = [[], ["tyranitar", "skarmory"], ["cloyster"], ["swampert", "celebi", "gengar"]]
     ids, hidden = _ids_and_mask(rows, tbl)
     prior = _head(species_prior_fusion=True).species_prior_logits(ids, hidden)   # [B,1,S]
@@ -70,14 +72,13 @@ def test_gpu_prior_matches_the_numpy_reference_up_to_normalization():
 
     for b, revealed in enumerate(rows):
         got = prior[b, 0].numpy()
-        want = species_prior_logits(revealed, table=tbl, n_species=_N_SPECIES)
-        cand = [tbl.num(s) for s in tbl.species
-                if s not in revealed and 0 < tbl.num(s) < _N_SPECIES]
-        d = got[cand] - want[cand]
-        assert float(np.abs(d - d.mean()).max()) < 1e-4, (revealed, d)
-        # ...and the ordering — the thing a consumer actually reads — is identical outright.
-        assert (sorted(cand, key=lambda n: -got[n])[:10]
-                == sorted(cand, key=lambda n: -want[n])[:10]), revealed
+        scores = log_marginal.numpy().copy()
+        for r in revealed:
+            scores = scores + log_lift[:, tbl.num(r)].numpy()
+        for r in revealed:
+            scores[tbl.num(r)] = SPECIES_CLAUSE_LOGIT
+        want = scores - np.log(np.exp(scores - scores.max()).sum()) - scores.max()
+        assert float(np.abs(got - want).max()) < 1e-4, revealed
 
 
 # ── S2: it is CONDITIONAL, not just a marginal ────────────────────────────────────────────────────
@@ -94,21 +95,25 @@ def test_no_revealed_species_gives_exactly_the_marginal():
 
 
 def test_revealing_a_teammate_moves_the_prior_along_the_measured_lift():
-    """Cloyster/Aerodactyl is the pool's strongest measured pair (log-lift +1.32/+1.34): revealing
-    Cloyster must raise Aerodactyl. Skarmory/Cloyster is the strongest ANTI-pair (-3.73): revealing
-    Skarmory must lower Cloyster. A prior that merely returned the marginal passes every shape
-    assertion and fails both of these."""
+    """Anchored to the SMOGON teammate source (2026-08-15, the owner's Smogon-only prior rule):
+    Jirachi/Flygon is the strongest positive common pair on the ladder (log-lift +1.12/+0.96 —
+    the JiraGon core), so revealing Flygon must raise Jirachi. Skarmory/Forretress is a strong
+    ANTI-pair (-2.5 — redundant spikers), so revealing Skarmory must lower Forretress. A prior
+    that merely returned the marginal passes every shape assertion and fails both of these.
+    (The old pool anchors are gone WITH the pool source: Cloyster→Aerodactyl was +1.32 on the
+    719 sample teams and is +0.23 on 2.5M ladder battles — a sample-team archetype artifact,
+    which is precisely why priors must not be pool-fit.)"""
     tbl = species_prior_table()
     head = _head(species_prior_fusion=True)
-    ids, hidden = _ids_and_mask([[], ["cloyster"], ["skarmory"]], tbl)
+    ids, hidden = _ids_and_mask([[], ["flygon"], ["skarmory"]], tbl)
     p = head.species_prior_logits(ids, hidden)[:, 0]                    # [3, S]
-    base, with_cloyster, with_skarmory = p[0], p[1], p[2]
+    base, with_flygon, with_skarmory = p[0], p[1], p[2]
 
-    aero, cloy = tbl.num("aerodactyl"), tbl.num("cloyster")
-    assert float(with_cloyster[aero]) > float(base[aero]) + 1.0
-    assert float(with_skarmory[cloy]) < float(base[cloy]) - 1.0
+    jira, forre = tbl.num("jirachi"), tbl.num("forretress")
+    assert float(with_flygon[jira]) > float(base[jira]) + 0.7
+    assert float(with_skarmory[forre]) < float(base[forre]) - 1.0
     # And it is not a global shift: the conditioned row is still a normalized log-prob.
-    for row in (base, with_cloyster, with_skarmory):
+    for row in (base, with_flygon, with_skarmory):
         assert float(row.exp().sum()) == pytest.approx(1.0, abs=1e-4)
 
 
@@ -144,16 +149,13 @@ def test_species_clause_floors_revealed_species_and_everything_stays_finite():
     assert float(p[tbl.num("blissey")]) > SPECIES_CLAUSE_LOGIT + 5.0
 
 
-def test_off_pool_species_are_improbable_but_not_impossible():
-    """A species outside the training pool is UNOBSERVED, not illegal — the same distinction the move
-    prior draws between its `floor` and `_ILLEGAL_PROB`. It must sit above the Species-Clause value so
-    the learned delta has somewhere to lift it from."""
+def test_unobserved_species_are_improbable_but_not_impossible():
+    """A species outside the Smogon usage data is UNOBSERVED, not illegal — the same distinction
+    the move prior draws between its `floor` and `_ILLEGAL_PROB`. Every floored entry must sit
+    above the Species-Clause value so the learned delta has somewhere to lift it from."""
     log_marginal, _ = build_species_cooccur_prior(_N_SPECIES)
     tbl = species_prior_table()
-    off_pool = [n for n in range(1, _N_SPECIES)
-                if n not in {tbl.num(s) for s in tbl.species}]
-    assert off_pool
-    floor = float(log_marginal[off_pool[0]])
+    floor = float(log_marginal[1:].min())                    # the rarest real candidate
     assert SPECIES_CLAUSE_LOGIT < floor < float(log_marginal[tbl.num("tyranitar")])
 
 

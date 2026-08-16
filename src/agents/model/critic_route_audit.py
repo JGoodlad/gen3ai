@@ -6,7 +6,9 @@ critic lean on each of the parallel critic magnitude routes carried since the co
   arm `seed`        — zero the assembler's `seed_rows` (the MultiSeedValueReadout window)
   arm `threat`      — zero `CLSPool`'s `threat_rows` (the --value-threat-inject token content)
   arm `hidden_opp`  — zero the 768-dim HiddenOppBeliefPool concat: `_both`, `_pi`, `_vf`
-  arm `all_off`     — seed + threat + hidden_opp(_both) together (the joint ceiling)
+  arm `entity_pool` — zero the unified entity pool's output (gen3_unified_value_readout_v1,
+                      the Stage-3 successor route; present only on a --value-entity-pool run)
+  arm `all_off`     — every present route together (the joint ceiling)
 
 Each arm reports masked KL / argmax flips (policy) and |dV| (critic) against the unablated
 forward, the same instrument family as `edge_ablation_audit` (whose state sampling and KL
@@ -90,6 +92,17 @@ class _Arms:
         hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
         return hooks, _pre
 
+    def entity_pool(self):
+        """Zero the unified entity pool's OUTPUT (gen3_unified_value_readout_v1) — vf-only by
+        construction, so this arm reads pure |dV| with structurally-zero KL/flips."""
+        fe = self.fe
+        marker = {"fired": False}
+
+        def _hook(_m, _args, output):
+            marker["fired"] = True
+            return torch.zeros_like(output)
+        return [fe.value_entity_pool.register_forward_hook(_hook)], marker
+
     def hidden_opp(self, mode: str):
         """mode ∈ {'both', 'pi', 'vf'} — patch the assembler's belief argument per head."""
         fe = self.fe
@@ -161,6 +174,8 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
     if getattr(fe, "hidden_opp_belief", None) is not None:
         for mode in ("both", "pi", "vf"):
             _run(f"hidden_opp_{mode}", [arms.hidden_opp(mode)])
+    if getattr(fe, "value_entity_pool", None) is not None:
+        _run("entity_pool", [arms.entity_pool()])
     all_sets = []
     if getattr(fe.assembler, "seed_readout", None) is not None:
         all_sets.append(arms.seed())
@@ -168,6 +183,8 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
         all_sets.append(arms.threat())
     if getattr(fe, "hidden_opp_belief", None) is not None:
         all_sets.append(arms.hidden_opp("both"))
+    if getattr(fe, "value_entity_pool", None) is not None:
+        all_sets.append(arms.entity_pool())
     if all_sets:
         _run("all_off", all_sets)
     return report

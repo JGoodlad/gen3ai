@@ -1010,6 +1010,7 @@ def current_model_version(
     opp_intent_grad_mode: str = "detached",
     intent_value_reduce: bool = False,
     intent_move_cell: bool = False,
+    value_entity_pool: bool = False,
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
@@ -1076,6 +1077,7 @@ def current_model_version(
     ext_kwargs["opp_intent_grad_mode"] = opp_intent_grad_mode
     ext_kwargs["intent_value_reduce"] = intent_value_reduce
     ext_kwargs["intent_move_cell"] = intent_move_cell
+    ext_kwargs["value_entity_pool"] = value_entity_pool
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
@@ -1158,6 +1160,9 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_intent_move_cell_v1 (v77): widens the pointer move scorer (policy state_dict), so a
         # frozen opponent's gate must see it (else a flag-on run FATALs loading its own sentinels).
         "intent_move_cell": bool(getattr(fe, "intent_move_cell", None) is not None),
+        # gen3_unified_value_readout_v1 (v80): widens the value projection (state_dict), so a
+        # frozen opponent's gate must see it.
+        "value_entity_pool": bool(getattr(fe, "value_entity_pool", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),

@@ -324,6 +324,25 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             edges.append(_edge("hidden_opp_belief", head, "concat",
                                fe.opp_belief_cls_k * fx.D_MODEL, "opp_belief_cls_k * D_MODEL",
                                via="HiddenOppBeliefPool", pooled=True))
+    if getattr(fe, "value_entity_pool", None) is not None:
+        # gen3_unified_value_readout_v1 (v80, Stage-3 T3-DELIVER): the critic's ONE entity pool
+        # — the designed successor of the seed/threat bolt-on routes above (OFF in production
+        # until the critic-route audit adjudicates them). Sources = every team token (+ the op's
+        # per-our-mon rows when the op exists), so it draws with the per-mon edge shape.
+        _uvr_via = ("UnifiedValueReadout (UVR_K queries, per-source type embeddings, "
+                    "zero-init out projection)")
+        for i in range(T):
+            edges.append(_edge(f"our_mon[{i}]", "vf_projection", "concat",
+                               fx.UVR_OUT_DIM, "UVR_OUT_DIM", via=_uvr_via,
+                               pooled=True, zero_init=True))
+            edges.append(_edge(f"opp_mon[{i}]", "vf_projection", "concat",
+                               fx.UVR_OUT_DIM, "UVR_OUT_DIM", via=_uvr_via,
+                               pooled=True, zero_init=True))
+        if fe.damage_op is not None:
+            edges.append(_edge("damage_op", "vf_projection", "concat",
+                               fx.UVR_OUT_DIM, "UVR_OUT_DIM",
+                               via=_uvr_via + " — the per-our-mon incoming-row source",
+                               pooled=True, zero_init=True))
 
     # --- CELL EDGES: per-action physics --------------------------------------------------------
     if op.pointer_move_cell_dim:

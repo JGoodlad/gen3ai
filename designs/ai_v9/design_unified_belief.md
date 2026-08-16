@@ -140,9 +140,21 @@ Three sources of genuine conditional information, in descending order of confide
    archetype-labelled. Pairwise co-occurrence `P(move_j | move_i, species)` is directly countable
    from it. **Caveat, stated up front: it is small (719 teams) and biased** — tournament/sample
    teams, which is our *training distribution* but not the ladder's.
-3. **Smogon co-occurrence, IF it exists at the needed granularity — UNVERIFIED.** Usage stats
-   sometimes carry teammate and moveset breakdowns. Whether they give per-species move-pair
-   conditionals must be checked before being relied on (§1.3).
+3. **Smogon co-occurrence — VERIFIED 2026-08-15** (the chaos JSON, e.g.
+   `stats/2026-07/chaos/gen3ou-1500.json`; our `tools/smogon_stats_downloader` already merges 12
+   months of exactly these files into `gen3_smogon_stats.json`): per-species `Moves` are
+   **marginals only** — chaos carries NO within-species move-pair joint. What it DOES carry as
+   joints: **`Teammates`** (species×species co-occurrence, 2.5M battles — now derived as
+   `gen3_teammate_priors.json` / `gen3_data.priors.teammates`, the hidden-team belief's coupling
+   prior) and **`Spreads`** (full nature+EV strings — a per-species joint over the spread axes,
+   already consumed as `gen3_spread_priors.json`).
+
+**⚠️ OWNER RULE (2026-08-15): priors are always SMOGON-based, never pool-based.** The 719-team
+pool may *measure* coupling (source 2 above — it is the only set-level joint we own), but a
+measured pool statistic never ships as a prior. Consequence for this design: species↔species and
+spread couplings have a shippable Smogon source; **move↔move couplings do not** — they stay with
+in-battle evidence (source 1) and whatever the network learns, and §1's pairwise-MRF idea is
+bounded to structure a Smogon-priored or evidence-driven quantity, not a pool-fit one.
 
 The natural object is then a **pairwise-coupled factorization** (a small MRF over the move axis,
 conditioned on species) rather than a categorical over sets: it is fit from co-occurrence, it is
@@ -178,13 +190,19 @@ Consequences that fall out for free rather than being engineered:
 
 ### 1.3 What must be verified before this is real
 
-**⚠️ The set vocabulary is a DATA question and it is UNVERIFIED.** This design assumes Smogon's
-gen3ou statistics can be read at set granularity (a species' *joint* move/spread/item modes), not
-merely as independent per-attribute frequencies. `data/pokemon/gen3_smogon_stats.json` is currently
-consumed as marginals (`gen3_ability_priors`, `gen3_hidden_power_priors`). **If the raw stats carry
-only marginals, the joint must be reconstructed** — from the 719-team pool (which IS set-level and
-already fingerprinted by `team_sha`), or by clustering. That reconstruction is step 0 and nothing
-below is buildable without it.
+**ANSWERED 2026-08-15 (was: the load-bearing UNVERIFIED).** Smogon's chaos stats carry NO
+set-level move joint (§1.2 source 3) — move sets exist in Smogon only as marginals. The
+couplings are nonetheless REAL: measured on the 719-team pool
+(`designs/research_state/measurements/belief_coupling_lift.json`,
+`tmp/belief_coupling_lift.py` — statistic `T = Σ freq·|log2 lift|` vs a marginal-preserving
+bipartite-re-deal null), every large species shows **T at 2.7–4.0× its null, p≈0**
+(tyranitar 3.97×, salamence 3.36×, swampert 3.16×, celebi 2.77×, jirachi 2.67×). The dominant
+structure is **EXCLUSION** (slot competition: crunch↔dragondance lift 0.007 — the CB/DD split;
+dragonclaw↔hiddenpowerflying 0.009; hydropump↔surf 0.01) with real positive archetype pairs
+(tyranitar sub→focuspunch lift 6.1, charizard 4.4). So §1.1's criticism stands *as physics* —
+but under the owner rule above, the shippable coupling prior is limited to what Smogon carries
+(teammates, spreads); move-pair structure must come from in-battle evidence or be learned,
+never fit on the pool.
 
 ---
 
@@ -319,16 +337,19 @@ Deliberately not a build order — a dependency order, cheapest-decisive-first:
 
 | # | step | needs a run? | decides |
 |---|---|---|---|
-| 0 | **Do usable CONDITIONALS exist?** (revised — there is no set prior, §1.2.) Count pairwise move co-occurrence per species on the 719-team pool, and check whether Smogon's stats carry any joint/teammate structure at all. | no | whether §1 has any input |
-| 1 | **Does the coupling carry information?** Measure `P(move_j \| move_i, species)` against the independent marginal. **This is THE decisive number**: if the lift is small, the MaxEnt argument (§1.2) says the current independent product is already right and the whole refactor is elegance without payoff. Report the lift on the pairs that matter (SubPunch, CB-vs-DD, Spikes/Whirlwind), not just the mean. | no | whether ANY of §1 is worth building |
+| 0 | ~~Do usable CONDITIONALS exist?~~ **DONE 2026-08-15** (§1.3): Smogon = move marginals + the `Teammates` joint (now `gen3_teammate_priors.json`) + full `Spreads`; the pool is the only move-pair joint and is measurement-only (owner rule). | no | whether §1 has any input |
+| 1 | ~~Does the coupling carry information?~~ **DONE 2026-08-15 — YES** (§1.3): T at 2.7–4.0× the marginal-preserving null, p≈0, on every n≥200 species; dominated by slot-EXCLUSION plus real archetype pairs (subpunch 6.1×/4.4×; the named Skarmory spikes→whirlwind is uninformative — spikes is in 203/203 sets, lift 1.0 by construction). The MaxEnt defense of the independent product is REFUTED as physics; the shippable-prior path is constrained to Smogon sources per the owner rule. | no | whether ANY of §1 is worth building |
 | 2 | **G3** from `design_conditional_execution.md` — one family (`c2`) re-delivered through the move cell with α. | no | whether the consequence line is alive AT ALL |
 | 3 | α's own gate — `alpha_acc_move` vs its `argmax(w)` baseline (both now logged, gen-9). | in flight | whether α beats the free guess |
 | 4 | the reduction's `how=` — swap `hard_max` for an α-weighted rung at the ONE call site. | no | §2 |
 | 5 | the delivery contract (§3) | retrain | §3 |
 
 **Steps 0–2 are all offline and all cheap, and any of them can kill the line before a generation is
-spent.** Step 1 is the one that decides whether this reframe is a real architecture or a tidier way
-of drawing the same picture — and I do not know the answer to it yet.
+spent.** Steps 0–1 are answered (2026-08-15): the coupling is real physics, and the prior budget
+for expressing it is Smogon-shaped — teammates + spreads carry shippable joints, move-pairs do
+not. The next decisive step is therefore G3 (step 2, built v77, unrun) plus wiring the teammate
+prior into the hidden-team belief's T0 posterior — the first consumer of the one coupling we may
+actually ship.
 
 ---
 

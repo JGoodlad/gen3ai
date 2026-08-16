@@ -611,9 +611,18 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   from the trace's own `(dist mean, recorded scalar V)` pairs (`fit_denorm` — exact under
   `value_from_dist`, an adequate approximation under `shaping`; identity without PopArt), so it
   runs on any dist-head run regardless of architecture drift. Battles ranked blind-first then by
-  divergence. Measured on gen-10 (1396 losses): 7.2% blind, median lead 7 turns, 12 cap losses
-  of which only 50% were aware ≥5 turns early — the top-ranked row is a turn-249 cap loss with
-  P(loss)=0.15 at its FINAL decision. CLI: `query awareness <run_dir>`.
+  divergence. The aggregate also carries **`quantile_coverage`** (runbook §3): the pooled
+  mid-PIT of the realized MC return under each predicted distribution (`coverage_stats` —
+  continuity-corrected, so a perfectly-centered prediction reads 0.5, not 0.5+half an atom) —
+  calibrated ⟺ `pit_mean` ≈ 0.5 and `coverage80` ≈ 0.80. ⚠️ Selection caveat: the default
+  `outcome="loss"` filter biases PIT low BY CONSTRUCTION; judge calibration on `outcome=None`
+  and use the filtered read for direction only. G is the MC discounted-reward return (the
+  calibration probe's convention) — an approximation of the bootstrapped training target.
+  Measured on gen-10 (1396 losses): 7.2% blind, median lead 7 turns, 12 cap losses of which
+  only 50% were aware ≥5 turns early — the top-ranked row is a turn-249 cap loss with
+  P(loss)=0.15 at its FINAL decision. Coverage (ALL outcomes, 109k decisions): pit_mean 0.396,
+  **coverage80 0.44 vs nominal 0.80** — the head is optimistic AND over-confident (narrow);
+  losses-only pit_mean 0.085. CLI: `query awareness <run_dir>`.
 - `battle_overview(battle_id)` — **model-free digest**: per-decision rows
   (chosen, top prob, `our_active`/`opp_active` board summary, recorded V(s), **ΔV**,
   **TD residual** = critic surprise, reward total, events, flags) + a `notable`

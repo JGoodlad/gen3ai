@@ -101,7 +101,14 @@ prune that previously crippled surprise-move anticipation. **gen3_no_concat_v1 (
 projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
 the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
 with the `value_seeds/*` TB collapse contract logged every train() by `seed_diagnostics.py`, which
-stays).
+stays). **v80 built its designed SUCCESSOR, opt-in and OFF in production:**
+`UnifiedValueReadout` (`--value-entity-pool`, `gen3_unified_value_readout_v1` — Stage-3
+T3-DELIVER of `design_unified_belief.md` §3): ONE attention pool over the critic's entity rows
+(the 12 team tokens + the op's per-our-mon incoming rows, per-source type embeddings, UVR_K=4
+queries, zero-init out projection, vf-only after the assembler so pi is untouched at any
+weight). The gen-11 `critic_route_audit` — which carries an `entity_pool` arm — adjudicates the
+seed/threat routes; a condemned route's next generation enables this in the same config
+(`value_entity_pool_test.py` pins the contract).
 **TWO PRESSURES WERE APPLIED TO THOSE SEEDS AND BOTH ARE NOW DELETED (v78)** — the record is kept
 because the finding is what closed the line, not the code. `--value-seed-vicreg-coef` (v62,
 `seed_vicreg.py`) was the repulsive one: gen-6 satisfied every VICReg term while

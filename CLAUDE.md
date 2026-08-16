@@ -1263,8 +1263,21 @@ Reference data (deterministic) under `data/pokemon/`, all regenerable via
   resolves a packed-team move alias like the RL runtime never touches); the `agents.gen3_data` facade
   does NOT load it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
 
-Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/`:
-- `gen3_smogon_stats.json` (raw aggregated stats) → `gen3_ability_priors.json`, `gen3_hidden_power_priors.json`
+Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/` (`sync.py` merges 12
+months of chaos JSONs → `compute_priors.py` derives six committed artifacts). **ALL priors must be
+Smogon-derived; only the MODEL gets bias against the pool** (owner rule 2026-08-15): anything the
+network READS must trace to Smogon (or ground-truth labels / ladder replays) — pool structure may
+enter only implicitly, through training against pool opponents (team sampling / league targeting
+are the sanctioned pool consumers). The 719-team pool may MEASURE structure (it is the only
+set-level joint we own) but never ships as a prior:
+- `gen3_smogon_stats.json` (raw aggregated chaos stats; per-species `Moves`/`Items`/`Spreads`/
+  `Teammates` are 12-month summed counts) → `gen3_ability_priors.json`,
+  `gen3_hidden_power_priors.json`, `gen3_move_priors.json`, `gen3_item_priors.json`,
+  `gen3_spread_priors.json`, and `gen3_teammate_priors.json` — the chaos `Teammates` field
+  normalized per species: the ONE species×species JOINT Smogon publishes (the hidden-team
+  belief's coupling prior; `gen3_data.priors.teammates`). Note chaos `Moves` are per-species
+  MARGINALS — within-species move-pair couplings exist in the data we can measure (pool) but
+  have no Smogon source, so they stay with in-battle evidence + learning.
 
 Pool-derived (a committed calibration artifact, same pattern):
 - `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class

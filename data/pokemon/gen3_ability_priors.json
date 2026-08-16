@@ -128,6 +128,15 @@
   "castform": {
     "forecast": 1.0
   },
+  "castformrainy": {
+    "forecast": 1.0
+  },
+  "castformsnowy": {
+    "forecast": 1.0
+  },
+  "castformsunny": {
+    "forecast": 1.0
+  },
   "caterpie": {
     "shielddust": 1.0
   },
@@ -214,6 +223,15 @@
     "vitalspirit": 0.2709307275755425
   },
   "deoxys": {
+    "pressure": 1.0
+  },
+  "deoxysattack": {
+    "pressure": 1.0
+  },
+  "deoxysdefense": {
+    "pressure": 1.0
+  },
+  "deoxysspeed": {
     "pressure": 1.0
   },
   "dewgong": {

@@ -51,10 +51,14 @@ Arms: `seed` / `threat` / `hidden_opp_{both,pi,vf}` / `all_off`. Decision rules,
 - Distributional **quantile coverage** on eval traces (realized return in predicted bands);
   the `knew_by_turn` / `lead_time` / `blind_loss` verdicts on every cap/stall loss — the
   deadline-clock regression test that never existed: *fraction of cap losses tail-aware ≥5
-  turns early*. **LANDED** (`main/prober/awareness.py`, model-free):
+  turns early*. **BOTH LANDED** (`main/prober/awareness.py`, model-free):
   `python -m main.prober.query awareness models/<run>` → `aggregate.cap_aware_ge_bar_fraction`
-  is the number; compare against the gen-10 baseline measured 2026-08-15 (1396 losses: 7.2%
-  blind, median lead 7, cap losses 12, cap-aware@5 **0.50**).
+  is the awareness number and `aggregate.quantile_coverage` the calibration one (judge
+  calibration with `--outcome` unset — the loss filter biases PIT low by construction).
+  Gen-10 baselines measured 2026-08-15: awareness (1396 losses) 7.2% blind, median lead 7,
+  cap losses 12, cap-aware@5 **0.50**; coverage (ALL outcomes, 109k decisions) pit_mean
+  **0.396**, coverage80 **0.44** vs nominal 0.80 — the gen-10 head is optimistic AND
+  over-confident, so gen-11's label_only arm has a concrete calibration bar to beat.
 - WinProb reliability curve vs the calibration command's V-based one.
 
 ## 4. Standing re-measures riding the same states
@@ -67,6 +71,10 @@ Arms: `seed` / `threat` / `hidden_opp_{both,pi,vf}` / `all_off`. Decision rules,
 ## Sequencing note
 
 Gen-12's config is decided by §§1–2 outputs + the G3 arm (`--intent-move-cell`, still unrun)
-+ the H-A `h` family (v78, built, opt-in). Per the attribution discipline, prefer: gen-12 =
++ the H-A `h` family (v79, built, opt-in). Per the attribution discipline, prefer: gen-12 =
 G3 + `h` (both zero-init, jointly ablatable) on whichever belief-grad default §1 selects,
-with Phase-3 deletions landing as pure code removals only for routes §2 condemned.
+with Phase-3 deletions landing as pure code removals only for routes §2 condemned. **The §2
+condemnations now have a built successor**: `--value-entity-pool` (v80,
+`gen3_unified_value_readout_v1` — the Stage-3 unified critic entity pool, zero-init vf-only,
+with its own `entity_pool` audit arm), so a route deletion and its replacement can land in ONE
+config change rather than a deletion generation followed by a rebuild generation.

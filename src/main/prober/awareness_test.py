@@ -109,6 +109,56 @@ def test_fit_denorm_recovers_popart_and_shifts_the_loss_bar():
     assert fit_denorm([0.0, 1.0], [1.0, -1.0]) == (0.0, 1.0)
 
 
+def test_coverage_calibrated_head_reads_calibrated():
+    """Dists centered ON the realized return → PIT ≈ 0.5 each, everything inside the 10–90 band."""
+    from main.prober.awareness import coverage_stats
+
+    returns = [4.0, 1.0, -3.0, -6.0]
+    dists = [_bump(g) for g in returns]
+    c = coverage_stats(dists, returns, SUPPORT)
+    assert c is not None and c["n"] == 4
+    assert abs(c["pit_mean"] - 0.5) < 0.05
+    assert c["coverage80"] == 1.0
+
+
+def test_coverage_optimistic_head_pit_below_half():
+    """Dists sitting ABOVE the realized returns → outcomes land in the lower tail: PIT ≪ 0.5 and
+    the narrow bands miss — the over-confident/optimistic signature."""
+    from main.prober.awareness import coverage_stats
+
+    returns = [-6.0, -7.0, -5.0, -8.0]
+    dists = [_bump(6.0, width=0.8) for _ in returns]
+    c = coverage_stats(dists, returns, SUPPORT)
+    assert c["pit_mean"] < 0.05
+    assert c["coverage80"] == 0.0
+
+
+def test_coverage_denorm_shifts_the_axis():
+    """With popart (mu=3, sigma=2) recovered from the paired scalar values, a dist whose
+    NORMALIZED mean matches (G-mu)/sigma is calibrated in REAL units; without the fit the same
+    inputs read miscalibrated."""
+    from main.prober.awareness import coverage_stats
+
+    mu, sigma = 3.0, 2.0
+    returns = [5.0, 3.0, 1.0, -1.0]
+    dists = [_bump((g - mu) / sigma, width=0.75) for g in returns]
+    means = [float((d / d.sum() * Z).sum()) for d in dists]
+    values = [m * sigma + mu for m in means]
+    c = coverage_stats(dists, returns, SUPPORT, values=values)
+    assert abs(c["pit_mean"] - 0.5) < 0.05 and c["coverage80"] == 1.0
+    raw = coverage_stats(dists, returns, SUPPORT)               # no denorm: axis is wrong
+    assert abs(raw["pit_mean"] - 0.5) > 0.1
+
+
+def test_coverage_skips_missing_and_requires_two():
+    from main.prober.awareness import coverage_stats
+
+    dists = [None, _bump(0.0), _bump(1.0)]
+    c = coverage_stats(dists, [0.0, 0.0, 1.0], SUPPORT)
+    assert c is not None and c["n"] == 2
+    assert coverage_stats([_bump(0.0), None], [0.0, 0.0], SUPPORT) is None
+
+
 def test_from_npz_reads_the_trace_arrays():
     from main.prober.awareness import awareness_from_npz
 

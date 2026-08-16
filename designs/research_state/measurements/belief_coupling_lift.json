@@ -1,0 +1,2157 @@
+{
+ "meta": {
+  "date": "2026-08-15",
+  "pool_teams": 719,
+  "pool_mons": 4314,
+  "n_species_total": 69,
+  "n_species_tested": 26,
+  "n_species_below_min": 43,
+  "min_sets": 20,
+  "min_move": 5,
+  "n_perms": 300,
+  "seed": 7,
+  "statistic": "T = sum_pairs freq_ij*|log2 lift|; null = marginal-preserving within-species re-deal (couplings destroyed, marginals exact)"
+ },
+ "aggregate": {
+  "n_significant_p01": 20,
+  "frac_significant": 0.769,
+  "median_excess_ratio": 1.782,
+  "max_excess_ratio": 3.97
+ },
+ "named_pairs": {
+  "subpunch": [
+   {
+    "species": "tyranitar",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 456,
+    "c_a": 7,
+    "c_b": 64,
+    "c_ab": 6,
+    "cond": 0.857,
+    "marg": 0.14,
+    "lift": 6.107
+   },
+   {
+    "species": "swampert",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 423,
+    "c_a": 29,
+    "c_b": 48,
+    "c_ab": 1,
+    "cond": 0.034,
+    "marg": 0.113,
+    "lift": 0.304
+   },
+   {
+    "species": "charizard",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 141,
+    "c_a": 28,
+    "c_b": 32,
+    "c_ab": 28,
+    "cond": 1.0,
+    "marg": 0.227,
+    "lift": 4.406
+   },
+   {
+    "species": "snorlax",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 136,
+    "c_a": 0,
+    "c_b": 52,
+    "c_ab": 0,
+    "cond": null,
+    "marg": 0.382,
+    "lift": null
+   },
+   {
+    "species": "heracross",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 42,
+    "c_a": 10,
+    "c_b": 9,
+    "c_ab": 3,
+    "cond": 0.3,
+    "marg": 0.214,
+    "lift": 1.4
+   },
+   {
+    "species": "medicham",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 8,
+    "c_a": 0,
+    "c_b": 6,
+    "c_ab": 0,
+    "cond": null,
+    "marg": 0.75,
+    "lift": null
+   },
+   {
+    "species": "hariyama",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 15,
+    "c_a": 0,
+    "c_b": 7,
+    "c_ab": 0,
+    "cond": null,
+    "marg": 0.467,
+    "lift": null
+   },
+   {
+    "species": "slaking",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 5,
+    "c_a": 0,
+    "c_b": 3,
+    "c_ab": 0,
+    "cond": null,
+    "marg": 0.6,
+    "lift": null
+   },
+   {
+    "species": "breloom",
+    "a": "substitute",
+    "b": "focuspunch",
+    "n": 11,
+    "c_a": 1,
+    "c_b": 5,
+    "c_ab": 1,
+    "cond": 1.0,
+    "marg": 0.455,
+    "lift": 2.2
+   }
+  ],
+  "skarmory_spikes_whirlwind": {
+   "species": "skarmory",
+   "a": "spikes",
+   "b": "whirlwind",
+   "n": 203,
+   "c_a": 203,
+   "c_b": 29,
+   "c_ab": 29,
+   "cond": 0.143,
+   "marg": 0.143,
+   "lift": 1.0
+  },
+  "tyranitar_dd_vs_cb": {
+   "n": 456,
+   "c_dd": 235,
+   "c_cb": 19,
+   "c_both": 0,
+   "p_dd": 0.515,
+   "p_dd_given_cb": 0.0
+  }
+ },
+ "per_species": [
+  {
+   "species": "tyranitar",
+   "n_sets": 456,
+   "T_obs": 5.4593,
+   "null_mean": 1.3752,
+   "null_sd": 0.0267,
+   "excess_ratio": 3.97,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "crunch",
+     "b": "dragondance",
+     "c_ab": 0,
+     "c_a": 130,
+     "c_b": 235,
+     "n": 456,
+     "cond": 0.004,
+     "marg": 0.515,
+     "lift": 0.007
+    },
+    {
+     "a": "dragondance",
+     "b": "pursuit",
+     "c_ab": 0,
+     "c_a": 235,
+     "c_b": 128,
+     "n": 456,
+     "cond": 0.002,
+     "marg": 0.281,
+     "lift": 0.008
+    },
+    {
+     "a": "doubleedge",
+     "b": "pursuit",
+     "c_ab": 0,
+     "c_a": 161,
+     "c_b": 128,
+     "n": 456,
+     "cond": 0.003,
+     "marg": 0.281,
+     "lift": 0.011
+    },
+    {
+     "a": "crunch",
+     "b": "doubleedge",
+     "c_ab": 0,
+     "c_a": 130,
+     "c_b": 161,
+     "n": 456,
+     "cond": 0.004,
+     "marg": 0.353,
+     "lift": 0.011
+    },
+    {
+     "a": "earthquake",
+     "b": "flamethrower",
+     "c_ab": 0,
+     "c_a": 304,
+     "c_b": 61,
+     "n": 456,
+     "cond": 0.002,
+     "marg": 0.134,
+     "lift": 0.012
+    },
+    {
+     "a": "earthquake",
+     "b": "fireblast",
+     "c_ab": 0,
+     "c_a": 304,
+     "c_b": 60,
+     "n": 456,
+     "cond": 0.002,
+     "marg": 0.132,
+     "lift": 0.012
+    }
+   ]
+  },
+  {
+   "species": "swampert",
+   "n_sets": 423,
+   "T_obs": 2.6938,
+   "null_mean": 0.8538,
+   "null_sd": 0.0179,
+   "excess_ratio": 3.155,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hydropump",
+     "b": "surf",
+     "c_ab": 0,
+     "c_a": 302,
+     "c_b": 70,
+     "n": 423,
+     "cond": 0.002,
+     "marg": 0.165,
+     "lift": 0.01
+    },
+    {
+     "a": "earthquake",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 362,
+     "c_b": 29,
+     "n": 423,
+     "cond": 0.001,
+     "marg": 0.069,
+     "lift": 0.02
+    },
+    {
+     "a": "earthquake",
+     "b": "endeavor",
+     "c_ab": 0,
+     "c_a": 362,
+     "c_b": 28,
+     "n": 423,
+     "cond": 0.001,
+     "marg": 0.066,
+     "lift": 0.021
+    },
+    {
+     "a": "curse",
+     "b": "focuspunch",
+     "c_ab": 0,
+     "c_a": 199,
+     "c_b": 48,
+     "n": 423,
+     "cond": 0.003,
+     "marg": 0.113,
+     "lift": 0.022
+    },
+    {
+     "a": "curse",
+     "b": "refresh",
+     "c_ab": 0,
+     "c_a": 199,
+     "c_b": 41,
+     "n": 423,
+     "cond": 0.003,
+     "marg": 0.097,
+     "lift": 0.026
+    },
+    {
+     "a": "curse",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 199,
+     "c_b": 29,
+     "n": 423,
+     "cond": 0.003,
+     "marg": 0.069,
+     "lift": 0.036
+    }
+   ]
+  },
+  {
+   "species": "metagross",
+   "n_sets": 325,
+   "T_obs": 1.9705,
+   "null_mean": 0.8213,
+   "null_sd": 0.0183,
+   "excess_ratio": 2.399,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "earthquake",
+     "b": "hiddenpowerfire",
+     "c_ab": 0,
+     "c_a": 233,
+     "c_b": 84,
+     "n": 325,
+     "cond": 0.002,
+     "marg": 0.258,
+     "lift": 0.008
+    },
+    {
+     "a": "hiddenpowergrass",
+     "b": "psychic",
+     "c_ab": 0,
+     "c_a": 87,
+     "c_b": 89,
+     "n": 325,
+     "cond": 0.006,
+     "marg": 0.274,
+     "lift": 0.021
+    },
+    {
+     "a": "hiddenpowerfire",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 84,
+     "c_b": 87,
+     "n": 325,
+     "cond": 0.006,
+     "marg": 0.268,
+     "lift": 0.022
+    },
+    {
+     "a": "hiddenpowerfire",
+     "b": "thunderpunch",
+     "c_ab": 0,
+     "c_a": 84,
+     "c_b": 67,
+     "n": 325,
+     "cond": 0.006,
+     "marg": 0.206,
+     "lift": 0.029
+    },
+    {
+     "a": "agility",
+     "b": "psychic",
+     "c_ab": 0,
+     "c_a": 52,
+     "c_b": 89,
+     "n": 325,
+     "cond": 0.009,
+     "marg": 0.274,
+     "lift": 0.034
+    },
+    {
+     "a": "agility",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 52,
+     "c_b": 87,
+     "n": 325,
+     "cond": 0.009,
+     "marg": 0.268,
+     "lift": 0.035
+    }
+   ]
+  },
+  {
+   "species": "salamence",
+   "n_sets": 241,
+   "T_obs": 4.3522,
+   "null_mean": 1.2955,
+   "null_sd": 0.0305,
+   "excess_ratio": 3.359,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "dragonclaw",
+     "b": "hiddenpowerflying",
+     "c_ab": 0,
+     "c_a": 106,
+     "c_b": 128,
+     "n": 241,
+     "cond": 0.005,
+     "marg": 0.531,
+     "lift": 0.009
+    },
+    {
+     "a": "flamethrower",
+     "b": "hiddenpowerflying",
+     "c_ab": 0,
+     "c_a": 86,
+     "c_b": 128,
+     "n": 241,
+     "cond": 0.006,
+     "marg": 0.531,
+     "lift": 0.011
+    },
+    {
+     "a": "dragonclaw",
+     "b": "earthquake",
+     "c_ab": 0,
+     "c_a": 106,
+     "c_b": 87,
+     "n": 241,
+     "cond": 0.005,
+     "marg": 0.361,
+     "lift": 0.013
+    },
+    {
+     "a": "earthquake",
+     "b": "flamethrower",
+     "c_ab": 0,
+     "c_a": 87,
+     "c_b": 86,
+     "n": 241,
+     "cond": 0.006,
+     "marg": 0.357,
+     "lift": 0.016
+    },
+    {
+     "a": "hiddenpowerflying",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 128,
+     "c_b": 57,
+     "n": 241,
+     "cond": 0.004,
+     "marg": 0.237,
+     "lift": 0.016
+    },
+    {
+     "a": "dragondance",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 102,
+     "c_b": 57,
+     "n": 241,
+     "cond": 0.005,
+     "marg": 0.237,
+     "lift": 0.021
+    }
+   ]
+  },
+  {
+   "species": "jirachi",
+   "n_sets": 239,
+   "T_obs": 3.2633,
+   "null_mean": 1.2203,
+   "null_sd": 0.0367,
+   "excess_ratio": 2.674,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "bodyslam",
+     "b": "calmmind",
+     "c_ab": 0,
+     "c_a": 130,
+     "c_b": 65,
+     "n": 239,
+     "cond": 0.004,
+     "marg": 0.272,
+     "lift": 0.014
+    },
+    {
+     "a": "hiddenpowergrass",
+     "b": "protect",
+     "c_ab": 0,
+     "c_a": 115,
+     "c_b": 68,
+     "n": 239,
+     "cond": 0.004,
+     "marg": 0.285,
+     "lift": 0.015
+    },
+    {
+     "a": "dynamicpunch",
+     "b": "wish",
+     "c_ab": 0,
+     "c_a": 40,
+     "c_b": 111,
+     "n": 239,
+     "cond": 0.012,
+     "marg": 0.464,
+     "lift": 0.026
+    },
+    {
+     "a": "hiddenpowerfighting",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 39,
+     "c_b": 115,
+     "n": 239,
+     "cond": 0.013,
+     "marg": 0.481,
+     "lift": 0.026
+    },
+    {
+     "a": "bodyslam",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 130,
+     "c_b": 30,
+     "n": 239,
+     "cond": 0.004,
+     "marg": 0.126,
+     "lift": 0.03
+    },
+    {
+     "a": "icepunch",
+     "b": "protect",
+     "c_ab": 0,
+     "c_a": 50,
+     "c_b": 68,
+     "n": 239,
+     "cond": 0.01,
+     "marg": 0.285,
+     "lift": 0.034
+    }
+   ]
+  },
+  {
+   "species": "zapdos",
+   "n_sets": 220,
+   "T_obs": 2.0978,
+   "null_mean": 0.9051,
+   "null_sd": 0.0276,
+   "excess_ratio": 2.318,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hiddenpowergrass",
+     "b": "hiddenpowerice",
+     "c_ab": 0,
+     "c_a": 49,
+     "c_b": 127,
+     "n": 220,
+     "cond": 0.01,
+     "marg": 0.577,
+     "lift": 0.017
+    },
+    {
+     "a": "protect",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 15,
+     "c_b": 145,
+     "n": 220,
+     "cond": 0.031,
+     "marg": 0.659,
+     "lift": 0.047
+    },
+    {
+     "a": "substitute",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 12,
+     "c_b": 145,
+     "n": 220,
+     "cond": 0.038,
+     "marg": 0.659,
+     "lift": 0.058
+    },
+    {
+     "a": "drillpeck",
+     "b": "hiddenpowerfighting",
+     "c_ab": 10,
+     "c_a": 13,
+     "c_b": 10,
+     "n": 220,
+     "cond": 0.75,
+     "marg": 0.045,
+     "lift": 16.5
+    },
+    {
+     "a": "drillpeck",
+     "b": "hiddenpowerice",
+     "c_ab": 0,
+     "c_a": 13,
+     "c_b": 127,
+     "n": 220,
+     "cond": 0.036,
+     "marg": 0.577,
+     "lift": 0.062
+    },
+    {
+     "a": "batonpass",
+     "b": "rest",
+     "c_ab": 0,
+     "c_a": 36,
+     "c_b": 40,
+     "n": 220,
+     "cond": 0.014,
+     "marg": 0.182,
+     "lift": 0.074
+    }
+   ]
+  },
+  {
+   "species": "celebi",
+   "n_sets": 212,
+   "T_obs": 2.432,
+   "null_mean": 0.8772,
+   "null_sd": 0.027,
+   "excess_ratio": 2.773,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "gigadrain",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 162,
+     "c_b": 30,
+     "n": 212,
+     "cond": 0.003,
+     "marg": 0.142,
+     "lift": 0.022
+    },
+    {
+     "a": "calmmind",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 144,
+     "c_b": 30,
+     "n": 212,
+     "cond": 0.003,
+     "marg": 0.142,
+     "lift": 0.024
+    },
+    {
+     "a": "gigadrain",
+     "b": "recover",
+     "c_ab": 1,
+     "c_a": 162,
+     "c_b": 48,
+     "n": 212,
+     "cond": 0.009,
+     "marg": 0.226,
+     "lift": 0.041
+    },
+    {
+     "a": "hiddenpowerfire",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 69,
+     "c_b": 30,
+     "n": 212,
+     "cond": 0.007,
+     "marg": 0.142,
+     "lift": 0.05
+    },
+    {
+     "a": "gigadrain",
+     "b": "perishsong",
+     "c_ab": 0,
+     "c_a": 162,
+     "c_b": 13,
+     "n": 212,
+     "cond": 0.003,
+     "marg": 0.061,
+     "lift": 0.05
+    },
+    {
+     "a": "calmmind",
+     "b": "perishsong",
+     "c_ab": 0,
+     "c_a": 144,
+     "c_b": 13,
+     "n": 212,
+     "cond": 0.003,
+     "marg": 0.061,
+     "lift": 0.056
+    }
+   ]
+  },
+  {
+   "species": "skarmory",
+   "n_sets": 203,
+   "T_obs": 1.0215,
+   "null_mean": 0.8214,
+   "null_sd": 0.0196,
+   "excess_ratio": 1.244,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "protect",
+     "b": "taunt",
+     "c_ab": 0,
+     "c_a": 88,
+     "c_b": 82,
+     "n": 203,
+     "cond": 0.006,
+     "marg": 0.404,
+     "lift": 0.014
+    },
+    {
+     "a": "roar",
+     "b": "whirlwind",
+     "c_ab": 0,
+     "c_a": 159,
+     "c_b": 29,
+     "n": 203,
+     "cond": 0.003,
+     "marg": 0.143,
+     "lift": 0.022
+    },
+    {
+     "a": "drillpeck",
+     "b": "whirlwind",
+     "c_ab": 0,
+     "c_a": 129,
+     "c_b": 29,
+     "n": 203,
+     "cond": 0.004,
+     "marg": 0.143,
+     "lift": 0.027
+    },
+    {
+     "a": "thief",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 16,
+     "c_b": 95,
+     "n": 203,
+     "cond": 0.029,
+     "marg": 0.468,
+     "lift": 0.063
+    },
+    {
+     "a": "taunt",
+     "b": "thief",
+     "c_ab": 0,
+     "c_a": 82,
+     "c_b": 16,
+     "n": 203,
+     "cond": 0.006,
+     "marg": 0.079,
+     "lift": 0.076
+    },
+    {
+     "a": "hiddenpowerground",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 6,
+     "c_b": 95,
+     "n": 203,
+     "cond": 0.071,
+     "marg": 0.468,
+     "lift": 0.153
+    }
+   ]
+  },
+  {
+   "species": "blissey",
+   "n_sets": 182,
+   "T_obs": 1.7175,
+   "null_mean": 0.8712,
+   "null_sd": 0.0301,
+   "excess_ratio": 1.971,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "seismictoss",
+     "b": "thunderbolt",
+     "c_ab": 0,
+     "c_a": 121,
+     "c_b": 33,
+     "n": 182,
+     "cond": 0.004,
+     "marg": 0.181,
+     "lift": 0.023
+    },
+    {
+     "a": "calmmind",
+     "b": "seismictoss",
+     "c_ab": 0,
+     "c_a": 22,
+     "c_b": 121,
+     "n": 182,
+     "cond": 0.022,
+     "marg": 0.665,
+     "lift": 0.033
+    },
+    {
+     "a": "aromatherapy",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 27,
+     "c_b": 65,
+     "n": 182,
+     "cond": 0.018,
+     "marg": 0.357,
+     "lift": 0.05
+    },
+    {
+     "a": "calmmind",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 22,
+     "c_b": 65,
+     "n": 182,
+     "cond": 0.022,
+     "marg": 0.357,
+     "lift": 0.061
+    },
+    {
+     "a": "thunderbolt",
+     "b": "wish",
+     "c_ab": 0,
+     "c_a": 33,
+     "c_b": 40,
+     "n": 182,
+     "cond": 0.015,
+     "marg": 0.22,
+     "lift": 0.067
+    },
+    {
+     "a": "fireblast",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 23,
+     "c_b": 52,
+     "n": 182,
+     "cond": 0.021,
+     "marg": 0.286,
+     "lift": 0.073
+    }
+   ]
+  },
+  {
+   "species": "gengar",
+   "n_sets": 182,
+   "T_obs": 2.0606,
+   "null_mean": 1.0613,
+   "null_sd": 0.0298,
+   "excess_ratio": 1.942,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hiddenpowergrass",
+     "b": "taunt",
+     "c_ab": 0,
+     "c_a": 52,
+     "c_b": 47,
+     "n": 182,
+     "cond": 0.009,
+     "marg": 0.258,
+     "lift": 0.037
+    },
+    {
+     "a": "explosion",
+     "b": "taunt",
+     "c_ab": 1,
+     "c_a": 127,
+     "c_b": 47,
+     "n": 182,
+     "cond": 0.012,
+     "marg": 0.258,
+     "lift": 0.045
+    },
+    {
+     "a": "gigadrain",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 15,
+     "c_b": 52,
+     "n": 182,
+     "cond": 0.031,
+     "marg": 0.286,
+     "lift": 0.109
+    },
+    {
+     "a": "firepunch",
+     "b": "taunt",
+     "c_ab": 1,
+     "c_a": 52,
+     "c_b": 47,
+     "n": 182,
+     "cond": 0.028,
+     "marg": 0.258,
+     "lift": 0.11
+    },
+    {
+     "a": "gigadrain",
+     "b": "hypnosis",
+     "c_ab": 0,
+     "c_a": 15,
+     "c_b": 34,
+     "n": 182,
+     "cond": 0.031,
+     "marg": 0.187,
+     "lift": 0.167
+    },
+    {
+     "a": "firepunch",
+     "b": "thunderbolt",
+     "c_ab": 6,
+     "c_a": 52,
+     "c_b": 126,
+     "n": 182,
+     "cond": 0.123,
+     "marg": 0.692,
+     "lift": 0.177
+    }
+   ]
+  },
+  {
+   "species": "suicune",
+   "n_sets": 141,
+   "T_obs": 1.4653,
+   "null_mean": 0.8223,
+   "null_sd": 0.0278,
+   "excess_ratio": 1.782,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hydropump",
+     "b": "surf",
+     "c_ab": 0,
+     "c_a": 29,
+     "c_b": 112,
+     "n": 141,
+     "cond": 0.017,
+     "marg": 0.794,
+     "lift": 0.021
+    },
+    {
+     "a": "rest",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 65,
+     "c_b": 39,
+     "n": 141,
+     "cond": 0.008,
+     "marg": 0.277,
+     "lift": 0.027
+    },
+    {
+     "a": "roar",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 55,
+     "c_b": 39,
+     "n": 141,
+     "cond": 0.009,
+     "marg": 0.277,
+     "lift": 0.032
+    },
+    {
+     "a": "hiddenpowergrass",
+     "b": "rest",
+     "c_ab": 0,
+     "c_a": 12,
+     "c_b": 65,
+     "n": 141,
+     "cond": 0.038,
+     "marg": 0.461,
+     "lift": 0.083
+    },
+    {
+     "a": "icebeam",
+     "b": "sleeptalk",
+     "c_ab": 0,
+     "c_a": 95,
+     "c_b": 7,
+     "n": 141,
+     "cond": 0.005,
+     "marg": 0.05,
+     "lift": 0.105
+    },
+    {
+     "a": "hydropump",
+     "b": "rest",
+     "c_ab": 1,
+     "c_a": 29,
+     "c_b": 65,
+     "n": 141,
+     "cond": 0.05,
+     "marg": 0.461,
+     "lift": 0.108
+    }
+   ]
+  },
+  {
+   "species": "charizard",
+   "n_sets": 141,
+   "T_obs": 1.1926,
+   "null_mean": 0.5714,
+   "null_sd": 0.0253,
+   "excess_ratio": 2.087,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "dragonclaw",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 108,
+     "c_b": 28,
+     "n": 141,
+     "cond": 0.005,
+     "marg": 0.199,
+     "lift": 0.023
+    },
+    {
+     "a": "beatup",
+     "b": "focuspunch",
+     "c_ab": 0,
+     "c_a": 88,
+     "c_b": 32,
+     "n": 141,
+     "cond": 0.006,
+     "marg": 0.227,
+     "lift": 0.025
+    },
+    {
+     "a": "beatup",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 88,
+     "c_b": 28,
+     "n": 141,
+     "cond": 0.006,
+     "marg": 0.199,
+     "lift": 0.028
+    },
+    {
+     "a": "fireblast",
+     "b": "flamethrower",
+     "c_ab": 0,
+     "c_a": 15,
+     "c_b": 126,
+     "n": 141,
+     "cond": 0.031,
+     "marg": 0.894,
+     "lift": 0.035
+    },
+    {
+     "a": "beatup",
+     "b": "brickbreak",
+     "c_ab": 0,
+     "c_a": 88,
+     "c_b": 18,
+     "n": 141,
+     "cond": 0.006,
+     "marg": 0.128,
+     "lift": 0.044
+    },
+    {
+     "a": "brickbreak",
+     "b": "focuspunch",
+     "c_ab": 0,
+     "c_a": 18,
+     "c_b": 32,
+     "n": 141,
+     "cond": 0.026,
+     "marg": 0.227,
+     "lift": 0.116
+    }
+   ]
+  },
+  {
+   "species": "snorlax",
+   "n_sets": 136,
+   "T_obs": 1.6105,
+   "null_mean": 0.8943,
+   "null_sd": 0.0323,
+   "excess_ratio": 1.801,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "bodyslam",
+     "b": "return",
+     "c_ab": 0,
+     "c_a": 93,
+     "c_b": 36,
+     "n": 136,
+     "cond": 0.005,
+     "marg": 0.265,
+     "lift": 0.02
+    },
+    {
+     "a": "rest",
+     "b": "selfdestruct",
+     "c_ab": 0,
+     "c_a": 13,
+     "c_b": 117,
+     "n": 136,
+     "cond": 0.036,
+     "marg": 0.86,
+     "lift": 0.042
+    },
+    {
+     "a": "focuspunch",
+     "b": "rest",
+     "c_ab": 0,
+     "c_a": 52,
+     "c_b": 13,
+     "n": 136,
+     "cond": 0.009,
+     "marg": 0.096,
+     "lift": 0.099
+    },
+    {
+     "a": "brickbreak",
+     "b": "focuspunch",
+     "c_ab": 0,
+     "c_a": 5,
+     "c_b": 52,
+     "n": 136,
+     "cond": 0.083,
+     "marg": 0.382,
+     "lift": 0.218
+    },
+    {
+     "a": "curse",
+     "b": "rest",
+     "c_ab": 13,
+     "c_a": 35,
+     "c_b": 13,
+     "n": 136,
+     "cond": 0.375,
+     "marg": 0.096,
+     "lift": 3.923
+    },
+    {
+     "a": "brickbreak",
+     "b": "return",
+     "c_ab": 0,
+     "c_a": 5,
+     "c_b": 36,
+     "n": 136,
+     "cond": 0.083,
+     "marg": 0.265,
+     "lift": 0.315
+    }
+   ]
+  },
+  {
+   "species": "magneton",
+   "n_sets": 127,
+   "T_obs": 1.0505,
+   "null_mean": 0.7273,
+   "null_sd": 0.0374,
+   "excess_ratio": 1.444,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hiddenpowerfire",
+     "b": "hiddenpowergrass",
+     "c_ab": 0,
+     "c_a": 97,
+     "c_b": 20,
+     "n": 127,
+     "cond": 0.005,
+     "marg": 0.157,
+     "lift": 0.032
+    },
+    {
+     "a": "rest",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 17,
+     "c_b": 72,
+     "n": 127,
+     "cond": 0.028,
+     "marg": 0.567,
+     "lift": 0.049
+    },
+    {
+     "a": "hiddenpowerfire",
+     "b": "hiddenpowerice",
+     "c_ab": 0,
+     "c_a": 97,
+     "c_b": 8,
+     "n": 127,
+     "cond": 0.005,
+     "marg": 0.063,
+     "lift": 0.081
+    },
+    {
+     "a": "sleeptalk",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 9,
+     "c_b": 72,
+     "n": 127,
+     "cond": 0.05,
+     "marg": 0.567,
+     "lift": 0.088
+    },
+    {
+     "a": "hiddenpowerice",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 8,
+     "c_b": 72,
+     "n": 127,
+     "cond": 0.056,
+     "marg": 0.567,
+     "lift": 0.098
+    },
+    {
+     "a": "protect",
+     "b": "thunderwave",
+     "c_ab": 1,
+     "c_a": 23,
+     "c_b": 72,
+     "n": 127,
+     "cond": 0.062,
+     "marg": 0.567,
+     "lift": 0.11
+    }
+   ]
+  },
+  {
+   "species": "dugtrio",
+   "n_sets": 120,
+   "T_obs": 0.0996,
+   "null_mean": 0.0888,
+   "null_sd": 0.0103,
+   "excess_ratio": 1.122,
+   "p_perm": 0.1767,
+   "top_pairs": [
+    {
+     "a": "rockslide",
+     "b": "screech",
+     "c_ab": 0,
+     "c_a": 66,
+     "c_b": 16,
+     "n": 120,
+     "cond": 0.007,
+     "marg": 0.133,
+     "lift": 0.056
+    },
+    {
+     "a": "beatup",
+     "b": "rockslide",
+     "c_ab": 1,
+     "c_a": 24,
+     "c_b": 66,
+     "n": 120,
+     "cond": 0.06,
+     "marg": 0.55,
+     "lift": 0.109
+    },
+    {
+     "a": "rockslide",
+     "b": "sunnyday",
+     "c_ab": 0,
+     "c_a": 66,
+     "c_b": 8,
+     "n": 120,
+     "cond": 0.007,
+     "marg": 0.067,
+     "lift": 0.112
+    },
+    {
+     "a": "beatup",
+     "b": "screech",
+     "c_ab": 0,
+     "c_a": 24,
+     "c_b": 16,
+     "n": 120,
+     "cond": 0.02,
+     "marg": 0.133,
+     "lift": 0.15
+    },
+    {
+     "a": "beatup",
+     "b": "sunnyday",
+     "c_ab": 0,
+     "c_a": 24,
+     "c_b": 8,
+     "n": 120,
+     "cond": 0.02,
+     "marg": 0.067,
+     "lift": 0.3
+    },
+    {
+     "a": "screech",
+     "b": "sunnyday",
+     "c_ab": 0,
+     "c_a": 16,
+     "c_b": 8,
+     "n": 120,
+     "cond": 0.029,
+     "marg": 0.067,
+     "lift": 0.441
+    }
+   ]
+  },
+  {
+   "species": "claydol",
+   "n_sets": 117,
+   "T_obs": 0.4038,
+   "null_mean": 0.357,
+   "null_sd": 0.0222,
+   "excess_ratio": 1.131,
+   "p_perm": 0.0333,
+   "top_pairs": [
+    {
+     "a": "psychic",
+     "b": "shadowball",
+     "c_ab": 0,
+     "c_a": 98,
+     "c_b": 12,
+     "n": 117,
+     "cond": 0.005,
+     "marg": 0.103,
+     "lift": 0.049
+    },
+    {
+     "a": "explosion",
+     "b": "refresh",
+     "c_ab": 1,
+     "c_a": 99,
+     "c_b": 13,
+     "n": 117,
+     "cond": 0.015,
+     "marg": 0.111,
+     "lift": 0.135
+    },
+    {
+     "a": "rest",
+     "b": "shadowball",
+     "c_ab": 3,
+     "c_a": 9,
+     "c_b": 12,
+     "n": 117,
+     "cond": 0.35,
+     "marg": 0.103,
+     "lift": 3.413
+    },
+    {
+     "a": "refresh",
+     "b": "shadowball",
+     "c_ab": 0,
+     "c_a": 13,
+     "c_b": 12,
+     "n": 117,
+     "cond": 0.036,
+     "marg": 0.103,
+     "lift": 0.348
+    },
+    {
+     "a": "refresh",
+     "b": "rockslide",
+     "c_ab": 0,
+     "c_a": 13,
+     "c_b": 10,
+     "n": 117,
+     "cond": 0.036,
+     "marg": 0.085,
+     "lift": 0.418
+    },
+    {
+     "a": "rockslide",
+     "b": "shadowball",
+     "c_ab": 0,
+     "c_a": 10,
+     "c_b": 12,
+     "n": 117,
+     "cond": 0.045,
+     "marg": 0.103,
+     "lift": 0.443
+    }
+   ]
+  },
+  {
+   "species": "jolteon",
+   "n_sets": 106,
+   "T_obs": 0.5235,
+   "null_mean": 0.464,
+   "null_sd": 0.0268,
+   "excess_ratio": 1.128,
+   "p_perm": 0.02,
+   "top_pairs": [
+    {
+     "a": "hiddenpowergrass",
+     "b": "hiddenpowerice",
+     "c_ab": 0,
+     "c_a": 87,
+     "c_b": 11,
+     "n": 106,
+     "cond": 0.006,
+     "marg": 0.104,
+     "lift": 0.055
+    },
+    {
+     "a": "roar",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 14,
+     "c_b": 64,
+     "n": 106,
+     "cond": 0.033,
+     "marg": 0.604,
+     "lift": 0.055
+    },
+    {
+     "a": "substitute",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 64,
+     "c_b": 12,
+     "n": 106,
+     "cond": 0.008,
+     "marg": 0.113,
+     "lift": 0.068
+    },
+    {
+     "a": "substitute",
+     "b": "wish",
+     "c_ab": 1,
+     "c_a": 64,
+     "c_b": 19,
+     "n": 106,
+     "cond": 0.023,
+     "marg": 0.179,
+     "lift": 0.129
+    },
+    {
+     "a": "roar",
+     "b": "wish",
+     "c_ab": 0,
+     "c_a": 14,
+     "c_b": 19,
+     "n": 106,
+     "cond": 0.033,
+     "marg": 0.179,
+     "lift": 0.186
+    },
+    {
+     "a": "toxic",
+     "b": "wish",
+     "c_ab": 0,
+     "c_a": 11,
+     "c_b": 19,
+     "n": 106,
+     "cond": 0.042,
+     "marg": 0.179,
+     "lift": 0.232
+    }
+   ]
+  },
+  {
+   "species": "aerodactyl",
+   "n_sets": 90,
+   "T_obs": 0.1052,
+   "null_mean": 0.1527,
+   "null_sd": 0.0273,
+   "excess_ratio": 0.688,
+   "p_perm": 0.9467,
+   "top_pairs": [
+    {
+     "a": "hiddenpowerbug",
+     "b": "hiddenpowerflying",
+     "c_ab": 0,
+     "c_a": 55,
+     "c_b": 26,
+     "n": 90,
+     "cond": 0.009,
+     "marg": 0.289,
+     "lift": 0.031
+    },
+    {
+     "a": "hiddenpowerbug",
+     "b": "hiddenpowerfighting",
+     "c_ab": 0,
+     "c_a": 55,
+     "c_b": 5,
+     "n": 90,
+     "cond": 0.009,
+     "marg": 0.056,
+     "lift": 0.161
+    },
+    {
+     "a": "hiddenpowerfighting",
+     "b": "hiddenpowerflying",
+     "c_ab": 0,
+     "c_a": 5,
+     "c_b": 26,
+     "n": 90,
+     "cond": 0.083,
+     "marg": 0.289,
+     "lift": 0.288
+    },
+    {
+     "a": "doubleedge",
+     "b": "hiddenpowerfighting",
+     "c_ab": 5,
+     "c_a": 87,
+     "c_b": 5,
+     "n": 90,
+     "cond": 0.062,
+     "marg": 0.056,
+     "lift": 1.125
+    },
+    {
+     "a": "hiddenpowerfighting",
+     "b": "rockslide",
+     "c_ab": 5,
+     "c_a": 5,
+     "c_b": 90,
+     "n": 90,
+     "cond": 0.917,
+     "marg": 1.0,
+     "lift": 0.917
+    },
+    {
+     "a": "earthquake",
+     "b": "hiddenpowerfighting",
+     "c_ab": 5,
+     "c_a": 90,
+     "c_b": 5,
+     "n": 90,
+     "cond": 0.06,
+     "marg": 0.056,
+     "lift": 1.088
+    }
+   ]
+  },
+  {
+   "species": "forretress",
+   "n_sets": 82,
+   "T_obs": 0.9776,
+   "null_mean": 0.705,
+   "null_sd": 0.0404,
+   "excess_ratio": 1.387,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "counter",
+     "b": "explosion",
+     "c_ab": 0,
+     "c_a": 35,
+     "c_b": 37,
+     "n": 82,
+     "cond": 0.014,
+     "marg": 0.451,
+     "lift": 0.031
+    },
+    {
+     "a": "hiddenpowerbug",
+     "b": "hiddenpowerghost",
+     "c_ab": 0,
+     "c_a": 40,
+     "c_b": 17,
+     "n": 82,
+     "cond": 0.012,
+     "marg": 0.207,
+     "lift": 0.059
+    },
+    {
+     "a": "earthquake",
+     "b": "hiddenpowerghost",
+     "c_ab": 0,
+     "c_a": 20,
+     "c_b": 17,
+     "n": 82,
+     "cond": 0.024,
+     "marg": 0.207,
+     "lift": 0.115
+    },
+    {
+     "a": "counter",
+     "b": "earthquake",
+     "c_ab": 1,
+     "c_a": 35,
+     "c_b": 20,
+     "n": 82,
+     "cond": 0.042,
+     "marg": 0.244,
+     "lift": 0.171
+    },
+    {
+     "a": "hiddenpowerbug",
+     "b": "hiddenpowerfire",
+     "c_ab": 0,
+     "c_a": 40,
+     "c_b": 5,
+     "n": 82,
+     "cond": 0.012,
+     "marg": 0.061,
+     "lift": 0.2
+    },
+    {
+     "a": "earthquake",
+     "b": "zapcannon",
+     "c_ab": 0,
+     "c_a": 20,
+     "c_b": 9,
+     "n": 82,
+     "cond": 0.024,
+     "marg": 0.11,
+     "lift": 0.217
+    }
+   ]
+  },
+  {
+   "species": "starmie",
+   "n_sets": 77,
+   "T_obs": 1.7836,
+   "null_mean": 0.8376,
+   "null_sd": 0.05,
+   "excess_ratio": 2.129,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hydropump",
+     "b": "surf",
+     "c_ab": 0,
+     "c_a": 27,
+     "c_b": 50,
+     "n": 77,
+     "cond": 0.018,
+     "marg": 0.649,
+     "lift": 0.028
+    },
+    {
+     "a": "icebeam",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 61,
+     "c_b": 13,
+     "n": 77,
+     "cond": 0.008,
+     "marg": 0.169,
+     "lift": 0.048
+    },
+    {
+     "a": "thunderbolt",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 54,
+     "c_b": 13,
+     "n": 77,
+     "cond": 0.009,
+     "marg": 0.169,
+     "lift": 0.054
+    },
+    {
+     "a": "hydropump",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 27,
+     "c_b": 13,
+     "n": 77,
+     "cond": 0.018,
+     "marg": 0.169,
+     "lift": 0.106
+    },
+    {
+     "a": "recover",
+     "b": "thunderbolt",
+     "c_ab": 4,
+     "c_a": 24,
+     "c_b": 54,
+     "n": 77,
+     "cond": 0.18,
+     "marg": 0.701,
+     "lift": 0.257
+    },
+    {
+     "a": "recover",
+     "b": "thunderwave",
+     "c_ab": 13,
+     "c_a": 24,
+     "c_b": 13,
+     "n": 77,
+     "cond": 0.54,
+     "marg": 0.169,
+     "lift": 3.198
+    }
+   ]
+  },
+  {
+   "species": "gyarados",
+   "n_sets": 53,
+   "T_obs": 1.2118,
+   "null_mean": 0.7128,
+   "null_sd": 0.068,
+   "excess_ratio": 1.7,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hiddenpowerflying",
+     "b": "hiddenpowerrock",
+     "c_ab": 0,
+     "c_a": 25,
+     "c_b": 20,
+     "n": 53,
+     "cond": 0.019,
+     "marg": 0.377,
+     "lift": 0.051
+    },
+    {
+     "a": "doubleedge",
+     "b": "return",
+     "c_ab": 0,
+     "c_a": 30,
+     "c_b": 9,
+     "n": 53,
+     "cond": 0.016,
+     "marg": 0.17,
+     "lift": 0.095
+    },
+    {
+     "a": "doubleedge",
+     "b": "thunderwave",
+     "c_ab": 0,
+     "c_a": 30,
+     "c_b": 8,
+     "n": 53,
+     "cond": 0.016,
+     "marg": 0.151,
+     "lift": 0.107
+    },
+    {
+     "a": "hiddenpowerflying",
+     "b": "hiddenpowerghost",
+     "c_ab": 0,
+     "c_a": 25,
+     "c_b": 8,
+     "n": 53,
+     "cond": 0.019,
+     "marg": 0.151,
+     "lift": 0.127
+    },
+    {
+     "a": "doubleedge",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 30,
+     "c_b": 6,
+     "n": 53,
+     "cond": 0.016,
+     "marg": 0.113,
+     "lift": 0.142
+    },
+    {
+     "a": "hiddenpowerghost",
+     "b": "hiddenpowerrock",
+     "c_ab": 0,
+     "c_a": 8,
+     "c_b": 20,
+     "n": 53,
+     "cond": 0.056,
+     "marg": 0.377,
+     "lift": 0.147
+    }
+   ]
+  },
+  {
+   "species": "cloyster",
+   "n_sets": 52,
+   "T_obs": 0.5135,
+   "null_mean": 0.4592,
+   "null_sd": 0.0234,
+   "excess_ratio": 1.118,
+   "p_perm": 0.0067,
+   "top_pairs": [
+    {
+     "a": "hiddenpowergrass",
+     "b": "rapidspin",
+     "c_ab": 0,
+     "c_a": 6,
+     "c_b": 40,
+     "n": 52,
+     "cond": 0.071,
+     "marg": 0.769,
+     "lift": 0.093
+    },
+    {
+     "a": "hiddenpowergrass",
+     "b": "icebeam",
+     "c_ab": 1,
+     "c_a": 6,
+     "c_b": 36,
+     "n": 52,
+     "cond": 0.214,
+     "marg": 0.692,
+     "lift": 0.31
+    },
+    {
+     "a": "icebeam",
+     "b": "surf",
+     "c_ab": 5,
+     "c_a": 36,
+     "c_b": 21,
+     "n": 52,
+     "cond": 0.149,
+     "marg": 0.404,
+     "lift": 0.368
+    },
+    {
+     "a": "hiddenpowergrass",
+     "b": "surf",
+     "c_ab": 5,
+     "c_a": 6,
+     "c_b": 21,
+     "n": 52,
+     "cond": 0.786,
+     "marg": 0.404,
+     "lift": 1.946
+    },
+    {
+     "a": "rapidspin",
+     "b": "surf",
+     "c_ab": 11,
+     "c_a": 40,
+     "c_b": 21,
+     "n": 52,
+     "cond": 0.28,
+     "marg": 0.404,
+     "lift": 0.695
+    },
+    {
+     "a": "explosion",
+     "b": "hiddenpowergrass",
+     "c_ab": 6,
+     "c_a": 51,
+     "c_b": 6,
+     "n": 52,
+     "cond": 0.125,
+     "marg": 0.115,
+     "lift": 1.083
+    }
+   ]
+  },
+  {
+   "species": "milotic",
+   "n_sets": 44,
+   "T_obs": 0.3459,
+   "null_mean": 0.2925,
+   "null_sd": 0.0168,
+   "excess_ratio": 1.182,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "icebeam",
+     "b": "toxic",
+     "c_ab": 1,
+     "c_a": 9,
+     "c_b": 36,
+     "n": 44,
+     "cond": 0.15,
+     "marg": 0.818,
+     "lift": 0.183
+    },
+    {
+     "a": "icebeam",
+     "b": "refresh",
+     "c_ab": 4,
+     "c_a": 9,
+     "c_b": 38,
+     "n": 44,
+     "cond": 0.45,
+     "marg": 0.864,
+     "lift": 0.521
+    },
+    {
+     "a": "icebeam",
+     "b": "surf",
+     "c_ab": 8,
+     "c_a": 9,
+     "c_b": 43,
+     "n": 44,
+     "cond": 0.85,
+     "marg": 0.977,
+     "lift": 0.87
+    },
+    {
+     "a": "refresh",
+     "b": "toxic",
+     "c_ab": 34,
+     "c_a": 38,
+     "c_b": 36,
+     "n": 44,
+     "cond": 0.885,
+     "marg": 0.818,
+     "lift": 1.081
+    },
+    {
+     "a": "icebeam",
+     "b": "recover",
+     "c_ab": 9,
+     "c_a": 9,
+     "c_b": 44,
+     "n": 44,
+     "cond": 0.95,
+     "marg": 1.0,
+     "lift": 0.95
+    },
+    {
+     "a": "surf",
+     "b": "toxic",
+     "c_ab": 35,
+     "c_a": 43,
+     "c_b": 36,
+     "n": 44,
+     "cond": 0.807,
+     "marg": 0.818,
+     "lift": 0.986
+    }
+   ]
+  },
+  {
+   "species": "heracross",
+   "n_sets": 42,
+   "T_obs": 0.5457,
+   "null_mean": 0.4521,
+   "null_sd": 0.0436,
+   "excess_ratio": 1.207,
+   "p_perm": 0.0267,
+   "top_pairs": [
+    {
+     "a": "brickbreak",
+     "b": "substitute",
+     "c_ab": 0,
+     "c_a": 25,
+     "c_b": 10,
+     "n": 42,
+     "cond": 0.019,
+     "marg": 0.238,
+     "lift": 0.081
+    },
+    {
+     "a": "brickbreak",
+     "b": "focuspunch",
+     "c_ab": 1,
+     "c_a": 25,
+     "c_b": 9,
+     "n": 42,
+     "cond": 0.058,
+     "marg": 0.214,
+     "lift": 0.269
+    },
+    {
+     "a": "focuspunch",
+     "b": "swordsdance",
+     "c_ab": 2,
+     "c_a": 9,
+     "c_b": 32,
+     "n": 42,
+     "cond": 0.25,
+     "marg": 0.762,
+     "lift": 0.328
+    },
+    {
+     "a": "focuspunch",
+     "b": "substitute",
+     "c_ab": 3,
+     "c_a": 9,
+     "c_b": 10,
+     "n": 42,
+     "cond": 0.35,
+     "marg": 0.238,
+     "lift": 1.47
+    },
+    {
+     "a": "rockslide",
+     "b": "substitute",
+     "c_ab": 7,
+     "c_a": 37,
+     "c_b": 10,
+     "n": 42,
+     "cond": 0.197,
+     "marg": 0.238,
+     "lift": 0.829
+    },
+    {
+     "a": "focuspunch",
+     "b": "rockslide",
+     "c_ab": 7,
+     "c_a": 9,
+     "c_b": 37,
+     "n": 42,
+     "cond": 0.75,
+     "marg": 0.881,
+     "lift": 0.851
+    }
+   ]
+  },
+  {
+   "species": "moltres",
+   "n_sets": 41,
+   "T_obs": 0.1824,
+   "null_mean": 0.3614,
+   "null_sd": 0.0258,
+   "excess_ratio": 0.505,
+   "p_perm": 1.0,
+   "top_pairs": [
+    {
+     "a": "fireblast",
+     "b": "flamethrower",
+     "c_ab": 0,
+     "c_a": 10,
+     "c_b": 31,
+     "n": 41,
+     "cond": 0.045,
+     "marg": 0.756,
+     "lift": 0.06
+    },
+    {
+     "a": "fireblast",
+     "b": "roar",
+     "c_ab": 7,
+     "c_a": 10,
+     "c_b": 31,
+     "n": 41,
+     "cond": 0.682,
+     "marg": 0.756,
+     "lift": 0.902
+    },
+    {
+     "a": "flamethrower",
+     "b": "willowisp",
+     "c_ab": 28,
+     "c_a": 31,
+     "c_b": 38,
+     "n": 41,
+     "cond": 0.891,
+     "marg": 0.927,
+     "lift": 0.961
+    },
+    {
+     "a": "fireblast",
+     "b": "willowisp",
+     "c_ab": 10,
+     "c_a": 10,
+     "c_b": 38,
+     "n": 41,
+     "cond": 0.955,
+     "marg": 0.927,
+     "lift": 1.03
+    },
+    {
+     "a": "roar",
+     "b": "willowisp",
+     "c_ab": 30,
+     "c_a": 31,
+     "c_b": 38,
+     "n": 41,
+     "cond": 0.953,
+     "marg": 0.927,
+     "lift": 1.028
+    },
+    {
+     "a": "flamethrower",
+     "b": "hiddenpowergrass",
+     "c_ab": 30,
+     "c_a": 31,
+     "c_b": 40,
+     "n": 41,
+     "cond": 0.953,
+     "marg": 0.976,
+     "lift": 0.977
+    }
+   ]
+  },
+  {
+   "species": "flygon",
+   "n_sets": 26,
+   "T_obs": 0.9846,
+   "null_mean": 0.715,
+   "null_sd": 0.0802,
+   "excess_ratio": 1.377,
+   "p_perm": 0.0,
+   "top_pairs": [
+    {
+     "a": "hiddenpowerbug",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 10,
+     "c_b": 16,
+     "n": 26,
+     "cond": 0.045,
+     "marg": 0.615,
+     "lift": 0.074
+    },
+    {
+     "a": "gust",
+     "b": "toxic",
+     "c_ab": 0,
+     "c_a": 6,
+     "c_b": 16,
+     "n": 26,
+     "cond": 0.071,
+     "marg": 0.615,
+     "lift": 0.116
+    },
+    {
+     "a": "hiddenpowerbug",
+     "b": "protect",
+     "c_ab": 0,
+     "c_a": 10,
+     "c_b": 10,
+     "n": 26,
+     "cond": 0.045,
+     "marg": 0.385,
+     "lift": 0.118
+    },
+    {
+     "a": "gust",
+     "b": "protect",
+     "c_ab": 0,
+     "c_a": 6,
+     "c_b": 10,
+     "n": 26,
+     "cond": 0.071,
+     "marg": 0.385,
+     "lift": 0.186
+    },
+    {
+     "a": "fireblast",
+     "b": "gust",
+     "c_ab": 0,
+     "c_a": 9,
+     "c_b": 6,
+     "n": 26,
+     "cond": 0.05,
+     "marg": 0.231,
+     "lift": 0.217
+    },
+    {
+     "a": "fireblast",
+     "b": "protect",
+     "c_ab": 1,
+     "c_a": 9,
+     "c_b": 10,
+     "n": 26,
+     "cond": 0.15,
+     "marg": 0.385,
+     "lift": 0.39
+    }
+   ]
+  }
+ ]
+}

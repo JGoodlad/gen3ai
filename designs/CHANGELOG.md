@@ -2968,3 +2968,54 @@ exists for. 20,000 rust episodes / ~1.69M steps clean before it tripped.
   recorded `edge_bias_families` string. Gate results recorded in the shipping commit.
   (Written as v78 pre-rebase; renumbered v79 on landing — `gen3_flag_surface_p1_v1` took 78
   concurrently, the v75/v76 renumbering precedent.)
+
+### `gen3_smogon_cooccur_prior_v1` (2026-08-15, NO config bump — a data-source swap, retrain-class)
+
+The species co-occurrence prior behind BOTH the v69 `species_prior_fusion` naive-Bayes read and
+the v72 `T0SpeciesPrior` was sourced from the 719-team POOL (`data/teams/gen3_species_priors.json`)
+— the one prior in the model that violated the owner rule stated 2026-08-15: **priors are always
+Smogon-based, never pool-based**. `build_species_cooccur_prior` now derives from Smogon: the
+marginal is `build_species_usage_prior`'s normalized usage share, and the lift comes from the
+chaos `Teammates` joint (`gen3_teammate_priors.json` / `gen3_data.priors.teammates`, ~2.5M gen3ou
+battles, 12-month merge), clamped to ±4 in place of the pool source's pseudo-count shrinkage;
+forme keys fold into their base num. The swap VALIDATED the rule with a concrete artifact: the
+pool's strongest positive pair (Cloyster→Aerodactyl, log-lift +1.32) measures **+0.23** on the
+ladder — a sample-team archetype baked into two generations of belief priors. New anchors:
+Jirachi|Flygon +1.12 (the JiraGon core), Forretress|Skarmory −2.51 (redundant spikers);
+GIGO guards now pin the Tyranitar marginal AND positive Skarmory|Tyranitar lift. The math,
+shapes, buffers and consumers are unchanged (the fusion parity test now checks the matmul
+against a numpy walk over the same tensors instead of the pool estimator);
+`agents.training.species_priors` remains as a pool-ANALYSIS tool only. No ModelVersion field
+moved — like any `data/` prior change this is retrain-class, not resume-gated.
+
+### v80 — `gen3_unified_value_readout_v1` (2026-08-15): the Stage-3 critic delivery contract, built
+
+`design_unified_belief.md` §3 named the critic's delivery problem: four parallel magnitude routes
+(value CLS pool, `MultiSeedValueReadout`, `--value-threat-inject`, the hidden-opp concat), two of
+which exist only because the others could not reach vf — "the signature of a missing contract."
+This ships the contract as an OPT-IN successor, ahead of the gen-11 audit that decides the
+condemnations:
+
+- **`UnifiedValueReadout`** (`--value-entity-pool`, STRUCTURAL v80 field): ONE attention pool
+  over the critic's entity-row set — the 12 post-transformer team tokens plus (when the op
+  exists) its 6 per-our-mon incoming rows — rows projected to `UVR_DIM` 64 with per-SOURCE type
+  embeddings, pooled by `UVR_K` 4 learned queries, through a ZERO-INIT output projection
+  (`UVR_OUT_DIM` 128) appended to vf ONLY after the assembler (the intent_value_reduce
+  placement: pi untouched at ANY weight). Explicit softmax (the MultiSeedValueReadout pattern),
+  so an all-masked row set degrades to a uniform average, never NaN, and the K×N attention is
+  stashed (`last_att`). Works without the op (the row set shrinks to the team tokens).
+- **Permutation-invariant by construction** — a row's identity rides its content + source tag,
+  never its position; the pointer head stays the policy's per-action pool. Same object, two
+  pools, one contract (§3's sentence, now code).
+- **Fully declared**: a `flag_registry` row (the registry test drove out the two sites the hand
+  pass missed — the `check_compatible` gate and the generated doc), argparse + `_resolve`,
+  ModelVersion field + named mismatch error, v80 setdefault migration, and the zero-init out
+  projection is picked up by the end-of-`__init__` identity-init sweep (SB3 ortho-clobber safe,
+  asserted by test).
+- **The audit gains an `entity_pool` arm** (`critic_route_audit.py`), so the run that enables
+  this measures it with the same instrument that condemns its predecessors.
+- OFF builds nothing — byte-identical baseline, no ARCH_SIGNATURE bump; production stays OFF
+  (`config_version` 80 stamped). Gates: `value_entity_pool_test.py` (OFF-builds-nothing,
+  zero-init survives policy build + contributes exactly 0, pi untouched at any weight while vf
+  fires, masked rows get zero attention, all-masked is finite, fail-loud op-rows contract, the
+  v80 migration stamp).

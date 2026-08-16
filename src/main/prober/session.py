@@ -36,7 +36,7 @@ from main.prober.discovery import (
     list_checkpoints,
     resolve_model_for_step,
 )
-from main.prober.awareness import awareness_from_npz
+from main.prober.awareness import awareness_from_npz, coverage_from_npz
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, build_board, build_opp_intent, build_our_hp_types,
     decode_incoming_belief, fit_probe, history_slot_saliency, opp_intent_text, parse_pct,
@@ -695,7 +695,7 @@ class ProbeSession:
         if support is None:
             return {"error": "this run has no distributional value head "
                              "(value_dist_mode none / no model_config.json)"}
-        rows, n_skipped = [], 0
+        rows, n_skipped, all_pits = [], 0, []
         for b in self.tree.all_battles():
             if outcome and b.outcome != outcome:
                 continue
@@ -708,6 +708,16 @@ class ProbeSession:
             if v is None:
                 n_skipped += 1
                 continue
+            # Quantile coverage (runbook §3): PIT of the realized MC return under each
+            # predicted distribution — same return convention as the calibration probe.
+            rewards = [((inv.get("outcome") or {}).get("reward") or {}).get("total")
+                       if isinstance((inv.get("outcome") or {}).get("reward"), dict)
+                       else (inv.get("outcome") or {}).get("reward") for inv in invs]
+            cov = coverage_from_npz(self._npz(b),
+                                    _discounted_returns(rewards, self._gamma),
+                                    self._dist_support())
+            if cov is not None:
+                all_pits.extend(cov.pop("pits"))
             last_turn = v["turns"][-1] if v["turns"] else None
             rows.append({
                 "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
@@ -719,6 +729,7 @@ class ProbeSession:
                 "blind_loss": v["blind_loss"],
                 "mean_tail_divergence": v["mean_tail_divergence"],
                 "divergence_turn": v["divergence_turn"],
+                "coverage": cov,        # per-battle PIT summary; None on a no-reward trace
             })
         losses = [r for r in rows if r["outcome"] == "loss"]
         caps = [r for r in losses if r["cap_loss"]]
@@ -737,6 +748,16 @@ class ProbeSession:
             "median_lead_time": (float(np.median(leads)) if leads else None),
             "stall_signature_fraction": _frac(
                 [r for r in losses if r["mean_tail_divergence"] >= stall_bar], losses),
+            # Pooled quantile coverage over EVERY scored decision (not means-of-battle-means):
+            # calibrated ⟺ pit_mean ≈ 0.5 and coverage80 ≈ 0.80. Note the selection caveat —
+            # the default outcome="loss" filter biases pit_mean low BY CONSTRUCTION (losses are
+            # the low-outcome tail); judge calibration on outcome=None, direction on the filter.
+            "quantile_coverage": ({
+                "n_decisions": len(all_pits),
+                "pit_mean": round(float(np.mean(all_pits)), 4),
+                "pit_std": round(float(np.std(all_pits)), 4),
+                "coverage80": round(float(np.mean([(0.10 <= p <= 0.90) for p in all_pits])), 4),
+            } if all_pits else None),
             "params": {"lead_bar": lead_bar, "cap_turn": cap_turn, "stall_bar": stall_bar},
         }
         # blind + stall-flagged first — the battles a reader should open

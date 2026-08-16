@@ -18,6 +18,7 @@ hidden_power_raw = _base.singleton(lambda: _base.load_json("gen3_hidden_power_pr
 move_raw = _base.singleton(lambda: _base.load_json("gen3_move_priors.json"))
 item_raw = _base.singleton(lambda: _base.load_json("gen3_item_priors.json"))
 spread_raw = _base.singleton(lambda: _base.load_json("gen3_spread_priors.json"))
+teammate_raw = _base.singleton(lambda: _base.load_json("gen3_teammate_priors.json"))
 smogon_stats_raw = _base.singleton(lambda: _base.load_json("gen3_smogon_stats.json"))
 
 _EV_INDEX = {"hp": 0, "atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
@@ -50,6 +51,14 @@ def items(species: str) -> Dict[str, float]:
 def spreads(species: str) -> List[list]:
     """``[[nature, [hp,atk,def,spa,spd,spe], weight], ...]`` raw usage spreads (weights sum→1)."""
     return spread_raw().get(species, [])
+
+
+def teammates(species: str) -> Dict[str, float]:
+    """``{teammate_species_id: P(teammate | species)}`` (sum→1) — the Smogon chaos ``Teammates``
+    co-occurrence, the ONE species×species JOINT the usage stats publish. The Smogon-based
+    coupling prior for the hidden-TEAM belief: one revealed Tyranitar should reshape the
+    posterior over the five unrevealed slots. Empty dict if the species has no entry."""
+    return teammate_raw().get(species, {})
 
 
 @functools.lru_cache(maxsize=1)

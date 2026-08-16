@@ -21,7 +21,20 @@ def test_unknown_species_empty_dict():
     assert priors.moves("notamon") == {}
     assert priors.items("notamon") == {}
     assert priors.spreads("notamon") == []
+    assert priors.teammates("notamon") == {}
     assert priors.stat_distribution("notamon", "spe") == ()
+
+
+def test_teammate_priors_tyranitar():
+    """The species×species coupling prior (chaos `Teammates`, the one JOINT Smogon publishes):
+    normalized conditional over gen3-known teammates; the sand core must rank high."""
+    from agents.gen3_data import species as g3species
+
+    p = priors.teammates("tyranitar")
+    assert p and abs(sum(p.values()) - 1.0) < 1e-6
+    assert all(g3species.get(t) is not None for t in p)      # every key is a known species
+    top5 = {t for t, _ in sorted(p.items(), key=lambda kv: -kv[1])[:5]}
+    assert {"skarmory", "swampert"} & top5                   # the TSS core co-occurs
 
 
 def test_move_priors_tyranitar():

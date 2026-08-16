@@ -1206,56 +1206,83 @@ _SPECIES_CLAUSE_PROB = 1e-6
 SPECIES_CLAUSE_LOGIT = math.log(_SPECIES_CLAUSE_PROB)
 
 
+# Bound on a single teammate's log-lift evidence (the SMOGON source has no shrinkage step, so
+# this clamp is what keeps one thin co-occurrence row from swinging a whole naive-Bayes read the
+# way the old pool source's pseudo-count shrinkage did). e^4 ≈ 55x either way.
+_COOCCUR_LIFT_CLAMP = 4.0
+
+
 def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Tensor]:
     """The two num-indexed tensors of the team-composition species prior:
 
-      * ``log_marginal`` ``[n_species]`` — ``log P(species s is on an opponent team)``
+      * ``log_marginal`` ``[n_species]`` — ``log P(an unrevealed opp slot is species s)``
       * ``log_lift``     ``[n_species, n_species]`` — ``log[ P(s | t) / P(s) ]``, the PAIRWISE
         evidence a revealed teammate ``t`` contributes about ``s``. Zero means "carries no
-        information" (an unknown/off-pool teammate, or ``t == s``), so an empty revealed set makes
-        the whole evidence term vanish and the prior degrades EXACTLY to the marginal.
+        information" (an unobserved pair, or ``t == s``), so an empty revealed set makes the
+        whole evidence term vanish and the prior degrades EXACTLY to the marginal.
 
     Combined by naive Bayes in the forward (`BeliefHead.species_prior_logits`):
 
         log P(s | R) ∝ log P(s) + Σ_{r ∈ R} log-lift(s, r)
 
-    Sourced from the committed calibration artifact ``data/teams/gen3_species_priors.json``
-    (`agents.training.species_priors`, derived from the ``data/teams/`` pool the runtime actually
-    trains against — the `gen3_team_archetypes` / `gen3_pubval` pattern). Its conditional estimate is
-    already shrunk toward the marginal (``P(s|t) = (n_st + m·P(s))/(n_t + m)``), so a two-team
-    coincidence cannot masquerade as a strong lift.
+    **Sourced from SMOGON, never the pool** (owner rule 2026-08-15 — priors are always
+    Smogon-based; the 719-team pool measures structure but never ships as a prior). The marginal
+    is the same normalized usage share `build_species_usage_prior` emits; the lift comes from the
+    chaos ``Teammates`` field (``gen3_data.priors.teammates`` — the ONE species×species joint
+    Smogon publishes, ~2.5M gen3ou battles): ``P(s | t)`` is the per-slot teammate conditional,
+    and the independence baseline renormalizes the usage share to exclude ``t`` itself
+    (a teammate of t is never t). Forme keys accumulate into their base num (the num-axis rule).
+    An s absent from t's teammate row keeps lift 0 — UNOBSERVED at Smogon's truncation, not
+    negative evidence. Until 2026-08-15 this was derived from ``data/teams/gen3_species_priors
+    .json`` (the pool) — `agents.training.species_priors` remains as a pool-ANALYSIS tool only.
 
-    Both are plain float32, for `BeliefHead` to register as NON-persistent buffers — data-derived and
-    recomputable, never a saved weight (same contract as ``move_prior_logits``).
+    Both are plain float32, for `BeliefHead` to register as NON-persistent buffers — data-derived
+    and recomputable, never a saved weight (same contract as ``move_prior_logits``).
 
-    Fail-loud GIGO guard, mirroring `build_species_usage_prior`: Tyranitar is on ~63% of gen3ou pool
-    teams, so if it does not resolve to a dominant marginal the id/num axis has drifted and the whole
-    prior would silently flatten to the floor."""
-    from agents.training.species_priors import species_prior_table   # lazy: artifact I/O, not physics
+    Fail-loud GIGO guards, mirroring `build_species_usage_prior`: Tyranitar must resolve to a
+    dominant usage marginal, and the sand core (Skarmory | Tyranitar) must carry POSITIVE lift —
+    either failing means the id/num axis drifted and the prior silently flattened."""
+    usage_prior = build_species_usage_prior(n_species)                  # [S] slot shares, sum 1
+    log_marginal = usage_prior.clamp_min(_SPECIES_PRIOR_FLOOR).log()
+    log_marginal[0] = math.log(_SPECIES_PRIOR_FLOOR)                    # sentinel: never a candidate
 
-    tbl = species_prior_table()
-    log_marginal = torch.full((n_species,), math.log(_SPECIES_PRIOR_FLOOR), dtype=torch.float32)
     log_lift = torch.zeros((n_species, n_species), dtype=torch.float32)
-
-    # num 0 is the UNKNOWN-SPECIES sentinel a hidden opp slot carries; it is never a candidate and
-    # never evidence, so it stays at the floor / at zero lift by construction.
-    nums = {sid: tbl.num(sid) for sid in tbl.species}
-    nums = {sid: num for sid, num in nums.items() if 0 < num < n_species}
-    if not nums:
+    base_ids = set(gen3_data.species.base_form_ids())
+    n_cols = 0
+    for tid in base_ids:                                                # evidence species t
+        td = gen3_data.species.get(tid)
+        if td is None or not (0 < td.num < n_species):
+            continue
+        mates = gen3_data.priors.teammates(tid)
+        if not mates:
+            continue
+        base_renorm = max(1.0 - float(usage_prior[td.num]), 1e-6)
+        cond_by_num: dict = {}                                          # formes fold into base num
+        for sid, p_cond in mates.items():
+            sd = gen3_data.species.get(sid)
+            if sd is None or not (0 < sd.num < n_species) or sd.num == td.num:
+                continue
+            cond_by_num[sd.num] = cond_by_num.get(sd.num, 0.0) + float(p_cond)
+        for snum, p_cond in cond_by_num.items():
+            expected = max(float(usage_prior[snum]), _SPECIES_PRIOR_FLOOR) / base_renorm
+            lift = math.log(max(p_cond, 1e-9) / expected)
+            log_lift[snum, td.num] = max(-_COOCCUR_LIFT_CLAMP, min(_COOCCUR_LIFT_CLAMP, lift))
+        n_cols += 1
+    if n_cols == 0:
         raise ValueError(
-            f"build_species_cooccur_prior: no pool species resolved into the [1, {n_species}) num "
-            f"axis — data/teams/gen3_species_priors.json is empty or its `species_nums` drifted.")
-    for sid, snum in nums.items():
-        log_marginal[snum] = math.log(max(tbl.marginal[sid], _SPECIES_PRIOR_FLOOR))
-    for sid, snum in nums.items():
-        for tid, tnum in nums.items():
-            if tid != sid:
-                log_lift[snum, tnum] = tbl.log_lift(sid, tid)
+            "build_species_cooccur_prior: no species carried a Smogon teammate row — "
+            "data/pokemon/gen3_teammate_priors.json is empty or its keys drifted.")
 
     tt = gen3_data.species.get("tyranitar")
     if tt is None or not (0 < tt.num < n_species) or float(log_marginal[tt.num]) < math.log(0.05):
         raise ValueError(
-            "build_species_cooccur_prior: Tyranitar did not resolve to a dominant pool marginal — "
+            "build_species_cooccur_prior: Tyranitar did not resolve to a dominant usage marginal — "
             "the team-composition species prior is empty/misaligned (id normalization drift?). "
             "GIGO guard.")
+    sk = gen3_data.species.get("skarmory")
+    if sk is None or float(log_lift[sk.num, tt.num]) <= 0.0:
+        raise ValueError(
+            "build_species_cooccur_prior: Skarmory|Tyranitar lift is not positive — the sand core "
+            "co-occurs far above independence on every Smogon window, so the teammate table is "
+            "empty/misaligned. GIGO guard.")
     return log_marginal, log_lift

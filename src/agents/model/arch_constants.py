@@ -46,6 +46,18 @@ VALUE_SEED_DIM = 64
 INTENT_VALUE_REDUCE_DIM = 64
 _INTENT_CELL_FEATURES = 6
 
+# gen3_unified_value_readout_v1 (v80, Stage-3 T3-DELIVER, design_unified_belief.md §3): ONE
+# attention pool over the critic's ENTITY-ROW SET (the 12 post-transformer team tokens + the op's
+# 6 per-our-mon incoming rows), the designed successor of the bolt-on vf routes (seed readout /
+# threat-inject) the gen-11 critic-route audit adjudicates. K learned queries over rows projected
+# to a shared UVR_DIM (with a per-SOURCE type embedding), zero-init output projection to
+# UVR_OUT_DIM riding vf only. `_UVR_N_SOURCES` axes: 0=our mon token, 1=their mon token,
+# 2=op incoming row.
+UVR_K = 4
+UVR_DIM = 64
+UVR_OUT_DIM = 128
+_UVR_N_SOURCES = 3
+
 # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the alpha-conditioned c2
 # status-consequence channels appended to the pointer MOVE cell. `_INTENT_MOVE_CELL_RAW` is the
 # raw channel stack [is_status, d_their_outspeed, e_burn_alpha, d_sched, e_slp_alpha,

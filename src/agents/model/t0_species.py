@@ -89,7 +89,7 @@ class T0SpeciesPrior(torch.nn.Module):
     """T0 RESOLVE: `[B, n_species]` P(species | revealed opponent team), for the T1 physics.
 
     Parameter-free — it owns only the two data-derived buffers, registered NON-persistent because
-    they are recomputable from the committed pool artifact (the move prior's contract). So turning
+    they are recomputable from the committed Smogon artifacts (the move prior's contract). So turning
     this flag on adds nothing to the `state_dict` and cannot shift an optimizer parameter position.
     """
 

@@ -219,6 +219,13 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
               "the pointer MOVE cell"),
+    ModelFlag("value_entity_pool", False, Tier.CLI, Klass.STRUCTURAL, 80,
+              "Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team "
+              "tokens + op incoming rows), zero-init, vf-only",
+              note="the designed SUCCESSOR contract of the bolt-on vf routes (seed readout / "
+                   "threat-inject) — those are adjudicated by the gen-11 critic_route_audit; "
+                   "this exists so a condemned route has a replacement the next generation can "
+                   "enable in the same config."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

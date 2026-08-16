@@ -49,6 +49,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
+    UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES,
       # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
@@ -1344,7 +1345,8 @@ class BeliefHead(torch.nn.Module):
 
         species_logits = head_delta + log P(species | the opponent's ALREADY-REVEALED mons)
 
-    The prior is naive Bayes over pairwise pool co-occurrence (`build_species_cooccur_prior`) — the
+    The prior is naive Bayes over SMOGON teammate co-occurrence (`build_species_cooccur_prior`,
+    the chaos `Teammates` joint — Smogon-sourced since 2026-08-15, never pool-fit) — the
     marginal plus one log-LIFT per revealed teammate — with Species Clause as a hard constraint. It is
     computed ENTIRELY on-GPU from two non-persistent buffers (one `[B,S] @ [S,S]` matmul per forward;
     no host round-trip, no numpy). The delta head is ZERO-INIT, so the cold-start posterior EQUALS the
@@ -2304,6 +2306,71 @@ class MultiSeedValueReadout(torch.nn.Module):
         return out.reshape(out.shape[0], self.out_dim)
 
 
+class UnifiedValueReadout(torch.nn.Module):
+    """gen3_unified_value_readout_v1 (v80) — Stage-3 T3-DELIVER, the critic's ONE entity pool.
+
+    `design_unified_belief.md` §3: today the critic reads magnitude through parallel bolt-on
+    routes (the value CLS pool, the seed readout over op rows, the threat-inject, the hidden-opp
+    concat) — two of which exist only because the others could not reach vf. This module is the
+    designed successor CONTRACT: one attention pool over the critic's ENTITY-ROW SET — the 12
+    post-transformer team tokens plus (when the op exists) its 6 per-our-mon incoming rows —
+    each row projected to a shared `UVR_DIM` and tagged with a learned per-SOURCE type
+    embedding, pooled by `UVR_K` learned queries. Permutation-invariant over entities by
+    construction (softmax attention; a row's identity rides its content + source tag, never its
+    position).
+
+    Ships OPT-IN and ZERO-INIT: the output projection starts at exactly 0, so a cold-start
+    forward contributes nothing (the M1 identity-at-init contract), and the flag OFF builds
+    nothing (byte-identical baseline). vf-ONLY — the output is concatenated after the assembler
+    on the value half, so the policy is untouched at ANY weight, not merely at init (the
+    intent_value_reduce placement). It does NOT replace the routes it succeeds — the gen-11
+    critic-route audit adjudicates those (`critic_route_audit.py`); this exists so a condemned
+    route has a successor the next generation can enable in the same config.
+
+    Attention is EXPLICIT (softmax over ≤18 rows per query, the MultiSeedValueReadout pattern)
+    rather than nn.MultiheadAttention: an all-masked row set (the dummy discovery forward's
+    all-fainted board) degrades to a uniform average instead of NaN, and the k×N pattern is
+    stashed for diagnostics (`last_att`)."""
+
+    def __init__(self, per_mon: int):
+        super().__init__()
+        self.token_proj = torch.nn.Linear(D_MODEL, UVR_DIM)
+        self.op_proj = torch.nn.Linear(per_mon, UVR_DIM) if per_mon > 0 else None
+        self.source_emb = torch.nn.Parameter(torch.randn(_UVR_N_SOURCES, UVR_DIM) * 0.02)
+        self.queries = torch.nn.Parameter(torch.randn(UVR_K, UVR_DIM) * (UVR_DIM ** -0.5))
+        self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, UVR_OUT_DIM)
+        torch.nn.init.zeros_(self.out_proj.weight)
+        torch.nn.init.zeros_(self.out_proj.bias)
+        self.out_dim = UVR_OUT_DIM
+        self.last_att: Optional[torch.Tensor] = None    # [B, K, N] — the diagnostics read
+
+    def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
+                all_fainted: torch.Tensor,
+                op_rows: Optional[torch.Tensor] = None,
+                op_alive: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """our/their_team_out [B,6,D_MODEL]; all_fainted [B,12] bool (True = masked);
+        op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists → [B, UVR_OUT_DIM]."""
+        rows = [self.token_proj(our_team_out) + self.source_emb[0],
+                self.token_proj(their_team_out) + self.source_emb[1]]
+        masks = [all_fainted]
+        if self.op_proj is not None:
+            if op_rows is None or op_alive is None:
+                raise ValueError(
+                    "value_entity_pool was built WITH the op's row source but the forward "
+                    "supplied no op rows — a silent skip would shrink the row set and read "
+                    "exactly like a working pool.")
+            rows.append(self.op_proj(op_rows) + self.source_emb[2])
+            masks.append(op_alive.clamp(max=1.0) < 0.5)
+        kv = torch.cat(rows, dim=1)                                        # [B, N, dim]
+        masked = torch.cat(masks, dim=1)                                   # [B, N] bool
+        att = torch.einsum("kd,bnd->bkn", self.queries, kv) * (UVR_DIM ** -0.5)
+        att = att.masked_fill(masked[:, None, :], -1e9)
+        att = torch.softmax(att, dim=-1)                                   # [B, K, N]
+        self.last_att = att
+        out = torch.einsum("bkn,bnd->bkd", att, kv)                        # [B, K, dim]
+        return self.out_proj(out.reshape(out.shape[0], UVR_K * UVR_DIM))
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -2403,6 +2470,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  opp_intent_grad_mode: str = "detached",
                  intent_value_reduce: bool = False,
                  intent_move_cell: bool = False,
+                 value_entity_pool: bool = False,
                  damage_topk_k: int = 0,
                  damage_candidate_k: int = 0,
                  entity_topk_seats: int = 0,
@@ -2993,6 +3061,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Stashed each forward when on (the [B, bins] per-atom logits, or None). Read by the (future)
         # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
         self.last_value_dist_logits: Optional[torch.Tensor] = None
+
+        # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — see the class
+        # docstring. Built as the LAST width-contributing module before the discovery forward,
+        # so with the flag OFF nothing is constructed and every existing parameter keeps its
+        # optimizer position; ON is a version-gated arch change (fresh run), where the shift is
+        # legitimate. Works with or without the op (the row set shrinks to the 12 team tokens).
+        self.value_entity_pool = (
+            UnifiedValueReadout(self.damage_op.per_mon if self.damage_op is not None else 0)
+            if value_entity_pool else None)
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
@@ -3746,6 +3823,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # need to match a width that does not exist yet at construction time.
             out = (_pi, torch.cat([_vf, self.intent_value_reduce(
                 self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)], dim=1))
+        # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — vf ONLY, appended
+        # after every other value part so the OFF layout is untouched. Zero-init out projection ⇒
+        # a cold start contributes exactly 0; the policy half is untouched at ANY weight (the
+        # intent_value_reduce placement). Row sources: the 12 post-transformer team tokens
+        # (ctx.all_fainted key-masked) + the op's per-our-mon incoming rows when the op exists.
+        if self.value_entity_pool is not None:
+            _pi, _vf = out
+            _op_rows = (self.damage_op.last_tensors.incoming_rows
+                        if (self.damage_op is not None and damage_block is not None) else None)
+            _op_alive = ((ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
+                         if _op_rows is not None else None)
+            out = (_pi, torch.cat([_vf, self.value_entity_pool(
+                our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive)], dim=1))
         return out
 
     def forward(self, obs):

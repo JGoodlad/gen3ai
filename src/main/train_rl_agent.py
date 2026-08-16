@@ -1309,6 +1309,17 @@ async def main():
                              "mass rides as a decorrelated alpha_stay channel). Zero-init "
                              "projection => identity at init. Requires --opp-intent-coef>0, "
                              "--damage-op and --damage-topk-k>0. STRUCTURAL, version-checked.")
+    parser.add_argument("--value-entity-pool", "--value_entity_pool",
+                        dest="value_entity_pool", action=BoolFlag, default=None,
+                        help="gen3_unified_value_readout_v1 (v80, design_unified_belief.md §3 / "
+                             "Stage-3 T3-DELIVER): ONE attention pool over the critic's entity "
+                             "rows — the 12 post-transformer team tokens + the op's per-our-mon "
+                             "incoming rows — K learned queries, per-source type embeddings, "
+                             "ZERO-INIT output projection riding vf only (the policy is untouched "
+                             "at any weight). The designed successor of the bolt-on vf routes the "
+                             "critic_route_audit adjudicates. Works with or without --damage-op "
+                             "(the row set shrinks to the team tokens). STRUCTURAL, "
+                             "version-checked.")
     parser.add_argument("--opp-intent-grad-mode", "--opp_intent_grad_mode",
                         dest="opp_intent_grad_mode", choices=["detached", "shaping"], default=None,
                         help="Whether alpha/beta's gradient reaches the shared trunk "
@@ -2005,6 +2016,7 @@ async def main():
     _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
     _resolve("intent_value_reduce", False)     # v74 structural, version-checked (step 6)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
+    _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

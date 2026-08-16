@@ -1,6 +1,6 @@
 """Compute per-species prior probability distributions from aggregated Smogon stats.
 
-Produces five files in one pass — all keyed by lowercase species name:
+Produces six files in one pass — all keyed by lowercase species name:
 
   data/pokemon/gen3_hidden_power_priors.json
     {species: {hp_type: probability}}   # 16 type buckets, omitted if usage=0
@@ -12,6 +12,12 @@ Produces five files in one pass — all keyed by lowercase species name:
   data/pokemon/gen3_spread_priors.json   {species: [[nature, [hp,atk,def,spa,spd,spe], weight], …]}
   data/pokemon/gen3_item_priors.json     {species: {item_id: P(item)}}           # sum-1
     # the latter three feed the incoming-damage / OHKO belief (gen3_incoming_damage_v1)
+
+  data/pokemon/gen3_teammate_priors.json {species: {teammate_id: P(teammate)}}   # sum-1
+    # the chaos Teammates field — the ONE joint (species x species co-occurrence) Smogon
+    # publishes; the Smogon-based coupling prior for the hidden-TEAM belief. Priors are
+    # ALWAYS Smogon-based, never pool-based (owner rule 2026-08-15): the 719-team pool may
+    # MEASURE coupling (tmp/belief_coupling_lift.py) but never ship as a prior.
 
 Ability priors are *anchored to the Showdown pokedex* as the ground truth for
 what abilities each species CAN have in Gen 3. Smogon usage weights the
@@ -56,6 +62,7 @@ ABILITY_OUTPUT_PATH = "data/pokemon/gen3_ability_priors.json"
 MOVE_OUTPUT_PATH    = "data/pokemon/gen3_move_priors.json"
 SPREAD_OUTPUT_PATH  = "data/pokemon/gen3_spread_priors.json"
 ITEM_OUTPUT_PATH    = "data/pokemon/gen3_item_priors.json"
+TEAMMATE_OUTPUT_PATH = "data/pokemon/gen3_teammate_priors.json"
 
 # Cap on spreads kept per species (sorted by usage). The Smogon tail is noise;
 # the top ~25 cover the meaningful nature/EV modes (the facade derives Atk/SpA/Spe
@@ -283,6 +290,27 @@ def compute_item_priors(chaos: dict, species_lookup: dict) -> dict:
     return out
 
 
+def compute_teammate_priors(chaos: dict, species_lookup: dict) -> dict:
+    """{species: {teammate_species_id: P(teammate | species)}} normalized over kept teammates
+    (sum→1). The chaos `Teammates` field is a rating-weighted co-occurrence count (verified
+    all-positive on the 12-month merge; NOT the +/-delta the text-format tables print), so a
+    per-species normalization is a proper conditional. Teammates outside our gen3 species
+    table (illegal/OM spillover) are dropped BEFORE normalizing, so the kept mass is a
+    distribution over teammates the belief can actually name."""
+    out: dict[str, dict[str, float]] = {}
+    for sp_name, sp_data in chaos["data"].items():
+        sp_key = sp_name.lower()
+        if sp_key not in species_lookup:
+            continue
+        mates = {_to_id(t): v for t, v in (sp_data.get("Teammates") or {}).items()
+                 if v > 0 and _to_id(t) in species_lookup}
+        tot = sum(mates.values())
+        if tot <= 0:
+            continue
+        out[sp_key] = {t: v / tot for t, v in mates.items()}
+    return out
+
+
 def compute_spread_priors(chaos: dict, species_lookup: dict, top_k: int = SPREAD_TOP_K) -> dict:
     """{species: [[nature, [hp,atk,def,spa,spd,spe], weight], ...]} — top-K raw spreads,
     weights renormalized to sum→1. Raw nature/EV spreads (provenance-clean); the
@@ -389,6 +417,12 @@ def main() -> int:
     spread_priors = compute_spread_priors(chaos, species)
     _write(SPREAD_OUTPUT_PATH, spread_priors)
     print(f"Spread priors: {len(spread_priors)} species → {SPREAD_OUTPUT_PATH}")
+
+    teammate_priors = compute_teammate_priors(chaos, species)
+    _write(TEAMMATE_OUTPUT_PATH, teammate_priors)
+    print(f"Teammate priors: {len(teammate_priors)} species → {TEAMMATE_OUTPUT_PATH}")
+    tm = sorted(teammate_priors.get("tyranitar", {}).items(), key=lambda kv: -kv[1])[:5]
+    print("  tyranitar teammates: " + ", ".join(f"{t}={p:.0%}" for t, p in tm))
 
     print("\nSpot check (move/item/spread):")
     for sp in ("tyranitar", "salamence", "suicune", "blissey"):

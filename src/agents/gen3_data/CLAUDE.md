@@ -32,6 +32,9 @@ gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers(
 gen3_data.type_chart.chart()            # {DEF: {ATT: multiplier}}; .multiplier(def, att)
 gen3_data.priors.ability(species)       # {ability_id: probability}     (Smogon)
 gen3_data.priors.hidden_power(species)  # {hp_type: probability}         (Smogon)
+gen3_data.priors.teammates(species)     # {teammate_id: P(teammate|species)} (Smogon chaos
+                                        #  Teammates — the one species×species JOINT published;
+                                        #  the hidden-team belief's coupling prior)
 gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (hard legality)
 gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
 ```

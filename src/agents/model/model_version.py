@@ -568,7 +568,17 @@ from typing import Any, Dict, List
 #   the obs widening is unconditional (retrain-class). No new ModelVersion field and NO
 #   ARCH_SIGNATURE bump (the recency precedent): total_dim + the widened role-encoder shapes
 #   are weight-field-caught, and the family rides the recorded edge_bias_families string.
-MODEL_CONFIG_VERSION = 79
+# v80 (gen3_unified_value_readout_v1, Stage-3 T3-DELIVER of design_unified_belief.md §3): the
+#   critic's UNIFIED ENTITY POOL — `value_entity_pool`, opt-in. K learned queries attention-pool
+#   the critic's entity-row set (the 12 post-transformer team tokens + the op's 6 per-our-mon
+#   incoming rows, per-source type embeddings, explicit NaN-safe softmax) through a ZERO-INIT
+#   output projection appended to vf ONLY (the intent_value_reduce placement: pi untouched at
+#   any weight). The designed SUCCESSOR contract of the bolt-on vf routes (seed readout /
+#   threat-inject) the gen-11 critic_route_audit adjudicates — built so a condemned route has a
+#   replacement the next generation can enable in the same config. OFF builds nothing
+#   (byte-identical baseline; no ARCH_SIGNATURE bump); ON widens the value projection
+#   (weight-field-caught).
+MODEL_CONFIG_VERSION = 80
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1293,6 +1303,13 @@ class ModelVersion:
     # extractor), so a mismatch would be shape-caught — the check is here anyway so the failure
     # names the cause instead of surfacing as an opaque size error deep in a load.
     intent_move_cell: bool = False
+
+    # v80 STRUCTURAL (gen3_unified_value_readout_v1, Stage-3 T3-DELIVER): the critic's unified
+    # entity pool — K queries over the 12 team tokens + the op's incoming rows, zero-init output
+    # riding vf only. WIDENS the value projection (a state_dict change), so a mismatch would be
+    # shape-caught — the check is here anyway so the failure names the cause instead of
+    # surfacing as an opaque size error deep in a load.
+    value_entity_pool: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1522,6 +1539,10 @@ class ModelVersion:
             intent_move_cell=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "intent_move_cell", False)
+            ),
+            value_entity_pool=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "value_entity_pool", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -1935,6 +1956,16 @@ class ModelVersion:
                 "The G3 alpha-conditioned c2 move-cell channels widen the pointer move scorer, "
                 "so the flag is fixed for a run's lifetime.\n"
                 "Resume with the matching --intent-move-cell, or start a fresh run."
+            )
+        # gen3_unified_value_readout_v1 (v80): widens the value projection (a state_dict change),
+        # so a mismatch would be shape-caught — this names the cause instead.
+        if self.value_entity_pool != saved.value_entity_pool:
+            raise ModelVersionError(
+                f"value_entity_pool mismatch: saved={saved.value_entity_pool}, "
+                f"current={self.value_entity_pool}.\n"
+                "The unified critic entity pool widens the value projection, so the flag is "
+                "fixed for a run's lifetime.\n"
+                "Resume with the matching --value-entity-pool, or start a fresh run."
             )
         if self.opp_intent_grad_mode != saved.opp_intent_grad_mode:
             raise ModelVersionError(
@@ -2455,4 +2486,9 @@ def _migrate_config(data: dict) -> dict:
         # break in total_dim + the widened encoder shapes (weight-field-caught); no new config
         # field, and the "h" edge family rides the recorded edge_bias_families string.
         data["config_version"] = 79
+    if version < 80:
+        # gen3_unified_value_readout_v1: post-floor flag-gated module — absent means the run
+        # predates the flag, i.e. OFF (the v77 intent_move_cell pattern).
+        data.setdefault("value_entity_pool", False)
+        data["config_version"] = 80
     return data

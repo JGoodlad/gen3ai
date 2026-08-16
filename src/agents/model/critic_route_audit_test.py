@@ -19,7 +19,7 @@ from agents.model.identity_init_test import _build_real_policy
 @pytest.fixture(scope="module")
 def model_and_enc():
     return _build_real_policy(opp_belief_cls_k=6, attend_unrevealed_opponents=True,
-                              value_threat_inject=True)
+                              value_threat_inject=True, value_entity_pool=True)
 
 
 def _states(enc, n=16):
@@ -33,7 +33,7 @@ def test_every_arm_fires_and_reports(model_and_enc):
     obs, masks = _states(enc)
     rep = audit(model.policy, obs, masks, batch=8)
     assert set(rep) == {"seed", "threat", "hidden_opp_both", "hidden_opp_pi",
-                       "hidden_opp_vf", "all_off"}
+                       "hidden_opp_vf", "entity_pool", "all_off"}
     for arm, row in rep.items():
         assert set(row) == {"kl_mean", "kl_p95", "flip_rate", "dv_mean"}
 
@@ -46,6 +46,8 @@ def test_zero_init_routes_read_zero_at_init(model_and_enc):
     obs, masks = _states(enc)
     rep = audit(model.policy, obs, masks, batch=8)
     assert rep["threat"]["dv_mean"] == 0.0
+    # the v80 entity pool's out projection is zero-init, so its arm reads a strict no-op cold
+    assert rep["entity_pool"]["dv_mean"] == 0.0
     for arm, row in rep.items():
         assert row["kl_mean"] == 0.0 and row["flip_rate"] == 0.0, (arm, row)
 
