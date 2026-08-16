@@ -168,5 +168,5 @@ def test_v81_migration_stamps_and_defaults_off():
     from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config
 
     out = _migrate_config({"config_version": 80, "obs_dim": 1, "n_actions": 11})
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 81
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 81
     assert out["history_events"] is False

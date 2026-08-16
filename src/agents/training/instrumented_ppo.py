@@ -218,6 +218,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # last_hp_type_logits + the training-only hp_type_label/hp_type_mask keys. Training-only (NOT
     # version-locked; the HPTypeBelief module is gated by the version-checked hp_type_belief_mode toggle).
     hp_type_belief_coef: float = 0.0
+    item_belief_coef: float = 0.0
 
     # Set by train_rl_agent (gen3_unified_move_system_v1). The MOVE-belief LATENT-grading weight:
     # move_belief_latent_coef * (cosine of the predicted move distribution's expected move-latent toward
@@ -793,6 +794,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
         spread_belief_on = self.spread_belief_coef > 0.0  # +SPREAD-belief supervision (gen3_unified_spread_belief_v1)
         hp_type_belief_on = self.hp_type_belief_coef > 0.0  # +HP-TYPE belief CE (gen3_opp_hp_type_belief_v1)
+        item_belief_on = self.item_belief_coef > 0.0  # +ITEM belief CE (gen3_item_belief_v1)
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
@@ -1165,11 +1167,14 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 spread_belief_term = None
                 nature_ev_term = None
                 hp_type_term = None
+                item_belief_term = None
                 for _brow, _bterm, _bm in _belief_bank.compute(
                         self.policy.features_extractor, rollout_data.observations,
                         coefs={"spread_belief_coef": self.spread_belief_coef,
-                               "hp_type_belief_coef": self.hp_type_belief_coef},
-                        gates={"spread": spread_belief_on, "hp_type": hp_type_belief_on},
+                               "hp_type_belief_coef": self.hp_type_belief_coef,
+                               "item_belief_coef": self.item_belief_coef},
+                        gates={"spread": spread_belief_on, "hp_type": hp_type_belief_on,
+                               "item": item_belief_on},
                         site="revealed"):
                     loss = loss + _bterm
                     if _brow.name == "spread":
@@ -1178,6 +1183,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         nature_ev_term = _bterm
                     elif _brow.name == "hp_type":
                         hp_type_term = _bterm
+                    elif _brow.name == "item":
+                        item_belief_term = _bterm
                     for _bk, _bv in _bm.items():
                         belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
 
@@ -1403,6 +1410,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
                 if nature_ev_term is not None:     aux_probe_terms["nature_ev"] = nature_ev_term
                 if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
+                if item_belief_term is not None:   aux_probe_terms["item_belief"] = item_belief_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if pubval_term is not None:        aux_probe_terms["pubval"] = pubval_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term

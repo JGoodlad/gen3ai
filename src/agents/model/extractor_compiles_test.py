@@ -255,6 +255,41 @@ def test_production_arch_compiles_to_one_graph():
     assert explained.graph_count == 1
 
 
+@_skip_compile
+def test_h_tier_arch_compiles_without_suppression():
+    """The gen-13 enable gate: production + the H tiers (`--history-events` seats + the `r`
+    reference family) must survive Inductor BEFORE a launch depends on `--compile-opponents`
+    with them on — the compile matrix's blind spot is exactly a flag combination nobody
+    compiled until launch day (the v80×v74 intersection lesson, compile edition)."""
+    torch.set_num_threads(1)
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(
+        history_events=True,
+        edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r")
+    obs = {"observation": torch.rand(_BATCH, layout["total_dim"],
+                                     generator=torch.Generator().manual_seed(7))}
+    with torch.no_grad():
+        ref = fe(obs)
+        got = torch.compile(fe.forward)(obs)
+    err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
+    assert err < 1e-5, f"compiled H-tier output diverged from eager: {err:.2e}"
+
+
+@_skip_compile
+def test_h_tier_arch_compiles_to_one_graph():
+    """The seats and the r cells must not break the one-graph property the 6.5x depends on."""
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(
+        history_events=True,
+        edge_bias_families="d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r")
+    obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
+    explained = torch._dynamo.explain(fe.forward)(obs)
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
+
+
 # ----------------------------------------------------------------- the other three matrix cells
 
 

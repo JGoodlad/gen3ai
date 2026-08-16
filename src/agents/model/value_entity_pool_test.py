@@ -175,3 +175,39 @@ def test_the_discovery_branch_falls_through_rather_than_returning():
         "to the forward that sizes value_pre_norm")
     assert "return" not in window[:j], (
         "the discovery branch returns before its else; it must fall through")
+
+
+# ------------------------------------------------------------------ v82: the FULL row set
+
+def test_full_requires_base_flag():
+    with pytest.raises(ValueError, match="requires value_entity_pool=True"):
+        _build_real_policy(value_entity_pool_full=True)
+
+
+def test_full_pool_adds_global_and_belief_rows_and_stays_zero_init():
+    """The complete Stage-3 row set: 12 team + 6 op + 1 global (+K belief when the hidden-opp
+    pool exists) — attended (last_att covers every row, global never masked), still exactly
+    zero cold, and the v80 3-row table is untouched when full=False (gen-12 compat)."""
+    model, enc = _build_real_policy(value_entity_pool=True, value_entity_pool_full=True,
+                                    opp_belief_cls_k=6, attend_unrevealed_opponents=True)
+    fe = model.policy.features_extractor
+    uvr = fe.value_entity_pool
+    assert uvr.full and uvr.source_emb.shape[0] == 5
+    assert float(uvr.out_proj.weight.abs().max()) == 0.0
+    obs = _obs(enc, n=3)
+    with torch.no_grad():
+        pi, vf = fe(obs)
+    assert torch.isfinite(vf).all()
+    n_rows = uvr.last_att.shape[-1]
+    assert n_rows == 12 + 6 + 1 + 6, n_rows          # team + op + global + K=6 belief
+    # the global row (index 18) is never masked: it must carry attention mass somewhere
+    assert float(uvr.last_att[:, :, 18].sum()) > 0.0
+    # v80 compat: the base build keeps the 3-row table byte-shape
+    base, _ = _build_real_policy(value_entity_pool=True)
+    assert base.policy.features_extractor.value_entity_pool.source_emb.shape[0] == 3
+
+
+def test_v82_migration_stamps_and_defaults_off():
+    out = _migrate_config({"config_version": 81, "obs_dim": 1, "n_actions": 11})
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 82
+    assert out["value_entity_pool_full"] is False

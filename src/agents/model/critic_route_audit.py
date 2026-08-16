@@ -10,6 +10,9 @@ critic lean on each of the parallel critic magnitude routes carried since the co
                       the Stage-3 successor route; present only on a --value-entity-pool run)
   arm `intent_reduce` — zero the α-weighted IntentValueReduce vf term (v74; present only on an
                       --intent-value-reduce run — gen-9 through gen-11 all train it)
+  arm `event_seats` — key-mask ALL H-B event seats (the design's seat USAGE audit in ablation
+                      form; present only on a --history-events run; NOT a zero-init route —
+                      nonzero at init is expected, the verdict is read on a TRAINED run)
   arm `nmr`         — zero `non_matchup_rest` at the assembler (the LAST positional head
                       concat, both heads; the Phase-3 item-2 deletion evidence — separate
                       from all_off, which stays the belief/magnitude-route joint)
@@ -96,6 +99,21 @@ class _Arms:
         _pre.fired = False
         hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
         return hooks, _pre
+
+    def event_seats(self):
+        """Key-mask ALL H-B event seats (force the pad mask True) — the design's "usage audit
+        on the event seats" in the house ablation form: if the trunk learned to attend over
+        the event window, masking it moves pi (KL/flips) and/or vf (|dV|); a dead-zero reading
+        on a TRAINED run means the seats never came alive. Present only on a
+        --history-events run. Affects BOTH heads (a trunk-level source)."""
+        fe = self.fe
+        marker = {"fired": False}
+
+        def _hook(_m, _args, output):
+            tokens, pad = output
+            marker["fired"] = True
+            return tokens, torch.ones_like(pad)
+        return [fe.history_events.register_forward_hook(_hook)], marker
 
     def intent_reduce(self):
         """Zero the α-weighted IntentValueReduce term (v74, vf-only zero-init concat) — the
@@ -216,6 +234,8 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
         _run("entity_pool", [arms.entity_pool()])
     if getattr(fe, "intent_value_reduce", None) is not None:
         _run("intent_reduce", [arms.intent_reduce()])
+    if getattr(fe, "history_events", None) is not None:
+        _run("event_seats", [arms.event_seats()])
     # Always present (unconditional obs content): the last positional head concat. Deliberately
     # NOT part of all_off — that arm is the belief/magnitude-route joint; this one answers the
     # separate Phase-3 item-2 question (can the direct shortcut die once the global token

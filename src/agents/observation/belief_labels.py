@@ -308,6 +308,38 @@ def zero_hp_type_labels() -> Tuple[np.ndarray, np.ndarray]:
     return (np.full(TEAM_SIZE, PAD, dtype=np.int64), np.zeros(TEAM_SIZE, dtype=np.float32))
 
 
+def build_item_labels(
+    revealed_species_in_slot_order: Sequence[str],
+    species_to_item_num: Dict[str, int],
+    species_known: Sequence[float],
+    normalize: Callable[[str], str],
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Build (item_label[TEAM_SIZE] int64, item_mask[TEAM_SIZE] float32) — the privileged label
+    for the ITEM belief (`gen3_item_belief_v1`), mirroring `build_hp_type_labels`.
+
+    Each REVEALED opp slot gets the TRUE item NUM from agent2's own team (matched BY SPECIES —
+    the species clause makes it unique). Gen 3 reveals an item only when it acts (Leftovers
+    ticks, a Berry fires, Trick) and NEVER reveals Choice Band directly, so this is a
+    hindsight-privileged, training-only label — read ONLY by the item CE loss, never in the
+    pi/vf forward. Item num 0 (`nothing`) is a legitimate class, not a pad — PAD is -1.
+    `mask`=1 at every revealed slot whose species maps to a recorded item num. Never raises."""
+    label = np.full(TEAM_SIZE, PAD, dtype=np.int64)
+    mask = np.zeros(TEAM_SIZE, dtype=np.float32)
+    revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]
+    for slot, sp in zip(revealed_slots, revealed_species_in_slot_order):
+        num = species_to_item_num.get(normalize(sp))
+        if num is None or num < 0:
+            continue
+        label[slot] = int(num)
+        mask[slot] = 1.0
+    return label, mask
+
+
+def zero_item_labels() -> Tuple[np.ndarray, np.ndarray]:
+    """All-PAD item_label + all-zero mask — off / pre-battle path (nothing scored)."""
+    return (np.full(TEAM_SIZE, PAD, dtype=np.int64), np.zeros(TEAM_SIZE, dtype=np.float32))
+
+
 def zero_belief_labels() -> Tuple[np.ndarray, np.ndarray]:
     """All-PAD labels — used for the off / pre-battle / parse-failure path so the Dict key always
     has a consistent shape (every slot PAD ⇒ nothing scored)."""

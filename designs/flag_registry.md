@@ -59,7 +59,7 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-39 toggles — 36 `cli`, 3 `config_only`, 0 `constructor_only`.
+41 toggles — 38 `cli`, 3 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
@@ -100,8 +100,10 @@ directions are asserted by `flag_registry_test.py`.
 | `opp_intent_grad_mode` | `--opp-intent-grad-mode` | `cli` | `structural` | `'detached'` | v73 | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
 | `intent_value_reduce` | `--intent-value-reduce` | `cli` | `structural` | `False` | v74 | append the alpha-weighted expected incoming threat to the critic's features |
 | `intent_move_cell` | `--intent-move-cell` | `cli` | `structural` | `False` | v77 | G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through the pointer MOVE cell |
+| `value_entity_pool_full` | `--value-entity-pool-full` | `cli` | `structural` | `False` | v82 | the entity pool's COMPLETE row set: + the refined global token and the hidden-opp belief queries |
 | `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
 | `value_entity_pool` | `--value-entity-pool` | `cli` | `structural` | `False` | v80 | Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team tokens + op incoming rows), zero-init, vf-only |
+| `item_belief` | `--item-belief` | `cli` | `structural` | `False` | v83 | the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes its publication (revealed stays exact 0/1) |
 
 **Notes**
 
@@ -116,8 +118,10 @@ directions are asserted by `flag_registry_test.py`.
 - `damage_matrices_outgoing_all` — DEMOTED (config_only), frozen OFF: never enabled in a gen-8/9/10 run; the switch-in offense read it prices is delivered by the d2 edge family.
 - `belief_grad_mode` — detach() is value-preserving => the forward is bit-identical in every mode, so check_belief_grad_mode on the resume path only.
 - `opp_intent` — coef>0 is the enable signal, like opp_belief_slots.
+- `value_entity_pool_full` — requires value_entity_pool; a separate flag/shape so v80-table checkpoints (gen-12 trains one) keep loading. The one successor for every vf route the critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat).
 - `history_events` — the obs BLOCK is unconditional (v81 widening); this flag builds only the consumer. Gen-13 candidate arm, gated on H-A's gen-12 verdict.
 - `value_entity_pool` — the designed SUCCESSOR contract of the bolt-on vf routes (seed readout / threat-inject) — those are adjudicated by the gen-11 critic_route_audit; this exists so a condemned route has a replacement the next generation can enable in the same config.
+- `item_belief` — BeliefBank's seventh row (--item-belief-coef supervises the revealed slots). Cold start posterior == the Smogon prior exactly; its CB column is within ~0.6% of the static table (row-floor renorm), so enabling is ~behavior-preserving at init and the delta must EARN its movement.
 <!-- END GENERATED: registry-table -->
 
 ## Out of scope

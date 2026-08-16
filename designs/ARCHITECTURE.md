@@ -203,7 +203,7 @@ happens to be written.
 
 | tier | question | modules |
 |---|---|---|
-| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief` |
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head` |
@@ -245,6 +245,12 @@ The concrete steps:
    the bare typeless 237 is driven to a finite `-30`. `Σ_t P(HP_t) == presence`, and presence is
    reveal-pinned, so a seen Hidden Power can never be believed away. Every downstream consumer
    (op, edges, seats, BCE, prober) reads this one typed posterior.
+   *(Opt-in, OFF in production: **`ItemBelief`** — `gen3_item_belief_v1`, `--item-belief` — resolves
+   each opp slot's hidden item as a posterior over item nums, Smogon usage prior ⊕ zero-init trunk
+   delta; cold start == prior. Published leak-mode-aware (`last_item_logits`); the op's p_cb
+   unrevealed branch consumes P(Choice Band) from the publication instead of the static
+   `SPECIES_CB_PRIOR` scalar — the revealed 0/1 exactness gate is unchanged. Supervised as the
+   BeliefBank's seventh row.)*
 5. **`DamageOperator`** — the full 660-dim block (§4), computed on the pre-attention tokens.
 6. **`prefuse_proj`** — the op's per-our-mon incoming rows `[B,6,12]` projected to `d_model` and
    **added** to our 6 role tokens. Zero-init ⇒ exactly 0 at init.
@@ -344,8 +350,11 @@ post-transformer team tokens + the op's 6 per-our-mon incoming rows, each projec
 appends a zero-init `UVR_OUT_DIM`=128 block to vf AFTER the assembler — the policy is untouched at
 any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below (seed
 readout, threat-inject); it runs here ALONGSIDE them rather than replacing them, so the
-`critic_route_audit` (which carries an `entity_pool` arm) can price all three against each other
-on one trained run.
+`critic_route_audit` (which carries `entity_pool`, `intent_reduce`, `nmr` and `event_seats`
+arms) can price all three against each other on one trained run. **`value_entity_pool_full`**
+(v82, OFF) completes the row set — +the refined GLOBAL token and +the hidden-opp belief
+queries — so the `nmr` concat and the hidden-opp vf half also have their successor here (its
+own flag/shape: gen-12's v80-shape pool keeps loading under `full=False`).
 
 ⚠️ It is appended AFTER `intent_value_reduce`, and until `ede5a88` that combination could not
 build: the intent-reduce discovery branch returned early, so the dummy forward that sizes
@@ -698,6 +707,7 @@ does nothing given another setting.
 | `hp_belief_mode` | `"composed"` | ACTIVE |
 | `intent_move_cell` | `true` | ACTIVE |
 | `intent_value_reduce` | `true` | ACTIVE |
+| `item_belief` | `false` | OFF |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |
@@ -718,6 +728,7 @@ does nothing given another setting.
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
+| `value_entity_pool_full` | `false` | OFF |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
@@ -762,6 +773,7 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE | " | ❌ |
 | `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 | " | ❌ |
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
+| `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ❌ |
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | win-prob aux (MC outcome — a **future** label) | `win_prob_mode != none` | ❌ |
 | `pubval_target` / `pubval_mask` | f32 `[1]` each | public-value aux | `pubval_mode != none` | ❌ |
 | `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |

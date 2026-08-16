@@ -37,6 +37,7 @@ _ZERO_INIT_TOGGLES = dict(
     attend_unrevealed_opponents=True, opp_belief_slots=True,
     move_belief_mode="revealed", move_prior_fusion=True, move_latent=True,
     damage_op=True, damage_outgoing=True, spread_belief=True,
+    item_belief=True,
 )
 
 
@@ -126,7 +127,7 @@ def test_belief_heads_cold_start_equals_prior():
     mods = dict(fe.named_modules())
     checked = 0
     for name in ("move_belief.move_head", "spread_belief.stat_head", "spread_belief.nature_head",
-                 "spread_belief.ev_head", "hp_type_belief.type_head"):
+                 "spread_belief.ev_head", "hp_type_belief.type_head", "item_belief_head.item_head"):
         mod = mods.get(name)
         if mod is None:          # flag-gated: not every head exists under every toggle set
             continue

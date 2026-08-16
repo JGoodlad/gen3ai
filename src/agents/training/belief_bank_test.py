@@ -68,7 +68,7 @@ def test_gates_and_none_rows_skip():
 
 
 def test_sites_partition_the_registry():
-    """Every row belongs to exactly one site, and the three sites cover all six heads — the
+    """Every row belongs to exactly one site, and the three sites cover all seven heads — the
     float-addition-order contract that lets one registry serve three call sites."""
     by_site = {}
     for row in bb.ROWS:
@@ -76,7 +76,7 @@ def test_sites_partition_the_registry():
     assert by_site == {
         "hidden_move": ["hidden_team", "move_belief"],
         "latent": ["move_latent"],
-        "revealed": ["spread", "nature_ev", "hp_type"],
+        "revealed": ["spread", "nature_ev", "hp_type", "item"],
     }
 
 

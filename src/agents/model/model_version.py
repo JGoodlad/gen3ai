@@ -587,7 +587,19 @@ from typing import Any, Dict, List
 #   CONSUMER — `history_events`, the event SEATS joining the trunk with per-type projections +
 #   the recency embedding — is opt-in (OFF builds nothing, byte-identical). v1 trims, recorded:
 #   no faint-cause multi-hot, no item/hazard content ids, SETBOOST/CLEARBOOST skipped.
-MODEL_CONFIG_VERSION = 81
+# v82 (gen3_unified_value_readout_v2): `value_entity_pool_full` — the entity pool's COMPLETE
+#   row set (+the refined GLOBAL token, +the hidden-opp belief queries; sources 3 and 4). Its
+#   own field because the source-embedding table grows 3→5 (a state_dict shape), keeping
+#   v80-shape checkpoints (gen-12's) loadable under full=False. With this, every vf route the
+#   critic_route_audit can condemn has ONE successor: the pool.
+# v83 (gen3_item_belief_v1): `item_belief` — a learned posterior over each opp slot's HIDDEN
+#   item (Smogon per-species item-usage prior ⊕ zero-init trunk delta; cold start == prior
+#   exactly). Supervised as the BeliefBank's SEVENTH row (CE vs the privileged true item num
+#   at revealed slots, --item-belief-coef). The op's Choice-Band-conditional tail consumes
+#   P(CB) from the PUBLISHED posterior at the unrevealed branch, replacing the static
+#   SPECIES_CB_PRIOR scalar there (revealed branch unchanged: exactness stays 0/1). Adds the
+#   ItemBelief module (state_dict), so STRUCTURAL, version-checked, own flag.
+MODEL_CONFIG_VERSION = 83
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1319,6 +1331,16 @@ class ModelVersion:
     # shape-caught — the check is here anyway so the failure names the cause instead of
     # surfacing as an opaque size error deep in a load.
     value_entity_pool: bool = False
+    # v82 STRUCTURAL (gen3_unified_value_readout_v2): the pool's COMPLETE row set (+global,
+    # +belief queries). Grows source_emb 3→5 rows (state_dict shape), so it is its OWN field —
+    # a v80-shape checkpoint (gen-12) stays loadable under full=False.
+    value_entity_pool_full: bool = False
+
+    # v83 STRUCTURAL (gen3_item_belief_v1): the hidden-item belief head (Smogon prior ⊕
+    # zero-init delta; the op's p_cb unrevealed branch consumes its publication). Adds the
+    # ItemBelief module — a state_dict change, so a mismatch would be shape-caught; the
+    # check names the cause.
+    item_belief: bool = False
 
     # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
@@ -1378,6 +1400,9 @@ class ModelVersion:
     # TRAINING-ONLY coefficient (like move_belief_coef, NOT version-locked): the HP-type CE aux weight.
     # Recorded for provenance + flagless-resume read-back. Only meaningful under 'composed'.
     hp_type_belief_coef: float = 0.0
+    # TRAINING-ONLY coefficient (gen3_item_belief_v1, NOT version-locked): the item CE aux weight.
+    # Recorded for provenance + flagless-resume read-back. Only meaningful under item_belief=True.
+    item_belief_coef: float = 0.0
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:
@@ -1428,6 +1453,7 @@ class ModelVersion:
         spread_belief_coef: float = 0.0,
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
+        item_belief_coef: float = 0.0,
         pubval_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
@@ -1562,6 +1588,14 @@ class ModelVersion:
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "history_events", False)
             ),
+            value_entity_pool_full=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "value_entity_pool_full", False)
+            ),
+            item_belief=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "item_belief", False)
+            ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
             ),
@@ -1598,6 +1632,7 @@ class ModelVersion:
             ),
             pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
+            item_belief_coef=float(item_belief_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -1984,6 +2019,24 @@ class ModelVersion:
                 "The unified critic entity pool widens the value projection, so the flag is "
                 "fixed for a run's lifetime.\n"
                 "Resume with the matching --value-entity-pool, or start a fresh run."
+            )
+        # gen3_unified_value_readout_v2 (v82): grows the pool's source table (state_dict).
+        if self.value_entity_pool_full != saved.value_entity_pool_full:
+            raise ModelVersionError(
+                f"value_entity_pool_full mismatch: saved={saved.value_entity_pool_full}, "
+                f"current={self.value_entity_pool_full}.\n"
+                "The full row set grows the pool's source-embedding table, so the flag is "
+                "fixed for a run's lifetime.\n"
+                "Resume with the matching --value-entity-pool-full, or start a fresh run."
+            )
+        # gen3_item_belief_v1 (v83): builds the ItemBelief module (a state_dict change).
+        if self.item_belief != saved.item_belief:
+            raise ModelVersionError(
+                f"item_belief mismatch: saved={saved.item_belief}, "
+                f"current={self.item_belief}.\n"
+                "The item-belief head adds trunk modules, so the flag is fixed for a run's "
+                "lifetime.\n"
+                "Resume with the matching --item-belief, or start a fresh run."
             )
         # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
         if self.history_events != saved.history_events:
@@ -2522,4 +2575,12 @@ def _migrate_config(data: dict) -> dict:
         # consumer flag is post-floor — absent means the run predates it, i.e. OFF.
         data.setdefault("history_events", False)
         data["config_version"] = 81
+    if version < 82:
+        # gen3_unified_value_readout_v2: post-floor flag-gated variant — absent means OFF.
+        data.setdefault("value_entity_pool_full", False)
+        data["config_version"] = 82
+    if version < 83:
+        # gen3_item_belief_v1: post-floor flag-gated head — absent means OFF.
+        data.setdefault("item_belief", False)
+        data["config_version"] = 83
     return data

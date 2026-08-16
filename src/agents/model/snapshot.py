@@ -1011,13 +1011,16 @@ def current_model_version(
     intent_value_reduce: bool = False,
     intent_move_cell: bool = False,
     value_entity_pool: bool = False,
+    value_entity_pool_full: bool = False,
     history_events: bool = False,
+    item_belief: bool = False,
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
     damage_matrices_outgoing_all: bool = False,
     threat_prob_outspeed: bool = False,
     hp_type_belief_coef: float = 0.0,
+    item_belief_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     pubval_mode: str = "none",
@@ -1079,7 +1082,9 @@ def current_model_version(
     ext_kwargs["intent_value_reduce"] = intent_value_reduce
     ext_kwargs["intent_move_cell"] = intent_move_cell
     ext_kwargs["value_entity_pool"] = value_entity_pool
+    ext_kwargs["value_entity_pool_full"] = value_entity_pool_full
     ext_kwargs["history_events"] = history_events
+    ext_kwargs["item_belief"] = item_belief
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
@@ -1100,7 +1105,8 @@ def current_model_version(
         move_belief_coef=move_belief_coef,
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
-        hp_type_belief_coef=hp_type_belief_coef, pubval_coef=pubval_coef,
+        hp_type_belief_coef=hp_type_belief_coef, item_belief_coef=item_belief_coef,
+        pubval_coef=pubval_coef,
     )
 
 
@@ -1165,8 +1171,13 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_unified_value_readout_v1 (v80): widens the value projection (state_dict), so a
         # frozen opponent's gate must see it.
         "value_entity_pool": bool(getattr(fe, "value_entity_pool", None) is not None),
+        # gen3_unified_value_readout_v2 (v82): the full row set grows source_emb (state_dict).
+        "value_entity_pool_full": bool(getattr(
+            getattr(fe, "value_entity_pool", None), "full", False)),
         # gen3_event_window_v1 (v81): adds the EventSeats trunk modules (state_dict), gated.
         "history_events": bool(getattr(fe, "history_events", None) is not None),
+        # gen3_item_belief_v1 (v83): adds the ItemBelief module (state_dict), gated.
+        "item_belief": bool(getattr(fe, "item_belief_head", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),

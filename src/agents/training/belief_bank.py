@@ -429,6 +429,29 @@ def belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
     return aux, metrics
 
 
+def item_belief_loss(logits, item_label, item_mask):
+    """Supervised CROSS-ENTROPY for the ITEM belief (gen3_item_belief_v1) — the bank's seventh
+    row, the exact hp_type shape over the item-num axis: `logits` = the extractor's stashed
+    per-opp-slot item posterior logits [B,6,n_items] (Smogon prior ⊕ zero-init delta; the op
+    consumes P(Choice Band) off the same posterior); supervise the REVEALED slots toward the
+    TRUE item num (privileged, training-only — Gen 3 never reveals a Choice Band directly).
+    Returns (loss, metrics) or None. LEAK-SAFE as the others."""
+    if logits is None or item_label is None or item_mask is None:
+        return None
+    device = logits.device
+    label = item_label.to(device).long()                               # [B,6]
+    mask = item_mask.to(device).float() > 0.5                          # [B,6]
+    if not bool(mask.any()):
+        return None
+    sel_logits = logits[mask]                                          # [N,n_items]
+    sel_label = label[mask].clamp(min=0)                               # [N] (PAD -1 masked out)
+    loss = F.cross_entropy(sel_logits, sel_label)
+    with th.no_grad():
+        acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
+    return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item()),
+                  "mask_rate": float(mask.float().mean().item())}    # uniform: see spread
+
+
 @dataclass(frozen=True)
 class BeliefHeadRow:
     """One supervised belief head: everything the train loop needs to fold it.
@@ -489,6 +512,14 @@ ROWS: Tuple[BeliefHeadRow, ...] = (
         coef="hp_type_belief_coef", loss_fn=hp_type_belief_loss,
         args=(("stash", "hp_type_logits"), ("obs", "hp_type_label"),
               ("obs", "hp_type_mask"))),
+    # gen3_item_belief_v1 — the SEVENTH head, and the bank's thesis made concrete: this row +
+    # its loss fn above are the ENTIRE train()-side cost of the new belief (appended last at
+    # the revealed site, so the pre-existing float-addition order is untouched).
+    BeliefHeadRow(
+        name="item", probe="item_belief", prefix="item_", gate="item",
+        coef="item_belief_coef", loss_fn=item_belief_loss,
+        args=(("stash", "item_logits"), ("obs", "item_label"),
+              ("obs", "item_mask"))),
 )
 
 

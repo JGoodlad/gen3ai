@@ -1,5 +1,20 @@
 # RUNBOOK — gen-12 end-of-run audit battery → the gen-13 config
 
+**THE BATTERY IS AUTOMATED** (2026-08-16, `src/main/endofrun.py`): one command applies §§1–3's
+pre-registered rules mechanically and writes the verdict JSON + Markdown into
+`designs/research_state/measurements/`:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.endofrun models/ai_v9_14_gen12_h_entitypool_shaping_0816 \
+    --ref models/ai_v9_13_gen11_labelonly_winprob_0815
+```
+
+(Gen-12 recorded v80 and the signature is unchanged, so the model-loading audits run under HEAD
+directly — no pinned worktree needed; an arch-drifted run gets the pinned-tree instructions in
+the report instead of an error.) This file remains the REGISTRATION OF RECORD — the runner cites
+these rules; §4's per-family reads and any judgment calls stay human.
+
 **Pre-registered 2026-08-16, BEFORE gen-12 launches** — decision rules written before the
 numbers exist (the concat-deletion precedent). Assumes gen-12 = gen-11's config + the `h` edge
 family + (if the gen-11 audit permitted) `--value-entity-pool`, on whichever belief-grad default
@@ -32,6 +47,10 @@ margin convention (within −15, CI excluding −40). Sparse in-run `eval/elo` i
   |dV| ≥ the sum of the routes it replaces (seed + threat) while those routes' single arms
   fall under the gen-11 §2 deletion bar, gen-13 DELETES seed+threat (pure code removal, the
   cleanup-journey playbook) and the pool stays ON.
+- **The successor is now the FULL pool** (v82 `--value-entity-pool-full`): +the refined
+  global token and +the hidden-opp belief queries as row sources — so a condemnation of the
+  hidden-opp VF half or the `nmr` concat also has its replacement ready (enable `full` in the
+  same config change; gen-12's v80-shape pool keeps loading regardless).
 - The `nmr` arm is new evidence, not yet a deletion license: `non_matchup_rest`'s content also
   rides the global token, so a small `nmr` KL+|dV| ⇒ the direct concat is redundant ⇒ Phase-3
   item 2 (the re-home + deletion) is GO for gen-13; large ⇒ the global-token route is not
@@ -70,5 +89,12 @@ gen-12's config
                                          # wait for gen-14 with the frame deletion
   ± seed/threat DELETED + entity pool ON # §3, only if the audit condemns + the successor carries
   ± non_matchup_rest re-home/delete      # §3 nmr arm, only on a small reading
+  + --item-belief                        # OPTIONAL rider (v83, gen3_item_belief_v1): the hidden
+                                         # ITEM as a belief; cold-start == the Smogon prior the
+                                         # op's static SPECIES_CB_PRIOR already used (within
+                                         # 0.6%), so it is ~behavior-preserving at init and the
+                                         # CE (belief/item_*) attributes it — a low-risk rider
+                                         # in the same class as the H-C edges. Smoke-verified
+                                         # e2e (acc 0.93 @ 4k debug steps — mostly the prior).
   (nothing else behavioral — the attribution discipline)
 ```

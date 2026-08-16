@@ -378,6 +378,7 @@ def _model_hparams(model) -> dict:
         "move_belief_latent_coef": float(getattr(model, "move_belief_latent_coef", 0.0)),
         "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
+        "item_belief_coef": float(getattr(model, "item_belief_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "pubval_coef": float(getattr(model, "pubval_coef", 0.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
@@ -1309,6 +1310,24 @@ async def main():
                              "mass rides as a decorrelated alpha_stay channel). Zero-init "
                              "projection => identity at init. Requires --opp-intent-coef>0, "
                              "--damage-op and --damage-topk-k>0. STRUCTURAL, version-checked.")
+    parser.add_argument("--value-entity-pool-full", "--value_entity_pool_full",
+                        dest="value_entity_pool_full", action=BoolFlag, default=None,
+                        help="gen3_unified_value_readout_v2 (v82): the entity pool's COMPLETE "
+                             "row set — + the refined GLOBAL token and the hidden-opp belief "
+                             "queries. Requires --value-entity-pool. The Stage-3 successor for "
+                             "every condemnable vf route. STRUCTURAL, version-checked.")
+    parser.add_argument("--item-belief", "--item_belief",
+                        dest="item_belief", action=BoolFlag, default=None,
+                        help="gen3_item_belief_v1 (v83): a learned posterior over each opp slot's "
+                             "HIDDEN item (Smogon usage prior ⊕ zero-init trunk delta; BeliefBank's "
+                             "seventh row supervises it at revealed slots via --item-belief-coef). "
+                             "The op's Choice-Band-conditional tail consumes P(CB) from the "
+                             "published posterior at the UNREVEALED branch (revealed stays exact "
+                             "0/1), replacing the static SPECIES_CB_PRIOR scalar there. Cold start "
+                             "posterior == the Smogon prior exactly (zero-init delta), whose CB "
+                             "column sits within ~0.6% of the static table (the row floor's renorm), "
+                             "so enabling is ~behavior-preserving at init. STRUCTURAL, "
+                             "version-checked.")
     parser.add_argument("--history-events", "--history_events",
                         dest="history_events", action=BoolFlag, default=None,
                         help="gen3_event_window_v1 (v81, Tier H-B of design_history_entity.md): "
@@ -1526,6 +1545,16 @@ async def main():
                              "there is a move belief, because its 'off' state made the model reason over a "
                              "typeless BP-0 Hidden Power and priced a REVEALED HP as nonexistent. "
                              "TRAINING-only (not version-locked); metrics ride belief/hptype_* (acc, n_slots).")
+    parser.add_argument("--item-belief-coef", "--item_belief_coef", dest="item_belief_coef",
+                        type=float, default=None,
+                        help="ITEM-belief SUPERVISION weight (gen3_item_belief_v1): coef * "
+                             "cross_entropy(ItemBelief posterior, TRUE opp item num) over the REVEALED "
+                             "opp slots (privileged training-only label from agent2's team — Gen 3 "
+                             "reveals an item only when it acts, and NEVER a Choice Band). 0.0 = the "
+                             "head still runs and still gets the op's p_cb damage gradient; it just "
+                             "has no direct CE, so it stays near the Smogon prior. Requires "
+                             "--item-belief (auto-zeroed with a warning otherwise). TRAINING-only "
+                             "(not version-locked); metrics ride belief/item_* (acc, n_slots).")
     parser.add_argument("--value-from-dist", "--value_from_dist", dest="value_from_dist",
                         action=BoolFlag, default=None,
                         help="Phase B (gen3_dist_critic_v1): make the DISTRIBUTIONAL value head the critic "
@@ -2026,6 +2055,8 @@ async def main():
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
+    _resolve("value_entity_pool_full", False)  # v82 structural, version-checked (full row set)
+    _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
@@ -2056,6 +2087,7 @@ async def main():
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
     _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
+    _resolve("item_belief_coef", 0.05)         # training-only (inherited like hp_type_belief_coef)
     # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
     if args.value_from_dist and args.value_dist_mode != "shaping":
         parser.error("--value-from-dist requires --value-dist-mode shaping (the distributional head must "
@@ -2474,6 +2506,13 @@ async def main():
               "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
               "typed HP channels are still predicted + supervised by the move-belief BCE.")
         args.hp_type_belief_coef = 0.0
+    if args.item_belief_coef and not args.item_belief:
+        # The CE supervises the ItemBelief head's posterior (last_item_logits) and the head exists
+        # only under --item-belief; a coef with no head would be a silent no-op (the bank's row
+        # sees no stash and returns None), so make the config honest instead of quietly inert.
+        print("[ItemBelief] --item-belief off: auto-zeroing --item-belief-coef (the head the CE "
+              "supervises is not built; pass --item-belief to enable it).")
+        args.item_belief_coef = 0.0
     log_level = LogLevel[args.log_level.upper()]
 
     # Automatically enable deep traces if --debug is set
@@ -2817,6 +2856,9 @@ async def main():
                     # belief; the CLI guards that the coef implies one).
                     emit_hp_type_labels=(args.move_belief_mode != "off" and args.hp_belief_mode == "composed"
                                          and args.hp_type_belief_coef > 0.0),
+                    # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
+                    # label only when the head exists AND the CE will consume it.
+                    emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
                     # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
                     # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
                     emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
@@ -3512,6 +3554,7 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
+            item_belief_coef=args.item_belief_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3562,6 +3605,7 @@ async def main():
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
+        model.item_belief_coef = args.item_belief_coef  # item CE weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.pubval_coef = args.pubval_coef  # pubval loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
@@ -3818,6 +3862,7 @@ async def main():
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
+        model.item_belief_coef = args.item_belief_coef  # item CE loss (0.0 = no direct CE)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.pubval_coef = args.pubval_coef  # pubval head soft-BCE (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
@@ -3873,6 +3918,7 @@ async def main():
             spread_belief_coef=args.spread_belief_coef,
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
+            item_belief_coef=args.item_belief_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

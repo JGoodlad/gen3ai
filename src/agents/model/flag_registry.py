@@ -219,6 +219,12 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
               "the pointer MOVE cell"),
+    ModelFlag("value_entity_pool_full", False, Tier.CLI, Klass.STRUCTURAL, 82,
+              "the entity pool's COMPLETE row set: + the refined global token and the "
+              "hidden-opp belief queries",
+              note="requires value_entity_pool; a separate flag/shape so v80-table checkpoints "
+                   "(gen-12 trains one) keep loading. The one successor for every vf route the "
+                   "critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat)."),
     ModelFlag("history_events", False, Tier.CLI, Klass.STRUCTURAL, 81,
               "Tier H-B: the obs event-window records join the trunk as event SEATS "
               "(shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY)",
@@ -231,6 +237,14 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "threat-inject) — those are adjudicated by the gen-11 critic_route_audit; "
                    "this exists so a condemned route has a replacement the next generation can "
                    "enable in the same config."),
+    ModelFlag("item_belief", False, Tier.CLI, Klass.STRUCTURAL, 83,
+              "the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon "
+              "usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes "
+              "its publication (revealed stays exact 0/1)",
+              note="BeliefBank's seventh row (--item-belief-coef supervises the revealed "
+                   "slots). Cold start posterior == the Smogon prior exactly; its CB column is "
+                   "within ~0.6% of the static table (row-floor renorm), so enabling is "
+                   "~behavior-preserving at init and the delta must EARN its movement."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

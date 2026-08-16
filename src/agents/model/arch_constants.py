@@ -57,6 +57,11 @@ UVR_K = 4
 UVR_DIM = 64
 UVR_OUT_DIM = 128
 _UVR_N_SOURCES = 3
+# gen3_unified_value_readout_v2 (v82, `value_entity_pool_full`): +source 3 = the refined
+# GLOBAL token, +source 4 = the hidden-opp belief queries — the pool's COMPLETE row set (the
+# one successor for every condemnable vf route). A separate flag/shape so v80-table
+# checkpoints keep loading.
+_UVR_N_SOURCES_FULL = 5
 
 # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the alpha-conditioned c2
 # status-consequence channels appended to the pointer MOVE cell. `_INTENT_MOVE_CELL_RAW` is the

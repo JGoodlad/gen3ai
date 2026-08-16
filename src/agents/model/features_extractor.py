@@ -49,7 +49,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
-    UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES,
+    UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
@@ -1178,6 +1178,10 @@ class TeamTransformer(torch.nn.Module):
 
         our_team_out   = tokens[:, self._our_token_slice, :]
         their_team_out = tokens[:, self._their_token_slice, :]
+        # gen3_unified_value_readout_v2: the REFINED global token, stashed as a side output
+        # (the full entity pool reads it as a row; nothing else consumes the stash, so plain
+        # attribute assignment keeps the return contract untouched).
+        self.last_global_out = tokens[:, self._total_tokens - 1, :]
         extra_out = tokens[:, self._total_tokens:, :] if extra is not None else None
         return our_team_out, their_team_out, extra_out
 
@@ -1699,7 +1703,7 @@ BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
 _BELIEF_SUPERVISION_KEYS = frozenset({
     "move_belief_logits", "hp_type_logits",
     "spread_belief", "spread_nature_logits", "spread_ev",
-    "alpha_logits",
+    "alpha_logits", "item_logits",
 })
 
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
@@ -1935,6 +1939,46 @@ class SpreadBelief(torch.nn.Module):
         delta = (believed - mean) / std.clamp(min=1.0)                                      # std-unit residual
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(pub(delta))
         return self.norm(enriched), believed, nat_logits, ev
+
+
+class ItemBelief(torch.nn.Module):
+    """gen3_item_belief_v1 — the opponent's HIDDEN ITEM, per opp slot: a posterior over item
+    nums, Smogon prior ⊕ zero-init learned delta (the HPTypeBelief pattern, lean v1 — no token
+    reinjection yet).
+
+    Why this belief exists: Gen 3 reveals an item only when it ACTS (Leftovers ticks, a Berry
+    fires, Trick) and NEVER reveals Choice Band directly — yet a hidden CB is ×1.5 physical
+    Atk. The op's CB-conditional tail priced that with a STATIC per-species usage scalar
+    (`SPECIES_CB_PRIOR`); this head replaces that scalar's unrevealed branch with a LEARNED
+    read of the trunk's evidence — and the evidence stream now exists: the tokens carry the
+    last-action fields and pair tendencies (v79), so "they clicked two DIFFERENT moves ⇒ not
+    Choice-locked" is representable, which no static prior can express.
+
+    Cold-start (delta 0) posterior == the Smogon prior exactly. Supervised as the BeliefBank's
+    SEVENTH row (CE vs the privileged true item num, revealed slots). Leak-safe: the posterior
+    is a model output; the label is training-only. The op consumes only P(item == Choice Band)
+    at the active slot, gated by the SAME exactness logic it already had (revealed → 0/1)."""
+
+    def __init__(self, n_species: int, n_items: int):
+        super().__init__()
+        self.n_items = n_items
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.item_head = torch.nn.Linear(D_MODEL, n_items)
+        torch.nn.init.zeros_(self.item_head.weight)        # cold start: posterior == prior
+        torch.nn.init.zeros_(self.item_head.bias)
+        from agents.model.damage_tables import build_item_prior
+        self.register_buffer("item_prior", build_item_prior(n_species, n_items),
+                             persistent=False)
+
+    def forward(self, opp_tokens: torch.Tensor,
+                opp_species_ids: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """opp_tokens [B,6,D], opp_species_ids [B,6] nums → (logits, posterior) [B,6,n_items].
+        logits = zero-init delta + log(prior[species]); posterior = softmax."""
+        read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
+        delta = self.item_head(self.norm(read))
+        prior = self.item_prior[opp_species_ids].clamp_min(1e-6)
+        logits = delta + torch.log(prior)
+        return logits, torch.softmax(logits, dim=-1)
 
 
 class HPTypeBelief(torch.nn.Module):
@@ -2440,11 +2484,18 @@ class UnifiedValueReadout(torch.nn.Module):
     all-fainted board) degrades to a uniform average instead of NaN, and the k×N pattern is
     stashed for diagnostics (`last_att`)."""
 
-    def __init__(self, per_mon: int):
+    def __init__(self, per_mon: int, full: bool = False):
         super().__init__()
         self.token_proj = torch.nn.Linear(D_MODEL, UVR_DIM)
         self.op_proj = torch.nn.Linear(per_mon, UVR_DIM) if per_mon > 0 else None
-        self.source_emb = torch.nn.Parameter(torch.randn(_UVR_N_SOURCES, UVR_DIM) * 0.02)
+        # `full` (gen3_unified_value_readout_v2, v82): the COMPLETE row set — the refined
+        # GLOBAL token (source 3) and the hidden-opp BELIEF queries (source 4) join the pool,
+        # making it the one successor for every vf route the audit may condemn (nmr's direct
+        # concat, the hidden-opp vf half, seed, threat). A SEPARATE flag/shape on purpose:
+        # v80-shape checkpoints (gen-12 trains one) keep loading under the 3-row table.
+        self.full = bool(full)
+        n_sources = _UVR_N_SOURCES_FULL if full else _UVR_N_SOURCES
+        self.source_emb = torch.nn.Parameter(torch.randn(n_sources, UVR_DIM) * 0.02)
         self.queries = torch.nn.Parameter(torch.randn(UVR_K, UVR_DIM) * (UVR_DIM ** -0.5))
         self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, UVR_OUT_DIM)
         torch.nn.init.zeros_(self.out_proj.weight)
@@ -2455,9 +2506,13 @@ class UnifiedValueReadout(torch.nn.Module):
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
                 all_fainted: torch.Tensor,
                 op_rows: Optional[torch.Tensor] = None,
-                op_alive: Optional[torch.Tensor] = None) -> torch.Tensor:
+                op_alive: Optional[torch.Tensor] = None,
+                global_row: Optional[torch.Tensor] = None,
+                belief_rows: Optional[torch.Tensor] = None) -> torch.Tensor:
         """our/their_team_out [B,6,D_MODEL]; all_fainted [B,12] bool (True = masked);
-        op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists → [B, UVR_OUT_DIM]."""
+        op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists; under `full`:
+        global_row [B,D_MODEL] (required — never masked) and belief_rows [B,K,D_MODEL]
+        (optional — present only with a HiddenOppBeliefPool) → [B, UVR_OUT_DIM]."""
         rows = [self.token_proj(our_team_out) + self.source_emb[0],
                 self.token_proj(their_team_out) + self.source_emb[1]]
         masks = [all_fainted]
@@ -2469,6 +2524,18 @@ class UnifiedValueReadout(torch.nn.Module):
                     "exactly like a working pool.")
             rows.append(self.op_proj(op_rows) + self.source_emb[2])
             masks.append(op_alive.clamp(max=1.0) < 0.5)
+        if self.full:
+            if global_row is None:
+                raise ValueError(
+                    "value_entity_pool_full is built but the forward supplied no global row — "
+                    "a silent skip would shrink the row set and read like a working pool.")
+            rows.append(self.token_proj(global_row)[:, None, :] + self.source_emb[3])
+            masks.append(torch.zeros(global_row.shape[0], 1, dtype=torch.bool,
+                                     device=global_row.device))
+            if belief_rows is not None:
+                rows.append(self.token_proj(belief_rows) + self.source_emb[4])
+                masks.append(torch.zeros(belief_rows.shape[0], belief_rows.shape[1],
+                                         dtype=torch.bool, device=belief_rows.device))
         kv = torch.cat(rows, dim=1)                                        # [B, N, dim]
         masked = torch.cat(masks, dim=1)                                   # [B, N] bool
         att = torch.einsum("kd,bnd->bkn", self.queries, kv) * (UVR_DIM ** -0.5)
@@ -2579,6 +2646,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_value_reduce: bool = False,
                  intent_move_cell: bool = False,
                  value_entity_pool: bool = False,
+                 value_entity_pool_full: bool = False,
+                 item_belief: bool = False,
                  history_events: bool = False,
                  damage_topk_k: int = 0,
                  damage_candidate_k: int = 0,
@@ -2878,6 +2947,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.hp_type_belief_head = (
             HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])
             if (self.move_belief is not None and self.hp_belief_mode == "composed") else None)
+        # gen3_item_belief_v1: the hidden-ITEM posterior (Smogon prior ⊕ zero-init delta), the
+        # BeliefBank's seventh head. The op consumes P(Choice Band) at the active slot in place
+        # of its static usage scalar; OFF builds nothing (byte-identical).
+        self.item_belief_head = (
+            ItemBelief(layout['max_species'], layout['max_items']) if item_belief else None)
+        self.last_item_logits: Optional[torch.Tensor] = None
         self.last_hp_type_logits: Optional[torch.Tensor] = None
         self._last_hp_type_post: Optional[torch.Tensor] = None
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
@@ -3181,8 +3256,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # so with the flag OFF nothing is constructed and every existing parameter keeps its
         # optimizer position; ON is a version-gated arch change (fresh run), where the shift is
         # legitimate. Works with or without the op (the row set shrinks to the 12 team tokens).
+        if value_entity_pool_full and not value_entity_pool:
+            raise ValueError(
+                "value_entity_pool_full=True requires value_entity_pool=True — `full` extends "
+                "the pool's row set; there is no pool to extend without the base flag.")
         self.value_entity_pool = (
-            UnifiedValueReadout(self.damage_op.per_mon if self.damage_op is not None else 0)
+            UnifiedValueReadout(self.damage_op.per_mon if self.damage_op is not None else 0,
+                                full=value_entity_pool_full)
             if value_entity_pool else None)
 
         # gen3_event_window_v1 (Tier H-B): the event-seat consumer of the obs event window —
@@ -3350,10 +3430,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         `_publish_belief` covers every consumer that reads a stash rather than being handed the tensor
         by the head. BeliefSlots has no predictive read at all and is intentionally absent.
         """
-        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head, self.belief_head):
+        _item = getattr(self, "item_belief_head", None)
+        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head,
+                    _item, self.belief_head):
             if _bh is not None:
                 _bh.detach_read = self._belief_detach
-        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head):
+        for _bh in (self.move_belief, self.spread_belief, self.hp_type_belief_head,
+                    _item):
             if _bh is not None:
                 _bh.publish_detach = self._belief_label_only
 
@@ -3538,6 +3621,23 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self._belief_supervision["spread_belief"] = None
             self._belief_supervision["spread_nature_logits"] = None
             self._belief_supervision["spread_ev"] = None
+        # gen3_item_belief_v1 (T0): the hidden-ITEM posterior on the same pre-transformer opp
+        # tokens the other T0 beliefs read. The op consumes P(Choice Band) per opp slot (its
+        # exactness gating stays op-side); the logits feed the bank's seventh CE row.
+        if self.item_belief_head is not None:
+            _item_logits, _item_post = self.item_belief_head(
+                opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
+            self._belief_supervision["item_logits"] = _item_logits
+            self.last_item_logits = self._publish_belief(_item_logits)
+            # the op reads the PUBLICATION (stop-grad under label_only — the one consumer rule),
+            # so cutting PPO→belief cuts the value-gradient route through the CB pricing too.
+            _item_cb_prob = (torch.softmax(self.last_item_logits, dim=-1)
+                             [:, :, self.damage_op.cb_item_num]
+                             if self.damage_op is not None else None)
+        else:
+            self.last_item_logits = None
+            self._belief_supervision["item_logits"] = None
+            _item_cb_prob = None
         # gen3_typed_hp_belief_v1: the opp-HP-TYPE head + its typed composition + its token reinjection all
         # moved UP into `_apply_move_belief`, where the move head reads the same tokens at the same time —
         # so `last_move_belief_logits` is ALREADY typed by the time it reaches here and the op needs no
@@ -3584,11 +3684,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
-                                          self._t0_species_probs,
+                                          self._t0_species_probs, _item_cb_prob,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, self._t0_species_probs)
+                                              move_latent_all, self._t0_species_probs,
+                                              item_cb_prob=_item_cb_prob)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
         self.last_damage_block = damage_block
         return opp_tokens, damage_block
@@ -3990,8 +4091,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                         if (self.damage_op is not None and damage_block is not None) else None)
             _op_alive = ((ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
                          if _op_rows is not None else None)
+            _uvr_kw = {}
+            if self.value_entity_pool.full:
+                _uvr_kw["global_row"] = self.team_transformer.last_global_out
+                if belief is not None:
+                    _uvr_kw["belief_rows"] = belief.view(
+                        ctx.batch_size, -1, D_MODEL)
             out = (_pi, torch.cat([_vf, self.value_entity_pool(
-                our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive)], dim=1))
+                our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive,
+                **_uvr_kw)], dim=1))
         return out
 
     def forward(self, obs):

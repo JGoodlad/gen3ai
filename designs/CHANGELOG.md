@@ -3103,3 +3103,70 @@ resolves unchanged). A seventh supervised belief is now a registry row, not anot
 ~35-line train() vertical. Gates: `belief_bank_test.py` (direct-call equality bit-for-bit,
 site partition pinned, the attr/param arg kinds, the hidden-team `aux_loss`/unprefixed
 conventions, all six aliases) + every pre-existing per-loss test file unchanged.
+
+### v82 — `gen3_unified_value_readout_v2` (2026-08-16): the entity pool's COMPLETE row set
+
+`--value-entity-pool-full` (STRUCTURAL v82 field, requires `--value-entity-pool`): the Stage-3
+critic pool gains its last two row sources — the REFINED global token (source 3, never masked;
+stashed by the transformer as `last_global_out`, a side output) and the hidden-opp belief
+queries (source 4, `[B,K,D_MODEL]`, present when the HiddenOppBeliefPool exists). With them the
+pool covers every content class the vf concat routes carry, so **every route the
+critic_route_audit can condemn now has ONE successor**: `nmr`'s direct concat (global content),
+the hidden-opp vf half (belief content), seed and threat (op-row content). Its OWN field on
+purpose — `full` grows the source-embedding table 3→5 (a state_dict shape), and gen-12 trains a
+v80-shape pool that must keep loading (`full=False` builds the byte-identical 3-row table,
+pinned by test). Zero-init out projection unchanged ⇒ cold start still contributes exactly 0.
+
+Same pass: the `event_seats` audit arm (the H-B "usage audit on the event seats" in the house
+ablation form — key-mask all seats, read KL/|dV| on a trained run; NOT a zero-init route, so
+nonzero at init is expected and asserted), and the **H-tier compile gates** —
+production + `--history-events` + the full 17-family string including `h,r` compiles with
+suppression OFF, matches eager <1e-5, and holds the ONE-GRAPH property (0 breaks) that the
+6.5× B=1 win depends on — measured beside the live gen-12 run at load 42. Gen-13's
+`--compile-opponents` path is proven before any launch relies on it.
+
+### `gen3_endofrun_battery_v1` (2026-08-16): the end-of-run battery, mechanized
+
+`python -m main.endofrun <run> [--ref <prev-run>]` — the per-generation verdict loop that was
+hand-driven from a runbook every ~2 days becomes one command emitting ONE artifact
+(`measurements/<run>_endofrun.{json,md}`). Steps fail SOFT with recorded reasons: the dense
+anchored ladder read by the TAIL-4 matched-count convention (the ELO reading rules — an
+under-sampled tail refuses to report rather than emitting the inflated mid-run number) → the §5
+non-inferiority rule; `critic_route_audit` arms → the §2 deletion ratio (<20% of `all_off` |dV|
+AND <2% flips) with the pre-registered substitutability CONFOUND note whenever the single arms
+sum well under the joint; `edge_ablation_audit` per-family → the family-alive bar (≥½ the
+median live family); `awareness_scan` twice → instrument directions vs the recorded gen-10
+baselines (coverage judged on ALL outcomes — the loss-filter PIT bias is pre-registered). A
+model-loading step on an arch-drifted run reports `needs_pinned_tree` with the exact worktree
+commands instead of an error. The runbooks remain the registration of record; the runner cites
+their rules and the rule functions are pure + pinned (`endofrun_test.py`).
+
+### v83 — `gen3_item_belief_v1` (2026-08-16): the hidden ITEM becomes a belief, and the op's last static prior factor goes learnable
+
+`--item-belief` builds **`ItemBelief`** (T0 RESOLVE): a per-opp-slot posterior over item nums —
+the per-species Smogon item-usage prior (`build_item_prior`, row floor 1e-5, GIGO-anchored:
+Blissey Leftovers 0.992) ⊕ a zero-init trunk delta, so the cold-start posterior equals the prior
+EXACTLY (softmax of log-prior; protected from the SB3 ortho clobber by the identity-init sweep).
+Its consumer is the op's Choice-Band-conditional tail: the UNREVEALED branch's `cb_prior` now
+reads P(item==CB) from the **publication** (`last_item_logits`, `_publish_belief` — so under
+`label_only` no PPO gradient reaches the head) instead of the static `SPECIES_CB_PRIOR` scalar;
+the revealed 0/1 exactness gate is untouched, and `item_cb_prob=None` (flag off) is
+byte-identical. The prior's CB column sits within 0.6% of the static table (measured max|Δ|
+0.0059), so enabling is ~behavior-preserving at init and the delta must EARN its movement —
+through the new CE and the op's damage gradient.
+
+Why now: the evidence stream this head needs arrived at v79 — the tokens carry last-action
+fields and pair tendencies, so "they clicked two DIFFERENT moves ⇒ not Choice-locked" is
+representable, which no static per-species scalar can express.
+
+Supervision is the **BeliefBank's seventh row** (`item_belief_loss`, site `revealed`, appended
+last so the float-addition order of the existing six is untouched — the bank consolidation
+paying off on its first arrival: the whole train()-side cost is one loss fn + one ROW).
+`Gen3Env` emits `item_label`/`item_mask` (privileged true item num from agent2's own team,
+matched by species; num 0 "nothing" is a CLASS, not PAD) gated on `--item-belief` +
+`--item-belief-coef > 0` (default 0.05, auto-zeroed with a warning if the head is off).
+STRUCTURAL, version-checked (`item_belief`, config v83, migration default False); the coef is
+training-only, recorded for provenance. Gates: `item_belief_test.py` (11 — cold-start==prior,
+CB-column tracking, op seam identities incl. the revealed-exactness pin, zero-init sweep
+membership, labels, bank row, migration, check_compatible), plus the extended identity-init /
+label-only / bank-partition / flag-registry pins.

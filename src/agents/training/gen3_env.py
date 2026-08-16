@@ -18,6 +18,7 @@ from agents.observation.belief_labels import (
     build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
     build_known_nature_ev_labels, zero_nature_ev_labels,
     build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
+    build_item_labels, zero_item_labels,
 )
 from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.model.features_extractor import N_HISTORY_TURNS
@@ -49,7 +50,8 @@ class Gen3Env(SinglesEnv):
                  move_belief_mode: str = "off",
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
                  emit_opp_intent_labels: bool = False,
-                 emit_hp_type_labels: bool = False, emit_defensive_opportunity: bool = False,
+                 emit_hp_type_labels: bool = False, emit_item_labels: bool = False,
+                 emit_defensive_opportunity: bool = False,
                  emit_pubval_target: bool = False, distill_team_species=None,
                  opponent_team=None, **kwargs):
         self.log_level = log_level
@@ -123,6 +125,11 @@ class Gen3Env(SinglesEnv):
         # a privileged label — never in the obs vector / pi-vf forward). Enabled by --hp-type-belief learned
         # + --hp-type-belief-coef>0 (threaded as emit_hp_type_labels from train_rl_agent).
         self._emit_hp_type_labels = emit_hp_type_labels
+        # ITEM-belief label key (TRAINING-ONLY, gen3_item_belief_v1): when on, the obs Dict carries
+        # `item_label` [6] (the TRUE item NUM of each revealed opp mon, from agent2's own team —
+        # privileged, Gen 3 never reveals a Choice Band) + `item_mask` [6]. Consumed ONLY by the
+        # BeliefBank's item CE row; never enters the forward. On iff --item-belief + coef>0.
+        self._emit_item_labels = emit_item_labels
         # WIN-PROBABILITY label keys (TRAINING-ONLY): when on, the obs Dict carries `win_target` [1] and
         # `win_mask` [1] (float32). The env emits PLACEHOLDER zeros each step; the WinProbLabelCallback
         # OVERWRITES them post-collection with the Monte-Carlo episode outcome (win=1/loss=0) + a known
@@ -241,6 +248,16 @@ class Gen3Env(SinglesEnv):
             base_obs["hp_type_label"] = spaces.Box(
                 low=-1, high=N_HP_TYPES_LABEL - 1, shape=(TEAM_SIZE,), dtype=np.int64)
             base_obs["hp_type_mask"] = spaces.Box(
+                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
+        if self._emit_item_labels:
+            # ITEM-belief label (gen3_item_belief_v1): the TRUE item NUM of each REVEALED opp mon +
+            # a per-slot mask (1 = supervised). int64 class index for CE over the item-num axis
+            # (num 0 = "nothing" IS a class); low=-1 keeps the PAD sentinel in-space. The high bound
+            # is the encoder's item axis (`max_items`), the same axis ItemBelief's logits span.
+            base_obs["item_label"] = spaces.Box(
+                low=-1, high=self.observation_encoder.get_layout()["max_items"] - 1,
+                shape=(TEAM_SIZE,), dtype=np.int64)
+            base_obs["item_mask"] = spaces.Box(
                 low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
         if self._emit_win_target:
             # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
@@ -636,6 +653,37 @@ class Gen3Env(SinglesEnv):
         lab, msk = build_hp_type_labels(revealed_species, species_to_hp_type, species_known, to_id_str)
         return {"hp_type_label": lab, "hp_type_mask": msk}
 
+    def _item_labels(self, obs_vec) -> dict:
+        """ITEM-belief label (gen3_item_belief_v1) — the _hp_type_labels shape over the item axis.
+        For each REVEALED opp slot, the TRUE item NUM from agent2's OWN team (matched by species —
+        privileged: Gen 3 reveals an item only when it acts, and NEVER a Choice Band). A mon holding
+        nothing labels num 0 ("nothing" is a class, not PAD). Read ONLY by the item CE loss."""
+        b1 = getattr(self, "battle1", None)
+        b2 = getattr(self, "battle2", None)
+        if b1 is None or b2 is None:
+            lab, msk = zero_item_labels()
+            return {"item_label": lab, "item_mask": msk}
+        species_known = [
+            float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
+            for i in range(TEAM_SIZE)
+        ]
+        revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True) if m is not None]
+        revealed_species = [m.species for m in revealed]
+        # TRUE item num per opp species from agent2's own team. poke-env keeps an own mon's `item`
+        # as the id string ("leftovers", "" / None when empty); num 0 is the "nothing" class.
+        from agents import gen3_data
+        species_to_item_num = {}
+        for m in b2.team.values():
+            item_id = getattr(m, "item", None)
+            if item_id:
+                data = gen3_data.items.get(to_id_str(item_id))
+                if data is not None:
+                    species_to_item_num[to_id_str(m.species)] = int(data.num)
+            else:
+                species_to_item_num[to_id_str(m.species)] = 0
+        lab, msk = build_item_labels(revealed_species, species_to_item_num, species_known, to_id_str)
+        return {"item_label": lab, "item_mask": msk}
+
     def action_to_order(self, action, battle, **kwargs):
         if isinstance(action, BattleOrder):
             return action
@@ -672,6 +720,8 @@ class Gen3Env(SinglesEnv):
             agent_obs.update(self._spread_labels(agent_obs["observation"]))
         if self._emit_hp_type_labels:
             agent_obs.update(self._hp_type_labels(agent_obs["observation"]))
+        if self._emit_item_labels:
+            agent_obs.update(self._item_labels(agent_obs["observation"]))
         if self._emit_opp_intent_labels:
             agent_obs.update(self._opp_intent_labels())
         if self._emit_win_target:
@@ -768,7 +818,8 @@ class Gen3Env(SinglesEnv):
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels or self._emit_defensive_opportunity
+                    or self._emit_hp_type_labels or self._emit_item_labels
+                    or self._emit_defensive_opportunity
                     or self._emit_pubval_target or self._emit_distill_mask
                     or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
@@ -792,7 +843,8 @@ class Gen3Env(SinglesEnv):
             self._stall_logger.reset()
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
-                    or self._emit_hp_type_labels or self._emit_defensive_opportunity
+                    or self._emit_hp_type_labels or self._emit_item_labels
+                    or self._emit_defensive_opportunity
                     or self._emit_pubval_target or self._emit_distill_mask
                     or self._emit_opp_intent_labels):
                 obs, info = out

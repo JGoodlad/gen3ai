@@ -570,6 +570,42 @@ def build_hp_type_prior(n_species: int) -> torch.Tensor:
     return prior
 
 
+def build_item_prior(n_species: int, n_items: int) -> torch.Tensor:
+    """``[n_species, n_items]`` per-species P(item) over ITEM NUMS, from the Smogon item prior
+    (``gen3_data.priors.items`` — sum-1 over observed items, `nothing` included at num 0's...
+    NOTE `nothing` maps to item num 0, which doubles as the UNREVEALED sentinel in the obs; here
+    it is a legitimate class (no item). Each row keeps a small floor on every num so an
+    off-usage item stays liftable by evidence, then renormalizes; a species with no usage entry
+    (and the unknown-species num 0) is uniform. Indexed by national-dex num (the belief/embedding
+    axis). Non-persistent (data-derived, recomputable). GIGO guard: Blissey's Leftovers is ~100%
+    of its usage — if it does not resolve dominant the item-num axis has drifted and the whole
+    prior silently flattened (`gen3_item_belief_v1`)."""
+    _FLOOR = 1e-5   # floor mass total ≈0.6% of a row: cold-start CB column within ~0.6% of SPECIES_CB_PRIOR
+    prior = torch.full((n_species, n_items), 1.0 / n_items, dtype=torch.float32)
+    for sid in gen3_data.species.base_form_ids():
+        sd = gen3_data.species.get(sid)
+        if not (0 <= sd.num < n_species):
+            continue
+        entry = gen3_data.priors.items(sid)
+        if not entry:
+            continue
+        vec = torch.full((n_items,), _FLOOR, dtype=torch.float32)
+        for item_id, p in entry.items():
+            it = gen3_data.items.get(item_id)
+            num = int(it.num) if it is not None else (0 if item_id == "nothing" else None)
+            if num is not None and 0 <= num < n_items:
+                vec[num] += float(p)
+        prior[sd.num] = vec / float(vec.sum())
+    bl = gen3_data.species.get("blissey")
+    lo = gen3_data.items.get("leftovers")
+    if (bl is None or lo is None or not (0 < bl.num < n_species)
+            or float(prior[bl.num, int(lo.num)]) < 0.5):
+        raise ValueError(
+            "build_item_prior: Blissey's Leftovers did not resolve dominant — the item prior is "
+            "empty/misaligned (item-num axis drift?). GIGO guard.")
+    return prior
+
+
 # gen3_bidir_threat_trunk_v1: the EXPECTED-LATENT-DEFENDER buffers. For an UNREVEALED opp mon (no team
 # preview in gen3) the op has no observed types/ability — so it marginalizes the move-belief's per-slot
 # P(species) through the type chart + the per-species Smogon ability prior, with P(KO) NULLED (owner

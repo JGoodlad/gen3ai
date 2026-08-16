@@ -71,6 +71,17 @@ def test_live_routes_move_the_critic(model_and_enc):
     assert rep["hidden_opp_both"]["dv_mean"] > 0.0
 
 
+def test_event_seats_arm_fires_on_a_history_events_build():
+    """The H-B usage-audit arm: present only when the seats are built; masking them MOVES the
+    forward even at init (the seat projection is not zero-init — this is a source ablation,
+    not a zero-init route), which is exactly what makes it a usage read on a trained run."""
+    model, enc = _build_real_policy(history_events=True)
+    obs, masks = _states(enc)
+    rep = audit(model.policy, obs, masks, batch=8)
+    assert "event_seats" in rep
+    assert rep["event_seats"]["kl_mean"] > 0.0 or rep["event_seats"]["dv_mean"] > 0.0
+
+
 def test_a_dead_hook_fails_loud():
     """The staleness guard: a marker that never fired must RAISE with the arm named, never
     return a plausible zero report."""

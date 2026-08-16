@@ -2798,7 +2798,8 @@ class DamageOperator(torch.nn.Module):
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
                 spread_belief: Optional[torch.Tensor] = None,
                 move_latent_all: Optional[torch.Tensor] = None,
-                species_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
+                species_probs: Optional[torch.Tensor] = None,
+                item_cb_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -3011,7 +3012,14 @@ class DamageOperator(torch.nn.Module):
         # revealed (item_id==CB → 1; any OTHER revealed item → 0; unrevealed id==0 → the species usage prior).
         # The op's outgoing block applies CB ×1.5 deterministically for OUR known item; here it's a belief.
         opp_item = ctx.item_ids[ar, opp_act]                                                     # [B]
-        cb_prior = self.SPECIES_CB_PRIOR[ctx.species_ids[ar, opp_act]]                           # [B]
+        # gen3_item_belief_v1: when the ITEM BELIEF runs, its published P(item==CB) at the ACTIVE
+        # slot replaces the static usage scalar in the UNREVEALED branch — the exactness gating
+        # (revealed → 0/1) stays HERE either way, so the belief only ever moves the prior factor.
+        # None (flag off / every historical caller) is byte-identical to the static prior.
+        if item_cb_prob is not None:
+            cb_prior = item_cb_prob[ar, ctx.opp_active_local]                                    # [B]
+        else:
+            cb_prior = self.SPECIES_CB_PRIOR[ctx.species_ids[ar, opp_act]]                       # [B]
         revealed_cb = (opp_item == self.cb_item_num).float()                                     # [B]
         unrevealed = (opp_item == 0).float()                                                     # [B] all-zero id
         p_cb = (revealed_cb + (1.0 - revealed_cb) * unrevealed * cb_prior) * has_opp             # [B]
