@@ -2275,10 +2275,13 @@ async def main():
                      "(the tail is defined relative to the E4 seats' truncation).")
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
-        _valid = {"d1", "d2", "d3", "d4", "s1", "s3", "v", "t", "x", "g", "c4", "c1", "c3", "c2", "c5"}
+        # The family vocabulary is the EXTRACTOR'S, single-sourced — a hand-copied set here
+        # silently rejected the v79 `h` family at launch (caught by the flag-on bridge smoke:
+        # the extractor knew `h`, the CLI did not, so a `,h` launch died in argparse).
+        from agents.model.features_extractor import _EDGE_FAMILIES as _valid
         _fams = {"d1", "d3"} if _ebf == "d" else set(_ebf.split(","))
-        if _fams - _valid:
-            parser.error(f"--edge-bias-families: unknown families {sorted(_fams - _valid)} "
+        if _fams - set(_valid):
+            parser.error(f"--edge-bias-families: unknown families {sorted(_fams - set(_valid))} "
                          f"(valid: off, d [= d1,d3 frozen], or a comma list of {sorted(_valid)})")
         if (_fams & {"d1", "s1", "c1", "c2"}) and not (args.damage_op and args.damage_outgoing):
             parser.error("--edge-bias-families d1/s1/c1/c2 require --damage-op AND --damage-outgoing "
