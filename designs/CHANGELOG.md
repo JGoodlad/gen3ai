@@ -3298,3 +3298,34 @@ What the audit of the REMAINING "recompute" entries found, recorded so nobody re
   only live caller; tests alone reach it. So `_incoming_rolls` runs ONCE per forward and the
   design's "called from two sites" reading describes the pre-v70 world. Deleting the orphan is
   cleanup-journey material, deliberately not taken here.
+
+### `gen3_forkserver_preload_v1` (2026-08-16): the forkserver compile preload — revived by fixing the fork hazard at its root
+
+The 2026-08 `set_forkserver_preload` attempt wedged a real 48-env run (2 workers forked of 48,
+parent blocked in `unix_stream_data_wait`, box at 0.2 load, no error anywhere) because `fork()`
+copies every mutex but only the calling thread, and importing the extractor started poke-env's
+GLOBAL asyncio loop thread — any `poke_env.x` import executed the eager package `__init__` →
+`player` → `ps_client` → `concurrency`. The planned fix was a ~12-file model-layer refactor
+(TYPE_CHECKING conversions + vendoring); the shipped fix is one level deeper and far smaller:
+**`poke_env/__init__.py`, `poke_env/player/__init__.py` and `poke_env/battle/__init__.py` are
+now LAZY (PEP 562)** — public surface unchanged (module `__getattr__` resolves names + submodules
+on first access), the battle/data/enum subtrees the extractor needs are thread-free, and the loop
+thread starts exactly when a player/client module is imported, which is what every training-side
+consumer does anyway. The laziness also DISSOLVED an order-dependent circular import the eager
+inits had been masking (`battle/__init__` → `battle.battle` → `player.battle_order` →
+`battle.move` — fatal for any entry that began in `battle_order`; probed green in all orders).
+
+On that foundation, `--compile-opponents-preload` arms `agents.model.compile_preload` via
+`set_forkserver_preload`: the extractor is compiled ONCE in the forkserver (config as DATA via
+`GEN3AI_PRELOAD_ARCH` — the `arch_kwargs_to_plain` seam built for exactly this) and every env
+worker inherits the traced graph by fork (~0.12 s vs ~30 s per worker against a warm disk cache).
+Three guards, all LOUD: `extractor_import_is_fork_safe()` (import ⇒ single-threaded — the old
+"currently FAILS" pin now asserts the inverse and names the regression), `compile_threads = 1` +
+`shutdown_compile_workers()` (the Inductor pool never exists), and the preload RAISING if any
+non-main thread survives its compile — killing the forkserver bootstrap so env construction
+fails with a traceback in the parent; the silent wedge is unrepresentable. Proven live: a real
+4-worker `SubprocVecEnv` CPU run with the preload armed compiled once (41 s), forked all
+workers, trained to completion — the exact scenario that hung in 2026-08. Runtime perf knob
+(requires `--compile-opponents`, never versioned, re-pass each launch); when armed it replaces
+the in-trainer cache prewarm. The honest sizing is unchanged (~50 s per 3 h restart): the reason
+to ship it is that the architecture now permits it safely, not throughput.

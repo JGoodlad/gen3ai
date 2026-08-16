@@ -1396,41 +1396,39 @@ vec env exists, so the workers hit a WARM shared on-disk cache instead of racing
 keyed to the graph the workers actually run; weights are graph INPUTS, not baked constants, so a
 fresh random extractor warms the cache for every opponent checkpoint.
 
-**⚠️ THE FORKSERVER PRELOAD DOES NOT WORK — and its failure mode is a HANG.** SB3's `SubprocVecEnv`
-uses `mp.get_context("forkserver")`, and a forkserver child inherits memory copy-on-write, so
-`set_forkserver_preload` on a module that compiles at import would hand every worker a ready-made
-graph (a standalone probe measured **0.12 s per worker**, vs ~30 s). It was built, wired, and **it
-wedged a real 48-env run**: the forkserver logged a successful compile, the trainer then forked **2
-workers instead of 48** and hung indefinitely — parent blocked in `unix_stream_data_wait` on the
-forkserver socket, workers idle in `anon_pipe_read`, whole box at **0.2 load average**, no error and
-no traceback. (Textbook `IDLE cpu = DEADLOCK`.)
+**THE FORKSERVER PRELOAD WORKS NOW (`--compile-opponents-preload`, `gen3_forkserver_preload_v1`,
+2026-08-16) — and the fix was one level deeper than the plan.** SB3's `SubprocVecEnv` uses
+`mp.get_context("forkserver")`, and a forkserver child inherits memory copy-on-write, so
+`agents.model.compile_preload` (armed via `set_forkserver_preload`) compiles the extractor ONCE in
+the forkserver and every worker inherits the traced graph (~0.12 s vs ~30 s per worker). The 2026-08
+attempt at exactly this **wedged a real 48-env run** — 2 workers forked instead of 48, parent blocked
+in `unix_stream_data_wait`, box at 0.2 load, no error anywhere — because `fork()` copies every mutex
+but only the calling thread, and importing the extractor started poke-env's GLOBAL asyncio loop
+thread: any `poke_env.x` import executed the eager package `__init__` → `player` → `ps_client` →
+`concurrency`. The planned fix was a ~12-file model-layer refactor; the shipped fix is at the ROOT
+instead — **`poke_env/__init__.py`, `poke_env/player/__init__.py` and `poke_env/battle/__init__.py`
+are LAZY (PEP 562)**, so the enum/data/battle subtrees the extractor needs are thread-free, the
+public surface is unchanged, and the loop thread starts exactly when a player/client module is
+imported (what every training-side consumer does anyway). The laziness also dissolved an
+order-dependent `battle ↔ player.battle_order` circular import the eager inits had been masking.
 
-Root cause: `fork()` gives the child only the calling thread but copies every MUTEX, including ones
-held by threads that no longer exist — so forking is safe only from a SINGLE-THREADED process, and
-the forkserver is not one. TWO independent sources of threads:
-1. Inductor's parallel-codegen pool (`compile_threads` = **16** here) survives the compile. This one
-   is fixable — `torch._inductor.async_compile.shutdown_compile_workers()` clears it.
-2. **poke-env's global asyncio loop thread** (`poke_env.concurrency.__run_loop`) is started at
-   IMPORT time, and `agents.model.features_extractor` transitively imports **37 poke-env modules**.
-   Merely importing the extractor makes the process multi-threaded, and nothing the preload does
-   from the outside can undo that.
+Three guards, all loud:
+- `compile_prewarm.extractor_import_is_fork_safe()` is the executable invariant (import ⇒
+  single-threaded), pinned by `compile_prewarm_test.py` — if the lazy init regresses, the suite
+  fails before any run arms the preload.
+- The preload pins `torch._inductor.config.compile_threads = 1` (the codegen pool never exists) and
+  calls `shutdown_compile_workers()` anyway.
+- After its compile the preload asserts `threading.active_count() == 1` and **RAISES otherwise**,
+  killing the forkserver bootstrap so `SubprocVecEnv` construction fails with a traceback in the
+  parent — the silent wedge is unrepresentable, not just unlikely.
 
-Reviving it requires removing poke-env from the model layer's import graph (the feature extractor has
-no business importing a battle client), then re-checking `threading.active_count() == 1` in the
-forkserver AFTER the compile. `compile_prewarm.extractor_import_is_fork_safe()` encodes that
-precondition and `compile_prewarm_test.py` asserts it currently FAILS — written to fail loudly with
-instructions if the situation ever improves, so the faster path is rediscovered by a test rather than
-forgotten.
-
-**But do NOT do it for throughput.** Per-worker compile would drop ~23 s -> 0.12 s, yet the
-decision-relevant number is wall clock to all-workers-ready, where the preload still pays its own
-one-time compile: **30.1 s -> 20.4 s (~1.5x)** at 16 workers, and maybe ~75 s -> ~25 s at 48. That is
-~50 s per launcher restart = **~0.5% of a 3 h window**, against a ~12-file refactor. The
-`agents.observation.*` modules import `AbstractBattle` purely for TYPE ANNOTATIONS in 11 places
-(`TYPE_CHECKING` would do), with a handful of genuine runtime uses (`to_id_str`, `SideCondition`,
-`Teambuilder`, `Pokemon`) needing vendoring or a lazy import — and note `poke_env/__init__.py`
-imports `poke_env.player`, so ANY `from poke_env.x import y` starts the loop thread. Worth doing as
-an ARCHITECTURE cleanup (the model layer should not import a battle client), not as a perf lever.
+Proven live 2026-08-16: a real 4-worker `SubprocVecEnv` CPU run with the preload armed compiled once
+(41 s), forked all workers, trained to completion. Opt-in (requires `--compile-opponents`; a runtime
+perf knob like its siblings — never versioned, re-pass each launch); when armed it REPLACES the
+in-trainer cache prewarm (the forkserver compile populates the same on-disk cache, which the
+Popen'd eval workers still hit). Honest sizing unchanged: all-workers-ready improves ~30 s → ~20 s
+at 16 workers (maybe ~75 s → ~25 s at 48), ~50 s per 3 h restart — the reason to have it is that the
+architecture now permits it and the guard structure makes it safe, not throughput.
 
 **Failure is LOUD (`--compile-opponents-strict`).** Falling back to eager is a ~6.5× regression on the
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and

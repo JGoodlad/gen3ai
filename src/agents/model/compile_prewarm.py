@@ -12,42 +12,15 @@ clock until every worker is ready:
 So paying one compile here, in the parent, roughly halves worker startup. The residual ~30 s is
 dynamo tracing + guard construction per process, which no on-disk cache can remove.
 
-⚠️ WHY NOT GO FURTHER — the forkserver preload, and why it must not be retried naively.
-SB3's `SubprocVecEnv` uses `mp.get_context("forkserver")`, and a forkserver child inherits the
-forkserver's memory copy-on-write — so `set_forkserver_preload` on a module that compiles at import
-would give every worker a ready-made compiled graph for free (measured 0.12 s per worker in a
-standalone probe). It does not work here, and the failure is a HANG rather than an error:
-
-  `fork()` gives the child only the calling thread but copies every mutex, including ones held by
-  threads that do not exist in the child. Forking is therefore only safe from a SINGLE-THREADED
-  process, and the forkserver ends up with at least two extra threads:
-    1. Inductor's parallel-codegen pool (`compile_threads`, 16 on this box) survives the compile;
-       `shutdown_compile_workers()` does clear it, but
-    2. poke-env's GLOBAL asyncio loop thread (`poke_env.concurrency.__run_loop`) is started at
-       IMPORT time, and `agents.model.features_extractor` pulls in 37 poke-env modules
-       transitively — so merely importing the extractor makes the process multi-threaded, and there
-       is nothing the preload can do about it from the outside.
-
-  Observed on a real 48-env run: the forkserver logged a successful compile, then the trainer forked
-  2 workers instead of 48 and hung indefinitely — parent blocked in `unix_stream_data_wait` on the
-  forkserver socket, every worker idle in `anon_pipe_read`, whole box at 0.2 load average. No error,
-  no traceback, no progress.
-
-  Reviving it requires removing poke-env from the extractor's import graph, then re-checking
-  `threading.active_count() == 1` in the forkserver AFTER a compile (not just after the import).
-  `compile_prewarm_test.py` pins the hazard so this is discovered by a test, not by a wedged run.
-
-  HOW BIG IS THE PRIZE, honestly? Per-worker compile would go from ~23 s (median, warm cache) to
-  0.12 s. But the decision-relevant number is WALL CLOCK to get all workers ready, and there the
-  preload still pays its own one-time compile: measured 30.1 s -> 20.4 s at 16 workers (~1.5x). At
-  `--n-envs 48` on 16 cores the gap widens (the cache path serializes ~3 waves of tracing) to
-  something like 75 s -> 25 s. That is ~50 s per launcher restart, i.e. **~0.5% of a 3 h window** —
-  and the A/B showed the per-forward win has already saturated, so startup is not where the
-  remaining throughput is. Treat the poke-env decoupling as an ARCHITECTURE cleanup (the model layer
-  importing a battle client is wrong on its own terms, and it costs every tool a poke-env import),
-  NOT as a throughput lever. It is ~12 files: 11 are annotation-only `AbstractBattle` imports that
-  become `TYPE_CHECKING`, plus a few genuine runtime uses (`to_id_str`, `SideCondition`,
-  `Teambuilder`, `Pokemon`) that need vendoring or a lazy import.
+THE FORKSERVER PRELOAD IS LIVE (`gen3_forkserver_preload_v1`, 2026-08-16) — see
+`agents.model.compile_preload` and `--compile-opponents-preload`. The hazard that killed the first
+attempt (fork() from a multi-threaded process; poke-env's loop thread started at extractor import)
+was fixed at the root by the LAZY poke_env package inits, and `extractor_import_is_fork_safe()`
+below is the executable statement of the invariant, pinned by `compile_prewarm_test.py`. When the
+preload is armed this in-parent prewarm is SKIPPED (the forkserver compile populates the same
+on-disk cache, which the Popen'd eval workers still hit). The full story — the 2026-08 silent
+48-env wedge, the three loud guards, the honest ~50 s-per-restart sizing — is in
+`src/agents/training/CLAUDE.md` → Compiled CPU opponents.
 """
 from __future__ import annotations
 

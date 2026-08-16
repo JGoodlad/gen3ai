@@ -1079,6 +1079,18 @@ async def main():
                              "versioned, not in check_compatible, NOT inherited on resume — re-pass it "
                              "each launch. Hides CUDA in the (CPU) workers first, because compiling in "
                              "a CUDA-visible process costs ~252 MiB of card per worker.")
+    parser.add_argument("--compile-opponents-preload", "--compile_opponents_preload",
+                        dest="compile_opponents_preload", action="store_true", default=False,
+                        help="gen3_forkserver_preload_v1: compile the extractor ONCE in the "
+                             "multiprocessing FORKSERVER so every env worker inherits the traced "
+                             "graph by fork (~0.12 s/worker instead of ~30 s against a warm disk "
+                             "cache). Possible since the lazy poke_env __init__ made the extractor "
+                             "import single-threaded (compile_prewarm.extractor_import_is_fork_safe). "
+                             "FAIL-LOUD: a preload that cannot prove the forkserver is "
+                             "single-threaded after the compile RAISES, killing env construction "
+                             "with a traceback instead of the silent 2-of-48-workers wedge the "
+                             "2026-08 attempt caused. Requires --compile-opponents; runtime perf "
+                             "knob (never versioned, re-pass each launch).")
     parser.add_argument("--compile-opponents-strict", "--compile_opponents_strict",
                         dest="compile_opponents_strict", action="store_true", default=False,
                         help="Turn a failed or ineffective OPPONENT compile into a hard error instead "
@@ -2535,6 +2547,9 @@ async def main():
               "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
               "typed HP channels are still predicted + supervised by the move-belief BCE.")
         args.hp_type_belief_coef = 0.0
+    if args.compile_opponents_preload and not args.compile_opponents:
+        parser.error("--compile-opponents-preload requires --compile-opponents — the preload IS "
+                     "the opponent compile, moved into the forkserver.")
     if args.item_belief_coef and not args.item_belief:
         # The CE supervises the ItemBelief head's posterior (last_item_logits) and the head exists
         # only under --item-belief; a coef with no head would be a silent no-op (the bank's row
@@ -3091,17 +3106,25 @@ async def main():
     # 59.6 s -> 30.1 s wall for 16 workers). Uses the same arch table as the model build below, so
     # the cached codegen is for the graph the workers will actually run.
     #
-    # An earlier attempt went further — `set_forkserver_preload` on a module that compiles at
-    # import, so the graph is traced ONCE and every worker inherits it by fork (0.12 s per worker).
-    # It is NOT viable and must not be retried without fixing the cause: forking is only safe from a
-    # SINGLE-THREADED process, and the forkserver ends up with at least two extra threads —
-    # Inductor's 16-way parallel-codegen pool (which survives the compile) and poke-env's global
-    # asyncio loop thread, started at import by `agents.model.features_extractor`'s transitive
-    # poke-env dependency. A 48-env run with that preload forked 2 workers instead of 48 and hung
-    # forever, parent blocked in `unix_stream_data_wait`, box at 0.2 load. Guarded by
-    # `compile_prewarm_test.py`.
+    # gen3_forkserver_preload_v1: `--compile-opponents-preload` goes further — the graph is
+    # traced ONCE in the forkserver and every worker inherits it by fork (~0.12 s/worker). This
+    # was IMPOSSIBLE until the lazy poke_env __init__ (2026-08-16): forking is only safe from a
+    # single-threaded process, and the extractor import used to start poke-env's global asyncio
+    # loop thread — the 2026-08 attempt forked 2 of 48 workers and hung forever. The preload now
+    # proves single-threadedness after its compile and RAISES otherwise (loud env-construction
+    # failure, never a silent wedge); `compile_prewarm_test.py` pins the import invariant.
     if args.compile_opponents and not args.debug:
-        prewarm_extractor_compile(build_extractor_arch_kwargs(args), mappings)
+        if args.compile_opponents_preload:
+            import multiprocessing as _mp
+            from agents.model.extractor_arch import arch_kwargs_to_plain
+            os.environ["GEN3AI_PRELOAD_ARCH"] = json.dumps(
+                arch_kwargs_to_plain(build_extractor_arch_kwargs(args)))
+            _mp.get_context("forkserver").set_forkserver_preload(
+                ["agents.model.compile_preload"])
+            emit("⚙️ forkserver preload armed — workers inherit ONE traced graph "
+                 "(gen3_forkserver_preload_v1)")
+        else:
+            prewarm_extractor_compile(build_extractor_arch_kwargs(args), mappings)
 
     _shutdown_event = threading.Event()
 

@@ -798,10 +798,12 @@ graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at 
 bottleneck and further compiler work on this path is spent effort.
 
 Startup: `agents.model.compile_prewarm` warms the shared on-disk Inductor cache in the trainer before
-any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 workers). Going further —
-a `set_forkserver_preload` that compiles ONCE and lets workers inherit it (0.12 s each) — **was built
-and HUNG a 48-env run**; forking is only safe from a single-threaded process and the extractor import
-starts poke-env's global asyncio loop thread. See the training leaf before retrying it.
+any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 workers). Going further,
+**`--compile-opponents-preload`** (`gen3_forkserver_preload_v1`, 2026-08-16) compiles ONCE in the
+forkserver so every worker inherits the traced graph (~0.12 s each) — possible since the LAZY
+poke_env package inits made the extractor import single-threaded (the 2026-08 attempt hung a 48-env
+run on exactly that thread), and fail-loud: a preload that cannot prove the forkserver
+single-threaded RAISES instead of forking. Detail: the training leaf.
 Failure is loud on stderr + the launcher event stream, and `--compile-opponents-strict` promotes it to
 a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
 **default-on test** (`extractor_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
