@@ -271,6 +271,10 @@ def _load_overlays() -> List[Dict[str, Any]]:
         with open(path) as fh:
             raw = json.load(fh)
         prov = raw.get("provenance", {})
+        if not isinstance(prov, dict):
+            # Some measurements record provenance as a one-line STRING (the oracle/baseline
+            # class). A malformed neighbour must never take down the whole viewer build.
+            prov = {"note": str(prov)}
         base = {
             "id": os.path.basename(path)[:-5],
             "file": os.path.relpath(path, _REPO),

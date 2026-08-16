@@ -1,0 +1,19 @@
+{
+  "measurement": "gen3_magiccoat_reflectable_oracle",
+  "date": "2026-08-16",
+  "question": "design_conditional_execution.md \u00a73.12 UNVERIFIED: does gen3 Magic Coat bounce side-targeting Spikes, or only user-targeting status?",
+  "method": "constructed single-turn scenarios on the reference sim (deps/pokemon-showdown, gen3customgame, BattleStream): Xatu clicks Magic Coat, Skarmory clicks the probe move; the bounce signature is the re-emitted move line with `[from] Magic Coat`.",
+  "results": {
+    "toxic": "BOUNCED",
+    "thunderwave": "BOUNCED",
+    "leechseed": "BOUNCED",
+    "willowisp": "BOUNCED (the bounced copy can miss \u2014 accuracy applies to the reflected move)",
+    "spikes": "NOT bounced \u2014 `-sidestart|p1` lands on the Magic Coat user's OWN side"
+  },
+  "conclusion": "The gen3 reflectable set is FOE-TARGETING STATUS moves (raw target == 'normal', not damaging). Side-targeting hazards (Spikes) and self/side moves are NOT reflectable. The `is_reflectable` predicate in intent_conditional._reflectable_table encodes exactly this.",
+  "provenance": {
+    "producer": "/tmp/magiccoat_oracle.js (5 constructed scenarios)",
+    "date": "2026-08-16",
+    "note": "run against the checked-out deps/pokemon-showdown dist (gen3customgame)"
+  }
+}

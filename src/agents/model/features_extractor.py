@@ -48,6 +48,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
+    INTENT_THRESH_MOVE_DIM, INTENT_THRESH_VF_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
     UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
@@ -1703,7 +1704,7 @@ BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
 _BELIEF_SUPERVISION_KEYS = frozenset({
     "move_belief_logits", "hp_type_logits",
     "spread_belief", "spread_nature_logits", "spread_ev",
-    "alpha_logits", "item_logits",
+    "alpha_logits", "beta_logits", "item_logits",
 })
 
 # Logit at which a REVEALED (certain) move is pinned under prior fusion: sigmoid(10) ≈ 0.99995 ≈ P 1.
@@ -2135,6 +2136,11 @@ class HPTypeBelief(torch.nn.Module):
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.intent_value_reduce import IntentValueReduce
 from agents.model.intent_move_cell import IntentMoveCell
+from agents.model.intent_threshold import (
+    IntentThresholdMoveCell, IntentThresholdValue, threshold_probs)
+from agents.model.intent_conditional import IntentConditionalMoveCell
+from agents.model.damage_op import _OUT_SEC_COLS as _OSC
+_OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     DamageOperator,
     OpTensors,
@@ -2314,7 +2320,11 @@ class EntityMoveSeats(torch.nn.Module):
                 "E4 threat seats need the pre-transformer move-belief logits + the move latent table "
                 "(guaranteed by the __init__ gate: damage_op + move_latent, and by the tiered order)"
             )
-            idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats)  # [B,K]
+            # gen3_op_candidate_dedup_v1: reuse the op forward's own candidate-weight build —
+            # the identical computation on the identical inputs, cleared at op-forward entry so
+            # a stale batch is unrepresentable (None ⇒ refine computes standalone).
+            idx, w = damage_op.refine_candidates(ctx, move_belief_logits, k=self.topk_seats,
+                                                 w_all=damage_op.last_w_all)              # [B,K]
             # gen3_edge_bias_trunk_v1: stash the candidate selection so the D3 edge bias prices the
             # SAME K moves the seats represent (seat c and bias row c must name the same move).
             self.last_cand = (idx, w)
@@ -2645,6 +2655,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  opp_intent_grad_mode: str = "detached",
                  intent_value_reduce: bool = False,
                  intent_move_cell: bool = False,
+                 intent_threshold: bool = False,
+                 intent_conditional: bool = False,
                  value_entity_pool: bool = False,
                  value_entity_pool_full: bool = False,
                  item_belief: bool = False,
@@ -2841,6 +2853,50 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 raise ValueError(
                     "intent_move_cell=True requires damage_op=True — it re-delivers the "
                     "operator's c2 status-consequence physics, which nothing else produces.")
+        # gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 step 3): the
+        # α-weighted THRESHOLD operator — five mechanics through the pointer MOVE cell plus the
+        # p_KO critic route (ledger H1). One flag builds BOTH consumers; the shared probs are
+        # computed once at the pointer stash (T2) and the vf half reads the stash at T3.
+        self.intent_threshold_move = None
+        self.intent_threshold_value = None
+        self._thresh_probs = None
+        if intent_threshold:
+            self.intent_threshold_move = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
+            self.intent_threshold_value = IntentThresholdValue(INTENT_THRESH_VF_DIM)
+            if not opp_intent:
+                raise ValueError(
+                    "intent_threshold=True requires opp_intent=True — every threshold form is "
+                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
+                    "weight with.")
+            if not damage_op:
+                raise ValueError(
+                    "intent_threshold=True requires damage_op=True — the operator's per-candidate "
+                    "damage/KO cells are the thresholds' only physics source.")
+        # gen3_intent_conditional_v1 (v85, design steps 4+7): Counter / Mirror Coat, flinch's
+        # (1−α_SWITCH) term, Explosion's execute/into-switch facts, Pursuit's doubling trigger —
+        # per-request-slot cells over tensors the op already stashes, α-contracted at T2.
+        self.intent_conditional = None
+        if intent_conditional:
+            self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
+            if not opp_intent:
+                raise ValueError(
+                    "intent_conditional=True requires opp_intent=True — every cell is "
+                    "WEIGHTED BY alpha, and with no alpha head there is no distribution to "
+                    "weight with.")
+            if not damage_op:
+                raise ValueError(
+                    "intent_conditional=True requires damage_op=True — the pair cells and the "
+                    "outgoing per-move rolls are the cells' only physics source.")
+            if not damage_outgoing:
+                raise ValueError(
+                    "intent_conditional=True requires damage_outgoing=True — the flinch and "
+                    "Pursuit cells read the outgoing per-move rolls, p_outspeed and the "
+                    "secondary columns, which only the outgoing block computes.")
+            if not damage_matrices_outgoing:
+                raise ValueError(
+                    "intent_conditional=True requires damage_matrices_outgoing=True — the boom "
+                    "trade-value cell reads the per-(our move, their mon) pko, which only the "
+                    "outgoing matrix computes (an arrival's KO probability has no other source).")
         if opp_intent_grad_mode not in ("detached", "shaping"):
             raise ValueError(
                 f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
@@ -3060,7 +3116,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # after the op exists, because the flag lives on the op but is owned by a consumer built
         # before it. Without this the consumer sees `last_pair_cells is None` and — by design —
         # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
-        if self.intent_value_reduce is not None:
+        if (self.intent_value_reduce is not None or self.intent_threshold_move is not None
+                or self.intent_conditional is not None):
             self.damage_op.stash_pair_cells = True
         # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
         if self.value_threat_inject:
@@ -3469,7 +3526,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_move_cell_v1: the alpha-conditioned c2 channels widen the move cell when on
         # (the policy sizes the pointer move scorer's in_features from this at build time).
         base = self.damage_op.pointer_move_cell_dim if self.damage_op is not None else 0
-        return base + (INTENT_MOVE_CELL_DIM if self.intent_move_cell is not None else 0)
+        base += INTENT_MOVE_CELL_DIM if self.intent_move_cell is not None else 0
+        # gen3_intent_threshold_v1: the five-mechanic threshold channels widen the move cell too.
+        base += INTENT_THRESH_MOVE_DIM if self.intent_threshold_move is not None else 0
+        # gen3_intent_conditional_v1: the Counter/flinch/Explosion/Pursuit cells likewise.
+        return base + (INTENT_COND_MOVE_DIM if self.intent_conditional is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
         return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
@@ -3966,8 +4027,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # rule.
             _opp_active_flag = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1]   # [B,6]
             _beta_mask = (ctx.opp_addressable & (_opp_active_flag < 0.5)).float()  # [B,6]
-            self.last_beta_logits = self.beta_head(
+            # gen3_intent_conditional_v1 (class B): beta is now PUBLISHED like alpha — the
+            # boom trade-value cell consumes it forward-side, so under label_only the policy
+            # gradient must be cut at this one boundary while the supervised intent loss keeps
+            # the LIVE view (the alpha pattern exactly).
+            _beta_live = self.beta_head(
                 their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
+            self._belief_supervision["beta_logits"] = _beta_live
+            self.last_beta_logits = self._publish_belief(_beta_live)
         _tok_req = _seat_out[:, :4, :]
         if self.damage_op is not None and damage_block is not None:
             _mcells, _scells = self.damage_op.pointer_cells(damage_block)
@@ -3996,6 +4063,66 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             else:
                 _mcells = torch.cat([_mcells, self.intent_move_cell(
                     self.last_alpha_logits, *_imc_ops)], dim=2)
+        # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, computed ONCE here
+        # (the first point where α exists) and consumed by BOTH heads — the move-cell block joins
+        # the pointer cells now; the vf block reads the stashed probs at the value tail (a
+        # T2-produced tensor read at T3 — the allowed direction). The consumer reads
+        # `last_alpha_logits` — the PUBLICATION, stop-grad under `belief_grad_mode=label_only`.
+        self._thresh_probs = None
+        if self.intent_threshold_move is not None:
+            _pair_cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
+            if self._intent_reduce_discovering and (self.last_alpha_logits is None
+                                                    or _pair_cells is None):
+                # Construction-time width probe only: alpha does not exist yet, so contribute a
+                # correctly-shaped ZERO. Deliberately NOT a runtime fallback — the raise below
+                # stays reachable.
+                _mcells = torch.cat([_mcells, _mcells.new_zeros(
+                    ctx.batch_size, _tok_req.shape[1], INTENT_THRESH_MOVE_DIM)], dim=2)
+            elif self.last_alpha_logits is None or _pair_cells is None:
+                raise RuntimeError(
+                    "intent_threshold is on but alpha produced no logits or the op stashed no "
+                    "pair cells — the thresholds would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
+                    "incoming matrix that computes it).")
+            else:
+                self._thresh_probs = threshold_probs(
+                    self.last_alpha_logits, _pair_cells, self.damage_op.last_pair_gate,
+                    ctx.our_active_idx)
+                _mcells = torch.cat([_mcells, self.intent_threshold_move(
+                    *self._thresh_probs, ctx.our_active_req_move_ids)], dim=2)
+        # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — same
+        # T1-producer/T2-consumer split, same publication read, same discovery convention.
+        if self.intent_conditional is not None:
+            _pc = self.damage_op.last_pair_cells if self.damage_op is not None else None
+            _ot = self.damage_op.last_tensors if self.damage_op is not None else None
+            _ready = (self.last_alpha_logits is not None and _pc is not None
+                      and _ot is not None and _ot.out_per_move is not None
+                      and _ot.outgoing_matrix is not None
+                      and self.last_beta_logits is not None
+                      and self.damage_op.last_topk_idx is not None)
+            if self._intent_reduce_discovering and not _ready:
+                _mcells = torch.cat([_mcells, _mcells.new_zeros(
+                    ctx.batch_size, _tok_req.shape[1], INTENT_COND_MOVE_DIM)], dim=2)
+            elif not _ready:
+                raise RuntimeError(
+                    "intent_conditional is on but alpha/the op stashes are missing — the cells "
+                    "would silently contribute nothing, which is indistinguishable from a null "
+                    "RESULT. Requires damage_topk_k>0 + the incoming matrix + the outgoing "
+                    "block.")
+            else:
+                _po = ctx.pokemon_part[
+                    torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
+                    POKEMON_PROTECT_OFFSET][:, None]
+                # the outgoing matrix's cell region, [B, 4 moves, 6 their-mons, 5 ch]; pko = ch 3
+                _omx = _ot.outgoing_matrix[:, :4 * TEAM_SIZE * 5].reshape(
+                    ctx.batch_size, 4, TEAM_SIZE, 5)
+                _mcells = torch.cat([_mcells, self.intent_conditional(
+                    self.last_alpha_logits, _pc, self.damage_op.last_pair_gate,
+                    ctx.our_active_idx, self.damage_op.last_topk_idx,
+                    _ot.out_per_move[..., 1], _ot.out_p_outspeed,
+                    _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],
+                    ctx.our_active_req_move_ids, _po,
+                    self.last_beta_logits, _omx[..., 3], ctx.opp_active_local)], dim=2)
         self.last_pointer_inputs = (_tok_req, _move_valid, our_team_out, _mcells, _scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
@@ -4100,6 +4227,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             out = (_pi, torch.cat([_vf, self.value_entity_pool(
                 our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive,
                 **_uvr_kw)], dim=1))
+        # gen3_intent_threshold_v1 (v84): the p_KO critic route — the H1 payoff, appended LAST so
+        # every existing value part keeps its offset. Reads the probs the pointer stash computed
+        # (T2 → T3, the allowed direction). ⚠️ The discovery branch FALLS THROUGH (the ede5a88
+        # lesson): a `return` here would hide any value part appended below it from the dummy
+        # forward that sizes `value_pre_norm`.
+        if self.intent_threshold_value is not None:
+            _pi, _vf = out
+            if self._thresh_probs is None:
+                if not self._intent_reduce_discovering:
+                    raise RuntimeError(
+                        "intent_threshold is on but the pointer stash computed no threshold "
+                        "probs — the vf block would silently contribute nothing.")
+                _extra = _vf.new_zeros(_vf.shape[0], INTENT_THRESH_VF_DIM)
+            else:
+                _extra = self.intent_threshold_value(*self._thresh_probs)
+            out = (_pi, torch.cat([_vf, _extra], dim=1))
         return out
 
     def forward(self, obs):

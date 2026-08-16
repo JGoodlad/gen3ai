@@ -1014,6 +1014,8 @@ def current_model_version(
     value_entity_pool_full: bool = False,
     history_events: bool = False,
     item_belief: bool = False,
+    intent_threshold: bool = False,
+    intent_conditional: bool = False,
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
@@ -1085,6 +1087,8 @@ def current_model_version(
     ext_kwargs["value_entity_pool_full"] = value_entity_pool_full
     ext_kwargs["history_events"] = history_events
     ext_kwargs["item_belief"] = item_belief
+    ext_kwargs["intent_threshold"] = intent_threshold
+    ext_kwargs["intent_conditional"] = intent_conditional
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
@@ -1178,6 +1182,10 @@ def arch_toggles_from_model(model) -> dict:
         "history_events": bool(getattr(fe, "history_events", None) is not None),
         # gen3_item_belief_v1 (v83): adds the ItemBelief module (state_dict), gated.
         "item_belief": bool(getattr(fe, "item_belief_head", None) is not None),
+        # gen3_intent_threshold_v1 (v84): the threshold operator's projections (state_dict), gated.
+        "intent_threshold": bool(getattr(fe, "intent_threshold_move", None) is not None),
+        # gen3_intent_conditional_v1 (v85): the mechanic-cell projection (state_dict), gated.
+        "intent_conditional": bool(getattr(fe, "intent_conditional", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),

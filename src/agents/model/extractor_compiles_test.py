@@ -290,6 +290,29 @@ def test_h_tier_arch_compiles_to_one_graph():
     assert explained.graph_count == 1
 
 
+@_skip_compile
+def test_intent_threshold_arch_compiles_to_one_graph():
+    """gen3_intent_threshold_v1 (v84) + gen3_intent_conditional_v1 (v85): production + BOTH
+    intent riders must hold the one-graph property before a run relies on
+    `--compile-opponents` with them on — the same launch-day blind spot the H-tier cells
+    close. Both paths are pure tensor ops over the op's stashes (gathers + α contractions),
+    so a break here means one of them stopped lowering."""
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
+                                            damage_matrices_outgoing=True)
+    obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
+    explained = torch._dynamo.explain(fe.forward)(obs)
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
+    torch._dynamo.reset()
+    with torch.no_grad():
+        ref = fe(obs)
+        got = torch.compile(fe.forward)(obs)
+    err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
+    assert err < 1e-5, f"compiled intent-threshold output diverged from eager: {err:.2e}"
+
+
 # ----------------------------------------------------------------- the other three matrix cells
 
 

@@ -1673,3 +1673,27 @@ def test_candidate_k_version_gate_and_migration():
     # pre-generation checkpoint and is refused outright.
     with _pytest.raises(ModelVersionError, match="PRE-GENERATION"):
         _migrate_config({"config_version": 48})
+
+
+# ------------------------------------------------- gen3_op_candidate_dedup_v1 (op_tensors step 2)
+
+
+def test_candidate_weight_dedup_is_bitwise_and_never_stale():
+    """The op forward stashes its [B, n_moves] candidate-weight build (`last_w_all`) and the E4
+    seat builder reuses it through `refine_candidates(w_all=...)`. Two pins:
+      * reuse == standalone BITWISE (identical function, identical inputs — the byte-identity
+        contract the dedup rides on);
+      * the stash is cleared at forward ENTRY, so a previous batch's weights are
+        unrepresentable (None ⇒ the standalone fallback, never a stale tensor)."""
+    K = 5
+    op, layout = _op_and_layout_topk(K)
+    ctx = _topk_ctx(op, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
+    logits = _logits_moves(layout["max_moves"], [_move_num("icebeam"), _move_num("earthquake")])
+    sentinel = torch.full((1, 3), 7.0)
+    op.last_w_all = sentinel                        # a stale "previous batch"
+    op(ctx, logits, None, _synth_latent(layout))
+    assert op.last_w_all is not None and op.last_w_all is not sentinel
+    idx_a, w_a = op.refine_candidates(ctx, logits, k=K)
+    idx_b, w_b = op.refine_candidates(ctx, logits, k=K, w_all=op.last_w_all)
+    assert torch.equal(idx_a, idx_b)
+    assert torch.equal(w_a, w_b)

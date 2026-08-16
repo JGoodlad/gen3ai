@@ -93,6 +93,15 @@ TIER_OF: Dict[str, int] = {
     # stash by the T2 alpha publication into the pointer MOVE cell. T2 by the same logic as
     # `alpha_head` itself: it answers "what are my moves worth", post-attention.
     "intent_move_cell": 2,
+    # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator's two consumers — the
+    # move-cell half runs at the pointer stash beside intent_move_cell (T2); the p_KO critic
+    # half reads the T2-stashed probs after the assembler (T3, the intent_value_reduce
+    # placement).
+    "intent_threshold_move": 2,
+    "intent_threshold_value": 3,
+    # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — the same
+    # pointer-stash placement as intent_move_cell.
+    "intent_conditional": 2,
     # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
     # (the first point where both operands exist) — a DELIVER-stage readout.
     "intent_value_reduce": 3,

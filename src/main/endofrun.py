@@ -285,6 +285,25 @@ def step_awareness(run_dir: str) -> dict:
         return {"status": "error", "why": f"{type(e).__name__}: {e}"}
 
 
+def step_mechanics(run_dir: str, ref_run: Optional[str]) -> dict:
+    """G2 — the mechanic USAGE read (design_conditional_execution.md §6): pick_rate/mean_prob
+    per conditional-execution mechanic, model-free over the eval-trace `actions` blocks. On a
+    run that trained the v84/v85 cells this is the did-it-work readout against the ref
+    generation's numbers; on any other run it is the standing pre-build baseline."""
+    try:
+        from agents.model.mechanic_usage_baseline import measure
+        cur = measure(run_dir)
+        out = {"status": "ok", "current": cur}
+        if ref_run:
+            try:
+                out["reference"] = measure(ref_run)
+            except Exception as e:  # noqa: BLE001
+                out["reference_error"] = f"{type(e).__name__}: {e}"
+        return out
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "why": f"{type(e).__name__}: {e}"}
+
+
 # ------------------------------------------------------------------ report
 
 def render_markdown(report: dict) -> str:
@@ -334,6 +353,23 @@ def render_markdown(report: dict) -> str:
                      + (f" ({cur} vs {v['gen10_baseline']})" if cur is not None else ""))
     else:
         L.append(f"- {aw.get('status')}: {aw.get('why')}")
+    mech = report["steps"].get("mechanics", {})
+    if mech:
+        L.append("\n## 4. Mechanic usage (G2 — conditional execution)")
+        if mech.get("status") == "ok":
+            cur = mech["current"]["mechanics"]
+            ref = (mech.get("reference") or {}).get("mechanics", {})
+            for name, st in cur.items():
+                if st["available"] == 0:
+                    continue
+                line = (f"- {name}: pick {st['pick_rate']:.1%} of {st['available']} "
+                        f"(mean prob {st['mean_prob']:.1%})")
+                r = ref.get(name)
+                if r and r.get("pick_rate") is not None:
+                    line += f" — ref {r['pick_rate']:.1%}"
+                L.append(line)
+        else:
+            L.append(f"- {mech.get('status')}: {mech.get('why', '')}")
     L.append("\n*Verdicts are decision-support against the pre-registered runbook rules; "
              "the runbooks remain the registration of record.*")
     return "\n".join(L) + "\n"
@@ -346,7 +382,8 @@ def main(argv=None) -> int:
     ap.add_argument("--anchors", default="data/gen3_bot_elo_anchors.json")
     ap.add_argument("--max-states", type=int, default=6000)
     ap.add_argument("--batch", type=int, default=512)
-    ap.add_argument("--skip", default="", help="comma list of steps: elo,audits,awareness")
+    ap.add_argument("--skip", default="",
+                    help="comma list of steps: elo,audits,awareness,mechanics")
     ap.add_argument("--out", default="designs/research_state/measurements")
     a = ap.parse_args(argv)
     skip = {s for s in a.skip.split(",") if s}
@@ -360,6 +397,8 @@ def main(argv=None) -> int:
         report["steps"]["audits"] = step_audits(a.run_dir, a.max_states, a.batch)
     if "awareness" not in skip:
         report["steps"]["awareness"] = step_awareness(a.run_dir)
+    if "mechanics" not in skip:
+        report["steps"]["mechanics"] = step_mechanics(a.run_dir, a.ref)
 
     os.makedirs(a.out, exist_ok=True)
     jpath = os.path.join(a.out, f"{report['run']}_endofrun.json")

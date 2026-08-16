@@ -599,7 +599,24 @@ from typing import Any, Dict, List
 #   P(CB) from the PUBLISHED posterior at the unrevealed branch, replacing the static
 #   SPECIES_CB_PRIOR scalar there (revealed branch unchanged: exactness stays 0/1). Adds the
 #   ItemBelief module (state_dict), so STRUCTURAL, version-checked, own flag.
-MODEL_CONFIG_VERSION = 83
+# v84 (gen3_intent_threshold_v1): `intent_threshold` — the α-weighted THRESHOLD operator
+#   `p_thresh(τ,⋛) = Σ_k α_k·1[damage(k,me) ⋛ τ]` (design_conditional_execution.md §3.0, build
+#   step 3). One contraction over the op's existing per-candidate pair cells lands FIVE
+#   mechanics at once through the pointer MOVE cell (Focus Punch executes / Sub survives /
+#   Endure·p_KO / Destiny Bond·p_KO / Endeavor survives-to-act) and produces `p_KO` — the
+#   calibrated "am I about to die this turn" — for the CRITIC (the ledger-H1 payoff: the
+#   critic previously inferred it from _chan_max's hard max). Two zero-init projections
+#   (state_dict): the move-cell block widens the pointer move cell by INTENT_THRESH_MOVE_DIM;
+#   the vf block appends INTENT_THRESH_VF_DIM after the entity pool. STRUCTURAL, own flag.
+# v85 (gen3_intent_conditional_v1): `intent_conditional` — the REMAINING α-conditioned mechanic
+#   cells (design build steps 4+7): Counter / Mirror Coat as the α-weighted CATEGORY sums
+#   ("the purest read-the-opponent moves in gen3 — literally unplayable without an intent
+#   model"), flinch's missing (1−α_SWITCH) conditioning, Explosion's p_executes
+#   (1 − Σα·is_protect) + into-switch mass (the H1 companion facts), and Pursuit's ×2
+#   never-miss doubling trigger — CORRECTED against the rust port: the strike hits the
+#   DEPARTING mon, not a β-weighted arrival, so no β enters. One zero-init projection widens
+#   the pointer move cell by INTENT_COND_MOVE_DIM. STRUCTURAL, own flag.
+MODEL_CONFIG_VERSION = 85
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1342,6 +1359,15 @@ class ModelVersion:
     # check names the cause.
     item_belief: bool = False
 
+    # v84 STRUCTURAL (gen3_intent_threshold_v1): the α-weighted threshold operator's two
+    # zero-init projections (move cell + vf) — a state_dict change AND a pointer-cell/critic
+    # width change, so a mismatch would be shape-caught; the check names the cause.
+    intent_threshold: bool = False
+
+    # v85 STRUCTURAL (gen3_intent_conditional_v1): the mechanic-cell projection — a state_dict
+    # AND pointer-cell width change; shape-caught, the check names the cause.
+    intent_conditional: bool = False
+
     # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
     # a state_dict change, so a mismatch would be shape-caught; the check names the cause.
@@ -1595,6 +1621,14 @@ class ModelVersion:
             item_belief=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "item_belief", False)
+            ),
+            intent_threshold=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "intent_threshold", False)
+            ),
+            intent_conditional=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "intent_conditional", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -2037,6 +2071,24 @@ class ModelVersion:
                 "The item-belief head adds trunk modules, so the flag is fixed for a run's "
                 "lifetime.\n"
                 "Resume with the matching --item-belief, or start a fresh run."
+            )
+        # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
+        if self.intent_threshold != saved.intent_threshold:
+            raise ModelVersionError(
+                f"intent_threshold mismatch: saved={saved.intent_threshold}, "
+                f"current={self.intent_threshold}.\n"
+                "The threshold operator widens the pointer move cell and the critic, so the "
+                "flag is fixed for a run's lifetime.\n"
+                "Resume with the matching --intent-threshold, or start a fresh run."
+            )
+        # gen3_intent_conditional_v1 (v85): a zero-init projection + a pointer-cell width change.
+        if self.intent_conditional != saved.intent_conditional:
+            raise ModelVersionError(
+                f"intent_conditional mismatch: saved={saved.intent_conditional}, "
+                f"current={self.intent_conditional}.\n"
+                "The mechanic cells widen the pointer move cell, so the flag is fixed for a "
+                "run's lifetime.\n"
+                "Resume with the matching --intent-conditional, or start a fresh run."
             )
         # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
         if self.history_events != saved.history_events:
@@ -2583,4 +2635,12 @@ def _migrate_config(data: dict) -> dict:
         # gen3_item_belief_v1: post-floor flag-gated head — absent means OFF.
         data.setdefault("item_belief", False)
         data["config_version"] = 83
+    if version < 84:
+        # gen3_intent_threshold_v1: post-floor flag-gated operator — absent means OFF.
+        data.setdefault("intent_threshold", False)
+        data["config_version"] = 84
+    if version < 85:
+        # gen3_intent_conditional_v1: post-floor flag-gated cells — absent means OFF.
+        data.setdefault("intent_conditional", False)
+        data["config_version"] = 85
     return data

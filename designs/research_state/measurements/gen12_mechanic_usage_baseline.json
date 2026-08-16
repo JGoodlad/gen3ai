@@ -1,0 +1,85 @@
+{
+  "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+  "n_summary_files": 1420,
+  "n_decisions": 61865,
+  "mechanics": {
+    "focuspunch": {
+      "available": 1400,
+      "chosen": 67,
+      "pick_rate": 0.0479,
+      "mean_prob": 0.0576
+    },
+    "substitute": {
+      "available": 2834,
+      "chosen": 26,
+      "pick_rate": 0.0092,
+      "mean_prob": 0.0397
+    },
+    "endure": {
+      "available": 48,
+      "chosen": 0,
+      "pick_rate": 0.0,
+      "mean_prob": 0.0037
+    },
+    "destinybond": {
+      "available": 79,
+      "chosen": 20,
+      "pick_rate": 0.2532,
+      "mean_prob": 0.2019
+    },
+    "endeavor": {
+      "available": 68,
+      "chosen": 3,
+      "pick_rate": 0.0441,
+      "mean_prob": 0.0753
+    },
+    "counter": {
+      "available": 591,
+      "chosen": 33,
+      "pick_rate": 0.0558,
+      "mean_prob": 0.092
+    },
+    "mirrorcoat": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+    },
+    "explosion": {
+      "available": 5719,
+      "chosen": 320,
+      "pick_rate": 0.056,
+      "mean_prob": 0.0728
+    },
+    "selfdestruct": {
+      "available": 728,
+      "chosen": 59,
+      "pick_rate": 0.081,
+      "mean_prob": 0.0974
+    },
+    "pursuit": {
+      "available": 2099,
+      "chosen": 72,
+      "pick_rate": 0.0343,
+      "mean_prob": 0.072
+    },
+    "protect": {
+      "available": 7311,
+      "chosen": 1805,
+      "pick_rate": 0.2469,
+      "mean_prob": 0.2087
+    },
+    "detect": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+    }
+  },
+  "provenance": {
+    "producer": "python -m agents.model.mechanic_usage_baseline",
+    "generation": "gen-12 (mid-run)",
+    "date": "2026-08-16",
+    "note": "model-free over eval-trace actions blocks; 61865 decisions"
+  }
+}

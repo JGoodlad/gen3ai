@@ -205,7 +205,7 @@ happens to be written.
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head` |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` (opt-in, off) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -355,6 +355,20 @@ arms) can price all three against each other on one trained run. **`value_entity
 (v82, OFF) completes the row set — +the refined GLOBAL token and +the hidden-opp belief
 queries — so the `nmr` concat and the hidden-opp vf half also have their successor here (its
 own flag/shape: gen-12's v80-shape pool keeps loading under `full=False`).
+
+**Available but OFF: `intent_threshold`** (v84, `gen3_intent_threshold_v1` — the §3.0
+threshold operator of `design_conditional_execution.md`). When on, `threshold_probs` contracts
+the op's per-candidate pair cells with the published α into `p_KO` / `p_sub_broken` /
+`p_fp_broken`, and two zero-init projections deliver them: five mechanic channels (Focus
+Punch / Substitute / Endure / Destiny Bond / Endeavor) through the pointer MOVE cell
+(+`INTENT_THRESH_MOVE_DIM`), and the `[p_KO, …]` block to vf after the entity pool
+(+`INTENT_THRESH_VF_DIM`) — the ledger-H1 payoff (the critic's "am I about to die" was a hard
+max). **`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
+flinch's `(1−α_SWITCH)` term, Explosion's execute/into-switch facts and Pursuit's ×2 never-miss
+doubling trigger (the port-verified departing-target rule — no β), one more zero-init block on
+the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision gated on
+gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage baseline is
+`measurements/gen12_mechanic_usage_baseline.json` (Endure 0.0% / Sub 0.9% / Counter 5.6%).
 
 ⚠️ It is appended AFTER `intent_value_reduce`, and until `ede5a88` that combination could not
 build: the intent-reduce discovery branch returned early, so the dummy forward that sizes
@@ -705,7 +719,9 @@ does nothing given another setting.
 | `entity_topk_seats` | `6` | ACTIVE |
 | `history_events` | `false` | OFF |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
+| `intent_conditional` | `false` | OFF |
 | `intent_move_cell` | `true` | ACTIVE |
+| `intent_threshold` | `false` | OFF |
 | `intent_value_reduce` | `true` | ACTIVE |
 | `item_belief` | `false` | OFF |
 | `move_belief_mode` | `"both"` | ACTIVE |

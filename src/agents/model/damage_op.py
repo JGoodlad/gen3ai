@@ -406,6 +406,13 @@ class DamageOperator(torch.nn.Module):
         # when a downstream alpha consumer asked for them. Off => None and zero extra work.
         self.stash_pair_cells: bool = False
         self.last_pair_cells: Optional[torch.Tensor] = None
+        # gen3_op_candidate_dedup_v1 (design_op_tensors step 2, the recompute half): the
+        # [B, n_moves] candidate-weight build (sigmoid + typed-HP scatter + presence mask) ran
+        # TWICE per production forward — once here for the incoming matrix's top-K and once in
+        # the E4 seat builder's `refine_candidates`. The forward now stashes it; consumers in
+        # the SAME forward reuse it via `refine_candidates(w_all=...)`. Cleared at forward
+        # entry so a stale batch is unrepresentable (None ⇒ the standalone fallback computes).
+        self.last_w_all: Optional[torch.Tensor] = None
         # gen3_op_tensors_views_v1: the typed views over the last forward's post-gain block.
         self.last_tensors: Optional[OpTensors] = None
         self.last_topk_cand_idx: Optional[torch.Tensor] = None
@@ -1499,7 +1506,8 @@ class DamageOperator(torch.nn.Module):
 
     def refine_candidates(self, ctx: 'ExtractorContext',
                           move_belief_logits: torch.Tensor,
-                          k: Optional[int] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                          k: Optional[int] = None,
+                          w_all: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """The SHARED candidate selection over the move belief → `(topk_idx, w_topk)`.
 
         `discrete_incoming` and `discrete_incoming_status` are called with the
@@ -1511,8 +1519,15 @@ class DamageOperator(torch.nn.Module):
         `k` overrides the default `_DMG_REFINE_K` — the E4 entity-seat builder
         (`gen3_entity_move_seats_v1`) reuses this selection at its own `entity_topk_seats` K, so the
         seats and the refine kernels share ONE candidate definition (the index selection stays
-        DETACHED; the gathered weights stay differentiable so the belief gradient rides them)."""
-        w_all = self._opp_candidate_weights(ctx, move_belief_logits)                     # [B, n_moves]
+        DETACHED; the gathered weights stay differentiable so the belief gradient rides them).
+
+        `w_all` (gen3_op_candidate_dedup_v1): the caller may pass the op forward's own
+        `last_w_all` — the IDENTICAL computation on the identical inputs — so the [B, n_moves]
+        build runs once per forward instead of twice. The top-K itself stays here (it is cheap,
+        and `k` may differ from the matrix's K). None ⇒ compute standalone, byte-identical to
+        the pre-dedup path."""
+        if w_all is None:
+            w_all = self._opp_candidate_weights(ctx, move_belief_logits)                 # [B, n_moves]
         K = min(_DMG_REFINE_K if k is None else int(k), w_all.shape[1])
         topk_idx = w_all.detach().topk(K, dim=-1).indices                                # [B,K] (DETACHED)
         return topk_idx, w_all.gather(-1, topk_idx)                                      # → belief gradient
@@ -2800,6 +2815,7 @@ class DamageOperator(torch.nn.Module):
                 move_latent_all: Optional[torch.Tensor] = None,
                 species_probs: Optional[torch.Tensor] = None,
                 item_cb_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
+        self.last_w_all = None                       # gen3_op_candidate_dedup_v1: no stale batch
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2868,6 +2884,7 @@ class DamageOperator(torch.nn.Module):
         # gen3_typed_hp_belief_v1: the candidate belief weights — the typed HPs already carry
         # P(present)·P(type) from the composed posterior; only the bare-237 presence channel is masked.
         w_all = self._opp_candidate_weights(ctx, move_belief_logits)                            # [B, n_moves]
+        self.last_w_all = w_all                      # gen3_op_candidate_dedup_v1: same-forward reuse
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
         # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent

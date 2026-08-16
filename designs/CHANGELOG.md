@@ -3170,3 +3170,131 @@ training-only, recorded for provenance. Gates: `item_belief_test.py` (11 — col
 CB-column tracking, op seam identities incl. the revealed-exactness pin, zero-init sweep
 membership, labels, bank row, migration, check_compatible), plus the extended identity-init /
 label-only / bank-partition / flag-registry pins.
+
+### v84 — `gen3_intent_threshold_v1` (2026-08-16): five mechanics, one operator — and the critic finally gets a calibrated p_KO
+
+`--intent-threshold` builds `design_conditional_execution.md` §3.0's shared primitive — the
+single most important structural fact in that document: Focus Punch, Substitute, Endure,
+Destiny Bond and Endeavor are the SAME computation, `p_thresh(τ,⋛) = Σ_k α_k·1[damage(k,me) ⋛ τ]`,
+with a different threshold and direction. No new physics: `threshold_probs` is one gather +
+three contractions over the op's existing `last_pair_cells` stash ([low, high, crit, ko, acc,
+is_phys] per (defender, seat candidate), already oracle-gated by the damage probe fuzz),
+α-weighted on the UNRENORMALIZED move slice (the missing SWITCH mass correctly reads "no damage
+this turn" — the IntentValueReduce precedent). Focus Punch's immunity term — the doc's
+likeliest-G0-mistake — falls out of the physics for free (immune ⇒ eff 0 ⇒ high 0 ⇒ no break).
+
+Two zero-init consumers, one producer (probs computed once at the pointer stash where α first
+exists): **`IntentThresholdMoveCell`** (T2) appends per-request-slot channels to the pointer
+MOVE cell — `[is_fp·(1−p_fp_broken), is_sub·(1−p_sub_broken), is_endure·p_KO, is_dbond·p_KO,
+is_endeavor·(1−p_KO), p_KO]` — the per-action-absolute channel measured to work; and
+**`IntentThresholdValue`** (T3) appends `[p_KO, p_sub_broken, p_fp_broken]` to the CRITIC after
+the entity pool (fall-through discovery — the ede5a88 lesson, now pinned with all three value
+flags on at once). The critic half is the ledger-H1 payoff and stands whatever the G3 verdict
+says about the mechanic cells: H1 measured the critic over-valuing a healthy self-KO trade
+(dV ≈ +2.9 against a −2.7 reward) because "am I about to die" reached it only as
+`_chan_max`'s hard max over believed moves; `p_KO` is the same tensor under the correct
+functional. §3.0's second-moment point is pinned as a test: two candidate sets with the SAME
+mean damage produce different sub-break readings — a threshold on the roll distribution is not
+a function of its mean, which is why `max` could never represent any row of the table.
+
+STRUCTURAL, version-checked (`intent_threshold`, config v84, migration default False); requires
+`opp_intent` + `damage_op` at build and the top-K pair-cell stash at runtime (fail-loud, the
+`op move-order` class). Gates: `intent_threshold_test.py` (15 — the contraction math, the
+SWITCH-mass shrink, mean-vs-threshold, seat-permutation invariance, mechanic-gate routing,
+zero-init on both heads + sweep membership, fail-louds, the all-value-flags discovery build,
+migration + check_compatible) and the compile cell
+(`test_intent_threshold_arch_compiles_to_one_graph`: production + the flag = ONE graph, 0
+breaks, compiled == eager <1e-5). E2E smoke: round-trip + PPO healthy with the flag on.
+Not yet done, recorded honestly: the full G0 constructed-scenario oracle for the per-mechanic
+EV terms (the damage INPUTS are oracle-gated; the mechanic-level expectations are not), and the
+class-B β-weighted branches (Explosion, Pursuit) stay at build-order step 7.
+
+### v85 — `gen3_intent_conditional_v1` (2026-08-16): Counter becomes playable, flinch learns about switches, and Pursuit gets the RIGHT rule
+
+`--intent-conditional` builds `design_conditional_execution.md`'s remaining steps 4+7 cells —
+per-request-slot, α-contracted, over tensors the op already stashes (the pair cells' high/is_phys
+columns, `last_topk_idx`, the outgoing per-move rolls, `p_outspeed`, the secondary flinch
+column). One zero-init `Linear(8, INTENT_COND_MOVE_DIM)` on the pointer MOVE cell:
+
+* **Counter / Mirror Coat** — the α-weighted CATEGORY sums (`Σ_k α_k·is_phys_k·dmg_k·high_k`
+  and its special mirror) plus `p_category_match`. The doc's words: "the purest
+  read-the-opponent moves in gen3 — literally unplayable without an intent model."
+* **Flinch** — `p_outspeed · p_flinch · (1 − α_SWITCH)`: the raw chance already rode the
+  secondary columns; the conditioning that makes it MEANINGFUL did not.
+* **Explosion / Self-Destruct** — `p_executes = 1 − Σ_k α_k·is_protect_k` (the worst branch is
+  α-visible) and the into-switch mass, decorrelated — the representation-side companions to
+  ledger H1 (the doc argues conditioning Explosion's value on α is the representation fix for
+  the same defect `--self-ko-hp-penalty` patches at the reward).
+* **Pursuit — CORRECTED against the port.** The design's §3.6 formula weighted the doubled
+  damage by a β-weighted switch-IN; `src/rust_sim/state.rs`'s pursuit interrupt (golden-gated
+  vs Showdown) strikes the DEPARTING mon at ×2 BP never-miss before the switch resolves. So no
+  β enters, and the cell carries `α_SWITCH` (the trigger) and `α_SWITCH·high` (the bonus)
+  against the CURRENT active. The doc is the registration of record and was not edited; this
+  entry records the discrepancy for the owner to reconcile.
+
+**G2 is now MEASURED, not assumed** (`agents.model.mechanic_usage_baseline`, model-free over the
+eval-trace `actions` blocks; artifact
+`measurements/gen12_mechanic_usage_baseline.json`, 61,865 gen-12 decisions): Endure picked
+**0.0%** of the 48 times it was legal, Substitute **0.9%** of 2,834, Counter **5.6%** of 591 at
+9.2% mean prob, Explosion 5.6% of 5,719, Pursuit 3.4%, Protect 24.7%. These are the numbers the
+v84/v85 retrains have to move — §3.7's "it is unsurprising if the current policy simply never
+clicks them" is confirmed in the tail (Endure/Sub) and directionally right everywhere.
+
+Same pass, the rest of the class-A set + the class-B β half (steps 5+6+7 complete):
+
+* **Protect / Detect** (step 5) — `c4` carried the mechanical `p_success` multiplier and
+  omitted the quantity it multiplies; the cell now carries the α-weighted avoided DAMAGE, the
+  same obs decay-odds scalar, and the α mass on STATUS seats (typed from the data facade, so an
+  immune damaging seat cannot masquerade as status), all decorrelated. Endure deliberately
+  excluded from this gate — its value is v84's `p_KO` branch.
+* **Magic Coat** (step 6) — its G0 oracle ran FIRST: five constructed scenarios on the
+  reference sim (`measurements/gen3_magiccoat_reflectable_oracle.json`) resolved §3.12's
+  UNVERIFIED set — foe-targeting status (Toxic/T-Wave/Leech Seed/WoW) BOUNCES, side-targeting
+  Spikes does NOT (it lands on the user's own side). The cell's `is_reflectable` predicate
+  encodes exactly that boundary and the test pins it.
+* **Explosion's β half** (step 7 — the FIRST forward-side β consumer): the trade's target
+  differs by branch, so the cell carries `α_stay·pko(boom, their active) +
+  α_SWITCH·Σ_j β_j·pko(boom, arrival j)`. **β is now PUBLISHED like α** — the supervised
+  intent CE keeps the LIVE view (`belief_supervision("beta_logits")`), the forward reads the
+  stop-grad publication under `label_only`, so the class-B consumption cannot reopen the
+  PPO→beta route. The arrival pko comes from the outgoing matrix (which prices an unrevealed
+  arrival's P(KO) as NULLED — unrevealed β mass honestly contributes zero rather than a guess),
+  which is why the flag requires `damage_matrices_outgoing`.
+
+STRUCTURAL, version-checked (`intent_conditional`, config v85, migration default False);
+requires opp_intent + damage_op + damage_outgoing + damage_matrices_outgoing (+ the top-K
+stash at runtime, fail-loud).
+Gates: `intent_conditional_test.py` (14 — the category math both directions, the
+status-feeds-neither pin, the flinch/boom/pursuit α_SWITCH conditioning, permutation
+invariance, width fail-loud, zero-init, the FULL intent stack v77+v84+v85 discovery build,
+migration + check_compatible); the compile cell now builds production + BOTH intent riders
+(one graph, 0 breaks, compiled == eager). E2E smoke: round-trip + PPO healthy with both flags.
+
+### `gen3_op_candidate_dedup_v1` (2026-08-16): the E4/d3/s3 recompute-dedup — the open half of op_tensors step 2, closed byte-identically
+
+The [B, n_moves] candidate-weight build (`_opp_candidate_weights`: the belief sigmoid + the
+typed-HP scatter + the bare-237 presence mask) ran TWICE per production forward — once in the op
+forward for the incoming matrix's top-K, once in the E4 seat builder's `refine_candidates`. The
+op forward now stashes it (`last_w_all`, CLEARED at forward entry so a stale batch is
+unrepresentable — None means the standalone fallback computes) and the seat builder reuses it
+via `refine_candidates(w_all=…)`. Byte-identity PROVEN, not asserted: the production-config
+pi/vf sha256 is unchanged pre/post (`3cab191a…`), and the regression test pins reuse ==
+standalone bitwise plus the clear-at-entry. (Backward: mathematically identical; the shared
+node sums its two consumers' gradients before the sigmoid backward where the duplicated path
+distributed it — the last-ulp FP-ordering class this file already documents for
+`_damage_rolls`.)
+
+What the audit of the REMAINING "recompute" entries found, recorded so nobody re-opens them:
+
+* **d3/s3 already share the candidate SELECTION** — both receive `entity_seats.last_cand`
+  (the v55-era stash), so seat c, bias row c and the α seats name the same move by
+  construction. Their per-candidate gathers are trivial.
+* **`pairwise_incoming`'s lean rolls are NOT the incoming matrix's rolls** — the lean kernel
+  prices a LEGACY de-timid attacker (no spread belief / boost / burn / weather / fixed) BY
+  DESIGN ("the coarse signal; the full post-transformer op is authoritative"), so replacing it
+  with the matrix's values would be a semantic upgrade, not a dedup — retrain-class, and it
+  belongs to op_tensors step 3's era, not this pass.
+* **`discrete_incoming` is DEAD in production** — the v70 refine-loop deletion orphaned its
+  only live caller; tests alone reach it. So `_incoming_rolls` runs ONCE per forward and the
+  design's "called from two sites" reading describes the pre-v70 world. Deleting the orphan is
+  cleanup-journey material, deliberately not taken here.

@@ -349,8 +349,9 @@ def test_supervision_keys_are_exactly_what_the_forward_registers():
     fe(_obs(enc))
     registered = set(fe._belief_supervision)
     missing = _BELIEF_SUPERVISION_KEYS - registered
-    # alpha_logits needs --opp-intent-coef, which this config does not build.
-    assert missing <= {"alpha_logits"}, f"declared but never registered: {sorted(missing)}"
+    # alpha/beta_logits need --opp-intent-coef, which this config does not build.
+    assert missing <= {"alpha_logits", "beta_logits"}, \
+        f"declared but never registered: {sorted(missing)}"
     assert not registered - _BELIEF_SUPERVISION_KEYS, (
         f"registered but undeclared (unreadable via belief_supervision): "
         f"{sorted(registered - _BELIEF_SUPERVISION_KEYS)}")

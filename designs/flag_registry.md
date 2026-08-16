@@ -59,7 +59,7 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-41 toggles — 38 `cli`, 3 `config_only`, 0 `constructor_only`.
+43 toggles — 40 `cli`, 3 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
@@ -104,6 +104,8 @@ directions are asserted by `flag_registry_test.py`.
 | `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
 | `value_entity_pool` | `--value-entity-pool` | `cli` | `structural` | `False` | v80 | Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team tokens + op incoming rows), zero-init, vf-only |
 | `item_belief` | `--item-belief` | `cli` | `structural` | `False` | v83 | the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes its publication (revealed stays exact 0/1) |
+| `intent_threshold` | `--intent-threshold` | `cli` | `structural` | `False` | v84 | the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO (the calibrated am-I-about-to-die) to the critic |
+| `intent_conditional` | `--intent-conditional` | `cli` | `structural` | `False` | v85 | the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 doubling trigger (port-verified departing-target rule) |
 
 **Notes**
 
@@ -122,6 +124,8 @@ directions are asserted by `flag_registry_test.py`.
 - `history_events` — the obs BLOCK is unconditional (v81 widening); this flag builds only the consumer. Gen-13 candidate arm, gated on H-A's gen-12 verdict.
 - `value_entity_pool` — the designed SUCCESSOR contract of the bolt-on vf routes (seed readout / threat-inject) — those are adjudicated by the gen-11 critic_route_audit; this exists so a condemned route has a replacement the next generation can enable in the same config.
 - `item_belief` — BeliefBank's seventh row (--item-belief-coef supervises the revealed slots). Cold start posterior == the Smogon prior exactly; its CB column is within ~0.6% of the static table (row-floor renorm), so enabling is ~behavior-preserving at init and the delta must EARN its movement.
+- `intent_threshold` — design_conditional_execution.md §3.0 build-order step 3. Requires opp_intent + damage_op (+ the top-K pair-cell stash at runtime). Both projections zero-init ⇒ ON-at-init bit-identical; the p_KO critic half is the ledger-H1 payoff and stands whatever the G3 verdict says.
+- `intent_conditional` — design_conditional_execution.md build steps 4+5+6+7. Requires opp_intent + damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko source). β is PUBLISHED like α (label_only cuts the PPO route at the same boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like intent_threshold.
 <!-- END GENERATED: registry-table -->
 
 ## Out of scope

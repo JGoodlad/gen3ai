@@ -96,5 +96,17 @@ gen-12's config
                                          # CE (belief/item_*) attributes it — a low-risk rider
                                          # in the same class as the H-C edges. Smoke-verified
                                          # e2e (acc 0.93 @ 4k debug steps — mostly the prior).
+  + --intent-threshold                   # OPTIONAL riders (v84 + v85: gen3_intent_threshold_v1
+  + --intent-conditional                 # + gen3_intent_conditional_v1), GATED ON gen-12's
+                                         # per-arm audit of intent_move_cell (= the G3 verdict):
+                                         # if c2-through-the-move-cell came alive, the ten
+                                         # mechanic cells ride the same proven channel; if it
+                                         # stayed at zero, enable ONLY --intent-threshold for
+                                         # the p_KO critic half (ledger H1) or nothing. The
+                                         # did-it-work readout is the G2 usage baseline
+                                         # (measurements/gen12_mechanic_usage_baseline.json:
+                                         # Endure 0.0%, Sub 0.9%, Counter 5.6% @ 9.2% prob —
+                                         # re-measure post-retrain with
+                                         # `python -m agents.model.mechanic_usage_baseline`).
   (nothing else behavioral — the attribution discipline)
 ```

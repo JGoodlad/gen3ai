@@ -1009,7 +1009,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # stop-grad publication under label_only (it feeds the critic under
                     # --intent-value-reduce), so the intent loss must read the supervision view.
                     _al = self.policy.features_extractor.belief_supervision("alpha_logits")
-                    _bl = getattr(self.policy.features_extractor, "last_beta_logits", None)
+                    # beta is published since gen3_intent_conditional_v1 (the boom cell reads
+                    # it forward-side), so its CE must read the supervision view too — the
+                    # attribute is the stop-grad publication under label_only.
+                    _bl = self.policy.features_extractor.belief_supervision("beta_logits")
                     _sn = getattr(self.policy.features_extractor, "last_alpha_seat_nums", None)
                     _obs = rollout_data.observations
                     if _al is not None and _sn is not None and "opp_action_kind" in _obs:

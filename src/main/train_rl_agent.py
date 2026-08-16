@@ -1316,6 +1316,33 @@ async def main():
                              "row set — + the refined GLOBAL token and the hidden-opp belief "
                              "queries. Requires --value-entity-pool. The Stage-3 successor for "
                              "every condemnable vf route. STRUCTURAL, version-checked.")
+    parser.add_argument("--intent-threshold", "--intent_threshold",
+                        dest="intent_threshold", action=BoolFlag, default=None,
+                        help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
+                             "step 3): the α-weighted THRESHOLD operator p_thresh(τ,⋛) — five "
+                             "mechanics through the pointer MOVE cell at once (Focus Punch "
+                             "executes / Substitute survives / Endure·p_KO / Destiny Bond·p_KO / "
+                             "Endeavor survives-to-act), plus p_KO — the calibrated am-I-about-"
+                             "to-die — appended to the CRITIC (the ledger-H1 payoff; the critic "
+                             "previously read a hard max). One contraction over the op's existing "
+                             "per-candidate cells; both projections zero-init so ON-at-init is "
+                             "bit-identical. Requires --opp-intent-coef>0, --damage-op and "
+                             "--damage-topk-k>0. STRUCTURAL, version-checked.")
+    parser.add_argument("--intent-conditional", "--intent_conditional",
+                        dest="intent_conditional", action=BoolFlag, default=None,
+                        help="gen3_intent_conditional_v1 (v85, design_conditional_execution.md "
+                             "steps 4+7): the remaining α-conditioned mechanic cells — Counter/"
+                             "Mirror Coat's category test (unplayable without an intent model), "
+                             "flinch's missing (1−α_SWITCH) term, Explosion's p_executes + "
+                             "into-switch facts (the H1 companions), Pursuit's ×2 never-miss "
+                             "doubling trigger (port-verified departing-target rule), Protect's "
+                             "α-weighted avoided damage/status beside c4's mechanical odds, Magic "
+                             "Coat's oracle-verified reflect set, and Explosion's β-weighted trade "
+                             "KO — the first forward-side β consumer (β published like α). One "
+                             "zero-init projection over tensors the op already stashes. Requires "
+                             "--opp-intent-coef>0, --damage-op, --damage-outgoing, "
+                             "--damage-matrices outgoing|both and --damage-topk-k>0. STRUCTURAL, "
+                             "version-checked.")
     parser.add_argument("--item-belief", "--item_belief",
                         dest="item_belief", action=BoolFlag, default=None,
                         help="gen3_item_belief_v1 (v83): a learned posterior over each opp slot's "
@@ -2057,6 +2084,8 @@ async def main():
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
     _resolve("value_entity_pool_full", False)  # v82 structural, version-checked (full row set)
     _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
+    _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
+    _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

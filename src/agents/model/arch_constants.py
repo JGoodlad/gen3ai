@@ -70,3 +70,36 @@ _UVR_N_SOURCES_FULL = 5
 # (what the pointer move scorer's in_features grow by when the flag is on).
 INTENT_MOVE_CELL_DIM = 7
 _INTENT_MOVE_CELL_RAW = 7
+
+# gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 / build-order step 3): the
+# α-weighted THRESHOLD operator `p_thresh(τ, ⋛) = Σ_k α_k · 1[damage(k, me) ⋛ τ]` — one
+# contraction over the op's already-computed per-candidate cells that lands five mechanics at
+# once (Focus Punch / Substitute / Endure / Destiny Bond / Endeavor) plus `p_KO`, the calibrated
+# "am I about to die this turn" the critic previously inferred from a hard max (ledger H1).
+# `_INTENT_THRESH_RAW_MOVE` is the per-request-slot raw stack
+# [fp_execute, sub_survives, endure_pko, dbond_pko, endeavor_survive, p_ko_context];
+# `_INTENT_THRESH_RAW_VF` is the critic's raw stack [p_ko, p_sub_broken, p_fp_broken].
+# The DIM constants are the two zero-init projections' output widths.
+INTENT_THRESH_MOVE_DIM = 6
+_INTENT_THRESH_RAW_MOVE = 6
+INTENT_THRESH_VF_DIM = 8
+_INTENT_THRESH_RAW_VF = 3
+
+# gen3_intent_conditional_v1 (v85, design_conditional_execution.md build steps 4+7): the
+# remaining α-conditioned mechanic cells — Counter / Mirror Coat (the category test), flinch's
+# missing (1−α_SWITCH) term, Explosion's execute/into-switch facts, and Pursuit's doubling
+# trigger (the PORT-verified rule: the strike hits the DEPARTING mon at ×2 BP never-miss, so no
+# β is needed — the design doc's β-weighted-arrival formula was wrong on the target).
+# `_INTENT_COND_RAW` is the per-request-slot raw stack [counter_return, mc_return, cat_match,
+# flinch_useful, boom_executes, boom_into_switch, pursuit_trigger, pursuit_bonus,
+# protect_dmg_avoided, protect_p_success, protect_status_avoided, magiccoat_reflect] — the
+# protect trio is build step 5 (§3.3): c4 carried the mechanical p_success and OMITTED the
+# α-weighted quantity it multiplies; here both ride decorrelated, plus the α mass on status
+# seats. magiccoat_reflect is step 6 (§3.12), built AFTER its G0 oracle resolved the
+# reflectable set (measurements/gen3_magiccoat_reflectable_oracle.json: foe-targeting status
+# bounces; side-targeting Spikes does NOT). boom_trade_ko is §3.1's β half — the FIRST
+# forward-side β consumer: P(the detonation KOs its actual target), α_stay-weighted vs their
+# active plus α_SWITCH·β-weighted vs the arrival (needs the outgoing matrix's per-(move, their
+# mon) pko — hence intent_conditional requires damage_matrices_outgoing).
+INTENT_COND_MOVE_DIM = 13
+_INTENT_COND_RAW = 13

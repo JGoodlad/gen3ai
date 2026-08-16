@@ -245,6 +245,25 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "slots). Cold start posterior == the Smogon prior exactly; its CB column is "
                    "within ~0.6% of the static table (row-floor renorm), so enabling is "
                    "~behavior-preserving at init and the delta must EARN its movement."),
+    ModelFlag("intent_threshold", False, Tier.CLI, Klass.STRUCTURAL, 84,
+              "the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / "
+              "Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO "
+              "(the calibrated am-I-about-to-die) to the critic",
+              note="design_conditional_execution.md §3.0 build-order step 3. Requires "
+                   "opp_intent + damage_op (+ the top-K pair-cell stash at runtime). Both "
+                   "projections zero-init ⇒ ON-at-init bit-identical; the p_KO critic half "
+                   "is the ledger-H1 payoff and stands whatever the G3 verdict says."),
+    ModelFlag("intent_conditional", False, Tier.CLI, Klass.STRUCTURAL, 85,
+              "the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category "
+              "test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the "
+              "β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted "
+              "avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 "
+              "doubling trigger (port-verified departing-target rule)",
+              note="design_conditional_execution.md build steps 4+5+6+7. Requires opp_intent + "
+                   "damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko "
+                   "source). β is PUBLISHED like α (label_only cuts the PPO route at the same "
+                   "boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like "
+                   "intent_threshold."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
