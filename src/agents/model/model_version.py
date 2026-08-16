@@ -624,7 +624,15 @@ from typing import Any, Dict, List
 #   always appended last). `op_believed_lean` — the lean d3 physics (`_incoming_rolls`) price
 #   the attacker from the BELIEVED spread instead of the legacy de-timid fiction (the B-spread
 #   correctness fix at the last de-timid site the edges read); forward-math change, no shape.
-MODEL_CONFIG_VERSION = 86
+# v87 (gen3_value_direct_routes_v1): two direct CRITIC routes, both zero-init vf-tail appends.
+#   `value_clock` — the v67 deadline clock's 3 raw scalars get the explicit critic route the
+#   fix was validated for (its surviving indirect route, the nmr concat, was audited dead).
+#   `value_intent` — the published α/β posteriors AS DISTRIBUTIONS (α over its K belief-sorted
+#   seats + SWITCH, β over the 6 slots): α previously reached vf only as a weighting inside
+#   intent_value_reduce's physics cells and β not at all — the block was ORDERING (T2 heads vs
+#   the assembler), which the post-assembler tail dissolves. Both widen the value projection
+#   (state_dict), so mismatches are shape-caught; the checks name the cause.
+MODEL_CONFIG_VERSION = 87
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1382,6 +1390,10 @@ class ModelVersion:
     op_drop_renders: bool = False
     op_believed_lean: bool = False
 
+    # v87 STRUCTURAL (gen3_value_direct_routes_v1): both widen the value projection.
+    value_clock: bool = False
+    value_intent: bool = False
+
     # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
     # a state_dict change, so a mismatch would be shape-caught; the check names the cause.
@@ -1651,6 +1663,14 @@ class ModelVersion:
             op_believed_lean=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "op_believed_lean", False)
+            ),
+            value_clock=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "value_clock", False)
+            ),
+            value_intent=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "value_intent", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -2127,6 +2147,21 @@ class ModelVersion:
                 "The believed-lean d3 physics are a forward-math change with no shape, so this "
                 "gate is the ONLY thing that rejects a mismatched resume.\n"
                 "Resume with the matching --op-believed-lean, or start a fresh run."
+            )
+        # gen3_value_direct_routes_v1 (v87): both widen the value projection (state_dict).
+        if self.value_clock != saved.value_clock:
+            raise ModelVersionError(
+                f"value_clock mismatch: saved={saved.value_clock}, "
+                f"current={self.value_clock}.\n"
+                "The direct clock route widens the value projection, so the flag is fixed for "
+                "a run's lifetime.\nResume with the matching --value-clock, or start a fresh run."
+            )
+        if self.value_intent != saved.value_intent:
+            raise ModelVersionError(
+                f"value_intent mismatch: saved={saved.value_intent}, "
+                f"current={self.value_intent}.\n"
+                "The direct intent route widens the value projection, so the flag is fixed for "
+                "a run's lifetime.\nResume with the matching --value-intent, or start a fresh run."
             )
         # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
         if self.history_events != saved.history_events:
@@ -2686,4 +2721,9 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("op_drop_renders", False)
         data.setdefault("op_believed_lean", False)
         data["config_version"] = 86
+    if version < 87:
+        # gen3_value_direct_routes_v1: post-floor flag-gated pair — absent means OFF.
+        data.setdefault("value_clock", False)
+        data.setdefault("value_intent", False)
+        data["config_version"] = 87
     return data

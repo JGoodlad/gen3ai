@@ -301,7 +301,8 @@ def test_intent_threshold_arch_compiles_to_one_graph():
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
                                             damage_matrices_outgoing=True,
-                                            op_drop_renders=True, op_believed_lean=True)
+                                            op_drop_renders=True, op_believed_lean=True,
+                                            value_clock=True, value_intent=True)
     obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
     explained = torch._dynamo.explain(fe.forward)(obs)
     assert explained.graph_break_count == 0, explained.break_reasons

@@ -741,12 +741,14 @@ does nothing given another setting.
 | `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
 | `value_active_readout` | `false` | OFF |
+| `value_clock` | `false` | OFF |
 | `value_dist_bins` | `51` | ACTIVE |
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `false` | OFF |
+| `value_intent` | `false` | OFF |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |

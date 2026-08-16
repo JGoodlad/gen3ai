@@ -7,7 +7,7 @@
   "belief_grad_mode": "shaping",
   "bias_additivity": 1.0,
   "bias_redesign": false,
-  "config_version": 86,
+  "config_version": 87,
   "consequence_topk": 6,
   "damage_candidate_k": 0,
   "damage_matrices_incoming": true,
@@ -95,5 +95,7 @@
   "win_prob_coef": 0.05,
   "win_prob_mode": "shaping",
   "op_drop_renders": false,
-  "op_believed_lean": false
+  "op_believed_lean": false,
+  "value_clock": false,
+  "value_intent": false
 }

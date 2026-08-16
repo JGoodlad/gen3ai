@@ -125,6 +125,10 @@ ACTIVE_CONTEXT_DIM = BOOSTS_DIM + VOLATILES_DIM
 # model's to learn.
 WEATHER_ONEHOT_DIM = 5
 CLOCK_DIM = 3            # [log_elapsed, remaining_linear, log_remaining]
+# gen3_value_direct_routes_v1: the clock group's offset INSIDE the global-env block (after the
+# weather one-hot + weather_permanent/turns + spikes×2) — named so the value route reads it
+# from a constant instead of a hand-counted index.
+CLOCK_OFFSET_IN_GLOBAL = WEATHER_ONEHOT_DIM + 2 + 2
 GLOBAL_ENV_DIM = WEATHER_ONEHOT_DIM + 2 + 2 + CLOCK_DIM + 8  # = 20
 
 # gen3_entity_rehome_v1 (Stage 3, the re-home): the two 144-dim MATCHUP MATRICES ARE GONE from

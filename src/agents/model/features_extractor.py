@@ -17,6 +17,7 @@ from agents.observation.constants import (
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
     POKEMON_SLEEP_BELIEF_OFFSET,
+    CLOCK_OFFSET_IN_GLOBAL, CLOCK_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
@@ -48,6 +49,7 @@ TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
+    VALUE_INTENT_DIM,
     INTENT_THRESH_MOVE_DIM, INTENT_THRESH_VF_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
     UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
@@ -2126,6 +2128,7 @@ from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import (
     IntentThresholdMoveCell, IntentThresholdValue, threshold_probs)
 from agents.model.intent_conditional import IntentConditionalMoveCell
+from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
@@ -2644,6 +2647,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_conditional: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
+                 value_clock: bool = False,
+                 value_intent: bool = False,
                  value_entity_pool: bool = False,
                  value_entity_pool_full: bool = False,
                  item_belief: bool = False,
@@ -2893,6 +2898,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "intent_conditional=True requires damage_matrices_outgoing=True — the boom "
                     "trade-value cell reads the per-(our move, their mon) pko, which only the "
                     "outgoing matrix computes (an arrival's KO probability has no other source).")
+        # gen3_value_direct_routes_v1 (v87): two direct critic routes, both zero-init vf-tail
+        # appends. The clock route has no dependency (the ctx always carries the global block);
+        # the intent route consumes the α/β PUBLICATIONS and so requires the intent heads.
+        self.value_clock_route = ValueClockRoute() if value_clock else None
+        self.value_intent_route = None
+        if value_intent:
+            if not opp_intent:
+                raise ValueError(
+                    "value_intent=True requires opp_intent=True — the route feeds the critic "
+                    "the α/β posteriors, and with no intent heads there is nothing to feed.")
+            self.value_intent_route = ValueIntentRoute(entity_topk_seats)
         if opp_intent_grad_mode not in ("detached", "shaping"):
             raise ValueError(
                 f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
@@ -4238,6 +4254,25 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _extra = _vf.new_zeros(_vf.shape[0], INTENT_THRESH_VF_DIM)
             else:
                 _extra = self.intent_threshold_value(*self._thresh_probs)
+            out = (_pi, torch.cat([_vf, _extra], dim=1))
+        # gen3_value_direct_routes_v1 (v87): the deadline clock's 3 raw scalars, vf only —
+        # the v67 fix finally gets the direct critic route it was validated for.
+        if self.value_clock_route is not None:
+            _pi, _vf = out
+            _clock = ctx.non_matchup_rest[:, CLOCK_OFFSET_IN_GLOBAL:CLOCK_OFFSET_IN_GLOBAL + CLOCK_DIM]
+            out = (_pi, torch.cat([_vf, self.value_clock_route(_clock)], dim=1))
+        # ...and the α/β posteriors as DISTRIBUTIONS — the ordering block the tail dissolves.
+        # Reads the PUBLICATIONS (stop-grad under label_only). Fall-through discovery (ede5a88).
+        if self.value_intent_route is not None:
+            _pi, _vf = out
+            if self.last_alpha_logits is None or self.last_beta_logits is None:
+                if not self._intent_reduce_discovering:
+                    raise RuntimeError(
+                        "value_intent is on but alpha/beta produced no logits — the route would "
+                        "silently contribute nothing.")
+                _extra = _vf.new_zeros(_vf.shape[0], VALUE_INTENT_DIM)
+            else:
+                _extra = self.value_intent_route(self.last_alpha_logits, self.last_beta_logits)
             out = (_pi, torch.cat([_vf, _extra], dim=1))
         return out
 

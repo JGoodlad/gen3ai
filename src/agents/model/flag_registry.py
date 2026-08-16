@@ -277,6 +277,18 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "site the edges read",
               note="requires spread_belief + damage_op. Forward-math only (no state_dict "
                    "change): the version gate is the ONLY thing rejecting a mismatched resume."),
+    ModelFlag("value_clock", False, Tier.CLI, Klass.STRUCTURAL, 87,
+              "the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only "
+              "— the explicit critic route the clock fix was validated for",
+              note="its indirect route (the nmr concat) was audited dead; a critic cannot "
+                   "price a deadline it cannot see."),
+    ModelFlag("value_intent", False, Tier.CLI, Klass.STRUCTURAL, 87,
+              "the published α/β posteriors AS DISTRIBUTIONS to the critic (α over K "
+              "belief-sorted seats + SWITCH, β over the 6 slots), zero-init, vf only",
+              note="requires opp_intent. α previously reached vf only as a weighting inside "
+                   "intent_value_reduce's cells; β not at all — the block was ORDERING, which "
+                   "the post-assembler tail dissolves. Publications ⇒ label_only keeps the "
+                   "PPO→α/β route cut."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

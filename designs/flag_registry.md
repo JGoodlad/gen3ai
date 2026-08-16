@@ -59,7 +59,7 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-45 toggles — 42 `cli`, 3 `config_only`, 0 `constructor_only`.
+47 toggles — 44 `cli`, 3 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
@@ -108,6 +108,8 @@ directions are asserted by `flag_registry_test.py`.
 | `intent_conditional` | `--intent-conditional` | `cli` | `structural` | `False` | v85 | the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 doubling trigger (port-verified departing-target rule) |
 | `op_drop_renders` | `--op-drop-renders` | `cli` | `structural` | `False` | v86 | design_op_tensors step 3: the op's flat forward block loses the three RENDER regions (omx/imx/OAX — serialization-only since the concat's deletion); selection machinery + every consumer stash survive, out_gain shrinks |
 | `op_believed_lean` | `--op-believed-lean` | `cli` | `structural` | `False` | v86 | the lean d3 physics price the attacker from the BELIEVED spread instead of the legacy de-timid fiction — the B-spread correctness fix at the last de-timid site the edges read |
+| `value_clock` | `--value-clock` | `cli` | `structural` | `False` | v87 | the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only — the explicit critic route the clock fix was validated for |
+| `value_intent` | `--value-intent` | `cli` | `structural` | `False` | v87 | the published α/β posteriors AS DISTRIBUTIONS to the critic (α over K belief-sorted seats + SWITCH, β over the 6 slots), zero-init, vf only |
 
 **Notes**
 
@@ -130,6 +132,8 @@ directions are asserted by `flag_registry_test.py`.
 - `intent_conditional` — design_conditional_execution.md build steps 4+5+6+7. Requires opp_intent + damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko source). β is PUBLISHED like α (label_only cuts the PPO route at the same boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like intent_threshold.
 - `op_drop_renders` — every surviving offset unchanged (renders appended last), so pi/vf at init are bit-identical to renders-on — pinned by test. The prober decodes a lean run's blocks with the run's own config flags.
 - `op_believed_lean` — requires spread_belief + damage_op. Forward-math only (no state_dict change): the version gate is the ONLY thing rejecting a mismatched resume.
+- `value_clock` — its indirect route (the nmr concat) was audited dead; a critic cannot price a deadline it cannot see.
+- `value_intent` — requires opp_intent. α previously reached vf only as a weighting inside intent_value_reduce's cells; β not at all — the block was ORDERING, which the post-assembler tail dissolves. Publications ⇒ label_only keeps the PPO→α/β route cut.
 <!-- END GENERATED: registry-table -->
 
 ## Out of scope

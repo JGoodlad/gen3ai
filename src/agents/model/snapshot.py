@@ -1018,6 +1018,8 @@ def current_model_version(
     intent_conditional: bool = False,
     op_drop_renders: bool = False,
     op_believed_lean: bool = False,
+    value_clock: bool = False,
+    value_intent: bool = False,
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
@@ -1093,6 +1095,8 @@ def current_model_version(
     ext_kwargs["intent_conditional"] = intent_conditional
     ext_kwargs["op_drop_renders"] = op_drop_renders
     ext_kwargs["op_believed_lean"] = op_believed_lean
+    ext_kwargs["value_clock"] = value_clock
+    ext_kwargs["value_intent"] = value_intent
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
@@ -1193,6 +1197,9 @@ def arch_toggles_from_model(model) -> dict:
         # gen3_op_lean_forward_v1 (v86): out_gain shape / d3 forward math, both gated.
         "op_drop_renders": bool(getattr(getattr(fe, "damage_op", None), "drop_renders", False)),
         "op_believed_lean": bool(getattr(getattr(fe, "damage_op", None), "believed_lean", False)),
+        # gen3_value_direct_routes_v1 (v87): both widen the value projection (state_dict), gated.
+        "value_clock": bool(getattr(fe, "value_clock_route", None) is not None),
+        "value_intent": bool(getattr(fe, "value_intent_route", None) is not None),
         # gen3_unified_topk_incoming_v1 (v30): the top-K incoming block's K (0 = off) — STRUCTURAL int,
         # gated in check_compatible (it scales the projection widths), so it must reach the worker's gate.
         "damage_topk_k": int(getattr(fe, "damage_topk_k", 0)),

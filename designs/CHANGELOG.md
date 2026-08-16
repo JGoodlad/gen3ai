@@ -3366,3 +3366,29 @@ nulling + stash survival, the full v77+v84+v85 intent stack running lean, the pk
 init-neutrality, the believed-vs-legacy pricing split on a real defender, migrations + both
 check_compatible gates); the compile cell now builds production + the ENTIRE gen-13 candidate
 stack (both intent riders + both v86 flags) as ONE graph, 0 breaks, compiled == eager.
+
+### v87 — `gen3_value_direct_routes_v1` (2026-08-16): the critic finally sees the clock it loses on and the intent it weights by
+
+Two direct CRITIC routes, both zero-init vf-tail appends (the `intent_value_reduce` placement,
+fall-through discovery — the ede5a88 rule, now pinned with EVERY value part on at once):
+
+* **`--value-clock`** — the v67 deadline clock (`gen3_deadline_clock_v1`) was built for exactly
+  this reader: "a critic cannot price a deadline it has no resolution on", motivated by a
+  positive V on the final decision in 13 of 14 timeout losses. Its only direct head route since
+  the ctx-dedup era is the `non_matchup_rest` concat, which the route audit read as dead — the
+  validated fix gets its own explicit route: the 3 raw scalars (log-elapsed, remaining-linear,
+  log-remaining, sliced by the NEW named `CLOCK_OFFSET_IN_GLOBAL`, never a hand-counted index)
+  through a zero-init projection, vf only.
+* **`--value-intent`** — α/β reach the critic AS DISTRIBUTIONS for the first time: α entered vf
+  only as a weighting inside `intent_value_reduce`'s physics cells, β not at all. The block was
+  ORDERING (the T2 heads are scored after the pools), which the post-assembler tail dissolves.
+  The route reads the PUBLICATIONS (stop-grad under `label_only` — no PPO→α/β route opens): α
+  softmaxed over its K belief-sorted seats + SWITCH (the canonical axis every α consumer aligns
+  to; a seat-count mismatch fails loud), β over the 6 team slots with the no-legal-candidate
+  case gated to a clean zero, never a NaN softmax.
+
+Both STRUCTURAL, version-checked (v87, migration defaults False; they widen the value
+projection so a mismatch is shape-caught — the checks name the cause). pi is untouched at any
+weight (vf-only concat, pinned). Gates: `value_routes_test.py` (10) and the compile cell now
+builds production + the ENTIRE rider stack (v84+v85+v86+v87) as ONE graph, 0 breaks. E2E smoke
+green with both flags.

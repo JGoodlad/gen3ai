@@ -99,6 +99,10 @@ TIER_OF: Dict[str, int] = {
     # placement).
     "intent_threshold_move": 2,
     "intent_threshold_value": 3,
+    # gen3_value_direct_routes_v1 (v87): the deadline-clock and α/β direct critic routes —
+    # post-assembler vf-tail appends, the same DELIVER placement as intent_value_reduce.
+    "value_clock_route": 3,
+    "value_intent_route": 3,
     # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — the same
     # pointer-stash placement as intent_move_cell.
     "intent_conditional": 2,

@@ -103,3 +103,13 @@ _INTENT_THRESH_RAW_VF = 3
 # mon) pko — hence intent_conditional requires damage_matrices_outgoing).
 INTENT_COND_MOVE_DIM = 13
 _INTENT_COND_RAW = 13
+
+
+# gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
+# zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the
+# v67 clock fix was validated for exactly this reader, and the audit read its surviving
+# indirect route as dead). VALUE_INTENT_DIM — the published α (K seats + SWITCH, belief-sorted
+# canonical order) and β (6 team slots) posteriors as probabilities; the critic finally reads
+# WHAT WE EXPECT THEM TO DO directly rather than only through the α-weighted physics cells.
+VALUE_CLOCK_DIM = 8
+VALUE_INTENT_DIM = 16

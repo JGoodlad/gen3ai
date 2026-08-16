@@ -117,5 +117,11 @@ gen-12's config
                                          # de-timid site) — re-read d3's ablation arm after it
                                          # per design_opponent_intent §7a(3): a channel carrying
                                          # DISTORTED content also reads low.
+  + --value-clock                        # OPTIONAL riders (v87, gen3_value_direct_routes_v1):
+  + --value-intent                       # the deadline clock's direct critic route (the v67
+                                         # fix's validated reader — its nmr route audited dead)
+                                         # and the α/β posteriors AS DISTRIBUTIONS to the
+                                         # critic (the ordering block dissolved). Both
+                                         # zero-init, vf-only, attribution-free at init.
   (nothing else behavioral — the attribution discipline)
 ```
