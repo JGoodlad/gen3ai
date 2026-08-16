@@ -337,14 +337,21 @@ HEAD, are generated below — never hand-edit inside the markers.
 | **total** | **1369** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
-**Available but OFF in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3
-T3-DELIVER of `design_unified_belief.md` §3). When on, ONE attention pool over the critic's
-entity-row set (the 12 post-transformer team tokens + the op's 6 per-our-mon incoming rows, each
-projected to `UVR_DIM`=64 with a per-source type embedding, `UVR_K`=4 queries, explicit NaN-safe
-softmax) appends a zero-init `UVR_OUT_DIM`=128 block to vf AFTER the assembler — the policy is
-untouched at any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below
-(seed readout, threat-inject): the gen-11 `critic_route_audit` (which carries an `entity_pool`
-arm) adjudicates those, and a condemned route's next generation enables this in the same config.
+**ON in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3 T3-DELIVER of
+`design_unified_belief.md` §3). ONE attention pool over the critic's entity-row set (the 12
+post-transformer team tokens + the op's 6 per-our-mon incoming rows, each projected to
+`UVR_DIM`=64 with a per-source type embedding, `UVR_K`=4 queries, explicit NaN-safe softmax)
+appends a zero-init `UVR_OUT_DIM`=128 block to vf AFTER the assembler — the policy is untouched at
+any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below (seed
+readout, threat-inject); it runs here ALONGSIDE them rather than replacing them, so the
+`critic_route_audit` (which carries an `entity_pool` arm) can price all three against each other
+on one trained run.
+
+⚠️ It is appended AFTER `intent_value_reduce`, and until `ede5a88` that combination could not
+build: the intent-reduce discovery branch returned early, so the dummy forward that sizes
+`value_pre_norm` never reached this block and the critic came out 128 dims short
+(`normalized_shape=[1241] … got [*, 1369]`). Any NEW vf part goes at the tail with a
+**fall-through** discovery branch — see `src/agents/model/CLAUDE.md`.
 
 The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
@@ -588,7 +595,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **d2** | our mon *i* × opp **ACTIVE** (one-hot column) | 4 | `[best_high, best_pko, p_outspeed, alive]` — our bench's offense vs their active |
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
-| **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **not in the production families string** — the opt-in H-A2 arm) |
+| **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
 | **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 2 | `[is_actor, is_target]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C): event *e*'s recorded actor/target IS mon *m* (species-num equality, side-gated against mirror false-links; `_event_reference_cells`, pure). **Not in the production string** — requires `--history-events` (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |

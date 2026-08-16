@@ -1691,6 +1691,25 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
     sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`/`value_dist`
     are ≈0 under `read_only` (stop-grad), real under `shaping`.
+- **Per-edge-family LIVENESS — `edge/<fam>_weight_norm` + `edge/<fam>_grad_norm`**
+  (`edge_family_metrics`, sampled once per `train()` right after the backward so `.grad` is still
+  populated; parameters only, so the forward — and therefore the CPU opponent path — pays nothing).
+  Every family enters as a ZERO-INIT `Linear(cell → 2·n_heads)`, which means **a family that never
+  learns anything is bit-identical in the logs to one that works**: both write zero into the
+  attention bias and neither says a word. The v79 `h` (pair-history) family shipped into a
+  production run with exactly that blindness, and the only recourse would have been a post-hoc
+  ablation at run end.
+  - `weight_norm` — how far the map moved off its zero init. **Has it learned anything?**
+  - `grad_norm` — how hard the loss is pushing it right now. **Does anything want it to?**
+  - Read as a PAIR: both ~0 = genuinely dead (the cell carries nothing the loss can use); weight ~0
+    with grad > 0 = still climbing off init (the expected early reading); weight > 0 with grad ~0 =
+    converged and contributing. Weight norm alone cannot separate the first two.
+  - ⚠️ **Neither is an EFFECT SIZE.** Both scale with the cell's input magnitude, so a family with
+    larger-magnitude inputs shows a bigger gradient regardless of usefulness — measured at init on
+    the gen-12 config, `h` reads the largest `grad_norm` of all 16 families (0.0100 vs d3's 0.0032),
+    which says it is alive and being pushed, **not** that it is the most useful. The per-family
+    ABLATION audit remains the only thing that measures importance, and these must never be quoted
+    in its place.
 - **Value scale — PopArt prep.** From the full rollout buffer: `train/return_mean` / `train/return_std`
   / `train/return_abs_max` (exactly the `(μ, σ)` + tail an adaptive return normalizer / PopArt's ART
   half tracks) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE

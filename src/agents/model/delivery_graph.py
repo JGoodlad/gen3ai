@@ -193,6 +193,18 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         "h": "obs-fed compiled pair-history (gen3_pair_history_v1) — the GPU cannot recompute it",
         "r": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
     }
+    # COVERAGE CHECK over the model's whole table, not just the families this config ENABLES. An
+    # unrouted family already raised a bare `KeyError: '<fam>'` from the loop below — but only once
+    # some config turned it on, so v79's `h` sat unrouted (and silently absent from the graph) from
+    # the day it was built until gen-12 enabled it. Checking the full table means the next family
+    # fails the moment it is DEFINED, with a message that says what to add. Same class as the CLI
+    # validator's hand-copied family set (a69708e).
+    _unrouted = set(fx._EDGE_FAMILIES) - set(_ROUTES)
+    if _unrouted:
+        raise KeyError(
+            f"delivery_graph._ROUTES is missing edge families {sorted(_unrouted)} — every family "
+            f"in features_extractor._EDGE_FAMILIES needs a (row, col) route here, or the graph "
+            f"omits it until some config happens to enable it.")
 
     def _members(group: str) -> List[str]:
         if group == "our_mon":

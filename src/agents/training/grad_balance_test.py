@@ -1,10 +1,12 @@
 """Pure unit tests for the gradient-balance + value-scale diagnostics (no battle, no SB3)."""
 import numpy as np
+import pytest
 import torch as th
 from torch import nn
 
 from agents.training.grad_balance import (
     SHARED_TRUNK_PHASES,
+    edge_family_metrics,
     grad_balance_metrics,
     shared_trunk_parameters,
     value_scale_metrics,
@@ -193,3 +195,78 @@ def test_value_scale_metrics_flattens_and_handles_empty():
     assert m["train/return_abs_max"] == 0.0
     assert m["train/value_pred_std"] == 0.0
     assert value_scale_metrics(np.array([]), np.array([])) == {}
+
+
+# ---------------------------------------------------------------- per-family edge liveness
+# The gap: every edge family enters ZERO-INIT, so a family that never learns is bit-identical in
+# the logs to one that works. The v79 `h` family shipped into a production run with no in-flight
+# way to tell. These pin the two numbers that make it readable.
+
+class _FakeEdgeBias(th.nn.Module):
+    def __init__(self, fams):
+        super().__init__()
+        self.families = set(fams)
+        for f in fams:
+            lin = th.nn.Linear(4, 8)
+            th.nn.init.zeros_(lin.weight); th.nn.init.zeros_(lin.bias)
+            setattr(self, f"{f}_map", lin)
+
+
+class _FakeExtractor(th.nn.Module):
+    def __init__(self, fams=("d1", "h")):
+        super().__init__()
+        self.edge_bias = _FakeEdgeBias(fams)
+
+
+def test_a_zero_init_family_reads_zero_weight_norm():
+    """The init state must be legible as 'has not moved', not as an absent metric."""
+    m = edge_family_metrics(_FakeExtractor())
+    assert m["edge/h_weight_norm"] == pytest.approx(0.0)
+    assert m["edge/d1_weight_norm"] == pytest.approx(0.0)
+
+
+def test_a_family_that_has_learned_reads_nonzero():
+    fe = _FakeExtractor()
+    with th.no_grad():
+        fe.edge_bias.h_map.weight.add_(0.5)
+    m = edge_family_metrics(fe)
+    assert m["edge/h_weight_norm"] > 0.0
+    assert m["edge/d1_weight_norm"] == pytest.approx(0.0), "only the touched family moves"
+
+
+def test_grad_norm_appears_only_after_a_backward():
+    """The PAIR is the point: weight~0 AND grad~0 = dead; weight~0 with grad>0 = still climbing.
+    A weight norm alone cannot tell those apart, so the grad half must actually be emitted."""
+    fe = _FakeExtractor()
+    assert "edge/h_grad_norm" not in edge_family_metrics(fe), "no backward yet => no grad key"
+    fe.edge_bias.h_map(th.ones(2, 4)).sum().backward()
+    m = edge_family_metrics(fe)
+    assert m["edge/h_grad_norm"] > 0.0
+    assert "edge/d1_grad_norm" not in m, "an untouched family still has no grad"
+
+
+def test_only_ENABLED_families_are_reported():
+    """`families` is the enabled set; a map attribute that exists but is disabled must not appear."""
+    m = edge_family_metrics(_FakeExtractor(fams=("d1",)))
+    assert set(m) == {"edge/d1_weight_norm"}
+
+
+def test_a_non_gen3_extractor_returns_empty_rather_than_raising():
+    assert edge_family_metrics(th.nn.Linear(2, 2)) == {}
+
+
+def test_it_reads_the_REAL_extractors_families():
+    """Against the production module, not a fake — the attribute contract (`families`, `<fam>_map`)
+    is what this helper depends on, and a rename there must fail here rather than silently
+    returning {} forever."""
+    pytest.importorskip("sb3_contrib")
+    from agents.model.features_extractor import EdgeBias
+
+    class _Real(th.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.edge_bias = EdgeBias("d1,d2,h")
+
+    m = edge_family_metrics(_Real())
+    assert set(m) == {"edge/d1_weight_norm", "edge/d2_weight_norm", "edge/h_weight_norm"}
+    assert all(v == pytest.approx(0.0) for v in m.values()), "production families are zero-init"

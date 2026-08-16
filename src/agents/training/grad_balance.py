@@ -201,3 +201,45 @@ def value_scale_metrics(returns, values) -> Dict[str, float]:
     if v.size:
         out["train/value_pred_std"] = float(v.std())
     return out
+
+
+def edge_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
+    """Per-family observability for the zero-init edge-bias maps (``edge/<fam>_*``).
+
+    The gap this closes: every edge family enters as a ZERO-INIT ``Linear(cell -> 2·n_heads)``, so
+    a family that never learns anything is bit-identical to a family that is working — both write
+    zero into the attention bias and neither logs a thing. The v79 ``h`` (pair-history) family
+    shipped into a production run with no way to tell, in flight, whether it was doing anything at
+    all; the only recourse was a post-hoc ablation at run end.
+
+    Two numbers per family, and the PAIR is what makes them readable:
+
+    * ``weight_norm`` — how far the map has moved off its zero init. **Has it learned anything?**
+    * ``grad_norm``   — how hard the loss is currently pushing it. **Does anything want it to?**
+
+    Read together: both ~0 = genuinely dead (the cell carries nothing the loss can use); weight ~0
+    with grad > 0 = still climbing off the init, expected early; weight > 0 with grad ~0 = converged
+    and contributing. A weight norm alone cannot distinguish the first two, which is why both ship.
+
+    ⚠️ ``weight_norm`` is a PARAMETER magnitude, NOT an effect size — a family can grow large
+    weights and still contribute nothing if its cell inputs are ~0. It answers "is this alive",
+    never "is this important". The per-family ABLATION audit remains the only thing that measures
+    importance, and this metric must not be quoted in its place.
+
+    Pure and SB3-free like the rest of this module: reads parameters (and ``.grad``, when a backward
+    has run) off the extractor, touches no forward path, and so costs the hot path nothing. Returns
+    ``{}`` for an extractor with no ``edge_bias`` (a non-Gen3 policy, or ``--edge-bias-families off``).
+    """
+    eb = getattr(features_extractor, "edge_bias", None)
+    if eb is None:
+        return {}
+    out: Dict[str, float] = {}
+    for fam in sorted(getattr(eb, "families", ()) or ()):
+        lin = getattr(eb, f"{fam}_map", None)
+        w = getattr(lin, "weight", None)
+        if w is None:
+            continue
+        out[f"edge/{fam}_weight_norm"] = float(w.detach().norm())
+        if w.grad is not None:
+            out[f"edge/{fam}_grad_norm"] = float(w.grad.detach().norm())
+    return out
