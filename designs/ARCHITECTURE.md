@@ -728,6 +728,8 @@ does nothing given another setting.
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |
 | `move_prior_fusion` | `true` | ACTIVE |
+| `op_believed_lean` | `false` | OFF |
+| `op_drop_renders` | `false` | OFF |
 | `opp_belief_cls_k` | `6` | ACTIVE |
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |

@@ -1340,6 +1340,21 @@ async def main():
                              "per-candidate cells; both projections zero-init so ON-at-init is "
                              "bit-identical. Requires --opp-intent-coef>0, --damage-op and "
                              "--damage-topk-k>0. STRUCTURAL, version-checked.")
+    parser.add_argument("--op-drop-renders", "--op_drop_renders",
+                        dest="op_drop_renders", action=BoolFlag, default=None,
+                        help="gen3_op_lean_forward_v1 (v86, design_op_tensors step 3): drop the op "
+                             "flat block's three RENDER regions (outgoing matrix / incoming matrix "
+                             "/ OAX) from the forward — serialization-only since the concat's "
+                             "deletion; every consumer value survives as a typed stash and every "
+                             "surviving offset is unchanged, so ON at init is bit-identical. "
+                             "Shrinks out_gain (state_dict). STRUCTURAL, version-checked.")
+    parser.add_argument("--op-believed-lean", "--op_believed_lean",
+                        dest="op_believed_lean", action=BoolFlag, default=None,
+                        help="gen3_op_lean_forward_v1 (v86): the lean d3 edge physics price the "
+                             "attacker from the BELIEVED spread instead of the legacy de-timid "
+                             "252-EV/boosting-nature fiction — the B-spread correctness fix at the "
+                             "last de-timid site the edges read. Requires --spread-belief and "
+                             "--damage-op. Forward-math only. STRUCTURAL, version-checked.")
     parser.add_argument("--intent-conditional", "--intent_conditional",
                         dest="intent_conditional", action=BoolFlag, default=None,
                         help="gen3_intent_conditional_v1 (v85, design_conditional_execution.md "
@@ -2098,6 +2113,8 @@ async def main():
     _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
     _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
+    _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
+    _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

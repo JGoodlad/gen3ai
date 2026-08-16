@@ -134,25 +134,24 @@ def test_grad_reaches_the_move_head():
 
 
 # --------------------------------------------------------------------------- T1: the operator
-def test_operator_runs_exactly_once_and_the_lean_kernels_never():
-    """THE headline property: one full op call per forward, and zero calls to the lean
-    `discrete_incoming` kernel (whose only caller was the deleted between-layers refine loop)."""
+def test_operator_runs_exactly_once_and_the_lean_kernels_are_gone():
+    """THE headline property: one full op call per forward — and the lean `discrete_incoming`
+    kernel (whose only caller was the v70-deleted between-layers refine loop) no longer EXISTS,
+    which is the strongest form of "never called" (`gen3_op_dead_kernel_cleanup_v1`)."""
     model = _make_model(**_BASE)
-    calls = {"full": 0, "lean": 0}
-    real_full, real_lean = model.damage_op.forward, model.damage_op.discrete_incoming
+    assert not hasattr(model.damage_op, "discrete_incoming")
+    assert not hasattr(model.damage_op, "discrete_outgoing")
+    calls = {"full": 0}
+    real_full = model.damage_op.forward
 
     def full(*a, **kw):
         calls["full"] += 1
         return real_full(*a, **kw)
 
-    def lean(*a, **kw):
-        calls["lean"] += 1
-        return real_lean(*a, **kw)
-
-    model.damage_op.forward, model.damage_op.discrete_incoming = full, lean
+    model.damage_op.forward = full
     with torch.no_grad():
         model.eval()(_obs())
-    assert calls == {"full": 1, "lean": 0}, calls
+    assert calls == {"full": 1}, calls
 
 
 def test_physics_reaches_the_trunk_before_attention():

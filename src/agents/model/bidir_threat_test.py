@@ -1,7 +1,6 @@
 """Unit tests for the DamageOperator's discrete OUTGOING + STATUS kernels
 (gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1) and `threat_prob_outspeed`.
 
-  * `discrete_outgoing` — per-opp-mon outgoing threat, with the expected-LATENT defender read
     (E[mult] via SPECIES_EXP_MULT, P(KO) nulled) when `species_probs` is supplied
   * `discrete_incoming_status` / `discrete_outgoing_status` — per-defender
     [P(major), P(immobilize)] (the physics the S1/S3 edge families deliver)
@@ -16,7 +15,7 @@ import torch
 
 from agents import gen3_data
 from agents.model.features_extractor import (
-    DamageOperator, TEAM_SIZE, _DMG_OUT_REFINE, _DMG_SPEED_SCALE,
+    DamageOperator, TEAM_SIZE, _DMG_SPEED_SCALE,
     _DMG_STATUS_REFINE, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX,
 )
 from agents.observation.constants import (
@@ -98,103 +97,6 @@ def _eq():
     return gen3_data.moves.get("earthquake")   # Ground, physical, BP 100
 
 
-# --------------------------------------------------------------------- #1 discrete_outgoing
-def test_discrete_outgoing_shape_and_no_opp_gate():
-    op, _ = _op()
-    eq = _eq()
-    ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                   our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                   move_mask=[1, 0, 0, 0],
-                   opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])] + [(0, 0, 0)] * 5,
-                   believed=[False] * 6)
-    out = op.discrete_outgoing(ctx)
-    assert out.shape == (1, TEAM_SIZE, _DMG_OUT_REFINE)
-    # EQ (Ground) vs Magneton (Electric/Steel: Steel 2× Ground, ×2) → real physical damage on slot 0.
-    assert out[0, 0, 0].item() > 0.0
-    # our active fainted → whole block zero
-    ctx_dead = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                        our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                        move_mask=[1, 0, 0, 0],
-                        opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])] + [(0, 0, 0)] * 5,
-                        believed=[False] * 6, our_alive=False)
-    assert op.discrete_outgoing(ctx_dead).abs().sum().item() == 0.0
-
-
-def test_discrete_outgoing_revealed_immunity():
-    """EQ (Ground) into a REVEALED Flying defender = 0 (type immunity through the real chart)."""
-    op, _ = _op()
-    eq = _eq()
-    ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                   our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                   move_mask=[1, 0, 0, 0],
-                   opp_defenders=[(_num("skarmory"), _T2I["STEEL"], _T2I["FLYING"])] + [(0, 0, 0)] * 5,
-                   believed=[False] * 6)
-    out = op.discrete_outgoing(ctx)
-    assert out[0, 0, 0].item() == 0.0          # Flying immune to Ground
-
-
-def test_discrete_outgoing_unrevealed_zeroed_without_belief():
-    """species_probs=None → UNREVEALED slots contribute nothing (the legacy revealed-gating)."""
-    op, _ = _op()
-    eq = _eq()
-    ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                   our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                   move_mask=[1, 0, 0, 0],
-                   opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])]
-                                 + [(0, 0, 0)] + [(0, 0, 0)] * 4,
-                   believed=[False, True, True, True, True, True])
-    out = op.discrete_outgoing(ctx, species_probs=None)
-    assert out[0, 0, 0].item() > 0.0           # revealed active still computes
-    assert out[0, 1:, :].abs().sum().item() == 0.0   # unrevealed slots zero
-
-
-def _one_hot_species(layout, slot_species, B=1):
-    """species_probs [B,6,n_species] one-hot per slot on the given species nums (None = uniform-ish 0)."""
-    n_sp = layout["max_species"]
-    p = torch.zeros(B, TEAM_SIZE, n_sp)
-    for i, num in enumerate(slot_species):
-        if num is not None:
-            p[:, i, num] = 1.0
-    return p
-
-
-def test_discrete_outgoing_expected_latent_levitate():
-    """#2: an UNREVEALED slot believed to be Gengar (Levitate) reads EQ damage 0 — the expected mult folds
-    Levitate's Ground immunity (SPECIES_EXP_MULT[gengar, GROUND] == 0), even though species_ids is the
-    sentinel and the real chart can't see it."""
-    op, layout = _op()
-    eq = _eq()
-    ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                   our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                   move_mask=[1, 0, 0, 0],
-                   opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])] + [(0, 0, 0)] * 5,
-                   believed=[False, True, True, True, True, True])
-    sp = _one_hot_species(layout, [None, _num("gengar")] + [None] * 4)
-    out = op.discrete_outgoing(ctx, species_probs=sp)
-    assert out[0, 1, 0].item() == 0.0          # believed-Gengar slot: Levitate ⇒ EQ 0
-    # control: believed Swampert (Water/Ground, neutral to Ground) → EQ lands (>0)
-    sp2 = _one_hot_species(layout, [None, _num("swampert")] + [None] * 4)
-    out2 = op.discrete_outgoing(ctx, species_probs=sp2)
-    assert out2[0, 1, 0].item() > 0.0
-
-
-def test_discrete_outgoing_pko_nulled_for_unrevealed():
-    """#2 owner rule: P(KO) is NULLED for UNREVEALED defenders — the expected MAGNITUDE survives but the
-    pko channel is exactly 0, even for a believed frail mon a STAB move would OHKO."""
-    op, layout = _op()
-    eq = _eq()
-    ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
-                   our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
-                   move_mask=[1, 0, 0, 0],
-                   opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])] + [(0, 0, 0)] * 5,
-                   believed=[False, True, True, True, True, True])
-    sp = _one_hot_species(layout, [None, _num("magneton")] + [None] * 4)   # 2× weak to Ground
-    out = op.discrete_outgoing(ctx, species_probs=sp)
-    assert out[0, 1, 0].item() > 0.0           # phys_high > 0 (magnitude survives)
-    assert out[0, 1, 2].item() == 0.0          # phys_pko NULLED for the unrevealed slot
-    assert out[0, 1, 3].item() == 0.0          # spec_pko NULLED too
-
-
 # --------------------------------------------------------------------- #3 probabilistic outspeed
 def test_prob_outspeed_bounds_and_differs():
     op_fixed, _ = _op()
@@ -216,13 +118,24 @@ def test_prob_outspeed_bounds_and_differs():
 
 
 # ------------------------------------------------------------------------ gradient flow
+def _one_hot_species(layout, slot_species, B=1):
+    """species_probs [B,6,n_species] one-hot per slot on the given species nums (None = uniform-ish 0)."""
+    n_sp = layout["max_species"]
+    p = torch.zeros(B, TEAM_SIZE, n_sp)
+    for i, num in enumerate(slot_species):
+        if num is not None:
+            p[:, i, num] = 1.0
+    return p
+
+
 def test_threat_grad_flows_to_a_consumer_and_the_species_belief():
-    """`discrete_outgoing` is differentiable: a backward through a consumer projection reaches BOTH the
-    projection's weight AND P(species) (so a loss reading it sharpens the species belief — the whole point
-    of the expected-latent read). Uses a hand-built ctx with a REAL move (BP>0) so out_feats is non-zero
-    (a fully-random obs gives BP-0 move ids → no signal)."""
+    """The expected-latent defender read is differentiable in P(species): a backward through a
+    consumer projection reaches BOTH the projection's weight AND the species probs — so a loss
+    reading it sharpens the species belief, the whole point of the expected-latent read. Pinned
+    on the LIVE consumer (`_outgoing_matrix`'s unrevealed pricing,
+    gen3_unrevealed_outgoing_prior_v1) since the standalone `discrete_outgoing` kernel was
+    deleted with the refine loop's other orphans (`gen3_op_dead_kernel_cleanup_v1`)."""
     op, layout = _op()
-    proj = torch.nn.Linear(_DMG_OUT_REFINE, 128)        # stand-in consumer (non-zero init)
     eq = _eq()
     ctx = _ctx_out(our_species=_num("tyranitar"), our_t1=_T2I["ROCK"], our_t2=_T2I["DARK"],
                    our_moves=[eq.num, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
@@ -230,8 +143,9 @@ def test_threat_grad_flows_to_a_consumer_and_the_species_belief():
                    opp_defenders=[(_num("magneton"), _T2I["ELECTRIC"], _T2I["STEEL"])] + [(0, 0, 0)] * 5,
                    believed=[False, True, True, True, True, True])
     sp = _one_hot_species(layout, [None, _num("magneton")] + [None] * 4).clone().requires_grad_(True)
-    out_feats = op.discrete_outgoing(ctx, species_probs=sp)     # [1,6,4]
-    proj(out_feats).sum().backward()
+    out = op._outgoing_matrix(ctx, species_probs=sp)             # [1, _DMG_OMX]
+    proj = torch.nn.Linear(out.shape[1], 128)                    # stand-in consumer (non-zero init)
+    proj(out).sum().backward()
     assert proj.weight.grad is not None and proj.weight.grad.abs().sum().item() > 0.0
     assert sp.grad is not None and sp.grad.abs().sum().item() > 0.0   # gradient reaches P(species)
 

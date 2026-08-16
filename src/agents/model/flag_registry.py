@@ -264,6 +264,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "source). β is PUBLISHED like α (label_only cuts the PPO route at the same "
                    "boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like "
                    "intent_threshold."),
+    ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
+              "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
+              "regions (omx/imx/OAX — serialization-only since the concat's deletion); "
+              "selection machinery + every consumer stash survive, out_gain shrinks",
+              note="every surviving offset unchanged (renders appended last), so pi/vf at init "
+                   "are bit-identical to renders-on — pinned by test. The prober decodes a "
+                   "lean run's blocks with the run's own config flags."),
+    ModelFlag("op_believed_lean", False, Tier.CLI, Klass.STRUCTURAL, 86,
+              "the lean d3 physics price the attacker from the BELIEVED spread instead of the "
+              "legacy de-timid fiction — the B-spread correctness fix at the last de-timid "
+              "site the edges read",
+              note="requires spread_belief + damage_op. Forward-math only (no state_dict "
+                   "change): the version gate is the ONLY thing rejecting a mismatched resume."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

@@ -3329,3 +3329,40 @@ workers, trained to completion — the exact scenario that hung in 2026-08. Runt
 (requires `--compile-opponents`, never versioned, re-pass each launch); when armed it replaces
 the in-trainer cache prewarm. The honest sizing is unchanged (~50 s per 3 h restart): the reason
 to ship it is that the architecture now permits it safely, not throughput.
+
+### v86 — `gen3_op_lean_forward_v1` (2026-08-16): op_tensors step 3 lands, the lean physics go believed, and the dead kernels go entirely
+
+**`gen3_op_dead_kernel_cleanup_v1` first** (no flag — pure deletion of test-only orphans found by
+a caller audit): `discrete_incoming` + `discrete_outgoing` (both orphaned by the v70 refine-loop
+deletion), `Embeddings.hp_latent_block` (the code's own comment had already declared it obsolete —
+the typed HPs 355-370 carry their own latent rows), and the `_locate_active_slot` back-compat shim
+(the free function is the live path). The tiered-pipeline pin upgrades from "the lean kernel is
+never CALLED" to "it does not EXIST"; the expected-latent species-gradient property re-pins on the
+LIVE consumer (`_outgoing_matrix`'s unrevealed pricing) instead of the deleted kernel. The audit's
+non-dead verdicts are recorded too: OAX and the pair-reduce rungs are config-reachable/spared, and
+the flagged property/dim accessors were false positives (attribute reads).
+
+**`--op-drop-renders`** (design_op_tensors step 3): the flat forward block loses its three RENDER
+regions — outgoing matrix, incoming matrix, OAX — which have had no forward consumer since the
+head-concat's deletion (`gen3_no_concat_v1`). The matrices' SELECTION machinery still runs (the
+top-K index α's seats align to, the pair cells, and the new typed `last_out_pko` stash the v85
+boom cell now reads in BOTH modes — pre-gain, so honest probabilities rather than the
+learned-gain-scaled render values; pinned equal to the old view at gain-init). The renders always
+appended LAST, so every surviving offset is unchanged — and the step-3 "gone by construction"
+claim is an executable fact: **pi/vf at init are BIT-IDENTICAL between the two modes** (pinned by
+test), while `out_gain` shrinks (state_dict, hence its own version-checked flag). OFF is
+byte-identical (the production sha probe reads unchanged: `3cab191a…`).
+
+**`--op-believed-lean`**: the lean d3 physics (`_incoming_rolls`) price the attacker from the
+BELIEVED spread instead of the legacy de-timid 252-EV/boosting-nature fiction — the B-spread
+correctness fix (`design_opponent_intent.md` §4.5: "pair_in computed against a fictional
+maximally-invested opponent... distorts the RELATIVE threat ordering") applied to the last
+de-timid site the edges read. Requires `--spread-belief` (fail-loud, verified live). Forward-math
+only — the version gate is the ONLY thing that rejects a mismatched resume, and the entry says so.
+
+Both flags are gen-13+ riders; production stays OFF and byte-identical. Gates:
+`op_lean_forward_test.py` (10 — the bit-identity pin, lean width + offset preservation, view
+nulling + stash survival, the full v77+v84+v85 intent stack running lean, the pko source-switch
+init-neutrality, the believed-vs-legacy pricing split on a real defender, migrations + both
+check_compatible gates); the compile cell now builds production + the ENTIRE gen-13 candidate
+stack (both intent riders + both v86 flags) as ONE graph, 0 breaks, compiled == eager.

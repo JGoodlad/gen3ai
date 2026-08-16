@@ -5684,7 +5684,7 @@
     "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 85,
+    "config_version": 86,
     "edge_bias_families": [
       "c1",
       "c2",

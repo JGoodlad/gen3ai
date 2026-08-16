@@ -616,7 +616,15 @@ from typing import Any, Dict, List
 #   never-miss doubling trigger — CORRECTED against the rust port: the strike hits the
 #   DEPARTING mon, not a β-weighted arrival, so no β enters. One zero-init projection widens
 #   the pointer move cell by INTENT_COND_MOVE_DIM. STRUCTURAL, own flag.
-MODEL_CONFIG_VERSION = 85
+# v86 (gen3_op_lean_forward_v1, design_op_tensors step 3): TWO flags. `op_drop_renders` — the
+#   op's flat forward block loses its three RENDER regions (outgoing matrix / incoming matrix /
+#   OAX), which have had no forward consumer since gen3_no_concat_v1; the matrices' SELECTION
+#   machinery still runs and every consumer value survives as a typed stash, so out_dim (and
+#   out_gain — a state_dict shape) shrink while every surviving offset is unchanged (renders
+#   always appended last). `op_believed_lean` — the lean d3 physics (`_incoming_rolls`) price
+#   the attacker from the BELIEVED spread instead of the legacy de-timid fiction (the B-spread
+#   correctness fix at the last de-timid site the edges read); forward-math change, no shape.
+MODEL_CONFIG_VERSION = 86
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1368,6 +1376,12 @@ class ModelVersion:
     # AND pointer-cell width change; shape-caught, the check names the cause.
     intent_conditional: bool = False
 
+    # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
+    # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
+    # ONLY thing that rejects a mismatched resume).
+    op_drop_renders: bool = False
+    op_believed_lean: bool = False
+
     # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
     # a state_dict change, so a mismatch would be shape-caught; the check names the cause.
@@ -1629,6 +1643,14 @@ class ModelVersion:
             intent_conditional=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "intent_conditional", False)
+            ),
+            op_drop_renders=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "op_drop_renders", False)
+            ),
+            op_believed_lean=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "op_believed_lean", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -2089,6 +2111,22 @@ class ModelVersion:
                 "The mechanic cells widen the pointer move cell, so the flag is fixed for a "
                 "run's lifetime.\n"
                 "Resume with the matching --intent-conditional, or start a fresh run."
+            )
+        # gen3_op_lean_forward_v1 (v86): out_gain shape / d3 forward math.
+        if self.op_drop_renders != saved.op_drop_renders:
+            raise ModelVersionError(
+                f"op_drop_renders mismatch: saved={saved.op_drop_renders}, "
+                f"current={self.op_drop_renders}.\n"
+                "The lean forward block shrinks out_gain, so the flag is fixed for a run's "
+                "lifetime.\nResume with the matching --op-drop-renders, or start a fresh run."
+            )
+        if self.op_believed_lean != saved.op_believed_lean:
+            raise ModelVersionError(
+                f"op_believed_lean mismatch: saved={saved.op_believed_lean}, "
+                f"current={self.op_believed_lean}.\n"
+                "The believed-lean d3 physics are a forward-math change with no shape, so this "
+                "gate is the ONLY thing that rejects a mismatched resume.\n"
+                "Resume with the matching --op-believed-lean, or start a fresh run."
             )
         # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
         if self.history_events != saved.history_events:
@@ -2643,4 +2681,9 @@ def _migrate_config(data: dict) -> dict:
         # gen3_intent_conditional_v1: post-floor flag-gated cells — absent means OFF.
         data.setdefault("intent_conditional", False)
         data["config_version"] = 85
+    if version < 86:
+        # gen3_op_lean_forward_v1: post-floor flag-gated pair — absent means OFF.
+        data.setdefault("op_drop_renders", False)
+        data.setdefault("op_believed_lean", False)
+        data["config_version"] = 86
     return data

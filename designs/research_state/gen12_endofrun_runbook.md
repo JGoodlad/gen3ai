@@ -108,5 +108,14 @@ gen-12's config
                                          # Endure 0.0%, Sub 0.9%, Counter 5.6% @ 9.2% prob —
                                          # re-measure post-retrain with
                                          # `python -m agents.model.mechanic_usage_baseline`).
+  + --op-drop-renders                    # OPTIONAL rider (v86): the op's serialization-only
+                                         # render regions leave the forward — BIT-IDENTICAL at
+                                         # init (pinned), so it is attribution-free; shrinks
+                                         # out_gain 660→138-class.
+  + --op-believed-lean                   # OPTIONAL rider (v86): d3's lean physics price the
+                                         # BELIEVED spread (the B-spread fix at the last
+                                         # de-timid site) — re-read d3's ablation arm after it
+                                         # per design_opponent_intent §7a(3): a channel carrying
+                                         # DISTORTED content also reads low.
   (nothing else behavioral — the attribution discipline)
 ```

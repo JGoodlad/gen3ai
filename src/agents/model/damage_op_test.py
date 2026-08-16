@@ -21,7 +21,7 @@ from agents.model.features_extractor import (
     _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
     _DMG_CB, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
     _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM, _N_OUT_SECONDARY, _OUT_SEC_COLS,
-    _DMG_REFINE_FEATS, _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
+    _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
     _dmg_imx_dim, _DMG_IMX_CELL,
     _DMG_OAX, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE,
 )
@@ -684,10 +684,13 @@ def test_topk_typed_hp_latent_distinct():
     model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
                                 damage_op=True, move_latent=True, damage_topk_k=_DMG_TOPK_DEFAULT_K,
                                 damage_matrices_incoming=True)
+    # gen3_opp_hp_typed_candidates_v1: the typed HPs are REAL move nums 355-370 whose
+    # latent_table rows carry their own type — the old hp_latent_block workaround is deleted.
     enc = model.pokemon_encoder.move_latent_encoder
-    hp = enc.hp_latent_block(model.embeddings, model.damage_op.HP_TYPE_IDX, model.damage_op.hp_num)
-    assert hp.shape == (16, MOVE_LATENT_DIM)
-    rock, ice = hp[_hp_slot("ROCK")], hp[_hp_slot("ICE")]
+    table = enc.latent_table(model.embeddings)
+    rock = table[_move_num("hiddenpowerrock")]
+    ice = table[_move_num("hiddenpowerice")]
+    assert rock.shape == (MOVE_LATENT_DIM,)
     assert not torch.allclose(rock, ice)                                   # distinct typed identities
 
 
@@ -752,51 +755,6 @@ def _op_and_layout_topk(k):
     synthetic-ctx tests. Since gen3_op_block_trim_v1 that block IS the incoming matrix."""
     layout = _make_layout()
     return DamageOperator(layout, topk_k=k, matrices_incoming=True), layout
-
-
-# ----------------------------------------------------- the LEAN discrete incoming kernel (discrete_incoming)
-def test_refine_kernel_shape_and_gates():
-    """discrete_incoming returns [B, TEAM_SIZE, _DMG_REFINE_FEATS], finite, and is gated to 0 with no opp
-    active / per fainted defender."""
-    op, layout = _op_and_layout()
-    ctx = _fake_ctx(op, attacker_num=384, attacker_t1=_T2I["DRAGON"], attacker_t2=_T2I["FLYING"],
-                    defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
-    feats = op.discrete_incoming(ctx, _believe_active(op, "earthquake"))
-    assert feats.shape == (1, TEAM_SIZE, _DMG_REFINE_FEATS)
-    assert torch.isfinite(feats).all()
-    # No opp active → whole summary zero.
-    ctx.hp_and_active[:, TEAM_SIZE:, -1] = 0.0
-    assert float(op.discrete_incoming(ctx, _believe_active(op, "earthquake")).abs().sum()) == 0.0
-
-
-def test_refine_kernel_matches_full_op_worst_case():
-    """The lean refine kernel reads the SAME believed worst-case incoming damage the full op exposes — on a
-    clean ctx (no weather/burn/boosts/CB), discrete_incoming's [phys_high, phys_pko] match the full op's
-    decoded per-mon channel max for a concentrated belief (the kernel reuses the validated `_rolls` physics)."""
-    op, layout = _op_and_layout()
-    # Tyranitar (Rock/Dark) believed to run Earthquake (Ground, physical) into our Electric active.
-    ctx = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
-                    defenders=[(0, _T2I["ELECTRIC"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
-    logits = _believe_active(op, "earthquake")
-    feats = op.discrete_incoming(ctx, logits)                                   # [1,6,4]
-    op(ctx, logits)                                                             # populates last_raw_block (pre-gain)
-    full = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False)
-    # Active (slot 0): the kernel's phys_high / phys_pko equal the full op's modal physical channel.
-    assert abs(float(feats[0, 0, 0]) - full["incoming"][0]["phys"]["high"]) < 1e-4
-    assert abs(float(feats[0, 0, 2]) - full["incoming"][0]["phys"]["pko"]) < 1e-4
-    assert float(feats[0, 0, 0]) > 0.0                                          # a real threat
-
-
-def test_refine_kernel_grad_sharpens_belief():
-    """The lean kernel is differentiable in the move belief (the per-round read that sharpens move_head):
-    backprop the summary → gradient reaches the belief logits. Decorrelated — the physics is w-independent,
-    the gradient rides the belief weight on the dominant candidate."""
-    op, layout = _op_and_layout()
-    ctx = _fake_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
-                    defenders=[(0, _T2I["ELECTRIC"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
-    logits = _believe_active(op, "earthquake").requires_grad_(True)
-    op.discrete_incoming(ctx, logits).sum().backward()
-    assert logits.grad is not None and float(logits.grad.abs().sum()) > 0.0
 
 
 # ----------------------------------------- gen3_per_move_matrices_v1: OUTGOING per-move damage matrix

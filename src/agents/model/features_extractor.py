@@ -524,19 +524,6 @@ class MoveLatentEncoder(torch.nn.Module):
         type_emb = embeddings.type_embedding(self.MOVE_TYPE_IDX)           # [n_moves, type_emb]
         return self.mlp(torch.cat([move_emb, type_emb, self.MOVE_ATTR], dim=-1))
 
-    def hp_latent_block(self, embeddings: 'Embeddings', hp_type_idx: torch.Tensor,
-                        hp_num: int) -> torch.Tensor:
-        """``[n_hp, MOVE_LATENT_DIM]`` TYPED Hidden-Power latents (gen3_unified_topk_incoming_v1): all 17
-        HP variants collide on ``hp_num`` (so the bare ``latent_table`` row is type-collapsed), but the
-        DamageOperator's top-K candidate axis carries 16 TYPED HP candidates — each must speak its own
-        type. Built the SAME way the move network builds its per-slot HP latent: the shared move
-        embedding(hp_num) ⊕ the per-type ``type_embedding(hp_type_idx[j])`` ⊕ MOVE_ATTR[hp_num] (all-zero
-        for HP), so HP-Rock ≠ HP-Ice in the latent axis. Aligned with the op's ``HP_TYPE_IDX`` order."""
-        n_hp = hp_type_idx.shape[0]
-        ids = torch.full((n_hp,), int(hp_num), device=self.MOVE_ATTR.device, dtype=torch.long)
-        move_emb = embeddings.move_embedding(ids)                          # [n_hp, move_emb] (shared HP emb)
-        type_emb = embeddings.type_embedding(hp_type_idx)                  # [n_hp, type_emb] (per-type)
-        return self.forward(move_emb, type_emb, ids)                       # [n_hp, MOVE_LATENT_DIM]
 
 
 class PokemonEncoder(torch.nn.Module):
@@ -2193,14 +2180,12 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
     _DMG_OUTGOING,
     _DMG_OUT_N_MOVES,
     _DMG_OUT_PER_MOVE,
-    _DMG_OUT_REFINE,
     _DMG_OUT_SEC,
     _N_OUT_SECONDARY,
     _OUT_SEC_COLS,
     _OUT_SEC_KEEP,
     _DMG_PARA_SPEED,
     _DMG_PER_MON,
-    _DMG_REFINE_FEATS,
     _DMG_REFINE_K,
     _DMG_ROLL_MIN,
     _DMG_SPEED_SCALE,
@@ -2657,6 +2642,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_move_cell: bool = False,
                  intent_threshold: bool = False,
                  intent_conditional: bool = False,
+                 op_drop_renders: bool = False,
+                 op_believed_lean: bool = False,
                  value_entity_pool: bool = False,
                  value_entity_pool_full: bool = False,
                  item_belief: bool = False,
@@ -2875,6 +2862,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_conditional_v1 (v85, design steps 4+7): Counter / Mirror Coat, flinch's
         # (1−α_SWITCH) term, Explosion's execute/into-switch facts, Pursuit's doubling trigger —
         # per-request-slot cells over tensors the op already stashes, α-contracted at T2.
+        # gen3_op_lean_forward_v1: believed_lean prices the lean d3 physics from the spread
+        # belief — with no SpreadBelief head there is nothing believed to price with.
+        if op_believed_lean and not spread_belief:
+            raise ValueError(
+                "op_believed_lean=True requires spread_belief=True — the lean physics price the "
+                "attacker from the believed spread, and without the head the flag would silently "
+                "reproduce the de-timid fiction it exists to remove.")
+        if op_believed_lean and not damage_op:
+            raise ValueError("op_believed_lean=True requires damage_op=True.")
         self.intent_conditional = None
         if intent_conditional:
             self.intent_conditional = IntentConditionalMoveCell(INTENT_COND_MOVE_DIM)
@@ -3108,7 +3104,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                                          matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
                                          candidate_k=self.damage_candidate_k,
-                                         reduce_how=_reduce_how)
+                                         reduce_how=_reduce_how,
+                                         drop_renders=op_drop_renders,
+                                         believed_lean=op_believed_lean)
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
@@ -3535,11 +3533,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def pointer_switch_cell_dim(self) -> int:
         return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
 
-    @staticmethod
-    def _locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
-        """Back-compat shim — delegates to the module-level `locate_active_slot`."""
-        return locate_active_slot(active_flags)
-
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the
         pointer stash / the prober). Under `label_only` this is a STOP-GRAD copy — gen3_belief_label_only_v1.
@@ -3880,7 +3873,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _cells["d2"] = self.damage_op.pairwise_bench_outgoing(ctx, _sb)
             if "d3" in _fams:
                 _cells["d3"] = self.damage_op.pairwise_incoming(
-                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand)
+                    ctx, self.last_move_belief_logits, self.entity_seats.last_cand,
+                    spread_belief=(self.last_spread_belief
+                                   if self.damage_op.believed_lean else None))
             if "d4" in _fams:
                 _cells["d4"] = self.damage_op.pairwise_bench_incoming(
                     ctx, self.last_move_belief_logits, k_bench=self.consequence_topk)
@@ -4097,7 +4092,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _ot = self.damage_op.last_tensors if self.damage_op is not None else None
             _ready = (self.last_alpha_logits is not None and _pc is not None
                       and _ot is not None and _ot.out_per_move is not None
-                      and _ot.outgoing_matrix is not None
+                      and self.damage_op.last_out_pko is not None
                       and self.last_beta_logits is not None
                       and self.damage_op.last_topk_idx is not None)
             if self._intent_reduce_discovering and not _ready:
@@ -4113,16 +4108,17 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _po = ctx.pokemon_part[
                     torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
                     POKEMON_PROTECT_OFFSET][:, None]
-                # the outgoing matrix's cell region, [B, 4 moves, 6 their-mons, 5 ch]; pko = ch 3
-                _omx = _ot.outgoing_matrix[:, :4 * TEAM_SIZE * 5].reshape(
-                    ctx.batch_size, 4, TEAM_SIZE, 5)
+                # gen3_op_lean_forward_v1: the boom cell reads the op's typed PRE-gain pko
+                # stash — honest probabilities, present in both render modes (the flat render
+                # is serialization, not a source).
                 _mcells = torch.cat([_mcells, self.intent_conditional(
                     self.last_alpha_logits, _pc, self.damage_op.last_pair_gate,
                     ctx.our_active_idx, self.damage_op.last_topk_idx,
                     _ot.out_per_move[..., 1], _ot.out_p_outspeed,
                     _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],
                     ctx.our_active_req_move_ids, _po,
-                    self.last_beta_logits, _omx[..., 3], ctx.opp_active_local)], dim=2)
+                    self.last_beta_logits, self.damage_op.last_out_pko,
+                    ctx.opp_active_local)], dim=2)
         self.last_pointer_inputs = (_tok_req, _move_valid, our_team_out, _mcells, _scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation

@@ -59,7 +59,7 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-43 toggles — 40 `cli`, 3 `config_only`, 0 `constructor_only`.
+45 toggles — 42 `cli`, 3 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
@@ -106,6 +106,8 @@ directions are asserted by `flag_registry_test.py`.
 | `item_belief` | `--item-belief` | `cli` | `structural` | `False` | v83 | the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes its publication (revealed stays exact 0/1) |
 | `intent_threshold` | `--intent-threshold` | `cli` | `structural` | `False` | v84 | the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO (the calibrated am-I-about-to-die) to the critic |
 | `intent_conditional` | `--intent-conditional` | `cli` | `structural` | `False` | v85 | the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 doubling trigger (port-verified departing-target rule) |
+| `op_drop_renders` | `--op-drop-renders` | `cli` | `structural` | `False` | v86 | design_op_tensors step 3: the op's flat forward block loses the three RENDER regions (omx/imx/OAX — serialization-only since the concat's deletion); selection machinery + every consumer stash survive, out_gain shrinks |
+| `op_believed_lean` | `--op-believed-lean` | `cli` | `structural` | `False` | v86 | the lean d3 physics price the attacker from the BELIEVED spread instead of the legacy de-timid fiction — the B-spread correctness fix at the last de-timid site the edges read |
 
 **Notes**
 
@@ -126,6 +128,8 @@ directions are asserted by `flag_registry_test.py`.
 - `item_belief` — BeliefBank's seventh row (--item-belief-coef supervises the revealed slots). Cold start posterior == the Smogon prior exactly; its CB column is within ~0.6% of the static table (row-floor renorm), so enabling is ~behavior-preserving at init and the delta must EARN its movement.
 - `intent_threshold` — design_conditional_execution.md §3.0 build-order step 3. Requires opp_intent + damage_op (+ the top-K pair-cell stash at runtime). Both projections zero-init ⇒ ON-at-init bit-identical; the p_KO critic half is the ledger-H1 payoff and stands whatever the G3 verdict says.
 - `intent_conditional` — design_conditional_execution.md build steps 4+5+6+7. Requires opp_intent + damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko source). β is PUBLISHED like α (label_only cuts the PPO route at the same boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like intent_threshold.
+- `op_drop_renders` — every surviving offset unchanged (renders appended last), so pi/vf at init are bit-identical to renders-on — pinned by test. The prober decodes a lean run's blocks with the run's own config flags.
+- `op_believed_lean` — requires spread_belief + damage_op. Forward-math only (no state_dict change): the version gate is the ONLY thing rejecting a mismatched resume.
 <!-- END GENERATED: registry-table -->
 
 ## Out of scope
