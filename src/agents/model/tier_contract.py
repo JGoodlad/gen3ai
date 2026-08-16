@@ -102,6 +102,9 @@ TIER_OF: Dict[str, int] = {
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool — applied
     # after the assembler on the value half, the same DELIVER placement as intent_value_reduce.
     "value_entity_pool": 3,
+    # gen3_event_window_v1 (v81): event seats are TRUNK INPUT built pre-transformer from the
+    # obs block — T1 REASON, exactly like entity_seats.
+    "history_events": 1,
 }
 
 #: Children that own no tier: embedding tables, the obs unpacker, and the root projections that

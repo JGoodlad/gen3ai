@@ -314,6 +314,198 @@ class PairHistoryTracker:
         )
 
 
+# Tier H-B event-type vocabulary — SINGLE-SOURCED in `agents.observation.constants` (it is
+# the obs contract: column 0 of every event row). Re-imported here for the fold that emits it.
+from agents.observation.constants import (          # noqa: E402
+    EVENT_T_PAD, EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
+    EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_ITEM_REVEAL, EVENT_T_HAZARD,
+    EVENT_T_SWITCH_REJECTED, N_EVENT_TYPES,
+)
+
+# Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's
+# vocabulary; kept as an ID here (the consumer embeds) rather than a one-hot (obs stays lean).
+_EVENT_STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
+
+
+class EventWindowTracker:
+    """Tier H-B (`designs/ai_v9/design_history_entity.md` §3 H-B): the last-N DECISION-RELEVANT
+    events as typed records — the sequential residue the compiled tiers (recency, H-A) cannot
+    carry, made queryable. PUBLIC protocol events only; within-battle only; **seq-idempotent**
+    (the PairHistoryTracker convention), so an overlapping window or a rolled-back opponent
+    RE-DECIDE can never append twice.
+
+    One record per event in the H-B vocabulary (moves, switch-ins, faints, status
+    applied/cured, boosts, item reveals, hazards, our rejected switches). MODIFIER events
+    (DAMAGE / MISS / FAIL / CRIT / IMMUNE / RESISTED / SUPEREFFECTIVE) do not get records —
+    they ATTACH to their side's open same-turn MOVE record (the H-A attach rule, extended):
+    damage lands on the target side and accumulates into the move's ``hp_delta``; the
+    effectiveness trio sets ``eff``; the outcome trio sets flags. ``we_first`` marks the
+    records of whichever side MOVED first that turn (speed-inversion evidence, §2).
+    ``forced_window`` tags events emitted while a side's active slot was empty after a faint
+    (the "turn framing dissolves" phase tag). v1 TRIMS, recorded deliberately: no faint-cause
+    multi-hot (adjacent events + compiled state carry it), no item/hazard CONTENT ids (the
+    reveal event + per-mon state carry them), SETBOOST/CLEARBOOST skipped (rare, compiled
+    boosts are current-state).
+
+    Records are plain dicts (species/move ids as STRINGS — the encoder maps to nums, exactly
+    like H-A's last-action). The window is bounded (``maxlen``); reads return
+    most-recent-LAST so the encoder's padding convention is stable."""
+
+    def __init__(self, maxlen: int = 32):
+        self.maxlen = int(maxlen)
+        self._events: deque = deque(maxlen=self.maxlen)
+        self._max_seq: int = -1
+        self._turn: int = 0
+        self._our_active: Optional[str] = None
+        self._opp_active: Optional[str] = None
+        self._open_move: dict = {}          # side -> the record modifiers attach to
+        self._first_mover_turn: int = -1    # the turn whose first mover is recorded
+        self._first_mover_side: Optional[str] = None
+        self._forced: dict = {}             # side -> active slot empty (post-faint window)
+
+    def _append(self, rec: dict) -> dict:
+        rec["forced_window"] = 1.0 if (self._forced.get("our") or self._forced.get("opp")) else 0.0
+        self._events.append(rec)
+        return rec
+
+    def update(self, turn: int, events, our_active: Optional[str],
+               opp_active: Optional[str]) -> None:
+        from agents.battle.battle_event import OURS, OPP, EventKind
+        self._turn = max(self._turn, int(turn))
+        for e in events or []:
+            seq = getattr(e, "seq", None)
+            if seq is not None:
+                if seq <= self._max_seq:
+                    continue
+                self._max_seq = seq
+            side = getattr(e, "side", None)
+            sp = getattr(e, "actor_species", None)
+            et = int(getattr(e, "turn", turn))
+            k = e.kind
+            if k is EventKind.MOVE and side is not None and sp:
+                if self._first_mover_turn != et:
+                    self._first_mover_turn = et
+                    self._first_mover_side = side
+                rec = self._append({
+                    "t": EVENT_T_MOVE, "actor": sp, "side": side,
+                    "target": (self._opp_active if side == OURS else self._our_active),
+                    "move_id": e.move_id, "hp_delta": 0.0,
+                    "missed": False, "failed": False, "crit": False,
+                    "eff": 0, "we_first": side == self._first_mover_side,
+                    "status": 0, "turn": et,
+                })
+                self._open_move[side] = rec
+            elif k is EventKind.DAMAGE and side is not None:
+                # damage lands ON `side`; it attaches to the OTHER side's open move this turn
+                # ONLY when it is the move's own hit: no `[from]` clause (recoil / Sandstorm /
+                # status / item residuals all carry one) AND the damaged mon IS the move's
+                # recorded target (a switched-in replacement taking hazard chip is not the hit).
+                mover = OPP if side == OURS else OURS
+                om = self._open_move.get(mover)
+                if (om is not None and om["turn"] == et
+                        and not e.value.get("from")
+                        and sp and om["target"] == sp):
+                    amt = e.amount
+                    if amt is not None:
+                        om["hp_delta"] += float(amt)
+            elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side is not None:
+                om = self._open_move.get(side)
+                if om is not None and om["turn"] == et:
+                    if k is EventKind.MISS:
+                        om["missed"] = True
+                    elif k is EventKind.FAIL:
+                        om["failed"] = True
+                    else:
+                        om["crit"] = True
+            elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) \
+                    and side is not None:
+                mover = OPP if side == OURS else OURS       # tagged on the DEFENDER
+                om = self._open_move.get(mover)
+                if om is not None and om["turn"] == et:
+                    om["eff"] = {EventKind.SUPEREFFECTIVE: 1, EventKind.RESISTED: 2,
+                                 EventKind.IMMUNE: 3}[k]
+            elif k in (EventKind.SWITCH, EventKind.DRAG) and side is not None and sp:
+                # append BEFORE clearing the forced flag: the arriving replacement IS the
+                # forced-window event (the tag is what lets a reader see "this switch-in was
+                # the post-faint replacement, not a chosen pivot").
+                self._append({
+                    "t": EVENT_T_SWITCH_IN, "actor": sp, "side": side,
+                    "target": (self._opp_active if side == OURS else self._our_active),
+                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
+                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                })
+                self._forced["our" if side == OURS else "opp"] = False
+                if side == OURS:
+                    self._our_active = sp
+                else:
+                    self._opp_active = sp
+            elif k is EventKind.FAINT and side is not None and sp:
+                self._append({
+                    "t": EVENT_T_FAINT, "actor": sp, "side": side, "target": None,
+                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
+                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                })
+                if side == OURS and self._our_active == sp:
+                    self._our_active = None
+                    self._forced["our"] = True
+                elif side == OPP and self._opp_active == sp:
+                    self._opp_active = None
+                    self._forced["opp"] = True
+            elif k in (EventKind.STATUS, EventKind.CURESTATUS) and sp:
+                self._append({
+                    "t": (EVENT_T_STATUS_APPLIED if k is EventKind.STATUS
+                          else EVENT_T_STATUS_CURED),
+                    "actor": sp, "side": side, "target": None, "move_id": None,
+                    "hp_delta": 0.0, "missed": False, "failed": False, "crit": False,
+                    "eff": 0, "we_first": False,
+                    "status": _EVENT_STATUS_IDS.get(e.status or "", 0), "turn": et,
+                })
+            elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp:
+                amt = float(e.amount or 0.0)
+                self._append({
+                    "t": EVENT_T_BOOST, "actor": sp, "side": side, "target": None,
+                    "move_id": None,
+                    "hp_delta": (amt if k is EventKind.BOOST else -amt),   # the magnitude col
+                    "missed": False, "failed": False, "crit": False, "eff": 0,
+                    "we_first": False, "status": 0, "turn": et,
+                })
+            elif k in (EventKind.ITEM, EventKind.ENDITEM) and sp:
+                self._append({
+                    "t": EVENT_T_ITEM_REVEAL, "actor": sp, "side": side, "target": None,
+                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
+                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                })
+            elif k is EventKind.SIDE and side is not None:
+                self._append({
+                    "t": EVENT_T_HAZARD, "actor": None, "side": side, "target": None,
+                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
+                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                })
+            elif k is EventKind.CHOICE_REJECTED:
+                self._append({
+                    "t": EVENT_T_SWITCH_REJECTED, "actor": self._our_active, "side": OURS,
+                    "target": None, "move_id": None, "hp_delta": 0.0, "missed": False,
+                    "failed": False, "crit": False, "eff": 0, "we_first": False,
+                    "status": 0, "turn": et,
+                })
+        # Decision-time resync (the H-A alive-filter is applied by the CALLER, which passes
+        # None for a fainted "active" — same contract as PairHistoryTracker.update).
+        if our_active:
+            self._our_active = our_active
+            self._forced["our"] = False
+        if opp_active:
+            self._opp_active = opp_active
+            self._forced["opp"] = False
+
+    @property
+    def turn(self) -> int:
+        return self._turn
+
+    def window(self) -> list:
+        """The folded records, oldest-first (≤ ``maxlen``)."""
+        return list(self._events)
+
+
 class EpisodeTracker:
     """
     Tracks per-episode state needed to build observations and reward signals.
@@ -348,6 +540,7 @@ class EpisodeTracker:
         self._recency = RecencyTracker()
         # Tier H-A (gen3_pair_history_v1): last-action + pair-history counters, same window.
         self._pair_history = PairHistoryTracker()
+        self._event_window = EventWindowTracker()
         # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
         # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
         # encoded vector never changes — we encode only the NEWEST delta each step and
@@ -370,6 +563,10 @@ class EpisodeTracker:
     @property
     def recency(self) -> RecencyTracker:
         return self._recency
+
+    @property
+    def event_window(self) -> EventWindowTracker:
+        return self._event_window
 
     @property
     def pair_history(self) -> PairHistoryTracker:
@@ -621,6 +818,11 @@ class EpisodeTracker:
                 live.turn, _ev,
                 _oa.species if (_oa is not None and not _oa.fainted) else None,
                 _pa.species if (_pa is not None and not _pa.fainted) else None)
+            # Tier H-B: the SAME window and the SAME alive-filtered resync contract.
+            self._event_window.update(
+                live.turn, _ev,
+                _oa.species if (_oa is not None and not _oa.fainted) else None,
+                _pa.species if (_pa is not None and not _pa.fainted) else None)
         return delta
 
     def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
@@ -717,3 +919,4 @@ class EpisodeTracker:
         # fresh trackers per battle so it never saw it); fixed alongside pair-history.
         self._recency = RecencyTracker()
         self._pair_history = PairHistoryTracker()
+        self._event_window = EventWindowTracker()

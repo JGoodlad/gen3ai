@@ -219,6 +219,11 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
               "the pointer MOVE cell"),
+    ModelFlag("history_events", False, Tier.CLI, Klass.STRUCTURAL, 81,
+              "Tier H-B: the obs event-window records join the trunk as event SEATS "
+              "(shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY)",
+              note="the obs BLOCK is unconditional (v81 widening); this flag builds only the "
+                   "consumer. Gen-13 candidate arm, gated on H-A's gen-12 verdict."),
     ModelFlag("value_entity_pool", False, Tier.CLI, Klass.STRUCTURAL, 80,
               "Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team "
               "tokens + op incoming rows), zero-init, vf-only",

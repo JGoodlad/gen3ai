@@ -5,8 +5,15 @@ last-action fields (H-A1, `POKEMON_FULL_DIM` 116→122) and the pair-history blo
 family (H-A2, obs 2669→2921; the family is opt-in, NOT in the production string — gen-12 is the
 intended first enable). The independent event-log fuzz caught two real bugs before ship (a
 fainted-active resurrection on forced-switch resync; a pre-existing recency cross-episode reset
-leak). **Tiers H-B (event tokens) and H-C (entity-reference edges) remain forward design**,
-gated on H-A's trained verdict per §6. Elaborates `design_generation_roadmap.md` §4's decided
+leak). **Tier H-B is BUILT too** (v81 `gen3_event_window_v1`, 2026-08-16: the fold + the 32×19 obs
+window + the opt-in `--history-events` event seats; the §6 row-2 DELETION of the 7×159 frames
+deliberately NOT taken — that lands with the generation that enables the seats, per the
+one-behavioral-change discipline; pre-enable gates: the event-fold fuzz + the obs benchmark).
+**H-C is BUILT too** (`gen3_event_ref_edges_v1`, same day: the `r` edge family — structural
+`[is_actor, is_target]` reference cells from each event seat to the 12 live tokens, side-gated
+against mirror-species false links, zero-init, riding the families string; requires
+`--history-events`). All three tiers now exist opt-in; §6's sequencing governs ENABLEMENT
+(H-A's verdict → enable H-B seats; H-B's verdict → enable `r` + delete the 7×159 frames). Elaborates `design_generation_roadmap.md` §4's decided
 direction (recency features → turn/event tokens → entity-linked event tokens; recurrence RULED
 OUT) with the full mapping from today's history surfaces. E9 step 1 (the per-mon recency
 triplet) is SHIPPED; this doc owns the rest. The concept frame is `designs/learning/entity_tokens_biases_pointers.md`

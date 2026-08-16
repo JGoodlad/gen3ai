@@ -94,7 +94,7 @@ def test_op_variant_fails_loud_without_rows():
 def test_v80_migration_stamps_and_defaults_off():
     data = {"config_version": 79, "obs_dim": 1, "n_actions": 11}
     out = _migrate_config(dict(data))
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 80
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 80
     assert out["value_entity_pool"] is False
 
 

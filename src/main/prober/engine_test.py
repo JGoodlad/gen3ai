@@ -639,10 +639,10 @@ def test_offsets_resolve_matches_layout():
     # gen3_wish_wired_v1 → rehome: the pending-Wish scalars ride the lean board block.
     # gen3_pair_history_v1: the per-mon slot widened 116 -> 122 (+6 last-action), so every
     # top-level offset after the team blocks shifted +72, and the 180-dim pair block sits
-    # between reactive and base (OFFSET_REACTIVE 1528 -> 1600, total 2669 -> 2921).
+    # between reactive and base; the H-B event window follows (total 3529).
     assert off.wish_our_off == 1603   # OFFSET_REACTIVE(1600) + wish_floating_our offset(3)
     assert off.wish_opp_off == 1604   # OFFSET_REACTIVE(1600) + wish_floating_opp offset(4)
-    assert off.total_dim == 2921      # 2669 + 72 last-action + 180 pair history
+    assert off.total_dim == 3529      # 2921 + 608 event window (gen3_event_window_v1)
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

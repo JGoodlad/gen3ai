@@ -8,7 +8,12 @@ critic lean on each of the parallel critic magnitude routes carried since the co
   arm `hidden_opp`  — zero the 768-dim HiddenOppBeliefPool concat: `_both`, `_pi`, `_vf`
   arm `entity_pool` — zero the unified entity pool's output (gen3_unified_value_readout_v1,
                       the Stage-3 successor route; present only on a --value-entity-pool run)
-  arm `all_off`     — every present route together (the joint ceiling)
+  arm `intent_reduce` — zero the α-weighted IntentValueReduce vf term (v74; present only on an
+                      --intent-value-reduce run — gen-9 through gen-11 all train it)
+  arm `nmr`         — zero `non_matchup_rest` at the assembler (the LAST positional head
+                      concat, both heads; the Phase-3 item-2 deletion evidence — separate
+                      from all_off, which stays the belief/magnitude-route joint)
+  arm `all_off`     — every present magnitude route together (the joint ceiling; nmr excluded)
 
 Each arm reports masked KL / argmax flips (policy) and |dV| (critic) against the unablated
 forward, the same instrument family as `edge_ablation_audit` (whose state sampling and KL
@@ -91,6 +96,39 @@ class _Arms:
         _pre.fired = False
         hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
         return hooks, _pre
+
+    def intent_reduce(self):
+        """Zero the α-weighted IntentValueReduce term (v74, vf-only zero-init concat) — the
+        critic-side α consumer gen-9+ trains. Its arm belongs in the same §2 consolidation as
+        seed/threat: the runbook's Phase-3 list names it, and without an arm the route would be
+        adjudicated by argument instead of measurement."""
+        fe = self.fe
+        marker = {"fired": False}
+
+        def _hook(_m, _args, output):
+            marker["fired"] = True
+            return torch.zeros_like(output)
+        return [fe.intent_value_reduce.register_forward_hook(_hook)], marker
+
+    def nmr(self):
+        """Zero `ctx.non_matchup_rest` at the assembler — the LAST positional head concat
+        (global env + board scalars, both heads). Its content also rides the global token
+        through the trunk, so this arm measures the DIRECT-shortcut dependency the Phase-3
+        item-2 deletion needs evidence for (cleanup journey §5.2)."""
+        import dataclasses
+
+        fe = self.fe
+        marker = {"fired": False}
+
+        def _pre(_m, args):
+            ctx = args[4]
+            nmr_t = getattr(ctx, "non_matchup_rest", None)
+            if nmr_t is None:
+                return args
+            marker["fired"] = True
+            new_ctx = dataclasses.replace(ctx, non_matchup_rest=torch.zeros_like(nmr_t))
+            return args[:4] + (new_ctx,) + args[5:]
+        return [fe.assembler.register_forward_pre_hook(_pre)], marker
 
     def entity_pool(self):
         """Zero the unified entity pool's OUTPUT (gen3_unified_value_readout_v1) — vf-only by
@@ -176,6 +214,13 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
             _run(f"hidden_opp_{mode}", [arms.hidden_opp(mode)])
     if getattr(fe, "value_entity_pool", None) is not None:
         _run("entity_pool", [arms.entity_pool()])
+    if getattr(fe, "intent_value_reduce", None) is not None:
+        _run("intent_reduce", [arms.intent_reduce()])
+    # Always present (unconditional obs content): the last positional head concat. Deliberately
+    # NOT part of all_off — that arm is the belief/magnitude-route joint; this one answers the
+    # separate Phase-3 item-2 question (can the direct shortcut die once the global token
+    # carries the content through the trunk).
+    _run("nmr", [arms.nmr()])
     all_sets = []
     if getattr(fe.assembler, "seed_readout", None) is not None:
         all_sets.append(arms.seed())
@@ -185,6 +230,8 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
         all_sets.append(arms.hidden_opp("both"))
     if getattr(fe, "value_entity_pool", None) is not None:
         all_sets.append(arms.entity_pool())
+    if getattr(fe, "intent_value_reduce", None) is not None:
+        all_sets.append(arms.intent_reduce())
     if all_sets:
         _run("all_off", all_sets)
     return report

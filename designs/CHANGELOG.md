@@ -3019,3 +3019,87 @@ condemnations:
   zero-init survives policy build + contributes exactly 0, pi untouched at any weight while vf
   fires, masked rows get zero attention, all-masked is finite, fail-loud op-rows contract, the
   v80 migration stamp).
+
+### v81 — `gen3_event_window_v1` (2026-08-16): Tier H-B — the event-token history window
+
+`design_history_entity.md` §3 H-B, the second landing of the history redesign. Obs **2921 →
+3529** (the 32×19 event-record block closes base at 2405); the CONSUMER is opt-in.
+
+- **The fold** — `EventWindowTracker` (episode_tracker, the H-A machinery: seq-idempotent,
+  running actives, alive-filtered decision resync, same per-decision window). One record per
+  event in the H-B vocabulary (move / switch_in / faint / status applied/cured / boost /
+  item_reveal / hazard / switch_rejected); MODIFIER events attach to their side's open
+  same-turn MOVE record — DAMAGE lands on the target side and accumulates into the move's
+  `hp_delta`, the effectiveness trio sets `eff`, MISS/FAIL/CRIT set flags (the H-A attach rule
+  extended). `we_first` marks the first mover's records (speed-inversion evidence);
+  `forced_window` tags events emitted while an active slot sat empty post-faint, and the
+  arriving replacement is tagged BEFORE the flag clears (a fold-order bug the unit tests
+  caught: appended-then-clear, so the forced switch-in reads as forced). v1 trims, recorded:
+  no faint-cause multi-hot, no item/hazard content ids, SETBOOST/CLEARBOOST skipped.
+- **The obs block** — rows most-recent-LAST, zero-padding at the FRONT, ids as embedding ids
+  (species/move dex nums, the type/status vocabularies in `observation/constants.py`), recency
+  log-saturated (the H-A curve), no Linear reads it raw. The side column caught a literal bug
+  in test (`"our"` vs the actual `OURS == "ours"`) before the goldens froze it.
+- **The consumer** — `--history-events` (STRUCTURAL v81 field): `EventSeats` — kind/status own
+  small embeddings, actor/target species + the move id through the SHARED tables (one
+  representation everywhere), 13 outcome/time scalars raw, one projection to d_model, a learned
+  `event_marker`, and TOKEN_TYPE_HISTORY (the E5 precedent — no token-type table growth). Seats
+  join the `extra` seam LAST, so every front-indexed seat slice (E3/E4/E5) is position-stable;
+  PAD rows are key-masked. OFF builds nothing — byte-identical; production stays OFF
+  (`config_version` 81 stamped). Declared T1 in the tier contract (trunk input, like
+  entity_seats).
+- **The goldens got STRONGER in the same pass**: `golden_obs_capture` had never run the env's
+  `update_progress_clock` leg, so the progress-clock scalar, the recency triplet and BOTH H-A
+  blocks were frozen as zeros in every golden since they shipped — the capture now runs the
+  full 3-step protocol and threads all four tracker feeds, so the fixture finally pins them.
+- Gates: `event_window_test.py` (fold attach/idempotence/forced-window/bounds, the 19-column
+  obs contract, OFF-builds-nothing, PAD masking, the v81 migration stamp); the flag-registry
+  validators (all five surfaces); the delivery graph auto-discovered the block
+  (`obs.event_window` node). **The event-fold FUZZ ran and PASSES** —
+  `poke_env_gaps/event_window_fuzz_test.py`, an independent from-scratch fold over the full
+  event log: 30 battles / 2429 decisions / **73,008 checks, 0 failures** — and it TIGHTENED
+  the fold before the goldens froze it: a `[from]`-claused DAMAGE (recoil / Sandstorm /
+  status / item residuals) or a clause-free hit on a NON-target mon no longer attaches to the
+  open move's `hp_delta` (unit-pinned on a Double-Edge recoil + sand + wrong-target trio).
+  The remaining pre-enable gate is the obs benchmark on an idle box (the +608-dim fold cost),
+  per `gen12_endofrun_runbook.md` §4. **[same day] BOTH pre-enable gates CLOSED**: benchmark
+  re-baselined on the idle box (0.363 ms/decision full protocol; H-B marginal +0.040 ms — and
+  the measurement-honesty finding that benchmark AND goldens had never threaded the
+  tracker-fed blocks, both fixed), and the `--history-events` bridge smoke trains to completion.
+
+### `gen3_event_ref_edges_v1` (2026-08-16, NO config bump — family vocabulary): Tier H-C built
+
+The third history tier, completing the design's stack: the **`r` edge family** — per (event
+seat e, mon token m), the STRUCTURAL `[is_actor, is_target]` reference cells
+(`_event_reference_cells`, pure): species-num equality, SIDE-GATED so a mirror species across
+teams can never false-link. Written at (the LAST-N event rows, the 12 mon cols) + transpose —
+the two critical queries become single attention hops ("what did they click into THIS mon" =
+mon j attending over its target-edges; "whom did they switch into" = the switch-in event's
+actor-edge). Zero-init like every family; rides the recorded `edge_bias_families` string (no
+new ModelVersion field — old code fail-louds on the unknown family); requires
+`--history-events` (the seats are the rows), fail-loud in `__init__`. Events referencing
+FAINTED mons: the mon KEY is masked, so the event→fainted hop is inert while mon→event
+survives — the accepted v1 nuance, now stated at the cell constant. Gates:
+`event_ref_edges_test.py` (the mirror side-gate exact, PAD links nothing, the requirement,
+zero-init + a full ON forward). Also in this pass: the `critic_route_audit` gains the
+`intent_reduce` arm (gen-9..11 all TRAIN the route; the runbook's Phase-3 list named it but no
+arm existed), and building its fixture flushed a REAL latent v80 bug — `intent_value_reduce`'s
+discovery-time early return skipped the entity-pool concat, so a both-flags build discovered a
+vf width 128 short of runtime (now falls through; caught by the audit fixture's shape error the
+first time both flags met).
+
+### `gen3_belief_bank_v1` (2026-08-16, NO config bump — a code-shape fold, byte-identical)
+
+`design_unified_belief.md` §4's consolidation, complete: **all six supervised belief losses**
+(hidden-team Hungarian aux, move-belief BCE, move-latent grading, spread, nature/EV, hp-type)
+now live in `agents/training/belief_bank.py` as declarative ROWS — arg spec
+(stash/attr/obs/param) · coef key · metric prefix · historic loss key — and
+`instrumented_ppo.train()`'s six inline verticals collapse into three `compute(site=…)` loops
+at the EXACT positions of the blocks they replaced (`hidden_move` / `latent` / `revealed`).
+The SITE tag is the byte-identity mechanism: float addition order is preserved because each
+row folds where its block folded; the loss bodies moved verbatim (the old
+`InstrumentedMaskablePPO._*_loss` statics remain as aliases, so every test and call site
+resolves unchanged). A seventh supervised belief is now a registry row, not another
+~35-line train() vertical. Gates: `belief_bank_test.py` (direct-call equality bit-for-bit,
+site partition pinned, the attr/param arg kinds, the hidden-team `aux_loss`/unprefixed
+conventions, all six aliases) + every pre-existing per-loss test file unchanged.

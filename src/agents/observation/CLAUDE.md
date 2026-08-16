@@ -107,9 +107,20 @@ headline on purpose (load-dependent); the **call counts and ordering are the con
 
 > ⚠️ The pasted block below predates `gen3_entity_rehome_v1` (the matchup deletion): the
 > matchup-era hot list (`effective_multiplier_by_types`, `reactive.py:encode` at ~44% of encode,
-> `_joint_expectation`) no longer exists. Current headline: **~3.46k calls/encode**, encode
-> ≈ 0.25 ms idle-box, no matchup loop in the profile. The block is kept for the v48-era shape
-> until the next full re-baseline.
+> `_joint_expectation`) no longer exists. The block is kept for the v48-era shape until the
+> next full re-baseline.
+>
+> **Current headline (re-baselined 2026-08-16, idle box, `--reps 200`, obs 3529)** — and a
+> MEASUREMENT-HONESTY correction: until this date the benchmark (like the golden capture)
+> never ran `update_progress_clock` and threaded none of the tracker-fed blocks, so every
+> "encode ≈ 0.25 ms" figure timed the progress-clock/recency/H-A/H-B writes as SKIPPED —
+> production always paid them. With the FULL env protocol threaded:
+> **0.363 ms/decision** (encode 98%). Split: naked encode 0.246 ms; + recency/clock/H-A
+> pair-loop ≈ +0.077 ms (paid since v79 — gen-11 trained at this cost); + the v81 H-B
+> event-window write loop ≈ **+0.040 ms (+12%)** — the marginal cost of enabling nothing
+> (the block is unconditional; the fold is ≤32 dict-row writes + 2 species and 1 move dex
+> lookups per row). If the H-B tier survives its audit, vectorizing the row writes (numpy
+> assembly in the tracker) is the obvious first optimization.
 
 ```
 PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, history slots N, opp mons w/ revealed moves 5/6)
@@ -224,7 +235,15 @@ full-log oracle; it caught a fainted-active-resurrection resync bug pre-ship). T
 tracker also feeds the **180-dim pair-history block** after reactive
 (`OFFSET_PAIR_HISTORY`, 6×6×5 `h[i,j]` tendency counters — switch-ins/attacks/status-clicks
 by their mon i while our mon j was active, shared-field turns, pairing recency; log-saturated
-over the 10 cap; consumed by the opt-in `h` edge family). **Appended tail**
+over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it**
+(`gen3_event_window_v1`, v81): the **608-dim event window** (`OFFSET_EVENT_WINDOW`, 32 × 19
+typed event records — the column contract is documented at `EVENT_TOKEN_DIM` in
+`constants.py`) closes base at 2405; total obs **3529**. Folded by the EpisodeTracker-owned
+`EventWindowTracker` (same window, same alive-filtered resync), threaded via
+`encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
+NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).
+Unit gate: `training/event_window_test.py`; the event-fold FUZZ (the pair-history pattern) is
+the pre-enable gate. **Appended tail**
 (state_encoder): `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the
 OUR-side LegalActions trapping bits, nonzero ONLY at our active slot (`maybe_trapped` is the
 high-value trap-risk bit; fuzz gate `action/trapping_signals_fuzz_test.py`, which also asserts

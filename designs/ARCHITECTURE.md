@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | `models/ai_v9_13_gen11_labelonly_winprob_0815/` (gen-11, launched 2026-08-15) — `model_config.json` `config_version` **77**, `arch_signature` **`gen3_ctx_dedup_v1`**; trains on its own pinned worktree |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 77 / `gen3_ctx_dedup_v1`) |
-| `designs/production_config.json` | the **gen-11** run's config (`ai_v9_13_gen11_labelonly_winprob_0815`) **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Production run | `models/ai_v9_14_gen12_h_entitypool_shaping_0816/` (gen-12, launched 2026-08-16) — `model_config.json` `config_version` **80**, `arch_signature` **`gen3_ctx_dedup_v1`**; the `h` family + `--value-entity-pool` LIVE; trains on its own pinned worktree |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 81 / `gen3_ctx_dedup_v1`) |
+| `designs/production_config.json` | the **gen-12** run's config (`ai_v9_14_gen12_h_entitypool_shaping_0816`) **carried forward to HEAD's schema** (the in-generation migration defaults applied by hand at each schema bump). It stops being a byte-identical run-config copy whenever HEAD's signature moves past the live run's, and exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -44,7 +44,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2921** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **3529** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -58,10 +58,20 @@ Every number below comes from `agents/observation/constants.py` and
 | Global env | 1580 | 1600 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
 | Board (reactive) | 1600 | 1617 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
 | Pair history — 6×6×5 h[i,j] | 1617 | 1797 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
-| *(= `base_dim`)* | | 1797 | | |
-| Prev-turn action mask | 1797 | 1808 | 11 | `ACTION_SPACE_SIZE` |
-| Turn history — 7 × TurnDelta | 1808 | 2921 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
-| **Total** | | **2921** | | `Gen3ObservationEncoder.dimension` |
+| Event window — 32 × 19 event records | 1797 | 2405 | 608 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
+| *(= `base_dim`)* | | 2405 | | |
+| Prev-turn action mask | 2405 | 2416 | 11 | `ACTION_SPACE_SIZE` |
+| Turn history — 7 × TurnDelta | 2416 | 3529 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
+| **Total** | | **3529** | | `Gen3ObservationEncoder.dimension` |
+
+**The event window** (Tier H-B, `gen3_event_window_v1`): the last 32 decision-relevant EVENTS as
+typed 19-column records — type id · actor/target species + side · move id · attributed
+`hp_delta` · outcome/crit/effectiveness · `we_first` · status id · log-saturated recency ·
+forced-window phase tag · valid — folded by `EpisodeTracker.EventWindowTracker` from PUBLIC
+protocol events (seq-idempotent), most-recent LAST with zero-padding at the front. Ids are
+embedding ids; **no Linear reads the block raw** — its only consumer is the opt-in
+`history_events` event-seat encoder (§ flag table). The columns are documented at
+`agents/observation/constants.py` (`EVENT_TOKEN_DIM`).
 
 `gen3_entity_rehome_v1` (Stage 3): the two 144-dim matchup matrices and 6 of the 11 reactive
 scalars are **deleted** — the D/V edge families compute a strict superset of the matchup signal
@@ -177,8 +187,8 @@ Modules actually built under the production config (`named_children()`) — GENE
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
 hidden_opp_belief · intent_value_reduce · intent_move_cell · t0_species_prior · belief_slots ·
 belief_head · move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj ·
-assembler · win_head · value_dist_head · pre_proj_norm · projection · value_pre_norm ·
-value_projection · activation · alpha_head · beta_head
+assembler · win_head · value_dist_head · value_entity_pool · pre_proj_norm · projection ·
+value_pre_norm · value_projection · activation · alpha_head · beta_head
 ```
 
 Notably **absent** (`None` on the instance): `pubval_head`.
@@ -314,7 +324,7 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-**`vf_projection` — `Linear(1241, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
+**`vf_projection` — `Linear(1369, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -323,7 +333,8 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | seed readout | 256 | `MultiSeedValueReadout` — k=4 × 64 over `OpTensors.incoming_rows` |
 | intent reduce | 64 | `IntentValueReduce` — α-weighted pair cells, appended AFTER the assembler |
-| **total** | **1241** | == `value_projection.in_features`, asserted at generation |
+| entity pool | 128 | `UnifiedValueReadout` — UVR_K=4 queries over the 12 team tokens + the op's incoming rows, zero-init, appended LAST (gen3_unified_value_readout_v1) |
+| **total** | **1369** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
 **Available but OFF in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3
@@ -578,6 +589,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **not in the production families string** — the opt-in H-A2 arm) |
+| **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 2 | `[is_actor, is_target]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C): event *e*'s recorded actor/target IS mon *m* (species-num equality, side-gated against mirror false-links; `_event_reference_cells`, pure). **Not in the production string** — requires `--history-events` (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
 | **g** | each mon × **global** (both sides) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
@@ -592,8 +604,9 @@ E4 `[24:30]`, E5 `[30:36]`.
 | c3, c4, c5, d2, d4, g, t, v | `damage_op` |
 | x | `damage_op` |
 | d3, s3 | `entity_topk_seats > 0` (the bias rows *are* the E4 seats) |
+| r | `history_events` (the bias rows *are* the H-B event seats) |
 
-All are satisfied in the production config.
+All are satisfied in the production config (`h` and `r` are opt-in and not in its string).
 
 ### 5.3 What an edge can and cannot carry
 
@@ -662,7 +675,7 @@ does nothing given another setting.
 | Flag | Production value | Status |
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
-| `belief_grad_mode` | `"label_only"` | ACTIVE |
+| `belief_grad_mode` | `"shaping"` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
@@ -671,9 +684,10 @@ does nothing given another setting.
 | `damage_op` | `true` | ACTIVE |
 | `damage_outgoing` | `true` | ACTIVE |
 | `damage_topk_k` | `6` | ACTIVE |
-| `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5"` | ACTIVE |
+| `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h"` | ACTIVE |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
+| `history_events` | `false` | OFF |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
 | `intent_move_cell` | `true` | ACTIVE |
 | `intent_value_reduce` | `true` | ACTIVE |
@@ -696,7 +710,7 @@ does nothing given another setting.
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
-| `value_entity_pool` | `false` | OFF |
+| `value_entity_pool` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |

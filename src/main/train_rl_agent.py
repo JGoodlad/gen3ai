@@ -1309,6 +1309,14 @@ async def main():
                              "mass rides as a decorrelated alpha_stay channel). Zero-init "
                              "projection => identity at init. Requires --opp-intent-coef>0, "
                              "--damage-op and --damage-topk-k>0. STRUCTURAL, version-checked.")
+    parser.add_argument("--history-events", "--history_events",
+                        dest="history_events", action=BoolFlag, default=None,
+                        help="gen3_event_window_v1 (v81, Tier H-B of design_history_entity.md): "
+                             "the last-32 event records join the trunk as EVENT SEATS — typed, "
+                             "entity-content (shared species/move embeddings), time as content "
+                             "(log recency + forced-window tag), appended after the E5 seats. "
+                             "The obs block is unconditional; this builds the consumer. "
+                             "STRUCTURAL, version-checked.")
     parser.add_argument("--value-entity-pool", "--value_entity_pool",
                         dest="value_entity_pool", action=BoolFlag, default=None,
                         help="gen3_unified_value_readout_v1 (v80, design_unified_belief.md §3 / "
@@ -2017,6 +2025,7 @@ async def main():
     _resolve("intent_value_reduce", False)     # v74 structural, version-checked (step 6)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
+    _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

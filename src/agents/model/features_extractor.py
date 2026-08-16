@@ -250,6 +250,10 @@ class ExtractorContext:
     # (opp mon i, our mon j, cell) — the `h` edge family permutes to the (our, opp) block
     # convention at the call site. None on pre-pair layouts (never in production).
     pair_history: "Optional[torch.Tensor]" = None
+    # gen3_event_window_v1 (Tier H-B): the [B, EVENT_WINDOW_N, EVENT_TOKEN_DIM] typed
+    # event-record block (None on a pre-event layout). Ids inside are embedding ids; ONLY the
+    # flag-gated EventSeats consumer reads it — no Linear touches it raw.
+    event_window: "Optional[torch.Tensor]" = None
 
 
 class Embeddings(torch.nn.Module):
@@ -412,6 +416,11 @@ class ObsUnpack(torch.nn.Module):
         if 'pair_history' in sl:
             _ph = sl['pair_history']
             pair_history = x[:, _ph].reshape(batch_size, TEAM_SIZE, TEAM_SIZE, -1)
+        event_window = None
+        if 'event_window' in sl:
+            _ew = sl['event_window']
+            event_window = x[:, _ew].reshape(
+                batch_size, self.layout['event_window_n'], self.layout['event_token_dim'])
 
         # Active-slot indices + fainted masks (used by move-validity, transformer, and pool).
         active_flags = hp_and_active[:, :, -1]
@@ -471,6 +480,7 @@ class ObsUnpack(torch.nn.Module):
             turn_history_raw=turn_history_raw,
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
             pair_history=pair_history,
+            event_window=event_window,
         )
 
 
@@ -875,6 +885,19 @@ _EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sche
 _EDGE_C5_CELL = 4   # [is_bp, d_best_high, d_best_pko, d_outspeed] per (E3 Baton-Pass seat, OUR
                     # mon) — the receiver's offense inheriting the active's stages (the first
                     # family on the (E3, our-mon) route)
+_EDGE_R_CELL = 2    # [is_actor, is_target] per (event seat e, mon token m) — Tier H-C ENTITY
+                    # REFERENCE edges (gen3_event_ref_edges_v1, design_history_entity.md §3 H-C):
+                    # a STRUCTURAL identity, not a computed quantity — event e's recorded
+                    # actor/target IS mon m (species-num equality, SIDE-GATED so a mirror match
+                    # across teams cannot false-link; species↔slot is battle-stable). This is
+                    # what turns the two critical queries into single attention hops: mon j
+                    # attends over the event seats whose target-edge points at j ("what did they
+                    # click into this mon"), and a switch-in event's actor-edge names the
+                    # arriving mon ("whom did they switch into"). Requires history_events (the
+                    # seats are the rows). Events referencing FAINTED mons: the mon KEY is
+                    # masked in attention, so the mon→event direction survives while the
+                    # event→fainted-mon hop is inert — the token's species content covers it
+                    # (the design's accepted v1 nuance).
 _EDGE_H_CELL = 5    # [switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]
                     # per (our mon j, opp mon i) — Tier H-A2 pair-history TENDENCY counts
                     # (gen3_pair_history_v1): folded CPU-side from PUBLIC events by the
@@ -888,7 +911,7 @@ _EDGE_FAMILIES = {"d1": _EDGE_D1_CELL, "d2": _EDGE_D2_CELL, "d3": _EDGE_D3_CELL,
                   "v": _EDGE_V_CELL, "t": _EDGE_T_CELL, "x": _EDGE_X_CELL,
                   "g": _EDGE_G_CELL, "c4": _EDGE_C4_CELL, "c1": _EDGE_C1_CELL,
                   "c3": _EDGE_C3_CELL, "c2": _EDGE_C2_CELL, "c5": _EDGE_C5_CELL,
-                  "h": _EDGE_H_CELL}
+                  "h": _EDGE_H_CELL, "r": _EDGE_R_CELL}
 
 
 class EdgeBias(torch.nn.Module):
@@ -987,6 +1010,14 @@ class EdgeBias(torch.nn.Module):
             g = 2 * TEAM_SIZE + N_HISTORY_TURNS
             self._write_block(bias, self.c4_map(cells["c4"][:, :, None, :]),
                               slice(base_seats, base_seats + 4), slice(g, g + 1))
+        if self.r_map is not None and cells.get("r") is not None:
+            # R (Tier H-C): event-seat reference edges to the 12 live mon tokens. CONTRACT: the
+            # event seats are the LAST N tokens (EventSeats joins the extra seam last — the
+            # position-stable append; a family between them and the end would break this slice).
+            n_tok = bias.shape[-1]
+            N = cells["r"].shape[1]
+            self._write_block(bias, self.r_map(cells["r"]),
+                              slice(n_tok - N, n_tok), slice(0, 2 * TEAM_SIZE))
         if self.g_map is not None and cells.get("g") is not None:
             # G rides the same (mon, GLOBAL seat) route as X — schedule facts are board-level.
             g = 2 * TEAM_SIZE + N_HISTORY_TURNS
@@ -1149,6 +1180,83 @@ class TeamTransformer(torch.nn.Module):
         their_team_out = tokens[:, self._their_token_slice, :]
         extra_out = tokens[:, self._total_tokens:, :] if extra is not None else None
         return our_team_out, their_team_out, extra_out
+
+
+def _event_reference_cells(event_window: torch.Tensor,
+                           species_ids: torch.Tensor) -> torch.Tensor:
+    """Tier H-C (`_EDGE_R_CELL`): the [B, N, 12, 2] `[is_actor, is_target]` reference cells.
+
+    Species-num equality between an event row's actor/target columns and the 12 mon slots,
+    SIDE-GATED — the actor lives on the event's own side, the target on the opposite side, so
+    a mirror species on the other team can never false-link. PAD rows (valid=0) contribute
+    nothing. Pure (no parameters) so the identity is testable without a forward."""
+    ev = event_window
+    sm = species_ids.float()[:, None, :]                                       # [B,1,12]
+    ss = torch.cat([torch.ones(TEAM_SIZE), -torch.ones(TEAM_SIZE)]) \
+        .to(ev.device)[None, None, :]                                          # [1,1,12]
+    valid = (ev[:, :, 18] > 0.5)[:, :, None]
+    actor, tgt, eside = ev[:, :, 1:2], ev[:, :, 3:4], ev[:, :, 2:3]
+    is_actor = (actor == sm) & (actor > 0) & (eside == ss) & valid             # [B,N,12]
+    is_target = (tgt == sm) & (tgt > 0) & (-eside == ss) & valid
+    return torch.stack([is_actor.float(), is_target.float()], dim=-1)
+
+
+class EventSeats(torch.nn.Module):
+    """gen3_event_window_v1 (Tier H-B, design_history_entity.md §3 H-B) — the CONSUMER of the
+    obs event-window block: the last-N event records become N extra TRUNK SEATS, appended
+    through the `extra` seam AFTER the E3/E4/E5 seats (position-stable — every front-indexed
+    seat slice keeps its meaning). "The sequential residue becomes queryable": a mon token can
+    attend over what happened, in order, with time as CONTENT (the log-saturated recency
+    scalar), never as a lag-indexed weight.
+
+    Per record: the type id and status id go through OWN small embeddings; actor/target
+    species and the move id go through the SHARED tables (one representation everywhere —
+    the design's move-latent rule, satisfied with the embedding the E3 seats also start
+    from); the 12 outcome/time scalars ride raw. One Linear projects the concat to d_model
+    (the per-type-projection budget deferred until the usage audit says the types need to
+    diverge). Seats take TOKEN_TYPE_HISTORY (the E5 precedent: no token-type table growth,
+    so the flag stays state_dict-minimal) plus a learned event_marker distinguishing them
+    from the TurnDelta frames they will eventually replace. PAD rows (valid=0) are
+    key-masked. OFF builds nothing — byte-identical baseline."""
+
+    _KIND_EMB = 16
+    _STATUS_EMB = 8
+    _N_SCALARS = 13          # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced
+
+    def __init__(self, layout: Dict[str, Any]):
+        super().__init__()
+        from agents.observation.constants import N_EVENT_TYPES
+        self.n = layout['event_window_n']
+        self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)
+        self.status_emb = torch.nn.Embedding(8, self._STATUS_EMB)
+        in_dim = (self._KIND_EMB + 2 * layout['species_embedding_dim'] +
+                  layout['move_embedding_dim'] + self._STATUS_EMB + self._N_SCALARS)
+        self.proj = torch.nn.Linear(in_dim, D_MODEL)
+        self.norm = torch.nn.LayerNorm(D_MODEL)
+        self.event_marker = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
+
+    def forward(self, ev: torch.Tensor, embeddings: 'Embeddings'
+                ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """ev [B, N, EVENT_TOKEN_DIM] → (seat tokens [B, N, D_MODEL], pad [B, N] bool)."""
+        kind = ev[:, :, 0].long().clamp(min=0)
+        actor = ev[:, :, 1].long().clamp(min=0)
+        target = ev[:, :, 3].long().clamp(min=0)
+        move = ev[:, :, 4].long().clamp(min=0)
+        status = ev[:, :, 15].long().clamp(min=0, max=7)
+        # the 12 raw scalars: side(2) mag(5) outcome(6:9) crit(9) eff(10:14) we_first(14)
+        # ago(16) forced(17) — columns 2,5..14,16,17
+        scalars = torch.cat([ev[:, :, 2:3], ev[:, :, 5:15], ev[:, :, 16:18]], dim=-1)
+        row = torch.cat([
+            self.kind_emb(kind),
+            embeddings.species_embedding(actor),
+            embeddings.species_embedding(target),
+            embeddings.move_embedding(move),
+            self.status_emb(status),
+            scalars,
+        ], dim=-1)
+        tokens = self.norm(self.proj(row)) + self.event_marker
+        pad = ev[:, :, 18] < 0.5                                     # valid=0 ⇒ masked
+        return tokens, pad
 
 
 class CLSPool(torch.nn.Module):
@@ -2471,6 +2579,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_value_reduce: bool = False,
                  intent_move_cell: bool = False,
                  value_entity_pool: bool = False,
+                 history_events: bool = False,
                  damage_topk_k: int = 0,
                  damage_candidate_k: int = 0,
                  entity_topk_seats: int = 0,
@@ -2989,6 +3098,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "edge_bias_families d3/s3 bias rows are the E4 threat seats — require "
                     "--entity-topk-seats > 0 (which itself requires the prefuse stack)."
                 )
+            if "r" in fams and not history_events:
+                raise ValueError(
+                    "edge_bias_families r (Tier H-C reference edges) bias rows are the "
+                    "H-B event seats — requires --history-events."
+                )
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
@@ -3070,6 +3184,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.value_entity_pool = (
             UnifiedValueReadout(self.damage_op.per_mon if self.damage_op is not None else 0)
             if value_entity_pool else None)
+
+        # gen3_event_window_v1 (Tier H-B): the event-seat consumer of the obs event window —
+        # opt-in (OFF builds nothing, byte-identical); the obs block itself is unconditional.
+        self.history_events = EventSeats(layout) if history_events else None
+        if history_events and 'event_window_n' not in layout:
+            raise ValueError(
+                "history_events=True but the obs layout carries no event_window block — "
+                "the seats would attend over nothing.")
 
         self.role_token_size = ROLE_TOKEN_SIZE
 
@@ -3541,6 +3663,22 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
             getattr(self, "_entity_latent_table", None))
+        _seat_types = self.entity_seats.seat_types(ctx.device)
+        # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
+        # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
+        # they take TOKEN_TYPE_HISTORY (the E5 precedent — no token-type table growth).
+        if self.history_events is not None:
+            if ctx.event_window is None:
+                raise RuntimeError(
+                    "history_events is on but the obs carries no event_window block — the "
+                    "seats would silently attend over nothing.")
+            _ev_tokens, _ev_pad = self.history_events(ctx.event_window, self.embeddings)
+            _seat_tokens = torch.cat([_seat_tokens, _ev_tokens], dim=1)
+            _seat_pad = torch.cat([_seat_pad, _ev_pad], dim=1)
+            _seat_types = torch.cat([
+                _seat_types,
+                torch.full((_ev_tokens.shape[1],), TOKEN_TYPE_HISTORY,
+                           dtype=torch.long, device=ctx.device)], dim=0)
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as attention EDGES. Cells are
         # built HERE (pre-transformer — d1 from the validated outgoing-matrix kernel at the belief
         # the prefuse stack already produced; d3 from the pre-collapse incoming kernel at the SAME
@@ -3607,6 +3745,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                         "edge family 'h' is on but the obs layout carries no pair_history "
                         "block — the family would silently bias on nothing.")
                 _cells["h"] = ctx.pair_history.permute(0, 2, 1, 3)
+            if "r" in _fams:
+                # Tier H-C: STRUCTURAL reference edges — event e's recorded actor/target IS mon
+                # m. Species-num equality, SIDE-GATED (a mirror species on the other team must
+                # not false-link: the actor lives on the event's own side, the target on the
+                # opposite side). PAD rows (valid=0) contribute nothing.
+                if ctx.event_window is None or self.history_events is None:
+                    raise RuntimeError(
+                        "edge family 'r' is on but the event seats are not built "
+                        "(--history-events) — the reference edges would have no rows.")
+                _cells["r"] = _event_reference_cells(ctx.event_window, ctx.species_ids)
             if "s3" in _fams:
                 _cells["s3"] = self.damage_op.discrete_incoming_status(
                     ctx, self.last_move_belief_logits, self.entity_seats.last_cand, per_pair=True)
@@ -3631,7 +3779,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 k_cand=self.consequence_topk, c2_cells=_c2_edge_cells)
         our_team_out, their_team_out, _seat_out = self.team_transformer(
             role_tokens, ctx, self.embeddings,
-            extra=(_seat_tokens, self.entity_seats.seat_types(ctx.device), _seat_pad),
+            extra=(_seat_tokens, _seat_types, _seat_pad),
             edge_bias_fn=_edge_fn)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.

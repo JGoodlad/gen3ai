@@ -59,7 +59,7 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-38 toggles — 35 `cli`, 3 `config_only`, 0 `constructor_only`.
+39 toggles — 36 `cli`, 3 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
@@ -100,6 +100,7 @@ directions are asserted by `flag_registry_test.py`.
 | `opp_intent_grad_mode` | `--opp-intent-grad-mode` | `cli` | `structural` | `'detached'` | v73 | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
 | `intent_value_reduce` | `--intent-value-reduce` | `cli` | `structural` | `False` | v74 | append the alpha-weighted expected incoming threat to the critic's features |
 | `intent_move_cell` | `--intent-move-cell` | `cli` | `structural` | `False` | v77 | G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through the pointer MOVE cell |
+| `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
 | `value_entity_pool` | `--value-entity-pool` | `cli` | `structural` | `False` | v80 | Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team tokens + op incoming rows), zero-init, vf-only |
 
 **Notes**
@@ -115,6 +116,7 @@ directions are asserted by `flag_registry_test.py`.
 - `damage_matrices_outgoing_all` — DEMOTED (config_only), frozen OFF: never enabled in a gen-8/9/10 run; the switch-in offense read it prices is delivered by the d2 edge family.
 - `belief_grad_mode` — detach() is value-preserving => the forward is bit-identical in every mode, so check_belief_grad_mode on the resume path only.
 - `opp_intent` — coef>0 is the enable signal, like opp_belief_slots.
+- `history_events` — the obs BLOCK is unconditional (v81 widening); this flag builds only the consumer. Gen-13 candidate arm, gated on H-A's gen-12 verdict.
 - `value_entity_pool` — the designed SUCCESSOR contract of the bolt-on vf routes (seed readout / threat-inject) — those are adjudicated by the gen-11 critic_route_audit; this exists so a condemned route has a replacement the next generation can enable in the same config.
 <!-- END GENERATED: registry-table -->
 

@@ -204,6 +204,42 @@ REACTIVE_DIM = REACTIVE_SCALAR_DIM + ACTIVE_REQ_MOVES_DIM                # 17
 PAIR_HISTORY_CELL_DIM = 5
 PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 
+# Tier H-B (gen3_event_window_v1, design_history_entity.md §3 H-B): the last-N
+# decision-relevant EVENTS as typed records — the sequential residue the compiled tiers
+# cannot carry. One row per event, most-recent LAST, zero rows = padding (valid=0).
+# Columns (EVENT_TOKEN_DIM):
+#   0 type_id (EVENT_T_* vocab; embedding-routed)   1 actor_species_num (embedding-routed)
+#   2 actor_side (+1 ours / -1 opp / 0)             3 target_species_num (embedding-routed)
+#   4 move_num (embedding-routed; 0 none)           5 magnitude (move: attributed hp_delta;
+#                                                      boost: signed stage delta / 6)
+#   6-8 outcome one-hot hit/miss/fail (moves only)  9 crit
+#   10-13 effectiveness one-hot neutral/super/resist/immune (moves only)
+#   14 we_first (this side moved first that turn)   15 status_id (0 none; brn..tox = 1..6)
+#   16 turns_ago (log-saturated, the recency curve) 17 forced_window (post-faint phase tag)
+#   18 valid (1 = a real event, 0 = pad)
+# N sized lean (events-not-turns: ~8-12 game turns) pending the usage audit the design
+# prescribes; the raw ids are consumed ONLY by the flag-gated event-seat encoder (no Linear
+# ever reads this block directly, so the manifest zeroing rule is satisfied by construction).
+EVENT_WINDOW_N = 32
+EVENT_TOKEN_DIM = 19
+EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 608
+
+# The H-B event-type vocabulary (column 0 of every event row; 0 = PAD). Stable ids — they are
+# an embedding table's axis. The fold that EMITS them lives in
+# `agents.training.episode_tracker.EventWindowTracker`; the ids live HERE because they are the
+# obs contract (the encoder writes them, the event-seat encoder embeds them).
+EVENT_T_PAD = 0
+EVENT_T_MOVE = 1
+EVENT_T_SWITCH_IN = 2
+EVENT_T_FAINT = 3
+EVENT_T_STATUS_APPLIED = 4
+EVENT_T_STATUS_CURED = 5
+EVENT_T_BOOST = 6
+EVENT_T_ITEM_REVEAL = 7
+EVENT_T_HAZARD = 8
+EVENT_T_SWITCH_REJECTED = 9
+N_EVENT_TYPES = 10
+
 # Top-level Offsets — all derived from the named constants. ONLY the expressions are
 # load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated
 # values misleading readers who grepped by eye — read `Gen3ObservationEncoder.get_layout()`
@@ -214,6 +250,7 @@ OFFSET_CONTEXT = 2 * OFFSET_OPP_TEAM
 OFFSET_GLOBAL = OFFSET_CONTEXT + (2 * ACTIVE_CONTEXT_DIM)
 OFFSET_REACTIVE = OFFSET_GLOBAL + GLOBAL_ENV_DIM
 OFFSET_PAIR_HISTORY = OFFSET_REACTIVE + REACTIVE_DIM     # the H-A2 block sits after reactive
+OFFSET_EVENT_WINDOW = OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM  # the H-B block closes base
 
 # Max values for normalization.
 # MAX_TURNS is ALSO the forfeit deadline: `StallConfig.threshold` defaults to it (training/stall.py

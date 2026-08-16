@@ -578,7 +578,16 @@ from typing import Any, Dict, List
 #   replacement the next generation can enable in the same config. OFF builds nothing
 #   (byte-identical baseline; no ARCH_SIGNATURE bump); ON widens the value projection
 #   (weight-field-caught).
-MODEL_CONFIG_VERSION = 80
+# v81 (gen3_event_window_v1, Tier H-B of design_history_entity.md): the EVENT-TOKEN history
+#   window. Obs 2921 → 3529: a 32×19 typed event-record block (last-N decision-relevant events —
+#   move/switch_in/faint/status/boost/item/hazard/switch_rejected — with attributed hp_delta,
+#   outcome/crit/effectiveness, we_first, log-saturated recency, forced-window phase tag),
+#   folded by `EventWindowTracker` from PUBLIC events (seq-idempotent, the H-A machinery).
+#   The obs widening is unconditional (retrain-class, weight-field-caught via total_dim); the
+#   CONSUMER — `history_events`, the event SEATS joining the trunk with per-type projections +
+#   the recency embedding — is opt-in (OFF builds nothing, byte-identical). v1 trims, recorded:
+#   no faint-cause multi-hot, no item/hazard content ids, SETBOOST/CLEARBOOST skipped.
+MODEL_CONFIG_VERSION = 81
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1310,6 +1319,11 @@ class ModelVersion:
     # shape-caught — the check is here anyway so the failure names the cause instead of
     # surfacing as an opaque size error deep in a load.
     value_entity_pool: bool = False
+
+    # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
+    # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
+    # a state_dict change, so a mismatch would be shape-caught; the check names the cause.
+    history_events: bool = False
     # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
     # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
     # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
@@ -1543,6 +1557,10 @@ class ModelVersion:
             value_entity_pool=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "value_entity_pool", False)
+            ),
+            history_events=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "history_events", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -1966,6 +1984,14 @@ class ModelVersion:
                 "The unified critic entity pool widens the value projection, so the flag is "
                 "fixed for a run's lifetime.\n"
                 "Resume with the matching --value-entity-pool, or start a fresh run."
+            )
+        # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
+        if self.history_events != saved.history_events:
+            raise ModelVersionError(
+                f"history_events mismatch: saved={saved.history_events}, "
+                f"current={self.history_events}.\n"
+                "The H-B event seats add trunk modules, so the flag is fixed for a run's "
+                "lifetime.\nResume with the matching --history-events, or start a fresh run."
             )
         if self.opp_intent_grad_mode != saved.opp_intent_grad_mode:
             raise ModelVersionError(
@@ -2491,4 +2517,9 @@ def _migrate_config(data: dict) -> dict:
         # predates the flag, i.e. OFF (the v77 intent_move_cell pattern).
         data.setdefault("value_entity_pool", False)
         data["config_version"] = 80
+    if version < 81:
+        # gen3_event_window_v1: the H-B obs widening is weight-field-caught (total_dim); the
+        # consumer flag is post-floor — absent means the run predates it, i.e. OFF.
+        data.setdefault("history_events", False)
+        data["config_version"] = 81
     return data

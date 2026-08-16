@@ -182,12 +182,16 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         "t": ("our_mon", "opp_mon"),
         "x": ("mon", "global"),            # BOTH sides
         "g": ("mon", "global"),            # BOTH sides
+        "h": ("our_mon", "opp_mon"),       # H-A2 pair-history tendencies (obs-fed)
+        "r": ("event", "mon"),             # H-C reference edges (event seats × all 12 mons)
     }
     _NOTES = {
         "d2": "opp ACTIVE column only (batch-varying, one-hot outer product)",
         "d4": "opp ACTIVE column pre-zeroed — that quadrant is d3's",
         "x": "written for our mons AND opp mons",
         "g": "written for our mons AND opp mons",
+        "h": "obs-fed compiled pair-history (gen3_pair_history_v1) — the GPU cannot recompute it",
+        "r": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
     }
 
     def _members(group: str) -> List[str]:

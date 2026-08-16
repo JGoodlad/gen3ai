@@ -104,7 +104,15 @@ class _DetPlayer(Player):
             tr = self._tracker
             if mask.sum() > 0:
                 tr.record(battle, mask, legal=legal)
-            obs = self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker, legal=legal)
+            # The env's 3-step protocol (record → update_progress_clock → encode), so the
+            # tracker-fed blocks (progress clock, recency, H-A last-action/pair-history, the
+            # H-B event window) are LIVE in the golden instead of asserting zeros — until
+            # 2026-08-16 this call was missing and the golden silently ignored all of them.
+            tr.update_progress_clock(battle, legal)
+            obs = self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker, legal=legal,
+                                      progress_clock=tr.progress_clock, recency=tr.recency,
+                                      pair_history=tr.pair_history,
+                                      event_window=tr.event_window)
             history = tr.prev_N_delta_vecs(N_HISTORY_TURNS, self.td_enc, battle=battle)
             full = np.concatenate([obs, tr.prev_mask, history.flatten()]).astype(np.float32)
             self.vectors.append(full)

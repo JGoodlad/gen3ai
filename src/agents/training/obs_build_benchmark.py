@@ -78,9 +78,12 @@ def profile_obs_build(battle, tracker, obs_enc, td_enc, *, reps: int, top: int) 
     n_hist = min(N_HISTORY_TURNS, len(tracker._history) - 1)
     n_opp_rev = sum(1 for m in battle.opponent_team.values() if m.moves)
 
-    full = lambda: (obs_enc.encode(battle, hp_tracker=hpt),
+    _kw = dict(hp_tracker=hpt, progress_clock=tracker.progress_clock,
+               recency=tracker.recency, pair_history=tracker.pair_history,
+               event_window=tracker.event_window)
+    full = lambda: (obs_enc.encode(battle, **_kw),
                     tracker.prev_N_delta_vecs(N_HISTORY_TURNS, td_enc, battle=battle))
-    enc_only = lambda: obs_enc.encode(battle, hp_tracker=hpt)
+    enc_only = lambda: obs_enc.encode(battle, **_kw)
     # Per-decision turn-history cost WITH the deque cache: one delta encode (+ trivial stack).
     hist_cached = lambda: tracker._encode_delta_slot(0, td_enc, battle)
     # What it cost BEFORE the cache: recompute every history slot from scratch each decision.
@@ -155,6 +158,10 @@ class _BenchmarkPlayer(Player):
         tr = self._trackers.setdefault(
             battle.battle_tag, EpisodeTracker(history_cap=N_HISTORY_TURNS))
         tr.record(battle, mask)
+        # The env's full 3-step protocol, so the tracker-fed blocks (progress clock, recency,
+        # H-A, the H-B event window) are LIVE in what gets measured — until 2026-08-16 this
+        # call was missing and the benchmark silently timed those writes as skipped.
+        tr.update_progress_clock(battle, None)
 
         if (self.result is None
                 and battle.turn >= self._profile_at_turn

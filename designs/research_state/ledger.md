@@ -623,3 +623,41 @@ unpicklable and SubprocVecEnv/eval workers pickle it. `tmp/perflag.sh` is the pe
 Two traps worth remembering: argparse PREFIX MATCHING silently turned a bare `--opp-belief-latent`
 (which does not exist) into `--opp-belief-latent-coef` and ate its value; and any benchmark on this
 box is meaningless while a production run shares it.
+
+### Belief-coupling lift (2026-08-15): move-pair structure is REAL — and the prior budget is Smogon-shaped
+
+`design_unified_belief.md` §6 steps 0–1, answered offline
+(`designs/research_state/measurements/belief_coupling_lift.json`, `tmp/belief_coupling_lift.py`).
+Statistic `T = Σ freq·|log2 lift|` vs a **marginal-preserving bipartite re-deal null** (the first
+two null generators failed structurally — whole-deal rejection has acceptance ≈0 when Spikes is in
+203/203 Skarmory sets): every n≥200 species reads **T at 2.7–4.0× its null, p≈0** (tyranitar
+3.97×, salamence 3.36×, swampert 3.16×). The dominant structure is **slot EXCLUSION**
+(crunch↔dragondance 0.007 — the CB/DD split; hydropump↔surf 0.01), plus real archetype pairs
+(sub→focuspunch 6.1×/4.4×). So §1.2's MaxEnt defense of the independent product is REFUTED as
+physics — but the owner rule (stated twice, same day: **ALL priors Smogon-derived; only the MODEL
+gets bias against the pool, via experience**) bounds what ships: Smogon's chaos carries move
+MARGINALS only; its joints are `Teammates` (→ `gen3_teammate_priors.json`, now the co-occurrence
+prior behind BeliefHead-fusion + T0 — the pool source is re-sourced out, and the pool's strongest
+pair Cloyster→Aerodactyl +1.32 measured **+0.23** on 2.5M ladder battles: a sample-team artifact
+two generations of belief priors carried) and `Spreads`. Move-pair coupling therefore stays with
+in-battle evidence + learning; the pool remains measurement-only.
+
+### Measurement honesty (2026-08-16): the golden capture AND the obs benchmark never ran the tracker leg
+
+Both called `encode()` without `update_progress_clock` and without threading
+progress-clock/recency/H-A/H-B — so goldens froze those blocks as ZEROS since they shipped, and
+every benchmark figure timed their writes as skipped (production always paid them). Both fixed;
+re-baselined idle-box: **0.363 ms/decision** full protocol (was reported 0.246); the v81 H-B
+event-window marginal is **+0.040 ms (+12%)**; the remaining +0.077 ms is H-A/recency cost gen-11
+already trained under. The durable lesson joins the golden-obs family: *a capture path that
+hand-assembles "exactly what the env does" drifts the moment the env grows a leg — thread the
+REAL protocol or the fixture silently pins zeros.*
+
+### Dist-head instrument baselines (2026-08-15, gen-10): optimistic AND over-confident
+
+`query awareness` (model-free; `main/prober/awareness.py`): 1396 losses — 7.2% blind
+(never sustained P(loss)>0.5), median lead 7 turns, 12 cap losses with cap-aware@5 = **0.50**
+(the gen-9 "positive V before the stall loss" pathology, now a column: the worst row had
+P(loss)=0.15 at the FINAL decision of a turn-249 cap loss). Quantile coverage (mid-PIT of
+realized MC returns, ALL outcomes, 109k decisions): pit_mean **0.396**, coverage80 **0.44** vs
+nominal 0.80. These are the pre-registered bars gen-11's label_only arm must beat (runbook §3).

@@ -1899,7 +1899,15 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   comparable across heads and batch sizes where the older `n_slots` counts are not — the label-coverage
   baseline the belief-unification consolidation will judge per-head non-inferiority against. Note the
   conventions TILE: hidden-team masks HIDDEN slots, the spread/nature/hp-type heads mask REVEALED
-  ones. **Balance:** the
+  ones. **ALL SIX supervised belief losses live in `belief_bank.py`** (the design_unified_belief
+  §4 code-shape fold, 2026-08-16): one declarative ROW per head (stash/attr/obs/param arg spec ·
+  coef key · metric prefix · the `aux_loss` historic key for hidden-team) and `compute(site=…)`
+  loops replace the six inline verticals at their THREE original train() positions
+  (`hidden_move` = hidden-team Hungarian + move-belief BCE · `latent` = move-latent grading ·
+  `revealed` = spread/nature-EV/hp-type) — the site tag is what preserves the float-addition
+  sequence exactly (byte-identical), the old `InstrumentedMaskablePPO._*_loss` statics remain as
+  aliases, and a seventh supervised belief is now a row, not a slice
+  (`belief_bank_test.py::test_sites_partition_the_registry` pins the partition). **Balance:** the
   shared-trunk grad-balance probe (`grad_balance.py`) reports `grad/species_belief_share` (this CE's
   share of the common trunk-pull total) + `grad/species_belief_policy_cosine` — the principled "is the
   aux DOMINATING / fighting the policy" signal (and `grad/aux_share` for the COMBINED non-RL draw).

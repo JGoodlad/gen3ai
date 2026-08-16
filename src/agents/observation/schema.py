@@ -132,6 +132,12 @@ def build_schema(layout: Dict) -> ObsSchema:
     if ph_dim:
         blocks.append(Block("pair_history", ph_off, ph_dim,
                             doc="H-A2: 6×6×5 pair-history counters (opp i, our j, cell)"))
+    # gen3_event_window_v1: the H-B event window closes base (absent = pre-event layouts).
+    ew_dim = layout.get("event_window_dim", 0)
+    if ew_dim:
+        blocks.append(Block("event_window", layout["event_window_offset"], ew_dim,
+                            doc=(f"H-B: last {layout['event_window_n']} event records × "
+                                 f"{layout['event_token_dim']} cols (typed, most-recent last)")))
     blocks += [
         Block("prev_action_mask", layout["base_dim"], layout["prev_mask_dim"]),
         Block("turn_history", layout["turn_history_offset"],

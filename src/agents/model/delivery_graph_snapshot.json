@@ -2408,6 +2408,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2448,6 +2458,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2488,6 +2508,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2528,6 +2558,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2568,6 +2608,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2604,6 +2654,16 @@
       "src": "our_mon[0]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[0]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -2668,6 +2728,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2708,6 +2778,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2748,6 +2828,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2788,6 +2878,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2828,6 +2928,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2864,6 +2974,16 @@
       "src": "our_mon[1]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[1]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -2928,6 +3048,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -2968,6 +3098,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3008,6 +3148,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3048,6 +3198,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3088,6 +3248,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3124,6 +3294,16 @@
       "src": "our_mon[2]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[2]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -3188,6 +3368,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3228,6 +3418,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3268,6 +3468,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3308,6 +3518,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3348,6 +3568,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3384,6 +3614,16 @@
       "src": "our_mon[3]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[3]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -3448,6 +3688,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3488,6 +3738,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3528,6 +3788,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3568,6 +3838,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3608,6 +3888,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3644,6 +3934,16 @@
       "src": "our_mon[4]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[4]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -3708,6 +4008,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[0]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3748,6 +4058,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[1]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3788,6 +4108,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[2]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3828,6 +4158,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[3]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3868,6 +4208,16 @@
     {
       "bidirectional": true,
       "dst": "opp_mon[4]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
       "family": "t",
       "note": "",
       "source_constant": "_EDGE_T_CELL",
@@ -3904,6 +4254,16 @@
       "src": "our_mon[5]",
       "type": "bias",
       "width": 4
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "h",
+      "note": "obs-fed compiled pair-history (gen3_pair_history_v1) \u2014 the GPU cannot recompute it",
+      "source_constant": "_EDGE_H_CELL",
+      "src": "our_mon[5]",
+      "type": "bias",
+      "width": 5
     },
     {
       "bidirectional": true,
@@ -4066,6 +4426,16 @@
       "width": 256
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "damage_op",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 the per-our-mon incoming-row source",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "opp_belief_cls_k * D_MODEL",
@@ -4120,6 +4490,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[0]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4136,6 +4516,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[1]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4156,6 +4546,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[2]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4172,6 +4572,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[3]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4192,6 +4602,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[4]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4208,6 +4628,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "opp_mon[5]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4237,6 +4667,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[0]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4253,6 +4693,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[1]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4273,6 +4723,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[2]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4289,6 +4749,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[3]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4309,6 +4779,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[4]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4325,6 +4805,16 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "UVR_OUT_DIM",
+      "src": "our_mon[5]",
+      "type": "concat",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pointer.move_logit[0]",
@@ -4761,6 +5251,14 @@
     {
       "dst": "obs_unpack",
       "note": "validated tiling \u2014 the slice map is proven exact at construction",
+      "source_constant": "schema.slices()['event_window']",
+      "src": "obs.event_window",
+      "type": "content",
+      "width": 608
+    },
+    {
+      "dst": "obs_unpack",
+      "note": "validated tiling \u2014 the slice map is proven exact at construction",
       "source_constant": "schema.slices()['global_env']",
       "src": "obs.global_env",
       "type": "content",
@@ -5186,7 +5684,7 @@
     "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 80,
+    "config_version": 81,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -5198,6 +5696,7 @@
       "d3",
       "d4",
       "g",
+      "h",
       "s1",
       "s3",
       "t",
@@ -5213,10 +5712,10 @@
     ],
     "extra_seats": 16,
     "n_tokens": 36,
-    "obs_dim": 2921,
+    "obs_dim": 3529,
     "op_out_dim": 660,
     "pi_projection_in": 1177,
-    "vf_projection_in": 1241
+    "vf_projection_in": 1369
   },
   "nodes": [
     {
@@ -5276,7 +5775,7 @@
     },
     {
       "id": "vf_projection",
-      "in_features": 1241,
+      "in_features": 1369,
       "kind": "head",
       "out_features": 512
     },
@@ -5359,6 +5858,13 @@
       "width": 116
     },
     {
+      "id": "obs.event_window",
+      "kind": "obs_block",
+      "offset": 1797,
+      "stage": "T0",
+      "width": 608
+    },
+    {
       "id": "obs.global_env",
       "kind": "obs_block",
       "offset": 1580,
@@ -5389,7 +5895,7 @@
     {
       "id": "obs.prev_action_mask",
       "kind": "obs_block",
-      "offset": 1797,
+      "offset": 2405,
       "stage": "T0",
       "width": 11
     },
@@ -5403,7 +5909,7 @@
     {
       "id": "obs.turn_history",
       "kind": "obs_block",
-      "offset": 1808,
+      "offset": 2416,
       "stage": "T0",
       "width": 1113
     },

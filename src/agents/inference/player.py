@@ -185,7 +185,8 @@ class Gen3Player(Player):
             battle, hp_tracker=tracker.hidden_power_tracker, legal=legal,
             progress_clock=tracker.progress_clock,
             recency=tracker.recency,
-                pair_history=tracker.pair_history,
+            pair_history=tracker.pair_history,
+            event_window=tracker.event_window,
         )
 
         prev_mask = tracker.prev_mask

@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from .base import ObservationEncoder
 from .pokemon import PokemonEncoder
@@ -27,6 +29,11 @@ from .constants import (
     OFFSET_PAIR_HISTORY,
     PAIR_HISTORY_DIM,
     PAIR_HISTORY_CELL_DIM,
+    OFFSET_EVENT_WINDOW,
+    EVENT_WINDOW_N,
+    EVENT_TOKEN_DIM,
+    EVENT_WINDOW_DIM,
+    EVENT_T_MOVE,
     ACTIVE_CONTEXT_DIM,
     GLOBAL_ENV_DIM
 )
@@ -139,8 +146,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
     @property
     def base_dimension(self) -> int:
         """Raw encoder output dimension, before the previous-turn mask is appended."""
-        # gen3_pair_history_v1: the H-A2 pair-history block sits after reactive, closing base.
-        return OFFSET_PAIR_HISTORY + PAIR_HISTORY_DIM
+        # gen3_event_window_v1: the H-B event window sits after the H-A2 block, closing base.
+        return OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM
 
     @property
     def dimension(self) -> int:
@@ -150,7 +157,8 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
     def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None,
-               progress_clock=None, recency=None, pair_history=None) -> np.ndarray:
+               progress_clock=None, recency=None, pair_history=None,
+               event_window=None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
@@ -311,6 +319,43 @@ class Gen3ObservationEncoder(ObservationEncoder):
                     vec[_b : _b + PAIR_HISTORY_CELL_DIM] = \
                         pair_history.pair_values(_opp_sp, _our_sp)
 
+        # 7. Tier H-B (gen3_event_window_v1): the last-N event records, oldest-first, padded
+        # with zero rows at the FRONT (most-recent event is always the last valid row — a
+        # stable read for the flag-gated event-seat encoder). Ids are embedding ids (the
+        # column comment in constants.py); no Linear reads this block raw. None (standalone/
+        # test path) leaves the block zero like the other optional trackers.
+        if event_window is not None:
+            from agents import gen3_data
+            _rows = event_window.window()[-EVENT_WINDOW_N:]
+            _cur = event_window.turn
+            _base = OFFSET_EVENT_WINDOW + (EVENT_WINDOW_N - len(_rows)) * EVENT_TOKEN_DIM
+            for _ri, _r in enumerate(_rows):
+                _o = _base + _ri * EVENT_TOKEN_DIM
+                _actor = gen3_data.species.get(_r["actor"]) if _r["actor"] else None
+                _target = gen3_data.species.get(_r["target"]) if _r["target"] else None
+                _mv = gen3_movedex.get(_r["move_id"]) if _r["move_id"] else None
+                vec[_o + 0] = float(_r["t"])
+                vec[_o + 1] = float(_actor.num) if _actor is not None else 0.0
+                vec[_o + 2] = (1.0 if _r["side"] == "ours"
+                               else (-1.0 if _r["side"] == "opp" else 0.0))
+                vec[_o + 3] = float(_target.num) if _target is not None else 0.0
+                vec[_o + 4] = float(_mv.num) if _mv is not None else 0.0
+                _mag = _r["hp_delta"]
+                vec[_o + 5] = (max(-1.0, min(1.0, _mag)) if _r["t"] == EVENT_T_MOVE
+                               else max(-1.0, min(1.0, _mag / 6.0)))
+                if _r["t"] == EVENT_T_MOVE:
+                    vec[_o + 6] = 0.0 if (_r["missed"] or _r["failed"]) else 1.0
+                    vec[_o + 7] = 1.0 if _r["missed"] else 0.0
+                    vec[_o + 8] = 1.0 if _r["failed"] else 0.0
+                    vec[_o + 9] = 1.0 if _r["crit"] else 0.0
+                    vec[_o + 10 + int(_r["eff"])] = 1.0
+                vec[_o + 14] = 1.0 if _r["we_first"] else 0.0
+                vec[_o + 15] = float(_r["status"])
+                _ago = max(0, _cur - int(_r["turn"]))
+                vec[_o + 16] = math.log1p(min(_ago, 10)) / math.log(11.0)
+                vec[_o + 17] = float(_r["forced_window"])
+                vec[_o + 18] = 1.0
+
         return vec
 
     def get_observation(self, battle: AbstractBattle) -> Dict[str, Any]:
@@ -379,6 +424,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
             "pair_history_offset": OFFSET_PAIR_HISTORY,
             "pair_history_dim": PAIR_HISTORY_DIM,
             "pair_history_cell_dim": PAIR_HISTORY_CELL_DIM,
+            "event_window_offset": OFFSET_EVENT_WINDOW,
+            "event_window_dim": EVENT_WINDOW_DIM,
+            "event_window_n": EVENT_WINDOW_N,
+            "event_token_dim": EVENT_TOKEN_DIM,
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
             "max_species": 400,

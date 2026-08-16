@@ -66,8 +66,7 @@ _WIN_CONTESTED_TAU = 0.25
 # (≈unit std), the belt-and-braces collapse guard on top of the stop-grad + task-anchored target.
 # Weighted by _LATENT_VICREG_WEIGHT inside the move-latent loss. The `movelatent_std` metric (mean
 # per-dim std) is the NO-GO monitor: std→0 while cosine→1 is collapse.
-_LATENT_STD_TARGET = 1.0
-_LATENT_VICREG_WEIGHT = 1.0
+# (moved to belief_bank with the latent loss; re-exported below for old imports)
 
 # Gradient-noise-scale EMA decay (McCandlish et al. 2018, "An Empirical Model of Large-Batch
 # Training"). The single-step estimates of |G|² (true-gradient squared norm) and tr(Σ) (per-example
@@ -76,18 +75,15 @@ _LATENT_VICREG_WEIGHT = 1.0
 # ≈ a few-hundred-train()-call window — long enough to denoise, short enough to track drift.
 _NOISE_SCALE_EMA_DECAY = 0.99
 
-# Spread-belief loss (gen3_unified_spread_belief_v1): the believed/true DERIVED stat VALUES are ~80-450,
-# so normalise by this before smooth_l1 to keep the term O(1) (the coef then sets its true weight). The
-# MAE metric is reported in RAW stat points (not normalised) for interpretability.
-_SPREAD_LOSS_SCALE = 100.0
-
-# Nature/EV-belief loss (gen3_nature_ev_belief_v1): the nature is a 25-way CE; the EV is a smooth_l1 over EV
-# VALUES (0..252) normalised by this so the term stays O(1) (the spread coef then sets its true weight). The
-# CE + EV sub-terms combine with these internal weights (the CE is the load-bearing decomposition signal; the
-# EV-MAE metric is reported in RAW EV points).
-_EV_LOSS_SCALE = 64.0
-_NATURE_CE_WEIGHT = 1.0
-_EV_LOSS_WEIGHT = 1.0
+# The supervised belief-head losses + their scale constants live in `belief_bank` (the
+# declarative fold of design_unified_belief.md §4 — one ROW per head instead of one inline
+# vertical per head). Re-exported here because tests and older call sites import them from
+# this module.
+from agents.training.belief_bank import (   # noqa: F401  (re-exports)
+    _EV_LOSS_SCALE, _NATURE_CE_WEIGHT, _EV_LOSS_WEIGHT, _SPREAD_LOSS_SCALE,
+    _LATENT_STD_TARGET, _LATENT_VICREG_WEIGHT,
+)
+from agents.training import belief_bank as _belief_bank
 
 
 def _verify_upstream_unchanged() -> None:
@@ -676,392 +672,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
         }
         return loss, metrics
 
-    @staticmethod
-    def _move_belief_loss(ml, known_moves, belief_moves, mode: str):
-        """Supervised loss for the MoveBelief REINJECTION head (``last_move_belief_logits`` [B,6,M]).
+    # ALL FIVE supervised belief losses now live in `belief_bank` (the declarative fold);
+    # these aliases keep every existing call site and test resolving unchanged.
+    _move_belief_loss = staticmethod(_belief_bank.move_belief_loss)
+    # The three revealed-slot supervised losses MOVED to `belief_bank` (the declarative fold);
+    # these aliases keep every existing call site and test resolving unchanged.
+    _spread_belief_loss = staticmethod(_belief_bank.spread_belief_loss)
+    _nature_ev_belief_loss = staticmethod(_belief_bank.nature_ev_belief_loss)
+    _hp_type_belief_loss = staticmethod(_belief_bank.hp_type_belief_loss)
 
-        Two DISJOINT slot populations, selected by ``mode``:
-        - REVEALED slots (mode revealed|both): seen mons. ``known_moves`` [B,6,4] holds each revealed
-          slot's FULL privileged moveset; those slots are supervised DIRECTLY (slot==species, no
-          matching) by a multi-label BCE — the head learns the mon's as-yet-UNREVEALED moves
-          (the surprise-OHKO new-move gap).
-        - UNREVEALED slots (mode unrevealed|both): hidden mons. ``belief_moves`` [B,6,4] holds the hidden
-          movesets at the believed (anonymous) slots; the k believed-slot predictions are
-          order-invariantly matched to the k hidden movesets (per-sample min-cost assignment — the
-          slots are interchangeable, so a fixed slot↔mon target would chase a reveal-shifting
-          assignment, the same defect the species aux fixed). The matching cost is the
-          assignment-relevant part of BCE, ``-(pred·target)`` (the per-slot constant terms drop out of
-          the argmin), so it is a cheap einsum, not a full pairwise BCE.
+    _move_belief_latent_loss = staticmethod(_belief_bank.move_belief_latent_loss)
 
-        The two label tensors PAD each other's slots (known_moves PADs believed slots; belief_moves
-        PADs revealed slots), so 'both' simply scores each population with its own rule. A slot whose
-        moveset is all-PAD (unknown moves) is NOT supervised. Returns (loss, metrics) or None
-        (off / labels absent / nothing scorable). FAILS LOUD on an out-of-vocab move id. Pure + static
-        (unit-tests without a full PPO)."""
-        if ml is None:
-            return None
-        device = ml.device
-        n_moves = ml.shape[-1]
-        terms = []
-        mv_tp = mv_pred_pos = mv_true_pos = 0
-        n_revealed = n_unrevealed = 0
-
-        def _vocab_check(ids):
-            if ids.numel() and bool((ids >= n_moves).any()):
-                raise ValueError(
-                    f"move-belief label out of vocab: max {int(ids.max())} (n_moves {n_moves}) — "
-                    "the embedding-num pipeline is corrupt (real Gen-3 move nums are all < 400)."
-                )
-
-        # ---- REVEALED: direct multi-label BCE (slot identity == revealed species) ----
-        if mode in ("revealed", "both") and known_moves is not None:
-            km = known_moves.long().to(device)                                     # [B, 6, 4]
-            valid = km >= 0
-            _vocab_check(km[valid])
-            slot_has = valid.any(-1)                                               # [B, 6]
-            if bool(slot_has.any()):
-                multi_hot = th.zeros_like(ml)                                      # [B, 6, M]
-                bb, ss, _ = valid.nonzero(as_tuple=True)
-                multi_hot[bb, ss, km[valid]] = 1.0
-                per_slot = F.binary_cross_entropy_with_logits(
-                    ml, multi_hot, reduction="none").mean(-1)                      # [B, 6]
-                terms.append(per_slot[slot_has].reshape(-1))
-                with th.no_grad():
-                    sel = slot_has.unsqueeze(-1)
-                    pp = (ml > 0.0) & sel
-                    mh = multi_hot.bool() & sel
-                    mv_tp += int((pp & mh).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mh.sum())
-                n_revealed += int(slot_has.sum())
-
-        # ---- UNREVEALED: order-invariant (Hungarian) multi-label BCE over the believed slots ----
-        if mode in ("unrevealed", "both") and belief_moves is not None:
-            bm = belief_moves.long().to(device)                                    # [B, 6, 4]
-            valid = bm >= 0
-            _vocab_check(bm[valid])
-            slot_has = valid.any(-1)                                               # [B, 6] believed slots w/ a moveset
-            counts = slot_has.sum(1)                                               # [B] k per sample
-            for k in range(1, ml.shape[1] + 1):
-                sel = (counts == k).nonzero(as_tuple=True)[0]
-                if sel.numel() == 0:
-                    continue
-                n = sel.numel()
-                slot_idx = slot_has[sel].nonzero(as_tuple=False)[:, 1].view(n, k)  # [n, k] believed positions
-                rows = sel.view(n, 1).expand(n, k)
-                preds = ml[rows, slot_idx]                                         # [n, k, M] logits
-                tgt = th.zeros((n, k, n_moves), device=device)                     # [n, k, M] target multi-hots
-                ids = bm[rows, slot_idx]                                           # [n, k, 4]
-                vmask = ids >= 0
-                if bool(vmask.any()):
-                    aa, kk, _ = vmask.nonzero(as_tuple=True)
-                    tgt[aa, kk, ids[vmask]] = 1.0
-                # cost[a,i,j] = assignment-relevant part of BCE(pred_i, tgt_j) = -(pred_i · tgt_j). The
-                # per-slot constant BCE terms are independent of the assignment → drop from the argmin.
-                cost = -th.einsum('akm,ajm->akj', preds, tgt)                      # [n, k, k]
-                perms = th.tensor(list(itertools.permutations(range(k))), dtype=th.long, device=device)
-                ii = th.arange(k, device=device).view(1, k).expand(perms.shape[0], k)
-                best_perm = perms[cost[:, ii, perms].sum(-1).argmin(1)]            # [n, k] min-cost assignment
-                matched = th.gather(tgt, 1, best_perm[:, :, None].expand(n, k, n_moves))  # [n, k, M]
-                per_slot = F.binary_cross_entropy_with_logits(
-                    preds, matched, reduction="none").mean(-1)                     # [n, k]
-                terms.append(per_slot.reshape(-1))
-                with th.no_grad():
-                    pp = preds > 0.0
-                    mh = matched.bool()
-                    mv_tp += int((pp & mh).sum()); mv_pred_pos += int(pp.sum()); mv_true_pos += int(mh.sum())
-                n_unrevealed += n * k
-
-        if not terms:
-            return None
-        loss = th.cat(terms).mean()
-        metrics = {
-            "bce": float(loss.item()),
-            "precision": (mv_tp / mv_pred_pos) if mv_pred_pos else 0.0,
-            "recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
-            "revealed_slots": float(n_revealed),
-            "unrevealed_slots": float(n_unrevealed),
-        }
-        return loss, metrics
-
-    @staticmethod
-    def _spread_belief_loss(sb, belief_spread, belief_spread_mask):
-        """Supervised loss for the SPREAD belief (gen3_unified_spread_belief_v1).
-
-        `sb` = the extractor's stashed `last_spread_belief` [B,6,5] — the believed DERIVED stats
-        {atk,def,spa,spd,spe} the DamageOperator consumes. Supervise the REVEALED opp slots
-        (`belief_spread_mask` [B,6]==1) toward their TRUE derived stats (`belief_spread` [B,6,5], a
-        training-only privileged label) with a smooth-L1 in scale-normalised stat units, so the head
-        learns the opponent's HIDDEN EV spread instead of sitting at the usage-mean prior (the
-        "over-estimates the largest EV" miscalibration). The gradient flows believed → stat_head →
-        opp tokens → trunk, so it joins the aux pull on the grad-balance probe.
-
-        Returns (loss, metrics) or None (off / labels absent / no scored slot). LEAK-SAFE: the believed
-        stats are a MODEL OUTPUT (the op's own input), not a label; the true-spread LABEL rides a
-        training-only obs key read ONLY here, never in the pi/vf forward. Pure + static (unit-testable
-        without a full PPO)."""
-        if sb is None or belief_spread is None or belief_spread_mask is None:
-            return None
-        device = sb.device
-        target = belief_spread.to(device).float()                          # [B,6,5]
-        mask = belief_spread_mask.to(device).float() > 0.5                 # [B,6]
-        if not bool(mask.any()):
-            return None
-        sb_sel = sb[mask]                                                  # [N,5]
-        tgt_sel = target[mask]                                             # [N,5]
-        loss = F.smooth_l1_loss(sb_sel / _SPREAD_LOSS_SCALE, tgt_sel / _SPREAD_LOSS_SCALE)
-        with th.no_grad():
-            mae = (sb_sel - tgt_sel).abs().mean()
-            # The "over-estimate the largest EV" diagnostic: signed error on each mon's LARGEST true stat
-            # (>0 ⇒ over-estimating it). Should trend toward 0 as the head learns off the prior.
-            amax = tgt_sel.argmax(dim=1)
-            rows = th.arange(tgt_sel.shape[0], device=device)
-            largest_bias = (sb_sel[rows, amax] - tgt_sel[rows, amax]).mean()
-        return loss, {"mae": float(mae.item()), "largest_bias": float(largest_bias.item()),
-                      "n_slots": int(mask.sum().item()),
-                      # UNIFORM across every belief head (belief/<head>_mask_rate): fraction of the
-                      # B×6 slot grid this head scored — the label-coverage ceiling, comparable
-                      # across heads/batch sizes (n_slots is not). gen3_belief_mask_rate_v1.
-                      "mask_rate": float(mask.float().mean().item())}
-
-    @staticmethod
-    def _nature_ev_belief_loss(nat_logits, ev_pred, belief_nature, belief_nature_mask, belief_ev, belief_ev_mask):
-        """Supervised loss for the NATURE/EV decomposition of the generative spread belief
-        (`gen3_nature_ev_belief_v1`). `nat_logits` [B,6,25] + `ev_pred` [B,6,5] are the extractor's stashed
-        `last_spread_nature_logits` / `last_spread_ev` (BOTH None when the additive head is used → returns None,
-        so the term is auto-skipped unless --spread-belief-nature is on). Supervise the REVEALED opp slots
-        toward the privileged INVERTED (nature, EVs) label: a 25-way CE on the nature + a scale-normalised
-        smooth_l1 on the EVs. This trains the decomposition DIRECTLY — the derived-stat smooth_l1 alone is
-        many-to-one (many (nature, EV) reproduce one derived stat) so it can't pin the nature/EV; this is what
-        actually fixes the "over-estimates the largest EV" order-statistic bias. The gradient flows
-        head → opp tokens → trunk. LEAK-SAFE: the labels are training-only, read ONLY here, never in pi/vf.
-        Returns (loss, metrics) or None (off / labels absent / no scored slot)."""
-        if nat_logits is None or ev_pred is None or belief_nature is None or belief_ev is None:
-            return None
-        device = nat_logits.device
-        if belief_nature_mask is None:
-            return None
-        nmask = belief_nature_mask.to(device).float() > 0.5                 # [B,6]
-        if not bool(nmask.any()):
-            return None
-        nat_true = belief_nature.to(device).long()                         # [B,6]
-        nl = nat_logits[nmask]                                              # [N,25]
-        nt = nat_true[nmask]                                               # [N]
-        nat_ce = F.cross_entropy(nl, nt)
-        ev_true = belief_ev.to(device).float()                             # [B,6,5]
-        evm = (belief_ev_mask.to(device).float() > 0.5) if belief_ev_mask is not None else nmask
-        if bool(evm.any()):
-            ev_loss = F.smooth_l1_loss(ev_pred[evm] / _EV_LOSS_SCALE, ev_true[evm] / _EV_LOSS_SCALE)
-            ev_mae = (ev_pred[evm] - ev_true[evm]).abs().mean().detach()
-        else:
-            ev_loss = nl.new_zeros(())
-            ev_mae = nl.new_zeros(())
-        loss = _NATURE_CE_WEIGHT * nat_ce + _EV_LOSS_WEIGHT * ev_loss
-        with th.no_grad():
-            acc = (nl.argmax(dim=-1) == nt).float().mean()
-        return loss, {"nature_acc": float(acc.item()), "nature_ce": float(nat_ce.item()),
-                      "ev_mae": float(ev_mae.item()), "n_slots": int(nmask.sum().item()),
-                      "mask_rate": float(nmask.float().mean().item())}   # uniform: see _spread_belief_loss
-
-    @staticmethod
-    def _hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
-        """Supervised CROSS-ENTROPY for the HP-TYPE belief (gen3_opp_hp_type_belief_v1).
-
-        `logits` = the extractor's stashed `last_hp_type_logits` [B,6,16] — the HPTypeBelief head's
-        per-opp-slot HP-type posterior logits (Smogon prior ⊕ learned delta) the DamageOperator consumes as
-        its typed-HP candidate weights. Supervise the slots whose REVEALED species runs Hidden Power
-        (`hp_type_mask` [B,6]==1) toward the TRUE HP type index (`hp_type_label` [B,6] ∈ 0..15, a
-        training-only privileged label — Gen 3 never reveals the opp HP type, so it can't ride the obs
-        vector). The gradient flows posterior → hp_type_head → opp tokens → trunk, joining the aux pull on
-        the grad-balance probe.
-
-        Returns (loss, metrics) or None (off / labels absent / no scored slot). LEAK-SAFE: the posterior is
-        a MODEL OUTPUT (the op's own input), not a label; the true-type LABEL rides a training-only obs key
-        read ONLY here, never in pi/vf. Pure + static (unit-testable without a full PPO)."""
-        if logits is None or hp_type_label is None or hp_type_mask is None:
-            return None
-        device = logits.device
-        label = hp_type_label.to(device).long()                            # [B,6]
-        mask = hp_type_mask.to(device).float() > 0.5                       # [B,6]
-        if not bool(mask.any()):
-            return None
-        sel_logits = logits[mask]                                          # [N,16]
-        sel_label = label[mask].clamp(min=0)                               # [N] (PAD -1 is masked out already)
-        loss = F.cross_entropy(sel_logits, sel_label)
-        with th.no_grad():
-            acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
-        return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item()),
-                      "mask_rate": float(mask.float().mean().item())}    # uniform: see _spread_belief_loss
-
-    @staticmethod
-    def _move_belief_latent_loss(ml, latent_table, known_moves):
-        """LATENT-space grading of the move belief (gen3_unified_move_system_v1) — the soft complement to
-        the per-ID BCE so near-moves (Rock Slide ≈ Hidden Power Rock) grade as near.
-
-        For each REVEALED scored slot (slot==species, like the BCE's revealed branch): the predicted
-        distribution's EXPECTED move-latent ``softmax(ml) @ latent_table`` (softmax over the move axis →
-        floor-robust, concentrates on the believed moves) is regressed by COSINE toward the slot's true
-        moveset MEAN latent (stop-grad — the grading TARGET), plus a VICReg variance floor on the
-        predictions. ``latent_table`` ``[M, D]`` is the context-free `MoveLatentEncoder.latent_table`;
-        ``ml`` ``[B,6,M]``; ``known_moves``
-        ``[B,6,4]`` (move nums, -1 PAD). Returns (loss, metrics) or None (off / labels absent / nothing
-        scorable). Pure + static (unit-testable without a full PPO).
-
-        COLLAPSE NOTE: the target here is derived from the SAME
-        `latent_table` whose params the prediction gradient updates (the `.detach()` only severs the
-        per-step path, not the shared table). So the cosine could in principle be gamed by collapsing the
-        table rows to one DIRECTION. The VICReg term below is NOT the guard against that — it floors per-dim
-        MAGNITUDE variance, which an angular collapse can satisfy by scaling magnitudes. The REAL
-        anti-collapse pressure is the RL TASK-ANCHORING: the same per-move latent feeds the move network
-        (`PokemonEncoder.forward`), so the table can't freely collapse without hurting the policy/value
-        objective. (Empirically full direction-collapse is not a reachable attractor of this loss; the
-        `movelatent_std` metric monitors magnitude, not angle — a future change that weakens the move-net
-        anchoring would remove the only real guard, so add a row-decorrelation term then.)"""
-        if ml is None or latent_table is None or known_moves is None:
-            return None
-        device = ml.device
-        km = known_moves.long().to(device)                                # [B,6,4]
-        valid = km >= 0
-        slot_has = valid.any(-1)                                          # [B,6]
-        if not bool(slot_has.any()):
-            return None
-        # predicted distribution's expected latent (softmax kills the ~0.02 prior floor → the latent is
-        # the believed moves', not the global mean), [B,6,D].
-        pred_latent = F.softmax(ml, dim=-1) @ latent_table               # [B,6,D]
-        # target = mean of the slot's TRUE moves' latents (stop-grad). gather + zero pads + mean.
-        move_lat = latent_table[km.clamp(min=0)] * valid.unsqueeze(-1).float()   # [B,6,4,D] (pads → 0)
-        tgt = (move_lat.sum(2) / valid.sum(-1, keepdim=True).clamp(min=1).float()).detach()  # [B,6,D]
-        pl = pred_latent[slot_has]                                        # [N,D]
-        tl = tgt[slot_has]                                                # [N,D]
-        cos = F.cosine_similarity(pl, tl, dim=-1)                         # [N]
-        cos_loss = (1.0 - cos).mean()
-        std = th.sqrt(pl.var(dim=0, unbiased=False) + 1e-4)              # [D] per-dim MAGNITUDE floor (see COLLAPSE NOTE)
-        vicreg = F.relu(_LATENT_STD_TARGET - std).mean()
-        loss = cos_loss + _LATENT_VICREG_WEIGHT * vicreg
-        metrics = {
-            "cosine": float(cos.mean().item()),
-            "std": float(std.mean().item()),
-            "slots": float(int(slot_has.sum())),
-        }
-        return loss, metrics
-
-    @staticmethod
-    def _belief_aux_loss(bl, sp_labels, mv_labels, moves_weight: float = 1.0):
-        """Order-invariant (Hungarian / DETR-style) hidden-opponent belief aux loss.
-
-        bl = {"species": [B,6,S], "moves": [B,6,M]} (the stashed BeliefHead logits); sp_labels [B,6]
-        and mv_labels [B,6,4] are the privileged int labels (-1 = revealed/pad).
-        The k believed-slot predictions of each sample are matched to its k hidden-mon targets by
-        **per-sample min-cost assignment** (so the anonymous slot tokens collectively cover the hidden
-        SET instead of each chasing a reveal-shifting fixed slot↔mon target), then species cross-entropy
-        + moves multi-label BCE are taken over the matched pairs. The matching is exact: for k ≤ TEAM_SIZE
-        the k! permutations are enumerated and the min-CE-cost one chosen (vectorised per distinct k — no
-        per-sample Python loop, no scipy).
-
-        Perf: the species log-softmax is taken on the GATHERED believed slots ([n,k,S]) not the full
-        [B,6,S] (the non-believed slots are never read); the moves branch is skipped entirely when
-        moves_weight==0; accuracy + moves P/R are diagnostics computed under no_grad.
-
-        Returns (aux_tensor, metrics_dict) or None when nothing to score (belief
-        off / labels absent / a minibatch with zero believed slots — the None guard keeps an empty
-        minibatch from NaN-poisoning the loss). FAILS LOUD on an out-of-vocab label id (impossible on
-        real data → a corrupt embedding-num pipeline), rather than silently dropping it. Pure + static so
-        it unit-tests without a full PPO."""
-        if bl is None or sp_labels is None or mv_labels is None:
-            return None
-        sp_logits = bl["species"]
-        mv_logits = bl["moves"]
-        device = sp_logits.device
-        sp_labels = sp_labels.long().to(device)
-        mv_labels = mv_labels.long().to(device)
-        n_species = sp_logits.shape[-1]
-        n_moves = mv_logits.shape[-1]
-        believed = sp_labels >= 0                                                  # [B, 6] (-1 = not scored)
-        counts = believed.sum(1)                                                   # [B] k per sample
-        if int(counts.sum()) == 0:
-            return None
-        # FAIL LOUD: a believed label id must fit the vocab. Every real Gen-3 species/move num is well
-        # inside max=400, so a violation means the label↔embedding num space is corrupt — crash, don't
-        # silently filter and train on a hole. (-1 pads were already excluded by `believed`.) A SINGLE
-        # host-sync on the happy path (the per-element max()/message only run on the failure path).
-        sp_believed = sp_labels[believed]
-        mv_believed = mv_labels[believed]
-        sp_bad = (sp_believed >= n_species).any()
-        mv_bad = (mv_believed >= n_moves).any() if mv_believed.numel() else sp_bad.new_zeros(())
-        if bool(sp_bad | mv_bad):
-            raise ValueError(
-                f"belief label out of vocab: species max {int(sp_believed.max())} (n_species {n_species}) / "
-                f"move max {int(mv_believed.max()) if mv_believed.numel() else -1} (n_moves {n_moves}) — "
-                "the embedding-num pipeline is corrupt (real Gen-3 nums are all < 400)."
-            )
-        do_moves = moves_weight != 0.0
-        ce_terms, bce_terms = [], []
-        n_correct = th.zeros((), device=device)
-        n_slots = 0
-        mv_tp = mv_pred_pos = mv_true_pos = 0  # moves precision/recall accumulators (diagnostic)
-        # Group samples by their believed-slot count k; within a group every cost matrix is k×k so the
-        # whole group is matched with one vectorised permutation-enumeration.
-        for k in range(1, sp_labels.shape[1] + 1):
-            sel = (counts == k).nonzero(as_tuple=True)[0]                          # samples with k believed
-            if sel.numel() == 0:
-                continue
-            n = sel.numel()
-            slot_idx = believed[sel].nonzero(as_tuple=False)[:, 1].view(n, k)      # [n, k] believed positions
-            rows = sel.view(n, 1).expand(n, k)                                     # [n, k] sample indices
-            pred_logp = th.log_softmax(sp_logits[rows, slot_idx], dim=-1)          # [n, k, S] softmax on gathered
-            tgt_sp = sp_labels[rows, slot_idx]                                     # [n, k] target species
-            # cost[a,i,j] = CE of predicting believed-slot i's logits at target j = -logp[a,i,tgt[a,j]]
-            cost = -th.gather(pred_logp, 2, tgt_sp[:, None, :].expand(n, k, k))    # [n, k, k]
-            perms = th.tensor(list(itertools.permutations(range(k))), dtype=th.long, device=device)  # [P,k]
-            ii = th.arange(k, device=device).view(1, k).expand(perms.shape[0], k)
-            best_perm = perms[cost[:, ii, perms].sum(-1).argmin(1)]               # [n, k] min-cost assignment
-            matched_sp = th.gather(tgt_sp, 1, best_perm)                           # [n, k] matched species target
-            ce_terms.append((-th.gather(pred_logp, 2, matched_sp[:, :, None]).squeeze(-1)).reshape(-1))
-            with th.no_grad():
-                n_correct = n_correct + (pred_logp.argmax(-1) == matched_sp).sum()
-            n_slots += n * k
-            if do_moves:
-                matched_label_slot = th.gather(slot_idx, 1, best_perm)             # [n, k] matched label slot
-            if do_moves:
-                mv_pred = mv_logits[rows, slot_idx]                                # [n, k, M] predictions
-                mv_ids = mv_labels[rows, matched_label_slot]                      # [n, k, 4] matched move ids
-                mvalid = mv_ids >= 0                                               # [n, k, 4] (pad excluded)
-                multi_hot = th.zeros_like(mv_pred)                                 # [n, k, M]
-                if bool(mvalid.any()):
-                    aa, kk, _ = mvalid.nonzero(as_tuple=True)
-                    multi_hot[aa, kk, mv_ids[mvalid]] = 1.0
-                # per-slot BCE = mean over the M move classes (same per-slot scale as the per-slot CE),
-                # but ONLY for slots with ≥1 labeled move — a slot whose moves are all-pad (unknown
-                # moveset) must NOT be supervised toward "predict no moves" (all-negative).
-                slot_has_moves = mvalid.any(-1)                                    # [n, k]
-                per_slot_bce = F.binary_cross_entropy_with_logits(
-                    mv_pred, multi_hot, reduction="none").mean(-1)                 # [n, k]
-                bce_terms.append(per_slot_bce[slot_has_moves].reshape(-1))
-                with th.no_grad():
-                    pred_present = mv_pred > 0.0                                   # sigmoid>0.5 ⇒ predicted present
-                    mv_tp += int((pred_present & multi_hot.bool()).sum())
-                    mv_pred_pos += int(pred_present.sum())
-                    mv_true_pos += int(multi_hot.sum())
-        ce = th.cat(ce_terms).mean()
-        bce_cat = th.cat(bce_terms) if bce_terms else th.zeros(0, device=device)
-        # numel guard: every believed slot could have an unknown moveset (all-pad) → no BCE terms → 0
-        # (not NaN). In practice hidden mons have mapped moves so this is the degenerate edge.
-        bce = bce_cat.mean() if bce_cat.numel() else th.zeros((), device=device)
-        aux = ce + moves_weight * bce
-        n_samples = int((counts > 0).sum())
-        acc = float((n_correct.float() / max(1, n_slots)).item())
-        metrics = {
-            "species_ce": float(ce.item()),
-            "moves_bce": float(bce.item()),
-            "species_acc": acc,
-            "species_acc_above_chance": acc - 1.0 / n_species,
-            "moves_precision": (mv_tp / mv_pred_pos) if mv_pred_pos else 0.0,
-            "moves_recall": (mv_tp / mv_true_pos) if mv_true_pos else 0.0,
-            "k_mean": n_slots / max(1, n_samples),
-            "coverage": n_samples / sp_labels.shape[0],
-            # uniform per-head coverage (see _spread_belief_loss): here believed = HIDDEN slots,
-            # so this is the flip side of the revealed-slot heads' rates — together they tile B×6.
-            "mask_rate": n_slots / believed.numel(),
-        }
-        return aux, metrics
+    _belief_aux_loss = staticmethod(_belief_bank.belief_aux_loss)
 
     def _value_loss_from_se(self, se: "th.Tensor") -> "th.Tensor":
         """Tail-weighted value loss from per-sample squared errors `se` (in whatever space the branch
@@ -1347,42 +969,27 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
                 # the privileged labels ride the same obs dict (training-only keys). Masked to the
                 # believed slots, folded in at opp_belief_aux_coef. OFF → skipped (loss byte-identical).
+                # +BELIEF BANK site "hidden_move": the hidden-team Hungarian aux
+                # (masked to the BELIEVED slots, folded at opp_belief_aux_coef — metrics
+                # UNPREFIXED with the historic `aux_loss` key) and the move-belief BCE
+                # (revealed direct + unrevealed order-invariant, folded at move_belief_coef,
+                # `move_` prefix). Same two blocks, one loop — rows in belief_bank.ROWS.
                 belief_aux_term = None  # the WEIGHTED aux contribution, for the grad-balance probe
-                if belief_aux_on:
-                    aux_out = self._belief_aux_loss(
-                        self.policy.features_extractor.last_belief_logits,
-                        rollout_data.observations.get("belief_species"),
-                        rollout_data.observations.get("belief_moves"),
-                        moves_weight=self.opp_belief_moves_weight,
-                    )
-                    if aux_out is not None:
-                        aux, belief_m = aux_out
-                        belief_aux_term = self.opp_belief_aux_coef * aux
-                        loss = loss + belief_aux_term
-                        belief_m["aux_loss"] = float(aux.item())
-                        for _bk, _bv in belief_m.items():
-                            belief_metrics.setdefault(_bk, []).append(float(_bv))
-
-                # +MOVE-BELIEF: predict+reinject the opp moveset. The extractor forward (run by
-                # evaluate_actions above) stashed last_move_belief_logits; known_moves/belief_moves ride
-                # the same training-only obs dict. Folded at move_belief_coef; mode read off the extractor
-                # (single source). OFF → skipped (byte-identical). Its gradient ALSO flows into the trunk
-                # via the reinjection, so it joins the aux pull on the grad-balance probe.
                 move_belief_term = None
-                if move_belief_on:
-                    mb_out = self._move_belief_loss(
-                        self.policy.features_extractor.belief_supervision("move_belief_logits"),
-                        rollout_data.observations.get("known_moves"),
-                        rollout_data.observations.get("belief_moves"),
-                        self.policy.features_extractor.move_belief_mode,
-                    )
-                    if mb_out is not None:
-                        mb_loss, mb_m = mb_out
-                        move_belief_term = self.move_belief_coef * mb_loss
-                        loss = loss + move_belief_term
-                        mb_m["loss"] = float(mb_loss.item())
-                        for _mk, _mv in mb_m.items():
-                            belief_metrics.setdefault("move_" + _mk, []).append(float(_mv))
+                for _brow, _bterm, _bm in _belief_bank.compute(
+                        self.policy.features_extractor, rollout_data.observations,
+                        coefs={"opp_belief_aux_coef": self.opp_belief_aux_coef,
+                               "move_belief_coef": self.move_belief_coef},
+                        gates={"hidden_team": belief_aux_on, "move_belief": move_belief_on},
+                        site="hidden_move",
+                        params={"moves_weight": self.opp_belief_moves_weight}):
+                    loss = loss + _bterm
+                    if _brow.name == "hidden_team":
+                        belief_aux_term = _bterm
+                    elif _brow.name == "move_belief":
+                        move_belief_term = _bterm
+                    for _bk, _bv in _bm.items():
+                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
 
                 # +OPPONENT INTENT (gen3_opp_intent_v1): supervise ALPHA/BETA against what the
                 # opponent actually did. The label lives in the obs, one row AHEAD of the prediction
@@ -1533,83 +1140,44 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # Reads the extractor's context-free move-latent table (stashed this minibatch) + the same
                 # known_moves labels. Its gradient flows into the move-belief head AND the MoveLatentEncoder
                 # (the table) → it joins the aux pull on the trunk. OFF → skipped (byte-identical).
+                # +BELIEF BANK site "latent": the move-latent grading (soft complement to the
+                # per-ID BCE — near-moves grade as near; `movelatent_` prefix).
                 move_latent_term = None
-                if move_latent_on:
-                    ml_out = self._move_belief_latent_loss(
-                        self.policy.features_extractor.belief_supervision("move_belief_logits"),
-                        self.policy.features_extractor.last_move_latent_table,
-                        rollout_data.observations.get("known_moves"),
-                    )
-                    if ml_out is not None:
-                        ml_loss, ml_m = ml_out
-                        move_latent_term = self.move_belief_latent_coef * ml_loss
-                        loss = loss + move_latent_term
-                        ml_m["loss"] = float(ml_loss.item())
-                        for _lk, _lv in ml_m.items():
-                            belief_metrics.setdefault("movelatent_" + _lk, []).append(float(_lv))
+                for _brow, _bterm, _bm in _belief_bank.compute(
+                        self.policy.features_extractor, rollout_data.observations,
+                        coefs={"move_belief_latent_coef": self.move_belief_latent_coef},
+                        gates={"move_latent": move_latent_on}, site="latent"):
+                    loss = loss + _bterm
+                    move_latent_term = _bterm
+                    for _bk, _bv in _bm.items():
+                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
 
-                # +SPREAD-BELIEF (gen3_unified_spread_belief_v1): supervise the believed opp spread toward
-                # the TRUE derived stats so the DamageOperator prices damage against the real bulk/offense/
-                # speed instead of the usage-mean prior. evaluate_actions stashed last_spread_belief; the
-                # belief_spread/_mask labels ride the same training-only obs dict. Its gradient flows into
-                # the SpreadBelief head + reinjection → the trunk, so it joins the aux pull. OFF → skipped.
+                # +BELIEF BANK (design_unified_belief.md §4, the code-shape fold): the three
+                # revealed-slot supervised heads — SPREAD (gen3_unified_spread_belief_v1),
+                # NATURE/EV (gen3_nature_ev_belief_v1, folded at the SAME spread coef — one knob
+                # supervises the whole spread belief), HP-TYPE (gen3_opp_hp_type_belief_v1) —
+                # folded by ONE loop over `belief_bank.ROWS`. Registry order == the old inline
+                # block order, so `loss = loss + term` accumulates bit-identically; each head's
+                # per-row docstring (stash keys, labels, leak-safety) lives in belief_bank.
+                # A sixth supervised belief is now a ROW there, not another inline vertical.
                 spread_belief_term = None
-                if spread_belief_on:
-                    sb_out = self._spread_belief_loss(
-                        self.policy.features_extractor.belief_supervision("spread_belief"),
-                        rollout_data.observations.get("belief_spread"),
-                        rollout_data.observations.get("belief_spread_mask"),
-                    )
-                    if sb_out is not None:
-                        sb_loss, sb_m = sb_out
-                        spread_belief_term = self.spread_belief_coef * sb_loss
-                        loss = loss + spread_belief_term
-                        sb_m["loss"] = float(sb_loss.item())
-                        for _sk, _sv in sb_m.items():
-                            belief_metrics.setdefault("spread_" + _sk, []).append(float(_sv))
-
-                # +NATURE/EV BELIEF (gen3_nature_ev_belief_v1): supervise the generative spread belief's NATURE
-                # categorical + EV decomposition toward the privileged inverted (nature, EVs) label, so the head
-                # learns the RIGHT decomposition (the derived loss above is many-to-one). The stashed
-                # last_spread_nature_logits/_ev are None unless --spread-belief-nature → the loss is None →
-                # skipped. Folded at the SAME spread_belief_coef (one knob supervises the whole spread belief).
                 nature_ev_term = None
-                if spread_belief_on:
-                    ne_out = self._nature_ev_belief_loss(
-                        self.policy.features_extractor.belief_supervision("spread_nature_logits"),
-                        self.policy.features_extractor.belief_supervision("spread_ev"),
-                        rollout_data.observations.get("belief_nature"),
-                        rollout_data.observations.get("belief_nature_mask"),
-                        rollout_data.observations.get("belief_ev"),
-                        rollout_data.observations.get("belief_ev_mask"),
-                    )
-                    if ne_out is not None:
-                        ne_loss, ne_m = ne_out
-                        nature_ev_term = self.spread_belief_coef * ne_loss
-                        loss = loss + nature_ev_term
-                        ne_m["loss"] = float(ne_loss.item())
-                        for _nk, _nv in ne_m.items():
-                            belief_metrics.setdefault("natureev_" + _nk, []).append(float(_nv))
-
-                # +HP-TYPE BELIEF (gen3_opp_hp_type_belief_v1): supervise the HPTypeBelief posterior toward the
-                # TRUE opp HP type so the DamageOperator prices the right typed-HP threat (the "opp HP reads
-                # immune" fix). evaluate_actions stashed last_hp_type_logits; the hp_type_label/_mask labels
-                # ride the same training-only obs dict. Its gradient flows into the HPTypeBelief head → the
-                # trunk, joining the aux pull. OFF → skipped (loss byte-identical).
                 hp_type_term = None
-                if hp_type_belief_on:
-                    hp_out = self._hp_type_belief_loss(
-                        self.policy.features_extractor.belief_supervision("hp_type_logits"),
-                        rollout_data.observations.get("hp_type_label"),
-                        rollout_data.observations.get("hp_type_mask"),
-                    )
-                    if hp_out is not None:
-                        hp_loss, hp_m = hp_out
-                        hp_type_term = self.hp_type_belief_coef * hp_loss
-                        loss = loss + hp_type_term
-                        hp_m["loss"] = float(hp_loss.item())
-                        for _hk, _hv in hp_m.items():
-                            belief_metrics.setdefault("hptype_" + _hk, []).append(float(_hv))
+                for _brow, _bterm, _bm in _belief_bank.compute(
+                        self.policy.features_extractor, rollout_data.observations,
+                        coefs={"spread_belief_coef": self.spread_belief_coef,
+                               "hp_type_belief_coef": self.hp_type_belief_coef},
+                        gates={"spread": spread_belief_on, "hp_type": hp_type_belief_on},
+                        site="revealed"):
+                    loss = loss + _bterm
+                    if _brow.name == "spread":
+                        spread_belief_term = _bterm
+                    elif _brow.name == "nature_ev":
+                        nature_ev_term = _bterm
+                    elif _brow.name == "hp_type":
+                        hp_type_term = _bterm
+                    for _bk, _bv in _bm.items():
+                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
 
                 # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
                 # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
