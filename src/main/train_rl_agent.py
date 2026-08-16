@@ -49,7 +49,7 @@ from agents.model.features_extractor import BELIEF_GRAD_MODES, Gen3FeaturesExtra
 # The move prior's LEGAL-BUT-UNOBSERVED base (--move-candidate-floor default) and its lower bound.
 # Move legality itself is unconditional — these only set how high a legal-unobserved move starts.
 from agents.model.damage_tables import _PRIOR_FLOOR, _MIN_PRIOR_FLOOR
-from agents.model.policy import Gen3DualHeadMaskablePolicy
+from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.extractor_arch import build_extractor_arch_kwargs
 from agents.model.compile_prewarm import prewarm_extractor_compile
@@ -3493,6 +3493,11 @@ async def main():
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": _load_extractor_kwargs,
             "net_arch": NET_ARCH,
+            # gen3_policy_activation_pin_v1: carried for PARITY with the fresh-run dict below, so
+            # the two policy_kwargs sites cannot drift. It has no effect on the resume itself —
+            # ModelVersion records no activation field, and SB3 rebuilds the loaded policy from the
+            # ZIP's OWN saved policy_kwargs, not from this dict.
+            "activation_fn": POLICY_ACTIVATION_FN,
             "use_popart": args.use_popart,  # version-checked vs the saved model_config.json
             "value_from_dist": args.value_from_dist,  # Phase B: dist head is the critic (resume-immutable)
         }
@@ -3767,6 +3772,11 @@ async def main():
             "features_extractor_class": Gen3FeaturesExtractor,
             "features_extractor_kwargs": extractor_kwargs,
             "net_arch": [512, 512],
+            # gen3_policy_activation_pin_v1: pin the tower's nonlinearity instead of inheriting
+            # sb3-contrib's signature default. Same value the default gives today (nn.Tanh), so
+            # this is behaviour-neutral — see agents.model.policy.POLICY_ACTIVATION_FN for why an
+            # unpinned activation is invisible to check_compatible.
+            "activation_fn": POLICY_ACTIVATION_FN,
             "optimizer_class": torch.optim.AdamW,
             "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
             "use_popart": args.use_popart,  # builds the PopArtNormalizer in the policy; recorded in model_config.json

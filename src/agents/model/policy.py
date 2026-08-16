@@ -27,6 +27,32 @@ from agents.model.arch_constants import D_MODEL
 from agents.model.popart import PopArtNormalizer
 
 
+# gen3_policy_activation_pin_v1: the nonlinearity of the SB3 `mlp_extractor` tower
+# (`net_arch = [512, 512]`, both the actor and the critic branch).
+#
+# This value was NEVER chosen here. Until 2026-08-16 `train_rl_agent.py` passed `net_arch` but not
+# `activation_fn`, so the tower ran on `MaskableActorCriticPolicy`'s SIGNATURE DEFAULT
+# (`activation_fn: type[nn.Module] = nn.Tanh` — the PPO/MuJoCo default). That is a defensible
+# choice and it is preserved EXACTLY here: pinning is behaviour-neutral by construction.
+#
+# It is pinned because the alternative is a silent dependency on someone else's default. An
+# sb3-contrib upgrade that changed it would rewrite four layers of the live policy, and NOTHING in
+# this repo would notice: `ModelVersion.from_layout_and_policy_kwargs` records
+# `net_arch` but has no activation field at all, so the tower's SHAPE is version-checked while its
+# NONLINEARITY is not — an activation swap is retrain-class yet weight-shape-neutral, so
+# `check_compatible` cannot see it and an old checkpoint would load clean into a different
+# function with no `[ModelVersion] FATAL`.
+#
+# ⚠️ The pin governs NEW models only. On resume SB3 rebuilds the policy from the ZIP's own saved
+# `policy_kwargs`, so a checkpoint written before this landed carries no `activation_fn` and still
+# takes whatever the installed sb3-contrib defaults to. Those checkpoints are protected by the
+# version pin on the code, not by this constant.
+#
+# Changing this is an ARCHITECTURE change: bump `ARCH_SIGNATURE` deliberately (see the
+# model-versioning playbook in `src/agents/model/CLAUDE.md`), because nothing else will catch it.
+POLICY_ACTIVATION_FN = th.nn.Tanh
+
+
 class _NoFlatActionNet(th.nn.Module):
     """gen3_pointer_native_v1: a RAISING stub in `action_net`'s slot.
 

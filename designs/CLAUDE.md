@@ -253,3 +253,14 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   collapse search under the expensive `DamageOperator` critic (≈8 evals/node vs 121), and the
   **team-subset exploiter** as where OPD compounds. Grounds ExIt/AlphaZero, Grill 2020, Gumbel MuZero,
   ReBeL/Student of Games onto our tooling.
+- **`activation_functions.md`** — is ReLU the right nonlinearity for our model? The three
+  nonlinearity **tiers** we already live by (generic ReLU trunk = swappable · SB3 `[512,512]` tower =
+  tanh by an SB3 *default* we never set · bounded pointer-head tanh = deliberate · the semantic
+  sigmoid/softmax/clamp tier where the function *is* the quantity and swapping it is a physics bug),
+  why dying-ReLU risk is low in our shallow LayerNorm-sandwiched trunk, and the one site where the
+  choice is structural — the extractor **returns** `ReLU(·)`, so the whole policy/critic interface is
+  non-negative and every signed quantity costs a channel pair. Records `gen3_policy_activation_pin_v1`:
+  pinning `POLICY_ACTIVATION_FN = nn.Tanh` (behaviour-neutral — it *is* the current default) because an
+  activation swap is retrain-class but weight-shape-NEUTRAL, so `check_compatible` cannot see it and an
+  sb3-contrib upgrade would silently rewrite four policy layers. Any real swap must bump `ARCH_SIGNATURE`
+  deliberately and re-pass the compile gates.
