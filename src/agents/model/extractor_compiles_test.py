@@ -300,11 +300,17 @@ def test_cpu_backward_still_does_not_compile():
 
     `maybe_compile_extractor` wraps the compiled callable so that any GRAD-ENABLED call routes to
     eager. That looks like belt-and-braces until you know why it is there: AOTAutograd's CPU
-    backward for this model contains a `scatter` with `scatter_mode='atomic_add'` (the belief
-    scatter, `[B, max_moves]` written over the 6 team slots), and Inductor's C++ backend asserts on
-    it — `torch/_inductor/codegen/cpp.py: assert mode is None`. So the compiled artifact is
+    backward for this model contains a `scatter` with `scatter_mode='atomic_add'` — the backward of
+    a gather is a scatter-ADD, since indices may repeat — and Inductor refuses it at
+    `torch/_inductor/codegen/cpp.py: assert mode is None`. So the compiled artifact is
     inference-only by necessity, which is also why the prober can still backprop through this same
     extractor for gradient saliency.
+
+    Two things about that refusal are worth knowing before acting on it. It is NOT a CPU-wide gap:
+    of Inductor's three C++ store kernels, `CppKernel` and `CppVecKernel` both emit `atomic_add`
+    and only `CppTile2DKernel` (the transposed variant, chosen by index LAYOUT) asserts. And WHICH
+    of this model's gathers produces it is NOT pinned — detaching the shape-matching candidate
+    (`damage_op`'s `w_all.gather(-1, topk_idx)`) left the refusal in place, so there are several.
 
     ⚠️ **The limitation is CONFIG-CONDITIONAL, and this test pins the config that reaches it.**
     The scatter only has a backward when a gradient flows into the belief heads, so

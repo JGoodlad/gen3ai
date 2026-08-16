@@ -324,13 +324,29 @@ production arch with suppression OFF (verified to fail if the old spelling retur
 CPU/CUDA x forward/backward — `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1` is
 needed for the CUDA cells (the root conftest hides the GPU from the suite). Repro:
 `tmp/inductor_crash_repro.py`. Note the CPU **backward** does NOT lower — an `atomic_add` scatter
-the C++ backend refuses — which is why the compiled-opponent artifact is inference-only. **That
-refusal is CONFIG-CONDITIONAL and the pin now says so**: the scatter only has a backward when a
-gradient reaches the belief heads, so `--belief-grad-mode label_only` (which publishes every belief
-output stop-grad) removes it and the CPU backward compiles cleanly. Measured 2026-08-15 —
-`shaping` REFUSED, `label_only` COMPILED, `win_prob_mode` irrelevant. The limitation test therefore
-builds at `belief_grad_mode="shaping"` explicitly, because production moved to `label_only` at
-gen-11 and the pin would otherwise have gone green while testing nothing; that is
+the C++ backend refuses — which is why the compiled-opponent artifact is inference-only.
+
+**It is NOT "CPU cannot accumulate", and the distinction is the actionable part.** Inductor's C++
+backend has THREE store kernels and two of them implement the mode: `CppKernel.store` emits
+`atomic_add(&buf[i], v)`, `CppVecKernel.store` emits `atomic_add_vec<...>(...)`, and only
+**`CppTile2DKernel.store`** carries the bare `assert mode is None`. `CppTile2DKernel` is the
+2D-tiled/TRANSPOSED variant, chosen when the store's index pattern needs a transpose. So the
+refusal is one missing case in one kernel variant, selected by memory LAYOUT — if a CPU training
+compile ever mattered, the lever is to reshape the scatter so Inductor picks `CppVecKernel`, not to
+wait upstream. Triton's `store()` has the case unconditionally (`tl.atomic_add(..., sem='relaxed')`),
+which is why CUDA — the only compiled backward we actually run — is unaffected.
+
+The op is an accumulate-scatter because it IS a backward: the gradient of a gather/index-select is
+a scatter-ADD (indices may repeat, so writes must accumulate). Cut the gradient and it disappears.
+**So the refusal is CONFIG-CONDITIONAL, and the pin now says so**: `--belief-grad-mode label_only`
+publishes every belief output stop-grad, which deletes those backwards and lets the CPU backward
+compile cleanly. Bisected 2026-08-15 — `shaping` REFUSED, `label_only` COMPILED, `win_prob_mode`
+irrelevant. ⚠️ **Which gather is NOT pinned**: detaching the obvious candidate
+(`damage_op.py`'s `w_all.gather(-1, topk_idx)`, whose shape matches the reported buffer exactly)
+left the refusal in place, so there are several sites and the shape match was a coincidence. The
+limitation test therefore builds at `belief_grad_mode="shaping"` explicitly, because production
+moved to `label_only` at gen-11 and the pin would otherwise have gone green while testing nothing;
+that is
 pinned as a limitation test that fails if it ever lifts.
 
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
