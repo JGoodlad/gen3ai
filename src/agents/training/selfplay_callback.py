@@ -36,7 +36,6 @@ from poke_env.ps_client import LocalhostServerConfiguration
 
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.eval_callback import (
-    _EVAL_CYCLE_TIMEOUT_SEC,
     eval_cycle_timeout,
     _EVAL_SUBPROCESS_CONCURRENCY,
     _ForcedEvalMixin,

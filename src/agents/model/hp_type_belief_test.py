@@ -20,7 +20,7 @@ import torch
 
 from agents.model import damage_tables as dt
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, HPTypeBelief, MoveBelief, TEAM_SIZE,
+    Gen3FeaturesExtractor, DamageOperator, HPTypeBelief, TEAM_SIZE,
     _DMG_PER_MON, _DMG_IDX_PHYS_HIGH, _DMG_IDX_SPEC_HIGH, _HP_PRESENCE_OFF_LOGIT, _REVEAL_LOGIT,
     HIDDEN_POWER_MOVE_NUM,
 )
@@ -32,7 +32,7 @@ from agents.observation.belief_labels import (
 )
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.model.model_version import (
-    ModelVersion, ModelVersionError, MODEL_CONFIG_VERSION, _migrate_config)
+    ModelVersion, ModelVersionError, _migrate_config)
 from agents import gen3_data
 from agents.model import damage_op_test as _DT  # reuse its proven _fake_ctx / _make_layout / _logits_hp_only
 

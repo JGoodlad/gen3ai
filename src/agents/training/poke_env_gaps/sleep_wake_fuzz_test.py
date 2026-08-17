@@ -44,7 +44,7 @@ from agents.battle.battle_event import EventKind
 from agents.battle.gen3_battle import Gen3Battle
 from agents.observation.constants import (
     OFFSET_OUR_TEAM, OFFSET_OPP_TEAM, POKEMON_FULL_DIM,
-    POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_COUNTER_OFFSET,
+    POKEMON_SLEEP_BELIEF_OFFSET,
 )
 from agents.observation.sleep_belief import (
     sleep_wake_probability, early_bird_probability, _reason_is_rest, _SLEEP_USABLE_MOVES,

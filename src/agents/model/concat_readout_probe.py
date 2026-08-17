@@ -27,7 +27,6 @@ import argparse
 import contextlib
 import json
 
-import numpy as np
 import torch
 
 from agents.model.audit_states import collect_states

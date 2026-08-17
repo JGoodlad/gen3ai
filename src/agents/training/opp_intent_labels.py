@@ -31,7 +31,7 @@ says, and `LABEL_IS_FOR_PREVIOUS_DECISION` is the flag that keeps the contract v
 """
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 # Kinds, matching `agents.model.opp_intent.match_seats_to_move_num`'s `kind` argument.
 KIND_MOVE, KIND_SWITCH, KIND_UNKNOWN = 0, 1, 2

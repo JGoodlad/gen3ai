@@ -6,7 +6,6 @@ Only instantiated when log_level >= LogLevel.PERIODIC; None in production.
 import time
 import numpy as np
 import torch
-from typing import Optional
 
 from utils.logging.rate_limiter import RateLimitedLogger
 

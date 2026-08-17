@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 from .items import ItemsEncoder
-from .constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
+from .constants import ITEM_ID_DIM, ITEM_KNOWN_DIM
 
 ITEM_MAPPING = {"leftovers": {"num": 100}, "sitrusberry": {"num": 101}, "choiceband": {"num": 102}}
 

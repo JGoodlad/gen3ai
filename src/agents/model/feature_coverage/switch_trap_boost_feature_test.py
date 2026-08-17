@@ -17,7 +17,6 @@ import numpy as np
 import pytest
 
 from agents.observation.turn_delta_encoder import (
-    BOOST_DIM,
     OFFSET_OUR_SWITCHED,
     OFFSET_OPP_SWITCHED,
     OFFSET_OUR_BOOST_DELTA,
@@ -27,8 +26,6 @@ from agents.observation.turn_delta_encoder import (
     ORDER_DIM,
     OFFSET_OUR_ACTOR_SPECIES,
     OFFSET_OPP_ACTOR_SPECIES,
-    OFFSET_OUR_TARGET_SPECIES,
-    OFFSET_OPP_TARGET_SPECIES,
     OFFSET_OUR_SWITCH_TO_SPEC,
     OFFSET_OPP_SWITCH_TO_SPEC,
     OFFSET_ATTEMPTED_SWITCH_REJECTED,

@@ -14,7 +14,7 @@ import torch
 
 pytest.importorskip("sb3_contrib")
 
-from agents.model.arch_constants import UVR_DIM, UVR_K, UVR_OUT_DIM, D_MODEL
+from agents.model.arch_constants import UVR_K, UVR_OUT_DIM, D_MODEL
 from agents.model.features_extractor import UnifiedValueReadout
 from agents.model.identity_init_test import _build_real_policy
 from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config

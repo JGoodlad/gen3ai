@@ -8,7 +8,6 @@ from poke_env.battle.status import Status
 
 from agents.gen3_mechanics import (
     ABILITY_TYPE_MULTIPLIER,
-    STATUS_MOVE_IMMUNITY,
     NOTABLE_EFFECTS,
     PHAZING_MOVES,
     INVULNERABLE_MOVES,
@@ -168,7 +167,6 @@ class TestMonStatusStr:
 
     def test_only_notable_effects_shown(self):
         # An effect not in NOTABLE_EFFECTS should not appear
-        from poke_env.battle.effect import Effect as E
         non_notable = next(e for e in Effect if e not in NOTABLE_EFFECTS)
         mon = _mon(effects={non_notable: 1})
         assert mon_status_str(mon) is None

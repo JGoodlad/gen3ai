@@ -4,12 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import numpy as np
 from agents.training.reward_manager import (
-    Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
+    Gen3RewardManager, RewardBreakdown,
     SWITCH_BASE_BONUS, SE_SWITCH_BONUS, MATCHUP_PENALTY,
     SPIKES_LAYER_BONUS, SPIKES_WASTE_PENALTY, FAILED_ROAR_PENALTY,
     FUTILE_ATTACK_PENALTY, FUTILE_IMMUNE_PENALTY, ESCAPE_THREAT_BONUS,
-    HP_VALUE, VICTORY_VALUE, MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT,
-    FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
+    VICTORY_VALUE, FUTILE_SETUP_PENALTY, SETUP_LOW_HP_MAX_PENALTY, STATUS_WASTED_PENALTY,
     EXPLOSION_BLOCK_BONUS, FINISHING_BLOW_BONUS,
     PBRS_RISK_WEIGHT, SWITCH_RISK_THRESHOLD,
 )
@@ -590,7 +589,6 @@ def _pivot_battle(new_mon, opp_mon, prev_species="prevmon", prev_mon=None):
     battle.opponent_team = {}
     battle.active_pokemon = new_mon
     battle.opponent_active_pokemon = opp_mon
-    from poke_env.battle.side_condition import SideCondition
     battle.opponent_side_conditions = {}
     if prev_mon is not None:
         prev_mon.species = prev_species

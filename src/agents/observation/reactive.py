@@ -2,16 +2,14 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from .constants import (
-    REACTIVE_DIM, TEAM_SIZE,
-    REACTIVE_SCALAR_DIM,
-    ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
+    REACTIVE_DIM, ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
 )
 from .types import TypeEncoder
 from agents.enums import PokemonType
 from agents import gen3_data
 from agents.observation.wish_belief import build_wish_pending, wish_floating_value
 from agents.battle.battle_event import OURS, OPP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 def _request_slot_moves(battle, legal):
     """Per-request-slot ``Move`` objects in ACTION order — slot i ↔ action logit ``6+i`` — with

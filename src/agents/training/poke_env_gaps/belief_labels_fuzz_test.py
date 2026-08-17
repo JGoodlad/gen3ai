@@ -27,7 +27,6 @@ Run directly (no server needed; in-process via the local BattleStream bridge):
 """
 from __future__ import annotations
 
-import os
 import sys
 import traceback
 
@@ -47,7 +46,6 @@ from agents.observation.constants import (
 from agents.observation.belief_labels import (
     BELIEF_MOVE_SLOTS, N_SPREAD_STATS, SPREAD_STAT_ORDER, N_HP_TYPES_LABEL, hp_type_idx_from_move_id,
 )
-from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader.loader import TeamLoader

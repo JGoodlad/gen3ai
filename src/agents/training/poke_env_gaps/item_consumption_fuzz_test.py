@@ -45,7 +45,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.items import ItemsEncoder
 from agents.observation.state_encoder import load_mappings
-from agents.observation.constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
+from agents.observation.constants import ITEM_ID_DIM, ITEM_KNOWN_DIM
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
 

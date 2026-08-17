@@ -13,10 +13,8 @@ from .constants import (
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_HP_REVEALED_OFFSET,
-    POKEMON_HP_PROBS_OFFSET,
 )
 from poke_env.battle.status import Status
-from poke_env.battle.pokemon_type import PokemonType
 from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
 _HP_IDX = {t.name: i for i, t in enumerate(HIDDEN_POWER_TYPE_ORDER)}

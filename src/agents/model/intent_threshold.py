@@ -57,7 +57,7 @@ Seat-permutation invariant by construction: the only seat-indexed computation is
 """
 from __future__ import annotations
 
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 
 import torch
 

@@ -15,7 +15,6 @@ Covered cases (the exemplar already covers "fail" outcome; we do not redo it):
 """
 import pytest
 import numpy as np
-import torch
 
 from agents.observation.turn_delta_encoder import (
     OUTCOME_DIM,
@@ -50,7 +49,6 @@ from agents.model.feature_coverage._support import (
     assert_delta_reaches_network,
     assert_reaches_network,
     read_block,
-    onehot_idx,
 )
 
 

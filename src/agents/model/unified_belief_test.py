@@ -9,18 +9,15 @@ P(outspeed), provenance, the noisy-OR effect/status threat) and the ablation tog
 """
 import types
 
-import numpy as np
-import gymnasium as gym
 import torch
 import pytest
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, DamageOperator, MoveBelief,
+    DamageOperator, MoveBelief,
     _DMG_PER_MON, _DMG_CB, TEAM_SIZE,
 )
-from agents.model import damage_tables as dt
 from agents.observation.constants import (
-    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, OFFSET_REACTIVE,
+    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM,
 )
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

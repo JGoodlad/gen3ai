@@ -10,7 +10,6 @@ arrays). The parent ``SearchTeacherCallback`` collects shards into the model's `
 from __future__ import annotations
 
 import json
-import os
 import sys
 
 import numpy as np

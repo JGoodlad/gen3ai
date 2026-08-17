@@ -10,7 +10,6 @@ Usage:
     export PYTHONPATH=$PYTHONPATH:src
     python3 src/main/visualize_arch.py                 # -> models/_arch/gen3_arch.onnx
     python3 src/main/visualize_arch.py --out /tmp/x.onnx
-    python3 src/main/visualize_arch.py --torchview      # also emit a graphviz .gv source
 
 The script prints step-by-step instructions (with the absolute file path) on exit.
 """
@@ -104,7 +103,6 @@ def build_extractor() -> tuple[Gen3FeaturesExtractor, spaces.Dict]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="models/_arch/gen3_arch.onnx")
-    ap.add_argument("--torchview", action="store_true", help="also write a graphviz .gv source")
     ap.add_argument("--serve", action="store_true",
                     help="host the graph with Netron's built-in server (view in a browser, "
                          "no manual file-picking). Binds 0.0.0.0 so you can SSH-tunnel from a laptop.")
@@ -180,22 +178,6 @@ def _serve(model_path: str, port: int) -> None:
     except KeyboardInterrupt:
         netron.stop()
         print("\n[arch] server stopped.")
-
-    if args.torchview:
-        from torchview import draw_graph
-        g = draw_graph(
-            wrapper,
-            input_data=(dummy_obs, dummy_mask),
-            depth=4,
-            expand_nested=True,
-            graph_name="Gen3FeaturesExtractor",
-            save_graph=False,
-        )
-        gv_path = os.path.splitext(args.out)[0] + ".gv"
-        with open(gv_path, "w") as f:
-            f.write(g.visual_graph.source)
-        print(f"[arch] wrote graphviz source -> {gv_path}")
-        print("[arch] paste its contents into https://dreampuf.github.io/GraphvizOnline/")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from .types import TypeEncoder
 from unittest.mock import MagicMock

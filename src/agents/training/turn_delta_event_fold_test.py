@@ -21,7 +21,6 @@ from agents.observation.turn_delta_encoder import (
     OFFSET_OUR_FAINT_CAUSES,
     OFFSET_OPP_FAINT_CAUSES,
     OFFSET_OUR_ATTEMPTED_MOVE,
-    OFFSET_OUR_ACTOR_SPECIES,
     FAINT_CAUSE_VOCAB as _ENC_CAUSE_VOCAB,
 )
 from agents.training.battle_snapshot import BattleContext

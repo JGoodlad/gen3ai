@@ -3,7 +3,6 @@ with a fake ProbeSession + monkeypatched falsify_battle — no model, no bridge.
 
 from types import SimpleNamespace
 
-import pytest
 
 import agents.training.teacher.selection as SEL
 from agents.training.teacher.selection import select_candidates

@@ -43,7 +43,6 @@ from agents.model.feature_coverage._support import (
     anchor_delta,
     encode_delta,
     obs_with_delta,
-    obs_zero,
     assert_reaches_network,
     assert_delta_reaches_network,
     read_block,

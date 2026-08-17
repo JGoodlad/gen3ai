@@ -26,7 +26,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.battle.gen3_battle import Gen3Battle
 from agents.inference.player import Gen3Player
-from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
+from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from main.prober.engine import build_spread_belief
 from poke_env.data.normalize import to_id_str

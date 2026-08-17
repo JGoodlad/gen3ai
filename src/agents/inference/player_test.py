@@ -7,7 +7,7 @@ from poke_env.player import Player
 from agents.inference.player import Gen3Player, RLPlayer
 from agents.action.mapper import StaleDecisionError
 from agents.observation.state_encoder import load_mappings, Gen3ObservationEncoder
-from agents.training.stall import StallConfig, StallLogger
+from agents.training.stall import StallConfig
 from agents.battle.strict_view import StrictBattleView
 
 
@@ -532,7 +532,6 @@ def test_value_dist_none_when_head_off():
 # exercises it. What it produces is what lands in the trace and therefore in the prober.
 
 def _intent_self(*, alpha=None, seat_nums=None, beta=None, species=None):
-    import torch
     from types import SimpleNamespace
     ex = SimpleNamespace(last_alpha_logits=alpha, last_alpha_seat_nums=seat_nums,
                          last_beta_logits=beta,

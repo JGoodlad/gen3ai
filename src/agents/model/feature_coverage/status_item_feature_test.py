@@ -24,7 +24,6 @@ Item-consumption pipeline:
 STATUS INDEX MAPPING (from _STATUS_ORDER in turn_delta_encoder.py):
     0 = BRN, 1 = FNT, 2 = FRZ, 3 = PAR, 4 = PSN, 5 = SLP, 6 = TOX
 """
-import numpy as np
 import pytest
 
 from agents.enums import Status
@@ -44,10 +43,7 @@ from agents.model.feature_coverage._support import (
     feature_model,
     anchor_delta,
     encode_delta,
-    obs_with_delta,
-    obs_zero,
     assert_delta_reaches_network,
-    assert_reaches_network,
     read_block,
     onehot_idx,
 )

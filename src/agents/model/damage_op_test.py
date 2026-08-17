@@ -18,12 +18,11 @@ import pytest
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, DamageOperator, decode_damage_block, _DMG_PER_MON,
-    _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
+    _DMG_OUT_PER_MOVE, _DMG_STATUS, _DMG_STATUS_N_MOVES,
     _DMG_CB, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX, TEAM_SIZE,
     _DMG_TOPK_DEFAULT_K, MOVE_LATENT_DIM, _N_OUT_SECONDARY, _OUT_SEC_COLS,
-    _DMG_OMX, _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
-    _dmg_imx_dim, _DMG_IMX_CELL,
-    _DMG_OAX, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE,
+    _DMG_OMX_CELL, _DMG_OUT_N_MOVES,
+    _dmg_imx_dim, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MOVE,
 )
 from agents.model import damage_tables as dt
 from agents.observation.constants import (
@@ -1129,7 +1128,6 @@ def test_outgoing_secondary_columns_exclude_the_structurally_dead_statuses():
 
     The DATA half of the claim is asserted here (not just the constant), so a future data refresh that
     gives sleep a damaging carrier fails this test instead of silently dropping a live signal."""
-    from agents import gen3_data
     assert set(_OUT_SEC_COLS) == set(dt.SECONDARY_COLS) - {"slp", "psn", "tox"}
     assert _N_OUT_SECONDARY == 7
     assert list(_OUT_SEC_COLS) == [c for c in dt.SECONDARY_COLS if c in set(_OUT_SEC_COLS)]

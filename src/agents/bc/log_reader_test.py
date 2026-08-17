@@ -5,7 +5,6 @@ human-agreement probe; here we lock the action-mapping / species-parsing / legal
 slot logic that a mask/label off-by-one would silently corrupt.
 """
 
-import numpy as np
 
 from agents.action.constants import MOVE_START
 from agents.battle.live_view import LegalActions, LegalMove, LegalSwitch

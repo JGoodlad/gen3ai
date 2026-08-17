@@ -9,7 +9,6 @@ can wake/thaw AND act on the same turn — the event log must keep both, in orde
 
 import logging
 
-import pytest
 
 from agents.battle.battle_event import EventKind
 from agents.battle.gen3_battle import Gen3Battle

@@ -72,15 +72,6 @@ def _read_checkpoint_git_hash(model_path: str) -> "str | None":
     return _read_checkpoint_field(model_path, key="git_hash", toplevel_key="git_hash")
 
 
-def _read_checkpoint_lr(model_path: str) -> "float | None":
-    """Current LR of the resumed checkpoint (sidecar → snapshot_history → top-level).
-
-    The sidecar/history store this under ``lr``; the run-level fallback uses the
-    legacy top-level ``current_lr`` key written by ``save_model_snapshot``.
-    """
-    return _read_checkpoint_field(model_path, key="lr", toplevel_key="current_lr")
-
-
 def _prune_stale_launcher_worktrees(repo_root: str) -> None:
     """Remove any stale launcher-* worktrees left by crashed sessions."""
     result = subprocess.run(

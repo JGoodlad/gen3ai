@@ -31,7 +31,6 @@ the live layout dicts + the imported OFFSET_/_DIM constants — never hardcoded.
 Each test asserts BOTH heads move via `assert_reaches_network`, except where a
 region only feeds one head (called out in a comment).
 """
-import torch
 
 from agents.model.feature_coverage._support import (
     feature_model,

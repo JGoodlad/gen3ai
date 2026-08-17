@@ -2,7 +2,6 @@
 (design_markovian_reward_and_features.md): the reward registry, the material PBRS Φ_mat, the
 bias-additivity accumulate-refund, and the ProgressClock predicate. Pure (no battle sim).
 """
-import math
 import unittest
 from dataclasses import fields
 
@@ -11,13 +10,12 @@ import numpy as np
 from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, RewardClass, RewardBreakdown,
     MAT_HP_WEIGHT, MAT_ALIVE_WEIGHT, STATUS_TEMPO_WEIGHT, PBRS_GAMMA, VICTORY_VALUE,
-    SWITCH_RISK_THRESHOLD, SAFE_PIVOT_PKO_MAX, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
+    SWITCH_RISK_THRESHOLD, STAY_RISK_TAX_FLOOR, ESCAPE_RISK_FRACTION,
     HAZARD_WEIGHT, BOOST_WEIGHT, OPP_BOOST_WEIGHT, ROAR_BOOST_WEIGHT, FINISHING_BLOW_BONUS, EXPLOSION_BLOCK_BONUS,
-    SPIKES_WASTE_PENALTY,
     _TIMEOUT_TURN_CAP,
 )
 from agents.training.progress_clock import (
-    ProgressClock, PROGRESS_CLOCK_CAP, PROGRESS_DMG_EPS, HEAL_FREEZE_GRACE,
+    ProgressClock, PROGRESS_CLOCK_CAP, HEAL_FREEZE_GRACE,
 )
 
 

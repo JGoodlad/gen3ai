@@ -1,7 +1,6 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from main.train_rl_agent import _write_latest_txt, _TrackingCheckpointCallback
 

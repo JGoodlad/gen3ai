@@ -19,7 +19,6 @@ and the spin returns silently — it costs a core and a gigabyte a day while the
 *looks* healthy, which is why it went unnoticed for a full run.
 """
 
-import io
 import os
 import subprocess
 import sys

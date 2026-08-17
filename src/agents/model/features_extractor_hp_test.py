@@ -15,15 +15,12 @@ from poke_env.battle.pokemon_type import PokemonType
 
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
-    MOVE_NET_HIDDEN,
 )
 from agents.observation.constants import (
     POKEMON_FULL_DIM,
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_MOVES_OFFSET,
-    MOVE_SLOT_DIM,
-    TEAM_SIZE,
     OFFSET_OUR_TEAM,
     OFFSET_OPP_TEAM,
 )

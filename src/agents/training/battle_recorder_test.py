@@ -4,8 +4,6 @@ import numpy as np
 import pytest
 
 from agents.training.battle_recorder import BattleRecorder
-from agents.training.battle_snapshot import BattleContext
-from agents.training.turn_delta import TurnDelta
 from agents.battle.live_view import LiveView
 from agents.battle.strict_view import StrictBattleView
 from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP

@@ -42,7 +42,6 @@ import sys
 import time
 from typing import Optional
 
-import numpy as np
 
 from poke_env import AccountConfiguration
 from poke_env.player import RandomPlayer

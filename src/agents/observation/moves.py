@@ -5,7 +5,7 @@ from .types import TypeEncoder
 from agents.gen3_data import moves as gen3_movedex
 from poke_env.battle.abstract_battle import AbstractBattle
 from agents.enums import MoveCategory
-from typing import Any, List, Dict
+from typing import Any, Dict
 
 # Hidden Power's Pokémon ID. All 16 typed variants ("hiddenpowergrass" etc.)
 # share this num with the bare "hiddenpower" in data/pokemon/gen3_moves.json,

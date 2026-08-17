@@ -14,7 +14,6 @@ import torch
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
     ExtractorContext,
-    Embeddings,
     HiddenOppBeliefPool,
     locate_active_slot,
     turn_delta_embed_dim,
@@ -24,7 +23,6 @@ from agents.model.features_extractor import (
 )
 import pytest
 from agents.observation.constants import POKEMON_FULL_DIM, TEAM_SIZE
-from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.action.constants import ACTION_SPACE_SIZE

@@ -8,7 +8,7 @@ import torch
 from agents.model import damage_tables as dt
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, SpreadBelief, DamageOperator, TEAM_SIZE,
-    _SB_ATK, _SB_DEF, _SB_SPA, _SB_SPD, _SB_SPE,
+    _SB_ATK,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.observation.types import TypeEncoder
@@ -93,8 +93,6 @@ def test_op_signature_back_compat_none():
     assert torch.equal(a, b)
 
 # ============================ gen3_nature_ev_belief_v1 (v40): nature/EV generative head ============================
-from agents.model.features_extractor import _EV_DELTA_SCALE, _DMG_IDX_PHYS_PKO
-from agents.training.instrumented_ppo import InstrumentedMaskablePPO as _PPO
 
 _COLS = dt.SPREAD_STAT_COLS
 

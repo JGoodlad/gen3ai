@@ -10,7 +10,6 @@ every quick check, so that half is exactly the part that stays silently uncovere
 mock-level guards so a regression fails the normal unit suite rather than waiting for someone to run
 the fuzz with the right flags.
 """
-import types
 
 import main.eval_worker as ew
 

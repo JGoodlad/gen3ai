@@ -16,7 +16,7 @@ expensive opponents (sentinel/fixed model-vs-model, stallers) lead, shortening t
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Opponent kinds. A bot is a scripted roster player; a sentinel is a self-play pool snapshot; a
 # fixed opponent is a frozen model from another run (the stable cross-run yardstick, ext_<label>).

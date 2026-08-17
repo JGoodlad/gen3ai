@@ -31,7 +31,6 @@ pruned rather than left to silently widen the guard.
 import ast
 import pathlib
 
-import pytest
 
 # src/agents/ — this test lives at the agents root so it can walk all four clusters.
 AGENTS_ROOT = pathlib.Path(__file__).resolve().parent

@@ -317,9 +317,9 @@ class PairHistoryTracker:
 # Tier H-B event-type vocabulary — SINGLE-SOURCED in `agents.observation.constants` (it is
 # the obs contract: column 0 of every event row). Re-imported here for the fold that emits it.
 from agents.observation.constants import (          # noqa: E402
-    EVENT_T_PAD, EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
+    EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
     EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_ITEM_REVEAL, EVENT_T_HAZARD,
-    EVENT_T_SWITCH_REJECTED, N_EVENT_TYPES,
+    EVENT_T_SWITCH_REJECTED,
 )
 
 # Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's

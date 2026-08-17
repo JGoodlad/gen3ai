@@ -14,7 +14,6 @@ import json
 import os
 import glob
 
-import pytest
 
 from src.utils.git import get_repo_root
 

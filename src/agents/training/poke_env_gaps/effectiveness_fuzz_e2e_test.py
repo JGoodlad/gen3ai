@@ -30,7 +30,6 @@ Run directly (requires: npm run showdown):
 """
 
 import asyncio
-import json
 import os
 import sys
 import time

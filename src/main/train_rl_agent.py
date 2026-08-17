@@ -35,7 +35,6 @@ for d in [root_dir, src_dir, main_dir]:
 
 import asyncio
 import json
-import random
 import argparse
 import signal
 import threading
@@ -554,7 +553,6 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
     import shutil
     import tempfile
     import torch
-    import numpy as np
     from agents.model.features_extractor import PROJECTION_DIM
 
     version = ModelVersion.from_layout_and_policy_kwargs(
@@ -1223,13 +1221,9 @@ async def main():
                              "for N teachers (joint multi-teacher distillation), e.g. "
                              "'models/expA:data/teams/specialist/a.txt,models/expB:data/teams/specialist/b.txt'. "
                              "The colon pairing binds each teacher to its team — no misalignment possible.")
-    parser.add_argument("--distill-teacher-team", "--distill_teacher_team", dest="distill_teacher_team",
-                        type=str, default=None,
-                        help="DEPRECATED (back-compat for in-flight runs) — a parallel team list for the bare "
-                             "(colon-less) --distill-teacher form. Prefer the 'TEACHER:TEAM' pair form instead.")
     parser.add_argument("--distill-coef", "--distill_coef", dest="distill_coef", type=float, default=None,
                         help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
-                             "Requires --distill-teacher + --distill-teacher-team. Training-only (inherited on "
+                             "Requires --distill-teacher ('TEACHER:TEAM' pairs). Training-only (inherited on "
                              "a flagless resume). Watch distill/kl ↓ + distill/agree_rate ↑ + grad/distill_share.")
     parser.add_argument("--distill-value-coef", "--distill_value_coef", dest="distill_value_coef",
                         type=float, default=None,
@@ -2260,34 +2254,26 @@ async def main():
     # so ONE multi-team teacher (a --trainee-teams z-cluster exploiter) binds to all its teams without being
     # repeated N times (which would cost N identical teacher forwards per batch). The legacy comma-separated
     # pair form ('T1:a.txt,T2:b.txt') still parses (a comma segment containing ':' starts a new teacher).
-    # Oldest form = bare teacher list + a parallel --distill-teacher-team (kept so in-flight runs resume).
     args._distill_pairs = []
     if args.distill_coef and args.distill_coef > 0:
         _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
         if not _items:
             parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)")
-        if any(":" in x for x in _items):                       # PREFERRED: colon groups
-            if args.distill_teacher_team:
-                parser.error("--distill-teacher uses 'TEACHER:TEAM[,TEAM...]' groups — do NOT also pass the "
-                             "deprecated --distill-teacher-team")
-            from agents.training.distill_spec import parse_distill_teacher_spec
-            from agents.training.matchup_spec import read_recorded_trainee_teams
-            try:
-                # 'TEACHER:*' → EXACTLY the teams that teacher trained on, from its own recorded
-                # provenance (single source of truth — a hand-typed list could mismatch and fire the
-                # distill mask where the teacher is off-distribution, silently).
-                args._distill_pairs = parse_distill_teacher_spec(
-                    args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
-            except (ValueError, FileNotFoundError) as _e:
-                parser.error(str(_e))
-        else:                                                   # LEGACY: bare list + parallel --distill-teacher-team
-            print("[Distill] WARNING: bare --distill-teacher + --distill-teacher-team is DEPRECATED; "
-                  "prefer 'TEACHER:TEAM' colon pairs in --distill-teacher.")
-            _teams = [t.strip() for t in (args.distill_teacher_team or "").split(",") if t.strip()]
-            if len(_teams) != len(_items):
-                parser.error(f"legacy --distill-teacher ({len(_items)}) / --distill-teacher-team ({len(_teams)}) "
-                             "must be equal-length — or use the 'TEACHER:TEAM' pair form in --distill-teacher")
-            args._distill_pairs = [(_t, [_tm]) for _t, _tm in zip(_items, _teams)]
+        if not all(":" in x for x in _items):
+            # The bare-list + parallel --distill-teacher-team form is DELETED (no run ever passed it;
+            # verified across every models/*/metadata.json 2026-08-16). One form, no misalignment.
+            parser.error("--distill-teacher takes 'TEACHER:TEAM[,TEAM...]' colon groups — the bare "
+                         "teacher list (with the deleted --distill-teacher-team) is no longer accepted")
+        from agents.training.distill_spec import parse_distill_teacher_spec
+        from agents.training.matchup_spec import read_recorded_trainee_teams
+        try:
+            # 'TEACHER:*' → EXACTLY the teams that teacher trained on, from its own recorded
+            # provenance (single source of truth — a hand-typed list could mismatch and fire the
+            # distill mask where the teacher is off-distribution, silently).
+            args._distill_pairs = parse_distill_teacher_spec(
+                args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
+        except (ValueError, FileNotFoundError) as _e:
+            parser.error(str(_e))
     if args.distill_coef and args.distill_coef > 0 and (args.trainee_team or args.trainee_teams):
         parser.error("--distill-coef is mutually exclusive with --trainee-team/--trainee-teams: "
                      "distillation biases the trainee toward the teacher team via --distill-team-bias "

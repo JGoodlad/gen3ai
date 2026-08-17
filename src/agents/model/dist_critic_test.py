@@ -7,7 +7,7 @@ import torch as th
 
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.model.model_version import (
-    MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config)
+    ModelVersion, ModelVersionError, _migrate_config)
 
 
 class _FakeHead:

@@ -18,7 +18,6 @@ correction can never be half-searched on one engine and half-confirmed on the ot
 
 from __future__ import annotations
 
-import os
 from typing import Optional, Tuple
 
 import numpy as np

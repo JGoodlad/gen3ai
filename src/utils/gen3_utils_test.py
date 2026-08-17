@@ -1,4 +1,3 @@
-import pytest
 from utils.gen3_utils import fix_gen3_hp_ivs, GEN3_HP_IVS
 from poke_env.teambuilder import TeambuilderPokemon
 

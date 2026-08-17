@@ -6,7 +6,6 @@ drain), mirroring the bot-eval orchestrator tests in eval_callback_test.py with 
 fake work-stealing worker that handles BOTH the bot roster and pool sentinels.
 """
 
-import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -18,7 +17,6 @@ from agents.training.selfplay_callback import (
     _monotonicity_score,
     SelfPlayCallback,
     _MASTERY_CONFIRM_CYCLES,
-    _REGRESSION_WARN_THRESHOLD,
 )
 
 

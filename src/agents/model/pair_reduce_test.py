@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from agents.model.pair_reduce import (
-    PAIR_REDUCE_EPS, PAIR_REDUCE_LATENT, PairReducer, alpha_belief_mean, alpha_hard_max,
+    PAIR_REDUCE_LATENT, PairReducer, alpha_belief_mean, alpha_hard_max,
     build_pair_reducer, reduce_with_alpha,
 )
 
@@ -165,7 +165,7 @@ def test_forward_multi_rung_leaves_block_byte_identical_and_stashes_extra():
     BIT-FOR-BIT equal to the default op's on the same ctx (the reducers only stash), (b) populate
     `last_reduced_extra` with the declared width, and (c) add ONLY `pair_reducer.*` state_dict
     keys. Default op: stash is None."""
-    from agents.model.damage_op import DamageOperator, TEAM_SIZE, _DMG_PER_MON
+    from agents.model.damage_op import DamageOperator, TEAM_SIZE
     from agents.model.damage_op_test import _make_layout, _fake_ctx, _logits_hp_only, _T2I
 
     layout = _make_layout()

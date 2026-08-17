@@ -29,7 +29,6 @@ from typing import List, Optional
 
 from poke_env.concurrency import POKE_LOOP, handle_threaded_coroutines
 from poke_env.player.player import Player
-from poke_env.teambuilder.teambuilder import Teambuilder
 
 from utils.bridge.battle_stream_client import BattleStreamClient
 from utils.bridge.seed_spec import validate_seed_spec

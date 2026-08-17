@@ -27,9 +27,8 @@ from typing import List, Optional
 
 # Reuse the EXACT band machinery the random-game fuzz uses (single source of truth for the op physics).
 from agents import gen3_data
-from agents.observation.types import TypeEncoder
 from agents.training.poke_env_gaps.damage_op_fuzz_test import (
-    _op_band, _OP, _STATS_REGISTRY, _DMG_ROLL_MIN, _CHIP_CAP, _CRIT_CAP, _type_idx)
+    _op_band, _OP, _STATS_REGISTRY, _type_idx)
 
 _PROBE_JS = str(Path(__file__).resolve().parents[3] / "utils" / "bridge" / "damage_probe.js")
 _TOL = 0.06          # exact-stats + exact-HP ⇒ the only slack is the op's smooth-vs-floored roll rounding

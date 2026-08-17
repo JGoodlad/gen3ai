@@ -15,7 +15,6 @@ This is the template every test in `feature_coverage/` follows (see
 battles. This closes the last hop: that the encoded fail dims move the network.
 """
 import numpy as np
-import torch
 
 from agents.observation.turn_delta_encoder import (
     OUTCOME_DIM,

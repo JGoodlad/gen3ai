@@ -2,7 +2,6 @@
 no torch, no bridge. The real search/confirm pipeline is the prober's, already tested end-to-end."""
 
 import numpy as np
-import pytest
 
 from agents.training.teacher.produce import produce_correction
 from agents.training.teacher.selection import Candidate

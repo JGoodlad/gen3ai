@@ -8,7 +8,7 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../src")))
 
 from poke_env.player import Player, RandomPlayer
-from poke_env import AccountConfiguration, LocalhostServerConfiguration
+from poke_env import AccountConfiguration
 from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from utils.team_loader.loader import TeamLoader

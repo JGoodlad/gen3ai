@@ -16,7 +16,6 @@ import json
 import os
 import random
 import sys
-import shutil
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path

@@ -46,7 +46,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.abilities import AbilitiesEncoder
 from agents.observation.constants import (
-    ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM, ABILITY_KNOWN_DIM,
+    ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM,
 )
 from agents.observation.state_encoder import load_mappings
 from utils.teambuilder import Gen3Teambuilder

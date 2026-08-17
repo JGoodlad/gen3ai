@@ -1,6 +1,5 @@
 """ActiveContextEncoder tests — LiveView API (boosts + full gen3 volatile set)."""
 
-import numpy as np
 
 from agents.observation.active_context import ActiveContextEncoder
 from agents.observation.constants import ACTIVE_CONTEXT_DIM, BOOSTS_DIM

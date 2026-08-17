@@ -135,16 +135,6 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
 _EVAL_CONCURRENCY = 100
 # PerOpponentEvalCallback evaluates every opponent concurrently — one RLPlayer per
 # opponent, all gathered. Cap the AGGREGATE in-flight battles so N opponents don't
-# flood the server with N×100; the per-opponent ceiling is this budget split N ways
-# (floored at 16, which already saturates the single-threaded inference pipeline).
-_EVAL_TOTAL_CONCURRENCY = 200
-
-
-def _per_opponent_concurrency(n_opponents: int) -> int:
-    """Per-player concurrency so the aggregate stays near _EVAL_TOTAL_CONCURRENCY."""
-    if n_opponents <= 0:
-        return _EVAL_CONCURRENCY
-    return max(16, _EVAL_TOTAL_CONCURRENCY // n_opponents)
 
 
 # Forensic-trace sample caps per opponent per eval cycle. Once both are filled the

@@ -1,6 +1,5 @@
 """Unit tests for the churn probe's pure math (masked KL + roster grouping) — no models/bridge."""
 import numpy as np
-import pytest
 
 from agents.training.churn_probe import masked_kl
 

@@ -1,6 +1,5 @@
 import time
 import sys
-from typing import Optional
 
 class RateLimitedLogger:
     """

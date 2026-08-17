@@ -25,7 +25,6 @@ from main.exit_codes import TrainExitCode
 from main.launcher.run import (
     _SessionCtx,
     _fatal_config_reason,
-    _prepare_session,
     _reap,
     _supervise,
 )

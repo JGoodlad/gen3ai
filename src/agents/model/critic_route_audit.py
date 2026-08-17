@@ -39,7 +39,6 @@ import argparse
 import json
 import os
 
-import numpy as np
 import torch
 
 from agents.model.edge_ablation_audit import _collect_states, _masked_kl, _measure

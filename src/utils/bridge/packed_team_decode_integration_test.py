@@ -23,7 +23,7 @@ import pytest
 
 from utils.contention import scale_timeout
 
-from utils.bridge.reconstruction import _STAT_ORDER, decode_packed_team
+from utils.bridge.reconstruction import decode_packed_team
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 

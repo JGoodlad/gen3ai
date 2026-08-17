@@ -41,7 +41,7 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
 from poke_env import AccountConfiguration
 from poke_env.player import RandomPlayer

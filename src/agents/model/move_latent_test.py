@@ -10,7 +10,7 @@ import numpy as np
 import torch
 
 from agents.model.features_extractor import (
-    Gen3FeaturesExtractor, MoveLatentEncoder, MOVE_LATENT_DIM, MOVE_NET_HIDDEN, TEAM_SIZE,
+    Gen3FeaturesExtractor, MoveLatentEncoder, MOVE_LATENT_DIM,
 )
 from agents.model import damage_tables as dt
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

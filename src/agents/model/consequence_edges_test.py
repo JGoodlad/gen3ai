@@ -16,7 +16,7 @@ import torch
 from agents import gen3_data
 from agents.model.damage_tables import build_self_boost_tables
 from agents.model.features_extractor import (
-    EdgeBias, Gen3FeaturesExtractor, TEAM_SIZE, _EDGE_C1_CELL,
+    Gen3FeaturesExtractor, TEAM_SIZE,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 

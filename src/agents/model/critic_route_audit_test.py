@@ -8,11 +8,10 @@ raises when a hook never matches.
 """
 import numpy as np
 import pytest
-import torch
 
 pytest.importorskip("sb3_contrib")
 
-from agents.model.critic_route_audit import audit, _Arms
+from agents.model.critic_route_audit import audit
 from agents.model.identity_init_test import _build_real_policy
 
 

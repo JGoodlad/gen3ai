@@ -9,7 +9,6 @@ import json
 import re
 from pathlib import Path
 
-import pytest
 
 from agents.model import extractor_arch as EA
 from agents.model.features_extractor import Gen3FeaturesExtractor

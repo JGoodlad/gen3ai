@@ -5,7 +5,6 @@ slow-but-progressing wait survive; does a wedged one still fail) without dependi
 box's actual load — which would make the tests for contention-robustness themselves
 contention-sensitive.
 """
-import os
 import time
 
 import pytest

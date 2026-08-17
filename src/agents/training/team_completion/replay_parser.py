@@ -22,16 +22,6 @@ def _normalize(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", name.lower())
 
 
-def _parse_player(identifier: str) -> str:
-    """Extract 'p1' or 'p2' from identifiers like 'p1a: Nickname'."""
-    return identifier[:2]
-
-
-def _parse_nickname(identifier: str) -> str:
-    """Extract nickname from identifiers like 'p1a: Nickname'."""
-    return identifier.split(": ", 1)[1]
-
-
 def _parse_species(details: str) -> str:
     """
     Extract species key from a details string like 'Zapdos', 'Blissey, F',

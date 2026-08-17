@@ -16,11 +16,10 @@ import torch
 from agents import gen3_data
 from agents.model.features_extractor import (
     DamageOperator, TEAM_SIZE, _DMG_SPEED_SCALE,
-    _DMG_STATUS_REFINE, _COND_SLP_IDX, _SUBSTITUTE_CTX_IDX,
+    _DMG_STATUS_REFINE,
 )
 from agents.observation.constants import (
-    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, ACTIVE_CONTEXT_DIM,
-    POKEMON_CONDITION_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET)
+    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM, ACTIVE_CONTEXT_DIM)
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 

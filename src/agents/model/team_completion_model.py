@@ -15,9 +15,7 @@ Architecture:
 """
 
 import io
-import json
 import zipfile
-from pathlib import Path
 from typing import Optional
 
 import torch

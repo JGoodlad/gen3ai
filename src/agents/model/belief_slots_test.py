@@ -17,7 +17,7 @@ from agents.model.features_extractor import (
     BeliefHead,
     D_MODEL,
 )
-from agents.observation.constants import TEAM_SIZE, POKEMON_FULL_DIM
+from agents.observation.constants import TEAM_SIZE
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 

@@ -22,10 +22,8 @@ Cell layout (from `decode_damage_block`): cell(i=our mon, k=move) at
 `cells_base + (i*K + k)*_DMG_IMX_CELL`, channels [low, high, crit, pko, type_mult, status_lands].
 """
 import argparse
-import glob
 import json
 
-import numpy as np
 import torch
 
 from agents.model import damage_op as D

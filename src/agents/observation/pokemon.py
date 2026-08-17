@@ -24,13 +24,7 @@ from .constants import (
 )
 from agents.gen3_mechanics import protect_success_probability
 from .sleep_belief import sleep_belief_features
-from .species import SpeciesEncoder
-from .items import ItemsEncoder
-from .types import TypeEncoder
-from .abilities import AbilitiesEncoder
-from .moves import MovesEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
-from poke_env.battle.pokemon import Pokemon
 from agents.enums import Status
 from typing import Any, Dict
 

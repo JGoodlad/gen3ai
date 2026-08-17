@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import ClassVar, Optional
 import numpy as np

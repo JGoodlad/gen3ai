@@ -11,7 +11,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION,
-    ARCH_SIGNATURE,
     ModelVersion,
     ModelVersionError,
     _migrate_config,
@@ -852,7 +851,7 @@ def test_opp_belief_cls_survives_save_load_and_rebuilds_module(layout, mappings)
     rebuilding HiddenOppBeliefPool at the same k (the projection widths must match the saved weights).
     Guards the config↔weights coupling: a refactor that dropped the flag from the serialized kwargs
     would rebuild a baseline-width extractor and FAIL the state_dict load — this pins it loudly."""
-    from agents.model.features_extractor import Gen3FeaturesExtractor, D_MODEL
+    from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.model.policy import Gen3DualHeadMaskablePolicy
     from sb3_contrib import MaskablePPO
 

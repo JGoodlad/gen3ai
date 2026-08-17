@@ -24,8 +24,8 @@ from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
-from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
-from agents.observation.constants import CLOCK_DIM, CLOCK_OFFSET_IN_GLOBAL, GLOBAL_ENV_DIM
+from agents.model.value_routes import ValueIntentRoute
+from agents.observation.constants import CLOCK_DIM, CLOCK_OFFSET_IN_GLOBAL
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
 _ON_KWARGS = dict(

@@ -8,7 +8,6 @@ import pytest
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.fixed_opponent_pool import (
-    EXT_PREFIX,
     is_external,
     parse_stable_opponents,
     register_exploiter_for_eval,

@@ -34,7 +34,6 @@ import time
 import traceback
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List
 
 import numpy as np
 

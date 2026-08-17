@@ -48,7 +48,6 @@ from typing import Optional
 import numpy as np
 
 from poke_env import AccountConfiguration
-from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.status import Status
 from poke_env.player import RandomPlayer
 from poke_env.player.player import Player
@@ -68,7 +67,6 @@ from agents.training.reward_manager import (
     FINISHING_BLOW_BONUS,
     FUTILE_ATTACK_PENALTY,
     FUTILE_IMMUNE_PENALTY,
-    HP_VALUE,
     MATCHUP_PENALTY,
     PROTECT_SWITCH_BONUS,
     REPETITION_TAX_FLOOR,

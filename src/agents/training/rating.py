@@ -31,7 +31,7 @@ needs the period's aggregate W/L, not the order).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from agents.training import elo as _elo

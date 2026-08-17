@@ -5,7 +5,6 @@ bridge, no Node. The real re-roll/seed/obs faithfulness is proven end-to-end aga
 from types import SimpleNamespace
 
 import numpy as np
-import pytest
 
 from poke_env.player.battle_order import SingleBattleOrder
 

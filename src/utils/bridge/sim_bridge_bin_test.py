@@ -1,7 +1,6 @@
 """Unit tests for the sim-bridge / search-driver binary resolvers (pure — no cargo build,
 no subprocess)."""
 
-import os
 from pathlib import Path
 
 import pytest

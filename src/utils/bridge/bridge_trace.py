@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Optional
 
 _TRACE_ENV = "POKESIM_BRIDGE_TRACE"
 _MAX_PAYLOAD = 240

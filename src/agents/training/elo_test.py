@@ -6,7 +6,6 @@ ladder and asserts the fit recovers it, plus the anchoring / robustness contract
 import json
 import math
 
-import numpy as np
 import pytest
 
 from agents.training import elo

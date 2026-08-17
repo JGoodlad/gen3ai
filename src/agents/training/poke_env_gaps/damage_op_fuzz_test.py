@@ -51,7 +51,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents import gen3_data
 from agents.model.features_extractor import (
-    DamageOperator, _DMG_PARA_SPEED, _DMG_ROLL_MIN, _DMG_CHIP_CAP as _CHIP_CAP, _DMG_CRIT_CAP as _CRIT_CAP)
+    DamageOperator, _DMG_ROLL_MIN, _DMG_CHIP_CAP as _CHIP_CAP, _DMG_CRIT_CAP as _CRIT_CAP)
 from agents.model.damage_tables import build_move_fixed_damage
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings

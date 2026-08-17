@@ -16,7 +16,6 @@ move_outcome / transition fuzz tests validate them against the live protocol at
 scale, and these unit tests pin the exact decision table.
 """
 import numpy as np
-import pytest
 
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from agents.gen3_mechanics import BOOST_DIM

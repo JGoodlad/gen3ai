@@ -1,10 +1,9 @@
-import numpy as np
 from unittest.mock import MagicMock
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
 from poke_env.battle.move import Move
 from .state_encoder import Gen3ObservationEncoder, load_mappings
-from .constants import TEAM_SIZE, OFFSET_REACTIVE, POKEMON_FULL_DIM, OFFSET_OUR_TEAM, MOVE_SLOT_DIM
+from .constants import OFFSET_OUR_TEAM, MOVE_SLOT_DIM
 
 def create_mock_move(move_id, base_power=60, move_type="Normal"):
     move = MagicMock(spec=Move)

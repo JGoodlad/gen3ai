@@ -1,19 +1,13 @@
-import io
 import json
 import os
 import signal
-import subprocess
-import tempfile
 import time
 import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from main.exit_codes import TrainExitCode
 from main.launcher import (
-    _TRAIN_SCRIPT,
-    _SRC_DIR,
     _PollFlags,
     _dispatch_command,
     _find_model_arg,
@@ -29,7 +23,6 @@ from main.launcher import (
     run_dir_for_checkpoint,
 )
 from main.launcher import LauncherState
-from main.launcher.worktree import _read_checkpoint_lr
 
 
 # ── find_latest_checkpoint ───────────────────────────────────────────────────
@@ -418,31 +411,6 @@ class TestReadCheckpointGitHash:
         }))
         result = _read_checkpoint_git_hash(str(tmp_path / "checkpoint_500_steps.zip"))
         assert result == "latest_save"
-
-
-# ── _read_checkpoint_lr ───────────────────────────────────────────────────────
-
-class TestReadCheckpointLr:
-    def test_reads_lr_from_snapshot_history(self, tmp_path):
-        # History stores the per-checkpoint value under `lr`; top-level current_lr
-        # is the latest save and must NOT shadow an older resumed checkpoint.
-        (tmp_path / "metadata.json").write_text(json.dumps({
-            "current_lr": 9.9e-4,
-            "snapshot_history": {"checkpoint_500_steps.zip": {"lr": 2.5e-5}},
-        }))
-        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
-        assert result == pytest.approx(2.5e-5)
-
-    def test_sidecar_lr_wins(self, tmp_path):
-        (tmp_path / "checkpoint_500_steps.json").write_text(json.dumps({"lr": 1e-5}))
-        (tmp_path / "metadata.json").write_text(json.dumps({"current_lr": 9.9e-4}))
-        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
-        assert result == pytest.approx(1e-5)
-
-    def test_falls_back_to_toplevel_current_lr(self, tmp_path):
-        (tmp_path / "metadata.json").write_text(json.dumps({"current_lr": 9.9e-4}))
-        result = _read_checkpoint_lr(str(tmp_path / "checkpoint_500_steps.zip"))
-        assert result == pytest.approx(9.9e-4)
 
 
 # ── _strip_launcher_args ──────────────────────────────────────────────────────

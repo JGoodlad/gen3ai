@@ -23,7 +23,6 @@ If upstream changes (e.g. after a `pip install -U sb3_contrib`):
 
 import hashlib
 import inspect
-import itertools
 
 import numpy as np
 import torch as th

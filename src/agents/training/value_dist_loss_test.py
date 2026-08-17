@@ -6,7 +6,6 @@ agents/model/value_dist_head_test.py; this covers the loss + its interpretabilit
 
 import math
 
-import numpy as np
 import torch
 
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO

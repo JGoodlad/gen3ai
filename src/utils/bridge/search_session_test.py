@@ -7,7 +7,6 @@ used before the seam existed, and the rust case asserts it fails loudly rather t
 serving node.
 """
 
-import subprocess
 from pathlib import Path
 
 import pytest

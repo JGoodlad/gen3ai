@@ -11,7 +11,6 @@ episodes with random *legal* actions — asserting each episode completes with a
 Marked ``integration``: needs Node + ``deps/pokemon-showdown`` (no live server).
 """
 
-import asyncio
 import os
 import signal
 from contextlib import suppress

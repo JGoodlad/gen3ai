@@ -18,7 +18,6 @@ Load-bearing tests here:
     coverage, save→load logit identity.
 """
 import inspect
-import math
 
 import dataclasses
 import gymnasium as gym
@@ -26,7 +25,7 @@ import numpy as np
 import pytest
 import torch
 
-from agents.action.constants import ACTION_SPACE_SIZE, MOVE_START, N_MOVE_SLOTS, STRUGGLE, SWITCH_START
+from agents.action.constants import ACTION_SPACE_SIZE, MOVE_START, N_MOVE_SLOTS
 from agents.model.damage_op import DamageOperator, decode_damage_block
 from agents.model.features_extractor import (
     Gen3FeaturesExtractor, MOVE_NET_HIDDEN, D_MODEL, PointerNativeActionHead,

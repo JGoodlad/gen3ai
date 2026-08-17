@@ -1,9 +1,8 @@
 """Unit tests for the pure hidden-opponent belief label builder."""
-import numpy as np
 
 from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels, zero_belief_labels, zero_known_moves,
-    build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
+    build_known_spread_labels, zero_spread_labels, N_SPREAD_STATS,
     PAD, BELIEF_MOVE_SLOTS,
 )
 from agents.observation.constants import TEAM_SIZE

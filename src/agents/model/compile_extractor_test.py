@@ -14,7 +14,6 @@ least that good.
 """
 import types
 
-import pytest
 import torch
 
 from agents.model import snapshot as S

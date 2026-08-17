@@ -4,10 +4,9 @@ import numpy as np
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.observation.constants import (
-    POKEMON_FULL_DIM, POKEMON_MOVES_OFFSET,
+    POKEMON_MOVES_OFFSET,
     POKEMON_SPECIES_OFFSET, POKEMON_ITEMS_OFFSET, ITEM_ID_DIM,
-    POKEMON_ABILITIES_OFFSET, ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM,
-    OFFSET_REACTIVE
+    POKEMON_ABILITIES_OFFSET, ABILITY_SLOT_DIM, ABILITY_DOMINANCE_DIM
 )
 import gymnasium as gym
 

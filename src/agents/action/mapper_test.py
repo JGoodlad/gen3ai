@@ -20,7 +20,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
 from agents.action.serialize import choice_to_order, order_to_action
 from agents.battle.live_view import (
-    LegalActions, LegalMove, LegalSwitch, LiveView, LiveSide, LivePokemon, LiveMove, LiveWeather,
+    LegalActions, LegalMove, LegalSwitch, LiveView, LiveSide, LivePokemon, LiveWeather,
 )
 from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon

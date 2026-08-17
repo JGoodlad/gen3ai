@@ -13,7 +13,7 @@ import logging
 import pytest
 
 from agents.battle.gen3_battle import Gen3Battle
-from agents.battle.live_view import LiveMove, LivePokemon, LiveView, LiveWeather
+from agents.battle.live_view import LiveMove, LivePokemon, LiveWeather
 
 LOG = logging.getLogger("liveview-test")
 
