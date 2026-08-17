@@ -707,36 +707,21 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
     return abort_training
 
 
-async def main():
-    # --- Pre-flight Checks ---
-    try:
-        import tensorboard
-    except ImportError:
-        print("\n" + "🛑" * 30)
-        print("🛑 ERROR: Tensorboard is NOT installed.")
-        print("🛑 Training requires tensorboard for professional logging.")
-        print("🛑 Please run: pip install tensorboard")
-        print("🛑" * 30 + "\n")
-        os._exit(1)
+def build_parser() -> argparse.ArgumentParser:
+    """THE argument parser, as data — built outside `main()` so it can be INSPECTED without
+    running a training job.
 
-    # --- Fail-Fast Handlers ---
-    def global_exception_handler(exctype, value, tb):
-        print("\n" + "🛑" * 20)
-        print("🛑 FATAL ERROR DETECTED - FAILING FAST")
-        print("🛑" * 20)
-        traceback.print_exception(exctype, value, tb)
-        os._exit(1) # Force immediate termination of all threads
+    Extracted for two reasons, both of which cost real time before it existed:
 
-    sys.excepthook = global_exception_handler
-    
-    def asyncio_exception_handler(loop, context):
-        msg = context.get("exception", context["message"])
-        print(f"\n🛑 Asyncio Error: {msg}")
-        os._exit(1)
-        
-    loop = asyncio.get_event_loop()
-    loop.set_exception_handler(asyncio_exception_handler)
+    * A run's recorded `launcher_command` outlives the flags in it. Relaunching gen-12's
+      argv on v89 died on `--pubval-*` (deleted at v88) — one flag at a time, since argparse
+      reports only the first error, and only by actually starting the trainer.
+    * `--help` was itself broken (an unescaped `%` rendered as a `%o` conversion), so there
+      was no offline way to ask what the parser accepts. Nothing rendered the help strings,
+      so nothing caught it.
 
+    `python -m main.checkargs` is the consumer; `checkargs_test.py` renders every help string.
+    """
     parser = argparse.ArgumentParser(description="Train or Evaluate Gen 3 OU RL Agent")
     
     # --- Operational Flags ---
@@ -1370,7 +1355,7 @@ async def main():
                              "published posterior at the UNREVEALED branch (revealed stays exact "
                              "0/1), replacing the static SPECIES_CB_PRIOR scalar there. Cold start "
                              "posterior == the Smogon prior exactly (zero-init delta), whose CB "
-                             "column sits within ~0.6% of the static table (the row floor's renorm), "
+                             "column sits within ~0.6%% of the static table (the row floor's renorm), "
                              "so enabling is ~behavior-preserving at init. STRUCTURAL, "
                              "version-checked.")
     parser.add_argument("--history-events", "--history_events",
@@ -1950,6 +1935,40 @@ async def main():
                              "719 pool teams → a tighter z-cluster than the 32 samples allow). For FiLM "
                              "capacity / count-vs-diversity studies; NOT for a teacher you'll distil as-is. "
                              "Training-only, not version-locked. Default off (gate enforced).")
+    return parser
+
+
+async def main():
+    # --- Pre-flight Checks ---
+    try:
+        import tensorboard
+    except ImportError:
+        print("\n" + "🛑" * 30)
+        print("🛑 ERROR: Tensorboard is NOT installed.")
+        print("🛑 Training requires tensorboard for professional logging.")
+        print("🛑 Please run: pip install tensorboard")
+        print("🛑" * 30 + "\n")
+        os._exit(1)
+
+    # --- Fail-Fast Handlers ---
+    def global_exception_handler(exctype, value, tb):
+        print("\n" + "🛑" * 20)
+        print("🛑 FATAL ERROR DETECTED - FAILING FAST")
+        print("🛑" * 20)
+        traceback.print_exception(exctype, value, tb)
+        os._exit(1) # Force immediate termination of all threads
+
+    sys.excepthook = global_exception_handler
+    
+    def asyncio_exception_handler(loop, context):
+        msg = context.get("exception", context["message"])
+        print(f"\n🛑 Asyncio Error: {msg}")
+        os._exit(1)
+        
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(asyncio_exception_handler)
+
+    parser = build_parser()
 
     args = parser.parse_args()
     if getattr(args, "trainee_teams", None) and getattr(args, "trainee_team", None):

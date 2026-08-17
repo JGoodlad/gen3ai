@@ -92,6 +92,7 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "spread_belief_coef": "spread_belief",
     "win_prob_coef": "win_head",
     "value_dist_coef": "value_dist_head",
+    "item_belief_coef": "item_belief_head",     # v83
     "vf_coef": None,
     "value_tail_weight": None,
 }

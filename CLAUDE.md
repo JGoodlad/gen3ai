@@ -479,6 +479,33 @@ Niceness is inherited across fork/exec, so one call before the first child cover
 SubprocVecEnv workers and every eval worker, across periodic and crash restarts alike. **On an idle
 box this changes nothing** — niceness only arbitrates under contention.
 
+### Will this command still launch? — `python -m main.checkargs`
+
+A run's recorded `launcher_command` outlives the flags in it, and **argparse reports only the FIRST
+unrecognized flag** — so relaunching an old argv after a deletion is a launch-crash-fix loop, ~40 s
+and a stray run dir per stale flag. `checkargs` answers offline, in one pass, without importing
+torch or touching `models/`:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.checkargs models/<run>                 # validate that run's recorded command
+python -m main.checkargs --argv "--steps 1 --device cuda"
+```
+
+Exit 0 = every flag is accepted; exit 1 names each one that would fail (with its value, so you can
+see whether it mattered). **It reports; it does not repair** — a deleted flag may have a
+replacement, so dropping one silently could change the run. Launcher-owned flags
+(`--restart-interval-hours`, `--nice`, `--sync-to-main`, …) are recognised as not-forwarded rather
+than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you
+might still relaunch or fork — that is what it is for.
+
+It reads the parser's own `_actions` via **`train_rl_agent.build_parser()`** (extracted from
+`main()` so the parser can be inspected without running a training job), not scraped `--help` text.
+That distinction is load-bearing: `--help` was itself broken by one unescaped `%` — `"~0.6% of"`
+renders as a space-flag `%o` conversion and raises `TypeError: %o format: an integer is required,
+not dict` — and nothing rendered the help strings, so nothing caught it.
+`checkargs_test.py::test_every_help_string_renders` is now that guard.
+
 ### Starting a fresh run via launcher
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \

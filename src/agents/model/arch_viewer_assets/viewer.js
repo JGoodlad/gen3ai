@@ -117,7 +117,7 @@ dashes();
    RECEIVES bias (28 in, 0 out) — which a ranker has no opinion about and would drop wherever. */
 const SEAT_BANDS = [['our_mon', 'opp_mon'],
                     ['E3_move', 'E4_threat', 'E5_tail'],
-                    ['global', 'history']];
+                    ['global', 'history', 'event']];
 const MISC_BAND = 9;
 const seatGroup = id => id.replace(/\[\d+\]$/, '');
 /* Bands read LEFT-TO-RIGHT in pipeline order. The two leading bands are the T0 front end: the obs

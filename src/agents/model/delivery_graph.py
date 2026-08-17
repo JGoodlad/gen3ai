@@ -136,6 +136,13 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     for t in range(n_e5):
         nodes.append(_node(f"E5_tail[{t}]", "seat", index=base + n_e3 + k_e4 + t,
                            token_type="THEIR_THREAT+tail_marker"))
+    # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST — which is what
+    # keeps every front-indexed slice above position-stable — and take TOKEN_TYPE_HISTORY (the
+    # E5 precedent, no token-type table growth). One seat per event record (`EventSeats.n`).
+    n_ev = fe.history_events.n if fe.history_events is not None else 0
+    for e in range(n_ev):
+        nodes.append(_node(f"event[{e}]", "seat", index=base + n_e3 + k_e4 + n_e5 + e,
+                           token_type="HISTORY"))
 
     # --- COMPUTE / SINK NODES ----------------------------------------------------------------
     nodes.append(_node("damage_op", "operator", out_dim=op.out_dim,
@@ -219,7 +226,23 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             return [f"E4_threat[{c}]" for c in range(k_e4)]
         if group == "global":
             return ["global"]
+        if group == "event":
+            return [f"event[{e}]" for e in range(n_ev)]
         raise KeyError(group)
+
+    # The `h` fix added a coverage check that every FAMILY has a route. This is the same hole one
+    # level down: a route can name a GROUP `_members` cannot resolve, and — exactly like the `h`
+    # KeyError — that only surfaces the day a config first enables the family. gen-13 enabling `r`
+    # is how this one surfaced, mid-ship. Resolve every group NOW, so a new route fails when it is
+    # DEFINED rather than when someone launches with it.
+    _bad = sorted({g for row_g, col_g in _ROUTES.values() for g in (row_g, col_g)
+                   if g not in ("our_mon", "opp_mon", "mon", "E3_move", "E4_threat",
+                                "global", "event")})
+    if _bad:
+        raise AssertionError(
+            f"delivery_graph._ROUTES names group(s) {_bad} that `_members` cannot resolve — add "
+            f"them there (and emit their seat nodes above), or the graph raises KeyError the day "
+            f"a config first enables that family.")
 
     fams = sorted(fe.edge_bias.families) if fe.edge_bias is not None else []
     for fam in fams:

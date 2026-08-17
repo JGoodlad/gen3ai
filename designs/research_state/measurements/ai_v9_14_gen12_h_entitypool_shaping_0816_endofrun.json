@@ -1,0 +1,312 @@
+{
+ "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+ "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_14_gen12_h_entitypool_shaping_0816",
+ "ref": "/home/goodlad/dev/gen3ai/models/ai_v9_13_gen11_labelonly_winprob_0815",
+ "steps": {
+  "elo": {
+   "status": "ok",
+   "current_tail": {
+    "k": 4,
+    "steps": [
+     18000000,
+     20000016,
+     22000032,
+     24000000
+    ],
+    "elo": 2066.359381343038,
+    "se": 14.37111963833888
+   },
+   "reference_tail": {
+    "k": 4,
+    "steps": [
+     18000000,
+     20000016,
+     22000032,
+     24000000
+    ],
+    "elo": 2091.152825771416,
+    "se": 14.905652842873646
+   },
+   "non_inferiority": {
+    "verdict": "INCONCLUSIVE",
+    "delta": -24.8,
+    "ci95": [
+     -65.4,
+     15.8
+    ],
+    "rule": "delta >= -15.0 and CI-low > -40.0"
+   },
+   "curve_len": 12
+  },
+  "audits": {
+   "status": "needs_pinned_tree",
+   "why": "ModelVersionError: Stable opponent total_dim mismatch: opponent=2921, current=3529 (arch_signature matched \u2014 the opponent's model_config.json looks hand-edited).",
+   "how": [
+    "git worktree add /tmp/endofrun-pinned ede5a887ea056b6f3d2f56719baeecdccc5b1634",
+    "copy src/main/endofrun.py + src/agents/model/critic_route_audit.py into the pinned tree if it predates them",
+    "PYTHONPATH=src python -m main.endofrun /home/goodlad/dev/gen3ai/models/ai_v9_14_gen12_h_entitypool_shaping_0816 --skip elo,awareness"
+   ]
+  },
+  "awareness": {
+   "status": "ok",
+   "loss_aggregate": {
+    "n_battles": 1358,
+    "n_skipped_no_dist": 0,
+    "n_losses": 1358,
+    "n_cap_losses": 15,
+    "blind_loss_fraction": 0.054,
+    "aware_ge_bar_fraction": 0.613,
+    "cap_aware_ge_bar_fraction": 0.8,
+    "median_lead_time": 7.0,
+    "stall_signature_fraction": 0.0,
+    "quantile_coverage": {
+     "n_decisions": 59158,
+     "pit_mean": 0.0868,
+     "pit_std": 0.1556,
+     "coverage80": 0.2467
+    },
+    "params": {
+     "lead_bar": 5,
+     "cap_turn": 240,
+     "stall_bar": 0.25
+    },
+    "baseline": {
+     "generation": "gen-10",
+     "measured": "2026-08-15",
+     "n_losses": 1396,
+     "n_cap_losses": 12,
+     "blind_loss_fraction": 0.072,
+     "median_lead_time": 7.0,
+     "cap_aware_ge_bar_fraction": 0.5,
+     "coverage_scope": "all outcomes, 109k decisions",
+     "pit_mean": 0.396,
+     "coverage80": 0.44,
+     "source": "designs/research_state/gen11_endofrun_runbook.md \u00a73"
+    }
+   },
+   "all_aggregate": {
+    "n_battles": 2582,
+    "n_skipped_no_dist": 0,
+    "n_losses": 1358,
+    "n_cap_losses": 15,
+    "blind_loss_fraction": 0.054,
+    "aware_ge_bar_fraction": 0.613,
+    "cap_aware_ge_bar_fraction": 0.8,
+    "median_lead_time": 7.0,
+    "stall_signature_fraction": 0.0,
+    "quantile_coverage": {
+     "n_decisions": 117019,
+     "pit_mean": 0.3924,
+     "pit_std": 0.3674,
+     "coverage80": 0.4652
+    },
+    "params": {
+     "lead_bar": 5,
+     "cap_turn": 240,
+     "stall_bar": 0.25
+    },
+    "baseline": {
+     "generation": "gen-10",
+     "measured": "2026-08-15",
+     "n_losses": 1396,
+     "n_cap_losses": 12,
+     "blind_loss_fraction": 0.072,
+     "median_lead_time": 7.0,
+     "cap_aware_ge_bar_fraction": 0.5,
+     "coverage_scope": "all outcomes, 109k decisions",
+     "pit_mean": 0.396,
+     "coverage80": 0.44,
+     "source": "designs/research_state/gen11_endofrun_runbook.md \u00a73"
+    }
+   },
+   "verdicts": {
+    "blind_loss_fraction": {
+     "current": 0.054,
+     "gen10_baseline": 0.072,
+     "verdict": "IMPROVED"
+    },
+    "median_lead_time": {
+     "current": 7.0,
+     "gen10_baseline": 7.0,
+     "verdict": "UNCHANGED"
+    },
+    "cap_aware_ge_bar_fraction": {
+     "current": 0.8,
+     "gen10_baseline": 0.5,
+     "verdict": "IMPROVED"
+    },
+    "coverage80": {
+     "current": 0.4652,
+     "gen10_baseline": 0.44,
+     "verdict": "IMPROVED"
+    },
+    "pit_mean": {
+     "current": 0.3924,
+     "gen10_baseline": 0.396,
+     "verdict": "UNCHANGED"
+    }
+   }
+  },
+  "mechanics": {
+   "status": "ok",
+   "current": {
+    "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+    "n_summary_files": 2582,
+    "n_decisions": 117019,
+    "mechanics": {
+     "focuspunch": {
+      "available": 2394,
+      "chosen": 130,
+      "pick_rate": 0.0543,
+      "mean_prob": 0.0654
+     },
+     "substitute": {
+      "available": 5179,
+      "chosen": 99,
+      "pick_rate": 0.0191,
+      "mean_prob": 0.0467
+     },
+     "endure": {
+      "available": 95,
+      "chosen": 0,
+      "pick_rate": 0.0,
+      "mean_prob": 0.0051
+     },
+     "destinybond": {
+      "available": 133,
+      "chosen": 21,
+      "pick_rate": 0.1579,
+      "mean_prob": 0.132
+     },
+     "endeavor": {
+      "available": 91,
+      "chosen": 4,
+      "pick_rate": 0.044,
+      "mean_prob": 0.0781
+     },
+     "counter": {
+      "available": 1108,
+      "chosen": 66,
+      "pick_rate": 0.0596,
+      "mean_prob": 0.0932
+     },
+     "mirrorcoat": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+     },
+     "explosion": {
+      "available": 11896,
+      "chosen": 658,
+      "pick_rate": 0.0553,
+      "mean_prob": 0.0698
+     },
+     "selfdestruct": {
+      "available": 1378,
+      "chosen": 96,
+      "pick_rate": 0.0697,
+      "mean_prob": 0.0829
+     },
+     "pursuit": {
+      "available": 4466,
+      "chosen": 174,
+      "pick_rate": 0.039,
+      "mean_prob": 0.0729
+     },
+     "protect": {
+      "available": 13825,
+      "chosen": 3382,
+      "pick_rate": 0.2446,
+      "mean_prob": 0.2102
+     },
+     "detect": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+     }
+    }
+   },
+   "reference": {
+    "run": "ai_v9_13_gen11_labelonly_winprob_0815",
+    "n_summary_files": 2516,
+    "n_decisions": 107986,
+    "mechanics": {
+     "focuspunch": {
+      "available": 2400,
+      "chosen": 80,
+      "pick_rate": 0.0333,
+      "mean_prob": 0.0426
+     },
+     "substitute": {
+      "available": 5024,
+      "chosen": 135,
+      "pick_rate": 0.0269,
+      "mean_prob": 0.0604
+     },
+     "endure": {
+      "available": 28,
+      "chosen": 0,
+      "pick_rate": 0.0,
+      "mean_prob": 0.0354
+     },
+     "destinybond": {
+      "available": 87,
+      "chosen": 5,
+      "pick_rate": 0.0575,
+      "mean_prob": 0.076
+     },
+     "endeavor": {
+      "available": 63,
+      "chosen": 8,
+      "pick_rate": 0.127,
+      "mean_prob": 0.1028
+     },
+     "counter": {
+      "available": 1229,
+      "chosen": 170,
+      "pick_rate": 0.1383,
+      "mean_prob": 0.1331
+     },
+     "mirrorcoat": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+     },
+     "explosion": {
+      "available": 11633,
+      "chosen": 822,
+      "pick_rate": 0.0707,
+      "mean_prob": 0.0809
+     },
+     "selfdestruct": {
+      "available": 1210,
+      "chosen": 87,
+      "pick_rate": 0.0719,
+      "mean_prob": 0.094
+     },
+     "pursuit": {
+      "available": 3503,
+      "chosen": 215,
+      "pick_rate": 0.0614,
+      "mean_prob": 0.0813
+     },
+     "protect": {
+      "available": 13199,
+      "chosen": 3532,
+      "pick_rate": 0.2676,
+      "mean_prob": 0.2144
+     },
+     "detect": {
+      "available": 0,
+      "chosen": 0,
+      "pick_rate": null,
+      "mean_prob": null
+     }
+    }
+   }
+  }
+ }
+}

@@ -2247,6 +2247,3846 @@
     },
     {
       "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[0]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[10]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[11]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[12]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[13]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[14]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[15]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[16]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[17]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[18]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[19]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[1]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[20]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[21]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[22]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[23]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[24]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[25]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[26]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[27]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[28]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[29]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[2]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[30]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[31]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[3]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[4]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[5]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[6]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[7]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[8]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "opp_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[0]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[1]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[2]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[3]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[4]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
+      "dst": "our_mon[5]",
+      "family": "r",
+      "note": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+      "source_constant": "_EDGE_R_CELL",
+      "src": "event[9]",
+      "type": "bias",
+      "width": 2
+    },
+    {
+      "bidirectional": true,
       "dst": "global",
       "family": "g",
       "note": "written for our mons AND opp mons",
@@ -4934,6 +8774,16 @@
       "source_constant": "D_MODEL",
       "src": "damage_op",
       "type": "content",
+      "via": "IntentThresholdValue (p_KO / p_sub / p_fp, alpha-contracted) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "damage_op",
+      "type": "content",
       "via": "IntentValueReduce (alpha-weighted pair-cell rows) \u2014 additive into value_pooled",
       "width": 128,
       "zero_init": true
@@ -4945,6 +8795,16 @@
       "src": "damage_op",
       "type": "content",
       "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled \u2014 the per-our-mon incoming-row source",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "damage_op",
+      "type": "content",
+      "via": "ValueIntentRoute (published alpha/beta posteriors as distributions) \u2014 additive into value_pooled",
       "width": 128,
       "zero_init": true
     },
@@ -5143,6 +9003,16 @@
       "src": "obs.global_env",
       "type": "content",
       "width": 20
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "obs.global_env.clock",
+      "type": "content",
+      "via": "ValueClockRoute (the 3 raw clock scalars) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "obs_unpack",
@@ -5697,6 +9567,7 @@
       "d4",
       "g",
       "h",
+      "r",
       "s1",
       "s3",
       "t",
@@ -5713,7 +9584,7 @@
     "extra_seats": 16,
     "n_tokens": 36,
     "obs_dim": 3529,
-    "op_out_dim": 660,
+    "op_out_dim": 138,
     "pi_projection_in": 1177,
     "vf_projection_in": 1177
   },
@@ -5998,7 +9869,7 @@
       "id": "damage_op",
       "incoming_dim": 85,
       "kind": "operator",
-      "out_dim": 660
+      "out_dim": 138
     },
     {
       "id": "belief_slots",
@@ -6125,6 +9996,198 @@
       "index": 35,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
+    },
+    {
+      "id": "event[0]",
+      "index": 36,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[10]",
+      "index": 46,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[11]",
+      "index": 47,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[12]",
+      "index": 48,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[13]",
+      "index": 49,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[14]",
+      "index": 50,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[15]",
+      "index": 51,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[16]",
+      "index": 52,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[17]",
+      "index": 53,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[18]",
+      "index": 54,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[19]",
+      "index": 55,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[1]",
+      "index": 37,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[20]",
+      "index": 56,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[21]",
+      "index": 57,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[22]",
+      "index": 58,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[23]",
+      "index": 59,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[24]",
+      "index": 60,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[25]",
+      "index": 61,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[26]",
+      "index": 62,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[27]",
+      "index": 63,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[28]",
+      "index": 64,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[29]",
+      "index": 65,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[2]",
+      "index": 38,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[30]",
+      "index": 66,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[31]",
+      "index": 67,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[3]",
+      "index": 39,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[4]",
+      "index": 40,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[5]",
+      "index": 41,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[6]",
+      "index": 42,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[7]",
+      "index": 43,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[8]",
+      "index": 44,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[9]",
+      "index": 45,
+      "kind": "seat",
+      "token_type": "HISTORY"
     },
     {
       "id": "global",

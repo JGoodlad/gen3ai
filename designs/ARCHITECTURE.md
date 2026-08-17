@@ -185,9 +185,11 @@ Modules actually built under the production config (`named_children()`) — GENE
 <!-- BEGIN GENERATED: modules -->
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
-hidden_opp_belief · intent_value_reduce · intent_move_cell · t0_species_prior · belief_slots ·
-belief_head · move_belief · spread_belief · hp_type_belief_head · damage_op · prefuse_proj ·
-assembler · win_head · value_dist_head · value_entity_pool · pre_proj_norm · projection ·
+hidden_opp_belief · intent_value_reduce · intent_move_cell · intent_threshold_move ·
+intent_threshold_value · intent_conditional · value_clock_route · value_intent_route ·
+t0_species_prior · belief_slots · belief_head · move_belief · spread_belief ·
+hp_type_belief_head · item_belief_head · damage_op · prefuse_proj · assembler · win_head ·
+value_dist_head · value_entity_pool · history_events · pre_proj_norm · projection ·
 value_pre_norm · value_projection · activation · alpha_head · beta_head
 ```
 <!-- END GENERATED: modules -->
@@ -713,26 +715,26 @@ does nothing given another setting.
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
-| `damage_matrices_outgoing` | `false` | OFF |
+| `damage_matrices_outgoing` | `true` | ACTIVE |
 | `damage_op` | `true` | ACTIVE |
 | `damage_outgoing` | `true` | ACTIVE |
 | `damage_topk_k` | `6` | ACTIVE |
-| `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h"` | ACTIVE |
+| `edge_bias_families` | `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | ACTIVE |
 | `entity_tail_seats` | `true` | ACTIVE |
 | `entity_topk_seats` | `6` | ACTIVE |
-| `history_events` | `false` | OFF |
+| `history_events` | `true` | ACTIVE |
 | `hp_belief_mode` | `"composed"` | ACTIVE |
-| `intent_conditional` | `false` | OFF |
+| `intent_conditional` | `true` | ACTIVE |
 | `intent_move_cell` | `true` | ACTIVE |
-| `intent_threshold` | `false` | OFF |
+| `intent_threshold` | `true` | ACTIVE |
 | `intent_value_reduce` | `true` | ACTIVE |
-| `item_belief` | `false` | OFF |
+| `item_belief` | `true` | ACTIVE |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |
 | `move_latent` | `true` | ACTIVE |
 | `move_prior_fusion` | `true` | ACTIVE |
-| `op_believed_lean` | `false` | OFF |
-| `op_drop_renders` | `false` | OFF |
+| `op_believed_lean` | `true` | ACTIVE |
+| `op_drop_renders` | `true` | ACTIVE |
 | `opp_belief_cls_k` | `6` | ACTIVE |
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |
@@ -742,17 +744,18 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
-| `value_clock` | `false` | OFF |
+| `value_clock` | `true` | ACTIVE |
 | `value_dist_bins` | `51` | ACTIVE |
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
-| `value_entity_pool_full` | `false` | OFF |
-| `value_intent` | `false` | OFF |
+| `value_entity_pool_full` | `true` | ACTIVE |
+| `value_intent` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
+| `item_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |

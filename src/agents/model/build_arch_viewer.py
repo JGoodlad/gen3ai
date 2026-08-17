@@ -166,6 +166,7 @@ FAMILY_LABEL = {
     "c3": "does healing beat their KO",
     "c4": "the turn a successful Protect banks",
     "c5": "Baton-Pass receiver axis",
+    "r": "which mon each event seat is ABOUT — actor and target identity",
 }
 
 
