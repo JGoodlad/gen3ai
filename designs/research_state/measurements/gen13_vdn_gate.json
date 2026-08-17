@@ -1,0 +1,729 @@
+{
+ "what": "C4 value-decomposition offline gate \u2014 pre-registered head comparison on frozen gen-13 tokens",
+ "date": "2026-08-17",
+ "run": "ai_v9_15_gen13_hb_events_stack_0817 ckpt 17243904 (mid-run), ALL 10 trace tiers",
+ "script": "tmp/vdn_gate_probe.py + tmp/vdn_gate_report.md (scratch, main checkout)",
+ "result": {
+  "probe": "vdn_gate \u2014 decomposed vs pooled critic head on FROZEN gen-13 trunk tokens",
+  "run": "models/ai_v9_15_gen13_hb_events_stack_0817",
+  "checkpoint": "/tmp/vdn_ckpt/checkpoint_17243904_steps.zip (copy of checkpoints/checkpoint_17243904_steps.zip)",
+  "data": {
+   "step_tiers": [
+    2000016,
+    4000032,
+    6000000,
+    8000016,
+    10000032,
+    12000000,
+    14000016,
+    16000032,
+    18000000,
+    20000016
+   ],
+   "n_battles": 2111,
+   "n_decisions": 87064,
+   "obs_dim": 3529,
+   "tokens_shape": [
+    87064,
+    12,
+    128
+   ],
+   "note": "ALL available gen-13 eval_traces decisions used (87064 < the 40000 cap was exceeded, but the forward cost 130 s so no subsampling was needed)."
+  },
+  "hook_sanity": {
+   "overall_pearson": 0.8497789819982523,
+   "overall_rmse": 7.899355038940498,
+   "rec_mean": 2.972056487413093,
+   "pred_mean": 3.3203494563913734,
+   "per_tier": {
+    "2000016": {
+     "n": 7909,
+     "pearson": 0.4798830920809967
+    },
+    "4000032": {
+     "n": 4944,
+     "pearson": 0.8143173531465546
+    },
+    "6000000": {
+     "n": 6611,
+     "pearson": 0.87726187729523
+    },
+    "8000016": {
+     "n": 7761,
+     "pearson": 0.9190192319366622
+    },
+    "10000032": {
+     "n": 8170,
+     "pearson": 0.9333356233856978
+    },
+    "12000000": {
+     "n": 9199,
+     "pearson": 0.9427259042888286
+    },
+    "14000016": {
+     "n": 9713,
+     "pearson": 0.9608034672594874
+    },
+    "16000032": {
+     "n": 9688,
+     "pearson": 0.9804971077420632
+    },
+    "18000000": {
+     "n": 10836,
+     "pearson": 0.9799797313909545
+    },
+    "20000016": {
+     "n": 12233,
+     "pearson": 0.9756817108774051
+    }
+   }
+  },
+  "descriptives": {
+   "G_std": 40.26414335370224,
+   "G_mean": -12.637364416980612,
+   "G99_std": 26.038798458850096,
+   "selfko_n": 433,
+   "selfko_with_succ": 402,
+   "selfko_battles": 366,
+   "selfko_immediate_reward_mean": -1.5647945273631838,
+   "selfko_immediate_reward_median": -1.5478500000000004,
+   "selfko_dG_std": 1.3174930910049099,
+   "selfko_dG99_std": 1.328218153900707,
+   "critic_dV_std": 6.290387022420397,
+   "critic_dV_mean": 2.932822013375771,
+   "recorded_dV_mean": 2.358434281538968,
+   "recorded_dV_std": 5.721893963707003
+  },
+  "arms": {
+   "primary": {
+    "target": "G",
+    "n": 87064,
+    "n_battles": 2111,
+    "self_ko_decisions": 433,
+    "self_ko_with_successor": 402,
+    "fold_info": [
+     {
+      "fold": 0,
+      "head": "pooled",
+      "val_mse_z": 0.3071476845115427,
+      "epochs": 6
+     },
+     {
+      "fold": 0,
+      "head": "decomposed",
+      "val_mse_z": 0.3174449115373982,
+      "epochs": 10
+     },
+     {
+      "fold": 0,
+      "head": "dueling",
+      "val_mse_z": 0.3104296846058145,
+      "epochs": 10
+     },
+     {
+      "fold": 1,
+      "head": "pooled",
+      "val_mse_z": 0.5252334606706769,
+      "epochs": 6
+     },
+     {
+      "fold": 1,
+      "head": "decomposed",
+      "val_mse_z": 0.5414615921623511,
+      "epochs": 13
+     },
+     {
+      "fold": 1,
+      "head": "dueling",
+      "val_mse_z": 0.5580534427086741,
+      "epochs": 8
+     },
+     {
+      "fold": 2,
+      "head": "pooled",
+      "val_mse_z": 0.4647816462251808,
+      "epochs": 8
+     },
+     {
+      "fold": 2,
+      "head": "decomposed",
+      "val_mse_z": 0.543322416284731,
+      "epochs": 15
+     },
+     {
+      "fold": 2,
+      "head": "dueling",
+      "val_mse_z": 0.49676146624627315,
+      "epochs": 8
+     },
+     {
+      "fold": 3,
+      "head": "pooled",
+      "val_mse_z": 0.38490195949051076,
+      "epochs": 6
+     },
+     {
+      "fold": 3,
+      "head": "decomposed",
+      "val_mse_z": 0.39583940958668096,
+      "epochs": 7
+     },
+     {
+      "fold": 3,
+      "head": "dueling",
+      "val_mse_z": 0.38052830987428227,
+      "epochs": 6
+     },
+     {
+      "fold": 4,
+      "head": "pooled",
+      "val_mse_z": 0.3513091741170425,
+      "epochs": 8
+     },
+     {
+      "fold": 4,
+      "head": "decomposed",
+      "val_mse_z": 0.3921664075559924,
+      "epochs": 20
+     },
+     {
+      "fold": 4,
+      "head": "dueling",
+      "val_mse_z": 0.4214144211148591,
+      "epochs": 9
+     }
+    ],
+    "heads": {
+     "pooled": {
+      "overall_rmse": 35.44877194836361,
+      "selfko_dv_rmse": 6.302144035493694,
+      "selfko_dv_bias": -0.6922060672270353,
+      "selfko_pred_dv_mean": 0.872588441151862,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     },
+     "decomposed": {
+      "overall_rmse": 36.458111135874574,
+      "selfko_dv_rmse": 9.139544018778995,
+      "selfko_dv_bias": 0.7507170004073764,
+      "selfko_pred_dv_mean": 2.3155115087862734,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     },
+     "dueling": {
+      "overall_rmse": 37.40931373234841,
+      "selfko_dv_rmse": 8.715466371770287,
+      "selfko_dv_bias": 0.676555508017505,
+      "selfko_pred_dv_mean": 2.241350016396402,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     }
+    },
+    "model_critic_reference": {
+     "selfko_pred_dv_mean": 2.932822013375771,
+     "selfko_actual_dv_mean": 1.5647944211959839,
+     "selfko_dv_rmse": 6.93180301766773,
+     "overall_rmse": 41.44490575582673
+    },
+    "bootstrap": {
+     "overall_pooled_minus_decomposed": {
+      "mean": -1.2017336870186885,
+      "ci95_lo": -2.4990606527978403,
+      "ci95_hi": 0.14119843293462317,
+      "p_gt_0": 0.049,
+      "n_boot": 2000
+     },
+     "overall_pooled_minus_dueling": {
+      "mean": -2.1146111015171094,
+      "ci95_lo": -5.363392407998417,
+      "ci95_hi": -0.18047538552371017,
+      "p_gt_0": 0.0105,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_decomposed": {
+      "mean": -2.839464586520114,
+      "ci95_lo": -3.746722058530628,
+      "ci95_hi": -1.966590699551328,
+      "p_gt_0": 0.0,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_dueling": {
+      "mean": -2.4206550313436885,
+      "ci95_lo": -3.135285163654573,
+      "ci95_hi": -1.7226292858219587,
+      "p_gt_0": 0.0,
+      "n_boot": 2000
+     }
+    },
+    "n_selfko_battles": 366,
+    "derived": {
+     "target_std": 40.26414336992825,
+     "selfko_actual_dv_std": 1.317493007578924,
+     "constant_dv_baseline_rmse": 1.317493007578924,
+     "constant_value_baseline_rmse": 40.26414336992825,
+     "per_head": {
+      "pooled": {
+       "value_r2": 0.22488621361498262,
+       "selfko_dv_pearson": -0.12231026082676172,
+       "selfko_dv_pred_std": 5.964871240859617
+      },
+      "decomposed": {
+       "value_r2": 0.18011790657257065,
+       "selfko_dv_pearson": -0.047748188783581606,
+       "selfko_dv_pred_std": 8.950185816843264
+      },
+      "dueling": {
+       "value_r2": 0.1367778914412383,
+       "selfko_dv_pearson": -0.09095319456301261,
+       "selfko_dv_pred_std": 8.469709846486719
+      }
+     }
+    },
+    "budget": {
+     "max_epochs": 40,
+     "patience": 5,
+     "lr": 0.001,
+     "bs": 1024
+    }
+   },
+   "robustness_gamma099": {
+    "target": "G99",
+    "n": 87064,
+    "n_battles": 2111,
+    "self_ko_decisions": 433,
+    "self_ko_with_successor": 402,
+    "fold_info": [
+     {
+      "fold": 0,
+      "head": "pooled",
+      "val_mse_z": 0.45773026547098644,
+      "epochs": 7
+     },
+     {
+      "fold": 0,
+      "head": "decomposed",
+      "val_mse_z": 0.4399570562900641,
+      "epochs": 11
+     },
+     {
+      "fold": 0,
+      "head": "dueling",
+      "val_mse_z": 0.44626382413059523,
+      "epochs": 16
+     },
+     {
+      "fold": 1,
+      "head": "pooled",
+      "val_mse_z": 0.5611799729803225,
+      "epochs": 9
+     },
+     {
+      "fold": 1,
+      "head": "decomposed",
+      "val_mse_z": 0.6109690382916776,
+      "epochs": 13
+     },
+     {
+      "fold": 1,
+      "head": "dueling",
+      "val_mse_z": 0.6195338313350562,
+      "epochs": 7
+     },
+     {
+      "fold": 2,
+      "head": "pooled",
+      "val_mse_z": 0.5870578768772995,
+      "epochs": 8
+     },
+     {
+      "fold": 2,
+      "head": "decomposed",
+      "val_mse_z": 0.6085075604918644,
+      "epochs": 17
+     },
+     {
+      "fold": 2,
+      "head": "dueling",
+      "val_mse_z": 0.6189902130645775,
+      "epochs": 10
+     },
+     {
+      "fold": 3,
+      "head": "pooled",
+      "val_mse_z": 0.44423200237786203,
+      "epochs": 6
+     },
+     {
+      "fold": 3,
+      "head": "decomposed",
+      "val_mse_z": 0.5021840445756534,
+      "epochs": 7
+     },
+     {
+      "fold": 3,
+      "head": "dueling",
+      "val_mse_z": 0.45585246609201113,
+      "epochs": 7
+     },
+     {
+      "fold": 4,
+      "head": "pooled",
+      "val_mse_z": 0.4446085734138322,
+      "epochs": 7
+     },
+     {
+      "fold": 4,
+      "head": "decomposed",
+      "val_mse_z": 0.46903332372940265,
+      "epochs": 13
+     },
+     {
+      "fold": 4,
+      "head": "dueling",
+      "val_mse_z": 0.48165993503087473,
+      "epochs": 9
+     }
+    ],
+    "heads": {
+     "pooled": {
+      "overall_rmse": 21.253305858073833,
+      "selfko_dv_rmse": 5.6216072692585675,
+      "selfko_dv_bias": -0.6385381632715037,
+      "selfko_pred_dv_mean": 0.8612846347884436,
+      "selfko_actual_dv_mean": 1.499822974205017
+     },
+     "decomposed": {
+      "overall_rmse": 21.95345587942078,
+      "selfko_dv_rmse": 5.623868757111646,
+      "selfko_dv_bias": -0.5949147311883166,
+      "selfko_pred_dv_mean": 0.9049080668716308,
+      "selfko_actual_dv_mean": 1.499822974205017
+     },
+     "dueling": {
+      "overall_rmse": 21.502411545762786,
+      "selfko_dv_rmse": 6.283422681974371,
+      "selfko_dv_bias": -0.16705579797138717,
+      "selfko_pred_dv_mean": 1.3327670000885603,
+      "selfko_actual_dv_mean": 1.499822974205017
+     }
+    },
+    "model_critic_reference": {
+     "selfko_pred_dv_mean": 2.932822013375771,
+     "selfko_actual_dv_mean": 1.499822974205017,
+     "selfko_dv_rmse": 6.901921201901315,
+     "overall_rmse": 26.782835130583706
+    },
+    "bootstrap": {
+     "overall_pooled_minus_decomposed": {
+      "mean": -0.7158095572931183,
+      "ci95_lo": -1.1618113362995899,
+      "ci95_hi": -0.3320013592363265,
+      "p_gt_0": 0.0,
+      "n_boot": 2000
+     },
+     "overall_pooled_minus_dueling": {
+      "mean": -0.25641410096784206,
+      "ci95_lo": -0.6483837486636068,
+      "ci95_hi": 0.09401817604132665,
+      "p_gt_0": 0.083,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_decomposed": {
+      "mean": 0.003253186639971183,
+      "ci95_lo": -0.6448455994424274,
+      "ci95_hi": 0.7080762250098485,
+      "p_gt_0": 0.4965,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_dueling": {
+      "mean": -0.6646853794338362,
+      "ci95_lo": -1.321803536488478,
+      "ci95_hi": -0.009116788808628377,
+      "p_gt_0": 0.0235,
+      "n_boot": 2000
+     }
+    },
+    "n_selfko_battles": 366,
+    "budget": {
+     "max_epochs": 40,
+     "patience": 5,
+     "lr": 0.001,
+     "bs": 1024
+    },
+    "derived": {
+     "target_std": 26.03879846364358,
+     "selfko_actual_dv_std": 1.3282181714836403,
+     "constant_dv_baseline_rmse": 1.3282181714836403,
+     "constant_value_baseline_rmse": 26.03879846364358,
+     "per_head": {
+      "pooled": {
+       "value_r2": 0.333790066421513,
+       "selfko_dv_pearson": -0.20390140128295617,
+       "selfko_dv_pred_std": 5.16092557728085
+      },
+      "decomposed": {
+       "value_r2": 0.2891730069907058,
+       "selfko_dv_pearson": -0.12056493830035012,
+       "selfko_dv_pred_std": 5.27451675531076
+      },
+      "dueling": {
+       "value_r2": 0.3180815213998467,
+       "selfko_dv_pearson": -0.12604571710496065,
+       "selfko_dv_pred_std": 5.974029679557777
+      }
+     }
+    }
+   },
+   "robustness_long_budget": {
+    "target": "G",
+    "n": 87064,
+    "n_battles": 2111,
+    "self_ko_decisions": 433,
+    "self_ko_with_successor": 402,
+    "fold_info": [
+     {
+      "fold": 0,
+      "head": "pooled",
+      "val_mse_z": 0.3071476845115427,
+      "epochs": 16
+     },
+     {
+      "fold": 0,
+      "head": "decomposed",
+      "val_mse_z": 0.3174449115373982,
+      "epochs": 20
+     },
+     {
+      "fold": 0,
+      "head": "dueling",
+      "val_mse_z": 0.30776131570429927,
+      "epochs": 29
+     },
+     {
+      "fold": 1,
+      "head": "pooled",
+      "val_mse_z": 0.5252334606706769,
+      "epochs": 16
+     },
+     {
+      "fold": 1,
+      "head": "decomposed",
+      "val_mse_z": 0.5414615921623511,
+      "epochs": 23
+     },
+     {
+      "fold": 1,
+      "head": "dueling",
+      "val_mse_z": 0.5580534427086741,
+      "epochs": 18
+     },
+     {
+      "fold": 2,
+      "head": "pooled",
+      "val_mse_z": 0.4647816462251808,
+      "epochs": 18
+     },
+     {
+      "fold": 2,
+      "head": "decomposed",
+      "val_mse_z": 0.543322416284731,
+      "epochs": 25
+     },
+     {
+      "fold": 2,
+      "head": "dueling",
+      "val_mse_z": 0.49676146624627315,
+      "epochs": 18
+     },
+     {
+      "fold": 3,
+      "head": "pooled",
+      "val_mse_z": 0.38490195949051076,
+      "epochs": 16
+     },
+     {
+      "fold": 3,
+      "head": "decomposed",
+      "val_mse_z": 0.39583940958668096,
+      "epochs": 17
+     },
+     {
+      "fold": 3,
+      "head": "dueling",
+      "val_mse_z": 0.38052830987428227,
+      "epochs": 16
+     },
+     {
+      "fold": 4,
+      "head": "pooled",
+      "val_mse_z": 0.3513091741170425,
+      "epochs": 18
+     },
+     {
+      "fold": 4,
+      "head": "decomposed",
+      "val_mse_z": 0.3921664075559924,
+      "epochs": 30
+     },
+     {
+      "fold": 4,
+      "head": "dueling",
+      "val_mse_z": 0.4214144211148591,
+      "epochs": 19
+     }
+    ],
+    "heads": {
+     "pooled": {
+      "overall_rmse": 35.44877194836361,
+      "selfko_dv_rmse": 6.302144035493694,
+      "selfko_dv_bias": -0.6922060672270353,
+      "selfko_pred_dv_mean": 0.872588441151862,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     },
+     "decomposed": {
+      "overall_rmse": 36.458111135874574,
+      "selfko_dv_rmse": 9.139544018778995,
+      "selfko_dv_bias": 0.7507170004073764,
+      "selfko_pred_dv_mean": 2.3155115087862734,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     },
+     "dueling": {
+      "overall_rmse": 37.41116980604595,
+      "selfko_dv_rmse": 8.869564988306678,
+      "selfko_dv_bias": 0.7042521693614882,
+      "selfko_pred_dv_mean": 2.2690466777403855,
+      "selfko_actual_dv_mean": 1.5647944211959839
+     }
+    },
+    "model_critic_reference": {
+     "selfko_pred_dv_mean": 2.932822013375771,
+     "selfko_actual_dv_mean": 1.5647944211959839,
+     "selfko_dv_rmse": 6.93180301766773,
+     "overall_rmse": 41.44490575582673
+    },
+    "bootstrap": {
+     "overall_pooled_minus_decomposed": {
+      "mean": -1.2017336870186885,
+      "ci95_lo": -2.4990606527978403,
+      "ci95_hi": 0.14119843293462317,
+      "p_gt_0": 0.049,
+      "n_boot": 2000
+     },
+     "overall_pooled_minus_dueling": {
+      "mean": -2.124312474359848,
+      "ci95_lo": -4.912417246850956,
+      "ci95_hi": -0.25224837531127614,
+      "p_gt_0": 0.0035,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_decomposed": {
+      "mean": -2.839464586520114,
+      "ci95_lo": -3.746722058530628,
+      "ci95_hi": -1.966590699551328,
+      "p_gt_0": 0.0,
+      "n_boot": 2000
+     },
+     "selfko_pooled_minus_dueling": {
+      "mean": -2.568162927121676,
+      "ci95_lo": -3.4318984580618963,
+      "ci95_hi": -1.7495326612139304,
+      "p_gt_0": 0.0,
+      "n_boot": 2000
+     }
+    },
+    "n_selfko_battles": 366,
+    "budget": {
+     "max_epochs": 120,
+     "patience": 15,
+     "lr": 0.001,
+     "bs": 1024
+    },
+    "derived": {
+     "target_std": 40.26414336992825,
+     "selfko_actual_dv_std": 1.317493007578924,
+     "constant_dv_baseline_rmse": 1.317493007578924,
+     "constant_value_baseline_rmse": 40.26414336992825,
+     "per_head": {
+      "pooled": {
+       "value_r2": 0.22488621361498262,
+       "selfko_dv_pearson": -0.12231026082676172,
+       "selfko_dv_pred_std": 5.964871240859617
+      },
+      "decomposed": {
+       "value_r2": 0.18011790657257065,
+       "selfko_dv_pearson": -0.047748188783581606,
+       "selfko_dv_pred_std": 8.950185816843264
+      },
+      "dueling": {
+       "value_r2": 0.13669223129739316,
+       "selfko_dv_pearson": -0.09158336679326241,
+       "selfko_dv_pred_std": 8.623022021529396
+      }
+     }
+    }
+   }
+  },
+  "verdict": {
+   "gate": "decomposed head passes ONLY if it beats pooled on self-KO dV RMSE with CI95 excluding 0 (i.e. pooled_minus_X CI95 entirely > 0)",
+   "per_arm": {
+    "primary::decomposed": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": -2.839464586520114,
+     "ci95": [
+      -3.746722058530628,
+      -1.966590699551328
+     ],
+     "passes_gate": false
+    },
+    "primary::dueling": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": -2.4206550313436885,
+     "ci95": [
+      -3.135285163654573,
+      -1.7226292858219587
+     ],
+     "passes_gate": false
+    },
+    "robustness_gamma099::decomposed": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": 0.003253186639971183,
+     "ci95": [
+      -0.6448455994424274,
+      0.7080762250098485
+     ],
+     "passes_gate": false
+    },
+    "robustness_gamma099::dueling": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": -0.6646853794338362,
+     "ci95": [
+      -1.321803536488478,
+      -0.009116788808628377
+     ],
+     "passes_gate": false
+    },
+    "robustness_long_budget::decomposed": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": -2.839464586520114,
+     "ci95": [
+      -3.746722058530628,
+      -1.966590699551328
+     ],
+     "passes_gate": false
+    },
+    "robustness_long_budget::dueling": {
+     "metric": "selfko_dv_rmse (pooled - opponent); POSITIVE = decomposed head BETTER",
+     "mean": -2.568162927121676,
+     "ci95": [
+      -3.4318984580618963,
+      -1.7495326612139304
+     ],
+     "passes_gate": false
+    }
+   },
+   "passed": false
+  },
+  "notes": {
+   "identical_primary_vs_long_budget": "pooled and decomposed produce BIT-IDENTICAL held-out predictions in the primary (patience 5) and long (patience 15) arms because the best-validation epoch was the SAME in every fold (seeded deterministically). That is the proof that early stopping was not truncating either head; only dueling differed (it kept improving to a later best epoch and still lost).",
+   "delta_target_identity": "With UNDISCOUNTED return-to-go, G(i+1)-G(i) == -r(i) exactly, so the self-KO delta target is the negated immediate reward. The gamma=0.99 arm breaks that identity ((1-g)G99(i+1) - r(i)) and is reported alongside.",
+   "constant_baseline": "The self-KO actual delta has std 1.32; a constant predictor therefore scores RMSE 1.32. EVERY learned head (5.6-9.1) and the real critic (6.9) are 4-7x WORSE than that constant, and every head delta-Pearson is NEGATIVE."
+  }
+ }
+}
