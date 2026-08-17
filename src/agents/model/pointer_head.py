@@ -61,7 +61,8 @@ class EntityMoveSeats(torch.nn.Module):
         Index selection detached, `w` differentiable → the belief gradient rides the seats. All K
         seats key-masked when there is no opponent active.
 
-    The feasibility spike (`entity_spike_benchmark.py`) priced the seat growth at ~+0.19 ms B=1 for
+    The closed feasibility spike (`entity_spike_benchmark.py`, git history) priced the seat growth
+    at ~+0.19 ms B=1 for
     the full ~50-seat layout — dispatch-bound, not FLOP-bound. NO edges yet (Stage 2); the seats
     enter attention purely as content. Input projections are ordinary trainable Linears (NOT
     zero-init — new-information inputs, the `history_proj`/`global_proj` convention, not the

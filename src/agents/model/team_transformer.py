@@ -30,7 +30,8 @@ class BiasedEncoderLayer(torch.nn.Module):
     clone (post-LN, ReLU, dropout 0 — the literal production kwargs) whose self-attention takes an
     ADDITIVE per-pair per-head float bias `[B, H, n, n]` via `F.scaled_dot_product_attention`'s
     additive-mask path — exactly "logits += bias" pre-softmax. This is the delivery mechanism for
-    computed physics as attention EDGES (the spike `entity_spike_benchmark.py` proved the kernel:
+    computed physics as attention EDGES (the closed Stage-2 spike — `entity_spike_benchmark.py`,
+    now in git history only — proved the kernel:
     matches a float64 softmax(logits+bias) reference at 1.2e-7 and compiles fullgraph with zero
     graph breaks). The KEY-PADDING mask rides the same tensor as a large negative addend, so
     bias=mask-only reproduces the stock masked layer's math (pinned by

@@ -308,7 +308,9 @@ modules out of the extractor and the layout out of the op):
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `MultiSeedValueReadout`, `UnifiedValueReadout` |
 | `damage_op_layout.py` | every `_DMG_*` offset/width constant, `OpTensors`, `decode_damage_block` — the block's shape contract |
-| `damage_op.py` | `DamageOperator` + `OpStashes` — the physics |
+| `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
+| `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
+| `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
 | `features_extractor.py` | `ProjectionAssembler` + the `Gen3FeaturesExtractor` orchestrator; **re-exports every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
 

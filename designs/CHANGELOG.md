@@ -4546,3 +4546,20 @@ byte-identical. A <v89 checkpoint recording any of the five flags ON is REFUSED 
 (the v75 rule: its projection shapes no longer exist; re-read from its metadata git_hash); OFF
 stamps forward. The production sha probe moves 3cab191a… → 694c1652… (production has
 `intent_value_reduce` + `value_entity_pool` ON; their delivery is the change).
+
+
+## `gen3_damage_op_mixins_v1` (2026-08-17): the operator's method families become mixins — byte-identical
+
+`damage_op.py` was 2,759 lines, ~2,640 of them one class. The class has two coherent method
+families with clean seams, now MIXINS the class inherits (`DamageOperator(DamageOperatorPairwise,
+DamageOperatorBlocks, torch.nn.Module)`): `damage_op_pairwise.py` — the 17 `pairwise_*`
+edge-family cell producers plus their shared believed-attacker helpers (~930 lines); and
+`damage_op_blocks.py` — the outgoing/incoming/status flat-block builders including the OAX kernel
+(d2's engine) and the discrete status probes (~880 lines). Mixins carry NO parameters, so the
+state_dict, parameter order (the SB3 optimizer-by-position hazard) and forward are untouched —
+verified by the production sha probe reading identically with and without the split, at the
+gen-13 production config (`001e1140…`, the baseline since `26b2850` promoted the enable set).
+`damage_op.py` keeps the ctor, stashes, core roll math, the pointer/slicer surface and the
+forward (946 lines). Also deleted: `entity_spike_benchmark.py` — the closed Stage-2 feasibility
+spike, which shadowed the production `BiasedEncoderLayer` class name; its measured results stay
+cited in `team_transformer.py`/`pointer_head.py` with a git-history pointer.
