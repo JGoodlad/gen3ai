@@ -111,6 +111,46 @@ def _accepted_extractor_kwargs() -> "set[str] | None":
     return set(params) - {"self"}
 
 
+def _dropped_extractor_kwargs(saved_kwargs) -> "tuple[str, ...]":
+    """The saved extractor-kwarg names the CURRENT constructor no longer accepts. Pure set math over
+    the live signature, so a unit test hits it with no checkpoint. `()` when nothing drops or when the
+    constructor takes `**kwargs` (nothing is unknown then). `layout` is always accepted, so it survives."""
+    accepted = _accepted_extractor_kwargs()
+    if accepted is None or not isinstance(saved_kwargs, dict):
+        return ()
+    return tuple(sorted(k for k in saved_kwargs if k not in accepted))
+
+
+def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple[dict | None, tuple[str, ...]]":
+    """`custom_objects` that drop any saved extractor kwarg the CURRENT constructor rejects.
+
+    A checkpoint pickles its full `policy_kwargs["features_extractor_kwargs"]`, and SB3 hands them
+    verbatim to `Gen3FeaturesExtractor.__init__` on load. When a flag is later DELETED or demoted out
+    of the constructor (v78 `value_active_readout` / `damage_matrices_outgoing_all`; v88 `pubval_mode`),
+    a bare `MaskablePPO.load` TypeErrors — so every offline reader breaks on a checkpoint the code can
+    otherwise reconstruct read-only. `ProbeModel.load` already dropped these inline for the analyze
+    path; the replay/counterfactual/lookahead rollouts in `session.py` did NOT, so they crashed on any
+    current-gen checkpoint. This is the shared sanitizer both call sites use.
+
+    NOTE it only rescues KWARG drift (weights still fit). A checkpoint with WEIGHT-shape drift (e.g. a
+    v80 gen-12 ckpt at a v88+ tree) still needs its own `git_hash` — this cannot help there, and does
+    not pretend to.
+
+    Returns `(custom_objects, dropped_keys)` — `custom_objects` is `None` (nothing to drop) or
+    `{"policy_kwargs": <sanitized copy>}`; the saved dict is never mutated.
+    """
+    dropped = _dropped_extractor_kwargs(peek_checkpoint(ckpt_path).get("extractor_kwargs"))
+    if not dropped:
+        return None, ()
+    from stable_baselines3.common.save_util import load_from_zip_file
+    data, _, _ = load_from_zip_file(ckpt_path, device=device)
+    pk = dict(data.get("policy_kwargs") or {})
+    fek = dict(pk.get("features_extractor_kwargs") or {})
+    drop = set(dropped)
+    pk["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k not in drop}
+    return {"policy_kwargs": pk}, dropped
+
+
 def _sidecar(ckpt_path: str, name: str) -> dict:
     """A checkpoint's `model_config.json` / `metadata.json`, searching its own dir then UP to the run
     root. `{}` when absent (an archived run may have neither).
@@ -318,21 +358,7 @@ class ProbeModel:
         # DELETED flag still loads. Anything else — a value the code now rejects, weight shapes that
         # no longer fit — is re-raised as an ArchDriftError that names the drift.
         peek = peek_checkpoint(ckpt_path)
-        dropped: "tuple[str, ...]" = ()
-        custom_objects = None
-        accepted = _accepted_extractor_kwargs()
-        saved_kwargs = peek.get("extractor_kwargs")
-        if accepted is not None and isinstance(saved_kwargs, dict):
-            dropped = tuple(sorted(k for k in saved_kwargs if k not in accepted))
-            if dropped:
-                # Only NOW pay the full deserialize: the JSON peek renders class refs as
-                # `:serialized:` markers, so real kwargs have to come from SB3's own loader.
-                from stable_baselines3.common.save_util import load_from_zip_file
-                data, _, _ = load_from_zip_file(ckpt_path, device=device)
-                pk = dict(data.get("policy_kwargs") or {})
-                fek = dict(pk.get("features_extractor_kwargs") or {})
-                pk["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k in accepted}
-                custom_objects = {"policy_kwargs": pk}
+        custom_objects, dropped = sanitized_load_custom_objects(ckpt_path, device)
 
         try:
             model = MaskablePPO.load(ckpt_path, device=device, custom_objects=custom_objects)

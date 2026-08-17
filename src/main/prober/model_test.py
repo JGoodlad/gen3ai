@@ -109,6 +109,23 @@ def test_accepted_kwargs_excludes_self():
     assert accepted is None or ("self" not in accepted and "observation_space" in accepted)
 
 
+def test_dropped_extractor_kwargs_flags_deleted_flags_and_keeps_live_ones():
+    """The load sanitizer's decision layer: a saved kwarg the current constructor no longer accepts
+    must be flagged for dropping, while live kwargs and `layout` survive. This is what lets an
+    offline reader (analyze, and the replay/counterfactual/lookahead rollouts) load a checkpoint
+    written before a flag was deleted or demoted (v78 value_active_readout /
+    damage_matrices_outgoing_all, v88 pubval_mode) instead of TypeError-ing on it."""
+    from main.prober.model import _dropped_extractor_kwargs
+
+    accepted = _accepted_extractor_kwargs()
+    if accepted is None:
+        pytest.skip("constructor takes **kwargs; nothing is droppable")
+    saved = {"damage_op": True, "layout": {}, "__deleted_flag__": 7}
+    assert _dropped_extractor_kwargs(saved) == ("__deleted_flag__",)
+    assert _dropped_extractor_kwargs({"damage_op": True, "layout": {}}) == ()
+    assert _dropped_extractor_kwargs(None) == ()
+
+
 def test_sidecar_reaches_the_run_root_from_an_eval_snapshot(tmp_path):
     """REGRESSION: an eval snapshot lives at `<run>/eval_traces/step_<N>/snapshot.zip`, so the
     run-level metadata.json — the ONLY source of the git_hash the drift message tells you to check

@@ -1137,7 +1137,14 @@ class ProbeSession:
         def _load(path):
             m = self._play_models.get(path)
             if m is None:
-                m = MaskablePPO.load(path, env=None, device="cpu")
+                # Drop any saved extractor kwarg the CURRENT constructor rejects (a flag deleted or
+                # demoted since the checkpoint was written — v78 value_active_readout /
+                # damage_matrices_outgoing_all, v88 pubval_mode). Without this a bare load TypeErrors
+                # on any current-gen checkpoint, silently breaking every rollout path (this method,
+                # better-line, lookahead). Same sanitizer ProbeModel.load uses.
+                from main.prober.model import sanitized_load_custom_objects
+                custom_objects, _dropped = sanitized_load_custom_objects(path, "cpu")
+                m = MaskablePPO.load(path, env=None, device="cpu", custom_objects=custom_objects)
                 m.policy.set_training_mode(False)
                 # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a
                 # "DEEP TRACE" banner on every forward — it would corrupt the CLI's JSON stdout and the
