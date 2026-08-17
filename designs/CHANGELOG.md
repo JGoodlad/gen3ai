@@ -4614,3 +4614,41 @@ noqas naming their consumers.
 reads `001e1140…` before and after (self-measured, same probe/config); mypy 0 errors; the compile
 gate still traces one graph. Gate: `extractor_stashes_test.py` (stale-read unrepresentable, stray
 writes loud on every property, container defaults, the layout raise).
+
+## `gen3_static_widths_v1` (2026-08-17): the construction-time discovery forward is DELETED — widths are static arithmetic, and the old mechanism is the new mechanism's test
+
+`Gen3FeaturesExtractor.__init__` used to MEASURE its projection-input widths by running a dummy
+`forward_internal` under `self._intent_reduce_discovering = True` — zero-fill branches in the
+pointer-cell blocks (`intent_move_cell`, `intent_threshold_move`, `intent_conditional`) and
+skip-silently conditions in `_value_pooled_routes` let that pass complete while `alpha_head` was
+still unbuilt. It was the last construction-time control flow interleaved into the runtime
+forward, and the parent of a shipped bug class (ede5a88: an early `return` in a discovery branch
+hid every vf part appended below it and built the critic 128 dims short, dying on the first real
+forward only when two individually-tested flags met).
+
+Since v89 (`gen3_value_pooled_routes_v1`) every value route injects ADDITIVELY into
+`value_pooled`, so no width is emergent. The widths are now the pure module-level
+`compute_projection_widths(layout, opp_belief_cls_k=…, damage_op=…)`: pi = 3·D_MODEL +
+`non_matchup_rest` + k·D_MODEL; vf = D_MODEL + `non_matchup_rest` + k·D_MODEL +
+(`VALUE_SEED_K·VALUE_SEED_DIM` iff the op). Only THREE inputs move a width — the layout's
+scalar tail, the hidden-opp belief pool, and the op's seed window; a construction-time assert
+ties the seed term to the built `MultiSeedValueReadout.out_dim`. The flag, the dummy-forward
+invocation, all three zero-fill arms and all three skip-silently conditions are DELETED; the
+runtime RAISE guards ("on but inputs missing" is loud, never a silent null) stay, now
+unconditional. Module creation order is UNCHANGED (the SB3 positional-optimizer hazard), and the
+dummy forward consumed no RNG (dropout 0 everywhere), so deletion is byte-neutral.
+
+The old mechanism survives as the verifier: `projection_width_test.py` sweeps production
+(`designs/production_config.json` via the `ARCH_ARG_KEYS` recipe), all-routes-on
+(`value_route_gradient_test._ALL_ROUTES_ON`), minimal, and 9 targeted combos (belief pool at
+k=3 and k=6, op on/off, `opp_belief_slots`, `value_entity_pool[_full]` with no op,
+`value_threat_inject`, `history_events`, the full intent-cell stack), building each, running a
+REAL forward, and asserting the measured concat widths equal the arithmetic and the built
+`pre_proj_norm`/`projection`/`value_pre_norm`/`value_projection` shapes. A wrong width for any
+combo fails in the suite, not at a production launch.
+
+`restore_identity_init`'s M1 capture is untouched — `_identity_init_zeroed` scans weights
+statically at the end of `__init__` and never depended on the forward having run.
+
+**Versioning:** none — no state_dict, arch, or forward-math change. The production sha probe
+reads `001e1140…` before and after (self-measured, same probe/config).

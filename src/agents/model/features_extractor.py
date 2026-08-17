@@ -273,6 +273,37 @@ class ExtractorStashes:
     belief_supervision: Dict[str, Optional[torch.Tensor]] = field(default_factory=dict)
 
 
+def compute_projection_widths(layout: Dict[str, Any], *, opp_belief_cls_k: int = 0,
+                              damage_op: bool = False) -> Tuple[int, int]:
+    """The `(pi, vf)` projection-input widths as STATIC ARITHMETIC (gen3_static_widths_v1).
+
+    Mirrors `ProjectionAssembler.forward`'s concat exactly — this is the single place that
+    arithmetic lives, and `projection_width_test.py` sweeps flag combos asserting a REAL
+    forward's measured widths equal it (the old construction-time discovery forward,
+    preserved as the verifier). Only THREE inputs move a width: the layout (the
+    `non_matchup_rest` scalar tail), the hidden-opp belief pool (`opp_belief_cls_k`
+    queries × D_MODEL, both heads), and the op (whose presence appends the critic's
+    multi-seed window, vf only). Every other flag is width-neutral by construction: the
+    v89 value routes inject ADDITIVELY into `value_pooled`, the intent cells widen the
+    pointer stash (not pi/vf), and the token-stream enrichments change content, not shape.
+
+    Pure — importable and unit-testable without building a model. `damage_op` gates the
+    seed window because the assembler builds `MultiSeedValueReadout` iff the op exists,
+    and the op (when built) runs every forward, so its `incoming_rows` are always fed.
+    """
+    from agents.observation.schema import build_schema
+    sl = build_schema(layout).slices()
+    # The non-matchup scalar tail: global-env block + the 5 raw board scalars — everything
+    # between the active contexts and the embedding-ID active_req_moves tail (ObsUnpack).
+    non_matchup_rest = sl['reactive.active_req_moves'].start - sl['global_env'].start
+    belief = opp_belief_cls_k * D_MODEL
+    # pi: our_team_pooled + their_team_pooled + our_active_refined (D_MODEL each) + tail + belief.
+    pi = 3 * D_MODEL + non_matchup_rest + belief
+    # vf: value_pooled (D_MODEL) + tail + belief + the critic's multi-seed window (op only).
+    vf = D_MODEL + non_matchup_rest + belief + ((VALUE_SEED_K * VALUE_SEED_DIM) if damage_op else 0)
+    return pi, vf
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -317,7 +348,9 @@ class ProjectionAssembler(torch.nn.Module):
         # replacement window is the multi-seed readout below (vf only).
         # Hidden-opponent belief (flag-guarded; None when off) feeds BOTH heads — the policy reads
         # the threat over the hidden team, the value reads its winning-ness. Appended last so the
-        # off-by-default block layout is unchanged (the dummy forward auto-sizes the projections).
+        # off-by-default block layout is unchanged (`compute_projection_widths` sizes the
+        # projections; a new width-contributing part must be added THERE too — the sweep test
+        # fails on any drift).
         if hidden_opp_belief is not None:
             pi_parts.append(hidden_opp_belief)
             vf_parts.append(hidden_opp_belief)
@@ -461,7 +494,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # through `self.stash.<field>`.
         self.stash = ExtractorStashes()
 
-        # Phase modules (constructed before the dummy forward below).
+        # Phase modules.
         self.embeddings = Embeddings(layout)
         self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
         # gen3_pointer_native_v1: the pointer action head is THE action head (no flat action_net in this
@@ -480,11 +513,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.consequence_topk = int(consequence_topk)   # v59: C1b/C2/C3 k_cand + D4 k_bench
         self.entity_tail_seats = bool(entity_tail_seats)
         self.entity_seats = EntityMoveSeats(self.entity_topk_seats, self.entity_tail_seats)
-        # gen3_opp_intent_v1: DECLARED here, CONSTRUCTED at the end of __init__. `__init__` runs a
-        # dummy `forward_internal` to auto-discover the projection widths, and that forward reads
-        # these attributes — so they must exist before it, while the MODULES must be appended last
-        # (SB3 restores optimizer state POSITIONALLY). None during the dummy pass just skips the
-        # stash, which is correct: there is nothing to supervise on a dummy observation.
+        # gen3_opp_intent_v1: DECLARED here, CONSTRUCTED at the end of __init__ — the MODULES
+        # must be appended last (SB3 restores optimizer state POSITIONALLY), while
+        # `forward_internal` reads these attributes unconditionally, so they must always exist.
         self.alpha_head: Optional[AlphaIntentHead] = None
         self.beta_head: Optional[BetaSwitchHead] = None
         # gen3_edge_bias_trunk_v1 (v56, Stage 2): computed physics as per-pair per-head attention
@@ -542,10 +573,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_value_reduce_v1 (step 6). Requires BOTH operands to exist, and both
         # requirements are fail-loud rather than silently degrading: no alpha => nothing to weight
         # with; no op => nothing to weight. `stash_pair_cells` is what makes the op keep the
-        # un-reduced tensor at all, so an off run pays nothing. (During the projection-discovery
-        # forward `alpha_head` is still unbuilt, so `stash.alpha_logits` stays None and the
-        # discovery convention below contributes correctly-shaped zeros.)
-        self._intent_reduce_discovering = False
+        # un-reduced tensor at all, so an off run pays nothing.
         self.intent_value_reduce = None
         if intent_value_reduce:
             self.intent_value_reduce = IntentValueReduce(
@@ -561,9 +589,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the POLICY-side alpha
         # consumer — the c2 status-consequence family re-delivered through the pointer MOVE cell,
         # alpha-conditioned. Same fail-loud requirement shape as intent_value_reduce: no alpha =>
-        # nothing to weight with; no op => no c2 physics to deliver. Declared BEFORE the
-        # projection-discovery forward (which runs while `alpha_head` is still unbuilt — the
-        # discovery pass appends correctly-shaped ZEROS to the pointer move cells instead).
+        # nothing to weight with; no op => no c2 physics to deliver.
         self.intent_move_cell = None
         if intent_move_cell:
             self.intent_move_cell = IntentMoveCell(INTENT_MOVE_CELL_DIM)
@@ -1011,10 +1037,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # each forward; NEVER fed into pi/vf.)
 
         # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — see the class
-        # docstring. Built as the LAST width-contributing module before the discovery forward,
-        # so with the flag OFF nothing is constructed and every existing parameter keeps its
-        # optimizer position; ON is a version-gated arch change (fresh run), where the shift is
-        # legitimate. Works with or without the op (the row set shrinks to the 12 team tokens).
+        # docstring. With the flag OFF nothing is constructed and every existing parameter keeps
+        # its optimizer position; ON is a version-gated arch change (fresh run), where the shift
+        # is legitimate. Works with or without the op (the row set shrinks to the 12 team tokens).
         if value_entity_pool_full and not value_entity_pool:
             raise ValueError(
                 "value_entity_pool_full=True requires value_entity_pool=True — `full` extends "
@@ -1035,20 +1060,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.role_token_size = ROLE_TOKEN_SIZE
 
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
-        # exists (before the dummy forward — shapes are identical in either mode, so auto-sizing is
-        # unaffected). 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
+        # exists. 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
         # swaps in learned tokens pre-transformer), so it is intentionally NOT in this list.
         self._stamp_belief_grad_flags()
 
-        # Discover the policy/value projection-input dims via a dummy forward through the
-        # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).
-        self._intent_reduce_discovering = True
-        with torch.no_grad():
-            dummy_obs = torch.zeros((1, layout['total_dim']))
-            pi_sample, vf_sample = self.forward_internal({"observation": dummy_obs})
-            self._intent_reduce_discovering = False
-            self.projection_input_dim = pi_sample.shape[1]
-            self.value_projection_input_dim = vf_sample.shape[1]
+        # gen3_static_widths_v1: the projection-input widths are STATIC ARITHMETIC — see
+        # `compute_projection_widths`. The old mechanism (a construction-time dummy
+        # `forward_internal` under `_intent_reduce_discovering`, with zero-fill/skip branches
+        # threaded through the runtime forward) is DELETED: since v89 every value route injects
+        # additively into `value_pooled`, so no width is emergent, and the discovery pass was
+        # the parent of a shipped bug class (ede5a88 — an early return in a discovery branch
+        # hid every width appended below it and built the critic 128 dims short). The sweep
+        # test `projection_width_test.py` preserves the old mechanism AS THE VERIFIER: it runs
+        # a real forward per flag combo and asserts the measured widths equal this arithmetic.
+        self.projection_input_dim, self.value_projection_input_dim = compute_projection_widths(
+            layout, opp_belief_cls_k=opp_belief_cls_k, damage_op=damage_op)
+        # Tie the vf seed-window term to the constructed readout — a drift between the
+        # arithmetic's constants and the assembler's module is a construction-time crash here,
+        # never a first-forward shape error.
+        if self.assembler.seed_readout is not None:
+            assert self.assembler.seed_readout.out_dim == VALUE_SEED_K * VALUE_SEED_DIM, (
+                f"compute_projection_widths' seed-window term "
+                f"({VALUE_SEED_K * VALUE_SEED_DIM}) has drifted from "
+                f"MultiSeedValueReadout.out_dim ({self.assembler.seed_readout.out_dim})")
 
         # Two projection heads, both → PROJECTION_DIM. Pre-projection LayerNorm equalises
         # per-block scales. The value head reads the value-dedicated CLS pool (Option C):
@@ -1790,21 +1824,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # `belief_grad_mode=label_only` — never a raw stash, so label_only keeps cutting the
         # PPO→alpha_head route through this path exactly as it does for intent_value_reduce.
         if self.intent_move_cell is not None:
-            if self._intent_reduce_discovering and (self.last_alpha_logits is None
-                                                    or _imc_ops is None):
-                # Construction-time width probe only: alpha does not exist yet (the head is built
-                # after the discovery forward), so contribute a correctly-shaped ZERO rather than
-                # a value. Deliberately NOT a runtime fallback — the raise below stays reachable.
-                _mcells = torch.cat([_mcells, _mcells.new_zeros(
-                    ctx.batch_size, _tok_req.shape[1], INTENT_MOVE_CELL_DIM)], dim=2)
-            elif self.last_alpha_logits is None or _imc_ops is None:
+            if self.last_alpha_logits is None or _imc_ops is None:
                 raise RuntimeError(
                     "intent_move_cell is on but alpha produced no logits or the op stashed no c2 "
                     "operands — the cell would silently contribute nothing, which is "
                     "indistinguishable from a null RESULT.")
-            else:
-                _mcells = torch.cat([_mcells, self.intent_move_cell(
-                    self.last_alpha_logits, *_imc_ops)], dim=2)
+            _mcells = torch.cat([_mcells, self.intent_move_cell(
+                self.last_alpha_logits, *_imc_ops)], dim=2)
         # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, computed ONCE here
         # (the first point where α exists) and consumed by BOTH heads — the move-cell block joins
         # the pointer cells now; the vf block reads the stashed probs at the value tail (a
@@ -1812,28 +1838,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # `last_alpha_logits` — the PUBLICATION, stop-grad under `belief_grad_mode=label_only`.
         if self.intent_threshold_move is not None:
             _pair_cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
-            if self._intent_reduce_discovering and (self.last_alpha_logits is None
-                                                    or _pair_cells is None):
-                # Construction-time width probe only: alpha does not exist yet, so contribute a
-                # correctly-shaped ZERO. Deliberately NOT a runtime fallback — the raise below
-                # stays reachable.
-                _mcells = torch.cat([_mcells, _mcells.new_zeros(
-                    ctx.batch_size, _tok_req.shape[1], INTENT_THRESH_MOVE_DIM)], dim=2)
-            elif self.last_alpha_logits is None or _pair_cells is None:
+            if self.last_alpha_logits is None or _pair_cells is None:
                 raise RuntimeError(
                     "intent_threshold is on but alpha produced no logits or the op stashed no "
                     "pair cells — the thresholds would silently contribute nothing, which is "
                     "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
-            else:
-                _tp = threshold_probs(
-                    self.last_alpha_logits, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
-                    ctx.our_active_idx)
-                self.stash.thresh_probs = _tp
-                _mcells = torch.cat([_mcells, self.intent_threshold_move(
-                    *_tp, ctx.our_active_req_move_ids)], dim=2)
+            _tp = threshold_probs(
+                self.last_alpha_logits, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
+                ctx.our_active_idx)
+            self.stash.thresh_probs = _tp
+            _mcells = torch.cat([_mcells, self.intent_threshold_move(
+                *_tp, ctx.our_active_req_move_ids)], dim=2)
         # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — same
-        # T1-producer/T2-consumer split, same publication read, same discovery convention.
+        # T1-producer/T2-consumer split, same publication read.
         if self.intent_conditional is not None:
             _pc = self.damage_op.last_pair_cells if self.damage_op is not None else None
             _ot = self.damage_op.last_tensors if self.damage_op is not None else None
@@ -1842,30 +1860,26 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                       and self.damage_op.last_out_pko is not None  # type: ignore[union-attr]
                       and self.last_beta_logits is not None
                       and self.damage_op.last_topk_idx is not None)  # type: ignore[union-attr]
-            if self._intent_reduce_discovering and not _ready:
-                _mcells = torch.cat([_mcells, _mcells.new_zeros(
-                    ctx.batch_size, _tok_req.shape[1], INTENT_COND_MOVE_DIM)], dim=2)
-            elif not _ready:
+            if not _ready:
                 raise RuntimeError(
                     "intent_conditional is on but alpha/the op stashes are missing — the cells "
                     "would silently contribute nothing, which is indistinguishable from a null "
                     "RESULT. Requires damage_topk_k>0 + the incoming matrix + the outgoing "
                     "block.")
-            else:
-                _po = ctx.pokemon_part[
-                    torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
-                    POKEMON_PROTECT_OFFSET][:, None]
-                # gen3_op_lean_forward_v1: the boom cell reads the op's typed PRE-gain pko
-                # stash — honest probabilities, present in both render modes (the flat render
-                # is serialization, not a source).
-                _mcells = torch.cat([_mcells, self.intent_conditional(
-                    self.last_alpha_logits, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
-                    ctx.our_active_idx, self.damage_op.last_topk_idx,  # type: ignore[union-attr]
-                    _ot.out_per_move[..., 1], _ot.out_p_outspeed,  # type: ignore[index,union-attr]
-                    _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],  # type: ignore[index,union-attr]
-                    ctx.our_active_req_move_ids, _po,
-                    self.last_beta_logits, self.damage_op.last_out_pko,  # type: ignore[union-attr]
-                    ctx.opp_active_local)], dim=2)
+            _po = ctx.pokemon_part[
+                torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
+                POKEMON_PROTECT_OFFSET][:, None]
+            # gen3_op_lean_forward_v1: the boom cell reads the op's typed PRE-gain pko
+            # stash — honest probabilities, present in both render modes (the flat render
+            # is serialization, not a source).
+            _mcells = torch.cat([_mcells, self.intent_conditional(
+                self.last_alpha_logits, _pc, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
+                ctx.our_active_idx, self.damage_op.last_topk_idx,  # type: ignore[union-attr]
+                _ot.out_per_move[..., 1], _ot.out_p_outspeed,  # type: ignore[index,union-attr]
+                _ot.out_secondary[..., _OUT_SEC_FLINCH_COL],  # type: ignore[index,union-attr]
+                ctx.our_active_req_move_ids, _po,
+                self.last_beta_logits, self.damage_op.last_out_pko,  # type: ignore[union-attr]
+                ctx.opp_active_local)], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)
@@ -1934,19 +1948,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         (`value_route_gradient_test.py`) iterates exactly this generator, so a route added here
         is covered by construction — and a route added ANYWHERE ELSE is the bug this seam
         exists to prevent. Contract per route: zero-init output projection (cold start adds 0),
-        raise when ON but inputs are missing (silence is indistinguishable from a null result),
-        skip silently only during the construction-time discovery forward."""
+        raise when ON but inputs are missing (silence is indistinguishable from a null result)."""
         if self.intent_value_reduce is not None:
             _cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
             if _cells is None or self.last_alpha_logits is None:
-                if not self._intent_reduce_discovering:
-                    raise RuntimeError(
-                        "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
-                        "produced no logits — the term would silently contribute nothing, which is "
-                        "indistinguishable from a null RESULT.")
-            else:
-                yield "intent_value_reduce", self.intent_value_reduce(
-                    self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)  # type: ignore[union-attr]
+                raise RuntimeError(
+                    "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
+                    "produced no logits — the term would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT.")
+            yield "intent_value_reduce", self.intent_value_reduce(
+                self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)  # type: ignore[union-attr]
         if self.value_entity_pool is not None:
             _op_rows = (self.damage_op.last_tensors.incoming_rows  # type: ignore[union-attr]
                         if (self.damage_op is not None and damage_block is not None) else None)
@@ -1961,24 +1972,20 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive, **_uvr_kw)
         if self.intent_threshold_value is not None:
             if self._thresh_probs is None:
-                if not self._intent_reduce_discovering:
-                    raise RuntimeError(
-                        "intent_threshold is on but the pointer stash computed no threshold "
-                        "probs — the vf route would silently contribute nothing.")
-            else:
-                yield "intent_threshold_value", self.intent_threshold_value(*self._thresh_probs)
+                raise RuntimeError(
+                    "intent_threshold is on but the pointer stash computed no threshold "
+                    "probs — the vf route would silently contribute nothing.")
+            yield "intent_threshold_value", self.intent_threshold_value(*self._thresh_probs)
         if self.value_clock_route is not None:
             _clock = ctx.non_matchup_rest[:, CLOCK_OFFSET_IN_GLOBAL:CLOCK_OFFSET_IN_GLOBAL + CLOCK_DIM]
             yield "value_clock", self.value_clock_route(_clock)
         if self.value_intent_route is not None:
             if self.last_alpha_logits is None or self.last_beta_logits is None:
-                if not self._intent_reduce_discovering:
-                    raise RuntimeError(
-                        "value_intent is on but alpha/beta produced no logits — the route would "
-                        "silently contribute nothing.")
-            else:
-                yield "value_intent", self.value_intent_route(
-                    self.last_alpha_logits, self.last_beta_logits)
+                raise RuntimeError(
+                    "value_intent is on but alpha/beta produced no logits — the route would "
+                    "silently contribute nothing.")
+            yield "value_intent", self.value_intent_route(
+                self.last_alpha_logits, self.last_beta_logits)
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

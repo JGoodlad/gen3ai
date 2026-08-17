@@ -20,7 +20,7 @@ ROLE_ENCODER_HIDDEN = [256, 128]
 
 Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `state_encoder.get_layout()` and flow through `features_extractor_kwargs` — same principle, different file.
 
-**`role_input_dim` is not a module-level constant** — it is computed dynamically in `PokemonEncoder.__init__` from the layout fields and `MOVE_NET_HIDDEN`. You do not need to update it manually when dims change; it is derived correctly. The projection input dim is also auto-discovered via a dummy forward pass for the same reason.
+**`role_input_dim` is not a module-level constant** — it is computed dynamically in `PokemonEncoder.__init__` from the layout fields and `MOVE_NET_HIDDEN`. You do not need to update it manually when dims change; it is derived correctly. The projection input dims are likewise derived — static arithmetic in `compute_projection_widths` (`gen3_static_widths_v1`), verified per flag combo by `projection_width_test.py`.
 
 ## Phase module structure
 
@@ -205,21 +205,26 @@ unpack the tuple — keep that in mind when touching the extractor's return shap
 The embedding tables live in a shared `Embeddings` module passed as a forward argument to the
 phases that need them, so they register exactly once. An immutable `ExtractorContext` produced
 by `ObsUnpack` carries the ~30 unpacked tensors downstream, keeping each phase's signature
-narrow. Both projection input dims are auto-discovered via a dummy forward pass in `__init__`,
-so they stay correct when the architecture changes with no manual update.
+narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1`):
+`compute_projection_widths(layout, opp_belief_cls_k=…, damage_op=…)` in
+`features_extractor.py` mirrors `ProjectionAssembler.forward`'s concat exactly — only three
+inputs move a width (the layout's `non_matchup_rest` tail; the hidden-opp belief pool,
+`k·D_MODEL` on both heads; the op, which appends the critic's `VALUE_SEED_K·VALUE_SEED_DIM`
+seed window, vf only). Every other flag is width-neutral by construction: the v89 value routes
+inject ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, not pi/vf.
 
-> 🚨 **The discovery forward must reach EVERY value part — so a construction-time width probe may
-> only ever fall through, never `return`.** The tail of `forward_internal` appends optional parts
-> to `vf_combined` in sequence (`intent_value_reduce`, then v80's `value_entity_pool`, then
-> whatever comes next), and each has a discovery branch that contributes a correctly-shaped ZERO
-> because its real operand does not exist yet. `intent_value_reduce`'s branch **returned the pair
-> outright**, so every part appended below it was invisible to the very forward that sizes
-> `value_pre_norm` — v80 landed underneath and the critic was built `UVR_OUT_DIM` (128) short,
-> dying on the first real forward with `normalized_shape=[1241] … got [*, 1369]`. It fires only
-> with BOTH flags on, so it was unreachable until the two met, and production wanted both on the
-> next run. When you add a value part: append it at the tail, give it a fall-through discovery
-> branch, and add a both-flags-on build to `value_entity_pool_test.py` — **every flag in that tail
-> was individually tested and the intersection was not, which is the whole reason this shipped.**
+> 🚨 **The old construction-time DISCOVERY forward is DELETED — its job is now a TEST.**
+> `__init__` used to measure the widths by running a dummy `forward_internal` with
+> `_intent_reduce_discovering` zero-fill branches threaded through the runtime forward; that
+> mechanism shipped the ede5a88 bug class (a discovery branch's early `return` hid every vf part
+> appended below it — the critic was built 128 dims short and died on the first real forward,
+> only when both flags met). `projection_width_test.py` is the old mechanism preserved as the
+> new mechanism's verifier: it builds production / all-routes-on / minimal / targeted flag
+> combos, runs a REAL forward each, and asserts the measured concat widths equal the arithmetic.
+> **When you add a width-contributing part**: extend `compute_projection_widths` in the same
+> pass and add the flag to the sweep — a wrong width for any combo fails in the suite, not at a
+> production launch. (A new additive `value_pooled` route needs no width change at all — see
+> `_value_pooled_routes`, whose runtime RAISE guards stay.)
 
 1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
    shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power

@@ -383,9 +383,14 @@ gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage basel
 
 Route availability is **width-neutral by construction** (additive injection changes no
 projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
-a vf part from the dummy forward that sizes `value_pre_norm` — is unrepresentable. Any NEW value
-route goes through `_value_pooled_routes` (the registry the gradient guard iterates) — never a
-new vf-concat part.
+a vf part from the forward that sized `value_pre_norm` — is unrepresentable. Both projection
+input widths are **static arithmetic** (`compute_projection_widths`, `gen3_static_widths_v1`;
+the construction-time discovery forward is deleted): pi = 3·D_MODEL + the `non_matchup_rest`
+scalar tail + k·D_MODEL (hidden-opp belief pool, `opp_belief_cls_k`); vf = D_MODEL + tail +
+k·D_MODEL + the multi-seed window (`VALUE_SEED_K·VALUE_SEED_DIM`, present iff the op is built).
+`projection_width_test.py` verifies the arithmetic against a real forward per flag combo. Any
+NEW value route goes through `_value_pooled_routes` (the registry the gradient guard iterates)
+— never a new vf-concat part.
 
 The value head does **not** read `our_active_refined` (the old `value_active_readout` toggle is
 deleted — v88 `gen3_dead_flag_purge_v1`), and does not

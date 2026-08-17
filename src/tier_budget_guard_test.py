@@ -13,7 +13,6 @@ halves, using the documented `GEN3AI_TIMEOUT_SCALE` override so they assert the 
 than waiting for the box to be in a particular state.
 """
 import importlib.util
-import os
 from pathlib import Path
 
 import pytest

@@ -77,7 +77,7 @@ def test_masked_rows_get_zero_attention_and_all_masked_is_finite():
     uvr(torch.randn(2, 6, D_MODEL), torch.randn(2, 6, D_MODEL), fainted)
     assert uvr.last_att.shape == (2, UVR_K, 12)
     assert float(uvr.last_att[:, :, 3].abs().max()) < 1e-6
-    # the dummy discovery forward's board: every row masked → uniform average, never NaN
+    # a degenerate all-fainted board: every row masked → uniform average, never NaN
     out = uvr(torch.zeros(1, 6, D_MODEL), torch.zeros(1, 6, D_MODEL),
               torch.ones(1, 12, dtype=torch.bool))
     assert bool(torch.isfinite(out).all())
@@ -122,7 +122,8 @@ def _build_both():
 
 
 def test_the_vf_projection_is_sized_for_BOTH_value_parts():
-    """The direct assertion: the discovered width must equal what a real forward produces."""
+    """The direct assertion: the static width must equal what a real forward produces
+    (gen3_static_widths_v1 — the broad flag sweep lives in `projection_width_test.py`)."""
     model, enc = _build_both()
     fe = model.policy.features_extractor
     if fe.intent_value_reduce is None or fe.value_entity_pool is None:
@@ -130,14 +131,14 @@ def test_the_vf_projection_is_sized_for_BOTH_value_parts():
     with torch.no_grad():
         _pi, vf = fe.forward_internal(_obs(enc, n=3))
     assert vf.shape[1] == fe.value_projection_input_dim, (
-        f"vf width {vf.shape[1]} != discovered {fe.value_projection_input_dim} "
-        f"(delta {vf.shape[1] - fe.value_projection_input_dim}); the discovery forward skipped a "
-        f"value part appended after the intent-reduce branch")
+        f"vf width {vf.shape[1]} != computed {fe.value_projection_input_dim} "
+        f"(delta {vf.shape[1] - fe.value_projection_input_dim}); a value part was appended "
+        f"outside compute_projection_widths' arithmetic")
     assert fe.value_pre_norm.normalized_shape[0] == vf.shape[1]
 
 
 def test_a_real_forward_through_the_policy_does_not_raise(model_and_enc):
-    """The end-to-end shape: whatever the discovery did, the built critic must actually run."""
+    """The end-to-end shape: whatever the width arithmetic says, the built critic must run."""
     model, enc = _build_both()
     with torch.no_grad():
         pi, vf = model.policy.features_extractor(_obs(enc, n=5))

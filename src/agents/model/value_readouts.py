@@ -68,8 +68,8 @@ class UnifiedValueReadout(torch.nn.Module):
     route has a successor the next generation can enable in the same config.
 
     Attention is EXPLICIT (softmax over ≤18 rows per query, the MultiSeedValueReadout pattern)
-    rather than nn.MultiheadAttention: an all-masked row set (the dummy discovery forward's
-    all-fainted board) degrades to a uniform average instead of NaN, and the k×N pattern is
+    rather than nn.MultiheadAttention: a degenerate all-masked row set (an all-fainted
+    board) degrades to a uniform average instead of NaN, and the k×N pattern is
     stashed for diagnostics (`last_att`)."""
 
     def __init__(self, per_mon: int, full: bool = False):
