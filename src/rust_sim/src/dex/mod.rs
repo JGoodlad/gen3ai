@@ -148,6 +148,15 @@ impl Dex {
     pub fn ability(&self, id: &str) -> Option<&AbilityData> {
         self.abilities.get(&to_id(id))
     }
+    /// Every gen-3 ability id (the 76 rows of `gen3_abilities.json`), unordered.
+    ///
+    /// Exists so a hand-maintained ability ALLOWLIST can be pinned against the dex
+    /// rather than against another hand-maintained list — see
+    /// `event::TRACE_COPYABLE`, whose drift from the modeled set shipped three times
+    /// before `trace_copyable_covers_every_gen3_ability` closed it.
+    pub fn ability_ids(&self) -> impl Iterator<Item = &str> {
+        self.abilities.keys().map(String::as_str)
+    }
     pub fn nature(&self, name: &str) -> Option<&NatureData> {
         self.natures.get(&to_id(name))
     }

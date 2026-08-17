@@ -6311,6 +6311,118 @@ the bridge byte goldens (`bridge_test` incl. the genesis-parity check, `bridge_c
 e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` is **UNCHANGED**. The change only fires on
 choices poke-env never sends, so the production transport is untouched.
 
+### ROUND 42 (FIX) — TRACE is a SECOND admission surface, and the randbats gate had been pinned blind
+
+`gen3_trace_copyable_dex_pinned_v1`. A randbats fuzz sweep at a fresh master-seed (20260817) on the
+otherwise-clean tree read **400 battles → 396 ok, 2 PANICS, 2 state divergences**, and the live
+external-consistency gate read **150 battles → 0 divergences, 1 child DEATH**. All three crashes are
+one bug: **`event.rs::TRACE_COPYABLE` never got `forecast`.**
+
+**THE BUG.** ROUND 35 modeled Forecast — the construction fail-loud came out of `state.rs::from_set`
+and `REJECT_ABILITIES`/`REJECT_SPECIES` were emptied, so gen3-randbats Castform reaches the port. But
+Trace has its OWN admission list, and it was not updated. A Porygon2 tracing a Castform therefore
+panics at `event.rs`'s fail-loud. **This is the THIRD time this exact drift shipped** — `liquidooze`
+and `wonderguard` were the round-24 instance, and the comment recording *that* fix sits four lines
+above where `forecast` was missing.
+
+**WHY THE OLD RATIONALE WAS FALSE.** The doc comment argued the panic was unreachable: "the e2e filter
+admits only teams whose EVERY mon carries a modeled/no-op ability — so a filtered battle can never trip
+this." That is true of the OFFLINE fuzzers and false of everything else. The LIVE bridge drives choices
+off the sim's OWN request and filters nothing. It is the identical escape route the Transform silent
+no-op took (`gen3_transform_failloud_v1`), and the identical lesson: **a guard whose safety argument
+rests on an upstream FILTER is only as good as the narrowest surface that filter covers.**
+
+**THE PRODUCTION SHAPE IS A HANG, NOT A CRASH.** On the bridge the panic kills the child, and what the
+gate printed was `drain timeout after 30s at decision 1 (rust) — a child stopped emitting`, `rust tail:
+(none)`, with the panic text only on stderr. Under `--use-bridge=rust` a trainer would see a transport
+that went quiet. (`drain_timeouts` must stay 0; this run read 1.) Exposure on the **training pool is
+ZERO** — 0 of 773 `data/teams/` files carry Castform — so this is a random-battle blocker, not a live
+production bug.
+
+**THE FIX + THE CLASS RETIREMENT.** `"forecast"` added, and — the durable half — the new unit test
+`event::tests::trace_copyable_covers_every_gen3_ability` pins the list against **the DEX** (all 76
+`gen3_abilities.json` rows via the new `Dex::ability_ids()`), NOT against `gen_e2e_fuzz.js`'s
+`MODELED_ABILITIES ∪ NOOP_ABILITIES`. Agreeing with the harness set would only prove the two
+hand-maintained lists were edited together; the dex is the source of truth and
+`dump_gen3_mechanics.js --check` already pins the dex to the dist. REVERT-VERIFIED: removing
+`"forecast"` fails the test with `missing 1 gen-3 abilit(ies): ["forecast"]`.
+
+**PROBE-SETTLED, not source-read** (`harness/probe_trace_forecast.js`, new + re-runnable): the sim
+emits `|-ability|p1a: Porygon2|Forecast|Trace|[from] ability: Trace|[of] p2a: Castform`, and on the
+next `-weather|SunnyDay` **only the real Castform** emits `-formechange`. The traced holder is inert.
+The port already agreed — `forecast_weather_change` returns early unless
+`base_species_id == "castform"` — so admitting the id is byte-neutral rather than a behaviour change.
+
+**A SECOND FIND, in the GATE rather than the engine: `gen_sim_bridge_diff.js` was pinning every
+randbats set to LEVEL 100.** Its stated reason ("the port omits the `, L79` details suffix") was closed
+by ROUND 9's T1 fix; the pin outlived it by many rounds and was deleting the one thing randbats has
+that the gen3ou pool does not — non-L100 mons, and with them level-scaled stats and damage. Re-measured
+before removal: **25/25 battles byte-identical across levels 66-100**, `details` AND the `|request|`
+JSON stats included, once the already-allowlisted `return102` alias is reconciled. Then re-run
+UNPINNED end-to-end: **120 battles → 0 divergences** (30 ok + 89 allowlisted, ALL
+`return102-numeric-alias`; the 1 `errored` is the open Wrap bug below, not a level one). The gender
+half of the pin STAYS (a real construction-draw gap). The removal is safe to gate on because the
+`gender-level-details` allowlist key is deliberately NOT ported here, so a genuine level divergence
+still FAILS — and that property is PINNED by `--selftest`'s load-bearing negative *"a LEVEL value
+difference is not allowlisted"*, not merely asserted by reading `classifyKnownResidual`. **Same
+family as the stale Trace comment: a workaround kept past its fix silently narrows the gate, and
+nothing in the output says so.**
+
+**⚠️ A CORRECTION TO ROUND 40's ABILITY CENSUS.** It reports Forecast as "the ONE uncovered id, already
+triple-guarded (the `gen3_forecast_failloud_v1` construction panic + `REJECT_ABILITIES` +
+`REJECT_SPECIES` castform)". All three of those had already been REMOVED by ROUND 35, which ran
+earlier — so that paragraph was wrong when written, and it is why the census concluded "no new guard
+needed" while the Trace surface it never enumerated was already broken. **A coverage census must
+enumerate every ADMISSION SITE, not just construction.**
+
+**Gates:** `cargo test --release --no-fail-fast` **75 binaries / 655 passed / 0 failed**; e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; `gen_sim_bridge_diff.js --selftest` 18/18
+(including the load-bearing negative *"a LEVEL value difference is not allowlisted"* — the property
+that makes unpinning the level safe rather than vacuous).
+
+**THE END-TO-END RE-RUN, same master-seed, same 400 battles** (`--mode randbats --protocol --format
+gen3ou --master-seed 20260817`):
+
+| | pre-fix | post-fix |
+|---|---|---|
+| ok | 396 | **398** |
+| **panics** | **2** (`ab_5_4`, `ab_11_2`) | **0** |
+| state divergences | 2 | 2 — the SAME two, same decisions, same HP |
+
+Per-chunk the two arms are identical everywhere else, which is what makes this a controlled comparison
+rather than a re-roll: chunk 5 went `ok=24 diverged=1 panic=1` → `ok=25 diverged=0 panic=0` and chunk
+11 likewise, while chunks 9 and 14 stayed `ok=24 diverged=1`. **A fix that also cleared 9 or 14 would
+have been evidence the HARNESS changed, not the engine** — it has no mechanism to touch a residual
+tick.
+
+⚠️ **THE GATE STILL FAILS, and that is the correct state.** `GREEN-GATE FAIL: 2 non-allowlisted
+divergence(s) (diverged=2 panic=0)`.
+
+**STILL OPEN — a real engine bug, NOT fixed here, but now LOCALIZED TO A MECHANIC: the PARTIAL-TRAP
+(Wrap) residual chip.** Three independent repros, two gates:
+
+| repro | gate | symptom |
+|---|---|---|
+| `ab_9_21` dec 88 | offline omniscient | `hp=198/264` vs `182/264` (Δ16 = maxhp/16) |
+| `ab_14_8` dec 48 | offline omniscient | `hp=175/233` vs `161/233` (Δ14 = maxhp/16) |
+| `sbd_msxkl91p_b62` dec 53 | **live per-side** | node `\|turn\|46` vs rust `\|turn\|45`; rust's last residual block is `-heal … Leftovers` **then** `-damage … \|[from] move: Wrap\|[partiallytrapped]`, `171→157` on a 227 maxhp = exactly maxhp/16 |
+
+In every case the port is LOW by exactly one `maxhp/16` tick **with the SEED MATCHING**, so it is one
+residual step applied or skipped, not a draw bug.
+
+**THE CONVERGENCE IS STATISTICAL, NOT ANECDOTAL — this is what promotes it from "diffuse tail" to a
+target.** All three repros carry a wrap-family move, and a wrap-family move appears in only **5.8% of
+randbats battles** (measured over 500 generated 12-mon pairs), so 3-for-3 by chance is **p ≈ 0.02%**.
+Prime suspect: the partial-trap chip's interaction with the Leftovers heal in the same residual block
+(ordering, or an off-by-one in the `random(3,7)` duration's last tick). Root-cause with
+`POKESIM_PRNG_TRACE=1` against `probe_repro_simtrace.js` per the round-26 method.
+
+⚠️ **ATTRIBUTION CAVEAT ON `b62`, stated because it would be easy to overclaim:** that run changed TWO
+variables at once — the level pin came out AND the master seed changed (170826 vs 20260817). So `b62`
+was found ON the unpinned run, NOT demonstrably BECAUSE of it. The mechanic is `maxhp/16`-relative and
+so is very unlikely to be level-dependent. Establishing that the pin was masking anything needs the
+controlled run (seed 170826 WITH the pin); it has not been done.
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because

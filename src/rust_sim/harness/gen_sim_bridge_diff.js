@@ -831,12 +831,19 @@ function buildPairProvider(flags, teamRng, genStats) {
   }
   // Pin explicit genders (the sim draws a gender `sample` for an unspecified ratio, an
   // unmodeled construction draw the port doesn't advance for — see
-  // `advance_seed_for_construction`'s gap note) AND LEVEL 100 (the port targets L100 in the
-  // `|switch|`/`details` LEVEL display — a randbats L<100> set would show `, L79` on the
-  // Node side but be omitted by the port; a pre-existing omniscient-stream gap orthogonal to
-  // the bridge layer). Both make the seeded byte-diff isolate the BRIDGE, not those two
-  // documented ENGINE gaps.
-  const pinGendersAndLevel = (packed) => {
+  // `advance_seed_for_construction`'s gap note), so the seeded byte-diff isolates the
+  // BRIDGE rather than that documented ENGINE gap.
+  //
+  // ⚠️ **THE LEVEL-100 PIN IS GONE (2026-08-17), and removing it is the POINT.** It cited
+  // "the port targets L100 in the `|switch|`/`details` LEVEL display — a randbats L<100>
+  // set would show `, L79` on the Node side but be omitted by the port". That gap was
+  // closed by ROUND 9's T1 details-suffix fix; the pin outlived it by many rounds and was
+  // silently deleting the ONE thing randbats has that the gen3ou pool does not — non-L100
+  // mons, hence level-scaled stats and damage. Re-measured before removal: 25/25 battles
+  // byte-identical across levels 66-100, `details` AND the `|request|` JSON stats included,
+  // once the already-allowlisted `return102` alias is reconciled. Do not re-add it; if a
+  // level divergence ever reappears it is a REAL bug and this gate should say so.
+  const pinGenders = (packed) => {
     const team = Teams.unpack(packed);
     if (!team) return packed;
     let touched = false;
@@ -846,11 +853,10 @@ function buildPairProvider(flags, teamRng, genStats) {
         const sp = dex3.species.get(sid);
         if (sp && sp.exists) { set.gender = sp.gender === '' ? 'M' : sp.gender; touched = true; }
       }
-      if (set.level && set.level !== 100) { set.level = 100; touched = true; }
     }
     return touched ? Teams.pack(team) : packed;
   };
-  return () => ({ p1: pinGendersAndLevel(single().packed), p2: pinGendersAndLevel(single().packed) });
+  return () => ({ p1: pinGenders(single().packed), p2: pinGenders(single().packed) });
 }
 
 // ── Replay a SAVED repro deterministically (`--repro <dir>`) ────────────────────

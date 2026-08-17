@@ -227,13 +227,27 @@ pub fn single_event_ability_start(state: &mut BattleState, holder_side: usize, h
     ability_on_start(state, holder_side, holder_slot, &ability_id, draw_trace);
 }
 
-/// The abilities a gen-3 TRACE copy can land on WITHOUT desyncing the port — the e2e
-/// harness's `MODELED_ABILITIES ∪ NOOP_ABILITIES` (gen_e2e_fuzz.js, the ONE source of
-/// truth for what the engine prices; keep in lockstep). Trace copies the OPPOSING
-/// active's CURRENT ability, and the e2e filter admits only teams whose EVERY mon
-/// (both sides) carries a modeled/no-op ability — so a filtered battle can never trip
-/// this. The engine still FAIL-LOUDS (panics) on an unmodeled copy rather than
-/// silently no-op'ing an ability the sim would run (the batch-3 Trace safety mandate).
+/// The abilities a gen-3 TRACE copy can land on WITHOUT desyncing the port. It should
+/// equal the e2e harness's `MODELED_ABILITIES ∪ NOOP_ABILITIES` (gen_e2e_fuzz.js), but
+/// the thing it is PINNED to is the **dex** — every gen-3 ability is modeled or
+/// verified-no-op, so the correct membership rule is "is this a gen-3 ability?", and
+/// pinning to the dex cannot be satisfied by editing two hand-maintained lists in step
+/// (see `trace_copyable_covers_every_gen3_ability`). Trace copies the OPPOSING
+/// active's CURRENT ability. The engine FAIL-LOUDS (panics) on an unmodeled copy rather
+/// than silently no-op'ing an ability the sim would run (the batch-3 Trace safety mandate).
+///
+/// ⚠️ **TRACE IS A SECOND ADMISSION SURFACE, and "the filter protects it" is FALSE.** The
+/// old rationale here — "the e2e filter admits only teams whose EVERY mon carries a
+/// modeled/no-op ability, so a filtered battle can never trip this" — describes the
+/// OFFLINE fuzzers only. The LIVE bridge drives choices off the sim's OWN request and
+/// filters nothing, so a real battle reaches this panic and KILLS THE CHILD: the trainer
+/// sees only a transport that went quiet. That is the identical escape route the Transform
+/// no-op took (`gen3_transform_failloud_v1`). Modeling an ability and admitting it HERE are
+/// two separate edits, and the second has now been missed three times — `liquidooze` and
+/// `wonderguard` (round 24), then `forecast` (round 35, caught 2026-08-17). The test
+/// `trace_copyable_covers_every_gen3_ability` is what retires the class: this list must
+/// span the whole gen-3 ability dex, so a newly-modeled ability cannot be admitted at
+/// construction and forgotten here.
 const TRACE_COPYABLE: &[&str] = &[
     // MODELED_ABILITIES:
     "intimidate", "sandstream", "drizzle", "drought", "levitate", "flashfire",
@@ -257,6 +271,16 @@ const TRACE_COPYABLE: &[&str] = &[
     // traced holder's live ability, `run_move`). Missing them here made Trace-of-Liquid-Ooze
     // (or -Wonder-Guard) FAIL-LOUD panic under `--use-bridge=rust` (repro rmry3vbgm_ab_1_15).
     "liquidooze", "wonderguard",
+    // ROUND 35 admission (`gen3_forecast_v1`) — Forecast is MODELED (the construction
+    // fail-loud in `state.rs::from_set` is gone and `REJECT_ABILITIES`/`REJECT_SPECIES`
+    // are empty, so gen3-randbats Castform reaches the port), but this list was never
+    // updated with it. PROBE-SETTLED, not source-read (`harness/probe_trace_forecast.js`):
+    // the sim emits `|-ability|p1a: Porygon2|Forecast|Trace|…`, and on the next
+    // `-weather|SunnyDay` ONLY the real Castform emits `-formechange` — the traced holder
+    // does nothing. The port already agrees for the same reason: `forecast_weather_change`
+    // returns early unless `base_species_id == "castform"`. So a copy onto a non-Castform
+    // arms an inert Forecast in BOTH engines, and admitting it here is byte-neutral.
+    "forecast",
     // NOOP_ABILITIES:
     "pressure", "oblivious", "runaway", "illuminate", "honeygather", "pickup",
     "stench", "sturdy", "rockhead", "earlybird", "noability",
@@ -501,6 +525,38 @@ impl BattleState {
 mod tests {
     use super::*;
     use crate::prng::Prng;
+
+    /// `TRACE_COPYABLE` must span the ENTIRE gen-3 ability dex.
+    ///
+    /// Every gen-3 ability is modeled or verified-no-op (ROUND 40's census), so there is
+    /// no id a Trace copy may legitimately panic on — yet the list drifted from the
+    /// modeled set THREE times, each time shipping a crash: `liquidooze`/`wonderguard`
+    /// (round 24) and `forecast` (round 35, found 2026-08-17 by a randbats fuzz — 2 panics
+    /// in 400 offline battles, and 1 child death in 150 live bridge battles, where it
+    /// presents as a 30 s drain timeout with the panic only on stderr).
+    ///
+    /// Pinning against the DEX rather than against `gen_e2e_fuzz.js`'s
+    /// `MODELED_ABILITIES ∪ NOOP_ABILITIES` is deliberate: the harness set is the other
+    /// hand-maintained list, so agreeing with it would only prove the two lists were
+    /// edited together. The dex is the source of truth, and `dump_gen3_mechanics.js
+    /// --check` already pins the dex to the Showdown dist.
+    #[test]
+    fn trace_copyable_covers_every_gen3_ability() {
+        let dex = crate::dex::Dex::for_gen(3);
+        let missing: Vec<&str> = dex
+            .ability_ids()
+            .filter(|id| !TRACE_COPYABLE.contains(id))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "TRACE_COPYABLE is missing {} gen-3 abilit(ies): {missing:?}.\n\
+             Each one is a PANIC when Traced — and on the live bridge that kills the child, \
+             so the trainer sees only a transport that went quiet. If the ability is modeled \
+             (it must be — every gen-3 ability is), add its id to TRACE_COPYABLE in \
+             src/event.rs. Modeling an ability and admitting it to Trace are two edits.",
+            missing.len()
+        );
+    }
 
     /// Build a handler whose only distinguishing key is `speed` (everything else
     /// at the switch-in defaults), carrying a `tag` payload so we can read the
