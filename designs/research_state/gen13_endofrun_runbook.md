@@ -103,6 +103,116 @@ still does not read. They are provably zero-gradient for the critic, so deleting
 removal, not a critic change — **do not report it as one**, and do not bundle it with a behavioral
 arm. `--value-threat-inject` is NOT in this set (it writes into `value_pooled` and trained).
 
+## 7. THE CRITIC-CALIBRATION GATE — did the blindness on losses move? *(added 2026-08-17, mid-run)*
+
+*Added while gen-13 is mid-run (~16M steps): no awareness / PIT / calibration measurement of
+gen-13 exists and none runs before the run completes, so the rules below are still fixed before
+any number. §2 measures whether the five routes are LIVE and USED (mechanism); this section
+measures the thing they were built for (outcome): the critic's established failure mode is
+over-confidence specifically on losing/stall trajectories — win_prob 0.7–0.98 on decisions whose
+resampled-dice win-rate is 0.0–0.4 (ledger C2 scope note + S1's probes, gen-12 @24M) — while
+LEVEL calibration vs the pool is fine (C2: gap −0.011, Spearman +0.66).*
+
+Method rules binding this section (the lessons that killed three clean findings in one session):
+**no max-over-candidates statistic anywhere** (S1: a null sim reads +0.24 from selection alone);
+**selection-free sampling only** (C2: the capture quota manufactured +14.5); **like-for-like**
+(same script version, same command, same trace tier and opponent mix; gen-12's number read
+before gen-13's).
+
+Three metrics, directions fixed now, each run on BOTH gen-12 and gen-13 final checkpoints:
+
+- **7a. Awareness re-read** — `python -m main.prober.query awareness <run>` (model-free):
+  blind-loss fraction ↓, median lead-time ↑, cap-aware@5 ↑, loss-side coverage80 toward the
+  nominal 0.80. Anchors: gen-10 baselines 7.2% blind / lead 7 / cap-aware@5 0.50 /
+  coverage80 0.44.
+- **7b. Stall-conditional rollout-PIT** — the `rollout_pit_probe` method restricted to the stall
+  class: battles ≥50 turns, decisions at game turn ≥30, LOSSES only. Report (i) mean(win_prob −
+  rollout win-rate) with battle-clustered SE, and (ii) the **confident-blind fraction** — the
+  share of sampled loss-decisions with win_prob ≥ 0.7 whose rollout win-rate is ≤ 0.4. n ≥ 25
+  decisions per run, ≥ 8 rollouts each, pivots evenly spaced through the eligible window (never
+  selected by badness). From each checkpoint's own pinned worktree (weight drift).
+- **7c. Mechanism cross-check** — §2's liveness + per-route |dV| (must be established BEFORE
+  interpreting a FAIL here), plus the C1 rank re-measure (participation ratio of `value_pooled`
+  on a ≥v89 checkpoint).
+
+**Decision rule:**
+
+- **PASS (delivery line vindicated)** = 7a blind-loss fraction falls AND 7b confident-blind
+  fraction falls, each by more than its battle-bootstrap uncertainty. → Keep investing
+  critic-side; §8's feature (if convicted) is an additive candidate, not a rescue.
+- **FAIL (delivery line EXHAUSTED)** = both flat or worse WITH §2 confirming the routes trained.
+  → The bottleneck is not delivery: the next lever is **input coverage** (§8's verdict) or the
+  **training distribution** of stall games — explicitly NOT more critic routes, NOT search (S1:
+  one-ply gaps statistically zero), NOT tail-weighted value loss (K1: strong-opp residuals
+  sub-Gaussian; the new evidence is *conditional bias*, and no loss re-weighting adds signal the
+  input lacks).
+- **Mixed** = report both halves, no partial credit; this gate answers exactly one question —
+  did the blindness move.
+
+**Confound, stated in advance:** gen-13 is not a v89 A/B (fresh init + the whole enable stack).
+An improvement is LINE-level evidence; only flatness-with-§2-confirmed is sharply interpretable —
+with every route provably live and provably trained, nothing is left in the delivery story to fix.
+
+## 8. The opponent-PP observability probe (runs NOW, on gen-12 — pre-registered before computing)
+
+**The fact:** the obs encodes opponent `current_pp` as ALWAYS FULL
+(`src/agents/observation/moves.py:129-130` — "Showdown doesn't track opponent PP for Gen 3");
+no tracker counts opponent move uses anywhere in the tree; the 7-turn history window cannot span
+a stall war. Our own PP is real (it rides the request). A Gen-3 stall war is decided by PP
+accounting — recovery-move PP, Pressure, who Struggles first — so the single most predictive
+quantity for exactly the game class the critic is blind on is structurally invisible to it.
+Opponent move usage is PUBLIC information (every `|move|` protocol line), so a tracker is
+"provide raw known facts", not a prior — no Smogon-rule issue. And the win-prob head is
+MC-supervised (`win_prob_callback.py`), which rules out bootstrapped self-confirmation as the
+mechanism for ITS blindness: with ground-truth labels, a persistent class-conditional miss means
+off-distribution states or missing input. This probe tests the missing-input branch.
+
+**Hypothesis:** cumulative usage/PP features carry outcome signal BEYOND everything the critic
+already reads. A **mechanism check, not an A/B** — conviction licenses building the obs feature;
+the feature's payoff is then measured the normal way (its own generation arm).
+
+**Population (power-checked 2026-08-17; feature–outcome relationships unexamined):** gen-12
+(`ai_v9_14_gen12_h_entitypool_shaping_0816`) eval traces, all step tiers and opponents; battles
+with `meta.turns ≥ 50` — **608 battles (253 LOSS / 355 WIN)**; decision points at game turn
+≥ 30. **Unit of inference = battle** (decisions within a battle share their outcome): grouped CV
+and battle-level resampling everywhere; anything else is leakage.
+
+**Features** — computed from `summary.json` invocations only (`outcome.our.action` /
+`outcome.opp.action`, cumulated up to each decision; no model loading, no obs decoding — the v80
+layout drifted and the summaries carry the whole signal): our/opp total recorded move uses;
+our/opp RECOVERY uses (fixed list: recover, softboiled, rest, wish, moonlight, morningsun,
+synthesis, milkdrink, slackoff); per-side max single-move use count (the Struggle-horizon
+proxy); the our−opp differential of each.
+
+**Test:** logistic regression, GroupKFold(5) grouped by battle, metric AUC over pooled held-out
+decisions:
+
+- **Baseline** = recorded `win_prob` (the critic's own read at that decision) + game turn — so
+  PP must add beyond everything-the-critic-knows AND beyond "it's late".
+- **Augmented** = baseline + the PP features.
+- **Primary (conviction):** ΔAUC = augmented − baseline > 0 with the 95% battle-bootstrap CI
+  excluding 0, AND a battle-level permutation null (PP feature blocks shuffled across battles,
+  ≥1000 permutations) at p < 0.05.
+- **Secondary (the pointed slice):** among decisions with win_prob ≥ 0.7, a PP-features-only
+  logistic separates eventual losses from wins at AUC ≥ 0.65 with the battle-bootstrap CI
+  excluding 0.5 — "when the critic says winning, the PP ledger knows better".
+
+**Verdicts:** **CONVICTED** → build the opponent-PP tracker obs feature (per revealed move: use
+count + estimated remaining-PP fraction; per-side recovery aggregate) as a gen-14 rider
+candidate; `levers/opp_pp_observability.md` gets the GO. **NULL** → PP-observability falls for
+the stall class; the next suspect is the training DISTRIBUTION of stall games, investigated
+before any objective redesign.
+
+**Caveats recorded in advance:** usage counts from decision-point outcomes UNDERCOUNT (turns
+without a recorded invocation; Pressure and PP-Ups unmodeled) — noise that biases AGAINST
+conviction, so a positive is conservative and a null is weakened if the measured count-coverage
+is poor (report it: fraction of game turns contributing an opp action). Recovery-use counts
+correlate with team archetype; grouped CV handles the within-battle part, and archetype signal is
+acceptable for an OBS feature (unlike a prior) — the production feature would carry it too. The
+secondary slice conditions on win_prob ≥ 0.7, which is a selection ON THE CRITIC'S OWN READ —
+legitimate here because the claim being tested is precisely about that slice, and the outcome
+labels are not selected.
+
 ## The gen-14 draft (edited by the verdicts above)
 
 ```
