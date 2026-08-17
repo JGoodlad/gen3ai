@@ -131,4 +131,4 @@ class UnifiedValueReadout(torch.nn.Module):
         att = torch.softmax(att, dim=-1)                                   # [B, K, N]
         self.last_att = att
         out = torch.einsum("bkn,bnd->bkd", att, kv)                        # [B, K, dim]
-        return self.out_proj(out.reshape(out.shape[0], UVR_K * UVR_DIM))
+        return self.out_proj(out.reshape(out.shape[0], UVR_K * UVR_DIM))  # type: ignore[no-any-return]

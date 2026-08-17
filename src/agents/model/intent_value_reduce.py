@@ -95,4 +95,4 @@ class IntentValueReduce(torch.nn.Module):
         rows = reduce_with_alpha(alpha, cells)                                       # [B,J,F]
         if gate is not None:
             rows = rows * gate
-        return self.proj(rows.flatten(start_dim=1))                                  # [B, out_dim]
+        return self.proj(rows.flatten(start_dim=1))  # type: ignore[no-any-return]  # [B, out_dim]

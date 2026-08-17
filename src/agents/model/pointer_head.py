@@ -5,7 +5,7 @@ re-exports every name here, so historical import paths still resolve.
 """
 from agents.model.extractor_ctx import ExtractorContext, TOKEN_TYPE_OUR_MOVE, TOKEN_TYPE_THEIR_THREAT
 import torch
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from agents.observation.constants import (
     TEAM_SIZE,
 )
@@ -16,7 +16,8 @@ from agents.model.arch_constants import (MOVE_NET_HIDDEN,
 )
 
 
-def _request_order_move_tokens(move_tokens_all, ctx):
+def _request_order_move_tokens(move_tokens_all: torch.Tensor,
+                               ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
     """gen3_pointer_native_v1: permute OUR ACTIVE mon's per-move tokens from the extractor's
     SORTED-BY-ID slot order into ACTION/REQUEST order, by MOVE-NUM IDENTITY (never by position).
 
@@ -95,7 +96,7 @@ class EntityMoveSeats(torch.nn.Module):
         """Total seat count: 4 E3 move seats + K E4 threat seats + (E5 tail seats when on)."""
         return 4 + self.topk_seats + (TEAM_SIZE if self.tail_seats else 0)
 
-    def seat_types(self, device) -> torch.Tensor:
+    def seat_types(self, device: torch.device) -> torch.Tensor:
         """Per-seat token-type ids [n_seats] for the transformer's type embedding. Tail seats reuse
         THEIR_THREAT (distinctness comes from `tail_marker` — see __init__)."""
         n_threat = self.topk_seats + (TEAM_SIZE if self.tail_seats else 0)
@@ -105,7 +106,7 @@ class EntityMoveSeats(torch.nn.Module):
         ])
 
     def forward(self, tok_req: torch.Tensor, move_valid: torch.Tensor, ctx: 'ExtractorContext',
-                damage_op, move_belief_logits: Optional[torch.Tensor],
+                damage_op: Any, move_belief_logits: Optional[torch.Tensor],
                 latent_table: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """→ `(seats [B, 4+K, d_model], pad [B, 4+K] bool)` (pad True = masked, the key-mask sense)."""
         seats = [self.move_seat_proj(tok_req)]                                # [B,4,D] (invalid = zeros)
@@ -130,7 +131,9 @@ class EntityMoveSeats(torch.nn.Module):
                 damage_op.MOVE_ACCURACY[idx][:, :, None],
                 damage_op.MOVE_PHYS[idx][:, :, None],
             ], dim=2)
-            e4 = self.threat_seat_proj(hdr) * has_opp[:, None, None].float()  # zeroed when no opp active
+            # `threat_seat_proj` / `tail_proj` are built only when their seat count is > 0, which
+            # is exactly the branch guard here — an invariant `__init__` owns, not the type.
+            e4 = self.threat_seat_proj(hdr) * has_opp[:, None, None].float()  # type: ignore[misc]  # zeroed when no opp active
             seats.append(e4)
             pads.append(~has_opp[:, None].expand(-1, self.topk_seats))
         if self.tail_seats:
@@ -152,7 +155,7 @@ class EntityMoveSeats(torch.nn.Module):
             revealed = 1.0 - ctx.opp_believed_mask.float()                        # [B,6]
             has_opp_t = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1)
             cells = torch.stack([p_tail, worst_phys, worst_spec, revealed], dim=-1)  # [B,6,4]
-            e5 = (self.tail_proj(cells) + self.tail_marker) * has_opp_t[:, None, None].float()
+            e5 = (self.tail_proj(cells) + self.tail_marker) * has_opp_t[:, None, None].float()  # type: ignore[misc]
             seats.append(e5)
             pads.append(~has_opp_t[:, None].expand(-1, TEAM_SIZE))
         return torch.cat(seats, dim=1), torch.cat(pads, dim=1)

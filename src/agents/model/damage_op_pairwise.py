@@ -8,7 +8,7 @@ state_dict is byte-identical, and the file split changes nothing the heads see (
 sha probe pins it). Split out of `damage_op.py` 2026-08-17 (one responsibility per file).
 """
 import torch
-from typing import Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
     TEAM_SIZE,
     POKEMON_SPREAD_OFFSET,
@@ -58,8 +58,79 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
+if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
+    from agents.model.extractor_ctx import ExtractorContext
+
 
 class DamageOperatorPairwise:
+
+    if TYPE_CHECKING:
+        # MIXIN, not a module (see the module docstring): every `self.*` below is owned by
+        # `DamageOperator`, which composes this class WITH `torch.nn.Module` — so at RUNTIME
+        # those names resolve either through the composed class's `__init__` or through
+        # `Module.__getattr__` (the damage tables are registered in a loop, so they exist
+        # only dynamically). Mirroring `Module.__getattr__`'s signature gives the checker the
+        # same view the interpreter has. TYPE_CHECKING-only: no runtime effect.
+        def __getattr__(self, name: str) -> Any: ...
+        # Scalars + the stash container the composed class sets in `__init__` (see
+        # `damage_op.DamageOperator`). Declared so arithmetic against them stays typed.
+        baton_num: int
+        curse_num: int
+        rest_num: int
+        toxic_num: int
+        rest_sleep_eb: float
+        rest_sleep_noeb: float
+        sleep_free_eb: float
+        sleep_free_noeb: float
+        @property
+        def last_topk_idx(self) -> Optional[torch.Tensor]: ...
+        # Methods the COMPOSED class (`damage_op.DamageOperator`) owns and both mixins call.
+        # Declared as callables rather than re-stated signatures: the definition is one file away
+        # and mypy checks it there; this only stops the reads decaying to `Any`.
+        _rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _boost_mult: Callable[..., torch.Tensor]
+        _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
+        _weather_mult: Callable[..., torch.Tensor]
+        _chan_max: Callable[..., torch.Tensor]
+        _p_outspeed: Callable[..., torch.Tensor]
+        _opp_candidate_weights: Callable[..., torch.Tensor]
+        # Methods the SIBLING mixin (`damage_op_blocks.DamageOperatorBlocks`) owns — the pairwise
+        # cells are built on the block kernels, so the call goes sideways across the composition.
+        discrete_outgoing_status: Callable[..., torch.Tensor]
+        unrevealed_species_probs: Callable[..., torch.Tensor]
+        _outgoing_matrix: Callable[..., torch.Tensor]
+        _outgoing_attacker_matrix: Callable[..., torch.Tensor]
+        _incoming_rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        # The damage TABLES (`damage_tables.build_damage_buffers`) are registered in a LOOP, so
+        # they exist only dynamically; declaring them keeps every read a `Tensor` instead of the
+        # `Any` the `__getattr__` above would hand back.
+        ABILITY_DAMAGE_MULT: torch.Tensor
+        ABILITY_IS_EARLYBIRD: torch.Tensor
+        ABILITY_IS_LEVITATE: torch.Tensor
+        ABILITY_TRAP: torch.Tensor
+        BASE_STATS: torch.Tensor
+        CHART: torch.Tensor
+        CURSE_BOOSTS: torch.Tensor
+        HP_CAND_MASK: torch.Tensor
+        MOVE_ACCURACY: torch.Tensor
+        MOVE_BOOST_HP_COST: torch.Tensor
+        MOVE_BP: torch.Tensor
+        MOVE_FIXED_DAMAGE: torch.Tensor
+        MOVE_HEAL_FRACTION: torch.Tensor
+        MOVE_INFLICTS_STATUS: torch.Tensor
+        MOVE_PHYS: torch.Tensor
+        MOVE_SELF_BOOSTS: torch.Tensor
+        MOVE_STATUS_CAT: torch.Tensor
+        MOVE_TYPE_IDX: torch.Tensor
+        MOVE_WEATHER_HEAL: torch.Tensor
+        SPECIES_EARLYBIRD_PRIOR: torch.Tensor
+        SPECIES_SPREAD_PRIOR: torch.Tensor
+        SPECIES_TRAP_PRIOR: torch.Tensor
+        TYPE_IS_FLYING: torch.Tensor
+        TYPE_IS_GHOST: torch.Tensor
+        TYPE_IS_PHYS: torch.Tensor
+        TYPE_IS_STEEL: torch.Tensor
 
     def pairwise_outgoing(self, ctx: 'ExtractorContext',
                           spread_belief: Optional[torch.Tensor] = None,
@@ -79,7 +150,7 @@ class DamageOperatorPairwise:
         rev = revealed[:, None, :, None].expand(-1, _DMG_OUT_N_MOVES, -1, 1)
         return torch.cat([cells, rev], dim=-1)                                            # [B,4,6,6]
 
-    def _setup_deltas(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor]:
+    def _setup_deltas(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Shared C1/C1b source of truth: per-request-slot setup stage deltas `[B,4,5]`
         (atk,def,spa,spd,spe) + the `is_boost` mask `[B,4]`. Table rows (`MOVE_SELF_BOOSTS`,
         the ~17 pure setup moves) PLUS the runtime NON-GHOST Curse branch (+1 atk/+1 def/−1 spe
@@ -192,7 +263,7 @@ class DamageOperatorPairwise:
         return cells * is_boost[:, :, None, None]
 
     def _believed_attackers(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
-                            k_cand: int):
+                            k_cand: int) -> Tuple[torch.Tensor, ...]:
         """Shared C1b/C3 attacker block (the D4 recipe with the ACTIVE column KEPT): per opp mon
         j its top-`k_cand` most-believed candidates from ITS OWN slot of the composed posterior
         (selection detached, weights differentiable), de-timid offense, revealed+alive gate.
@@ -214,7 +285,7 @@ class DamageOperatorPairwise:
                     * (ctx.hp_and_active[:, opp, 0] > 0).float())                    # [B,6]
         return w_k, bp_k, mty_k, phys_k, acc_k, atk_j, spa_j, att_gate
 
-    def _active_defender(self, ctx: 'ExtractorContext'):
+    def _active_defender(self, ctx: 'ExtractorContext') -> Tuple[torch.Tensor, ...]:
         """Consequence-kernel defender block (C2; C1b/C3 keep inline variants — C1b needs the
         UNFOLDED stats to fold per-world stages itself): OUR ACTIVE's real-spread stats with
         its CURRENT def/spd stages folded (named indices — the v58 rule). → (def_c, spd_c,
@@ -355,7 +426,8 @@ class DamageOperatorPairwise:
                                        move_belief_logits: torch.Tensor,
                                        spread_belief: Optional[torch.Tensor] = None,
                                        k_cand: int = 6,
-                                       c2_cells: Optional[torch.Tensor] = None):
+                                       c2_cells: Optional[torch.Tensor] = None
+                                       ) -> Tuple[torch.Tensor, ...]:
         """gen3_intent_move_cell_v1 (G3): the RAW operands for the alpha-conditioned c2
         re-delivery through the pointer MOVE cell (`agents.model.intent_move_cell` weights them
         by the published alpha at T2 — alpha does not exist when this runs, the same
@@ -730,7 +802,7 @@ class DamageOperatorPairwise:
         spa_j = (2.0 * a_base[..., 3] + off_const) * 1.1
         at1 = ctx.type1_ids[:, opp]
         at2 = ctx.type2_ids[:, opp]
-        revealed_j = (1.0 - ctx.opp_believed_mask.float())                             # [B,6]
+        revealed_j: torch.Tensor = (1.0 - ctx.opp_believed_mask.float())               # [B,6]
         alive_j = (ctx.hp_and_active[:, opp, 0] > 0).float()
         not_active_j = torch.ones(B, TEAM_SIZE, device=device)
         not_active_j[ar, ctx.opp_active_local] = 0.0
@@ -800,10 +872,11 @@ class DamageOperatorPairwise:
         sand = ctx.weather_feature[:, 3:4]                                        # [B,1]
         hail = ctx.weather_feature[:, 4:5]
 
-        def _side(sl, ctx_raw, active_local, exact_side):
+        def _side(sl: slice, ctx_raw: torch.Tensor, active_local: torch.Tensor,
+                  exact_side: bool) -> torch.Tensor:
             types1 = ctx.type1_ids[:, sl]
             types2 = ctx.type2_ids[:, sl]
-            def _has(tname):
+            def _has(tname: str) -> torch.Tensor:
                 ti = _T2I[tname]
                 return ((types1 == ti) | (types2 == ti)).float()                  # [B,6]
             sand_immune = (_has("ROCK") + _has("GROUND") + _has("STEEL")).clamp(max=1.0)
@@ -940,7 +1013,9 @@ class DamageOperatorPairwise:
         alive_j = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()
         both = alive_i[:, :, None] * alive_j[:, None, :]                           # [B,6i,6j]
 
-        def _victim(steel_t1, steel_t2, fly_t1, fly_t2, p_lev):
+        def _victim(steel_t1: torch.Tensor, steel_t2: torch.Tensor, fly_t1: torch.Tensor,
+                    fly_t2: torch.Tensor,
+                    p_lev: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
             steel = (steel_t1 + steel_t2).clamp(max=1.0)
             flying = (fly_t1 + fly_t2).clamp(max=1.0)
             grounded = (1.0 - flying) * (1.0 - p_lev)

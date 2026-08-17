@@ -26,7 +26,7 @@ invariance** (de-normalized outputs identical before/after a stats update).
 """
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
 import torch as th
 from torch import nn
@@ -48,6 +48,14 @@ class PopArtNormalizer(nn.Module):
     the running stats from a batch of targets and rescales the value head's output layer to preserve
     its de-normalized outputs.
     """
+
+    if TYPE_CHECKING:
+        # Registered buffers exist only dynamically, so `Module.__getattr__` types them
+        # `Any`. Declaring them keeps the (de)normalization maps typed. No runtime effect.
+        mu: th.Tensor
+        sigma: th.Tensor
+        nu: th.Tensor
+        initialized: th.Tensor
 
     def __init__(self, beta: float = _DEFAULT_BETA, sigma_floor: float = _SIGMA_FLOOR) -> None:
         super().__init__()

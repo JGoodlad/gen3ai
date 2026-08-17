@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from typing import Any, Callable, Dict
 
 # Shared Inductor cache. Under `spawn` every worker re-imports and re-traces from scratch, but a
 # SHARED on-disk cache turns all but the first process's CODEGEN into a hit (measured 19.1s cold ->
@@ -68,7 +69,7 @@ class CompileExtractorError(RuntimeError):
     """Raised under `--compile-opponents-strict` when a compile does not deliver its speedup."""
 
 
-def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
+def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
                             hide_cuda: bool = False, strict: bool = False) -> bool:
     """`torch.compile` a frozen model's FEATURE EXTRACTOR for CPU inference. Returns True if applied.
 
@@ -172,7 +173,8 @@ def maybe_compile_extractor(model, enabled: bool, label: str = "opponent",
     return True
 
 
-def _eager_fallback_on_error(compiled, original, label: str):
+def _eager_fallback_on_error(compiled: Callable[[Any], Any], original: Callable[[Any], Any],
+                             label: str) -> Callable[[Any], Any]:
     """Wrap the compiled callable so it degrades to eager instead of killing the caller.
 
     TWO things it guards:
@@ -196,7 +198,7 @@ def _eager_fallback_on_error(compiled, original, label: str):
 
     state = {"failed": False}
 
-    def guarded(obs):
+    def guarded(obs: Any) -> Any:
         if state["failed"] or torch.is_grad_enabled():
             return original(obs)
         try:
@@ -210,7 +212,7 @@ def _eager_fallback_on_error(compiled, original, label: str):
     return guarded
 
 
-def _time_forward(fn, obs, reps: int = _TIMING_REPS) -> float:
+def _time_forward(fn: Callable[[Any], Any], obs: Any, reps: int = _TIMING_REPS) -> float:
     """min-of-N ms for one forward. min, not mean: contention only ever ADDS time, and this runs at
     worker startup while other workers are still spawning."""
     import torch
@@ -225,7 +227,7 @@ def _time_forward(fn, obs, reps: int = _TIMING_REPS) -> float:
     return best * 1e3
 
 
-def _compile_warmup_obs(fe) -> dict:
+def _compile_warmup_obs(fe: Any) -> Dict[str, Any]:
     """A zero observation of the right width — enough to force compilation of the B=1 graph."""
     import torch
     layout = getattr(fe, "layout", None)

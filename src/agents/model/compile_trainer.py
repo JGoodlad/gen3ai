@@ -42,7 +42,7 @@ so at startup beats a confusing backend traceback ten minutes in.
 from __future__ import annotations
 
 import time
-from typing import Optional
+from typing import Any, Callable, Optional, Tuple
 
 import torch
 
@@ -165,12 +165,13 @@ def check_numerics(err: float) -> None:
             f"re-enabling.")
 
 
-def resolve_device(fe) -> "torch.device":
+def resolve_device(fe: Any) -> "torch.device":
     """The learner's device, as its own function so the CPU refusal has a seam to test through."""
-    return next(fe.parameters()).device
+    # `fe` is deliberately `Any` (the extractor arrives through SB3), so `.parameters()` is too.
+    return next(fe.parameters()).device  # type: ignore[no-any-return]
 
 
-def _one_step(fe, obs):
+def _one_step(fe: Any, obs: Any) -> Tuple["torch.Tensor", "torch.Tensor"]:
     """One forward + backward through the extractor, the shape the PPO step actually runs."""
     fe.zero_grad(set_to_none=True)
     pi, vf = fe(obs)
@@ -178,7 +179,7 @@ def _one_step(fe, obs):
     return pi, vf
 
 
-def _time_steps(fe, obs, reps: int) -> float:
+def _time_steps(fe: Any, obs: Any, reps: int) -> float:
     for _ in range(2):                       # warm: the first call pays tracing + codegen
         _one_step(fe, obs)
     if obs["observation"].is_cuda:
@@ -193,8 +194,8 @@ def _time_steps(fe, obs, reps: int) -> float:
     return best * 1000.0
 
 
-def compile_trainer_extractor(model, enabled: bool, *, batch: Optional[int] = None,
-                              emit=None) -> Optional[float]:
+def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int] = None,
+                              emit: Optional[Callable[[str], None]] = None) -> Optional[float]:
     """Compile `model.policy.features_extractor.forward` in place. Returns the measured speedup.
 
     Returns None when `enabled` is False (a true no-op — nothing is touched, so an off run is

@@ -30,11 +30,14 @@ from __future__ import annotations
 
 import math
 from functools import lru_cache
-from typing import Dict, Tuple
+from typing import cast, Dict, List, Optional, Sequence, Tuple
 
 import torch
 
 from agents import gen3_data
+from agents.gen3_data.items import ItemData
+from agents.gen3_data.moves import MoveData
+from agents.gen3_data.species import SpeciesData
 from agents.enums import MoveCategory, PokemonType
 from agents.gen3_mechanics import (ABILITY_STATUS_IMMUNITY, CURSE_NON_GHOST_BOOSTS,
                                    STATUS_MOVE_IMMUNITY)
@@ -108,7 +111,7 @@ N_MOVE_ATTR = len(MOVE_ATTR_COLS)            # 9 + 10 + 7 = 26
 _PRIORITY_NORM = 6.0                          # gen3 priority spans ~ -6..+5 → normalize into ~[-1, 1]
 
 
-def _belief_num(move_id: str, md) -> int:
+def _belief_num(move_id: str, md: MoveData) -> int:
     """The move num the OPPONENT's move-belief PRIOR keys on. Every Hidden Power — bare or typed —
     aggregates to the typeless num ``237``, which under `gen3_typed_hp_belief_v1` is the belief's
     **PRESENCE channel**: ``prior[species, 237] = Σ_t usage(hiddenpower<t>) = P(species runs SOME HP)``.
@@ -132,11 +135,11 @@ def _hp_typed_nums() -> Tuple[int, ...]:
     the same axis as ``HP_TYPE_IDX`` / the obs ``hp_probs`` / ``belief_labels.HP_TYPE_NAMES``.
     Data-derived (never hardcoded) so a num remap can't silently misalign the type axis; the throwing
     GIGO guard in `build_damage_buffers` pins that alignment."""
-    return tuple(gen3_data.moves.get("hiddenpower" + t.name.lower()).num
+    return tuple(cast(MoveData, gen3_data.moves.get("hiddenpower" + t.name.lower())).num
                  for t in HIDDEN_POWER_TYPE_ORDER)
 
 
-def _move_type_idx(md) -> int:
+def _move_type_idx(md: MoveData) -> int:
     """TypeEncoder index of a MoveData's type. Curse/typeless carry PokemonType.THREE_QUESTION_MARKS
     whose .name is 'THREE_QUESTION_MARKS', NOT '???' — map it explicitly (these are BP 0 anyway)."""
     if md.type is PokemonType.THREE_QUESTION_MARKS:
@@ -173,7 +176,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # accuracy mods (evasion/Sand-Attack/Compound Eyes) are not modelled — base accuracy only.
     move_accuracy = torch.ones(n_moves, dtype=torch.float32)
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
         if num == HIDDEN_POWER_NUM:          # HP collision: handled via the typed-candidate path
             continue
@@ -194,7 +197,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # base's stats/types at that num. The obs species channel is num-keyed too, so a forme is
     # observationally its base — the base's facts are the correct occupant of the row.
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         num = sd.num
         if not (0 <= num < n_species):
             continue
@@ -221,7 +224,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # MOVE_EFFECT_COLS.
     move_effect_flags = torch.zeros(n_moves, len(MOVE_EFFECT_COLS), dtype=torch.float32)
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
         if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
             continue
@@ -292,7 +295,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
     move_recoil = torch.zeros(n_moves, dtype=torch.float32)
     move_fixed_damage = build_move_fixed_damage(n_moves)        # gen3_unified_op_physics_v1
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
         if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
             continue
@@ -386,7 +389,7 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
     (the same L100/IV31 formula the op uses for our revealed mons)."""
     prior = torch.zeros(n_species, N_SPREAD_STATS, 2, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
@@ -452,7 +455,7 @@ def build_species_nature_prior(n_species: int) -> torch.Tensor:
     logprior = torch.full((n_species, N_NATURES), 1.0 / N_NATURES, dtype=torch.float32).log()
     nat_raw = gen3_data.natures.raw()
     for sid in gen3_data.species.base_form_ids():
-        snum = gen3_data.species.get(sid).num
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if not (0 <= snum < n_species):
             continue
         counts = torch.zeros(N_NATURES, dtype=torch.float32)
@@ -476,7 +479,7 @@ def build_species_ev_prior(n_species: int) -> torch.Tensor:
     head clamps the posterior EV to [0,252]. Non-persistent (data-derived)."""
     ev = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        snum = gen3_data.species.get(sid).num
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if not (0 <= snum < n_species):
             continue
         acc = torch.zeros(N_SPREAD_STATS, dtype=torch.float32)
@@ -495,7 +498,7 @@ def build_species_base_stats(n_species: int) -> torch.Tensor:
     needs it to compute the gen3 derived stat ``(2·base + 31 + EV/4 + 5)·mult``. Non-persistent."""
     base = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         for j, stat in enumerate(SPREAD_STAT_COLS):
@@ -503,7 +506,8 @@ def build_species_base_stats(n_species: int) -> torch.Tensor:
     return base
 
 
-def invert_nature_evs(derived, base, species_id=None):
+def invert_nature_evs(derived: Sequence[float], base: Sequence[float],
+                      species_id: Optional[str] = None) -> Optional[Tuple[int, List[int]]]:
     """Recover a ``(nature_num, [ev×5])`` generative decomposition that EXACTLY reproduces the gen3 DERIVED
     stats ``derived`` {atk,def,spa,spd,spe} for a mon with base stats ``base`` (same order), assuming IV 31 /
     L100. Used to build the privileged NATURE/EV supervision label from agent2's known ``mon.stats`` (gen3
@@ -515,16 +519,16 @@ def invert_nature_evs(derived, base, species_id=None):
     highest Smogon nature prior for ``species_id`` (the most plausible TRUE nature), then smallest num —
     deterministic and self-consistent (any returned pair reproduces ``derived`` by construction)."""
     nat_raw = gen3_data.natures.raw()
-    weight = {}                                                          # nature usage hint for disambiguation
+    weight: Dict[int, float] = {}                                        # nature usage hint for disambiguation
     if species_id is not None:
         for nature, _evs, w in gen3_data.priors.spreads(species_id):
             nd = nat_raw.get(str(nature).lower())
             if nd is not None:
                 weight[int(nd["num"])] = weight.get(int(nd["num"]), 0.0) + float(w)
-    candidates = []
+    candidates: List[Tuple[float, int, int, List[int]]] = []
     for _name, v in nat_raw.items():
         num = int(v["num"])
-        evs, ok = [], True
+        evs, ok = [], True                       # type: List[int], bool
         for j, stat in enumerate(SPREAD_STAT_COLS):
             m = float(v.get(stat, 1.0))
             D, b = int(round(float(derived[j]))), int(round(float(base[j])))
@@ -557,7 +561,7 @@ def build_hp_type_prior(n_species: int) -> torch.Tensor:
     raw = gen3_data.priors.hidden_power_raw()
     names = [t.name.lower() for t in HIDDEN_POWER_TYPE_ORDER]
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         entry = raw.get(sid)
@@ -583,7 +587,7 @@ def build_item_prior(n_species: int, n_items: int) -> torch.Tensor:
     _FLOOR = 1e-5   # floor mass total ≈0.6% of a row: cold-start CB column within ~0.6% of SPECIES_CB_PRIOR
     prior = torch.full((n_species, n_items), 1.0 / n_items, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         entry = gen3_data.priors.items(sid)
@@ -617,7 +621,7 @@ def build_species_types(n_species: int) -> torch.Tensor:
     matching the obs mono-type convention (idx 0 = neutral in the chart). Non-persistent buffer."""
     types = torch.zeros(n_species, 2, dtype=torch.long)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         for j, tname in enumerate(sd.types[:2]):
@@ -648,7 +652,7 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
     n_abilities = ability_damage_mult.shape[0]
     exp_ability = torch.ones(n_species, N_TYPE_IDX, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
@@ -667,12 +671,12 @@ def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_m
 # usage prior P(CB | species) the op collapses to 0/1 once the item is revealed, then exposes the
 # CB-CONDITIONAL physical damage tail + P(CB) decorrelated (the head weights them — the same provide-the-fact
 # philosophy as the crit-split, since OHKO is a nonlinear threshold a mean-field ×(1+0.5·p_cb) would blur).
-CHOICE_BAND_ITEM_NUM = int(gen3_data.items.get("choiceband").num)   # 220
+CHOICE_BAND_ITEM_NUM = int(cast(ItemData, gen3_data.items.get("choiceband")).num)   # 220
 CHOICE_BAND_PHYS_MULT = 1.5
-CURSE_MOVE_NUM = int(gen3_data.moves.get("curse").num)              # 174 — the C1 runtime type branch
-TOXIC_MOVE_NUM = int(gen3_data.moves.get("toxic").num)              # 92 — C2 tox-vs-psn (shared cat 5)
-REST_MOVE_NUM = int(gen3_data.moves.get("rest").num)                # 156 — C3's self-sleep cost channel
-BATON_PASS_MOVE_NUM = int(gen3_data.moves.get("batonpass").num)     # 226 — C5's receiver-axis edge
+CURSE_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("curse")).num)              # 174 — the C1 runtime type branch
+TOXIC_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("toxic")).num)              # 92 — C2 tox-vs-psn (shared cat 5)
+REST_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("rest")).num)                # 156 — C3's self-sleep cost channel
+BATON_PASS_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("batonpass")).num)     # 226 — C5's receiver-axis edge
 
 
 # gen3_unrevealed_outgoing_prior_v1: the FLOOR a real species with no usage entry gets, applied on the
@@ -701,7 +705,7 @@ def build_species_usage_prior(n_species: int) -> torch.Tensor:
                          "gen3_smogon_stats.json empty/malformed?")
     prior = torch.zeros(n_species, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 < sd.num < n_species):                  # sentinel num 0 stays exactly 0
             continue
         prior[sd.num] = max(float(usage.get(sid, 0.0)) / total, _USAGE_PRIOR_FLOOR)
@@ -720,7 +724,7 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
     buffer (recomputable from data/, zero params). A species with no usage data reads 0.0."""
     prior = torch.zeros(n_species, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        snum = gen3_data.species.get(sid).num
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if 0 <= snum < n_species:
             prior[snum] = float((gen3_data.priors.items(sid) or {}).get("choiceband", 0.0))
     return prior
@@ -739,7 +743,7 @@ def build_move_fixed_damage(n_moves: int) -> torch.Tensor:
     Fighting Seismic Toss reads 0 vs Ghost (your named edge) and Ghost Night Shade 0 vs Normal."""
     fd = torch.zeros(n_moves, dtype=torch.float32)
     for mid, dmg in _FIXED_DAMAGE.items():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         if md is not None and 0 <= md.num < n_moves:
             fd[md.num] = float(dmg)
     return fd
@@ -783,7 +787,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     blocked_if_statused = torch.zeros(n_moves, dtype=torch.float32)
     type_immune = torch.zeros(n_moves, N_TYPE_IDX, dtype=torch.float32)
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
         if not (0 <= num < n_moves) or num == HIDDEN_POWER_NUM:
             continue
@@ -812,7 +816,10 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         if ad is None or not (0 <= ad.num < n_abilities):
             continue
         for s in statuses:
-            c = _STATUS_CAT.get(s)
+            # `c` is bound as `int` by the status-MOVE loop above; this second, independent loop
+            # reuses the name for an Optional lookup it immediately guards. Narrowing is correct at
+            # runtime — mypy just keeps one binding per name in a function.
+            c = _STATUS_CAT.get(s)  # type: ignore[assignment]
             if c is not None:
                 ability_block[ad.num, c] = 1.0
 
@@ -820,7 +827,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     # P(this species' ability blocks status c) used when the opp ability is UNREVEALED (priors-then-confirm).
     species_block = torch.zeros(n_species, N_STATUS_CAT, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
@@ -883,7 +890,7 @@ def build_trap_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tenso
 
     prior = torch.zeros(n_species, 4, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         for aid, pv in (gen3_data.priors.ability(sid) or {}).items():
@@ -924,7 +931,7 @@ def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     regression can't silently empty the table."""
     t = torch.zeros(n_moves, 5, dtype=torch.float32)
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         if md is None or not md.self_boosts or not (0 <= md.num < n_moves):
             continue
         for stat, stages in md.self_boosts:
@@ -980,7 +987,7 @@ def build_recovery_tables(n_moves: int) -> Dict[str, torch.Tensor]:
     wh = torch.zeros(n_moves, dtype=torch.float32)
     _WEATHER_HEALS = ("moonlight", "morningsun", "synthesis")
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         if md is None or not md.is_heal or not (0 <= md.num < n_moves):
             continue
         if mid == "wish":
@@ -1014,7 +1021,7 @@ def build_sleep_tables(n_species: int, n_abilities: int) -> Dict[str, torch.Tens
     is_eb[eb.num] = 1.0
     prior = torch.zeros(n_species, dtype=torch.float32)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
             continue
         prior[sd.num] = float((gen3_data.priors.ability(sid) or {}).get("earlybird", 0.0))
@@ -1028,7 +1035,7 @@ def build_move_type_idx(n_moves: int) -> torch.Tensor:
     built in build_damage_buffers (kept standalone so the encoder doesn't build the whole damage table)."""
     idx = torch.zeros(n_moves, dtype=torch.long)
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         if 0 <= md.num < n_moves and md.num != HIDDEN_POWER_NUM:
             idx[md.num] = _move_type_idx(md)
     return idx
@@ -1045,7 +1052,7 @@ def build_move_attr(n_moves: int) -> torch.Tensor:
     attr = torch.zeros(n_moves, N_MOVE_ATTR, dtype=torch.float32)
     idx = {c: i for i, c in enumerate(MOVE_ATTR_COLS)}
     for mid in gen3_data.moves.raw():
-        md = gen3_data.moves.get(mid)
+        md = cast(MoveData, gen3_data.moves.get(mid))
         num = md.num
         if num == HIDDEN_POWER_NUM or not (0 <= num < n_moves):
             continue
@@ -1176,7 +1183,7 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
     # is missing: no movepool known → nothing to prune).
     covered = torch.zeros(n_species, dtype=torch.bool)
     for sid in gen3_data.species.base_form_ids():
-        sd = gen3_data.species.get(sid)
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
@@ -1295,7 +1302,7 @@ def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Ten
         base_renorm = max(1.0 - float(usage_prior[td.num]), 1e-6)
         cond_by_num: dict = {}                                          # formes fold into base num
         for sid, p_cond in mates.items():
-            sd = gen3_data.species.get(sid)
+            sd = cast(SpeciesData, gen3_data.species.get(sid))
             if sd is None or not (0 < sd.num < n_species) or sd.num == td.num:
                 continue
             cond_by_num[sd.num] = cond_by_num.get(sd.num, 0.0) + float(p_cond)

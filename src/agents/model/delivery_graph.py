@@ -45,7 +45,10 @@ import argparse
 import inspect
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+
+if TYPE_CHECKING:
+    from agents.model.damage_op import DamageOperator
 
 # Edge-type vocabulary. Extending this is a deliberate act: each entry is a claim about a distinct
 # PHYSICAL delivery channel, not a convenience label.
@@ -62,12 +65,12 @@ _DEFAULT_CONFIG = os.path.join(
 
 
 # ----------------------------------------------------------------------------- graph construction
-def _node(nid: str, kind: str, **attrs) -> Dict[str, Any]:
+def _node(nid: str, kind: str, **attrs: Any) -> Dict[str, Any]:
     return {"id": nid, "kind": kind, **attrs}
 
 
 def _edge(src: str, dst: str, etype: str, width: Optional[int], const: str,
-          **attrs) -> Dict[str, Any]:
+          **attrs: Any) -> Dict[str, Any]:
     assert etype in EDGE_TYPES, f"unknown edge type {etype!r}"
     return {"src": src, "dst": dst, "type": etype, "width": width,
             "source_constant": const, **attrs}
@@ -98,11 +101,13 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # reconcile at construction (see the helper's docstring for why not in _migrate_config).
     sanitize_historical_move_floor(kwargs)
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
+    # the ctor annotates spaces.Dict, but this introspection seam never feeds the space forward
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()  # type: ignore[arg-type]
     if hasattr(fe, "disable_observation_debugger"):
         fe.disable_observation_debugger()
 
-    op = fe.damage_op
+    # the graph is only built from configs that carry the op; every read below already assumes it
+    op = cast("DamageOperator", fe.damage_op)
     seats = fe.entity_seats
     T = fx.TEAM_SIZE
     D = fx.D_MODEL

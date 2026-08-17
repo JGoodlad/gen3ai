@@ -43,7 +43,8 @@ def extractor_import_is_fork_safe() -> Optional[str]:
     return None
 
 
-def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings, quiet: bool = False) -> float:
+def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings: Dict[str, Any],
+                              quiet: bool = False) -> float:
     """Build the extractor this run will use and compile it once, populating the shared cache.
 
     Returns seconds spent (0.0 if it was skipped or failed). Never raises: a pre-warm is an
@@ -71,7 +72,10 @@ def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings, quiet: bool
         space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
         sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
         kw = {k: v for k, v in arch_kwargs.items() if k in sig}
-        fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()
+        # `Gen3FeaturesExtractor` annotates `observation_space: spaces.Dict`, but never READS the
+        # parameter — every serverless probe path (here, `compile_prewarm`, `feature_coverage`)
+        # passes the flat `Box` the encoder describes. The annotation is the false half.
+        fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()  # type: ignore[arg-type]
         if hasattr(fe, "disable_observation_debugger"):
             fe.disable_observation_debugger()
         with torch.no_grad():

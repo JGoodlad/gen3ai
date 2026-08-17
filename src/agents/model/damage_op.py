@@ -18,7 +18,7 @@ from torch.utils.checkpoint import checkpoint
 import numpy as np
 from dataclasses import dataclass, replace
 from gymnasium import spaces
-from typing import Callable, Dict, Any, Optional, Sequence, Tuple
+from typing import Callable, Dict, Any, Optional, Sequence, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
     TRACE_INTERVAL,
     TEAM_SIZE,
@@ -110,6 +110,9 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
+
+if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
+    from agents.model.extractor_ctx import ExtractorContext
 
 
 class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Module):
@@ -336,25 +339,25 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
     # gen3_op_stashes_v1 — the READ surface over the typed stash container (the re-export
     # convention: reads stay valid everywhere; writes must go through `self.stash`).
     @property
-    def last_topk_idx(self): return self.stash.topk_idx
+    def last_topk_idx(self) -> Optional[torch.Tensor]: return self.stash.topk_idx
     @property
-    def last_topk_cand_idx(self): return self.stash.topk_cand_idx
+    def last_topk_cand_idx(self) -> Optional[torch.Tensor]: return self.stash.topk_cand_idx
     @property
-    def last_topk_w(self): return self.stash.topk_w
+    def last_topk_w(self) -> Optional[torch.Tensor]: return self.stash.topk_w
     @property
-    def last_w_all(self): return self.stash.w_all
+    def last_w_all(self) -> Optional[torch.Tensor]: return self.stash.w_all
     @property
-    def last_pair_cells(self): return self.stash.pair_cells
+    def last_pair_cells(self) -> Optional[torch.Tensor]: return self.stash.pair_cells
     @property
-    def last_pair_gate(self): return self.stash.pair_gate
+    def last_pair_gate(self) -> Optional[torch.Tensor]: return self.stash.pair_gate
     @property
-    def last_reduced_extra(self): return self.stash.reduced_extra
+    def last_reduced_extra(self) -> Optional[torch.Tensor]: return self.stash.reduced_extra
     @property
-    def last_out_pko(self): return self.stash.out_pko
+    def last_out_pko(self) -> Optional[torch.Tensor]: return self.stash.out_pko
     @property
-    def last_raw_block(self): return self.stash.raw_block
+    def last_raw_block(self) -> Optional[torch.Tensor]: return self.stash.raw_block
     @property
-    def last_tensors(self): return self.stash.tensors
+    def last_tensors(self) -> Optional['OpTensors']: return self.stash.tensors
 
     def _opp_candidate_weights(self, ctx: 'ExtractorContext',
                                move_belief_logits: torch.Tensor) -> torch.Tensor:
@@ -435,7 +438,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         rain = weather_feature[:, 2:3]                                               # [B,1]
         return 1.0 + rain * (0.5 * is_water - 0.5 * is_fire) + sun * (0.5 * is_fire - 0.5 * is_water)
 
-    def _rolls(self, dmg_ns, screen, maxhp, cur_hp, acc, eps: float = 1e-6):
+    def _rolls(self, dmg_ns: torch.Tensor, screen: Optional[torch.Tensor], maxhp: torch.Tensor,
+               cur_hp: torch.Tensor, acc: torch.Tensor,
+               eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
         """The single source of the 3-roll + accuracy-folded-P(KO) physics — BOTH the incoming kernel
         and the outgoing block call this (the DRY core). From pre-screen max-roll damage ``dmg_ns`` + the
         DEFENDER's ``screen`` multiplier + ``maxhp``/``cur_hp`` + per-candidate ``acc`` (all broadcast-
@@ -460,7 +465,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                       reflect: torch.Tensor, light_screen: torch.Tensor,
                       bp_all: torch.Tensor, mty_all: torch.Tensor, phys_all: torch.Tensor,
                       acc_all: torch.Tensor, fixed_all: torch.Tensor, weather_mult: torch.Tensor,
-                      eps: float = 1e-6):
+                      eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
         """Role-parameterized gen3 single-hit damage per ``(defender, candidate)`` — the shared
         physics kernel every DIRECTION reuses (incoming opp→our-6, outgoing our→opp, safe-switch).
         Roles are passed in rather than hardcoded so the SAME math serves attacker/defender swaps.
@@ -638,8 +643,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # --- move cells: the outgoing damage stack + status landing + per-move secondaries ---
         if not self.outgoing:
             return damage_block.new_zeros(B, _DMG_OUT_N_MOVES, 0), switch_cells
-        move_cells = torch.cat([t.out_per_move, t.status_p_land[:, :, None],
-                                t.status_known[:, :, None], t.out_secondary], dim=2)
+        # The `if not self.outgoing` early-return above is exactly the condition under which
+        # `tensors_from_block` leaves these four views None — an invariant across two objects
+        # that no narrowing can express.
+        move_cells = torch.cat([t.out_per_move, t.status_p_land[:, :, None],  # type: ignore[index,list-item]
+                                t.status_known[:, :, None], t.out_secondary], dim=2)  # type: ignore[index,list-item]
         return move_cells, switch_cells                                                  # [B,4,13], [B,6,Cs]
 
     def forward(self, ctx: 'ExtractorContext', move_belief_logits: torch.Tensor,
@@ -791,7 +799,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # `wfc` is the SAME masked tensor whose amax already produced this channel's `phys_high`/
         # `spec_high` above, so both are passed in rather than recomputed (the old form rebuilt the
         # product AND re-ran the amax per channel).
-        def _chan_acc(wfc, chan_max):
+        def _chan_acc(wfc: torch.Tensor, chan_max: torch.Tensor) -> torch.Tensor:
             dom = wfc.argmax(dim=-1, keepdim=True)                                               # [B,6,1]
             acc = torch.gather(acc_exp, -1, dom).squeeze(-1)                                     # [B,6]
             return torch.where(chan_max > eps, acc, torch.zeros_like(acc))                       # 0 if no threat

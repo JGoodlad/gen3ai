@@ -23,6 +23,7 @@ import glob
 import json
 import os
 import sys
+from typing import Any, Sequence
 
 # The v84 threshold mechanics + the v85 conditional mechanics + Protect (step 5, for context).
 MECHANICS = (
@@ -57,7 +58,7 @@ def measure(run_dir: str) -> dict:
                 st["prob_sum"] += float(str(a.get("prob", "0")).rstrip("%")) / 100.0
                 if chosen == m:
                     st["chosen"] += 1
-    out = {"run": os.path.basename(os.path.normpath(run_dir)),
+    out: dict[str, Any] = {"run": os.path.basename(os.path.normpath(run_dir)),
            "n_summary_files": len(files), "n_decisions": decisions, "mechanics": {}}
     for m, st in stats.items():
         av = st["available"]
@@ -70,7 +71,7 @@ def measure(run_dir: str) -> dict:
     return out
 
 
-def main(argv=None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("run_dir")
     ap.add_argument("--out", default=None, help="write the JSON here (default: stdout only)")

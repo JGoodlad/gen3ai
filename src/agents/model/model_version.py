@@ -478,7 +478,7 @@ class ModelVersion:
         layout: Dict[str, Any],
         policy_kwargs: Dict[str, Any],
         vf_coef: float = 0.5,
-        reward_config=None,
+        reward_config: Any = None,               # duck-typed: read only via getattr(_, default)
         value_tail_weight: float = 0.0,
         opp_belief_aux_coef: float = 0.0,
         move_belief_coef: float = 0.0,
@@ -1370,7 +1370,7 @@ class ModelVersion:
                 f"{self.value_dist_vmax!r}, or start a fresh run."
             )
 
-    def check_reward_config(self, reward_config) -> None:
+    def check_reward_config(self, reward_config: Any) -> None:
         """Raise ModelVersionError if the resume `reward_config` differs from this saved config's
         reward hparams (bias_additivity / mat_alive_weight / bias_redesign). Like check_vf_coef:
         these are VALUE-meaning (changing them mid-run silently shifts the reward), NOT weight-shape,

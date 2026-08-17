@@ -51,14 +51,14 @@ class MoveLatentEncoder(torch.nn.Module):
         """Per-slot latent. ``move_emb``/``type_emb`` are the ALREADY-embedded move + (HP-resolved) type
         ``[..., emb]``; ``move_ids`` ``[...]`` gathers MOVE_ATTR. Returns ``[..., MOVE_LATENT_DIM]``."""
         attr = self.MOVE_ATTR[move_ids]                                    # [..., N_MOVE_ATTR]
-        return self.mlp(torch.cat([move_emb, type_emb, attr], dim=-1))
+        return self.mlp(torch.cat([move_emb, type_emb, attr], dim=-1))  # type: ignore[no-any-return]
 
     def latent_table(self, embeddings: 'Embeddings') -> torch.Tensor:
         """``[n_moves, MOVE_LATENT_DIM]`` context-free latent over canonical types — the grading target."""
         ids = torch.arange(self.MOVE_ATTR.shape[0], device=self.MOVE_ATTR.device)
         move_emb = embeddings.move_embedding(ids)                          # [n_moves, move_emb]
         type_emb = embeddings.type_embedding(self.MOVE_TYPE_IDX)           # [n_moves, type_emb]
-        return self.mlp(torch.cat([move_emb, type_emb, self.MOVE_ATTR], dim=-1))
+        return self.mlp(torch.cat([move_emb, type_emb, self.MOVE_ATTR], dim=-1))  # type: ignore[no-any-return]
 
 
 
@@ -344,4 +344,4 @@ class PokemonEncoder(torch.nn.Module):
         role_tokens = self.role_encoder(
             pokemon_enriched_with_context.reshape(-1, pokemon_enriched_with_context.shape[-1])
         )
-        return role_tokens.reshape(batch_size, n_poke, self.role_token_size)   # [B, 12, 128]
+        return role_tokens.reshape(batch_size, n_poke, self.role_token_size)  # type: ignore[no-any-return]  # [B, 12, 128]

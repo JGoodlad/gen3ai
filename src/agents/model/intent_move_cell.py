@@ -99,4 +99,4 @@ class IntentMoveCell(torch.nn.Module):
         alpha_stay = alpha.sum(dim=-1, keepdim=True) * base[..., 0]                   # [B,4]
         cells = torch.stack([base[..., 0], base[..., 1], e_burn, base[..., 2],
                              e_slp, base[..., 3], alpha_stay], dim=-1)                # [B,4,7]
-        return self.proj(cells)                                                       # [B,4,out]
+        return self.proj(cells)  # type: ignore[no-any-return]  # [B,4,out]

@@ -114,7 +114,7 @@ class DeepSetsReducer(torch.nn.Module):
                             w[:, None, :, None].expand(B, J, C, 1)], dim=-1)   # [B,J,C,2F+1]
         msg = self.phi(msg_in)                                                 # [B,J,C,L]
         pooled = msg.sum(dim=2) if self.pool == "sum" else msg.amax(dim=2)     # [B,J,L]
-        return self.rho(pooled)
+        return self.rho(pooled)  # type: ignore[no-any-return]
 
 
 class PairReducer(torch.nn.Module):
@@ -144,8 +144,10 @@ class PairReducer(torch.nn.Module):
     def forward(self, w: torch.Tensor, cells: torch.Tensor) -> torch.Tensor:
         parts = []
         for how in self.w_hows:
+            # `alpha_learned` exists iff a non-`belief_mean` how is in `w_hows`, which is what
+            # selects this branch — an `__init__` invariant the type cannot carry.
             alpha = (alpha_belief_mean(w) if how == "belief_mean"
-                     else self.alpha_learned(w, cells))
+                     else self.alpha_learned(w, cells))  # type: ignore[misc]
             mean1 = reduce_with_alpha(alpha, cells)                            # E_α[cell]
             mean2 = reduce_with_alpha(alpha, cells.pow(2))                     # E_α[cell²] (§4.1)
             prov = (alpha * w).sum(dim=-1)[:, None, None].expand(

@@ -15,11 +15,12 @@ make SB3 instantiate a second full body (Option A, ~2× compute) — not what Op
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import torch as th
 
+from stable_baselines3.common.type_aliases import PyTorchObs
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
@@ -62,7 +63,7 @@ class _NoFlatActionNet(th.nn.Module):
     would be silently running a policy we deleted; make that a loud error, never an `Identity`
     fallback (which would emit `latent_pi` AS the logits — a garbage policy, not a crash)."""
 
-    def forward(self, *args, **kwargs):  # pragma: no cover - defensive
+    def forward(self, *args: Any, **kwargs: Any) -> Any:  # pragma: no cover - defensive
         raise RuntimeError(
             "The flat action_net was removed (gen3_pointer_native_v1) — action logits come from "
             "Gen3DualHeadMaskablePolicy.pointer_head via _get_action_dist_from_latent. A code path "
@@ -99,7 +100,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     be toggled on a resumed model.
     """
 
-    def _build(self, lr_schedule) -> None:
+    def _build(self, lr_schedule: Any) -> None:
         """gen3_pointer_native_v1: build SB3's stack, then REPLACE the flat action head.
 
         `super()._build` creates `action_net = Linear(latent_dim_pi, 11)` (the flat positional head),
@@ -124,10 +125,12 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             move_cell_dim=fe.pointer_move_cell_dim,
             switch_cell_dim=fe.pointer_switch_cell_dim,
         )
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
+        # `Optimizer.__init__` is typed without `lr`; every concrete class SB3 selects takes it.
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),  # type: ignore[call-arg]
                                               **self.optimizer_kwargs)
 
-    def __init__(self, *args, use_popart: bool = False, value_from_dist: bool = False, **kwargs):
+    def __init__(self, *args: Any, use_popart: bool = False, value_from_dist: bool = False,
+                 **kwargs: Any) -> None:
         # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
         super().__init__(*args, **kwargs)
         self.popart = PopArtNormalizer() if use_popart else None
@@ -180,7 +183,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                 return self._denorm(head.mean(logits))
         return self._denorm(self.value_net(latent_vf))
 
-    def _get_action_dist_from_latent(self, latent_pi: th.Tensor):
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> MaskableDistribution:
         """gen3_pointer_native_v1: the action logits ARE the pointer head's scores.
 
         All three logit sites (`forward`, `evaluate_actions`, `get_distribution`) funnel through this
@@ -216,7 +219,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         obs: th.Tensor,
         deterministic: bool = False,
         action_masks: Optional[np.ndarray] = None,
-    ):
+    ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
@@ -234,7 +237,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         obs: th.Tensor,
         actions: th.Tensor,
         action_masks: Optional[th.Tensor] = None,
-    ):
+    ) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
@@ -251,7 +254,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         return values, log_prob, distribution.entropy()
 
     def get_distribution(
-        self, obs, action_masks: Optional[np.ndarray] = None
+        self, obs: PyTorchObs, action_masks: Optional[np.ndarray] = None
     ) -> MaskableDistribution:
         pi_features, _ = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
@@ -260,7 +263,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             distribution.apply_masking(action_masks)
         return distribution
 
-    def predict_values(self, obs) -> th.Tensor:
+    def predict_values(self, obs: PyTorchObs) -> th.Tensor:
         _, vf_features = self.extract_features(obs)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
         return self._critic_value(latent_vf)

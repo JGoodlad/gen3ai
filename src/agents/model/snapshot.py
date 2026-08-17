@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Optional, Tuple
+from typing import Any, cast, Dict, Optional, Tuple
 
 import stable_baselines3
 from sb3_contrib import MaskablePPO
@@ -71,7 +71,7 @@ def save_model_snapshot(
             existing_original_command = existing.get("original_command")
             existing_matchup_history = existing.get("matchup_history", [])
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
         "git_hash": git_hash,
         "python_version": sys.version,
@@ -236,11 +236,12 @@ def _read_matchup_hash(model_dir: str) -> "str | None":
             meta = json.load(f)
     except (OSError, ValueError):
         return None
+    # `meta` is a raw JSON blob, so every field off it is `Any`.
     h = (meta.get("cli_args") or {}).get("_matchup_spec_hash")
     if h:
-        return h
+        return h  # type: ignore[no-any-return]
     hist = meta.get("matchup_history") or []
-    return hist[-1].get("hash") if hist else None
+    return cast(Optional[str], hist[-1].get("hash")) if hist else None
 
 
 def read_recorded_matchup(model_path: str) -> "tuple[str | None, dict | None]":
@@ -470,7 +471,7 @@ def read_checkpoint_metadata(checkpoint_path: str) -> dict:
     path = _checkpoint_metadata_path(checkpoint_path)
     if os.path.exists(path):
         with open(path) as f:
-            return json.load(f)
+            return cast(dict, json.load(f))
     return {}
 
 
@@ -482,12 +483,12 @@ def _checkpoint_metadata_path(checkpoint_path: str) -> str:
 
 def load_model_snapshot(
     model_path: str,
-    env,
+    env: Any,
     current_version: ModelVersion,
     device: str = "auto",
     tensorboard_log: Optional[str] = None,
     enforce_vf_coef: Optional[float] = None,
-    enforce_reward_config=None,
+    enforce_reward_config: Any = None,   # duck-typed, like ModelVersion.build
     enforce_value_tail_weight: Optional[float] = None,
     enforce_value_dist: Optional[Tuple[float, float]] = None,
     enforce_belief_grad_mode: Optional[str] = None,
@@ -772,7 +773,7 @@ def load_foreign_opponent(
 
 
 def current_model_version(
-    mappings,
+    mappings: Dict[str, Any],
     *,
     attend_unrevealed_opponents: bool = False,
     opp_belief_cls_k: int = 0,
@@ -828,7 +829,7 @@ def current_model_version(
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     vf_coef: float = 0.5,
-    reward_config=None,
+    reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
 ) -> ModelVersion:
     """Build a ``ModelVersion`` reflecting the CURRENT RUN's architecture for ``mappings``.
@@ -914,7 +915,7 @@ def current_model_version(
     )
 
 
-def arch_toggles_from_model(model) -> dict:
+def arch_toggles_from_model(model: Any) -> dict:
     """Extract THIS run's architecture TOGGLES from a live model, JSON-serializable for a worker
     subprocess's cfg. The eval/self-play workers run in separate processes and rebuild a
     ``current_model_version`` to gate sentinel/foreign snapshot loads; without the run's real toggles

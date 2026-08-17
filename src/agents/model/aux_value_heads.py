@@ -28,7 +28,7 @@ class WinProbHead(torch.nn.Module):
     win-prediction objective also shapes the shared trunk). `none` = this module is not built (the chain
     is byte-for-byte the baseline)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Small MLP off the value pool: LayerNorm → Linear → ReLU → Linear(→1). A bottleneck (not a bare
         # linear) so `read_only` reports "decodable by a small head" — fairer to the nonlinear trunk.
@@ -41,7 +41,7 @@ class WinProbHead(torch.nn.Module):
 
     def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
         """value_pooled [B, D_MODEL] → win-probability logit [B, 1] (sigmoid ⇒ P(win))."""
-        return self.net(value_pooled)
+        return self.net(value_pooled)  # type: ignore[no-any-return]
 
 
 class ValueDistHead(torch.nn.Module):
@@ -89,9 +89,9 @@ class ValueDistHead(torch.nn.Module):
 
     def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
         """value_pooled [B, D_MODEL] → per-atom logits [B, bins] (softmax ⇒ return distribution)."""
-        return self.net(value_pooled)
+        return self.net(value_pooled)  # type: ignore[no-any-return]
 
     def mean(self, logits: torch.Tensor) -> torch.Tensor:
         """E[Z] = Σ atomsᵢ·softmax(logits)ᵢ — the scalar the distribution implies, [B, 1]. (Used by
         the prober / diagnostics; the Phase-A side head does NOT feed this into the scalar critic.)"""
-        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)
+        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)  # type: ignore[no-any-return]

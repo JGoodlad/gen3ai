@@ -23,15 +23,20 @@ Cell layout (from `decode_damage_block`): cell(i=our mon, k=move) at
 """
 import argparse
 import json
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
 
 import torch
+
+if TYPE_CHECKING:
+    import numpy as np
 
 from agents.model import damage_op as D
 from agents.observation.constants import TEAM_SIZE
 from agents.action.constants import SWITCH_START, SWITCH_END, MOVE_START, MOVE_END
 
 
-def collect(patterns, max_states, seed=0):
+def collect(patterns: Sequence[str], max_states: int, seed: int = 0,
+            ) -> Tuple["np.ndarray", "np.ndarray", Dict]:
     # gen3_audit_state_sampler_v1: STRATIFIED, deterministic (shared `audit_states` sampler).
     # The old sorted-glob + break-at-cap drew every state from ONE lexically-first step dir —
     # the §2.5.1 defect this probe's own caveats documented against itself.
@@ -40,7 +45,7 @@ def collect(patterns, max_states, seed=0):
     return collect_states(patterns, max_states, seed=seed)
 
 
-def arms(op):
+def arms(op: Any) -> Dict[str, torch.Tensor]:
     """→ {name: LongTensor of column indices into the op block}. Anchors first (for
     reproduction against the committed 40M numbers), then the new decomposition."""
     assert op.matrices_incoming, "probe requires --damage-matrices incoming"
@@ -59,21 +64,21 @@ def arms(op):
     imx_hi = cells_lo + TEAM_SIZE * K * C
     assert imx_hi - imx_lo == D._dmg_imx_dim(K)
 
-    def rng(lo, hi):
+    def rng(lo: int, hi: int) -> torch.Tensor:
         return torch.arange(lo, hi, dtype=torch.long)
 
-    def hdr_field(off, width):
+    def hdr_field(off: int, width: int) -> torch.Tensor:
         """`width` columns at `off` within EVERY move's 51-dim header."""
         return torch.tensor([hdr_lo + k * H + off + j
                              for k in range(K) for j in range(width)], dtype=torch.long)
 
-    def cell_chans(chans):
+    def cell_chans(chans: Sequence[int]) -> torch.Tensor:
         """`chans` channels of EVERY (our mon, move) cell."""
         return torch.tensor([cells_lo + (i * K + k) * C + c
                              for i in range(TEAM_SIZE) for k in range(K) for c in chans],
                             dtype=torch.long)
 
-    a = {}
+    a: Dict[str, torch.Tensor] = {}
     # --- anchors (must reproduce the committed 40M run) ---
     a["FULL_CONCAT"] = rng(0, op.out_dim)
     a["in_matrix"] = rng(imx_lo, imx_hi)
@@ -92,7 +97,7 @@ def arms(op):
     return a
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True)
@@ -129,13 +134,14 @@ def main():
     N = len(obs_np)
     dev = next(policy.parameters()).device
 
-    stash = {}
+    stash: Dict[str, Any] = {}
 
-    def _unpack_hook(_m, _inp, out):
+    def _unpack_hook(_m: Any, _inp: Any, out: Any) -> None:
         stash["ctx"] = out
     h = fe.unpack.register_forward_hook(_unpack_hook)
 
-    def forward_all(cols=None, mode="zero"):
+    def forward_all(cols: Optional[torch.Tensor] = None,
+                    mode: str = "zero") -> Tuple[torch.Tensor, ...]:
         """cols = LongTensor of op-block columns to intervene on at the assembler, or None.
 
         'zero'    — set those columns to 0 (the deletion counterfactual). OFF-MANIFOLD, so it
@@ -148,7 +154,7 @@ def main():
         zero-ablation artifact, NOT a width-fair measure of reliance. (A 2026-08-08 draft of
         `designs/ai_v9/design_op_tensors.md` quoted it as one; see that doc's §2.5.5 retraction.)
         """
-        def _perturb(db):
+        def _perturb(db: torch.Tensor) -> torch.Tensor:
             db = db.clone()
             if mode == "zero":
                 db[:, cols] = 0.0
@@ -167,9 +173,9 @@ def main():
             # gen3_op_tensors_views_v1: the assembler now receives the TYPED rows view, so the
             # perturbation runs in FLAT col coordinates on a clone of the block and the rows
             # view of THAT clone is substituted — same semantics, same col-space.
-            def _pre(_module, args):
-                _rows = (fe.damage_op.last_tensors.incoming_rows
-                         if fe.damage_op.last_tensors is not None else None)
+            def _pre(_module: Any, args: Tuple[Any, ...]) -> Tuple[Any, ...]:
+                _rows: Any = (fe.damage_op.last_tensors.incoming_rows
+                              if fe.damage_op.last_tensors is not None else None)
                 if args and args[-1] is not None and args[-1] is _rows:
                     flat = _perturb(fe.last_damage_block.clone())
                     rows = flat[:, :TEAM_SIZE * op.per_mon].reshape(
@@ -184,7 +190,7 @@ def main():
             # route (pi pointer cells + vf seed rows). NOT covered: routes fed from the op's
             # INTERNAL tensors before the block is assembled (prefuse token injection, E4 seat
             # content, d3/s3 edge biases) — those are separately measured by edge_ablation_audit.
-            def _post(_module, _inp, out):
+            def _post(_module: Any, _inp: Any, out: torch.Tensor) -> torch.Tensor:
                 return _perturb(out)
             hook = op.register_forward_hook(_post)
         ps, vs, raws, acts, hps = [], [], [], [], []
@@ -195,7 +201,9 @@ def main():
                     ob = {"observation": torch.as_tensor(obs_np[i:i + a.batch], device=dev),
                           "action_mask": mk.float()}
                     dist = policy.get_distribution(ob)
-                    lg = dist.distribution.logits.clone()
+                    # SB3 types `.distribution` as the multi-discrete union; the maskable
+                    # CATEGORICAL path this policy takes always yields the single one with logits.
+                    lg = dist.distribution.logits.clone()  # type: ignore[union-attr]
                     lg[~mk] = -1e9
                     ps.append(torch.softmax(lg, -1))
                     vs.append(policy.predict_values(ob).squeeze(-1))
@@ -237,7 +245,7 @@ def main():
               & can_switch & can_move & (bench_pko <= a.safe))
     masks_t = torch.as_tensor(masks_np, device=dev)
 
-    def metrics(p, v, sel):
+    def metrics(p: torch.Tensor, v: torch.Tensor, sel: torch.Tensor) -> Dict[str, float]:
         eps = 1e-9
         kl = ((base_p * ((base_p + eps).log() - (p + eps).log())) * masks_t.float()).sum(-1)
         flip = (base_p.argmax(-1) != p.argmax(-1)).float()
@@ -246,7 +254,7 @@ def main():
                 "flip_rate": float(flip[sel].mean()), "dv_mean": float(dv[sel].mean())}
 
     allsel = torch.ones(N, dtype=torch.bool)
-    rows = {}
+    rows: Dict[str, Dict[str, Any]] = {}
     for name, cols in arms(op).items():
         p, v = forward_all(cols, "zero")
         ps, vs = forward_all(cols, "shuffle")

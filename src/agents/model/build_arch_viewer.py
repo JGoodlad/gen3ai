@@ -61,7 +61,7 @@ import hashlib
 import json
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
@@ -240,9 +240,9 @@ def _load_graph(config: Optional[str]) -> Dict[str, Any]:
     """The committed snapshot by default; regenerate live when a config is named."""
     if config:
         from agents.model import delivery_graph
-        return delivery_graph.build_graph(config)                       # type: ignore[attr-defined]
+        return delivery_graph.build_graph(config)
     with open(_SNAPSHOT) as fh:
-        return json.load(fh)
+        return cast(Dict[str, Any], json.load(fh))
 
 
 def _norm_metrics(d: Dict[str, Any]) -> Dict[str, float]:
@@ -480,7 +480,7 @@ def vendor(html: str) -> str:
     return html.replace(tag, f"<script>{js}</script>")
 
 
-def main(argv=None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--config", default=None,
                     help="a run's model_config.json — regenerate the graph live instead of using "

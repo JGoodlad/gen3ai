@@ -156,7 +156,7 @@ class IntentThresholdMoveCell(torch.nn.Module):
             is_endv * (1.0 - p_ko),              # P(I survive to act) — rises as the danger falls
             p_ko.expand_as(is_fp),               # decorrelated context on every slot
         ], dim=-1)                                                          # [B,4,6]
-        return self.proj(raw)                                               # [B,4,out]
+        return self.proj(raw)  # type: ignore[no-any-return]  # [B,4,out]
 
 
 class IntentThresholdValue(torch.nn.Module):
@@ -173,4 +173,4 @@ class IntentThresholdValue(torch.nn.Module):
 
     def forward(self, p_ko: torch.Tensor, p_sub_broken: torch.Tensor,
                 p_fp_broken: torch.Tensor) -> torch.Tensor:
-        return self.proj(torch.cat([p_ko, p_sub_broken, p_fp_broken], dim=-1))   # [B,out]
+        return self.proj(torch.cat([p_ko, p_sub_broken, p_fp_broken], dim=-1))  # type: ignore[no-any-return]  # [B,out]

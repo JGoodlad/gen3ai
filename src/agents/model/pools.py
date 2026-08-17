@@ -144,4 +144,4 @@ class HiddenOppBeliefPool(torch.nn.Module):
         queries = self.queries.expand(batch_size, -1, -1)                         # [B, K, D_MODEL]
         belief = self.decoder(queries, all_team_out, memory_key_padding_mask=all_fainted)
         belief = self.norm(belief)                                                # [B, K, D_MODEL]
-        return belief.reshape(batch_size, self.k * D_MODEL)                       # [B, K*D_MODEL]
+        return belief.reshape(batch_size, self.k * D_MODEL)  # type: ignore[no-any-return]  # [B, K*D_MODEL]

@@ -4,10 +4,15 @@ Moved out of Gen3FeaturesExtractor to keep the forward path clean.
 Only instantiated when log_level >= LogLevel.PERIODIC; None in production.
 """
 import time
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 import numpy as np
 import torch
 
 from utils.logging.rate_limiter import RateLimitedLogger
+
+if TYPE_CHECKING:
+    from agents.observation.state_encoder import Gen3ObservationEncoder
 
 
 class ObservationDebugger:
@@ -15,12 +20,12 @@ class ObservationDebugger:
 
     def __init__(self, mappings: dict, interval_seconds: int = 30):
         self._mappings = mappings
-        self._encoder = None  # lazy: only built when a print is triggered
-        self._trace_buffer: list = []
+        self._encoder: Optional["Gen3ObservationEncoder"] = None  # lazy: only built when a print is triggered
+        self._trace_buffer: List[torch.Tensor] = []
         self._trace_collect_remaining: int = 0
         self._logger = RateLimitedLogger(interval_seconds=interval_seconds)
 
-    def _get_encoder(self):
+    def _get_encoder(self) -> "Gen3ObservationEncoder":
         if self._encoder is None:
             from agents.observation.state_encoder import Gen3ObservationEncoder
             self._encoder = Gen3ObservationEncoder(self._mappings)
@@ -70,7 +75,8 @@ class ObservationDebugger:
 
         td = desc.get("turn_delta")
         if td is not None:
-            def _action_str(switched, failed, cant, move):
+            def _action_str(switched: Any, failed: Any, cant: Any,
+                            move: Optional[Dict[str, Any]]) -> str:
                 move_str = None
                 if move and move.get("move_id", 0) > 0:
                     name = move.get("move_name") or f"#{move['move_id']}"

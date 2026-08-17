@@ -50,7 +50,11 @@ Seat-permutation invariant: the only seat-indexed computation is `Σ_k α_k · f
 """
 from __future__ import annotations
 
+from typing import cast
+
 import torch
+
+from agents.gen3_data.moves import MoveData
 
 from agents.model.arch_constants import _INTENT_COND_RAW
 
@@ -78,7 +82,7 @@ def _reflectable_table() -> torch.Tensor:
     (target 'foeSide') and self/side moves are NOT reflectable."""
     from agents import gen3_data
     raw = gen3_data.moves.raw()
-    n = max(gen3_data.moves.get(mid).num for mid in raw) + 1
+    n = max(cast(MoveData, gen3_data.moves.get(mid)).num for mid in raw) + 1
     t = torch.zeros(n, dtype=torch.float32)
     for mid, r in raw.items():
         md = gen3_data.moves.get(mid)
@@ -92,7 +96,7 @@ def _status_table() -> torch.Tensor:
     facade — so 'α mass on status seats' cannot be conflated with an immune damaging seat
     (both read high == 0 in the pair cells)."""
     from agents import gen3_data
-    n = max(gen3_data.moves.get(mid).num for mid in gen3_data.moves.raw()) + 1
+    n = max(cast(MoveData, gen3_data.moves.get(mid)).num for mid in gen3_data.moves.raw()) + 1
     t = torch.zeros(n, dtype=torch.float32)
     for mid in gen3_data.moves.raw():
         md = gen3_data.moves.get(mid)
@@ -203,4 +207,4 @@ class IntentConditionalMoveCell(torch.nn.Module):
             is_boom * (a_stay * pko_active
                        + (alpha_full[:, -1:]) * pko_arrival),   # P(the trade KOs its real target)
         ], dim=-1)                                                     # [B,4,13]
-        return self.proj(raw)                                          # [B,4,out]
+        return self.proj(raw)  # type: ignore[no-any-return]  # [B,4,out]

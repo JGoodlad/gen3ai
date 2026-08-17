@@ -273,11 +273,13 @@ class _Tracer:
         if not isinstance(module, torch.nn.Module):
             return
 
-        def pre(_m, args, kwargs, _n=name, _t=tier):
+        def pre(_m: Any, args: Tuple[Any, ...], kwargs: Dict[str, Any],
+                _n: str = name, _t: int = tier) -> None:
             self._enter(_n, _t, args, kwargs)
             return None
 
-        def post(_m, args, kwargs, output, _t=tier):
+        def post(_m: Any, args: Tuple[Any, ...], kwargs: Dict[str, Any], output: Any,
+                 _t: int = tier) -> None:
             self._exit(_t, output)
             return None
 
@@ -287,7 +289,8 @@ class _Tracer:
     def _patch_method(self, label: str, tier: int, module: Any, meth: str) -> None:
         bound = getattr(module, meth)
 
-        def wrapper(*args, _b=bound, _l=label, _t=tier, **kwargs):
+        def wrapper(*args: Any, _b: Any = bound, _l: str = label, _t: int = tier,
+                    **kwargs: Any) -> Any:
             self._enter(_l, _t, args, kwargs)
             out = _b(*args, **kwargs)
             self._exit(_t, out)

@@ -5,7 +5,7 @@ re-exports every name here, so historical import paths still resolve.
 """
 import torch
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, NamedTuple
+from typing import Dict, Any, Optional, NamedTuple, TYPE_CHECKING
 from agents.observation.constants import (
     POKEMON_LAST_ACTION_OFFSET,
     TEAM_SIZE,
@@ -73,7 +73,7 @@ def turn_delta_embed_dim(layout: Dict[str, Any]) -> int:
         "type": layout['type_embedding_dim'],
         "species": layout['species_embedding_dim'],
     }
-    embedded = sum(dim_by_kind[kind] for _, kind in TURN_DELTA_EMBEDDED_IDS)
+    embedded: int = sum(dim_by_kind[kind] for _, kind in TURN_DELTA_EMBEDDED_IDS)
     return embedded + len(TURN_DELTA_SCALAR_OFFSETS)
 
 
@@ -232,6 +232,12 @@ class Embeddings(torch.nn.Module):
     turn-history encoding. Passed as a forward-time argument to the phases that need
     it so the tables register exactly once in the state_dict."""
 
+    if TYPE_CHECKING:
+        # Registered buffers exist only dynamically, so `Module.__getattr__` types them `Any`.
+        # Declaring them keeps every read a `Tensor`. TYPE_CHECKING-only: no runtime effect.
+        hp_type_idx_map: torch.Tensor
+        _td_scalar_idx: torch.Tensor
+
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         self.species_embedding = torch.nn.Embedding(layout['max_species'], layout['species_embedding_dim'])
@@ -274,7 +280,7 @@ class Embeddings(torch.nn.Module):
     def hp_soft_type(self, hp_probs: torch.Tensor) -> torch.Tensor:
         """[B, 12, 16] HP candidate-type distribution → [B, 12, type_emb] soft type embedding."""
         hp_type_rows = self.type_embedding(self.hp_type_idx_map)   # [16, type_emb]
-        return hp_probs @ hp_type_rows
+        return hp_probs @ hp_type_rows  # type: ignore[no-any-return]
 
     def embed_delta_slot(self, slot: torch.Tensor) -> torch.Tensor:
         """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim].

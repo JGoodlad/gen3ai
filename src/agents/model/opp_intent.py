@@ -44,7 +44,7 @@ the opponent perturbed the policy. Letting `α` shape the trunk is a later, sepa
 """
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 
@@ -523,7 +523,8 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
 
 
 def render_alpha(alpha_probs: torch.Tensor, seat_nums: torch.Tensor,
-                 move_name: callable, top: int = 5) -> list:
+                 move_name: Callable[[int], Optional[str]],
+                 top: int = 5) -> List[Dict[str, Any]]:
     """G3b — `α` as a ranked list of NAMED options, the interpretability deliverable.
 
     This is not a debug helper: the owner constraint is that the model may only ever point at
@@ -531,7 +532,7 @@ def render_alpha(alpha_probs: torch.Tensor, seat_nums: torch.Tensor,
     by a test. Returns [{'name': str, 'p': float}], SWITCH included, highest first.
     """
     k = alpha_probs.shape[-1] - 1
-    rows = []
+    rows: List[Dict[str, Any]] = []
     for i in range(k):
         num = int(seat_nums[i])
         if num <= 0:

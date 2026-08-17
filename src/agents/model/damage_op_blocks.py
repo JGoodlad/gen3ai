@@ -8,7 +8,7 @@ state_dict is byte-identical, and the split changes nothing the heads see (the p
 probe pins it). Split out of `damage_op.py` 2026-08-17 (one responsibility per file).
 """
 import torch
-from typing import Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
     TEAM_SIZE,
     POKEMON_SPREAD_OFFSET,
@@ -56,8 +56,67 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
+if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
+    from agents.model.extractor_ctx import ExtractorContext
+    from agents.model.damage_op import OpStashes
+
 
 class DamageOperatorBlocks:
+
+    if TYPE_CHECKING:
+        # MIXIN, not a module (see the module docstring): every `self.*` below is owned by
+        # `DamageOperator`, which composes this class WITH `torch.nn.Module` — so at RUNTIME
+        # those names resolve either through the composed class's `__init__` or through
+        # `Module.__getattr__` (the damage tables are registered in a loop, so they exist
+        # only dynamically). Mirroring `Module.__getattr__`'s signature gives the checker the
+        # same view the interpreter has. TYPE_CHECKING-only: no runtime effect.
+        def __getattr__(self, name: str) -> Any: ...
+        # Scalars + the stash container the composed class sets in `__init__` (see
+        # `damage_op.DamageOperator`). Declared so arithmetic against them stays typed.
+        cb_item_num: int
+        cb_phys_mult: float
+        hp_bp: float
+        hp_num: int
+        stash: 'OpStashes'
+        # Methods the COMPOSED class (`damage_op.DamageOperator`) owns and both mixins call.
+        # Declared as callables rather than re-stated signatures: the definition is one file away
+        # and mypy checks it there; this only stops the reads decaying to `Any`.
+        _rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _damage_rolls: Callable[..., Tuple[torch.Tensor, ...]]
+        _boost_mult: Callable[..., torch.Tensor]
+        _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
+        _weather_mult: Callable[..., torch.Tensor]
+        _chan_max: Callable[..., torch.Tensor]
+        _p_outspeed: Callable[..., torch.Tensor]
+        _opp_candidate_weights: Callable[..., torch.Tensor]
+        # The damage TABLES (`damage_tables.build_damage_buffers`) are registered in a LOOP, so
+        # they exist only dynamically; declaring them keeps every read a `Tensor` instead of the
+        # `Any` the `__getattr__` above would hand back.
+        ABILITY_DAMAGE_MULT: torch.Tensor
+        ABILITY_SECONDARY_BLOCK: torch.Tensor
+        ABILITY_SECONDARY_MULT: torch.Tensor
+        ABILITY_STATUS_BLOCK: torch.Tensor
+        BASE_STATS: torch.Tensor
+        CHART: torch.Tensor
+        MOVE_ACCURACY: torch.Tensor
+        MOVE_BLOCKED_IF_STATUSED: torch.Tensor
+        MOVE_BP: torch.Tensor
+        MOVE_EFFECT_FLAGS: torch.Tensor
+        MOVE_FIXED_DAMAGE: torch.Tensor
+        MOVE_INFLICTS_STATUS: torch.Tensor
+        MOVE_IS_SLEEP: torch.Tensor
+        MOVE_PHYS: torch.Tensor
+        MOVE_SECONDARY: torch.Tensor
+        MOVE_STATUS_CAT: torch.Tensor
+        MOVE_STATUS_TYPE_IMMUNE: torch.Tensor
+        MOVE_TYPE_IDX: torch.Tensor
+        SPECIES_EXP_MULT: torch.Tensor
+        SPECIES_SPREAD_PRIOR: torch.Tensor
+        SPECIES_STATUS_BLOCK_PRIOR: torch.Tensor
+        SPECIES_USAGE_PRIOR: torch.Tensor
+        TYPE_IS_PHYS: torch.Tensor
+        _OUT_SEC_KEEP_IDX: torch.Tensor
+        _SEC_CAT_IDX: torch.Tensor
 
     def _outgoing_block(self, ctx: 'ExtractorContext',
                         spread_belief: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -319,7 +378,7 @@ class DamageOperatorBlocks:
         # --- type effectiveness eff[B,4,6] = CHART[t1d]·CHART[t2d]·ability_mult, gathered by move type ---
         T = self.CHART.shape[-1]
         mty_e = move_ty[:, :, None, None].expand(B, _DMG_OUT_N_MOVES, TEAM_SIZE, 1)      # [B,4,6,1]
-        def _gather_type(table_per_def):                                                 # table [B,6,T] → [B,4,6]
+        def _gather_type(table_per_def: torch.Tensor) -> torch.Tensor:                                                 # table [B,6,T] → [B,4,6]
             t = table_per_def[:, None].expand(B, _DMG_OUT_N_MOVES, TEAM_SIZE, T)
             return torch.gather(t, 3, mty_e).squeeze(-1)
         eff = (_gather_type(self.CHART[t1d]) * _gather_type(self.CHART[t2d])
@@ -729,7 +788,8 @@ class DamageOperatorBlocks:
     def _incoming_rolls(self, ctx: 'ExtractorContext',
                         move_belief_logits: torch.Tensor,
                         cand: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-                        spread_belief: Optional[torch.Tensor] = None):
+                        spread_belief: Optional[torch.Tensor] = None
+                        ) -> Tuple[torch.Tensor, ...]:
         """The SHARED lean incoming physics (gen3_iterative_damage_v1 / gen3_edge_bias_trunk_v1): the opp
         active's top-K believed candidate moves vs our 6 defenders, PRE-collapse. Factored out of
         `discrete_incoming` verbatim so its refine consumer and the D3 edge-bias consumer
@@ -854,7 +914,8 @@ class DamageOperatorBlocks:
         already_block = already[:, :, None] * blocked[:, None, :]                         # [B,6,K]
         land = (inflicts[:, None, :] * acc[:, None, :] * (1.0 - t_imm)
                 * (1.0 - abl_block) * (1.0 - already_block))                              # [B,6,K]
-        is_immob = sum((sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,K]
+        is_immob: torch.Tensor = sum(  # type: ignore[union-attr]
+            (sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,K]
         if per_pair:
             # gen3_edge_bias_trunk_v1 (S3): the UN-collapsed per-(candidate, defender) status cells for
             # the edge bias — [B, K, 6, 3] = [land, land·is_immob, w] per (their believed status move c,
@@ -898,13 +959,14 @@ class DamageOperatorBlocks:
         is_sleep = self.MOVE_IS_SLEEP[move_ids]                                           # [B,4]
         blocked = self.MOVE_BLOCKED_IF_STATUSED[move_ids]                                 # [B,4]
         ti = self.MOVE_STATUS_TYPE_IMMUNE[move_ids]                                       # [B,4,n_type]
-        is_immob = sum((sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,4]
+        is_immob: torch.Tensor = sum(  # type: ignore[union-attr]
+            (sidx == c) for c in _IMMOBILIZE_STATUS_CATS).float().clamp(max=1.0)              # [B,4]
         # opp 6 defenders
         opp_t1 = ctx.type1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
         opp_t2 = ctx.type2_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
         opp_ability = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                         # [B,6]
         opp_species = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                          # [B,6]
-        revealed_slot = (1.0 - ctx.opp_believed_mask.float())                             # [B,6] 1 = revealed
+        revealed_slot: torch.Tensor = (1.0 - ctx.opp_believed_mask.float())               # [B,6] 1 = revealed
         defender_alive = (ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] > 0).float()    # [B,6]
         ti_dm = ti[:, None, :, :].expand(B, TEAM_SIZE, 4, n_type)                          # [B,6,4,n_type]
         timm1 = torch.gather(ti_dm, 3, opp_t1[:, :, None, None].expand(B, TEAM_SIZE, 4, 1)).squeeze(-1)

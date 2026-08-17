@@ -43,7 +43,7 @@ class BeliefSlots(torch.nn.Module):
     transformer and never refined). Off ⇒ this module is not built and the opp slots stay zeros
     (baseline arch, byte-for-byte). See `designs/ai_v5/design_offense_and_opponent_belief.md`."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # One distinct learned token per opponent team-slot position. Same 0.02 init scale as the
         # CLS / belief queries. Slot position is the canonical order the aux labels are matched in.
@@ -166,7 +166,9 @@ class BeliefHead(torch.nn.Module):
         if self.species_prior_fusion and opp_species_ids is not None:
             logits = logits + self.species_prior_logits(
                 opp_species_ids, opp_believed_mask)                              # posterior = prior ⊕ delta
-        return logits
+        # torch types `Module.__call__` as `-> Any`, so a value a layer above produced
+        # stays `Any` all the way to the return.
+        return logits  # type: ignore[no-any-return]
 
     def species_posterior(self, tokens: torch.Tensor,
                           opp_species_ids: "Optional[torch.Tensor]" = None,
@@ -343,7 +345,9 @@ class MoveBelief(torch.nn.Module):
                 revealed = torch.zeros_like(logits, dtype=torch.bool)            # [B, 6, M]
                 revealed.scatter_(-1, ids, valid)
                 logits = torch.where(revealed, _REVEAL_LOGIT, logits)
-        return logits
+        # torch types `Module.__call__` as `-> Any`, so a value a layer above produced
+        # stays `Any` all the way to the return.
+        return logits  # type: ignore[no-any-return]
 
     def reinject_moves(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
                        move_embedding: torch.nn.Embedding,
@@ -366,7 +370,7 @@ class MoveBelief(torch.nn.Module):
         logits = move_logits.detach() if getattr(self, "publish_detach", False) else move_logits
         soft_emb = torch.sigmoid(logits) @ move_embedding.weight                  # [B, 6, move_emb]
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(soft_emb)
-        return self.norm(enriched)
+        return self.norm(enriched)  # type: ignore[no-any-return]
 
     def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor,
                 move_embedding: torch.nn.Embedding,
@@ -437,7 +441,8 @@ class SpreadBelief(torch.nn.Module):
             self.register_buffer("nature_mult", build_nature_mult(), persistent=False)                        # [25,5]
             self.register_buffer("base_nonhp", build_species_base_stats(n_species), persistent=False)         # [n,5]
 
-    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor, opp_species_ids: torch.Tensor):
+    def forward(self, opp_tokens: torch.Tensor, apply_mask: torch.Tensor, opp_species_ids: torch.Tensor
+                ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
         """opp_tokens [B,6,D], apply_mask [B,6] bool (which slots get the belief), opp_species_ids [B,6] (nums)
         → (enriched_tokens [B,6,D], believed_stats [B,6,5], nature_logits [B,6,25]|None, ev [B,6,5]|None). The
         residual carries the believed-vs-prior delta into the (selected) token; unselected slots pass through.
@@ -636,4 +641,4 @@ class HPTypeBelief(torch.nn.Module):
         soft = embeddings.hp_soft_type(posterior)                          # [B,6,type_emb] expected type emb
         gated = presence.unsqueeze(-1) * soft                              # ≈0 when HP unlikely (no spurious)
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject_proj(gated)
-        return self.reinject_norm(enriched)
+        return self.reinject_norm(enriched)  # type: ignore[no-any-return]

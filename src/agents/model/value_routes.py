@@ -34,14 +34,14 @@ class ValueClockRoute(torch.nn.Module):
     """`clock [B, CLOCK_DIM] → [B, D_MODEL]`, zero-init — added into `value_pooled`
     (gen3_value_pooled_routes_v1: the vf-tail concat never reached the dist-head critic)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.proj = torch.nn.Linear(CLOCK_DIM, D_MODEL)
         torch.nn.init.zeros_(self.proj.weight)
         torch.nn.init.zeros_(self.proj.bias)
 
     def forward(self, clock: torch.Tensor) -> torch.Tensor:
-        return self.proj(clock)
+        return self.proj(clock)  # type: ignore[no-any-return]
 
 
 class ValueIntentRoute(torch.nn.Module):
@@ -65,4 +65,4 @@ class ValueIntentRoute(torch.nn.Module):
         has_cand = torch.isfinite(beta_logits).any(-1, keepdim=True).float()        # [B,1]
         beta = torch.softmax(beta_logits.float().clamp(min=-1e9), dim=-1
                              ).to(beta_logits.dtype) * has_cand                     # [B,6]
-        return self.proj(torch.cat([alpha, beta], dim=-1))                          # [B,out]
+        return self.proj(torch.cat([alpha, beta], dim=-1))  # type: ignore[no-any-return]  # [B,out]

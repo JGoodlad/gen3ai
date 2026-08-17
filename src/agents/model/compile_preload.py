@@ -76,7 +76,10 @@ def _preload() -> None:
     import inspect
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
     kwargs = {k: v for k, v in cfg.items() if k in sig}
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)
+    # `Gen3FeaturesExtractor` annotates `observation_space: spaces.Dict`, but never READS the
+    # parameter — every serverless probe path (here, `compile_prewarm`, `feature_coverage`)
+    # passes the flat `Box` the encoder describes. The annotation is the false half.
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)  # type: ignore[arg-type]
     fe.eval()
     fe.disable_observation_debugger()                   # dynamo cannot trace its numpy asserts
     compiled = torch.compile(fe.forward)

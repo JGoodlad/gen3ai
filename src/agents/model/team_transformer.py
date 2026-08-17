@@ -59,7 +59,7 @@ class BiasedEncoderLayer(torch.nn.Module):
         q, k, v = (qkv[:, :, i].transpose(1, 2) for i in range(3))            # each [B,H,n,hd]
         attn = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=bias)
         x = self.norm1(x + self.out_proj(attn.transpose(1, 2).reshape(B, n, d)))
-        return self.norm2(x + self.linear2(torch.nn.functional.relu(self.linear1(x))))
+        return self.norm2(x + self.linear2(torch.nn.functional.relu(self.linear1(x))))  # type: ignore[no-any-return]
 
 
 # The key-padding addend on the attention logits. Large-negative-finite rather than -inf: a -inf

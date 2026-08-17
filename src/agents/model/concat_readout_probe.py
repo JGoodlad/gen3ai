@@ -26,8 +26,12 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+from typing import TYPE_CHECKING, Any, Iterator
 
 import torch
+
+if TYPE_CHECKING:
+    import numpy as np
 
 from agents.model.audit_states import collect_states
 from agents.observation.constants import TEAM_SIZE
@@ -36,7 +40,7 @@ from agents.observation.constants import TEAM_SIZE
 from agents.model import damage_op as D
 
 
-def _imx_header_slice(op):
+def _imx_header_slice(op: Any) -> tuple[int, int]:
     """(lo, hi) of the incoming-matrix HEADERS inside the flat op block."""
     cur = op.incoming_dim
     if op.outgoing:
@@ -48,14 +52,15 @@ def _imx_header_slice(op):
 
 
 @contextlib.contextmanager
-def _assembler_arm(fe, mode: str, hdr: "tuple[int, int] | None" = None):
+def _assembler_arm(fe: Any, mode: str, hdr: "tuple[int, int] | None" = None) -> Iterator[None]:
     """mode ∈ {'off_pi', 'off_vf', 'off_both', 'headers_off', 'none'} — patch the assembler."""
     if mode == "none":
         yield
         return
     orig = fe.assembler.forward
 
-    def patched(our_p, their_p, our_act, val_p, ctx, hidden_opp_belief=None, seed_rows=None):
+    def patched(our_p: Any, their_p: Any, our_act: Any, val_p: Any, ctx: Any,
+                hidden_opp_belief: Any = None, seed_rows: Any = None) -> Any:
         # gen3_op_tensors_views_v1: the assembler consumes the TYPED incoming-rows view. The
         # imx headers therefore never reach this site at all — `headers_off` is structurally a
         # no-op here (it already was post-gen3_no_concat_v1, when the headers fell outside the
@@ -80,14 +85,14 @@ def _assembler_arm(fe, mode: str, hdr: "tuple[int, int] | None" = None):
 
 
 @contextlib.contextmanager
-def _e4_seats_off(fe):
+def _e4_seats_off(fe: Any) -> Iterator[None]:
     """Zero the E4 threat-seat tokens in the trunk's `extra` pack (E3 [0:4], E4 [4:4+K],
     E5 tail after — layout per EntityMoveSeats)."""
     tt = fe.team_transformer
     orig = tt.forward
     k = fe.entity_seats.topk_seats
 
-    def patched(*args, extra=None, **kw):
+    def patched(*args: Any, extra: Any = None, **kw: Any) -> Any:
         if extra is not None and k > 0:
             tokens, types, pad = extra
             tokens = tokens.clone()
@@ -103,7 +108,8 @@ def _e4_seats_off(fe):
 
 
 @torch.no_grad()
-def _measure(policy, obs_np, masks_np, batch):
+def _measure(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray",
+             batch: int) -> tuple[torch.Tensor, torch.Tensor]:
     ps, vs = [], []
     for i in range(0, len(obs_np), batch):
         mk = torch.as_tensor(masks_np[i:i + batch])
@@ -116,7 +122,8 @@ def _measure(policy, obs_np, masks_np, batch):
     return torch.cat(ps), torch.cat(vs)
 
 
-def _vs_base(p, v, bp, bv):
+def _vs_base(p: torch.Tensor, v: torch.Tensor, bp: torch.Tensor,
+             bv: torch.Tensor) -> dict[str, float]:
     flips = (p.argmax(1) != bp.argmax(1)).float().mean().item()
     kl = (bp.clamp_min(1e-9) * (bp.clamp_min(1e-9).log() - p.clamp_min(1e-9).log())).sum(1)
     return {"flip_rate": round(flips, 5), "kl_mean": round(kl.mean().item(), 6),
@@ -124,7 +131,8 @@ def _vs_base(p, v, bp, bv):
 
 
 @torch.no_grad()
-def _features(policy, obs_np, masks_np, batch):
+def _features(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray",
+              batch: int) -> tuple["np.ndarray", "np.ndarray"]:
     pis, vfs = [], []
     for i in range(0, len(obs_np), batch):
         ob = {"observation": torch.as_tensor(obs_np[i:i + batch]),
@@ -135,14 +143,15 @@ def _features(policy, obs_np, masks_np, batch):
     return torch.cat(pis).numpy(), torch.cat(vfs).numpy()
 
 
-def _coverage_fit(policy, fe, obs_np, masks_np, batch):
+def _coverage_fit(policy: Any, fe: Any, obs_np: "np.ndarray", masks_np: "np.ndarray",
+                  batch: int) -> dict[str, Any]:
     """The coverage-probe targets (labels exact from the op's in_matrix) on pi/vf features."""
     from main.prober.engine import fit_probe
     op, K = fe.damage_op, fe.damage_op.matrices_incoming_k
     hdr_lo, hdr_hi = _imx_header_slice(op)
     cells_dim = TEAM_SIZE * K * D._DMG_IMX_CELL
 
-    stash = {}
+    stash: dict[str, Any] = {}
     h = fe.unpack.register_forward_hook(lambda m, i, o: stash.__setitem__("ctx", o))
     imxs, acts, hps = [], [], []
     with torch.no_grad():
@@ -171,7 +180,7 @@ def _coverage_fit(policy, fe, obs_np, masks_np, batch):
         "act_threat": ("regression", threat[idx, our_act].numpy()),
         "n_threatened": ("regression", ((threat >= 0.5) & alive).sum(1).float().numpy()),
     }
-    out = {}
+    out: dict[str, dict[str, Any]] = {}
     for arm in ("baseline", "concat_off"):
         cm = _assembler_arm(fe, "off_both") if arm == "concat_off" else contextlib.nullcontext()
         with cm:
@@ -186,7 +195,7 @@ def _coverage_fit(policy, fe, obs_np, masks_np, batch):
     return out
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True)

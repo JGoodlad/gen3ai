@@ -27,7 +27,7 @@ import difflib
 import inspect
 import json
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 # The same committed config every derived artifact keys on (delivery graph, arch viewer,
 # compile gate). Reused rather than re-derived so the artifacts cannot disagree on the source.
@@ -118,10 +118,10 @@ def _resolve(fe: Any, dotted: str) -> Any:
 # --------------------------------------------------------------------------------- instantiation
 def load_config(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     with open(config_path) as fh:
-        return json.load(fh)
+        return cast(Dict[str, Any], json.load(fh))
 
 
-def build_extractor(config_path: str = _DEFAULT_CONFIG):
+def build_extractor(config_path: str = _DEFAULT_CONFIG) -> Tuple[Any, Dict[str, Any]]:
     """The same build seam `delivery_graph.build_graph` and the compile gate use: config fields
     filtered by the live constructor signature, historical floor reconciled at construction."""
     import gymnasium as gym
@@ -138,7 +138,8 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG):
     kwargs = {k: v for k, v in cfg.items() if k in sig}
     sanitize_historical_move_floor(kwargs)
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
+    # the ctor annotates spaces.Dict, but this introspection seam never feeds the space forward
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()  # type: ignore[arg-type]
     if hasattr(fe, "disable_observation_debugger"):
         fe.disable_observation_debugger()
     return fe, cfg
@@ -160,7 +161,7 @@ def _wrap_interpunct(names: List[str], width: int = 95) -> str:
     return "\n".join(lines)
 
 
-def modules_section(fe) -> str:
+def modules_section(fe: Any) -> str:
     names = [n for n, _ in fe.named_children()]
     absent = [label for label, attr in _ABSENT_CANDIDATES if _resolve(fe, attr) is None]
     out = "```\n" + _wrap_interpunct(names) + "\n```\n"
@@ -171,7 +172,7 @@ def modules_section(fe) -> str:
 
 
 # -------------------------------------------------------------------------------- §3 head inputs
-def head_input_parts(fe) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, int, str]]]:
+def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, int, str]]]:
     """The concat parts of each head, IN ORDER, derived from the live instance.
 
     The order mirrors `ProjectionAssembler.forward` (pi: pools, active, non_matchup_rest, then the
@@ -210,7 +211,7 @@ def head_input_parts(fe) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, in
     return pi, vf
 
 
-def _assert_totals(fe, pi: List[Tuple[str, int, str]], vf: List[Tuple[str, int, str]]) -> None:
+def _assert_totals(fe: Any, pi: List[Tuple[str, int, str]], vf: List[Tuple[str, int, str]]) -> None:
     pi_total = sum(d for _, d, _ in pi)
     vf_total = sum(d for _, d, _ in vf)
     if pi_total != fe.projection.in_features:
@@ -225,7 +226,7 @@ def _assert_totals(fe, pi: List[Tuple[str, int, str]], vf: List[Tuple[str, int, 
             f"ProjectionAssembler.forward / forward_internal. Parts: {vf}")
 
 
-def _head_table(title: str, linear, parts: List[Tuple[str, int, str]], total_attr: str) -> str:
+def _head_table(title: str, linear: Any, parts: List[Tuple[str, int, str]], total_attr: str) -> str:
     lines = [f"**`{title}` — `Linear({linear.in_features}, {linear.out_features})`** "
              "(LayerNorm → Linear → ReLU). Input concat, in order:", "",
              "| Part | Dims | Source |", "|---|---|---|"]
@@ -236,7 +237,7 @@ def _head_table(title: str, linear, parts: List[Tuple[str, int, str]], total_att
     return "\n".join(lines)
 
 
-def head_inputs_section(fe) -> str:
+def head_inputs_section(fe: Any) -> str:
     pi, vf = head_input_parts(fe)
     _assert_totals(fe, pi, vf)
     return (_head_table("pi_projection", fe.projection, pi, "projection")
@@ -245,7 +246,7 @@ def head_inputs_section(fe) -> str:
 
 
 # --------------------------------------------------------------------------------- §6 flag table
-def _toggle_status(fe, key: str, value: Any) -> str:
+def _toggle_status(fe: Any, key: str, value: Any) -> str:
     if _is_off(value):
         return "OFF"
     attr = _TOGGLE_MODULE.get(key)
@@ -256,7 +257,7 @@ def _toggle_status(fe, key: str, value: Any) -> str:
     return "ACTIVE"
 
 
-def _coef_status(fe, key: str, value: Any) -> str:
+def _coef_status(fe: Any, key: str, value: Any) -> str:
     if key not in _COEF_MODULE:
         raise KeyError(
             f"{key!r} looks like a training-loss coefficient but has no entry in "
@@ -280,7 +281,7 @@ def _fmt_value(value: Any) -> str:
     return f"`{json.dumps(value)}`"
 
 
-def flag_table_section(fe, cfg: Dict[str, Any]) -> str:
+def flag_table_section(fe: Any, cfg: Dict[str, Any]) -> str:
     from agents.model.features_extractor import Gen3FeaturesExtractor
 
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)

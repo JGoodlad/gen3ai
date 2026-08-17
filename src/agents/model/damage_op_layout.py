@@ -7,7 +7,7 @@ historical import paths still resolve.
 """
 import torch
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Dict, Optional
 from agents.observation.constants import (
     TEAM_SIZE,
 )
@@ -297,9 +297,9 @@ class OpTensors:
 
 
 
-def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE,
+def decode_damage_block(row: torch.Tensor, *, outgoing: bool, team_size: int = TEAM_SIZE,
                         matrices_outgoing: bool = False, matrices_incoming_k: int = 0,
-):
+) -> Dict[str, Any]:
     """Decode ONE `DamageOperator.last_raw_block[i]` row (the PRE-gain physics) into a human-readable dict
     for the prober / forensic tooling — the single source of truth for the operator's output layout, mirrored
     by the TUI. Uses the named `_DMG_IDX_*` offsets: per our mon the incoming threat
@@ -316,7 +316,7 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE,
     (`matrices_incoming_k`) is where those facts live."""
     r = [float(x) for x in row]
 
-    def _chan(b):
+    def _chan(b: int) -> Dict[str, float]:
         return {"low": r[b], "high": r[b + 1], "crit": r[b + 2], "pko": r[b + 3], "acc": r[b + 4]}
 
     incoming = []

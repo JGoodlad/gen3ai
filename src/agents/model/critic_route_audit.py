@@ -38,14 +38,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from typing import TYPE_CHECKING, Any, Sequence
 
 import torch
 
 from agents.model.edge_ablation_audit import _collect_states, _masked_kl, _measure
 
+if TYPE_CHECKING:
+    import numpy as np
+
 
 @torch.no_grad()
-def _forward_all(policy, obs_np, masks_np, batch=512):
+def _forward_all(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray",
+                 batch: int = 512) -> tuple[torch.Tensor, torch.Tensor]:
     """The edge_ablation_audit forward contract verbatim: `policy.get_distribution` +
     `policy.predict_values` (which internally respect PopArt and value_from_dist — the exact
     reason not to hand-roll the value path here)."""
@@ -66,40 +71,44 @@ def _forward_all(policy, obs_np, masks_np, batch=512):
 class _Arms:
     """Context managers zeroing one route each; identity-checked to fail loud on drift."""
 
-    def __init__(self, fe):
+    def __init__(self, fe: Any) -> None:
         self.fe = fe
 
-    def seed(self):
+    def seed(self) -> tuple[list[Any], Any]:
         fe = self.fe
         hooks = []
 
-        def _pre(_m, args):
-            _rows = (fe.damage_op.last_tensors.incoming_rows
-                     if getattr(fe.damage_op, "last_tensors", None) is not None else None)
+        def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
+            _rows: Any = (fe.damage_op.last_tensors.incoming_rows
+                          if getattr(fe.damage_op, "last_tensors", None) is not None else None)
             if args and args[-1] is not None and args[-1] is _rows:
-                _pre.fired = True
+                # `fired` is a hand-set attribute on the hook function object (the arm's own
+                # did-it-match flag); mypy models a function as attribute-less.
+                _pre.fired = True  # type: ignore[attr-defined]
                 return args[:-1] + (torch.zeros_like(args[-1]),)
             return args
-        _pre.fired = False
+        _pre.fired = False  # type: ignore[attr-defined]
         hooks.append(fe.assembler.register_forward_pre_hook(_pre))
         return hooks, _pre
 
-    def threat(self):
+    def threat(self) -> tuple[list[Any], Any]:
         fe = self.fe
         hooks = []
 
-        def _pre(_m, args, kwargs):
+        def _pre(_m: Any, args: tuple[Any, ...],
+                 kwargs: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
             tr = kwargs.get("threat_rows")
             if tr is not None:
-                _pre.fired = True
+                # hand-set did-it-match flag on the hook function object (see `seed`).
+                _pre.fired = True  # type: ignore[attr-defined]
                 kwargs = dict(kwargs)
                 kwargs["threat_rows"] = torch.zeros_like(tr)
             return args, kwargs
-        _pre.fired = False
+        _pre.fired = False  # type: ignore[attr-defined]
         hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
         return hooks, _pre
 
-    def event_seats(self):
+    def event_seats(self) -> tuple[list[Any], dict[str, bool]]:
         """Key-mask ALL H-B event seats (force the pad mask True) — the design's "usage audit
         on the event seats" in the house ablation form: if the trunk learned to attend over
         the event window, masking it moves pi (KL/flips) and/or vf (|dV|); a dead-zero reading
@@ -108,13 +117,13 @@ class _Arms:
         fe = self.fe
         marker = {"fired": False}
 
-        def _hook(_m, _args, output):
+        def _hook(_m: Any, _args: Any, output: Any) -> Any:
             tokens, pad = output
             marker["fired"] = True
             return tokens, torch.ones_like(pad)
         return [fe.history_events.register_forward_hook(_hook)], marker
 
-    def intent_reduce(self):
+    def intent_reduce(self) -> tuple[list[Any], dict[str, bool]]:
         """Zero the α-weighted IntentValueReduce term (v74, vf-only zero-init concat) — the
         critic-side α consumer gen-9+ trains. Its arm belongs in the same §2 consolidation as
         seed/threat: the runbook's Phase-3 list names it, and without an arm the route would be
@@ -122,12 +131,12 @@ class _Arms:
         fe = self.fe
         marker = {"fired": False}
 
-        def _hook(_m, _args, output):
+        def _hook(_m: Any, _args: Any, output: Any) -> Any:
             marker["fired"] = True
             return torch.zeros_like(output)
         return [fe.intent_value_reduce.register_forward_hook(_hook)], marker
 
-    def nmr(self):
+    def nmr(self) -> tuple[list[Any], dict[str, bool]]:
         """Zero `ctx.non_matchup_rest` at the assembler — the LAST positional head concat
         (global env + board scalars, both heads). Its content also rides the global token
         through the trunk, so this arm measures the DIRECT-shortcut dependency the Phase-3
@@ -137,7 +146,7 @@ class _Arms:
         fe = self.fe
         marker = {"fired": False}
 
-        def _pre(_m, args):
+        def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
             ctx = args[4]
             nmr_t = getattr(ctx, "non_matchup_rest", None)
             if nmr_t is None:
@@ -147,24 +156,25 @@ class _Arms:
             return args[:4] + (new_ctx,) + args[5:]
         return [fe.assembler.register_forward_pre_hook(_pre)], marker
 
-    def entity_pool(self):
+    def entity_pool(self) -> tuple[list[Any], dict[str, bool]]:
         """Zero the unified entity pool's OUTPUT (gen3_unified_value_readout_v1) — vf-only by
         construction, so this arm reads pure |dV| with structurally-zero KL/flips."""
         fe = self.fe
         marker = {"fired": False}
 
-        def _hook(_m, _args, output):
+        def _hook(_m: Any, _args: Any, output: Any) -> Any:
             marker["fired"] = True
             return torch.zeros_like(output)
         return [fe.value_entity_pool.register_forward_hook(_hook)], marker
 
-    def hidden_opp(self, mode: str):
+    def hidden_opp(self, mode: str) -> tuple[list[Any], dict[str, bool]]:
         """mode ∈ {'both', 'pi', 'vf'} — patch the assembler's belief argument per head."""
         fe = self.fe
         orig = fe.assembler.forward
         marker = {"fired": False}
 
-        def patched(our_p, their_p, our_act, val_p, ctx, hidden_opp_belief=None, seed_rows=None):
+        def patched(our_p: Any, their_p: Any, our_act: Any, val_p: Any, ctx: Any,
+                    hidden_opp_belief: Any = None, seed_rows: Any = None) -> Any:
             if hidden_opp_belief is None:
                 return orig(our_p, their_p, our_act, val_p, ctx,
                             hidden_opp_belief=None, seed_rows=seed_rows)
@@ -181,12 +191,12 @@ class _Arms:
 
         fe.assembler.forward = patched
         class _H:
-            def remove(self_inner):
+            def remove(self_inner) -> None:
                 fe.assembler.forward = orig
         return [_H()], marker
 
 
-def _assert_fired(name: str, markers) -> None:
+def _assert_fired(name: str, markers: Sequence[Any]) -> None:
     """The staleness guard: an arm whose hook never matched measured NOTHING while producing a
     plausible report — the exact silent-failure mode this audit cannot afford once a year of
     refactors separates it from the forward it patches."""
@@ -197,14 +207,14 @@ def _assert_fired(name: str, markers) -> None:
                                "the route identity drifted and the arm measured nothing.")
 
 
-def audit(policy, obs_np, masks_np, batch=512) -> dict:
+def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int = 512) -> dict:
     fe = policy.features_extractor
     arms = _Arms(fe)
     base_p, base_v = _forward_all(policy, obs_np, masks_np, batch)
     masks_t = torch.as_tensor(masks_np)
-    report = {}
+    report: dict[str, dict[str, float]] = {}
 
-    def _run(name, hook_sets):
+    def _run(name: str, hook_sets: Sequence[tuple[list[Any], Any]]) -> None:
         hooks, markers = [], []
         for hs, mk in hook_sets:
             hooks += hs
@@ -256,7 +266,7 @@ def audit(policy, obs_np, masks_np, batch=512) -> dict:
     return report
 
 
-def main(argv=None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True)

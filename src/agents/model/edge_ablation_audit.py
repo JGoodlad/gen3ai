@@ -32,12 +32,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from typing import Any, Sequence
 
 import numpy as np
 import torch
 
 
-def _collect_states(patterns, max_states: int, seed: int = 0):
+def _collect_states(patterns: Sequence[str], max_states: int, seed: int = 0,
+                    ) -> tuple[np.ndarray, np.ndarray, dict]:
     # gen3_audit_state_sampler_v1: STRATIFIED, deterministic sampling (the shared
     # `audit_states.collect_states` — two-level round-robin over step dirs × opponents +
     # a seeded row subsample). The old sorted-glob + break-at-cap drew every state from ONE
@@ -54,7 +56,7 @@ def _collect_states(patterns, max_states: int, seed: int = 0):
 
 
 @torch.no_grad()
-def _measure(policy, obs_t: dict, masks: torch.Tensor):
+def _measure(policy: Any, obs_t: dict, masks: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """→ (probs [N, A] masked-renormalized, values [N])."""
     dist = policy.get_distribution(obs_t)
     logits = dist.distribution.logits.clone()
@@ -71,7 +73,7 @@ def _masked_kl(p: torch.Tensor, q: torch.Tensor, masks: torch.Tensor) -> torch.T
 
 
 @torch.no_grad()
-def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) -> dict:
+def audit(policy: Any, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) -> dict:
     fe = policy.features_extractor
     eb = getattr(fe, "edge_bias", None)
     if eb is None:
@@ -80,7 +82,7 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
     device = next(policy.parameters()).device
     maps = {f: getattr(eb, f"{f}_map") for f in fams}
 
-    def _forward_all():
+    def _forward_all() -> tuple[torch.Tensor, torch.Tensor]:
         ps, vs = [], []
         for i in range(0, len(obs_np), batch):
             mk = torch.as_tensor(masks_np[i:i + batch], device=device)
@@ -93,9 +95,9 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
 
     base_p, base_v = _forward_all()
     masks_t = torch.as_tensor(masks_np, device=device)
-    report = {}
+    report: dict[str, dict[str, float]] = {}
 
-    def _ablate(names):
+    def _ablate(names: Sequence[str]) -> dict[str, float]:
         saved = {n: (maps[n].weight.detach().clone(), maps[n].bias.detach().clone()) for n in names}
         for n in names:
             maps[n].weight.zero_(); maps[n].bias.zero_()
@@ -125,29 +127,31 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
     if getattr(fe, "damage_op", None) is not None and fe.last_damage_block is not None:
         pa = fe.assembler
 
-        def _zero_db_hook(_module, args):
+        def _zero_db_hook(_module: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
             # gen3_op_tensors_views_v1: the assembler receives the TYPED incoming-rows view
             # (`OpTensors.incoming_rows`), not the flat block — match it by identity against
             # the op's own stash so a signature drift here fails the identity check loudly
             # (the arm asserts it fired, below) instead of silently measuring nothing.
-            _rows = (fe.damage_op.last_tensors.incoming_rows
-                     if fe.damage_op.last_tensors is not None else None)
+            _rows: Any = (fe.damage_op.last_tensors.incoming_rows
+                          if fe.damage_op.last_tensors is not None else None)
             if args and args[-1] is not None and args[-1] is _rows:
-                _zero_db_hook.fired = True
+                # `fired` is a hand-set attribute on the hook function object (the arm's own
+                # did-it-match flag); mypy models a function as attribute-less.
+                _zero_db_hook.fired = True  # type: ignore[attr-defined]
                 return args[:-1] + (torch.zeros_like(args[-1]),)
             return args
-        _zero_db_hook.fired = False
+        _zero_db_hook.fired = False  # type: ignore[attr-defined]
 
-        def _measure_with(zero_cells: bool):
+        def _measure_with(zero_cells: bool) -> dict[str, float]:
             h = pa.register_forward_pre_hook(_zero_db_hook)
             orig_cells = fe.damage_op.pointer_cells
             if zero_cells:
                 fe.damage_op.pointer_cells = lambda db: tuple(
                     torch.zeros_like(t) for t in orig_cells(db))
             try:
-                _zero_db_hook.fired = False
+                _zero_db_hook.fired = False  # type: ignore[attr-defined]
                 p, v = _forward_all()
-                if not _zero_db_hook.fired:
+                if not _zero_db_hook.fired:  # type: ignore[attr-defined]
                     raise RuntimeError(
                         "the concat-arm assembler hook never matched its argument — the "
                         "assembler's seed-rows identity drifted and the arm measured nothing.")
@@ -171,7 +175,7 @@ def audit(policy, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 512) ->
     return report
 
 
-def main(argv=None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True,

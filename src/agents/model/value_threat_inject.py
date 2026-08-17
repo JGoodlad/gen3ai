@@ -106,4 +106,4 @@ class ValueThreatInject(torch.nn.Module):
                 f"ValueThreatInject shape mismatch: tokens {tuple(our_team_out.shape[:2])} vs rows "
                 f"{tuple(threat_rows.shape[:2])}"
             )
-        return our_team_out + self.proj(threat_rows.to(our_team_out.dtype))
+        return our_team_out + self.proj(threat_rows.to(our_team_out.dtype))  # type: ignore[no-any-return]
