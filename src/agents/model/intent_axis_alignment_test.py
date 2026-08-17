@@ -48,8 +48,8 @@ def test_alpha_seat_nums_are_the_ops_topk_in_the_same_order():
     """
     pytest.importorskip("sb3_contrib")
     fe = _forward_with_intent()
-    seat_nums = getattr(fe, "last_alpha_seat_nums", None)
-    topk = getattr(getattr(fe, "damage_op", None), "last_topk_idx", None)
+    seat_nums = fe.last_alpha_seat_nums
+    topk = fe.damage_op.last_topk_idx if fe.damage_op is not None else None
     if seat_nums is None or topk is None:
         pytest.skip("this config built no alpha head or no op top-K")
     assert seat_nums.shape == topk.shape, (seat_nums.shape, topk.shape)

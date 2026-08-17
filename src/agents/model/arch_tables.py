@@ -186,7 +186,7 @@ def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[st
         ("`non_matchup_rest`", nmr, "shared with pi"),
     ]
     if fe.hidden_opp_belief is not None:
-        row = (f"`hidden_opp_belief`", fe.opp_belief_cls_k * D,
+        row = ("`hidden_opp_belief`", fe.opp_belief_cls_k * D,
                f"`HiddenOppBeliefPool` — k={fe.opp_belief_cls_k} × `D_MODEL`")
         pi.append(row)
         vf.append(row)

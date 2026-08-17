@@ -29,6 +29,10 @@ class _Op:
     def __init__(self, row, outgoing=False):
         self.outgoing = outgoing
         self.last_raw_block = torch.as_tensor(row).unsqueeze(0)
+        # gen3_extractor_stashes_v1: the reader now uses the op's TYPED property surface
+        # directly (no getattr default), so the stand-in must carry the whole surface it
+        # touches — as the real op always does (OpStashes fields default None).
+        self.last_topk_idx = None
 
 
 class _Ext:

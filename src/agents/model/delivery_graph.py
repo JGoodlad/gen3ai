@@ -45,10 +45,7 @@ import argparse
 import inspect
 import json
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
-
-if TYPE_CHECKING:
-    from agents.model.damage_op import DamageOperator
+from typing import Any, Dict, List, Optional, Tuple
 
 # Edge-type vocabulary. Extending this is a deliberate act: each entry is a claim about a distinct
 # PHYSICAL delivery channel, not a convenience label.
@@ -216,8 +213,8 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     # reconcile at construction (see the helper's docstring for why not in _migrate_config).
     sanitize_historical_move_floor(kwargs)
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    # the ctor annotates spaces.Dict, but this introspection seam never feeds the space forward
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()  # type: ignore[arg-type]
+    # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
     if hasattr(fe, "disable_observation_debugger"):
         fe.disable_observation_debugger()
     return fe, cfg, layout
@@ -235,8 +232,17 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
 
     fe, cfg, layout = build_extractor(config_path)
 
-    # the graph is only built from configs that carry the op; every read below already assumes it
-    op = cast("DamageOperator", fe.damage_op)
+    # The graph is only built from configs that carry the op — but that was an ASSUMPTION a
+    # `cast` made silent: with an op-less config the first `op.out_dim` read below would be a
+    # deep `AttributeError` on None. Every other optional module in this file is guarded
+    # (`if fe.<mod> is not None`); the op is not optional for THIS graph, so declare that
+    # loudly at entry instead (gen3_extractor_stashes_v1 rider, task 4c).
+    if fe.damage_op is None:
+        raise ValueError(
+            f"build_graph: config {config_path!r} builds no DamageOperator (damage_op=false) — "
+            "the delivery graph is defined around the op's kernels/cells and cannot be built "
+            "without it. Point build_graph at a config with the op enabled.")
+    op = fe.damage_op
     seats = fe.entity_seats
     T = fx.TEAM_SIZE
     D = fx.D_MODEL

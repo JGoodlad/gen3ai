@@ -962,7 +962,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # it forward-side), so its CE must read the supervision view too — the
                     # attribute is the stop-grad publication under label_only.
                     _bl = self.policy.features_extractor.belief_supervision("beta_logits")
-                    _sn = getattr(self.policy.features_extractor, "last_alpha_seat_nums", None)
+                    _sn = self.policy.features_extractor.last_alpha_seat_nums
                     _obs = rollout_data.observations
                     if _al is not None and _sn is not None and "opp_action_kind" in _obs:
                         from agents.model.opp_intent import (INTENT_IGNORE, OPP_CLASS_NAMES,

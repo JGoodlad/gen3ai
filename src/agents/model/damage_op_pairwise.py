@@ -737,7 +737,6 @@ class DamageOperatorPairwise:
         (the prefuse SpreadBelief) else the neutral sentinel-free estimate; the uncertainty-aware
         sigmoid (`prob_outspeed`) divides by the believed per-species speed STD. Unrevealed opp slots
         carry the `revealed_j` channel so the head can discount the guess."""
-        B, device = ctx.batch_size, ctx.device
         # --- our 6: real spread reconstruction (the _incoming_rolls defender recipe) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                          # [B,6,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
@@ -954,7 +953,7 @@ class DamageOperatorPairwise:
           * pursuit_eff — Dark effectiveness at the victim's types (decorrelated from p).
         Victim-alive-gated; opp cells revealed-gated (unknown types). The "switching is not free"
         facts, attention-composable with every mon token via the global seat."""
-        B, device = ctx.batch_size, ctx.device
+        device = ctx.device
         from agents.model.damage_tables import _pursuit_num, _T2I
         pur = _pursuit_num()
         dark = _T2I["DARK"]
@@ -1003,7 +1002,6 @@ class DamageOperatorPairwise:
         (`SPECIES_TRAP_PRIOR`), and grounded folds the Levitate prior the same way. An UNREVEALED
         opp VICTIM is gated to 0 in direction A (its types are unknown — the D4 convention);
         both-alive-gated. "My Dugtrio traps their weakened Blissey" is a plan-defining edge."""
-        B, device = ctx.batch_size, ctx.device
         our_ab = ctx.ability1_ids[:, :TEAM_SIZE]                                   # [B,6]
         opp_ab = ctx.ability1_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
         opp_sp = ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]
@@ -1059,7 +1057,6 @@ class DamageOperatorPairwise:
         its own channel (the belief gradient path). Gated to 0 with no opp active / per fainted defender."""
         high, ko, eff, phys_k, w_topk, defender_alive, has_opp = self._incoming_rolls(
             ctx, move_belief_logits, cand, spread_belief=spread_belief)
-        K = high.shape[-1]
         cells = torch.stack([
             high, ko, eff.clamp(max=4.0) / 4.0,
             phys_k[:, None, :].expand_as(high),

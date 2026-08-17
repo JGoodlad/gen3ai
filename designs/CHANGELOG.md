@@ -4563,3 +4563,54 @@ gen-13 production config (`001e1140…`, the baseline since `26b2850` promoted t
 forward (946 lines). Also deleted: `entity_spike_benchmark.py` — the closed Stage-2 feasibility
 spike, which shadowed the production `BiasedEncoderLayer` class name; its measured results stay
 cited in `team_transformer.py`/`pointer_head.py` with a git-history pointer.
+
+
+## `gen3_extractor_stashes_v1` (2026-08-17): the extractor's side values become ONE typed container — byte-identical, plus a critic fail-loud
+
+The OpStashes recipe (`gen3_op_stashes_v1`) applied to `Gen3FeaturesExtractor` itself, after v89
+made the cost of the old pattern concrete: phases communicated through mutable `self.last_*`
+instance stashes, cross-module consumers read them with `getattr(..., None)`, and nothing
+type-level connected producer to consumer — which is how five value routes fed a concat the dist
+critic never read, silently, for two generations.
+
+**The container:** every per-forward side value the extractor exposes (`pointer_inputs`,
+`alpha/beta_logits` + `alpha_seat_nums` + `thresh_probs`, the belief-bank publications
+(`move_belief/spread/item/hp_type/belief_logits`, `opp_believed_mask`, `opp_active_local`,
+`move_latent_table`), `damage_block`, `value_pooled`, `win_prob_logits`, `value_dist_logits`, the
+internal T0→T1/T2 hand-offs `t0_species_probs` / `entity_latent_table`, and the LIVE
+`belief_supervision` dict) lives in ONE `ExtractorStashes` dataclass that `forward_internal`
+replaces at ENTRY — a stale cross-batch read is unrepresentable for any stash, uniformly (the old
+code had at least three reset conventions, and `_entity_latent_table` was read back through a
+`getattr` because nothing guaranteed it existed). Reads stay on read-only `last_*` properties (the
+documented surface; every consumer keeps its spelling), writes go through `fe.stash.<field>`, and
+a stray write to a legacy name raises. `_publish_belief`/`belief_supervision()` stop-grad
+semantics are UNCHANGED — the dict just rides the container, so its per-forward clear is the same
+entry replacement. `PokemonEncoder.last_move_tokens` deliberately STAYS on the encoder: each
+producer module owns its own stash surface (the op keeps OpStashes); hoisting a submodule's stash
+into the parent's container would be the cross-module write this change exists to remove.
+`_last_hp_type_post` was found to have NO reader anywhere and is deleted.
+
+**The hazard fix (policy.py):** `_critic_value` under `--value-from-dist` used to FALL BACK to
+the scalar `value_net` when the dist head/logits were missing — but under value_from_dist that
+net is FROZEN, so the fallback was a silently-wrong critic, the exact v89 shape. It now RAISES
+(missing head, un-stashed logits, or a batch-size mismatch = stale stash), pinned by
+`dist_critic_test.py`. The scalar path with the flag off is unchanged.
+
+**Cross-module readers re-routed:** `policy.py` (`last_pointer_inputs`, `last_value_dist_logits`),
+`instrumented_ppo.py` (`last_alpha_seat_nums`), `main/prober/model.py` (7 sites incl. the op's
+`last_raw_block`/`last_topk_idx`), `agents/inference/player.py` (12 sites) — all now typed
+property reads; no `getattr(..., None)` reach-across remains for extractor/op stashes.
+
+**Riders:** (a) `observation_space` is annotated `spaces.Space` and documented DELIBERATELY
+UNREAD (SB3's positional construction contract; `layout` is the dim source) — three probe-side
+`type: ignore[arg-type]`s die with it; (b) absent `layout` now raises a named ValueError at ctor
+entry (and the narrowing retires ~15 `type: ignore`s); (c) `delivery_graph.build_graph` raises
+loudly on an op-less config instead of a deep AttributeError through a `cast`; (d) `ruff.toml`'s
+TEMPORARY handoff section is CLOSED — all ~54 deferred findings fixed at the source; the two
+measured damage_op re-exports (`POKEMON_COUNTER_OFFSET`, `_N_SECONDARY`) survive with inline
+noqas naming their consumers.
+
+**Versioning:** none — no state_dict, arch, or forward-math change. The production sha probe
+reads `001e1140…` before and after (self-measured, same probe/config); mypy 0 errors; the compile
+gate still traces one graph. Gate: `extractor_stashes_test.py` (stale-read unrepresentable, stray
+writes loud on every property, container defaults, the layout raise).

@@ -79,8 +79,9 @@ class _Arms:
         hooks = []
 
         def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
-            _rows: Any = (fe.damage_op.last_tensors.incoming_rows
-                          if getattr(fe.damage_op, "last_tensors", None) is not None else None)
+            _op = fe.damage_op
+            _rows: Any = (_op.last_tensors.incoming_rows
+                          if _op is not None and _op.last_tensors is not None else None)
             if args and args[-1] is not None and args[-1] is _rows:
                 # `fired` is a hand-set attribute on the hook function object (the arm's own
                 # did-it-match flag); mypy models a function as attribute-less.

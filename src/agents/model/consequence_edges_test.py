@@ -155,7 +155,6 @@ def _force_active_speed_scenario(fe, ctx):
     from agents.observation.pokemon import POKEMON_SPREAD_OFFSET
     aero = gen3_data.species.get("aerodactyl")
     lax = gen3_data.species.get("snorlax")
-    B = ctx.batch_size
     ctx.our_active_idx[:] = 0
     ctx.species_ids[:, 0] = aero.num
     ctx.species_ids[:, TEAM_SIZE] = lax.num
@@ -316,7 +315,6 @@ def test_status_consequence_channels():
     deliberately NOT a C2 row."""
     fe = _make(**_C1_TOGGLES).eval()
     ctx = _c1b_ctx(fe, seed=103)
-    ar = torch.arange(2)
     ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("aerodactyl").num   # fast attacker
     ctx.screen_feature[:, :] = 0.0
     from agents.model.damage_op import POKEMON_CONDITION_OFFSET
@@ -407,7 +405,6 @@ def test_belly_drum_priced_with_cost_and_fail_gate():
     live = base[..., 1].amax(dim=1) > 1e-6
     assert bool((cells[:, 1, :, 1][live] > 0).all()), "maximized Atk must raise the physical line"
     assert float(cells[:, 1, :, 4][live].min()) == 0.5, "the half-max-HP price rides the cell"
-    sd_live = cells[:, 1, :, 1][live]
     ctx.our_active_req_move_ids[:, 2] = _SD
     with torch.no_grad():
         both = fe.damage_op.pairwise_boost(ctx)

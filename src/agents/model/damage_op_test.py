@@ -173,7 +173,6 @@ def test_typed_hp_distinct_effectiveness():
 
     grass = [0.0] * 16; grass[_hp_slot("GRASS")] = 1.0
     ice = [0.0] * 16; ice[_hp_slot("ICE")] = 1.0
-    lg = _logits_hp_only(layout["max_moves"])
 
     ctx = _fake_ctx(op, defenders=defenders, hp_probs_active=[0.0] * 16, **attacker)
     g = op(ctx, _logits_hp_only(layout["max_moves"], grass))[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)
@@ -230,7 +229,6 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    grow = TEAM_SIZE * _DMG_PER_MON + _DMG_CB
     # gen3_no_concat_v1: the flat block no longer enters EITHER projection — pi is
     # untouched by the op; vf gains exactly the multi-seed readout window (k*dim),
     # independent of the op's out_dim.
@@ -568,7 +566,6 @@ def test_topk_off_path_projection_dims_unchanged():
     base, _ = _make_model(**common)
     on, _ = _make_model(**common, damage_topk_k=_DMG_TOPK_DEFAULT_K, damage_matrices_incoming=True)
     assert base.damage_op.topk_k == 0 and on.damage_op.topk_k == _DMG_TOPK_DEFAULT_K
-    grow = _dmg_imx_dim(_DMG_TOPK_DEFAULT_K)
     # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
     # these configs carry the op (and so the fixed-width seed window) — no delta at all.
     assert on.projection_input_dim == base.projection_input_dim
@@ -1050,7 +1047,7 @@ def test_incoming_matrix_cell_physics_and_immunity():
     # slot 0 = Electric active (EQ 2× SE), slot 1 = a Flying pivot (Ground-immune).
     ctx = _topk_ctx(op, attacker_num=248, attacker_t1=_T2I["ROCK"], attacker_t2=_T2I["DARK"],
                     defenders=[(0, _T2I["ELECTRIC"], 0), (0, _T2I["FLYING"], 0)] + [(0, 0, 0)] * 4)
-    out = op(ctx, _logits_moves(layout["max_moves"], [eq]), None, _synth_latent(layout))
+    op(ctx, _logits_moves(layout["max_moves"], [eq]), None, _synth_latent(layout))
     dec = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
     s = op.last_topk_idx[0].tolist().index(eq)                          # EQ's top-K slot
     active = dec["incoming_matrix"]["per_defender"][0][s]               # Electric active
@@ -1069,7 +1066,7 @@ def test_incoming_matrix_header_effect_and_secondary():
     roar, bodyslam = _move_num("roar"), _move_num("bodyslam")
     ctx = _topk_ctx(op, attacker_num=248, attacker_t1=_T2I["NORMAL"], attacker_t2=0,
                     defenders=[(0, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5)
-    out = op(ctx, _logits_moves(layout["max_moves"], [roar, bodyslam]), None, _synth_latent(layout))
+    op(ctx, _logits_moves(layout["max_moves"], [roar, bodyslam]), None, _synth_latent(layout))
     dec = decode_damage_block(op.last_raw_block[0].detach().numpy(), outgoing=False, matrices_incoming_k=K)
     idx = op.last_topk_idx[0].tolist()
     h_roar = dec["incoming_matrix"]["moves"][idx.index(roar)]
@@ -1276,7 +1273,6 @@ def test_op_modifiers_match_cpu_reference_which_is_showdown_fuzz_validated():
     burned = cpu.gen3_damage_max(100, 300, 200, stab=False, type_eff=1.0, burned=True)
     assert burned == pytest.approx(0.5 * base, rel=0.02)
     # 5. weather: op _weather_mult == CPU weather_damage_mult for Water/Fire in rain/sun.
-    one = torch.ones(1, 1)
     def op_w(weather_idx, is_water, is_fire):
         wf = torch.zeros(1, 7); wf[0, weather_idx] = 1.0
         return DamageOperator._weather_mult(wf, torch.tensor([[float(is_water)]]),

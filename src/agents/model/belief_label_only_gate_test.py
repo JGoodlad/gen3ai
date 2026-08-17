@@ -343,15 +343,28 @@ def test_alpha_is_cut_under_intent_value_reduce():
 
 def test_supervision_keys_are_exactly_what_the_forward_registers():
     """A key in the frozenset but never registered is a loss silently reading `None`; one registered
-    but absent from the set cannot be read at all (the accessor raises)."""
+    but absent from the set cannot be read at all (the accessor raises).
+
+    gen3_extractor_stashes_v1 unified the registration convention: a head that did not RUN this
+    forward registers NOTHING (key absent => `belief_supervision()` returns None) — the old
+    else-branch `= None` registrations for OFF heads went with the container's entry reset. The
+    expected-absent set is therefore derived from which heads THIS config builds, not hand-listed."""
     model, enc = _build_real_policy(belief_grad_mode="label_only")
     fe = model.policy.features_extractor
     fe(_obs(enc))
     registered = set(fe._belief_supervision)
+    not_built = set()
+    if fe.alpha_head is None:
+        not_built |= {"alpha_logits", "beta_logits"}     # need --opp-intent-coef
+    if fe.spread_belief is None:
+        not_built |= {"spread_belief", "spread_nature_logits", "spread_ev"}
+    if fe.item_belief_head is None:
+        not_built |= {"item_logits"}                     # need --item-belief-coef
+    if fe.move_belief is None:
+        not_built |= {"move_belief_logits", "hp_type_logits"}
     missing = _BELIEF_SUPERVISION_KEYS - registered
-    # alpha/beta_logits need --opp-intent-coef, which this config does not build.
-    assert missing <= {"alpha_logits", "beta_logits"}, \
-        f"declared but never registered: {sorted(missing)}"
+    assert missing == not_built, \
+        f"declared but never registered: {sorted(missing)} (heads not built: {sorted(not_built)})"
     assert not registered - _BELIEF_SUPERVISION_KEYS, (
         f"registered but undeclared (unreadable via belief_supervision): "
         f"{sorted(registered - _BELIEF_SUPERVISION_KEYS)}")

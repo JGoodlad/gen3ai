@@ -72,10 +72,10 @@ def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings: Dict[str, A
         space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
         sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
         kw = {k: v for k, v in arch_kwargs.items() if k in sig}
-        # `Gen3FeaturesExtractor` annotates `observation_space: spaces.Dict`, but never READS the
-        # parameter — every serverless probe path (here, `compile_prewarm`, `feature_coverage`)
-        # passes the flat `Box` the encoder describes. The annotation is the false half.
-        fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()  # type: ignore[arg-type]
+        # `Gen3FeaturesExtractor` never READS `observation_space` (its annotation says so —
+        # `spaces.Space`, deliberately unread); every serverless probe path passes the flat
+        # `Box` the encoder describes.
+        fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()
         if hasattr(fe, "disable_observation_debugger"):
             fe.disable_observation_debugger()
         with torch.no_grad():

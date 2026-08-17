@@ -51,7 +51,6 @@ def test_model_full_embedding_forensics():
     obs[pk0_start + POKEMON_ABILITIES_OFFSET + ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM] = 1.0  # known
     # Move 0: Surf (ID 57), Known=1, partially depleted PP (8 current / 24 max)
     m_slot_layout = layout['pokemon']['moves']['layout']['slot_layout']
-    reactive_layout = layout['reactive_layout']
     from agents.observation.constants import MAX_PP
     _cur_pp, _max_pp = 8, 24
     obs[pk0_start + POKEMON_MOVES_OFFSET + 0] = 57.0
@@ -77,12 +76,6 @@ def test_model_full_embedding_forensics():
     emb_dim = layout['move_embedding_dim'] + layout['type_embedding_dim']  # 32
     remnant_dim = model.pokemon_encoder.move_remnant_dim                    # 6
     known_idx    = emb_dim + remnant_dim                                    # 38
-    gl = layout.get('global_layout', {}); rl = layout.get('reactive_layout', {})
-    ctx_dim = (1 + 1
-               + gl.get('weather', {}).get('dim', 6)
-               + rl.get('fainted', {}).get('dim', 2)
-               + gl.get('hazards', {}).get('dim', 2))                      # 12
-    hp_probs_idx = known_idx + 1 + ctx_dim   # gen3_entity_rehome_v1: HP-candidate block follows ctx
 
     # PP indices: current_pp and max_pp sit in the remnants block just before the known flag
     _rem1 = m_slot_layout['type']['offset'] - m_slot_layout['power']['offset']         # 3
@@ -97,13 +90,7 @@ def test_model_full_embedding_forensics():
     assert float(m0_features[current_pp_idx]) < float(m0_features[max_pp_idx]),   "current_pp should be less than max_pp for depleted move"
 
     # Compute role_input known-flag indices from layout
-    pk_layout = layout['pokemon']
-    items_info = pk_layout['items']; items_layout = items_info['layout']
-    item_known_idx = (layout['move_embedding_dim'] * 2 + 6   # species_emb(32) + stats(6) + item_emb(16)
-                      - layout['move_embedding_dim']          # undo double-count: species=32, item=16
-                      + items_info['offset'] - pk_layout['species']['offset'] - 1  # offset within pokemon
-                      )
-    # Simpler: compute directly from known layout offsets in role-encoder input
+    # Compute directly from known layout offsets in role-encoder input
     # role input = species_emb(32) + stats(6) + item_emb(16) + item_known(1) + item_consumed(1)
     #             + pk_types(32) + ability1_emb(16) + ability2_emb(16) + dominance(1)
     #             + ability_known(1) + ...

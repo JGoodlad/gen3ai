@@ -17,7 +17,6 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -67,8 +66,6 @@ def _registry_names(fe, layout):
     fe.eval()
     with torch.no_grad():
         fe(obs)   # populate the stashes the generator reads
-        # re-run the generator standalone to enumerate it
-        ctx = None
     # Names are observed during a real forward instead: monkey-count via a wrapper
     names = []
     orig = fe._value_pooled_routes

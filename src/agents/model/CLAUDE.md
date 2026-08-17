@@ -350,6 +350,28 @@ via `self.stash`, and never add a bare `self.last_x = …` attribute. The extrac
 stashes are typed the same way (`PointerInputs`, `ThresholdProbs` — NamedTuples, so positional
 unpacks keep working).
 
+**The EXTRACTOR's side values follow the same contract (`gen3_extractor_stashes_v1`).** Every
+per-forward stash `Gen3FeaturesExtractor` exposes — `last_pointer_inputs`, the α/β intent trio,
+every belief publication (`last_move_belief_logits`, `last_spread_*`, `last_item_logits`,
+`last_hp_type_logits`, `last_belief_logits`, `last_opp_believed_mask`, `last_opp_active_local`,
+`last_move_latent_table`), `last_damage_block`, `last_value_pooled`, `last_win_prob_logits`,
+`last_value_dist_logits`, the internal T0→T1/T2 hand-offs (`t0_species_probs`,
+`entity_latent_table`, `thresh_probs`) and the LIVE `belief_supervision` dict — lives in ONE
+`ExtractorStashes` dataclass that `forward_internal` replaces at ENTRY. Same rules: **reads** on
+the `last_*` properties (every cross-module consumer — the policy's pointer head + dist critic,
+`instrumented_ppo`, the prober, inference — uses the typed properties, never `getattr(..., None)`);
+**writes** through `fe.stash.<field>`; a stray write to a `last_*` name raises. When you add a
+stash: add the dataclass field with its shape comment, write via `self.stash`, add the read-only
+property if it has an external consumer — never a bare `self.last_x = …` attribute. The
+publication/stop-grad semantics (`_publish_belief` / `belief_supervision()`) are unchanged — the
+supervision dict rides the container, so its per-forward clear IS the entry replacement.
+Boundary rule: each producer module owns its own stash surface — the op keeps `OpStashes`,
+`PokemonEncoder` keeps `last_move_tokens` (written unconditionally every encoder forward, read in
+the same extractor forward) — a submodule never writes into its parent's container. Related
+fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under `--value-from-dist` RAISES when the
+dist head/logits are missing or batch-stale instead of falling back to the FROZEN scalar
+`value_net` (the silently-wrong-critic shape v89 exposed). Gate: `extractor_stashes_test.py`.
+
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
 `BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written

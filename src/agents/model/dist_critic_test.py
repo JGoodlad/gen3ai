@@ -46,11 +46,30 @@ def test_critic_value_uses_scalar_when_off():
     assert abs(v.item() - 7.0) < 1e-6                     # the scalar value_net
 
 
-def test_phase_b_falls_back_to_scalar_if_logits_missing():
-    """Defensive: value_from_dist ON but the head hasn't stashed logits → scalar, never a crash."""
+def test_phase_b_raises_if_logits_missing():
+    """gen3_extractor_stashes_v1 (task 3): value_from_dist ON + no stashed logits must RAISE.
+    Under Phase B the scalar value_net is FROZEN, so the old silent fallback to it was a
+    silently-wrong critic — the exact shape of the v89 orphaned-route bug. Never degrade."""
     p = _fake_policy(True, logits=None, scalar=7.0)
-    v = p._critic_value(th.zeros(1, 4))
-    assert abs(v.item() - 7.0) < 1e-6
+    with pytest.raises(RuntimeError, match="FROZEN under value_from_dist"):
+        p._critic_value(th.zeros(1, 4))
+
+
+def test_phase_b_raises_if_head_missing():
+    """Same guard, other half: value_from_dist ON but the extractor built no dist head."""
+    p = _fake_policy(True, logits=th.zeros(1, 3), scalar=7.0)
+    p.features_extractor.value_dist_head = None
+    with pytest.raises(RuntimeError, match="no value_dist_head"):
+        p._critic_value(th.zeros(1, 4))
+
+
+def test_phase_b_raises_on_stale_batch():
+    """A batch-size mismatch between the stashed logits and latent_vf is a stale cross-batch
+    read (the extractor forward and the critic read came from different batches) — loud, never
+    a silently mis-aligned value."""
+    p = _fake_policy(True, logits=th.zeros(2, 3), scalar=7.0)
+    with pytest.raises(RuntimeError, match="stale value-dist stash"):
+        p._critic_value(th.zeros(1, 4))
 
 
 def test_value_from_dist_migrates_and_gates():

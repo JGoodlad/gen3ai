@@ -14,37 +14,17 @@ Verified by `tmp/damage_op_equiv_probe.py` (pi/vf/op-block bit-identical) + the 
 for a refactor that claims to change nothing.
 """
 import torch
-from torch.utils.checkpoint import checkpoint
-import numpy as np
-from dataclasses import dataclass, replace
-from gymnasium import spaces
-from typing import Callable, Dict, Any, Optional, Sequence, Tuple, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
 from agents.observation.constants import (
-    TRACE_INTERVAL,
     TEAM_SIZE,
-    GLOBAL_ENV_DIM,
-    POKEMON_FULL_DIM,
-    POKEMON_HP_PROBS_OFFSET,
-    POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_SPREAD_OFFSET,
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
-    POKEMON_COUNTER_OFFSET,
-    POKEMON_SLEEP_BELIEF_OFFSET,
-)
-from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-from agents.model.damage_tables import (N_SECONDARY as _N_SECONDARY,
-                                        SECONDARY_COLS as _SECONDARY_COLS, LEECH_SEED_CAT,
-                                        _SLP_CAT as _SLP_STATUS_CAT)
-from agents.observation.turn_delta_encoder import (
-    TURN_DELTA_DIM,
-    EFF_DIM,
-    ORDER_DIM,
-    TURN_DELTA_EMBEDDED_IDS,
-    TURN_DELTA_SCALAR_OFFSETS,
-)
-from agents.action.constants import ACTION_SPACE_SIZE
-from utils.logging.levels import LogLevel
+    POKEMON_COUNTER_OFFSET,  # noqa: F401  (re-export — consequence_edges_test imports it from here)
+    )
+# re-export — op_block_split_audit.py reads `D._N_SECONDARY` off this module
+from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY  # noqa: F401
 from agents.model.arch_constants import (  # noqa: F401  (re-export)
     ROLE_TOKEN_SIZE,
     PROJECTION_DIM,

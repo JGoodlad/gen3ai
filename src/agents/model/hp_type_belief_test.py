@@ -500,7 +500,7 @@ def test_flat_leaves_the_typed_channels_to_the_move_head():
     composition. Concretely: perturbing the MOVE head's typed-HP row moves the posterior there, and the
     composition's constraint is NOT applied (the typed weights need not sum to the presence)."""
     from agents.model.features_extractor import mask_typeless_hp
-    m = _ab("flat")
+    _ab("flat")   # construction must succeed in the flat arm
     raw = _raw_logits()
     ice_num = int(dt._hp_typed_nums()[_hp_idx("ICE")])
     raw[:, :, ice_num] = 4.0                                  # the head likes HP-Ice

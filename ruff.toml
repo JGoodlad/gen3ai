@@ -37,34 +37,8 @@ extend-exclude = ["src/poke_env", "src/rust_sim"]
 # larger than the public-star set.
 "src/agents/model/features_extractor.py" = ["F401"]
 
-# ------------------------------------------------- TEMPORARY — a HANDOFF, not a pattern
-#
-# ⚠️ EVERYTHING BELOW IS ORDINARY DEAD CODE: an unused import, a local assigned and never read,
-# an `f` prefix on a string with no placeholder. None of it is deliberate and none of it should
-# be kept. It is ignored ONLY because these files were being rewritten by a concurrent
-# type-annotation change when this gate landed, and racing another writer in the same files was
-# the worse trade. This list is meant to shrink to nothing on the next pass over the package.
-#
-# TO CLOSE an entry: delete the line, re-run the gate, remove the dead binding/import/prefix.
-# Every one is a one-line change; `ruff check --fix` handles most of them.
-
-# 25 unused imports left behind by `gen3_damage_op_split_v1` (the operator was carved out of
-# features_extractor.py and kept that file's whole import block). The docstring calls these a
-# re-export surface, but MEASURED that is true of exactly ONE of them: `POKEMON_COUNTER_OFFSET`
-# is imported from here by `consequence_edges_test.py`. KEEP that one; the other 24 — `numpy`,
-# `gymnasium.spaces`, `typing.Callable`/`Sequence`, `torch.utils.checkpoint.checkpoint`,
-# `dataclasses.replace`, the TURN_DELTA_* group, LogLevel, … — have no consumer anywhere and are
-# simply deletable. Do NOT reclassify this as "permanent re-export" without re-measuring.
-"src/agents/model/damage_op.py" = ["F401"]
-
-"src/agents/model/arch_tables.py" = ["F541"]
-"src/agents/model/observation_debugger.py" = ["F541"]
-"src/agents/model/damage_op_blocks.py" = ["F841"]
-"src/agents/model/damage_op_pairwise.py" = ["F841"]
-"src/agents/model/compile_trainer_test.py" = ["F841"]
-"src/agents/model/consequence_edges_test.py" = ["F841"]
-"src/agents/model/damage_op_test.py" = ["F841"]
-"src/agents/model/hp_type_belief_test.py" = ["F841"]
-"src/agents/model/model_embedding_test.py" = ["F841"]
-"src/agents/model/value_entity_pool_test.py" = ["F401"]
-"src/agents/model/value_route_gradient_test.py" = ["F401", "F841"]
+# (The TEMPORARY handoff section is CLOSED — gen3_extractor_stashes_v1, 2026-08-17: every
+# dead import / unused local / bare-f prefix it deferred was deleted at the source. The one
+# measured re-export among them — `POKEMON_COUNTER_OFFSET` in damage_op.py, consumed by
+# `consequence_edges_test.py` — survives with an inline `# noqa: F401` naming its consumer.
+# Do not re-grow a blanket per-file entry here for ordinary dead code; fix it instead.)

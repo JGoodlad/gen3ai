@@ -545,7 +545,7 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        logits = getattr(extractor, "last_value_dist_logits", None)
+        logits = extractor.last_value_dist_logits
         if logits is None:
             return None
         return torch.softmax(logits[0], dim=-1).detach().cpu().numpy()
@@ -565,7 +565,7 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        logits = getattr(extractor, "last_win_prob_logits", None)
+        logits = extractor.last_win_prob_logits
         if logits is None:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
@@ -702,8 +702,8 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        logits = getattr(extractor, "last_belief_logits", None)
-        bmask = getattr(extractor, "last_opp_believed_mask", None)
+        logits = extractor.last_belief_logits
+        bmask = extractor.last_opp_believed_mask
         if logits is None or bmask is None or "species" not in logits:
             return None
         return (logits["species"][0].detach().cpu().numpy(),
@@ -735,7 +735,7 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        raw = getattr(op, "last_raw_block", None)            # the op stashes on ITSELF, not the extractor
+        raw = op.last_raw_block                              # the op stashes on ITSELF, not the extractor
         if raw is None:
             return None
         # The discrete incoming move-space is decoded at the op's `matrices_incoming_k` (the lean top-K
@@ -750,7 +750,7 @@ class ProbeModel:
         # Resolve each candidate move to its EXACT name from the op's stashed indices (the op knows which
         # candidate it picked — better than a nearest-latent decode); `last_topk_idx` is set by
         # `_incoming_matrix`.
-        idx = getattr(op, "last_topk_idx", None)
+        idx = op.last_topk_idx
         if idx is not None:
             names = self._topk_move_names(op, [int(c) for c in idx[0].detach().cpu().tolist()])
             blk = view.get("incoming_matrix")
@@ -805,7 +805,7 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        logits = getattr(extractor, "last_move_belief_logits", None)
+        logits = extractor.last_move_belief_logits
         if logits is None:
             return None
         probs = torch.sigmoid(logits)[0].detach().cpu().numpy()        # [6, n_moves] P(move in slot's set)
@@ -856,10 +856,10 @@ class ProbeModel:
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
             self._policy.extract_features({"observation": ot, "action_mask": mt})
-        sb = getattr(extractor, "last_spread_belief", None)
+        sb = extractor.last_spread_belief
         if sb is None:
             return None
-        bmask = getattr(extractor, "last_opp_believed_mask", None)
+        bmask = extractor.last_opp_believed_mask
         bm = bmask[0].detach().cpu().numpy().astype(bool) if bmask is not None else None
         # Per opp slot: the REVEALED species id (obs-slot order; "" when hidden) so the engine can match the
         # believed spread row → the true mon. Mirrors `move_belief`'s _slots decode (authoritative known bit).

@@ -6,7 +6,6 @@ end-of-__init__ zero-Linear sweep); the policy half is untouched at ANY weight, 
 init (vf-only by placement); and a masked entity row gets zero attention. Plus the fail-loud
 op-rows requirement and the v80 migration stamp.
 """
-import inspect
 
 import numpy as np
 import pytest

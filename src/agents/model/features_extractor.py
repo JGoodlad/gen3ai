@@ -1,7 +1,7 @@
 import torch
 from torch.utils.checkpoint import checkpoint
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from gymnasium import spaces
 from typing import Callable, Dict, Any, Iterator, Optional, Sequence, Tuple, NamedTuple
 from agents.observation.constants import (
@@ -220,6 +220,59 @@ from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
 
 
 
+@dataclass
+class ExtractorStashes:
+    """Every per-forward SIDE VALUE the extractor exposes, as ONE typed unit
+    (`gen3_extractor_stashes_v1` — the OpStashes recipe applied to the orchestrator). The v89
+    lesson made the cost of the old pattern concrete: phases communicated through mutable
+    `self.last_*` instance stashes, consumers — including other MODULES — read them with
+    `getattr`, and nothing type-level connected producer to consumer, so a consumer rewiring
+    silently orphaned five value routes for two generations. `forward_internal` replaces the
+    whole container at ENTRY, so a stale cross-batch read is unrepresentable for ANY stash.
+    Reads stay on the `fe.last_*` properties (the documented consumer surface — the policy's
+    pointer head + dist critic, instrumented_ppo's aux losses, the prober and inference all
+    keep their spelling); WRITES go through `fe.stash.<field>` — a stray write to a `last_*`
+    name now fails loud (AttributeError) instead of silently forking the state.
+
+    Every stash is leak-safe by construction: they are OUTPUTS of the forward, read by aux
+    losses / the prober / the policy heads, never fed back as inputs that could carry a label."""
+    # --- pointer / action head (read by Gen3DualHeadMaskablePolicy) -------------------------
+    pointer_inputs: Optional[PointerInputs] = None   # request-ordered move tokens + valid mask
+    #                                                  + our team tokens + the op's per-action cells
+    # --- intent heads (T2 publications — stop-grad under belief_grad_mode=label_only) --------
+    alpha_logits: Optional[torch.Tensor] = None      # [B,K+1] which believed move (or SWITCH)
+    alpha_seat_nums: Optional[torch.Tensor] = None   # [B,K] seat move NUMS (detached; loss labels)
+    beta_logits: Optional[torch.Tensor] = None       # [B,6] if they switch, to whom
+    thresh_probs: Optional[ThresholdProbs] = None    # T2-computed, read by the vf route at T3
+    # --- belief bank (publications; the LIVE views live in `belief_supervision`) -------------
+    belief_logits: Optional[Dict[str, torch.Tensor]] = None  # species/moves aux dict (refined opp)
+    opp_believed_mask: Optional[torch.Tensor] = None  # [B,6] bool: un-revealed opp slots
+    opp_active_local: Optional[torch.Tensor] = None   # [B] opp active idx (prober belief-row decode)
+    move_belief_logits: Optional[torch.Tensor] = None  # [B,6,n_moves] TYPED posterior (11 readers)
+    move_latent_table: Optional[torch.Tensor] = None   # [n_moves,MOVE_LATENT_DIM] grading target
+    spread_belief: Optional[torch.Tensor] = None       # [B,6,5] believed derived stats
+    spread_nature_logits: Optional[torch.Tensor] = None  # [B,6,25] (gen3_nature_ev_belief_v1)
+    spread_ev: Optional[torch.Tensor] = None           # [B,6,5] believed EVs
+    item_logits: Optional[torch.Tensor] = None         # [B,6,n_items] hidden-item posterior
+    hp_type_logits: Optional[torch.Tensor] = None      # [B,6,16] HP-type head (aux CE + prober)
+    # --- op / physics -------------------------------------------------------------------------
+    damage_block: Optional[torch.Tensor] = None        # [B,out_dim] prober decode; never read fwd
+    # --- value-side readouts ------------------------------------------------------------------
+    value_pooled: Optional[torch.Tensor] = None        # [B,D_MODEL] the FitNets HINT layer
+    win_prob_logits: Optional[torch.Tensor] = None     # [B,1] P(win) logit (aux BCE + prober)
+    value_dist_logits: Optional[torch.Tensor] = None   # [B,bins] dist-critic atoms (E[Z] source)
+    # --- same-forward hand-offs (T0 producer → T1/T2 consumer; internal, no `last_*` name) ----
+    t0_species_probs: Optional[torch.Tensor] = None    # T0 species resolve → every T1 pricing site
+    entity_latent_table: Optional[torch.Tensor] = None  # LIVE latent table → the E4 seat builder
+    # The LIVE (graph-carrying) belief outputs for the SUPERVISED aux losses only — see
+    # `belief_supervision()`. Under shaping/detached these are the identical objects the `last_*`
+    # stashes hold; under label_only the `last_*` stashes are their stop-grad publications.
+    # Container replacement at forward entry is what makes "key absent ⇒ the head did not run
+    # this forward" true (these hold graph-carrying tensors, so a stale one would backprop
+    # through a freed — or worse, a different minibatch's — graph).
+    belief_supervision: Dict[str, Optional[torch.Tensor]] = field(default_factory=dict)
+
+
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
@@ -293,7 +346,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     `self.embeddings` (shared) and are passed into the phases that need them. See
     `src/agents/model/CLAUDE.md` for the phase-module contract."""
 
-    def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
+    # `observation_space` is DELIBERATELY UNREAD. SB3 constructs every features extractor as
+    # `features_extractor_class(observation_space, **features_extractor_kwargs)`, so the positional
+    # parameter is its construction contract and cannot be dropped — but this extractor sizes
+    # everything from `layout` (Gen3ObservationEncoder.get_layout(), the single source of truth
+    # for every obs offset), never from the space. Tests and probes exploit that: they pass a
+    # plain Box of the right total_dim. Typed `spaces.Space` (not Dict) to record exactly that.
+    def __init__(self, observation_space: spaces.Space, layout: Optional[Dict[str, Any]] = None,
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
                  opp_belief_slots: bool = False,
@@ -331,6 +390,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  ):
         super().__init__()
+        # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
+        # builds the extractor from `features_extractor_kwargs`; every real construction passes
+        # it and `Embeddings` indexes it immediately — so absence fails loud HERE, with the fix
+        # named, instead of as a deep `TypeError: 'NoneType' object is not subscriptable`.
+        if layout is None:
+            raise ValueError(
+                "Gen3FeaturesExtractor requires layout=Gen3ObservationEncoder(mappings)"
+                ".get_layout() — pass it via features_extractor_kwargs (SB3) or directly. "
+                "The default of None exists only to satisfy SB3's keyword-forwarding "
+                "construction contract and is not a usable value.")
         self.layout = layout
         self.mappings = mappings
         self.log_level = log_level
@@ -386,25 +455,21 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.belief_grad_mode = belief_grad_mode
         self._belief_detach = (belief_grad_mode == "detached")
         self._belief_label_only = (belief_grad_mode == "label_only")
-        # The LIVE (graph-carrying) belief outputs, for the SUPERVISED aux losses only — see
-        # `belief_supervision`. Under shaping/detached these are the identical objects the `last_*`
-        # stashes hold; under label_only the `last_*` stashes are their stop-grad publications.
-        self._belief_supervision: Dict[str, Optional[torch.Tensor]] = {}
+        # gen3_extractor_stashes_v1: ALL per-forward side values live in ONE typed container,
+        # replaced at forward entry (see ExtractorStashes — the shape/consumer docs live on its
+        # fields). Reads go through the read-only `last_*` properties below the ctor; writes go
+        # through `self.stash.<field>`.
+        self.stash = ExtractorStashes()
 
         # Phase modules (constructed before the dummy forward below).
-        # `layout` is `Optional` in the signature only because SB3 builds a features extractor
-        # from `features_extractor_kwargs`; every real construction passes it, and the line below
-        # indexes it unconditionally — so the `arg-type`/`index` ignores on `layout` throughout
-        # this constructor all record that one un-narrowable fact, not a per-site judgement.
-        self.embeddings = Embeddings(layout)  # type: ignore[arg-type]
-        self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)  # type: ignore[arg-type]
+        self.embeddings = Embeddings(layout)
+        self.unpack = ObsUnpack(layout, attend_unrevealed_opponents=attend_unrevealed_opponents)
         # gen3_pointer_native_v1: the pointer action head is THE action head (no flat action_net in this
         # generation), but the MODULE lives on the POLICY (Gen3DualHeadMaskablePolicy._build — its ctx is
         # latent_pi, which does not exist at extractor time). The extractor's side of the contract is the
-        # per-forward stash `last_pointer_inputs` (request-ordered move tokens + valid mask + our team
+        # per-forward stash `stash.pointer_inputs` (request-ordered move tokens + valid mask + our team
         # tokens + the op's per-action cells), set unconditionally in forward_internal.
-        self.last_pointer_inputs: Optional['PointerInputs'] = None
-        self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)  # type: ignore[arg-type]
+        self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
         # gen3_entity_move_seats_v1 (v54, Stage 1): move ENTITY seats in the trunk — E3 (our active's
         # 4 request-ordered move tokens, unconditional) + E4 (the opp active's top-`entity_topk_seats`
         # believed threat moves, opt-in). The pointer head then reads the REFINED E3 seats (post-
@@ -429,14 +494,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.edge_bias_families = str(edge_bias_families or "off")
         self.edge_bias = (EdgeBias(self.edge_bias_families)
                           if self.edge_bias_families != "off" else None)
-        self.team_transformer = TeamTransformer(layout)  # type: ignore[arg-type]
+        self.team_transformer = TeamTransformer(layout)
         # The injection width IS the op reducer's `extra_dim`, computed by the SAME function the
         # reducer uses. It has to come from the pure helper rather than `self.damage_op`, because
         # the op is built ~250 lines BELOW this point and module construction order is load-bearing
         # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
         # every resume). A post-construction assert below ties the two together.
         _vti_dim = value_threat_inject_dim() if bool(value_threat_inject) else 0
-        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)  # type: ignore[arg-type]
+        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
@@ -477,12 +542,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_value_reduce_v1 (step 6). Requires BOTH operands to exist, and both
         # requirements are fail-loud rather than silently degrading: no alpha => nothing to weight
         # with; no op => nothing to weight. `stash_pair_cells` is what makes the op keep the
-        # un-reduced tensor at all, so an off run pays nothing.
-        # Declared BEFORE the projection-discovery forward, which runs while `alpha_head` is still
-        # unbuilt. Without this the discovery pass raises AttributeError on a name that does not
-        # exist yet — the term's WIDTH must be measurable before alpha exists, even though its VALUE
-        # cannot be.
-        self.last_alpha_logits: Optional[torch.Tensor] = None
+        # un-reduced tensor at all, so an off run pays nothing. (During the projection-discovery
+        # forward `alpha_head` is still unbuilt, so `stash.alpha_logits` stays None and the
+        # discovery convention below contributes correctly-shaped zeros.)
         self._intent_reduce_discovering = False
         self.intent_value_reduce = None
         if intent_value_reduce:
@@ -520,7 +582,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # computed once at the pointer stash (T2) and the vf half reads the stash at T3.
         self.intent_threshold_move = None
         self.intent_threshold_value = None
-        self._thresh_probs: Optional[ThresholdProbs] = None
         if intent_threshold:
             self.intent_threshold_move = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
             self.intent_threshold_value = IntentThresholdValue(D_MODEL)
@@ -583,22 +644,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
                 f"{opp_intent_grad_mode!r}")
         self.opp_intent_grad_mode = opp_intent_grad_mode
-        self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])  # type: ignore[index]
+        self.t0_species_prior = (T0SpeciesPrior(layout['max_species'])
                                  if t0_species_prior else None)
         self.belief_slots = BeliefSlots() if opp_belief_slots else None
         self.belief_head = (
-            BeliefHead(layout['max_species'], layout['max_moves'],  # type: ignore[index]
+            BeliefHead(layout['max_species'], layout['max_moves'],
                        species_prior_fusion=species_prior_fusion) if opp_belief_slots else None
         )
-        # Stashed each forward when belief is on (the species/moves[/latent] logits dict, or None);
-        # read by the vendored PPO train loop to add the aux loss. Carries grad — read+used in the same
-        # backward graph as the forward that produced it (per minibatch). See instrumented_ppo.
-        self.last_belief_logits: Optional[Dict[str, torch.Tensor]] = None
-        # Stashed each forward [B,6] bool: which opponent team slots are un-revealed (believed) — the
-        # single-sourced `ctx.opp_believed_mask`. A read-only side stash (does NOT change the forward
-        # output, so the off/baseline path stays byte-identical) so eval/forensic tooling can decode
-        # `last_belief_logits["species"]` for exactly the hidden slots (see inference/belief_decode.py).
-        self.last_opp_believed_mask: Optional[torch.Tensor] = None
+        # (`stash.belief_logits` — the per-minibatch aux dict, carries grad — and
+        # `stash.opp_believed_mask` are written each forward; see ExtractorStashes.)
         # Move belief (flag-guarded): predict + REINJECT the opp moveset into the slot tokens so the
         # believed moves flow into the policy/value readout. mode ∈ {off, revealed, unrevealed, both}
         # selects which opp slots are enriched + scored. OFF reproduces the baseline arch byte-for-byte.
@@ -630,16 +684,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # DELETED; a config that recorded `move_belief_prefuse=False` is REFUSED by the v71 migration
         # rather than silently re-ordered.
         self.move_belief = (
-            MoveBelief(layout['max_moves'], layout['move_embedding_dim'],  # type: ignore[index]
-                       prior_fusion=move_prior_fusion, n_species=layout['max_species'],  # type: ignore[index]
+            MoveBelief(layout['max_moves'], layout['move_embedding_dim'],
+                       prior_fusion=move_prior_fusion, n_species=layout['max_species'],
                        move_candidate_floor=move_candidate_floor)
             if move_belief_mode != "off" else None
         )
-        self.last_move_belief_logits: Optional[torch.Tensor] = None
-        # gen3_unified_move_system_v1: the [n_moves, MOVE_LATENT_DIM] context-free move-latent table,
-        # stashed each forward (training only) for the Stage-3 latent grading aux — a side stash, never
-        # fed forward (the per-slot latent is what flows; the table is the grading TARGET).
-        self.last_move_latent_table: Optional[torch.Tensor] = None
         # gen3_unified_spread_belief_v1: the THIRD belief leg — predicts the opp's hidden SPREAD (5 derived
         # stats) per slot, reinjected into the opp token, consumed by the DamageOperator (replacing its
         # hand-coded opp-spread constants). STRUCTURAL toggle (widens nothing in the projection — it enriches
@@ -654,10 +703,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_nature_ev_belief_v1: the op marginalises P(KO) over the head's nature distribution → requires it.
         self.spread_belief_enabled = spread_belief
         self.spread_belief_nature = spread_belief_nature
-        self.spread_belief = SpreadBelief(layout['max_species'], nature=spread_belief_nature) if spread_belief else None  # type: ignore[index]
-        self.last_spread_belief: Optional[torch.Tensor] = None
-        self.last_spread_nature_logits: Optional[torch.Tensor] = None   # [B,6,25] (gen3_nature_ev_belief_v1)
-        self.last_spread_ev: Optional[torch.Tensor] = None              # [B,6,5] believed EVs
+        self.spread_belief = SpreadBelief(layout['max_species'], nature=spread_belief_nature) if spread_belief else None
         # gen3_typed_hp_belief_v1 / gen3_hp_belief_ablation_v1: the opponent's Hidden Power is ALWAYS
         # reasoned about as the 16 DISCRETE TYPED moves — the old typeless-BP-0 candidate is gone in both
         # arms, because it was a correctness bug (a 0-damage "immune" reading of a revealed HP), not an
@@ -682,16 +728,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             raise ValueError(
                 f"hp_belief_mode must be one of composed|flat, got {hp_belief_mode!r}")
         self.hp_type_belief_head = (
-            HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])  # type: ignore[index]
+            HPTypeBelief(layout['max_species'], layout['type_embedding_dim'])
             if (self.move_belief is not None and self.hp_belief_mode == "composed") else None)
         # gen3_item_belief_v1: the hidden-ITEM posterior (Smogon prior ⊕ zero-init delta), the
         # BeliefBank's seventh head. The op consumes P(Choice Band) at the active slot in place
         # of its static usage scalar; OFF builds nothing (byte-identical).
         self.item_belief_head = (
-            ItemBelief(layout['max_species'], layout['max_items']) if item_belief else None)  # type: ignore[index]
-        self.last_item_logits: Optional[torch.Tensor] = None
-        self.last_hp_type_logits: Optional[torch.Tensor] = None
-        self._last_hp_type_post: Optional[torch.Tensor] = None
+            ItemBelief(layout['max_species'], layout['max_items']) if item_belief else None)
         # Differentiable damage operator (flag-guarded): consumes the move belief's PREDICTED moves for
         # the opp active and computes the believed-move incoming damage to each of our mons, fed to BOTH
         # heads. OFF reproduces the baseline arch byte-for-byte (no module, projection widths unchanged).
@@ -779,7 +822,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # `intent_* is not None`) whose implication this constructor enforces with a raise. That
         # invariant spans two objects, so no narrowing expresses it — hence the
         # `type: ignore[union-attr]` on each read. Same story for the `Optional` OpTensors views.
-        self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,  # type: ignore[arg-type]
+        self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
                                          prob_outspeed=threat_prob_outspeed,
@@ -919,7 +962,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
         self.assembler = ProjectionAssembler(
-            layout,  # type: ignore[arg-type]
+            layout,
             seed_per_mon=(self.damage_op.per_mon if self.damage_op is not None else 0))
 
         # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
@@ -933,13 +976,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             raise ValueError(f"win_prob_mode must be none|read_only|shaping, got {win_prob_mode!r}")
         self.win_prob_mode = win_prob_mode
         self.win_head = WinProbHead() if win_prob_mode != "none" else None
-        # Stashed each forward when the head is on (the [B,1] win logit, or None). Read by the PPO aux
-        # loss + the offline prober/eval; NEVER fed into pi/vf (the OUTCOME label can't leak).
-        self.last_win_prob_logits: Optional[torch.Tensor] = None
-        # Stashed EVERY forward (the [B,128] value-CLS pool). The FitNets distillation HINT layer — read by
-        # `instrumented_ppo._value_feat_distill` off both the student and teacher forwards. None until the
-        # first forward; never fed into pi/vf.
-        self.last_value_pooled: Optional[torch.Tensor] = None
+        # (`stash.win_prob_logits` [B,1] — the aux BCE + prober readout — and `stash.value_pooled`
+        # — the FitNets HINT layer `instrumented_ppo._value_feat_distill` reads — are written each
+        # forward; NEVER fed into pi/vf, so no label can leak.)
 
         # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
         # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no
@@ -968,9 +1007,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             ValueDistHead(value_dist_bins, value_dist_vmin, value_dist_vmax)
             if value_dist_mode != "none" else None
         )
-        # Stashed each forward when on (the [B, bins] per-atom logits, or None). Read by the (future)
-        # distributional aux loss + the offline prober/eval; NEVER fed into pi/vf (leak-safe side head).
-        self.last_value_dist_logits: Optional[torch.Tensor] = None
+        # (`stash.value_dist_logits` [B,bins] — the dist-critic/aux/prober readout — is written
+        # each forward; NEVER fed into pi/vf.)
 
         # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — see the class
         # docstring. Built as the LAST width-contributing module before the discovery forward,
@@ -988,8 +1026,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
 
         # gen3_event_window_v1 (Tier H-B): the event-seat consumer of the obs event window —
         # opt-in (OFF builds nothing, byte-identical); the obs block itself is unconditional.
-        self.history_events = EventSeats(layout) if history_events else None  # type: ignore[arg-type]
-        if history_events and 'event_window_n' not in layout:  # type: ignore[operator]
+        self.history_events = EventSeats(layout) if history_events else None
+        if history_events and 'event_window_n' not in layout:
             raise ValueError(
                 "history_events=True but the obs layout carries no event_window block — "
                 "the seats would attend over nothing.")
@@ -1006,7 +1044,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # assembled phases (the assembler returns a (pi_combined, vf_combined) pair).
         self._intent_reduce_discovering = True
         with torch.no_grad():
-            dummy_obs = torch.zeros((1, layout['total_dim']))  # type: ignore[index]
+            dummy_obs = torch.zeros((1, layout['total_dim']))
             pi_sample, vf_sample = self.forward_internal({"observation": dummy_obs})
             self._intent_reduce_discovering = False
             self.projection_input_dim = pi_sample.shape[1]
@@ -1049,11 +1087,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         if self.opp_intent:
             self.alpha_head = AlphaIntentHead(D_MODEL, _intent_ctx)
             self.beta_head = BetaSwitchHead(D_MODEL, _intent_ctx)
-        # Stashes read ONLY by the aux loss + the prober; never fed forward (leak-safe by construction:
-        # they are OUTPUTS of the forward, and the loss pairs them with a label the env supplies).
-        self.last_alpha_logits = None
-        self.last_alpha_seat_nums: Optional[torch.Tensor] = None
-        self.last_beta_logits: Optional[torch.Tensor] = None
+        # (alpha/beta stashes: read ONLY by the aux loss + the prober; never fed forward — see
+        # ExtractorStashes.)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so
@@ -1176,6 +1211,57 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     @property
     def hp_type_idx_map(self) -> torch.Tensor: return self.embeddings.hp_type_idx_map
 
+    # gen3_extractor_stashes_v1 — the READ surface over the typed stash container (see
+    # ExtractorStashes). Every consumer keeps its historical `last_*` spelling — the policy's
+    # pointer head + dist critic, instrumented_ppo's aux losses, the prober, inference — and a
+    # stray WRITE to any of these names raises AttributeError (no setter) instead of silently
+    # forking the state. Writes go through `self.stash.<field>` only.
+    @property
+    def last_pointer_inputs(self) -> Optional[PointerInputs]: return self.stash.pointer_inputs
+    @property
+    def last_alpha_logits(self) -> Optional[torch.Tensor]: return self.stash.alpha_logits
+    @property
+    def last_alpha_seat_nums(self) -> Optional[torch.Tensor]: return self.stash.alpha_seat_nums
+    @property
+    def last_beta_logits(self) -> Optional[torch.Tensor]: return self.stash.beta_logits
+    @property
+    def last_belief_logits(self) -> Optional[Dict[str, torch.Tensor]]: return self.stash.belief_logits
+    @property
+    def last_opp_believed_mask(self) -> Optional[torch.Tensor]: return self.stash.opp_believed_mask
+    @property
+    def last_opp_active_local(self) -> Optional[torch.Tensor]: return self.stash.opp_active_local
+    @property
+    def last_move_belief_logits(self) -> Optional[torch.Tensor]: return self.stash.move_belief_logits
+    @property
+    def last_move_latent_table(self) -> Optional[torch.Tensor]: return self.stash.move_latent_table
+    @property
+    def last_spread_belief(self) -> Optional[torch.Tensor]: return self.stash.spread_belief
+    @property
+    def last_spread_nature_logits(self) -> Optional[torch.Tensor]: return self.stash.spread_nature_logits
+    @property
+    def last_spread_ev(self) -> Optional[torch.Tensor]: return self.stash.spread_ev
+    @property
+    def last_item_logits(self) -> Optional[torch.Tensor]: return self.stash.item_logits
+    @property
+    def last_hp_type_logits(self) -> Optional[torch.Tensor]: return self.stash.hp_type_logits
+    @property
+    def last_damage_block(self) -> Optional[torch.Tensor]: return self.stash.damage_block
+    @property
+    def last_value_pooled(self) -> Optional[torch.Tensor]: return self.stash.value_pooled
+    @property
+    def last_win_prob_logits(self) -> Optional[torch.Tensor]: return self.stash.win_prob_logits
+    @property
+    def last_value_dist_logits(self) -> Optional[torch.Tensor]: return self.stash.value_dist_logits
+    # Private per-forward hand-offs with external test readers keep their names too (same
+    # read-only discipline; the T0->T1/T2 contract is documented on the dataclass fields).
+    @property
+    def _thresh_probs(self) -> Optional[ThresholdProbs]: return self.stash.thresh_probs
+    @property
+    def _entity_latent_table(self) -> Optional[torch.Tensor]: return self.stash.entity_latent_table
+    @property
+    def _belief_supervision(self) -> Dict[str, Optional[torch.Tensor]]:
+        return self.stash.belief_supervision
+
     # gen3_pointer_native_v1: the pointer head's per-action cell widths — the policy sizes the head's
     # Linears from these at build time (0 when the source op block is off, so a missing block narrows
     # the Linear instead of silently feeding zeros at a learned weight).
@@ -1232,7 +1318,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 f"{sorted(_BELIEF_SUPERVISION_KEYS)}. Add the key to _BELIEF_SUPERVISION_KEYS and "
                 "register the LIVE tensor where the head's stash is published."
             )
-        return self._belief_supervision.get(name)
+        return self.stash.belief_supervision.get(name)
 
     def _typed_hp_posterior(self, opp_tokens: torch.Tensor, ctx: ExtractorContext,
                             raw_move_logits: torch.Tensor
@@ -1289,11 +1375,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # publishing. `logits` is the TYPED posterior, so it carries BOTH the move head's and the
         # HP-type head's gradient — which is why the move BCE and the HP CE both keep training under
         # `label_only` while every forward consumer downstream reads the stop-grad publication.
-        self._belief_supervision["move_belief_logits"] = logits
-        self._belief_supervision["hp_type_logits"] = hp_logits
-        self.last_hp_type_logits = self._publish_belief(hp_logits)
+        self.stash.belief_supervision["move_belief_logits"] = logits
+        self.stash.belief_supervision["hp_type_logits"] = hp_logits
+        self.stash.hp_type_logits = self._publish_belief(hp_logits)
         logits = self._publish_belief(logits)  # type: ignore[assignment]
-        self._last_hp_type_post = hp_post                     # stashed for the typed-HP recompose
         enriched = self.move_belief.reinject_moves(  # type: ignore[union-attr]
             opp_tokens, mb_mask, self.embeddings.move_embedding, logits)
         # gen3_opp_hp_type_belief_v2: ALSO reinject the presence-gated expected TYPE embedding. This is
@@ -1333,35 +1418,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # reinject takes, is itself derived from believed). So the nature/EV stashes need no
             # publication of their own; they are registered here for the ONE rule ("a forward-consumed
             # belief head's stashes are published") rather than because a consumer reads them.
-            self._belief_supervision["spread_belief"] = _believed
-            self._belief_supervision["spread_nature_logits"] = _nat_logits
-            self._belief_supervision["spread_ev"] = _ev
-            self.last_spread_belief = self._publish_belief(_believed)
-            self.last_spread_nature_logits = self._publish_belief(_nat_logits)
-            self.last_spread_ev = self._publish_belief(_ev)
-        else:
-            self.last_spread_belief = None
-            self.last_spread_nature_logits = None
-            self.last_spread_ev = None
-            self._belief_supervision["spread_belief"] = None
-            self._belief_supervision["spread_nature_logits"] = None
-            self._belief_supervision["spread_ev"] = None
+            self.stash.belief_supervision["spread_belief"] = _believed
+            self.stash.belief_supervision["spread_nature_logits"] = _nat_logits
+            self.stash.belief_supervision["spread_ev"] = _ev
+            self.stash.spread_belief = self._publish_belief(_believed)
+            self.stash.spread_nature_logits = self._publish_belief(_nat_logits)
+            self.stash.spread_ev = self._publish_belief(_ev)
+        # (no else-clear needed: gen3_extractor_stashes_v1's entry reset left every field None and
+        # every supervision key absent)
         # gen3_item_belief_v1 (T0): the hidden-ITEM posterior on the same pre-transformer opp
         # tokens the other T0 beliefs read. The op consumes P(Choice Band) per opp slot (its
         # exactness gating stays op-side); the logits feed the bank's seventh CE row.
         if self.item_belief_head is not None:
             _item_logits, _item_post = self.item_belief_head(
                 opp_tokens, ctx.species_ids[:, TEAM_SIZE:])
-            self._belief_supervision["item_logits"] = _item_logits
-            self.last_item_logits = self._publish_belief(_item_logits)
+            self.stash.belief_supervision["item_logits"] = _item_logits
+            _item_pub = self._publish_belief(_item_logits)
+            self.stash.item_logits = _item_pub
             # the op reads the PUBLICATION (stop-grad under label_only — the one consumer rule),
             # so cutting PPO→belief cuts the value-gradient route through the CB pricing too.
-            _item_cb_prob = (torch.softmax(self.last_item_logits, dim=-1)  # type: ignore[arg-type]
+            _item_cb_prob = (torch.softmax(_item_pub, dim=-1)  # type: ignore[arg-type]
                              [:, :, self.damage_op.cb_item_num]
                              if self.damage_op is not None else None)
         else:
-            self.last_item_logits = None
-            self._belief_supervision["item_logits"] = None
             _item_cb_prob = None
         # gen3_typed_hp_belief_v1: the opp-HP-TYPE head + its typed composition + its token reinjection all
         # moved UP into `_apply_move_belief`, where the move head reads the same tokens at the same time —
@@ -1372,7 +1451,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # (gen3_unified_topk_incoming_v1) the op's top-K candidate latents. The latter must be present in
         # rollout too (the op output feeds both heads), so when topk is on the table is built EVERY forward.
         # One `latent_table()` call, reused for both.
-        self.last_move_latent_table = None
         move_latent_all = None
         # The op's candidate latent table is needed in rollout (not just is_grad_enabled) when the incoming
         # per-move matrix is on — it gathers the per-move latent into the op output (which feeds both heads)
@@ -1387,7 +1465,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             enc = self.pokemon_encoder.move_latent_encoder
             latent_table = enc.latent_table(self.embeddings)                     # [n_moves, MOVE_LATENT_DIM]
             if torch.is_grad_enabled():
-                self.last_move_latent_table = latent_table                       # grading aux target
+                self.stash.move_latent_table = latent_table                      # grading aux target
             if need_topk_latent:
                 # gen3_opp_hp_typed_candidates_v1: the op's candidate axis is C = n_moves — the typed HPs are
                 # the real move-nums 355-370, whose latents already carry their type (move_emb[355-370] ⊕ the
@@ -1396,7 +1474,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 move_latent_all = latent_table                                   # [n_moves, MOVE_LATENT_DIM]
         # gen3_entity_move_seats_v1: LIVE stash for the E4 seat builder (same forward, read in
         # forward_internal right after this returns; live, not detached — the latent gradient rides).
-        self._entity_latent_table = move_latent_all if self.entity_topk_seats > 0 else None
+        self.stash.entity_latent_table = move_latent_all if self.entity_topk_seats > 0 else None
         # Differentiable damage op (flag-guarded; None when off): fed the move belief's PREDICTED moves for
         # the opp active. Forward-only, leak-free; its gradient flows back into the move/spread belief heads
         # via last_move_belief_logits / last_spread_belief.
@@ -1409,25 +1487,23 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if self.damage_op.grad_checkpointing and torch.is_grad_enabled():
                 damage_block = checkpoint(self.damage_op, ctx, self.last_move_belief_logits,
                                           self.last_spread_belief, move_latent_all,
-                                          self._t0_species_probs, _item_cb_prob,
+                                          self.stash.t0_species_probs, _item_cb_prob,
                                           use_reentrant=False)
             else:
                 damage_block = self.damage_op(ctx, self.last_move_belief_logits, self.last_spread_belief,
-                                              move_latent_all, self._t0_species_probs,
+                                              move_latent_all, self.stash.t0_species_probs,
                                               item_cb_prob=_item_cb_prob)
         # Read-only stash for the prober/forensic decode — never read by the forward, so off is unchanged.
-        self.last_damage_block = damage_block
+        self.stash.damage_block = damage_block
         return opp_tokens, damage_block
 
     def forward_internal(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Build the (pi_combined, vf_combined) pre-projection pair by chaining the phases."""
-        # gen3_belief_label_only_v1: drop the previous forward's LIVE supervision views, mirroring the
-        # `self.last_* = None` resets below. These hold graph-carrying tensors, so a stale one is worse
-        # than a stale stash: a loss reading it would backprop through a FREED graph (a confusing
-        # "backward through the graph a second time" error) or, worse, through activations from a
-        # different minibatch. Clearing is what makes "the key is absent ⇒ the head did not run this
-        # forward" true, which is the property `belief_supervision`'s None return relies on.
-        self._belief_supervision.clear()
+        # gen3_extractor_stashes_v1: replace the WHOLE stash container at ENTRY — no stash (nor a
+        # live belief-supervision view, which holds a graph-carrying tensor whose stale read would
+        # backprop through a freed or foreign graph) can survive into this forward. This one line
+        # is what makes a stale cross-batch read unrepresentable for every field at once.
+        self.stash = ExtractorStashes()
         ctx = self.unpack(obs)
         # gen3_t0_species_prior_v1: resolve the hidden opponent slots to a DISCRETE species
         # distribution HERE — still T0, before any T1 consumer — and hand the same tensor to every
@@ -1435,7 +1511,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # op block can then never disagree on a value, which is the invariant `pairwise_outgoing`'s
         # docstring already asserts for the physics. None (flag off) ⇒ every consumer falls through
         # to the static usage prior, byte-identically.
-        self._t0_species_probs = (
+        self.stash.t0_species_probs = (
             self.t0_species_prior(ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE],
                                   ctx.opp_believed_mask)
             if self.t0_species_prior is not None else None
@@ -1443,8 +1519,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Expose which opp slots are believed (hidden) so eval/forensic tooling can decode the belief
         # head's per-slot species prediction for exactly those slots. Read-only stash — never read by
         # the forward itself, so the off/baseline output is unchanged.
-        self.last_opp_believed_mask = ctx.opp_believed_mask
-        self.last_opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
+        self.stash.opp_believed_mask = ctx.opp_believed_mask
+        self.stash.opp_active_local = ctx.opp_active_local   # for the prober's belief-row decode
         role_tokens = self.pokemon_encoder(ctx, self.embeddings)
         # In-place hidden-opponent belief: replace the un-revealed opp slots with distinct learned
         # unknown-mon tokens BEFORE the transformer, so the body refines them and every readout
@@ -1456,10 +1532,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # species/team belief through the attention layers. The logits are stashed here; every
         # downstream consumer (damage op, E4 seats, edge cells, aux loss) reads the same
         # `last_move_belief_logits`. There is no second placement.
-        self.last_move_belief_logits = None
         if self.move_belief is not None:
-            opp_role, self.last_move_belief_logits = self._apply_move_belief(
+            opp_role, _mb_logits = self._apply_move_belief(
                 role_tokens[:, TEAM_SIZE:], ctx)
+            self.stash.move_belief_logits = _mb_logits
             role_tokens = torch.cat([role_tokens[:, :TEAM_SIZE], opp_role], dim=1)
         # T0 RESOLVE (spread/HP-type) → T1 REASON (the op). Run the WHOLE physics stack ONCE, here,
         # PRE-attention: the spread + HP-type beliefs read the raw opp role tokens (the move belief
@@ -1488,7 +1564,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         _seat_tokens, _seat_pad = self.entity_seats(
             _tok_req_raw, _move_valid, ctx, self.damage_op,
             self.last_move_belief_logits,
-            getattr(self, "_entity_latent_table", None))
+            self.stash.entity_latent_table)
         _seat_types = self.entity_seats.seat_types(ctx.device)
         # gen3_event_window_v1 (Tier H-B): the event seats join the extra seam LAST, so every
         # front-indexed seat slice (E3 [:4], E4 [4:4+K], the E5 tail) is position-stable, and
@@ -1520,13 +1596,13 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             _cells = {}
             if "d1" in _fams:
                 _cells["d1"] = self.damage_op.pairwise_outgoing(  # type: ignore[union-attr]
-                    ctx, _sb, species_probs=self._t0_species_probs)
+                    ctx, _sb, species_probs=self.stash.t0_species_probs)
             if "c1" in _fams:
                 # C1 (outgoing) reuses D1's current-world cells as its delta base when both are
                 # on; C1b (incoming) appends the defensive halves — one 6-wide consequence cell.
                 _cells["c1"] = torch.cat([
                     self.damage_op.pairwise_boost(ctx, _sb, base=_cells.get("d1"),  # type: ignore[union-attr]
-                                                  species_probs=self._t0_species_probs),
+                                                  species_probs=self.stash.t0_species_probs),
                     self.damage_op.pairwise_boost_incoming(  # type: ignore[union-attr]
                         ctx, self.last_move_belief_logits, k_cand=self.consequence_topk),  # type: ignore[arg-type]
                 ], dim=-1)
@@ -1611,7 +1687,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             edge_bias_fn=_edge_fn)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.
-        self.last_belief_logits = (
+        self.stash.belief_logits = (
             self.belief_head(their_team_out, ctx.species_ids[:, TEAM_SIZE:], ctx.opp_believed_mask)
             if self.belief_head is not None else None
         )
@@ -1666,15 +1742,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if not _keep:
                 _seat_feats, _ictx = _seat_feats.detach(), _ictx.detach()
             _seat_nums = _cand[0]                                                  # [B,K] move NUMS
-            self.last_alpha_seat_nums = _seat_nums.detach()
+            self.stash.alpha_seat_nums = _seat_nums.detach()
             _alpha = self.alpha_head(_seat_feats, _ictx, seat_valid=(_seat_nums > 0).float())
             # gen3_belief_label_only_v1: alpha is a pure readout UNTIL `--intent-value-reduce`, which
             # appends an alpha-weighted threat term to the CRITIC half (below) — that flag is what makes
             # the value gradient able to reach `alpha_head`, and therefore what puts alpha in the
             # label_only set. Publishing unconditionally keeps the one rule: a forward-consumed belief
             # head's stash IS the publication, so turning the flag on later cannot reopen the route.
-            self._belief_supervision["alpha_logits"] = _alpha
-            self.last_alpha_logits = self._publish_belief(_alpha)
+            self.stash.belief_supervision["alpha_logits"] = _alpha
+            self.stash.alpha_logits = self._publish_belief(_alpha)
             # BETA's candidates: every slot they could legally bring in. Legality is a MASK, never
             # something the head has to learn — an illegal switch-in must be unrepresentable.
             #
@@ -1699,8 +1775,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             # the LIVE view (the alpha pattern exactly).
             _beta_live = self.beta_head(  # type: ignore[misc]
                 their_team_out.detach(), _ictx, candidate_mask=_beta_mask)
-            self._belief_supervision["beta_logits"] = _beta_live
-            self.last_beta_logits = self._publish_belief(_beta_live)
+            self.stash.belief_supervision["beta_logits"] = _beta_live
+            self.stash.beta_logits = self._publish_belief(_beta_live)
         _tok_req = _seat_out[:, :4, :]
         if self.damage_op is not None and damage_block is not None:
             _mcells, _scells = self.damage_op.pointer_cells(damage_block)
@@ -1734,7 +1810,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # the pointer cells now; the vf block reads the stashed probs at the value tail (a
         # T2-produced tensor read at T3 — the allowed direction). The consumer reads
         # `last_alpha_logits` — the PUBLICATION, stop-grad under `belief_grad_mode=label_only`.
-        self._thresh_probs = None
         if self.intent_threshold_move is not None:
             _pair_cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
             if self._intent_reduce_discovering and (self.last_alpha_logits is None
@@ -1751,11 +1826,12 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
                     "incoming matrix that computes it).")
             else:
-                self._thresh_probs = threshold_probs(
+                _tp = threshold_probs(
                     self.last_alpha_logits, _pair_cells, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
                     ctx.our_active_idx)
+                self.stash.thresh_probs = _tp
                 _mcells = torch.cat([_mcells, self.intent_threshold_move(
-                    *self._thresh_probs, ctx.our_active_req_move_ids)], dim=2)
+                    *_tp, ctx.our_active_req_move_ids)], dim=2)
         # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — same
         # T1-producer/T2-consumer split, same publication read, same discovery convention.
         if self.intent_conditional is not None:
@@ -1790,7 +1866,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     ctx.our_active_req_move_ids, _po,
                     self.last_beta_logits, self.damage_op.last_out_pko,  # type: ignore[union-attr]
                     ctx.opp_active_local)], dim=2)
-        self.last_pointer_inputs = PointerInputs(
+        self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)
         belief = None
@@ -1824,7 +1900,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # distill loop can regress the student's value_pooled toward each teacher's on the teacher-team
         # states. NOT read by the forward → off-path/eval is byte-identical; carries grad on the student pass
         # (a live activation) so the cosine distill gradient flows into the shared trunk.
-        self.last_value_pooled = value_pooled
+        self.stash.value_pooled = value_pooled
         # Auxiliary win-probability readout (flag-guarded; None when off). Reads the whole-board
         # value_pooled and stashes a [B,1] logit for the aux loss + the prober/eval. NOT fed into the
         # assembler (a side readout — the future OUTCOME label can't leak into pi/vf). `read_only` feeds
@@ -1833,9 +1909,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # negligible and it is never gated off, since the prober reads it under no_grad.
         if self.win_head is not None:
             wp_in = value_pooled if self.win_prob_mode == "shaping" else value_pooled.detach()
-            self.last_win_prob_logits = self.win_head(wp_in)
-        else:
-            self.last_win_prob_logits = None
+            self.stash.win_prob_logits = self.win_head(wp_in)
         # Distributional VALUE readout (flag-guarded; None when off). Same value_pooled the win head
         # reads → per-atom return-distribution logits, stashed for the aux loss + prober/eval. NOT fed
         # into the assembler (a side readout — the value target can't leak into pi/vf). `read_only`
@@ -1843,9 +1917,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # every forward (one small MLP) so eval/inference can read the distribution too.
         if self.value_dist_head is not None:
             vd_in = value_pooled if self.value_dist_mode == "shaping" else value_pooled.detach()
-            self.last_value_dist_logits = self.value_dist_head(vd_in)
-        else:
-            self.last_value_dist_logits = None
+            self.stash.value_dist_logits = self.value_dist_head(vd_in)
         out: Tuple[torch.Tensor, torch.Tensor] = self.assembler(
                              our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
                              ctx, belief,

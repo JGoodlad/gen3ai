@@ -328,10 +328,10 @@ class RLPlayer(Gen3Player):
         believed moveset the across-battle trajectory tracks). None when the move-belief head is off
         (`--move-belief-mode none`). A lean per-decision row (n_moves floats), parallel to `value_dist`."""
         extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = getattr(extractor, "last_move_belief_logits", None)
+        logits = extractor.last_move_belief_logits if extractor is not None else None
         if logits is None:
             return None
-        active = getattr(extractor, "last_opp_active_local", None)
+        active = extractor.last_opp_active_local
         a = int(active[0].item()) if active is not None else 0
         a = max(0, min(a, int(logits.shape[1]) - 1))
         return torch.sigmoid(logits[0, a]).detach().cpu().numpy().tolist()
@@ -344,10 +344,10 @@ class RLPlayer(Gen3Player):
         `--spread-belief` is off. (The prober's per-decision spread PANEL re-runs the model for the full
         [6,5] vs the privileged true spread; this lean capture is for the offline axis-B trajectory.)"""
         extractor = getattr(self.model.policy, "features_extractor", None)
-        sb = getattr(extractor, "last_spread_belief", None)
+        sb = extractor.last_spread_belief if extractor is not None else None
         if sb is None:
             return None
-        active = getattr(extractor, "last_opp_active_local", None)
+        active = extractor.last_opp_active_local
         a = int(active[0].item()) if active is not None else 0
         a = max(0, min(a, int(sb.shape[1]) - 1))
         return sb[0, a].detach().cpu().numpy().tolist()
@@ -357,7 +357,7 @@ class RLPlayer(Gen3Player):
         stashed on this same forward (``last_win_prob_logits``); None when the head is off
         (``--win-prob-mode none``). sigmoid(logit) ⇒ probability the current state leads to a win."""
         extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = getattr(extractor, "last_win_prob_logits", None)
+        logits = extractor.last_win_prob_logits if extractor is not None else None
         if logits is None:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
@@ -381,8 +381,10 @@ class RLPlayer(Gen3Player):
         `opp_intent`), which is what the prober's `/battle` replay and `analyze` read.
         """
         extractor = getattr(self.model.policy, "features_extractor", None)
-        alogits = getattr(extractor, "last_alpha_logits", None)
-        seat_nums = getattr(extractor, "last_alpha_seat_nums", None)
+        if extractor is None:
+            return None
+        alogits = extractor.last_alpha_logits
+        seat_nums = extractor.last_alpha_seat_nums
         if alogits is None or seat_nums is None:
             return None
         from agents.model.opp_intent import render_alpha
@@ -397,7 +399,7 @@ class RLPlayer(Gen3Player):
         # Rounded on the way to disk: these ride EVERY captured decision of every captured battle,
         # and 15 significant figures of a display probability is trace weight with no reader.
         out = {"alpha": [{"name": r["name"], "p": round(float(r["p"]), 4)} for r in alpha]}
-        blogits = getattr(extractor, "last_beta_logits", None)
+        blogits = extractor.last_beta_logits
         if blogits is not None:
             bp = torch.softmax(blogits[0], dim=-1)
             named = self._slot_species()
@@ -412,7 +414,7 @@ class RLPlayer(Gen3Player):
         slot. Empty when the checkpoint has no species-belief head (then `β` rows carry a bare
         index, which is honest: nothing in the model can say what that slot holds)."""
         extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = getattr(extractor, "last_belief_logits", None)
+        logits = extractor.last_belief_logits if extractor is not None else None
         if logits is None or "species" not in logits:
             return {}
         from agents.inference.belief_decode import top_species_per_slot
@@ -425,7 +427,7 @@ class RLPlayer(Gen3Player):
         is off (``--value-dist-mode none``). The prober reconstructs the atom support from
         model_config.json's value_dist_vmin/vmax/bins to render the histogram + mean/std/entropy/PIT."""
         extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = getattr(extractor, "last_value_dist_logits", None)
+        logits = extractor.last_value_dist_logits if extractor is not None else None
         if logits is None:
             return None
         return torch.softmax(logits[0], dim=-1).cpu().numpy().tolist()
@@ -437,8 +439,10 @@ class RLPlayer(Gen3Player):
         returns None when the hidden-opponent belief is off / no slot is hidden. See belief_decode.py.
         """
         extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = getattr(extractor, "last_belief_logits", None)
-        mask = getattr(extractor, "last_opp_believed_mask", None)
+        if extractor is None:
+            return None
+        logits = extractor.last_belief_logits
+        mask = extractor.last_opp_believed_mask
         if logits is None or mask is None or "species" not in logits:
             return None
         species_logits = logits["species"][0].detach().cpu().numpy()   # [n_slots, n_species]

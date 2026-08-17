@@ -233,7 +233,6 @@ def test_validation_uses_a_small_batch_NOT_the_models_batch_size(monkeypatch):
 
 def test_an_explicit_batch_still_wins():
     """The CUDA property test passes batch=8 deliberately; the caller must stay in control."""
-    seen = {}
     m = _model("cpu")
     assert compile_trainer_extractor(m, False, batch=8) is None      # off short-circuits
 

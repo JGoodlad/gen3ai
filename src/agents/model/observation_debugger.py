@@ -101,7 +101,7 @@ class ObservationDebugger:
             opp_known = "" if td["opp_move_known"] else "  [unconfirmed]"
             faint_parts = (["us"] if td["we_fainted"] else []) + (["opp"] if td["opp_fainted"] else [])
             faint_str = f"   💀 fainted: {'/'.join(faint_parts)}" if faint_parts else ""
-            print(f"--- Last Turn ---")
+            print("--- Last Turn ---")
             print(f"  Us:  {_action_str(td['our_switched'], td['our_failed'], td['our_cant'], td['our_move']):{W}}")
             print(f"  Opp: {_action_str(td['opp_switched'], td['opp_failed'], td['opp_cant'], td['opp_move']) + opp_known:{W}}")
             print(f"  ΔHP  us={td['our_hp_delta']:+.2f}  opp={td['opp_hp_delta']:+.2f}{faint_str}")
@@ -122,7 +122,7 @@ class ObservationDebugger:
         print("\n" + "🧬" * 30)
         print(f"🧬 [DEEP TRACE — {n} turns ending at {time.strftime('%H:%M:%S')}]")
         print("=" * 60)
-        labels = [f"turn -2 (oldest)", "turn -1", "turn 0 (current)"][-n:]
+        labels = ["turn -2 (oldest)", "turn -1", "turn 0 (current)"][-n:]
         for obs_t, label in zip(self._trace_buffer, labels):
             self._print_one_turn(obs_t.cpu().numpy(), label)
         print("=" * 60 + "\n")

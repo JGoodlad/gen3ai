@@ -173,14 +173,33 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     def _critic_value(self, latent_vf: th.Tensor) -> th.Tensor:
         """The real-unit critic value used by GAE / bootstrap / deployment. Phase B: E[Z] from the
         distributional head (normalized) → _denorm (same PopArt peg as the scalar) → real units, so
-        the plumbing is byte-for-byte the scalar path except the source. Falls back to the scalar
-        value_net when off, or if the dist logits aren't stashed (defensive — never silently wrong)."""
+        the plumbing is byte-for-byte the scalar path except the source.
+
+        ⚠️ With ``_value_from_dist`` ON there is NO fallback (gen3_extractor_stashes_v1, task 3):
+        under Phase B the scalar ``value_net`` is FROZEN, so silently falling back to it would be a
+        silently-wrong critic — the exact shape of the v89 bug (a value source the training loop
+        believes in but that nothing updates). A missing head or un-stashed logits here means the
+        extractor forward and this critic read are mis-wired, and that must crash, not degrade.
+        With the flag OFF the scalar path is the correct critic, unchanged."""
         if self._value_from_dist:
             fe = self.features_extractor
-            head = getattr(fe, "value_dist_head", None)
-            logits = getattr(fe, "last_value_dist_logits", None)
-            if head is not None and logits is not None:
-                return self._denorm(head.mean(logits))
+            head = fe.value_dist_head
+            logits = fe.last_value_dist_logits
+            if head is None or logits is None:
+                raise RuntimeError(
+                    "_value_from_dist is ON but "
+                    + ("the extractor has no value_dist_head" if head is None
+                       else "last_value_dist_logits was not stashed by the preceding forward")
+                    + " — the scalar value_net is FROZEN under value_from_dist, so falling back "
+                    "to it would be a silently-wrong critic (the v89 orphaned-route class). "
+                    "Check that extract_features ran on THIS policy's extractor before the "
+                    "critic read, and that value_dist_mode != 'none'.")
+            if logits.shape[0] != latent_vf.shape[0]:
+                raise RuntimeError(
+                    f"stale value-dist stash: logits batch {logits.shape[0]} vs latent_vf "
+                    f"{latent_vf.shape[0]} — the extractor forward and this critic read are "
+                    "from different batches.")
+            return self._denorm(head.mean(logits))
         return self._denorm(self.value_net(latent_vf))
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> MaskableDistribution:
@@ -197,7 +216,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         head consumed, so the op block / beliefs / FiLM all condition every pointer score. Masking is
         applied by the callers on the returned distribution, downstream of these logits, exactly as
         before."""
-        inputs = getattr(self.features_extractor, "last_pointer_inputs", None)
+        inputs = self.features_extractor.last_pointer_inputs
         if inputs is None:
             raise RuntimeError(
                 "last_pointer_inputs is None — _get_action_dist_from_latent was called without a "

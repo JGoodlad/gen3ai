@@ -704,7 +704,7 @@ class DamageOperatorBlocks:
         status_lands reuses `_incoming_status_lands`. Decorrelated (belief gradient rides `w`, latent rides the
         gather). Meaningful-K gate (zero the 5th+ slot once all 4 opp moves are revealed). HP candidates carry
         zero effect/secondary (extended with zeros). Output `[B, _dmg_imx_dim(matrix_k)]`."""
-        B, device, eps = ctx.batch_size, ctx.device, 1e-6
+        B, device = ctx.batch_size, ctx.device
         K = matrix_k
         ar = torch.arange(B, device=device)
         topk_idx = w_all.detach().topk(K, dim=-1).indices                          # [B,K] (detached selection)
@@ -883,8 +883,7 @@ class DamageOperatorBlocks:
         major-vs-immobilize split is the decorrelation that matters for a SWITCH (a Ground pivot reads 0
         T-Wave immobilize even if it eats Toxic). Belief-weighted hard-max over K → the per-round gradient
         rides `w_topk` and sharpens the move belief toward status threats. `[B, TEAM_SIZE, _DMG_STATUS_REFINE]`."""
-        B, device = ctx.batch_size, ctx.device
-        ar = torch.arange(B, device=device)
+        B = ctx.batch_size
         has_opp = ctx.hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, -1].any(dim=1).float()   # [B]
         n_type = self.MOVE_STATUS_TYPE_IMMUNE.shape[1]
         # candidate selection — the SAME detached top-K over the move belief as discrete_incoming. C =
