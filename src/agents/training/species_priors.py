@@ -5,7 +5,7 @@ Every other belief leg in this codebase fuses a PRIOR with a learned DELTA
 exception — a bare ``Linear(D_MODEL, n_species)`` cold-starting ~uniform over ~400 nums. This
 derives the missing prior from the pool the runtime actually trains on
 (``data/teams/`` via :class:`utils.team_loader.TeamLoader`), as a committed calibration artifact
-in the ``gen3_team_archetypes`` / ``gen3_bot_elo_anchors`` / ``gen3_pubval`` pattern:
+in the ``gen3_team_archetypes`` / ``gen3_bot_elo_anchors`` pattern:
 
   ``data/teams/gen3_species_priors.json``
     * ``meta``      — n_teams, git hash, date, the species-id vocabulary basis, smoothing

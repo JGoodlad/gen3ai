@@ -45,7 +45,6 @@ _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
     ("spread_belief", "spread_belief"),
     ("hidden_opp_belief", "hidden_opp_belief"),
     ("win_head", "win_head"),
-    ("pubval_head", "pubval_head"),
     ("value_dist_head", "value_dist_head"),
     ("alpha_head", "alpha_head"),
     ("beta_head", "beta_head"),
@@ -73,14 +72,12 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "spread_belief": "spread_belief",
     "spread_belief_nature": "spread_belief",
     "win_prob_mode": "win_head",
-    "pubval_mode": "pubval_head",
     "value_dist_mode": "value_dist_head",
     "value_dist_bins": "value_dist_head",
     "value_dist_vmin": "value_dist_head",
     "value_dist_vmax": "value_dist_head",
     "value_threat_inject": "cls_pool.value_threat_proj",
     "intent_value_reduce": "intent_value_reduce",
-    "value_active_readout": "assembler",  # effect checked via the bool below, module always built
 }
 
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one
@@ -94,7 +91,6 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "opp_belief_aux_coef": "belief_head",
     "spread_belief_coef": "spread_belief",
     "win_prob_coef": "win_head",
-    "pubval_coef": "pubval_head",
     "value_dist_coef": "value_dist_head",
     "vf_coef": None,
     "value_tail_weight": None,
@@ -198,8 +194,6 @@ def head_input_parts(fe) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, in
         ("`value_pooled`", D, "`CLSPool.value_cls` over **all 12** team tokens"),
         ("`non_matchup_rest`", nmr, "shared with pi"),
     ]
-    if fe.assembler.value_active_readout:
-        vf.append(("`our_active_refined`", D, "`value_active_readout` — the active-mon read"))
     if fe.hidden_opp_belief is not None:
         row = (f"`hidden_opp_belief`", fe.opp_belief_cls_k * D,
                f"`HiddenOppBeliefPool` — k={fe.opp_belief_cls_k} × `D_MODEL`")

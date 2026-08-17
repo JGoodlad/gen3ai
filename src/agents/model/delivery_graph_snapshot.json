@@ -4359,7 +4359,7 @@
     },
     {
       "dst": "pointer.switch_logit[0]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4367,7 +4367,7 @@
     },
     {
       "dst": "pointer.switch_logit[1]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4375,7 +4375,7 @@
     },
     {
       "dst": "pointer.switch_logit[2]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4383,7 +4383,7 @@
     },
     {
       "dst": "pointer.switch_logit[3]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4391,7 +4391,7 @@
     },
     {
       "dst": "pointer.switch_logit[4]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4399,7 +4399,7 @@
     },
     {
       "dst": "pointer.switch_logit[5]",
-      "note": "incoming row + CB tail (NO offense read \u2014 matrices_outgoing_all is off)",
+      "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
@@ -4641,7 +4641,7 @@
     },
     {
       "dst": "pi_projection",
-      "note": "our active's refined token; vf does NOT read it unless value_active_readout",
+      "note": "our active's refined token; pi-only (the vf active readout route was deleted \u2014 superseded by the seed window, then the pool)",
       "pooled": false,
       "source_constant": "D_MODEL",
       "src": "our_active_refined",
@@ -5684,7 +5684,7 @@
     "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 87,
+    "config_version": 88,
     "edge_bias_families": [
       "c1",
       "c2",

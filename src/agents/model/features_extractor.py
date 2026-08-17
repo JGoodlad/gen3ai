@@ -3,7 +3,7 @@ from torch.utils.checkpoint import checkpoint
 import numpy as np
 from dataclasses import dataclass
 from gymnasium import spaces
-from typing import Callable, Dict, Any, Optional, Sequence, Tuple
+from typing import Callable, Dict, Any, Optional, Sequence, Tuple, NamedTuple
 from agents.observation.constants import (
     POKEMON_LAST_ACTION_OFFSET,
     TRACE_INTERVAL,
@@ -80,6 +80,18 @@ TOKEN_TYPE_GLOBAL = 3
 TOKEN_TYPE_OUR_MOVE = 4        # E3 — our active's 4 request-ordered move tokens
 TOKEN_TYPE_THEIR_THREAT = 5    # E4 — the opp active's top-K believed threat-move tokens
 NUM_TOKEN_TYPES = 6
+
+
+class PointerInputs(NamedTuple):
+    """The pointer action head's per-forward inputs (`gen3_op_stashes_v1`, extractor half):
+    request-ordered move seat tokens + validity, the refined team tokens, and the two
+    per-action cell blocks. A NamedTuple so `Gen3DualHeadMaskablePolicy`'s unpack keeps
+    working positionally while every consumer can name what it reads."""
+    move_tokens: torch.Tensor        # [B, 4, D_MODEL] refined E3 seats, request order
+    move_valid: torch.Tensor         # [B, 4]
+    team_tokens: torch.Tensor        # [B, 6, D_MODEL] our refined team tokens
+    move_cells: torch.Tensor         # [B, 4, move_cell_dim]
+    switch_cells: torch.Tensor       # [B, 6, switch_cell_dim]
 
 
 def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
@@ -1601,21 +1613,6 @@ class WinProbHead(torch.nn.Module):
         return self.net(value_pooled)
 
 
-class PubValHead(WinProbHead):
-    """PUBLIC-information value readout (`gen3_pubval_aux_v1`) — the WinProbHead architecture with a
-    different, EXOGENOUS target: the frozen HUMAN-replay-calibrated public value `V_pub(public board)`
-    (`agents.training.pubval`, 164k rated gen3ou games, held-out AUC ≈ 0.74, calibrated). Where the
-    win-prob head learns P(win) from SELF-PLAY outcomes (inheriting the bootstrap's blind spots — a
-    policy that never plays positionally never generates outcomes that price positional value), this
-    head regresses the trunk toward how HUMAN game outcomes price the same public board — hazards,
-    status, attrition, tempo — as a dense per-step target (V_pub moves turn by turn, so the trunk sees
-    WHEN the game swung, not only how it ended: the credit-assignment lever). Under `shaping` its
-    gradient flows into the shared trunk; the target is a pure function of PUBLIC state computed
-    env-side (leak-free: the POC's turn-1 AUC ≈ 0.51 guard), NEVER in pi/vf, and NEVER in GAE (it is
-    V^human, not V^π). Same module shape as WinProbHead (a named subclass so state_dict keys +
-    reprs are self-documenting)."""
-
-
 class ValueDistHead(torch.nn.Module):
     """Distributional VALUE readout — an INTERPRETABILITY side head over the return distribution.
 
@@ -1685,7 +1682,7 @@ BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
 # every one of these `last_*` stashes is a STOP-GRAD publication, and a supervised loss must read its
 # target through `Gen3FeaturesExtractor.belief_supervision(...)` instead.
 #
-# The other supervised heads — BeliefHead (species/moves/latent), WinProbHead, PubValHead,
+# The other supervised heads — BeliefHead (species/moves/latent), WinProbHead,
 # BetaSwitchHead — are STRUCTURALLY label-only already: they are
 # side readouts whose output never re-enters the forward, so no policy gradient can reach them in ANY
 # mode and there is nothing here to cut. `belief_label_only_gate_test.py` asserts that rather than
@@ -2561,20 +2558,12 @@ class ProjectionAssembler(torch.nn.Module):
     one direct path to the heads (no 1:1 replacement — its re-home is a separate decision).
     """
 
-    def __init__(self, layout: Dict[str, Any], value_active_readout: bool = False,
-                 seed_per_mon: int = 0):
+    def __init__(self, layout: Dict[str, Any], seed_per_mon: int = 0):
         super().__init__()
         # gen3_no_concat_v1: the critic's multi-seed window (None when the config has no op —
         # then there are no our_mon rows to read and vf keeps its pooled-only shape).
         self._seed_per_mon = seed_per_mon
         self.seed_readout = MultiSeedValueReadout(seed_per_mon) if seed_per_mon > 0 else None
-        # When True, the value head ALSO reads our_active_refined (the active mon's refined token).
-        # The dual-head (Option C) value readout pools the whole board (value_pooled) but DROPS the
-        # active-mon view the policy head keeps — a probe on a real checkpoint found the value rep
-        # predicts an incoming self-KO at AUC 0.79 vs the policy rep's 0.90 (and ≈ the raw-obs-linear
-        # 0.77, i.e. the critic isn't using the trunk's nonlinear KO reasoning). A critic blind to
-        # incoming KOs over-values pre-KO states → the V-tail crater. Off by default (clean A/B).
-        self.value_active_readout = value_active_readout
 
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
@@ -2591,10 +2580,6 @@ class ProjectionAssembler(torch.nn.Module):
         # itself lives on: pointer cells (policy, lossless per-action), prefuse token injection,
         # the D/S/C/V/T/X edge cells, and `last_raw_block` for the probes. The critic's
         # replacement window is the multi-seed readout below (vf only).
-        # Give the critic the active-mon readout it structurally lacked (see __init__): routes the
-        # trunk's nonlinear incoming-KO/threat reasoning into the value head so it can price the tail.
-        if self.value_active_readout:
-            vf_parts.append(our_active_refined)
         # Hidden-opponent belief (flag-guarded; None when off) feeds BOTH heads — the policy reads
         # the threat over the hidden team, the value reads its winning-ness. Appended last so the
         # off-by-default block layout is unchanged (the dummy forward auto-sizes the projections).
@@ -2629,7 +2614,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
     def __init__(self, observation_space: spaces.Dict, layout: Optional[Dict[str, Any]] = None,
                  mappings: Optional[Dict[str, Any]] = None, log_level: LogLevel = LogLevel.QUIET,
                  attend_unrevealed_opponents: bool = False, opp_belief_cls_k: int = 0,
-                 value_active_readout: bool = False, opp_belief_slots: bool = False,
+                 opp_belief_slots: bool = False,
                  move_belief_mode: str = "off",
                  damage_op: bool = False, move_prior_fusion: bool = False,
                  win_prob_mode: str = "none",
@@ -2660,10 +2645,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  entity_tail_seats: bool = False,
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
-                 damage_matrices_outgoing_all: bool = False,
                  threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
-                 pubval_mode: str = "none",
                  ):
         super().__init__()
         self.layout = layout
@@ -2734,7 +2717,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # latent_pi, which does not exist at extractor time). The extractor's side of the contract is the
         # per-forward stash `last_pointer_inputs` (request-ordered move tokens + valid mask + our team
         # tokens + the op's per-action cells), set unconditionally in forward_internal.
-        self.last_pointer_inputs: Optional[Tuple[torch.Tensor, ...]] = None
+        self.last_pointer_inputs: Optional['PointerInputs'] = None
         self.pokemon_encoder = PokemonEncoder(layout, move_latent=move_latent)
         # gen3_entity_move_seats_v1 (v54, Stage 1): move ENTITY seats in the trunk — E3 (our active's
         # 4 request-ordered move tokens, unconditional) + E4 (the opp active's top-`entity_topk_seats`
@@ -3087,15 +3070,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 "damage_matrices_incoming=True requires move_latent=True — the matrix header gathers each "
                 "move's identity LATENT. Enable --move-latent (--unified-moves), or drop the incoming matrix."
             )
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
-        # switch-in offense read). Requires damage_op (the op physics). Off byte-identical.
-        self.damage_matrices_outgoing_all = bool(damage_matrices_outgoing_all)
-        if self.damage_matrices_outgoing_all and not damage_op:
-            raise ValueError(
-                "damage_matrices_outgoing_all=True requires damage_op=True — the transposed outgoing matrix "
-                "(our 6 mons' moves → opp active) is emitted by the DamageOperator. Enable --damage-op "
-                "(--unified-damage), or drop --damage-matrices-outgoing-all."
-            )
         # gen3_topk_candidates_v1: the incoming candidate-sweep cap (0 = full ~400-wide sweep).
         self.damage_candidate_k = int(damage_candidate_k)
         if self.damage_candidate_k and not damage_op:
@@ -3117,7 +3091,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
-                                         matrices_outgoing_all=self.damage_matrices_outgoing_all,
                                          prob_outspeed=threat_prob_outspeed,
                                          candidate_k=self.damage_candidate_k,
                                          reduce_how=_reduce_how,
@@ -3254,9 +3227,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.move_candidate_floor = move_candidate_floor
         # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
         # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
-        self.value_active_readout = value_active_readout
         self.assembler = ProjectionAssembler(
-            layout, value_active_readout=value_active_readout,
+            layout,
             seed_per_mon=(self.damage_op.per_mon if self.damage_op is not None else 0))
 
         # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
@@ -3278,18 +3250,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # first forward; never fed into pi/vf.
         self.last_value_pooled: Optional[torch.Tensor] = None
 
-        # Auxiliary PUBLIC-VALUE head (tri-state `pubval_mode`, gen3_pubval_aux_v1): the WinProbHead
-        # pattern with the frozen HUMAN-replay-calibrated V_pub as the target (dense per-step, exogenous
-        # — see PubValHead's docstring). 'none' = no module (baseline byte-for-byte); 'read_only' =
-        # head-only training on a STOP-GRAD value_pooled; 'shaping' = the human positional prior also
-        # shapes the shared trunk. SIDE readout (stashed for the aux loss, never in pi/vf, never in GAE).
-        if pubval_mode not in ("none", "read_only", "shaping"):
-            raise ValueError(f"pubval_mode must be none|read_only|shaping, got {pubval_mode!r}")
-        self.pubval_mode = pubval_mode
-        self.pubval_head = PubValHead() if pubval_mode != "none" else None
         # Stashed each forward when the head is on (the [B,1] V_pub logit, or None). Read by the PPO
         # aux loss; NEVER fed into pi/vf.
-        self.last_pubval_logits: Optional[torch.Tensor] = None
 
         # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
         # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no
@@ -4135,7 +4097,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     ctx.our_active_req_move_ids, _po,
                     self.last_beta_logits, self.damage_op.last_out_pko,
                     ctx.opp_active_local)], dim=2)
-        self.last_pointer_inputs = (_tok_req, _move_valid, our_team_out, _mcells, _scells)
+        self.last_pointer_inputs = PointerInputs(
+            move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
+            move_cells=_mcells, switch_cells=_scells)
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
         # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the
@@ -4154,16 +4118,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_win_prob_logits = self.win_head(wp_in)
         else:
             self.last_win_prob_logits = None
-        # Auxiliary PUBLIC-VALUE readout (flag-guarded; None when off). Same value_pooled read as the
-        # win head → a [B,1] V_pub logit stashed for the aux loss (regressed toward the frozen
-        # human-replay-calibrated public value riding the training-only `pubval_target` obs key). NOT
-        # fed into the assembler (a side readout). `read_only` feeds a STOP-GRAD value_pooled;
-        # `shaping` lets the human positional prior shape the shared trunk.
-        if self.pubval_head is not None:
-            pv_in = value_pooled if self.pubval_mode == "shaping" else value_pooled.detach()
-            self.last_pubval_logits = self.pubval_head(pv_in)
-        else:
-            self.last_pubval_logits = None
         # Distributional VALUE readout (flag-guarded; None when off). Same value_pooled the win head
         # reads → per-atom return-distribution logits, stashed for the aux loss + prober/eval. NOT fed
         # into the assembler (a side readout — the value target can't leak into pi/vf). `read_only`

@@ -311,11 +311,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            via="CLSPool.value_cls", pooled=True))
     edges.append(_edge("our_active_refined", "pi_projection", "concat", D, "D_MODEL",
                        pooled=False,
-                       note="our active's refined token; vf does NOT read it unless "
-                            "value_active_readout"))
-    if fe.assembler.value_active_readout:
-        edges.append(_edge("our_active_refined", "vf_projection", "concat", D, "D_MODEL",
-                           pooled=False))
+                       note="our active's refined token; pi-only (the vf active readout "
+                            "route was deleted — superseded by the seed window, then the pool)"))
     for head in FORWARD_SINKS:
         # gen3_ctx_dedup_v1: the active-context concat is DELETED from both heads — the ctx
         # rides the active tokens (E2 injection) + the global token. The op's flat block is
@@ -382,11 +379,9 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
                                op.pointer_switch_cell_dim,
-                               "_PTR_SWITCH_CELL_IN" + (" + _PTR_SWITCH_CELL_OAX"
-                                                        if op.matrices_outgoing_all else ""),
-                               note="incoming row + CB tail"
-                                    + (" + OAX attacker row" if op.matrices_outgoing_all
-                                       else " (NO offense read — matrices_outgoing_all is off)")))
+                               "_PTR_SWITCH_CELL_IN",
+                               note="incoming row + CB tail (the OAX offense read was deleted "
+                                    "with its flag — d2 carries the switch-in offense)"))
 
     # --- AUX EDGES: training-only supervision --------------------------------------------------
     # These terminate at loss sinks and NOWHERE else. delivery_graph_test asserts it.

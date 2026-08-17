@@ -2,7 +2,7 @@
 
 The claim: the pointer head IS the action head — no flat positional `action_net` exists. Each action
 is scored from the token of the entity it selects (move logit k ← REQUEST-slot-k move token ⊕ its op
-cells; switch logit j ← our-team token j ⊕ its incoming/OAX cells; struggle ← the latent_pi context),
+cells; switch logit j ← our-team token j ⊕ its incoming cells; struggle ← the latent_pi context),
 which makes two defect classes structurally impossible rather than defended:
   * **F2** — switch logits read from a permutation-INVARIANT CLS pool, so a bench mon's own token
     could never reach its own switch logit.
@@ -12,7 +12,7 @@ which makes two defect classes structurally impossible rather than defended:
 Load-bearing tests here:
   * the PERMUTATION on a SCRAMBLED order (an alphabetical moveset would pass even if it were a no-op);
   * `pointer_cells` offset parity vs `decode_damage_block` (the SoT layout mirror) with EVERY optional
-    op block enabled, so a future append that shifts the OAX tail is caught;
+    op block enabled, so a future append that shifts the serialization tail is caught;
   * the REAL-POLICY suite (M1 rule: invariants asserted only on a bare module are not invariants) —
     uniform-over-legal at init, funnel consistency, no `action_net.*` params, exact optimizer
     coverage, save→load logit identity.
@@ -41,10 +41,10 @@ _mappings = load_mappings()
 _layout = Gen3ObservationEncoder(_mappings).get_layout()
 _SIG = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
 
-# The op-enabled toggle set (damage_op pulls in move_belief revealed + the unmask flag; outgoing +
-# OAX are the two cell sources the pointer head consumes).
+# The op-enabled toggle set (damage_op pulls in move_belief revealed + the unmask flag; the
+# outgoing block is the move-cell source; the OAX switch-cell widening died with its flag).
 _OP_TOGGLES = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed",
-                   damage_op=True, damage_outgoing=True, damage_matrices_outgoing_all=True)
+                   damage_op=True, damage_outgoing=True)
 
 
 def _make(**kw):
@@ -116,17 +116,16 @@ def test_pointer_cells_match_decode_damage_block_with_every_block_enabled():
     """The offset test: build the op with EVERY optional block between the outgoing block and the OAX
     tail enabled (omx + imx), fill a random row, and
     require each pointer cell to equal the `decode_damage_block` field it claims to be. A future block
-    appended before OAX (or a reordering) that shifts an offset fails here, not in a trained run."""
+    appended mid-layout (or a reordering) that shifts an offset fails here, not in a trained run."""
     op = DamageOperator(_layout, outgoing=True, topk_k=5, matrices_outgoing=True,
-                        matrices_incoming=True, matrices_outgoing_all=True)
+                        matrices_incoming=True)
     row = torch.rand(2, op.out_dim, generator=torch.Generator().manual_seed(3))
     move_cells, switch_cells = op.pointer_cells(row)
     assert tuple(move_cells.shape) == (2, 4, op.pointer_move_cell_dim) == (2, 4, 13)
-    assert tuple(switch_cells.shape) == (2, 6, op.pointer_switch_cell_dim) == (2, 6, 15 + 18)
+    assert tuple(switch_cells.shape) == (2, 6, op.pointer_switch_cell_dim) == (2, 6, 15)
     for b in range(2):
         d = decode_damage_block(row[b], outgoing=True, matrices_outgoing=True,
-                                matrices_incoming_k=op.matrices_incoming_k,
-                                matrices_outgoing_all=True)
+                                matrices_incoming_k=op.matrices_incoming_k)
         for k in range(4):
             cell = move_cells[b, k]
             mv, st = d["outgoing"]["moves"][k], d["status_landing"][k]
@@ -143,17 +142,13 @@ def test_pointer_cells_match_decode_damage_block_with_every_block_enabled():
             assert float(cell[12]) == cb["phys_high_cb"][j]
             assert float(cell[13]) == cb["phys_pko_cb"][j]
             assert float(cell[14]) == cb["p_cb"]                      # shared, broadcast per mon
-            atk = d["outgoing_matrix_all"]["attackers"][j]
-            flat = [atk["moves"][k][c] for k in range(4) for c in ("low", "high", "crit", "pko")]
-            assert [float(x) for x in cell[15:31]] == flat
-            assert float(cell[31]) == atk["p_outspeed"] and float(cell[32]) == atk["alive"]
 
 
 def test_pointer_cell_dims_track_the_toggle_set():
     assert DamageOperator(_layout).pointer_move_cell_dim == 0
     assert DamageOperator(_layout).pointer_switch_cell_dim == 15
     assert DamageOperator(_layout, outgoing=True).pointer_move_cell_dim == 13
-    assert DamageOperator(_layout, matrices_outgoing_all=True).pointer_switch_cell_dim == 33
+
 
 
 # ------------------------------------------------------- the extractor stash (unconditional)
@@ -180,8 +175,8 @@ def test_extractor_stashes_op_cells_when_the_op_is_on():
         fe(_obs(batch=2))
     _, _, _, mcells, scells = fe.last_pointer_inputs
     assert tuple(mcells.shape) == (2, 4, 13)
-    assert tuple(scells.shape) == (2, 6, 33)
-    assert fe.pointer_move_cell_dim == 13 and fe.pointer_switch_cell_dim == 33
+    assert tuple(scells.shape) == (2, 6, 15)
+    assert fe.pointer_move_cell_dim == 13 and fe.pointer_switch_cell_dim == 15
 
 
 # ------------------------------------------------------- the REAL policy (the M1 rule)

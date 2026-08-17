@@ -195,21 +195,16 @@ def test_the_active_ctx_concat_is_dead(graph):
 
 
 def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
-    """The switch cell width must follow the op's actual toggles. In the production config
-    `damage_matrices_outgoing_all` is off, so the OAX attacker row does NOT exist and the switch
-    logit gets no offense read — the exact fact a stale doc misreported. If someone turns the
-    matrix on, this width moves and the snapshot diff makes it visible."""
+    """The switch cell width must follow the op's actual composition. The OAX attacker row was
+    DELETED with its flag (gen3_dead_flag_purge_v1) — d2 carries the switch-in offense — so the
+    switch cell is the incoming row + CB tail only. If a future op sub-block widens it, this
+    width moves and the snapshot diff makes it visible."""
     cells = [e for e in graph["edges"]
              if e["type"] == "cell" and e["dst"].startswith("pointer.switch_logit")]
     assert cells
     widths = {e["width"] for e in cells}
-    assert len(widths) == 1
-    const = cells[0]["source_constant"]
-    if "OAX" in const:
-        assert widths == {33}, "OAX row present — expected the 15+18 switch cell"
-    else:
-        assert widths == {15}, (
-            "without matrices_outgoing_all the switch cell is the incoming row + CB tail only")
+    assert widths == {15}, (
+        "the switch cell is the incoming row + CB tail only (the OAX row was deleted)")
 
 
 def test_phase_nodes_are_derived_from_the_live_module_tree_not_a_hardcoded_list():

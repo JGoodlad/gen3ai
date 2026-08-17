@@ -632,7 +632,15 @@ from typing import Any, Dict, List
 #   intent_value_reduce's physics cells and β not at all — the block was ORDERING (T2 heads vs
 #   the assembler), which the post-assembler tail dissolves. Both widen the value projection
 #   (state_dict), so mismatches are shape-caught; the checks name the cause.
-MODEL_CONFIG_VERSION = 87
+# v88 (gen3_dead_flag_purge_v1): `value_active_readout` and `damage_matrices_outgoing_all` are
+#   DELETED — both config_only frozen OFF since v78, never enabled in any gen-8+ run, and each
+#   superseded twice over (the active read by the seed window then the entity pool; the OAX
+#   render by d2, which keeps `_outgoing_attacker_matrix` as its physics engine). A config that
+#   recorded either True is REFUSED (each widened a projection/out_dim the surviving code cannot
+#   rebuild); False pops silently. `pubval_mode`/`pubval_coef` go the same way (measured NULL,
+#   head never built in production): a recorded mode != 'none' is REFUSED (PubValHead carried
+#   parameters), 'none' pops.
+MODEL_CONFIG_VERSION = 88
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1161,7 +1169,6 @@ class ModelVersion:
     # policy's 0.90, which under-prices the V-tail. ON widens the value projection by D_MODEL; OFF
     # reproduces the baseline value head byte-for-byte, so like use_popart it lives in check_compatible
     # WITHOUT an ARCH_SIGNATURE bump.
-    value_active_readout: bool = False
 
     # v11 resume-immutable VALUE-meaning hparam (like vf_coef — NOT weight-shape): tail-weighted value
     # loss β. 0.0 = plain MSE; >0 blends the CVaR of the worst value misses into the loss. Changing it
@@ -1429,7 +1436,6 @@ class ModelVersion:
     # opp ACTIVE (the switch-in offense read; the transpose of damage_matrices_outgoing). Widens both
     # projections via the op out_dim. OFF byte-for-byte (no module output). Gated in check_compatible (bool,
     # like damage_op). Requires damage_op.
-    damage_matrices_outgoing_all: bool = False
     # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the UNCERTAINTY-AWARE P(outspeed) — divide the speed
     # gap by the believed speed std instead of a fixed scale. No new params (values only), gated bool.
     threat_prob_outspeed: bool = False
@@ -1484,11 +1490,9 @@ class ModelVersion:
     # head's params) regressed toward the frozen human-replay-calibrated V_pub. Gated in check_compatible
     # with a STRING compare ('none'↔head = state_dict change; read_only↔shaping = the resume-immutable
     # grad-flow choice). OFF byte-for-byte (NO ARCH_SIGNATURE bump).
-    pubval_mode: str = "none"
     # v43 TRAINING-ONLY loss coefficient for the pubval head (like win_prob_coef). Scales the soft-target
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
-    pubval_coef: float = 0.0
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -1506,7 +1510,6 @@ class ModelVersion:
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
         item_belief_coef: float = 0.0,
-        pubval_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -1556,9 +1559,6 @@ class ModelVersion:
             ),
             opp_belief_cls_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_cls_k", 0)
-            ),
-            value_active_readout=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_active_readout", False)
             ),
             opp_belief_slots=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("opp_belief_slots", False)
@@ -1690,9 +1690,6 @@ class ModelVersion:
             damage_matrices_incoming=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_incoming", False)
             ),
-            damage_matrices_outgoing_all=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_outgoing_all", False)
-            ),
             threat_prob_outspeed=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("threat_prob_outspeed", False)
             ),
@@ -1703,10 +1700,6 @@ class ModelVersion:
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
             value_from_dist=bool(policy_kwargs.get("value_from_dist", False)),
-            pubval_mode=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("pubval_mode", "none")
-            ),
-            pubval_coef=float(pubval_coef),
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
             value_tail_weight=float(value_tail_weight),
@@ -1808,14 +1801,6 @@ class ModelVersion:
 
         # Structural toggle — adds our_active_refined to the value projection (widens it by D_MODEL), so
         # a mismatch breaks the value head's state_dict. Like use_popart it gates EVERY load.
-        if self.value_active_readout != saved.value_active_readout:
-            raise ModelVersionError(
-                f"value_active_readout mismatch: saved={saved.value_active_readout}, "
-                f"current={self.value_active_readout}.\n"
-                "Routing the active-mon readout into the value head widens the value projection, so it "
-                "changes the state_dict and cannot be toggled on an existing model.\n"
-                "Resume with the matching --value-active-readout setting, or start a fresh training run."
-            )
 
         # Structural toggle — ON adds the BeliefHead + per-slot unknown-mon embeddings to the
         # state_dict (the in-place hidden-opponent belief). Like use_popart it gates EVERY load; the
@@ -2024,18 +2009,6 @@ class ModelVersion:
                 "Resume with the matching --win-prob-mode setting, or start a fresh training run."
             )
 
-        # v43 PUBLIC-information value aux head (gen3_pubval_aux_v1, like win_prob_mode): STRING-gated so
-        # BOTH 'none'↔head (the PubValHead params, a state_dict change) AND read_only↔shaping (the
-        # resume-immutable trunk-gradient choice) FATAL on a mismatch. The training-only pubval_coef is
-        # NOT checked.
-        if self.pubval_mode != saved.pubval_mode:
-            raise ModelVersionError(
-                f"pubval_mode mismatch: saved={saved.pubval_mode!r}, current={self.pubval_mode!r}.\n"
-                "The public-value aux head is fixed for a run's lifetime: adding/removing it changes the "
-                "state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
-                "trunk (a silent mid-run training change).\n"
-                "Resume with the matching --pubval-mode setting, or start a fresh training run."
-            )
 
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
         # ValueDistHead params) AND read_only↔shaping (grad-flow); the BIN COUNT is the head's output
@@ -2247,17 +2220,6 @@ class ModelVersion:
                 "The incoming per-move damage matrix widens the damage operator's output (hence both "
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
-            )
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active)
-        # widens the op out_dim → both projection in_features. Toggling it is a weight-shape change (like damage_op).
-        if self.damage_matrices_outgoing_all != saved.damage_matrices_outgoing_all:
-            raise ModelVersionError(
-                f"damage_matrices_outgoing_all mismatch: saved={saved.damage_matrices_outgoing_all}, "
-                f"current={self.damage_matrices_outgoing_all}.\n"
-                "The transposed outgoing per-move damage matrix (our 6 mons' moves → opp active) widens the "
-                "damage operator's output (hence both projection widths), so toggling it is incompatible with "
-                "a saved checkpoint.\n"
-                "Resume with the matching --damage-matrices-outgoing-all setting, or start a fresh training run."
             )
         # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) is a version-gated
         # forward-behavior toggle — fresh-only.
@@ -2726,4 +2688,21 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("value_clock", False)
         data.setdefault("value_intent", False)
         data["config_version"] = 87
+    # v88 (gen3_dead_flag_purge_v1) — runs for EVERY version (the keys must leave the config
+    # whatever vintage wrote them). A recorded ON value named parameters/widths the surviving
+    # code cannot rebuild ⇒ refuse (the v75 rule); OFF pops silently.
+    for _dead, _ok in (("value_active_readout", False),
+                       ("damage_matrices_outgoing_all", False),
+                       ("pubval_mode", "none")):
+        if _dead in data:
+            _rec = data.pop(_dead)
+            _bad = (_rec != _ok if isinstance(_ok, str) else bool(_rec) is not _ok)
+            if _bad:
+                raise ModelVersionError(
+                    f"{_dead}={_rec!r} is no longer supported (gen3_dead_flag_purge_v1): the "
+                    f"only supported value is {_ok!r}. This checkpoint trained under a forward "
+                    "that no longer exists; re-read it from the git_hash in its metadata.json.")
+    data.pop("pubval_coef", None)
+    if version < 88:
+        data["config_version"] = 88
     return data

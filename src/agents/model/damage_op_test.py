@@ -907,29 +907,11 @@ def _oax_alive(row):
     return [float(x) for x in row[base:base + TEAM_SIZE]]
 
 
-def test_matrices_outgoing_all_off_path_dims_unchanged():
-    """damage_matrices_outgoing_all OFF == baseline op; ON adds EXACTLY _DMG_OAX to BOTH projection heads."""
-    common = dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
-    base, _ = _make_model(**common)
-    on, _ = _make_model(**common, damage_matrices_outgoing_all=True)
-    assert base.damage_op.matrices_outgoing_all is False and on.damage_op.matrices_outgoing_all is True
-    # gen3_no_concat_v1: the flat block no longer enters either projection, and BOTH of
-    # these configs carry the op (and so the fixed-width seed window) — no delta at all.
-    assert on.projection_input_dim == base.projection_input_dim
-    assert on.value_projection_input_dim == base.value_projection_input_dim
-
-
-def test_matrices_outgoing_all_requires_damage_op():
-    with pytest.raises(ValueError, match="damage_op"):
-        _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
-                    damage_matrices_outgoing_all=True)                  # no damage_op
-
-
 def test_outgoing_attacker_matrix_active_row_matches_single_active():
     """The user's HARD PARITY requirement: the OUR-ACTIVE mon's row of `_outgoing_attacker_matrix` reproduces
     the validated `_outgoing_block` byte-for-byte (same boosts/CB/burn + request-ordered moves + same opp-active
     defender + same `_rolls` kernel), and its p_outspeed matches too."""
-    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    op = DamageOperator(_make_layout(), outgoing=True)
     eq = _move_num("earthquake")
     ctx = _ctx_mtx(our_species=376, our_t1=_T2I["STEEL"], our_t2=_T2I["PSYCHIC"],     # Metagross
                    our_moves=[eq, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
@@ -953,7 +935,7 @@ def test_outgoing_attacker_matrix_active_row_parity_under_weather():
     inlines the gen3 weather mult to broadcast over the [B,6,4] grid instead of calling `_weather_mult` (which
     `_outgoing_block` uses). In RAIN with a STAB Water move the active row must STILL equal `_outgoing_block`
     byte-for-byte — proving the inlined formula is identical, not a drift."""
-    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    op = DamageOperator(_make_layout(), outgoing=True)
     surf = _move_num("surf")
     ctx = _ctx_mtx(our_species=245, our_t1=_T2I["WATER"], our_t2=0,        # Suicune (Water, STAB Surf)
                    our_moves=[surf, 0, 0, 0], our_move_types=[_T2I["WATER"], 0, 0, 0],
@@ -973,7 +955,7 @@ def test_outgoing_attacker_matrix_bench_priced_on_forced_switch():
     """The WHOLE POINT: on a FORCED SWITCH the active is fainted → `_outgoing_block` zeroes, but the new block
     must price the ALIVE BENCH attackers (their offense vs the opp active). Bench rows are NON-zero + finite;
     the alive bits flag exactly the alive attackers."""
-    op = DamageOperator(_make_layout(), outgoing=True, matrices_outgoing_all=True)
+    op = DamageOperator(_make_layout(), outgoing=True)
     eq = _move_num("earthquake")
     ctx = _ctx_mtx(our_species=376, our_t1=_T2I["STEEL"], our_t2=_T2I["PSYCHIC"],
                    our_moves=[eq, 0, 0, 0], our_move_types=[_T2I["GROUND"], 0, 0, 0],
@@ -995,33 +977,24 @@ def test_outgoing_attacker_matrix_bench_priced_on_forced_switch():
     assert torch.isfinite(oax).all()
 
 
-def test_outgoing_attacker_matrix_shape_finite_and_leak_free():
-    """End-to-end: the transposed matrix rides the op output (+_DMG_OAX), is finite, decodes to a 6-attacker
-    block, and reads only public obs (poisoning the privileged label keys leaves the forward bit-identical)."""
-    model, layout = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed",
-                                move_prior_fusion=True, damage_op=True, damage_matrices_outgoing_all=True)
-    model.eval()
-    torch.manual_seed(0)
-    obs_t = torch.rand(4, layout["total_dim"])
-    with torch.no_grad():
-        pi, vf = model.forward({"observation": obs_t})
-        dec = decode_damage_block(model.damage_op.last_raw_block[0].numpy(), outgoing=False,
-                                  matrices_outgoing_all=True)
-    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
-    assert dec["outgoing_matrix_all"] is not None
-    assert len(dec["outgoing_matrix_all"]["attackers"]) == TEAM_SIZE
-    assert len(dec["outgoing_matrix_all"]["attackers"][0]["moves"]) == _DMG_OAX_N_MOVES
-    poisoned = {"observation": obs_t,
-                "belief_species": torch.rand(4, TEAM_SIZE, layout["max_species"]),
-                "belief_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"]),
-                "known_moves": torch.rand(4, TEAM_SIZE, layout["max_moves"])}
-    with torch.no_grad():
-        clean_pi, clean_vf = model.forward({"observation": obs_t})
-        pois_pi, pois_vf = model.forward(poisoned)
-    assert torch.equal(clean_pi, pois_pi) and torch.equal(clean_vf, pois_vf)
+def test_outgoing_attacker_matrix_shape_finite_via_d2():
+    """The KERNEL through its ONE live consumer (its flag/render died in
+    gen3_dead_flag_purge_v1; the kernel survives as d2's physics engine,
+    `pairwise_bench_outgoing`): finite cells of the documented [B,6,4] shape on a real forward
+    ctx — pinned here so a kernel regression surfaces as a d2 failure, not a silent zero edge."""
+    op, _ = _op_and_layout()
+    eq_num = _move_num("earthquake")
+    ctx = _fake_ctx_out(our_species=143, our_t1=_T2I["NORMAL"], our_t2=0,
+                        our_moves=[eq_num, 0, 0, 0],
+                        our_move_types=[_T2I["GROUND"], 0, 0, 0],
+                        opp_species=248, opp_t1=_T2I["ROCK"], opp_t2=0,
+                        move_mask=[1, 0, 0, 0])
+    cells = op.pairwise_bench_outgoing(ctx)
+    assert cells.shape == (1, TEAM_SIZE, 4)
+    assert torch.isfinite(cells).all()
+    assert float(cells[0, 0, 0]) > 0.0        # the active row carries a real hit (EQ 2x vs Rock)
 
 
-# ------------------------------------ gen3_per_move_matrices_v1: INCOMING per-move damage matrix (enriched top-K)
 def _imx_common():
     return dict(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True, move_latent=True)
 
@@ -1648,9 +1621,14 @@ def test_candidate_weight_dedup_is_bitwise_and_never_stale():
     ctx = _topk_ctx(op, defenders=[(0, _T2I["WATER"], 0)] + [(0, 0, 0)] * 5)
     logits = _logits_moves(layout["max_moves"], [_move_num("icebeam"), _move_num("earthquake")])
     sentinel = torch.full((1, 3), 7.0)
-    op.last_w_all = sentinel                        # a stale "previous batch"
+    op.stash.w_all = sentinel                       # a stale "previous batch" (writes go via stash
+    #                                                 — gen3_op_stashes_v1; last_w_all is read-only)
     op(ctx, logits, None, _synth_latent(layout))
     assert op.last_w_all is not None and op.last_w_all is not sentinel
+    # ...and a stray write to the read-only surface fails LOUD rather than forking the state
+    import pytest as _pytest
+    with _pytest.raises(AttributeError):
+        op.last_w_all = sentinel
     idx_a, w_a = op.refine_candidates(ctx, logits, k=K)
     idx_b, w_b = op.refine_candidates(ctx, logits, k=K, w_all=op.last_w_all)
     assert torch.equal(idx_a, idx_b)

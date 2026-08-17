@@ -570,7 +570,7 @@ def test_migrate_pre_v17_adds_move_belief_defaults(version):
 
 def test_check_compatible_rejects_damage_op_mismatch(version):
     """damage_op widens BOTH projection heads → a weight-shape change check_compatible must reject
-    (like value_active_readout / opp_belief_slots)."""
+    (like opp_belief_slots)."""
     on = dataclasses.replace(version, damage_op=True)
     with pytest.raises(ModelVersionError) as exc_info:
         version.check_compatible(on)        # version has damage_op=False (default)
@@ -710,40 +710,52 @@ def test_migrate_pre_v32_adds_damage_matrices_outgoing_default(version):
         _migrate_config(data)
 
 
-# --- damage_matrices_outgoing_all: the TRANSPOSED outgoing matrix, a structural BOOL toggle (v39) ----------
+# --- gen3_dead_flag_purge_v1 (v88): value_active_readout / damage_matrices_outgoing_all / pubval ----------
 
 
-def test_check_compatible_rejects_damage_matrices_outgoing_all_mismatch(version):
-    """The transposed outgoing matrix widens the op out_dim → both projection in_features; toggling it is a
-    weight-shape change check_compatible must reject (like damage_op)."""
-    on = dataclasses.replace(version, damage_matrices_outgoing_all=True)
-    with pytest.raises(ModelVersionError) as exc_info:
-        version.check_compatible(on)        # version has it off (default)
-    assert "damage_matrices_outgoing_all" in str(exc_info.value)
+def test_purged_fields_are_not_modelversion_fields(version):
+    """The v88 purge deleted the FIELDS, not just their defaults — a config carrying them must go
+    through the migration, never the dataclass."""
+    names = {f.name for f in dataclasses.fields(version)}
+    assert not ({"value_active_readout", "damage_matrices_outgoing_all",
+                 "pubval_mode", "pubval_coef"} & names)
 
 
-def test_check_compatible_accepts_matching_damage_matrices_outgoing_all(version):
-    version.check_compatible(dataclasses.replace(version))            # off vs off
-    on = dataclasses.replace(version, damage_matrices_outgoing_all=True)
-    on.check_compatible(dataclasses.replace(on))                      # on vs on
-
-
-def test_damage_matrices_outgoing_all_read_from_features_extractor_kwargs(layout):
-    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"damage_matrices_outgoing_all": True}}
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
-    assert v.damage_matrices_outgoing_all is True and v.config_version == MODEL_CONFIG_VERSION
-    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    assert v_default.damage_matrices_outgoing_all is False
-
-
-def test_migrate_pre_v39_adds_damage_matrices_outgoing_all_default(version):
-    """The v39 damage_matrices_outgoing_all injection branch is pre-floor (MIGRATION_FLOOR): a
-    v38 config is a pre-generation checkpoint and is refused outright instead of migrating."""
+@pytest.mark.parametrize("field,off_value", [
+    ("value_active_readout", False),
+    ("damage_matrices_outgoing_all", False),
+    ("pubval_mode", "none"),
+])
+def test_migrate_pops_recorded_off_purged_field(version, field, off_value):
+    """A recorded OFF value for a purged flag pops silently — the surviving forward is what that
+    checkpoint trained under, so it must keep loading."""
     data = json.loads(version.to_json())
-    data.pop("damage_matrices_outgoing_all", None)
-    data["config_version"] = 38
-    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+    data[field] = off_value
+    migrated = _migrate_config(data)
+    assert field not in migrated
+    assert migrated["config_version"] == MODEL_CONFIG_VERSION
+
+
+@pytest.mark.parametrize("field,on_value", [
+    ("value_active_readout", True),
+    ("damage_matrices_outgoing_all", True),
+    ("pubval_mode", "read_only"),
+])
+def test_migrate_refuses_recorded_on_purged_field(version, field, on_value):
+    """A recorded ON value named parameters/widths the surviving code cannot rebuild ⇒ refuse
+    (the v75 deleted-toggle rule), naming the flag and the re-read path."""
+    data = json.loads(version.to_json())
+    data[field] = on_value
+    with pytest.raises(ModelVersionError, match=field):
         _migrate_config(data)
+
+
+def test_migrate_pops_pubval_coef_unconditionally(version):
+    """pubval_coef was training-only (INERT for a forward) — any recorded value pops silently."""
+    data = json.loads(version.to_json())
+    data["pubval_coef"] = 0.35
+    migrated = _migrate_config(data)
+    assert "pubval_coef" not in migrated
 
 
 # --- damage_matrices_incoming: a structural BOOL toggle (the incoming per-move damage matrix, v33) --------
@@ -816,29 +828,9 @@ def test_migrate_pre_v20_adds_move_prior_fusion_default(version):
         _migrate_config(data)
 
 
-def test_check_compatible_rejects_value_active_readout_mismatch(version):
-    """① value_active_readout widens the value projection → a weight-shape change check_compatible
-    must reject (like use_popart)."""
-    flipped = dataclasses.replace(version, value_active_readout=not version.value_active_readout)
-    with pytest.raises(ModelVersionError) as exc_info:
-        version.check_compatible(flipped)
-    assert "value_active_readout" in str(exc_info.value)
-
-
-def test_value_active_readout_read_from_features_extractor_kwargs(layout):
-    """① value_active_readout sources from features_extractor_kwargs; absent → False."""
-    pk = {"net_arch": [512, 512], "features_extractor_kwargs": {"value_active_readout": True}}
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
-    assert v.value_active_readout is True and v.config_version == MODEL_CONFIG_VERSION
-    v_default = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    assert v_default.value_active_readout is False
-
-
-def test_migrate_v9_adds_value_active_readout_default(version):
-    """The v10 value_active_readout injection branch is pre-floor (MIGRATION_FLOOR): a v9 config
-    is a pre-generation checkpoint and is refused outright instead of migrating."""
+def test_migrate_v9_is_pre_generation(version):
+    """A v9 config is a pre-generation checkpoint and is refused outright instead of migrating."""
     data = json.loads(version.to_json())
-    data.pop("value_active_readout", None)
     data.pop("value_tail_weight", None)
     data["config_version"] = 9
     with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
@@ -1804,17 +1796,17 @@ def test_arch_toggles_from_model_extracts_flags():
     import types
     # Note: the fe attribute for the damage op is `damage_op_enabled`, the emitted key is `damage_op`.
     fe = types.SimpleNamespace(attend_unrevealed_opponents=True, opp_belief_cls_k=0,
-                               opp_belief_slots=True, value_active_readout=False,
+                               opp_belief_slots=True,
                                move_belief_mode="revealed",
                                damage_op_enabled=True, damage_outgoing=True, move_candidate_floor=0.3,
                                move_latent=True, move_prior_fusion=True,
                                win_prob_mode="read_only",
                                damage_topk_k=5, damage_matrices_outgoing=True,
-                               damage_matrices_incoming=True, damage_matrices_outgoing_all=True)
+                               damage_matrices_incoming=True)
     model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
-    assert t["use_popart"] is True and t["value_active_readout"] is False
+    assert t["use_popart"] is True
     assert t["move_belief_mode"] == "revealed"
     # v23/v24 keys (these were the threading gaps): every one must round-trip.
     assert t["damage_op"] is True and t["damage_outgoing"] is True
@@ -1830,8 +1822,6 @@ def test_arch_toggles_from_model_extracts_flags():
     assert t["damage_matrices_outgoing"] is True
     # v33: the incoming per-move damage matrix.
     assert t["damage_matrices_incoming"] is True
-    # v39: the TRANSPOSED outgoing matrix (our 6 mons → opp active; a switch-in-offense-ON run must gate it).
-    assert t["damage_matrices_outgoing_all"] is True
     # Every emitted toggle MUST be an accepted current_model_version kwarg — else a future toggle that
     # isn't threaded fails here in a unit test, not only at a self-play load (TypeError).
     assert set(t) <= set(inspect.signature(current_model_version).parameters)

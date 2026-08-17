@@ -62,12 +62,18 @@ def test_raises_to_target():
     encodes "whoever runs pytest is at nice 0", and fails the day someone runs the suite under
     `nice` (or from a session that already drifted). That is an ambient-state dependency, not a
     property of `_apply_nice`.
+
+    The target is also CLAMPED to the kernel's ceiling of 19: `base + 7` overshoots it whenever
+    the suite runs at nice ≥ 13 (routine on this box — agents nice their test runs beside the
+    live trainer), and `os.nice` silently caps there, so an unclamped exact-match assert fails
+    on ambient niceness with `_apply_nice` having done nothing wrong. Same family as the
+    invariant fix in test_never_lowers_priority_below_current.
     """
     out = _in_subprocess(
         "import os;"
         "base = os.nice(0);"
         "from main.launcher.run import _apply_nice;"
-        "target = base + 7;"
+        "target = min(base + 7, 19);"
         "print(_apply_nice(target), os.nice(0), target)"
     )
     got, now, target = out.split()

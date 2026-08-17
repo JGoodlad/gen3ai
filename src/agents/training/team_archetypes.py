@@ -4,7 +4,7 @@ The archetype-competence study measured a style gradient (turn-1 P(win): offense
 0.55 / balance 0.46) over UNIFORMLY-sampled teams, and the league plan targets exploiters at
 STYLES (trap, CM-stall, hyper-offense). Both need the team pool labeled. This derives
 ``data/teams/gen3_team_archetypes.json`` from the pool (the ``bot_elo_calibration`` /
-``pubval_calibration`` committed-artifact pattern): rule-based composition features over the
+``bot_elo_calibration`` committed-artifact pattern): rule-based composition features over the
 parsed Showdown exports + the ``gen3_data`` facade (base stats, damaging-move classification),
 with a k-means cross-tab printed as an unsupervised sanity check (agreement, not ground truth).
 

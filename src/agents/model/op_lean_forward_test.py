@@ -78,7 +78,7 @@ def test_drop_renders_nulls_the_views_and_keeps_the_stashes():
     with torch.no_grad():
         fe(_obs(layout))
     t = fe.damage_op.last_tensors
-    assert t.outgoing_matrix is None and t.incoming_matrix is None and t.oax_cells is None
+    assert t.outgoing_matrix is None and t.incoming_matrix is None
     assert t.incoming_rows is not None and t.out_per_move is not None
     assert fe.damage_op.last_topk_idx is not None
     assert fe.damage_op.last_out_pko is not None

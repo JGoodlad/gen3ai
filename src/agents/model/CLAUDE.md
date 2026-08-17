@@ -40,7 +40,7 @@ Grouped into the four tiers the contract asserts:
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` (opt-in) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head`, `intent_threshold_value` / `value_clock_route` / `value_intent_route` (opt-in) |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head`, `intent_threshold_value` / `value_clock_route` / `value_intent_route` (opt-in) |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
 module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
@@ -323,6 +323,18 @@ block remains the serialization: `decode_damage_block` (the prober's human-reada
 (retrain-class — it shrinks `out_gain`). Landed as a byte-identical refactor under the proof
 bundle above, on 64 real gen-9 eval states across three config arms.
 
+## The op's SIDE VALUES have ONE container (`gen3_op_stashes_v1`)
+
+Every per-forward stash the op exposes (`last_topk_idx`, `last_pair_cells`, `last_w_all`,
+`last_out_pko`, `last_raw_block`, `last_tensors`, …) lives in ONE `OpStashes` dataclass that the
+forward replaces at ENTRY — so no stash can carry a previous batch, uniformly (three different
+clearing conventions used to coexist, and the top-K trio had none). **Reads** use the `last_*`
+properties (the documented surface); **writes** go through `op.stash.<field>` — writing a
+`last_*` name raises. When you add a stash: add the dataclass field with its shape comment, write
+via `self.stash`, and never add a bare `self.last_x = …` attribute. The extractor's tuple
+stashes are typed the same way (`PointerInputs`, `ThresholdProbs` — NamedTuples, so positional
+unpacks keep working).
+
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
 `BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written
@@ -443,9 +455,11 @@ Demote a toggle when it is *settled*: same value in every run, no live experimen
 own constructor default is deliberately left alone, so the OFF baseline stays constructible for a
 test or a probe; only the launch surface shrinks. `config_only_pattern_test.py` pins the contract
 end to end (recorded in a fresh `model_config.json` · rejected on a mismatched resume · no argparse
-entry). The three demoted at v78: `attend_unrevealed_opponents` (frozen **ON** — a hard prerequisite
-of the whole belief stack since v16), `value_active_readout` and `damage_matrices_outgoing_all`
-(frozen OFF — never enabled in a gen-8/9/10 run).
+entry). The one config_only survivor: `attend_unrevealed_opponents` (frozen **ON** — a hard
+prerequisite of the whole belief stack since v16). The other two v78 demotions
+(`value_active_readout`, `damage_matrices_outgoing_all`) were frozen OFF and are **deleted
+outright at v88** (`gen3_dead_flag_purge_v1`): the fields, gates and forwards are gone, and the
+migration refuses a checkpoint that recorded either ON.
 
 ### The four CLASSES — which gate a mismatch gets
 

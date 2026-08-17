@@ -57,7 +57,7 @@ Seat-permutation invariant by construction: the only seat-indexed computation is
 """
 from __future__ import annotations
 
-from typing import Tuple
+from typing import NamedTuple, Tuple
 
 import torch
 
@@ -80,13 +80,22 @@ def _mech_nums() -> torch.Tensor:
     return torch.tensor(nums, dtype=torch.long)
 
 
+class ThresholdProbs(NamedTuple):
+    """The α-contracted threshold probabilities, each [B, 1] — a typed tuple so the T2→T3
+    stash (`_thresh_probs`) names its fields instead of relying on positional convention
+    (`gen3_op_stashes_v1`, the extractor half). Still a tuple: `*probs` unpacking is unchanged."""
+    p_ko: torch.Tensor
+    p_sub_broken: torch.Tensor
+    p_fp_broken: torch.Tensor
+
+
 _SUB_HP_FRAC = 0.25          # gen3 Substitute HP = maxhp/4; `high` is a fraction of maxhp
 _KO_RAMP_WINDOW = 0.15       # the op's own modal-roll KO-ramp window (see damage_op._rolls)
 
 
 def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
                     pair_gate: torch.Tensor, our_active_idx: torch.Tensor,
-                    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                    ) -> ThresholdProbs:
     """`(published α logits [B,K+1], op pair cells [B,6,K,6], gate [B,6,1], our_active [B])`
     → `(p_ko, p_sub_broken, p_fp_broken)`, each `[B, 1]`. Pure — no parameters, no state.
 
@@ -118,7 +127,7 @@ def threshold_probs(alpha_logits: torch.Tensor, pair_cells: torch.Tensor,
     p_ko = (alpha * ko_k).sum(dim=-1, keepdim=True) * gate             # [B,1]
     p_sub = (alpha * break_sub_k).sum(dim=-1, keepdim=True) * gate
     p_fp = (alpha * break_fp_k).sum(dim=-1, keepdim=True) * gate
-    return p_ko, p_sub, p_fp
+    return ThresholdProbs(p_ko=p_ko, p_sub_broken=p_sub, p_fp_broken=p_fp)
 
 
 class IntentThresholdMoveCell(torch.nn.Module):

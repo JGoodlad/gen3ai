@@ -261,22 +261,6 @@ def test_opp_belief_cls_k_forward_finite_both_heads():
     assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
 
 
-def test_value_active_readout_grows_value_head_only():
-    """① value_active_readout routes our_active_refined into the VALUE projection only: the value
-    input widens by exactly D_MODEL, the policy input is UNCHANGED (it already had the token)."""
-    base, _ = _make_model()
-    on, layout = _make_model(value_active_readout=True)
-    assert on.value_active_readout is True and on.hidden_opp_belief is None
-    assert on.value_projection_input_dim == base.value_projection_input_dim + D_MODEL
-    assert on.projection_input_dim == base.projection_input_dim   # policy head untouched
-    pi, vf = on({"observation": _zeros(layout)})
-    assert torch.isfinite(pi).all() and torch.isfinite(vf).all()
-
-
-# ---------------------------------------------------------------------------
-# Embeddings — shared table owner
-# ---------------------------------------------------------------------------
-
 def test_embeddings_hp_soft_type_is_weighted_lookup():
     model, _ = _make_model()
     emb = model.embeddings

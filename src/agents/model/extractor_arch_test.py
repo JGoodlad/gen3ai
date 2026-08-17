@@ -59,7 +59,6 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     args.move_belief_mode = "off"
     args.belief_grad_mode = "shaping"
     args.win_prob_mode = "none"
-    args.pubval_mode = "none"
     args.value_dist_mode = "none"
     args.opp_intent_grad_mode = "detached"
     args.hp_belief_mode = "composed"

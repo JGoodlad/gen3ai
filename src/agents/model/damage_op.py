@@ -210,9 +210,7 @@ _PTR_MOVE_CELL = _DMG_OUT_PER_MOVE + 2 + _N_OUT_SECONDARY              # 4 + 2 +
 # SWITCH cell (defender/candidate mon j, always when the op is on): the per-mon incoming row (12) + its
 # CB-conditional pair [phys_high_cb_j, pko_cb_j] + the shared p_cb (broadcast — the head needs it NEXT TO
 # the CB tail it conditions) = 15; + the OAX attacker row (16 cells + p_outspeed_j + alive_j = 18) when
-# `matrices_outgoing_all` (the switch-in OFFENSE read).
 _PTR_SWITCH_CELL_IN = _DMG_PER_MON + _DMG_CB_PER_MON + 1               # 12 + 2 + 1 = 15
-_PTR_SWITCH_CELL_OAX = _DMG_OAX_PER_MON + 2                            # 16 + p_outspeed + alive = 18
 
 # gen3_per_move_matrices_v1 (v33): the INCOMING per-move DAMAGE MATRIX — the ENRICHED evolution of the v30
 # top-K block (it SUPERSEDES it; the two don't coexist). For the opp active's top-K most-believed moves: a
@@ -324,9 +322,28 @@ class OpTensors:
     status_known: Optional[torch.Tensor]        # [B, 4]
     outgoing_matrix: Optional[torch.Tensor]     # [B, 126] opaque render (off in production)
     incoming_matrix: Optional[torch.Tensor]     # [B, imx_dim] opaque render
-    oax_cells: Optional[torch.Tensor]           # [B, 6, 16] (off in production)
-    oax_p_outspeed: Optional[torch.Tensor]      # [B, 6]
-    oax_alive: Optional[torch.Tensor]           # [B, 6]
+
+
+
+@dataclass
+class OpStashes:
+    """Every per-forward SIDE VALUE the op exposes, as ONE typed unit (`gen3_op_stashes_v1` —
+    the OpTensors discipline applied to the stash surface). The forward replaces the whole
+    container at ENTRY, so a stale batch is unrepresentable for ANY stash — the guarantee
+    `last_w_all` had to hand-build (and `last_topk_idx` quietly lacked: it used to survive a
+    forward in which the matrix path didn't run). Reads stay on the `op.last_*` properties (the
+    documented surface, like the extractor's re-exports); WRITES go through `op.stash.<field>`
+    — a stray write to a `last_*` name now fails loud instead of silently forking the state."""
+    topk_idx: Optional[torch.Tensor] = None          # [B,K] move NUMS (detached; prober decode)
+    topk_cand_idx: Optional[torch.Tensor] = None     # [B,K] candidate-axis indices (detached)
+    topk_w: Optional[torch.Tensor] = None            # [B,K] belief weights (detached)
+    w_all: Optional[torch.Tensor] = None             # [B,n_moves] candidate weights (LIVE — dedup)
+    pair_cells: Optional[torch.Tensor] = None        # [B,J,K,F] un-reduced cells (alpha consumers)
+    pair_gate: Optional[torch.Tensor] = None         # [B,J,1] alive x has_opp
+    reduced_extra: Optional[torch.Tensor] = None     # [B,6,extra] the pair-reduce rung output
+    out_pko: Optional[torch.Tensor] = None           # [B,4,6] per-(our move, their mon) pko, PRE-gain
+    raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
+    tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
 
 class DamageOperator(torch.nn.Module):
@@ -383,7 +400,6 @@ class DamageOperator(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
-                 matrices_outgoing_all: bool = False,
                  prob_outspeed: bool = False,
                  candidate_k: int = 0,
                  reduce_how: str = "hard_max",
@@ -411,26 +427,13 @@ class DamageOperator(torch.nn.Module):
             raise ValueError(f"DamageOperator reduce_how={reduce_how!r} — one of {PAIR_REDUCE_HOWS}")
         self.reduce_how = reduce_how
         self.pair_reducer = build_pair_reducer(reduce_how, n_channels=_PAIR_REDUCE_N_CHANNELS)
-        self.last_reduced_extra: Optional[torch.Tensor] = None
-        # Step 6's seam: the UN-reduced [B,6,C,F] cells + their alive/has-opp gate, stashed only
-        # when a downstream alpha consumer asked for them. Off => None and zero extra work.
+        # Step 6's seam flag: the UN-reduced cells are stashed only when a downstream alpha
+        # consumer asked for them. Off => None and zero extra work.
         self.stash_pair_cells: bool = False
-        self.last_pair_cells: Optional[torch.Tensor] = None
-        # gen3_op_candidate_dedup_v1 (design_op_tensors step 2, the recompute half): the
-        # [B, n_moves] candidate-weight build (sigmoid + typed-HP scatter + presence mask) ran
-        # TWICE per production forward — once here for the incoming matrix's top-K and once in
-        # the E4 seat builder's `refine_candidates`. The forward now stashes it; consumers in
-        # the SAME forward reuse it via `refine_candidates(w_all=...)`. Cleared at forward
-        # entry so a stale batch is unrepresentable (None ⇒ the standalone fallback computes).
-        self.last_w_all: Optional[torch.Tensor] = None
-        # gen3_op_lean_forward_v1: the per-(our request move, their mon) pko [B,4,6], PRE-gain —
-        # the intent_conditional boom cell's source in both render modes (the typed stash that
-        # replaces its old post-gain flat-view read).
-        self.last_out_pko: Optional[torch.Tensor] = None
-        # gen3_op_tensors_views_v1: the typed views over the last forward's post-gain block.
-        self.last_tensors: Optional[OpTensors] = None
-        self.last_topk_cand_idx: Optional[torch.Tensor] = None
-        self.last_pair_gate: Optional[torch.Tensor] = None
+        # gen3_op_stashes_v1: ALL per-forward side values live in ONE typed container, replaced
+        # at forward entry (see OpStashes). The individual docs moved onto the dataclass fields;
+        # the provenance tags (candidate dedup, lean forward, tensors views) are in CHANGELOG.
+        self.stash = OpStashes()
         # gen3_topk_candidates_v1: cap the incoming candidate sweep at the K most-believed opponent
         # moves (0 = the full ~400-wide sweep, byte-identical). No tail-risk bound — the truncated
         # mass is simply dropped, which is the tradeoff under test.
@@ -507,19 +510,13 @@ class DamageOperator(torch.nn.Module):
                 "top-K block was deleted — the v35 INCOMING MATRIX is its strict superset and was already "
                 "suppressing it in every production config (measured 0 calls/forward). Pass "
                 "--damage-matrices incoming (or both) alongside --damage-topk, or set --damage-topk 0.")
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix — our 6 mons' moves → opp active (the
-        # switch-in offense read). Off by default; when on the op ALSO emits the `_DMG_OAX` block (widens
-        # out_dim → both projections auto-size). Appended LAST (after the v34 outgoing matrix). Requires the
-        # op's physics buffers (always present). The legacy single-active `_outgoing_block` is the ACTIVE row.
-        self.matrices_outgoing_all = matrices_outgoing_all
         # The OUTGOING direction carries the per-move damage block + the gen3_unified_status_landing_v1
         # status-landing block (both action-aligned, our active → opp). Off ⇒ neither → baseline byte-identical.
         _renders = not drop_renders                     # gen3_op_lean_forward_v1: the serialization tail
         self.out_dim = (self.incoming_dim + (_DMG_OUTGOING + _DMG_STATUS if outgoing else 0)
                         + (_DMG_OMX if matrices_outgoing and _renders else 0)
                         + (_dmg_imx_dim(self.matrices_incoming_k)
-                           if matrices_incoming and _renders else 0)
-                        + (_DMG_OAX if matrices_outgoing_all and _renders else 0))
+                           if matrices_incoming and _renders else 0))
         # Runtime grad-checkpointing flag (set per run by --grad-checkpointing via
         # _apply_grad_checkpointing) — recompute the op in backward, trading idle-GPU compute for the
         # ~GBs of [B,6,C]-over-~416-candidate activations this op materialises at batch 16384. No-op
@@ -567,22 +564,31 @@ class DamageOperator(torch.nn.Module):
             _imx_cell = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0, 1.0 / 4.0, 1.0])
             gain[_imx0:_imx0 + TEAM_SIZE * self.matrices_incoming_k * _DMG_IMX_CELL] = \
                 _imx_cell.repeat(TEAM_SIZE * self.matrices_incoming_k)
-        if matrices_outgoing_all and _renders:
-            # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing-matrix tail. Per (attacker mon, move)
-            # cell [low, high, crit, pko] — scale low/high (÷1.5), crit (÷3.0); pko already [0,1]. The trailing
-            # p_outspeed[6] + alive[6] blocks stay at gain 1.0 (already in [0,1]). Placed AFTER every prior
-            # block (incoming → outgoing → omx → imx) — append LAST, all prior offsets untouched.
-            _oax0 = (self.incoming_dim + (_DMG_OUTGOING + _DMG_STATUS if outgoing else 0)
-                     + (_DMG_OMX if matrices_outgoing else 0)
-                     + (_dmg_imx_dim(self.matrices_incoming_k) if matrices_incoming else 0))
-            _oax_move = torch.tensor([1.0 / 1.5, 1.0 / 1.5, 1.0 / 3.0, 1.0])   # low,high,crit,pko
-            gain[_oax0:_oax0 + TEAM_SIZE * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE] = \
-                _oax_move.repeat(TEAM_SIZE * _DMG_OAX_N_MOVES)
         self.out_gain = torch.nn.Parameter(gain)
-        # gen3_unified_topk_incoming_v1: detached side stashes for the prober (the selected candidate
-        # indices + their belief weights) → exact move-name decode. None when topk off / before a forward.
-        self.last_topk_idx: Optional[torch.Tensor] = None
-        self.last_topk_w: Optional[torch.Tensor] = None
+
+
+    # gen3_op_stashes_v1 — the READ surface over the typed stash container (the re-export
+    # convention: reads stay valid everywhere; writes must go through `self.stash`).
+    @property
+    def last_topk_idx(self): return self.stash.topk_idx
+    @property
+    def last_topk_cand_idx(self): return self.stash.topk_cand_idx
+    @property
+    def last_topk_w(self): return self.stash.topk_w
+    @property
+    def last_w_all(self): return self.stash.w_all
+    @property
+    def last_pair_cells(self): return self.stash.pair_cells
+    @property
+    def last_pair_gate(self): return self.stash.pair_gate
+    @property
+    def last_reduced_extra(self): return self.stash.reduced_extra
+    @property
+    def last_out_pko(self): return self.stash.out_pko
+    @property
+    def last_raw_block(self): return self.stash.raw_block
+    @property
+    def last_tensors(self): return self.stash.tensors
 
     def _opp_candidate_weights(self, ctx: 'ExtractorContext',
                                move_belief_logits: torch.Tensor) -> torch.Tensor:
@@ -1229,7 +1235,7 @@ class DamageOperator(torch.nn.Module):
     @property
     def pointer_switch_cell_dim(self) -> int:
         """Per-candidate-mon cell width for the pointer SWITCH scorer."""
-        return _PTR_SWITCH_CELL_IN + (_PTR_SWITCH_CELL_OAX if self.matrices_outgoing_all else 0)
+        return _PTR_SWITCH_CELL_IN
 
     def tensors_from_block(self, damage_block: torch.Tensor) -> OpTensors:
         """THE single slicer of the flat block's layout (`gen3_op_tensors_views_v1`) — every
@@ -1266,14 +1272,6 @@ class DamageOperator(torch.nn.Module):
             imx_dim = _dmg_imx_dim(self.matrices_incoming_k)
             incoming_matrix = damage_block[:, pos:pos + imx_dim]
             pos += imx_dim
-        oax_cells = oax_p_outspeed = oax_alive = None
-        if self.matrices_outgoing_all and not self.drop_renders:
-            oax_cells = damage_block[:, pos:pos + TEAM_SIZE * _DMG_OAX_PER_MON].reshape(
-                B, TEAM_SIZE, _DMG_OAX_PER_MON)
-            posp0 = pos + TEAM_SIZE * _DMG_OAX_PER_MON
-            oax_p_outspeed = damage_block[:, posp0:posp0 + TEAM_SIZE]                    # [B,6]
-            oax_alive = damage_block[:, posp0 + TEAM_SIZE:posp0 + 2 * TEAM_SIZE]         # [B,6]
-            pos += _DMG_OAX
         if pos != self.out_dim:
             raise RuntimeError(
                 f"OpTensors layout walk ended at {pos}, out_dim is {self.out_dim} — a region "
@@ -1283,8 +1281,7 @@ class DamageOperator(torch.nn.Module):
             out_per_move=out_per_move, out_p_outspeed=out_p_outspeed,
             out_secondary=out_secondary, status_p_land=status_p_land,
             status_known=status_known, outgoing_matrix=outgoing_matrix,
-            incoming_matrix=incoming_matrix, oax_cells=oax_cells,
-            oax_p_outspeed=oax_p_outspeed, oax_alive=oax_alive)
+            incoming_matrix=incoming_matrix)
 
     def pointer_cells(self, damage_block: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """gen3_pointer_native_v1: the flat damage block as PER-ACTION cells for the pointer head.
@@ -1297,16 +1294,13 @@ class DamageOperator(torch.nn.Module):
             pointer token permutation matches against): `[low, high, crit, pko, p_land, known, sec×7]`
             (the 7 live secondary columns — see `_OUT_SEC_COLS`).
           * switch cell j: the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` +
-            (when `matrices_outgoing_all`) the OAX attacker row `[cells×16, p_outspeed_j, alive_j]`.
         Pure slicing of the SAME tensor the seed readout consumes (post-gain), so the pointer path and
         the critic's window can never disagree on a value."""
         B = damage_block.shape[0]
         t = self.tensors_from_block(damage_block)
-        # --- switch cells: incoming per-mon rows + the CB tail (+ the OAX attacker rows) ---
+        # --- switch cells: incoming per-mon rows + the CB tail ---
         switch_parts = [t.incoming_rows, t.cb_high[:, :, None], t.cb_pko[:, :, None],
                         t.p_cb[:, None, :].expand(B, TEAM_SIZE, 1)]
-        if self.matrices_outgoing_all:
-            switch_parts += [t.oax_cells, t.oax_p_outspeed[:, :, None], t.oax_alive[:, :, None]]
         switch_cells = torch.cat(switch_parts, dim=2)                                    # [B,6,Cs]
         # --- move cells: the outgoing damage stack + status landing + per-move secondaries ---
         if not self.outgoing:
@@ -1477,13 +1471,13 @@ class DamageOperator(torch.nn.Module):
         # ids, the status-landing physics and the prober's stash — must go through `cand_nums` to get
         # the REAL move-num. None ⇒ no truncation ⇒ the reduced index IS the move-num.
         real_idx = topk_idx if cand_nums is None else cand_nums.gather(-1, topk_idx)   # [B,K] move-nums
-        self.last_topk_idx = real_idx.detach()                                     # prober: exact move names
+        self.stash.topk_idx = real_idx.detach()                                     # prober: exact move names
         # The CANDIDATE-AXIS index (not the move num) — what a consumer must gather with to line a
         # [B,J,C,F] cells tensor up with alpha's K seats. `last_topk_idx` holds move NUMS, which
         # name the seats but cannot index the candidate axis; using it as an index would silently
         # read the wrong columns.
-        self.last_topk_cand_idx = topk_idx.detach()
-        self.last_topk_w = w_topk.detach()
+        self.stash.topk_cand_idx = topk_idx.detach()
+        self.stash.topk_w = w_topk.detach()
         # --- per-move header: latent (→ MoveLatentEncoder grad) + belief + accuracy + is_phys + effect + secondary ---
         latent_topk = move_latent_all[real_idx]                                    # [B,K,32] differentiable
         acc_topk = acc_all.gather(-1, topk_idx)                                    # [B,K]
@@ -2703,7 +2697,7 @@ class DamageOperator(torch.nn.Module):
                 move_latent_all: Optional[torch.Tensor] = None,
                 species_probs: Optional[torch.Tensor] = None,
                 item_cb_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
-        self.last_w_all = None                       # gen3_op_candidate_dedup_v1: no stale batch
+        self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         B = ctx.batch_size
         device = ctx.device
         eps = 1e-6
@@ -2772,7 +2766,7 @@ class DamageOperator(torch.nn.Module):
         # gen3_typed_hp_belief_v1: the candidate belief weights — the typed HPs already carry
         # P(present)·P(type) from the composed posterior; only the bare-237 presence channel is masked.
         w_all = self._opp_candidate_weights(ctx, move_belief_logits)                            # [B, n_moves]
-        self.last_w_all = w_all                      # gen3_op_candidate_dedup_v1: same-forward reuse
+        self.stash.w_all = w_all                     # gen3_op_candidate_dedup_v1: same-forward reuse
 
         # gen3_topk_candidates_v1: TRUNCATE the candidate axis to the top-K of the MOVE BELIEF, no
         # tail bound. The op used to price ALL ~400 move-nums per defender even though the opponent
@@ -2898,11 +2892,9 @@ class DamageOperator(torch.nn.Module):
             # after it — pairing the two axes positionally would mis-weight every term while every
             # shape check still passed (`op move-order` bug class).
             _pr_cells_raw, _pr_gate_raw = (cells_pr, _gate) if self.stash_pair_cells else (None, None)
-            self.last_reduced_extra = ((self.pair_reducer(w_all, cells_pr) * _gate)
+            self.stash.reduced_extra = ((self.pair_reducer(w_all, cells_pr) * _gate)
                                        if self.pair_reducer is not None else None)
-        else:
-            self.last_reduced_extra = None
-            self.last_pair_cells = self.last_pair_gate = None
+        # (no else-clear needed: gen3_op_stashes_v1's entry reset already left every field None)
 
         # gen3_op_block_trim_v1: the opp-active-level believed-EFFECT scalars (6) and per-STATUS SECONDARY
         # scalars (10) that used to sit here are DELETED. Both were belief-weighted maxes with NO DEFENDER
@@ -2946,7 +2938,7 @@ class DamageOperator(torch.nn.Module):
             _omx = self._outgoing_matrix(ctx, spread_belief, species_probs=species_probs)
             # gen3_op_lean_forward_v1: the typed pko stash consumers read (pre-gain — honest
             # probabilities, not the learned-gain-scaled render values).
-            self.last_out_pko = _omx[:, :_DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL].reshape(
+            self.stash.out_pko = _omx[:, :_DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL].reshape(
                 B, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)[..., _DMG_OMX_IDX_PKO]
             if not self.drop_renders:
                 block = torch.cat([block, _omx], dim=1)
@@ -2978,21 +2970,19 @@ class DamageOperator(torch.nn.Module):
             _idx = _ci[:, None, :, None].expand(
                 _pr_cells_raw.shape[0], _pr_cells_raw.shape[1], _ci.shape[-1],
                 _pr_cells_raw.shape[-1])
-            self.last_pair_cells = _pr_cells_raw.gather(2, _idx)               # [B,J,K,F]
-            self.last_pair_gate = _pr_gate_raw
+            self.stash.pair_cells = _pr_cells_raw.gather(2, _idx)              # [B,J,K,F]
+            self.stash.pair_gate = _pr_gate_raw
 
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
         # switch-in offense read). Appended LAST so every existing offset is untouched.
-        if self.matrices_outgoing_all and not self.drop_renders:
-            block = torch.cat([block, self._outgoing_attacker_matrix(ctx, spread_belief)], dim=1)  # [B, out_dim]
         # Read-only stash of the PRE-gain physics (the interpretable damage fractions / P(KO) / accuracy),
         # for the prober/forensic decode — the learned out_gain only rescales for the projection.
-        self.last_raw_block = block.detach()
+        self.stash.raw_block = block.detach()
         gained = block * self.out_gain                                  # learnable per-channel adapter (×only)
         # gen3_op_tensors_views_v1: the typed named views over the post-gain block, computed ONCE
         # here so every same-forward consumer (prefuse injection, seed readout) reads a field
         # instead of an offset. Zero-copy — `gained` is still the returned serialization.
-        self.last_tensors = self.tensors_from_block(gained)
+        self.stash.tensors = self.tensors_from_block(gained)
         return gained
 
 
@@ -3005,7 +2995,7 @@ _DMG_EFFECT_COLS = ("recovery", "status", "phaze", "boost", "hazard", "protect")
 
 def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE,
                         matrices_outgoing: bool = False, matrices_incoming_k: int = 0,
-                        matrices_outgoing_all: bool = False):
+):
     """Decode ONE `DamageOperator.last_raw_block[i]` row (the PRE-gain physics) into a human-readable dict
     for the prober / forensic tooling — the single source of truth for the operator's output layout, mirrored
     by the TUI. Uses the named `_DMG_IDX_*` offsets: per our mon the incoming threat
@@ -3100,22 +3090,6 @@ def decode_damage_block(row, *, outgoing: bool, team_size: int = TEAM_SIZE,
         out["incoming_matrix"] = {"moves": moves, "per_defender": per_def}
         base = cb2 + team_size * matrices_incoming_k * _DMG_IMX_CELL    # end of the incoming matrix
     out["outgoing_matrix_all"] = None
-    if matrices_outgoing_all:
-        # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix — our `team_size` mons × 4 moves
-        # → the opp ACTIVE: all (attacker, move) cells [low,high,crit,pko], then the trailing per-attacker
-        # `p_outspeed` block + the `alive` block.
-        ab = base                                          # attacker-cell base
-        pb = ab + team_size * _DMG_OAX_N_MOVES * _DMG_OAX_PER_MOVE   # p_outspeed base
-        lb = pb + team_size                                # alive base
-        attackers = []
-        for i in range(team_size):
-            mvs = []
-            for k in range(_DMG_OAX_N_MOVES):
-                o = ab + (i * _DMG_OAX_N_MOVES + k) * _DMG_OAX_PER_MOVE
-                mvs.append({"low": r[o + _DMG_OAX_IDX_LOW], "high": r[o + _DMG_OAX_IDX_HIGH],
-                            "crit": r[o + _DMG_OAX_IDX_CRIT], "pko": r[o + _DMG_OAX_IDX_PKO]})
-            attackers.append({"moves": mvs, "p_outspeed": r[pb + i], "alive": r[lb + i]})
-        out["outgoing_matrix_all"] = {"attackers": attackers}
     return out
 
 

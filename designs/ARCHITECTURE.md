@@ -190,8 +190,6 @@ belief_head · move_belief · spread_belief · hp_type_belief_head · damage_op 
 assembler · win_head · value_dist_head · value_entity_pool · pre_proj_norm · projection ·
 value_pre_norm · value_projection · activation · alpha_head · beta_head
 ```
-
-Notably **absent** (`None` on the instance): `pubval_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -206,7 +204,7 @@ happens to be written.
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` (opt-in, off) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `pubval_head`, `value_dist_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
 **non-decreasing** tier order, and no entry point receives a tensor whose storage was produced by a
@@ -376,7 +374,8 @@ build: the intent-reduce discovery branch returned early, so the dummy forward t
 (`normalized_shape=[1241] … got [*, 1369]`). Any NEW vf part goes at the tail with a
 **fall-through** discovery branch — see `src/agents/model/CLAUDE.md`.
 
-The value head does **not** read `our_active_refined` (`value_active_readout` is off), and does not
+The value head does **not** read `our_active_refined` (the old `value_active_readout` toggle is
+deleted — v88 `gen3_dead_flag_purge_v1`), and does not
 read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
 learned queries cross-attend (explicit softmax, dead mons key-masked) over the op's per-our-mon
 incoming rows — the critic's magnitude read after the concat's death, MULTIPLICITY not width
@@ -444,12 +443,12 @@ Scoring: `tanh(proj(token ⊕ cells) + ctx_proj(latent_pi))` → a zero-init `Li
 Move logits are multiplied by `move_valid`, so an unresolved request slot contributes **exactly 0**
 rather than a score computed from a zero token.
 
-**What the switch logit does NOT see in this config:** the `outgoing_matrix_all` attacker row
-(`[cells×16, p_outspeed_j, alive_j]`, 18 dims, `_PTR_SWITCH_CELL_OAX`). That row is gated on
-`damage_matrices_outgoing_all`, which is **false** — so the switch cell is 15, not 33, and the
-per-candidate **offense** read does not exist. The switch logit's physics is purely defensive
+**What the switch logit does NOT see:** a per-candidate **offense** read. The OAX attacker row
+(`damage_matrices_outgoing_all`) was deleted with its flag (v88 `gen3_dead_flag_purge_v1` — never
+enabled in a gen-8+ run), so the switch cell is 15 dims and its physics is purely defensive
 (what this mon takes on the switch-in) plus whatever the trunk carried into `our_team_out`. The
-`d2` edge family (§5) is the only other route by which a bench mon's offense reaches its own token.
+`d2` edge family (§5) — whose engine is the same `_outgoing_attacker_matrix` kernel — is the route
+by which a bench mon's offense reaches its own token.
 
 Secondary channel widths: `sec×7`, not `sec×10` — the outgoing block prices only the 7 secondary
 columns an our-side gen3 move can inflict (`_OUT_SEC_COLS`; slp/psn/tox were dropped as structural
@@ -477,7 +476,6 @@ enters `pi` or `vf`, so none changes a projection width. Two are built in this c
 |---|---|---|
 | `win_head` | `win_prob_mode` **`shaping`** (coef 0.05) | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
 | `value_dist_head` | `value_dist_mode` **`shaping`**, 51 atoms over [−12, +12] | live — and `value_from_dist` **true**, so this head IS the critic |
-| `pubval_head` | `pubval_mode` `none` | not built |
 
 **`value_from_dist` true makes the distributional head load-bearing rather than diagnostic**: GAE,
 bootstrapping and deployment all read `E[Z]` (`policy._critic_value`), the HL-Gauss cross-entropy
@@ -507,7 +505,6 @@ offset).
 | 4 | status-landing — `P(lands) ×4`, `known ×4` | **8** | ✅ | `damage_outgoing` |
 | 5 | `outgoing_matrix` — our 4 moves × opp 6 mons | **126** | ❌ **ABSENT** | `damage_matrices_outgoing` = **false** |
 | 6 | `incoming_matrix` — K=6 headers (51 each) + 6 mons × 6 moves × 6-wide cells | 6×51 + 6×6×6 = **522** | ✅ | `damage_matrices_incoming` = true, K = `damage_topk_k` = 6 |
-| 7 | `outgoing_attacker_matrix` (OAX) — our 6 mons × 4 moves + `p_outspeed ×6` + `alive ×6` | **108** | ❌ **ABSENT** | `damage_matrices_outgoing_all` = **false** |
 | | **Total** | **85 + 45 + 8 + 522 = 660** | | |
 
 The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
@@ -572,7 +569,7 @@ make it non-transferable:
 | Block in that table | % of that run's ceiling | Exists in production config? |
 |---|---|---|
 | OUTGOING (per-action, un-collapsed) | 65.7% | ✅ yes (sub-block 3) |
-| `outgoing_attacker_matrix` | 21.4% | ❌ **no** — `damage_matrices_outgoing_all` false |
+| `outgoing_attacker_matrix` | 21.4% | ❌ **no** — the OAX flat block is deleted (v88); the kernel survives as `d2`'s engine |
 | `incoming_matrix` (mon × move) | 15.4% | ✅ yes (sub-block 6) |
 | incoming per-mon | 12.7% | ✅ yes (sub-block 1) |
 | status-landing | 8.8% | ✅ yes (sub-block 4) |
@@ -710,7 +707,6 @@ does nothing given another setting.
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
 | `damage_matrices_outgoing` | `false` | OFF |
-| `damage_matrices_outgoing_all` | `false` | OFF |
 | `damage_op` | `true` | ACTIVE |
 | `damage_outgoing` | `true` | ACTIVE |
 | `damage_topk_k` | `6` | ACTIVE |
@@ -734,13 +730,11 @@ does nothing given another setting.
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |
 | `opp_intent_grad_mode` | `"detached"` | ACTIVE |
-| `pubval_mode` | `"none"` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
-| `value_active_readout` | `false` | OFF |
 | `value_clock` | `false` | OFF |
 | `value_dist_bins` | `51` | ACTIVE |
 | `value_dist_mode` | `"shaping"` | ACTIVE |
@@ -755,7 +749,6 @@ does nothing given another setting.
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |
-| `pubval_coef` | `0.1` | INERT — no `pubval_head` |
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `value_dist_coef` | `1.0` | ACTIVE |
 | `value_tail_weight` | `0.3` | ACTIVE |
@@ -795,7 +788,6 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ❌ |
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | win-prob aux (MC outcome — a **future** label) | `win_prob_mode != none` | ❌ |
-| `pubval_target` / `pubval_mask` | f32 `[1]` each | public-value aux | `pubval_mode != none` | ❌ |
 | `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
 

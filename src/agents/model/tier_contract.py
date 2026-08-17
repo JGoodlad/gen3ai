@@ -113,7 +113,6 @@ TIER_OF: Dict[str, int] = {
     "hidden_opp_belief": 3,
     "assembler": 3,
     "win_head": 3,
-    "pubval_head": 3,
     "value_dist_head": 3,
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool — applied
     # after the assembler on the value half, the same DELIVER placement as intent_value_reduce.

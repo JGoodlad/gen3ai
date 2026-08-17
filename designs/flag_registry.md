@@ -59,13 +59,12 @@ directions are asserted by `flag_registry_test.py`.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-47 toggles — 44 `cli`, 3 `config_only`, 0 `constructor_only`.
+44 toggles — 43 `cli`, 1 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | meaning |
 |---|---|---|---|---|---|---|
 | `attend_unrevealed_opponents` | — | `config_only` | `structural` | `True` | v8 | keep the opponent's still-hidden party attendable instead of key-masking it |
 | `opp_belief_cls_k` | `--opp-belief-cls-k` | `cli` | `structural` | `0` | v9 | k learned query tokens summarising the unrevealed opp party into both heads |
-| `value_active_readout` | — | `config_only` | `structural` | `False` | v10 | route our active mon's refined token into the VALUE projection |
 | `opp_belief_slots` | `--opp-belief-aux-coef` *(coef)* | `cli` | `structural` | `False` | v16 | learned unknown-mon tokens in the un-revealed opp slots + the BeliefHead |
 | `move_belief_mode` | `--move-belief-mode` | `cli` | `structural` | `'off'` | v17 | predict + reinject each opp mon's moveset (off|revealed|unrevealed|both) |
 | `damage_op` | `--damage-op` | `cli` | `structural` | `False` | v19 | build the differentiable GPU DamageOperator |
@@ -83,10 +82,8 @@ directions are asserted by `flag_registry_test.py`.
 | `damage_matrices_outgoing` | `--damage-matrices` | `cli` | `structural` | `False` | v34 | our active's 4 moves x the opp's 6 mons, per-(move, mon) rolls |
 | `damage_matrices_incoming` | `--damage-matrices` | `cli` | `structural` | `False` | v35 | the enriched top-K incoming matrix (per opp move x per our mon) |
 | `threat_prob_outspeed` | `--threat-prob-outspeed` | `cli` | `structural` | `False` | v36 | uncertainty-aware P(outspeed): divide the speed gap by the believed speed std |
-| `damage_matrices_outgoing_all` | — | `config_only` | `structural` | `False` | v39 | the TRANSPOSED outgoing matrix — our 6 mons' 4 moves -> the opp ACTIVE |
 | `spread_belief_nature` | `--spread-belief-nature` | `cli` | `structural` | `False` | v40 | swap SpreadBelief's additive head for the NATURE/EV generative head |
 | `belief_grad_mode` | `--belief-grad-mode` | `cli` | `resume_immutable` | `'shaping'` | v41 | which gradient arrow between the belief heads and the trunk is cut |
-| `pubval_mode` | `--pubval-mode` | `cli` | `structural` | `'none'` | v43 | PUBLIC-information value aux head regressed toward the frozen V_pub logistic |
 | `damage_candidate_k` | `--damage-candidate-k` | `cli` | `structural` | `0` | v49 | cap the op's incoming candidate sweep at the K most-believed opponent moves |
 | `hp_belief_mode` | `--hp-belief-mode` | `cli` | `structural` | `'composed'` | v53 | how the 16 typed Hidden-Power channels are produced (composed|flat) |
 | `entity_topk_seats` | `--entity-topk-seats` | `cli` | `structural` | `0` | v54 | E4 — the opp active's top-K believed threat-move attention seats |
@@ -114,14 +111,12 @@ directions are asserted by `flag_registry_test.py`.
 **Notes**
 
 - `attend_unrevealed_opponents` — DEMOTED (config_only) and frozen ON: it is a hard prerequisite of opp_belief_cls_k>0 / opp_belief_slots / move_belief_mode!=off, so no run since v16 has turned it off. The extractor kwarg still defaults False — the OFF baseline stays constructible, it is just no longer selectable from the CLI.
-- `value_active_readout` — DEMOTED (config_only), frozen OFF: superseded by the MultiSeedValueReadout (v61) and --value-threat-inject (v64); never enabled in a gen-8/9/10 run.
 - `opp_belief_slots` — coef>0 is the enable signal; the COEF is a training hparam, the BOOL is the version-checked arch toggle.
 - `move_candidate_floor` — must equal damage_tables._PRIOR_FLOOR; legality itself is unconditional (v65).
 - `value_dist_vmin` — value-MEANING, so check_value_dist on the resume path only.
 - `value_dist_vmax` — value-MEANING, so check_value_dist on the resume path only.
 - `damage_matrices_outgoing` — set by the `--damage-matrices {off,outgoing,incoming,both}` MODE flag, which desugars into this bool and `damage_matrices_incoming` before `_resolve`.
 - `damage_matrices_incoming` — the other half of the `--damage-matrices` mode desugar; it also REUSES `damage_topk_k` as its K.
-- `damage_matrices_outgoing_all` — DEMOTED (config_only), frozen OFF: never enabled in a gen-8/9/10 run; the switch-in offense read it prices is delivered by the d2 edge family.
 - `belief_grad_mode` — detach() is value-preserving => the forward is bit-identical in every mode, so check_belief_grad_mode on the resume path only.
 - `opp_intent` — coef>0 is the enable signal, like opp_belief_slots.
 - `value_entity_pool_full` — requires value_entity_pool; a separate flag/shape so v80-table checkpoints (gen-12 trains one) keep loading. The one successor for every vf route the critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat).

@@ -1291,12 +1291,6 @@ Pool-derived (a committed calibration artifact, same pattern):
   shortlist) and future archetype-aware team sampling. Loader:
   `agents.training.team_archetypes.load_team_archetypes`.
 
-Human-replay-derived (a committed calibration artifact, like `gen3_bot_elo_anchors.json`):
-- `gen3_pubval.json` — the frozen public-value logistic (V_pub, `gen3_pubval_aux_v1`): 17 public-board
-  features → P(win), fit on the rated gen3ou replay corpus (`replays/showdown/gen3ou/`, local-only, NOT in
-  the repo) by `python -m agents.training.pubval_calibration`; provenance (n_games, AUC, git hash) in `meta`.
-  Consumed by `Gen3Env` when `--pubval-mode != none` (via `agents.training.pubval.PubValModel`).
-
 All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
 empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a
 parser sentinel (`GenData.UNKNOWN_ITEM`) and the `to_id_str` string util — neither is static data.

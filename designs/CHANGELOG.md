@@ -3392,3 +3392,49 @@ projection so a mismatch is shape-caught — the checks name the cause). pi is u
 weight (vf-only concat, pinned). Gates: `value_routes_test.py` (10) and the compile cell now
 builds production + the ENTIRE rider stack (v84+v85+v86+v87) as ONE graph, 0 breaks. E2E smoke
 green with both flags.
+
+### `gen3_op_stashes_v1` (2026-08-16): the typed refactor of the side-value surface — byte-identical
+
+The OpTensors discipline applied to the STASH surface. The op carried ten independently-managed
+`last_*` attributes with three different clearing conventions — `last_w_all` cleared at forward
+entry (hand-built), the pair stashes cleared in an else-branch, and the top-K trio not cleared at
+all (a `last_topk_idx` from the PREVIOUS batch silently survived any forward in which the matrix
+path didn't run). They are now ONE `OpStashes` dataclass replaced as a unit at forward entry, so
+a stale batch is unrepresentable for every stash at once. Reads stay on the documented `last_*`
+surface (now read-only properties — the re-export convention), and a stray WRITE to a `last_*`
+name fails loud instead of silently forking the state (pinned by test). The extractor half: the
+anonymous 5-tuple `last_pointer_inputs` becomes the `PointerInputs` NamedTuple and the
+threshold stash becomes `ThresholdProbs` — still tuples, so every positional unpack is
+unchanged. Byte-identity proven (the production sha probe reads `3cab191a…` unchanged after
+each phase), the compile cells hold (dynamo traces the properties + NamedTuples to the same one
+graph), and the publication/`belief_supervision` surface is deliberately untouched — its typed
+accessor and publish boundary are already the enforced contract.
+
+## v88 — `gen3_dead_flag_purge_v1` (2026-08-16): three dead flags deleted outright, plus the whole pubval subsystem
+
+The cleanup-journey deletion pattern (v75/v78) applied to the three surviving flags whose OFF
+value was the only value any generation ever ran:
+
+* **`value_active_readout`** (v10) — the active-token vf readout. Demoted to config_only at v78,
+  frozen OFF, superseded by the multi-seed readout and `--value-threat-inject`. Field, gate and
+  forward branch deleted.
+* **`damage_matrices_outgoing_all`** (v39) — the OAX transposed outgoing flat block + its 18-dim
+  pointer switch-cell extension (`_PTR_SWITCH_CELL_OAX`, the 33-wide switch cell). Deleted with
+  its flag — **but the `_outgoing_attacker_matrix` KERNEL survives untouched as `d2`'s engine**
+  (`pairwise_bench_outgoing` calls it every production forward): what died is the flat-block
+  RENDER and its never-enabled head delivery, not the physics. The switch cell is 15 wide,
+  unconditionally.
+* **`pubval_mode` / `pubval_coef`** (v43) — the entire public-replay value aux subsystem:
+  `PubValHead`, `agents.training.pubval`, `pubval_calibration`, `_pubval_loss`, the env target
+  emission (`_pubval_target` + the `pubval_target`/`pubval_mask` obs keys), the argparse pair,
+  the launcher labels, the parity fuzz, and the committed artifact `data/gen3_pubval.json`.
+  Measured NULL as a lever; never ON in a production generation. The raw replay corpus and the
+  design doc remain.
+
+Migration: a v88 purge loop runs for EVERY config vintage — a recorded ON value names
+parameters/widths the surviving code cannot rebuild and is REFUSED with the re-read-from-git_hash
+diagnosis (the v75 rule); a recorded OFF/none value pops silently; `pubval_coef` (training-only,
+INERT for a forward) pops unconditionally. `_DEAD_FEK_JUDGED`/`_DEAD_FEK_INERT` mirror the same
+split in `snapshot.py`. Production byte-identity: the sha probe reads `3cab191a…` unchanged, and
+the full test reconciliation (snapshot purge tests, the d2 kernel re-pinned through
+`pairwise_bench_outgoing`, delivery graph + arch tables + flag doc regenerated) is green.

@@ -817,9 +817,18 @@ _DEAD_FEK_INERT = (
     # `zarch_lut_rosters` is a lookup table, so none of them can be ON on their own — the two
     # JUDGED mode strings below carry the whole decision.
     "zarch_dim", "zarch_lut_init_std", "zarch_lut_rosters",
+    # v88: pubval's training coefficient — scaled a loss for a head that no longer exists.
+    "pubval_coef",
 )
 _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     ("damage_reattend", False),
+                    # v88 (gen3_dead_flag_purge_v1): both were config_only frozen OFF since v78;
+                    # each ON value widened a projection/out_dim the surviving code cannot
+                    # rebuild, so ON is refused, OFF pops. pubval's mode string goes the same
+                    # way (PubValHead carried parameters when != 'none').
+                    ("value_active_readout", False),
+                    ("damage_matrices_outgoing_all", False),
+                    ("pubval_mode", "none"),
                     # v75: the SimSiam latent-belief predictor is deleted. True is REFUSED because
                     # it put parameters in the state_dict; False pops silently (nothing built).
                     ("opp_belief_latent", False),
@@ -977,7 +986,6 @@ def current_model_version(
     attend_unrevealed_opponents: bool = False,
     opp_belief_cls_k: int = 0,
     opp_belief_slots: bool = False,
-    value_active_readout: bool = False,
     use_popart: bool = False,
     opp_belief_aux_coef: float = 0.0,
     move_belief_mode: str = "off",
@@ -1023,14 +1031,11 @@ def current_model_version(
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
-    damage_matrices_outgoing_all: bool = False,
     threat_prob_outspeed: bool = False,
     hp_type_belief_coef: float = 0.0,
     item_belief_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
-    pubval_mode: str = "none",
-    pubval_coef: float = 0.0,
     vf_coef: float = 0.5,
     reward_config=None,
     value_tail_weight: float = 0.0,
@@ -1061,7 +1066,6 @@ def current_model_version(
     ext_kwargs["attend_unrevealed_opponents"] = attend_unrevealed_opponents
     ext_kwargs["opp_belief_cls_k"] = opp_belief_cls_k
     ext_kwargs["opp_belief_slots"] = opp_belief_slots
-    ext_kwargs["value_active_readout"] = value_active_readout
     ext_kwargs["move_belief_mode"] = move_belief_mode
     ext_kwargs["damage_op"] = damage_op
     ext_kwargs["damage_outgoing"] = damage_outgoing
@@ -1100,11 +1104,9 @@ def current_model_version(
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
-    ext_kwargs["damage_matrices_outgoing_all"] = damage_matrices_outgoing_all
     ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
     ext_kwargs["hp_belief_mode"] = hp_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
-    ext_kwargs["pubval_mode"] = pubval_mode
     policy_kwargs = {
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
@@ -1118,7 +1120,6 @@ def current_model_version(
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
         hp_type_belief_coef=hp_type_belief_coef, item_belief_coef=item_belief_coef,
-        pubval_coef=pubval_coef,
     )
 
 
@@ -1133,7 +1134,6 @@ def arch_toggles_from_model(model) -> dict:
         "attend_unrevealed_opponents": bool(getattr(fe, "attend_unrevealed_opponents", False)),
         "opp_belief_cls_k": int(getattr(fe, "opp_belief_cls_k", 0)),
         "opp_belief_slots": bool(getattr(fe, "opp_belief_slots", False)),
-        "value_active_readout": bool(getattr(fe, "value_active_readout", False)),
         "move_belief_mode": str(getattr(fe, "move_belief_mode", "off")),
         "damage_op": bool(getattr(fe, "damage_op_enabled", False)),
         "damage_outgoing": bool(getattr(fe, "damage_outgoing", False)),
@@ -1156,9 +1156,6 @@ def arch_toggles_from_model(model) -> dict:
         "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
         "entity_tail_seats": bool(getattr(fe, "entity_tail_seats", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
-        # v43 pubval aux head (gen3_pubval_aux_v1): STRUCTURAL string like win_prob_mode, gated in
-        # check_compatible, so it must reach the worker's gate (a pubval-ON run's own snapshots carry it).
-        "pubval_mode": str(getattr(fe, "pubval_mode", "none")),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),
@@ -1210,7 +1207,6 @@ def arch_toggles_from_model(model) -> dict:
         "damage_matrices_incoming": bool(getattr(fe, "damage_matrices_incoming", False)),
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons → opp active) —
         # STRUCTURAL bool (widens the op out_dim), gated in check_compatible, so it must reach the worker's gate.
-        "damage_matrices_outgoing_all": bool(getattr(fe, "damage_matrices_outgoing_all", False)),
         # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) — a version-gated
         # forward-behavior bool, so it must reach the worker's check_compatible gate.
         "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
