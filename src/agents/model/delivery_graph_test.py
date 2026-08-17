@@ -1,6 +1,6 @@
 """The delivery graph is pinned to a committed snapshot, and leak-safety is a test, not an argument.
 
-Two jobs:
+Three jobs:
 
 1. **Anti-rot.** `designs/architecture_graph.dot` and `designs/ARCHITECTURE.md` describe the model.
    Documents drift; this makes drift a red test. Regenerate the graph from the live code and diff it
@@ -12,6 +12,14 @@ Two jobs:
    opponent's true moveset, its Hidden Power type, its spread). "They never enter the forward" has
    always been true by construction and asserted only in prose. Here it is checked: no `aux` edge
    may terminate at `pi_projection`, `vf_projection`, or any pointer logit.
+
+3. **Completeness — the one drift the two above cannot see.** Both compare the graph against
+   ITSELF. A module that was never drawn is identical in the snapshot and in the live build, and a
+   module with no edges is indistinguishable from a module the config does not build — so the graph
+   drifted BY OMISSION for months (the v84/v87 value routes had no edges at all). The gate below
+   enumerates the extractor's parametered top-level modules and demands each one resolve to a graph
+   element or to an allowlist entry with a reason. It is the `build_arch_viewer` move ("a new family
+   cannot ship as a bare letter") one level up: a new module cannot ship undrawn.
 
 Regenerate after an intentional architecture change:
 
@@ -28,7 +36,12 @@ import pytest
 from agents.model.delivery_graph import (
     EDGE_TYPES,
     FORWARD_SINKS,
+    MODULE_GRAPH_TOKENS,
+    NON_DELIVERY_MODULES,
+    build_extractor,
     build_graph,
+    module_coverage,
+    parametered_children,
     to_dot,
 )
 
@@ -47,6 +60,14 @@ _REGEN = ("Regenerate BOTH artifacts in the same commit:\n"
 @pytest.fixture(scope="module")
 def graph():
     return build_graph(_CONFIG)
+
+
+@pytest.fixture(scope="module")
+def extractor():
+    """The SAME build seam `build_graph` uses — the coverage claim is only meaningful if the modules
+    being enumerated are the modules the graph was drawn from."""
+    fe, _cfg, _layout = build_extractor(_CONFIG)
+    return fe
 
 
 @pytest.fixture(scope="module")
@@ -266,3 +287,107 @@ def test_phase_stages_come_from_the_enforced_tier_contract():
         if owner in TIER_OF:
             assert n["stage"] == f"T{TIER_OF[owner]}", (
                 f"{n['id']} claims {n['stage']} but the contract says T{TIER_OF[owner]}")
+
+
+# --------------------------------------------------------------- COMPLETENESS: nothing goes undrawn
+def test_every_parametered_module_is_reachable_in_the_graph(extractor, graph):
+    """THE OMISSION GATE. A module that learned something must deliver it somewhere in this picture.
+
+    Every other test here compares the graph against itself — the snapshot, the DOT, the leak rule —
+    so all of them are blind to a module that was never drawn: it looks the same in both halves, and
+    "no edges" is indistinguishable from "the config does not build it". That blindness is measured,
+    not hypothetical: when this gate was written it found thirteen parametered modules with no
+    presence at all, among them BOTH v84/v87 pointer-cell blocks, both opponent-intent heads, the
+    item belief, the event seats and both critic side readouts.
+
+    A module passes by resolving to a node id or a declared `via` substring, or by sitting in
+    `NON_DELIVERY_MODULES` with a reason. There is no third option, and adding one is the point.
+    """
+    gaps = module_coverage(extractor, graph)
+    assert not gaps, (
+        "modules unaccounted for in the delivery graph:\n"
+        + "\n".join(f"  {k}: {v}" for k, v in sorted(gaps.items()))
+        + "\n\nDraw the module's edges in delivery_graph.build_graph and declare a token for it in "
+          "MODULE_GRAPH_TOKENS, or allowlist it in NON_DELIVERY_MODULES with a one-line reason.\n"
+        + _REGEN)
+
+
+def test_a_new_parametered_module_FAILS_the_gate(extractor, graph):
+    """The falsifiability check: the gate must be a gate.
+
+    A coverage test that everything passes is worth nothing unless a module that SHOULD fail does.
+    Attach a parametered child the graph has never heard of and the coverage must name it — this is
+    the property a future flag relies on, since a flag's whole footprint is usually "a new module
+    appears on the extractor".
+    """
+    import torch
+
+    extractor.add_module("_gate_probe", torch.nn.Linear(3, 3))
+    try:
+        gaps = module_coverage(extractor, graph)
+        assert "_gate_probe" in gaps, (
+            "a brand-new parametered module passed the completeness gate — the gate is inert, and "
+            "the next feature will ship undrawn exactly like the v84/v87 value routes did")
+        assert "UNDRAWN" in gaps["_gate_probe"]
+    finally:
+        del extractor._modules["_gate_probe"]
+    assert "_gate_probe" not in module_coverage(extractor, graph)
+
+
+def test_no_stale_declaration_survives_a_deleted_module(extractor, graph):
+    """A declaration for a module that no longer exists must FAIL, not sit there.
+
+    Dead entries are how an allowlist rots into a blanket excuse: the name gets reused, or a reader
+    trusts a reason that describes something deleted two generations ago. `module_coverage` reports
+    them, and this pins that it does — with a fake entry, so the check cannot pass vacuously just
+    because today's declarations happen to be clean.
+    """
+    assert not module_coverage(extractor, graph), "preconditions: the live declarations are clean"
+
+    children = {name for name, _ in extractor.named_children()}
+    for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
+        assert name in children, (
+            f"{name!r} is declared in delivery_graph but is not a child of the extractor at the "
+            "production config — delete the entry")
+
+    MODULE_GRAPH_TOKENS["_ghost_module"] = ("nothing",)
+    try:
+        gaps = module_coverage(extractor, graph)
+        assert "STALE" in gaps.get("_ghost_module", ""), (
+            "a declaration naming a module the extractor does not have went unreported — a dead "
+            "allowlist entry can then silently excuse whatever takes its name later")
+    finally:
+        del MODULE_GRAPH_TOKENS["_ghost_module"]
+
+
+def test_the_allowlist_is_short_and_every_entry_gives_a_reason(extractor):
+    """The escape hatch has to stay expensive to use.
+
+    A reason is required because "not drawn" and "carries nothing" are different claims, and only
+    one of them is a fact about the architecture. The cap is deliberately low: this allowlist
+    growing is the signal that the graph has stopped describing the model.
+    """
+    for name, reason in NON_DELIVERY_MODULES.items():
+        assert len(reason) > 40 and "—" in reason, (
+            f"{name}: the allowlist reason must say WHY the module carries nothing, in a sentence")
+    assert len(NON_DELIVERY_MODULES) <= 6, (
+        f"{len(NON_DELIVERY_MODULES)} allowlisted modules — the exceptions are becoming the rule")
+    assert set(NON_DELIVERY_MODULES).isdisjoint(MODULE_GRAPH_TOKENS)
+
+
+def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
+    """Coverage is enumerated from the LIVE module tree, and the criterion is parameters.
+
+    Parameters are the right criterion because they are what a state_dict has to agree about: a
+    parametered module is a thing that learned something, and a learned thing reaching no head and
+    no logit is either dead weight or an undrawn route. This also pins that the enumeration is not
+    quietly excluding the modules it would be most embarrassing to miss.
+    """
+    live = parametered_children(extractor)
+    assert len(live) > 25, live
+    for expect in ("damage_op", "team_transformer", "value_dist_head", "alpha_head",
+                   "intent_conditional", "history_events"):
+        assert expect in live, f"{expect} vanished from the extractor — update the declarations"
+    # ObsUnpack and the T0 species prior own no parameters; they must not be demanded.
+    for parameterless in ("unpack", "activation", "t0_species_prior"):
+        assert parameterless not in live

@@ -45,7 +45,7 @@ import argparse
 import inspect
 import json
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 if TYPE_CHECKING:
     from agents.model.damage_op import DamageOperator
@@ -64,6 +64,122 @@ _DEFAULT_CONFIG = os.path.join(
 )
 
 
+# ------------------------------------------------------- COMPLETENESS: every module must be drawn
+# THE FAILURE MODE THIS EXISTS FOR. The per-module edge lists below are hand-written against the
+# forward, and they drift BY OMISSION — which is the one kind of drift nothing here could catch. A
+# wrong width fails the snapshot; an unlabelled family fails the viewer; a module with NO edges at
+# all looks exactly like a module the config does not build. Measured when this gate was added:
+# thirteen parametered modules were absent, including both v84/v87 pointer-cell blocks, both
+# opponent-intent heads, the item belief, the event seats and both critic side readouts.
+#
+# The rule: every TOP-LEVEL child of the extractor that owns parameters must be REACHABLE in the
+# graph, or be allowlisted below with a reason. Reachable means ANY of its declared tokens is an
+# EDGE ENDPOINT or appears inside an edge's `via` — deliberately not "is a node id", because an
+# isolated node delivers nothing and declaring one would be a way to satisfy this gate without
+# drawing the route it is asking for.
+#
+# The tokens are DECLARED, never matched fuzzily against prose. A `via` is English written for a
+# human reader, so a gate that greps English fails the day someone improves the wording — the
+# declaration is the contract, and rewording a `via` that a token points at breaks the test loudly
+# instead of silently un-covering a module.
+MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
+    # --- resolved as a NODE ID ---
+    "damage_op": ("damage_op",),
+    "belief_slots": ("belief_slots",),
+    "belief_head": ("species_belief",),           # the T2 training-only readout, drawn by its role
+    "move_belief": ("move_belief",),
+    "spread_belief": ("spread_belief",),
+    "hp_type_belief_head": ("hp_type_belief",),
+    "item_belief_head": ("item_belief",),
+    "hidden_opp_belief": ("hidden_opp_belief",),
+    "alpha_head": ("alpha_head",),
+    "beta_head": ("beta_head",),
+    "win_head": ("win_head",),
+    "value_dist_head": ("value_dist_head",),
+    "projection": ("pi_projection",),
+    "value_projection": ("vf_projection",),
+    "pokemon_encoder": ("pokemon_encoder.role_encoder", "pokemon_encoder.move_network"),
+    # --- resolved through an edge's `via` (the module IS the channel, not an endpoint) ---
+    "embeddings": ("Embeddings",),
+    "edge_bias": ("EdgeBias",),
+    "entity_seats": ("EntityMoveSeats",),
+    "history_events": ("EventSeats",),
+    "cls_pool": ("CLSPool",),
+    "prefuse_proj": ("prefuse_proj",),
+    "assembler": ("ProjectionAssembler", "MultiSeedValueReadout"),
+    "value_entity_pool": ("UnifiedValueReadout",),
+    "intent_move_cell": ("IntentMoveCell",),
+    "intent_threshold_move": ("IntentThresholdMoveCell",),
+    "intent_threshold_value": ("IntentThresholdValue",),
+    "intent_conditional": ("IntentConditionalMoveCell",),
+    "intent_value_reduce": ("IntentValueReduce",),
+    "value_clock_route": ("ValueClockRoute",),
+    "value_intent_route": ("ValueIntentRoute",),
+}
+
+#: Parametered modules that deliberately draw NO edge, each with the reason. An entry here is a
+#: claim that the module carries no fact from anywhere to anywhere — not that nobody got round to
+#: drawing it. Keep it short; the allowlist is the escape hatch, and a long one means the graph has
+#: stopped describing the model.
+NON_DELIVERY_MODULES: Dict[str, str] = {
+    "team_transformer":
+        "the TRUNK itself — it refines tokens IN PLACE, so its output IS the seat nodes and its "
+        "input IS the bias families. A node for it would duplicate the seats, not add a route.",
+    "pre_proj_norm":
+        "root LayerNorm on the assembled pi concat (UNTIERED_CHILDREN) — normalises the head "
+        "input in place; it carries no fact of its own.",
+    "value_pre_norm":
+        "root LayerNorm on the assembled vf concat — the value-side mirror of pre_proj_norm.",
+}
+
+
+def parametered_children(fe: Any) -> List[str]:
+    """The top-level child modules that own parameters — the set the graph must account for.
+
+    Parameters are the criterion because they are what a `state_dict` and a `model_config.json`
+    have to agree about: a parametered module is a thing that LEARNED something, and a learned
+    thing that reaches no head and no logit is either dead weight or an undrawn route.
+    """
+    return [name for name, child in fe.named_children()
+            if any(True for _ in child.parameters())]
+
+
+def module_coverage(fe: Any, graph: Dict[str, Any]) -> Dict[str, str]:
+    """`{module attr: what is wrong}` — empty means every parametered module is reachable.
+
+    Also reports STALE declarations (a mapping or allowlist entry naming a module the extractor no
+    longer has), so a deleted module cannot leave behind an entry that keeps some future module
+    silently excused.
+    """
+    endpoints = ({e["src"] for e in graph["edges"]} | {e["dst"] for e in graph["edges"]})
+    vias = "\n".join(e.get("via") or "" for e in graph["edges"])
+    children = {name for name, _ in fe.named_children()}
+    problems: Dict[str, str] = {}
+
+    for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
+        if name not in children:
+            problems[name] = ("STALE declaration — the extractor has no child by this name at "
+                              "this config; delete the entry")
+        elif name in MODULE_GRAPH_TOKENS and name in NON_DELIVERY_MODULES:
+            problems[name] = "declared BOTH mapped and non-delivery — pick one"
+
+    for name in parametered_children(fe):
+        if name in problems or name in NON_DELIVERY_MODULES:
+            continue
+        tokens = MODULE_GRAPH_TOKENS.get(name)
+        if tokens is None:
+            problems[name] = (
+                "UNDRAWN — a parametered module with no presence in the graph. Add its edges "
+                "(and a MODULE_GRAPH_TOKENS entry naming an edge endpoint or a `via` substring), "
+                "or allowlist it in NON_DELIVERY_MODULES with a reason.")
+        elif not any(t in endpoints or t in vias for t in tokens):
+            problems[name] = (
+                f"declared tokens {tokens} are on no edge — as an endpoint or in a `via`. Either "
+                "the edges were removed (leaving an isolated node, which delivers nothing) or a "
+                "`via` was reworded out from under the declaration")
+    return problems
+
+
 # ----------------------------------------------------------------------------- graph construction
 def _node(nid: str, kind: str, **attrs: Any) -> Dict[str, Any]:
     return {"id": nid, "kind": kind, **attrs}
@@ -76,18 +192,17 @@ def _edge(src: str, dst: str, etype: str, width: Optional[int], const: str,
             "source_constant": const, **attrs}
 
 
-def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
-    """Instantiate the extractor from `config_path` and read the delivery graph off the live modules.
+def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str, Any], Dict[str, Any]]":
+    """Instantiate the extractor from a `model_config.json`. Returns `(fe, cfg, layout)`.
 
-    Every width and every seat index below is READ, not assumed: the op's sub-block widths come from
-    its own constants, the seat indices from `TeamTransformer._total_tokens` + `EntityMoveSeats`,
-    the projection widths from the built `nn.Linear`s. A structural change therefore moves the graph.
+    THE ONE BUILD SEAM. `build_graph`, `arch_tables` and the completeness gate all come through
+    here, so "the modules the graph was drawn from" and "the modules the gate enumerates" cannot
+    become two different instances — which is the only way a coverage check over the live module
+    tree means anything.
     """
     import gymnasium as gym
     import numpy as np
 
-    from agents.model import damage_op as dop
-    from agents.model import features_extractor as fx
     from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from agents.model.damage_tables import sanitize_historical_move_floor
@@ -105,6 +220,20 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()  # type: ignore[arg-type]
     if hasattr(fe, "disable_observation_debugger"):
         fe.disable_observation_debugger()
+    return fe, cfg, layout
+
+
+def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
+    """Instantiate the extractor from `config_path` and read the delivery graph off the live modules.
+
+    Every width and every seat index below is READ, not assumed: the op's sub-block widths come from
+    its own constants, the seat indices from `TeamTransformer._total_tokens` + `EntityMoveSeats`,
+    the projection widths from the built `nn.Linear`s. A structural change therefore moves the graph.
+    """
+    from agents.model import damage_op as dop
+    from agents.model import features_extractor as fx
+
+    fe, cfg, layout = build_extractor(config_path)
 
     # the graph is only built from configs that carry the op; every read below already assumes it
     op = cast("DamageOperator", fe.damage_op)
@@ -162,6 +291,29 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         nodes.append(_node("spread_belief", "belief_head"))
     if fe.belief_head is not None:
         nodes.append(_node("species_belief", "belief_head"))
+    # gen3_item_belief_v1 (v83): the hidden-ITEM posterior. A T0 resolve step exactly like the
+    # species/spread/HP-type beliefs — and, until now, the only one with no presence in this graph.
+    if getattr(fe, "item_belief_head", None) is not None:
+        nodes.append(_node("item_belief", "belief_head", stage="T0",
+                           out_dim=fe.item_belief_head.item_head.out_features))
+    if getattr(fe, "alpha_head", None) is not None:
+        # gen3_opp_intent_v1 (v67): α (which of their believed moves will they click, or SWITCH)
+        # and β (if they switch, to whom). Pointer heads over objects that already exist, so both
+        # are equivariant under permuting what they point at.
+        nodes.append(_node("alpha_head", "belief_head", stage="T2",
+                           out_dim=fe.entity_topk_seats + 1))
+        nodes.append(_node("beta_head", "belief_head", stage="T2", out_dim=T))
+    # The two SIDE readouts off `value_pooled`. Neither is drawn as a head input (they are not
+    # concatenated into pi/vf at all), which is exactly why both went unrepresented — a module with
+    # no concat is invisible to a graph built from the head-input tables.
+    if getattr(fe, "win_head", None) is not None:
+        nodes.append(_node("win_head", "head", in_features=D, out_features=1,
+                           note="sigmoid(logit) = P(win); supervised by the MC episode outcome"))
+    if getattr(fe, "value_dist_head", None) is not None:
+        nodes.append(_node("value_dist_head", "head", in_features=D,
+                           out_features=fe.value_dist_head.bins,
+                           note="categorical over a fixed atom support; under --value-from-dist "
+                                "the critic's V IS this head's mean, not value_net's scalar"))
 
     nodes.append(_node("pi_projection", "head",
                        in_features=fe.projection.in_features,
@@ -257,6 +409,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             for dst in _members(col_g):
                 edges.append(_edge(src, dst, "bias", cell, f"_EDGE_{fam.upper()}_CELL",
                                    family=fam, bidirectional=True,
+                                   via="EdgeBias.forward (zero-init cell map -> a per-pair, "
+                                       "per-head additive attention logit, every layer)",
                                    note=_NOTES.get(fam, "")))
 
     # --- CONTENT EDGES: what becomes / enters a token ------------------------------------------
@@ -276,6 +430,16 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         edges.append(_edge("damage_op", f"E5_tail[{t}]", "content", 4, "_EDGE_TAIL_CELL(4)",
                            via="EntityMoveSeats.tail_proj",
                            note="[p_tail, worst_phys, worst_spec, revealed] — beyond-top-K mass"))
+    # gen3_event_window_v1 (Tier H-B): what BUILDS an event seat. The seats themselves were drawn
+    # from the day they shipped, but nothing delivered into them — so the graph showed 32 tokens
+    # made of nothing, and `EventSeats` (a 15.7k-param module) appeared nowhere at all.
+    for e in range(n_ev):
+        edges.append(_edge("obs.event_window", f"event[{e}]", "content",
+                           layout["event_token_dim"], "layout['event_token_dim']",
+                           via="EventSeats (own kind/status embeddings + the SHARED species/move "
+                               "tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
+                           note="one seat per event record; time is CONTENT (the log-recency "
+                                "scalar), never a lag-indexed weight. PAD rows are key-masked"))
 
     # Residual injections onto existing seats.
     if fe.prefuse_proj is not None:
@@ -338,7 +502,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         edges.append(_edge(f"opp_mon[{j}]", "vf_projection", "concat", D, "D_MODEL",
                            via="CLSPool.value_cls", pooled=True))
     edges.append(_edge("our_active_refined", "pi_projection", "concat", D, "D_MODEL",
-                       pooled=False,
+                       via="ProjectionAssembler concat", pooled=False,
                        note="our active's refined token; pi-only (the vf active readout "
                             "route was deleted — superseded by the seed window, then the pool)"))
     for head in FORWARD_SINKS:
@@ -346,9 +510,24 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         # rides the active tokens (E2 injection) + the global token. The op's flat block is
         # likewise NOT a head input since gen3_no_concat_v1; its per-head routes are below.
         edges.append(_edge("non_matchup_rest", head, "concat", nmr,
-                           "GLOBAL_ENV_DIM + board scalars", pooled=False,
+                           "GLOBAL_ENV_DIM + board scalars",
+                           via="ProjectionAssembler concat", pooled=False,
                            note="the one head input with NO token route a pool reads — its "
                                 "only other delivery is the global token"))
+    # gen3_value_threat_inject_v1: the op's per-our-mon reduced incoming row, ADDED to that mon's
+    # token on the value pool's OWN copy — so `value_cls` pools an augmented set while `our_cls`,
+    # `our_active_refined` and the pointer head read the untouched tokens (pi is bit-identical for
+    # an arbitrary W_inj, by construction rather than by discipline). Drawn as a damage_op->vf route
+    # because that is what it is; it lives under `cls_pool`, which is why it was never drawn.
+    if getattr(fe.cls_pool, "value_threat_proj", None) is not None:
+        from agents.model.value_threat_inject import value_threat_inject_dim
+        edges.append(_edge("damage_op", "vf_projection", "content",
+                           value_threat_inject_dim(), "value_threat_inject_dim()",
+                           via="CLSPool.value_threat_proj (one SHARED Linear over the six rows) — "
+                               "token CONTENT on the value pool's copy of our mons",
+                           pooled=True, zero_init=True,
+                           note="an attention VALUE carries a magnitude where an attention BIAS "
+                                "cannot — 'this mon is about to lose 62% of its HP', per entity"))
     if fe.assembler.seed_readout is not None:
         edges.append(_edge("damage_op", "vf_projection", "concat",
                            fx.VALUE_SEED_K * fx.VALUE_SEED_DIM, "VALUE_SEED_K * VALUE_SEED_DIM",
@@ -415,8 +594,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                     f"{dop._N_OUT_SECONDARY}] for THIS request slot"))
     if getattr(fe, "intent_move_cell", None) is not None:
         # gen3_intent_move_cell_v1 (G3): the alpha-conditioned c2 re-delivery — a per-action
-        # ABSOLUTE on the move logits, weighted by the T2 alpha publication (OFF in production
-        # until the G3 gate run).
+        # ABSOLUTE on the move logits, weighted by the T2 alpha publication.
         for k in range(n_e3):
             edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
                                fx.INTENT_MOVE_CELL_DIM, "INTENT_MOVE_CELL_DIM",
@@ -424,6 +602,29 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                zero_init=True,
                                note="alpha-expected burn/sleep consequence + raw c2 columns "
                                     "+ alpha_stay, for THIS request slot"))
+    # The two pointer-cell blocks that shipped after `intent_move_cell` and were never drawn: both
+    # widen `PointerInputs.move_cells` exactly as it does, so their absence made the pointer head's
+    # own input look narrower than it is.
+    if getattr(fe, "intent_threshold_move", None) is not None:
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.INTENT_THRESH_MOVE_DIM, "INTENT_THRESH_MOVE_DIM",
+                               via="IntentThresholdMoveCell (alpha-contracted p_KO / "
+                                   "P(sub survives) / P(the punch executes))",
+                               zero_init=True,
+                               note="gated to the mechanic that reads it — Focus Punch, "
+                                    "Substitute, Endure, Destiny Bond, Endeavor — plus p_KO as "
+                                    "decorrelated context on every slot"))
+    if getattr(fe, "intent_conditional", None) is not None:
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.INTENT_COND_MOVE_DIM, "INTENT_COND_MOVE_DIM",
+                               via="IntentConditionalMoveCell (published alpha AND beta × the op "
+                                   "pair cells / outgoing block)",
+                               zero_init=True,
+                               note="Counter & Mirror Coat (alpha-weighted phys/spec incoming), "
+                                    "flinch, Protect, Explosion trade value (beta-weighted), "
+                                    "Pursuit — the SWITCH mass carries meaning in every cell"))
     if op.pointer_switch_cell_dim:
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
@@ -432,24 +633,137 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                note="incoming row + CB tail (the OAX offense read was deleted "
                                     "with its flag — d2 carries the switch-in offense)"))
 
+    # --- OPPONENT INTENT: what alpha/beta READ, and where their publication lands ---------------
+    # gen3_opp_intent_v1. Both heads were missing from this graph entirely, and the omission was
+    # load-bearing rather than cosmetic: five downstream modules (IntentMoveCell,
+    # IntentThresholdMove/Value, IntentConditionalMoveCell, IntentValueReduce, ValueIntentRoute)
+    # are all named "published alpha × …" in their own `via` text, with nothing in the picture
+    # producing an alpha. The WIDTH on a publication edge is the publication's own width — the
+    # blocks those weights build are drawn by the parallel `damage_op` edges, so the two are not
+    # additive and this edge is never a second copy of the same columns.
+    if getattr(fe, "alpha_head", None) is not None:
+        _detached = fe.opp_intent_grad_mode != "shaping"
+        _grad_note = ("input DETACHED (opp_intent_grad_mode=detached) — a null then says the head "
+                      "cannot predict the opponent, not that predicting them perturbed the policy"
+                      if _detached else
+                      "opp_intent_grad_mode=shaping — the intent gradient reaches the trunk")
+        for c in range(k_e4):
+            edges.append(_edge(f"E4_threat[{c}]", "alpha_head", "content", D, "D_MODEL",
+                               via="AlphaIntentHead.seat_scorer (the REFINED E4 seat ‖ board ctx, "
+                                   "one SHARED scorer over every seat)",
+                               note="equivariant under permuting their moves; "
+                                    "SWITCH is scored from the ctx alone. " + _grad_note))
+        for i in range(T):
+            edges.append(_edge(f"our_mon[{i}]", "alpha_head", "content", D, "D_MODEL",
+                               via="AlphaIntentHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
+                               pooled=True))
+            edges.append(_edge(f"opp_mon[{i}]", "alpha_head", "content", D, "D_MODEL",
+                               via="AlphaIntentHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
+                               pooled=True))
+            edges.append(_edge(f"opp_mon[{i}]", "beta_head", "content", D, "D_MODEL",
+                               via="BetaSwitchHead.scorer (their refined token ‖ board ctx)",
+                               note="pointer over their six tokens — legality is a MASK, never "
+                                    "learned; their_team_out is detached at this call"))
+            edges.append(_edge(f"our_mon[{i}]", "beta_head", "content", D, "D_MODEL",
+                               via="BetaSwitchHead ctx = CLSPool.our_cls ‖ CLSPool.their_cls",
+                               pooled=True))
+        _a_w, _a_c = fe.entity_topk_seats + 1, "entity_topk_seats + 1 (the SWITCH class)"
+        _move_cell_consumers = [
+            n for n, m in (("IntentMoveCell", getattr(fe, "intent_move_cell", None)),
+                           ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
+                           ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)))
+            if m is not None]
+        if _move_cell_consumers:
+            for k in range(n_e3):
+                edges.append(_edge("alpha_head", f"pointer.move_logit[{k}]", "cell", _a_w, _a_c,
+                                   via="the alpha PUBLICATION weighting "
+                                       + " / ".join(_move_cell_consumers),
+                                   note="stop-grad under belief_grad_mode=label_only; the CELL "
+                                        "widths ride the parallel damage_op edges"))
+        _val_consumers = [
+            n for n, m in (("IntentValueReduce", fe.intent_value_reduce),
+                           ("IntentThresholdValue", fe.intent_threshold_value),
+                           ("ValueIntentRoute", fe.value_intent_route))
+            if m is not None]
+        if _val_consumers:
+            edges.append(_edge("alpha_head", "vf_projection", "content", _a_w, _a_c,
+                               via="the alpha PUBLICATION weighting " + " / ".join(_val_consumers)
+                                   + " — additive into value_pooled",
+                               pooled=True,
+                               note="THE flag that lets the value gradient reach alpha_head at "
+                                    "all, and therefore what puts alpha in the label_only set"))
+        if getattr(fe, "intent_conditional", None) is not None:
+            for k in range(n_e3):
+                edges.append(_edge("beta_head", f"pointer.move_logit[{k}]", "cell", T, "TEAM_SIZE",
+                                   via="the beta PUBLICATION weighting IntentConditionalMoveCell",
+                                   note="the Explosion trade-value cell: what they bring in is "
+                                        "what a boom trades against"))
+        if fe.value_intent_route is not None:
+            edges.append(_edge("beta_head", "vf_projection", "content", T, "TEAM_SIZE",
+                               via="the beta PUBLICATION — ValueIntentRoute, additive into "
+                                   "value_pooled", pooled=True))
+
+    # --- SIDE READOUTS off `value_pooled` -------------------------------------------------------
+    # Neither head is a concat part (that is the point — a privileged/outcome label must not reach
+    # pi or vf), which is exactly why a graph derived from the head-input tables never saw them.
+    # They read the SAME pooled tensor the vf concat's first part is, so they draw with the vf pool's
+    # per-mon edge shape.
+    for _sink, _via in (("win_head", "CLSPool.value_cls -> WinProbHead"),
+                        ("value_dist_head", "CLSPool.value_cls -> ValueDistHead")):
+        if getattr(fe, _sink, None) is None:
+            continue
+        _mode = fe.win_prob_mode if _sink == "win_head" else fe.value_dist_mode
+        _note = ("`shaping` — the head's objective also shapes the shared trunk"
+                 if _mode == "shaping" else
+                 "`read_only` — STOP-GRAD input, a risk-free diagnostic that cannot perturb "
+                 "the policy")
+        for i in range(T):
+            edges.append(_edge(f"our_mon[{i}]", _sink, "content", D, "D_MODEL",
+                               via=_via, pooled=True, note=_note))
+            edges.append(_edge(f"opp_mon[{i}]", _sink, "content", D, "D_MODEL",
+                               via=_via, pooled=True, note=_note))
+
     # --- AUX EDGES: training-only supervision --------------------------------------------------
     # These terminate at loss sinks and NOWHERE else. delivery_graph_test asserts it.
+    _OBS_KEY = "training-only obs Dict key"
+    _ROLLOUT = "training-only rollout-buffer target (not an obs key)"
     aux_specs = []
     if fe.move_belief is not None and float(cfg.get("move_belief_coef", 0.0)) > 0:
-        aux_specs.append(("move_belief", "loss.move_belief_bce", "known_moves"))
+        aux_specs.append(("move_belief", "loss.move_belief_bce", "known_moves", _OBS_KEY))
     if fe.move_belief is not None and float(cfg.get("move_belief_latent_coef", 0.0)) > 0:
-        aux_specs.append(("move_belief", "loss.move_latent_grading", "known_moves"))
+        aux_specs.append(("move_belief", "loss.move_latent_grading", "known_moves", _OBS_KEY))
     if fe.hp_type_belief_head is not None and float(cfg.get("hp_type_belief_coef", 0.0)) > 0:
-        aux_specs.append(("hp_type_belief", "loss.hp_type_ce", "hp_type_label"))
+        aux_specs.append(("hp_type_belief", "loss.hp_type_ce", "hp_type_label", _OBS_KEY))
     if fe.belief_head is not None and float(cfg.get("opp_belief_aux_coef", 0.0)) > 0:
-        aux_specs.append(("species_belief", "loss.belief_aux", "belief_species/belief_moves"))
+        aux_specs.append(("species_belief", "loss.belief_aux", "belief_species/belief_moves",
+                          _OBS_KEY))
     if fe.spread_belief is not None and float(cfg.get("spread_belief_coef", 0.0)) > 0:
-        aux_specs.append(("spread_belief", "loss.spread_belief", "belief_spread"))
-    for src, sink, label in aux_specs:
+        aux_specs.append(("spread_belief", "loss.spread_belief", "belief_spread", _OBS_KEY))
+    if (getattr(fe, "item_belief_head", None) is not None
+            and float(cfg.get("item_belief_coef", 0.0)) > 0):
+        aux_specs.append(("item_belief", "loss.item_belief_ce", "belief_items", _OBS_KEY))
+    if getattr(fe, "win_head", None) is not None and float(cfg.get("win_prob_coef", 0.0)) > 0:
+        aux_specs.append(("win_head", "loss.win_prob_bce", "MC episode outcome (win=1/loss=0)",
+                          _ROLLOUT))
+    if (getattr(fe, "value_dist_head", None) is not None
+            and float(cfg.get("value_dist_coef", 0.0)) > 0):
+        aux_specs.append(("value_dist_head", "loss.value_dist_hl_gauss", "realized return G(s)",
+                          _ROLLOUT))
+    if getattr(fe, "alpha_head", None) is not None:
+        # `opp_intent_coef` is a TRAIN-LOOP flag, not a weight-shape param, so it is absent from
+        # model_config.json — the heads' existence is the only thing this config can witness. Drawn
+        # unconditionally rather than guessed, with the coefficient named as the real gate.
+        aux_specs.append(("alpha_head", "loss.opp_intent_alpha_ce",
+                          "opp_action_move_num (folded at the train-loop --opp-intent-coef)",
+                          _OBS_KEY))
+        aux_specs.append(("beta_head", "loss.opp_intent_beta_ce",
+                          "opp_switch_species (folded at the train-loop --opp-intent-coef)",
+                          _OBS_KEY))
+    for src, sink, label, source in aux_specs:
         nodes.append(_node(sink, "aux_loss", label_key=label))
-        edges.append(_edge(src, sink, "aux", None, "training-only obs Dict key",
-                           label_key=label,
-                           note="privileged label; never enters the forward"))
+        edges.append(_edge(src, sink, "aux", None, source, label_key=label,
+                           note="privileged label (the OUTCOME / their actual action is the "
+                                "future at decision time); never enters the forward"))
 
     # ---------------------------------------------------------------- T0: the front of the pipeline
     # Until now this graph began at the ROLE TOKENS and everything upstream collapsed into a handful
@@ -525,7 +839,11 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     edges.append(_edge("obs_unpack", "pokemon_encoder.role_encoder", "content",
                        layout["pokemon_full_dim"] if "pokemon_full_dim" in layout else D,
                        "POKEMON_FULL_DIM",
-                       note="species/item/ability/type embeddings + the E2 active-ctx injection"))
+                       via="Embeddings (the SHARED species / item / ability / type tables) -> "
+                           "role_encoder",
+                       note="species/item/ability/type embeddings + the E2 active-ctx injection; "
+                            "the same tables EventSeats and the move network read — one "
+                            "representation everywhere"))
     for i in range(T):
         edges.append(_edge("pokemon_encoder.role_encoder", f"our_mon[{i}]", "content",
                            D, "D_MODEL"))
@@ -555,6 +873,13 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         edges.append(_edge("spread_belief", "damage_op", "content", 5, "5 stats",
                            note="believed opp spread; without it the op prices a fictional "
                                 "maximally-invested opponent"))
+    if getattr(fe, "item_belief_head", None) is not None:
+        edges.append(_edge("item_belief", "damage_op", "content", 1,
+                           "softmax(item_logits)[:, :, cb_item_num]",
+                           via="the PUBLICATION (stop-grad under belief_grad_mode=label_only)",
+                           note="P(item == Choice Band) per opp slot — replaces the STATIC "
+                                "per-species SPECIES_CB_PRIOR on the unrevealed branch; the "
+                                "revealed branch stays exact, op-side"))
     if getattr(fe, "hp_type_belief_head", None) is not None:
         edges.append(_edge("hp_type_belief", "move_belief", "content", N_HP_TYPES, "16 HP types",
                            note="composes the typed Hidden Power posterior"))
@@ -767,7 +1092,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     g = build_graph(a.config)
     if a.check:
-        return _check(g)
+        rc = _check(g)
+        # The snapshot only pins the graph against ITSELF; a module nobody drew is identical in
+        # both. Run the completeness gate here too, so the CLI catches an omission at the same
+        # moment the test does rather than only in a suite someone remembers to run.
+        fe, _cfg, _layout = build_extractor(a.config)
+        gaps = module_coverage(fe, g)
+        if gaps:
+            print(f"\nINCOMPLETE — {len(gaps)} parametered module(s) unaccounted for:")
+            for name, why in sorted(gaps.items()):
+                print(f"  {name}: {why}")
+            rc = 1
+        return rc
     if a.dot:
         open(a.dot, "w").write(to_dot(g, collapse=not a.no_collapse))
         print(f"wrote {a.dot}")

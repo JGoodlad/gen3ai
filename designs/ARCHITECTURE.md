@@ -25,7 +25,12 @@ softmax-normalised RATIO, `content` = an absolute as token content, `concat` = a
 head input, `cell` = an absolute per-action, `aux` = training-only and never in the forward). It is
 produced by `src/agents/model/delivery_graph.py` and pinned by `delivery_graph_test.py` against a
 committed JSON snapshot, so an architecture change that is not reflected in the graph fails a test
-rather than quietly rotting. Regenerate both artifacts in the same commit:
+rather than quietly rotting. The snapshot compares the graph against *itself*, which cannot see a
+module nobody drew — so a second gate enumerates the extractor's parametered top-level modules and
+fails unless each one is reachable in the graph or allowlisted with a reason
+(`delivery_graph.MODULE_GRAPH_TOKENS` / `NON_DELIVERY_MODULES`, checked by
+`test_every_parametered_module_is_reachable_in_the_graph` and by `--check`). Regenerate both
+artifacts in the same commit:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \

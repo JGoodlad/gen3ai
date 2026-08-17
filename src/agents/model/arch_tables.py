@@ -123,25 +123,14 @@ def load_config(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
 
 def build_extractor(config_path: str = _DEFAULT_CONFIG) -> Tuple[Any, Dict[str, Any]]:
     """The same build seam `delivery_graph.build_graph` and the compile gate use: config fields
-    filtered by the live constructor signature, historical floor reconciled at construction."""
-    import gymnasium as gym
-    import numpy as np
+    filtered by the live constructor signature, historical floor reconciled at construction.
 
-    from agents.model.damage_tables import sanitize_historical_move_floor
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-
-    cfg = load_config(config_path)
-    mappings = load_mappings()
-    layout = Gen3ObservationEncoder(mappings).get_layout()
-    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
-    kwargs = {k: v for k, v in cfg.items() if k in sig}
-    sanitize_historical_move_floor(kwargs)
-    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    # the ctor annotates spaces.Dict, but this introspection seam never feeds the space forward
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()  # type: ignore[arg-type]
-    if hasattr(fe, "disable_observation_debugger"):
-        fe.disable_observation_debugger()
+    DELEGATES to `delivery_graph.build_extractor` rather than repeating it — two copies of a
+    construction ritual is two things to keep in step, and these tables and that graph describing
+    different instances of the model is precisely the drift both exist to prevent.
+    """
+    from agents.model.delivery_graph import build_extractor as _build
+    fe, cfg, _layout = _build(config_path)
     return fe, cfg
 
 
