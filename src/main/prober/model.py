@@ -127,17 +127,29 @@ def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple
     A checkpoint pickles its full `policy_kwargs["features_extractor_kwargs"]`, and SB3 hands them
     verbatim to `Gen3FeaturesExtractor.__init__` on load. When a flag is later DELETED or demoted out
     of the constructor (v78 `value_active_readout` / `damage_matrices_outgoing_all`; v88 `pubval_mode`),
-    a bare `MaskablePPO.load` TypeErrors — so every offline reader breaks on a checkpoint the code can
-    otherwise reconstruct read-only. `ProbeModel.load` already dropped these inline for the analyze
-    path; the replay/counterfactual/lookahead rollouts in `session.py` did NOT, so they crashed on any
-    current-gen checkpoint. This is the shared sanitizer both call sites use.
+    a bare `MaskablePPO.load` TypeErrors — so every offline reader that rebuilds an extractor (the
+    analyze path, and the replay-counterfactual / better-line / lookahead rollouts) breaks on a
+    checkpoint the code can otherwise reconstruct read-only. This is the shared sanitizer the
+    prober's two load sites use (`ProbeModel.load`, and `replay_counterfactual`'s player loader).
 
-    NOTE it only rescues KWARG drift (weights still fit). A checkpoint with WEIGHT-shape drift (e.g. a
-    v80 gen-12 ckpt at a v88+ tree) still needs its own `git_hash` — this cannot help there, and does
-    not pretend to.
+    WHY THIS IS NOT `snapshot.py`'s `sanitize_dead_extractor_kwargs`. Both strip dead extractor
+    kwargs; they answer to different callers and must NOT be merged.
+      * `snapshot.py` serves the paths where being wrong corrupts something — training resume,
+        frozen pool opponents, eval workers. It works off a CURATED dead-list and RAISES
+        `ModelVersionError` on a JUDGED flag whose recorded value the surviving forward cannot
+        reproduce, because a silently-different forward would poison a run or misreport an opponent.
+      * This one serves the prober's READ-ONLY load and is pure set math over the live signature, so
+        it also catches flags nobody remembered to add to that list, and it NEVER refuses. Reading an
+        archived model is allowed to be approximate as long as it SAYS SO — which is `dropped_kwargs`'
+        job: it rides `ProbeModel` and `ArchDriftError` up through `analyze`'s `model_resolution` to
+        the web view's warning banner.
+    Measured over `models/` (89 runs with a checkpoint, 2026-08-17): `snapshot.py`'s sanitizer would
+    REFUSE 69 of them, and 70 carry at least one dead name its list does not have
+    (`spread_belief_nature_marginalize` on nearly every run). So delegating would both break
+    forensics on the runs it refuses AND under-cover the ones it accepts.
 
-    Returns `(custom_objects, dropped_keys)` — `custom_objects` is `None` (nothing to drop) or
-    `{"policy_kwargs": <sanitized copy>}`; the saved dict is never mutated.
+    Returns `(custom_objects, dropped_keys)` — `custom_objects` is `None` (nothing to drop, and no
+    full deserialize is paid) or `{"policy_kwargs": <sanitized copy>}`; the saved dict is never mutated.
     """
     dropped = _dropped_extractor_kwargs(peek_checkpoint(ckpt_path).get("extractor_kwargs"))
     if not dropped:

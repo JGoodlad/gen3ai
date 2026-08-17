@@ -120,10 +120,48 @@ def test_dropped_extractor_kwargs_flags_deleted_flags_and_keeps_live_ones():
     accepted = _accepted_extractor_kwargs()
     if accepted is None:
         pytest.skip("constructor takes **kwargs; nothing is droppable")
+    # a definitely-live kwarg + `layout` + a definitely-dead one
     saved = {"damage_op": True, "layout": {}, "__deleted_flag__": 7}
-    assert _dropped_extractor_kwargs(saved) == ("__deleted_flag__",)
+    dropped = _dropped_extractor_kwargs(saved)
+    assert dropped == ("__deleted_flag__",), dropped
     assert _dropped_extractor_kwargs({"damage_op": True, "layout": {}}) == ()
     assert _dropped_extractor_kwargs(None) == ()
+
+
+def test_sanitized_load_custom_objects_skips_the_deserialize_when_nothing_drops(tmp_path, monkeypatch):
+    """The fast path is load-bearing, not a micro-optimization: a checkpoint trained at the CURRENT
+    arch drops nothing, and it must not pay a full ~27 MB `load_from_zip_file` to learn that. So
+    `None` custom_objects (SB3's own default) and an untouched zip."""
+    from stable_baselines3.common import save_util
+    from main.prober.model import sanitized_load_custom_objects
+
+    accepted = _accepted_extractor_kwargs()
+    assert accepted, "signature introspection failed — the sanitizer cannot be tested"
+    keep = sorted(accepted)[0]
+
+    def _boom(*a, **k):
+        raise AssertionError("paid the full deserialize with nothing to drop")
+
+    monkeypatch.setattr(save_util, "load_from_zip_file", _boom)
+    assert sanitized_load_custom_objects(_fake_ckpt(tmp_path / "clean.zip", {keep: 1})) == (None, ())
+
+
+def test_every_prober_checkpoint_load_goes_through_the_sanitizer():
+    """REGRESSION: the prober rebuilds an extractor at TWO sites — `ProbeModel.load` and
+    `replay_counterfactual`'s rollout-player loader — and a bare `MaskablePPO.load` at either one
+    TypeErrors on any checkpoint written before a flag was deleted (measured over `models/`: 70 of
+    89 runs carry at least one such kwarg). The counterfactual site was bare until this gate, which
+    is why the failure only showed up on the rollout paths. A new load site must sanitize too."""
+    import pathlib
+    import main.prober as pkg
+
+    root = pathlib.Path(pkg.__file__).parent
+    bare = [f"{p.relative_to(root)}:{i}" for p in sorted(root.rglob("*.py"))
+            if not p.name.endswith("_test.py")
+            for i, line in enumerate(p.read_text().splitlines(), 1)
+            if "MaskablePPO.load(" in line and "custom_objects" not in line]
+    assert not bare, ("checkpoint load without `custom_objects=` from "
+                      f"`sanitized_load_custom_objects`: {bare}")
 
 
 def test_sidecar_reaches_the_run_root_from_an_eval_snapshot(tmp_path):
