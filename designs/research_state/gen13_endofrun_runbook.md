@@ -213,6 +213,23 @@ secondary slice conditions on win_prob ≥ 0.7, which is a selection ON THE CRIT
 legitimate here because the claim being tested is precisely about that slice, and the outcome
 labels are not selected.
 
+**RESULT (2026-08-17, run AS REGISTERED — `measurements/gen12_opp_pp_probe.json`): NOT
+CONVICTED.** 608 battles / 39,656 decisions, zero skips, count-coverage 0.738 (above the ~0.7
+floor, so the null is meaningful). **Primary NULL**: base AUC 0.8874 → augmented 0.8848,
+ΔAUC = **−0.0026**, battle-bootstrap CI95 [−0.0178, +0.0102], permutation p = 0.12 (the null's
+mean is −0.008 — nine extra features cost AUC under this CV, and the real PP features merely
+lose *less* than shuffled ones). **Secondary BELOW ITS BAR**: PP-only AUC on the win_prob ≥ 0.7
+slice (23,326 decisions, 4,453 losses) = **0.595**, CI95 [0.512, 0.668] — a real-but-weak signal
+(CI excludes 0.5) far under the registered 0.65. Since the archetype confound biases TOWARD
+conviction, the null is conservative. Reading: the critic's own win_prob + turn already
+separates long-game outcomes at 0.887, and the PP ledger adds nothing detectable at the margin —
+the strong form of the observability story (PP is THE missing stall determinant) is dead on
+gen-12 traces. Scope note, not a bar move: the population is ALL ≥50-turn games (the broad
+long-game class); a maximally-narrow certified-PP-war-only test was never registered, and the
+secondary's weakness makes it unpromising. **The registered verdict applies: the next suspect
+for the stall blindness is the training DISTRIBUTION of stall games, investigated before any
+objective redesign — and §7's FAIL branch now points there directly.**
+
 ## The gen-14 draft (edited by the verdicts above)
 
 ```

@@ -1,0 +1,36 @@
+{
+ "what": "C3 opponent-PP observability probe \u2014 pre-registered gen13_endofrun_runbook.md \u00a78, run AS REGISTERED",
+ "date": "2026-08-17",
+ "run": "ai_v9_14_gen12_h_entitypool_shaping_0816 (gen-12, complete)",
+ "script": "tmp/opp_pp_probe.py (scratch, main checkout; method fully specified in the runbook \u00a78)",
+ "population": "battles meta.turns>=50 (608: 253 L / 355 W), decisions at game turn>=30, all step tiers & opponents",
+ "verdict": {
+  "primary": "NULL \u2014 dAUC CI straddles 0, permutation p=0.12, point estimate negative",
+  "secondary": "BELOW BAR \u2014 CI excludes 0.5 (weak real signal) but 0.595 << the 0.65 bar",
+  "registered_next": "training DISTRIBUTION of stall games, before any objective redesign"
+ },
+ "result": {
+  "battles": 608,
+  "decisions": 39656,
+  "skipped": {},
+  "coverage_mean": 0.7383495212765969,
+  "auc_base": 0.8874191066655391,
+  "auc_aug": 0.8848378095955892,
+  "dauc": -0.002581297069949917,
+  "dauc_ci95": [
+   -0.01779313112138587,
+   0.010243011210188903
+  ],
+  "perm_p": 0.11988011988011989,
+  "perm_null_mean": -0.00815159113417465,
+  "secondary": {
+   "n": 23326,
+   "losses": 4453,
+   "auc": 0.5946205795141444,
+   "ci95": [
+    0.5116933601092607,
+    0.6676793802477904
+   ]
+  }
+ }
+}
