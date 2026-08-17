@@ -13524,6 +13524,78 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// PT8 — SUBSTITUTE by the victim frees the trap, SILENTLY
+/// (`gen3_substitute_frees_partial_trap_v1`). The sibling of PT4, and the FORM differs: the
+/// substitute condition's own `onStart` (moves.js:18380-18382) does an explicit
+/// `this.add('-end', …, '[partiallytrapped]', '[silent]')` + `delete`, rather than a
+/// `removeVolatile` — so this emits the **SILENT** end where Rapid Spin emits the bare one.
+/// It sits BETWEEN `|-start|<user>|Substitute` and the directDamage `-damage` (the cost),
+/// because `onStart` runs inside `addVolatile`, before the move's `onHit`. DRAW-FREE.
+///
+/// Living in `onStart` also fixes the scope: a FAILED Substitute never starts the volatile, so
+/// it must NOT free the trap. (The already-subbed pairing is unreachable anyway — a sub BLOCKS
+/// an incoming partial trap, and starting one frees an existing trap.)
+///
+/// WRONG (pre-fix): the port kept the trap and went on chipping `maxhp/16` every residual. It
+/// hid well because Leftovers heals the SAME `maxhp/16`, so the HP sat still turn after turn and
+/// only the total diverged — three fuzz repros across two gates (`ab_9_21` dec 88, `ab_14_8`
+/// dec 48, `sbd_msxkl91p_b62` dec 53), each the port LOW by exactly one tick with the seed
+/// matching. Ground truth + the stack trace that located it: `harness/probe_ptrap_substitute.js`.
+#[test]
+fn partial_trap_substitute_frees_it_with_the_silent_end() {
+    let d = dex();
+    let p1 = "Dragonite||Leftovers|InnerFocus|wrap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|substitute,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Wrap lands on Snorlax
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Snorlax SUBSTITUTES
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // no further chip
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // …nor here
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| {
+            l.contains("partiallytrapped") || l.contains("move: Wrap") || l.contains("Substitute")
+        })
+        .map(|l| l.as_str())
+        .collect();
+    assert_eq!(
+        marks,
+        vec![
+            "|-activate|p2a: Snorlax|move: Wrap|[of] p1a: Dragonite",
+            "|-damage|p2a: Snorlax|452/482|[from] move: Wrap|[partiallytrapped]",
+            "|move|p2a: Snorlax|Substitute|p2a: Snorlax",
+            "|-start|p2a: Snorlax|Substitute",
+            "|-end|p2a: Snorlax|Wrap|[partiallytrapped]|[silent]",
+        ],
+        "PT8: ONE chip, then the sub's -start followed by the SILENT partial-trap end, and NO \
+         chip on any later turn. got:\n{}",
+        raw.join("\n")
+    );
+    // THE ORDERING CLAIM, pinned on its own: the release happens inside `addVolatile`, so it
+    // precedes the move's `onHit` directDamage — the very next line must be the sub's HP cost
+    // (a BARE `-damage`, no `[from]`). Reversing the two emits would still satisfy `marks`.
+    let end_at = raw
+        .iter()
+        .position(|l| l.contains("[partiallytrapped]") && l.contains("[silent]"))
+        .expect("PT8: the silent end must be emitted");
+    let next = raw.get(end_at + 1).map(String::as_str).unwrap_or("<eof>");
+    assert!(
+        next.starts_with("|-damage|p2a: Snorlax|") && !next.contains("[from]"),
+        "PT8: the trap release must PRECEDE the substitute's HP cost (onStart runs inside \
+         addVolatile, before onHit). next line was {next:?}\n{}",
+        raw.join("\n")
+    );
+    assert!(!st.is_trapped(1, &d), "PT8: the substitute frees the victim");
+}
+
 /// PT7 — the endTurn `TrapPokemon` HANDLER-SORT TIE (`gen3_partial_trap_v1`). The trap-MOVE
 /// `trapped` volatile (Block / Mean Look / Spider Web) and `partiallytrapped` BOTH carry an
 /// `onTrapPokemon`, and both are **Conditions** ⇒ `subOrder` 2 (`sim/battle.ts:957`). Held

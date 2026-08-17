@@ -1941,6 +1941,51 @@ impl crate::state::BattleState {
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
                 self.log.volatile_start(&user, "Substitute");
+            }
+            // SUBSTITUTE RELEASES A PARTIAL TRAP (`gen3_substitute_frees_partial_trap_v1`).
+            // The substitute condition's own `onStart` (moves.js:18380-18382) ends any
+            // `partiallytrapped` on the mon that just put the sub up:
+            //
+            //   this.effectState.hp = Math.floor(target.maxhp / 4);
+            //   if (target.volatiles['partiallytrapped']) {
+            //     this.add('-end', target, <sourceEffect>, '[partiallytrapped]', '[silent]');
+            //     delete target.volatiles['partiallytrapped'];
+            //   }
+            //
+            // So it sits BETWEEN the `-start|Substitute` and the directDamage `-damage`, and
+            // the freed mon takes NO chip that turn or after. STACK-TRACE-SETTLED, not
+            // source-guessed (`harness/probe_ptrap_substitute.js` instruments `Battle.add`);
+            // a CONTROLLED probe over Substitute / Protect / Agility / Thunderbolt at one seed
+            // isolates Substitute as the sole releaser (the other three keep chipping, 4/4).
+            //
+            // It lives in `onStart`, which runs ONLY when the volatile actually STARTS — so a
+            // FAILED Substitute (`-fail`, either already-subbed or `[weak]`) must NOT release,
+            // which is why this sits after the fail arm above rather than at the move's top.
+            // The already-subbed pairing is in fact unreachable: a sub BLOCKS an incoming
+            // partial trap (the gen-4 `onTryPrimaryHit` eats the hit), and starting a sub frees
+            // an existing one, so "trapped AND subbed" has no construction.
+            //
+            // COST: the port was chipping a freed mon for `maxhp/16` every residual — the
+            // divergence that read as a bare `hp` mismatch in three fuzz repros across two
+            // gates (`ab_9_21` dec 88, `ab_14_8` dec 48, `sbd_msxkl91p_b62` dec 53), each the
+            // port LOW by exactly one tick with the SEED MATCHING, because a Leftovers heal
+            // (also `maxhp/16`) cancelled it turn-for-turn until the trap's duration ran out.
+            if self.sides[_side].pokemon[_slot].partial_trap.is_some() {
+                let move_name = self.sides[_side].pokemon[_slot]
+                    .partial_trap
+                    .as_ref()
+                    .map(|pt| pt.move_name.clone())
+                    .unwrap_or_default();
+                self.sides[_side].pokemon[_slot].partial_trap = None;
+                // [EMIT] `|-end|<user>|<Move>|[partiallytrapped]|[silent]` — the SILENT form,
+                // the same one the onResidual trapper-gone release uses.
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.partial_trap_end(&user, &move_name, true);
+                }
+            }
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
                 let hp = self.hp_status(_side, _slot);
                 self.log.damage(&user, &hp, None);
             }

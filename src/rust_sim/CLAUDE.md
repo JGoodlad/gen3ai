@@ -6417,11 +6417,105 @@ Prime suspect: the partial-trap chip's interaction with the Leftovers heal in th
 (ordering, or an off-by-one in the `random(3,7)` duration's last tick). Root-cause with
 `POKESIM_PRNG_TRACE=1` against `probe_repro_simtrace.js` per the round-26 method.
 
+> ✅ **CLOSED by ROUND 43** — and note BOTH named suspects were WRONG. It was neither the residual
+> ordering (subOrders 4-before-9 were already correct) nor the duration tick: SUBSTITUTE frees the
+> trap, and the port never modelled that. The statistical convergence above is what made it findable;
+> the two guesses that followed it were not.
+
 ⚠️ **ATTRIBUTION CAVEAT ON `b62`, stated because it would be easy to overclaim:** that run changed TWO
 variables at once — the level pin came out AND the master seed changed (170826 vs 20260817). So `b62`
 was found ON the unpinned run, NOT demonstrably BECAUSE of it. The mechanic is `maxhp/16`-relative and
 so is very unlikely to be level-dependent. Establishing that the pin was masking anything needs the
 controlled run (seed 170826 WITH the pin); it has not been done.
+
+### ROUND 43 (FIX) — SUBSTITUTE frees a partial trap, and the port kept chipping
+
+`gen3_substitute_frees_partial_trap_v1`. The ROUND-42 residual cluster, closed. The substitute
+condition's own `onStart` (`data/moves.js:18380-18382`) ends any `partiallytrapped` on the mon that
+just put the sub up:
+
+```js
+this.effectState.hp = Math.floor(target.maxhp / 4);
+if (target.volatiles['partiallytrapped']) {
+  this.add('-end', target, <sourceEffect>, '[partiallytrapped]', '[silent]');
+  delete target.volatiles['partiallytrapped'];
+}
+```
+
+The port modelled none of it, so a subbed mon kept taking `maxhp/16` every residual for the rest of
+the trap's duration.
+
+**WHY IT HID FOR SO LONG — the two `maxhp/16` cancel.** Leftovers heals `maxhp/16` and the trap chips
+`maxhp/16`, and Leftovers (subOrder 4) runs BEFORE the trap (subOrder 9) in the same residual block. So
+the victim's HP sat **completely still**, turn after turn, and nothing in the protocol looked wrong —
+only the eventual total diverged, one tick at a time. The revert-verified pin shows it perfectly: three
+consecutive `|-damage|p2a: Snorlax|332/482|…|[partiallytrapped]` lines at an unchanging `332/482`.
+
+**HOW IT WAS FOUND, in the order that actually worked:**
+1. **Statistical convergence, not a hunch.** All three repros carried a wrap-family move; a wrap-family
+   move is in only **5.8%** of randbats battles (measured, 500 pairs) ⇒ **p ≈ 0.02%**. That is what
+   turned "diffuse state tail" into a named mechanic. **Generalise this: when repros share a feature,
+   measure the feature's BASE RATE before believing it means anything.**
+2. **Both follow-up guesses were wrong** — residual ORDERING (refuted: the port's subOrders already
+   matched, and the b62 emission proved it) and a DURATION off-by-one. The convergence was the signal;
+   the mechanism guesses were noise.
+3. **A grep of the dist found nothing** (the release is not in `sim/`, not in Rapid Spin's handler, and
+   the gen-1 `endTurn` block is gen-1-only). What found it was **instrumenting `Battle.add` with a
+   stack trace** at the emit — `harness/probe_ptrap_substitute.js`. Reusable: when you know the LINE
+   but not the CALLER, patch the emitter, don't read more source.
+4. **A CONTROLLED probe fixed the scope**: Substitute / Protect / Agility / Thunderbolt at one seed,
+   same opponent script — only Substitute releases, the other three keep chipping 4/4. So the trigger
+   is the move, not "any self-targeting move".
+
+**THE MECHANISM SETTLED AN EDGE THE PROBE COULDN'T REACH.** Living in `onStart` means it runs ONLY when
+the volatile actually STARTS, so a **FAILED** Substitute (`-fail`, already-subbed or `[weak]`) must NOT
+free the trap — which is why the port's release sits after the fail arm. Two probe attempts at that edge
+were both invalid (one because a sub BLOCKS an incoming trap, one because the chip damage never got the
+mon under ¼), and reading the source is what answered it. Note the corollary: **"trapped AND subbed" is
+unreachable** — a sub blocks an incoming trap, and starting a sub frees an existing one.
+
+**Placement:** BETWEEN `|-start|<user>|Substitute` and the directDamage `-damage` cost, because
+`onStart` runs inside `addVolatile`, before the move's `onHit`. The pin asserts that ordering
+separately from the line set, since reversing the two emits would still satisfy a set comparison.
+
+**Pin:** `regression_test::partial_trap_substitute_frees_it_with_the_silent_end` (PT8 — the sibling of
+PT4's Rapid Spin clear, which emits the NON-silent form because it goes through `removeVolatile`).
+REVERT-VERIFIED with the right specificity: disabling the release fails PT8 **and only PT8** — the other
+9 partial-trap pins stay green.
+
+**Gates:** `cargo test --release --no-fail-fast` **75 binaries / 656 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; both ROUND-42 repros (`ab_9_21`, `ab_14_8`) replay
+`ok` and now run FURTHER (94 and 106 decisions, up from 48 and 88) because the state no longer diverges.
+
+**THE FULL ARC ON SEED 20260817**, 400 randbats battles, one row per fix — the two defects were
+independent, and each re-run moves only its own column:
+
+| tree | ok | panics | state div |
+|---|---|---|---|
+| before ROUND 42 | 396 | **2** | 2 |
+| + the Trace/forecast fix | 398 | 0 | **2** |
+| + this fix | **400** | 0 | **0** — `GREEN-GATE PASS` |
+
+⚠️ **That seed is the one the fix was DERIVED from, so on its own it is weak evidence** (the project
+has made this mistake before — see the note against re-measuring on 250724). Two INDEPENDENT
+confirmations were run rather than assumed:
+
+| gate | scope | result |
+|---|---|---|
+| `ab_fuzz --mode randbats --protocol`, **fresh** seed 880171 | 600 battles | **600 ok / 0 diverged / 0 panics — GREEN-GATE PASS** |
+| `gen_sim_bridge_diff` (the live per-side gate) at **`b62`'s own seed** 170826 | 120 battles | **0 diverged, 0 errored, `drain_timeouts` 0** (was 1 errored + 1 drain timeout) |
+
+**1000 offline battles across two seeds plus 120 live-bridge battles, zero divergences.** The live
+gate's `ok`/`allowlisted` split moved (39/110 → 30/90) purely because a state fix changes trajectories,
+so a different set of battles reaches the `return102` display residual; the total is 120 either way and
+`drain_timeouts` returning to 0 is the invariant that matters.
+
+⚠️ **A PROCESS NOTE worth keeping: TWO revert-verifications in this wave were VACUOUS on the first
+attempt** — one `cd` that failed inside an `&&` chain so the mutation never applied, and one text-slice
+whose end-marker matched a nested line. Both "passed" while proving nothing. The habit that saved it was
+asserting the mutation actually applied (`assert removed contains …`) before running the test. **A
+revert-verification that does not verify the revert is worse than none, because it launders a guess into
+a fact.**
 
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
