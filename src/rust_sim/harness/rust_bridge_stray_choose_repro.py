@@ -43,8 +43,8 @@ casualty is the parent's reader.
 USAGE
 -----
     export PYTHONPATH=$PWD/src
-    python tmp/rust_bridge_stray_choose_repro.py            # both impls
-    python tmp/rust_bridge_stray_choose_repro.py --impl rust
+    python src/rust_sim/harness/rust_bridge_stray_choose_repro.py            # both impls
+    python src/rust_sim/harness/rust_bridge_stray_choose_repro.py --impl rust
 
 Exit 0 = every case behaved. Exit 1 = reproduced.
 """

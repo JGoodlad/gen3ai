@@ -28,3 +28,8 @@ replays/
 # running tools/smogon_stats_downloader/sync.py. The aggregated merged file
 # at data/pokemon/gen3_smogon_stats.json IS tracked.
 data/pokemon/smogon_stats_monthly/
+
+# Scratch space — research scripts and probe outputs, always UNTRACKED (the main checkout
+# carries ~280 of them). A script a doc cites as a GATE graduates into the tree instead
+# (src/rust_sim/harness/ holds the node-vs-rust parity gates that used to live here).
+tmp/

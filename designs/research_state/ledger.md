@@ -196,7 +196,7 @@ _Last updated: 2026-08-08._
   seed spread at this n; R1+R0's +0.048 SUGGESTS complementarity (matches the add-beside design)
   but is within noise; the SKYLINE is overfit-limited (2800 dims / 80 train rows) and cannot
   support a "no headroom" claim. NOT a kill, NOT an endorsement — expanding to ~600 scanned
-  targets for tighter CIs (`tmp/g1_bakeoff.py`, resumable); G7 remains the capability gate.
+  targets for tighter CIs (`src/rust_sim/harness/g1_bakeoff.py`, resumable); G7 remains the capability gate.
 
 * **G1 FINAL (n=299, 5 seeds): the reduction ladder FAILS its pre-registered bar.** R0 0.403±0.034
   · R1 0.423±0.063 · R1+R0 0.423±0.031 · SKYLINE(2800d) 0.413±0.037 (chance 0.167). No rung beats

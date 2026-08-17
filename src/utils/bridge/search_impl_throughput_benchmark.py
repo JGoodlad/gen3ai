@@ -2,7 +2,7 @@
 
 `gen3_rust_search_driver_v1` / `gen3_rust_replay_driver_v1` gave the clone-and-branch search a
 second engine (`src/rust_sim/src/bin/search_driver.rs`). Equivalence is already pinned bit-for-bit
-(`tmp/search_impl_parity.py`, `tmp/replay_impl_parity.py`, `search_clone_parity_fuzz_test --impl
+(`src/rust_sim/harness/search_impl_parity.py`, `src/rust_sim/harness/replay_impl_parity.py`, `search_clone_parity_fuzz_test --impl
 rust`, the cross-impl `better_line_integration_test`). **This measures whether it is FASTER**, which
 is the only remaining reason to prefer one.
 

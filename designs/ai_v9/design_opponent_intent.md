@@ -841,7 +841,7 @@ replay corpus is the natural *validation* set; using it as a training set is a d
 | the reduction is one named call site with a `how` knob | `damage_op.py:534` `_chan_max(..., how="hard_max")` |
 | status is absent from the pointer switch cell; only `s3` (a ratio) carries it in production | `design_pair_reduction.md` §2.1 |
 | G1 FINAL n=299: R0 0.403±0.034 · R1 0.423±0.063 · SKYLINE 0.413±0.037 | `research_state/ledger.md` |
-| the G1 probe's fit (LBFGS, L2 1e-3, 80/20) | `tmp/g1_bakeoff.py:175-195` (read 2026-08-11) |
+| the G1 probe's fit (LBFGS, L2 1e-3, 80/20) | `src/rust_sim/harness/g1_bakeoff.py:175-195` (read 2026-08-11) |
 | opponent moves + switches are recoverable with side attribution and delegation-awareness | `agents/battle/battle_event.py` — `EventKind.MOVE`, `side`, `move_id`, `delegating_move_id` |
 | the training-only-key pattern, and `win_target` as precedent for a FUTURE label | `ARCHITECTURE.md` §7 |
 | no aux edge may reach the forward | `delivery_graph_test.test_no_aux_edge_reaches_the_forward` |

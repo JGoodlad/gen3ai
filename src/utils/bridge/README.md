@@ -135,7 +135,7 @@ at load 5 alike (it is a RATE, not a load effect):
 Gate: `bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err`
 and `::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child`, both parametrized over
 node AND rust — node is the reference arm. Repro (no training, ~5 s):
-`tmp/rust_bridge_stray_choose_repro.py`. **Why the existing gate missed it:**
+`src/rust_sim/harness/rust_bridge_stray_choose_repro.py`. **Why the existing gate missed it:**
 `bridge_session_fuzz_test.py --impl rust` drives only masked-legal `move`/`switch` tokens and
 never lands a CHOOSE after `__END__`; a 16-worker / ~22 000-episode soak passes clean either way.
 
@@ -203,8 +203,8 @@ Tests — the ENGINE EQUIVALENCE (the claim that actually matters: rust answers 
 
 | gate | what it pins |
 |---|---|
-| `tmp/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized |
-| `tmp/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm |
+| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized |
+| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm |
 | `search_clone_parity_fuzz_test.py --impl rust [--record-impl rust]` | the rust clone ≡ the rust `reroll_many` **at the OBS**, bit-for-bit, + the `value_crn` anchor + depth-2 |
 | `counterfactual_fuzz_test.py --impl rust [--record-impl rust]` | the CONFIRM leg — scripted-prefix obs oracle, divergence-to-terminal, Monte-Carlo reseed determinism |
 | `main/prober/better_line_integration_test.py` | parametrized over both impls, **plus a cross-impl test** asserting node and rust yield identical candidate V. The fake model is `V = obs.sum()`, so an exact match is an obs-level bit-identity claim at every ply of the beam |

@@ -4,7 +4,7 @@ That is precisely what a Rust `buildToTurn` would do (drive a fresh session from
 record's `>start` + `>player` lines, then feed `record.commands`), so this is the
 load-bearing precondition for a Rust search driver. Scratch tool (tmp/).
 
-    python tmp/rust_record_replay_check.py [tmp/search_golden_node.json]
+    python src/rust_sim/harness/rust_record_replay_check.py [tmp/search_golden_node.json]
 
 Replays each golden case's record through BOTH `local_sim_bridge.js` and the rust
 `sim_bridge` binary and diffs the per-side chunk streams (|t:| normalized — the port's

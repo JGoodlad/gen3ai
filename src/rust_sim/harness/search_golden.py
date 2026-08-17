@@ -5,7 +5,7 @@ must reproduce byte-for-byte. It talks to `search_driver.js` over raw stdin/stdo
 JSON — deliberately NOT through `SearchSession`, so it stays valid while the Python
 seam is being reworked.
 
-    python tmp/search_golden.py [n_battles] [--out tmp/search_golden_node.json]
+    python src/rust_sim/harness/search_golden.py [n_battles] [--out tmp/search_golden_node.json]
 
 Writes {"cases": [{record, turn, open_root, expand_many}, ...]}.
 """

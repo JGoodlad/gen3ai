@@ -192,7 +192,7 @@ silent-stall watchdog all read `scale_timeout(...)` at CALL time, where the fact
   throughput result (node 798 vs rust 427 fps) was measured on a saturated box and had to be
   superseded — **with the conclusion reversed** — and nothing in its output said so.
 
-**Measured** (`tmp/contention_proof.py`, 40 CPU burners → load ~47 on 16 cores, factor ~3.7, same
+**Measured** (a since-deleted scratch script, 40 CPU burners → load ~47 on 16 cores, factor ~3.7, same
 battles both arms): at a 2.0 s baseline, scaling OFF = **0 completed / 6 timed out**; scaling ON =
 **6 completed / 0 timed out**. At a 4.0 s baseline both arms completed — the scaling matters
 exactly when the bound sits within ~2x of the real battle duration, which is where a loaded box
@@ -678,8 +678,8 @@ tree + binary 2026-08-04). Kept as history because the *coverage-hole lesson* is
     `run_local_battles` (which used to take node silently). **Every default is `"node"`**, so this
     is byte-identical until someone asks for rust.
 
-  **Gates** (all run): `tmp/search_impl_parity.py` 6 cases / 60 arms / 18873 leaf fields and
-  `tmp/replay_impl_parity.py` 76 cases / 136 arms / 30689 leaf fields, both node-vs-rust with only
+  **Gates** (all run): `src/rust_sim/harness/search_impl_parity.py` 6 cases / 60 arms / 18873 leaf fields and
+  `src/rust_sim/harness/replay_impl_parity.py` 76 cases / 136 arms / 30689 leaf fields, both node-vs-rust with only
   `|t:|` normalized; `search_clone_parity_fuzz_test --impl rust [--record-impl rust]` (clone ≡
   `reroll_many` at the OBS, bit-for-bit); `counterfactual_fuzz_test --impl rust`;
   `better_line_integration_test`, parametrized over both impls plus a **cross-impl** test asserting

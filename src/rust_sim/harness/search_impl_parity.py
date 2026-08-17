@@ -5,7 +5,7 @@ from `src/utils/bridge/search_driver.js` by `tmp/search_golden.py`; this drives 
 binary over the IDENTICAL request sequence and compares every field of every response.
 
     export PYTHONPATH=$PYTHONPATH:src
-    python tmp/search_impl_parity.py [--golden PATH] [--bin PATH] [-v]
+    python src/rust_sim/harness/search_impl_parity.py [--golden PATH] [--bin PATH] [-v]
 
 Deliberately talks raw stdin/stdout JSON — NOT through `SearchSession` — so it stays
 valid while the Python seam is being reworked by another agent.

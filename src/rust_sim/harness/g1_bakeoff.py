@@ -25,8 +25,8 @@ Stages (separate processes; targets is hours of beam compute, probe is seconds):
                     capture-reducer monkeypatch, fit the four probes, report accuracy ± bootstrap.
 
 Usage:
-  python tmp/g1_bakeoff.py --run <run_dir> --stage targets --limit 200 --depth 2
-  python tmp/g1_bakeoff.py --run <run_dir> --stage probe
+  python src/rust_sim/harness/g1_bakeoff.py --run <run_dir> --stage targets --limit 200 --depth 2
+  python src/rust_sim/harness/g1_bakeoff.py --run <run_dir> --stage probe
 """
 import argparse
 import json
