@@ -4707,3 +4707,51 @@ design, because reading an archived model may be approximate as long as it says 
 
 **Versioning:** none — no state_dict, arch, or forward-math change. Production sha probe
 `001e1140…` before and after (self-measured, same probe/config).
+
+## `gen3_flag_requires_v1` (2026-08-17): flag dependencies become registry DATA, enforced in both directions
+
+`flag_registry.py` was the single declaration of every extractor toggle across five hand-synced
+surfaces — but a flag's DEPENDENCIES lived only as ~30 hand-written `raise ValueError` lines inside
+`Gen3FeaturesExtractor.__init__`. Nothing outside that function knew them: `main.checkargs` could
+not warn about an unsatisfiable recorded command, `designs/flag_registry.md` could not show the
+graph, and "what is the minimum config that turns X on?" meant reading the constructor.
+
+`ModelFlag.requires: tuple[str, ...]` is that data — the flags that must be ENABLED for this one to
+be. `is_enabled` defines both ends (`False` / `0` / `'off'` / `'none'` are OFF) and is deliberately
+NOT `bool()`: a mode string's off state is the truthy `'off'`, and reading it as enabled is a bug
+this tree has already shipped once (the dead-kwarg sanitizer refused every OFF-mode checkpoint until
+it stopped testing truthiness). `requirement_closure(name)` walks it transitively. **24 of 44**
+toggles declare a dependency; the deepest closure is `intent_conditional`'s eight.
+
+`flag_requires_test.py` enforces BOTH directions, because a declaration nothing checks is a comment
+and a check nothing declares is invisible. FORWARD: for each declared pair, build the extractor with
+the flag on plus its full closure and the one dependency off, and demand a `ValueError` naming that
+dependency — plus a POSITIVE control that the closure-satisfied config actually BUILDS, which is the
+half that catches an incomplete declaration. REVERSE: AST-scan `__init__` and collect every `raise`
+guarded on two or more registry flags; each must be declared, or listed in `BESPOKE_COUPLINGS` with
+a reason. All three mutations verified failing on revert (drop a `requires` entry; delete a ctor
+raise; add a stale exemption).
+
+The positive control EARNED ITS KEEP ON THE FIRST RUN, like the registry test before it: it found
+that `value_dist_mode != 'none'` also needs `value_dist_vmax > value_dist_vmin`, enforced inside
+`ValueDistHead` where neither `requires` nor a `__init__` scan can see it. It is a magnitude
+RELATION between two numbers, not a switch, so it is recorded in the test's `_VALUE_RELATIONS` table
+rather than forced into a shape `requires` cannot express.
+
+The bespoke carve-out is one flag, not a category. Only `edge_bias_families` is exempt: its 17
+family letters each carry their own requirement (most need `damage_op`, `d1/s1/c1/c2` also need
+`damage_outgoing`, `d3/s3` need `entity_topk_seats > 0`, `r` needs `history_events`, `h` needs
+nothing), so no flag-level statement about it is true. `damage_op` is NOT exempt — it declares
+`move_belief_mode` while the constructor keeps the stronger `in {revealed, both}`, on the principle
+that a weaker truth in the registry beats a blank. A stale exemption fails too.
+
+Downstream: the generated `designs/flag_registry.md` grows a `requires` column plus the closure and
+bespoke notes, and `python -m main.checkargs` reads the graph — a recorded command that enables a
+flag while explicitly disabling one of its dependencies is now reported offline (exit 1, alongside
+the unknown-flag half) instead of crashing the child ~40 s into a launch. It fires only on an
+EXPLICIT negation: a resume inherits every unspecified flag from the checkpoint's config, so an
+omitted dependency carries no information and reporting it would make the tool cry wolf.
+
+**Versioning:** none — validation only, no state_dict, arch, or forward-math change; every valid
+config builds exactly as before. Production sha probe `001e1140…` before and after (self-measured,
+same probe/config).

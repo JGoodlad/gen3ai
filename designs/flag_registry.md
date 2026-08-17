@@ -56,57 +56,73 @@ Getting this wrong is not cosmetic in either direction: a `structural` toggle wi
 toggle *inside* `check_compatible` makes a run FATAL on loading its own pool snapshots. Both
 directions are asserted by `flag_registry_test.py`.
 
+## Dependencies
+
+A flag's PREREQUISITES are registry data too — the `requires` column below. They used to exist only
+as hand-written `raise ValueError` lines inside `Gen3FeaturesExtractor.__init__`, invisible to
+everything else, so no tool could answer "would this command launch?" or "what is the minimum config
+that turns X on?". `flag_requires_test.py` holds the constructor and the registry to each other in
+BOTH directions: every declared dependency must actually make the constructor raise (with a positive
+control that the declared closure BUILDS, so an incomplete declaration fails too), and every
+constructor raise coupling two registry flags must be declared here or listed as bespoke with a
+reason. `python -m main.checkargs` reads the same graph to flag an unsatisfiable recorded command
+offline.
+
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
 44 toggles — 43 `cli`, 1 `config_only`, 0 `constructor_only`.
 
-| toggle | CLI | tier | class | default | since | meaning |
-|---|---|---|---|---|---|---|
-| `attend_unrevealed_opponents` | — | `config_only` | `structural` | `True` | v8 | keep the opponent's still-hidden party attendable instead of key-masking it |
-| `opp_belief_cls_k` | `--opp-belief-cls-k` | `cli` | `structural` | `0` | v9 | k learned query tokens summarising the unrevealed opp party into both heads |
-| `opp_belief_slots` | `--opp-belief-aux-coef` *(coef)* | `cli` | `structural` | `False` | v16 | learned unknown-mon tokens in the un-revealed opp slots + the BeliefHead |
-| `move_belief_mode` | `--move-belief-mode` | `cli` | `structural` | `'off'` | v17 | predict + reinject each opp mon's moveset (off|revealed|unrevealed|both) |
-| `damage_op` | `--damage-op` | `cli` | `structural` | `False` | v19 | build the differentiable GPU DamageOperator |
-| `move_prior_fusion` | `--move-prior-fusion` | `cli` | `structural` | `False` | v20 | fuse the Smogon move-frequency prior into the move belief as a log-odds delta |
-| `win_prob_mode` | `--win-prob-mode` | `cli` | `structural` | `'none'` | v22 | auxiliary win-probability side head off value_pooled (none|read_only|shaping) |
-| `damage_outgoing` | `--damage-outgoing` | `cli` | `structural` | `False` | v23 | the op's OUTGOING per-move direction (our active's moves -> the opp active) |
-| `move_candidate_floor` | `--move-candidate-floor` | `cli` | `structural` | `0.02` | v23 | the LEGAL-BUT-UNOBSERVED base probability of the move prior |
-| `move_latent` | `--move-latent` | `cli` | `structural` | `False` | v24 | the context-free MoveLatentEncoder concatenated into the move network |
-| `spread_belief` | `--spread-belief` | `cli` | `structural` | `False` | v25 | predict + reinject the opponent's hidden spread (5 derived stats per slot) |
-| `value_dist_mode` | `--value-dist-mode` | `cli` | `structural` | `'none'` | v29 | distributional VALUE side head off value_pooled (none|read_only|shaping) |
-| `value_dist_bins` | `--value-dist-bins` | `cli` | `structural` | `0` | v29 | atom count = the value-dist head's output Linear width |
-| `value_dist_vmin` | `--value-dist-vmin` | `cli` | `resume_immutable` | `0.0` | v29 | low end of the return range the value-dist atoms span |
-| `value_dist_vmax` | `--value-dist-vmax` | `cli` | `resume_immutable` | `0.0` | v29 | high end of the return range the value-dist atoms span |
-| `damage_topk_k` | `--damage-topk` | `cli` | `structural` | `0` | v30 | K = how many of the opp active's believed moves the incoming matrix surfaces |
-| `damage_matrices_outgoing` | `--damage-matrices` | `cli` | `structural` | `False` | v34 | our active's 4 moves x the opp's 6 mons, per-(move, mon) rolls |
-| `damage_matrices_incoming` | `--damage-matrices` | `cli` | `structural` | `False` | v35 | the enriched top-K incoming matrix (per opp move x per our mon) |
-| `threat_prob_outspeed` | `--threat-prob-outspeed` | `cli` | `structural` | `False` | v36 | uncertainty-aware P(outspeed): divide the speed gap by the believed speed std |
-| `spread_belief_nature` | `--spread-belief-nature` | `cli` | `structural` | `False` | v40 | swap SpreadBelief's additive head for the NATURE/EV generative head |
-| `belief_grad_mode` | `--belief-grad-mode` | `cli` | `resume_immutable` | `'shaping'` | v41 | which gradient arrow between the belief heads and the trunk is cut |
-| `damage_candidate_k` | `--damage-candidate-k` | `cli` | `structural` | `0` | v49 | cap the op's incoming candidate sweep at the K most-believed opponent moves |
-| `hp_belief_mode` | `--hp-belief-mode` | `cli` | `structural` | `'composed'` | v53 | how the 16 typed Hidden-Power channels are produced (composed|flat) |
-| `entity_topk_seats` | `--entity-topk-seats` | `cli` | `structural` | `0` | v54 | E4 — the opp active's top-K believed threat-move attention seats |
-| `edge_bias_families` | `--edge-bias-families` | `cli` | `structural` | `'off'` | v56 | which physics families are delivered as additive per-pair attention biases |
-| `entity_tail_seats` | `--entity-tail-seats` | `cli` | `structural` | `False` | v57 | E5 — 6 per-opp-mon seats summarising the beyond-top-K belief mass |
-| `consequence_topk` | `--consequence-topk` | `cli` | `structural` | `6` | v59 | the consequence kernels' believed-candidate axis (C1b/C2/C3 k_cand + D4 k_bench) |
-| `value_threat_inject` | `--value-threat-inject` | `cli` | `structural` | `False` | v64 | add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy |
-| `opp_intent` | `--opp-intent-coef` *(coef)* | `cli` | `structural` | `False` | v68 | the alpha (their move) / beta (their switch-in) supervised pointer heads |
-| `species_prior_fusion` | `--species-prior-fusion` | `cli` | `structural` | `False` | v69 | read BeliefHead's species head as a DELTA on the team-composition prior |
-| `t0_species_prior` | `--t0-species-prior` | `cli` | `structural` | `False` | v72 | feed the T1 physics the model's own species belief, not the static usage table |
-| `opp_intent_grad_mode` | `--opp-intent-grad-mode` | `cli` | `structural` | `'detached'` | v73 | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
-| `intent_value_reduce` | `--intent-value-reduce` | `cli` | `structural` | `False` | v74 | append the alpha-weighted expected incoming threat to the critic's features |
-| `intent_move_cell` | `--intent-move-cell` | `cli` | `structural` | `False` | v77 | G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through the pointer MOVE cell |
-| `value_entity_pool_full` | `--value-entity-pool-full` | `cli` | `structural` | `False` | v82 | the entity pool's COMPLETE row set: + the refined global token and the hidden-opp belief queries |
-| `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
-| `value_entity_pool` | `--value-entity-pool` | `cli` | `structural` | `False` | v80 | Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team tokens + op incoming rows), zero-init, vf-only |
-| `item_belief` | `--item-belief` | `cli` | `structural` | `False` | v83 | the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes its publication (revealed stays exact 0/1) |
-| `intent_threshold` | `--intent-threshold` | `cli` | `structural` | `False` | v84 | the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO (the calibrated am-I-about-to-die) to the critic |
-| `intent_conditional` | `--intent-conditional` | `cli` | `structural` | `False` | v85 | the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 doubling trigger (port-verified departing-target rule) |
-| `op_drop_renders` | `--op-drop-renders` | `cli` | `structural` | `False` | v86 | design_op_tensors step 3: the op's flat forward block loses the three RENDER regions (omx/imx/OAX — serialization-only since the concat's deletion); selection machinery + every consumer stash survive, out_gain shrinks |
-| `op_believed_lean` | `--op-believed-lean` | `cli` | `structural` | `False` | v86 | the lean d3 physics price the attacker from the BELIEVED spread instead of the legacy de-timid fiction — the B-spread correctness fix at the last de-timid site the edges read |
-| `value_clock` | `--value-clock` | `cli` | `structural` | `False` | v87 | the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only — the explicit critic route the clock fix was validated for |
-| `value_intent` | `--value-intent` | `cli` | `structural` | `False` | v87 | the published α/β posteriors AS DISTRIBUTIONS to the critic (α over K belief-sorted seats + SWITCH, β over the 6 slots), zero-init, vf only |
+| toggle | CLI | tier | class | default | since | requires | meaning |
+|---|---|---|---|---|---|---|---|
+| `attend_unrevealed_opponents` | — | `config_only` | `structural` | `True` | v8 | — | keep the opponent's still-hidden party attendable instead of key-masking it |
+| `opp_belief_cls_k` | `--opp-belief-cls-k` | `cli` | `structural` | `0` | v9 | `attend_unrevealed_opponents` | k learned query tokens summarising the unrevealed opp party into both heads |
+| `opp_belief_slots` | `--opp-belief-aux-coef` *(coef)* | `cli` | `structural` | `False` | v16 | `attend_unrevealed_opponents` | learned unknown-mon tokens in the un-revealed opp slots + the BeliefHead |
+| `move_belief_mode` | `--move-belief-mode` | `cli` | `structural` | `'off'` | v17 | `attend_unrevealed_opponents` | predict + reinject each opp mon's moveset (off|revealed|unrevealed|both) |
+| `damage_op` | `--damage-op` | `cli` | `structural` | `False` | v19 | `move_belief_mode` | build the differentiable GPU DamageOperator |
+| `move_prior_fusion` | `--move-prior-fusion` | `cli` | `structural` | `False` | v20 | `move_belief_mode` | fuse the Smogon move-frequency prior into the move belief as a log-odds delta |
+| `win_prob_mode` | `--win-prob-mode` | `cli` | `structural` | `'none'` | v22 | — | auxiliary win-probability side head off value_pooled (none|read_only|shaping) |
+| `damage_outgoing` | `--damage-outgoing` | `cli` | `structural` | `False` | v23 | `damage_op` | the op's OUTGOING per-move direction (our active's moves -> the opp active) |
+| `move_candidate_floor` | `--move-candidate-floor` | `cli` | `structural` | `0.02` | v23 | — | the LEGAL-BUT-UNOBSERVED base probability of the move prior |
+| `move_latent` | `--move-latent` | `cli` | `structural` | `False` | v24 | — | the context-free MoveLatentEncoder concatenated into the move network |
+| `spread_belief` | `--spread-belief` | `cli` | `structural` | `False` | v25 | — | predict + reinject the opponent's hidden spread (5 derived stats per slot) |
+| `value_dist_mode` | `--value-dist-mode` | `cli` | `structural` | `'none'` | v29 | `value_dist_bins` | distributional VALUE side head off value_pooled (none|read_only|shaping) |
+| `value_dist_bins` | `--value-dist-bins` | `cli` | `structural` | `0` | v29 | — | atom count = the value-dist head's output Linear width |
+| `value_dist_vmin` | `--value-dist-vmin` | `cli` | `resume_immutable` | `0.0` | v29 | — | low end of the return range the value-dist atoms span |
+| `value_dist_vmax` | `--value-dist-vmax` | `cli` | `resume_immutable` | `0.0` | v29 | — | high end of the return range the value-dist atoms span |
+| `damage_topk_k` | `--damage-topk` | `cli` | `structural` | `0` | v30 | `damage_op`, `move_latent`, `damage_matrices_incoming` | K = how many of the opp active's believed moves the incoming matrix surfaces |
+| `damage_matrices_outgoing` | `--damage-matrices` | `cli` | `structural` | `False` | v34 | `damage_op` | our active's 4 moves x the opp's 6 mons, per-(move, mon) rolls |
+| `damage_matrices_incoming` | `--damage-matrices` | `cli` | `structural` | `False` | v35 | `damage_op`, `move_latent` | the enriched top-K incoming matrix (per opp move x per our mon) |
+| `threat_prob_outspeed` | `--threat-prob-outspeed` | `cli` | `structural` | `False` | v36 | — | uncertainty-aware P(outspeed): divide the speed gap by the believed speed std |
+| `spread_belief_nature` | `--spread-belief-nature` | `cli` | `structural` | `False` | v40 | `spread_belief` | swap SpreadBelief's additive head for the NATURE/EV generative head |
+| `belief_grad_mode` | `--belief-grad-mode` | `cli` | `resume_immutable` | `'shaping'` | v41 | — | which gradient arrow between the belief heads and the trunk is cut |
+| `damage_candidate_k` | `--damage-candidate-k` | `cli` | `structural` | `0` | v49 | `damage_op` | cap the op's incoming candidate sweep at the K most-believed opponent moves |
+| `hp_belief_mode` | `--hp-belief-mode` | `cli` | `structural` | `'composed'` | v53 | — | how the 16 typed Hidden-Power channels are produced (composed|flat) |
+| `entity_topk_seats` | `--entity-topk-seats` | `cli` | `structural` | `0` | v54 | `damage_op`, `move_latent` | E4 — the opp active's top-K believed threat-move attention seats |
+| `edge_bias_families` | `--edge-bias-families` | `cli` | `structural` | `'off'` | v56 | — | which physics families are delivered as additive per-pair attention biases |
+| `entity_tail_seats` | `--entity-tail-seats` | `cli` | `structural` | `False` | v57 | `damage_op`, `entity_topk_seats` | E5 — 6 per-opp-mon seats summarising the beyond-top-K belief mass |
+| `consequence_topk` | `--consequence-topk` | `cli` | `structural` | `6` | v59 | — | the consequence kernels' believed-candidate axis (C1b/C2/C3 k_cand + D4 k_bench) |
+| `value_threat_inject` | `--value-threat-inject` | `cli` | `structural` | `False` | v64 | `damage_op` | add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy |
+| `opp_intent` | `--opp-intent-coef` *(coef)* | `cli` | `structural` | `False` | v68 | `entity_topk_seats` | the alpha (their move) / beta (their switch-in) supervised pointer heads |
+| `species_prior_fusion` | `--species-prior-fusion` | `cli` | `structural` | `False` | v69 | `opp_belief_slots` | read BeliefHead's species head as a DELTA on the team-composition prior |
+| `t0_species_prior` | `--t0-species-prior` | `cli` | `structural` | `False` | v72 | — | feed the T1 physics the model's own species belief, not the static usage table |
+| `opp_intent_grad_mode` | `--opp-intent-grad-mode` | `cli` | `structural` | `'detached'` | v73 | — | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
+| `intent_value_reduce` | `--intent-value-reduce` | `cli` | `structural` | `False` | v74 | `opp_intent`, `damage_op` | append the alpha-weighted expected incoming threat to the critic's features |
+| `intent_move_cell` | `--intent-move-cell` | `cli` | `structural` | `False` | v77 | `opp_intent`, `damage_op` | G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through the pointer MOVE cell |
+| `value_entity_pool_full` | `--value-entity-pool-full` | `cli` | `structural` | `False` | v82 | `value_entity_pool` | the entity pool's COMPLETE row set: + the refined global token and the hidden-opp belief queries |
+| `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | — | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
+| `value_entity_pool` | `--value-entity-pool` | `cli` | `structural` | `False` | v80 | — | Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team tokens + op incoming rows), zero-init, vf-only |
+| `item_belief` | `--item-belief` | `cli` | `structural` | `False` | v83 | — | the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes its publication (revealed stays exact 0/1) |
+| `intent_threshold` | `--intent-threshold` | `cli` | `structural` | `False` | v84 | `opp_intent`, `damage_op` | the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO (the calibrated am-I-about-to-die) to the critic |
+| `intent_conditional` | `--intent-conditional` | `cli` | `structural` | `False` | v85 | `opp_intent`, `damage_op`, `damage_outgoing`, `damage_matrices_outgoing` | the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the β-weighted trade KO (the FIRST forward-side β consumer), Protect's α-weighted avoided quantities, Magic Coat's oracle-verified reflect set, Pursuit's ×2 doubling trigger (port-verified departing-target rule) |
+| `op_drop_renders` | `--op-drop-renders` | `cli` | `structural` | `False` | v86 | — | design_op_tensors step 3: the op's flat forward block loses the three RENDER regions (omx/imx/OAX — serialization-only since the concat's deletion); selection machinery + every consumer stash survive, out_gain shrinks |
+| `op_believed_lean` | `--op-believed-lean` | `cli` | `structural` | `False` | v86 | `spread_belief`, `damage_op` | the lean d3 physics price the attacker from the BELIEVED spread instead of the legacy de-timid fiction — the B-spread correctness fix at the last de-timid site the edges read |
+| `value_clock` | `--value-clock` | `cli` | `structural` | `False` | v87 | — | the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only — the explicit critic route the clock fix was validated for |
+| `value_intent` | `--value-intent` | `cli` | `structural` | `False` | v87 | `opp_intent` | the published α/β posteriors AS DISTRIBUTIONS to the critic (α over K belief-sorted seats + SWITCH, β over the 6 slots), zero-init, vf only |
+
+**Dependencies.** 24 of 44 toggles name a `requires`. The column lists only DIRECT dependencies; the transitive closure is `flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also pulls in `opp_intent`, `entity_topk_seats`, `damage_op`, `move_belief_mode`, `attend_unrevealed_opponents`, `move_latent`, `damage_outgoing`, `damage_matrices_outgoing`. "Enabled" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are OFF, everything else is ON.
+
+Two constructor checks are STRONGER than the column can say, and stay hand-written in `Gen3FeaturesExtractor.__init__`: `damage_op` needs `move_belief_mode` in *{revealed, both}* specifically (the column can only say "enabled"), and `edge_bias_families` carries a requirement PER FAMILY LETTER — most families need `damage_op`, `d1/s1/c1/c2` also need `damage_outgoing`, `d3/s3` need `entity_topk_seats > 0`, `r` needs `history_events`, and `h` needs nothing — which no flag-level declaration can represent. `flag_requires_test.py` holds that list and fails if a new coupling appears in neither place.
 
 **Notes**
 

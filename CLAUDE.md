@@ -520,7 +520,14 @@ python -m main.checkargs --argv "--steps 1 --device cuda"
 ```
 
 Exit 0 = every flag is accepted; exit 1 names each one that would fail (with its value, so you can
-see whether it mattered). **It reports; it does not repair** — a deleted flag may have a
+see whether it mattered). It checks **two** ways a command fails: a flag the parser no longer knows,
+and a COMBINATION the extractor refuses — `agents.model.flag_registry`'s `requires` graph, e.g.
+`--intent-conditional` without `--damage-outgoing`. That second crash is later and dearer than an
+argparse error (the run dir exists, the child starts, the traceback comes out of
+`Gen3FeaturesExtractor.__init__`). The dependency half is deliberately conservative: it fires only
+when the argv enables a flag AND explicitly names a dependency with a disabled value, because a
+resume inherits every unspecified flag from the checkpoint's config, so absence carries no
+information. **It reports; it does not repair** — a deleted flag may have a
 replacement, so dropping one silently could change the run. Launcher-owned flags
 (`--restart-interval-hours`, `--nice`, `--sync-to-main`, …) are recognised as not-forwarded rather
 than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you

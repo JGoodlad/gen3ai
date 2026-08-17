@@ -20,6 +20,19 @@ Usage:
 
 Exit 0 = every flag is accepted. Exit 1 = something would fail at launch.
 
+Two ways a command fails, and it reports both in one pass:
+  * a flag the parser no longer knows (the motivating case above);
+  * a combination the extractor constructor refuses — `agents.model.flag_registry`'s `requires`
+    graph, e.g. `--intent-conditional` without `--damage-outgoing`. That crash is later and more
+    expensive than an argparse error: the run dir exists, the child starts, and the traceback comes
+    out of `Gen3FeaturesExtractor.__init__`.
+
+The dependency half is deliberately CONSERVATIVE — it fires only when the argv enables a flag AND
+explicitly names a dependency with a disabled value. An argv that simply omits a dependency is not
+reported, because a resume inherits every unspecified flag from the checkpoint's recorded config
+(`_resolve`), so absence carries no information here. Under-reporting is the right failure
+direction: this tool's value is that a warning from it is worth acting on.
+
 It REPORTS; it does not repair. A deleted flag may have a replacement, so dropping it silently can
 change the run in a way nobody sees — naming the problem is the job, deciding what the command
 should say is the reader's.
@@ -72,6 +85,57 @@ def split_argv(argv: List[str]) -> List[Tuple[str, List[str]]]:
     return out
 
 
+def _enabled_state(vals: List[str]) -> bool:
+    """Is `--flag <vals>` the ON state, by the registry's OFF convention?
+
+    No value = a `store_true` that is present, so ON. One value is read as a number when it looks
+    like one (the two derived toggles are set by a COEFFICIENT, where `0` means off), else as the
+    mode string it is. Anything longer is not a toggle spelling and is treated as ON rather than
+    guessed at.
+    """
+    from agents.model.flag_registry import is_enabled
+    if not vals:
+        return True
+    if len(vals) > 1:
+        return True
+    tok = vals[0]
+    try:
+        return is_enabled(float(tok))
+    except ValueError:
+        return is_enabled(tok)
+
+
+def unsatisfiable_pairs(argv: List[str]) -> List[Tuple[str, str, str]]:
+    """`(flag, dependency, the disabling token)` for each dependency the argv explicitly negates.
+
+    The registry import is function-local: it is pure data today (VERIFIED — calling this leaves
+    `torch` out of `sys.modules`), but it lives under `agents.model`, and this module's promise to
+    answer without importing torch should not depend on that staying true by luck.
+    """
+    from agents.model.flag_registry import BY_NAME, cli_flags
+
+    # CLI spelling -> the registry rows it sets. `--damage-matrices` desugars into two rows, so a
+    # dict of lists rather than a dict; a mode flag that grew a third row would just work.
+    by_cli: Dict[str, List[str]] = {}
+    for f in cli_flags():
+        by_cli.setdefault(f.cli_flag, []).append(f.name)
+
+    state: Dict[str, Tuple[bool, str]] = {}      # flag name -> (enabled?, the token that said so)
+    for flag, vals in split_argv(argv):
+        for name in by_cli.get(flag, ()):
+            state[name] = (_enabled_state(vals), " ".join([flag] + vals))
+
+    out: List[Tuple[str, str, str]] = []
+    for name, (on, _) in state.items():
+        if not on:
+            continue
+        for dep in BY_NAME[name].requires:
+            dep_state = state.get(dep)
+            if dep_state is not None and not dep_state[0]:
+                out.append((name, dep, dep_state[1]))
+    return sorted(out)
+
+
 def check(argv: List[str]) -> dict:
     """Every flag in `argv` classified against the live parser. Pure — unit-testable."""
     known = known_option_strings()
@@ -86,7 +150,8 @@ def check(argv: List[str]) -> dict:
         else:
             unknown.append((flag, vals))
     return {"n_flags": len(ok) + len(launcher) + len(unknown),
-            "accepted": ok, "launcher_only": launcher, "unknown": unknown}
+            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
+            "unsatisfiable": unsatisfiable_pairs(argv)}
 
 
 def argv_from_run(run_dir: str) -> List[str]:
@@ -129,15 +194,28 @@ def main(raw: List[str] | None = None) -> int:
     print(f"checked {res['n_flags']} flags from {src}")
     print(f"  accepted by the trainer parser : {len(res['accepted'])}")
     print(f"  launcher-owned (not forwarded) : {len(res['launcher_only'])}")
-    if not res["unknown"]:
-        print("  unrecognized                   : 0  ✓ this command still launches")
+    if res["unknown"]:
+        print(f"  unrecognized                   : {len(res['unknown'])}  ✗ WOULD FAIL AT LAUNCH")
+        for flag, vals in res["unknown"]:
+            print(f"      {flag}{' ' + ' '.join(vals) if vals else ''}")
+        print("\n  These are not in the current parser — most likely deleted by a version bump.")
+        print("  Check designs/CHANGELOG.md for which version removed each one, and whether a")
+        print("  replacement flag exists, before you drop it from the command.")
+    else:
+        print("  unrecognized                   : 0")
+
+    if res["unsatisfiable"]:
+        print(f"  unsatisfiable combinations     : {len(res['unsatisfiable'])}  "
+              "✗ WOULD FAIL IN THE EXTRACTOR")
+        for flag, dep, token in res["unsatisfiable"]:
+            print(f"      {flag} requires {dep}, but the command says `{token}`")
+        print("\n  These pass argparse and crash later, inside Gen3FeaturesExtractor.__init__.")
+        print("  The dependency graph is designs/flag_registry.md (generated from")
+        print("  agents.model.flag_registry, which is where the constructor's raises are declared).")
+
+    if not res["unknown"] and not res["unsatisfiable"]:
+        print("  ✓ this command still launches")
         return 0
-    print(f"  unrecognized                   : {len(res['unknown'])}  ✗ WOULD FAIL AT LAUNCH")
-    for flag, vals in res["unknown"]:
-        print(f"      {flag}{' ' + ' '.join(vals) if vals else ''}")
-    print("\n  These are not in the current parser — most likely deleted by a version bump.")
-    print("  Check designs/CHANGELOG.md for which version removed each one, and whether a")
-    print("  replacement flag exists, before you drop it from the command.")
     return 1
 
 

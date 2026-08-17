@@ -13,7 +13,7 @@ import json
 import pytest
 
 from main.checkargs import (argv_from_run, check, known_option_strings,
-                            split_argv)
+                            split_argv, unsatisfiable_pairs)
 
 
 # ------------------------------------------------------------------ the parser is inspectable
@@ -97,3 +97,37 @@ def test_missing_run_dir_says_so(tmp_path):
     with pytest.raises(SystemExit) as e:
         argv_from_run(str(tmp_path / "nope"))
     assert "no such run dir" in str(e.value)
+
+
+# ------------------------------------------------- the flag_registry dependency graph, threaded in
+
+def test_an_explicitly_negated_dependency_is_reported():
+    """The whole point: this argv passes argparse and dies inside the extractor constructor."""
+    pairs = unsatisfiable_pairs(
+        ["--steps", "100", "--intent-conditional", "--damage-matrices", "off"])
+    assert ("intent_conditional", "damage_matrices_outgoing", "--damage-matrices off") in pairs
+
+
+def test_a_merely_ABSENT_dependency_is_not_reported():
+    """A resume inherits every unspecified flag from the checkpoint's config, so absence is not
+    evidence. Reporting it would make the tool cry wolf on the commands people actually rerun."""
+    assert unsatisfiable_pairs(["--steps", "100", "--intent-conditional"]) == []
+
+
+def test_a_satisfied_dependency_is_silent():
+    argv = ["--intent-conditional", "--damage-op", "--damage-outgoing",
+            "--damage-matrices", "both", "--opp-intent-coef", "0.5"]
+    assert unsatisfiable_pairs(argv) == []
+
+
+def test_a_zero_COEFFICIENT_disables_a_derived_toggle():
+    """`opp_intent` is set by `--opp-intent-coef`, where 0 is OFF — the one place a numeric value,
+    not a mode string, decides whether a dependency is satisfied."""
+    pairs = unsatisfiable_pairs(["--value-intent", "--opp-intent-coef", "0"])
+    assert [(f, d) for f, d, _ in pairs] == [("value_intent", "opp_intent")]
+
+
+def test_check_reports_both_failure_kinds_in_one_pass():
+    res = check(["--pubval-mode", "none", "--intent-conditional", "--damage-matrices", "off"])
+    assert [f for f, _ in res["unknown"]] == ["--pubval-mode"]
+    assert res["unsatisfiable"], "the dependency half must not be masked by the unknown-flag half"

@@ -516,6 +516,46 @@ Getting this wrong hurts in **both** directions, so both are asserted: a `struct
 toggle *inside* `check_compatible` makes a run FATAL while loading its own pool snapshots (that gate
 runs on frozen eval/pool/distill opponents too, whose forward is identical regardless).
 
+
+### Dependencies — `requires=`, and why both directions are enforced
+
+A flag's DEPENDENCIES used to live only as ~30 hand-written `raise ValueError` lines inside
+`Gen3FeaturesExtractor.__init__` ("intent_value_reduce requires opp_intent", "value_entity_pool_full
+requires value_entity_pool", …). Nothing outside that function knew them, so `checkargs` could not
+warn about an unsatisfiable command, the generated table could not show the graph, and answering
+"what is the minimum config that turns X on?" meant reading the constructor.
+
+`ModelFlag.requires` is that data — the flags that must be **enabled** for this one to be, where
+enabled is `flag_registry.is_enabled` (`False` / `0` / `'off'` / `'none'` are OFF; note it is *not*
+`bool()`, because a mode string's OFF state is the truthy `'off'`). `requirement_closure(name)`
+gives the transitive set. **24 of 44** toggles declare one.
+
+`flag_requires_test.py` enforces it in **both** directions, because a declaration nothing checks is
+a comment and a check nothing declares is invisible:
+
+| direction | what it does | what it catches |
+|---|---|---|
+| forward, positive | build with the flag on + **only** its declared closure | an INCOMPLETE `requires` — the ctor refuses a config the registry called complete |
+| forward, negative | build with the closure minus **one** declared dep | a dependency that stopped being enforced |
+| reverse | AST-scan `__init__` for every `raise` guarded on ≥2 registry flags | a hand-written coupling the registry never learned |
+
+The positive control found a real omission on its first run (`value_dist_mode` also needs
+`value_dist_vmax > value_dist_vmin`, enforced inside `ValueDistHead`), which is why the test carries
+an explicit `_VALUE_RELATIONS` table rather than a silent fixup.
+
+**What stays bespoke, and how narrow the carve-out is.** `requires` says only "must be enabled", so
+a per-VALUE dependency has no flag-level form. Only `edge_bias_families` is exempt
+(`BESPOKE_COUPLINGS` in the test, with the reason): its 17 family letters each carry their own
+requirement and `h` carries none, so no statement about the flag is true. `damage_op` is NOT exempt
+— it declares `move_belief_mode` (the weaker truth) while the constructor keeps the stronger
+`in {revealed, both}`, because a weaker truth in the registry beats a blank. A stale exemption fails
+too: `test_every_bespoke_coupling_still_exists` refuses an entry that matches no live raise.
+
+**Downstream:** `python -m main.checkargs` reads the graph, so a recorded command that enables a
+flag while explicitly disabling one of its dependencies is reported offline instead of crashing the
+child ~40 s into a launch. It only fires on an EXPLICIT negation — an omitted dependency is inherited
+from the checkpoint's config on resume, so absence carries no information.
+
 ## Model versioning (`model_version.py`, `snapshot.py`)
 
 Every model save writes the **run-level** `model_config.json` + `metadata.json` at the run root via `save_model_snapshot()`, plus a **per-checkpoint** `.json` sidecar beside each checkpoint `.zip` (`write_checkpoint_metadata`, derived from the zip path). Periodic + forced checkpoints `.zip` live in `<run>/checkpoints/` (so their sidecar lands there too); the run-level config/metadata stay one level up at the run root. Loading goes through `load_model_snapshot()`, which resolves the zip then searches **its dir AND its parent** for `model_config.json` (so the run-root config is found even when the zip is in `checkpoints/`; `load_foreign_opponent` does the same) and runs `check_compatible()` before `MaskablePPO.load()` — a mismatch fails fast with a clear error rather than silently loading bad weights. (`snapshot_history` keys + the `worktree.py` resume lookup stay BARE basenames, e.g. `checkpoint_123_steps.zip`, regardless of the subdir.)

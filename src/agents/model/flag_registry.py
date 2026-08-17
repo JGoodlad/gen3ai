@@ -52,6 +52,26 @@ THE FOUR CLASSES say what a mismatch MEANS, which is what picks the gate:
                        opponent on it would be a false rejection that breaks league play)
     training_coef      recorded for provenance, never gated (a resume may change it freely)
     runtime            a perf knob — never recorded, never gated, NOT inherited on resume
+
+DEPENDENCIES (``requires``). A sixth surface used to exist and was not listed above, because it was
+not a surface at all — it was ~30 hand-written ``raise ValueError`` lines in
+``Gen3FeaturesExtractor.__init__`` saying things like *"intent_value_reduce requires opp_intent"*.
+Nothing outside that function knew them, so the launcher could not warn about an unsatisfiable
+combination, ``designs/flag_registry.md`` could not show the graph, and there was no way to ask
+"what is the minimum config that turns X on?" without reading the constructor.
+
+``requires`` is now that data. It names the flags that must be ENABLED for this flag to be enabled
+— ``is_enabled`` below defines both ends of "enabled", and its OFF convention (``False`` / ``0`` /
+``'off'`` / ``'none'``) is the same one the CLI already uses.
+
+It is deliberately WEAKER than the constructor in two places, and the constructor keeps the
+stronger form: ``requires`` can say *"damage_op needs move_belief_mode enabled"* but not *"…in
+{revealed, both}"*, and it cannot express a per-VALUE dependency at all — which is why
+``edge_bias_families`` (whose 17 family letters each carry their own requirement, and ``h`` carries
+none) declares nothing and stays bespoke. ``flag_requires_test.py`` enforces BOTH directions: every
+declared dependency must actually make the constructor raise, and every constructor raise that
+couples two registry flags must be declared here or listed in that test's bespoke table. Neither
+side is allowed to know something the other does not.
 """
 from __future__ import annotations
 
@@ -95,6 +115,7 @@ class ModelFlag:
     source_arg: Optional[str] = None    # the args attribute that feeds it; defaults to ``name``
     cli_name: Optional[str] = None  # the long flag when it is NOT `--<arg with dashes>`
     note: str = ""                  # anything a reader needs that ``meaning`` cannot carry
+    requires: Tuple[str, ...] = ()  # flags that must be ENABLED for this one to be (see below)
 
     @property
     def arg(self) -> str:
@@ -126,22 +147,28 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "v16 has turned it off. The extractor kwarg still defaults False — the OFF "
                    "baseline stays constructible, it is just no longer selectable from the CLI."),
     ModelFlag("opp_belief_cls_k", 0, Tier.CLI, Klass.STRUCTURAL, 9,
-              "k learned query tokens summarising the unrevealed opp party into both heads"),
+              "k learned query tokens summarising the unrevealed opp party into both heads",
+              requires=("attend_unrevealed_opponents",)),
     ModelFlag("opp_belief_slots", False, Tier.CLI, Klass.STRUCTURAL, 16,
               "learned unknown-mon tokens in the un-revealed opp slots + the BeliefHead",
               derived=True, source_arg="opp_belief_aux_coef",
               note="coef>0 is the enable signal; the COEF is a training hparam, the BOOL is the "
-                   "version-checked arch toggle."),
+                   "version-checked arch toggle.",
+              requires=("attend_unrevealed_opponents",)),
     ModelFlag("move_belief_mode", "off", Tier.CLI, Klass.STRUCTURAL, 17,
-              "predict + reinject each opp mon's moveset (off|revealed|unrevealed|both)"),
+              "predict + reinject each opp mon's moveset (off|revealed|unrevealed|both)",
+              requires=("attend_unrevealed_opponents",)),
     ModelFlag("damage_op", False, Tier.CLI, Klass.STRUCTURAL, 19,
-              "build the differentiable GPU DamageOperator"),
+              "build the differentiable GPU DamageOperator",
+              requires=("move_belief_mode",)),
     ModelFlag("move_prior_fusion", False, Tier.CLI, Klass.STRUCTURAL, 20,
-              "fuse the Smogon move-frequency prior into the move belief as a log-odds delta"),
+              "fuse the Smogon move-frequency prior into the move belief as a log-odds delta",
+              requires=("move_belief_mode",)),
     ModelFlag("win_prob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 22,
               "auxiliary win-probability side head off value_pooled (none|read_only|shaping)"),
     ModelFlag("damage_outgoing", False, Tier.CLI, Klass.STRUCTURAL, 23,
-              "the op's OUTGOING per-move direction (our active's moves -> the opp active)"),
+              "the op's OUTGOING per-move direction (our active's moves -> the opp active)",
+              requires=("damage_op",)),
     ModelFlag("move_candidate_floor", 0.02, Tier.CLI, Klass.STRUCTURAL, 23,
               "the LEGAL-BUT-UNOBSERVED base probability of the move prior",
               note="must equal damage_tables._PRIOR_FLOOR; legality itself is unconditional (v65)."),
@@ -150,7 +177,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("spread_belief", False, Tier.CLI, Klass.STRUCTURAL, 25,
               "predict + reinject the opponent's hidden spread (5 derived stats per slot)"),
     ModelFlag("value_dist_mode", "none", Tier.CLI, Klass.STRUCTURAL, 29,
-              "distributional VALUE side head off value_pooled (none|read_only|shaping)"),
+              "distributional VALUE side head off value_pooled (none|read_only|shaping)",
+              requires=("value_dist_bins",)),
     ModelFlag("value_dist_bins", 0, Tier.CLI, Klass.STRUCTURAL, 29,
               "atom count = the value-dist head's output Linear width"),
     ModelFlag("value_dist_vmin", 0.0, Tier.CLI, Klass.RESUME_IMMUTABLE, 29,
@@ -161,60 +189,73 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="value-MEANING, so check_value_dist on the resume path only."),
     ModelFlag("damage_topk_k", 0, Tier.CLI, Klass.STRUCTURAL, 30,
               "K = how many of the opp active's believed moves the incoming matrix surfaces",
-              cli_name="--damage-topk"),
+              cli_name="--damage-topk",
+              requires=("damage_op", "move_latent", "damage_matrices_incoming")),
     ModelFlag("damage_matrices_outgoing", False, Tier.CLI, Klass.STRUCTURAL, 34,
               "our active's 4 moves x the opp's 6 mons, per-(move, mon) rolls",
               cli_name="--damage-matrices",
               note="set by the `--damage-matrices {off,outgoing,incoming,both}` MODE flag, which "
-                   "desugars into this bool and `damage_matrices_incoming` before `_resolve`."),
+                   "desugars into this bool and `damage_matrices_incoming` before `_resolve`.",
+              requires=("damage_op",)),
     ModelFlag("damage_matrices_incoming", False, Tier.CLI, Klass.STRUCTURAL, 35,
               "the enriched top-K incoming matrix (per opp move x per our mon)",
               cli_name="--damage-matrices",
               note="the other half of the `--damage-matrices` mode desugar; it also REUSES "
-                   "`damage_topk_k` as its K."),
+                   "`damage_topk_k` as its K.",
+              requires=("damage_op", "move_latent")),
     ModelFlag("threat_prob_outspeed", False, Tier.CLI, Klass.STRUCTURAL, 36,
               "uncertainty-aware P(outspeed): divide the speed gap by the believed speed std"),
     ModelFlag("spread_belief_nature", False, Tier.CLI, Klass.STRUCTURAL, 40,
-              "swap SpreadBelief's additive head for the NATURE/EV generative head"),
+              "swap SpreadBelief's additive head for the NATURE/EV generative head",
+              requires=("spread_belief",)),
     ModelFlag("belief_grad_mode", "shaping", Tier.CLI, Klass.RESUME_IMMUTABLE, 41,
               "which gradient arrow between the belief heads and the trunk is cut",
               note="detach() is value-preserving => the forward is bit-identical in every mode, so "
                    "check_belief_grad_mode on the resume path only."),
     ModelFlag("damage_candidate_k", 0, Tier.CLI, Klass.STRUCTURAL, 49,
-              "cap the op's incoming candidate sweep at the K most-believed opponent moves"),
+              "cap the op's incoming candidate sweep at the K most-believed opponent moves",
+              requires=("damage_op",)),
     ModelFlag("hp_belief_mode", "composed", Tier.CLI, Klass.STRUCTURAL, 53,
               "how the 16 typed Hidden-Power channels are produced (composed|flat)"),
     ModelFlag("entity_topk_seats", 0, Tier.CLI, Klass.STRUCTURAL, 54,
-              "E4 — the opp active's top-K believed threat-move attention seats"),
+              "E4 — the opp active's top-K believed threat-move attention seats",
+              requires=("damage_op", "move_latent")),
     ModelFlag("edge_bias_families", "off", Tier.CLI, Klass.STRUCTURAL, 56,
               "which physics families are delivered as additive per-pair attention biases"),
     ModelFlag("entity_tail_seats", False, Tier.CLI, Klass.STRUCTURAL, 57,
-              "E5 — 6 per-opp-mon seats summarising the beyond-top-K belief mass"),
+              "E5 — 6 per-opp-mon seats summarising the beyond-top-K belief mass",
+              requires=("damage_op", "entity_topk_seats")),
     ModelFlag("consequence_topk", 6, Tier.CLI, Klass.STRUCTURAL, 59,
               "the consequence kernels' believed-candidate axis (C1b/C2/C3 k_cand + D4 k_bench)"),
     ModelFlag("value_threat_inject", False, Tier.CLI, Klass.STRUCTURAL, 64,
-              "add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy"),
+              "add the op's alpha-weighted incoming row to our tokens on the VALUE pool's copy",
+              requires=("damage_op",)),
     ModelFlag("opp_intent", False, Tier.CLI, Klass.STRUCTURAL, 68,
               "the alpha (their move) / beta (their switch-in) supervised pointer heads",
               derived=True, source_arg="opp_intent_coef",
-              note="coef>0 is the enable signal, like opp_belief_slots."),
+              note="coef>0 is the enable signal, like opp_belief_slots.",
+              requires=("entity_topk_seats",)),
     ModelFlag("species_prior_fusion", False, Tier.CLI, Klass.STRUCTURAL, 69,
-              "read BeliefHead's species head as a DELTA on the team-composition prior"),
+              "read BeliefHead's species head as a DELTA on the team-composition prior",
+              requires=("opp_belief_slots",)),
     ModelFlag("t0_species_prior", False, Tier.CLI, Klass.STRUCTURAL, 72,
               "feed the T1 physics the model's own species belief, not the static usage table"),
     ModelFlag("opp_intent_grad_mode", "detached", Tier.CLI, Klass.STRUCTURAL, 73,
               "whether alpha/beta's gradient reaches the shared trunk (detached|shaping)"),
     ModelFlag("intent_value_reduce", False, Tier.CLI, Klass.STRUCTURAL, 74,
-              "append the alpha-weighted expected incoming threat to the critic's features"),
+              "append the alpha-weighted expected incoming threat to the critic's features",
+              requires=("opp_intent", "damage_op")),
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
-              "the pointer MOVE cell"),
+              "the pointer MOVE cell",
+              requires=("opp_intent", "damage_op")),
     ModelFlag("value_entity_pool_full", False, Tier.CLI, Klass.STRUCTURAL, 82,
               "the entity pool's COMPLETE row set: + the refined global token and the "
               "hidden-opp belief queries",
               note="requires value_entity_pool; a separate flag/shape so v80-table checkpoints "
                    "(gen-12 trains one) keep loading. The one successor for every vf route the "
-                   "critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat)."),
+                   "critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat).",
+              requires=("value_entity_pool",)),
     ModelFlag("history_events", False, Tier.CLI, Klass.STRUCTURAL, 81,
               "Tier H-B: the obs event-window records join the trunk as event SEATS "
               "(shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY)",
@@ -242,7 +283,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="design_conditional_execution.md §3.0 build-order step 3. Requires "
                    "opp_intent + damage_op (+ the top-K pair-cell stash at runtime). Both "
                    "projections zero-init ⇒ ON-at-init bit-identical; the p_KO critic half "
-                   "is the ledger-H1 payoff and stands whatever the G3 verdict says."),
+                   "is the ledger-H1 payoff and stands whatever the G3 verdict says.",
+              requires=("opp_intent", "damage_op")),
     ModelFlag("intent_conditional", False, Tier.CLI, Klass.STRUCTURAL, 85,
               "the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category "
               "test, flinch's (1−α_SWITCH) term, Explosion's execute/into-switch facts + the "
@@ -253,7 +295,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "damage_op + damage_outgoing + damage_matrices_outgoing (the arrival pko "
                    "source). β is PUBLISHED like α (label_only cuts the PPO route at the same "
                    "boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like "
-                   "intent_threshold."),
+                   "intent_threshold.",
+              requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_outgoing")),
     ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
               "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
               "regions (omx/imx/OAX — serialization-only since the concat's deletion); "
@@ -266,7 +309,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "legacy de-timid fiction — the B-spread correctness fix at the last de-timid "
               "site the edges read",
               note="requires spread_belief + damage_op. Forward-math only (no state_dict "
-                   "change): the version gate is the ONLY thing rejecting a mismatched resume."),
+                   "change): the version gate is the ONLY thing rejecting a mismatched resume.",
+              requires=("spread_belief", "damage_op")),
     ModelFlag("value_clock", False, Tier.CLI, Klass.STRUCTURAL, 87,
               "the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only "
               "— the explicit critic route the clock fix was validated for",
@@ -278,7 +322,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="requires opp_intent. α previously reached vf only as a weighting inside "
                    "intent_value_reduce's cells; β not at all — the block was ORDERING, which "
                    "the post-assembler tail dissolves. Publications ⇒ label_only keeps the "
-                   "PPO→α/β route cut."),
+                   "PPO→α/β route cut.",
+              requires=("opp_intent",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -286,6 +331,56 @@ BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
 if len(BY_NAME) != len(REGISTRY):                    # a duplicate would silently shadow a row
     _dupes = sorted({f.name for f in REGISTRY if sum(g.name == f.name for g in REGISTRY) > 1})
     raise AssertionError(f"duplicate flag_registry names: {_dupes}")
+
+_unknown_req = sorted({(f.name, d) for f in REGISTRY for d in f.requires if d not in BY_NAME})
+if _unknown_req:                                     # a typo'd dependency would silently never fire
+    raise AssertionError(f"flag_registry `requires` names no such flag: {_unknown_req}")
+
+for _f in REGISTRY:                                  # a self-requirement can never be satisfied
+    if _f.name in _f.requires:
+        raise AssertionError(f"flag_registry: {_f.name} requires itself")
+
+
+# The OFF values, one convention for every type the registry carries. `False` for a bool, `0` for a
+# width/count (`entity_topk_seats`, `value_dist_bins`), and the two mode-string spellings the CLI
+# already uses. It is a MODULE-level rule rather than per-flag data because the CLI enforces it too:
+# every mode flag in `train_rl_agent` spells its disabled state exactly one of these ways.
+OFF_VALUES = (False, 0, "off", "none")
+
+
+def is_enabled(value: Any) -> bool:
+    """Is this flag value the ON state, for the purpose of ``requires``?
+
+    Note this is NOT ``bool(value)``: a mode string's OFF state is the truthy ``'off'`` / ``'none'``,
+    and reading it as enabled is a real bug this project has shipped before (the dead-kwarg
+    sanitizer refused every OFF-mode checkpoint until it stopped testing truthiness). Floats are
+    excluded on purpose — ``move_candidate_floor`` and the ``value_dist_v*`` bounds are magnitudes,
+    not switches, and nothing depends on them.
+    """
+    if isinstance(value, str):
+        return value not in ("off", "none")
+    return bool(value)
+
+
+def requirement_closure(name: str) -> Tuple[str, ...]:
+    """Every flag that must be enabled to enable ``name``, transitively, excluding ``name``.
+
+    Order is deterministic (depth-first over the declared order) so a caller building a minimal
+    config gets a stable answer. Cycles are impossible — a cycle would make both flags
+    unenableable, so ``flag_requires_test`` fails on one rather than this silently looping.
+    """
+    seen: List[str] = []
+
+    def walk(n: str, stack: Tuple[str, ...]) -> None:
+        for dep in BY_NAME[n].requires:
+            if dep in stack:
+                raise AssertionError(f"flag_registry `requires` cycle: {' -> '.join(stack + (dep,))}")
+            if dep not in seen:
+                seen.append(dep)
+            walk(dep, stack + (dep,))
+
+    walk(name, (name,))
+    return tuple(seen)
 
 
 def cli_flags() -> Tuple[ModelFlag, ...]:
@@ -351,16 +446,37 @@ def registry_table_section() -> str:
         f"{len(cli_flags())} `cli`, {len(config_only_flags())} `config_only`, "
         f"{len([f for f in REGISTRY if f.tier is Tier.CONSTRUCTOR_ONLY])} `constructor_only`.",
         "",
-        "| toggle | CLI | tier | class | default | since | meaning |",
-        "|---|---|---|---|---|---|---|",
+        "| toggle | CLI | tier | class | default | since | requires | meaning |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for f in REGISTRY:
         cli = f"`{f.cli_flag}`" if f.tier is Tier.CLI else "—"
         if f.derived and f.tier is Tier.CLI:
             cli += " *(coef)*"
+        req = ", ".join(f"`{d}`" for d in f.requires) or "—"
         lines.append(
             f"| `{f.name}` | {cli} | `{f.tier.value}` | `{f.klass.value}` | "
-            f"{_cell(f.default)} | v{f.since} | {f.meaning} |")
+            f"{_cell(f.default)} | v{f.since} | {req} | {f.meaning} |")
+
+    dependents = [f for f in REGISTRY if f.requires]
+    lines += [
+        "",
+        f"**Dependencies.** {len(dependents)} of {len(REGISTRY)} toggles name a `requires`. The "
+        "column lists only DIRECT dependencies; the transitive closure is "
+        "`flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also "
+        f"pulls in {', '.join('`%s`' % d for d in requirement_closure('intent_conditional'))}. "
+        "\"Enabled\" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are "
+        "OFF, everything else is ON.",
+        "",
+        "Two constructor checks are STRONGER than the column can say, and stay hand-written in "
+        "`Gen3FeaturesExtractor.__init__`: `damage_op` needs `move_belief_mode` in "
+        "*{revealed, both}* specifically (the column can only say \"enabled\"), and "
+        "`edge_bias_families` carries a requirement PER FAMILY LETTER — most families need "
+        "`damage_op`, `d1/s1/c1/c2` also need `damage_outgoing`, `d3/s3` need "
+        "`entity_topk_seats > 0`, `r` needs `history_events`, and `h` needs nothing — which no "
+        "flag-level declaration can represent. `flag_requires_test.py` holds that list and fails "
+        "if a new coupling appears in neither place.",
+    ]
     notes = [f for f in REGISTRY if f.note]
     if notes:
         lines += ["", "**Notes**", ""]
