@@ -11,11 +11,6 @@ from agents.observation.constants import (
     POKEMON_FULL_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
-
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (ROLE_TOKEN_SIZE,
     MOVE_NET_HIDDEN,
     MOVE_LATENT_HIDDEN,
@@ -160,6 +155,8 @@ class PokemonEncoder(torch.nn.Module):
         )
 
     def forward(self, ctx: ExtractorContext, embeddings: Embeddings) -> torch.Tensor:
+        """Encode the 12 Pokémon → role tokens [B, 12, ROLE_TOKEN_SIZE]. Also stashes the per-(mon,
+        move-slot) tokens at `self.last_move_tokens` for the pointer head (SORTED-BY-ID slot order)."""
         layout = self.layout
         batch_size = ctx.batch_size
         pokemon_part = ctx.pokemon_part

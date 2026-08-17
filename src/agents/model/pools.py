@@ -7,11 +7,6 @@ from agents.model.extractor_ctx import ExtractorContext
 import torch
 from typing import Dict, Any, Optional, Tuple
 from agents.model.value_threat_inject import (ValueThreatInject)
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
-
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
@@ -59,6 +54,9 @@ class CLSPool(torch.nn.Module):
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
                 ctx: ExtractorContext,
                 threat_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """our/their_team_out [B,6,D_MODEL]; `threat_rows` the op's reduced per-mon rows (required
+        only when value_threat_inject is built) → `(our_team_pooled, their_team_pooled,
+        our_active_refined, value_pooled)`, each [B, D_MODEL]."""
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
         their_cls_q = self.their_cls.expand(batch_size, -1, -1)

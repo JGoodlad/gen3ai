@@ -4,11 +4,6 @@ Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); t
 re-exports every name here, so historical import paths still resolve.
 """
 import torch
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
-
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (D_MODEL,
 )
 

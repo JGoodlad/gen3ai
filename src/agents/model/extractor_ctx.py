@@ -12,8 +12,6 @@ from agents.observation.constants import (
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
 )
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
     EFF_DIM,
@@ -28,13 +26,6 @@ from agents.observation.turn_delta_encoder import (
 
 TD_STRATEGIC_DIM    = EFF_DIM * 2 + ORDER_DIM      # 10: our_eff(4) + opp_eff(4) + order(2)
 TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
-
-# Architecture constants — single source of truth.
-# ModelVersion imports these so model_config.json always reflects the live values.
-# When you change any of these, also bump MODEL_CONFIG_VERSION in model_version.py.
-# gen3_arch_constants_v1: the architecture constants now live in `arch_constants.py` so
-# `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
-# remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
 
 # Token group ids for the unified transformer's type embedding.
 TOKEN_TYPE_OUR_TEAM = 0

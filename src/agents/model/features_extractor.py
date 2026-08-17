@@ -37,9 +37,6 @@ from agents.observation.turn_delta_encoder import (
 from agents.action.constants import ACTION_SPACE_SIZE
 from utils.logging.levels import LogLevel
 
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
-
 
 # Architecture constants — single source of truth.
 # ModelVersion imports these so model_config.json always reflects the live values.
@@ -253,6 +250,9 @@ class ProjectionAssembler(torch.nn.Module):
                 ctx: ExtractorContext,
                 hidden_opp_belief: Optional[torch.Tensor] = None,
                 seed_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Concatenate the per-head pre-projection inputs → `(pi_combined, vf_combined)` [B, *].
+        `hidden_opp_belief` [B, K*D_MODEL] feeds both heads when built; `seed_rows` (the op's typed
+        incoming rows [B,6,per_mon]) feeds the critic's multi-seed readout, vf only."""
         pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
                     ctx.non_matchup_rest]
         vf_parts = [value_pooled, ctx.non_matchup_rest]
@@ -932,9 +932,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # `instrumented_ppo._value_feat_distill` off both the student and teacher forwards. None until the
         # first forward; never fed into pi/vf.
         self.last_value_pooled: Optional[torch.Tensor] = None
-
-        # Stashed each forward when the head is on (the [B,1] V_pub logit, or None). Read by the PPO
-        # aux loss; NEVER fed into pi/vf.
 
         # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
         # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no

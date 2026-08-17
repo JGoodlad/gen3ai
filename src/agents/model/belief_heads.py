@@ -10,12 +10,11 @@ from agents.observation.constants import (
     TEAM_SIZE,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
+# _PRIOR_FLOOR — the LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default).
+# Legality itself is unconditional; this is only the height of the liftable base a legal-unobserved
+# move starts from.
 from agents.model.damage_tables import _PRIOR_FLOOR
 
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (D_MODEL,
 )
 

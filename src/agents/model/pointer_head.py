@@ -9,11 +9,6 @@ from typing import Optional, Tuple
 from agents.observation.constants import (
     TEAM_SIZE,
 )
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
-
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (MOVE_NET_HIDDEN,
     MOVE_LATENT_DIM,
     POINTER_HIDDEN,
@@ -96,6 +91,7 @@ class EntityMoveSeats(torch.nn.Module):
 
     @property
     def n_seats(self) -> int:
+        """Total seat count: 4 E3 move seats + K E4 threat seats + (E5 tail seats when on)."""
         return 4 + self.topk_seats + (TEAM_SIZE if self.tail_seats else 0)
 
     def seat_types(self, device) -> torch.Tensor:

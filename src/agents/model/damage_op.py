@@ -2460,6 +2460,10 @@ class DamageOperator(torch.nn.Module):
                 move_latent_all: Optional[torch.Tensor] = None,
                 species_probs: Optional[torch.Tensor] = None,
                 item_cb_prob: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Compute the full post-gain damage block [B, out_dim] from the beliefs. `move_belief_logits`
+        [B,6,M] (already typed-HP composed), `spread_belief` [B,6,5] believed opp stats, `move_latent_all`
+        [n_moves,MOVE_LATENT_DIM] (top-K identity source), `species_probs` [B,6,S] the T0 species prior,
+        `item_cb_prob` [B,6] P(Choice Band). Also populates every per-forward stash on `self.stash`."""
         self.stash = OpStashes()          # gen3_op_stashes_v1: ONE reset, no stash can go stale
         B = ctx.batch_size
         device = ctx.device

@@ -11,14 +11,10 @@ from agents.observation.constants import (
     TEAM_SIZE,
     GLOBAL_ENV_DIM,
 )
-# The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
-# unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
 from agents.observation.turn_delta_encoder import (
     TURN_DELTA_DIM,
 )
 
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
 from agents.model.arch_constants import (N_HISTORY_TURNS,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
@@ -55,6 +51,8 @@ class BiasedEncoderLayer(torch.nn.Module):
         self.norm2 = torch.nn.LayerNorm(d_model)
 
     def forward(self, x: torch.Tensor, bias: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """x [B, n, d_model]; `bias` [B, H, n, n] additive per-pair per-head attention-logit bias
+        (already carrying the key-padding addend), or None. Returns the refined [B, n, d_model]."""
         B, n, d = x.shape
         qkv = self.in_proj(x).reshape(B, n, 3, self.n_heads, self.head_dim)
         q, k, v = (qkv[:, :, i].transpose(1, 2) for i in range(3))            # each [B,H,n,hd]
