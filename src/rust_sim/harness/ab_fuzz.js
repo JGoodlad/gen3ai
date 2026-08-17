@@ -33,7 +33,7 @@
 // gen_e2e_fuzz.js — one source of truth, no copy-paste drift.
 //
 // USAGE
-//   node src/rust_sim/harness/ab_fuzz.js [--mode randbats|random|pool]
+//   node src/rust_sim/harness/ab_fuzz.js [--mode randbats|random|pool|ourandom]
 //        [--battles N | --hours H]     (default: run until killed)
 //        [--master-seed S]             (default: from time; ALWAYS printed)
 //        [--chunk N]                   (default 25 battles per chunk)
@@ -62,6 +62,7 @@ const fs = require('fs');
 const { execFileSync, spawnSync } = require('child_process');
 
 const e2e = require('./gen_e2e_fuzz.js');
+const ouRandom = require('./ou_random_teams.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
@@ -118,8 +119,8 @@ function parseFlags(argv) {
     console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
     process.exit(2);
   }
-  if (!['randbats', 'random', 'pool'].includes(f.mode)) {
-    console.error(`--mode must be randbats|random|pool, got ${f.mode}`);
+  if (!['randbats', 'random', 'pool', 'ourandom'].includes(f.mode)) {
+    console.error(`--mode must be randbats|random|pool|ourandom, got ${f.mode}`);
     process.exit(2);
   }
   if (f.masterSeed === null) f.masterSeed = (Date.now() ^ (process.pid * 2654435761)) >>> 0;
@@ -458,6 +459,22 @@ async function main() {
   let provider;
   if (flags.mode === 'randbats') provider = makeRandbatsProvider(teamRng, genStats);
   else if (flags.mode === 'pool') provider = makePoolProvider(teamRng, genStats);
+  else if (flags.mode === 'ourandom') {
+    // gen3ou-RANDBATS: random teams drawn from the REAL gen3ou distribution (Smogon usage +
+    // the teammate joint + per-species move/item/ability/spread priors), validated by
+    // Showdown's own TeamValidator('gen3ou'). See harness/ou_random_teams.js.
+    const ouUniverse = ouRandom.buildOuUniverse({
+      isModeledMove: (m) => isModeledMove(m, true), // HP is BP-70 by construction here
+      modeledItem: (it) => e2e.MODELED_ITEMS.has(toId(it)),
+      allowedAbility: (sid, a) => {
+        const ok = speciesAllowedAbility(sid);
+        return !!ok && ok.includes(toId(a));
+      },
+      portSpecies,
+    });
+    console.error(ouRandom.describeCoverage(ouUniverse));
+    provider = ouRandom.makeOuRandomProvider(teamRng, genStats, ouUniverse);
+  }
   else {
     const universe = buildRandomUniverse();
     console.error(`[random] modeled universe: ${universe.eligible.length} species, ` +
@@ -531,7 +548,9 @@ async function main() {
           // excluded (see isModeledMove). `--format` threads the run format for the byte path.
           rec = await runBattle(t1.packed, t2.packed, battleSeed, chooseSeed, 'modeled', {
             format: flags.format,
-            allowHiddenPower: flags.mode === 'pool',
+            // `ourandom` PINS Hidden Power to BP 70 by construction (its IV solver), so HP is
+            // byte-safe there exactly as it is on the gen3ou-validated pool.
+            allowHiddenPower: flags.mode === 'pool' || flags.mode === 'ourandom',
           });
         } catch (e) {
           cum.empty++;

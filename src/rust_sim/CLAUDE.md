@@ -6517,6 +6517,78 @@ asserting the mutation actually applied (`assert removed contains …`) before r
 revert-verification that does not verify the revert is worse than none, because it launders a guess into
 a fact.**
 
+### `--mode ourandom` — "gen3ou-randbats", the fuzz surface that is actually the one we care about
+
+`gen3_ou_random_teams_v1` (`harness/ou_random_teams.js`). The fuzzers had two team sources and
+NEITHER is the training/ladder surface:
+
+| mode | on-surface? | diverse? |
+|---|---|---|
+| `pool` | **yes** — the 722 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
+| `randbats` | **no** — non-L100 levels, curated movesets, near-uniform items | yes |
+| **`ourandom`** | **yes** | **yes** |
+
+**THE MOTIVATING MEASUREMENT.** Both bugs found on 2026-08-17 (ROUND 42's Trace/forecast, ROUND
+43's Substitute/wrap) have **ZERO gen3ou-pool exposure** — 0 of 773 pool files carry Castform, 0
+carry a wrap-family move. Training plays pool-vs-pool, so neither could ever have fired there.
+That is the round-24 lesson ("fix bugs found on the SURFACE YOU CARE ABOUT") restated as a number,
+and it is why a gen3ou-native random generator is worth having.
+
+**EVERY INPUT IS SMOGON-DERIVED AND ALREADY COMMITTED** — no new data, no scraping:
+`gen3_smogon_stats.json`'s per-species `usage` (which species appear) · `gen3_teammate_priors.json`
+(the species×species joint, so teams are recognisable CORES not six unrelated mons) ·
+`gen3_move_priors.json` / `gen3_item_priors.json` / `gen3_ability_priors.json` /
+`gen3_spread_priors.json`. Deliberately NOT `data/teams/gen3_species_priors.json` — that is
+POOL-derived, and the whole point is independence from the 722.
+
+**LEGALITY IS SHOWDOWN'S VERDICT, NOT A REIMPLEMENTATION.** Every generated team goes through the
+real `TeamValidator('gen3ou')`, so the banlist and every team-building clause are enforced by the
+sim. Rejections are genuine gen-3 breeding facts (`Tyranitar can't get its egg move combination
+(dragondance, pursuit)`), reject-sampled away.
+
+**COVERAGE IS DISCLOSED, NOT ASSUMED.** Move sampling is renormalized over ENGINE-MODELED moves, so
+a generated battle ALWAYS plays to completion — no fail-loud, no truncated prefix. The cost is
+exactly the renormalized mass: **1.33% of gen3ou move-slot prior mass** sits on the 88 unmodeled
+moves, printed in the run banner by `describeCoverage()` every run. Closing it is a NAMED, finite
+queue: `sandattack recycle confuseray safeguard conversion weatherball fakeout imprison present
+skillswap torment eruption`.
+
+**HIDDEN POWER — the one non-obvious mechanic, and it is solved in closed form.** HP is ~12% of
+gen3ou move slots (47.9% of mons carry one), so dropping it would gut the generator, and gen-3 HP
+derives BOTH type and base power from IVs. BP 70 requires the bit-1 sum to be 63 — i.e. bit 1 set
+in EVERY IV — which is true of both 30 (`11110`) and 31 (`11111`). So restricting IVs to {30,31}
+PINS BP at 70 automatically and the bit-0 pattern alone selects the type; `hpIvsForType`
+brute-forces the 64 patterns once. **Verified 16/16 by RECOMPUTING type and BP from the emitted
+IVs**, not by trusting the table. Because BP is pinned, `allowHiddenPower` is enabled for this mode
+exactly as it is for `pool`.
+
+**TWO BUGS THE REAL DATA SHAPES CAUGHT** (both would have been invisible to a source read):
+`gen3_spread_priors.json` stores a **LIST** of `[nature, [hp,atk,def,spa,spd,spe], weight]` triples,
+not a dict — reading it as a dict silently passes the ARRAY INDEX as the nature, which Showdown
+rejects with `"24" is an invalid nature`; and all typed Hidden Powers validate as ONE move, so a set
+may carry at most one (`<species> has multiple copies of Hidden Power <type>`).
+
+**First results:** a 50-battle smoke is `GREEN-GATE PASS`, 0 divergences, **69 distinct species and
+95 distinct moves** — against 34 species in 25 `pool` battles. Same `{packed, genSeed}` interface as
+`makeRandbatsProvider`, so it drops into `gen_sim_bridge_diff.js` unchanged too.
+
+### The picker's own blind spots (found while measuring the above)
+
+- **STRUGGLE is now pickable.** It is ENGINE-MODELED (`pp_struggle_test.rs` is a full
+  STATE+PP+SEED+winner differential) but `isModeledMove` returns false for it, so a mon with every
+  slot spent AND no switch had no pickable choice and the whole battle was DROPPED to a prefix.
+  That truncated precisely the PP-exhaustion endgames — the deepest, most state-laden turns, and the
+  ones gen3ou STALL teams produce most. The live per-side gate already accepted Struggle
+  (`id === 'struggle' || isModeledMove(id)`); the two harnesses simply disagreed and the offline one
+  was weaker. **A picker predicate that gates a test silently SHRINKS that test** — the same shape
+  as ROUND 42's L100 pin.
+- **The drop LABEL named an innocent bystander.** `forced-unmodeled-move:<moves[0]>` reported the
+  FIRST slot in the request regardless of why the pick failed, so a drop on a mon whose first slot
+  happened to be Substitute read as `forced-unmodeled-move:substitute` — and Substitute is modeled,
+  so the label sent a reader hunting a bug that does not exist (it did, on 2026-08-17). It now names
+  the moves that actually blocked, with a distinct `all-disabled(...)` reason. **A diagnostic that
+  names an innocent bystander is worse than one that names nothing.**
+
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
 `gen3_simbridge_diff_allowlist_v1`. **This is the strongest correctness gate in the project**, because

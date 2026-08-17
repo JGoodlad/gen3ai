@@ -1346,7 +1346,16 @@ function pickMove(battle, side, rng, mode, allowHiddenPower = false) {
         if (!BATCH5_E2E_EXCLUDED && sleepTalkPoolModeled(battle, side)) legalMoveSlots.push(k);
         continue;
       }
-      if (isModeledMove(id, allowHiddenPower)) legalMoveSlots.push(k);
+      // STRUGGLE is ENGINE-MODELED (`pp_struggle_test.rs` is a STATE+PP+SEED+winner
+      // differential over it) but `isModeledMove` returns false for it — a picker FALSE
+      // NEGATIVE, and an expensive one. When every slot is spent the sim offers ONLY
+      // Struggle, so a mon that also cannot switch had NO pickable choice and the whole
+      // battle was DROPPED to a prefix (`forced-unmodeled-move:struggle`). That truncates
+      // exactly the PP-exhaustion endgames — the deepest, most state-laden turns, and the
+      // ones gen3ou STALL teams produce most. The live per-side gate already accepts it
+      // (`gen_sim_bridge_diff.js`: `id === 'struggle' || isModeledMove(id)`); the two
+      // harnesses simply disagreed, and the offline one was the weaker.
+      if (id === 'struggle' || isModeledMove(id, allowHiddenPower)) legalMoveSlots.push(k);
     } else {
       // taxonomy: damaging (non-status), still skip the structurally-unreplayable
       // moves that would desync on the CHOICE side (variable power/fixed/2-turn/
@@ -1379,8 +1388,20 @@ function pickMove(battle, side, rng, mode, allowHiddenPower = false) {
     // No modeled move AND no switch (incl. TRAPPED with only unmodeled moves — the
     // trapped mon must fight, and the port can't replay an unmodeled move) →
     // forced-unmodeled.
-    const firstId = moves.length ? toId(moves[0].id || moves[0].move) : '?';
-    return { choice: null, reason: `forced-unmodeled-move:${firstId}` };
+    //
+    // ⚠️ REPORT THE MOVES THAT ACTUALLY BLOCKED, not `moves[0]`. The old label named the
+    // FIRST slot in the request regardless of why the pick failed, so a drop on a mon whose
+    // first slot happened to be Substitute read as `forced-unmodeled-move:substitute` — and
+    // Substitute is modeled, so that label sent a reader hunting a bug that did not exist
+    // (it did, on 2026-08-17). A diagnostic that names an innocent bystander is worse than
+    // one that names nothing. `undisabled` is the honest set: the slots that were OFFERED
+    // and still unpickable; a fully-`disabled` request is its own distinct reason.
+    const offered = moves.map((m) => ({ id: toId(m.id || m.move), disabled: !!m.disabled }));
+    const undisabled = offered.filter((m) => !m.disabled).map((m) => m.id);
+    const why = undisabled.length
+      ? undisabled.sort().join('+')
+      : `all-disabled(${offered.map((m) => m.id).sort().join('+') || 'none'})`;
+    return { choice: null, reason: `forced-unmodeled-move:${why}` };
   }
   // Mostly attack; occasionally switch (to exercise the switch-phase draws) — 1/6.
   if (switchSlots.length > 0 && rng() < 1 / 6) {
