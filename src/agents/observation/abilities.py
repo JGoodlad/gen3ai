@@ -106,7 +106,8 @@ class AbilitiesEncoder(ObservationEncoder):
                           "dim": ABILITY_KNOWN_DIM},
         }
 
-    def describe_vector(self, vector: np.ndarray) -> str:
+    # Why the `type: ignore[override]` below — compact-string sub-encoder; see TypeEncoder.describe_vector.
+    def describe_vector(self, vector: np.ndarray) -> str:  # type: ignore[override]
         dom = float(vector[ABILITY_SLOT_DIM])
         known = vector[ABILITY_SLOT_DIM + ABILITY_DOMINANCE_DIM] >= 0.5
         ab1_id = int(vector[0])

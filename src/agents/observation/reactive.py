@@ -8,9 +8,9 @@ from .types import TypeEncoder
 from agents import gen3_data
 from agents.observation.wish_belief import build_wish_pending, wish_floating_value
 from agents.battle.battle_event import OURS, OPP
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-def _request_slot_moves(battle, legal):
+def _request_slot_moves(battle: Any, legal: Any) -> List[Any]:
     """Per-request-slot ``Move`` objects in ACTION order — slot i ↔ action logit ``6+i`` — with
     DISABLED moves KEPT, so the per-move obs features (base power, type multiplier, effect flags)
     align with the action mask / mapper, which both index ``legal.move_slots[i] → action 6+i``.
@@ -82,7 +82,7 @@ class ReactiveEncoder(ObservationEncoder):
     might be Dugtrio/Arena Trap" and weigh the pivot.
     """
     
-    def __init__(self, ability_priors: Optional[Dict[str, Dict[str, float]]] = None):
+    def __init__(self, ability_priors: Optional[Dict[str, Dict[str, float]]] = None) -> None:
         """ability_priors: Smogon-derived per-species ability distributions
         keyed by lowercase species name → {ability_id: probability}. Used to
         compute expected matchup effectiveness against opponents whose ability
@@ -95,8 +95,10 @@ class ReactiveEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return REACTIVE_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None, live=None, legal=None,
-               progress_clock=None) -> np.ndarray:
+    # Why the `type: ignore[override]` below — LiveView-subject encoder; see ActiveContextEncoder.encode.
+    def encode(self, battle: AbstractBattle, hp_tracker: Any = None,  # type: ignore[override]
+               live: Any = None, legal: Any = None,
+               progress_clock: Any = None) -> np.ndarray:
         """Encode the reactive block.
 
         live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this

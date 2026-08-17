@@ -43,7 +43,8 @@ class GlobalEnvEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return GLOBAL_ENV_DIM
 
-    def encode(self, live_view: Any) -> np.ndarray:
+    # Why the `type: ignore[override]` below — LiveView-subject encoder; see ActiveContextEncoder.encode.
+    def encode(self, live_view: Any) -> np.ndarray:  # type: ignore[override]
         """``live_view`` is a :class:`LiveView`."""
         vec = np.zeros(self.dimension, dtype=np.float32)
         w = live_view.weather

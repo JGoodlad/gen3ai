@@ -198,6 +198,60 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 `src/agents/gen3_mechanics_test.py`. Obs-value changes are retrain-class → bump
 `ARCH_SIGNATURE`.
 
+## Static typing (mypy)
+
+This package is **type-checked at ZERO errors**, on the same config and the same strictness tier as
+`src/agents/model/` — one `mypy.ini` at the repo root, one `files =` naming both. New code here must
+pass before it lands:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy   # scope from mypy.ini; must be clean
+```
+
+The gate is `src/agents/model/mypy_gate_test.py`, which runs bare `python -m mypy` (no path) so the
+scope is the config's, and separately asserts that `files =` still NAMES both packages — mypy exits
+0 just as happily on a scope of nothing, and "checked less" is otherwise indistinguishable from
+"everything is clean". **The two packages share one config, so a loosening to clear something here
+silently de-tiers the model package.** Narrow with a targeted ignore instead.
+
+**The obs layer's own idioms come first; types complement them, never replace them:**
+
+- **The offset/layout constants discipline is unchanged.** A slice is still written from a named
+  constant and read back through `get_layout()` — mypy types the *array*, not the *index*, so it
+  cannot catch a wrong offset and must never be mistaken for a check that it does. The shape and
+  block comments stay.
+- **`np.ndarray` carries no shape.** Same rule as the model package's `[B, 6, K]` comments: the
+  dimension lives in the comment and the `*_DIM` constant, the checker only knows "an array".
+- **`typing.cast` at the `gen3_data` facade boundary**, where the facade's `.get()` is `Optional` but
+  a guard has already proven presence. `incoming_damage_encoder` is the live case: `_is_damaging()`
+  owns the not-None test, so no narrowing survives the call and the two use sites `cast` rather than
+  re-test. `cast` returns its argument unchanged — the emitted vector is byte-identical. It IS a
+  real function call, so keep it off the hottest loops; the current four per obs build are 0.0002%
+  of the ~2.1M calls the benchmark counts and do not appear in the cProfile top-22.
+- **`# type: ignore` always carries a code and a reason.** One cause dominates here and is worth
+  knowing before reading one as a smell: **`ObservationEncoder.encode` still declares the pre-ai_v4
+  `(item, battle)` signature**, while `StateEncoder` / `GlobalEnv` / `ActiveContext` / `Reactive`
+  were migrated onto the LiveView read-model and take an entirely different subject. Nothing calls
+  them through the base, so the divergence is declared at each override rather than paid for by
+  widening the ABC to `*args` — which would delete the check for the encoders that DO conform. The
+  same applies to the three compact-string `describe_vector` sub-encoders (types / items /
+  abilities), whose output is embedded as a dict VALUE by `PokemonEncoder`.
+- ⚠️ **A standalone comment that starts with `# type: ignore` IS a directive.** mypy parses it
+  wherever it sits and rejects it as malformed, so an explanatory line above an ignore must not
+  begin with those words — this file's convention is `# Why the \`type: ignore[...]\` below — …`.
+
+**One latent mismatch is DECLARED rather than repaired**, at `incoming_damage_encoder._defender`:
+`Defender.type1` is non-optional and `effective_multiplier_by_types` requires it, but the
+expression yields `None` for a typeless `lm`. Believed unreachable (a `LivePokemon` always carries
+≥1 type). It carries a `# type: ignore[arg-type]` naming itself; if it ever fires the fix belongs
+in `_defender`, not in the annotation.
+
+**Annotations are runtime-neutral, and this package's benchmark gate still applies to them.**
+Measured over the typing pass (same-load A/B, busy box — absolute ms not comparable, ratios are):
+`state_encoder.encode` 93% → 94% of the build, turn-history 9% → 9%, `live_view()` 22% → 20%, and
+the cProfile top-22 ranking unchanged.
+
 ---
 
 ## Observation vector layout (per-block reference)

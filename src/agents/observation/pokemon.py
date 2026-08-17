@@ -24,9 +24,14 @@ from .constants import (
 )
 from agents.gen3_mechanics import protect_success_probability
 from .sleep_belief import sleep_belief_features
+from .abilities import AbilitiesEncoder
+from .items import ItemsEncoder
+from .moves import MovesEncoder
+from .species import SpeciesEncoder
+from .types import TypeEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from agents.enums import Status
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Status → condition one-hot slot, in both the read-model's id form (LivePokemon.status,
 # e.g. "brn") and poke-env's Status enum (raw / unit-test fallback). Both map to the SAME
@@ -61,13 +66,19 @@ class PokemonEncoder(ObservationEncoder):
     
     _NATURE_STAT_ORDER = ("atk", "def", "spa", "spd", "spe")
 
-    def __init__(self, species_encoder, items_encoder, type_encoder, abilities_encoder, moves_encoder, natures: dict = None):
+    def __init__(self,
+                 species_encoder: SpeciesEncoder,
+                 items_encoder: ItemsEncoder,
+                 type_encoder: TypeEncoder,
+                 abilities_encoder: AbilitiesEncoder,
+                 moves_encoder: MovesEncoder,
+                 natures: Optional[Dict[str, Any]] = None) -> None:
         self.species_encoder = species_encoder
         self.items_encoder = items_encoder
         self.type_encoder = type_encoder
         self.abilities_encoder = abilities_encoder
         self.moves_encoder = moves_encoder
-        self._natures = natures or {}
+        self._natures: Dict[str, Any] = natures or {}
 
     @property
     def dimension(self) -> int:
@@ -80,10 +91,10 @@ class PokemonEncoder(ObservationEncoder):
         is_own: bool = False,
         hp_probs: "np.ndarray | None" = None,
         hp_known: bool = False,
-        live_mon=None,
-        sleep_sources=None,
-        recency_vals=None,
-        last_action_vals=None,
+        live_mon: Any = None,
+        sleep_sources: Any = None,
+        recency_vals: Any = None,
+        last_action_vals: Any = None,
     ) -> np.ndarray:
         """Encode a single Pokémon slot.
 

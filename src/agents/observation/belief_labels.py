@@ -20,7 +20,7 @@ a separate Dict-obs key consumed only by the aux loss), so it cannot leak into t
 Pure + dependency-free (caller injects the name->num maps and a normaliser) so it unit-tests with
 synthetic data and stays off the obs hot path unless belief is enabled.
 """
-from typing import Callable, Dict, List, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.observation.constants import TEAM_SIZE
@@ -138,6 +138,10 @@ def build_known_move_labels(
     known_moves = np.full((TEAM_SIZE, BELIEF_MOVE_SLOTS), PAD, dtype=np.int64)
     # privileged species_norm -> full moveset (first occurrence; Gen-3 OU species-clause ⇒ unique).
     full_by_species: Dict[str, List[str]] = {}
+    # One declaration for both bindings below: the loop binds a privileged moveset, the
+    # lookup at the revealed-slot loop binds `.get()`'s Optional miss. Declared rather than
+    # split into two names so the code stays byte-identical.
+    moves: Optional[Sequence[str]]
     for sp, moves in zip(team_species, team_moves):
         full_by_species.setdefault(normalize(sp), list(moves))
     revealed_slots = [i for i in range(TEAM_SIZE) if i < len(species_known) and species_known[i] >= 0.5]

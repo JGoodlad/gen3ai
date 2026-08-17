@@ -38,11 +38,11 @@ from .constants import (
     GLOBAL_ENV_DIM
 )
 from poke_env.battle.abstract_battle import AbstractBattle
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
-def load_mappings():
+def load_mappings() -> Dict[str, Any]:
     """Assemble the observation encoder's reference mappings from the ``gen3_data`` facade.
 
     Each ``data/pokemon/`` file is parsed once by its concept module (``gen3_data.species``,
@@ -50,7 +50,7 @@ def load_mappings():
     dicts and inverts id→name reverse maps. The three upstreams (poke-env / Showdown / Smogon)
     stay hidden behind the facade — this loader speaks only domain concepts, no file paths."""
     from agents import gen3_data
-    mappings = {
+    mappings: Dict[str, Any] = {
         # Reference dexes — the raw {id: {num, …}} dicts the sub-encoders read directly. A fresh
         # outer dict per call (matching the previous loader's semantics); inner records are the
         # shared, immutable-by-convention singletons.
@@ -67,7 +67,7 @@ def load_mappings():
     # Pre-compute reverse mappings for IDs to names
     mappings["reverse"] = {}
     for category in ["species", "moves", "abilities", "items"]:
-        rev = {}
+        rev: Dict[int, str] = {}
         for name, data in mappings[category].items():
             if isinstance(data, dict) and "num" in data:
                 # gen3_species_formes_v1: an alternate/cosmetic FORME (Deoxys-Speed,
@@ -89,7 +89,7 @@ def load_mappings():
 
     return mappings
 
-def get_observation_encoder(mappings):
+def get_observation_encoder(mappings: Dict[str, Any]) -> "Gen3ObservationEncoder":
     return Gen3ObservationEncoder(mappings)
 
 class Gen3ObservationEncoder(ObservationEncoder):
@@ -98,7 +98,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
     Total dimensions: base_dimension + 11 (prev_mask) + N_HISTORY_TURNS * TURN_DELTA_DIM
     """
     
-    def __init__(self, mappings: Dict[str, Any] = None):
+    def __init__(self, mappings: Optional[Dict[str, Any]] = None) -> None:
         self.mappings = mappings or {}
         mappings = self.mappings
         
@@ -156,9 +156,11 @@ class Gen3ObservationEncoder(ObservationEncoder):
         from agents.model.features_extractor import N_HISTORY_TURNS
         return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
 
-    def encode(self, battle: AbstractBattle, hp_tracker=None, legal=None,
-               progress_clock=None, recency=None, pair_history=None,
-               event_window=None) -> np.ndarray:
+    # Why the `type: ignore[override]` below — LiveView-subject encoder; the ABC still
+    # declares the pre-ai_v4 `encode(item, battle)`. See ActiveContextEncoder.encode.
+    def encode(self, battle: AbstractBattle, hp_tracker: Any = None,  # type: ignore[override]
+               legal: Any = None, progress_clock: Any = None, recency: Any = None,
+               pair_history: Any = None, event_window: Any = None) -> np.ndarray:
         """Encode the full base observation vector.
 
         hp_tracker: optional HiddenPowerTracker whose per-species probability
@@ -203,7 +205,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         # mon's slot carries — [move_num (embedding id; 0 = none/switch), was_switch,
         # hit, miss, fail, crit] (outcome order = turn-delta's _OUTCOME_ORDER). The move id
         # string→dex-num conversion uses the same gen3_movedex single source MovesEncoder uses.
-        def _last_action_tuple(side):
+        def _last_action_tuple(side: str) -> Optional[Tuple[Any, ...]]:
             if pair_history is None:
                 return None
             mid, was_switch, outcome, crit = pair_history.last_action(side)
@@ -449,7 +451,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         }
 
     def describe_vector(self, vector: np.ndarray) -> Dict[str, Any]:
-        desc = {"our_team": [], "opp_team": []}
+        desc: Dict[str, Any] = {"our_team": [], "opp_team": []}
         
         # 1. Teams
         for i in range(TEAM_SIZE):

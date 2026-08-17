@@ -22,7 +22,7 @@ Song → one normalised 0–1 counter, Stockpile → one 0–1 counter, all part
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -150,7 +150,7 @@ for _v, _lvl in _STOCKPILE_LEVEL.items():
     GEN3_VOLATILE_TO_SLOT[_v] = ("stockpile", _lvl)
 
 
-def encode_volatiles(volatiles) -> np.ndarray:
+def encode_volatiles(volatiles: Iterable[str]) -> np.ndarray:
     """Encode an iterable of id-form volatile strings (``LivePokemon.volatiles``) into a
     fixed :data:`VOLATILE_DIM` vector. **Raises** :class:`UnknownVolatileError` on any
     volatile without a slot — we crash rather than drop. Empty input → all zeros."""
@@ -194,7 +194,7 @@ _CANT_INDEX: Dict[str, int] = {r: i for i, r in enumerate(CANT_REASONS)}
 _CANT_RAW_TO_ID: Dict[str, str] = {r: r for r in CANT_REASONS}
 
 
-def normalize_cant_reason(reason) -> str:
+def normalize_cant_reason(reason: Optional[str]) -> str:
     """Normalise a raw ``|cant|`` reason to a stable id in :data:`CANT_REASONS`.
 
     Strips the protocol's ``move:`` / ``ability:`` prefixes and lowercases to id-form
@@ -218,7 +218,7 @@ def normalize_cant_reason(reason) -> str:
     return norm
 
 
-def encode_cant_reason(reason) -> np.ndarray:
+def encode_cant_reason(reason: Optional[str]) -> np.ndarray:
     """One-hot a normalised cant reason into a :data:`CANT_DIM` vector. ``reason=None``
     (the side acted normally / switched) → all zeros, NOT a crash."""
     vec = np.zeros(CANT_DIM, dtype=np.float32)

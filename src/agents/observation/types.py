@@ -51,7 +51,12 @@ class TypeEncoder(ObservationEncoder):
             "type2": {"offset": 1, "dim": 1}
         }
 
-    def describe_vector(self, vector: np.ndarray) -> str:
+    # Why the `type: ignore[override]` below — the base returns a dict; the three SUB-encoders (types /
+    # items / abilities) deliberately return a compact STRING, because they are never
+    # rendered on their own: `PokemonEncoder.describe_vector` embeds each one as a single
+    # dict VALUE ("types": "WATER/GROUND"). Narrowing the return here rather than widening
+    # the base keeps the dict contract real for the encoders the prober calls directly.
+    def describe_vector(self, vector: np.ndarray) -> str:  # type: ignore[override]
         t1_idx = int(vector[0])
         t2_idx = int(vector[1])
         

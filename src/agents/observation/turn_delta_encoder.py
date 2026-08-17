@@ -81,7 +81,7 @@ Target species ID: from the OTHER side's damaging_event.target_species.
 """
 from __future__ import annotations
 import numpy as np
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from agents.training.turn_delta import TurnDelta
 from agents.observation.types import TypeEncoder
 from agents.observation.gen3_effects import (
@@ -264,7 +264,8 @@ class TurnDeltaEncoder:
 
     TURN_DELTA_DIM: int = TURN_DELTA_DIM
 
-    def __init__(self, gen3_moves: dict, gen3_species: Optional[dict] = None):
+    def __init__(self, gen3_moves: Dict[str, Any],
+                 gen3_species: Optional[Dict[str, Any]] = None) -> None:
         self._moves = gen3_moves
         self._species = gen3_species or {}
         nums = [v.get("num", 0) for v in gen3_moves.values()]
@@ -272,7 +273,7 @@ class TurnDeltaEncoder:
         # Build reverse map (num → name). The opp's bare HP keeps num 237 → "hiddenpower"; OUR typed
         # HP have distinct nums (355-370) → their typed names (gen3_typed_hidden_power_ids_v1). The
         # base-name preference only ever affects 237 (no other id claims it now).
-        self._num_to_name = {}
+        self._num_to_name: Dict[int, str] = {}
         for k, v in gen3_moves.items():
             if "num" not in v:
                 continue
@@ -447,7 +448,10 @@ class TurnDeltaEncoder:
             return None
         return fallback
 
-    def _faint_cause_multihot(self, causes: np.ndarray) -> np.ndarray:
+    # `causes` is Optional: the body's own `causes is None` guard is the contract, and the
+    # two call sites pass a `getattr(delta, …, None)`. The declaration used to say
+    # `np.ndarray` and simply did not describe either.
+    def _faint_cause_multihot(self, causes: Optional[np.ndarray]) -> np.ndarray:
         """Pass through the faint-cause multi-hot (already FAINT_CAUSE_DIM float32).
 
         Returns zeros if the array is missing/wrong-shape (shouldn't happen in
@@ -481,15 +485,16 @@ class TurnDeltaEncoder:
         _CANT = list(_CANT_REASONS_GE)
         _EFF_LABELS = ["immune", "resisted", "normal", "super-effective"]
 
-        def _cant_label(onehot):
+        def _cant_label(onehot: np.ndarray) -> Optional[str]:
             idx = int(np.argmax(onehot))
             return _CANT[idx] if onehot[idx] > 0.5 else None
 
-        def _onehot_label(onehot, labels):
+        def _onehot_label(onehot: np.ndarray, labels: List[str]) -> Optional[str]:
             idx = int(np.argmax(onehot))
             return labels[idx] if onehot[idx] > 0.5 else None
 
-        def _move_dict(id_raw, pwr_raw, sec_raw, recoil_raw, type_raw):
+        def _move_dict(id_raw: float, pwr_raw: float, sec_raw: float,
+                       recoil_raw: float, type_raw: float) -> Dict[str, Any]:
             num = int(id_raw)
             type_id = int(type_raw)
             return {
@@ -502,7 +507,7 @@ class TurnDeltaEncoder:
                 "move_type": self._idx_to_type.get(type_id),
             }
 
-        def _species_name(raw):
+        def _species_name(raw: float) -> Optional[str]:
             num = int(raw)
             return self._num_to_species.get(num) if num > 0 else None
 

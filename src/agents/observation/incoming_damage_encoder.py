@@ -20,11 +20,12 @@ Design: `designs/ai_v5/design_incoming_damage_obs.md`.
 from __future__ import annotations
 
 import functools
-from typing import Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import numpy as np
 
 from agents import gen3_data
+from agents.gen3_data.moves import MoveData
 from agents.enums import PokemonType, Status
 from agents.gen3_mechanics import RECOVERY_MOVES
 from agents.observation import incoming_damage as inc
@@ -96,7 +97,7 @@ def _offensive_stat(species: str, stat: str) -> Tuple[float, float, tuple]:
     return float(tail), float(mean), dist
 
 
-def _is_damaging(mid: str, md) -> bool:
+def _is_damaging(mid: str, md: Optional[MoveData]) -> bool:
     """Does move ``mid`` deal damage we should price? A positive-BP move, a fixed-damage move
     (Seismic Toss/… read 0 BP in the dex but hit for a constant), or a variable-power move
     (Return/Frustration, also 0 BP in the dex)."""
@@ -104,7 +105,7 @@ def _is_damaging(mid: str, md) -> bool:
                                or mid in _VARIABLE_POWER)
 
 
-def _make_candidate(mid: str, md, p_in_set: float) -> inc.Candidate:
+def _make_candidate(mid: str, md: MoveData, p_in_set: float) -> inc.Candidate:
     """Build a :class:`incoming_damage.Candidate` for move ``mid`` at probability ``p_in_set``.
     Variable-power moves (Return/Frustration) substitute their competitive-max BP for the dex 0."""
     power = _VARIABLE_POWER.get(mid, int(md.base_power or 0))
@@ -116,21 +117,24 @@ def _make_candidate(mid: str, md, p_in_set: float) -> inc.Candidate:
 
 
 @functools.lru_cache(maxsize=None)
-def _prior_candidates(species: str) -> Tuple[tuple, tuple]:
+def _prior_candidates(species: str) -> Tuple[Tuple[inc.Candidate, ...], Tuple[inc.Candidate, ...]]:
     """Cached per-species prior (unrevealed-slot) candidate moves, split by gen3 type-category.
     Static per species → computed once. Revealed moves are merged in per decision by
     :func:`_candidates`; duplicates are harmless because the belief takes the max over candidates
     (the revealed P=1 copy wins)."""
-    phys: list = []
-    spec: list = []
+    phys: List[inc.Candidate] = []
+    spec: List[inc.Candidate] = []
     pc = sc = 0
     for p, mid in sorted(((p, mid) for mid, p in gen3_data.priors.moves(species).items()
                           if p >= _PRIOR_MOVE_MIN_P), reverse=True):
         md = gen3_data.moves.get(mid)
         if not _is_damaging(mid, md):
             continue
-        cand = _make_candidate(mid, md, p)
-        if inc.type_is_physical(md.type):
+        # `_is_damaging` is True only when `md is not None`, but that guard lives INSIDE the
+        # helper, so no narrowing reaches here. `cast` is the erasure-free narrowing tool — it
+        # returns its argument unchanged, so the emitted candidate stays byte-identical.
+        cand = _make_candidate(mid, cast(MoveData, md), p)
+        if inc.type_is_physical(cast(MoveData, md).type):
             if pc < _MAX_CANDIDATES_PER_CHANNEL:
                 pc += 1
                 phys.append(cand)
@@ -140,12 +144,12 @@ def _prior_candidates(species: str) -> Tuple[tuple, tuple]:
     return tuple(phys), tuple(spec)
 
 
-def _hp_type_dist(species: str, hp_tracker) -> dict:
+def _hp_type_dist(species: str, hp_tracker: Any) -> Dict[str, float]:
     """``{type_name: P(HP type)}`` for a revealed Hidden Power on ``species`` — the tracker's
     observation-narrowed distribution if it has one (the per-episode signal: e.g. a 2× HP Ice on a
     Dragon already rules out the non-Ice types), else the species' Smogon HP-type prior. Normalised
     to sum 1 (HP IS in the set when revealed; only the type is uncertain)."""
-    dist: dict = {}
+    dist: Dict[str, float] = {}
     if hp_tracker is not None and species:
         probs = hp_tracker.get_probs(species)
         if probs is not None and getattr(probs, "sum", lambda: 0.0)() > 0:
@@ -158,13 +162,13 @@ def _hp_type_dist(species: str, hp_tracker) -> dict:
     return {k: v / total for k, v in dist.items()} if total > 0 else {}
 
 
-def _hidden_power_candidates(species: str, hp_tracker, p_total: float) -> list:
+def _hidden_power_candidates(species: str, hp_tracker: Any, p_total: float) -> List[inc.Candidate]:
     """Expand a Hidden Power of total set-probability ``p_total`` into per-type ``Candidate``s.
     Each is priced from its typed dex variant (``hiddenpower<type>``, ~70 BP, correct gen3 category)
     at ``p_total · P(type)``, so a revealed bare ``hiddenpower`` (dex BP 0 → previously dropped)
     makes its Ice/Grass/Fighting coverage visible. The per-defender max in ``_channel_threat`` then
     surfaces whichever HP type is super-effective vs each of our mons."""
-    out: list = []
+    out: List[inc.Candidate] = []
     for type_name, prob in _hp_type_dist(species, hp_tracker).items():
         if prob < _HP_TYPE_MIN_P:
             continue
@@ -177,14 +181,15 @@ def _hidden_power_candidates(species: str, hp_tracker, p_total: float) -> list:
     return out
 
 
-def _candidates(revealed_move_ids, species: str, hp_tracker=None) -> Tuple[list, list]:
+def _candidates(revealed_move_ids: Sequence[str], species: str,
+                hp_tracker: Any = None) -> Tuple[List[inc.Candidate], List[inc.Candidate]]:
     """Physical / special candidate moves vs us = revealed (P=1, per decision) ∪ cached prior
     moves. Fixed-damage moves (Seismic Toss/…) carry constant damage despite the dex STATUS tag; a
     revealed bare ``hiddenpower`` is expanded into per-type candidates (its type is hidden, so it
     reads 0 BP in the dex) via the HP tracker / prior. The belief takes the max over candidates, so
     the revealed/prior order does not affect the output."""
-    phys: list = []
-    spec: list = []
+    phys: List[inc.Candidate] = []
+    spec: List[inc.Candidate] = []
     for mid in revealed_move_ids:
         if mid == _HIDDEN_POWER:   # revealed but un-typed → expand into per-type candidates
             for cand in _hidden_power_candidates(species, hp_tracker, 1.0):
@@ -192,13 +197,15 @@ def _candidates(revealed_move_ids, species: str, hp_tracker=None) -> Tuple[list,
             continue
         md = gen3_data.moves.get(mid)
         if _is_damaging(mid, md):
-            cand = _make_candidate(mid, md, 1.0)
-            (phys if inc.type_is_physical(md.type) else spec).append(cand)
+            # See `_prior_candidates`: `_is_damaging` owns the not-None guard, so narrow with
+            # a no-op `cast` rather than re-testing (which would change the code, not its types).
+            cand = _make_candidate(mid, cast(MoveData, md), 1.0)
+            (phys if inc.type_is_physical(cast(MoveData, md).type) else spec).append(cand)
     pp, sp = _prior_candidates(species)
     return phys + list(pp), spec + list(sp)
 
 
-def _attacker_threat(live, hp_tracker=None) -> Optional[inc.AttackerThreat]:
+def _attacker_threat(live: Any, hp_tracker: Any = None) -> Optional[inc.AttackerThreat]:
     """The opponent active as a belief (None if there is no opp active / no species yet): types
     known, offensive stats as usage tail+mean (boost folded in), candidate moves split by channel,
     plus our screens / the weather, all from the LiveView read-model, and the recovery scalars.
@@ -246,7 +253,7 @@ def _attacker_threat(live, hp_tracker=None) -> Optional[inc.AttackerThreat]:
     )
 
 
-def _defender(lm) -> Optional[inc.Defender]:
+def _defender(lm: Any) -> Optional[inc.Defender]:
     """One of our mons as an exact ``Defender`` (None if absent / fainted / stats not yet known),
     built from its :class:`~agents.battle.live_view.LivePokemon`. ``status`` is converted to the raw
     :class:`~agents.enums.Status` enum; ``has_sub`` is only set for the active mon (a Substitute eats
@@ -262,7 +269,12 @@ def _defender(lm) -> Optional[inc.Defender]:
     has_sub = lm.active and lm.has_volatile("substitute")
     return inc.Defender(
         def_stat=int(d), spd_stat=int(sd), hp_remaining=int(hp), hp_max=int(hpx), spe=int(spe),
-        type1=_ptype(lm.types[0]) if lm.types else None,
+        # ⚠️ `Defender.type1` is declared NON-optional and `effective_multiplier_by_types`
+        # requires it, but this expression yields None for a typeless `lm` — a LATENT
+        # mismatch, not a behaviour change made here, so it is DECLARED rather than
+        # silently repaired. Believed unreachable (a LivePokemon always carries ≥1 type);
+        # if it ever fires, the fix belongs in `_defender`, not in this annotation.
+        type1=_ptype(lm.types[0]) if lm.types else None,  # type: ignore[arg-type]
         type2=_ptype(lm.types[1]) if len(lm.types) > 1 else None,
         ability=lm.ability,
         status=_pstatus(lm.status), boost_def=int(boosts.get("def", 0)),
@@ -270,7 +282,7 @@ def _defender(lm) -> Optional[inc.Defender]:
     )
 
 
-def encode_block(live, hp_tracker=None) -> np.ndarray:
+def encode_block(live: Any, hp_tracker: Any = None) -> np.ndarray:
     """The incoming-damage / OHKO belief block (incoming_damage_v2) for one decision, from the
     :class:`~agents.battle.live_view.LiveView` read-model.
 

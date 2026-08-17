@@ -21,14 +21,19 @@ class ActiveContextEncoder(ObservationEncoder):
     classify (crash-don't-drop) — we never silently lose a battle fact.
     """
 
-    def __init__(self, move_to_id=None):
-        self.move_to_id = move_to_id or {}
+    def __init__(self, move_to_id: Optional[Dict[str, Any]] = None) -> None:
+        self.move_to_id: Dict[str, Any] = move_to_id or {}
 
     @property
     def dimension(self) -> int:
         return ACTIVE_CONTEXT_DIM
 
-    def encode(self, live_mon: Optional[Any]) -> np.ndarray:
+    # Why the `type: ignore[override]` below — the ABC still declares the pre-ai_v4 `encode(item, battle)`.
+    # The read-model migration moved this encoder (and GlobalEnv / Reactive / StateEncoder)
+    # onto LiveView, so its SUBJECT is a LivePokemon, not a poke-env mon plus a battle.
+    # Nothing calls these through the base, so the divergence is declared here rather than
+    # papered over by widening the ABC to `*args` and losing the check for everyone else.
+    def encode(self, live_mon: Optional[Any]) -> np.ndarray:  # type: ignore[override]
         """``live_mon`` is a ``LivePokemon`` (or None when there is no active mon)."""
         vec = np.zeros(self.dimension, dtype=np.float32)
         if live_mon is None:

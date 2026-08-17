@@ -17,7 +17,12 @@ Usage:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
+
+if TYPE_CHECKING:
+    # `gym_space` imports gymnasium INSIDE the function on purpose (this module is imported
+    # by tools that must not pull gymnasium in), so the name exists for the checker only.
+    from gymnasium import spaces
 
 
 @dataclass(frozen=True)
@@ -80,7 +85,7 @@ class ObsSchema:
                 out[f"{b.name}.{c.name}"] = slice(b.offset + c.offset, b.offset + c.end)
         return out
 
-    def gym_space(self):
+    def gym_space(self) -> spaces.Box:
         """The flat observation's gym `Box`, generated FROM the schema (the exact params
         `Gen3Env.vector_space` uses today — one source for the shape, so an obs-dim change
         can never desync the env's space from the encoder's vector)."""

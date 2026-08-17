@@ -5,7 +5,7 @@ from .types import TypeEncoder
 from agents.gen3_data import moves as gen3_movedex
 from poke_env.battle.abstract_battle import AbstractBattle
 from agents.enums import MoveCategory
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Hidden Power's Pokémon ID. All 16 typed variants ("hiddenpowergrass" etc.)
 # share this num with the bare "hiddenpower" in data/pokemon/gen3_moves.json,
@@ -30,7 +30,7 @@ HIDDEN_POWER_MOVE_NUM = 237
 _CATEGORY_VAL_CACHE: Dict[str, float] = {}
 
 
-def _category_val(move) -> float:
+def _category_val(move: Any) -> float:
     """Encoded category scalar for a move, memoized by move id off the live category.
 
     First read of an id resolves poke-env's `move.category` (the gen3 type-split property)
@@ -62,8 +62,8 @@ class MovesEncoder(ObservationEncoder):
     ``reverse_mapping`` (move num → name) is kept for ``describe_vector``.
     """
 
-    def __init__(self, reverse_mapping=None):
-        self.reverse_mapping = reverse_mapping or {}
+    def __init__(self, reverse_mapping: Optional[Dict[int, str]] = None) -> None:
+        self.reverse_mapping: Dict[int, str] = reverse_mapping or {}
 
     @property
     def dimension(self) -> int:

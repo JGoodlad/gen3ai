@@ -2,15 +2,17 @@ import numpy as np
 from .base import ObservationEncoder
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.pokemon import Pokemon
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class SpeciesEncoder(ObservationEncoder):
     """
     Encodes species ID and base stats.
     Dimension: 7 (1 + 6)
     """
-    
-    def __init__(self, mapping=None, reverse_mapping=None):
+
+    def __init__(self,
+                 mapping: Optional[Dict[str, Any]] = None,
+                 reverse_mapping: Optional[Dict[int, str]] = None) -> None:
         if not mapping:
             raise ValueError("SpeciesEncoder requires a non-empty mapping for enrichment!")
         self.mapping = mapping
@@ -20,7 +22,10 @@ class SpeciesEncoder(ObservationEncoder):
     def dimension(self) -> int:
         return 7
 
-    def encode(self, pokemon: Pokemon, battle: AbstractBattle = None, live_mon=None) -> np.ndarray:
+    def encode(self,
+               pokemon: Pokemon,
+               battle: Optional[AbstractBattle] = None,
+               live_mon: Any = None) -> np.ndarray:
         """Encode species id + base stats.
 
         ``live_mon`` is the :class:`~agents.battle.live_view.LivePokemon` current-board

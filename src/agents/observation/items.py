@@ -3,14 +3,16 @@ from .base import ObservationEncoder
 from .constants import ITEM_ID_DIM, ITEM_KNOWN_DIM, ITEM_CONSUMED_DIM
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env import to_id_str  # canonical id normalizer (accepted poke-env string-util touch)
-from typing import Any
+from typing import Any, Dict, Optional
 
 class ItemsEncoder(ObservationEncoder):
     """
     Encodes item IDs and reveal status.
     """
-    
-    def __init__(self, item_to_id=None, reverse_mapping=None):
+
+    def __init__(self,
+                 item_to_id: Optional[Dict[str, Any]] = None,
+                 reverse_mapping: Optional[Dict[int, str]] = None) -> None:
         if not item_to_id:
             raise ValueError("ItemsEncoder requires a non-empty mapping!")
         self.item_to_id = item_to_id
@@ -63,7 +65,8 @@ class ItemsEncoder(ObservationEncoder):
             "consumed": {"offset": ITEM_ID_DIM + ITEM_KNOWN_DIM, "dim": ITEM_CONSUMED_DIM},
         }
 
-    def describe_vector(self, vector: np.ndarray) -> str:
+    # Why the `type: ignore[override]` below — compact-string sub-encoder; see TypeEncoder.describe_vector.
+    def describe_vector(self, vector: np.ndarray) -> str:  # type: ignore[override]
         known = vector[ITEM_ID_DIM] >= 0.5
         consumed = vector[ITEM_ID_DIM + ITEM_KNOWN_DIM] >= 0.5
 

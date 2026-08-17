@@ -15,7 +15,7 @@ no torch) so they unit-test without a battle.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -265,7 +265,7 @@ def weather_damage_mult(move_type: PokemonType, weather: Optional[str]) -> float
     return 1.0
 
 
-def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
+def _channel_threat(cands: Sequence[Candidate], d: Defender, atk_tail: float, atk_mean: float, *,
                     a: AttackerThreat, screen: bool, is_phys: bool) -> Tuple[float, float, float, float]:
     """(pko_nocrit, pko_crit, expdmg_frac, revealed) = max over a channel's candidates of
     p_in_set·(KO prob / dmg fraction), plus the provenance of the dominant threat.
@@ -320,7 +320,8 @@ def _channel_threat(cands, d: Defender, atk_tail: float, atk_mean: float, *,
     return best_nc, best_cr, best_exp, best_revealed
 
 
-def compute_team_block(defenders: List[Defender], attacker: Optional[AttackerThreat],
+def compute_team_block(defenders: Sequence[Optional[Defender]],
+                       attacker: Optional[AttackerThreat],
                        n_slots: int) -> np.ndarray:
     """The incoming-KO belief block: per our mon (slot-aligned to the team), the phys/spec
     expected-damage-fraction + the modal no-crit P(KO) + the crit-risk DELTA per channel + P(outspeed)
@@ -328,7 +329,11 @@ def compute_team_block(defenders: List[Defender], attacker: Optional[AttackerThr
 
     Width = ``n_slots * PER_MON + RECOVERY``. All zeros when there is no opponent active (forced
     switch / battle start). A defender behind a Substitute can't be KO'd this turn → its KO/dmg
-    rows are zeroed (the hit eats the Sub)."""
+    rows are zeroed (the hit eats the Sub).
+
+    ``defenders`` slots may be ``None`` (empty / fainted / stats not yet known) — the loop skips
+    them, leaving that mon's row zeroed. That has always been the behaviour; the parameter type
+    used to say ``List[Defender]`` and simply did not describe it."""
     out = np.zeros(n_slots * PER_MON + RECOVERY, dtype=np.float32)
     if attacker is None:
         return out
