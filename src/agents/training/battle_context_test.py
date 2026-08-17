@@ -166,7 +166,6 @@ def test_opp_resolved_move_id_prefers_event_then_falls_back():
         target_status=None, move_id="hiddenpower", effectiveness=0.5,
     )
     prev = _ctx(our_team_order=("snorlax",))
-    curr = _ctx()
     # Inject the event via TurnDelta directly (build_legacy() pulls from curr_ctx).
     curr_with_event = _ctx(opp_last_damaging_event=event)
     delta = build_legacy(prev, curr_with_event, action=6)

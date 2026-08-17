@@ -701,17 +701,17 @@ def print_report(s: ScenarioStats) -> None:
     print(f"SCENARIO: {s.name}")
     print(f"{'=' * 65}")
     print(f"Total transitions     : {t}")
-    print(f"  Our action:")
+    print("  Our action:")
     print(f"    Known move        : {_pct(s.our_move_known, t)}")
     print(f"    Known switch      : {_pct(s.our_switch_known, t)}")
     print(f"    Unknown slot [!]  : {_pct(s.our_move_slot_unknown, t)}  <- should be 0")
-    print(f"  Our intent↔outcome (pressed move == protocol move):")
+    print("  Our intent↔outcome (pressed move == protocol move):")
     print(f"    Match             : {s.our_intent_match}")
     print(f"    Skipped (caller)  : {s.our_intent_caller}  (Sleep Talk/Metronome called a different move)")
     print(f"    Skipped (cant)    : {s.our_intent_cant}  (prevented from moving)")
     print(f"    Skipped (no proto): {s.our_intent_no_proto}  (switch-out / two-turn charge / turn-1)")
     print(f"    MISMATCH [!]      : {s.our_intent_mismatch}  <- pressed X, fired Y; should be 0")
-    print(f"  Opp action:")
+    print("  Opp action:")
     print(f"    Switch known      : {_pct(s.opp_switch_known, t)}")
     print(f"    Move known        : {_pct(s.opp_move_known, t)}")
     print(f"    Move unknown      : {_pct(s.opp_move_unknown, t)}")
@@ -721,7 +721,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"      Cant-move est.  :   {s.opp_cant_move_estimated}  (par/flinch/frz/slp, expected)")
     print(f"      True anomaly[!] :   {s.opp_true_anomaly}  <- new move revealed but no last_move; should be 0")
 
-    print(f"  Persistence / nuance:")
+    print("  Persistence / nuance:")
     print(f"    Two-turn same move: {s.two_turn_same_move}  (recharge/sleep rest/|cant| persist)")
     print(f"    Sleep Talk failed : {s.sleeptalk_as_last_move}  (last_move==\"sleeptalk\"; delegation failed)")
     if sleep_total > 0:
@@ -733,19 +733,19 @@ def print_report(s: ScenarioStats) -> None:
 
     # Top-10 opponent move IDs seen
     if s.opp_move_id_counts:
-        print(f"  Top opp move IDs seen:")
+        print("  Top opp move IDs seen:")
         for move_id, count in s.opp_move_id_counts.most_common(10):
             marker = "  <- Sleep Talk delegation FAILED" if move_id == "sleeptalk" else ""
             print(f"    {move_id:<20} {count:4d}{marker}")
 
     if s.phaze_fired > 0:
-        print(f"  Phaze (Roar/Whirlwind):")
+        print("  Phaze (Roar/Whirlwind):")
         print(f"    Phaze turns         : {s.phaze_fired}")
         print(f"    Event captured      : {_pct(s.phaze_event_captured, s.phaze_fired)}  (damaging move attributed via DamagingMoveEvent)")
         print(f"    No damaging event   : {_pct(s.phaze_no_damaging_event, s.phaze_fired)}  (non-damaging move or |cant|)")
 
     if s.opp_true_anomaly > 0:
-        print(f"  TRUE ANOMALIES (new move revealed but last_move=None):")
+        print("  TRUE ANOMALIES (new move revealed but last_move=None):")
         for a in s.true_anomaly_details[:3]:
             if a.get("type") == "opp_new_move_but_no_last_move":
                 fa_marker = " [fresh-active]" if a.get("prev_was_freshly_active") else ""
@@ -829,13 +829,9 @@ async def main(n_battles: int = 50) -> None:
     total_phaze_fired = sum(s.phaze_fired for s in all_stats)
     total_phaze_event = sum(s.phaze_event_captured for s in all_stats)
 
-    # Soft-validate the DamagingMoveEvent closure: at least one of the
-    # scenarios that runs Explosion (A, B) should produce some event_explosion
-    # observations. If we never recover ANY Explosion via the event across the
-    # whole run, ai_v4 step 3's pending → promote path is regressed.
-    total_explosion_event_explosion = sum(
-        s.opp_explosion_gap_event_explosion for s in all_stats
-    )
+    # The DamagingMoveEvent closure (ai_v4 step 3's pending → promote path) is reported
+    # PER SCENARIO in the informational block below rather than aggregated here — a
+    # whole-run total was computed and never asserted on, which read as a gate but was not one.
     # Explosion against a Ghost-type target produces a Ghost-immune emission,
     # which DOES promote the event — those are the cases that should show up
     # in event_explosion. With random opponents and Gen 3 sample teams it's
@@ -843,7 +839,7 @@ async def main(n_battles: int = 50) -> None:
     # other stats counters track this). The actual gate is "did the run finish
     # without crashing on a transition" — driven by our_unknown/true_anomaly.
     print(f"\n{'=' * 65}")
-    print(f"DamagingMoveEvent classification (informational):")
+    print("DamagingMoveEvent classification (informational):")
     for s in all_stats:
         if s.opp_explosion_gap > 0:
             print(f"  {s.name:<22} gaps={s.opp_explosion_gap:4d}  "
@@ -861,11 +857,11 @@ async def main(n_battles: int = 50) -> None:
     total_intent_mismatch = sum(s.our_intent_mismatch for s in all_stats)
     total_intent_caller = sum(s.our_intent_caller for s in all_stats)
     total_intent_cant = sum(s.our_intent_cant for s in all_stats)
-    print(f"Intent↔outcome (OUR side, across all scenarios):")
+    print("Intent↔outcome (OUR side, across all scenarios):")
     print(f"  match={total_intent_match}  caller-skip={total_intent_caller}  "
           f"cant-skip={total_intent_cant}  MISMATCH={total_intent_mismatch}")
     if total_intent_mismatch:
-        print(f"  MISMATCH details (pressed != fired):")
+        print("  MISMATCH details (pressed != fired):")
         for s in all_stats:
             for d in s.our_intent_mismatch_details[:10]:
                 print(f"    {s.name}: {d}")

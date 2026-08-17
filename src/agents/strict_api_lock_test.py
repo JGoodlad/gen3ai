@@ -79,7 +79,6 @@ ALLOWLISTED_BATTLE_READS = frozenset({
     # for fainted counts, byte-identical to the LiveView path.
     ("observation/reactive.py", "available_moves"),
     ("observation/reactive.py", "active_pokemon"),
-    ("observation/reactive.py", "opponent_active_pokemon"),
     ("observation/reactive.py", "team"),
     ("observation/reactive.py", "opponent_team"),
 

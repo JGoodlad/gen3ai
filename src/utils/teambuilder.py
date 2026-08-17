@@ -39,9 +39,8 @@ class Gen3Teambuilder(Teambuilder):
         for i, res in enumerate(validations):
             if res.get("valid"):
                 valid_indices.append(i)
-            else:
-                errors = ", ".join(res.get("errors", ["Unknown error"]))
-                # We skip illegal teams but don't crash unless the whole pool is bad.
+            # An invalid team is SKIPPED, not fatal — we only crash below if the whole pool
+            # is bad, and that error path re-reads `validations` for the message.
 
         if not valid_indices:
             raise ValueError(f"No valid teams found in the provided list! (First error: {validations[0].get('errors')})")

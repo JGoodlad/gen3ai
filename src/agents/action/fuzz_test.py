@@ -76,7 +76,7 @@ class IntegrityFuzzPlayer(Player):
             return Gen3ActionMapper.action_to_order(int(choice), battle, legal=legal, mask=mask)
 
         except Exception as e:
-            print(f"\n🛑 [FUZZ TEST CRITICAL FAILURE] 🛑")
+            print("\n🛑 [FUZZ TEST CRITICAL FAILURE] 🛑")
             print(f"Battle: {battle.battle_tag}, Turn: {battle.turn}")
             print(f"Error: {e}")
             traceback.print_exc()

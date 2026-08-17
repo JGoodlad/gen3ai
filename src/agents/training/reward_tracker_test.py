@@ -52,7 +52,7 @@ def test_has_pending_false_after_complete_pending():
     tracker.begin_turn(_fake_ctx(), 0)
 
     with patch("agents.training.reward_tracker.TurnDelta") as mock_td, \
-         patch("agents.training.reward_tracker.BattleContext") as mock_bc:
+         patch("agents.training.reward_tracker.BattleContext"):
         mock_td.build.return_value = MagicMock()
         tracker.complete_pending(_fake_ctx(), _fake_battle())
 

@@ -556,7 +556,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"Layer 2 held mis.         : {s.layer2_held_mismatches}  (held encoding wrong)")
 
     if s.examples:
-        print(f"Mismatch examples (up to 10):")
+        print("Mismatch examples (up to 10):")
         for ex in s.examples:
             print(f"  {ex}")
 

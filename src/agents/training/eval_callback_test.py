@@ -11,7 +11,6 @@ import agents.training.eval_callback as eval_callback
 from agents.training.eval_callback import (
     PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
     external_elo, record_external_elos, request_forced_eval, consume_forced_eval_request,
-    _EVAL_CONCURRENCY,
 )
 
 

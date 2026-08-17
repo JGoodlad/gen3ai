@@ -290,6 +290,33 @@ rot on main three times: `integration` now spans a ~100x cost range, so excludin
 cheap, high-value coverage (bridge battles, data parity, mechanics) to avoid the browser suite. Cut
 on **`slow`** instead — that is the marker that means "expensive".
 
+### The two STATIC gates (mypy + ruff) — default-on, in every tier
+
+Static checking is enforced by **tests**, not by habit, because there is no CI on this box: the
+routine suite is the only thing that runs on every change, so a check outside it is advisory and
+rots. Both are unmarked (they run even in the fast inner loop) and both are ~free:
+
+| Gate | Runs | Scope | Measured |
+|---|---|---|---|
+| `src/agents/model/mypy_gate_test.py` | `python -m mypy src/agents/model` | the model package only, per `mypy.ini` | **0.28 s warm**, 19.6 s cold |
+| `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/poke_env --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
+
+They are complementary, not overlapping: mypy is deep over ONE package (`mypy.ini` sets `files =
+src/agents/model` with `follow_imports = silent`, so the rest of the tree is read for types but not
+reported — widening is a `mypy.ini` edit and the test follows it), while ruff is shallow over
+everything. `--select F,E9` is pyflakes + syntax errors only — findings that mean the code is
+**wrong**, never a style opinion, so the gate cannot degrade into a formatting argument.
+
+**A missing tool FAILS, it does not skip** (both are pinned in `environment.yml`) — a linter that
+silently opts out reads exactly like a linter that found nothing. Opt out explicitly with
+`GEN3AI_SKIP_MYPY_GATE=1` / `GEN3AI_SKIP_RUFF_GATE=1`.
+
+**Known ruff findings are per-file entries in `ruff.toml`, never a blanket exclude**, and that file
+keeps two categories apart: a PERMANENT one (the model package's declared re-export hubs, which
+import names solely so other modules can import them back out) and a TEMPORARY handoff list of
+ordinary dead code. The second is meant to shrink to nothing. `/gen3ai-ship` runs both gates before
+staging (step 1c), so the ship path does not depend on whether the suite was run.
+
 ### Unit tests only (the fast inner loop)
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q

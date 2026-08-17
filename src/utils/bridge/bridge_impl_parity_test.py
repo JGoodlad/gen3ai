@@ -143,7 +143,7 @@ def _play_series(impl: str, n_battles: int, all_teams, tag: str):
                     continue
                 transport_err += 1  # a real bridge/plumbing error — surfaced by the caller
                 continue
-            except ValueError as e:
+            except ValueError:
                 # A poke-env PARSE error (e.g. "team already has 6 pokemons" from a Pressure
                 # target resolved off a `|move|` line) is a Rust protocol-CONTENT divergence — the
                 # emitted mon-identifier token differs from node's. NOT an unmodeled-move skip: it

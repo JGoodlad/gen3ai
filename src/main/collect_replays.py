@@ -164,7 +164,7 @@ def render_dashboard(
     abandoned = spectator.abandoned_count
     abandoned_cell = (
         f"[bold red]{abandoned}[/bold red]\n[dim]abandoned[/dim]" if abandoned
-        else f"[dim]0[/dim]\n[dim]abandoned[/dim]"
+        else "[dim]0[/dim]\n[dim]abandoned[/dim]"
     )
     stats = Table.grid(padding=(0, 3), expand=True)
     for _ in range(7):

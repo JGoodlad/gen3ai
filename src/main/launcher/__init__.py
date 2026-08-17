@@ -4,6 +4,11 @@
 back-compat alias for the same entry point. Re-exports the public API so
 `from main.launcher import X` keeps working after the flat module was split into submodules.
 """
+# ruff: noqa: F401 — this module IS the re-export surface. Every name below is imported
+# precisely so that `from main.launcher import X` still resolves after the flat module was
+# split into submodules; `launcher_test.py` imports a dozen of the private helpers that way.
+# `__all__` stays the SHORT public list on purpose (it is what `import *` should give), so it
+# cannot double as the "these are used" declaration ruff would otherwise want.
 
 from main.launcher.checkpoint import (
     find_latest_checkpoint,

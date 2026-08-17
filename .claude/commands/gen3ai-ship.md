@@ -74,6 +74,22 @@ copy of whichever run counts as "production". If a new run has taken over, that 
 therefore everything below it — is describing the old one. Nothing will tell you; it is a
 judgement, not a fact derivable from the tree.
 
+### 1c. Run the two STATIC gates BEFORE staging
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m mypy src/agents/model                     # model package type-checks
+python -m ruff check src/agents src/main src/utils --select F,E9 \
+    --exclude src/poke_env --exclude src/rust_sim   # pyflakes over the rest
+```
+
+Same reasoning as the artifact checks above, and the same failure mode: both of these are tests
+already (`src/agents/model/mypy_gate_test.py`, `src/ruff_gate_test.py`), but this skill runs the
+suite **only after a rebase** (step 4b) — so on a clean push nothing checks either one. Running
+them here costs about 0.4 s warm and makes the ship path independent of whether the suite
+happened to run. Both must be clean before staging; fix findings rather than widening
+`mypy.ini` / `ruff.toml`.
+
 ### 2. Get the commit message
 
 If the user provided a message as an argument to `/gen3ai-ship`, use it directly (skip to step 3).

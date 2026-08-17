@@ -607,7 +607,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"Layer 3 mismatches    : {s.layer3_mismatches}  (BattleContext vs TurnDelta)")
     print(f"Layer 4 mismatches    : {s.layer4_mismatches}  (TurnDelta vs encoded vector)")
     print(f"Edge mismatches       : {s.edge_mismatches}  (faint/self-faint misrepresented)")
-    print(f"Coverage:")
+    print("Coverage:")
     print(f"  hit seen            : {s.hit_seen}")
     print(f"  miss seen           : {s.miss_seen}")
     print(f"  fail seen           : {s.fail_seen}")

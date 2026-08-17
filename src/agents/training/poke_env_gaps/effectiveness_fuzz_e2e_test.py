@@ -806,7 +806,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"Layer 3 mismatches    : {s.layer3_mismatches}  (BattleContext vs TurnDelta)")
     print(f"Layer 4 mismatches    : {s.layer4_mismatches}  (TurnDelta vs encoded vector)")
     print(f"Layer 5 mismatches    : {s.layer5_mismatches}  (DamagingMoveEvent vs raw |move| lines)")
-    print(f"Coverage:")
+    print("Coverage:")
     print(f"  immune seen         : {s.immune_seen}")
     print(f"  resisted seen       : {s.resisted_seen}")
     print(f"  normal seen         : {s.normal_seen}")
@@ -816,7 +816,7 @@ def print_report(s: ScenarioStats) -> None:
     print(f"  we_first=None seen  : {s.switched_no_order_seen}")
 
     if s.examples:
-        print(f"Mismatch examples (up to 10):")
+        print("Mismatch examples (up to 10):")
         for ex in s.examples:
             print(f"  {ex}")
 

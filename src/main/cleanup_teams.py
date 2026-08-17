@@ -45,7 +45,7 @@ def cleanup_teams():
             with open(json_path, "w") as f:
                 json.dump(valid_meta, f, indent=2)
 
-    print(f"\nCleanup Complete!")
+    print("\nCleanup Complete!")
     print(f"Total Teams Scanned: {total_found}")
     print(f"Total Illegal/Missing Teams Removed: {total_removed}")
     print(f"Remaining Valid Teams: {total_found - total_removed}")

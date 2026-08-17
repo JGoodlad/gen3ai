@@ -610,7 +610,7 @@ class CBTrackerPlayer(Player):
                 self.stats.invariant_checks += 1
                 if true_held == CHOICE_BAND and got == 0.0:
                     self._violation(battle, tag, sp,
-                                    f"INV-A: TRUE Choice-Band holder false-eliminated (p_cb=0)")
+                                    "INV-A: TRUE Choice-Band holder false-eliminated (p_cb=0)")
                 if true_held != CHOICE_BAND and got == 1.0:
                     self._violation(battle, tag, sp,
                                     f"INV-B: non-CB mon false-asserted as CB (p_cb=1, true={true_held})")
@@ -848,7 +848,7 @@ def _report(stats: FuzzStats, minutes: float) -> None:
     print(f"Invariant checks (curated)    : {s.invariant_checks}")
     print(f"Distinct opp species seen     : {len(s.species_seen)}")
     print(f"Distinct opp items seen       : {len(s.items_seen)}  {sorted(s.items_seen)[:12]}")
-    print(f"\nEdge-case coverage (each MUST be > 0):")
+    print("\nEdge-case coverage (each MUST be > 0):")
     missing = []
     for edge in REQUIRED_EDGES:
         n = s.coverage.get(edge, 0)

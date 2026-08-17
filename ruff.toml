@@ -1,0 +1,70 @@
+# Ruff config — the STATIC half of the routine gate.
+#
+# Run (the exact command `src/ruff_gate_test.py` shells out to):
+#
+#     ruff check src/agents src/main src/utils --select F,E9 \
+#         --exclude src/poke_env --exclude src/rust_sim
+#
+# Scope note: `--select F,E9` is deliberately narrow. F is pyflakes (undefined names,
+# unused imports/locals, f-strings that forgot their placeholders) and E9 is the syntax /
+# IO error class — findings that mean the code is WRONG, not unfashionable. No style rule is
+# selected, so this gate can never turn into an argument about formatting, and a red run
+# always means something real.
+
+# `src/poke_env` is a vendored FORK and `src/rust_sim` is a Rust crate whose only Python is
+# harness scratch; neither is ours to lint. Mirrored on the gate's command line so a bare
+# `ruff check src/` from a shell agrees with the test.
+extend-exclude = ["src/poke_env", "src/rust_sim"]
+
+# ==============================================================================================
+# Per-file ignores. TWO CATEGORIES, kept apart on purpose — one is a real pattern, the other is
+# a debt. Collapsing them would make the debt invisible, which is how an ignore list becomes
+# permanent by accident. There is no blanket exclude here and there should never be one: every
+# entry names a file AND a rule, so nothing unrelated rides along.
+# ==============================================================================================
+[lint.per-file-ignores]
+
+# ----------------------------------------------------------- PERMANENT — a declared pattern
+#
+# `features_extractor.py` IS the model package's documented import surface. It imports ~42 names
+# it never uses itself, purely so `from agents.model.features_extractor import D_MODEL /
+# N_HISTORY_TURNS / DamageOperator / …` keeps resolving. This is stated three times in the tree:
+# at the file's own lines 45-46 and 127-140 ("Re-exported here UNCHANGED — this module remains
+# the documented import surface"), by the two `# noqa: F401 (re-export)` markers already on its
+# import blocks, and by the root CLAUDE.md ("re-exports the whole block, so historical import
+# paths still resolve"). MEASURED: `N_HISTORY_TURNS` alone is imported through it by 13 modules
+# across `agents/` and `main/`. `__all__` cannot stand in for this — the re-exported set is far
+# larger than the public-star set.
+"src/agents/model/features_extractor.py" = ["F401"]
+
+# ------------------------------------------------- TEMPORARY — a HANDOFF, not a pattern
+#
+# ⚠️ EVERYTHING BELOW IS ORDINARY DEAD CODE: an unused import, a local assigned and never read,
+# an `f` prefix on a string with no placeholder. None of it is deliberate and none of it should
+# be kept. It is ignored ONLY because these files were being rewritten by a concurrent
+# type-annotation change when this gate landed, and racing another writer in the same files was
+# the worse trade. This list is meant to shrink to nothing on the next pass over the package.
+#
+# TO CLOSE an entry: delete the line, re-run the gate, remove the dead binding/import/prefix.
+# Every one is a one-line change; `ruff check --fix` handles most of them.
+
+# 25 unused imports left behind by `gen3_damage_op_split_v1` (the operator was carved out of
+# features_extractor.py and kept that file's whole import block). The docstring calls these a
+# re-export surface, but MEASURED that is true of exactly ONE of them: `POKEMON_COUNTER_OFFSET`
+# is imported from here by `consequence_edges_test.py`. KEEP that one; the other 24 — `numpy`,
+# `gymnasium.spaces`, `typing.Callable`/`Sequence`, `torch.utils.checkpoint.checkpoint`,
+# `dataclasses.replace`, the TURN_DELTA_* group, LogLevel, … — have no consumer anywhere and are
+# simply deletable. Do NOT reclassify this as "permanent re-export" without re-measuring.
+"src/agents/model/damage_op.py" = ["F401"]
+
+"src/agents/model/arch_tables.py" = ["F541"]
+"src/agents/model/observation_debugger.py" = ["F541"]
+"src/agents/model/damage_op_blocks.py" = ["F841"]
+"src/agents/model/damage_op_pairwise.py" = ["F841"]
+"src/agents/model/compile_trainer_test.py" = ["F841"]
+"src/agents/model/consequence_edges_test.py" = ["F841"]
+"src/agents/model/damage_op_test.py" = ["F841"]
+"src/agents/model/hp_type_belief_test.py" = ["F841"]
+"src/agents/model/model_embedding_test.py" = ["F841"]
+"src/agents/model/value_entity_pool_test.py" = ["F401"]
+"src/agents/model/value_route_gradient_test.py" = ["F401", "F841"]

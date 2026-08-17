@@ -9,11 +9,10 @@ the parser accepts, which is exactly when you need one.
 from __future__ import annotations
 
 import json
-import os
 
 import pytest
 
-from main.checkargs import (LAUNCHER_ONLY, argv_from_run, check, known_option_strings,
+from main.checkargs import (argv_from_run, check, known_option_strings,
                             split_argv)
 
 

@@ -267,8 +267,6 @@ def _battle(won=False, lost=False, finished=False, opp_spikes=0,
 
 def _make_mon(type1_name, type2_name=None, moves=None, status=None, ability=None):
     """Build a mock Pokemon with the given types and optional revealed moves."""
-    from poke_env.data import GenData
-    type_chart = GenData.from_gen(3).type_chart
 
     # Use real PokemonType objects so damage_multiplier works correctly
     from poke_env.battle.pokemon_type import PokemonType
@@ -1262,7 +1260,7 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
         # Second use: same action, opp took no damage — zero-effect repeat
         self.manager.record_action(_ctx(), 6)
-        r2 = self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
+        self.manager.process_turn_reward(_battle(), _delta(opp_hp_delta=0.0))
         # Zero-effect first repeat (n=1): -REPETITION_ZERO_EFFECT_STEP * 1 = -0.15
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.repetition_tax, -0.15, places=5)
@@ -1285,7 +1283,7 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
         self._repeat_attack(3)
         # Switch to action 7
         self.manager.record_action(_ctx(), 7)
-        r = self.manager.process_turn_reward(_battle(), _delta())
+        self.manager.process_turn_reward(_battle(), _delta())
         bd = self.manager._last_breakdown
         self.assertAlmostEqual(bd.repetition_tax, 0.0, places=5)
 

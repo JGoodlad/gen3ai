@@ -261,7 +261,7 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
     print("            bridge-only and indicative. The real FPS verdict is training-side.")
 
     # ---- Drill-down: where does OUR CPU go (the part we can optimize)? ----
-    print(f"\n  OUR-CPU STAGE BREAKDOWN  (mean per decision):")
+    print("\n  OUR-CPU STAGE BREAKDOWN  (mean per decision):")
     print(f"  {'stage':<32}{'mean':>10}{'% our-CPU':>12}{'calls/dec':>12}")
     print("  " + "-" * 64)
     for label, leaves in _GROUPS:

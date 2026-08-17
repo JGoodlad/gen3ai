@@ -417,7 +417,7 @@ def _check_invariants(
         if not _almost(bd.matchup_penalty, MATCHUP_PENALTY):
             viol(f"matchup_penalty={bd.matchup_penalty:.4f} != {MATCHUP_PENALTY}")
         if delta.our_switch_to is not None:
-            viol(f"matchup_penalty fired on switch turn")
+            viol("matchup_penalty fired on switch turn")
 
     # --- Switch: pivot signals ---
     if bd.pivot_protect != 0.0:
@@ -425,14 +425,14 @@ def _check_invariants(
         if not _almost(bd.pivot_protect, PROTECT_SWITCH_BONUS):
             viol(f"pivot_protect={bd.pivot_protect:.4f} != {PROTECT_SWITCH_BONUS}")
         if delta.our_switch_to is None:
-            viol(f"pivot_protect fired without a switch")
+            viol("pivot_protect fired without a switch")
 
     if bd.pivot_status != 0.0:
         stats.fires_by_signal["pivot_status"] += 1
         if not _almost(bd.pivot_status, STATUS_IMMUNE_SWITCH_BONUS):
             viol(f"pivot_status={bd.pivot_status:.4f} != {STATUS_IMMUNE_SWITCH_BONUS}")
         if delta.our_switch_to is None:
-            viol(f"pivot_status fired without a switch")
+            viol("pivot_status fired without a switch")
 
     if bd.pivot_damage != 0.0:
         stats.fires_by_signal["pivot_damage"] += 1
@@ -440,7 +440,7 @@ def _check_invariants(
         if bd.pivot_damage not in (0.10, 0.15):
             viol(f"pivot_damage={bd.pivot_damage:.4f} not in (0.10, 0.15)")
         if delta.our_switch_to is None:
-            viol(f"pivot_damage fired without a switch")
+            viol("pivot_damage fired without a switch")
 
     # --- Switch: se_switch + escape_threat_switch ---
     if bd.se_switch != 0.0:
@@ -448,7 +448,7 @@ def _check_invariants(
         if not _almost(bd.se_switch, SE_SWITCH_BONUS):
             viol(f"se_switch={bd.se_switch:.4f} != {SE_SWITCH_BONUS}")
         if delta.our_switch_to is None:
-            viol(f"se_switch fired without a switch")
+            viol("se_switch fired without a switch")
 
     if bd.escape_threat_switch != 0.0:
         stats.fires_by_signal["escape_threat_switch"] += 1
@@ -467,7 +467,7 @@ def _check_invariants(
             viol(f"sleep_in={bd.sleep_in:.4f} != {-SLEEP_SWAP_BONUS}")
         active = battle.active_pokemon
         if not (active and active.status == Status.SLP):
-            viol(f"sleep_in fired without sleeping active")
+            viol("sleep_in fired without sleeping active")
 
     # --- Switch subsidy: only fires on a REALIZED voluntary switch (hard invariant) ---
     # The reward manager settles the switch subsidy at OUTCOME time
@@ -599,7 +599,7 @@ class RewardInvariantFuzzPlayer(Player):
         )
         if self.stats.violations:
             print(
-                f"\n[FUZZ FATAL] Invariant violation detected — aborting.",
+                "\n[FUZZ FATAL] Invariant violation detected — aborting.",
                 flush=True,
             )
             os._exit(1)
@@ -722,11 +722,11 @@ async def main(n_battles: int = 30) -> None:
 
     s = fuzz.stats
     print(f"\n{'=' * 60}", flush=True)
-    print(f"Reward Invariants Fuzz Test Results", flush=True)
+    print("Reward Invariants Fuzz Test Results", flush=True)
     print(f"{'=' * 60}", flush=True)
     print(f"Turns validated   : {s.turns_validated}", flush=True)
     print(f"Violations        : {len(s.violations)}", flush=True)
-    print(f"\nSignal fire counts:", flush=True)
+    print("\nSignal fire counts:", flush=True)
     for signal in sorted(s.fires_by_signal):
         print(f"  {signal:<25} {s.fires_by_signal[signal]:5d}", flush=True)
 

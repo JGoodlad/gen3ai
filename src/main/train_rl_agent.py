@@ -1941,7 +1941,8 @@ def build_parser() -> argparse.ArgumentParser:
 async def main():
     # --- Pre-flight Checks ---
     try:
-        import tensorboard
+        import tensorboard  # noqa: F401 — imported for its SIDE EFFECT of raising ImportError;
+        # this is an availability probe, not a use. The name is deliberately never referenced.
     except ImportError:
         print("\n" + "🛑" * 30)
         print("🛑 ERROR: Tensorboard is NOT installed.")

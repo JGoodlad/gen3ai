@@ -617,7 +617,7 @@ class HiddenPowerTrackerFuzzPlayer(Player):
         )
         try:
             tracker.observe(event.user_species, event.effectiveness, wrapped)
-        except ValueError as e:
+        except ValueError:
             print(
                 f"\n[FUZZ DBG] turn={battle.turn} event={event} target_wrapped="
                 f"{wrapped}",
@@ -753,18 +753,18 @@ async def main(n_battles: int = 500) -> None:
     print(f"  FAILED                      : {s.ground_truth_failed}")
 
     if s.species_observations:
-        print(f"\nObservations per opponent species:")
+        print("\nObservations per opponent species:")
         for sp, cnt in sorted(s.species_observations.items(), key=lambda x: -x[1]):
             true_type = OPP_HP_GROUND_TRUTH.get(sp, "?")
             print(f"  {sp:<16} {cnt:5d}  (true: {true_type})")
 
     if s.immunity_hits:
-        print(f"\nImmunity (0×) triggers by ability:")
+        print("\nImmunity (0×) triggers by ability:")
         for ability, count in sorted(s.immunity_hits.items(), key=lambda x: -x[1]):
             print(f"  {ability:<20} {count}")
 
     if s.ground_truth_failures:
-        print(f"\nGROUND TRUTH FAILURES (first 3 with full log):")
+        print("\nGROUND TRUTH FAILURES (first 3 with full log):")
         for f in s.ground_truth_failures[:3]:
             print(f"\n  ===== {f['species']}: true={f['true_type']}, survivors={f['surviving']} =====")
             print(f"    battle={f['battle']}")

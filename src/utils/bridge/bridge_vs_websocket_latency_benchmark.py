@@ -144,7 +144,7 @@ def main():
     if "websocket" in results and "bridge" in results:
         ws_ms = 1000 * results["websocket"][0] / args.steps
         br_ms = 1000 * results["bridge"][0] / args.steps
-        print(f"\n=== transport latency (single env, RandomPlayer opponent) ===")
+        print("\n=== transport latency (single env, RandomPlayer opponent) ===")
         print(f"  websocket : {ws_ms:6.2f} ms/step")
         print(f"  bridge    : {br_ms:6.2f} ms/step")
         if br_ms > 0:

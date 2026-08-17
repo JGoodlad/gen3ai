@@ -52,7 +52,6 @@ def _strip_ts(chunks) -> list:
 def _verify_replay(record, battle, p1_name: str) -> None:
     rep = replay_battle(record)
     assert rep.outcome["ended"], f"{record.battle_tag}: replay did not end"
-    live_winner = p1_name if battle.won else (None if battle.won is None else "other")
     if battle.won is True:
         assert rep.outcome["winner"] == p1_name, (
             f"{record.battle_tag}: live winner {p1_name} vs replay {rep.outcome['winner']}"

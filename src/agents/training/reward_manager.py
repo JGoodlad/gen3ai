@@ -615,7 +615,6 @@ class Gen3RewardManager:
         self._our_boosts_before = ctx.our_boosts.copy()
 
         repetition_tax = 0.0
-        bouncing_tax = 0.0
         struggle_loop_tax = 0.0
 
         if action >= 6:
@@ -1723,9 +1722,9 @@ class Gen3RewardManager:
         elif meta.get("type") == "ATTACK" and (bd.repetition_tax != 0 or bd.struggle_tax != 0):
             print(f"    🔍 [DEEP TRACE] Type: ATTACK | Repetition Tax: {bd.repetition_tax:.2f} | Struggle Loop Tax: {bd.struggle_tax:.2f}")
         elif meta.get("type") == "FORCED_FAINT":
-            print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (post-faint, no subsidy)")
+            print("    🔍 [DEEP TRACE] Type: FORCED SWITCH (post-faint, no subsidy)")
         elif meta.get("type") == "FORCED_ROAR":
-            print(f"    🔍 [DEEP TRACE] Type: FORCED SWITCH (roar/whirlwind, no bonuses)")
+            print("    🔍 [DEEP TRACE] Type: FORCED SWITCH (roar/whirlwind, no bonuses)")
 
     def report_episode(self, battle):
         if self.log_level < LogLevel.PERIODIC or self.total_reward == 0:

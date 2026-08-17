@@ -197,7 +197,7 @@ class TestMaterialPBRS(unittest.TestCase):
         phi0 = m._compute_phi_mat(livesteps[0])
         s = 0.0
         for i, live in enumerate(livesteps):
-            bd = m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
+            m.process_turn_reward(_Battle(live, turn=i + 1), _delta())
             s += m._last_breakdown.pbrs_material
         # Σ(γΦ′−Φ) telescopes to γ^T·Φ_T − Φ_0 + (γ−1)Σ_interior; Φ_T zeroed at terminal.
         resid = abs((PBRS_GAMMA - 1.0)) * 6 * (MAT_HP_WEIGHT * 6 + MAT_ALIVE_WEIGHT * 6)

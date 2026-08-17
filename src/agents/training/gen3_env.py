@@ -501,10 +501,6 @@ class Gen3Env(SinglesEnv):
             self._opp_slot_map = {}
             return
         try:
-            species_known = [
-                float(obs_vec[OFFSET_OPP_TEAM + i * POKEMON_FULL_DIM + POKEMON_SPECIES_KNOWN_OFFSET])
-                for i in range(TEAM_SIZE)
-            ]
             revealed = [m for m in ObservationEncoder.get_team_list(b1, is_opponent=True)
                         if m is not None]
             slot_map = {}

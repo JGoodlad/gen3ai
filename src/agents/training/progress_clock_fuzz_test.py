@@ -147,7 +147,6 @@ def main(n_battles: int = 40) -> int:
     charge_mag = abs(env._tracker._progress_clock.no_progress_penalty)
 
     stats = Counter()
-    residual_charged = []   # windows that WOULD violate the guard (collected for the message)
     t0 = __import__("time").time()
     try:
         win_cursor = 0

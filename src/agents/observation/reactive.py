@@ -5,7 +5,6 @@ from .constants import (
     REACTIVE_DIM, ACTIVE_REQ_MOVES_OFFSET, ACTIVE_REQ_MOVES_PER, ACTIVE_REQ_MOVES_DIM,
 )
 from .types import TypeEncoder
-from agents.enums import PokemonType
 from agents import gen3_data
 from agents.observation.wish_belief import build_wish_pending, wish_floating_value
 from agents.battle.battle_event import OURS, OPP
@@ -154,13 +153,6 @@ class ReactiveEncoder(ObservationEncoder):
                 len(battle.available_moves) == 1
                 and battle.available_moves[0].id == "struggle"
             )
-
-        active = battle.active_pokemon
-        opp = battle.opponent_active_pokemon
-        # Curse is a setup move (+atk/+def/-spe) ONLY for a non-Ghost user; for a Ghost
-        # user it is a self-HP-cost trap. Resolve from the live user's type (the static
-        # MoveData.is_boost is False for Curse precisely because it is type-conditional).
-        user_is_ghost = active is not None and PokemonType.GHOST in (active.type_1, active.type_2)
 
         if not is_forced_struggle:
             # REQUEST-slot order (action 6+i ↔ slot i), disabled moves KEPT — so each per-move

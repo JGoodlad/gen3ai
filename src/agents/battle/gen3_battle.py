@@ -26,7 +26,7 @@ recorder) for free — nothing else needs to know it changed.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from poke_env.battle.battle import Battle
 from poke_env.data.normalize import to_id_str
@@ -41,6 +41,15 @@ from agents.battle.battle_event import (
     classify,
     from_clause_move_source,
 )
+
+if TYPE_CHECKING:
+    # These three would be CIRCULAR at import time — `live_view` and `strict_view` both
+    # import `Gen3Battle`. `live_view()` / `strict_view()` / `live_weather()` therefore
+    # import them INSIDE the method body and annotate the return with a string. This block
+    # is what makes those strings resolvable to a type checker (and to ruff, which
+    # otherwise reports the annotations as undefined names — F821).
+    from agents.battle.live_view import LiveView, LiveWeather
+    from agents.battle.strict_view import StrictBattleView
 
 
 # Tokens that look like a player identifier prefix ("p1", "p2"). Move/item name
