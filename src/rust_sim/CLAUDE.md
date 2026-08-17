@@ -6517,6 +6517,45 @@ asserting the mutation actually applied (`assert removed contains …`) before r
 revert-verification that does not verify the revert is worse than none, because it launders a guess into
 a fact.**
 
+### The `ab_replay` SUBSEQUENCE SEED ANCHOR — shipped, and it did NOT close the repro that motivated it
+
+`gen3_ab_replay_seed_anchor_subsequence_v1`. Round 26 left this as the scoped next step: port
+`bridge_replay.rs::anchor_seed_divergence` (round 20's A2 fix) to `ab_replay`, so a decision-boundary
+CHECKPOINT offset stops reading as `kind:"seed"` and costing a full triage.
+
+**What landed.** `align_seed_subsequence` aligns the sim's per-decision seeds as a SUBSEQUENCE of the
+port's checkpoints and the per-decision STATE/species/status/boost checks then run at the ALIGNED
+pairs (ab_replay checks more per boundary than its bridge sibling, so aligning only the seed would
+have left the state checks comparing unrelated boundaries). Verdicts still report the GOLDEN's
+decision index, which is what a reader greps for in `battle.txt`.
+
+**Held to round 20's bar, because a sloppy anchor makes the omniscient gate VACUOUS — far worse than
+the artifact it removes.** `anchor_tests` is 10 cases and the NEGATIVES are the load-bearing half: an
+**INJECTED EXTRA DRAW** still fails (a real desync permanently shifts every later seed VALUE, so the
+sim's post-divergence seeds never reappear and the subsequence necessarily breaks), as do a missing
+draw, a REORDERED pair (same values, wrong order), a port stream that ends early, and an empty port
+stream. Gates: committed e2e golden still replays **220 ok / 0 diverged** through `ab_replay`; full
+suite **75 binaries / 666 passed / 0 failed**; e2e md5 `3155eb…` UNCHANGED.
+
+**NEW DIAGNOSTIC `POKESIM_DUMP_SEEDS=1`** prints BOTH per-decision seed lists. The anchor is only
+sound if the port's checkpoint list really is a SUPERSET of the sim's, and that is now CHECKABLE on
+any repro rather than assumed.
+
+⚠️ **THE FINDING: `ab_41_9` is the MIRROR shape, and the anchor correctly does NOT reconcile it.**
+The dump reads `port n=33  sim n=45`, decisions 0-4 IDENTICAL, divergence at 5, never re-syncing. So
+the port surfaces **FEWER** checkpoints than the sim — the inverse of the A2 case the anchor exists
+for (where the port surfaces EXTRA ones). Reconciling *missing* boundaries would mean accepting that
+the port failed to surface a request the sim surfaced, which is round 26's hypothesis (b) — **a real
+draw-free legality bug** — and swallowing it is exactly the vacuous-gate failure. So the anchor stops
+at the honest boundary and `ab_41_9` stays REPORTED.
+
+**Correcting an earlier read in this same session:** `ab_41_9` was first called "the known
+segmentation artifact" on the strength of a byte-clean `POKESIM_PROTOCOL_ONLY` replay. Byte-clean
+still supports HARMLESS, but the seed-stream dump shows it is NOT the class the anchor addresses. It
+is unexplained, it is on the gen3ou POOL surface, and the next step is a per-decision
+ACCEPTED/REJECTED comparison (the live per-side gate), NOT more draw tracing — 250 pool battles of
+`gen_sim_bridge_diff` were clean, so if it is real it is rare.
+
 ### `--mode ourandom` — "gen3ou-randbats", the fuzz surface that is actually the one we care about
 
 `gen3_ou_random_teams_v1` (`harness/ou_random_teams.js`). The fuzzers had two team sources and

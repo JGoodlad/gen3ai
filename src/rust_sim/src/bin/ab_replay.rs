@@ -83,6 +83,47 @@ struct DecExpect {
     first_mover: String,
 }
 
+/// Align the sim's per-decision seeds as a SUBSEQUENCE of the port's checkpoint seeds.
+///
+/// Returns, for each sim decision `j`, the port checkpoint index that carries the same
+/// `seed_after` — so the caller compares STATE at genuinely corresponding boundaries instead of
+/// by raw index. `Err((j, want, got_at))` at the first sim seed that cannot be reconciled.
+///
+/// Ported from `bridge_replay.rs::anchor_seed_divergence` (round 20's A2 fix). The full rationale
+/// and the safety argument live at the call site; the property that makes it safe is that a real
+/// draw desync PERMANENTLY shifts every later seed value, so the sim's post-divergence seeds never
+/// reappear in the port's stream and the subsequence necessarily fails.
+///
+/// Deliberately takes SLICES OF STRINGS rather than the record types, so `anchor_tests` can drive
+/// it with hand-built streams (including an injected extra draw) without constructing a battle.
+fn align_seed_subsequence(got: &[String], exp: &[String]) -> Result<Vec<usize>, (usize, String, String)> {
+    let mut out = Vec::with_capacity(exp.len());
+    let mut i = 0usize;
+    for (j, want) in exp.iter().enumerate() {
+        let start = i;
+        while i < got.len() && &got[i] != want {
+            i += 1;
+        }
+        if i >= got.len() {
+            let got_at = got.get(start).cloned().unwrap_or_default();
+            return Err((j, want.clone(), got_at));
+        }
+        out.push(i);
+        i += 1; // consume the matched checkpoint
+    }
+    Ok(out)
+}
+
+/// [`align_seed_subsequence`] over the concrete record types.
+fn align_decisions(
+    port: &[pokesim::turn::DecisionRecord],
+    sim: &[DecExpect],
+) -> Result<Vec<usize>, (usize, String, String)> {
+    let got: Vec<String> = port.iter().map(|d| d.seed_after.clone()).collect();
+    let exp: Vec<String> = sim.iter().map(|d| d.seed_after.clone()).collect();
+    align_seed_subsequence(&got, &exp)
+}
+
 #[derive(Debug, Clone)]
 struct CaseExpect {
     id: String,
@@ -750,10 +791,66 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
     // bytes diverge too, it is a real engine bug. Not for the gate — a triage lens only.
     let protocol_only = std::env::var("POKESIM_PROTOCOL_ONLY").is_ok();
 
-    let n = outcome.decisions.len().min(case.decisions.len());
-    for di in 0..n {
-        let rec = &outcome.decisions[di];
-        let exp = &case.decisions[di];
+    // DIAGNOSTIC (`POKESIM_DUMP_SEEDS=1`): print BOTH per-decision seed lists to stderr. The
+    // alignment below is only sound if the port's checkpoint list really is a SUPERSET of the
+    // sim's; this is how you check that on a given repro instead of assuming it.
+    if std::env::var("POKESIM_DUMP_SEEDS").is_ok() {
+        eprintln!("[seeds] port n={} sim n={}", outcome.decisions.len(), case.decisions.len());
+        for (i, d) in outcome.decisions.iter().enumerate() {
+            eprintln!("[seeds] port #{i} {}", d.seed_after);
+        }
+        for (j, e) in case.decisions.iter().enumerate() {
+            eprintln!("[seeds] sim  #{j} {}", e.seed_after);
+        }
+    }
+
+    // THE SUBSEQUENCE SEED ANCHOR (`gen3_ab_replay_seed_anchor_subsequence_v1`) — ported from
+    // `bridge_replay.rs::anchor_seed_divergence` (round 20's A2 fix) and held to the same bar.
+    //
+    // The port and the omniscient fuzzer can CHECKPOINT at different frames: the port records a
+    // `seed_after` per `run_full_battle` decision boundary, the fuzzer per `makeRequest` pause,
+    // and a synchronous write-cascade can merge two sim boundaries into one recorded decision (or
+    // split one). Compared in LOCKSTEP BY INDEX that reads as `kind:"seed"` — indistinguishable
+    // from a real draw bug, and it has cost a full triage more than once (round 26 found 12 of 13
+    // open repros had ZERO wrong draws).
+    //
+    // So align the sim's decision-seeds as a SUBSEQUENCE of the port's: every sim seed must
+    // appear, IN ORDER, among the port's checkpoints, which may interleave extras between them.
+    //
+    // SAFETY — this can NEVER mask a genuine draw desync. An extra/missing/mis-ordered draw
+    // PERMANENTLY shifts every downstream seed VALUE, so the sim's post-divergence seeds never
+    // reappear in the port's stream, the subsequence fails, and `kind:"seed"` is reported at the
+    // first unreconcilable decision exactly as before. A coincidental match of a shifted 64-bit
+    // seed is ~2^-64. The per-decision STATE/species/status/boost checks and the winner check then
+    // run at the ALIGNED pairs, so a desync that somehow survived the seed test still fails there.
+    // `anchor_tests` pins all of this, including an INJECTED-EXTRA-DRAW proof.
+    let align = match align_decisions(&outcome.decisions, &case.decisions) {
+        Ok(a) => a,
+        Err((j, want, got_at)) => {
+            if !protocol_only {
+                return Verdict::diverged(
+                    &case.id,
+                    "seed",
+                    Some(j),
+                    want,
+                    got_at,
+                    "a draw is mis-ordered/missing/extra (RNG-consumption divergence)".to_string(),
+                    j,
+                );
+            }
+            Vec::new()
+        }
+    };
+
+    let n = align.len();
+    for j in 0..n {
+        let pi = align[j]; // the PORT's checkpoint index (may run ahead of the sim's)
+        // Every verdict below reports `di` — keep that meaning the GOLDEN's decision index, which
+        // is what a reader greps for in battle.txt and what it meant before the anchor existed
+        // (back when the two indices coincided by construction).
+        let di = j;
+        let rec = &outcome.decisions[pi];
+        let exp = &case.decisions[j];
         if protocol_only {
             continue; // skip the seed + state per-decision checkpoints; only the byte diff runs
         }
@@ -1101,6 +1198,99 @@ fn main() {
 // framing attribution (the load-bearing requirement). These lock each of the 6 clauses;
 // reverting any clause in `classify_construction_mirror_of_flip` makes a NEG case start
 // (wrongly) allowlisting → a test fails.
+/// GATE-INTEGRITY tests for the subsequence seed anchor.
+///
+/// These exist because **a sloppy anchor makes the omniscient byte gate VACUOUS, which is far
+/// worse than the artifact it removes.** Round 20 shipped nine of these for the bridge sibling
+/// plus an injected-extra-draw proof; this mirrors that bar. The NEGATIVES are the load-bearing
+/// half — an anchor that accepts everything would pass every positive case here.
+#[cfg(test)]
+mod anchor_tests {
+    use super::*;
+
+    fn s(v: &[&str]) -> Vec<String> {
+        v.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn identical_streams_align_one_to_one() {
+        let g = s(&["a", "b", "c"]);
+        assert_eq!(align_seed_subsequence(&g, &g), Ok(vec![0, 1, 2]));
+    }
+
+    #[test]
+    fn an_extra_port_checkpoint_is_tolerated_and_maps_past_it() {
+        // The A2 shape: the port surfaces an intermediate boundary the fuzzer merged away.
+        let got = s(&["a", "x", "b", "c"]);
+        let exp = s(&["a", "b", "c"]);
+        assert_eq!(align_seed_subsequence(&got, &exp), Ok(vec![0, 2, 3]));
+    }
+
+    #[test]
+    fn a_zero_draw_duplicate_checkpoint_is_tolerated() {
+        // The round-6 form: the extra checkpoint drew nothing, so it repeats the previous seed.
+        let got = s(&["a", "a", "b"]);
+        let exp = s(&["a", "b"]);
+        assert_eq!(align_seed_subsequence(&got, &exp), Ok(vec![0, 2]));
+    }
+
+    #[test]
+    fn several_extras_in_one_gap_are_tolerated() {
+        let got = s(&["a", "x", "y", "z", "b"]);
+        let exp = s(&["a", "b"]);
+        assert_eq!(align_seed_subsequence(&got, &exp), Ok(vec![0, 4]));
+    }
+
+    // ── The NEGATIVES: a genuine desync must still be caught ────────────────────────
+
+    #[test]
+    fn an_injected_extra_draw_still_fails() {
+        // THE PROOF THAT MATTERS. A real extra draw permanently shifts every downstream seed
+        // VALUE — the port's post-divergence seeds are all different, so the sim's never reappear.
+        let exp = s(&["a", "b", "c", "d"]);
+        let got = s(&["a", "b!", "c!", "d!"]); // every later value shifted by the extra draw
+        let err = align_seed_subsequence(&got, &exp).unwrap_err();
+        assert_eq!(err.0, 1, "must fail at the FIRST unreconcilable sim decision");
+        assert_eq!(err.1, "b");
+    }
+
+    #[test]
+    fn a_missing_draw_still_fails() {
+        let exp = s(&["a", "b", "c"]);
+        let got = s(&["a", "B", "C"]);
+        assert_eq!(align_seed_subsequence(&got, &exp).unwrap_err().0, 1);
+    }
+
+    #[test]
+    fn a_reordered_pair_still_fails() {
+        // Same VALUES, wrong ORDER — a mis-ordered draw. Subsequence is order-sensitive, so the
+        // second one cannot be matched after the first consumed the later index.
+        let exp = s(&["a", "b"]);
+        let got = s(&["b", "a"]);
+        assert_eq!(align_seed_subsequence(&got, &exp).unwrap_err().0, 1);
+    }
+
+    #[test]
+    fn a_port_stream_that_ends_early_still_fails() {
+        // The port ran out of decisions (it consumed the fixed script at a different rate).
+        // That is NOT reconcilable and must report, not silently truncate the comparison.
+        let exp = s(&["a", "b", "c"]);
+        let got = s(&["a", "b"]);
+        assert_eq!(align_seed_subsequence(&got, &exp).unwrap_err().0, 2);
+    }
+
+    #[test]
+    fn an_empty_port_stream_fails_rather_than_vacuously_passing() {
+        let exp = s(&["a"]);
+        assert!(align_seed_subsequence(&[], &exp).is_err());
+    }
+
+    #[test]
+    fn an_empty_sim_stream_aligns_to_nothing() {
+        assert_eq!(align_seed_subsequence(&s(&["a", "b"]), &[]), Ok(vec![]));
+    }
+}
+
 #[cfg(test)]
 mod a1_allowlist_tests {
     use super::*;
