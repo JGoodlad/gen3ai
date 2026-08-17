@@ -1,0 +1,752 @@
+{
+ "what": "C5 TD-consistency aux rung-1 gate \u2014 pre-registered lambda sweep on frozen gen-13 tokens (same population as gen13_vdn_gate)",
+ "date": "2026-08-17",
+ "script": "tmp/td_aux_gate_probe.py + tmp/td_aux_gate_report.md (scratch, main checkout)",
+ "verdict": "PASS at lambda=1.0 and 3.0 (pre-registered); lambda 10/30 post-hoc extension excluded from the gate",
+ "result": {
+  "probe": "td_aux_gate \u2014 does a TD-consistency auxiliary loss shrink self-KO delta-dispersion?",
+  "rung": "1 of the pre-registered validation ladder (OFFLINE, frozen tokens)",
+  "run": "models/ai_v9_15_gen13_hb_events_stack_0817",
+  "checkpoint": "/tmp/vdn_ckpt/checkpoint_17243904_steps.zip (gen-13, 17.24M steps)",
+  "data": {
+   "source": "REUSED from tmp/vdn_gate_probe.py \u2014 /tmp/vdn_tokens_tokens.npy + _meta.npz",
+   "tokens_shape": [
+    87064,
+    12,
+    128
+   ],
+   "n_battles": 2111,
+   "n_decisions": 87064,
+   "note": "identical population, battle grouping, self-KO set and GroupKFold(5) splits as the vdn_gate probe, so the two are directly comparable."
+  },
+  "head": "pooled: learned-query MultiheadAttention(4h) over the 12 tokens -> LayerNorm -> MLP(128,ReLU) -> scalar  (identical to vdn_gate's head (a))",
+  "loss": "L = MSE(V(s), G_target) + lambda_td * TD_residual; BOTH ends of every residual carry gradient (no detach)",
+  "terminal_handling": {
+   "rule": "the last decision T of a battle contributes (V(s_T) - G(T))^2",
+   "why_exact": "the traces' final invocation reward already carries everything after the last decision, so G(T) == r(T) EXACTLY (verified: max abs err 0.0 over all 2111 battles). The pair chain therefore telescopes to the discounted return and the TD auxiliary shares the MSE term's fixed point \u2014 lambda is a pure 'how hard do you constrain adjacent differences' knob, not a change of target.",
+   "verify": {
+    "G99_reconstruction_max_abs_err": 2.2737367544323206e-13,
+    "terminal_G_equals_r_max_abs_err": 0.0,
+    "n_terminal": 2111
+   }
+  },
+  "batching": "whole-battle (segment) minibatches of >=1024 decisions, so BOTH ends of every adjacent pair sit in the same forward \u2014 exactly the segment-minibatch trick a training-loop implementation would need.",
+  "early_stopping": "each arm early-stops on ITS OWN validation objective (val_MSE + lambda*val_TD), same rule for all arms (max 40 epochs, patience 5, inner val split by BATTLE). For lambda=0 this reduces exactly to the vdn_gate probe's rule.",
+  "arms": {
+   "primary_gamma099": {
+    "target": "G99",
+    "gamma": 0.99,
+    "lambdas": [
+     0.0,
+     0.1,
+     0.3,
+     1.0,
+     3.0
+    ],
+    "n": 87064,
+    "n_battles": 2111,
+    "n_selfko_pairs": 402,
+    "n_selfko_battles": 366,
+    "baselines": {
+     "target_std": 26.038798458850096,
+     "constant_value_rmse": 26.038798458850096,
+     "selfko_actual_dv_mean": 1.4998228383696954,
+     "selfko_actual_dv_std": 1.328218153900707,
+     "constant_dv_rmse": 1.328218153900707
+    },
+    "budget": {
+     "max_epochs": 40,
+     "patience": 5,
+     "lr": 0.001,
+     "bs": 1024
+    },
+    "per_lambda": {
+     "0.0": {
+      "overall_rmse": 21.500000361917444,
+      "overall_r2": 0.3182344471243802,
+      "selfko_dv_rmse": 4.95112881439555,
+      "selfko_dv_bias": -0.34572574052925725,
+      "selfko_dv_err_std": 4.939043454867893,
+      "selfko_pred_dv_mean": 1.1540970978404383,
+      "selfko_pred_dv_std": 4.473157779245703,
+      "selfko_dispersion_ratio": 3.367788466155915,
+      "selfko_dv_pearson": -0.220560593809452,
+      "heldout_td_residual_rmse": 3.830693335678381,
+      "pred_std_all": 15.16286568791494
+     },
+     "0.1": {
+      "overall_rmse": 21.608874061016085,
+      "overall_r2": 0.31131218912261793,
+      "selfko_dv_rmse": 5.222710505726552,
+      "selfko_dv_bias": -0.3024243594385553,
+      "selfko_dv_err_std": 5.2139471164794795,
+      "selfko_pred_dv_mean": 1.1973984789311403,
+      "selfko_pred_dv_std": 4.789781989150163,
+      "selfko_dispersion_ratio": 3.606171151240138,
+      "selfko_dv_pearson": -0.19483795367392273,
+      "heldout_td_residual_rmse": 3.91336271071093,
+      "pred_std_all": 14.882633303607102
+     },
+     "0.3": {
+      "overall_rmse": 21.760874648628892,
+      "overall_r2": 0.30158941285283725,
+      "selfko_dv_rmse": 4.832651553094702,
+      "selfko_dv_bias": -0.48360105563134265,
+      "selfko_dv_err_std": 4.8083938121394425,
+      "selfko_pred_dv_mean": 1.0162217827383526,
+      "selfko_pred_dv_std": 4.350610246598168,
+      "selfko_dispersion_ratio": 3.2755238541359413,
+      "selfko_dv_pearson": -0.2101456311238777,
+      "heldout_td_residual_rmse": 3.7558279261317526,
+      "pred_std_all": 15.474057972499738
+     },
+     "1.0": {
+      "overall_rmse": 21.50751290944176,
+      "overall_r2": 0.3177579177419373,
+      "selfko_dv_rmse": 4.351319331416456,
+      "selfko_dv_bias": -0.8629801213289195,
+      "selfko_dv_err_std": 4.264885137275057,
+      "selfko_pred_dv_mean": 0.636842717040776,
+      "selfko_pred_dv_std": 3.7979035665686096,
+      "selfko_dispersion_ratio": 2.8593974230926884,
+      "selfko_dv_pearson": -0.19833802147802226,
+      "heldout_td_residual_rmse": 3.379587652055444,
+      "pred_std_all": 14.433385823068381
+     },
+     "3.0": {
+      "overall_rmse": 21.404553643615714,
+      "overall_r2": 0.3242742464927483,
+      "selfko_dv_rmse": 3.9887645692759777,
+      "selfko_dv_bias": -0.2907326548443725,
+      "selfko_dv_err_std": 3.9781550136361603,
+      "selfko_pred_dv_mean": 1.209090183525323,
+      "selfko_pred_dv_std": 3.4913220568575354,
+      "selfko_dispersion_ratio": 2.628575770180698,
+      "selfko_dv_pearson": -0.2018684841204848,
+      "heldout_td_residual_rmse": 3.1074241524782105,
+      "pred_std_all": 14.270322278281467
+     }
+    },
+    "bootstrap_control_minus_lambda": {
+     "0.1": {
+      "selfko": {
+       "mean": -0.2713173894242669,
+       "ci95_lo": -0.5202246587205139,
+       "ci95_hi": -0.034954275253564884,
+       "p_improve": 0.0095,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.1034379436045074,
+       "ci95_lo": -0.2891000814279008,
+       "ci95_hi": 0.07496100122789197,
+       "p_improve": 0.1405,
+       "n_boot": 2000
+      }
+     },
+     "0.3": {
+      "selfko": {
+       "mean": 0.12876869050210973,
+       "ci95_lo": -0.2494291073034579,
+       "ci95_hi": 0.5495876050713872,
+       "p_improve": 0.731,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.24104796598719383,
+       "ci95_lo": -0.599984372554321,
+       "ci95_hi": 0.06540507931141695,
+       "p_improve": 0.079,
+       "n_boot": 2000
+      }
+     },
+     "1.0": {
+      "selfko": {
+       "mean": 0.6061739989747897,
+       "ci95_lo": 0.1784656580560604,
+       "ci95_hi": 1.0809476069164177,
+       "p_improve": 0.997,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.005248039659442959,
+       "ci95_lo": -0.1633792162515772,
+       "ci95_hi": 0.1498642471191875,
+       "p_improve": 0.4785,
+       "n_boot": 2000
+      }
+     },
+     "3.0": {
+      "selfko": {
+       "mean": 0.9629531743046147,
+       "ci95_lo": 0.579988478529213,
+       "ci95_hi": 1.3822106081339967,
+       "p_improve": 1.0,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": 0.1260829587841459,
+       "ci95_lo": -0.4152188342376376,
+       "ci95_hi": 0.5939870055609706,
+       "p_improve": 0.669,
+       "n_boot": 2000
+      }
+     }
+    },
+    "shrink_decomposition": {
+     "0.1": {
+      "selfko_pred_dv_std_ratio_vs_control": 1.0707831526474463,
+      "pred_std_all_ratio_vs_control": 0.9815185077757969,
+      "targeting": 1.0909454525456994
+     },
+     "0.3": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.9726037983242791,
+      "pred_std_all_ratio_vs_control": 1.0205233160399767,
+      "targeting": 0.9530441715906661
+     },
+     "1.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.8490430595115382,
+      "pred_std_all_ratio_vs_control": 0.9518903695474948,
+      "targeting": 0.8919546690184
+     },
+     "3.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.7805050099185787,
+      "pred_std_all_ratio_vs_control": 0.9411362318967949,
+      "targeting": 0.82932202954882
+     }
+    }
+   },
+   "secondary_gamma1": {
+    "target": "G",
+    "gamma": 1.0,
+    "lambdas": [
+     0.0,
+     0.1,
+     0.3,
+     1.0,
+     3.0
+    ],
+    "n": 87064,
+    "n_battles": 2111,
+    "n_selfko_pairs": 402,
+    "n_selfko_battles": 366,
+    "baselines": {
+     "target_std": 40.26414335370224,
+     "constant_value_rmse": 40.26414335370224,
+     "selfko_actual_dv_mean": 1.5647945273631838,
+     "selfko_actual_dv_std": 1.3174930910049099,
+     "constant_dv_rmse": 1.3174930910049099
+    },
+    "budget": {
+     "max_epochs": 40,
+     "patience": 5,
+     "lr": 0.001,
+     "bs": 1024
+    },
+    "per_lambda": {
+     "0.0": {
+      "overall_rmse": 36.24565205885057,
+      "overall_r2": 0.18964576343082906,
+      "selfko_dv_rmse": 5.838171009415219,
+      "selfko_dv_bias": 0.18397049081027528,
+      "selfko_dv_err_std": 5.835271681223364,
+      "selfko_pred_dv_mean": 1.7487650181734593,
+      "selfko_pred_dv_std": 5.402644665868217,
+      "selfko_dispersion_ratio": 4.1007005674294525,
+      "selfko_dv_pearson": -0.21958846801137974,
+      "heldout_td_residual_rmse": 4.447208468450906,
+      "pred_std_all": 18.50568988476643
+     },
+     "0.1": {
+      "overall_rmse": 36.000638921614794,
+      "overall_r2": 0.20056438967533552,
+      "selfko_dv_rmse": 6.029411879740121,
+      "selfko_dv_bias": 0.0677527488166711,
+      "selfko_dv_err_std": 6.029031197512507,
+      "selfko_pred_dv_mean": 1.6325472761798552,
+      "selfko_pred_dv_std": 5.684683797181704,
+      "selfko_dispersion_ratio": 4.314773136947341,
+      "selfko_dv_pearson": -0.15340073158960754,
+      "heldout_td_residual_rmse": 4.566494275359838,
+      "pred_std_all": 18.423201525774385
+     },
+     "0.3": {
+      "overall_rmse": 36.30078822757887,
+      "overall_r2": 0.18717849861905778,
+      "selfko_dv_rmse": 5.461374478354326,
+      "selfko_dv_bias": 0.23708466293645653,
+      "selfko_dv_err_std": 5.4562259901346,
+      "selfko_pred_dv_mean": 1.8018791902996407,
+      "selfko_pred_dv_std": 4.984398391480412,
+      "selfko_dispersion_ratio": 3.783244424969692,
+      "selfko_dv_pearson": -0.24291382629525257,
+      "heldout_td_residual_rmse": 4.293151758143815,
+      "pred_std_all": 17.74309400581849
+     },
+     "1.0": {
+      "overall_rmse": 35.35829178992596,
+      "overall_r2": 0.228837995278258,
+      "selfko_dv_rmse": 5.391767862748897,
+      "selfko_dv_bias": -0.28254802439832954,
+      "selfko_dv_err_std": 5.384359506912629,
+      "selfko_pred_dv_mean": 1.2822465029648544,
+      "selfko_pred_dv_std": 4.974274993020928,
+      "selfko_dispersion_ratio": 3.7755605907783774,
+      "selfko_dv_pearson": -0.19166091330253104,
+      "heldout_td_residual_rmse": 4.073586615726757,
+      "pred_std_all": 17.9451563151657
+     },
+     "3.0": {
+      "overall_rmse": 35.448544417634324,
+      "overall_r2": 0.22489616321586792,
+      "selfko_dv_rmse": 4.480201091996209,
+      "selfko_dv_bias": -0.017557972695173302,
+      "selfko_dv_err_std": 4.480166686889993,
+      "selfko_pred_dv_mean": 1.5472365546680107,
+      "selfko_pred_dv_std": 3.9769641371827698,
+      "selfko_dispersion_ratio": 3.0185844345865713,
+      "selfko_dv_pearson": -0.2404621341808571,
+      "heldout_td_residual_rmse": 3.450968736716542,
+      "pred_std_all": 15.845335977333566
+     }
+    },
+    "bootstrap_control_minus_lambda": {
+     "0.1": {
+      "selfko": {
+       "mean": -0.20084472782145135,
+       "ci95_lo": -0.7885991756372099,
+       "ci95_hi": 0.3484058130032606,
+       "p_improve": 0.247,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": 0.20780437681710884,
+       "ci95_lo": -0.30184048840384026,
+       "ci95_hi": 0.6476914716307002,
+       "p_improve": 0.795,
+       "n_boot": 2000
+      }
+     },
+     "0.3": {
+      "selfko": {
+       "mean": 0.3759737773163148,
+       "ci95_lo": 0.127002772619644,
+       "ci95_hi": 0.6176846668514884,
+       "p_improve": 0.9985,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.05033176443660041,
+       "ci95_lo": -0.184307258445709,
+       "ci95_hi": 0.10030480145752249,
+       "p_improve": 0.2365,
+       "n_boot": 2000
+      }
+     },
+     "1.0": {
+      "selfko": {
+       "mean": 0.43126090851574245,
+       "ci95_lo": -0.1871661223282413,
+       "ci95_hi": 1.0958156414517979,
+       "p_improve": 0.909,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": 0.6913045758181344,
+       "ci95_lo": -0.8751687938785649,
+       "ci95_hi": 2.550811862319778,
+       "p_improve": 0.6855,
+       "n_boot": 2000
+      }
+     },
+     "3.0": {
+      "selfko": {
+       "mean": 1.3465811458970378,
+       "ci95_lo": 0.7866670412237754,
+       "ci95_hi": 1.964101521087463,
+       "p_improve": 1.0,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": 0.7122527038752946,
+       "ci95_lo": -0.12718498159513106,
+       "ci95_hi": 1.6368866604881116,
+       "p_improve": 0.9315,
+       "n_boot": 2000
+      }
+     }
+    },
+    "shrink_decomposition": {
+     "0.1": {
+      "selfko_pred_dv_std_ratio_vs_control": 1.0522039017474718,
+      "pred_std_all_ratio_vs_control": 0.9955425407263553,
+      "targeting": 1.0569150575723023
+     },
+     "0.3": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.9225849004969511,
+      "pred_std_all_ratio_vs_control": 0.9587912753484703,
+      "targeting": 0.9622374798536207
+     },
+     "1.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.9207111147705938,
+      "pred_std_all_ratio_vs_control": 0.9697102040998671,
+      "targeting": 0.9494703787563453
+     },
+     "3.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.736114326064726,
+      "pred_std_all_ratio_vs_control": 0.8562413007027194,
+      "targeting": 0.8597042976793985
+     }
+    }
+   },
+   "primary_gamma099_high_lambda_extension": {
+    "target": "G99",
+    "gamma": 0.99,
+    "lambdas": [
+     0.0,
+     10.0,
+     30.0
+    ],
+    "n": 87064,
+    "n_battles": 2111,
+    "n_selfko_pairs": 402,
+    "n_selfko_battles": 366,
+    "baselines": {
+     "target_std": 26.038798458850096,
+     "constant_value_rmse": 26.038798458850096,
+     "selfko_actual_dv_mean": 1.4998228383696954,
+     "selfko_actual_dv_std": 1.328218153900707,
+     "constant_dv_rmse": 1.328218153900707
+    },
+    "budget": {
+     "max_epochs": 40,
+     "patience": 5,
+     "lr": 0.001,
+     "bs": 1024
+    },
+    "per_lambda": {
+     "0.0": {
+      "overall_rmse": 21.500000361917444,
+      "overall_r2": 0.3182344471243802,
+      "selfko_dv_rmse": 4.95112881439555,
+      "selfko_dv_bias": -0.34572574052925725,
+      "selfko_dv_err_std": 4.939043454867893,
+      "selfko_pred_dv_mean": 1.1540970978404383,
+      "selfko_pred_dv_std": 4.473157779245703,
+      "selfko_dispersion_ratio": 3.367788466155915,
+      "selfko_dv_pearson": -0.220560593809452,
+      "heldout_td_residual_rmse": 3.830693335678381,
+      "pred_std_all": 15.16286568791494
+     },
+     "10.0": {
+      "overall_rmse": 21.55523820500401,
+      "overall_r2": 0.31472676013671674,
+      "selfko_dv_rmse": 3.2335609035470045,
+      "selfko_dv_bias": -0.4496946575901629,
+      "selfko_dv_err_std": 3.202138477936672,
+      "selfko_pred_dv_mean": 1.0501281807795326,
+      "selfko_pred_dv_std": 2.7779263893586426,
+      "selfko_dispersion_ratio": 2.091468469392951,
+      "selfko_dv_pearson": -0.10470417155084165,
+      "heldout_td_residual_rmse": 2.6267642369768733,
+      "pred_std_all": 12.982344871211735
+     },
+     "30.0": {
+      "overall_rmse": 21.87385222646416,
+      "overall_r2": 0.2943186054436525,
+      "selfko_dv_rmse": 2.822474893694309,
+      "selfko_dv_bias": -0.4531087448164685,
+      "selfko_dv_err_std": 2.7858673677879118,
+      "selfko_pred_dv_mean": 1.0467140935532269,
+      "selfko_pred_dv_std": 2.43133202909733,
+      "selfko_dispersion_ratio": 1.8305216066780912,
+      "selfko_dv_pearson": -0.013240802817054687,
+      "heldout_td_residual_rmse": 2.249152986115876,
+      "pred_std_all": 11.66739382643508
+     }
+    },
+    "bootstrap_control_minus_lambda": {
+     "10.0": {
+      "selfko": {
+       "mean": 1.717760676034266,
+       "ci95_lo": 1.3272257820058453,
+       "ci95_hi": 2.100518511178217,
+       "p_improve": 1.0,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.03452687248480712,
+       "ci95_lo": -0.4674670110746296,
+       "ci95_hi": 0.3889787034470686,
+       "p_improve": 0.44,
+       "n_boot": 2000
+      }
+     },
+     "30.0": {
+      "selfko": {
+       "mean": 2.1279312135334134,
+       "ci95_lo": 1.7470422672212327,
+       "ci95_hi": 2.5011973655888857,
+       "p_improve": 1.0,
+       "n_boot": 2000
+      },
+      "overall": {
+       "mean": -0.3543117321019242,
+       "ci95_lo": -0.8160915601698431,
+       "ci95_hi": 0.07746504901854019,
+       "p_improve": 0.0605,
+       "n_boot": 2000
+      }
+     }
+    },
+    "control_reproduces_main_arm_exactly": true,
+    "shrink_decomposition": {
+     "10.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.6210213291039058,
+      "pred_std_all_ratio_vs_control": 0.8561933567451491,
+      "targeting": 0.7253283667894149
+     },
+     "30.0": {
+      "selfko_pred_dv_std_ratio_vs_control": 0.5435381779686116,
+      "pred_std_all_ratio_vs_control": 0.7694715541623632,
+      "targeting": 0.7063785204643468
+     }
+    }
+   }
+  },
+  "gate": {
+   "definition": "VALIDATED iff some lambda>0 achieves (a) self-KO dV RMSE BETTER than the lambda=0 control with CI95 on (control - lambda) excluding 0 (i.e. ci95_lo > 0), AND (b) overall held-out value RMSE within +5% of control.",
+   "per_arm": {
+    "primary_gamma099": {
+     "0.1": {
+      "selfko_dv_rmse": 5.222710505726552,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": -0.2713173894242669,
+      "ci95": [
+       -0.5202246587205139,
+       -0.034954275253564884
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": false,
+      "overall_rmse_pct_vs_control": 0.5063892896089772,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": false,
+      "decomposition": {
+       "bias": -0.3024243594385553,
+       "control_bias": -0.34572574052925725,
+       "err_std": 5.2139471164794795,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 3.606171151240138,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     },
+     "0.3": {
+      "selfko_dv_rmse": 4.832651553094702,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": 0.12876869050210973,
+      "ci95": [
+       -0.2494291073034579,
+       0.5495876050713872
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": false,
+      "overall_rmse_pct_vs_control": 1.2133687549769956,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": false,
+      "decomposition": {
+       "bias": -0.48360105563134265,
+       "control_bias": -0.34572574052925725,
+       "err_std": 4.8083938121394425,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 3.2755238541359413,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     },
+     "1.0": {
+      "selfko_dv_rmse": 4.351319331416456,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": 0.6061739989747897,
+      "ci95": [
+       0.1784656580560604,
+       1.0809476069164177
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": 0.03494208092025275,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": -0.8629801213289195,
+       "control_bias": -0.34572574052925725,
+       "err_std": 4.264885137275057,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 2.8593974230926884,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     },
+     "3.0": {
+      "selfko_dv_rmse": 3.9887645692759777,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": 0.9629531743046147,
+      "ci95": [
+       0.579988478529213,
+       1.3822106081339967
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": -0.44393821718623494,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": -0.2907326548443725,
+       "control_bias": -0.34572574052925725,
+       "err_std": 3.9781550136361603,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 2.628575770180698,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     }
+    },
+    "secondary_gamma1": {
+     "0.1": {
+      "selfko_dv_rmse": 6.029411879740121,
+      "control_selfko_dv_rmse": 5.838171009415219,
+      "delta_vs_control": -0.20084472782145135,
+      "ci95": [
+       -0.7885991756372099,
+       0.3484058130032606
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": false,
+      "overall_rmse_pct_vs_control": -0.6759793887497367,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": false,
+      "decomposition": {
+       "bias": 0.0677527488166711,
+       "control_bias": 0.18397049081027528,
+       "err_std": 6.029031197512507,
+       "control_err_std": 5.835271681223364,
+       "dispersion_ratio": 4.314773136947341,
+       "control_dispersion_ratio": 4.1007005674294525
+      }
+     },
+     "0.3": {
+      "selfko_dv_rmse": 5.461374478354326,
+      "control_selfko_dv_rmse": 5.838171009415219,
+      "delta_vs_control": 0.3759737773163148,
+      "ci95": [
+       0.127002772619644,
+       0.6176846668514884
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": 0.15211802132510943,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": 0.23708466293645653,
+       "control_bias": 0.18397049081027528,
+       "err_std": 5.4562259901346,
+       "control_err_std": 5.835271681223364,
+       "dispersion_ratio": 3.783244424969692,
+       "control_dispersion_ratio": 4.1007005674294525
+      }
+     },
+     "1.0": {
+      "selfko_dv_rmse": 5.391767862748897,
+      "control_selfko_dv_rmse": 5.838171009415219,
+      "delta_vs_control": 0.43126090851574245,
+      "ci95": [
+       -0.1871661223282413,
+       1.0958156414517979
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": false,
+      "overall_rmse_pct_vs_control": -2.448184040071455,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": false,
+      "decomposition": {
+       "bias": -0.28254802439832954,
+       "control_bias": 0.18397049081027528,
+       "err_std": 5.384359506912629,
+       "control_err_std": 5.835271681223364,
+       "dispersion_ratio": 3.7755605907783774,
+       "control_dispersion_ratio": 4.1007005674294525
+      }
+     },
+     "3.0": {
+      "selfko_dv_rmse": 4.480201091996209,
+      "control_selfko_dv_rmse": 5.838171009415219,
+      "delta_vs_control": 1.3465811458970378,
+      "ci95": [
+       0.7866670412237754,
+       1.964101521087463
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": -2.1991814078058614,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": -0.017557972695173302,
+       "control_bias": 0.18397049081027528,
+       "err_std": 4.480166686889993,
+       "control_err_std": 5.835271681223364,
+       "dispersion_ratio": 3.0185844345865713,
+       "control_dispersion_ratio": 4.1007005674294525
+      }
+     }
+    },
+    "primary_gamma099_high_lambda_extension": {
+     "10.0": {
+      "selfko_dv_rmse": 3.2335609035470045,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": 1.717760676034266,
+      "ci95": [
+       1.3272257820058453,
+       2.100518511178217
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": 0.25692019607779226,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": -0.4496946575901629,
+       "control_bias": -0.34572574052925725,
+       "err_std": 3.202138477936672,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 2.091468469392951,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     },
+     "30.0": {
+      "selfko_dv_rmse": 2.822474893694309,
+      "control_selfko_dv_rmse": 4.95112881439555,
+      "delta_vs_control": 2.1279312135334134,
+      "ci95": [
+       1.7470422672212327,
+       2.5011973655888857
+      ],
+      "criterion_a_selfko_better_ci_excludes_0": true,
+      "overall_rmse_pct_vs_control": 1.7388458523419859,
+      "criterion_b_no_harm_within_5pct": true,
+      "passes": true,
+      "decomposition": {
+       "bias": -0.4531087448164685,
+       "control_bias": -0.34572574052925725,
+       "err_std": 2.7858673677879118,
+       "control_err_std": 4.939043454867893,
+       "dispersion_ratio": 1.8305216066780912,
+       "control_dispersion_ratio": 3.367788466155915
+      }
+     }
+    }
+   },
+   "PASSED": true,
+   "PASSED_primary_arm_only": true,
+   "passing_lambdas_primary": [
+    "1.0",
+    "3.0"
+   ]
+  },
+  "caveats": [
+   "Self-KO n = 402 transitions / 366 battles (0.46% of the corpus); the gate turns on it.",
+   "FROZEN tokens: this tests the LOSS MECHANISM on a fixed representation, not the full training dynamics. A pass would license a fork A/B, never a ship.",
+   "On the gamma=1.0 / G arm the metric DEGENERATES: G(t+1)-G(t) == -r(t) exactly, so the self-KO dV metric asks only 'can two states predict the reward of the step between them', and the TD residual there is a hard algebraic identity of the target. It is reported as a SECONDARY arm for that reason.",
+   "The target is shaped-reward return-to-go, not the GAE/PopArt target the production critic actually regresses; absolute RMSEs are not comparable to any training metric.",
+   "One frozen trunk (17.24M steps) scores traces from 2M-20M; early tiers' tokens come from a policy that did not play them (vdn_gate sanity Pearson 0.48 @2M vs 0.98 @16-18M)."
+  ]
+ }
+}
