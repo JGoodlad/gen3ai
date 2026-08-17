@@ -18,13 +18,15 @@ policy path's layers. See §2.4.
 
 The generic tier is the only place a GELU/SiLU swap even means anything. The single site where
 the choice has a real structural consequence is the extractor's **output** projection
-(`features_extractor.py:4009-4010`), which makes every feature the policy and critic see
+(`features_extractor.py` (`Gen3FeaturesExtractor.forward`)), which makes every feature the policy and critic see
 non-negative. Everything else is a 2-layer-deep, LayerNorm-sandwiched MLP where the literature's
 ReLU-vs-GELU gap is small.
 
-**Nothing about activations has ever been measured in this repo** — a grep for `GELU`/`SiLU`/`Mish`
+**Almost nothing about activations has been measured in this repo** — a grep for `GELU`/`SiLU`/`Mish`
 over `src/` returns zero hits. Every claim below about *our* model is mechanism, not measurement,
-and is marked where it matters.
+and is marked where it matters. The **one exception** is the extractor-output site: its dying-unit
+risk was probed on 2026-08-16 and came back **zero dead units of 512 in both heads** over 2479 real
+states (§2.3, ledger K11), which kills the strongest argument for swapping it.
 
 ---
 
@@ -103,7 +105,7 @@ Three structural facts work in our favour:
   (`ROLE_ENCODER_HIDDEN = [256,128]`, `MOVE_NET_HIDDEN = [96,32]`). Dying-ReLU compounds with
   depth; at 2 layers there is very little to compound.
 - **LayerNorm is everywhere.** Post-LN transformer blocks (`norm_first=False`,
-  `features_extractor.py:1375`) and a `LayerNorm` in front of every head MLP re-center activations
+  `team_transformer.py`) and a `LayerNorm` in front of every head MLP re-center activations
   each block, which is precisely the condition under which a unit's pre-activation stops drifting
   permanently negative.
 - **Nothing is depth-starved.** The classic dying-ReLU disasters are deep plain MLPs with a large
@@ -113,7 +115,7 @@ So the textbook argument for switching is weaker here than it is in general.
 
 ### Where the choice *does* have a structural consequence
 
-`features_extractor.py:4009-4010`:
+`features_extractor.py` (`Gen3FeaturesExtractor.forward`):
 
 ```
 pi_features = ReLU(pi_pre)
@@ -133,6 +135,72 @@ Two consequences follow, and neither is about training dynamics:
 This is the one site where "would a smooth or signed activation change the model's expressive
 shape?" has an unambiguous *yes*. **UNVERIFIED:** whether it changes measured strength.
 
+#### MEASURED 2026-08-16 — consequence 2 (dead units) is FALSE here
+
+The dying-unit half of the argument above is the one that would justify a generation, and it does
+not survive contact with the model. `tmp/relu_deadunit_probe.py` hooks `projection` /
+`value_projection` (their outputs *are* `pi_pre` / `vf_pre`) and reads gen-12 @14.2M over **2479
+real greedy on-distribution decision states**:
+
+| | `pi_pre` | `vf_pre` |
+|---|---|---|
+| **dead (never fires)** | **0 / 512** | **0 / 512** |
+| always-on | 0 | 0 |
+| near-dead (<1% of states) | 6 | 4 |
+| active on <10% of states | 90 | 82 |
+| mean active fraction | 0.465 (median 0.428) | 0.483 (median 0.457) |
+
+By the rule of three, a unit reading dead at n=2479 has a true activation rate below 0.12%. With
+**zero** dead *and* **zero** always-on, every unit genuinely modulates: this is a textbook-healthy,
+roughly zero-centred ReLU gate, not a dying layer. The ~17% of units firing on <10% of states are
+sparse specialists, not corpses.
+
+**Two traps this measurement sets, both worth internalising:**
+
+- **A dead COUNT is meaningless without its sample bound.** The pilot at n=97 reported "3 pi / 5 vf
+  dead" — entirely artifact: at n=97 a unit that truly fires 1% of the time reads dead 38% of the
+  time. The probe prints the rule-of-three bound for exactly this reason.
+- **"≈55% of pre-activation mass is clipped" is NOT lost information.** The network *trained* under
+  ReLU and arranged its representation so the discarded half carries what it does not need. That
+  number describes ReLU's operating point; reading it as a 55% loss is the same error one level up.
+
+#### …and consequence 1 (the orthant tax) is dead too — because capacity is not binding
+
+The channel-pair argument is a **capacity** argument, and capacity has a precondition that is easy
+to skip: *it costs nothing unless the interface is full.* `tmp/relu_capacity_probe.py` (n=4944
+states, n/d = 9.7×) asks that first:
+
+| | `pi` | `vf` |
+|---|---|---|
+| effective dim (participation ratio) of the post-ReLU interface | **26.9 / 512** | **30.8 / 512** |
+| variance actually TRANSMITTED to the tower (`λ_k‖Wv_k‖²`) | 23.2 | 30.8 |
+| anti-correlated pre-activation pairs (corr < −0.8) | **0** | **0** |
+
+The interface carries an effectively **~25–31 dimensional** signal through 512 channels — ~5–6% of
+the budget — and this is not a structural cap: both projections are *compressions* (1177→512,
+1369→512), so full rank is reachable and the deficit is a property of the learned representation.
+Spending two channels to carry a sign is free when ~480 contribute almost nothing. And the
+mechanism is not even visible: **zero** anti-correlated pairs in either head (most negative −0.711 /
+−0.721), so the model does not appear to be paying the tax in the first place.
+
+⚠️ **One wrong analysis is preserved here because the error is instructive.** The first version of
+the follow-up compared the tower's raw read-weight energy `‖Wv_k‖²` against the variance curve,
+found it spread across ~460 of 512 dims, and concluded the tower amplifies low-variance directions
+(so PR understates capacity). That is the **null**: `‖Wv_k‖²` measures only how `W` is *oriented*,
+and is flat in `k` for isotropic `W` — the measured curve matched a matched-scale random-`W`
+baseline to within ~1pp. The quantity a consumer actually receives is variance *transmitted*,
+`λ_k‖Wv_k‖²`, and by that measure the PR reading stands. **A curve that matches its own null is not
+a finding.**
+
+**Two limits stated honestly:** every measure here is variance-based, and a low-variance direction
+*can* be decisive — an ablation→ΔKL sweep would close that gap; and pairwise correlation cannot see
+a sign encoded across a distributed subspace rather than a clean pair.
+
+**Ledger K11: both legs measured dead. Not worth a generation slot** — and since the swap is
+`ARCH_SIGNATURE`-bumping and fresh-only, it cannot be A/B'd mid-run nor folded into another
+generation without confounding it, so "cheap to try later" is not on the table. Re-run both probes
+if the activation ever changes; they are the pre-registered metrics.
+
 There is also a historical note worth keeping: `model_version.py:326` records that the retired FiLM
 conditioning generators were zero-init and applied **post-projection, pre-ReLU**. A modulation
 signal starting at exactly zero has to grow through the ReLU's gate, and the gate is closed on
@@ -146,7 +214,7 @@ footnote, not a re-opened case.
 The full route from trunk to action logits is not "ReLU trunk → pointer head". It is:
 
 ```
-trunk blocks .............. ReLU          (features_extractor.py:855, :1375)
+trunk blocks .............. ReLU          (team_transformer.py: BiasedEncoderLayer / TeamTransformer)
 extractor OUTPUT .......... ReLU          (:3223, applied :4009-4010)   → pi_features ≥ 0
 SB3 mlp_extractor ......... Linear(512) tanh  Linear(512) tanh          → latent_pi ∈ [-1,1]
 pointer head .............. tanh          (:2374)  → zero-init scorer   → 11 logits
@@ -170,7 +238,7 @@ result on this model.
 
 ### Why the pointer head is tanh, and why that is correct
 
-`features_extractor.py:2374-2382` scores every action through `tanh`, then a **zero-initialised**
+`pointer_head.py` (`PointerNativeActionHead`) scores every action through `tanh`, then a **zero-initialised**
 linear scorer:
 
 ```
@@ -221,15 +289,15 @@ untouched only by luck. The tiers must be edited by hand.
 
 | Site | File | Activation |
 |---|---|---|
-| Transformer FFN (trunk) | `features_extractor.py:1375` (`activation="relu"`, post-LN) | ReLU |
-| Edge-bias encoder-layer clone | `features_extractor.py:855` | ReLU |
-| `MoveLatentEncoder` MLP | `features_extractor.py:508` | ReLU |
-| Shared move network | `features_extractor.py:583` | ReLU |
-| Per-mon role encoder | `features_extractor.py:629` | ReLU |
-| Value head / `WinProbHead` bottleneck | `features_extractor.py:1601`, `:1660` | ReLU |
-| **Extractor output projection** | `features_extractor.py:3223`, applied `:4009-4010` | ReLU |
+| Transformer FFN (trunk) | `team_transformer.py` — `TeamTransformer` (post-LN) | ReLU |
+| Edge-bias encoder-layer clone | `team_transformer.py` — `BiasedEncoderLayer` | ReLU |
+| `MoveLatentEncoder` MLP | `encoders.py` — `MoveLatentEncoder` | ReLU |
+| Shared move network | `encoders.py` — `PokemonEncoder.move_network` | ReLU |
+| Per-mon role encoder | `encoders.py` — `PokemonEncoder.role_encoder` | ReLU |
+| Value head / `WinProbHead` bottleneck | `aux_value_heads.py` — `WinProbHead` / `ValueDistHead` | ReLU |
+| **Extractor output projection** | `features_extractor.py` — `self.activation`, applied in `forward` | ReLU |
 | **SB3 policy/value tower `[512,512]`** | `train_rl_agent.py:3766` (no `activation_fn` passed) | **tanh** (SB3 default) |
-| **Pointer (action) head** | `features_extractor.py:2374-2382` | **tanh** |
+| **Pointer (action) head** | `pointer_head.py` (`PointerNativeActionHead`) | **tanh** |
 | `OppIntent` / `PairReduce` / team-completion MLPs | `opp_intent.py:72`, `pair_reduce.py:77`, `team_completion_model.py:134` | ReLU |
 | Damage op, belief posteriors, attention | `damage_op.py`, `t0_species.py`, everywhere | sigmoid / softmax / clamp |
 
@@ -279,8 +347,23 @@ from noise at our ELO error bars.
 The genuinely interesting version of the question is narrower and structural: the extractor
 **returns** `ReLU(·)`, so the entire policy/critic interface is non-negative, and every signed
 quantity must be spent as a channel pair. That is the one site where the activation changes what
-the representation can *express* rather than how smoothly it trains — and it is the only one worth
-a deliberate, ELO-gated generation to test.
+the representation can *express* rather than how smoothly it trains.
+
+**But it is no longer worth a generation slot, and that is a measurement rather than a judgement**
+(§2.3 above, ledger K11). The argument had two legs; the load-bearing one is dead. Dying units at
+this site would have been a concrete, unrecoverable defect — and there are **zero** of them across
+2479 real states, in both heads, with zero always-on either. What remains is the orthant-efficiency
+leg alone: real, but a capacity argument in a model whose plateau work has repeatedly localised the
+ceiling to *structural* holes (belief, conditioning, critic credit assignment) rather than to
+capacity. Since the swap is `ARCH_SIGNATURE`-bumping and fresh-only, it cannot be A/B'd mid-run and
+cannot ride along with another generation without confounding it — so "cheap to fold in later" is
+not actually available. The honest ranking puts it below every open structural lever.
+
+The transferable lesson is about *where* activations matter: at narrow, un-renormalised
+**interfaces** that many consumers read — not in wide, LayerNorm-sandwiched hidden layers. This
+projection is the former and the trunk is the latter, so if you ever spend attention on one
+activation here, this is still the right one to look at. "Right one to look at" and "will move ELO"
+are different claims, and only the free diagnostic separates them.
 
 And the answer to "do different parts need different functions?" is that they already have them,
 along the axis that actually matters: **our own generic positions take the cheapest
