@@ -143,10 +143,19 @@ def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple
         archived model is allowed to be approximate as long as it SAYS SO — which is `dropped_kwargs`'
         job: it rides `ProbeModel` and `ArchDriftError` up through `analyze`'s `model_resolution` to
         the web view's warning banner.
-    Measured over `models/` (89 runs with a checkpoint, 2026-08-17): `snapshot.py`'s sanitizer would
-    REFUSE 69 of them, and 70 carry at least one dead name its list does not have
-    (`spread_belief_nature_marginalize` on nearly every run). So delegating would both break
-    forensics on the runs it refuses AND under-cover the ones it accepts.
+    Measured over `models/` (89 runs with a checkpoint, 2026-08-17, last checkpoint per run):
+    `snapshot.py`'s sanitizer REFUSES 69 of them, so delegating would break forensics on three
+    quarters of the archive by design.
+
+    That same measurement is what FOUND the curated list's five missing names — 70 runs carried at
+    least one it did not have, and 7 (`ai_v9_01`..`ai_v9_07`, all on
+    `spread_belief_nature_marginalize`) reached a bare TypeError instead of a judgment. They are
+    covered now, so the two sanitizers currently agree on every archived run. That agreement is a
+    SNAPSHOT, not a property: this one is set math over the live signature and cannot fall behind;
+    the curated one can, and did. `agents.model.ctor_kwarg_snapshot_test` is what now turns the next
+    such omission red rather than latent — but the case for keeping both is unchanged, because
+    reading an archived model is allowed to be approximate as long as it says so, and resuming one
+    is not.
 
     Returns `(custom_objects, dropped_keys)` — `custom_objects` is `None` (nothing to drop, and no
     full deserialize is paid) or `{"policy_kwargs": <sanitized copy>}`; the saved dict is never mutated.

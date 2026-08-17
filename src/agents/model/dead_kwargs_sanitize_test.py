@@ -11,15 +11,27 @@ The load-bearing case is `test_judged_field_with_unsupported_value_refuses`: pop
 `move_belief_prefuse=False` would let a POST-ordering checkpoint load into the PRE-ordering forward
 and be quietly wrong forever — the state_dict is byte-identical either way, so no shape check
 anywhere would catch it. Sanitising must inherit `_migrate_config`'s refusal, not soften it.
+
+Every test here is parametrized OFF the curated lists, so a new entry is exercised the moment it is
+added — which is how the five PRE-FLOOR names measured on 2026-08-17 (the v48 `mask_*_obs` trio, v52
+`hp_type_belief_mode`, v66 `spread_belief_nature_marginalize`) got their coverage. Whether the
+curated lists are COMPLETE is a question these tests structurally cannot ask; that is
+`ctor_kwarg_snapshot_test.py`'s job.
 """
 import pytest
 
-from agents.model.model_version import ModelVersionError, _migrate_config
+from agents.model.model_version import MIGRATION_FLOOR, ModelVersionError, _migrate_config
 from agents.model.snapshot import (
     _DEAD_FEK_INERT,
     _DEAD_FEK_JUDGED,
     sanitize_dead_extractor_kwargs,
 )
+
+# The names deleted BELOW MIGRATION_FLOOR. They are the reason `_migrate_config` needs no matching
+# per-field entry: no config that can still carry them is loadable at all.
+_PRE_FLOOR_JUDGED = ("mask_incoming_damage_obs", "mask_active_move_scalars_obs",
+                     "mask_move_effects_obs", "hp_type_belief_mode",
+                     "spread_belief_nature_marginalize")
 
 
 def _supported_fek() -> dict:
@@ -78,6 +90,27 @@ def test_zip_sanitizer_agrees_with_migrate_config(field, supported):
     fek = {field: supported}
     assert sanitize_dead_extractor_kwargs(fek) is True
     assert field not in fek
+
+
+@pytest.mark.parametrize("field", _PRE_FLOOR_JUDGED)
+def test_pre_floor_fields_need_no_migrate_config_entry(field):
+    """The asymmetry the 2026-08-17 measurement turned up, pinned so nobody re-derives it.
+
+    These five left the constructor at v48/v52/v66 — all below MIGRATION_FLOOR. A `model_config.json`
+    old enough to still name one is refused on AGE before any per-field rule could run, so adding
+    `_migrate_config` branches for them would be dead code (that is exactly why the executable v2–v66
+    branches were deleted when the floor landed). The ZIP is the asymmetric half: its pickled
+    `features_extractor_kwargs` carries no `config_version`, so no floor covers it and the curated
+    per-field judgment is the ONLY thing standing between it and a bare TypeError.
+    """
+    assert field in dict(_DEAD_FEK_JUDGED), f"{field} lost its sanitizer entry"
+    # Whatever the recorded value, a config carrying it is pre-floor and refused on age alone.
+    for version in (1, MIGRATION_FLOOR - 1):
+        with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+            _migrate_config({"config_version": version, field: dict(_DEAD_FEK_JUDGED)[field]})
+    # And a config AT the floor cannot carry it, because it was deleted long before — so the
+    # sanitizer's judgment is unreachable from the config path in either direction.
+    assert _migrate_config({"config_version": MIGRATION_FLOOR}).get(field) is None
 
 
 def test_inert_fields_are_popped_regardless_of_value():

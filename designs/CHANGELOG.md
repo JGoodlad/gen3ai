@@ -4652,3 +4652,58 @@ statically at the end of `__init__` and never depended on the forward having run
 
 **Versioning:** none — no state_dict, arch, or forward-math change. The production sha probe
 reads `001e1140…` before and after (self-measured, same probe/config).
+
+## `gen3_dead_kwarg_tripwire_v1` (2026-08-17): five deleted kwargs that never got a verdict — and the guard that makes the next one red
+
+A kwarg deleted from `Gen3FeaturesExtractor.__init__` stays pickled in every archived checkpoint's
+`policy_kwargs["features_extractor_kwargs"]`, and SB3 rebuilds the extractor from the ZIP rather
+than from `model_config.json`. `snapshot.sanitize_dead_extractor_kwargs` handles that — INERT names
+pop silently, JUDGED names REFUSE on a value the surviving forward cannot reproduce — but it is a
+CURATED list, so it is exactly as complete as whoever last deleted a flag remembered to make it.
+Nothing read the constructor's real signature, so a forgotten name produced no error at deletion
+time, no failing test, and no warning; only a bare `TypeError` months later, on the three paths
+(training resume, frozen pool opponents, eval workers) whose entire job is to sanitize-or-refuse
+with judgment.
+
+MEASURED over the 89 runs under `models/` carrying a checkpoint (via the prober's
+`_dropped_extractor_kwargs`, pure set math over the live signature): 23 distinct rejected kwarg
+names, **five in neither list**, present on **70 of 89 runs**. All five are JUDGED, because each is
+the v71 shape exactly — a forward-behavioural toggle whose state_dict is byte-identical across its
+values, or (one case) whose values disagree about whether a head's PARAMETERS exist:
+
+* `mask_incoming_damage_obs` (61 runs), `mask_active_move_scalars_obs` / `mask_move_effects_obs`
+  (58) — v48 `gen3_cpu_damage_deleted_v1`. The three `--unified-obs` ablation masks ZEROED an obs
+  region out of the model's view; the source called them "an ablation toggle (no weight-shape
+  change)". `False` = the region is read live, which the surviving forward still does → pops.
+* `hp_type_belief_mode` (51) — v52 `gen3_typed_hp_belief_v1`. The tri-state `off|prior|learned` is
+  gone; `HPTypeBelief` is UNCONDITIONAL under a move belief. `'learned'` is the only value whose
+  state_dict carries that head (and the only one any archived run records) → pops; `'off'`/`'prior'`
+  name a head-less forward the surviving code cannot build.
+* `spread_belief_nature_marginalize` (55) — v66. The op marginalised P(KO) over the nature posterior
+  instead of evaluating at its mode; no parameters either way, and `DamageOperator._nature_marg_ko`
+  is deleted. `False` = mean-field, which the op still computes → pops.
+
+`_migrate_config` needs NO matching entries, and that asymmetry is the reason the gap opened: all
+five left the constructor below `MIGRATION_FLOOR`, so the CONFIG half collapsed into the blanket
+PRE-GENERATION refusal, while the ZIP half — which carries no `config_version` for any floor to
+apply to — kept needing a per-field judgment nobody wrote. Pinned by
+`dead_kwargs_sanitize_test::test_pre_floor_fields_need_no_migrate_config_entry`.
+
+Effect on the archive, self-measured before and after: **7 runs (`ai_v9_01`–`ai_v9_07`, all on
+`spread_belief_nature_marginalize`) went from a bare TypeError to a clean load**; 69 still get the
+judged `ModelVersionError` naming the git_hash to re-probe from, which is correct — they trained
+under forwards this tree does not contain. 0 of 89 now TypeError. Note the gap between 70 carrying
+an uncovered name and 7 surfacing it: the other 63 were masked only because a DIFFERENT curated
+entry happened to refuse them first. That is luck, not coverage — delete one JUDGED entry and the
+rest surface — and it is the argument for a tripwire rather than for patching the seven.
+
+THE GUARD (`ctor_kwarg_snapshot_test.py`) is the durable half: a committed snapshot of the live
+`__init__` kwarg set, so a REMOVED name fails red with the four-step instruction (judge it →
+`_DEAD_FEK_*` → `_migrate_config` if at/above the floor → then update the snapshot), and a
+resurrected name fails too (the sanitizer would silently strip a LIVE argument and re-default it on
+every load). Same tripwire pattern as the delivery-graph gate: it converts "someone forgot" from
+silent into red. The prober's second sanitizer STAYS and is not delegated to — it never refuses, by
+design, because reading an archived model may be approximate as long as it says so.
+
+**Versioning:** none — no state_dict, arch, or forward-math change. Production sha probe
+`001e1140…` before and after (self-measured, same probe/config).

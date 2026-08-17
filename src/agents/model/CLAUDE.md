@@ -478,7 +478,6 @@ writes `damage_topk_k`, and the `--damage-matrices` MODE flag desugars into both
 `damage_matrices_*` bools. Those name their flag with `cli_name=` rather than being exempted.
 
 **Read `designs/flag_registry.md`** for the current table (generated; `--check` is the gate).
-
 ### The three TIERS — a flag can lose its CLI entry without losing explicitness
 
 A flag plays three independent roles — **SELECT** (choose it at launch), **RECORD** (write it into
@@ -533,6 +532,41 @@ Every model save writes the **run-level** `model_config.json` + `metadata.json` 
 **When you make a structural change** (different forward pass, new layer type):
 1. Change `ARCH_SIGNATURE` in `model_version.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load
+
+**When you DELETE an extractor kwarg** — the case with no automatic gate, and the one this project
+has silently got wrong five times. Every archived checkpoint keeps the deleted name pickled in
+`policy_kwargs["features_extractor_kwargs"]`, and **SB3 rebuilds the extractor from the ZIP, not
+from `model_config.json`** — so a deleted kwarg `TypeError`s every training resume, frozen pool
+opponent and eval worker that touches such a checkpoint. `_migrate_config`'s `MIGRATION_FLOOR` does
+NOT cover it: the pickled kwargs carry no `config_version` for a floor to apply to.
+
+1. **Judge it**, into exactly one of `snapshot._DEAD_FEK_*`:
+   - **`_DEAD_FEK_INERT`** — no value of it selected anything in the surviving forward (it only
+     SIZED or INITIALISED a deleted module, was training-only, or its branch was unreachable in
+     production). Popped unconditionally.
+   - **`_DEAD_FEK_JUDGED`** — some value fed a forward this code can no longer reproduce. Record the
+     one value that IS still reproducible; every other value is REFUSED loudly. Two things put a
+     flag here: a byte-identical state_dict across its values (nothing shape-based can catch the
+     swap), or an ON value that named PARAMETERS (popping it hands SB3 an unplaceable state_dict).
+2. **`_migrate_config`** needs a matching entry only if the name could still appear in a config at
+   or above `MIGRATION_FLOOR`; below the floor the blanket PRE-GENERATION refusal already owns the
+   config half. That asymmetry is pinned by `dead_kwargs_sanitize_test.py`.
+3. **Update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V89`** — last, and only after steps 1–2.
+
+That snapshot is the tripwire, and it exists because the machinery cannot detect this failure about
+itself: the sanitizer is a CURATED list, so a forgotten name produces no error at deletion time and
+no failing test — only a bare `TypeError` months later. **Measured 2026-08-17 over the 89 archived
+runs carrying a checkpoint:** 23 distinct rejected kwarg names, **five in neither list**
+(`mask_incoming_damage_obs` / `mask_active_move_scalars_obs` / `mask_move_effects_obs` at v48,
+`hp_type_belief_mode` at v52, `spread_belief_nature_marginalize` at v66), present on **70 of the 89
+runs**; 7 of them (generations `ai_v9_01`–`ai_v9_07`) reached the TypeError rather than a judgment.
+All five are JUDGED now and the archive is at 0 TypeErrors.
+
+**Do not confuse this with the prober's sanitizer.** `main.prober.model.sanitized_load_custom_objects`
+is pure set math over the live signature and NEVER refuses — reading an archived model may be
+approximate as long as it SAYS SO (`dropped_kwargs` rides the drift banner). The curated one serves
+the paths where being wrong corrupts something, so it refuses (69 of 89 runs). Both are needed;
+neither delegates to the other.
 
 **⚠️ REORDERING a module's parameters silently breaks the optimizer on resume.** SB3/torch save+load
 the Adam optimizer state **by parameter POSITION, not name**. So if a refactor changes the *order*

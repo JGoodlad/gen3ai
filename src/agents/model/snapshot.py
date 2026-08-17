@@ -601,6 +601,19 @@ from agents.model.compile_opponents import (   # noqa: F401
 #     it. Mirror `_migrate_config`'s v71 rule exactly: refuse loudly, never default.
 # Agreement with `_migrate_config` is pinned by `dead_kwargs_sanitize_test.py` rather than by
 # sharing a constant, so the two cannot drift apart unnoticed.
+#
+# THE RULE, stated once, because every future deletion has to answer it. When a kwarg leaves
+# `Gen3FeaturesExtractor.__init__` it goes in exactly one of these two lists:
+#   * INERT     — no value of it selected anything in the surviving forward (it only SIZED or
+#                 INITIALISED a deleted module, it was training-only, or its branch was
+#                 unreachable in production). Pop unconditionally.
+#   * JUDGED    — some value of it fed a forward this codebase can no longer reproduce. Record
+#                 the ONE value that the surviving code still reproduces; every other value is
+#                 refused loudly. Two things put a flag here: a byte-identical state_dict across
+#                 its values (nothing shape-based can catch the swap), or an ON value that named
+#                 PARAMETERS (popping it hands SB3 an unplaceable state_dict).
+# Forgetting BOTH lists is the failure this machinery cannot self-detect, so
+# `ctor_kwarg_snapshot_test.py` pins the live kwarg set and fails red when one disappears.
 _DEAD_FEK_INERT = (
     "damage_refine_rounds", "threat_refine_outgoing", "threat_unrevealed_outgoing",
     "threat_status_refine", "move_belief_single_compute",
@@ -627,11 +640,45 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # v78: the ZArchEncoder + FiLM generators, the per-team LUT Embedding, and the
                     # per-seed quantile Linear are deleted. Each ON value named PARAMETERS, so it is
                     # refused for the v75 reason rather than popped into an unplaceable state_dict.
-                    ("zarch_film", "off"), ("zarch_lut", "off"), ("seed_quantile", False))
+                    ("zarch_film", "off"), ("zarch_lut", "off"), ("seed_quantile", False),
+                    # ---------------------------------------------------------------------------
+                    # PRE-FLOOR names (v48/v52/v66). MEASURED 2026-08-17 over the 89 runs under
+                    # `models/` with a checkpoint: these five were deleted from the constructor
+                    # without ever entering either list. 70 runs CARRY one; 7 (`ai_v9_01`..
+                    # `ai_v9_07`) actually reached a bare `TypeError` on the resume /
+                    # frozen-opponent / eval-worker paths instead of the judged refusal those paths
+                    # exist to give — the other 63 were masked only because an EARLIER entry in
+                    # this tuple refused them first, which is luck, not coverage. All five predate
+                    # MIGRATION_FLOOR, and that is exactly WHY they were missed: the config half of
+                    # the rule became the blanket floor refusal, while the zip half carries no
+                    # `config_version` to fall under any floor. `ctor_kwarg_snapshot_test.py` is
+                    # the tripwire that stops the next deletion repeating this.
+                    #
+                    # v48 (gen3_cpu_damage_deleted_v1): the three `--unified-obs` ablation masks
+                    # ZEROED an obs region out of the model's view — "an ablation toggle (no
+                    # weight-shape change)", so a True checkpoint's state_dict is byte-identical to
+                    # a False one and nothing shape-based would catch the swap. False = the region
+                    # is read live, which the surviving forward still does, so False pops.
+                    ("mask_incoming_damage_obs", False),
+                    ("mask_active_move_scalars_obs", False),
+                    ("mask_move_effects_obs", False),
+                    # v52 (gen3_typed_hp_belief_v1): the tri-state off|prior|learned is gone —
+                    # `HPTypeBelief` is now UNCONDITIONAL under a move belief. 'learned' is the one
+                    # value whose state_dict CARRIES that head (and the only value any archived run
+                    # records), so it pops; 'off'/'prior' name a head-less forward the surviving
+                    # code cannot build, and popping one would hand SB3 a state_dict missing the
+                    # head's parameters.
+                    ("hp_type_belief_mode", "learned"),
+                    # v66: the op marginalised P(KO) over the nature posterior instead of
+                    # evaluating at its mode. No parameters either way (it read the spread head's
+                    # logits), so True is the v71 shape exactly — a byte-identical state_dict in
+                    # front of a `DamageOperator._nature_marg_ko` kernel that no longer exists.
+                    # False = mean-field, which is what the op still computes, so False pops.
+                    ("spread_belief_nature_marginalize", False))
 
 
 def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
-    """Drop v70/v71/v75/v78-deleted keys from a saved `features_extractor_kwargs`. True if it changed.
+    """Drop DELETED keys from a saved `features_extractor_kwargs`. True if it changed.
 
     Raises `ModelVersionError` — exactly as `_migrate_config` does — when a JUDGED field records a
     value the surviving forward pass cannot reproduce.
@@ -673,7 +720,7 @@ def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
     constructor no longer accepts", and both are read from the same one zip read:
 
     1. `move_candidate_floor` (below).
-    2. Extractor kwargs deleted at config v70/v71/v75 (`sanitize_dead_extractor_kwargs`).
+    2. Extractor kwargs deleted from the constructor (`sanitize_dead_extractor_kwargs`).
 
     --- 1. Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
 
