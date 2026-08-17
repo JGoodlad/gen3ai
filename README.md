@@ -96,6 +96,14 @@ Also load-bearing: [poke-env](https://github.com/hsahovic/poke-env) (the Python 
 this project forked and builds on) and [Pokémon Showdown](https://github.com/smogon/pokemon-showdown)
 itself — the reference battle engine our Rust port is validated against, move by move.
 
+## License
+
+[MIT](LICENSE) — use it, fork it, build on it; keep the notice. The vendored
+[poke-env](https://github.com/hsahovic/poke-env) fork under `src/poke_env/` retains its original
+MIT notice, and [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) (a git submodule)
+is its own MIT-licensed project. Pokémon itself is © Nintendo/Creatures/GAME FREAK — this is an
+unaffiliated fan research project.
+
 ## Keywords
 
 Pokémon AI · Pokémon Showdown bot · reinforcement learning · PPO · self-play · Gen 3 OU · ADV ·
