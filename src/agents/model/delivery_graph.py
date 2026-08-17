@@ -327,10 +327,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            via="MultiSeedValueReadout (k seed queries over the per-our-mon "
                                "incoming rows, OpTensors.incoming_rows)", pooled=True,
                            note="the critic's magnitude window after the concat's death"))
+    # gen3_value_pooled_routes_v1 (v89): every value route is an ADDITIVE zero-init injection
+    # into `value_pooled` — the tensor the dist-head critic reads AND `vf_parts[0]` — never a
+    # vf-concat part (the concat route was structurally bypassed by --value-from-dist; gen-12's
+    # route projections were bit-exact zero after 25M steps).
     if fe.intent_value_reduce is not None:
-        edges.append(_edge("damage_op", "vf_projection", "concat",
-                           fx.INTENT_VALUE_REDUCE_DIM, "INTENT_VALUE_REDUCE_DIM",
-                           via="IntentValueReduce (alpha-weighted pair-cell rows)", pooled=True,
+        edges.append(_edge("damage_op", "vf_projection", "content",
+                           fx.D_MODEL, "D_MODEL",
+                           via="IntentValueReduce (alpha-weighted pair-cell rows) — additive "
+                               "into value_pooled", pooled=True,
                            zero_init=True))
     if fe.hidden_opp_belief is not None:
         for head in FORWARD_SINKS:
@@ -343,19 +348,35 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         # until the critic-route audit adjudicates them). Sources = every team token (+ the op's
         # per-our-mon rows when the op exists), so it draws with the per-mon edge shape.
         _uvr_via = ("UnifiedValueReadout (UVR_K queries, per-source type embeddings, "
-                    "zero-init out projection)")
+                    "zero-init out projection) — additive into value_pooled")
         for i in range(T):
-            edges.append(_edge(f"our_mon[{i}]", "vf_projection", "concat",
-                               fx.UVR_OUT_DIM, "UVR_OUT_DIM", via=_uvr_via,
+            edges.append(_edge(f"our_mon[{i}]", "vf_projection", "content",
+                               fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True))
-            edges.append(_edge(f"opp_mon[{i}]", "vf_projection", "concat",
-                               fx.UVR_OUT_DIM, "UVR_OUT_DIM", via=_uvr_via,
+            edges.append(_edge(f"opp_mon[{i}]", "vf_projection", "content",
+                               fx.D_MODEL, "D_MODEL", via=_uvr_via,
                                pooled=True, zero_init=True))
         if fe.damage_op is not None:
-            edges.append(_edge("damage_op", "vf_projection", "concat",
-                               fx.UVR_OUT_DIM, "UVR_OUT_DIM",
+            edges.append(_edge("damage_op", "vf_projection", "content",
+                               fx.D_MODEL, "D_MODEL",
                                via=_uvr_via + " — the per-our-mon incoming-row source",
                                pooled=True, zero_init=True))
+    if fe.intent_threshold_value is not None:
+        edges.append(_edge("damage_op", "vf_projection", "content",
+                           fx.D_MODEL, "D_MODEL",
+                           via="IntentThresholdValue (p_KO / p_sub / p_fp, alpha-contracted) — "
+                               "additive into value_pooled", pooled=True, zero_init=True))
+    if fe.value_clock_route is not None:
+        edges.append(_edge("obs.global_env.clock", "vf_projection", "content",
+                           fx.D_MODEL, "D_MODEL",
+                           via="ValueClockRoute (the 3 raw clock scalars) — additive into "
+                               "value_pooled", pooled=True, zero_init=True))
+    if fe.value_intent_route is not None:
+        edges.append(_edge("damage_op", "vf_projection", "content",
+                           fx.D_MODEL, "D_MODEL",
+                           via="ValueIntentRoute (published alpha/beta posteriors as "
+                               "distributions) — additive into value_pooled",
+                           pooled=True, zero_init=True))
 
     # --- CELL EDGES: per-action physics --------------------------------------------------------
     if op.pointer_move_cell_dim:

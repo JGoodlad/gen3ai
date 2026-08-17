@@ -22,7 +22,7 @@ import pytest
 import torch
 
 from agents.model.arch_constants import (
-    INTENT_THRESH_MOVE_DIM, INTENT_THRESH_VF_DIM,
+    D_MODEL, INTENT_THRESH_MOVE_DIM,
 )
 from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.intent_threshold import (
@@ -176,7 +176,7 @@ def test_move_cell_gates_route_each_mechanic():
 
 def test_both_heads_are_zero_init():
     m = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
-    v = IntentThresholdValue(INTENT_THRESH_VF_DIM)
+    v = IntentThresholdValue(D_MODEL)
     assert float(m.proj.weight.abs().max()) == 0.0
     assert float(v.proj.weight.abs().max()) == 0.0
     out = m(torch.rand(2, 1), torch.rand(2, 1), torch.rand(2, 1),
@@ -194,8 +194,8 @@ def test_off_builds_no_module_and_no_extra_dims():
     assert fe_off.intent_threshold_move is None and fe_off.intent_threshold_value is None
     assert not any("intent_threshold" in k for k in fe_off.state_dict())
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim + INTENT_THRESH_MOVE_DIM
-    assert (fe_on.value_projection.in_features
-            == fe_off.value_projection.in_features + INTENT_THRESH_VF_DIM)
+    # gen3_value_pooled_routes_v1: the vf half injects into value_pooled — width-neutral
+    assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
     # pi is untouched at ANY weight — the projection widths agree
     assert fe_on.projection.in_features == fe_off.projection.in_features
 

@@ -5,7 +5,7 @@ re-exports every name here, so historical import paths still resolve.
 """
 import torch
 from typing import Optional
-from agents.model.arch_constants import (UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
+from agents.model.arch_constants import (UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
@@ -85,10 +85,10 @@ class UnifiedValueReadout(torch.nn.Module):
         n_sources = _UVR_N_SOURCES_FULL if full else _UVR_N_SOURCES
         self.source_emb = torch.nn.Parameter(torch.randn(n_sources, UVR_DIM) * 0.02)
         self.queries = torch.nn.Parameter(torch.randn(UVR_K, UVR_DIM) * (UVR_DIM ** -0.5))
-        self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, UVR_OUT_DIM)
+        self.out_proj = torch.nn.Linear(UVR_K * UVR_DIM, D_MODEL)
         torch.nn.init.zeros_(self.out_proj.weight)
         torch.nn.init.zeros_(self.out_proj.bias)
-        self.out_dim = UVR_OUT_DIM
+        self.out_dim = D_MODEL
         self.last_att: Optional[torch.Tensor] = None    # [B, K, N] — the diagnostics read
 
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
@@ -100,7 +100,7 @@ class UnifiedValueReadout(torch.nn.Module):
         """our/their_team_out [B,6,D_MODEL]; all_fainted [B,12] bool (True = masked);
         op_rows [B,6,per_mon] + op_alive [B,6] float when the op exists; under `full`:
         global_row [B,D_MODEL] (required — never masked) and belief_rows [B,K,D_MODEL]
-        (optional — present only with a HiddenOppBeliefPool) → [B, UVR_OUT_DIM]."""
+        (optional — present only with a HiddenOppBeliefPool) → [B, D_MODEL], added into `value_pooled`."""
         rows = [self.token_proj(our_team_out) + self.source_emb[0],
                 self.token_proj(their_team_out) + self.source_emb[1]]
         masks = [all_fainted]

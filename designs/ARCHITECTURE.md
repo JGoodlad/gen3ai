@@ -328,7 +328,7 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-**`vf_projection` — `Linear(1369, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
+**`vf_projection` — `Linear(1177, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
@@ -336,16 +336,23 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `non_matchup_rest` | 25 | shared with pi |
 | `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
 | seed readout | 256 | `MultiSeedValueReadout` — k=4 × 64 over `OpTensors.incoming_rows` |
-| intent reduce | 64 | `IntentValueReduce` — α-weighted pair cells, appended AFTER the assembler |
-| entity pool | 128 | `UnifiedValueReadout` — UVR_K=4 queries over the 12 team tokens + the op's incoming rows, zero-init, appended LAST (gen3_unified_value_readout_v1) |
-| **total** | **1369** | == `value_projection.in_features`, asserted at generation |
+| **total** | **1177** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
+
+**Every value route INJECTS into `value_pooled`** (v89 `gen3_value_pooled_routes_v1`): the
+routes below add a zero-init `D_MODEL` contribution to the tensor the dist-head critic actually
+reads (and `vf_parts[0]`, so the scalar critic sees the same wiring). The old post-assembler
+vf-concat delivery was structurally bypassed by `--value-from-dist` — gen-12 proof:
+`value_entity_pool.out_proj` and `intent_value_reduce.proj` bit-exact ZERO after 25M steps,
+while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
+gradient-connectivity guard (`value_route_gradient_test.py`) backprops the critic through every
+registered route each suite run, under BOTH critic parameterizations.
 
 **ON in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3 T3-DELIVER of
 `design_unified_belief.md` §3). ONE attention pool over the critic's entity-row set (the 12
 post-transformer team tokens + the op's 6 per-our-mon incoming rows, each projected to
 `UVR_DIM`=64 with a per-source type embedding, `UVR_K`=4 queries, explicit NaN-safe softmax)
-appends a zero-init `UVR_OUT_DIM`=128 block to vf AFTER the assembler — the policy is untouched at
+adds its zero-init `D_MODEL` output into `value_pooled` — the policy is untouched at
 any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below (seed
 readout, threat-inject); it runs here ALONGSIDE them rather than replacing them, so the
 `critic_route_audit` (which carries `entity_pool`, `intent_reduce`, `nmr` and `event_seats`
@@ -359,20 +366,19 @@ threshold operator of `design_conditional_execution.md`). When on, `threshold_pr
 the op's per-candidate pair cells with the published α into `p_KO` / `p_sub_broken` /
 `p_fp_broken`, and two zero-init projections deliver them: five mechanic channels (Focus
 Punch / Substitute / Endure / Destiny Bond / Endeavor) through the pointer MOVE cell
-(+`INTENT_THRESH_MOVE_DIM`), and the `[p_KO, …]` block to vf after the entity pool
-(+`INTENT_THRESH_VF_DIM`) — the ledger-H1 payoff (the critic's "am I about to die" was a hard
-max). **`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
+(+`INTENT_THRESH_MOVE_DIM`), and the `[p_KO, …]` block into `value_pooled` — the ledger-H1
+payoff (the critic's "am I about to die" was a hard max). **`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
 flinch's `(1−α_SWITCH)` term, Explosion's execute/into-switch facts and Pursuit's ×2 never-miss
 doubling trigger (the port-verified departing-target rule — no β), one more zero-init block on
 the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision gated on
 gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage baseline is
 `measurements/gen12_mechanic_usage_baseline.json` (Endure 0.0% / Sub 0.9% / Counter 5.6%).
 
-⚠️ It is appended AFTER `intent_value_reduce`, and until `ede5a88` that combination could not
-build: the intent-reduce discovery branch returned early, so the dummy forward that sizes
-`value_pre_norm` never reached this block and the critic came out 128 dims short
-(`normalized_shape=[1241] … got [*, 1369]`). Any NEW vf part goes at the tail with a
-**fall-through** discovery branch — see `src/agents/model/CLAUDE.md`.
+Route availability is **width-neutral by construction** (additive injection changes no
+projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
+a vf part from the dummy forward that sizes `value_pre_norm` — is unrepresentable. Any NEW value
+route goes through `_value_pooled_routes` (the registry the gradient guard iterates) — never a
+new vf-concat part.
 
 The value head does **not** read `our_active_refined` (the old `value_active_readout` toggle is
 deleted — v88 `gen3_dead_flag_purge_v1`), and does not
@@ -464,8 +470,9 @@ logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 `forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
 channel exists for the actor and **not** for the critic — the critic's op-physics routes are the
 `MultiSeedValueReadout` window over the typed `incoming_rows`, `--value-threat-inject`'s token
-content on the value pool's copy, and (when on) the `intent_value_reduce` term — all vf-only,
-all reading the op through `OpTensors` views rather than flat offsets.
+content on the value pool's copy, and (when on) the `intent_value_reduce` / entity-pool /
+threshold-p_KO injections into `value_pooled` — all vf-only, all reading the op through
+`OpTensors` views rather than flat offsets.
 
 ### 3.4 Side readouts
 

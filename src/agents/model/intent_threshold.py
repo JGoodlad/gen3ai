@@ -46,8 +46,8 @@ exists); its outputs are consumed by BOTH heads:
   is_endure·p_ko, is_dbond·p_ko, is_endeavor·(1−p_ko), p_ko]` — the probability and the mechanic
   gate are provided as facts (§1's convention); the head forms the products it needs. The last
   channel is the decorrelated `p_ko` context on every slot.
-* **`IntentThresholdValue`** (T3) — `[p_ko, p_sub_broken, p_fp_broken]` appended to the CRITIC
-  after the assembler (the `intent_value_reduce` placement). This half stands on its own whatever
+* **`IntentThresholdValue`** (T3) — `[p_ko, p_sub_broken, p_fp_broken]` injected additively
+  into `value_pooled` (gen3_value_pooled_routes_v1 — the tensor the dist-head critic reads). This half stands on its own whatever
   the G3 verdict says about the mechanic cells: H1 measured the critic over-valuing a healthy
   self-KO trade (dV ≈ +2.9 vs a −2.7 reward) because "am I about to die" reached it only as a max.
 

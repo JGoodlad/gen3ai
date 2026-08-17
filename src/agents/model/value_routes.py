@@ -1,7 +1,8 @@
 """gen3_value_direct_routes_v1 — two direct CRITIC routes: the deadline clock, and α/β.
 
-Both answer an audit finding, and both use the established vf-tail contract (post-assembler
-zero-init append — the `intent_value_reduce` placement, with the ede5a88 fall-through rule):
+Both answer an audit finding, and both INJECT additively into `value_pooled`
+(gen3_value_pooled_routes_v1, v89 — the old post-assembler vf-tail concat was structurally
+bypassed by `--value-from-dist`, whose dist-head critic reads `value_pooled` only):
 
 * **`ValueClockRoute`** — the v67 deadline clock (`gen3_deadline_clock_v1`: log-elapsed,
   remaining-linear, log-remaining) was built for the CRITIC — "a critic cannot price a deadline
@@ -12,7 +13,7 @@ zero-init append — the `intent_value_reduce` placement, with the ede5a88 fall-
 * **`ValueIntentRoute`** — α/β have never reached the critic AS DISTRIBUTIONS: α enters vf only
   as a weighting inside `intent_value_reduce`'s physics cells, β not at all (it was structurally
   label-only until the v85 boom cell). The block was ORDERING — α/β are scored at T2, after the
-  pools — which the post-assembler tail dissolves. The route feeds the PUBLISHED posteriors
+  pools — which the post-pool injection point dissolves. The route feeds the PUBLISHED posteriors
   (stop-grad under `label_only`, so no PPO→α/β route opens) as probabilities: α over its K
   belief-sorted seats + SWITCH (a canonical order — the same axis every α consumer aligns to),
   β over the 6 team slots (the obs slot convention), with β's no-legal-candidate case gated to
@@ -25,16 +26,17 @@ from __future__ import annotations
 
 import torch
 
-from agents.model.arch_constants import VALUE_CLOCK_DIM, VALUE_INTENT_DIM
+from agents.model.arch_constants import D_MODEL
 from agents.observation.constants import CLOCK_DIM
 
 
 class ValueClockRoute(torch.nn.Module):
-    """`clock [B, CLOCK_DIM] → [B, VALUE_CLOCK_DIM]`, zero-init."""
+    """`clock [B, CLOCK_DIM] → [B, D_MODEL]`, zero-init — added into `value_pooled`
+    (gen3_value_pooled_routes_v1: the vf-tail concat never reached the dist-head critic)."""
 
     def __init__(self):
         super().__init__()
-        self.proj = torch.nn.Linear(CLOCK_DIM, VALUE_CLOCK_DIM)
+        self.proj = torch.nn.Linear(CLOCK_DIM, D_MODEL)
         torch.nn.init.zeros_(self.proj.weight)
         torch.nn.init.zeros_(self.proj.bias)
 
@@ -43,13 +45,13 @@ class ValueClockRoute(torch.nn.Module):
 
 
 class ValueIntentRoute(torch.nn.Module):
-    """`(published α logits [B,K+1], published β logits [B,6]) → [B, VALUE_INTENT_DIM]`,
-    zero-init. `n_seats` is the α head's K (entity_topk_seats), fixed per run."""
+    """`(published α logits [B,K+1], published β logits [B,6]) → [B, D_MODEL]`, zero-init —
+    added into `value_pooled`. `n_seats` is the α head's K (entity_topk_seats), fixed per run."""
 
     def __init__(self, n_seats: int):
         super().__init__()
         self.n_seats = int(n_seats)
-        self.proj = torch.nn.Linear(self.n_seats + 1 + 6, VALUE_INTENT_DIM)
+        self.proj = torch.nn.Linear(self.n_seats + 1 + 6, D_MODEL)
         torch.nn.init.zeros_(self.proj.weight)
         torch.nn.init.zeros_(self.proj.bias)
 

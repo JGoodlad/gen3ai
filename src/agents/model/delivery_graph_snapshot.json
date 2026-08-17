@@ -4407,16 +4407,6 @@
     },
     {
       "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "INTENT_VALUE_REDUCE_DIM",
-      "src": "damage_op",
-      "type": "concat",
-      "via": "IntentValueReduce (alpha-weighted pair-cell rows)",
-      "width": 64,
-      "zero_init": true
-    },
-    {
-      "dst": "vf_projection",
       "note": "the critic's magnitude window after the concat's death",
       "pooled": true,
       "source_constant": "VALUE_SEED_K * VALUE_SEED_DIM",
@@ -4426,16 +4416,6 @@
       "width": 256
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "damage_op",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 the per-our-mon incoming-row source",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "opp_belief_cls_k * D_MODEL",
@@ -4490,16 +4470,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[0]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4516,16 +4486,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[1]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4546,16 +4506,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[2]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4572,16 +4522,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[3]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4602,16 +4542,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[4]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4628,16 +4558,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "opp_mon[5]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4667,16 +4587,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[0]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4693,16 +4603,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[1]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4723,16 +4623,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[2]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4749,16 +4639,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[3]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -4779,16 +4659,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[4]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
-    },
-    {
       "dst": "pi_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -4805,16 +4675,6 @@
       "type": "concat",
       "via": "CLSPool.value_cls",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "UVR_OUT_DIM",
-      "src": "our_mon[5]",
-      "type": "concat",
-      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection)",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "pointer.move_logit[0]",
@@ -5066,6 +4926,26 @@
       "type": "content",
       "via": "prefuse_proj",
       "width": 12,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "damage_op",
+      "type": "content",
+      "via": "IntentValueReduce (alpha-weighted pair-cell rows) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "damage_op",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled \u2014 the per-our-mon incoming-row source",
+      "width": 128,
       "zero_init": true
     },
     {
@@ -5329,6 +5209,66 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[0]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[1]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[2]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[3]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[4]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "opp_mon[5]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[0]",
       "note": "the post-transformer team token",
       "source_constant": "D_MODEL",
@@ -5336,6 +5276,16 @@
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[0]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pointer.switch_logit[1]",
@@ -5347,6 +5297,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[1]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[2]",
       "note": "the post-transformer team token",
       "source_constant": "D_MODEL",
@@ -5354,6 +5314,16 @@
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[2]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pointer.switch_logit[3]",
@@ -5365,6 +5335,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[3]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[4]",
       "note": "the post-transformer team token",
       "source_constant": "D_MODEL",
@@ -5374,6 +5354,16 @@
       "width": 128
     },
     {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[4]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[5]",
       "note": "the post-transformer team token",
       "source_constant": "D_MODEL",
@@ -5381,6 +5371,16 @@
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
       "width": 128
+    },
+    {
+      "dst": "vf_projection",
+      "pooled": true,
+      "source_constant": "D_MODEL",
+      "src": "our_mon[5]",
+      "type": "content",
+      "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled",
+      "width": 128,
+      "zero_init": true
     },
     {
       "dst": "pointer.move_logit[0]",
@@ -5684,7 +5684,7 @@
     "arch_signature": "gen3_ctx_dedup_v1",
     "base_seats": 20,
     "config": "production_config.json",
-    "config_version": 88,
+    "config_version": 89,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -5715,7 +5715,7 @@
     "obs_dim": 3529,
     "op_out_dim": 660,
     "pi_projection_in": 1177,
-    "vf_projection_in": 1369
+    "vf_projection_in": 1177
   },
   "nodes": [
     {
@@ -5775,7 +5775,7 @@
     },
     {
       "id": "vf_projection",
-      "in_features": 1369,
+      "in_features": 1177,
       "kind": "head",
       "out_features": 512
     },

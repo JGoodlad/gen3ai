@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.arch_constants import VALUE_CLOCK_DIM, VALUE_INTENT_DIM
+from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
@@ -51,14 +51,15 @@ def _obs(layout, b=3):
     return {"observation": torch.rand(b, layout["total_dim"])}
 
 
-def test_off_builds_nothing_and_on_widens_vf_only():
+def test_off_builds_nothing_and_on_is_width_neutral():
+    """gen3_value_pooled_routes_v1: the routes INJECT into value_pooled, so ON changes NO
+    projection width — route availability can never mis-size `value_pre_norm`."""
     off, _ = _build(**{**_ON_KWARGS, "value_clock": False, "value_intent": False})
     on, _ = _build(**_ON_KWARGS)
     assert off.value_clock_route is None and off.value_intent_route is None
     assert not any("value_clock_route" in k or "value_intent_route" in k
                    for k in off.state_dict())
-    assert (on.value_projection.in_features
-            == off.value_projection.in_features + VALUE_CLOCK_DIM + VALUE_INTENT_DIM)
+    assert on.value_projection.in_features == off.value_projection.in_features
     assert on.projection.in_features == off.projection.in_features   # pi untouched
 
 
@@ -94,7 +95,7 @@ def test_clock_moves_vf_and_not_pi():
 def test_intent_route_probabilities_and_nan_guard():
     r = ValueIntentRoute(n_seats=6)
     with torch.no_grad():
-        w = torch.zeros(VALUE_INTENT_DIM, 13)
+        w = torch.zeros(D_MODEL, 13)
         w[:13, :13] = torch.eye(13)
         r.proj.weight.copy_(w)
     lg = torch.zeros(2, 7)
@@ -135,7 +136,19 @@ def test_migration_defaults_off():
     assert migrated["value_clock"] is False
     assert migrated["value_intent"] is False
     assert migrated["config_version"] >= 87
-    assert MODEL_CONFIG_VERSION >= 87
+    assert MODEL_CONFIG_VERSION >= 89
+
+
+@pytest.mark.parametrize("flag", ["intent_value_reduce", "value_entity_pool", "intent_threshold",
+                                  "value_clock", "value_intent"])
+def test_v89_refuses_pre_rehome_checkpoints_with_a_route_on(flag):
+    """gen3_value_pooled_routes_v1: a <v89 config recording a value route ON carries projection
+    shapes the re-homed forward cannot rebuild — refused with the re-read diagnosis. OFF stamps
+    forward (the route built nothing, so the surviving forward is what it trained under)."""
+    with pytest.raises(ModelVersionError, match="value_pooled"):
+        _migrate_config({"config_version": 88, flag: True})
+    migrated = _migrate_config({"config_version": 88, flag: False})
+    assert migrated["config_version"] >= 89
 
 
 @pytest.mark.parametrize("field", ["value_clock", "value_intent"])

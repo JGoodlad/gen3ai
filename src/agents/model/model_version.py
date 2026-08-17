@@ -11,7 +11,14 @@ from typing import Any, Dict, List
 # The per-version narrative (v3 -> v88: what each field means, which gate enforces it, and
 # why) lives in designs/CHANGELOG.md under 'The MODEL_CONFIG_VERSION narrative' — moved
 # there 2026-08-16; it is history, and this file keeps only the live machinery.
-MODEL_CONFIG_VERSION = 88
+# v89 (gen3_value_pooled_routes_v1): the five value routes (intent_value_reduce v74,
+#   value_entity_pool v80/82, intent_threshold's vf half v84, value_clock/value_intent v87)
+#   INJECT into `value_pooled` instead of the post-assembler vf concat, which
+#   `--value-from-dist` structurally bypassed (gen-12 proof: their zero-init projections
+#   bit-exact ZERO after 25M steps). Route out-widths become D_MODEL and the vf concat
+#   narrows for flag-ON configs, so a <v89 checkpoint recording ANY of them ON carries
+#   shapes the surviving code cannot load — REFUSED (the v75 rule); OFF stamps forward.
+MODEL_CONFIG_VERSION = 89
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -1676,4 +1683,19 @@ def _migrate_config(data: dict) -> dict:
     data.pop("pubval_coef", None)
     if version < 88:
         data["config_version"] = 88
+    # v89 (gen3_value_pooled_routes_v1) — the value routes moved from the vf-tail concat into
+    # `value_pooled`, changing their projection shapes and the vf concat width. A <v89 config
+    # with any of them ON recorded a forward that no longer exists ⇒ refuse with the re-read
+    # diagnosis; OFF stamps forward (byte-identical — the routes built nothing).
+    if version < 89:
+        for _rt in ("intent_value_reduce", "value_entity_pool", "intent_threshold",
+                    "value_clock", "value_intent"):
+            if data.get(_rt):
+                raise ModelVersionError(
+                    f"{_rt}=True at config_version {version} is no longer loadable "
+                    "(gen3_value_pooled_routes_v1): the route was re-homed from the vf-tail "
+                    "concat into value_pooled, so its recorded projection shapes no longer "
+                    "exist. This checkpoint trained under a forward the current code cannot "
+                    "rebuild; re-read it from the git_hash in its metadata.json.")
+        data["config_version"] = 89
     return data

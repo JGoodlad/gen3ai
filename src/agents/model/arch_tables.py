@@ -203,15 +203,9 @@ def head_input_parts(fe) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, in
     if sr is not None and fe.damage_op is not None:
         vf.append(("seed readout", sr.k * sr.dim,
                    f"`MultiSeedValueReadout` — k={sr.k} × {sr.dim} over `OpTensors.incoming_rows`"))
-    if fe.intent_value_reduce is not None:
-        from agents.model.arch_constants import INTENT_VALUE_REDUCE_DIM
-        vf.append(("intent reduce", INTENT_VALUE_REDUCE_DIM,
-                   "`IntentValueReduce` — α-weighted pair cells, appended AFTER the assembler"))
-    if getattr(fe, "value_entity_pool", None) is not None:
-        from agents.model.arch_constants import UVR_OUT_DIM
-        vf.append(("entity pool", UVR_OUT_DIM,
-                   "`UnifiedValueReadout` — UVR_K=4 queries over the 12 team tokens + the op's "
-                   "incoming rows, zero-init, appended LAST (gen3_unified_value_readout_v1)"))
+    # gen3_value_pooled_routes_v1 (v89): the value routes are ADDITIVE injections into
+    # `value_pooled` — width-neutral for the projections, so they do NOT appear as vf concat
+    # parts here; the flag table + delivery graph carry them.
     return pi, vf
 
 

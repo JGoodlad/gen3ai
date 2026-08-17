@@ -43,7 +43,6 @@ VALUE_SEED_DIM = 64
 # gen3_intent_value_reduce_v1 (step 6): the alpha-weighted threat term appended to the CRITIC's
 # pre-projection features. `_INTENT_CELL_FEATURES` is the F axis of the operator's un-reduced
 # `cells_pr` stack (low/high/crit/ko_ramp/acc/phys_mask) — change one and the other must follow.
-INTENT_VALUE_REDUCE_DIM = 64
 _INTENT_CELL_FEATURES = 6
 
 # gen3_unified_value_readout_v1 (v80, Stage-3 T3-DELIVER, design_unified_belief.md §3): ONE
@@ -53,9 +52,12 @@ _INTENT_CELL_FEATURES = 6
 # to a shared UVR_DIM (with a per-SOURCE type embedding), zero-init output projection to
 # UVR_OUT_DIM riding vf only. `_UVR_N_SOURCES` axes: 0=our mon token, 1=their mon token,
 # 2=op incoming row.
+# gen3_value_pooled_routes_v1 (v89): the value routes (intent_value_reduce, entity pool,
+# threshold-vf, clock, intent) INJECT additively into value_pooled, so their output width
+# is D_MODEL by definition — the old per-route width constants are deleted with the
+# vf-tail concat they sized.
 UVR_K = 4
 UVR_DIM = 64
-UVR_OUT_DIM = 128
 _UVR_N_SOURCES = 3
 # gen3_unified_value_readout_v2 (v82, `value_entity_pool_full`): +source 3 = the refined
 # GLOBAL token, +source 4 = the hidden-opp belief queries — the pool's COMPLETE row set (the
@@ -82,7 +84,6 @@ _INTENT_MOVE_CELL_RAW = 7
 # The DIM constants are the two zero-init projections' output widths.
 INTENT_THRESH_MOVE_DIM = 6
 _INTENT_THRESH_RAW_MOVE = 6
-INTENT_THRESH_VF_DIM = 8
 _INTENT_THRESH_RAW_VF = 3
 
 # gen3_intent_conditional_v1 (v85, design_conditional_execution.md build steps 4+7): the
@@ -111,5 +112,3 @@ _INTENT_COND_RAW = 13
 # indirect route as dead). VALUE_INTENT_DIM — the published α (K seats + SWITCH, belief-sorted
 # canonical order) and β (6 team slots) posteriors as probabilities; the critic finally reads
 # WHAT WE EXPECT THEM TO DO directly rather than only through the α-weighted physics cells.
-VALUE_CLOCK_DIM = 8
-VALUE_INTENT_DIM = 16

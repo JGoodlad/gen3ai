@@ -44,11 +44,10 @@ from utils.logging.levels import LogLevel
 # gen3_arch_constants_v1: the architecture constants now live in `arch_constants.py` so
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
-from agents.model.arch_constants import (INTENT_VALUE_REDUCE_DIM, _INTENT_CELL_FEATURES,
-    VALUE_INTENT_DIM,
-    INTENT_THRESH_MOVE_DIM, INTENT_THRESH_VF_DIM, INTENT_COND_MOVE_DIM,
+from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
+    INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
-    UVR_K, UVR_DIM, UVR_OUT_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
+    UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
     VALUE_SEED_DIM,
@@ -484,7 +483,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.intent_value_reduce = None
         if intent_value_reduce:
             self.intent_value_reduce = IntentValueReduce(
-                TEAM_SIZE, _INTENT_CELL_FEATURES, INTENT_VALUE_REDUCE_DIM)
+                TEAM_SIZE, _INTENT_CELL_FEATURES, D_MODEL)
             if not opp_intent:
                 raise ValueError(
                     "intent_value_reduce=True requires opp_intent=True — the reduction is WEIGHTED "
@@ -520,7 +519,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self._thresh_probs = None
         if intent_threshold:
             self.intent_threshold_move = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
-            self.intent_threshold_value = IntentThresholdValue(INTENT_THRESH_VF_DIM)
+            self.intent_threshold_value = IntentThresholdValue(D_MODEL)
             if not opp_intent:
                 raise ValueError(
                     "intent_threshold=True requires opp_intent=True — every threshold form is "
@@ -1780,6 +1779,31 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         self.last_pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)
+        belief = None
+        if self.hidden_opp_belief is not None:
+            # Same 12-token memory + the single-sourced ctx.all_fainted key-mask the value CLS pools
+            # over (all_team_out is a forward activation, cheap to recompute; the MASK carries the
+            # NaN-safety invariant and is single-sourced on the context). Computed BEFORE the value
+            # routes because the entity pool's `full` rider reads the belief rows.
+            all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
+            belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
+        # ============================================================================
+        # gen3_value_pooled_routes_v1 (v89): the value routes INJECT into `value_pooled` —
+        # the tensor the dist-head critic actually reads — instead of the post-assembler vf
+        # concat, which `--value-from-dist` structurally bypassed (verified on gen-12:
+        # `value_entity_pool.out_proj` and `intent_value_reduce.proj` bit-exact ZERO after
+        # 25M steps, while `value_threat_proj` — the one value_pooled route — trained to
+        # 0.117). `vf_parts[0] is value_pooled`, so the SAME wiring feeds `value_net` when
+        # the scalar critic is on: one wiring, both parameterizations. Every route stays
+        # zero-init (cold start adds exactly 0) and vf-only at ANY weight (pi never reads
+        # value_pooled). Additive injection changes no width, so route availability can
+        # never mis-size `value_pre_norm` — the ede5a88 discovery bug class is gone by
+        # construction; the runtime raise guards below keep "on but inputs missing" LOUD.
+        # ============================================================================
+        for _route_name, _contrib in self._value_pooled_routes(ctx, our_team_out,
+                                                               their_team_out, belief,
+                                                               damage_block):
+            value_pooled = value_pooled + _contrib
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
         # (`instrumented_ppo._value_feat_distill`): both student and teacher forwards leave it here, so the
@@ -1808,58 +1832,32 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.last_value_dist_logits = self.value_dist_head(vd_in)
         else:
             self.last_value_dist_logits = None
-        belief = None
-        if self.hidden_opp_belief is not None:
-            # Same 12-token memory + the single-sourced ctx.all_fainted key-mask the value CLS pools
-            # over (all_team_out is a forward activation, cheap to recompute; the MASK carries the
-            # NaN-safety invariant and is single-sourced on the context).
-            all_team_out = torch.cat([our_team_out, their_team_out], dim=1)                 # [B, 12, D]
-            belief = self.hidden_opp_belief(all_team_out, ctx.all_fainted, ctx.batch_size)
         out = self.assembler(our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
                              ctx, belief,
                              self.damage_op.last_tensors.incoming_rows
                              if damage_block is not None else None)
-        # gen3_intent_value_reduce_v1 (STEP 6): alpha finally CONSUMED. Applied HERE — after the
-        # assembler — because it is the first point where both operands exist: the op's un-reduced
-        # cells (T1) and alpha (T2, scored from the seats and pools the op precedes). Added to the
-        # VALUE half only, through a zero-init projection, so `pi` is untouched at ANY weight rather
-        # than merely at init.
+        return out
+
+    def _value_pooled_routes(self, ctx, our_team_out, their_team_out, belief, damage_block):
+        """Yield `(name, [B, D_MODEL] contribution)` for every enabled value route
+        (gen3_value_pooled_routes_v1). THE route registry: the gradient-connectivity guard
+        (`value_route_gradient_test.py`) iterates exactly this generator, so a route added here
+        is covered by construction — and a route added ANYWHERE ELSE is the bug this seam
+        exists to prevent. Contract per route: zero-init output projection (cold start adds 0),
+        raise when ON but inputs are missing (silence is indistinguishable from a null result),
+        skip silently only during the construction-time discovery forward."""
         if self.intent_value_reduce is not None:
             _cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
-            _pi, _vf = out
-            if self._intent_reduce_discovering and (_cells is None
-                                                    or self.last_alpha_logits is None):
-                # Construction-time width probe only: alpha does not exist yet, so contribute a
-                # correctly-shaped ZERO rather than a value. Deliberately NOT a fallback at
-                # runtime — see the raise below, which must stay reachable.
-                #
-                # ⚠️ This must FALL THROUGH, never `return`. It used to return the pair directly,
-                # which silently skipped every value part appended BELOW it — v80's
-                # `value_entity_pool` landed underneath and so was invisible to the very dummy
-                # forward that sizes `value_pre_norm`. The critic was then built 128 dims short and
-                # died at the first real forward with `normalized_shape=[1241] ... got [*, 1369]`.
-                # It only fires with BOTH --intent-value-reduce and --value-entity-pool on, so it
-                # was unreachable until the two met. Pinned by `value_entity_pool_test.py`.
-                _extra = _vf.new_zeros(_vf.shape[0], INTENT_VALUE_REDUCE_DIM)
-            else:
-                if _cells is None or self.last_alpha_logits is None:
+            if _cells is None or self.last_alpha_logits is None:
+                if not self._intent_reduce_discovering:
                     raise RuntimeError(
                         "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
                         "produced no logits — the term would silently contribute nothing, which is "
                         "indistinguishable from a null RESULT.")
-                _extra = self.intent_value_reduce(
+            else:
+                yield "intent_value_reduce", self.intent_value_reduce(
                     self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)
-            # CONCAT rather than add: the value half's width is auto-discovered by a dummy forward
-            # in __init__, so a fixed-width extra part is measured correctly; an additive term would
-            # need to match a width that does not exist yet at construction time.
-            out = (_pi, torch.cat([_vf, _extra], dim=1))
-        # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — vf ONLY, appended
-        # after every other value part so the OFF layout is untouched. Zero-init out projection ⇒
-        # a cold start contributes exactly 0; the policy half is untouched at ANY weight (the
-        # intent_value_reduce placement). Row sources: the 12 post-transformer team tokens
-        # (ctx.all_fainted key-masked) + the op's per-our-mon incoming rows when the op exists.
         if self.value_entity_pool is not None:
-            _pi, _vf = out
             _op_rows = (self.damage_op.last_tensors.incoming_rows
                         if (self.damage_op is not None and damage_block is not None) else None)
             _op_alive = ((ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
@@ -1868,47 +1866,29 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             if self.value_entity_pool.full:
                 _uvr_kw["global_row"] = self.team_transformer.last_global_out
                 if belief is not None:
-                    _uvr_kw["belief_rows"] = belief.view(
-                        ctx.batch_size, -1, D_MODEL)
-            out = (_pi, torch.cat([_vf, self.value_entity_pool(
-                our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive,
-                **_uvr_kw)], dim=1))
-        # gen3_intent_threshold_v1 (v84): the p_KO critic route — the H1 payoff, appended LAST so
-        # every existing value part keeps its offset. Reads the probs the pointer stash computed
-        # (T2 → T3, the allowed direction). ⚠️ The discovery branch FALLS THROUGH (the ede5a88
-        # lesson): a `return` here would hide any value part appended below it from the dummy
-        # forward that sizes `value_pre_norm`.
+                    _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, D_MODEL)
+            yield "value_entity_pool", self.value_entity_pool(
+                our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive, **_uvr_kw)
         if self.intent_threshold_value is not None:
-            _pi, _vf = out
             if self._thresh_probs is None:
                 if not self._intent_reduce_discovering:
                     raise RuntimeError(
                         "intent_threshold is on but the pointer stash computed no threshold "
-                        "probs — the vf block would silently contribute nothing.")
-                _extra = _vf.new_zeros(_vf.shape[0], INTENT_THRESH_VF_DIM)
+                        "probs — the vf route would silently contribute nothing.")
             else:
-                _extra = self.intent_threshold_value(*self._thresh_probs)
-            out = (_pi, torch.cat([_vf, _extra], dim=1))
-        # gen3_value_direct_routes_v1 (v87): the deadline clock's 3 raw scalars, vf only —
-        # the v67 fix finally gets the direct critic route it was validated for.
+                yield "intent_threshold_value", self.intent_threshold_value(*self._thresh_probs)
         if self.value_clock_route is not None:
-            _pi, _vf = out
             _clock = ctx.non_matchup_rest[:, CLOCK_OFFSET_IN_GLOBAL:CLOCK_OFFSET_IN_GLOBAL + CLOCK_DIM]
-            out = (_pi, torch.cat([_vf, self.value_clock_route(_clock)], dim=1))
-        # ...and the α/β posteriors as DISTRIBUTIONS — the ordering block the tail dissolves.
-        # Reads the PUBLICATIONS (stop-grad under label_only). Fall-through discovery (ede5a88).
+            yield "value_clock", self.value_clock_route(_clock)
         if self.value_intent_route is not None:
-            _pi, _vf = out
             if self.last_alpha_logits is None or self.last_beta_logits is None:
                 if not self._intent_reduce_discovering:
                     raise RuntimeError(
                         "value_intent is on but alpha/beta produced no logits — the route would "
                         "silently contribute nothing.")
-                _extra = _vf.new_zeros(_vf.shape[0], VALUE_INTENT_DIM)
             else:
-                _extra = self.value_intent_route(self.last_alpha_logits, self.last_beta_logits)
-            out = (_pi, torch.cat([_vf, _extra], dim=1))
-        return out
+                yield "value_intent", self.value_intent_route(
+                    self.last_alpha_logits, self.last_beta_logits)
 
     def forward(self, obs):
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

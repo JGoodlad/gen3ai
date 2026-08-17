@@ -14,7 +14,7 @@ import torch
 
 pytest.importorskip("sb3_contrib")
 
-from agents.model.arch_constants import UVR_K, UVR_OUT_DIM, D_MODEL
+from agents.model.arch_constants import UVR_K, D_MODEL
 from agents.model.features_extractor import UnifiedValueReadout
 from agents.model.identity_init_test import _build_real_policy
 from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config
@@ -53,7 +53,7 @@ def test_zero_init_survives_policy_build_and_contributes_zero(model_and_enc):
     out = uvr(torch.randn(3, 6, D_MODEL), torch.randn(3, 6, D_MODEL),
               torch.zeros(3, 12, dtype=torch.bool),
               torch.randn(3, 6, uvr.op_proj.in_features), torch.ones(3, 6))
-    assert out.shape == (3, UVR_OUT_DIM) and float(out.abs().max()) == 0.0
+    assert out.shape == (3, D_MODEL) and float(out.abs().max()) == 0.0
 
 
 def test_pi_untouched_at_any_weight_and_vf_fires(model_and_enc):
@@ -102,7 +102,7 @@ def test_v80_migration_stamps_and_defaults_off():
 # The defect these pin: `forward_internal`'s intent-value-reduce DISCOVERY branch used to
 # `return` the pair outright. Every value part appended BELOW it was therefore invisible to the
 # dummy forward that sizes `value_pre_norm` — and v80's entity pool landed exactly there. The
-# critic was built UVR_OUT_DIM short and died on the first real forward with
+# critic was built one pool-width short and died on the first real forward with
 # `normalized_shape=[1241] ... got [*, 1369]`.
 #
 # Why nothing caught it: every test above builds `value_entity_pool=True` ALONE, and the intent
@@ -146,35 +146,22 @@ def test_a_real_forward_through_the_policy_does_not_raise(model_and_enc):
     assert torch.isfinite(vf).all()
 
 
-def test_the_discovery_branch_falls_through_rather_than_returning():
-    """Pin the SHAPE of the fix, not just its effect — a future value part appended below the
-    intent-reduce branch must be reached too, and only a fall-through guarantees that.
+def test_route_availability_is_width_neutral_by_construction():
+    """gen3_value_pooled_routes_v1 (v89) replaced the old fall-through pin this test used to be.
 
-    Written this way after a first cut PASSED against the reintroduced bug: it split on `else:`
-    and, with no `else:` in the branch, silently took the whole window as the prefix. So the
-    `else:` is now REQUIRED to exist, which is the actual structural claim — an if/else, not an
-    early exit — and its absence fails instead of being absorbed.
-    """
-    import agents.model.features_extractor as fx
-    src = inspect.getsource(fx.Gen3FeaturesExtractor.forward_internal)
-    # Anchor on INTENT_VALUE_REDUCE_DIM, which appears only in this branch. `_intent_reduce_
-    # discovering` does NOT identify it — `intent_move_cell` guards on the same flag and comes
-    # FIRST, so an earlier cut of this test silently inspected that branch instead and passed
-    # against the reintroduced bug.
-    i = src.find("INTENT_VALUE_REDUCE_DIM")
-    assert i > 0, "the intent-value-reduce discovery branch moved; update this test"
-    i = src.rfind("_intent_reduce_discovering", 0, i)
-    # CODE only — the branch's own comment says the word "return" (it documents that it must not
-    # use one), and scanning raw text made the test fail against the very fix it guards.
-    window = "\n".join(ln for ln in src[i:i + 1600].splitlines()
-                       if not ln.lstrip().startswith("#"))
-    j = window.find("\n            else:")
-    assert j > 0, (
-        "the intent-reduce discovery branch is not an if/else — it must not exit early, or every "
-        "value part appended below it (v80's entity pool, and whatever comes next) is invisible "
-        "to the forward that sizes value_pre_norm")
-    assert "return" not in window[:j], (
-        "the discovery branch returns before its else; it must fall through")
+    The ede5a88 bug class — a discovery branch exiting early and hiding a value part from the
+    forward that sizes `value_pre_norm` — is now UNREPRESENTABLE: every value route injects
+    additively into `value_pooled`, so no combination of routes changes any projection width.
+    The strongest form of the old claim: the vf projection input is IDENTICAL with both parts
+    on and both off."""
+    from agents.model.intent_value_reduce_test import _build
+    model_on, _ = _build(intent_value_reduce=True, value_entity_pool=True)
+    model_off, _ = _build(intent_value_reduce=False, value_entity_pool=False)
+    fe_on = model_on.policy.features_extractor
+    fe_off = model_off.policy.features_extractor
+    assert fe_on.value_projection_input_dim == fe_off.value_projection_input_dim
+    assert (fe_on.value_pre_norm.normalized_shape[0]
+            == fe_off.value_pre_norm.normalized_shape[0])
 
 
 # ------------------------------------------------------------------ v82: the FULL row set

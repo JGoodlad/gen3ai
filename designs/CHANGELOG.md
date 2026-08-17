@@ -4511,3 +4511,38 @@ Structural only; the production sha probe reads `3cab191a…` unchanged at every
 4. **`damage_op.py` → `damage_op_layout.py`**: the `_DMG_*` offset/width constants, `OpTensors`
    and `decode_damage_block` (the block's SHAPE CONTRACT) split from the `DamageOperator` physics;
    full re-export as above.
+
+
+## v89 — `gen3_value_pooled_routes_v1` (2026-08-17): the value routes finally reach the critic
+
+**The bug (verified on gen-12's final_model.zip):** `--value-from-dist` makes
+`_critic_value` read the dist head, and the dist head reads `value_pooled` — so everything
+concatenated into the post-assembler vf tail was structurally disconnected from V and received
+no value-loss gradient. Five routes were inert whenever the dist critic was on:
+`intent_value_reduce` (v74), `value_entity_pool` (v80/82), `intent_threshold`'s vf half (v84),
+`value_clock` and `value_intent` (v87). Proof, not inference: after gen-12's 25M steps,
+`value_entity_pool.out_proj.weight` and `intent_value_reduce.proj.weight` were bit-exact ZERO
+(their upstream layers frozen at init noise), while `cls_pool.value_threat_proj` — the one route
+already injecting into `value_pooled` — trained to 0.117. Gen-11 and gen-12 both ran
+`--value-from-dist`, so v74/v80 were dead for two full generations, and every endofrun route-audit
+arm measuring a vf-tail route was measuring a dead limb.
+
+**The fix:** every value route now INJECTS additively into `value_pooled` (the
+`value_threat_inject` precedent) through a zero-init `D_MODEL`-wide projection —
+`_value_pooled_routes` in the orchestrator is the single registry/seam. Since
+`vf_parts[0] is value_pooled`, one wiring feeds BOTH critic parameterizations. Properties held:
+zero-init (ON-at-init exact), vf-only at ANY weight (pi never reads value_pooled), M1 capture.
+A structural bonus: additive injection is width-neutral, so the ede5a88 discovery-sizing bug
+class (an early return hiding a vf part from the `value_pre_norm` dummy forward) is
+unrepresentable, and the per-route width constants (`INTENT_VALUE_REDUCE_DIM`,
+`INTENT_THRESH_VF_DIM`, `VALUE_CLOCK_DIM`, `VALUE_INTENT_DIM`, `UVR_OUT_DIM`) are deleted.
+
+**The guard that was missing:** `value_route_gradient_test.py` backprops the critic (BOTH
+parameterizations) through every route the registry yields and fails on any zero gradient —
+one backward pass, generic over the seam, so the next route is covered by construction.
+
+**Versioning:** MODEL_CONFIG_VERSION 89. `ARCH_SIGNATURE` unchanged — flag-OFF configs are
+byte-identical. A <v89 checkpoint recording any of the five flags ON is REFUSED by the migration
+(the v75 rule: its projection shapes no longer exist; re-read from its metadata git_hash); OFF
+stamps forward. The production sha probe moves 3cab191a… → 694c1652… (production has
+`intent_value_reduce` + `value_entity_pool` ON; their delivery is the change).
