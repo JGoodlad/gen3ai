@@ -141,14 +141,14 @@ FORWARD_SINKS = ("pi_projection", "vf_projection")
 # be read aloud in a design conversation must never send you off to look one up — so the viewer
 # expands every one of them, everywhere the code appears.
 #
-# The split is deliberate: the CELL CONTENTS are PARSED out of `features_extractor.py` (those lines
+# The split is deliberate: the CELL CONTENTS are PARSED out of `team_transformer.py` (those lines
 # ARE the definition, and `edge_bias_test.py` pins them against the operator's own methods), so a
 # cell-content change reaches the viewer without anyone remembering to update it. Only the one-line
 # "what is this family FOR" phrase is curated here, because the code states that as a variable name
 # and nothing else. `build_arch_viewer_test.py` fails if a family in the graph has no entry, so a
 # new family cannot ship as a bare letter.
 # --------------------------------------------------------------------------------------------
-_EXTRACTOR = os.path.join(_HERE, "features_extractor.py")
+_EXTRACTOR = os.path.join(_HERE, "team_transformer.py")   # the _EDGE_*_CELL lines moved here 2026-08-16
 FAMILY_LABEL = {
     "h": "pair-history tendencies (switch-ins / clicks into this mon, exposure, recency)",
     "d1": "our active's move vs each opp mon",

@@ -15,7 +15,8 @@ from pathlib import Path
 
 from sb3_contrib import MaskablePPO
 
-from agents.model.snapshot import load_model_snapshot, maybe_compile_extractor
+from agents.model.compile_opponents import maybe_compile_extractor
+from agents.model.snapshot import load_model_snapshot
 from agents.model.model_version import ModelVersion
 from main.launcher.ipc import emit
 

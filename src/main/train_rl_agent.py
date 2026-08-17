@@ -2957,8 +2957,8 @@ async def main():
                 # mastered (pushed via set_stable_mastered) → floor peer of the bots.
                 stable_players, stable_labels, stable_teams = [], [], []
                 if self_play and stable_opponents:
-                    from agents.model.snapshot import (load_foreign_opponent,
-                                                        maybe_compile_extractor)
+                    from agents.model.compile_opponents import maybe_compile_extractor
+                    from agents.model.snapshot import load_foreign_opponent
                     from utils.teambuilder import Gen3Teambuilder as _G3TB
                     for e in stable_opponents:
                         opp_model, _ = load_foreign_opponent(
@@ -2991,8 +2991,8 @@ async def main():
                 exploiter_player = None
                 exploiter_team = None
                 if exploiter_entry is not None:
-                    from agents.model.snapshot import (load_foreign_opponent,
-                                                        maybe_compile_extractor)
+                    from agents.model.compile_opponents import maybe_compile_extractor
+                    from agents.model.snapshot import load_foreign_opponent
                     from utils.teambuilder import Gen3Teambuilder as _G3TB
                     _ex_model, _ = load_foreign_opponent(
                         exploiter_entry.zip_path, current_version=opponent_version,

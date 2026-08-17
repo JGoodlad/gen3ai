@@ -1076,8 +1076,10 @@ src/
   agents/
     model/           # Gen3FeaturesExtractor (PyTorch feature extractor) — has CLAUDE.md
                      #   arch_constants.py — the weight-shape dims (single source of truth)
-                     #   damage_op.py      — DamageOperator + decode_damage_block (split out 2026-08-01;
-                     #                       re-exported by features_extractor, so old imports still work)
+                     #   one file per phase group (extractor_ctx/encoders/team_transformer/pools/
+                     #   belief_heads/aux_value_heads/pointer_head/value_readouts) + damage_op.py
+                     #   (the physics) + damage_op_layout.py (the _DMG_* shape contract) — all
+                     #   re-exported by features_extractor, so old imports still work
     gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
                      #   type_chart/priors) over data/ — single interface, poke-env-free — has CLAUDE.md
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.) — has CLAUDE.md
@@ -1172,8 +1174,10 @@ it is the only document that describes the model as it is now rather than as it 
 Orientation only:
 
 - `Gen3FeaturesExtractor` (`src/agents/model/features_extractor.py`) is decomposed into named phase
-  `nn.Module`s chained by a thin orchestrator. Most phases are flag-gated; which ones exist depends
-  on the run config.
+  `nn.Module`s chained by a thin orchestrator — one file per phase group since 2026-08-16
+  (`extractor_ctx` / `encoders` / `team_transformer` / `pools` / `belief_heads` / `aux_value_heads`
+  / `pointer_head` / `value_readouts`, all re-exported by `features_extractor`). Most phases are
+  flag-gated; which ones exist depends on the run config.
 - It returns a **`(pi_features, vf_features)` tuple** and therefore MUST be paired with
   `Gen3DualHeadMaskablePolicy` (`policy.py`). A stock SB3 policy will not work.
 - The action head is the **pointer head** — there is no flat `action_net`, and no flag to restore

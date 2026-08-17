@@ -194,7 +194,8 @@ def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample
     torch.set_num_threads(1)  # defensive: B=1 CPU inference; the parallelism is across shards
     from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
     from agents.inference.player import RLPlayer
-    from agents.model.snapshot import load_foreign_opponent, maybe_compile_extractor
+    from agents.model.compile_opponents import maybe_compile_extractor
+    from agents.model.snapshot import load_foreign_opponent
     from utils.teambuilder import Gen3Teambuilder
     from utils.bridge.local_battle_runner import run_local_battles
 

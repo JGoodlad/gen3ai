@@ -66,7 +66,7 @@ def _publish_shard(output_dir, wid, seq, corrections):
 
 def run(cfg_path: str) -> None:
     from sb3_contrib import MaskablePPO
-    from agents.model.snapshot import maybe_compile_extractor
+    from agents.model.compile_opponents import maybe_compile_extractor
     from poke_env.ps_client import AccountConfiguration
     from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
     from agents.observation.state_encoder import load_mappings

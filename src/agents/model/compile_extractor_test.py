@@ -16,7 +16,7 @@ import types
 
 import torch
 
-from agents.model import snapshot as S
+from agents.model import compile_opponents as S
 
 
 class _FE(torch.nn.Module):
@@ -279,15 +279,16 @@ def test_drops_the_observation_debugger(monkeypatch):
 
 
 def test_cache_dir_is_not_an_import_side_effect():
-    """`snapshot.py` is imported by the prober, eval workers and offline tooling that never compile.
-    The cache dir is set when a compile actually happens, not at import."""
+    """`compile_opponents.py` is imported (via `snapshot.py`'s re-export) by the prober, eval
+    workers and offline tooling that never compile. The cache dir is set when a compile actually
+    happens, not at import."""
     import os
     monkey = os.environ.pop("TORCHINDUCTOR_CACHE_DIR", None)
     try:
         import importlib
         importlib.reload(S)
         assert "TORCHINDUCTOR_CACHE_DIR" not in os.environ, (
-            "importing snapshot.py must not mutate the environment"
+            "importing compile_opponents.py must not mutate the environment"
         )
         assert S._inductor_cache_dir() == S.DEFAULT_INDUCTOR_CACHE_DIR
         assert os.environ["TORCHINDUCTOR_CACHE_DIR"] == S.DEFAULT_INDUCTOR_CACHE_DIR

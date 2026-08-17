@@ -63,7 +63,7 @@ def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings, quiet: bool
         import torch
 
         from agents.model.features_extractor import Gen3FeaturesExtractor
-        from agents.model.snapshot import _compile_warmup_obs, _inductor_cache_dir
+        from agents.model.compile_opponents import _compile_warmup_obs, _inductor_cache_dir
         from agents.observation.state_encoder import Gen3ObservationEncoder
 
         cache_dir = _inductor_cache_dir()

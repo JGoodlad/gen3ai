@@ -27,7 +27,7 @@ from dataclasses import asdict
 
 import numpy as np
 
-from agents.model.snapshot import maybe_compile_extractor
+from agents.model.compile_opponents import maybe_compile_extractor
 
 from main.prober.discovery import (
     BattleTrace,
