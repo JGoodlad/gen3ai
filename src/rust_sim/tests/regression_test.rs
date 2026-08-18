@@ -13524,6 +13524,61 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// CR1 — CONFUSE RAY (`gen3_confuse_ray_v1`). A VOLATILE-inflicting status move, so it lives
+/// outside `modeled_status_move` (which maps only MAJOR statuses) and used to hit that path's
+/// FAIL-LOUD panic. Ground truth `harness/probe_confuseray.js` (re-runnable):
+///   plain hit       -> `|-start|<target>|confusion`, and the random(2,6) duration draw
+///   already confused-> `|move|…|[still]` + `|-fail|<USER>`  (the USER, not the target), NO draw
+/// The duration draw is the SHARED `add_confusion` path (Water Pulse & co), so this pins the
+/// MOVE-LEVEL forms — the two emissions a secondary never produces.
+#[test]
+fn confuse_ray_starts_confusion_then_fails_on_an_already_confused_target() {
+    let d = dex();
+    let p1 = "Gengar||Leftovers|Levitate|confuseray,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Confuse Ray lands
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // again -> already confused
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let marks: Vec<&str> = raw
+        .iter()
+        .filter(|l| l.contains("Confuse Ray") || l.contains("confusion") || l.starts_with("|-fail|"))
+        .map(|l| l.as_str())
+        .collect();
+    assert!(
+        marks.iter().any(|l| *l == "|-start|p2a: Snorlax|confusion"),
+        "CR1: the landing cast must emit -start|confusion. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        marks.iter().any(|l| l.contains("Confuse Ray") && l.contains("[still]")),
+        "CR1: the second cast must carry the [still] attr. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        marks.iter().any(|l| *l == "|-fail|p1a: Gengar"),
+        "CR1: the already-confused fail names the USER, not the target. got:\n{}",
+        raw.join("\n")
+    );
+    // Exactly ONE -start: the second cast hit the already-confused gate, so it neither
+    // re-applied the volatile nor took the random(2,6) duration draw. (Do NOT assert the
+    // volatile still EXISTS here — it rolled a 2-turn duration and legitimately expires,
+    // which is what the sim's `|-end|…|confusion` on turn 2 shows.)
+    assert_eq!(
+        marks.iter().filter(|l| **l == "|-start|p2a: Snorlax|confusion").count(),
+        1,
+        "CR1: the already-confused cast must NOT re-add the volatile. got:\n{}",
+        raw.join("\n")
+    );
+}
+
 /// PT8 — SUBSTITUTE by the victim frees the trap, SILENTLY
 /// (`gen3_substitute_frees_partial_trap_v1`). The sibling of PT4, and the FORM differs: the
 /// substitute condition's own `onStart` (moves.js:18380-18382) does an explicit

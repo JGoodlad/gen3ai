@@ -179,6 +179,10 @@ const MOVE_ID_BLOCKLIST = new Set([
 // (the port FAIL-LOUDs on them). Kept in lockstep with `modeled_status_move` in
 // src/turn.rs.
 const MODELED_STATUS_MOVES = new Set([
+  // CONFUSE RAY (`gen3_confuse_ray_v1`) — a VOLATILE-inflicting status move (the rest of this
+  // set inflicts MAJOR statuses). Admitted once the engine grew its arm; the shared
+  // `add_confusion` path supplies the random(2,6) duration draw and the `-start|confusion`.
+  'confuseray',
   'thunderwave', 'stunspore', 'glare',
   'poisonpowder', 'poisongas',
   'toxic',

@@ -2730,6 +2730,48 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- CONFUSE RAY (`gen3_confuse_ray_v1`). A VOLATILE-inflicting status move, so it
+        //     sits outside `modeled_status_move` (which maps only MAJOR statuses). Accuracy is
+        //     already rolled upstream — reaching here means the move HIT.
+        //
+        //     PROBE-SETTLED (`harness/probe_confuseray.js`, and re-runnable):
+        //       plain hit      : random(100) accuracy THEN random(2,6) duration
+        //                        -> `|-start|<target>|confusion`
+        //       already confused: accuracy ONLY, NO duration draw
+        //                        -> `|move|…|[still]` + `|-fail|<USER>`   (the USER, not the target)
+        //       OWN TEMPO      : accuracy ONLY, NO duration draw
+        //                        -> `|-immune|<target>|confusion|[from] ability: Own Tempo`
+        //
+        //     The hard half already existed: `secondaries.rs::add_confusion` implements the
+        //     KO / already-confused / Own-Tempo gates, the random(2,6) duration draw and the
+        //     `-start|confusion` emission (it is the shared path with Water Pulse & co). This arm
+        //     adds only the two MOVE-LEVEL emissions a secondary never produces, and must
+        //     therefore re-test the gates itself to know WHICH to emit. ---
+        if move_id == "confuseray" {
+            let target = &self.sides[foe].pokemon[foe_slot];
+            let own_tempo = to_id(&target.ability) == "owntempo";
+            let already = target.confusion.is_some();
+            let gone = target.fainted || target.hp == 0;
+            if own_tempo {
+                if self.logging() {
+                    let t = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_effect_from_ability(&t, "confusion", "Own Tempo");
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if already || gone {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // SUCCESS → the shared path draws random(2,6) and emits `-start|confusion`.
+            self.add_confusion(foe, foe_slot, dex);
+            return MoveResolution::done(false, false, false);
+        }
+
         // FAIL-LOUD GUARD: only the explicitly-modeled foe-targeting major-status
         // moves are allowed. Any other status move (recovery/boost/phaze/hazard/field)
         // would draw an UNMODELED number/order of PRNG calls → a silent desync. PANIC

@@ -1,0 +1,665 @@
+# ab_fuzz chunk — gen3ou-RANDOM team fixture (`--mode ourandom`, master_seed=8180818).
+# Metagross/Gengar-era OU board: status + stat-stage + Flygon activate forms over 58 decisions.
+# Frozen so the gen3ou-RANDOM surface has a PERMANENT cargo-test gate: every other run of
+# it today was hand-invoked, which is exactly how a ROUND-35 bug survived to 2026-08-17.
+SCEN	ab_0_0
+TEAM	ab_0_0	p1	Metagross||liechiberry|clearbody|earthquake,meteormash,rockslide,agility|Adamant|168,252,,,,88|N||||]Gengar||leftovers|levitate|explosion,willowisp,hiddenpowergrass,taunt|Hasty|,4,,252,,252|M|30,,30,30,,|||]Porygon2||leftovers|trace|recover,thunderwave,icebeam,return|Bold|252,,200,56,,|N||||]Salamence||leftovers|intimidate|fireblast,hydropump,earthquake,dragonclaw|Adamant|,156,,,140,212|M||||]Jolteon||leftovers|voltabsorb|thunderbolt,roar,substitute,batonpass|Timid|4,,,252,,252|M||||]Flygon||leftovers|levitate|protect,quickattack,rockslide,earthquake|Jolly|4,252,,,,252|M||||
+TEAM	ab_0_0	p2	Regice||leftovers|clearbody|thunderwave,thunderbolt,explosion,icebeam|Quiet|252,,,252,,4|N||||]Flygon||leftovers|levitate|rockslide,endure,earthquake,protect|Jolly|,252,,,4,252|M||||]Suicune||leftovers|pressure|roar,calmmind,icebeam,surf|Bold|240,,252,,,16|N||||]Gengar||leftovers|levitate|thunderbolt,explosion,icepunch,willowisp|Hasty|168,,,,164,176|M||||]Metagross||leftovers|clearbody|explosion,thunderpunch,doubleedge,meteormash|Adamant|128,252,,,,128|N||||]Qwilfish||leftovers|poisonpoint|selfdestruct,sludgebomb,spikes,shadowball|Lonely|100,252,,,,156|M||||
+FMT	ab_0_0	gen3ou
+INIT	ab_0_0	58984,7288,37832,60433	1901437548	0
+DEC	ab_0_0	0	move	0	0	m3	m0	47826,17104,26087,17514	Metagross	343	343	0	par	0	0	0	0	2	0	6	Regice	364	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	1	move	0	0	s3	m1	1329,57425,1039,49369	Salamence	240	331	0	-	0	0	0	0	0	0	6	Regice	364	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	2	move	0	0	s2	m1	32162,20015,11406,62215	Porygon2	297	374	0	-	0	0	0	0	0	0	6	Regice	364	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	3	move	0	0	m3	s1	37435,62296,10103,51755	Porygon2	320	374	0	-	0	0	0	0	0	0	6	Flygon	211	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	4	move	0	0	m0	m0	26731,24368,40981,48814	Porygon2	374	374	0	-	0	0	0	0	0	0	6	Flygon	229	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	5	move	0	0	m3	m2	23239,9416,25969,25111	Porygon2	267	374	0	-	0	0	0	0	0	0	6	Flygon	30	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	6	move	0	0	m2	m3	7615,53118,44264,18456	Porygon2	290	374	0	-	0	0	0	0	0	0	6	Flygon	48	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	7	move	0	0	m3	m3	63035,8034,40402,22572	Porygon2	313	374	0	-	0	0	0	0	0	0	6	Flygon	66	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	8	move	0	0	m1	m2	8210,9523,7271,43459	Porygon2	223	374	0	-	0	0	0	0	0	0	6	Flygon	84	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	9	move	0	0	s4	m3	41357,25792,38714,62386	Jolteon	272	272	0	-	0	0	0	0	0	0	6	Flygon	102	301	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	10	move	0	0	m2	m1	42530,27922,49181,24724	Jolteon	221	272	0	-	0	0	0	0	0	0	6	Flygon	120	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_0_0	11	move	0	0	m2	m1	47277,56107,52951,3622	Jolteon	238	272	0	-	0	0	0	0	0	0	6	Flygon	138	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_0_0	12	move	0	0	s1	m3	27374,33489,7323,35265	Gengar	260	260	0	-	0	0	0	0	0	0	6	Flygon	156	301	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	13	move	0	0	m2	m1	35081,12178,39227,58364	Gengar	260	260	0	-	0	0	0	0	0	0	6	Flygon	74	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	1
+DEC	ab_0_0	14	move	0	0	m0	s2	4686,49803,29878,6281	Gengar	0	260	1	fnt	0	0	0	0	0	0	5	Suicune	207	401	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	15	switch	1	0	s2	-	42366,30427,63198,40400	Salamence	260	331	0	-	0	0	0	0	0	0	5	Suicune	232	401	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_0	16	move	0	0	m2	m3	938,25854,4521,13905	Salamence	231	331	0	-	0	0	0	0	0	0	5	Suicune	170	401	0	-	-1	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	17	move	0	0	m2	s4	37509,7066,17889,31957	Salamence	251	331	0	-	0	0	0	0	0	0	5	Metagross	142	333	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	18	move	0	0	s3	s3	11250,25632,33725,56268	Metagross	343	343	0	par	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	19	move	0	0	m3	m0	22943,12135,58284,15442	Metagross	242	343	0	par	0	0	0	0	2	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	20	move	0	0	s4	m2	30934,65414,527,46728	Porygon2	165	374	0	-	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	21	move	0	0	m0	m0	27255,47053,62631,13135	Porygon2	276	374	0	-	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	22	move	0	0	m3	m2	34059,42711,19004,43693	Porygon2	220	374	0	-	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	23	move	0	0	m0	m3	20521,15505,46776,13911	Porygon2	374	374	0	-	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	24	move	0	0	m3	m2	1066,7155,35956,30709	Porygon2	324	374	0	-	0	0	0	0	0	0	5	Gengar	303	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	25	move	0	0	m2	m2	49508,58787,20443,28628	Porygon2	274	374	0	-	0	0	0	0	0	0	5	Gengar	240	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	26	move	0	0	m3	m2	49551,65152,61143,25242	Porygon2	224	374	0	-	0	0	0	0	0	0	5	Gengar	258	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	27	move	0	0	m2	m2	38727,65178,12235,55757	Porygon2	86	374	0	-	0	0	0	0	0	0	5	Gengar	186	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	28	move	0	0	m3	m0	34673,58254,4789,16529	Porygon2	0	374	1	fnt	0	0	0	0	0	0	4	Gengar	186	303	0	-	0	0	0	0	0	0	6	p2	0	0	0	1	0
+DEC	ab_0_0	29	switch	1	0	s3	-	13797,64887,20781,45304	Salamence	271	331	0	-	0	0	0	0	0	0	4	Gengar	204	303	0	-	-1	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_0_0	30	move	0	0	m3	m0	40768,18663,12948,23520	Salamence	199	331	0	-	0	0	0	0	0	0	4	Gengar	132	303	0	-	-1	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	31	move	0	0	m3	m0	52921,3906,47598,45512	Salamence	118	331	0	-	0	0	0	0	0	0	4	Gengar	48	303	0	-	-1	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	32	move	0	0	m2	s1	42221,61845,65405,1756	Salamence	138	331	0	-	0	0	0	0	0	0	4	Regice	263	364	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_0	33	move	0	0	m1	m0	12233,9637,51233,25570	Salamence	158	331	0	par	0	0	0	0	0	0	4	Regice	233	364	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_0	34	move	0	0	m2	m2	34852,32862,5520,51863	Salamence	0	331	1	fnt	0	0	0	0	0	0	3	Regice	0	364	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_0	35	switch	1	1	s4	s1	4556,38313,15570,23382	Metagross	242	343	0	par	0	0	0	0	0	0	3	Gengar	66	303	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_0	36	move	0	0	m0	m1	25182,62744,19765,51387	Metagross	132	343	0	par	0	0	0	0	0	0	3	Gengar	0	303	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_0	37	switch	0	1	-	s3	11867,15318,40935,58250	Metagross	132	343	0	par	0	0	0	0	0	0	3	Metagross	162	333	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_0	38	move	0	0	s1	m3	26691,4469,26304,28281	Jolteon	102	272	0	-	0	0	0	0	0	0	3	Metagross	182	333	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_0	39	move	0	0	m0	m0	98,55585,47836,10406	Jolteon	0	272	1	fnt	0	0	0	0	0	0	2	Metagross	0	333	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	40	switch	1	1	s5	s4	49649,57335,44877,32321	Flygon	302	302	0	-	0	0	0	0	0	0	2	Suicune	195	401	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_0	41	move	0	0	m3	s2	36069,44434,38424,9166	Flygon	302	302	0	-	0	0	0	0	0	0	2	Flygon	92	301	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_0	42	move	0	0	m0	m1	33873,27246,12499,502	Flygon	302	302	0	-	0	0	0	0	0	0	2	Flygon	110	301	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_0_0	43	move	0	0	m0	s2	53191,12498,4686,55515	Flygon	302	302	0	-	0	0	0	0	0	0	2	Suicune	220	401	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_0	44	move	0	0	s1	m2	7941,14563,52047,25374	Metagross	94	343	0	par	0	0	0	0	0	0	2	Suicune	245	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	45	move	0	0	m3	m0	35228,15003,10905,16082	Flygon	302	302	0	-	0	0	0	0	0	0	2	Suicune	270	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	46	move	0	0	m1	m3	64662,8458,34370,60139	Flygon	197	302	0	-	0	0	0	0	0	0	2	Suicune	269	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	47	move	0	0	m3	m1	21106,63203,63478,43983	Flygon	215	302	0	-	0	0	0	0	0	0	2	Suicune	202	401	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	48	move	0	0	m2	m3	11020,64065,6715,7895	Flygon	60	302	0	-	0	0	0	0	0	0	2	Suicune	179	401	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	49	move	0	0	s1	m2	45103,55822,27158,3274	Metagross	40	343	0	par	1	0	0	0	0	0	2	Suicune	204	401	0	-	0	0	1	1	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	50	move	0	0	s1	s2	1837,9213,25384,4281	Flygon	78	302	0	-	0	0	0	0	0	0	2	Flygon	128	301	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_0	51	move	0	0	m0	m1	58921,22509,41136,6273	Flygon	96	302	0	-	0	0	0	0	0	0	2	Flygon	146	301	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	1
+DEC	ab_0_0	52	move	0	0	m2	m0	13720,62562,59209,18715	Flygon	68	302	0	-	0	0	0	0	0	0	2	Flygon	120	301	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_0	53	move	0	0	s1	s2	5833,27409,27039,1791	Metagross	40	343	0	par	0	0	0	0	0	0	2	Suicune	229	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	54	move	0	0	m1	m0	15582,19449,38303,20131	Flygon	86	302	0	-	0	0	0	0	0	0	2	Suicune	254	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	55	move	0	0	s1	m3	13465,55152,18433,7668	Metagross	0	343	1	fnt	0	0	0	0	0	0	1	Suicune	254	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_0	56	switch	1	0	s1	-	19203,54211,49995,1031	Flygon	104	302	0	-	0	0	0	0	0	0	1	Suicune	279	401	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_0	57	move	0	0	m2	m2	55900,37998,56653,2063	Flygon	0	302	1	-	0	0	0	0	0	0	0	Suicune	228	401	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	ab_0_0	1	p2
+L	ab_0_0	0	|t:|<NORMALIZED>
+L	ab_0_0	1	|gametype|singles
+L	ab_0_0	2	|player|p1|P1||
+L	ab_0_0	3	|player|p2|P2||
+L	ab_0_0	4	|gen|3
+L	ab_0_0	5	|tier|[Gen 3] OU
+L	ab_0_0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_0	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_0	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_0	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_0	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_0	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_0	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_0	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_0	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_0	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_0	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_0	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_0	18	|
+L	ab_0_0	19	|t:|<NORMALIZED>
+L	ab_0_0	20	|teamsize|p1|6
+L	ab_0_0	21	|teamsize|p2|6
+L	ab_0_0	22	|start
+L	ab_0_0	23	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_0	24	|switch|p2a: Regice|Regice|364/364
+L	ab_0_0	25	|turn|1
+L	ab_0_0	26	|
+L	ab_0_0	27	|t:|<NORMALIZED>
+L	ab_0_0	28	|move|p1a: Metagross|Agility|p1a: Metagross
+L	ab_0_0	29	|-boost|p1a: Metagross|spe|2
+L	ab_0_0	30	|move|p2a: Regice|Thunder Wave|p1a: Metagross
+L	ab_0_0	31	|-status|p1a: Metagross|par
+L	ab_0_0	32	|
+L	ab_0_0	33	|upkeep
+L	ab_0_0	34	|turn|2
+L	ab_0_0	35	|
+L	ab_0_0	36	|t:|<NORMALIZED>
+L	ab_0_0	37	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_0_0	38	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_0	39	|-fail|p2a: Regice|unboost|[from] ability: Clear Body|[of] p2a: Regice
+L	ab_0_0	40	|move|p2a: Regice|Thunderbolt|p1a: Salamence
+L	ab_0_0	41	|-damage|p1a: Salamence|220/331
+L	ab_0_0	42	|
+L	ab_0_0	43	|-heal|p1a: Salamence|240/331|[from] item: Leftovers
+L	ab_0_0	44	|upkeep
+L	ab_0_0	45	|turn|3
+L	ab_0_0	46	|
+L	ab_0_0	47	|t:|<NORMALIZED>
+L	ab_0_0	48	|switch|p1a: Porygon2|Porygon2|374/374
+L	ab_0_0	49	|-ability|p1a: Porygon2|Clear Body|Trace|[from] ability: Trace|[of] p2a: Regice
+L	ab_0_0	50	|move|p2a: Regice|Thunderbolt|p1a: Porygon2
+L	ab_0_0	51	|-damage|p1a: Porygon2|274/374
+L	ab_0_0	52	|
+L	ab_0_0	53	|-heal|p1a: Porygon2|297/374|[from] item: Leftovers
+L	ab_0_0	54	|upkeep
+L	ab_0_0	55	|turn|4
+L	ab_0_0	56	|
+L	ab_0_0	57	|t:|<NORMALIZED>
+L	ab_0_0	58	|switch|p2a: Flygon|Flygon, M|301/301
+L	ab_0_0	59	|move|p1a: Porygon2|Return|p2a: Flygon
+L	ab_0_0	60	|-damage|p2a: Flygon|193/301
+L	ab_0_0	61	|
+L	ab_0_0	62	|-heal|p2a: Flygon|211/301|[from] item: Leftovers
+L	ab_0_0	63	|-heal|p1a: Porygon2|320/374|[from] item: Leftovers
+L	ab_0_0	64	|upkeep
+L	ab_0_0	65	|turn|5
+L	ab_0_0	66	|
+L	ab_0_0	67	|t:|<NORMALIZED>
+L	ab_0_0	68	|move|p2a: Flygon|Rock Slide|p1a: Porygon2
+L	ab_0_0	69	|-crit|p1a: Porygon2
+L	ab_0_0	70	|-damage|p1a: Porygon2|190/374
+L	ab_0_0	71	|move|p1a: Porygon2|Recover|p1a: Porygon2
+L	ab_0_0	72	|-heal|p1a: Porygon2|374/374
+L	ab_0_0	73	|
+L	ab_0_0	74	|-heal|p2a: Flygon|229/301|[from] item: Leftovers
+L	ab_0_0	75	|upkeep
+L	ab_0_0	76	|turn|6
+L	ab_0_0	77	|
+L	ab_0_0	78	|t:|<NORMALIZED>
+L	ab_0_0	79	|move|p2a: Flygon|Earthquake|p1a: Porygon2
+L	ab_0_0	80	|-damage|p1a: Porygon2|244/374
+L	ab_0_0	81	|move|p1a: Porygon2|Return|p2a: Flygon
+L	ab_0_0	82	|-crit|p2a: Flygon
+L	ab_0_0	83	|-damage|p2a: Flygon|12/301
+L	ab_0_0	84	|
+L	ab_0_0	85	|-heal|p2a: Flygon|30/301|[from] item: Leftovers
+L	ab_0_0	86	|-heal|p1a: Porygon2|267/374|[from] item: Leftovers
+L	ab_0_0	87	|upkeep
+L	ab_0_0	88	|turn|7
+L	ab_0_0	89	|
+L	ab_0_0	90	|t:|<NORMALIZED>
+L	ab_0_0	91	|move|p2a: Flygon|Protect|p2a: Flygon
+L	ab_0_0	92	|-singleturn|p2a: Flygon|Protect
+L	ab_0_0	93	|move|p1a: Porygon2|Ice Beam|p2a: Flygon
+L	ab_0_0	94	|-activate|p2a: Flygon|Protect
+L	ab_0_0	95	|
+L	ab_0_0	96	|-heal|p2a: Flygon|48/301|[from] item: Leftovers
+L	ab_0_0	97	|-heal|p1a: Porygon2|290/374|[from] item: Leftovers
+L	ab_0_0	98	|upkeep
+L	ab_0_0	99	|turn|8
+L	ab_0_0	100	|
+L	ab_0_0	101	|t:|<NORMALIZED>
+L	ab_0_0	102	|move|p2a: Flygon|Protect|p2a: Flygon
+L	ab_0_0	103	|-singleturn|p2a: Flygon|Protect
+L	ab_0_0	104	|move|p1a: Porygon2|Return|p2a: Flygon
+L	ab_0_0	105	|-activate|p2a: Flygon|Protect
+L	ab_0_0	106	|
+L	ab_0_0	107	|-heal|p2a: Flygon|66/301|[from] item: Leftovers
+L	ab_0_0	108	|-heal|p1a: Porygon2|313/374|[from] item: Leftovers
+L	ab_0_0	109	|upkeep
+L	ab_0_0	110	|turn|9
+L	ab_0_0	111	|
+L	ab_0_0	112	|t:|<NORMALIZED>
+L	ab_0_0	113	|move|p2a: Flygon|Earthquake|p1a: Porygon2
+L	ab_0_0	114	|-damage|p1a: Porygon2|200/374
+L	ab_0_0	115	|move|p1a: Porygon2|Thunder Wave|p2a: Flygon
+L	ab_0_0	116	|-immune|p2a: Flygon
+L	ab_0_0	117	|
+L	ab_0_0	118	|-heal|p2a: Flygon|84/301|[from] item: Leftovers
+L	ab_0_0	119	|-heal|p1a: Porygon2|223/374|[from] item: Leftovers
+L	ab_0_0	120	|upkeep
+L	ab_0_0	121	|turn|10
+L	ab_0_0	122	|
+L	ab_0_0	123	|t:|<NORMALIZED>
+L	ab_0_0	124	|switch|p1a: Jolteon|Jolteon, M|272/272
+L	ab_0_0	125	|move|p2a: Flygon|Protect||[still]
+L	ab_0_0	126	|-fail|p2a: Flygon
+L	ab_0_0	127	|
+L	ab_0_0	128	|-heal|p2a: Flygon|102/301|[from] item: Leftovers
+L	ab_0_0	129	|upkeep
+L	ab_0_0	130	|turn|11
+L	ab_0_0	131	|
+L	ab_0_0	132	|t:|<NORMALIZED>
+L	ab_0_0	133	|move|p2a: Flygon|Endure|p2a: Flygon
+L	ab_0_0	134	|-singleturn|p2a: Flygon|move: Endure
+L	ab_0_0	135	|move|p1a: Jolteon|Substitute|p1a: Jolteon
+L	ab_0_0	136	|-start|p1a: Jolteon|Substitute
+L	ab_0_0	137	|-damage|p1a: Jolteon|204/272
+L	ab_0_0	138	|
+L	ab_0_0	139	|-heal|p1a: Jolteon|221/272|[from] item: Leftovers
+L	ab_0_0	140	|-heal|p2a: Flygon|120/301|[from] item: Leftovers
+L	ab_0_0	141	|upkeep
+L	ab_0_0	142	|turn|12
+L	ab_0_0	143	|
+L	ab_0_0	144	|t:|<NORMALIZED>
+L	ab_0_0	145	|move|p2a: Flygon|Endure||[still]
+L	ab_0_0	146	|-fail|p2a: Flygon
+L	ab_0_0	147	|move|p1a: Jolteon|Substitute|p1a: Jolteon
+L	ab_0_0	148	|-fail|p1a: Jolteon|move: Substitute
+L	ab_0_0	149	|
+L	ab_0_0	150	|-heal|p1a: Jolteon|238/272|[from] item: Leftovers
+L	ab_0_0	151	|-heal|p2a: Flygon|138/301|[from] item: Leftovers
+L	ab_0_0	152	|upkeep
+L	ab_0_0	153	|turn|13
+L	ab_0_0	154	|
+L	ab_0_0	155	|t:|<NORMALIZED>
+L	ab_0_0	156	|switch|p1a: Gengar|Gengar, M|260/260
+L	ab_0_0	157	|move|p2a: Flygon|Protect||[still]
+L	ab_0_0	158	|-fail|p2a: Flygon
+L	ab_0_0	159	|
+L	ab_0_0	160	|-heal|p2a: Flygon|156/301|[from] item: Leftovers
+L	ab_0_0	161	|upkeep
+L	ab_0_0	162	|turn|14
+L	ab_0_0	163	|
+L	ab_0_0	164	|t:|<NORMALIZED>
+L	ab_0_0	165	|move|p2a: Flygon|Endure|p2a: Flygon
+L	ab_0_0	166	|-singleturn|p2a: Flygon|move: Endure
+L	ab_0_0	167	|move|p1a: Gengar|Hidden Power|p2a: Flygon
+L	ab_0_0	168	|-damage|p2a: Flygon|56/301
+L	ab_0_0	169	|
+L	ab_0_0	170	|-heal|p2a: Flygon|74/301|[from] item: Leftovers
+L	ab_0_0	171	|upkeep
+L	ab_0_0	172	|turn|15
+L	ab_0_0	173	|
+L	ab_0_0	174	|t:|<NORMALIZED>
+L	ab_0_0	175	|switch|p2a: Suicune|Suicune|401/401
+L	ab_0_0	176	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_0	177	|move|p1a: Gengar|Explosion|p2a: Suicune
+L	ab_0_0	178	|-damage|p2a: Suicune|207/401
+L	ab_0_0	179	|faint|p1a: Gengar
+L	ab_0_0	180	|
+L	ab_0_0	181	|t:|<NORMALIZED>
+L	ab_0_0	182	|switch|p1a: Salamence|Salamence, M|240/331
+L	ab_0_0	183	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_0	184	|-unboost|p2a: Suicune|atk|1
+L	ab_0_0	185	|
+L	ab_0_0	186	|-heal|p1a: Salamence|260/331|[from] item: Leftovers
+L	ab_0_0	187	|-heal|p2a: Suicune|232/401|[from] item: Leftovers
+L	ab_0_0	188	|upkeep
+L	ab_0_0	189	|turn|16
+L	ab_0_0	190	|
+L	ab_0_0	191	|t:|<NORMALIZED>
+L	ab_0_0	192	|move|p1a: Salamence|Earthquake|p2a: Suicune
+L	ab_0_0	193	|-damage|p2a: Suicune|145/401
+L	ab_0_0	194	|move|p2a: Suicune|Surf|p1a: Salamence
+L	ab_0_0	195	|-resisted|p1a: Salamence
+L	ab_0_0	196	|-damage|p1a: Salamence|211/331
+L	ab_0_0	197	|
+L	ab_0_0	198	|-heal|p1a: Salamence|231/331|[from] item: Leftovers
+L	ab_0_0	199	|-heal|p2a: Suicune|170/401|[from] item: Leftovers
+L	ab_0_0	200	|upkeep
+L	ab_0_0	201	|turn|17
+L	ab_0_0	202	|
+L	ab_0_0	203	|t:|<NORMALIZED>
+L	ab_0_0	204	|switch|p2a: Metagross|Metagross|333/333
+L	ab_0_0	205	|move|p1a: Salamence|Earthquake|p2a: Metagross
+L	ab_0_0	206	|-supereffective|p2a: Metagross
+L	ab_0_0	207	|-damage|p2a: Metagross|122/333
+L	ab_0_0	208	|
+L	ab_0_0	209	|-heal|p1a: Salamence|251/331|[from] item: Leftovers
+L	ab_0_0	210	|-heal|p2a: Metagross|142/333|[from] item: Leftovers
+L	ab_0_0	211	|upkeep
+L	ab_0_0	212	|turn|18
+L	ab_0_0	213	|
+L	ab_0_0	214	|t:|<NORMALIZED>
+L	ab_0_0	215	|switch|p1a: Metagross|Metagross|343/343 par
+L	ab_0_0	216	|switch|p2a: Gengar|Gengar, M|303/303
+L	ab_0_0	217	|
+L	ab_0_0	218	|upkeep
+L	ab_0_0	219	|turn|19
+L	ab_0_0	220	|
+L	ab_0_0	221	|t:|<NORMALIZED>
+L	ab_0_0	222	|move|p2a: Gengar|Thunderbolt|p1a: Metagross
+L	ab_0_0	223	|-damage|p1a: Metagross|242/343 par
+L	ab_0_0	224	|move|p1a: Metagross|Agility|p1a: Metagross
+L	ab_0_0	225	|-boost|p1a: Metagross|spe|2
+L	ab_0_0	226	|
+L	ab_0_0	227	|upkeep
+L	ab_0_0	228	|turn|20
+L	ab_0_0	229	|
+L	ab_0_0	230	|t:|<NORMALIZED>
+L	ab_0_0	231	|switch|p1a: Porygon2|Porygon2|223/374
+L	ab_0_0	232	|-ability|p1a: Porygon2|Levitate|Trace|[from] ability: Trace|[of] p2a: Gengar
+L	ab_0_0	233	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	234	|-damage|p1a: Porygon2|142/374
+L	ab_0_0	235	|
+L	ab_0_0	236	|-heal|p1a: Porygon2|165/374|[from] item: Leftovers
+L	ab_0_0	237	|upkeep
+L	ab_0_0	238	|turn|21
+L	ab_0_0	239	|
+L	ab_0_0	240	|t:|<NORMALIZED>
+L	ab_0_0	241	|move|p2a: Gengar|Thunderbolt|p1a: Porygon2
+L	ab_0_0	242	|-damage|p1a: Porygon2|66/374
+L	ab_0_0	243	|move|p1a: Porygon2|Recover|p1a: Porygon2
+L	ab_0_0	244	|-heal|p1a: Porygon2|253/374
+L	ab_0_0	245	|
+L	ab_0_0	246	|-heal|p1a: Porygon2|276/374|[from] item: Leftovers
+L	ab_0_0	247	|upkeep
+L	ab_0_0	248	|turn|22
+L	ab_0_0	249	|
+L	ab_0_0	250	|t:|<NORMALIZED>
+L	ab_0_0	251	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	252	|-damage|p1a: Porygon2|197/374
+L	ab_0_0	253	|move|p1a: Porygon2|Return|p2a: Gengar
+L	ab_0_0	254	|-immune|p2a: Gengar
+L	ab_0_0	255	|
+L	ab_0_0	256	|-heal|p1a: Porygon2|220/374|[from] item: Leftovers
+L	ab_0_0	257	|upkeep
+L	ab_0_0	258	|turn|23
+L	ab_0_0	259	|
+L	ab_0_0	260	|t:|<NORMALIZED>
+L	ab_0_0	261	|move|p2a: Gengar|Will-O-Wisp|p1a: Porygon2|[miss]
+L	ab_0_0	262	|-miss|p2a: Gengar|p1a: Porygon2
+L	ab_0_0	263	|move|p1a: Porygon2|Recover|p1a: Porygon2
+L	ab_0_0	264	|-heal|p1a: Porygon2|374/374
+L	ab_0_0	265	|
+L	ab_0_0	266	|upkeep
+L	ab_0_0	267	|turn|24
+L	ab_0_0	268	|
+L	ab_0_0	269	|t:|<NORMALIZED>
+L	ab_0_0	270	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	271	|-damage|p1a: Porygon2|301/374
+L	ab_0_0	272	|move|p1a: Porygon2|Return|p2a: Gengar
+L	ab_0_0	273	|-immune|p2a: Gengar
+L	ab_0_0	274	|
+L	ab_0_0	275	|-heal|p1a: Porygon2|324/374|[from] item: Leftovers
+L	ab_0_0	276	|upkeep
+L	ab_0_0	277	|turn|25
+L	ab_0_0	278	|
+L	ab_0_0	279	|t:|<NORMALIZED>
+L	ab_0_0	280	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	281	|-damage|p1a: Porygon2|251/374
+L	ab_0_0	282	|move|p1a: Porygon2|Ice Beam|p2a: Gengar
+L	ab_0_0	283	|-damage|p2a: Gengar|222/303
+L	ab_0_0	284	|
+L	ab_0_0	285	|-heal|p2a: Gengar|240/303|[from] item: Leftovers
+L	ab_0_0	286	|-heal|p1a: Porygon2|274/374|[from] item: Leftovers
+L	ab_0_0	287	|upkeep
+L	ab_0_0	288	|turn|26
+L	ab_0_0	289	|
+L	ab_0_0	290	|t:|<NORMALIZED>
+L	ab_0_0	291	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	292	|-damage|p1a: Porygon2|201/374
+L	ab_0_0	293	|move|p1a: Porygon2|Return|p2a: Gengar
+L	ab_0_0	294	|-immune|p2a: Gengar
+L	ab_0_0	295	|
+L	ab_0_0	296	|-heal|p2a: Gengar|258/303|[from] item: Leftovers
+L	ab_0_0	297	|-heal|p1a: Porygon2|224/374|[from] item: Leftovers
+L	ab_0_0	298	|upkeep
+L	ab_0_0	299	|turn|27
+L	ab_0_0	300	|
+L	ab_0_0	301	|t:|<NORMALIZED>
+L	ab_0_0	302	|move|p2a: Gengar|Ice Punch|p1a: Porygon2
+L	ab_0_0	303	|-crit|p1a: Porygon2
+L	ab_0_0	304	|-damage|p1a: Porygon2|63/374
+L	ab_0_0	305	|move|p1a: Porygon2|Ice Beam|p2a: Gengar
+L	ab_0_0	306	|-damage|p2a: Gengar|168/303
+L	ab_0_0	307	|
+L	ab_0_0	308	|-heal|p2a: Gengar|186/303|[from] item: Leftovers
+L	ab_0_0	309	|-heal|p1a: Porygon2|86/374|[from] item: Leftovers
+L	ab_0_0	310	|upkeep
+L	ab_0_0	311	|turn|28
+L	ab_0_0	312	|
+L	ab_0_0	313	|t:|<NORMALIZED>
+L	ab_0_0	314	|move|p2a: Gengar|Thunderbolt|p1a: Porygon2
+L	ab_0_0	315	|-damage|p1a: Porygon2|0 fnt
+L	ab_0_0	316	|faint|p1a: Porygon2
+L	ab_0_0	317	|
+L	ab_0_0	318	|t:|<NORMALIZED>
+L	ab_0_0	319	|switch|p1a: Salamence|Salamence, M|251/331
+L	ab_0_0	320	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_0_0	321	|-unboost|p2a: Gengar|atk|1
+L	ab_0_0	322	|
+L	ab_0_0	323	|-heal|p2a: Gengar|204/303|[from] item: Leftovers
+L	ab_0_0	324	|-heal|p1a: Salamence|271/331|[from] item: Leftovers
+L	ab_0_0	325	|upkeep
+L	ab_0_0	326	|turn|29
+L	ab_0_0	327	|
+L	ab_0_0	328	|t:|<NORMALIZED>
+L	ab_0_0	329	|move|p2a: Gengar|Thunderbolt|p1a: Salamence
+L	ab_0_0	330	|-damage|p1a: Salamence|179/331
+L	ab_0_0	331	|move|p1a: Salamence|Dragon Claw|p2a: Gengar
+L	ab_0_0	332	|-damage|p2a: Gengar|114/303
+L	ab_0_0	333	|
+L	ab_0_0	334	|-heal|p2a: Gengar|132/303|[from] item: Leftovers
+L	ab_0_0	335	|-heal|p1a: Salamence|199/331|[from] item: Leftovers
+L	ab_0_0	336	|upkeep
+L	ab_0_0	337	|turn|30
+L	ab_0_0	338	|
+L	ab_0_0	339	|t:|<NORMALIZED>
+L	ab_0_0	340	|move|p2a: Gengar|Thunderbolt|p1a: Salamence
+L	ab_0_0	341	|-damage|p1a: Salamence|98/331
+L	ab_0_0	342	|move|p1a: Salamence|Dragon Claw|p2a: Gengar
+L	ab_0_0	343	|-damage|p2a: Gengar|30/303
+L	ab_0_0	344	|
+L	ab_0_0	345	|-heal|p2a: Gengar|48/303|[from] item: Leftovers
+L	ab_0_0	346	|-heal|p1a: Salamence|118/331|[from] item: Leftovers
+L	ab_0_0	347	|upkeep
+L	ab_0_0	348	|turn|31
+L	ab_0_0	349	|
+L	ab_0_0	350	|t:|<NORMALIZED>
+L	ab_0_0	351	|switch|p2a: Regice|Regice|364/364
+L	ab_0_0	352	|move|p1a: Salamence|Earthquake|p2a: Regice
+L	ab_0_0	353	|-damage|p2a: Regice|241/364
+L	ab_0_0	354	|
+L	ab_0_0	355	|-heal|p1a: Salamence|138/331|[from] item: Leftovers
+L	ab_0_0	356	|-heal|p2a: Regice|263/364|[from] item: Leftovers
+L	ab_0_0	357	|upkeep
+L	ab_0_0	358	|turn|32
+L	ab_0_0	359	|
+L	ab_0_0	360	|t:|<NORMALIZED>
+L	ab_0_0	361	|move|p1a: Salamence|Hydro Pump|p2a: Regice
+L	ab_0_0	362	|-damage|p2a: Regice|211/364
+L	ab_0_0	363	|move|p2a: Regice|Thunder Wave|p1a: Salamence
+L	ab_0_0	364	|-status|p1a: Salamence|par
+L	ab_0_0	365	|
+L	ab_0_0	366	|-heal|p2a: Regice|233/364|[from] item: Leftovers
+L	ab_0_0	367	|-heal|p1a: Salamence|158/331 par|[from] item: Leftovers
+L	ab_0_0	368	|upkeep
+L	ab_0_0	369	|turn|33
+L	ab_0_0	370	|
+L	ab_0_0	371	|t:|<NORMALIZED>
+L	ab_0_0	372	|move|p2a: Regice|Explosion|p1a: Salamence
+L	ab_0_0	373	|-damage|p1a: Salamence|0 fnt
+L	ab_0_0	374	|faint|p2a: Regice
+L	ab_0_0	375	|faint|p1a: Salamence
+L	ab_0_0	376	|
+L	ab_0_0	377	|t:|<NORMALIZED>
+L	ab_0_0	378	|switch|p1a: Metagross|Metagross|242/343 par
+L	ab_0_0	379	|switch|p2a: Gengar|Gengar, M|48/303
+L	ab_0_0	380	|
+L	ab_0_0	381	|-heal|p2a: Gengar|66/303|[from] item: Leftovers
+L	ab_0_0	382	|upkeep
+L	ab_0_0	383	|turn|34
+L	ab_0_0	384	|
+L	ab_0_0	385	|t:|<NORMALIZED>
+L	ab_0_0	386	|move|p2a: Gengar|Explosion|p1a: Metagross
+L	ab_0_0	387	|-resisted|p1a: Metagross
+L	ab_0_0	388	|-damage|p1a: Metagross|132/343 par
+L	ab_0_0	389	|faint|p2a: Gengar
+L	ab_0_0	390	|
+L	ab_0_0	391	|t:|<NORMALIZED>
+L	ab_0_0	392	|switch|p2a: Metagross|Metagross|142/333
+L	ab_0_0	393	|
+L	ab_0_0	394	|-heal|p2a: Metagross|162/333|[from] item: Leftovers
+L	ab_0_0	395	|upkeep
+L	ab_0_0	396	|turn|35
+L	ab_0_0	397	|
+L	ab_0_0	398	|t:|<NORMALIZED>
+L	ab_0_0	399	|switch|p1a: Jolteon|Jolteon, M|238/272
+L	ab_0_0	400	|move|p2a: Metagross|Meteor Mash|p1a: Jolteon
+L	ab_0_0	401	|-resisted|p1a: Jolteon
+L	ab_0_0	402	|-damage|p1a: Jolteon|85/272
+L	ab_0_0	403	|
+L	ab_0_0	404	|-heal|p1a: Jolteon|102/272|[from] item: Leftovers
+L	ab_0_0	405	|-heal|p2a: Metagross|182/333|[from] item: Leftovers
+L	ab_0_0	406	|upkeep
+L	ab_0_0	407	|turn|36
+L	ab_0_0	408	|
+L	ab_0_0	409	|t:|<NORMALIZED>
+L	ab_0_0	410	|move|p1a: Jolteon|Thunderbolt|p2a: Metagross
+L	ab_0_0	411	|-damage|p2a: Metagross|13/333
+L	ab_0_0	412	|move|p2a: Metagross|Explosion|p1a: Jolteon
+L	ab_0_0	413	|-damage|p1a: Jolteon|0 fnt
+L	ab_0_0	414	|faint|p2a: Metagross
+L	ab_0_0	415	|faint|p1a: Jolteon
+L	ab_0_0	416	|
+L	ab_0_0	417	|t:|<NORMALIZED>
+L	ab_0_0	418	|switch|p1a: Flygon|Flygon, M|302/302
+L	ab_0_0	419	|switch|p2a: Suicune|Suicune|170/401
+L	ab_0_0	420	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_0	421	|
+L	ab_0_0	422	|-heal|p2a: Suicune|195/401|[from] item: Leftovers
+L	ab_0_0	423	|upkeep
+L	ab_0_0	424	|turn|37
+L	ab_0_0	425	|
+L	ab_0_0	426	|t:|<NORMALIZED>
+L	ab_0_0	427	|switch|p2a: Flygon|Flygon, M|74/301
+L	ab_0_0	428	|move|p1a: Flygon|Earthquake|p2a: Flygon
+L	ab_0_0	429	|-immune|p2a: Flygon
+L	ab_0_0	430	|
+L	ab_0_0	431	|-heal|p2a: Flygon|92/301|[from] item: Leftovers
+L	ab_0_0	432	|upkeep
+L	ab_0_0	433	|turn|38
+L	ab_0_0	434	|
+L	ab_0_0	435	|t:|<NORMALIZED>
+L	ab_0_0	436	|move|p2a: Flygon|Endure|p2a: Flygon
+L	ab_0_0	437	|-singleturn|p2a: Flygon|move: Endure
+L	ab_0_0	438	|move|p1a: Flygon|Protect||[still]
+L	ab_0_0	439	|-fail|p1a: Flygon
+L	ab_0_0	440	|
+L	ab_0_0	441	|-heal|p2a: Flygon|110/301|[from] item: Leftovers
+L	ab_0_0	442	|upkeep
+L	ab_0_0	443	|turn|39
+L	ab_0_0	444	|
+L	ab_0_0	445	|t:|<NORMALIZED>
+L	ab_0_0	446	|switch|p2a: Suicune|Suicune|195/401
+L	ab_0_0	447	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_0	448	|move|p1a: Flygon|Protect||[still]
+L	ab_0_0	449	|-fail|p1a: Flygon
+L	ab_0_0	450	|
+L	ab_0_0	451	|-heal|p2a: Suicune|220/401|[from] item: Leftovers
+L	ab_0_0	452	|upkeep
+L	ab_0_0	453	|turn|40
+L	ab_0_0	454	|
+L	ab_0_0	455	|t:|<NORMALIZED>
+L	ab_0_0	456	|switch|p1a: Metagross|Metagross|132/343 par
+L	ab_0_0	457	|move|p2a: Suicune|Ice Beam|p1a: Metagross
+L	ab_0_0	458	|-resisted|p1a: Metagross
+L	ab_0_0	459	|-damage|p1a: Metagross|94/343 par
+L	ab_0_0	460	|
+L	ab_0_0	461	|-heal|p2a: Suicune|245/401|[from] item: Leftovers
+L	ab_0_0	462	|upkeep
+L	ab_0_0	463	|turn|41
+L	ab_0_0	464	|
+L	ab_0_0	465	|t:|<NORMALIZED>
+L	ab_0_0	466	|move|p1a: Metagross|Agility|p1a: Metagross
+L	ab_0_0	467	|-boost|p1a: Metagross|spe|2
+L	ab_0_0	468	|move|p2a: Suicune|Roar|p1a: Metagross
+L	ab_0_0	469	|drag|p1a: Flygon|Flygon, M|302/302
+L	ab_0_0	470	|
+L	ab_0_0	471	|-heal|p2a: Suicune|270/401|[from] item: Leftovers
+L	ab_0_0	472	|upkeep
+L	ab_0_0	473	|turn|42
+L	ab_0_0	474	|
+L	ab_0_0	475	|t:|<NORMALIZED>
+L	ab_0_0	476	|move|p1a: Flygon|Quick Attack|p2a: Suicune
+L	ab_0_0	477	|-damage|p2a: Suicune|244/401
+L	ab_0_0	478	|move|p2a: Suicune|Surf|p1a: Flygon
+L	ab_0_0	479	|-damage|p1a: Flygon|179/302
+L	ab_0_0	480	|
+L	ab_0_0	481	|-heal|p1a: Flygon|197/302|[from] item: Leftovers
+L	ab_0_0	482	|-heal|p2a: Suicune|269/401|[from] item: Leftovers
+L	ab_0_0	483	|upkeep
+L	ab_0_0	484	|turn|43
+L	ab_0_0	485	|
+L	ab_0_0	486	|t:|<NORMALIZED>
+L	ab_0_0	487	|move|p1a: Flygon|Earthquake|p2a: Suicune
+L	ab_0_0	488	|-damage|p2a: Suicune|177/401
+L	ab_0_0	489	|move|p2a: Suicune|Calm Mind|p2a: Suicune
+L	ab_0_0	490	|-boost|p2a: Suicune|spa|1
+L	ab_0_0	491	|-boost|p2a: Suicune|spd|1
+L	ab_0_0	492	|
+L	ab_0_0	493	|-heal|p1a: Flygon|215/302|[from] item: Leftovers
+L	ab_0_0	494	|-heal|p2a: Suicune|202/401|[from] item: Leftovers
+L	ab_0_0	495	|upkeep
+L	ab_0_0	496	|turn|44
+L	ab_0_0	497	|
+L	ab_0_0	498	|t:|<NORMALIZED>
+L	ab_0_0	499	|move|p1a: Flygon|Rock Slide|p2a: Suicune
+L	ab_0_0	500	|-damage|p2a: Suicune|154/401
+L	ab_0_0	501	|move|p2a: Suicune|Surf|p1a: Flygon
+L	ab_0_0	502	|-damage|p1a: Flygon|42/302
+L	ab_0_0	503	|
+L	ab_0_0	504	|-heal|p1a: Flygon|60/302|[from] item: Leftovers
+L	ab_0_0	505	|-heal|p2a: Suicune|179/401|[from] item: Leftovers
+L	ab_0_0	506	|upkeep
+L	ab_0_0	507	|turn|45
+L	ab_0_0	508	|
+L	ab_0_0	509	|t:|<NORMALIZED>
+L	ab_0_0	510	|switch|p1a: Metagross|Metagross|94/343 par
+L	ab_0_0	511	|move|p2a: Suicune|Ice Beam|p1a: Metagross
+L	ab_0_0	512	|-resisted|p1a: Metagross
+L	ab_0_0	513	|-damage|p1a: Metagross|40/343 par
+L	ab_0_0	514	|
+L	ab_0_0	515	|-heal|p2a: Suicune|204/401|[from] item: Leftovers
+L	ab_0_0	516	|-enditem|p1a: Metagross|Liechi Berry|[eat]
+L	ab_0_0	517	|-boost|p1a: Metagross|atk|1|[from] item: Liechi Berry
+L	ab_0_0	518	|upkeep
+L	ab_0_0	519	|turn|46
+L	ab_0_0	520	|
+L	ab_0_0	521	|t:|<NORMALIZED>
+L	ab_0_0	522	|switch|p2a: Flygon|Flygon, M|110/301
+L	ab_0_0	523	|switch|p1a: Flygon|Flygon, M|60/302
+L	ab_0_0	524	|
+L	ab_0_0	525	|-heal|p2a: Flygon|128/301|[from] item: Leftovers
+L	ab_0_0	526	|-heal|p1a: Flygon|78/302|[from] item: Leftovers
+L	ab_0_0	527	|upkeep
+L	ab_0_0	528	|turn|47
+L	ab_0_0	529	|
+L	ab_0_0	530	|t:|<NORMALIZED>
+L	ab_0_0	531	|move|p2a: Flygon|Endure|p2a: Flygon
+L	ab_0_0	532	|-singleturn|p2a: Flygon|move: Endure
+L	ab_0_0	533	|move|p1a: Flygon|Protect||[still]
+L	ab_0_0	534	|-fail|p1a: Flygon
+L	ab_0_0	535	|
+L	ab_0_0	536	|-heal|p1a: Flygon|96/302|[from] item: Leftovers
+L	ab_0_0	537	|-heal|p2a: Flygon|146/301|[from] item: Leftovers
+L	ab_0_0	538	|upkeep
+L	ab_0_0	539	|turn|48
+L	ab_0_0	540	|
+L	ab_0_0	541	|t:|<NORMALIZED>
+L	ab_0_0	542	|move|p2a: Flygon|Rock Slide|p1a: Flygon
+L	ab_0_0	543	|-resisted|p1a: Flygon
+L	ab_0_0	544	|-damage|p1a: Flygon|50/302
+L	ab_0_0	545	|move|p1a: Flygon|Rock Slide|p2a: Flygon
+L	ab_0_0	546	|-resisted|p2a: Flygon
+L	ab_0_0	547	|-damage|p2a: Flygon|102/301
+L	ab_0_0	548	|
+L	ab_0_0	549	|-heal|p2a: Flygon|120/301|[from] item: Leftovers
+L	ab_0_0	550	|-heal|p1a: Flygon|68/302|[from] item: Leftovers
+L	ab_0_0	551	|upkeep
+L	ab_0_0	552	|turn|49
+L	ab_0_0	553	|
+L	ab_0_0	554	|t:|<NORMALIZED>
+L	ab_0_0	555	|switch|p1a: Metagross|Metagross|40/343 par
+L	ab_0_0	556	|switch|p2a: Suicune|Suicune|204/401
+L	ab_0_0	557	|-ability|p2a: Suicune|Pressure|[silent]
+L	ab_0_0	558	|
+L	ab_0_0	559	|-heal|p2a: Suicune|229/401|[from] item: Leftovers
+L	ab_0_0	560	|upkeep
+L	ab_0_0	561	|turn|50
+L	ab_0_0	562	|
+L	ab_0_0	563	|t:|<NORMALIZED>
+L	ab_0_0	564	|cant|p1a: Metagross|par
+L	ab_0_0	565	|move|p2a: Suicune|Roar|p1a: Metagross
+L	ab_0_0	566	|drag|p1a: Flygon|Flygon, M|68/302
+L	ab_0_0	567	|
+L	ab_0_0	568	|-heal|p1a: Flygon|86/302|[from] item: Leftovers
+L	ab_0_0	569	|-heal|p2a: Suicune|254/401|[from] item: Leftovers
+L	ab_0_0	570	|upkeep
+L	ab_0_0	571	|turn|51
+L	ab_0_0	572	|
+L	ab_0_0	573	|t:|<NORMALIZED>
+L	ab_0_0	574	|switch|p1a: Metagross|Metagross|40/343 par
+L	ab_0_0	575	|move|p2a: Suicune|Surf|p1a: Metagross
+L	ab_0_0	576	|-damage|p1a: Metagross|0 fnt
+L	ab_0_0	577	|faint|p1a: Metagross
+L	ab_0_0	578	|
+L	ab_0_0	579	|t:|<NORMALIZED>
+L	ab_0_0	580	|switch|p1a: Flygon|Flygon, M|86/302
+L	ab_0_0	581	|
+L	ab_0_0	582	|-heal|p1a: Flygon|104/302|[from] item: Leftovers
+L	ab_0_0	583	|-heal|p2a: Suicune|279/401|[from] item: Leftovers
+L	ab_0_0	584	|upkeep
+L	ab_0_0	585	|turn|52
+L	ab_0_0	586	|
+L	ab_0_0	587	|t:|<NORMALIZED>
+L	ab_0_0	588	|move|p1a: Flygon|Rock Slide|p2a: Suicune
+L	ab_0_0	589	|-damage|p2a: Suicune|228/401
+L	ab_0_0	590	|move|p2a: Suicune|Ice Beam|p1a: Flygon
+L	ab_0_0	591	|-supereffective|p1a: Flygon
+L	ab_0_0	592	|-crit|p1a: Flygon
+L	ab_0_0	593	|-damage|p1a: Flygon|0 fnt
+L	ab_0_0	594	|faint|p1a: Flygon
+L	ab_0_0	595	|
+L	ab_0_0	596	|win|P2

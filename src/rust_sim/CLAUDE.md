@@ -6541,20 +6541,45 @@ suite **75 binaries / 666 passed / 0 failed**; e2e md5 `3155eb…` UNCHANGED.
 sound if the port's checkpoint list really is a SUPERSET of the sim's, and that is now CHECKABLE on
 any repro rather than assumed.
 
-⚠️ **THE FINDING: `ab_41_9` is the MIRROR shape, and the anchor correctly does NOT reconcile it.**
-The dump reads `port n=33  sim n=45`, decisions 0-4 IDENTICAL, divergence at 5, never re-syncing. So
-the port surfaces **FEWER** checkpoints than the sim — the inverse of the A2 case the anchor exists
-for (where the port surfaces EXTRA ones). Reconciling *missing* boundaries would mean accepting that
-the port failed to surface a request the sim surfaced, which is round 26's hypothesis (b) — **a real
-draw-free legality bug** — and swallowing it is exactly the vacuous-gate failure. So the anchor stops
-at the honest boundary and `ab_41_9` stays REPORTED.
+⚠️ **THE FINDING: `ab_41_9` is a CHECKPOINT-PLACEMENT artifact — the port's boundary lands exactly
+ONE DRAW EARLY — and the anchor correctly does not reconcile it.** The port's RNG consumption is
+CORRECT; there is no draw bug and no missing request.
 
-**Correcting an earlier read in this same session:** `ab_41_9` was first called "the known
-segmentation artifact" on the strength of a byte-clean `POKESIM_PROTOCOL_ONLY` replay. Byte-clean
-still supports HARMLESS, but the seed-stream dump shows it is NOT the class the anchor addresses. It
-is unexplained, it is on the gen3ou POOL surface, and the next step is a per-decision
-ACCEPTED/REJECTED comparison (the live per-side gate), NOT more draw tracing — 250 pool battles of
-`gen_sim_bridge_diff` were clean, so if it is real it is rare.
+**THE PROOF, from draw POSITIONS inside one decision** (`POKESIM_PRNG_TRACE=1` for the port,
+`probe_repro_simtrace.js` for the sim). Decision 5 opens at the port's draw line 20 (the dec-4 seed):
+
+| | |
+|---|---|
+| port's dec-5 checkpoint | line **29** → **9** draws consumed |
+| the SIM's dec-5 seed | line **30** → the port's VERY NEXT draw |
+
+and the sim's own trace carries the two values ADJACENT, in the same order:
+
+```
+[dec 6] draw#5  seed_before=12362,51825,42696,29605   <- the PORT's dec-5 checkpoint
+[dec 6] draw#6  seed_before=58601,2165,55458,35804    <- the SIM's dec-5 checkpoint
+```
+
+Both engines therefore traverse the SAME seed values in the SAME order; only the pause point differs,
+by one draw. The board is a forced-switch (dec 4, Swampert faints → Charizard) followed by a move
+turn — the boundary bookkeeping shifts by one across that transition.
+
+**WHY THE ANCHOR CANNOT ABSORB IT, and why that is correct.** The anchor matches sim seeds against
+the port's **CHECKPOINT LIST**, and `58601` never appears there — it exists only in the port's DRAW
+stream. Closing this class properly means anchoring against the DRAW stream instead, which is a
+materially larger change carrying its own vacuity risk (the draw stream is dense, so a sloppy
+draw-anchor would match almost anything). NOT attempted; recorded here as the next step for whoever
+takes it, together with the warning.
+
+**THREE READINGS, AND ONLY THE THIRD IS RIGHT — the durable methodological lesson.** Within one
+session this repro was called: (1) "the known segmentation artifact", asserted from a byte-clean
+`POKESIM_PROTOCOL_ONLY` replay — under-evidenced; (2) "the port surfaces FEWER requests, possibly
+round 26's hypothesis (b), a real draw-free legality bug" — WRONG, and the alarming one; (3) the
+one-draw checkpoint offset above. What settled it was comparing draw POSITIONS **within a single
+decision**. The earlier reads compared draw COUNTS across differently-scoped windows — `ab_replay`
+plays the WHOLE scripted battle before it compares, so its 171-draw trace covers all 33 port
+decisions, not the 5 the verdict names. **A count comparison whose two sides cover different windows
+is not evidence, and it reads exactly like evidence.**
 
 ### `--mode ourandom` — "gen3ou-randbats", the fuzz surface that is actually the one we care about
 

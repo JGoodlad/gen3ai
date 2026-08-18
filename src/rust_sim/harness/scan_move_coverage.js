@@ -35,10 +35,15 @@ const rustMoves = JSON.parse(fs.readFileSync(RUST_MOVES, 'utf8'));
 // ── The ENGINE's TRUE modeled sets (mirrored from src/turn.rs) ───────────────
 // Each is the exact Rust `matches!`/data-driven set. If turn.rs changes, update here.
 
-// Standalone status-inflicting moves (`modeled_status_move`).
+// Standalone status-inflicting moves (`modeled_status_move`) PLUS the volatile-inflicting
+// status moves that have their own engine arm. `confuseray` (`gen3_confuse_ray_v1`) is the
+// latter kind: it lives OUTSIDE `modeled_status_move` (which maps only MAJOR statuses) and is
+// dispatched by its own arm in `status_moves.rs`, so a reader checking only that fn would
+// wrongly conclude it is unmodeled.
 const MODELED_STATUS = new Set([
   'thunderwave', 'stunspore', 'glare', 'toxic', 'poisonpowder', 'poisongas',
   'willowisp', 'spore', 'sleeppowder', 'hypnosis', 'sing', 'lovelykiss', 'grasswhistle',
+  'confuseray',
 ]);
 // Self-boost SETUP moves — DATA-DRIVEN from gen3_moves.json `selfBoosts` (== engine's
 // `self_boost_spec`, which reads `MoveData::self_boosts`).
@@ -326,7 +331,9 @@ function statusMechanic(m, id) {
   if (S('charge')) return 'charge-volatile';
   if (S('foresight') || S('odorsleuth') || S('miracleeye')) return 'identify';
   if (S('lockon') || S('mindreader')) return 'lock-on';
-  if (S('confuseray') || S('supersonic') || S('sweetkiss')) return 'confuse';
+  // `confuseray` is MODELED (`gen3_confuse_ray_v1`); its siblings supersonic/sweetkiss are
+  // NOT (they share the volatile but not the arm — model them the same way when wanted).
+  if (S('supersonic') || S('sweetkiss')) return 'confuse';
   if (S('gravity')) return 'field-gravity';
   if (S('taunt') || S('disable')) return 'move-restriction';
   return 'other-status-move';

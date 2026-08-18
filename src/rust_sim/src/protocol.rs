@@ -603,6 +603,14 @@ impl ProtocolBuilder {
     pub fn immune_from_ability(&mut self, mon: &MonRef, ability: &str) {
         self.push_raw(format!("|-immune|{mon}|[from] ability: {ability}"));
     }
+    /// `|-immune|<mon>|<effect>|[from] ability: <Ability>` — an ability blocking a specific
+    /// VOLATILE rather than the whole move (`gen3_confuse_ray_v1`: Own Tempo vs confusion emits
+    /// `|-immune|<mon>|confusion|[from] ability: Own Tempo`). Probe-settled — the effect segment
+    /// sits BETWEEN the mon and the `[from]`, which the plain `immune_from_ability` omits.
+    /// Observation-only.
+    pub fn immune_effect_from_ability(&mut self, mon: &MonRef, effect: &str, ability: &str) {
+        self.push_raw(format!("|-immune|{mon}|{effect}|[from] ability: {ability}"));
+    }
     /// `|-miss|<user>[|<target>]` — paired with the `|move|…|[miss]`.
     pub fn miss(&mut self, user: &MonRef, target: Option<&MonRef>) {
         match target {

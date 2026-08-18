@@ -292,3 +292,82 @@ module.exports = {
   buildOuUniverse, makeOuRandomProvider, describeCoverage,
   hpIvsForType, hpIvTable, parseSpread, priors, HP_TYPES,
 };
+
+// ── `--selftest`: GATE-INTEGRITY for the generator itself ───────────────────────
+//
+// The frozen `byte_fuzz_corpus` fixtures gate the ENGINE on gen3ou-random boards, but they are
+// frozen OUTPUT — break this generator and they still replay clean, so nothing fails. This is the
+// generator's own gate. It is deliberately made of the two bugs that actually bit during the
+// build, because those are the ones a refactor will reintroduce:
+//   * the spread priors are a LIST of [nature, evs, weight] TRIPLES, not a dict (reading them as
+//     a dict silently passes the ARRAY INDEX as the nature -> `"24" is an invalid nature`);
+//   * all typed Hidden Powers validate as ONE move, so a set may carry at most one.
+// Plus the property everything else rests on: the HP IV solver must produce the requested TYPE at
+// BASE POWER 70, verified by RECOMPUTING both from the emitted IVs rather than trusting the table.
+//
+//   node src/rust_sim/harness/ou_random_teams.js --selftest
+function selftest() {
+  const e2e = require('./gen_e2e_fuzz.js');
+  const ab = require('./ab_fuzz.js');
+  let fail = 0;
+  const check = (name, cond, extra) => {
+    if (cond) { console.log(`  ok   ${name}`); } else { console.log(`  FAIL ${name}${extra ? ' — ' + extra : ''}`); fail++; }
+  };
+
+  // 1. The Hidden Power IV solver — recompute type AND base power from the emitted IVs.
+  for (const want of HP_TYPES) {
+    const ivs = hpIvsForType(want);
+    let t = 0, u = 0;
+    IV_KEYS.forEach((k, i) => { t += ((ivs[k] & 1) ? 1 : 0) << i; u += (((ivs[k] >> 1) & 1) ? 1 : 0) << i; });
+    const gotType = HP_TYPES[Math.floor((t * 15) / 63)];
+    const gotBp = Math.floor((u * 40) / 63) + 30;
+    check(`hidden power ${want} solves to ${want} @ BP70`, gotType === want && gotBp === 70, `got ${gotType} @ BP${gotBp}`);
+  }
+
+  // 2. Spread priors really are [nature, evs, weight] triples, and parseSpread reads them.
+  const P = priors();
+  const anySid = Object.keys(P.spreads)[0];
+  check('spread priors are a LIST (not a dict)', Array.isArray(P.spreads[anySid]));
+  const sp = parseSpread(P.spreads[anySid][0]);
+  check('parseSpread yields a real nature, not an array index',
+    typeof sp.nature === 'string' && /^[A-Z][a-z]+$/.test(sp.nature), `got ${JSON.stringify(sp.nature)}`);
+  check('parseSpread yields 6 numeric EVs summing <= 510',
+    Object.values(sp.evs).every((v) => Number.isInteger(v) && v >= 0)
+      && Object.values(sp.evs).reduce((a, b) => a + b, 0) <= 510, JSON.stringify(sp.evs));
+
+  // 3. End to end: generated teams must be gen3ou-LEGAL and carry at most one Hidden Power.
+  const toIdL = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const universe = buildOuUniverse({
+    isModeledMove: (m) => e2e.isModeledMove(m, true),
+    modeledItem: (it) => e2e.MODELED_ITEMS.has(toIdL(it)),
+    allowedAbility: (sid, a) => { const ok = ab.speciesAllowedAbility(sid); return !!ok && ok.includes(toIdL(a)); },
+    portSpecies: null,
+  });
+  check('universe is non-trivial (>=100 gen3ou species)', universe.eligible.length >= 100, `${universe.eligible.length}`);
+  const dropped = 100 * (universe.coverage.priorMass - universe.coverage.keptMass) / universe.coverage.priorMass;
+  check('renormalized-away move mass stays small (<5%)', dropped < 5, `${dropped.toFixed(2)}%`);
+
+  const stats = { setsTotal: 0, teamsKept: 0, teamsRejected: 0, genErrors: 0, rejectReasons: new Map() };
+  let s = 1234567; const rng = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  const next = makeOuRandomProvider(rng, stats, universe);
+  let multiHp = 0, badSize = 0, dupSpecies = 0;
+  const N = 25;
+  for (let i = 0; i < N; i++) {
+    const team = Teams.unpack(next().packed);
+    if (!team || team.length !== 6) { badSize++; continue; }
+    const ids = team.map((t) => toIdL(t.species));
+    if (new Set(ids).size !== 6) dupSpecies++;
+    for (const set of team) {
+      if ((set.moves || []).filter((m) => toIdL(m).startsWith('hiddenpower')).length > 1) multiHp++;
+    }
+  }
+  check(`${N} teams all have 6 members`, badSize === 0, `${badSize} bad`);
+  check('SPECIES CLAUSE holds (no duplicate species)', dupSpecies === 0, `${dupSpecies} teams`);
+  check('no set carries TWO Hidden Powers', multiHp === 0, `${multiHp} sets`);
+  check('every kept team passed TeamValidator(gen3ou)', stats.teamsKept === N, `kept ${stats.teamsKept}/${N}`);
+
+  console.log(fail ? `\n[selftest] ${fail} FAILURE(S)` : '\n[selftest] all generator gate-integrity cases pass');
+  process.exit(fail ? 1 : 0);
+}
+
+if (require.main === module && process.argv.includes('--selftest')) selftest();
