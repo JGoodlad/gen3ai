@@ -67,6 +67,11 @@ never measured, and at the documented benefit the two roughly cancel.*
   cannot settle the question either way. (They do price the restart itself: ~8 min per 3 h restart,
   a smaller recurring cost that the startup table above already covers in principle.)
 
+  **Third independent reason it is an upper bound (observed 2026-08-17 22:22): gen-14 passed
+  4.03M steps with the pool still at ONE entry and the compile count still 48 — no second
+  promotion happened.** Promotions are gated on winning an eval cycle, so they are NOT a
+  fixed every-2M event; gen-13's 12 snapshots over 25M is an average, not a schedule.
+
   **So the ×12.5 projection is an UPPER BOUND, not an estimate**, and the per-run "~3.9 h" should be
   read that way until a promotion into a multi-entry pool is timed. gen-14's 4M promotion is exactly
   that test and costs nothing but attention.
