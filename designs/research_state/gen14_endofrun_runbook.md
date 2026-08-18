@@ -138,6 +138,21 @@ deadline clock is the causal candidate and it discharged the blindness it was bu
 needs n ≈ 30+ cap-length losses; gen-14 supplies them at its observed rate. **Do not quote (c) as a
 finding** — it is a registered follow-up with a stated power requirement.
 
+> **CORRECTION (same day, before anyone plans on it): gen-14 does NOT supply that power.**
+> An earlier draft of this section said it would. gen-13 retained **12** eval-trace step dirs
+> (`--keep-eval-trace-steps 20`) yielding 1349 loss traces of which **9** were cap-length, and
+> gen-14 runs the same retention — so it delivers ~9 again, not ~30. One run cannot power this
+> at the current retention.
+>
+> **The route that does work is a META-ANALYSIS over generations**, and it is sound precisely
+> because the statistic is a WITHIN-run ratio (cap-vs-ordinary positive-V rate), which is the
+> one cross-generation operation `measurements/README.md` permits. Compute the per-run
+> DIFFERENCE with its own CI, then pool the differences — never pool the raw rates, whose
+> levels move with architecture. Three generations at ~9 each reaches n≈27. The alternative,
+> raising `--keep-eval-trace-steps`, buys power in ONE run but costs disk on every run and
+> changes nothing already recorded; prefer the meta-analysis unless the residual becomes
+> load-bearing.
+
 **Bonus, gen-14 early health (not a §7 reading):** the frames deletion shows **no stall
 regression**. Matched 46-minute windows, gen-14 @2M vs gen-13's final segment @25M: **50 stall logs
 each**, i.e. 22.3 vs 54.1 per 1M steps once fps (811 vs 335) is divided out. The *direction* favours

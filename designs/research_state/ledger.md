@@ -873,3 +873,21 @@ The durable point: **`--compile-opponents` was measured and adopted on a STARTUP
 recurring cost was never measured at all.** A perf flag's bill can arrive on a schedule nobody
 profiled — here, one that is larger than the win the flag was adopted for is not, but is the same
 order.
+
+### Correction (2026-08-17, hours after shipping it): "gen-14 supplies the power" was wrong
+
+The §7 successor registered its residual (cap-length losses 22% positive-V vs ordinary 5.1%, Fisher
+p = 0.076 at n=9) with the note that gen-14 would supply the n≈30 needed. **It will not.** gen-13
+retained 12 eval-trace step dirs under `--keep-eval-trace-steps 20` → 1349 loss traces → **9**
+cap-length; gen-14 runs identical retention, so it returns ~9 again. The claim was an assumption
+about a sampling rate, shipped without checking it against the retention flag that sets it.
+
+Corrected in place with the route that does work: **meta-analyse the per-run DIFFERENCE across
+generations.** That is sound where pooling the raw rates would not be, because the statistic is a
+WITHIN-run ratio — the single cross-generation operation `measurements/README.md` allows. Three
+generations reach n≈27.
+
+Recorded because the error has a shape worth recognising: **a power calculation that names a future
+run as its source is only as good as the assumption about how much data that run keeps** — and
+retention is a FLAG, sitting far from the analysis, easy to never look at. Check the flag that
+governs the sample before promising the sample.
