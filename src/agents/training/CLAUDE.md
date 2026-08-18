@@ -1297,7 +1297,7 @@ FPS with half the envs (≈half the env/bridge RAM). Off by default (stock `Subp
 under `--debug`. Caveat: benchmarked with heuristic opponents — re-bench under `--self-play` for the
 production-regime number. Full design + benchmark table: `designs/ai_v5/design_async_rollout.md`.
 
-## Compiled CPU opponents (`--compile-opponents`) + BLAS thread pinning
+## Compiled CPU opponents (`--compile-opponents`, DEFAULT ON) + BLAS thread pinning
 
 > **Two independent compile flags, split by WHO and WHERE** (renamed 2026-08-14 from the
 > single `--compile-extractor`, which said neither): **`--compile-opponents`** is the
@@ -1307,8 +1307,17 @@ production-regime number. Full design + benchmark table: `designs/ai_v5/design_a
 
 **`--compile-opponents`** `torch.compile`s each frozen OPPONENT's feature extractor in the env workers
 (pool / stable / exploiter loads, via `agents.model.snapshot.maybe_compile_extractor`). It is a
-**runtime PERF knob** — never versioned, never in `check_compatible`, NOT inherited on resume; re-pass
-it each launch, like `--grad-checkpointing`.
+**runtime PERF knob** — never versioned, never in `check_compatible`.
+
+🚨 **DEFAULT ON since 2026-08-17 (owner decision: the compile flags are FALLBACKS, not opt-ins).**
+`--no-compile-opponents` is the way back to eager, and it takes `--compile-opponents-preload` with it
+(the preload FOLLOWS this flag, so one flag turns the whole path off). `--compile-opponents-strict`
+stays opt-in — default-ON is about the compile, not about the failure mode, and warn-and-fall-back
+IS the fallback the default wants. **"Not inherited on resume" now cuts the other way**: a flagless
+resume gets the compile ON, so it is the opt-out you must re-pass, not the flag. Pinned by
+`src/main/compile_defaults_test.py` (defaults + opt-outs by value) and
+`src/main/launcher/compile_flag_forwarding_test.py` (the launcher forwards all of them and owns no
+default of its own).
 
 **Why it works now when it didn't in June.** The 2026-06-30 attempt compiled only
 `DamageOperator.forward` inside `policy.get_distribution` and measured **0.70× (slower)** — dynamo
@@ -1423,12 +1432,40 @@ Three guards, all loud:
   parent — the silent wedge is unrepresentable, not just unlikely.
 
 Proven live 2026-08-16: a real 4-worker `SubprocVecEnv` CPU run with the preload armed compiled once
-(41 s), forked all workers, trained to completion. Opt-in (requires `--compile-opponents`; a runtime
-perf knob like its siblings — never versioned, re-pass each launch); when armed it REPLACES the
-in-trainer cache prewarm (the forkserver compile populates the same on-disk cache, which the
-Popen'd eval workers still hit). Honest sizing unchanged: all-workers-ready improves ~30 s → ~20 s
-at 16 workers (maybe ~75 s → ~25 s at 48), ~50 s per 3 h restart — the reason to have it is that the
-architecture now permits it and the guard structure makes it safe, not throughput.
+(41 s), forked all workers, trained to completion. When armed it REPLACES the in-trainer cache
+prewarm (the forkserver compile populates the same on-disk cache, which the Popen'd eval workers
+still hit). Honest sizing unchanged: all-workers-ready improves ~30 s → ~20 s at 16 workers (maybe
+~75 s → ~25 s at 48), ~50 s per 3 h restart — the reason to have it is that the architecture now
+permits it and the guard structure makes it safe, not throughput.
+
+**DEFAULT since 2026-08-17: it FOLLOWS `--compile-opponents`** (tri-state — `None` = unset ⇒ follow),
+so both ship on and `--no-compile-opponents` turns the pair off in one flag;
+`--no-compile-opponents-preload` keeps the per-worker compile and reverts to the cache prewarm. The
+"requires `--compile-opponents`" error now fires only on an EXPLICIT preload beside an explicitly-off
+opponent compile — erroring on the pairing the DEFAULTS produce would have made
+`--no-compile-opponents` itself a usage error, which is the regression
+`compile_defaults_test.py::test_no_compile_opponents_alone_is_not_a_usage_error` exists to catch.
+
+**What justifies defaulting the thing whose predecessor hung a run**: the predecessor's cause is
+fixed at the ROOT (lazy `poke_env` inits ⇒ a thread-free extractor import, pinned by
+`compile_prewarm_test.py`), and the failure MODE is inverted — a preload that cannot prove
+single-threadedness RAISES during forkserver bootstrap, so `SubprocVecEnv` construction dies with a
+traceback in the parent instead of wedging 2 of 48 workers in silence. A loud startup failure with a
+one-flag opt-out is a defensible default; a silent 13-hour stall would not have been.
+**The 48-worker FORK STORM is now measured** (2026-08-17, `tmp/preload_fork_probe.py`, CPU, beside a
+live run): arm the preload, then `forkserver` `Pool(48)` — **48/48 workers forked, 41 distinct pids
+took a task, 48/48 reported the compiled graph present in inherited memory**, 19.7 s wall after an
+11 s preload compile. That is the exact mechanism that wedged at 2-of-48 before, so the count-specific
+fear is addressed directly rather than by extrapolation from the 4-worker run.
+**⚠️ What is STILL untested is the full 48-env TRAINING composition** — real `Gen3Env` workers,
+bridge children, a mid-run pool promotion — not the fork itself. If it ever refuses, the message
+names the surviving thread and `--no-compile-opponents-preload` is the immediate way past it.
+
+**Its fail-loud path was also observed, by accident.** A malformed `GEN3AI_PRELOAD_ARCH` during that
+probe made the preload's extractor construction raise: the child's traceback printed in full and the
+parent died on `EOFError: unexpected EOF` out of `forkserver.read_signed`. Loud, immediate, no wedge
+— but note the PARENT-side exception is not self-describing, so **the diagnosis is in the child's
+stderr**, which under the launcher lands in `launcher_child.log`.
 
 **Failure is LOUD (`--compile-opponents-strict`).** Falling back to eager is a ~6.5× regression on the
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and
@@ -1495,7 +1532,7 @@ run startup), `SnapshotPool._model_cache` keeps one compile per worker per snaps
 `_COMPILE_VALIDATED` puts every compile after a process's first on the cheap path. Nothing here
 needs fixing.
 
-**The one-time event IS addressable, and the flag for it already exists — `--compile-opponents-preload`.**
+**The one-time event IS addressable, and the flag for it is now ON BY DEFAULT — `--compile-opponents-preload`.**
 The +1095 s is 48 workers each paying their process's FIRST compile, and fork-inheritance is exactly
 the thing that removes it: the preload compiles once in the forkserver and workers inherit the traced
 graph copy-on-write (**0.12 s per worker vs ~30 s**). Note the on-disk Inductor cache and the fork
@@ -1506,26 +1543,67 @@ Why the cost landed at iteration 22 rather than at worker startup: **the pool is
 first promotion**, so workers have nothing to compile when they fork, and their first compile is
 deferred to the moment self-play activates.
 
-Two limits before turning it on:
-- It would SHRINK the event, not remove it — those 48 workers also each load a 41 MB checkpoint
+Two limits, unchanged by the default flip — expect a SHRUNK event, not a gone one:
+- It SHRINKS the event, it does not remove it — those 48 workers also each load a 41 MB checkpoint
   (`load_model_snapshot` → deserialize → build policy), which no compile flag touches.
 - The 0.12 s figure is a standalone probe of STARTUP compiles, and the flag's live proof is a
   **4-worker** run. A snapshot extractor compiled 2M steps AFTER the fork should still hit the
   inherited dynamo state (same `forward` code object, same shapes) but that case is not directly
   measured. And the hang this flag's predecessor caused was specifically at **48 workers** — it is
   fail-loud now (it RAISES rather than wedging), so the risk is a loud crash at construction, not a
-  silent 13 h stall, but 48 envs is untested for the fixed version. **Worth trying on gen-15; do not
-  retrofit it onto a live run.**
+  silent 13 h stall, but **48 envs is still untested for the fixed version**, and defaulting it on
+  is what schedules that test for the next fresh launch. **Do not retrofit it onto a LIVE run**
+  (a launcher-pinned worktree keeps its own code, so a live run does not pick this up); if a fresh
+  48-env launch refuses at construction, the message names the surviving thread and
+  `--no-compile-opponents-preload` is the immediate way past it.
 
 ⚠️ **A `[SELFPLAY EVAL] … [Ns]` line beside a slow iteration is NOT its cause — eval is genuinely
 non-blocking.** gen-13 ran an **1865 s** eval cycle inside a **395 s** iteration. Attributing
 iteration cost to an overlapping eval (or vice versa) is a window coincidence; separate them by the
 compile path (`timed` vs `reused`), which is what actually distinguishes the expensive event.
 
-## Compiled GPU trainer (`--compile-trainer`, opt-in)
+## Compiled GPU trainer (`--compile-trainer`, DEFAULT ON for cuda)
 
 `torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step
 runs. The other half of the pair above, and the larger of the two.
+
+🚨 **DEFAULT since 2026-08-17, and it is the one default that could NOT be a flat `True`.** This
+flag REFUSES a non-cuda device (the first row of the refusal table below), so `default=True` would
+convert every working CPU invocation — the `--debug` smoke, a laptop, CI — into a `FATAL_CONFIG`
+exit. The default is therefore **AUTO**, resolved by `train_rl_agent.resolve_compile_trainer_default`
+(pure, injectable, unit-tested without a card):
+
+| resolved device | `--debug` | default |
+|---|---|---|
+| `cuda` / `cuda:N` | no | **ON** |
+| `auto` on a box with a card | no | **ON** |
+| `auto` with no card, `cpu`, anything else explicit | no | OFF |
+| any device, including an explicit `--device cuda` | **yes** | **OFF** |
+
+`--debug` is excluded outright because a smoke exists to prove the pipeline in ~1 minute and a
+multi-minute Inductor compile (plus a CUDA context taken from whatever run owns the card) defeats
+that. **The REFUSAL is unchanged**: an explicit `--compile-trainer --device cpu` still exits
+`FATAL_CONFIG` with the same message. `--no-compile-trainer` is the opt-out, and it is also how you
+KEEP the ObservationDebugger — see the trade below, which every default cuda run now makes.
+
+**⚠️ The device is only HALF the auto default, and the other half is easy to miss.**
+`check_shape_stability` (below) refuses `--async-rollout` and a rollout that does not divide by
+`--batch-size` — both correct for someone who ASKED for the compile, and both fatal for a DEFAULT,
+because they would convert two classes of command that work today into a startup `FATAL_CONFIG`.
+So `resolve_compile_trainer_auto` runs those same checks and, on a refusal, **leaves the default OFF
+and says why** rather than refusing to launch:
+
+```
+⚡ --compile-trainer would be ON by default here, but this config cannot take it — leaving it
+   OFF rather than refusing to launch. Reason: … (pass --compile-trainer explicitly to make
+   this a hard error instead.)
+```
+
+The rule, and it generalises to any future default: **a default yields to the config the user typed
+and announces it; an explicit flag refuses.** Pinned by `src/main/compile_defaults_test.py`
+(`test_auto_yields_to_async_rollout_instead_of_refusing_to_launch`,
+`test_auto_yields_to_a_rollout_that_does_not_divide_the_batch`, and
+`test_an_explicit_flag_never_reaches_the_auto_path`, which holds the refusal in place).
 
 **Measured** (2026-08-14, v76 `gen3_ctx_dedup_v1`, RTX 3080 Ti, the real
 `MaskablePPO -> ActorCriticPolicy._build()` path, gen-9's own `cli_args`: batch 4096, PopArt on;
@@ -1613,15 +1691,22 @@ batch 4096 -> 3.6e-06**, against a value scale of 2.111 — float32 rounding, no
 **⚠️ It DROPS the ObservationDebugger, and that is a production-visible trade.** Dynamo cannot trace
 the debugger's numpy asserts at all (it dies building a guard over a numpy bool), so this is
 compile-or-debugger, not both. The debugger attaches at `log_level >= PERIODIC` — i.e. it is ON in
-production — so enabling this flag costs you the per-forward obs-integrity check for that run. It
-gets its own startup line rather than happening quietly.
+production — so this flag costs you the per-forward obs-integrity check for that run.
+
+**With the default ON, that trade is now made by EVERY plain cuda run, with nobody having typed a
+flag — which makes the announcement more load-bearing, not less.** It is said twice: once at
+startup, when the auto default resolves to on (`⚡ --compile-trainer ON by default (device=cuda)`,
+naming the debugger and `--no-compile-trainer`), and once from `compile_trainer_extractor` when the
+debugger is actually dropped. Neither line is conditional on a launcher being attached. The opt-out
+is the only way to keep the debugger.
 
 **Mechanics.** Patches the BOUND `fe.forward`, never the module: `torch.compile(module)` returns an
 `OptimizedModule` and prefixes every `state_dict` key with `_orig_mod.`, which would land in every
 checkpoint of the run and make them unloadable by anything else. It runs immediately BEFORE
 `_run_roundtrip_test`, which turns that existing save -> reload -> forward gate into a free check on
 exactly that hazard. **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
-inherited on resume — re-pass it each launch, like `--grad-checkpointing`.
+inherited on resume — but with the AUTO default that means a flagless cuda resume gets it ON, so it
+is `--no-compile-trainer` you re-pass each launch, not the flag.
 
 Tests: `agents/model/compile_trainer_test.py` (the verdicts are pure functions so every refusal is
 testable without a GPU — a contract that needs a free card is a contract that gets checked rarely;

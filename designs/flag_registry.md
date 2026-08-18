@@ -172,4 +172,7 @@ The registry covers the **feature-extractor architecture toggles** — the thing
   `check_reward_config` / `check_vf_coef`, on a different mechanism entirely.
 - **Runtime perf knobs** (`--compile-opponents`, `--compile-trainer`, `--grad-checkpointing`,
   `--async-rollout`, `--use-bridge`, …) — never versioned, never in `check_compatible`, and
-  deliberately **not** inherited on resume, so they must be re-passed each launch.
+  deliberately **not** inherited on resume: a resume gets each one's DEFAULT, not the value the
+  original launch used. For a knob that defaults OFF that means re-passing the flag each launch;
+  for the three compile knobs, which default ON since 2026-08-17, it means re-passing the
+  `--no-` opt-out instead.

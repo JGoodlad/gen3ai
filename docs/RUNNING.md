@@ -63,6 +63,15 @@ python -m main.launcher --model models/<run>/checkpoints/checkpoint_NNNN_steps.z
 Checkpoints land in `models/run_<timestamp>/checkpoints/`; TensorBoard logs beside them
 (`tensorboard --logdir models/`).
 
+**`torch.compile` is on by default** — the CPU env-worker opponents (`--compile-opponents`, plus its
+forkserver preload) and, when the resolved device is `cuda`, the GPU learner (`--compile-trainer`,
+~1.75x on the PPO train step). The flags exist as fallbacks: `--no-compile-opponents` /
+`--no-compile-trainer` return to eager if the compiler is ever the suspect. Two things worth knowing
+before a launch: `--compile-trainer` drops the per-forward ObservationDebugger (it says so at
+startup; `--no-compile-trainer` keeps it), and a compile failure there is FATAL by design rather
+than a silent fall back to a ~1.75x slower run. The CPU smoke above is unaffected — the trainer
+compile is off on `cpu` and off under `--debug`.
+
 ## Tests
 
 Two orthogonal marker axes: capability (*what a test needs* — `integration`, `sim`, `browser`,

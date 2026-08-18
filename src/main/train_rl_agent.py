@@ -157,6 +157,84 @@ class BoolFlag(argparse.Action):
             setattr(namespace, self.dest, str2bool(values))
 
 
+_PRELOAD_WITHOUT_OPPONENTS = (
+    "--compile-opponents-preload requires --compile-opponents — the preload IS "
+    "the opponent compile, moved into the forkserver.")
+
+
+def resolve_compile_opponents_preload(preload, compile_opponents: bool) -> bool:
+    """Resolve `--compile-opponents-preload` (tri-state) against `--compile-opponents`.
+
+    `None` = unset ⇒ FOLLOW the opponent compile, so both ship ON together and
+    `--no-compile-opponents` turns the pair off in one flag. Only an EXPLICIT preload alongside an
+    off opponent compile is a contradiction; raises `ValueError` there (the caller renders it as a
+    `parser.error`). Erroring on the DEFAULT pairing instead would make `--no-compile-opponents` —
+    the documented fallback — a usage error, which is the whole point of resolving before checking.
+    """
+    if preload is None:
+        return bool(compile_opponents)
+    if preload and not compile_opponents:
+        raise ValueError(_PRELOAD_WITHOUT_OPPONENTS)
+    return bool(preload)
+
+
+def resolve_compile_trainer_default(device, debug: bool, cuda_available=None) -> bool:
+    """The AUTO default for `--compile-trainer`: ON for cuda, OFF for cpu, OFF under `--debug`.
+
+    `--compile-trainer` REFUSES a non-cuda device by design (the CPU backward provably does not
+    lower). A default must therefore never be a flat `True`, or every CPU invocation that works
+    today — a smoke, a laptop, a CI run — would start failing with a FATAL_CONFIG. So the default
+    is conditioned on the device rather than softened: `auto`/`cuda*` with a card ⇒ ON, anything
+    else ⇒ OFF, and an EXPLICIT `--compile-trainer` on cpu still refuses exactly as before.
+
+    `--debug` is excluded outright even with an explicit `--device cuda`: a smoke exists to prove
+    the pipeline in ~1 minute, and a multi-minute Inductor compile (plus a CUDA context a live GPU
+    run does not want a smoke taking) defeats the point of it.
+
+    Pure and injectable (`cuda_available`) so the matrix is unit-testable without a card.
+    """
+    if debug:
+        return False
+    dev = str(device or "auto").strip().lower()
+    if dev.startswith("cuda"):
+        return True
+    if dev != "auto":
+        return False                                   # cpu / mps / anything explicit and non-cuda
+    if cuda_available is None:
+        import torch
+        cuda_available = torch.cuda.is_available
+    try:
+        return bool(cuda_available())
+    except Exception:                                  # noqa: BLE001 — a probe must never crash a launch
+        return False
+
+
+def resolve_compile_trainer_auto(*, device, debug: bool, n_steps: int, n_envs: int,
+                                 batch_size: int, async_rollout: bool, cuda_available=None):
+    """The full AUTO decision for `--compile-trainer`. Returns `(enabled, downgrade_reason)`.
+
+    Two gates, and the SECOND one is the non-obvious half. `check_shape_stability` REFUSES two
+    configs outright — `--async-rollout` (an unbounded rollout shape set) and a rollout that does
+    not divide by `--batch-size` (a third shape, every epoch) — because for someone who ASKED for
+    the compile, silently getting eager is the whole failure this flag exists to prevent.
+
+    But a DEFAULT is not an ask. Applying that refusal to the default would convert two classes of
+    command that work today into a `FATAL_CONFIG` exit, which is exactly the failure the cpu
+    conditioning avoids, one flag over. So the auto default YIELDS to the config that was actually
+    typed and returns the reason for the caller to announce; an EXPLICIT `--compile-trainer` never
+    reaches here and still hits the refusal.
+    """
+    if not resolve_compile_trainer_default(device, debug, cuda_available):
+        return False, None
+    from agents.model.compile_trainer import CompileTrainerError, check_shape_stability
+    try:
+        check_shape_stability(n_steps=int(n_steps or 0), n_envs=int(n_envs or 0),
+                              batch_size=int(batch_size or 0), async_rollout=bool(async_rollout))
+    except CompileTrainerError as exc:
+        return False, str(exc)
+    return True, None
+
+
 def _load_saved_version(model_path: str):
     """Best-effort read of a checkpoint's saved ModelVersion (its model_config.json).
 
@@ -1053,17 +1131,20 @@ def build_parser() -> argparse.ArgumentParser:
                              "same: flipping it re-means every species logit. REQUIRES "
                              "--opp-belief-aux-coef>0. Off by default (byte-identical).")
     parser.add_argument("--compile-opponents", "--compile_opponents", dest="compile_opponents",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=True,
                         help="torch.compile each frozen SELF-PLAY OPPONENT's feature extractor in the "
                              "env workers (CPU, B=1 — the measured 68%% of rollout worker time). "
                              "Measured 6.53x on the real forward; value-preserving to ~5e-7 with 0/16 "
                              "argmax flips. This is the CPU/ROLLOUT half; --compile-trainer is the "
-                             "GPU/LEARNER half and they are independent. RUNTIME PERF KNOB: not "
-                             "versioned, not in check_compatible, NOT inherited on resume — re-pass it "
-                             "each launch. Hides CUDA in the (CPU) workers first, because compiling in "
-                             "a CUDA-visible process costs ~252 MiB of card per worker.")
+                             "GPU/LEARNER half and they are independent. **DEFAULT ON** — pass "
+                             "--no-compile-opponents to fall back to eager. The default failure mode "
+                             "is still warn-and-fall-back (--compile-opponents-strict promotes it to "
+                             "a hard error). RUNTIME PERF KNOB: not versioned, not in "
+                             "check_compatible; with the default ON a flagless resume gets it ON. "
+                             "Hides CUDA in the (CPU) workers first, because compiling in a "
+                             "CUDA-visible process costs ~252 MiB of card per worker.")
     parser.add_argument("--compile-opponents-preload", "--compile_opponents_preload",
-                        dest="compile_opponents_preload", action="store_true", default=False,
+                        dest="compile_opponents_preload", action=BoolFlag, default=None,
                         help="gen3_forkserver_preload_v1: compile the extractor ONCE in the "
                              "multiprocessing FORKSERVER so every env worker inherits the traced "
                              "graph by fork (~0.12 s/worker instead of ~30 s against a warm disk "
@@ -1072,8 +1153,11 @@ def build_parser() -> argparse.ArgumentParser:
                              "FAIL-LOUD: a preload that cannot prove the forkserver is "
                              "single-threaded after the compile RAISES, killing env construction "
                              "with a traceback instead of the silent 2-of-48-workers wedge the "
-                             "2026-08 attempt caused. Requires --compile-opponents; runtime perf "
-                             "knob (never versioned, re-pass each launch).")
+                             "2026-08 attempt caused. **DEFAULT: FOLLOWS --compile-opponents** (so "
+                             "ON by default, OFF whenever the opponent compile is off); "
+                             "--no-compile-opponents-preload keeps the opponent compile but reverts "
+                             "to the per-worker in-trainer cache prewarm. Runtime perf knob (never "
+                             "versioned, not inherited on resume).")
     parser.add_argument("--compile-opponents-strict", "--compile_opponents_strict",
                         dest="compile_opponents_strict", action="store_true", default=False,
                         help="Turn a failed or ineffective OPPONENT compile into a hard error instead "
@@ -1084,7 +1168,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "FPS graph a day later. (--compile-trainer needs no such flag: it is "
                              "ALWAYS fail-loud, see its help.)")
     parser.add_argument("--compile-trainer", "--compile_trainer", dest="compile_trainer",
-                        action="store_true", default=False,
+                        action=BoolFlag, default=None,
                         help="torch.compile the LEARNER's feature extractor — the GPU forward AND "
                              "backward that the PPO train step runs. Measured on v76 at the production "
                              "shape (batch 4096, PopArt on, real MaskablePPO path): "
@@ -1092,8 +1176,14 @@ def build_parser() -> argparse.ArgumentParser:
                              "~89%% train share. CUDA ONLY and FAIL-LOUD by design — a silent fall back "
                              "to eager would be an invisible 1.75x regression, and the CPU backward "
                              "provably does not lower (Inductor's C++ backend refuses an atomic_add "
-                             "scatter). RUNTIME PERF KNOB: not versioned, NOT inherited on resume — "
-                             "re-pass it each launch, like --grad-checkpointing.")
+                             "scatter). **DEFAULT: AUTO — ON when the resolved device is cuda, OFF on "
+                             "cpu and OFF under --debug**, so a working CPU invocation can never be "
+                             "turned into a refusal by a default. An EXPLICIT --compile-trainer on cpu "
+                             "still refuses, loudly (that contract is unchanged). "
+                             "--no-compile-trainer opts out and is also how you KEEP the "
+                             "ObservationDebugger, which the compile drops (dynamo cannot trace its "
+                             "numpy asserts). RUNTIME PERF KNOB: not versioned; with the auto default "
+                             "a flagless cuda resume gets it ON.")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,
                         help="v59: the CONSEQUENCE kernels' believed-candidate axis — C1b/C2/C3's "
@@ -2687,9 +2777,16 @@ async def main():
               "builds no HP-type head, so there is no posterior for the CE to supervise). The 16 "
               "typed HP channels are still predicted + supervised by the move-belief BCE.")
         args.hp_type_belief_coef = 0.0
-    if args.compile_opponents_preload and not args.compile_opponents:
-        parser.error("--compile-opponents-preload requires --compile-opponents — the preload IS "
-                     "the opponent compile, moved into the forkserver.")
+    # The preload IS the opponent compile, moved into the forkserver — so it FOLLOWS
+    # --compile-opponents by default (both ship ON). Only an EXPLICIT --compile-opponents-preload
+    # alongside --no-compile-opponents is a contradiction worth erroring on; the same pairing
+    # arrived at by defaults must silently resolve to "no compile at all", or --no-compile-opponents
+    # (the documented fallback) would itself become a usage error.
+    try:
+        args.compile_opponents_preload = resolve_compile_opponents_preload(
+            args.compile_opponents_preload, args.compile_opponents)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.item_belief_coef and not args.item_belief:
         # The CE supervises the ItemBelief head's posterior (last_item_logits) and the head exists
         # only under --item-belief; a coef with no head would be a silent no-op (the bank's row
@@ -2714,6 +2811,32 @@ async def main():
         # hang anywhere in startup is covered too. Real (launcher-managed) runs keep a live
         # parent and are unaffected.
         start_orphan_watchdog(label="debug-smoke")
+
+    # --compile-trainer's AUTO default, resolved AFTER --debug has had its say on the device (a
+    # --debug run with no --device is cpu, and must stay a pure-CPU minute-long smoke). An explicit
+    # --compile-trainer / --no-compile-trainer always wins; the auto value only fills the None.
+    #
+    # ⚠️ THE SECOND HALF IS NOT OPTIONAL. `check_shape_stability` REFUSES two configs outright
+    # (--async-rollout, and a rollout that does not divide by --batch-size), so a device-only
+    # default would convert two classes of command that work today into a FATAL_CONFIG exit —
+    # the same failure the cpu conditioning above exists to avoid, one flag over. A DEFAULT yields
+    # to the config the user actually typed and says why; an EXPLICIT --compile-trainer still hits
+    # the refusal, loudly, because there the user asked for something impossible.
+    if args.compile_trainer is None:
+        args.compile_trainer, _ct_why = resolve_compile_trainer_auto(
+            device=args.device, debug=args.debug, n_steps=args.n_steps, n_envs=args.n_envs,
+            batch_size=args.batch_size, async_rollout=bool(getattr(args, "async_rollout", False)))
+        if _ct_why:
+            emit("⚡ --compile-trainer would be ON by default here, but this config cannot take "
+                 f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "
+                 "(pass --compile-trainer explicitly to make this a hard error instead.)")
+        if args.compile_trainer:
+            # LOUD, and at STARTUP rather than only after the compile succeeds: with the default
+            # ON, every plain cuda run now trades away the ObservationDebugger, and a trade nobody
+            # typed a flag for is exactly the kind that has to announce itself.
+            emit("⚡ --compile-trainer ON by default (device=cuda) — ~1.75x on the PPO train step. "
+                 "⚠️ this DROPS the ObservationDebugger (dynamo cannot trace its numpy asserts); "
+                 "pass --no-compile-trainer to keep it. Compile failure is FATAL by design.")
 
     # Load all teams using the new TeamLoader
     loader = TeamLoader()

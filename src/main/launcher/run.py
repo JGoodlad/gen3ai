@@ -750,11 +750,15 @@ def run(
     sys.exit(getattr(app, "exit_code", 0))
 
 
-def main() -> None:
-    """Launcher entry point (``python -m main.launcher`` / ``-m main.launcher.tui``).
+def build_launcher_parser():
+    """The launcher's OWN flags — everything else is forwarded verbatim to `train_rl_agent.py`.
 
-    Parses launcher-owned flags, strips them, defaults the Showdown port, and forwards the
-    rest to ``train_rl_agent.py``."""
+    Extracted from `main()` so a test can interrogate the real parser rather than a hand-copied
+    twin. What that buys: argparse abbreviation-matches unknown tokens against known options, so a
+    NEW trainer flag can be silently swallowed here and never reach the child (the failure would be
+    a flag that appears to do nothing). `compile_flag_forwarding_test.py` pins that the compile
+    flags survive this parser AND `_strip_launcher_args`.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -826,6 +830,15 @@ def main() -> None:
         ),
     )
     parser.add_argument("-h", "--help", action="store_true")
+    return parser
+
+
+def main() -> None:
+    """Launcher entry point (``python -m main.launcher`` / ``-m main.launcher.tui``).
+
+    Parses launcher-owned flags, strips them, defaults the Showdown port, and forwards the
+    rest to ``train_rl_agent.py``."""
+    parser = build_launcher_parser()
 
     known, _ = parser.parse_known_args()
 

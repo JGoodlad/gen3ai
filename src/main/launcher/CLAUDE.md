@@ -225,6 +225,17 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
 launcher-owned flags).
 
+**The launcher owns NO compile default.** `--compile-opponents` / `--compile-opponents-preload` /
+`--compile-trainer` all default ON in `train_rl_agent`'s own parser (2026-08-17), and the launcher's
+only job is to be transparent to them and to their `--no-` opt-outs. Two ways it could stop being:
+`_strip_launcher_args` could grow an entry that eats one, or argparse could abbreviation-match an
+unknown token against a launcher flag (it parses with `parse_known_args`, and `--no-pin` lives right
+next to `--no-compile-*`). `compile_flag_forwarding_test.py` pins both against the REAL parser —
+`build_launcher_parser()` was extracted from `main()` for exactly that, so the test interrogates the
+parser rather than a hand-copied twin. Same failure class as `default_port_test.py`, mirrored: that
+one catches a launcher-injected default drifting from the trainer's, this one catches the launcher
+silently swallowing a child flag.
+
 ## Resume contract
 
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by

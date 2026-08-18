@@ -344,7 +344,13 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     _say(f"[CompileTrainer] ON — learner fwd+bwd {eager_ms:.1f} -> {comp_ms:.1f} ms "
          f"({speedup:.2f}x) at batch {batch} on {device}{shape_note}")
     if dropped_debugger:
-        _say("[CompileTrainer] the ObservationDebugger was DROPPED to allow the compile — dynamo "
+        # This flag DEFAULTS ON for a cuda run, so this trade is now made on every production
+        # launch by default rather than by someone who typed a flag and read its help. That makes
+        # the announcement MORE load-bearing, not less — it is the only place the run says it out
+        # loud, and it names the opt-out so the reader does not have to go looking.
+        _say("[CompileTrainer] ⚠️ the ObservationDebugger was DROPPED to allow the compile — dynamo "
              "cannot trace its numpy asserts. You lose that per-forward obs-integrity check for "
-             "this run; every other guard is unaffected.")
+             "this run; every other guard is unaffected. This is the DEFAULT on cuda: pass "
+             "--no-compile-trainer to keep the debugger (at ~1.75x less throughput on the train "
+             "step).")
     return speedup

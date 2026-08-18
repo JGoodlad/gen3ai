@@ -836,20 +836,33 @@ it, and `off` stays for the ladder. **The launcher agrees**: `child_uses_bridge`
 `torch.compile` is applied at two independent sites, split by WHO and WHERE. They were one flag
 (`--compile-extractor`) until 2026-08-14, which named neither half:
 
-| flag | what | device | on failure |
-|---|---|---|---|
-| `--compile-opponents` | each frozen self-play OPPONENT's extractor, in the env workers | **CPU** | warn + fall back to eager; `--compile-opponents-strict` opts into raising |
-| `--compile-trainer` | the LEARNER's extractor — the fwd **and bwd** of the PPO step | **CUDA** | **always FATAL** |
+| flag | what | device | **default** | opt-out | on failure |
+|---|---|---|---|---|---|
+| `--compile-opponents` | each frozen self-play OPPONENT's extractor, in the env workers | **CPU** | **ON** | `--no-compile-opponents` | warn + fall back to eager; `--compile-opponents-strict` opts into raising |
+| `--compile-opponents-preload` | the same compile, done ONCE in the forkserver and inherited by fork | **CPU** | **follows `--compile-opponents`** | `--no-compile-opponents-preload` | RAISES at env construction (never a silent wedge) |
+| `--compile-trainer` | the LEARNER's extractor — the fwd **and bwd** of the PPO step | **CUDA** | **AUTO — ON when the resolved device is cuda**, OFF on cpu, OFF under `--debug` | `--no-compile-trainer` | **always FATAL** |
 
-Orthogonal — a run can take either, both, or neither. Both are runtime perf knobs: never versioned,
-never in `check_compatible`, NOT inherited on resume, so re-pass them each launch.
+**🚨 These default ON (2026-08-17). They are FALLBACKS, not opt-ins** — the flags exist so a run can
+be turned back to eager when something is wrong, not so a run can opt into speed. A launch that
+types none of them compiles.
 
-### Compiled CPU opponents (`--compile-opponents`, opt-in)
+`--compile-trainer` is the one that cannot be a flat `True`: it **refuses** a non-cuda device by
+design, so a flat default would turn every working CPU invocation into a `FATAL_CONFIG` exit. Its
+default is therefore conditioned on the resolved device (`auto` follows the box), and `--debug` is
+excluded outright even with an explicit `--device cuda`. **An EXPLICIT `--compile-trainer` on cpu
+still refuses, loudly — the default was flipped, not the safety.**
+
+Orthogonal — a run can take either, both, or neither. All are runtime perf knobs: never versioned,
+never in `check_compatible`. **They are still not INHERITED on resume — but with the defaults ON
+that now cuts the other way**: a flagless resume gets them ON, so it is the OPT-OUT you have to
+re-pass each launch, not the flag.
+
+### Compiled CPU opponents (`--compile-opponents`, **default ON**)
 
 `torch.compile`s each frozen self-play OPPONENT's feature extractor in the env workers — the measured
 **68% of rollout-worker time**, run on CPU at B=1 where the graph is dispatch-bound. A **runtime perf
-knob**: never versioned, never in `check_compatible`, NOT inherited on resume — re-pass it each launch
-like `--grad-checkpointing`.
+knob**: never versioned, never in `check_compatible`. **ON by default**; `--no-compile-opponents`
+falls the whole path back to eager, which is what to reach for when the compile is the suspect.
 
 **Measured: B=1 CPU forward 6.371 → 0.976 ms (6.53×)** on the literal production arch (1 graph, 0
 graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at `--n-envs 48`**
@@ -858,13 +871,23 @@ graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at 
 (3.6× → 6.53×) moved end-to-end only ~31% → ~33%, so the opponent forward is no longer the rollout
 bottleneck and further compiler work on this path is spent effort.
 
-Startup: `agents.model.compile_prewarm` warms the shared on-disk Inductor cache in the trainer before
-any worker exists, halving worker startup (**59.6 s -> 30.1 s** wall for 16 workers). Going further,
-**`--compile-opponents-preload`** (`gen3_forkserver_preload_v1`, 2026-08-16) compiles ONCE in the
-forkserver so every worker inherits the traced graph (~0.12 s each) — possible since the LAZY
-poke_env package inits made the extractor import single-threaded (the 2026-08 attempt hung a 48-env
-run on exactly that thread), and fail-loud: a preload that cannot prove the forkserver
-single-threaded RAISES instead of forking. Detail: the training leaf.
+Startup: **`--compile-opponents-preload`** (`gen3_forkserver_preload_v1`, 2026-08-16) compiles ONCE in
+the forkserver so every worker inherits the traced graph (~0.12 s each instead of ~30 s). It
+**follows `--compile-opponents`**, so it is on by default too; `--no-compile-opponents-preload`
+keeps the opponent compile and falls back to `agents.model.compile_prewarm`, which warms the shared
+on-disk Inductor cache in the trainer before any worker exists (**59.6 s -> 30.1 s** wall for 16
+workers). The two fix DIFFERENT halves — the disk cache removes codegen, the fork removes
+per-process dynamo tracing and guard construction.
+
+**It is not the approach that hung a run, and the difference is structural, not a tuning.** The
+2026-08 attempt wedged a 48-env run because `fork()` copies every mutex but only the calling thread
+and the extractor import started poke-env's global asyncio loop thread. That root cause is FIXED
+(the `poke_env` package inits are LAZY, so the extractor's import graph is thread-free — pinned by
+`compile_prewarm_test.py`), and the preload additionally **asserts single-threadedness after its own
+compile and RAISES**, which kills the forkserver bootstrap and fails `SubprocVecEnv` construction
+with a traceback in the parent. The silent wedge is unrepresentable; the worst case is a loud
+refusal at startup with a one-flag opt-out. **Untested at 48 workers** (proven live at 4) — see the
+training leaf.
 Failure is loud on stderr + the launcher event stream, and `--compile-opponents-strict` promotes it to
 a hard error (falling back to eager is an invisible ~6.5× regression). "The model still compiles" is a
 **default-on test** (`extractor_compiles_test.py`; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out).
@@ -872,7 +895,7 @@ a hard error (falling back to eager is an invisible ~6.5× regression). "The mod
 Full detail — the four guards, the Inductor crash root-caused to one op, and the startup-cost table —
 is in `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
 
-### Compiled GPU trainer (`--compile-trainer`, opt-in)
+### Compiled GPU trainer (`--compile-trainer`, **default ON for cuda**)
 
 The other half, and the bigger one. **Measured on v76 at the production shape** (batch 4096, PopArt
 on, the real `MaskablePPO` path, arms interleaved on an idle box): `policy.evaluate_actions`
@@ -886,10 +909,21 @@ slower, or numerically-divergent compile is a hard `FATAL_CONFIG` exit rather th
 `--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
 backend refuses the damage op's `atomic_add` scatter).
 
-**⚠️ It drops the ObservationDebugger**, which dynamo cannot trace; that debugger is on in
-production, so this is a real trade and it announces itself at startup. Full detail — the four
-refusals, the `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` →
-Compiled GPU trainer.
+**The DEFAULT yields; the REFUSAL does not.** `auto`/`cuda` with a card ⇒ on; `cpu`, any other
+explicit device, or `--debug` ⇒ off. The auto path *also* runs `check_shape_stability` and stays
+OFF (with a startup line saying why) when the config is one this flag refuses — `--async-rollout`,
+or a rollout that does not divide by `--batch-size` — because a default must never turn a command
+that works today into a `FATAL_CONFIG`. An explicit `--compile-trainer` on any of those still exits
+`FATAL_CONFIG` with the message it always did. **A default yields to the config you typed and says
+so; an explicit flag refuses.**
+
+**⚠️ It drops the ObservationDebugger**, which dynamo cannot trace. That debugger is on in
+production, so this is a real trade — and **with the default ON, every plain cuda run now makes it
+without anyone typing a flag**, which is why it announces itself twice: once at startup when the
+auto default resolves to on, and once from `compile_trainer_extractor` when the debugger is actually
+dropped. `--no-compile-trainer` is how you keep it. Full detail — the four refusals, the
+`state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
+trainer.
 
 ### Non-barrier async rollout (`--async-rollout`, opt-in)
 
