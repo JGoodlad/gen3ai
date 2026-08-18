@@ -13527,6 +13527,48 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// HP1 — the DISABLE `-start` line collapses a TYPED Hidden Power to the BARE name.
+///
+/// gen-3 hides the Hidden Power TYPE, so EVERY emitted line reads `Hidden Power` — never the
+/// typed dex display name. The round-8 BF1 fix collapsed the `|move|` / `|cant|` announces but
+/// MISSED this one, which kept rendering `Hidden Power Grass`. Found by the long `ourandom`
+/// byte fuzz at 10,775 battles: a Disable landing on a typed-HP `lastMove` is rare enough that
+/// no earlier gate reached it. Repro `rmsz2yo80_ab_104_0`.
+#[test]
+fn disable_start_line_hides_the_hidden_power_type() {
+    let d = dex();
+    // The foe's ONLY move is a typed Hidden Power, so its lastMove is guaranteed to be it.
+    let user = "Gengar||none|Levitate|disable,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Zapdos||none|Pressure|hiddenpowergrass|Hardy|85,85,85,85,85,85|N|30,30,30,30,30,30|||";
+    // Disable is accuracy 55, so sweep until it lands rather than trusting one seed.
+    let mut saw = None;
+    for seed in ["3,3,3,3", "11,11,11,11", "7,7,7,7", "1,2,3,4", "31,29,23,19", "5,9,13,17"] {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // foe uses typed HP
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Disable it
+            ],
+            &d,
+        );
+        if let Some(l) = lines
+            .into_iter()
+            .map(|l| l.0)
+            .find(|l| l.starts_with("|-start|p2a: Zapdos|Disable|"))
+        {
+            saw = Some(l);
+            break;
+        }
+    }
+    let line = saw.expect("HP1: Disable must land at one of the swept seeds");
+    assert_eq!(
+        line, "|-start|p2a: Zapdos|Disable|Hidden Power",
+        "HP1: the Disable -start must render the BARE `Hidden Power` — gen-3 hides the type, \
+         and the typed dex name (`Hidden Power Grass`) is an information LEAK"
+    );
+}
+
 /// IM1 — IMPRISON: the cast succeeds only when the caster SHARES a move with the foe, and
 /// every shared move is then CANT-ed for the foe with no PP spent. Ground truth
 /// `harness/probe_imprison.js`.

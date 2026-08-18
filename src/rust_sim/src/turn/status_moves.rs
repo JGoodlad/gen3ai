@@ -2123,7 +2123,21 @@ impl crate::state::BattleState {
                     .moves
                     .get(last_slot)
                     .and_then(|mid| dex.moves(mid))
-                    .map(|m| m.name.clone())
+                    .map(|m| {
+                        // TYPED HIDDEN POWER collapses to the BARE `Hidden Power` here too
+                        // (`gen3_disable_hidden_power_name_v1`). gen-3 hides the HP type, so
+                        // EVERY emitted line reads `Hidden Power` — the `|move|`/`|cant|`
+                        // announces were collapsed by the round-8 BF1 fix, but THIS
+                        // `-start|…|Disable|<MoveName>` kept the typed dex display name and
+                        // leaked it (`Hidden Power Grass`). Found by the long `ourandom`
+                        // byte fuzz at 10,775 battles — a Disable onto a typed-HP lastMove is
+                        // rare enough that no earlier gate reached it.
+                        if crate::dex::to_id(&m.id).starts_with("hiddenpower") {
+                            "Hidden Power".to_string()
+                        } else {
+                            m.name.clone()
+                        }
+                    })
                     .unwrap_or_default();
                 self.log.volatile_start(&target, &format!("Disable|{mv_name}"));
             }

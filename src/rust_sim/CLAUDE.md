@@ -8228,3 +8228,37 @@ magic coat / mist / nightmare / role play / sketch / spite / the stat-drop tail 
 reports a slightly larger number than the census because it deliberately false-rejects two modeled
 things — the typed Hidden Powers and (carrier-conditionally) Sleep Talk.
 
+### ROUND 53 (FIX) — the DISABLE `-start` leaked the Hidden Power TYPE
+
+`gen3_disable_hidden_power_name_v1`. Found by a **10,775-battle** `ourandom --protocol` run
+(0 panics, 2 divergences total — a 0.019% rate):
+
+```
+sim:  |-start|p2a: Zapdos|Disable|Hidden Power
+port: |-start|p2a: Zapdos|Disable|Hidden Power Grass
+```
+
+gen-3 HIDES the Hidden Power type — it is hidden information — so EVERY emitted line reads the
+bare `Hidden Power`, never the typed dex display name. The **round-8 BF1 fix collapsed the
+`|move|` / `|cant|` announces and MISSED this one**, which kept rendering the typed name straight
+from `MoveData.name`. It is an information LEAK, not merely a cosmetic byte difference: the type
+is exactly what an opponent is not supposed to know.
+
+**⚠️ WHY NO EARLIER GATE CAUGHT IT.** It needs a Disable landing on a typed-Hidden-Power
+`lastMove` — Disable is accuracy 55, typed HP has to be the foe's last move, and neither the
+committed e2e corpus nor any dedicated golden pairs them. It took five figures of battles. **The
+lesson is about the SHAPE of the earlier fix rather than its content: BF1 collapsed the name at
+three call sites and the fourth was written the same way, from `MoveData.name`, somewhere else in
+the file.** A fix expressed as "collapse it at these sites" leaves every future site free to
+re-introduce it; the durable version would be a single accessor that cannot return the typed name
+to an emitter.
+
+**Gates:** `cargo test --release --no-fail-fast` **707 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1075 rows**. Pinned by the
+revert-verified `disable_start_line_hides_the_hidden_power_type` (which sweeps seeds, since
+Disable is accuracy 55) AND frozen as byte-fuzz corpus fixture
+`73_disable_start_hides_hidden_power_type.txt` — the original repro, which replays `ok` with the
+fix and `kind=protocol` without it.
+
+**The run's OTHER divergence is the known `kind=seed` tail** (ROUND 26's class), unrelated.
+
