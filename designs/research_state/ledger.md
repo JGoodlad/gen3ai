@@ -955,3 +955,47 @@ warm-up, a different event entirely**, and evidence for neither the high nor the
 
 Same family as the pooled-correlation trap earlier today: **an aggregate that does not break down by
 the dimension that defines the event will happily aggregate two different events into one number.**
+
+### T1 KILLED (2026-08-17, same day, on the owner's challenge): I generalised a ONE-TIME transition into a recurring bill
+
+The owner's response to the T1 writeup was one sentence — *"This might be a bug — we eagerly compile
+the model and then they are a cache. Can you double check this."* — and it was right on the
+substance. **The caching works; the lever's premise did not.**
+
+| event | excess | compiles | path |
+|---|---|---|---|
+| iteration 22 | **+1095 s** | 48 | all *timed* (each process's FIRST compile) |
+| iteration 42 | **+77 s** | 27 of 48 | all *"reused this process's validated compile"* |
+
+Iteration 22 is where **self-play first activates** — the pool is seeded from empty, so all 48
+workers simultaneously load a 41 MB checkpoint AND pay their process's first compile. It happens
+once per run. The recurring promotion cost is **+77 s (~2.7%, ~16 min per 25M run)**, not 18.5 min
+and ~31%, and `--compile-opponents` is net **+40%**, not a −0.3% wash. Everything downstream —
+lever, training leaf, frontier note, measurement file, memory — is corrected.
+
+**Three failures compounded, and each was individually avoidable:**
+
+1. **n=1 on an event I had no reason to think was typical.** It was the FIRST of its kind in the
+   run — the position in a series most likely to be atypical — and I multiplied it by 12.5.
+2. **I never separated the two compile paths, though the log names them.** Iteration 22's lines read
+   `ON — 14.21 -> 1.84 ms (7.7x)`; iteration 42's read `ON (reused this process's validated
+   compile)`. **The distinguishing evidence was printed in the log I was already parsing, and I
+   counted the lines instead of reading them.**
+3. **I confirmed a cost without checking what else occupied the window.** A 950 s `[SELFPLAY EVAL]`
+   cycle sat inside that iteration. It turned out not to be the cause either (eval is genuinely
+   non-blocking — gen-13 ran an **1865 s** eval inside a **395 s** iteration), but I did not know
+   that when I attributed 100% of the excess to compiles.
+
+> **The rule: before attributing a cost to a mechanism, enumerate everything else in the window, and
+> check whether the mechanism has cheap and expensive MODES that your count conflates.** A count of
+> events is not a measurement of a cost.
+
+**And the meta-lesson, which is the expensive one.** I had already written three ledger entries
+today about exactly this failure family — the pooled-correlation Simpson trap, the false stall
+alarm, the "a burst that matches your event's SIZE is not your event" note — and then committed a
+fourth instance *while writing the third*. Recognising a pattern in retrospect is not the same
+capability as applying it prospectively. **The countermeasure that actually works is procedural, not
+attentional: for any measured cost that is about to become a DECISION input, require n≥2 and require
+that the second observation be a different instance rather than a repeat of the first.** Applied
+here it would have cost one 20-minute wait and saved a shipped lever, five corrected documents, and
+an owner having to catch it.

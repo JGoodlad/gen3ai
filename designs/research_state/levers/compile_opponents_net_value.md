@@ -1,10 +1,40 @@
 # `--compile-opponents` net value once the RECURRING bill is counted
 
-**Status:** 🔬 open — one half measured, the other half never was · **Ledger id:** T1
+**Status:** ❌ **KILLED 2026-08-17, same day it was opened** — the premise was a mis-attribution.
+The flag is net **+40%**, not a wash. · **Ledger id:** T1
 
-One-line claim: *`--compile-opponents` was adopted on a measured +43.7% rollout FPS (rust) and a STARTUP
-cost model; its RECURRING cost — every self-play promotion recompiles in all N env workers — was
-never measured, and at the documented benefit the two roughly cancel.*
+One-line claim (REFUTED): *`--compile-opponents` was adopted on a startup cost model, and a
+recurring per-promotion recompile bill cancels its benefit.*
+
+## Verdict — the recurring bill is ~2.7%, not ~31%
+
+`measurements/gen14_pool_refresh_compile_cost.json` (now n=2, supersedes the n=1 version):
+
+| event | excess | compiles | which path |
+|---|---|---|---|
+| iteration 22 | **+1095 s** | 48 | all *timed* (each process's FIRST compile) |
+| iteration 42 | **+77 s** | 27 | all *"reused this process's validated compile"* |
+
+**Iteration 22 was a ONE-TIME transition, not a promotion.** It is where self-play first activates:
+the pool is seeded from empty, so all 48 workers simultaneously load a 41 MB checkpoint *and* pay
+their process's first compile. Iteration 42 is the true steady state — **+77 s ≈ 2.7% of wall-clock,
+~16 min over a 25M run**, against the ~3.9 h this lever was opened on.
+
+Net value, using the same arithmetic that opened the lever: compiled-effective 690.4 fps vs
+uncompiled 493.6 fps at the +43.7% rust benefit → **+39.9%. The flag is clearly worth keeping.**
+
+**The caching works exactly as designed** — the challenge that reopened this was right. The shared
+Inductor cache was HIT at the promotion (13 files written, versus 6600+ at run startup), and
+`_COMPILE_VALIDATED` correctly put every steady-state compile on the cheap path.
+
+**Also established while settling this (worth keeping):** eval cycles are genuinely **non-blocking** —
+gen-13 ran an **1865 s** `[SELFPLAY EVAL]` cycle inside a **395 s** iteration. A long eval in the log
+beside a slow iteration is a coincidence of window, not a cause.
+
+**Do not reopen without a NEW steady-state measurement.** The 18.5 min figure is retired; if you see
+it quoted anywhere, it is stale.
+
+## Original framing, retained as the record of what was wrong
 
 ## Known (established)
 

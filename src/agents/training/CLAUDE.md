@@ -1473,45 +1473,32 @@ the *check* creates no CUDA context either) — a compile test must never be wha
 Every skip NAMES the cause and the knob rather than saying "no CUDA device", because a silent skip
 on a box that is always training would turn the gate into a no-op that still reads green.
 
-### ⚠️ The RECURRING cost nobody had measured: every pool promotion recompiles in ALL N workers
+### The recurring promotion cost — measured, and it is SMALL (~2.7%)
 
-Everything above sizes **startup**. There is a second, larger bill that arrives *during* the run and
-is not startup at all — measured on gen-14, 2026-08-17
-(`designs/research_state/measurements/gen14_pool_refresh_compile_cost.json`):
+Everything above sizes **startup**. There is a second bill during the run, when a self-play
+promotion makes env workers compile the new opponent. Measured on gen-14, 2026-08-17
+(`designs/research_state/measurements/gen14_pool_refresh_compile_cost.json`, n=2 events):
 
-| | |
-|---|---|
-| baseline iteration | **123.7 s** |
-| the iteration a snapshot entered the pool | **1234 s** — `[CompileExtractor]` fires **48 times**, exactly `n_envs` |
-| excess | **+18.5 min, from ONE promotion** |
-| steady state (one snapshot ≈ every 2M steps) | **~31% of wall-clock** |
-| projected over a 25M run (gen-13 kept 12 snapshots) | **≤ ~3.9 h — an UPPER BOUND, not an estimate** |
+| event | excess over the 138.6 s baseline | compiles | path |
+|---|---|---|---|
+| iteration 22 | **+1095 s** | 48 | all *timed* — each process's FIRST compile |
+| iteration 42 | **+77 s** | 27 of 48 | all *"reused this process's validated compile"* |
 
-**Why the existing prewarm does not cover it.** The startup prewarm ran and worked (`[CompilePrewarm]
-warmed the Inductor cache in 40.7 s`), and codegen is weight-independent — so the on-disk cache was
-**already warm** for this snapshot. What each worker still pays is **dynamo tracing + guard
-construction, which is per-PROCESS and no on-disk cache can remove** (this file says so above; the
-pool path is where that residual becomes the headline). `SnapshotPool._get_model` compiles lazily
-into a per-instance `_model_cache`, and every env worker owns its own pool — so a promotion is 48
-independent cold traces racing on 16 cores, behind the `SubprocVecEnv` barrier that makes the rollout
-wait for the slowest.
+**Read the second row, not the first.** Iteration 22 is not a promotion in the steady-state sense —
+it is where **self-play first activates**: the pool is seeded from empty, so all 48 workers at once
+load a 41 MB checkpoint *and* pay their process's first compile (the `revalidate` branch, which also
+times eager-vs-compiled). It happens once per run. The recurring cost is **+77 s per promotion ≈
+2.7% of wall-clock ≈ 16 min over a 25M run**, and `--compile-opponents` is net **+40%**.
 
-**Therefore `--compile-opponents-preload` does NOT fix this.** It compiles in the forkserver *before
-the workers exist*, so it cannot know a snapshot promoted 2M steps later. Do not reach for it here.
+**The caches work.** The shared Inductor cache is HIT at a promotion (13 files written, vs 6600+ at
+run startup), `SnapshotPool._model_cache` keeps one compile per worker per snapshot, and
+`_COMPILE_VALIDATED` puts every compile after a process's first on the cheap path. Nothing here
+needs fixing.
 
-**Nothing is fixed yet — this is a measured problem, not a solved one.** The candidate directions,
-none gated: stagger promotions so the traces do not all land in one barrier; let workers keep serving
-the previous opponent for one iteration while the new one compiles; or hold one compiled callable
-across snapshots (the deep fix, and the awkward one — `nn.Module` weights are attributes, so a new
-instance is a new dynamo guard set even though the *graph* is identical).
-
-**Caveat, stated plainly: n = 1 promotion, and it was the WORST CASE.** That promotion went into a
-pool holding **exactly one entry**, so `sample()` returned the new snapshot with p = 1 and all 48
-workers adopted it at once. A promotion into a MATURE pool is unmeasured, and the nearest evidence
-points cheaper: gen-13's retained segment shows 42–48-compile bursts costing only +2.2 to +8.3 min —
-but those span **10–11 distinct snapshots** and follow a launcher restart, so they price *restart
-warm-up*, not promotion. **Read the per-run hours as an UPPER BOUND** until a promotion into a
-multi-entry pool is timed.
+⚠️ **A `[SELFPLAY EVAL] … [Ns]` line beside a slow iteration is NOT its cause — eval is genuinely
+non-blocking.** gen-13 ran an **1865 s** eval cycle inside a **395 s** iteration. Attributing
+iteration cost to an overlapping eval (or vice versa) is a window coincidence; separate them by the
+compile path (`timed` vs `reused`), which is what actually distinguishes the expensive event.
 
 ## Compiled GPU trainer (`--compile-trainer`, opt-in)
 

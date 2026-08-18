@@ -37,7 +37,7 @@ sound when the metric is a within-run ratio.
 | `gen2_edge_family_audit_40M.json` | 2 | 40M | 4000 | 2026-08-06 | 11 families, end of run |
 | `gen25_edge_family_audit_25M.json` | 2.5 | 25M | 4000 | 2026-08-07 | 15 families, mid-run |
 | `gen13_stall_coverage.json` | 13 | 25M | 1349 | 2026-08-17 | **§7 successor** — stall-trajectory share of training decisions vs matched eval losses, + recorded critic sign at the final decision of a timeout loss (model-free; producer script committed beside it) |
-| `gen14_pool_refresh_compile_cost.json` | 14 | 2.26M | 1 event | 2026-08-17 | Wall-clock cost of a self-play pool promotion under `--compile-opponents`: 48 worker recompiles, +18.5 min in one iteration, ~31% steady-state overhead |
+| `gen14_pool_refresh_compile_cost.json` | 14 | 4.0M | 2 events | 2026-08-17 | Cost of a self-play pool promotion under `--compile-opponents`: **+77 s recurring (~2.7%)**; the +1095 s first event is a one-time self-play activation, not a promotion |
 
 ## The two headline reads
 

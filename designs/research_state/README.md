@@ -42,13 +42,6 @@ After **any** investigation that changes our belief, update this folder in the s
    it; one `git clean` from gone. A citation to an uncommitted file is a dangling pointer wearing
    provenance clothes.
 
-> **Open throughput lever (2026-08-17):** `--compile-opponents` may be net-NEGATIVE at
-> production settings once self-play promotions are counted (~31% of wall-clock in
-> 48-worker recompiles in the one measured event, which would very nearly cancel the measured
-> +43.7% rust rollout gain — arithmetic lands at -0.3%, a dead wash. The measured event was the
-> WORST case (1-entry pool), so treat the per-run figure as an upper bound) →
-> [levers/compile_opponents_net_value.md](levers/compile_opponents_net_value.md).
-
 ## The amortizability gate — route every oracle finding through L1–L4
 
 The falsifier is an **ORACLE** (hindsight + re-rolls), so *"a better action existed"* is its DEFAULT
