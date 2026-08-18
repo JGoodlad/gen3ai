@@ -112,6 +112,7 @@ const MODELED_SCREEN = new Set(['lightscreen', 'reflect']);
 // SAFEGUARD (`gen3_safeguard_v1`) — the SideCondition sibling of the screens, residual
 // order 4 (they are 1 and 2), blocking FOE-sourced status + confusion instead of damage.
 const MODELED_SAFEGUARD = new Set(['safeguard']);
+const MODELED_CONVERSION = new Set(['conversion', 'conversion2']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
 // BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED
 // (the reactive volatile + recorder / the delta), no longer deferred.
@@ -270,6 +271,7 @@ function classifyStatus(m, id) {
   if (MODELED_STATDROP.has(id)) return { cov: 'MODELED', mech: 'stat-drop (batch 2)' };
   if (MODELED_SCREEN.has(id)) return { cov: 'MODELED', mech: 'screen (batch 2)' };
   if (MODELED_SAFEGUARD.has(id)) return { cov: 'MODELED', mech: 'safeguard (gen3_safeguard_v1)' };
+  if (MODELED_CONVERSION.has(id)) return { cov: 'MODELED', mech: 'type-change (gen3_conversion_v1)' };
   // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`) — SLEEP TALK (the
   // move-sampler). MODELED per-move; team-level playability composes naturally: a
   // sleep-talker whose POOL carries an unmodeled move is blocked by THAT move's own

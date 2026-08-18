@@ -229,6 +229,7 @@ impl crate::state::BattleState {
                 mon.torment = false; // gen3_torment_v1 — SILENT, clearVolatile fires no onEnd
                 mon.disable = None;
                 mon.last_move = None;
+                mon.last_move_used = None; // gen3_conversion_v1
                 mon.last_move_was_self_overwrite = false;
                 // clearVolatile also drops the FLASH FIRE activation on faint — a fainted FF
                 // mon carries no boost, and if re-encoded must not show a stale `flash_fire`.
@@ -922,6 +923,9 @@ impl crate::state::BattleState {
             // The COLOR CHANGE type-override clears on switch-out (a re-entering Kecleon
             // is Normal again — probe_colorchange_rng.js t4). `gen3_ability_batch4_v1`.
             m.types_override = None;
+            // `lastMoveUsed` resets on switch-out (`gen3_conversion_v1`, probe C8), so a
+            // Conversion 2 into a freshly-entered mon FAILS draw-free.
+            m.last_move_used = None;
             // The FOCUS PUNCH + PURSUIT `duration: 1` volatiles clear on switch-out
             // (`clearVolatile`, `gen3_move_coverage_batch4_v1`). A switching FP user drops its
             // focuspunch; a switching pursued mon that reaches here (a non-intercepted path)

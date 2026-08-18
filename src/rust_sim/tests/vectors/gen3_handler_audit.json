@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 51,
-   "moves": 277,
-   "rows": 1006
+   "moves": 279,
+   "rows": 1012
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -3692,6 +3692,42 @@
    "fp": "val:[{\"chance\":10,\"boosts\":{\"spe\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:conversion2:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::conversion2_candidates",
+   "reason": "keys off the TARGET's lastMoveUsed (MonState::last_move_used, reset on switch-out) and type-changes the SOURCE. The list is every type whose damageTaken[attackType] is resist or immune, built in CONVERSION2_TYPE_ORDER — the typedex FILE key order, neither alphabetical nor the port Type enum order — because the single random(n) indexes into it. No lastMoveUsed, or a typeless ??? last move (Curse), gives an empty list and a draw-free [still]+-fail. Extracted as a pure fn so the order is pinned seed-free against the sim's own dex dump (all 17 rows)."
+  },
+  "move:conversion2:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::conversion2_candidates",
+   "reason": "keys off the TARGET's lastMoveUsed (MonState::last_move_used, reset on switch-out) and type-changes the SOURCE. The list is every type whose damageTaken[attackType] is resist or immune, built in CONVERSION2_TYPE_ORDER — the typedex FILE key order, neither alphabetical nor the port Type enum order — because the single random(n) indexes into it. No lastMoveUsed, or a typeless ??? last move (Curse), gives an empty list and a draw-free [still]+-fail. Extracted as a pure fn so the order is pinned seed-free against the sim's own dex dump (all 17 rows)."
+  },
+  "move:conversion2:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:5579b6e0:onHit(target, source) { if (!target.lastMoveUsed) { return false; } const possibleTypes = []; const lastMoveUsed = targe",
+   "anchor": "turn.rs::conversion2_candidates",
+   "reason": "keys off the TARGET's lastMoveUsed (MonState::last_move_used, reset on switch-out) and type-changes the SOURCE. The list is every type whose damageTaken[attackType] is resist or immune, built in CONVERSION2_TYPE_ORDER — the typedex FILE key order, neither alphabetical nor the port Type enum order — because the single random(n) indexes into it. No lastMoveUsed, or a typeless ??? last move (Curse), gives an empty list and a draw-free [still]+-fail. Extracted as a pure fn so the order is pinned seed-free against the sim's own dex dump (all 17 rows)."
+  },
+  "move:conversion:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the conversion arm: never-miss so no accuracy roll; the candidate list is the USER's LIVE move slots IN SLOT ORDER keeping move.type for every slot whose id != \"curse\" and whose type the user does not CURRENTLY have, DUPLICATES KEPT. Exactly ONE random(n) on success (n==1 still draws) and ZERO draws when the list is empty ([still] + a bare -fail on the USER). setType replaces the whole array with one type via types_override, which already reverts on switch-out for Color Change. LIVE matters three ways: a Mimic-overwritten slot contributes the COPIED type, a Color-Changed type excludes its own move, and a second Conversion sees the first result (which is how Conversion's own Normal slot enters the list once the user is no longer Normal)."
+  },
+  "move:conversion:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the conversion arm: never-miss so no accuracy roll; the candidate list is the USER's LIVE move slots IN SLOT ORDER keeping move.type for every slot whose id != \"curse\" and whose type the user does not CURRENTLY have, DUPLICATES KEPT. Exactly ONE random(n) on success (n==1 still draws) and ZERO draws when the list is empty ([still] + a bare -fail on the USER). setType replaces the whole array with one type via types_override, which already reverts on switch-out for Color Change. LIVE matters three ways: a Mimic-overwritten slot contributes the COPIED type, a Color-Changed type excludes its own move, and a second Conversion sees the first result (which is how Conversion's own Normal slot enters the list once the user is no longer Normal)."
+  },
+  "move:conversion:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:4ebcf449:onHit(target) { const possibleTypes = target.moveSlots.map((moveSlot) => { const move = this.dex.moves.get(moveSlot.id);",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the conversion arm: never-miss so no accuracy roll; the candidate list is the USER's LIVE move slots IN SLOT ORDER keeping move.type for every slot whose id != \"curse\" and whose type the user does not CURRENTLY have, DUPLICATES KEPT. Exactly ONE random(n) on success (n==1 still draws) and ZERO draws when the list is empty ([still] + a bare -fail on the USER). setType replaces the whole array with one type via types_override, which already reverts on switch-out for Color Change. LIVE matters three ways: a Mimic-overwritten slot contributes the COPIED type, a Color-Changed type excludes its own move, and a second Conversion sees the first result (which is how Conversion's own Normal slot enters the list once the user is no longer Normal)."
   },
   "move:cosmicpower:boosts": {
    "disposition": "implemented",

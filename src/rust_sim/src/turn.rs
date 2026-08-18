@@ -331,6 +331,33 @@ const SAFEGUARD_RESIDUAL_ORDER: u64 = 4;
 /// SAFEGUARD's FIXED duration. `durationCallback` returns 5 deterministically in gen-3 (the
 /// `Persistent` +2 is gen5+), so this is a constant and the cast draws nothing.
 const SAFEGUARD_DURATION: u8 = 5;
+
+/// CONVERSION 2's candidate order (`gen3_conversion_v1`) — `Dex.mod('gen3').types.names()`,
+/// which is the TYPEDEX FILE's key order, NOT alphabetical and NOT `Type`'s enum order. The
+/// move's single `random(n)` indexes into a list built in exactly this sequence, so using the
+/// enum order instead picks a DIFFERENT type from the same roll. Probe-captured verbatim.
+const CONVERSION2_TYPE_ORDER: [&str; 17] = [
+    "Electric", "Ghost", "Grass", "Steel", "Dark", "Bug", "Dragon", "Fighting", "Fire",
+    "Flying", "Ground", "Ice", "Normal", "Poison", "Psychic", "Rock", "Water",
+];
+
+/// CONVERSION 2's candidate list: every type that RESISTS or is IMMUNE to `att`
+/// (Showdown's `damageTaken` ∈ {2, 3}, equivalently effectiveness < 1), **in
+/// `CONVERSION2_TYPE_ORDER`** — the typedex file's key order, which the move's single
+/// `random(n)` indexes into. It deliberately does NOT exclude the source's own types.
+///
+/// Extracted as a pure function so the ORDER can be pinned directly. Pinning it through a
+/// battle instead does not work: the eligible SET is order-independent, so only the
+/// index→type mapping discriminates, and that would require seeding the port at the sim's
+/// POST-CONSTRUCTION seed (the raw `>start` seed spends draws on the construction window
+/// the port's `start_with_switchins` does not run — the round-29 methodology trap).
+pub fn conversion2_candidates(att: crate::dex::Type, dex: &crate::dex::Dex) -> Vec<crate::dex::Type> {
+    CONVERSION2_TYPE_ORDER
+        .iter()
+        .filter_map(|n| crate::dex::Type::from_name(n))
+        .filter(|t| dex.type_chart().effectiveness(att, &[*t]) < 1.0)
+        .collect()
+}
 /// A (non-slot) SIDE condition's residual subOrder — `resolvePriority`'s effectTypeOrder for a
 /// `Condition` whose `state.target instanceof Side` (not a slot condition) = **4**
 /// (`sim/battle.ts` `resolvePriority`). Unobservable for the sort ORDER (reflect 1 / lightscreen

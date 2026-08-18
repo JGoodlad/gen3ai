@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs (5 SHIPPED, 3 open)
+### THE BANKED SPEC QUEUE — 8 probe-settled specs (6 SHIPPED, 2 open)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -6579,7 +6579,7 @@ one non-obvious, because that trap is the reason the spec is worth more than the
 | ~~Safeguard~~ **SHIPPED** | `probe_safeguard.js` | two Safeguards **TIE at residual order 4** → an extra shuffle, invisible to any single-side test; and a blocked SECONDARY still rolls its `random(100)` |
 | ~~Recycle~~ **SHIPPED** | `probe_recycle.js` | the discriminator is WHICH primitive removed the item — `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT, so Knock Off is **not** recyclable |
 | ~~Fake Out~~ **SHIPPED** | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
-| Conversion / Conversion 2 | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
+| ~~Conversion / Conversion 2~~ **SHIPPED** | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
 | ~~Torment~~ **SHIPPED** | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
 | Imprison | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
 | Weather Ball | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
@@ -7879,4 +7879,62 @@ battle set — the neutralise-in-place A/B is what gives a true same-input compa
 Also unverified: the yawn-vs-sleep-immune-ability precedence (placed to match the general status
 order, but no probed board carries both), and Swagger's PARTIAL block (+2 Atk applies, only the
 confusion is warded) — Swagger is not modeled yet.
+
+### ROUND 47 (FIX) — CONVERSION + CONVERSION 2: a list whose ORDER is the mechanic
+
+`gen3_conversion_v1`. Census **293 → 295 MODELED / 74 fail-loud**, MISMODELED 0. Both moves are
+never-miss, so neither draws an accuracy roll, and each consumes EXACTLY ONE `random(n)` on
+success and ZERO on failure. `setType` replaces the whole type array with ONE type, which is
+already exactly what `types_override` does for Color Change — including reverting on switch-out.
+
+- **CONVERSION** samples the USER's **LIVE** move slots, in slot order, keeping each slot's type
+  where the id isn't `curse` and the user does not CURRENTLY have that type. **Duplicates are
+  kept** (three Ice moves ⇒ a 3-entry list ⇒ `random(3)`), and `n == 1` STILL DRAWS. "Live" is
+  load-bearing three ways, all probe-confirmed: a MIMIC-overwritten slot contributes the COPIED
+  move's type; the exclusion runs against CURRENT types so a COLOR-CHANGED type excludes its own
+  move; and a second Conversion sees the first one's result — which is how Conversion's OWN Normal
+  slot enters the list once the user is no longer Normal. A typed Hidden Power is stored BARE, so
+  its slot type is Normal and it is excluded like any other Normal move, not by an id rule.
+- **CONVERSION 2** keys off the TARGET's `lastMoveUsed` and type-changes the SOURCE. New state:
+  `MonState::last_move_used`, an ID (not a slot), set beside `last_move`, cleared on switch-out and
+  faint. That placement is probe-settled rather than assumed — a SLEEP-TALK-called move does NOT
+  overwrite it (the sim reports `lastMoveUsed = sleeptalk`, the OUTER move), which is exactly what
+  sitting inside the existing `!sleep_talk_call` guard gives.
+
+**⚠️ THE ORDER IS THE MECHANIC.** Conversion 2's single `random(n)` indexes a list built in
+`Dex.mod('gen3').types.names()` order — the typedex FILE's key order, which is neither alphabetical
+nor the port's `Type` enum order. An implementation that iterates the enum builds the same SET and
+picks a DIFFERENT type from the identical roll. The candidate builder is therefore extracted as a
+pure function and its order pinned directly.
+
+**⚠️ TWO METHODOLOGY TRAPS HIT IN ONE ROUND, both worth recording.**
+1. **The seed trap (round 29's, re-learned).** The first CV3 asserted the probe's captured pick
+   (`Rock`) against a port board seeded with the probe's RAW `>start` seed. That is invalid: the sim
+   spends draws on its turn-0 construction window and the port's `start_with_switchins` does not, so
+   the two rolls are not comparable. The fix was not to align seeds but to stop needing them — the
+   SET is order-independent, so only a pure-function assertion on the LIST discriminates order.
+2. **Nearly fixing the test to match the code.** The three-case version of that order pin carried a
+   hand-written Electric row, `[Grass, Dragon, Ground, Electric]`. The port said
+   `[Electric, Grass, Dragon, Ground]` and the test went red. The tempting move — and the wrong one
+   — is to edit the expectation. The probe had only ever exercised Normal and Water, so neither side
+   was authoritative; dumping the SIM's own computation
+   (`types.names().filter(t => types.get(t).damageTaken[att] in {2,3})`) settled it: **the port was
+   right and the expectation was the guess.** CV3b now pins all **17** rows from that dump rather
+   than a sample, which is both stronger and immune to the same temptation next time.
+
+**Gates:** `cargo test --release --no-fail-fast` **686 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1012 rows**; `SCAN_UNIVERSE=1`
+**369 → 295 MODELED / 74 FAIL-LOUD / 0 MISMODELED**. Pins CV1 (cross-seed sampling — one seed
+cannot tell "samples" from "always slot 0"), CV2 (empty list ⇒ `[still]`+bare `-fail`, draw-free vs
+a Splash control), CV3 (the battle-level behaviour), CV3b (the 17-row order table), CV4 (no
+`lastMoveUsed` ⇒ draw-free fail, exercising the switch-out RESET). Mutation-verified: swapping the
+enum order in fails ONLY CV3b; dropping the current-types exclusion fails ONLY CV2.
+
+**HONEST SCOPE.** Two of the four battle-level pins initially passed for the wrong reason and were
+rebuilt: CV3 read the foe's `lastMoveUsed` AFTER the battle (by then turn 2's move), and CV4 let a
+much faster foe act BEFORE Conversion 2 — its turn-3 action is now a SWITCH, which resolves at order
+103 ahead of moves, so the entrant is in place and has not acted. Zero exposure on the pool and
+randbats surfaces; this is a coverage-gate unlock. Untested: Conversion 2 after a Struggle (the
+port records `"struggle"`, and since gen-3 struggle's dex type is already Normal the sim's explicit
+special-case is a no-op either way).
 

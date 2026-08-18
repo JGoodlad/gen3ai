@@ -461,6 +461,18 @@ pub struct MonState {
     /// CLEARED on switch-out (a re-entering Kecleon is Normal again). DRAW-FREE.
     /// Probe `probe_colorchange_rng.js`. `None` at construction.
     pub types_override: Option<Vec<crate::dex::Type>>,
+    /// The ID of the move this mon last EXECUTED (`pokemon.lastMoveUsed`), or `None` if it
+    /// has not moved since entering (`gen3_conversion_v1`). DISTINCT from `last_move`, which
+    /// is a moveslot INDEX for Disable: this is an id, survives a Mimic overwrite, and is set
+    /// for a Struggle (where `last_move` is deliberately `None`). Read by CONVERSION 2, which
+    /// keys off the TARGET's last-used move's TYPE. Cleared on switch-out and on faint —
+    /// probe-confirmed (`harness/probe_conversion.js` C8: a switched-out mon reports NONE).
+    ///
+    /// Set at the same site as `last_move`, i.e. INSIDE the `!pursuit_strike && !sleep_talk_call`
+    /// guard. That placement is probe-settled, not assumed: a SLEEP-TALK-called move does NOT
+    /// overwrite it — after Snorlax Sleep-Talks, the sim reports `lastMoveUsed = sleeptalk`,
+    /// the OUTER move, so the inner `useMove` must leave it alone.
+    pub last_move_used: Option<String>,
     /// `pokemon.activeTurns` — the number of turns this mon has been active (`pokemon.ts:243`;
     /// set to 0 in `switchIn` [battle-actions.ts:137], `++`'d at `endTurn` [battle.ts:1762],
     /// AFTER the residual). Read by **Speed Boost** (`gen3_ability_batch1_v1`): its
@@ -1261,6 +1273,7 @@ impl MonState {
             gender: set_gender,
             attract: None,
             types_override: None,
+            last_move_used: None,
             position,
             uid: position, // the construction-time index is the stable identity
             // `pokemon.speed` is initialized to the raw `storedStats.spe` (the

@@ -424,6 +424,10 @@ const MODELED_YAWN_MOVES = new Set(['yawn']);
 // entirely DRAW-FREE; the block is too, and BOTH sides carrying it TIE at residual order 4
 // for one extra shuffle. Blocks FOE-sourced major status + confusion; a SELF Rest passes.
 const MODELED_SAFEGUARD_MOVES = new Set(['safeguard']);
+// CONVERSION / CONVERSION 2 (`gen3_conversion_v1`) — never-miss, ONE random(n) on success
+// and ZERO draws on failure. Conversion 2's candidate list is built in the TYPEDEX FILE's key
+// order, which is neither alphabetical nor the port's enum order.
+const MODELED_CONVERSION_MOVES = new Set(['conversion', 'conversion2']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -782,6 +786,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       // YAWN (`gen3_yawn_v1`) — the delayed-sleep move, category Status + bit-for-bit modeled.
       (YAWN_E2E_EXCLUDED ? false : MODELED_YAWN_MOVES.has(id)) ||
       MODELED_SAFEGUARD_MOVES.has(id) ||
+      MODELED_CONVERSION_MOVES.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));

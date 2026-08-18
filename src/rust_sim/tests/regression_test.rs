@@ -13524,6 +13524,243 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// CV1 — CONVERSION: the list is the USER's LIVE slots minus its CURRENT types, duplicates
+/// kept, and the single `random(n)` fires even at n == 1. Ground truth
+/// `harness/probe_conversion.js`.
+///
+/// The pin's teeth are the CROSS-SEED spread: one seed cannot distinguish "samples the list"
+/// from "always takes slot 0", so it asserts that different seeds reach DIFFERENT types and
+/// that every reached type is a member of the expected set.
+#[test]
+fn conversion_samples_a_live_slot_type_the_user_does_not_have() {
+    let d = dex();
+    // Porygon2 is NORMAL; the three attacking slots are Ice / Electric / Ghost, so all three
+    // are eligible and Conversion's own Normal slot is excluded (the user IS Normal).
+    let user = "Porygon2||Leftovers|Trace|conversion,icebeam,thunderbolt,shadowball\
+|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+
+    let mut seen = std::collections::BTreeSet::new();
+    for seed in ["9,9,9,9", "1,2,3,4", "42,42,42,42", "7,11,13,17", "31,29,23,19"] {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+            &d,
+        );
+        let t = st.sides[0].pokemon[0]
+            .types_override
+            .clone()
+            .unwrap_or_else(|| panic!("CV1: Conversion must set a type override (seed {seed})"));
+        assert_eq!(t.len(), 1, "CV1: setType REPLACES the array with ONE type");
+        let name = t[0].display_name().to_string();
+        assert!(
+            matches!(name.as_str(), "Ice" | "Electric" | "Ghost"),
+            "CV1: picked {name}, which is not one of the three eligible slot types"
+        );
+        seen.insert(name);
+    }
+    assert!(
+        seen.len() >= 2,
+        "CV1: the pick must actually SAMPLE — every seed reached the same type {seen:?}, which \
+         a hard-coded slot-0 implementation would also satisfy"
+    );
+}
+
+/// CV2 — CONVERSION fails DRAW-FREE when no slot offers a new type, and the failure is the
+/// `[still]` did-nothing form with a bare `-fail` on the USER.
+///
+/// This is also the CURSE-exclusion pin: Curse is excluded BY ID (not by type), so a Normal
+/// user whose only non-Normal slot is Curse has an EMPTY list.
+#[test]
+fn conversion_with_no_eligible_slot_fails_draw_free() {
+    let d = dex();
+    // Every slot is Normal EXCEPT curse, which is excluded by id → the list is empty.
+    let user =
+        "Porygon2||Leftovers|Trace|conversion,curse,splash|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "9,9,9,9";
+
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    let fail_seed = seed_str(&st.prng_seed());
+
+    assert!(
+        st.sides[0].pokemon[0].types_override.is_none(),
+        "CV2: no type may change. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|move|p1a: Porygon2|Conversion||[still]"),
+        "CV2: the failure takes the [still] did-nothing form. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-fail|p1a: Porygon2"),
+        "CV2: with a BARE -fail on the USER. got:\n{joined}"
+    );
+
+    // DRAW-FREE: a Splash control from the same start must land on the SAME seed.
+    let mut b2 = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st2 = b2.state_mut().expect("state");
+    st2.run_full_battle(
+        &[ScriptDecision::both(Choice::Move(2), Choice::Move(0))],
+        &d,
+    );
+    assert_eq!(
+        fail_seed,
+        seed_str(&st2.prng_seed()),
+        "CV2: a FAILED Conversion draws nothing — it must match a Splash control exactly"
+    );
+}
+
+/// CV3 — CONVERSION 2 reads the TARGET's last-used move and picks a type that RESISTS it,
+/// from the TYPEDEX FILE's key order.
+///
+/// ⚠️ THE ORDER IS THE WHOLE PIN. The single `random(n)` indexes a list built in
+/// `Dex.mod('gen3').types.names()` order — neither alphabetical nor the port's `Type` enum
+/// order — so a correct-looking implementation that iterates the enum picks a DIFFERENT type
+/// from the identical roll. Against a Normal last-move the eligible set is {Ghost, Steel,
+/// Rock} and the probe's captured pick at these seeds is Rock; an enum-ordered list would
+/// yield Rock only by coincidence.
+#[test]
+fn conversion_2_picks_a_resisting_type_in_the_typedex_order() {
+    let d = dex();
+    let user = "Shuckle||Leftovers|Sturdy|conversion2,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||Leftovers|Immunity|tackle,splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "9,9,9,9";
+
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // foe Tackles (Normal)
+            // The foe Tackles AGAIN so its lastMoveUsed is still `tackle` when the assertion
+            // reads it after the battle — with Splash here the guard would read turn 2's move
+            // and fail while the mechanic was fine.
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Conversion 2
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    // NON-VACUITY: the foe really did record a Normal last move.
+    assert_eq!(
+        st.sides[1].pokemon[0].last_move_used.as_deref(),
+        Some("tackle"),
+        "CV3: the target must have a lastMoveUsed for this to test anything"
+    );
+    let t = st.sides[0].pokemon[0]
+        .types_override
+        .clone()
+        .unwrap_or_else(|| panic!("CV3: Conversion 2 must set a type. got:\n{joined}"));
+    let name = t[0].display_name();
+    assert!(
+        matches!(name, "Ghost" | "Steel" | "Rock"),
+        "CV3: {name} does not resist Normal — the eligible set is Ghost/Steel/Rock"
+    );
+    // NOTE: the exact PICK is deliberately NOT asserted here. The probe's seeds are RAW
+    // `>start` seeds and the sim spends draws on its turn-0 construction window, which the
+    // port's draw-free `start_with_switchins` does not run — so the two rolls are not
+    // comparable and an equality here would be a methodology error, not a gate (round 29).
+    // The ORDER, which is what the single `random(n)` actually indexes, is pinned exactly and
+    // seed-free by `conversion2_candidate_order_is_the_typedex_order` below.
+}
+
+/// CV3b — the ORDER pin, and the reason it is a pure-function test.
+///
+/// Conversion 2's one `random(n)` indexes a list built in `Dex.mod('gen3').types.names()`
+/// order. The eligible SET is order-independent, so no battle-level assertion can
+/// discriminate a correctly-ordered list from an enum-ordered one without aligning seeds to
+/// the sim's post-construction state (the round-29 trap). Asserting the list sidesteps that.
+///
+/// The expected table is the SIM'S OWN computation, dumped verbatim from `Dex.mod('gen3')`:
+/// `types.names().filter(t => types.get(t).damageTaken[att] in {2, 3})`. All 17 attacking
+/// types are pinned, not a sample — the probe's battles only ever exercised Normal and Water,
+/// and a three-case version of this test was written with a WRONG Electric row that the port
+/// correctly contradicted. Deriving the whole table from the oracle is both stronger and the
+/// only way to avoid "fixing" the test to match the code.
+#[test]
+fn conversion2_candidate_order_is_the_typedex_order() {
+    use pokesim::dex::Type;
+    let d = dex();
+    let expected: &[(&str, &[&str])] = &[
+        ("Electric", &["Electric", "Grass", "Dragon", "Ground"]),
+        ("Ghost", &["Steel", "Dark", "Normal"]),
+        ("Grass", &["Grass", "Steel", "Bug", "Dragon", "Fire", "Flying", "Poison"]),
+        ("Steel", &["Electric", "Steel", "Fire", "Water"]),
+        ("Dark", &["Steel", "Dark", "Fighting"]),
+        ("Bug", &["Ghost", "Steel", "Fighting", "Fire", "Flying", "Poison"]),
+        ("Dragon", &["Steel"]),
+        ("Fighting", &["Ghost", "Bug", "Flying", "Poison", "Psychic"]),
+        ("Fire", &["Dragon", "Fire", "Rock", "Water"]),
+        ("Flying", &["Electric", "Steel", "Rock"]),
+        ("Ground", &["Grass", "Bug", "Flying"]),
+        ("Ice", &["Steel", "Fire", "Ice", "Water"]),
+        ("Normal", &["Ghost", "Steel", "Rock"]),
+        ("Poison", &["Ghost", "Steel", "Ground", "Poison", "Rock"]),
+        ("Psychic", &["Steel", "Dark", "Psychic"]),
+        ("Rock", &["Steel", "Fighting", "Ground"]),
+        ("Water", &["Grass", "Dragon", "Water"]),
+    ];
+    for (att, want) in expected {
+        let t = Type::from_name(att).expect("known type");
+        let got: Vec<&str> = pokesim::turn::conversion2_candidates(t, &d)
+            .into_iter()
+            .map(|x| x.display_name())
+            .collect();
+        assert_eq!(
+            got, *want,
+            "CV3b: the {att} candidate list must match the sim's typedex order exactly"
+        );
+    }
+}
+
+/// CV4 — CONVERSION 2 fails DRAW-FREE against a target that has not moved, and `lastMoveUsed`
+/// RESETS on switch-out (probe C8) — so a freshly-entered target also fails.
+#[test]
+fn conversion_2_fails_draw_free_with_no_target_last_move() {
+    let d = dex();
+    let user = "Shuckle||Leftovers|Sturdy|conversion2,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||Leftovers|Immunity|tackle,splash|Hardy|85,85,85,85,85,85|M||||]Miltank||Leftovers|Scrappy|splash|Hardy|85,85,85,85,85,85|F||||";
+    let seed = "9,9,9,9";
+
+    // Turn 1 the foe Tackles (so Snorlax HAS a lastMoveUsed), turn 2 it switches OUT
+    // (clearing Snorlax's), turn 3 it switches BACK IN and Conversion 2 must fail — proving
+    // the RESET, not merely an unmoved target.
+    //
+    // ⚠️ The turn-3 action must be a SWITCH, not a move: switches resolve at order 103 and
+    // moves at 200, so the entrant is in place before Conversion 2 runs AND has not acted. A
+    // move there would let the much faster foe set a fresh lastMoveUsed first and the pin
+    // would silently test nothing.
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(0), Choice::Switch(1)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    assert!(
+        st.sides[0].pokemon[0].types_override.is_none(),
+        "CV4: nothing may change type. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|move|p1a: Shuckle|Conversion 2||[still]"),
+        "CV4: the [still] did-nothing form. got:\n{joined}"
+    );
+}
+
 /// SG1 — SAFEGUARD (`gen3_safeguard_v1`): the cast, the re-cast fail, the expiry, and the
 /// status BLOCK. Ground truth `harness/probe_safeguard.js`.
 ///

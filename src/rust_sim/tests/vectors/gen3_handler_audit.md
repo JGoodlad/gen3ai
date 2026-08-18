@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-51 conditions (engine state space + attached), 277 modeled moves
-→ **1006 (effect, hook) rows**.
+51 conditions (engine state space + attached), 279 modeled moves
+→ **1012 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 953 |
+| implemented | 959 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -585,7 +585,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (452 rows: implemented=448, noop_justified=2, unreachable_justified=2)
+## move (458 rows: implemented=454, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -656,6 +656,12 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | confuseray | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | confusion | secondaries | implemented | `turn.rs::apply_secondaries` |
 | constrict | secondaries | implemented | `turn.rs::apply_secondaries` |
+| conversion2 | ignoreImmunity | implemented | `turn.rs::conversion2_candidates` |
+| conversion2 | neverMiss | implemented | `turn.rs::conversion2_candidates` |
+| conversion2 | onHit | implemented | `turn.rs::conversion2_candidates` |
+| conversion | ignoreImmunity | implemented | `turn/status_moves.rs::run_status_move` |
+| conversion | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
+| conversion | onHit | implemented | `turn/status_moves.rs::run_status_move` |
 | cosmicpower | boosts | implemented | `turn.rs::self_boost_spec` |
 | cosmicpower | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | cosmicpower | neverMiss | implemented | `turn.rs::never_miss` |

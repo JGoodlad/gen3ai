@@ -493,6 +493,16 @@ impl crate::state::BattleState {
         //     point (like PP), so it leaves `last_move` unchanged — mirroring `moveUsed` running
         //     only after BeforeMove passes. ---
         self.sides[side].pokemon[slot].last_move = if struggle { None } else { Some(move_index) };
+        // `lastMoveUsed` (`gen3_conversion_v1`) — an ID, not a slot, and set for a STRUGGLE too
+        // (where `last_move` is deliberately None). Conversion 2 special-cases "struggle" to
+        // Normal and gen-3 struggle's dex type is ALREADY Normal, so that arm is a no-op either
+        // way. Sitting inside the same guard is what makes a Sleep-Talk-called move leave the
+        // OUTER move recorded, matching the sim.
+        self.sides[side].pokemon[slot].last_move_used = Some(if struggle {
+            "struggle".to_string()
+        } else {
+            move_id.clone()
+        });
         // `gen3_mimic_disable_self_overwrite_v1`: reset the self-overwrite flag for EVERY move;
         // the Mimic success block re-sets it TRUE after it overlays its own slot.
         self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;

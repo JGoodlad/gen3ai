@@ -1748,6 +1748,85 @@ impl crate::state::BattleState {
         //
         // It carries NO `protect` and NO `reflectable` flag, so a Protect does NOT block it
         // and it is never bounced — hence no protect_blocks / substitute check here.
+        // ---- CONVERSION / CONVERSION 2 (`gen3_conversion_v1`) --------------------
+        // Both are category Status and never-miss (`accuracy: true`) → NO accuracy draw, and
+        // each consumes EXACTLY ONE `random(n)` when it SUCCEEDS (Showdown's `sample(list)`
+        // is `random(list.length)`) and ZERO when it FAILS. `setType` REPLACES the whole type
+        // array with ONE type, takes effect immediately for STAB/chart, and is reverted by a
+        // switch-out — which is exactly `types_override`, already carried for Color Change.
+        // Ground truth `harness/probe_conversion.js`.
+        if move_id == "conversion" || move_id == "conversion2" {
+            debug_assert!(never_miss, "conversion: expected the never-miss dex row");
+            let list: Vec<Type> = if move_id == "conversion" {
+                // The USER's LIVE move slots, IN SLOT ORDER, keeping `move.type` for every
+                // slot whose id != "curse" and whose type the user does NOT currently have.
+                // DUPLICATES ARE KEPT — three Ice moves make a 3-entry list and a random(3).
+                //
+                // "LIVE" is load-bearing three ways, all probe-confirmed: a MIMIC-overwritten
+                // slot contributes the COPIED move's type (C9); the exclusion is against the
+                // mon's CURRENT types, so a COLOR-CHANGED type excludes its move (C10); and a
+                // second Conversion sees the first one's result, which is how Conversion's OWN
+                // Normal slot enters the list once the user is no longer Normal (C7).
+                //
+                // A typed Hidden Power is stored BARE, so its slot type is Normal (C5) — it is
+                // excluded for a Normal user like any other Normal move, NOT by an id rule.
+                let cur = mon_types(&self.sides[_side].pokemon[_slot], dex);
+                let n = self.sides[_side].pokemon[_slot].set.moves.len();
+                let mut out: Vec<Type> = Vec::new();
+                for k in 0..n {
+                    if let Some(m) = self.move_at(_side, _slot, k, dex) {
+                        if to_id(&m.id) == "curse" {
+                            continue;
+                        }
+                        if let Some(t) = m.move_type {
+                            if !cur.contains(&t) {
+                                out.push(t);
+                            }
+                        }
+                    }
+                }
+                out
+            } else {
+                // CONVERSION 2 keys off the TARGET's `lastMoveUsed` and type-changes the
+                // SOURCE. The list is every type that RESISTS or is IMMUNE to that move's
+                // type — i.e. `damageTaken` ∈ {2, 3}, equivalently effectiveness < 1 — and it
+                // does NOT exclude the source's own current types.
+                match self.sides[foe].pokemon[foe_slot].last_move_used.as_ref() {
+                    None => Vec::new(), // no lastMoveUsed → fail, ZERO draws
+                    Some(id) => {
+                        // gen-3 struggle's dex type is already Normal, so the sim's explicit
+                        // "struggle" special-case is a no-op; reading the dex covers both.
+                        let att = dex.moves(&to_id(id)).and_then(|m| m.move_type);
+                        match att {
+                            // A TYPELESS `???` last move (Curse) yields an EMPTY list → fail.
+                            None => Vec::new(),
+                            Some(att) => conversion2_candidates(att, dex),
+                        }
+                    }
+                }
+            };
+            if list.is_empty() {
+                // ZERO draws. `|move|<u>|<Move>||[still]` + `|-fail|<u>`.
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // THE ONE DRAW. `random(n)` fires even when n == 1 (probe C2).
+            let pick = list[self.prng.random_below(list.len() as u32) as usize];
+            self.sides[_side].pokemon[_slot].types_override = Some(vec![pick]);
+            // [EMIT] `|-start|<u>|typechange|<Type>` — the DISPLAY-cased type name (the
+            // Color Change precedent; the internal key is UPPERCASE).
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log
+                    .push_raw(format!("|-start|{user}|typechange|{}", pick.display_name()));
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         if move_id == "safeguard" {
             debug_assert!(
                 never_miss && move_type == Some(Type::Normal),
