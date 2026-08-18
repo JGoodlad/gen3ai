@@ -744,3 +744,21 @@ Secondary, same pass — two test-integrity findings worth the family they belon
   pre-deletion because seed 103 happened to land well; the obs getting 1092 dims shorter changed the
   draw and it failed. Seed-shopping would have buried that; it now asserts the wiring property it
   was documented to test (30/30 seeds, vs 7/8 for the old form).
+
+### Method (2026-08-17, the Damp closure): a CLAMP at an embedding boundary is the silent cousin of crash-don't-drop
+
+Closing §3.7 exposed a third defect the first two were hiding: `cant_emb` was sized
+`CANT_DIM + 1 = 13` rows while the newly-accepted `damp` reason's live id is 13 — the lookup
+would have **clamped onto id 12 = `truant`**, so every blocked Explosion would have read as
+loafing, silently, forever. The general rule: **an out-of-range id at an embedding table does not
+error, it acquires a specific WRONG meaning** — clamp converts "unknown" into "the last thing in
+the vocabulary". Size embedding tables from the LIVE vocabulary constant, never a sibling that
+can drift, and prefer a range assert (crash) over clamp at every id→embedding seam. Same family
+as `normalize_cant_reason`'s crash-don't-drop — this is the half of that contract that lives on
+the CONSUMER side. Also recorded: the archive-vs-live vocabulary split that motivated it —
+`CANT_REASONS` stays FROZEN at 12 because it sizes `TURN_DELTA_DIM = 159`, the decode contract
+for 79 archived runs (the frame deletion made `TurnDeltaEncoder` purely the prober's archive
+decoder); `CANT_REASONS_LIVE` extends it for the live path; the frozen one-hot REFUSES a
+live-only reason loudly; and `test_the_archive_cant_vocabulary_is_FROZEN` pins the split plus
+live ⊇ archive in order. A grown-in-place vocabulary would have mis-sliced every archived
+history silently while returning a plausible dict.
