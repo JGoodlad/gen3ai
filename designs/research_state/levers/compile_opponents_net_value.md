@@ -75,6 +75,18 @@ never measured, and at the documented benefit the two roughly cancel.*
   schedule-dependent rather than a constant.
 - Dropping the flag would also lose the compile path's incidental benefits (a warm shared cache for
   eval workers), which are not sized here.
+- **Two facts make a deferred/staggered compile a PURE PERF change, with no behavioural question —
+  this is the main reason the third option below is attractive.** (1) Compiled and eager agree to
+  **max|Δ| 5.07e-07**, so which one plays is not a modelling decision. (2) The codebase ALREADY
+  ships eager as the accepted degradation: `_eager_fallback_on_error` silently runs one opponent
+  eager when its compile fails, and `--compile-opponents-strict` exists precisely because that
+  fallback is otherwise invisible. So "serve eager for k iterations, compile later" changes no
+  policy that is not already in force on the failure path.
+- **The cheap path is already taken, so there is no easy win left inside the current design.**
+  `_COMPILE_VALIDATED` is a process-global that skips the eager-vs-compiled TIMING forwards on every
+  compile after the first in that process — the promotion path is already the cheap branch, and it
+  still costs 18.5 min. What remains is the per-INSTANCE dynamo trace and guard construction, which
+  is unavoidable while each snapshot is a distinct `nn.Module` with its own bound `forward`.
 - A third option probably dominates both arms and is not tested by this A/B: **keep the flag and fix
   the promotion path** (stagger promotions across the barrier; serve the previous opponent for one
   iteration while the new one traces; or hold one compiled callable across snapshots). Settling
