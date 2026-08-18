@@ -34,8 +34,19 @@ def test_every_arm_fires_and_reports(model_and_enc):
     model, enc = model_and_enc
     obs, masks = _states(enc)
     rep = audit(model.policy, obs, masks, batch=8)
+    # The arm set is CONDITIONAL on the build, deliberately, and the two ways it varies are
+    # different in kind:
+    #   * `vr_*` arms exist per ENABLED value route (the generic registry-keyed arm), so this
+    #     fixture — which enables intent_value_reduce and value_entity_pool — gets exactly two.
+    #     That is the property that stops the arm set drifting from the route set.
+    #   * `frames` is absent because gen3_frame_deletion_v1 DELETED its subject at v90. The arm
+    #     raises if asked directly and the runner skips it with a printed reason; what it must
+    #     never do is appear here with a 0.0, which would read as "the frames were worthless"
+    #     rather than "the frames are gone".
     assert set(rep) == {"seed", "threat", "hidden_opp_both", "hidden_opp_pi",
-                       "hidden_opp_vf", "entity_pool", "intent_reduce", "nmr", "all_off"}
+                        "hidden_opp_vf", "entity_pool", "intent_reduce", "nmr", "all_off",
+                        "vr_intent_value_reduce", "vr_value_entity_pool"}
+    assert "frames" not in rep, "an unmeasurable arm must be ABSENT, never a fabricated row"
     for arm, row in rep.items():
         assert set(row) == {"kl_mean", "kl_p95", "flip_rate", "dv_mean"}
 

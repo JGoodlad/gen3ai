@@ -10096,7 +10096,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[10]",
@@ -10105,7 +10105,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[11]",
@@ -10114,7 +10114,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[12]",
@@ -10123,7 +10123,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[13]",
@@ -10132,7 +10132,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[14]",
@@ -10141,7 +10141,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[15]",
@@ -10150,7 +10150,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[16]",
@@ -10159,7 +10159,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[17]",
@@ -10168,7 +10168,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[18]",
@@ -10177,7 +10177,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[19]",
@@ -10186,7 +10186,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[1]",
@@ -10195,7 +10195,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[20]",
@@ -10204,7 +10204,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[21]",
@@ -10213,7 +10213,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[22]",
@@ -10222,7 +10222,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[23]",
@@ -10231,7 +10231,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[24]",
@@ -10240,7 +10240,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[25]",
@@ -10249,7 +10249,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[26]",
@@ -10258,7 +10258,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[27]",
@@ -10267,7 +10267,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[28]",
@@ -10276,7 +10276,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[29]",
@@ -10285,7 +10285,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[2]",
@@ -10294,7 +10294,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[30]",
@@ -10303,7 +10303,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[31]",
@@ -10312,7 +10312,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[3]",
@@ -10321,7 +10321,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[4]",
@@ -10330,7 +10330,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[5]",
@@ -10339,7 +10339,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[6]",
@@ -10348,7 +10348,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[7]",
@@ -10357,7 +10357,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[8]",
@@ -10366,7 +10366,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "event[9]",
@@ -10375,7 +10375,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 20
+      "width": 22
     },
     {
       "dst": "obs_unpack",
@@ -10383,7 +10383,7 @@
       "source_constant": "schema.slices()['event_window']",
       "src": "obs.event_window",
       "type": "content",
-      "width": 640
+      "width": 704
     },
     {
       "dst": "obs_unpack",
@@ -11381,10 +11381,10 @@
     }
   ],
   "meta": {
-    "arch_signature": "gen3_frame_deletion_v1",
+    "arch_signature": "gen3_event_semantics_v1",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 90,
+    "config_version": 91,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -11413,7 +11413,7 @@
     ],
     "extra_seats": 16,
     "n_tokens": 29,
-    "obs_dim": 2437,
+    "obs_dim": 2501,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
     "vf_projection_in": 1177
@@ -11620,7 +11620,7 @@
       "kind": "obs_block",
       "offset": 1797,
       "stage": "T0",
-      "width": 640
+      "width": 704
     },
     {
       "id": "obs.global_env",

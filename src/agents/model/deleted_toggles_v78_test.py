@@ -99,15 +99,16 @@ def test_the_migration_floor_did_not_move():
     It was written when v78 was a POST-floor deletion (OFF byte-identical ⇒ no ARCH_SIGNATURE bump,
     no floor raise) and it said: "If the floor ever reaches 78 these branches become dead code and
     should be deleted." gen3_frame_deletion_v1 bumped the signature, which the floor contract
-    requires be matched by a floor raise IN THE SAME COMMIT — so the floor went 76 → 90 and every
+    requires be matched by a floor raise IN THE SAME COMMIT — so the floor went 76 → 90, and
+    gen3_event_semantics_v1 took it → 91 the same way and every
     v77–v89 migration branch is now unreachable.
 
     FOLLOW-UP, deliberately NOT done here: those dead branches should be deleted. That is a
     separable cleanup and mixing a ~13-branch deletion into a behavioural change the owner has to
     review would make both harder to read. The tests that exercised them now assert the refusal,
     so nothing claims to cover a branch it cannot reach."""
-    assert MIGRATION_FLOOR == 90
-    assert MODEL_CONFIG_VERSION >= 90
+    assert MIGRATION_FLOOR == 91
+    assert MODEL_CONFIG_VERSION >= 91
 
 
 # ------------------------------------------------------------------------ the pickled-kwargs side

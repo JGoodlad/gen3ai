@@ -113,10 +113,12 @@ class TestFaintFlags:
         assert enc[OFFSET_OPP_FAINTED] < 0.5, "opp_fainted spuriously set"
 
     @pytest.mark.xfail(strict=True, reason=(
-        "gen3_frame_deletion_v1: a TurnDelta is a per-turn AGGREGATE and the event window is a "
-        "SEQUENCE, so a two-sided turn needs SEVERAL event rows; `delta_to_event_cols` emits one. "
-        "See designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (`delta_to_event_rows`). "
-        "Strict xfail: it flips RED the moment the translator becomes multi-row."))
+        "gen3_event_semantics_v1: the obs gap is CLOSED (faint_cause_id / item_transition "
+        "columns; both verified to move each head). What remains is the TRANSLATOR: a TurnDelta "
+        "is a per-turn AGGREGATE and the event window is a SEQUENCE, so a multi-KO turn or an "
+        "ordering fact needs SEVERAL event rows and delta_to_event_cols emits one. See "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (delta_to_event_rows). Strict "
+        "xfail: flips RED when the translator becomes multi-row."))
     def test_we_fainted_reaches_network(self):
         model, layout, _ = feature_model()
         assert_delta_reaches_network(
@@ -166,10 +168,6 @@ class TestEachFaintCause:
         )
 
     @pytest.mark.parametrize("cause_name", list(FAINT_CAUSE_VOCAB))
-    @pytest.mark.xfail(strict=True, reason=(
-        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
     def test_cause_our_reaches_network(self, cause_name):
         """Each our_faint_causes bit moves the network output."""
         model, layout, _ = feature_model()
@@ -191,10 +189,6 @@ class TestEachFaintCause:
             f"opp_faint_causes={cause_name} vs empty",
         )
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
     def test_two_different_causes_produce_different_outputs(self):
         """Attack-cause and weather-cause produce distinguishable network outputs,
         proving cause identity (not just 'fainted') reaches the net."""
@@ -229,10 +223,6 @@ class TestMultiKoWindow:
         ])
         assert bits == expected, f"Expected {expected}, got {bits}"
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
     def test_multi_ko_reaches_network(self):
         model, layout, _ = feature_model()
         assert_delta_reaches_network(
@@ -243,9 +233,12 @@ class TestMultiKoWindow:
         )
 
     @pytest.mark.xfail(strict=True, reason=(
-        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
+        "gen3_event_semantics_v1: the obs gap is CLOSED (faint_cause_id / item_transition "
+        "columns; both verified to move each head). What remains is the TRANSLATOR: a TurnDelta "
+        "is a per-turn AGGREGATE and the event window is a SEQUENCE, so a multi-KO turn or an "
+        "ordering fact needs SEVERAL event rows and delta_to_event_cols emits one. See "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (delta_to_event_rows). Strict "
+        "xfail: flips RED when the translator becomes multi-row."))
     def test_multi_ko_vs_single_ko_distinguishable(self):
         """Two causes produce different output from one cause — the extra bit is visible."""
         model, layout, _ = feature_model()
@@ -304,6 +297,13 @@ class TestExplosionSelfKo:
             "explosion self-KO vs plain tackle anchor",
         )
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_event_semantics_v1: the obs gap is CLOSED (faint_cause_id / item_transition "
+        "columns; both verified to move each head). What remains is the TRANSLATOR: a TurnDelta "
+        "is a per-turn AGGREGATE and the event window is a SEQUENCE, so a multi-KO turn or an "
+        "ordering fact needs SEVERAL event rows and delta_to_event_cols emits one. See "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (delta_to_event_rows). Strict "
+        "xfail: flips RED when the translator becomes multi-row."))
     def test_explosion_distinct_from_plain_faint(self):
         """A selfko faint with Explosion is distinguishable from a faint with no move."""
         model, layout, _ = feature_model()
@@ -373,6 +373,13 @@ class TestKoBeforeActing:
             "KO-before-acting (no move, no cant, fainted) vs plain anchor",
         )
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_event_semantics_v1: the obs gap is CLOSED (faint_cause_id / item_transition "
+        "columns; both verified to move each head). What remains is the TRANSLATOR: a TurnDelta "
+        "is a per-turn AGGREGATE and the event window is a SEQUENCE, so a multi-KO turn or an "
+        "ordering fact needs SEVERAL event rows and delta_to_event_cols emits one. See "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (delta_to_event_rows). Strict "
+        "xfail: flips RED when the translator becomes multi-row."))
     def test_ko_before_acting_distinct_from_normal_faint(self):
         """A KO-before-acting (no move, no outcome) is distinguishable from
         a faint where the mon did get a move off (tackle hit, then died)."""

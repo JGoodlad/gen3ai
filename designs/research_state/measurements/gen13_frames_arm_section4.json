@@ -1,0 +1,56 @@
+{
+  "id": "gen13_frames_arm_section4",
+  "title": "The §4 denominator — the TurnDelta frames ablation arm, and the gen-14 frame-deletion verdict",
+  "date": "2026-08-17",
+  "registration": "designs/research_state/gen13_endofrun_runbook.md §4; the numeric rule was fixed in the GEN-13.5 work order BEFORE this arm existed",
+  "run": "ai_v9_15_gen13_hb_events_stack_0817",
+  "checkpoint": "final_model.zip",
+  "pinned_worktree": "1fa4733",
+  "instrument": "agents.model.critic_route_audit._Arms.frames — zeroes the turn_history + prev_action_mask obs slices AT INPUT via an extractor forward_pre_hook",
+  "why_input_side": "event_seats key-masks the whole seat block, so its reading is 'everything downstream of that content, gone'. Zeroing a mid-pipeline tensor would measure ONE consumer; the frames feed the history tokens AND the global token.",
+  "slices": {
+    "source": "build_schema(layout).slices() — never a literal; the obs moved 2669 -> 2921 -> 3529 in three generations",
+    "prev_action_mask": [2405, 2416],
+    "turn_history": [2416, 3529],
+    "total_dims_zeroed": 1124,
+    "note": "1124 matches the -1124 the gen-14 plan cites"
+  },
+
+  "primary": {
+    "n_states": 6000,
+    "sampler": "stratified_round_robin_v1 (12 step dirs x 14 opponents)",
+    "frames":      {"dv_mean": 1.3015, "kl_mean": 0.2548, "kl_p95": 1.0508, "flip_rate": 0.2908},
+    "event_seats": {"dv_mean": 2.7714, "kl_mean": 0.3494, "flip_rate": 0.3510}
+  },
+
+  "verdict": {
+    "rule": "GO iff event_seats dV >= frames dV; frames within [0.8x, 1.25x] of seats => INCONCLUSIVE (escalate); frames > 1.25x seats => NO-GO",
+    "frames_over_seats": 0.4696,
+    "inconclusive_band_for_frames_dv": [2.2171, 3.4643],
+    "result": "GO",
+    "reading": "The event seats carry 2.13x what the frames carry, on every measure (dV, KL, flips). Far below the inconclusive band's floor."
+  },
+
+  "falsification": {
+    "why": "a GO here authorises deleting 1124 obs dims — retrain-class and hard to undo — so the arm was tested for dynamic range and for hitting the slices it names",
+    "n_states": 1500,
+    "arms": {
+      "our_team_positive_control": {"dv_mean": 21.8791, "kl_mean": 2.5230, "flip_rate": 0.9300},
+      "frames":                    {"dv_mean": 1.3411,  "kl_mean": 0.2695, "flip_rate": 0.2980},
+      "event_window_obs_block":    {"dv_mean": 2.7395,  "kl_mean": 0.3522, "flip_rate": 0.3573},
+      "null_zero_width":           {"dv_mean": 0.0000,  "kl_mean": 0.0000, "flip_rate": 0.0000}
+    },
+    "checks_passed": [
+      "dynamic range: a known-large ablation reads 21.88, ~16x the frames arm",
+      "no manufactured signal: a zero-width arm reads EXACTLY 0.0",
+      "independent corroboration: ablating event CONTENT at obs input (2.7395 / 35.7%) reproduces the event SEATS module arm (2.7714 / 35.1%) by a different route",
+      "the ablated slices were non-zero: turn_history 12.2% non-zero entries (|mean| 7.06), prev_action_mask 67.4%",
+      "sample stability: frames dV 1.3015 at n=6000 vs 1.3411 at n=1500"
+    ]
+  },
+
+  "caveats": [
+    "dV/KL/flips measure DEPENDENCE of the trained gen-13 forward, not what a model TRAINED without the frames would do. A route can read low because a substitute already carries the content — which is exactly the claim here, and why the seats arm is the comparator rather than zero.",
+    "Both arms are measured on gen-13, where the seats are present. This cannot say what the frames were worth in gen-12, where they were the only history route."
+  ]
+}

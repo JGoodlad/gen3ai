@@ -314,11 +314,37 @@ from agents.observation.constants import (          # noqa: E402
     EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
     EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_ITEM_REVEAL, EVENT_T_HAZARD,
     EVENT_T_SWITCH_REJECTED, EVENT_T_CANT,
+    ITEM_TR_REVEALED, ITEM_TR_CONSUMED, ITEM_TR_REMOVED, ITEM_TR_SWAPPED,
 )
 
 # Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's
 # vocabulary; kept as an ID here (the consumer embeds) rather than a one-hot (obs stays lean).
 _EVENT_STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
+
+
+# gen3_event_semantics_v1 — the two classifiers the H-B rows need.
+# `_classify_faint_cause` is IMPORTED from turn_view rather than reimplemented: the frames and
+# the event window must never disagree about what "weather" means, and one copy cannot drift.
+from agents.battle.turn_view import _classify_faint_cause
+
+_SELF_KO_MOVE_IDS: frozenset = frozenset({"explosion", "selfdestruct"})
+def _classify_item_transition(kind, from_clause: "Optional[str]") -> int:
+    """|-item| / |-enditem| (+ its `[from]`) -> one of the ITEM_TR_* ids.
+
+    Gen3 has THREE ways an item stops being held and they mean different things to a player:
+    a CONSUMED berry is spent (the mon is now itemless by its own design), a Knock Off REMOVAL
+    is permanent in ADV (unlike later gens), and a Trick/Thief/Covet SWAP means the OPPONENT is
+    now holding it — which is information about their set, not just about ours. Collapsing them
+    into one "item gone" bit is the conflation this column exists to end."""
+    from agents.battle.battle_event import EventKind
+    if kind is EventKind.ITEM:
+        return ITEM_TR_REVEALED
+    fc = (from_clause or "").strip().lower()
+    if "knock off" in fc or "knockoff" in fc:
+        return ITEM_TR_REMOVED
+    if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
+        return ITEM_TR_SWAPPED
+    return ITEM_TR_CONSUMED
 
 
 class EventWindowTracker:
@@ -352,7 +378,13 @@ class EventWindowTracker:
         self._turn: int = 0
         self._our_active: Optional[str] = None
         self._opp_active: Optional[str] = None
-        self._open_move: dict = {}          # side -> the record modifiers attach to
+        self._open_move: dict = {}
+        # gen3_event_semantics_v1: the FAINT row's cause needs to know what last damaged
+        # the mon — the protocol says it on the DAMAGE line's `[from]`, not on the faint.
+        # Per SIDE, reset when that side's mon leaves the field (a fresh mon's death has
+        # nothing to do with the previous occupant's last chip).
+        self._last_dmg_cause: dict = {}
+        self._used_selfko: dict = {}   # side -> did its last move self-KO
         self._first_mover_turn: int = -1    # the turn whose first mover is recorded
         self._first_mover_side: Optional[str] = None
         self._forced: dict = {}             # side -> active slot empty (post-faint window)
@@ -389,15 +421,24 @@ class EventWindowTracker:
                     "status": 0, "turn": et,
                 })
                 self._open_move[side] = rec
+                # Explosion / Self-Destruct kill their OWN user; the lethal damage carries no
+                # `[from]`, so without this the faint would classify as a plain `attack`.
+                self._used_selfko[side] = (e.move_id in _SELF_KO_MOVE_IDS)
             elif k is EventKind.DAMAGE and side is not None:
                 # damage lands ON `side`; it attaches to the OTHER side's open move this turn
                 # ONLY when it is the move's own hit: no `[from]` clause (recoil / Sandstorm /
                 # status / item residuals all carry one) AND the damaged mon IS the move's
                 # recorded target (a switched-in replacement taking hazard chip is not the hit).
+                self._last_dmg_cause[side] = e.from_clause   # None ⇒ a direct hit
                 mover = OPP if side == OURS else OURS
                 om = self._open_move.get(mover)
+                # `from_clause`, NOT `value.get("from")`. On a DAMAGE event the parser stores
+                # the `[from]` clause under `value["reason"]`, so the raw key is ALWAYS absent
+                # here and this guard never fired: every sandstorm/burn/poison/Leech-Seed/recoil
+                # residual landing on the move's target was folded into the move's attributed
+                # magnitude. Shipped v81, trained on for two generations.
                 if (om is not None and om["turn"] == et
-                        and not e.value.get("from")
+                        and not e.from_clause
                         and sp and om["target"] == sp):
                     amt = e.amount
                     if amt is not None:
@@ -433,12 +474,22 @@ class EventWindowTracker:
                     self._our_active = sp
                 else:
                     self._opp_active = sp
+                # A fresh mon inherits no chip history from the one it replaced — without this
+                # the incoming mon's first faint would read the PREVIOUS occupant's last cause.
+                self._last_dmg_cause.pop(side, None)
+                self._used_selfko.pop(side, None)
             elif k is EventKind.FAINT and side is not None and sp:
                 self._append({
                     "t": EVENT_T_FAINT, "actor": sp, "side": side, "target": None,
                     "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
                     "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                    # gen3_event_semantics_v1: WHY it fainted. Reuses `turn_view`'s classifier
+                    # so the event window and the TurnDelta fold cannot drift on the vocabulary.
+                    "faint_cause": _classify_faint_cause(
+                        self._last_dmg_cause.get(side), bool(self._used_selfko.get(side))),
                 })
+                self._last_dmg_cause.pop(side, None)
+                self._used_selfko.pop(side, None)
                 if side == OURS and self._our_active == sp:
                     self._our_active = None
                     self._forced["our"] = True
@@ -468,6 +519,7 @@ class EventWindowTracker:
                     "t": EVENT_T_ITEM_REVEAL, "actor": sp, "side": side, "target": None,
                     "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
                     "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
+                    "item_tr": _classify_item_transition(k, e.from_clause),
                 })
             elif k is EventKind.SIDE and side is not None:
                 self._append({
@@ -481,8 +533,13 @@ class EventWindowTracker:
                 # TurnDelta fold read it into `*_cant_reason`, but it reached the model ONLY
                 # through the lag frames — this window emitted no row. With those frames
                 # deleted this is the fact's only route, so it gets its own type + column.
+                # gen3_damp_cant_v1: attribute the row to the mon that LOST ITS TURN, not to
+                # the ability holder the protocol files it against. Falls back to the event's own
+                # actor/side for ordinary self-inflicted cants, where they are the same mon.
+                _cs = e.blocked_side or side
+                _ca = e.blocked_actor or sp
                 self._append({
-                    "t": EVENT_T_CANT, "actor": sp, "side": side, "target": None,
+                    "t": EVENT_T_CANT, "actor": _ca, "side": _cs, "target": None,
                     "move_id": e.cant_move, "hp_delta": 0.0, "missed": False,
                     "failed": True, "crit": False, "eff": 0, "we_first": False,
                     "status": 0, "cant": e.reason, "turn": et,

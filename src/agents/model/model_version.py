@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 #   bit-exact ZERO after 25M steps). Route out-widths become D_MODEL and the vf concat
 #   narrows for flag-ON configs, so a <v89 checkpoint recording ANY of them ON carries
 #   shapes the surviving code cannot load — REFUSED (the v75 rule); OFF stamps forward.
-MODEL_CONFIG_VERSION = 90
+MODEL_CONFIG_VERSION = 91
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -39,7 +39,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_frame_deletion_v1"
+ARCH_SIGNATURE = "gen3_event_semantics_v1"
 
 # The migration floor: the first MODEL_CONFIG_VERSION stamped with the current ARCH_SIGNATURE.
 # Every `if version < N` migration branch with N <= this floor could only ever produce a config
@@ -49,7 +49,7 @@ ARCH_SIGNATURE = "gen3_frame_deletion_v1"
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 90
+MIGRATION_FLOOR = 91
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -58,6 +58,7 @@ SIGNATURE_FIRST_VERSION = {
     "gen3_deadline_clock_v1": 67,
     "gen3_ctx_dedup_v1": 76,
     "gen3_frame_deletion_v1": 90,
+    "gen3_event_semantics_v1": 91,
 }
 
 
@@ -1705,4 +1706,11 @@ def _migrate_config(data: dict) -> dict:
         # beside the other version stories rather than only in the changelog.
         data.pop("n_history_turns", None)
         data["config_version"] = 90
+    if version < 91:
+        # gen3_event_semantics_v1: the H-B event row gains `faint_cause_id` (col 20) and
+        # `item_transition` (col 21), closing the last two coverage gaps the frame-deletion
+        # audit found — obs 2437 -> 2501. Width change ⇒ `total_dim` breaks `_WEIGHT_FIELDS`
+        # and the signature bumps, so `check_compatible` refuses a pre-v91 checkpoint before
+        # this runs; the branch exists so the story sits beside the others on the record.
+        data["config_version"] = 91
     return data

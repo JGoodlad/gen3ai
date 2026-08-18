@@ -213,3 +213,125 @@ def test_cant_reason_ids_are_distinct_and_zero_means_none():
     ids = {r: cant_reason_id(r) for r in CANT_REASONS}
     assert 0 not in ids.values(), "0 is reserved for 'no cant' and must not collide with a reason"
     assert len(set(ids.values())) == len(CANT_REASONS), f"reason ids collide: {ids}"
+
+
+# ---------------------------------------------------------------------------
+# The residual-attribution defect (shipped v81, found 2026-08-17 by coverage audit)
+# ---------------------------------------------------------------------------
+
+def test_residual_damage_is_not_folded_into_the_move_magnitude():
+    """A move's magnitude is ITS OWN hit — residual chip on the same target must not join it.
+
+    The defect this pins: `EventWindowTracker` tested `e.value.get("from")` to mean "this damage
+    carries a [from] clause, so it is NOT the move's own hit". On a DAMAGE event the parser
+    stores that clause under `value["reason"]` instead, so the raw key was ALWAYS absent and the
+    guard NEVER fired. Every sandstorm / burn / poison / Leech Seed / recoil tick landing on the
+    move's target that turn was added to the move's attributed hp_delta — measured -0.3625 for a
+    -0.3000 hit under sandstorm. It shipped in v81 and trained through two generations.
+
+    Asserted on the ARITHMETIC, not on the guard's spelling: a future refactor that reaches for
+    the wrong key again fails here regardless of how it phrases the test."""
+    t = EventWindowTracker(maxlen=16)
+    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None),
+                 _ev(2, 1, EventKind.SWITCH, OPP, "tyranitar", prev_active=None)],
+             "snorlax", "tyranitar")
+    t.update(2, [
+        _ev(3, 2, EventKind.MOVE, OPP, "tyranitar", move_id="rockslide"),
+        _ev(4, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.30),                 # the hit
+        _ev(5, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.0625, reason="Sandstorm"),
+        _ev(6, 2, EventKind.DAMAGE, OURS, sp="snorlax", amount=-0.0625, reason="brn"),
+    ], "snorlax", "tyranitar")
+    moves = [r for r in t.window() if r["t"] == EVENT_T_MOVE]
+    assert len(moves) == 1
+    assert abs(moves[0]["hp_delta"] - (-0.30)) < 1e-9, (
+        f"move magnitude {moves[0]['hp_delta']} != -0.30 — residual damage was folded in")
+
+
+def test_from_clause_reads_both_storage_keys():
+    """`[from]` lives under two different keys depending on event kind — one accessor must span it.
+
+    DAMAGE/HEAL/SETHP/STATUS store it as `value["reason"]`; ITEM/ENDITEM/WEATHER/effect kinds
+    merge the parsed cause dict so it lands under `value["from"]`. BOTH raw accessors therefore
+    return None for half the event kinds, silently. `from_clause` is the one safe reader, and
+    this pins that — the inconsistency is the actual defect generator, not the one call site."""
+    dmg = _ev(1, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.06, reason="Sandstorm")
+    itm = _ev(2, 1, EventKind.ENDITEM, OURS, "snorlax", item="leftovers", **{"from": "move: Knock Off"})
+    assert dmg.from_cause is None, "precondition: the raw key really is absent on DAMAGE"
+    assert dmg.from_clause == "Sandstorm"
+    assert itm.from_clause == "move: Knock Off"
+    assert _ev(3, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30).from_clause is None
+
+
+# ---------------------------------------------------------------------------
+# gen3_damp_cant_v1 — the ability-sourced cant (register §3.7)
+# ---------------------------------------------------------------------------
+
+def test_damp_cant_does_not_crash_and_is_attributed_to_the_blocked_mon():
+    """`ability: Damp` must fold cleanly AND name the mon that actually lost its turn.
+
+    TWO defects rode this one row and fixing only the first would have shipped the second.
+
+    (a) CRASH. `damp` was absent from the cant vocabulary, and `normalize_cant_reason` is
+        crash-don't-drop — so the first blocked Explosion raised out of `state_encoder.encode`
+        and killed the episode, and in training the run. Damp is gen3-legal (Quagsire, Golduck,
+        Politoed, …) and Explosion is ubiquitous in gen3ou, so it is reachable in ordinary play;
+        reproduced on battle #1 of a scripted Quagsire-vs-Snorlax bridge battle.
+
+    (b) A LYING ROW. Showdown files an ability-sourced cant against the ability HOLDER with the
+        BLOCKED move as its argument:
+            |cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax
+        Taken at face value that says Quagsire could not use Self-Destruct — a move it never had
+        — while the side that really lost its turn goes unmentioned. The `[of]` mon is resolved
+        at EMISSION (the log gains the fact; the fold stays pure) and preferred here."""
+    t = EventWindowTracker(maxlen=16)
+    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "quagsire", prev_active=None),
+                 _ev(2, 1, EventKind.SWITCH, OPP, "snorlax", prev_active=None)],
+             "quagsire", "snorlax")
+    t.update(2, [_ev(3, 2, EventKind.CANT, OURS, "quagsire",
+                     reason="ability: Damp", move="selfdestruct",
+                     **{"of": "p2a: Snorlax", "of_side": OPP, "of_actor": "snorlax"})],
+             "quagsire", "snorlax")
+    rows = [r for r in t.window() if r["t"] == EVENT_T_CANT]
+    assert len(rows) == 1
+    assert rows[0]["actor"] == "snorlax", "the row must name the mon that LOST its turn"
+    assert rows[0]["side"] == OPP, "...and its side, not the Damp holder's"
+    assert rows[0]["cant"] == "ability: Damp"
+
+
+def test_an_ordinary_cant_still_uses_its_own_actor():
+    """The `[of]` preference must not disturb self-inflicted cants, where holder == blocked mon."""
+    t = EventWindowTracker(maxlen=16)
+    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None)], "snorlax", None)
+    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "snorlax", reason="par")], "snorlax", None)
+    r = [x for x in t.window() if x["t"] == EVENT_T_CANT][0]
+    assert r["actor"] == "snorlax" and r["side"] == OURS
+
+
+def test_truant_is_ability_sourced_but_keeps_its_OWN_actor():
+    """The `[of]` preference must key on `[of]`, NOT on the `ability:` prefix.
+
+    `ability: Truant` is every bit as ability-sourced as `ability: Damp` and is entirely
+    SELF-inflicted — the loafing mon blocks itself. Showdown sends no `[of]` for it, because
+    `[of]` means "caused by that OTHER mon". A rule that re-attributed on the prefix would
+    hand every Truant turn to the opponent, turning one fixed lie into a new one."""
+    t = EventWindowTracker(maxlen=16)
+    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "slaking", prev_active=None)], "slaking", None)
+    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "slaking", reason="ability: Truant")],
+             "slaking", None)
+    r = [x for x in t.window() if x["t"] == EVENT_T_CANT][0]
+    assert r["actor"] == "slaking" and r["side"] == OURS, "Truant must keep its own actor"
+
+
+def test_the_archive_cant_vocabulary_is_FROZEN():
+    """`CANT_REASONS` sizes TURN_DELTA_DIM (159) — the lag-frame width 79 archived runs recorded.
+
+    The frames are deleted from the live obs, so `TurnDeltaEncoder` survives only as the prober's
+    decoder for that archive. Growing `CANT_REASONS` would shift every offset after the cant block
+    and make it mis-slice historical data — silently, since it would still return a plausible
+    dict. New reasons go in `CANT_REASONS_LIVE`. This test is what makes that split enforced
+    rather than merely intended."""
+    from agents.observation.gen3_effects import CANT_REASONS, CANT_DIM, CANT_REASONS_LIVE
+    from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
+    assert CANT_DIM == 12 and TURN_DELTA_DIM == 159, "the ARCHIVE format moved — the prober will mis-slice"
+    assert CANT_REASONS_LIVE[:len(CANT_REASONS)] == CANT_REASONS, "live must EXTEND the archive, never reorder it"
+    assert "damp" in CANT_REASONS_LIVE and "damp" not in CANT_REASONS

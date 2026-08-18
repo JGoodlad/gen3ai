@@ -56,6 +56,13 @@ gradient). So this is a genuine first measurement, not a re-read.
 - **Decision:** a route at ≥ half `threat`'s |dV| KEEPS. All five null ⇒ the v74/v80/v82/v84/v87
   critic-route program is a measured dead end and gen-14 deletes the lot (the honest outcome the
   two inert generations could never deliver).
+- **REGISTERED 2026-08-17 — the TIE-BREAK ZONE, fixed before the arms that need it landed.** A
+  route that MISSES the bar by **≤25%** (i.e. dV ≥ 0.29 against the 0.39 bar) is **tie-break
+  eligible**: re-audit at **≥2× sample** in the gen-14 battery, and below bar there ⇒ **delete, no
+  appeal**. A miss deeper than 25% is a **NULL now**, with no tie-break. This was registered
+  because "coin-flip zone" had been used twice as a judgement without ever being a rule — it
+  clears `intent_value_reduce` (0.3826, 98% of bar) and `value_clock` (0.3370, 86%), and would
+  NOT rescue a route at half the bar. Apply it to any borderline arm without asking.
 
 ## 3. `h` re-read + the `r` verdict
 

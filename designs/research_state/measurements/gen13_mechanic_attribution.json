@@ -1,0 +1,20 @@
+{
+  "id": "gen13_mechanic_attribution",
+  "title": "§5 attribution — no stack member accounts for the substitute/counter regression",
+  "date": "2026-08-17",
+  "run": "ai_v9_15_gen13_hb_events_stack_0817", "pinned_worktree": "1fa4733",
+  "method": "ablate one policy-side cell at a time on 4000 frozen on-distribution decisions; report pick_rate (P(argmax==mechanic)) and mean_prob among decisions where the mechanic was LEGAL. Within-sample contrast, so the arms are directly comparable.",
+  "legal_counts": {"counter": 208, "substitute": 816, "focuspunch": 430, "protect": 2108, "pursuit": 617, "destinybond": 15},
+  "arms": {
+    "base":                  {"counter": {"pick": 0.0769, "prob": 0.0872}, "substitute": {"pick": 0.0466, "prob": 0.0500}},
+    "no_intent_threshold":   {"counter": {"pick": 0.0769, "prob": 0.0873}, "substitute": {"pick": 0.0466, "prob": 0.0500}},
+    "no_intent_conditional": {"counter": {"pick": 0.0817, "prob": 0.0876}, "substitute": {"pick": 0.0453, "prob": 0.0494}}
+  },
+  "verdict": "NEITHER v84 nor v85 is implicated. Ablating intent_threshold changes nothing; ablating intent_conditional moves counter +0.005 and substitute -0.001 — inside noise and in the WRONG direction to explain a regression (removing a cell does not RESTORE the mechanic).",
+  "scope_limit_stated_plainly": "This tested the v84/v85 CELLS, because §5's mechanics are theirs. It did NOT test the three RIDERS whose unconditionalization decision-5 gates (--op-drop-renders, --op-believed-lean, --item-belief). D therefore exonerates the cells and says NOTHING about the riders; the gate is not satisfied by this result.",
+  "caveats": [
+    "the h/r family arms (the work order's 'if cheap' option) were NOT run — adding edge-family ablation to this probe was not cheap",
+    "the sample is the forensically-captured subset, not §5's full trace population, so the LEVELS here are not comparable to §5's numbers; only the cross-arm contrast is",
+    "a defect was found and fixed mid-run (an all-ones action mask); the fix changed nothing to 4 decimals because the pointer head derives legality from the obs itself"
+  ]
+}

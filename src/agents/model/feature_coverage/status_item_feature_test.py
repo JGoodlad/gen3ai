@@ -303,10 +303,6 @@ def test_opp_status_cured_reaches_network(status: Status):
 # 4. NETWORK — item-used bit reaches both heads
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason=(
-    "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-    "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-    "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
 def test_our_item_used_reaches_network():
     model, layout, _ = feature_model()
     assert_delta_reaches_network(
@@ -317,10 +313,6 @@ def test_our_item_used_reaches_network():
     )
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "gen3_frame_deletion_v1: this fact has NO event-window home — see "
-    "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
-    "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
 def test_opp_item_used_reaches_network():
     model, layout, _ = feature_model()
     assert_delta_reaches_network(

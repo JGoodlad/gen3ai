@@ -1,0 +1,46 @@
+{
+  "id": "gen13_value_route_arms",
+  "title": "All five v89 value_pooled routes measured — plus the r-family verdict the §3 tooling skipped",
+  "date": "2026-08-17",
+  "registration": "gen13_endofrun_runbook.md §2 (bar: KEEP at dV >= 0.5 x threat = 0.39) and §3 (family ALIVE at >= 0.5 x median live family)",
+  "run": "ai_v9_15_gen13_hb_events_stack_0817",
+  "pinned_worktree": "1fa4733",
+  "n_states": 6000,
+  "sampler": "stratified_round_robin_v1",
+
+  "instrument": {
+    "arm": "agents.model.critic_route_audit._Arms.value_route(name)",
+    "design": "ONE generic arm keyed off the `_value_pooled_routes` registry seam, not five bespoke arms — the seam already yields (name, contribution), so the arm set CANNOT drift from the route set. That drift is exactly what happened: value_clock / value_intent / intent_threshold_value shipped in v84/v87, trained live through all of gen-13, and had no arm when the §2 verdict was first computed.",
+    "cross_check": "the generic arm reproduces the two BESPOKE arms EXACTLY (entity_pool 6.2754 == 6.2754; intent_reduce 0.3826 == 0.3826) — two independent mechanisms, one number"
+  },
+
+  "value_routes": {
+    "bar": 0.39,
+    "value_entity_pool":       {"dv_mean": 6.2754, "kl_mean": 0.0, "flip_rate": 0.0, "verdict": "KEEP"},
+    "intent_value_reduce":     {"dv_mean": 0.3826, "kl_mean": 0.0, "flip_rate": 0.0, "verdict": "null", "note": "98% of bar — the ratified coin-flip; owner tie-break is a >=2x-sample re-run in the gen-14 battery"},
+    "value_clock":             {"dv_mean": 0.3370, "kl_mean": 0.0, "flip_rate": 0.0, "verdict": "null", "note": "86% of bar — the SECOND near-bar route; same tie-break logic applies"},
+    "value_intent":            {"dv_mean": 0.1560, "kl_mean": 0.0, "flip_rate": 0.0, "verdict": "null"},
+    "intent_threshold_value":  {"dv_mean": 0.1554, "kl_mean": 0.0, "flip_rate": 0.0, "verdict": "null", "note": "the v84 p_KO-to-critic route — ledger H1's intended payoff"},
+    "context": {"threat": 0.7853, "frames": 1.3015, "event_seats": 2.7714, "all_off": 5.6847},
+    "reading": "KL and flips are 0.0 on every one, which is CORRECT for a vf-only route and is itself a check that the arms hit the value path and nothing else. §2's 'all five null => gen-14 deletes the lot' branch does NOT fire: entity_pool keeps decisively and carries the critic."
+  },
+
+  "edge_families": {
+    "rule": "ALIVE at dV >= 0.5 x median live family",
+    "median_live_family_excl_h_r": 0.0551,
+    "bar": 0.0276,
+    "h": {"dv_mean": 0.1765, "verdict": "ALIVE", "x_bar": 6.40},
+    "r": {"dv_mean": 0.0571, "verdict": "ALIVE", "x_bar": 2.07,
+          "note": "ALIVE but only just — it sits essentially AT the median (0.0571 vs 0.0551), not above it. Zero-init, so any nonzero is learned use; but this is a weak pass, not a strong one."},
+    "full_ranking": {"d2": 1.6237, "d1": 0.5709, "v": 0.5229, "d4": 0.2950, "h": 0.1765,
+                     "t": 0.1151, "x": 0.1023, "d3": 0.0705, "r": 0.0571, "g": 0.0551,
+                     "s3": 0.0491, "s1": 0.0217, "c2": 0.0203, "c5": 0.0198, "c1": 0.0178,
+                     "c3": 0.0172, "c4": 0.0006},
+    "incidental": "the consequence families remain at/below the noise floor (c4 0.0006; c1/c2/c3/c5 0.017-0.020), independently corroborating the gen-14 draft's trim list."
+  },
+
+  "caveats": [
+    "dV measures DEPENDENCE of the trained gen-13 forward. A route can read low because a substitute already carries the content — which is the entity_pool succession story, and why threat fell 100% -> 14% of all_off between generations.",
+    "Two routes sit within 15% of the bar (intent_value_reduce 0.383, value_clock 0.337). At n=6000 that margin is not resolvable; the ratified tie-break (>=2x sample in the gen-14 battery) applies to BOTH, not just intent_value_reduce."
+  ]
+}

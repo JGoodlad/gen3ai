@@ -4825,3 +4825,91 @@ The trapping-signals end-to-end check now asserts an `EVENT_T_SWITCH_REJECTED` r
 longer check. `phase_modules_test` gained positive assertions that `total_dim == base_dim`, that the
 five deleted layout keys are ABSENT, and that `ctx` no longer exposes `move_mask`/`switch_mask`/
 `struggle_mask` — a deletion asserted is a deletion that cannot silently come back.
+
+---
+
+### v91 — `gen3_event_semantics_v1`: the last two coverage gaps close, and the residual-attribution GIGO that the audit walked into
+
+**Obs 2437 → 2501** (+64 = 32 event rows × 2 new columns). `ARCH_SIGNATURE`
+`gen3_frame_deletion_v1` → **`gen3_event_semantics_v1`**, config 90 → 91, `MIGRATION_FLOOR` → 91.
+
+**1. THE BUG — the event window mis-attributed residual damage to the attacking move.**
+Found while auditing the coverage gaps, not by any test. `EventWindowTracker` decided "this DAMAGE
+is NOT the move's own hit" by testing `e.value.get("from")`. On a DAMAGE event the parser stores
+the `[from]` clause under `value["reason"]` instead, so the raw key was **always absent** and the
+guard **never fired**: every sandstorm / burn / poison / Leech Seed / recoil tick landing on the
+move's target that turn was folded into the move's attributed magnitude. Measured **−0.3625 for a
+−0.3000 hit** under sandstorm alone. Shipped in v81 and **trained through gen-13 and gen-14**.
+
+The generator is worth more than the instance: the same `[from]` concept is stored under **two
+different keys depending on event kind** — DAMAGE/HEAL/SETHP/STATUS write `value["reason"]`, while
+ITEM/ENDITEM/WEATHER/effect kinds merge the cause dict so it lands in `value["from"]`. There were
+two accessors and *neither was safe without knowing the kind*; both return None for half the
+kinds, silently. `BattleEvent.from_clause` is the new kind-agnostic reader and the raw `from_cause`
+now carries a warning. `TurnView` had it right all along (`turn_view.py` documents "stored as
+`event.reason`"), which is why the reward path and `TurnDelta` were never affected — the damage was
+confined to the H-B magnitude column the event seats read. Gate:
+`event_window_test::test_residual_damage_is_not_folded_into_the_move_magnitude`, asserted on the
+ARITHMETIC so a refactor that reaches for the wrong key again fails regardless of phrasing —
+VERIFIED failing on revert (−0.425 with two residuals).
+
+**2. `faint_cause_id` (column 20) — WHY a mon died.** The lag frames carried an 8-way multi-hot;
+the `EVENT_T_FAINT` row had no cause column. The "a sequence makes it inferable" argument only
+covers {attack, recoil, selfko} — **weather, status, hazard and Leech Seed deaths emit no preceding
+event to infer from, because residual damage is not an event**, and that non-inferable half is
+exactly the slow-attrition class the C6/§7 stall work keeps flagging. The tracker now records what
+last damaged each side (cleared on switch-in, so a fresh mon inherits no chip history) and
+classifies through `turn_view._classify_faint_cause` — the SAME function the TurnDelta fold uses,
+so the two encodings cannot drift on what "weather" means. `faint_cause_id` lives in `turn_view`
+beside the vocabulary and `_FAINT_CAUSE_TO_IDX` it indexes.
+
+**3. `item_transition` (column 21) — an ENUM, not a flag.** `EVENT_T_ITEM_REVEAL` conflated
+"revealed" with "gone". Gen3 has **three** ways an item stops being held and they mean different
+things to a player: a CONSUMED berry is spent by its own trigger, a Knock Off REMOVAL is permanent
+in ADV (unlike later gens), and a Trick/Thief/Covet SWAP means the OPPONENT now holds it — which is
+information about their set, not only ours. A bare `consumed` flag would have left the conflation
+half-alive, so the column is `revealed / consumed / removed / swapped`.
+
+Both columns are embedding-routed, sized `+1` from the same vocabularies the encoder writes ids
+from, so extending either widens producer and consumer together instead of clamping a new id onto
+an existing row. Both verified to move BOTH heads, including the distinctions that motivated them
+(hazard vs weather; removed vs swapped). The delivery graph diff is **meta-only** — no node or edge
+moved, which is the right signature for columns added inside a block an existing seat already
+reads.
+
+**What this closes.** Of the four facts the frame-deletion coverage audit found with no
+event-window home, three are now closed (`cant_reason` at v90, these two here) and one is ACCEPTED
+on value grounds (`our_attempted_switch_spec` — and its "structurally unreachable" framing was
+itself corrected: the fact IS available at emission, so payload enrichment would close it if its
+value ever materialises). Ten of the 22 strict-xfail coverage probes flipped to passing, which is
+what strict xfail is for — the remaining 12 are the single-row translator limit
+(`delta_to_event_rows`), not obs gaps.
+
+**Same pass — `gen3_damp_cant_v1` (register §3.7): the ability-sourced cant.** `ability: Damp`
+blocks Explosion / Self-Destruct and emits a `|cant|`. It was absent from the cant vocabulary, and
+`normalize_cant_reason` is crash-don't-drop, so the first blocked Explosion raised out of
+`state_encoder.encode` and killed the episode — and, in training, the run. Damp is gen3-legal
+(Quagsire, Golduck, Politoed, the Horsea and Paras lines) and Explosion is ubiquitous in gen3ou.
+
+**A second defect rode the same row and a bare reason-add would have shipped it.** Showdown files
+an ability-sourced cant against the ability HOLDER with the BLOCKED move as its argument —
+`|cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax` — which at face value says
+Quagsire could not use a move it never had, while the side that really lost its turn goes
+unmentioned. The `[of]` mon is now resolved at EMISSION (`gen3_battle`, where the ident is still
+resolvable) and preferred by the fold: the log gains the fact and the fold stays a pure function of
+it, which is the same enrichment pattern the refused-switch-target gap would take if its value ever
+materialised.
+
+**And a third that the fix itself exposed.** `EventSeats.cant_emb` was sized `CANT_DIM + 1` = 13
+rows; `damp`'s live id is 13, so it would have **clamped onto 12 = `truant`** — every blocked
+Explosion silently read as loafing. Sized from `CANT_DIM_LIVE` now.
+
+**Why `damp` is NOT in `CANT_REASONS`.** That tuple sizes `CANT_DIM`, which sizes `TURN_DELTA_DIM`
+(159) — the lag-frame width **79 archived runs recorded**. The frames are deleted from the live
+obs, so `TurnDeltaEncoder` is now purely the prober's decoder for that archive, and growing the
+tuple would shift every offset after the cant block and make it mis-slice history *silently*, since
+it would still return a plausible dict. So the archive vocabulary is FROZEN and
+`CANT_REASONS_LIVE = CANT_REASONS + ("damp",)` carries the live path; the frozen one-hot refuses a
+live-only reason loudly rather than mis-encoding it.
+`event_window_test::test_the_archive_cant_vocabulary_is_FROZEN` makes the split enforced rather
+than intended, and pins live ⊇ archive *in order* so nobody reorders the archive either.

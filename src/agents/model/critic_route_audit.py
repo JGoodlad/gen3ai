@@ -137,6 +137,100 @@ class _Arms:
             return torch.zeros_like(output)
         return [fe.intent_value_reduce.register_forward_hook(_hook)], marker
 
+    def value_route(self, name: str) -> tuple[list[Any], dict[str, bool]]:
+        """Zero ONE v89 `value_pooled` route by NAME, at the `_value_pooled_routes` registry seam.
+
+        Deliberately generic rather than five bespoke arms. The seam already yields
+        `(name, contribution)` for every enabled route, so keying off that name means the arm set
+        cannot drift from the route set — a route added tomorrow is auditable the day it exists,
+        which is exactly what did NOT happen for `value_clock` / `value_intent` /
+        `intent_threshold_value`: they shipped in v87/v84, trained live through all of gen-13, and
+        had no arm at all when the §2 verdict was computed.
+
+        It also gives a free cross-check on the two routes that DO have bespoke arms
+        (`entity_pool`, `intent_reduce`) — two independent mechanisms reading the same route
+        should agree, and a disagreement means one of them is measuring the wrong thing.
+
+        Implemented by wrapping the bound generator (the seam is a method, not a module, so there
+        is no hook to register). `fired` is set only when the named route is actually yielded, so
+        a typo or a disabled route fails the `_assert_fired` staleness guard rather than silently
+        reporting a null.
+        """
+        fe = self.fe
+        marker = {"fired": False}
+        original = fe._value_pooled_routes
+
+        def _wrapped(*a: Any, **k: Any) -> Any:
+            for rname, contrib in original(*a, **k):
+                if rname == name:
+                    marker["fired"] = True
+                    yield rname, torch.zeros_like(contrib)
+                else:
+                    yield rname, contrib
+
+        fe._value_pooled_routes = _wrapped
+
+        class _Restore:
+            def remove(self_inner) -> None:
+                fe._value_pooled_routes = original
+        return [_Restore()], marker
+
+    def frames(self) -> tuple[list[Any], dict[str, bool]]:
+        """Zero the 7xN TurnDelta LAG-FRAME block AND the prev-turn action mask **at the obs
+        input** — the DENOMINATOR the H-B `event_seats` arm is measured against.
+
+        This is the only arm that ablates OBS CONTENT rather than a module output, because the
+        thing under test is content, not a route: gen-14's headline change deletes these 1124
+        dims outright, and "the seats carry at least as much as the frames they replace" is
+        unanswerable without measuring the frames the same way the seats were measured.
+
+        Zeroing at INPUT (a pre-hook on the extractor) rather than at some consumer is what makes
+        the two arms comparable: `event_seats` key-masks the whole seat block, so its reading is
+        "everything downstream of that content, gone". Zeroing a mid-pipeline tensor instead would
+        measure one consumer and silently exclude the others (the frames feed the history tokens
+        AND the global token).
+
+        Offsets come from the layout's validated slice map, never a literal — the obs has moved
+        twice in three generations (2669 -> 2921 -> 3529) and a hardcoded 1556 would now zero the
+        middle of the event window while reporting a frames number.
+        """
+        from agents.observation.schema import build_schema
+        fe = self.fe
+        marker = {"fired": False}
+        sl = build_schema(fe.layout).slices()
+        # gen3_frame_deletion_v1 DELETED the blocks this arm zeroes. The arm stays because it is
+        # the instrument that LICENSED that deletion (gen-13.5 §4, dV 1.3015 vs event_seats
+        # 2.7714) and every archived pre-v90 checkpoint is still auditable with it — but on a
+        # post-deletion layout there is nothing to zero, and silently reporting dV 0.0 would read
+        # as "the frames were worthless" rather than "the frames are gone". RAISE instead: an
+        # arm that cannot measure its subject must say so, not return a number.
+        missing = [k for k in ("turn_history", "prev_action_mask") if k not in sl]
+        if missing:
+            raise RuntimeError(
+                f"the `frames` arm has no subject on this architecture: {missing} absent from the "
+                f"obs schema (gen3_frame_deletion_v1 deleted them at v90). Run this arm against a "
+                f"pre-v90 checkpoint, from the commit its metadata.json git_hash names.")
+        spans = [sl["turn_history"], sl["prev_action_mask"]]
+
+        def _pre(_m: Any, args: Any, kwargs: Any) -> Any:
+            obs = kwargs.get("observations")
+            if obs is None and args:
+                obs = args[0]
+            if not isinstance(obs, dict) or "observation" not in obs:
+                return args, kwargs
+            x = obs["observation"].clone()
+            for s in spans:
+                x[..., s] = 0.0
+            marker["fired"] = True
+            new = dict(obs)
+            new["observation"] = x
+            if kwargs.get("observations") is not None:
+                kwargs = dict(kwargs)
+                kwargs["observations"] = new
+                return args, kwargs
+            return (new,) + tuple(args[1:]), kwargs
+        return [fe.register_forward_pre_hook(_pre, with_kwargs=True)], marker
+
     def nmr(self) -> tuple[list[Any], dict[str, bool]]:
         """Zero `ctx.non_matchup_rest` at the assembler — the LAST positional head concat
         (global env + board scalars, both heads). Its content also rides the global token
@@ -208,12 +302,28 @@ def _assert_fired(name: str, markers: Sequence[Any]) -> None:
                                "the route identity drifted and the arm measured nothing.")
 
 
+def _route_is_enabled(fe: Any, name: str) -> bool:
+    """Is this v89 value route BUILT on `fe`? Keyed on the module the seam actually calls, so a
+    renamed attribute fails here (arm absent, visible in the report) rather than silently."""
+    attr = {"intent_value_reduce": "intent_value_reduce",
+            "value_entity_pool": "value_entity_pool",
+            "intent_threshold_value": "intent_threshold_value",
+            "value_clock": "value_clock_route",
+            "value_intent": "value_intent_route"}[name]
+    return getattr(fe, attr, None) is not None
+
+
 def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int = 512) -> dict:
     fe = policy.features_extractor
     arms = _Arms(fe)
     base_p, base_v = _forward_all(policy, obs_np, masks_np, batch)
     masks_t = torch.as_tensor(masks_np)
     report: dict[str, dict[str, float]] = {}
+    # Arms whose SUBJECT this architecture no longer has. Kept OUT of `report`, whose
+    # values are homogeneous dV/KL rows — a skip reason living there would either break
+    # every consumer's `["kl_mean"]` or, worse, get coerced to a 0.0 that reads as a
+    # measurement. Absent-with-a-reason and measured-as-zero must never look alike.
+    skipped: dict[str, str] = {}
 
     def _run(name: str, hook_sets: Sequence[tuple[list[Any], Any]]) -> None:
         hooks, markers = [], []
@@ -246,6 +356,30 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
         _run("intent_reduce", [arms.intent_reduce()])
     if getattr(fe, "history_events", None) is not None:
         _run("event_seats", [arms.event_seats()])
+    # Every v89 value_pooled route, keyed off the registry seam itself so the arm set cannot drift
+    # from the route set. `vr_entity_pool` / `vr_intent_value_reduce` deliberately DUPLICATE the
+    # bespoke `entity_pool` / `intent_reduce` arms — two mechanisms reading one route should agree,
+    # and a disagreement means one of them measures the wrong thing.
+    for _vr in ("intent_value_reduce", "value_entity_pool", "intent_threshold_value",
+                "value_clock", "value_intent"):
+        if _route_is_enabled(fe, _vr):
+            _run(f"vr_{_vr}", [arms.value_route(_vr)])
+    # The §4 DENOMINATOR. Run unconditionally — the frames are unconditional obs content, and the
+    # comparison is only meaningful when both arms come from the SAME states in the SAME pass.
+    # Deliberately NOT in all_off: that arm is the value-route joint, this one answers "would the
+    # deletion cost anything", which is a different question about a different substrate.
+    # gen3_frame_deletion_v1 deleted this arm's subject at v90. The ARM still raises when asked
+    # directly (it must never fabricate a dV for a block that is not there), so the RUNNER checks
+    # availability instead of catching — "skipped, and here is why" is a reportable state, whereas
+    # a 0.0 in the results table would read as "the frames were worthless" to anyone scanning it.
+    from agents.observation.schema import build_schema as _bs
+    _sl = _bs(fe.layout).slices()
+    if "turn_history" in _sl and "prev_action_mask" in _sl:
+        _run("frames", [arms.frames()])
+    else:
+        skipped["frames"] = ("no subject on this architecture — the lag frames were deleted at "
+                             "v90 (gen3_frame_deletion_v1); audit a pre-v90 checkpoint from its "
+                             "own git_hash to measure them")
     # Always present (unconditional obs content): the last positional head concat. Deliberately
     # NOT part of all_off — that arm is the belief/magnitude-route joint; this one answers the
     # separate Phase-3 item-2 question (can the direct shortcut die once the global token
@@ -264,6 +398,10 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
         all_sets.append(arms.intent_reduce())
     if all_sets:
         _run("all_off", all_sets)
+    for _k, _why in skipped.items():
+        # LOUD, and deliberately not a row: `report` holds measurements, and an arm that could
+        # not be measured must not occupy a slot in it under any encoding (0.0, NaN, or a string).
+        print(f"  [audit] arm {_k!r} SKIPPED — {_why}")
     return report
 
 

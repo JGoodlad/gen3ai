@@ -1,0 +1,47 @@
+{
+  "id": "gen13_section7_calibration",
+  "title": "§7 critic-calibration gate — did the loss-side blindness move? (gen-12 vs gen-13)",
+  "date": "2026-08-17",
+  "registration": "gen13_endofrun_runbook.md §7 (added mid-run, before any gen-13 calibration number existed)",
+  "method_rules_honoured": [
+    "gen-12's number read FIRST, same script version, same flags, same trace tier (like-for-like)",
+    "selection-free: pivots evenly spaced through the eligible window by POSITION only, never by badness",
+    "no max-over-candidates statistic anywhere (ledger S1)",
+    "battle-CLUSTERED bootstrap: decisions inside one battle share a board/matchup/opponent, so resampling decisions would report a CI far too narrow"
+  ],
+  "7a_awareness": {
+    "instrument": "python -m main.prober.query awareness <run>, model-free",
+    "gen12": {"blind_loss_fraction": 0.054, "median_lead_time": 7.0, "cap_aware_ge_bar_fraction": 0.800,
+              "aware_ge_bar_fraction": 0.613, "qc_coverage80": 0.2467, "qc_pit_mean": 0.0868,
+              "n_losses": 1358, "n_cap_losses": 15},
+    "gen13": {"blind_loss_fraction": 0.052, "median_lead_time": 7.0, "cap_aware_ge_bar_fraction": 0.667,
+              "aware_ge_bar_fraction": 0.593, "qc_coverage80": 0.2385, "qc_pit_mean": 0.0865,
+              "n_losses": 1349, "n_cap_losses": 9},
+    "reading": "FLAT to slightly worse. blind_loss moves 0.002 on n~1350 (noise); cap_aware 0.800->0.667 is 12/15 vs 6/9 and carries no weight at that n. Nothing improved."
+  },
+  "7b_rollout_pit": {
+    "filters": "LOSSES only, battle >= 50 game turns, decision at turn >= 30, 3 evenly-spaced pivots/battle, 8 rollouts each",
+    "broad_band_wp_0.15_to_1.0": {
+      "gen12": {"n_decisions": 30, "n_battles": 11, "mean_gap": 0.1249, "ci95": [-0.0016, 0.2414], "n_confident": 7},
+      "gen13": {"n_decisions": 30, "n_battles": 11, "mean_gap": 0.2046, "ci95": [0.1195, 0.3164], "n_confident": 3},
+      "difference_gen13_minus_gen12": {"point": 0.0797, "ci95": [-0.0701, 0.2530], "separable": false}
+    },
+    "confident_band_wp_0.70_to_1.0": {
+      "why": "the registered n>=25 was specified on DECISIONS, but reading (ii) lives on the win_prob>=0.7 SUBSET, which was only 7 and 3 in the broad sample. Re-sampled targeting that band. This is a gap in the REGISTRATION, not in the run.",
+      "gen12": {"n_decisions": 30, "n_battles": 11, "mean_gap": 0.2406, "ci95": [0.1388, 0.3486],
+                "confident_blind_fraction": 0.400, "cb_ci95": [0.2222, 0.5938], "n_confident": 30},
+      "gen13": {"n_decisions": 30, "n_battles": 11, "mean_gap": 0.3577, "ci95": [0.2273, 0.5040],
+                "confident_blind_fraction": 0.500, "cb_ci95": [0.2903, 0.7241], "n_confident": 30},
+      "difference_confident_blind": {"point": 0.100, "ci95": [-0.1774, 0.3939], "separable": false}
+    }
+  },
+  "verdict": {
+    "result": "FAIL — the loss-side over-confidence did NOT improve",
+    "two_part": [
+      "gen-13 IS significantly over-confident on the stall class: mean gap +0.358, CI95 [0.227, 0.504] on the confident band (and +0.205 [0.120, 0.316] on the broad band). Half of its confident stall-loss decisions are blind (0.500, CI [0.290, 0.724]).",
+      "gen-13 is NOT separably different from gen-12 on EITHER reading: mean-gap difference +0.080 CI [-0.070, +0.253]; confident-blind difference +0.100 CI [-0.177, +0.394]. The five routes neither fixed the blindness nor measurably worsened it."
+    ],
+    "correction_recorded": "Reading the two runs' individual CIs would have supported 'gen-13 got worse' (gen-12's touches zero, gen-13's excludes it). Testing the DIFFERENCE refutes that. The individual-CI comparison is the error this entry exists to prevent.",
+    "branch_fired": "FAIL with §2 liveness PROVEN — all five routes trained off zero, so this is not 'the routes were never connected'. The delivery line is exhausted; the next work is training-distribution/input, NOT more routes, NOT search, NOT tail-weighting."
+  }
+}

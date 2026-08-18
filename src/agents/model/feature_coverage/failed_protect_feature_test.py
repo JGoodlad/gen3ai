@@ -137,7 +137,8 @@ def test_no_linear_reads_a_raw_event_id():
     model, _, _ = feature_model()
     es = model.history_events
     assert es is not None, "the fixture must build history_events=True"
-    ID_COLS = {0: "kind_emb", 1: "species", 3: "species", 4: "move", 15: "status_emb", 19: "cant_emb"}
+    ID_COLS = {0: "kind_emb", 1: "species", 3: "species", 4: "move", 15: "status_emb",
+                19: "cant_emb", 20: "faint_emb", 21: "itemtr_emb"}
     SCALAR_COLS = {2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17}
     VALID_COL = {18}
     assert set(ID_COLS) | SCALAR_COLS | VALID_COL == set(range(EVENT_TOKEN_DIM)), (
@@ -146,5 +147,5 @@ def test_no_linear_reads_a_raw_event_id():
     assert es._N_SCALARS == len(SCALAR_COLS), (
         f"EventSeats says {es._N_SCALARS} raw scalars, the column map says {len(SCALAR_COLS)} — "
         "if a column changed routing, one of the two was not updated")
-    for attr in ("kind_emb", "status_emb", "cant_emb"):
+    for attr in ("kind_emb", "status_emb", "cant_emb", "faint_emb", "itemtr_emb"):
         assert hasattr(es, attr), f"EventSeats lost its {attr} table"

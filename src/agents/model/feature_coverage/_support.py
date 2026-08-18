@@ -145,7 +145,7 @@ def obs_with_event(layout, slot_from_recent: int = 0, **cols) -> torch.Tensor:
         "hit": 6, "miss": 7, "fail": 8, "crit": 9,
         "eff_neutral": 10, "eff_super": 11, "eff_resist": 12, "eff_immune": 13,
         "we_first": 14, "status_id": 15, "turns_ago": 16, "forced_window": 17, "valid": 18,
-        "cant_id": 19,
+        "cant_id": 19, "faint_cause_id": 20, "item_transition": 21,
     }
     cols.setdefault("valid", 1.0)
     for k, v in cols.items():
@@ -243,7 +243,8 @@ def delta_to_event_cols(delta) -> dict:
     it — a coverage gap must be enumerable, not silently vacuous."""
     from agents.observation.constants import (
         EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
-        EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_CANT,
+        EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_ITEM_REVEAL,
+        ITEM_TR_CONSUMED,
     )
     from agents.observation.gen3_effects import cant_reason_id
     from agents import gen3_data
@@ -309,11 +310,37 @@ def delta_to_event_cols(delta) -> dict:
                     actor_side=1.0 if our_b else -1.0)
         return cols
 
-    # --- FAINT ---
-    if getattr(delta, "our_fainted", None) or getattr(delta, "opp_fainted", None):
+    # --- FAINT (+ its CAUSE, gen3_event_semantics_v1) ---
+    def _cause_id(multi_hot):
+        """The lag frames stored causes as a MULTI-hot (a turn can kill two mons two ways); the
+        event window is one row per faint, so a row carries ONE cause. Take the first set bit —
+        the probes vary a single cause at a time, and a genuine multi-KO turn emits multiple
+        FAINT rows in the real fold, which is the representation that made the multi-hot
+        unnecessary in the first place."""
+        if multi_hot is None:
+            return 0
+        arr = np.asarray(multi_hot).reshape(-1)
+        nz = np.nonzero(arr)[0]
+        return int(nz[0]) + 1 if len(nz) else 0
+
+    our_fc = _cause_id(getattr(delta, "our_faint_causes", None))
+    opp_fc = _cause_id(getattr(delta, "opp_faint_causes", None))
+    if our_fc or opp_fc or getattr(delta, "our_fainted", None) or getattr(delta, "opp_fainted", None):
         cols.update(type_id=EVENT_T_FAINT,
-                    actor_side=1.0 if getattr(delta, "our_fainted", None) else -1.0)
+                    actor_side=1.0 if (our_fc or getattr(delta, "our_fainted", None)) else -1.0,
+                    faint_cause_id=float(our_fc or opp_fc))
         return cols
+
+    # --- ITEM (+ its TRANSITION) ---
+    for fld, side in (("our_item_lost", 1.0), ("opp_item_lost", -1.0)):
+        if getattr(delta, fld, None):
+            # The delta records only THAT an item was lost, not by which of the three gen3
+            # routes — so the translation is CONSUMED, the common case. The distinction the
+            # column exists for (removed / swapped) is carried by the live fold's `[from]`
+            # clause, which a hand-built TurnDelta has no field for.
+            cols.update(type_id=EVENT_T_ITEM_REVEAL, actor_side=side,
+                        item_transition=float(ITEM_TR_CONSUMED))
+            return cols
 
     # --- SWITCH-IN, LAST and only when nothing move-shaped is set -------------------------------
     # ORDER IS LOAD-BEARING. `anchor_delta` sets `our_prev_active="snorlax"` on EVERY delta as its

@@ -412,22 +412,33 @@ class EventSeats(torch.nn.Module):
     _KIND_EMB = 16
     _STATUS_EMB = 8
     _CANT_EMB = 6
+    _FAINT_EMB = 5
+    _ITEMTR_EMB = 4
     _N_SCALARS = 13          # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         from agents.observation.constants import N_EVENT_TYPES
-        from agents.observation.gen3_effects import CANT_DIM
+        from agents.observation.gen3_effects import CANT_DIM_LIVE
+        from agents.observation.constants import N_ITEM_TRANSITIONS
+        from agents.battle.turn_view import FAINT_CAUSE_DIM
         self.n = layout['event_window_n']
         self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)
         self.status_emb = torch.nn.Embedding(8, self._STATUS_EMB)
-        # gen3_frame_deletion_v1: the cant reason (col 19), 0 = not a CANT row. Sized
-        # CANT_DIM + 1 from the SAME vocabulary the encoder writes ids from, so adding a
-        # gen3 cant reason widens both sides at once instead of silently clamping here.
-        self.cant_emb = torch.nn.Embedding(CANT_DIM + 1, self._CANT_EMB)
+        # gen3_frame_deletion_v1: the cant reason (col 19), 0 = not a CANT row. Sized from
+        # CANT_DIM_**LIVE**, not CANT_DIM — the archive vocabulary is frozen at 12 to keep
+        # TURN_DELTA_DIM at 159 for the prober, while the live one grew to 13 with `damp`
+        # (gen3_damp_cant_v1). Sizing from the frozen number would have clamped damp's id of 13
+        # onto 12 = `truant`: a SILENT collision, one blocked Explosion read as loafing.
+        self.cant_emb = torch.nn.Embedding(CANT_DIM_LIVE + 1, self._CANT_EMB)
+        # gen3_event_semantics_v1: cols 20/21. Both sized +1 from the SAME vocabularies the
+        # encoder writes ids from (FAINT_CAUSE_VOCAB / ITEM_TR_*), so extending either widens
+        # both sides at once rather than silently clamping a new id onto an existing row.
+        self.faint_emb = torch.nn.Embedding(FAINT_CAUSE_DIM + 1, self._FAINT_EMB)
+        self.itemtr_emb = torch.nn.Embedding(N_ITEM_TRANSITIONS, self._ITEMTR_EMB)
         in_dim = (self._KIND_EMB + 2 * layout['species_embedding_dim'] +
                   layout['move_embedding_dim'] + self._STATUS_EMB + self._CANT_EMB +
-                  self._N_SCALARS)
+                  self._FAINT_EMB + self._ITEMTR_EMB + self._N_SCALARS)
         self.proj = torch.nn.Linear(in_dim, D_MODEL)
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.event_marker = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -441,6 +452,8 @@ class EventSeats(torch.nn.Module):
         move = ev[:, :, 4].long().clamp(min=0)
         status = ev[:, :, 15].long().clamp(min=0, max=7)
         cant = ev[:, :, 19].long().clamp(min=0, max=self.cant_emb.num_embeddings - 1)
+        faint = ev[:, :, 20].long().clamp(min=0, max=self.faint_emb.num_embeddings - 1)
+        itemtr = ev[:, :, 21].long().clamp(min=0, max=self.itemtr_emb.num_embeddings - 1)
         # the 12 raw scalars: side(2) mag(5) outcome(6:9) crit(9) eff(10:14) we_first(14)
         # ago(16) forced(17) — columns 2,5..14,16,17
         scalars = torch.cat([ev[:, :, 2:3], ev[:, :, 5:15], ev[:, :, 16:18]], dim=-1)
@@ -451,6 +464,8 @@ class EventSeats(torch.nn.Module):
             embeddings.move_embedding(move),
             self.status_emb(status),
             self.cant_emb(cant),
+            self.faint_emb(faint),
+            self.itemtr_emb(itemtr),
             scalars,
         ], dim=-1)
         tokens = self.norm(self.proj(row)) + self.event_marker

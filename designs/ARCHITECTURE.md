@@ -49,7 +49,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2437** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2501** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -63,8 +63,8 @@ Every number below comes from `agents/observation/constants.py` and
 | Global env | 1580 | 1600 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
 | Board (reactive) | 1600 | 1617 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
 | Pair history — 6×6×5 h[i,j] | 1617 | 1797 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
-| Event window — 32 × 20 event records | 1797 | 2437 | 640 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
-| **Total** *(= `base_dim`)* | | **2437** | | `Gen3ObservationEncoder.dimension` |
+| Event window — 32 × 22 event records | 1797 | 2501 | 704 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
+| **Total** *(= `base_dim`)* | | **2501** | | `Gen3ObservationEncoder.dimension` |
 
 The event window is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
 observation. There is no appended tail — `Gen3Env.embed_battle` returns `encode(...)` unchanged.
@@ -187,6 +187,15 @@ with one addition and one accepted loss:
   It now emits `EVENT_T_CANT` with the reason as a 1-based id into `gen3_effects.CANT_REASONS`
   (0 = not a cant row). It has its own column rather than riding `status_id` — the two are
   mutually exclusive by `type_id`, so overloading would encode compactly and read wrongly.
+- **`faint_cause_id` (column 20) and `item_transition` (column 21) were ADDED**
+  (`gen3_event_semantics_v1`), closing the other two gaps. The FAINT row now carries WHY a mon
+  died — 1..8 into `turn_view.FAINT_CAUSE_VOCAB`, via the same `_classify_faint_cause` the
+  TurnDelta fold uses, so the two cannot drift. The sequence-makes-it-inferable argument only
+  ever covered {attack, recoil, selfko}: weather, status, hazard and Leech Seed deaths emit NO
+  preceding event, because residual damage is not an event. `item_transition` is an ENUM, not a
+  consumed flag — gen3 has three item-GONE routes (consumed berries/herbs · REMOVED by Knock
+  Off, permanent in ADV · SWAPPED by Trick/Thief/Covet) and one flag would leave the conflation
+  half-alive.
 - **`our_attempted_switch_spec` is LOST, knowingly.** When a switch is refused while trapped, the
   window records that it happened (`EVENT_T_SWITCH_REJECTED`) but not WHICH bench mon was aimed
   at. That is structural, not an omission: `Gen3Battle.record_choice_rejected` documents that the
@@ -246,7 +255,7 @@ stashed for the aux loss and never fed forward, which is exactly what its T2 dec
 
 The concrete steps:
 
-1. **`ObsUnpack`** — slices the 2437-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2501-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`

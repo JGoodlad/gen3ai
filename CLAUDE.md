@@ -1194,7 +1194,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) § Observation.** That file is derived from the
 code and the live run config; this summary is the orientation only.
 
-The observation is a flat **2437-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
+The observation is a flat **2501-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
 11-dim `action_mask`, delivered as a Dict obs.
 
 | Block | Dims | Offset |
@@ -1205,8 +1205,8 @@ The observation is a flat **2437-dim float32 vector** (`Gen3ObservationEncoder.d
 | Global env (`GLOBAL_ENV_DIM`) | 20 | 1580 |
 | Board (5 raw scalars + 12 active-req-moves) | 17 | 1600 |
 | Pair history (6×6×5, Tier H-A2) | 180 | 1617 |
-| Event window (32 × 20 typed event records, Tier H-B) | 640 | 1797 |
-| **Total** | **2437** | |
+| Event window (32 × 22 typed event records, Tier H-B) | 704 | 1797 |
+| **Total** | **2501** | |
 
 ⚠️ **This table was stale by two generations before 2026-08-17** — it still described a 2669-dim
 vector after H-A (`gen3_pair_history_v1`) and H-B (`gen3_event_window_v1`) had added 852 dims
@@ -1218,10 +1218,12 @@ are DELETED** — the event window is the last block, so `total_dim == base_dim`
 output IS the observation (`Gen3Env.embed_battle` appends nothing). The licence was gen-13.5 §4:
 the H-B event seats measured dV 2.7714 against the frames' 1.3015, so the frames were a second,
 weaker copy of a job the seats already do. `TurnDelta` itself SURVIVES — it is the reward
-manager's per-decision input and the α/β label source; only its obs encoding died. Two facts had
-no substitute: `cant_reason` was CLOSED (a new `EVENT_T_CANT` + column 19 `cant_id`), and
-`our_attempted_switch_spec` is knowingly LOST (the attempted target is recovered from the action
-index, not from the wire, so an events-only window structurally cannot carry it).
+manager's per-decision input and the α/β label source; only its obs encoding died. Four facts had no
+substitute, found by a per-fact COVERAGE audit that a dV ablation cannot perform. Three are now
+CLOSED — `cant_reason` (`EVENT_T_CANT` + col 19 `cant_id`), the eight faint causes (col 20
+`faint_cause_id`), and the item-GONE family (col 21 `item_transition`, an enum: gen3 has three
+such routes and a bare flag would leave the conflation half-alive). `our_attempted_switch_spec`
+is knowingly ACCEPTED on value grounds — the rejection fact and trappedness both survive.
 
 Every offset is computed from named constants in `agents/observation/constants.py` — **never
 hardcode an index**; read `Gen3ObservationEncoder.get_layout()`.

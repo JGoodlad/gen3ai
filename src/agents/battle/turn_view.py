@@ -62,6 +62,22 @@ class FaintDetail:
     cause: str  # element of FAINT_CAUSE_VOCAB
 
 
+def faint_cause_id(cause: Optional[str]) -> int:
+    """Faint-cause label -> a 1-based id into :data:`FAINT_CAUSE_VOCAB`; ``None`` -> 0.
+
+    The EMBEDDING-routed counterpart of the lag frames' multi-hot, for the H-B event window's
+    `faint_cause_id` column (gen3_event_semantics_v1). 1-based so 0 can mean "not a FAINT row",
+    which every other record type must read. Lives HERE, beside the vocabulary and
+    :func:`_classify_faint_cause`, so the frames-era encoding and the event window cannot drift
+    on what a cause label means — one vocabulary, one index map, two consumers.
+
+    Raises on an unknown label: the vocabulary is closed, and a silent 0 would read as "no faint"
+    on a row that IS one."""
+    if cause is None:
+        return 0
+    return _FAINT_CAUSE_TO_IDX[cause] + 1
+
+
 def _classify_faint_cause(from_clause: Optional[str], used_selfko: bool) -> str:
     """Map a DAMAGE event's ``[from]`` clause + self-KO flag → faint cause label."""
     if used_selfko:

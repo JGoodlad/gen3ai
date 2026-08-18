@@ -41,7 +41,6 @@ from agents.battle.battle_event import OPP, OURS, BattleEvent, EventKind
 from agents.observation.constants import EVENT_T_CANT, EVENT_T_MOVE
 from agents.observation.gen3_effects import (
     CANT_REASONS,
-    UnknownCantReasonError,
     VOLATILE_SLOTS,
     cant_reason_id,
     encode_volatiles,
@@ -199,14 +198,10 @@ class TestConfusionSelfHit:
         assert any(r["t"] in (EVENT_T_CANT,) or r["actor"] == OPP_SP for r in rows), (
             f"nothing in the window says the confused mon lost its turn; window = {rows}")
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "2026-08-17 follow-up audit — THE MAGNITUDE GIGO (see §3.5). The tracker's residual "
-        "filter reads `e.value.get('from')` (episode_tracker.py:400) but the parser writes the "
-        "`[from]` clause to `value['reason']` (gen3_battle.py:502-503), so the guard is DEAD and "
-        "EVERY clause-carrying residual on the move's target — confusion, sandstorm, burn, "
-        "poison, Leech Seed, recoil — is summed into the attacker's move magnitude. Confirmed "
-        "live: a 0-BP `confuseray` row read hp_delta=-0.12, and a FAILED confuseray read -0.13. "
-        "Strict xfail so a fix turns this RED."))
+    # gen3_event_semantics_v1 FIXED this — the xfail is removed, not flipped to skip.
+    # Registered independently by the 2026-08-17 follow-up audit while the same defect
+    # was being fixed from the other side; this test passing on a case the fix's own
+    # author did not write is the stronger confirmation of the two.
     def test_confusion_self_damage_is_not_credited_to_the_opponents_move(self):
         rows = _move_rows(_fold([
             _ev(0, EventKind.MOVE, OURS, OUR_SP, move_id="confuseray"),
@@ -218,10 +213,10 @@ class TestConfusionSelfHit:
             "the confused mon's SELF-damage was credited to our status move: "
             f"confuseray hp_delta={our_row['hp_delta']}")
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "2026-08-17 follow-up audit — the same dead `[from]` guard as above, shown on the "
-        "residual family that touches every gen3ou battle (Tyranitar sand + burn). See §3.5. "
-        "Strict xfail so a fix turns this RED."))
+    # gen3_event_semantics_v1 FIXED this — the xfail is removed, not flipped to skip.
+    # Registered independently by the 2026-08-17 follow-up audit while the same defect
+    # was being fixed from the other side; this test passing on a case the fix's own
+    # author did not write is the stronger confirmation of the two.
     def test_end_of_turn_residuals_are_not_credited_to_the_attackers_move(self):
         rows = _move_rows(_fold([
             _ev(0, EventKind.MOVE, OPP, OPP_SP, move_id="rockslide"),
@@ -260,30 +255,26 @@ class TestCantVocabulary:
         to fix — and it CRASHES (crash-don't-drop), it does not degrade."""
         assert cant_reason_id(raw) > 0
 
-    @pytest.mark.xfail(strict=True, raises=UnknownCantReasonError, reason=(
-        "2026-08-17 follow-up audit — 🚨 A LIVE CRASH IN A JUST-SHIPPED FEATURE, see §3.7. "
-        "`ability: Damp` blocking Self-Destruct/Explosion (abilities.ts:805, and the rust port "
-        "at protocol.rs:690) is a gen3-reachable `|cant|` reason missing from CANT_REASONS, so "
-        "`state_encoder.encode` raises UnknownCantReasonError and takes the run with it. "
-        "Reproduced on battle #1 of a Quagsire-vs-Snorlax bridge battle. Damp is gen3-legal on "
-        "Psyduck/Golduck, the Poliwag line, Wooper/Quagsire, Politoed, the Horsea line and the "
-        "Paras line, and Explosion is ubiquitous in gen3ou. Strict xfail so the fix turns this "
-        "RED — it is NOT an accepted gap."))
+    # gen3_damp_cant_v1 FIXED this (register §3.7). `damp` joins
+    # CANT_REASONS_LIVE — NOT CANT_REASONS, which is frozen at 12 because it sizes
+    # TURN_DELTA_DIM (159), the lag-frame width 79 archived runs recorded and the
+    # prober still decodes. The row is also re-attributed to the BLOCKED mon via
+    # `[of]`, so fixing the crash did not ship the lying row alongside it.
     def test_ability_damp_is_a_known_cant_reason(self):
         assert cant_reason_id("ability: Damp") > 0
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "2026-08-17 follow-up audit — the SECOND defect on the same row (§3.7). Showdown puts "
-        "the Damp `|cant|` on the ABILITY HOLDER with the BLOCKED move as its argument, so our "
-        "fold emits `actor=quagsire, side=ours, move_id=selfdestruct` — naming a mon that never "
-        "had Self-Destruct as the one that could not move, while the mon that actually lost its "
-        "turn is the opponent. Adding 'damp' to the vocabulary alone would ship this lie to the "
-        "network. Strict xfail so a full fix turns this RED."))
+    # gen3_damp_cant_v1 FIXED this. The event below now carries the `[of]` token the
+    # real protocol line always sends — this test omitted it, and `[of]` is precisely
+    # what the fix keys on. That is not incidental: `[of]` means "caused by that OTHER
+    # mon", which is the only sound discriminator here. Keying on the `ability:` prefix
+    # instead would be WRONG, because `ability: Truant` is equally ability-sourced and
+    # entirely self-inflicted — it carries no `[of]`, and correctly keeps its own actor.
     def test_damp_cant_row_names_the_side_that_actually_lost_its_turn(self):
         rows = _fold([
             _ev(0, EventKind.MOVE, OPP, OPP_SP, move_id="selfdestruct"),
             # `|cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax`
-            _ev(1, EventKind.CANT, OURS, OUR_SP, reason="ability: Damp", move="selfdestruct"),
+            _ev(1, EventKind.CANT, OURS, OUR_SP, reason="ability: Damp", move="selfdestruct",
+                **{"of": f"p2a: {OPP_SP}", "of_side": OPP, "of_actor": OPP_SP}),
         ])
         cant = next(r for r in rows if r["t"] == EVENT_T_CANT)
         assert cant["side"] == OPP, (

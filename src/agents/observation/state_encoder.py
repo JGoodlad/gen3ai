@@ -40,6 +40,7 @@ from .constants import (
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Optional, Tuple
 from agents.observation.gen3_effects import cant_reason_id
+from agents.battle.turn_view import faint_cause_id
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
@@ -353,6 +354,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 # gen3_frame_deletion_v1: `.get` because only the CANT branch sets the key —
                 # every other record type leaves it absent, which must read as a clean 0.
                 vec[_o + 19] = float(cant_reason_id(_r.get("cant")))
+                # gen3_event_semantics_v1 — same `.get` reasoning: only the FAINT / ITEM branches
+                # set their key, and every other row must read a clean 0.
+                vec[_o + 20] = float(faint_cause_id(_r.get("faint_cause")))
+                vec[_o + 21] = float(_r.get("item_tr", 0))
                 _ago = max(0, _cur - int(_r["turn"]))
                 vec[_o + 16] = math.log1p(min(_ago, 10)) / math.log(11.0)
                 vec[_o + 17] = float(_r["forced_window"])

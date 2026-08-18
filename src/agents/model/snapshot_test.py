@@ -137,7 +137,7 @@ def test_check_compatible_rejects_a_frame_era_obs_width(version):
     sized). `total_dim` is the successor, and it is not a redundant copy of the sibling test above
     — that one perturbs the width by +1 to prove the FIELD is compared at all; this one uses a
     wildly different width to stand for the real scenario, a pre-v90 checkpoint whose 3529-dim obs
-    cannot feed weights built for 2437."""
+    cannot feed weights built for the current width."""
     saved_v1 = dataclasses.replace(version, total_dim=1)
     with pytest.raises(ModelVersionError) as exc_info:
         version.check_compatible(saved_v1)

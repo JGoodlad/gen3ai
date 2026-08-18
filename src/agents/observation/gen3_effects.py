@@ -190,8 +190,25 @@ CANT_REASONS: Tuple[str, ...] = (
     "truant",       # loafing (Truant ability)
 )
 CANT_DIM: int = len(CANT_REASONS)
+
+# gen3_damp_cant_v1 — `ability: Damp` blocks Explosion / Self-Destruct and emits a `|cant|`.
+# It is gen3-legal (Psyduck/Golduck, the Poliwag line, Wooper/Quagsire, Politoed, the Horsea and
+# Paras lines) and Explosion is ubiquitous in gen3ou, so the reason is reachable in ordinary play
+# — `normalize_cant_reason` is crash-don't-drop, so hitting it KILLED the episode and, in
+# training, the run. Reproduced on battle #1 of a scripted Quagsire-vs-Snorlax bridge battle.
+#
+# ⚠️ IT IS APPENDED TO A SEPARATE *LIVE* TUPLE, NOT TO `CANT_REASONS`, AND THAT SPLIT IS THE
+# WHOLE POINT. `CANT_REASONS` sizes `CANT_DIM`, which sizes `TURN_DELTA_DIM` (159) — the width of
+# the lag-frame slots that 79 ARCHIVED runs recorded. Those frames are deleted from the live obs
+# (gen3_frame_deletion_v1), so `TurnDeltaEncoder` survives ONLY as the prober's decoder for that
+# archive. Growing `CANT_REASONS` would shift every offset after the cant block and make the
+# decoder mis-slice historical data — silently, since it would still return a plausible dict.
+# A decoder for archived data must match the archive; the LIVE vocabulary is free to grow.
+CANT_REASONS_LIVE: Tuple[str, ...] = CANT_REASONS + ("damp",)
+CANT_DIM_LIVE: int = len(CANT_REASONS_LIVE)
 _CANT_INDEX: Dict[str, int] = {r: i for i, r in enumerate(CANT_REASONS)}
-_CANT_RAW_TO_ID: Dict[str, str] = {r: r for r in CANT_REASONS}
+_CANT_INDEX_LIVE: Dict[str, int] = {r: i for i, r in enumerate(CANT_REASONS_LIVE)}
+_CANT_RAW_TO_ID: Dict[str, str] = {r: r for r in CANT_REASONS_LIVE}
 
 
 def normalize_cant_reason(reason: Optional[str]) -> str:
@@ -213,7 +230,8 @@ def normalize_cant_reason(reason: Optional[str]) -> str:
     if norm is None:
         raise UnknownCantReasonError(
             f"cant reason {reason!r} (id {rid!r}) is not a known gen3 cause — add it to "
-            f"gen3_effects.CANT_REASONS before training. Known: {list(CANT_REASONS)}"
+            f"gen3_effects.CANT_REASONS_LIVE before training. Known: "
+            f"{list(CANT_REASONS_LIVE)}"
         )
     return norm
 
@@ -230,7 +248,7 @@ def cant_reason_id(reason: Optional[str]) -> int:
     """
     if reason is None:
         return 0
-    return _CANT_INDEX[normalize_cant_reason(reason)] + 1
+    return _CANT_INDEX_LIVE[normalize_cant_reason(reason)] + 1
 
 
 def encode_cant_reason(reason: Optional[str]) -> np.ndarray:
@@ -239,7 +257,15 @@ def encode_cant_reason(reason: Optional[str]) -> np.ndarray:
     vec = np.zeros(CANT_DIM, dtype=np.float32)
     if reason is None:
         return vec
-    vec[_CANT_INDEX[normalize_cant_reason(reason)]] = 1.0
+    norm = normalize_cant_reason(reason)
+    if norm not in _CANT_INDEX:
+        raise UnknownCantReasonError(
+            f"cant reason {norm!r} is LIVE-only and has no slot in the FROZEN archive one-hot. "
+            f"`CANT_REASONS` sizes TURN_DELTA_DIM (159), the width 79 archived runs recorded, so "
+            f"it cannot grow without making the prober mis-slice historical data. Reaching this "
+            f"means an archived vector is being encoded with a post-archive vocabulary, which "
+            f"should be impossible — the archive could not contain a reason that crashed it.")
+    vec[_CANT_INDEX[norm]] = 1.0
     return vec
 
 

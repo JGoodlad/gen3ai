@@ -284,6 +284,22 @@ class BattleEvent:
         return self.value.get("reason")
 
     @property
+    def blocked_side(self) -> Optional[str]:
+        """CANT: the SIDE that actually lost its turn, when the row is ability-sourced.
+
+        An ability-sourced `|cant|` is filed against the ability HOLDER, not the mon it stopped
+        (`|cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax`). `side`/`actor`
+        therefore name the WRONG mon on those rows, and any consumer that wants "who lost their
+        turn" must prefer this. None on ordinary self-inflicted cants (paralysis, sleep, flinch),
+        where the holder IS the blocked mon."""
+        return self.value.get("of_side")
+
+    @property
+    def blocked_actor(self) -> Optional[str]:
+        """CANT: the SPECIES that actually lost its turn. See :attr:`blocked_side`."""
+        return self.value.get("of_actor")
+
+    @property
     def cant_move(self) -> Optional[str]:
         """CANT: the move that was prevented (e.g. ``focuspunch``)."""
         return self.value.get("move")
@@ -325,8 +341,26 @@ class BattleEvent:
 
     @property
     def from_cause(self) -> Optional[str]:
-        """The ``[from] …`` source clause (e.g. ``move: Knock Off``, ``Spikes``)."""
+        """RAW ``value["from"]``. ⚠️ Prefer :attr:`from_clause` — this is None on
+        DAMAGE/HEAL/SETHP/STATUS even when the protocol line HAD a ``[from]``."""
         return self.value.get("from")
+
+    @property
+    def from_clause(self) -> Optional[str]:
+        """The ``[from] …`` source clause, WHICHEVER key this event kind stores it under.
+
+        ⚠️ Use this, never the raw dict. The parser is inconsistent by design-accident:
+        DAMAGE/HEAL/SETHP/STATUS write the clause to ``value["reason"]`` while ITEM/ENDITEM/
+        WEATHER/effect kinds merge it to ``value["from"]``. So BOTH raw accessors return None
+        for half the event kinds, silently, and a consumer that guesses wrong gets a guard that
+        never fires rather than an error.
+
+        That is not hypothetical: `EventWindowTracker` used `value.get("from")` to mean "this
+        damage is NOT the move's own hit", which on a DAMAGE event is always None — so every
+        residual (sandstorm, burn/poison tick, Leech Seed, recoil) was folded into the attacking
+        move's attributed magnitude. Shipped in v81 and trained on for two generations before a
+        coverage audit surfaced it. `event_window_test` now pins the arithmetic directly."""
+        return self.value.get("reason") or self.value.get("from")
 
     @property
     def of_source(self) -> Optional[str]:

@@ -221,6 +221,7 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 #   14 we_first (this side moved first that turn)   15 status_id (0 none; brn..tox = 1..6)
 #   16 turns_ago (log-saturated, the recency curve) 17 forced_window (post-faint phase tag)
 #   18 valid (1 = a real event, 0 = pad)                19 cant_id (embedding-routed)
+#   20 faint_cause_id (embedding-routed)                21 item_transition (embedding-routed)
 # `cant_id` (gen3_frame_deletion_v1) is 0 on every non-CANT row and 1..CANT_DIM on a CANT row,
 # indexing `gen3_effects.CANT_REASONS` (+1, so 0 stays "none"). It exists because deleting the
 # TurnDelta lag frames deleted the ONLY route by which "my mon could not move last turn, and
@@ -229,11 +230,25 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 # no row for it. It gets its OWN column rather than riding `status_id` — the two are mutually
 # exclusive by `type_id`, so overloading would encode compactly and read wrongly, and a
 # consumer that forgot to check the type would silently take a cant reason for a status.
+#
+# `faint_cause_id` and `item_transition` (gen3_event_semantics_v1) close the other two gaps the
+# frame-deletion coverage audit found, on the SAME one-column-per-fact principle:
+#
+#   * `faint_cause_id` — 0 on every non-FAINT row, else 1..FAINT_CAUSE_DIM into
+#     `turn_view.FAINT_CAUSE_VOCAB` (attack/hazard/weather/status/recoil/selfko/leechseed/other).
+#     The lag frames carried this as a multi-hot; the FAINT row had no cause column at all. The
+#     "a sequence makes it inferable" argument only covers {attack, recoil, selfko} — weather,
+#     status, hazard and Leech Seed deaths emit NO preceding event to infer from, because
+#     residual damage is not an event. That non-inferable half is the slow-attrition class.
+#   * `item_transition` — 0 on every non-ITEM row, else one of ITEM_TR_*. NOT a bare
+#     "consumed" flag: gen3 has THREE ways an item stops being held (consumed berries/herbs,
+#     REMOVED by Knock Off — permanent in ADV, SWAPPED by Trick/Thief/Covet) and one flag would
+#     leave the conflation half-alive, which is the failure this column exists to end.
 # N sized lean (events-not-turns: ~8-12 game turns) pending the usage audit the design
 # prescribes; the raw ids are consumed ONLY by the flag-gated event-seat encoder (no Linear
 # ever reads this block directly, so the manifest zeroing rule is satisfied by construction).
 EVENT_WINDOW_N = 32
-EVENT_TOKEN_DIM = 20
+EVENT_TOKEN_DIM = 22
 EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 608
 
 # The H-B event-type vocabulary (column 0 of every event row; 0 = PAD). Stable ids — they are
@@ -252,6 +267,15 @@ EVENT_T_HAZARD = 8
 EVENT_T_SWITCH_REJECTED = 9
 EVENT_T_CANT = 10          # gen3_frame_deletion_v1 — the lag frames' one unsubstituted fact
 N_EVENT_TYPES = 11
+
+# gen3_event_semantics_v1: the ITEM row's transition, column 21. 0 = not an item row.
+# A bare consumed/not flag would conflate the three gen3 item-GONE paths; these keep them apart.
+ITEM_TR_NONE = 0
+ITEM_TR_REVEALED = 1   # |-item| — the item was merely disclosed, still held
+ITEM_TR_CONSUMED = 2   # |-enditem| with no [from] — berry/herb used up by its own trigger
+ITEM_TR_REMOVED = 3    # |-enditem| [from] Knock Off — gone for the rest of the battle (ADV)
+ITEM_TR_SWAPPED = 4    # |-enditem| [from] Trick / Thief / Covet — the OPPONENT now holds it
+N_ITEM_TRANSITIONS = 5
 
 # Top-level Offsets — all derived from the named constants. ONLY the expressions are
 # load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated

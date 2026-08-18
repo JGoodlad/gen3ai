@@ -545,11 +545,22 @@ class Gen3Battle(Battle):
 
         # ---- cant ----
         if kind is EventKind.CANT:
+            # gen3_damp_cant_v1: Showdown puts an ABILITY-sourced cant on the ability HOLDER with
+            # the BLOCKED move as its argument, and names the mon that actually lost its turn in
+            # `[of]`:  |cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax
+            # Taken at face value that row says Quagsire could not use Self-Destruct — a move it
+            # never had — while the side that really lost its turn goes unmentioned. Resolve the
+            # `[of]` mon HERE, at emission, where the ident is still resolvable; the fold stays a
+            # pure function of the log.
+            _of = cause.get("of")
             return self._from_ident(
                 kind, sm, sm[2],
                 value={
                     "reason": sm[3] if len(sm) > 3 else None,
                     "move": to_id_str(sm[4]) if len(sm) > 4 else None,
+                    "of": _of,
+                    "of_side": self._side_of(_of) if _of else None,
+                    "of_actor": self._species_of(_of) if _of else None,
                 },
             )
 

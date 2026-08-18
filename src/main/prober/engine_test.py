@@ -642,10 +642,12 @@ def test_offsets_resolve_matches_layout():
     # between reactive and base; the H-B event window follows (total 3529).
     assert off.wish_our_off == 1603   # OFFSET_REACTIVE(1600) + wish_floating_our offset(3)
     assert off.wish_opp_off == 1604   # OFFSET_REACTIVE(1600) + wish_floating_opp offset(4)
-    # gen3_frame_deletion_v1: 3529 -> 2437. The event window is now the LAST block, so
-    # total == base; the -1124 lag-frame/prev-mask tail is partly offset by the +32 the
-    # window gained for its new `cant_id` column (32 rows x 19 -> x 20).
-    assert off.total_dim == 2437
+    # gen3_frame_deletion_v1 took this 3529 -> 2437 (the event window became the LAST block,
+    # so total == base); gen3_event_semantics_v1 then took it -> 2501, adding `faint_cause_id`
+    # and `item_transition` to every event row (32 rows x 20 -> x 22). A LITERAL on purpose:
+    # this is the tripwire that makes an UNINTENDED obs-width change fail loudly, so it moves
+    # only when someone decided it should.
+    assert off.total_dim == 2501
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()
