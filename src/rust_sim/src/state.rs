@@ -473,6 +473,16 @@ pub struct MonState {
     /// overwrite it — after Snorlax Sleep-Talks, the sim reports `lastMoveUsed = sleeptalk`,
     /// the OUTER move, so the inner `useMove` must leave it alone.
     pub last_move_used: Option<String>,
+    /// UPROAR's multi-turn lock (`gen3_uproar_v1`): `Some((remaining_turns, move_index))`
+    /// while locked, `None` otherwise. The duration is drawn ONCE — a `random(2,6)` on the
+    /// CAST turn, AFTER the damage — and NEVER re-drawn; each later turn re-uses the slot and
+    /// spends NO PP. Ticked by the order-10/subOrder-11 residual, which emits
+    /// `|-start|<u>|Uproar|[upkeep]` on a live tick and `|-end|<u>|Uproar` on the tick that
+    /// reaches 0 (the duration-END `continue` branch, so — unlike outrage/thrash — there is NO
+    /// end-of-lock confusion). Folds into `move_locked()`, which is what gives it the FIRM
+    /// single-move `trapped:true` request shape for free. Cleared SILENTLY on switch-out and
+    /// faint (a phazed-out uproarer emits no `-end`).
+    pub uproar: Option<(u8, usize)>,
     /// `pokemon.activeTurns` — the number of turns this mon has been active (`pokemon.ts:243`;
     /// set to 0 in `switchIn` [battle-actions.ts:137], `++`'d at `endTurn` [battle.ts:1762],
     /// AFTER the residual). Read by **Speed Boost** (`gen3_ability_batch1_v1`): its
@@ -1205,7 +1215,7 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 13] = [
+        const UNMODELED_FAILLOUD_MOVES: [&str; 12] = [
             "dreameater",
             "falseswipe",
             "furycutter",
@@ -1218,7 +1228,6 @@ impl MonState {
             "secretpower",
             "smellingsalts",
             "thrash",
-            "uproar",
         ];
         if let Some(bad) = set
             .moves
@@ -1273,6 +1282,7 @@ impl MonState {
             attract: None,
             types_override: None,
             last_move_used: None,
+            uproar: None,
             position,
             uid: position, // the construction-time index is the stable identity
             // `pokemon.speed` is initialized to the raw `storedStats.spe` (the
@@ -1378,7 +1388,11 @@ impl MonState {
     /// choice and a voluntary switch is REJECTED ("Can't switch: The active Pokémon is
     /// trapped" — the FIRM-trap shape, probe-verified request JSON).
     pub fn move_locked(&self) -> bool {
-        self.must_recharge || self.two_turn.map_or(false, |t| t.charging)
+        self.must_recharge
+            || self.two_turn.map_or(false, |t| t.charging)
+            // UPROAR locks the same way (`gen3_uproar_v1`): the request offers ONLY Uproar and
+            // is `trapped:true`, so folding it here gives the whole FIRM shape for free.
+            || self.uproar.is_some()
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an

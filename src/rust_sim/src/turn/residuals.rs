@@ -167,6 +167,17 @@ impl crate::state::BattleState {
                     handler: ResidualAction::ScreenDuration { side, is_reflect: true },
                 });
             }
+            if self.sides[side].pokemon[self.sides[side].active].uproar.is_some() {
+                let sl = self.sides[side].active;
+                handlers.push(EventHandler {
+                    order: 10,
+                    priority: 0,
+                    speed: self.sides[side].pokemon[sl].cached_speed as f64,
+                    sub_order: UPROAR_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::UproarDuration { side, slot: sl },
+                });
+            }
             if self.sides[side].safeguard > 0 {
                 handlers.push(EventHandler {
                     order: SAFEGUARD_RESIDUAL_ORDER,
@@ -970,6 +981,30 @@ impl crate::state::BattleState {
                             self.log.sideend(&side_ref, "Safeguard");
                         }
                         continue; // duration-END → skip faintMessages (D4 order fix)
+                    }
+                }
+                // UPROAR's lock tick (`gen3_uproar_v1`). A LIVE tick emits the `[upkeep]`
+                // form; the tick that reaches 0 emits `-end` and takes the duration-END
+                // `continue` (no end-of-lock confusion, unlike outrage/thrash).
+                ResidualAction::UproarDuration { side, slot } => {
+                    let Some((turns, k)) = self.sides[side].pokemon[slot].uproar else {
+                        continue;
+                    };
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    if turns <= 1 {
+                        self.sides[side].pokemon[slot].uproar = None;
+                        if self.logging() {
+                            let u = self.mon_ref(side, slot, dex);
+                            self.log.volatile_end(&u, "Uproar");
+                        }
+                        continue; // duration-END → skip faintMessages
+                    }
+                    self.sides[side].pokemon[slot].uproar = Some((turns - 1, k));
+                    if self.logging() {
+                        let u = self.mon_ref(side, slot, dex);
+                        self.log.volatile_start_upkeep(&u, "Uproar");
                     }
                 }
                 // MUSTRECHARGE duration handler on the Hyper Beam CAST turn

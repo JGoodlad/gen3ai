@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-51 conditions (engine state space + attached), 280 modeled moves
-→ **1014 (effect, hook) rows**.
+52 conditions (engine state space + attached), 281 modeled moves
+→ **1024 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 961 |
+| implemented | 971 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -347,7 +347,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (233 rows: implemented=218, noop_justified=9, unreachable_justified=6)
+## condition (241 rows: implemented=226, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -576,6 +576,14 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | twoturnmove | onLockMove | implemented | `state.rs::move_locked` |
 | twoturnmove | onMoveAborted | implemented | `turn.rs::run_move` |
 | twoturnmove | onStart | implemented | `state.rs::two_turn` |
+| uproar | durationCallback | implemented | `turn/moves.rs::run_move` |
+| uproar | onAnySetStatus | implemented | `turn/status.rs::try_set_status_impl` |
+| uproar | onEnd | implemented | `turn/residuals.rs::run_residuals` |
+| uproar | onLockMove | implemented | `turn/moves.rs::run_move` |
+| uproar | onResidual | implemented | `turn/residuals.rs::run_residuals` |
+| uproar | onResidualOrder | implemented | `turn/residuals.rs::run_residuals` |
+| uproar | onResidualSubOrder | implemented | `turn/residuals.rs::run_residuals` |
+| uproar | onStart | implemented | `turn/moves.rs::run_move` |
 | wish | duration | implemented | `state.rs::wish_pending` |
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
@@ -585,7 +593,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (460 rows: implemented=456, noop_justified=2, unreachable_justified=2)
+## move (462 rows: implemented=458, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -1025,6 +1033,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | twineedle | multihit | implemented | `turn.rs::run_multihit` |
 | twineedle | secondaries | implemented | `turn.rs::apply_secondaries` |
 | twister | secondaries | implemented | `turn.rs::apply_secondaries` |
+| uproar | onTryHit | implemented | `turn/moves.rs::run_move` |
+| uproar | self | implemented | `turn/moves.rs::run_move` |
 | vitalthrow | neverMiss | implemented | `turn.rs::never_miss` |
 | vitalthrow | priority | implemented | `turn.rs::move_priority` |
 | volttackle | recoil | implemented | `turn.rs::apply_recoil` |

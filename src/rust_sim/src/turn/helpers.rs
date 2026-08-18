@@ -1503,6 +1503,22 @@ fn species_types(species_id: &str, dex: &Dex) -> Vec<Type> {
 /// gate, Leech Seed's Grass gate); otherwise the species types. Probe
 /// `probe_colorchange_rng.js` (an EQ into an Electric-overridden Kecleon is
 /// super-effective; a Rock-overridden Kecleon is sand-immune).
+impl crate::state::BattleState {
+    /// The ACTIVE mon currently locked into UPROAR, on EITHER side (`gen3_uproar_v1`).
+    /// The condition's handler is `onAnySetStatus`, so one uproar anywhere on the field
+    /// blocks sleep for everyone — hence a field-wide scan rather than a per-side read.
+    pub(crate) fn any_uproarer(&self) -> Option<(usize, usize)> {
+        for side in 0..2 {
+            let slot = self.sides[side].active;
+            let mon = &self.sides[side].pokemon[slot];
+            if mon.uproar.is_some() && !mon.fainted {
+                return Some((side, slot));
+            }
+        }
+        None
+    }
+}
+
 pub(crate) fn mon_types(mon: &crate::state::MonState, dex: &Dex) -> Vec<Type> {
     match &mon.types_override {
         Some(t) => t.clone(),

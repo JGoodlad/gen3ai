@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs (7 SHIPPED, 1 open)
+### THE BANKED SPEC QUEUE — 8 probe-settled specs (7 SHIPPED, IMPRISON open)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -7998,4 +7998,65 @@ quiet false negative rather than an error.
 `ourandom` fuzz will not sample it either. Untested: Weather Ball on its only natural gen-3 carrier,
 CASTFORM, where Forecast retypes the USER with the same weather so STAB composes
 (`harness/probe_weatherball3.js` captured that board but no pin drives it).
+
+### ROUND 49 (FIX) — UPROAR: a lock that reuses the whole `move_locked` seam
+
+`gen3_uproar_v1`. Census **296 → 297 MODELED / 72 fail-loud**, MISMODELED 0. Uproar is four
+mechanics at once, but only one of them needed new machinery:
+
+- **THE LOCK** is `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the
+  damage by a single `random(2,6)` that is NEVER re-drawn. Folding it into `move_locked()` is what
+  makes the rest free: the FIRM single-move `trapped:true` request shape, the `Move(0)` →
+  locked-slot mapping at queue-build, and the switch reject all already existed for
+  mustrecharge / two-turn moves. PP is spent **once per CAST** — every continuing turn is a
+  lockedmove that skips `deductPP`, exactly like Solar Beam's fire turn. A cast that did NOT LAND
+  (miss / type-immune Ghost / Protect-blocked) applies no volatile and draws no duration, though
+  its PP is already spent.
+- **THE RESIDUAL** ticks at order 10 / subOrder **11** (probe-captured, between the status DoT at
+  10/6 and Taunt at 10/15). A live tick emits `|-start|<u>|Uproar|[upkeep]`; the tick that reaches
+  0 emits `|-end|` instead and takes the duration-END `continue` — so, unlike outrage/thrash,
+  **there is NO end-of-lock confusion**.
+- **THE FIELD-WIDE SLEEP BLOCK** is an `onAnySetStatus`, so ONE live uproar on EITHER side blocks
+  sleep for EVERY mon — a field scan, not a per-side read. DRAW-FREE and SEED-NEUTRAL: in gen3ou
+  the handler-sort shuffle still draws exactly one call, because uproar has a DEFINED speed and so
+  takes index 0 while the two Standard clauses stay a size-2 tie (`random(1,3)` vs the control's
+  `random(0,2)` — same COUNT). The sleep MOVE keeps its accuracy roll; the sleep `random(2,6)` is
+  not drawn. The `[msg]` attr appears ONLY when the blocked mon is the uproarer itself.
+- **THE WAKE** cures `slp` on BOTH ACTIVES on a landed uproar, draw-free, as a bare
+  `|-curestatus|<mon>|slp|[msg]` — never for a benched sleeper.
+
+**⚠️ A DEAD ARM CAUGHT BY CHECKING PLACEMENT, NOT BY A TEST.** The cast site was first written
+against an anchor that matched inside **`run_multihit`** — a function Uproar never reaches — so the
+lock would simply never have armed, and no test existed yet to notice. What caught it was printing
+the enclosing function of the line that had just been edited. **When you anchor an edit on a code
+pattern rather than a location, verify which function it landed in**; a multi-thousand-line file
+has several plausible-looking tails.
+
+**⚠️ TWO PINS THAT FAILED FOR REASONS THAT WERE MINE, NOT THE ENGINE'S.** UP1 asserted
+`pp == pp0 - 1`, but the duration is a `random(2,6)` and a FIXED script can OUTLIVE the lock and
+start a legitimate SECOND uproar. The fix is to assert the real invariant — PP spent equals the
+number of **CASTS**, counted from the `-start` lines — plus a guard that the lock made the user act
+more often than it cast, so the claim cannot go vacuous. UP3's foe never fell asleep because **Rest
+FAILS at full HP** and nothing had chipped it. Same shape as the Weather Ball round: **a pin whose
+precondition is not asserted is a pin that can quietly stop testing anything.**
+
+**Gates:** `cargo test --release --no-fail-fast` **692 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1024 rows**; `SCAN_UNIVERSE=1`
+**369 → 297 MODELED / 72 FAIL-LOUD / 0 MISMODELED**. Four mutations, each caught by exactly one pin:
+removing uproar from `move_locked` fails only UP1; spending PP every locked turn fails only UP1;
+deleting the sleep block fails only UP2; deleting the wake fails only UP3.
+
+**THE MIRROR-ORDER TRAP AGAIN, third time in three rounds.** Uproar carries a `self.volatileStatus`
+(its own lock), which both the picker and the census reject generically — so, as with Weather Ball's
+`onModifyMove`, the modeled check had to be hoisted ABOVE the generic reject in BOTH files. The
+symptom is a silent false negative either way: the picker never samples the move, and the census
+keeps reporting a move the engine models. **This belongs in the ROUND-40 admission checklist as a
+step, not as something to rediscover per move:** after admitting, ASSERT `isModeledMove(id) === true`
+and re-run the census, rather than assuming the set membership was sufficient.
+
+**HONEST SCOPE.** Zero pool/randbats exposure, and per ROUND 46 the `ourandom` fuzz will not sample
+it. NOT pinned, though probe-captured: the interruption cases (MISS / IMMUNE / Protect / full-para /
+flinch — none of which end the lock, each still ticking the duration), the lock surviving a target's
+faint and re-targeting the entrant, and the Yawn-at-10/19 vs uproar-expiry-at-10/11 ordering where
+the `-end` runs first and the yawn then lands.
 

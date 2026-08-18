@@ -328,6 +328,13 @@ const LIGHT_SCREEN_RESIDUAL_ORDER: u64 = 2;
 /// SAME condition on the OTHER side ties, and BOTH sides carrying Safeguard is exactly that
 /// tie: it draws ONE extra `random(0,2)` per residual (measured 8 → 9 draws on a mirror).
 const SAFEGUARD_RESIDUAL_ORDER: u64 = 4;
+
+/// UPROAR's residual tick (`gen3_uproar_v1`): order 10, subOrder **11** — probe-captured,
+/// sitting between the status DoT (10/6) and Taunt (10/15). A live tick emits
+/// `|-start|<u>|Uproar|[upkeep]`; the tick that reaches 0 emits `|-end|<u>|Uproar` INSTEAD and
+/// takes the duration-END `continue`, so — unlike outrage/thrash — there is NO end-of-lock
+/// confusion.
+const UPROAR_RESIDUAL_SUBORDER: i32 = 11;
 /// SAFEGUARD's FIXED duration. `durationCallback` returns 5 deterministically in gen-3 (the
 /// `Persistent` +2 is gen5+), so this is a constant and the cast draws nothing.
 const SAFEGUARD_DURATION: u8 = 5;
@@ -632,6 +639,8 @@ enum ResidualAction {
     /// SAFEGUARD's side-condition duration tick (`gen3_safeguard_v1`), order 4 / subOrder 4 /
     /// speed 0 — the reflect/lightscreen sibling. Decrement, `|-sideend|<side>|Safeguard` at 0.
     SafeguardDuration { side: usize },
+    /// UPROAR's lock tick (`gen3_uproar_v1`), order 10 / subOrder 11.
+    UproarDuration { side: usize, slot: usize },
 }
 
 /// The per-mon outcome of a turn (what THIS step validates against the sim).

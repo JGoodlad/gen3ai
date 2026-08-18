@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 51,
-   "moves": 280,
-   "rows": 1014
+   "conditions": 52,
+   "moves": 281,
+   "rows": 1024
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -2131,6 +2131,54 @@
    "fp": "fn:8ce1af72:onStart(attacker, defender, effect) { this.effectState.move = effect.id; attacker.addVolatile(effect.id); let moveTarget",
    "anchor": "state.rs::two_turn",
    "reason": "TwoTurnMove {move_index, duration:2, charging:true} set at the charge (the solarbeam sub-volatile == charging)"
+  },
+  "condition:uproar:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:8ee07c32:durationCallback() { return this.random(2, 6); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the lock: `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the damage with a single random(2,6) that is NEVER re-drawn. It folds into `move_locked()`, which gives the FIRM single-move `trapped:true` request shape, the Move(0)->locked-slot mapping at queue-build, and the switch reject, all for free. PP is spent ONCE per CAST — every continuing turn is a lockedmove that skips deductPP, exactly like Solar Beam's fire turn. A cast that did NOT land (miss / type-immune Ghost / Protect) applies no volatile and draws no duration, though its PP is spent."
+  },
+  "condition:uproar:onAnySetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:db524b44:onAnySetStatus(status, pokemon) { if (status.id === \"slp\") { if (pokemon === this.effectState.target) { this.add(\"-fail\"",
+   "anchor": "turn/status.rs::try_set_status_impl",
+   "reason": "the FIELD-WIDE sleep block at (2b1): onAnySetStatus, so ONE live uproar on EITHER side blocks sleep for EVERY mon (hence the any_uproarer field scan). DRAW-FREE, and in gen3ou the handler-sort shuffle still draws exactly ONE call — uproar has a DEFINED speed so it takes index 0 and the two Standard clauses stay a size-2 tie, random(1,3) vs the control random(0,2), the same COUNT and therefore seed-neutral. The sleep MOVE still draws its accuracy roll; the sleep random(2,6) does not. Rest is fully blocked (no heal, no random(2,6)). Emits |-fail|<mon>|slp|[from] Uproar, with a trailing |[msg] only when the blocked mon IS the uproarer."
+  },
+  "condition:uproar:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:42a0c392:onEnd(target) { this.add(\"-end\", target, \"Uproar\"); }",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::UproarDuration at order 10 / subOrder 11 (probe-captured, between the status DoT at 10/6 and Taunt at 10/15), speed = the holder's cached_speed. A LIVE tick emits |-start|<u>|Uproar|[upkeep]; the tick that reaches 0 emits |-end|<u>|Uproar and takes the duration-END continue — so, unlike outrage/thrash, there is NO end-of-lock confusion. The lock also clears SILENTLY on switch-out and faint (a phazed-out uproarer emits no -end)."
+  },
+  "condition:uproar:onLockMove": {
+   "disposition": "implemented",
+   "fp": "val:\"uproar\"",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the lock: `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the damage with a single random(2,6) that is NEVER re-drawn. It folds into `move_locked()`, which gives the FIRM single-move `trapped:true` request shape, the Move(0)->locked-slot mapping at queue-build, and the switch reject, all for free. PP is spent ONCE per CAST — every continuing turn is a lockedmove that skips deductPP, exactly like Solar Beam's fire turn. A cast that did NOT land (miss / type-immune Ghost / Protect) applies no volatile and draws no duration, though its PP is spent."
+  },
+  "condition:uproar:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:ed2a767e:onResidual(target) { if (target.volatiles[\"throatchop\"]) { target.removeVolatile(\"uproar\"); return; } if (target.lastMov",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::UproarDuration at order 10 / subOrder 11 (probe-captured, between the status DoT at 10/6 and Taunt at 10/15), speed = the holder's cached_speed. A LIVE tick emits |-start|<u>|Uproar|[upkeep]; the tick that reaches 0 emits |-end|<u>|Uproar and takes the duration-END continue — so, unlike outrage/thrash, there is NO end-of-lock confusion. The lock also clears SILENTLY on switch-out and faint (a phazed-out uproarer emits no -end)."
+  },
+  "condition:uproar:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::UproarDuration at order 10 / subOrder 11 (probe-captured, between the status DoT at 10/6 and Taunt at 10/15), speed = the holder's cached_speed. A LIVE tick emits |-start|<u>|Uproar|[upkeep]; the tick that reaches 0 emits |-end|<u>|Uproar and takes the duration-END continue — so, unlike outrage/thrash, there is NO end-of-lock confusion. The lock also clears SILENTLY on switch-out and faint (a phazed-out uproarer emits no -end)."
+  },
+  "condition:uproar:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:11",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::UproarDuration at order 10 / subOrder 11 (probe-captured, between the status DoT at 10/6 and Taunt at 10/15), speed = the holder's cached_speed. A LIVE tick emits |-start|<u>|Uproar|[upkeep]; the tick that reaches 0 emits |-end|<u>|Uproar and takes the duration-END continue — so, unlike outrage/thrash, there is NO end-of-lock confusion. The lock also clears SILENTLY on switch-out and faint (a phazed-out uproarer emits no -end)."
+  },
+  "condition:uproar:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:e5fbb774:onStart(target) { this.add(\"-start\", target, \"Uproar\"); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the lock: `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the damage with a single random(2,6) that is NEVER re-drawn. It folds into `move_locked()`, which gives the FIRM single-move `trapped:true` request shape, the Move(0)->locked-slot mapping at queue-build, and the switch reject, all for free. PP is spent ONCE per CAST — every continuing turn is a lockedmove that skips deductPP, exactly like Solar Beam's fire turn. A cast that did NOT land (miss / type-immune Ghost / Protect) applies no volatile and draws no duration, though its PP is spent."
   },
   "condition:wish:duration": {
    "disposition": "implemented",
@@ -5901,6 +5949,18 @@
    "fp": "val:[{\"chance\":20,\"volatileStatus\":\"flinch\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:uproar:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:1827ff74:onTryHit(target) { const activeTeam = target.side.activeTeam(); const foeActiveTeam = target.side.foe.activeTeam(); for ",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the WAKE: a LANDED uproar cures slp on BOTH ACTIVES, DRAW-FREE, emitted as a bare |-curestatus|<mon>|slp|[msg] with no [from] clause. NOT on a miss, NOT on a type-immune target, and NEVER for a benched sleeper — the first two return before the site, and the loop reads only the two actives."
+  },
+  "move:uproar:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"uproar\"}",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the lock: `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the damage with a single random(2,6) that is NEVER re-drawn. It folds into `move_locked()`, which gives the FIRM single-move `trapped:true` request shape, the Move(0)->locked-slot mapping at queue-build, and the switch reject, all for free. PP is spent ONCE per CAST — every continuing turn is a lockedmove that skips deductPP, exactly like Solar Beam's fire turn. A cast that did NOT land (miss / type-immune Ghost / Protect) applies no volatile and draws no duration, though its PP is spent."
   },
   "move:vitalthrow:neverMiss": {
    "disposition": "implemented",

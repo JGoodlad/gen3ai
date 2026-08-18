@@ -432,6 +432,11 @@ impl crate::state::BattleState {
         let locked_fire = !pursuit_strike
             && move_id == "solarbeam"
             && self.sides[side].pokemon[slot].two_turn.map_or(false, |t| t.charging);
+        // UPROAR spends PP ONCE, on the CAST (`gen3_uproar_v1`, probed 16 -> 15 across a
+        // 5-turn lock) — every CONTINUING turn is a lockedmove and skips deductPP, exactly
+        // like Solar Beam's fire turn.
+        let locked_uproar =
+            !pursuit_strike && move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_some();
 
         // The PRE-move Choice-lock snapshot (`gen3_move_coverage_batch5_v1`, the Sleep
         // Talk `onTryHit` choicelock gate): the lock the PP block below sets for THIS
@@ -506,7 +511,7 @@ impl crate::state::BattleState {
         //     `useMoveInner` lockedmove path skips `deductPP` (`gen3_move_coverage_
         //     batch4c_v1`; probed: PP is paid ONCE, at the CHARGE — 16→15, or 16→14 under
         //     a Pressure foe — and the fire turn leaves it untouched).
-        if !struggle && !locked_fire {
+        if !struggle && !locked_fire && !locked_uproar {
             let pressure_extra = pressure_targets_foe
                 && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "pressure";
             let deduct = if pressure_extra { 2 } else { 1 };
@@ -1543,6 +1548,42 @@ impl crate::state::BattleState {
         //     itself has no secondary `random(100)`).
         if !struggle {
             self.apply_secondaries(side, slot, foe, foe_slot, move_index, absorbed, dex);
+        }
+
+        // --- UPROAR's LOCK is armed here (`gen3_uproar_v1`): the `random(2,6)` duration is
+        //     drawn ONCE, on the CAST turn, AFTER the damage, and NEVER re-drawn — every
+        //     continuing turn just re-runs the locked slot. A CAST that did not LAND (miss /
+        //     type-IMMUNE Ghost / Protect-blocked) returned before this point, so it applies
+        //     NO volatile and draws no duration, though its PP is already spent — probed. ---
+        // --- UPROAR's WAKE (`gen3_uproar_v1`): a LANDED uproar cures `slp` on BOTH ACTIVES
+        //     (the MOVE's own `onTryHit`, DRAW-FREE) — NOT on a miss, NOT on a type-IMMUNE
+        //     target, and NEVER for a BENCHED sleeper. Emitted as a BARE
+        //     `|-curestatus|<mon>|slp|[msg]` with no `[from]` clause. Both of those returned
+        //     before this point, so simply reaching here means the hit landed. ---
+        if move_id == "uproar" {
+            for s2 in 0..2 {
+                let sl2 = self.sides[s2].active;
+                if matches!(self.sides[s2].pokemon[sl2].status, Some(Status::Sleep(_)))
+                    && !self.sides[s2].pokemon[sl2].fainted
+                {
+                    self.sides[s2].pokemon[sl2].status = None;
+                    self.sides[s2].pokemon[sl2].sleep_from_rest = false;
+                    if self.logging() {
+                        let m = self.mon_ref(s2, sl2, dex);
+                        self.log.curestatus(&m, "slp", true);
+                    }
+                }
+            }
+        }
+
+        if move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_none() {
+            let dur = self.prng.random_range(2, 6) as u8;
+            self.sides[side].pokemon[slot].uproar = Some((dur, move_index));
+            // [EMIT] `|-start|<user>|Uproar`.
+            if self.logging() {
+                let u = self.mon_ref(side, slot, dex);
+                self.log.volatile_start(&u, "Uproar");
+            }
         }
 
         // --- KING'S ROCK appended flinch secondary (`gen3_ability_batch4_v1`) — an

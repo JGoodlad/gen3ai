@@ -821,6 +821,9 @@ impl FullBattleDriver {
                         .two_turn
                         .filter(|t| t.charging)
                         .map(|t| t.move_index)
+                        // UPROAR resolves the same way (`gen3_uproar_v1`) — the accepted
+                        // `move 1` maps back to the LOCKED Uproar slot, not slot 0.
+                        .or_else(|| bs.sides[side].pokemon[active].uproar.map(|(_, k)| k))
                         .unwrap_or(mi);
                     // A mon with NO usable move (all slots at 0 PP) has `moveid:'struggle'`
                     // substituted by `side.choose` — regardless of the scripted slot `mi`.

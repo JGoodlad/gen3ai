@@ -13524,6 +13524,164 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// UP1 — UPROAR's LOCK: the duration is drawn ONCE on the cast, PP is spent ONCE, the user is
+/// locked to Uproar (a switch is rejected), and the residual emits `[upkeep]` each live turn
+/// then `-end` on expiry — with NO end-of-lock confusion. Ground truth
+/// `harness/probe_uproar.js`.
+#[test]
+fn uproar_locks_the_user_for_its_rolled_duration_and_spends_pp_once() {
+    let d = dex();
+    let user = "Exploud||Leftovers|Soundproof|uproar,splash|Hardy|85,85,85,85,85,85|M||||]Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Blissey||Leftovers|NaturalCure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let pp0 = st.sides[0].pokemon[0].pp_of(0);
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // CAST
+            // While locked the request offers ONLY Uproar and is trapped, so a SWITCH is
+            // rejected draw-free and a `move 1` maps back to the locked slot.
+            ScriptDecision::both(Choice::Switch(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-start|p1a: Exploud|Uproar"),
+        "UP1: the cast emits -start. got:\n{joined}"
+    );
+    // The rejected switch: the uproarer is still active right after it.
+    assert_eq!(
+        st.sides[0].active, 0,
+        "UP1: a locked uproarer must NOT be able to switch out"
+    );
+    // PP is spent ONCE PER CAST — every CONTINUING turn is a lockedmove and spends none.
+    // ⚠️ The duration is a random(2,6), so this fixed script can OUTLIVE the lock and start a
+    // SECOND uproar, which legitimately spends PP again. Assert the real invariant
+    // (spent == casts), not a fixed −1, and guard that the lock actually made the user act
+    // more often than it cast — otherwise the claim is vacuous.
+    let casts = raw
+        .iter()
+        .filter(|l| l.as_str() == "|-start|p1a: Exploud|Uproar")
+        .count();
+    let uses = raw
+        .iter()
+        .filter(|l| l.starts_with("|move|p1a: Exploud|Uproar"))
+        .count();
+    assert!(
+        uses > casts,
+        "UP1: the lock must make the user act MORE often than it CAST (uses {uses}, casts {casts})"
+    );
+    assert_eq!(
+        st.sides[0].pokemon[0].pp_of(0) as usize,
+        pp0 as usize - casts,
+        "UP1: PP is deducted once per CAST ({casts}), not once per USE ({uses}). got:\n{joined}"
+    );
+    // The residual ticks with `[upkeep]` while live, then `-end` exactly once.
+    let upkeeps = raw
+        .iter()
+        .filter(|l| l.as_str() == "|-start|p1a: Exploud|Uproar|[upkeep]")
+        .count();
+    assert!(upkeeps >= 1, "UP1: at least one live [upkeep] tick. got:\n{joined}");
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-end|p1a: Exploud|Uproar"),
+        "UP1: the lock expires with an -end on the tick that reaches 0. got:\n{joined}"
+    );
+    // NO end-of-lock confusion (unlike outrage/thrash).
+    assert!(
+        !raw.iter().any(|l| l.contains("|confusion")),
+        "UP1: the lock ends WITHOUT confusion. got:\n{joined}"
+    );
+    // (the script deliberately outlives the first lock, so a SECOND may be live here — the
+    // expiry assertions above already cover the -end)
+}
+
+/// UP2 — the FIELD-WIDE sleep block. Uproar's handler is `onAnySetStatus`, so ONE live uproar
+/// blocks sleep for EVERY mon — and the `[msg]` attr appears only when the blocked mon IS the
+/// uproarer. The sleep move still draws its accuracy roll; the sleep `random(2,6)` does not.
+#[test]
+fn uproar_blocks_sleep_field_wide_with_the_msg_attr_only_for_itself() {
+    let d = dex();
+    // p2 uproars; p1 then tries to Spore it (the UPROARER — `[msg]` form).
+    let sleeper = "Butterfree||Leftovers|Synchronize|spore,splash|Hardy|85,85,85,85,85,85|M||||";
+    let uproarer = "Exploud||Leftovers|Soundproof|uproar,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b =
+        Battle::start_with_switchins(&opts_cg(sleeper, uproarer, "44446,15321,46848,55374"), &d)
+            .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // p2 casts Uproar
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // p1 Spores the uproarer
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    // NON-VACUITY: the lock is genuinely live at the Spore.
+    assert!(
+        st.sides[1].pokemon[0].uproar.is_some(),
+        "UP2: the uproar must still be live. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-fail|p2a: Exploud|slp|[from] Uproar|[msg]"),
+        "UP2: blocking the UPROARER itself carries the [msg] attr. got:\n{joined}"
+    );
+    assert!(
+        !matches!(st.sides[1].pokemon[0].status, Some(pokesim::state::Status::Sleep(_))),
+        "UP2: nothing may fall asleep. got:\n{joined}"
+    );
+}
+
+/// UP3 — the WAKE. A LANDED uproar cures `slp` on BOTH ACTIVES (the move's own `onTryHit`),
+/// DRAW-FREE, emitted as a bare `|-curestatus|<mon>|slp|[msg]`.
+#[test]
+fn a_landed_uproar_wakes_both_actives() {
+    let d = dex();
+    // ⚠️ The USER needs a CHIP move: Rest FAILS at full HP, so without damaging the foe
+    // first the "foe is asleep" precondition never holds and the pin tests nothing.
+    let user = "Exploud||Leftovers|Soundproof|uproar,seismictoss,splash\
+|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Blissey||Leftovers|NaturalCure|rest,splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            // Chip the foe so its Rest can heal, then let it Rest itself asleep.
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
+            // Now uproar: the sleeping foe must WAKE.
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    // NON-VACUITY: the foe really was asleep before the uproar.
+    assert!(
+        raw.iter().any(|l| l.contains("|-status|p2a: Blissey|slp")),
+        "UP3: the foe must be asleep first, else this proves nothing. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-curestatus|p2a: Blissey|slp|[msg]"),
+        "UP3: a landed uproar wakes the sleeping foe. got:\n{joined}"
+    );
+    assert!(
+        st.sides[1].pokemon[0].status.is_none(),
+        "UP3: and the state agrees. got:\n{joined}"
+    );
+}
+
 /// WB1 — WEATHER BALL: type + base power follow the EFFECTIVE weather, and a suppressor
 /// reverts it fully. Ground truth `harness/probe_weatherball.js`.
 #[test]
@@ -15551,7 +15709,7 @@ fn unmodeled_moves_fail_loud_at_construction() {
     for mv in [
         "dreameater", "falseswipe", "furycutter", "iceball",
         "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
-        "smellingsalts", "thrash", "uproar",
+        "smellingsalts", "thrash",
     ] {
         let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

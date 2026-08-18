@@ -523,6 +523,29 @@ impl crate::state::BattleState {
                 return;
             }
         }
+        // (2b1) UPROAR's field-wide SLEEP BLOCK (`gen3_uproar_v1`). The condition's handler is
+        //       `onAnySetStatus`, so ANY live uproar on EITHER side blocks sleep for EVERY mon,
+        //       and it fires INSIDE `runEvent('SetStatus')` — DRAW-FREE, and in gen3ou the
+        //       handler-sort shuffle still draws exactly ONE call (uproar has a DEFINED speed so
+        //       it takes index 0 and the two Standard clauses stay a size-2 tie: `random(1,3)`
+        //       vs the control's `random(0,2)` — the same COUNT, so SEED-NEUTRAL, exactly like
+        //       the STATUS_IMMUNE-ability pattern).
+        //
+        //       The sleep MOVE still draws its accuracy roll; the sleep `random(2,6)` is NOT
+        //       drawn (blocked before the onStart). REST is fully blocked too — no heal, no
+        //       `random(2,6)`.
+        //       [EMIT] `|-fail|<mon>|slp|[from] Uproar`, with a trailing `|[msg]` when the mon
+        //       being blocked is the UPROARER itself.
+        if effect == "slp" {
+            if let Some((uside, uslot)) = self.any_uproarer() {
+                if self.logging() {
+                    let m = self.mon_ref(foe, foe_slot, dex);
+                    let is_self = uside == foe && uslot == foe_slot;
+                    self.log.fail_slp_from_uproar(&m, is_self);
+                }
+                return;
+            }
+        }
         // (2b2) SAFEGUARD (`gen3_safeguard_v1`) — the side condition's `onSetStatus`
         //       RETURNS false, DRAW-FREE (the gen3ou handler-sort shuffle above already
         //       fired; safeguard's handler sorts into its OWN group, leaving the 2 Standard

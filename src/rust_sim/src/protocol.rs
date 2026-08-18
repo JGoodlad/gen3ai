@@ -888,6 +888,22 @@ impl ProtocolBuilder {
         self.push_raw(format!("|-start|{mon}|{effect}|[of] {of}"));
     }
     /// `|-end|<mon>|<Effect>` — a volatile ends (Substitute breaks).
+    /// `|-start|<mon>|<effect>|[upkeep]` — UPROAR's per-residual live tick
+    /// (`gen3_uproar_v1`). The sim re-emits `-start` with an `[upkeep]` attr each turn the
+    /// lock survives, and switches to `-end` only on the tick that expires it.
+    /// `|-fail|<mon>|slp|[from] Uproar` (+ a trailing `|[msg]` when the blocked mon IS the
+    /// uproarer) — UPROAR's field-wide sleep block (`gen3_uproar_v1`). Probe-captured: the
+    /// `[msg]` appears ONLY for the uproarer itself, not for anyone else it protects.
+    pub fn fail_slp_from_uproar(&mut self, mon: &MonRef, is_uproarer: bool) {
+        if is_uproarer {
+            self.push_raw(format!("|-fail|{mon}|slp|[from] Uproar|[msg]"));
+        } else {
+            self.push_raw(format!("|-fail|{mon}|slp|[from] Uproar"));
+        }
+    }
+    pub fn volatile_start_upkeep(&mut self, mon: &MonRef, effect: &str) {
+        self.push_raw(format!("|-start|{mon}|{effect}|[upkeep]"));
+    }
     pub fn volatile_end(&mut self, mon: &MonRef, effect: &str) {
         self.push_raw(format!("|-end|{mon}|{effect}"));
     }

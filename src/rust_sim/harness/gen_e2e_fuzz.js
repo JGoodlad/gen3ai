@@ -431,6 +431,9 @@ const MODELED_CONVERSION_MOVES = new Set(['conversion', 'conversion2']);
 // WEATHER BALL (`gen3_weather_ball_v1`) — type + BP + CATEGORY all follow the EFFECTIVE
 // weather, resolved before the crit/damage draws so the whole thing is draw-neutral.
 const MODELED_WEATHERBALL_MOVES = new Set(['weatherball']);
+// UPROAR (`gen3_uproar_v1`) — a multi-turn LOCK whose random(2,6) duration is drawn ONCE on
+// the cast, plus a field-wide sleep block and a wake-on-hit. Locked turns spend no PP.
+const MODELED_UPROAR_MOVES = new Set(['uproar']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -791,6 +794,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       MODELED_SAFEGUARD_MOVES.has(id) ||
       MODELED_CONVERSION_MOVES.has(id) ||
       MODELED_WEATHERBALL_MOVES.has(id) ||
+      MODELED_UPROAR_MOVES.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
@@ -841,6 +845,10 @@ function isModeledMove(id, allowHiddenPower = false) {
   // random(100) — admitted via MODELED_SELFDROP_MOVES. A self.volatileStatus (a locked-move) is
   // still UNMODELED → rejected. (A self.boosts move NOT in the modeled set — none in gen-3 OU —
   // stays out.)
+  // UPROAR's `self.volatileStatus` IS its lock, and the lock is modeled — admit it ahead of
+  // this generic reject (the Weather Ball ordering trap again: the symptom of getting this
+  // wrong is a silent false negative, not an error).
+  if (MODELED_UPROAR_MOVES.has(id)) return true;
   if (m.self && m.self.volatileStatus) return false;
   if (m.self && m.self.boosts && !MODELED_SELFDROP_MOVES.has(id)) return false;
   // PARTIAL TRAP (`gen3_partial_trap_v1`) — ADMITTED HERE, before the blanket `m.volatileStatus`
@@ -868,7 +876,7 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.damageCallback) return false;
   // Weather Ball's type/BP/category mutate via `onModifyMove`, and it IS modeled — admit it
   // ahead of the generic reject (the Thunder / Beat Up precedent).
-  if (MODELED_WEATHERBALL_MOVES.has(id)) return true;
+  if (MODELED_WEATHERBALL_MOVES.has(id) || MODELED_UPROAR_MOVES.has(id)) return true;
   if (m.onModifyMove) return false;
   // Secondary shape: 0 or 1 secondary, modeled cols only.
   const secs = m.secondaries || (m.secondary ? [m.secondary] : []);
@@ -1138,7 +1146,7 @@ const REJECT_SPECIES = new Set([]);
 const REJECT_MOVES = new Set([
   'dreameater', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
-  'smellingsalts', 'thrash', 'uproar',
+  'smellingsalts', 'thrash',
 ]);
 function abilityAllowed(id) {
   const a = toId(id);

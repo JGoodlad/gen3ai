@@ -230,6 +230,7 @@ impl crate::state::BattleState {
                 mon.disable = None;
                 mon.last_move = None;
                 mon.last_move_used = None; // gen3_conversion_v1
+                mon.uproar = None; // gen3_uproar_v1 — silent on faint too
                 mon.last_move_was_self_overwrite = false;
                 // clearVolatile also drops the FLASH FIRE activation on faint — a fainted FF
                 // mon carries no boost, and if re-encoded must not show a stale `flash_fire`.
@@ -926,6 +927,9 @@ impl crate::state::BattleState {
             // `lastMoveUsed` resets on switch-out (`gen3_conversion_v1`, probe C8), so a
             // Conversion 2 into a freshly-entered mon FAILS draw-free.
             m.last_move_used = None;
+            // UPROAR's lock clears SILENTLY on switch-out — a phazed-out uproarer emits no
+            // `-end` line (`gen3_uproar_v1`, clearVolatile).
+            m.uproar = None;
             // The FOCUS PUNCH + PURSUIT `duration: 1` volatiles clear on switch-out
             // (`clearVolatile`, `gen3_move_coverage_batch4_v1`). A switching FP user drops its
             // focuspunch; a switching pursued mon that reaches here (a non-intercepted path)
