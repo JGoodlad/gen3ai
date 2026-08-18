@@ -36,6 +36,7 @@ sound when the metric is a within-run ratio.
 | `gen1_edge_family_audit_40M_with_concat.json` | 1 | 40M | 4000 | 2026-08-05 | …plus the op head-concat arm |
 | `gen2_edge_family_audit_40M.json` | 2 | 40M | 4000 | 2026-08-06 | 11 families, end of run |
 | `gen25_edge_family_audit_25M.json` | 2.5 | 25M | 4000 | 2026-08-07 | 15 families, mid-run |
+| `gen13_stall_coverage.json` | 13 | 25M | 1349 | 2026-08-17 | **§7 successor** — stall-trajectory share of training decisions vs matched eval losses, + recorded critic sign at the final decision of a timeout loss (model-free; producer script committed beside it) |
 
 ## The two headline reads
 

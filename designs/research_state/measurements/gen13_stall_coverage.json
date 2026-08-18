@@ -1,0 +1,114 @@
+{
+  "provenance": {
+    "generation": 13,
+    "run": "ai_v9_15_gen13_hb_events_stack_0817",
+    "checkpoint": null,
+    "step": 25067520,
+    "n_states": 1349,
+    "date": "2026-08-17",
+    "producer": "designs/research_state/measurements/gen13_stall_coverage.py",
+    "note": "MODEL-FREE: no checkpoint is loaded. V and P(win) are the values RECORDED in each trace's states.npz at decision time, not a re-forward. Training-rollout figures come from the final launcher segment's child log (926 episodes), NOT the whole 25M run."
+  },
+  "measurement": "gen13_stall_coverage_and_critic_sign",
+  "date": "2026-08-17",
+  "run": "models/ai_v9_15_gen13_hb_events_stack_0817",
+  "cap_turns": 250,
+  "notes": [
+    "Eval trace counts are NOT a win rate: losses are deliberately over-sampled by the eval quota.",
+    "Eval denominator split by opponent class; bots end far shorter than pool sentinels, so the pooled number is not the comparison for a self-play training rollout.",
+    "Value-loss MASS share NOT measured (needs train-loop instrumentation). Decision share is a LOWER bound on it, since stall residuals exceed average."
+  ],
+  "training_rollout": {
+    "episodes": 926,
+    "cap_episodes": 8,
+    "cap_episode_frac": 0.00864,
+    "decisions_total": 66881,
+    "decisions_cap": 2000,
+    "cap_decision_frac": 0.0299,
+    "cap_outcomes": {
+      "LOSS": 8
+    },
+    "outcomes_all": {
+      "WIN": 614,
+      "LOSS": 312
+    }
+  },
+  "eval_turn_distribution": {
+    "bot": {
+      "LOSS": {
+        "n": 863,
+        "median_turns": 21,
+        "p90_turns": 46,
+        "max_turns": 250,
+        "cap_n": 8,
+        "cap_frac": 0.00927
+      },
+      "WIN": {
+        "n": 864,
+        "median_turns": 22,
+        "p90_turns": 54,
+        "max_turns": 242,
+        "cap_n": 0,
+        "cap_frac": 0.0
+      }
+    },
+    "sentinel": {
+      "LOSS": {
+        "n": 486,
+        "median_turns": 44,
+        "p90_turns": 92,
+        "max_turns": 250,
+        "cap_n": 1,
+        "cap_frac": 0.00206
+      },
+      "WIN": {
+        "n": 360,
+        "median_turns": 52,
+        "p90_turns": 102,
+        "max_turns": 233,
+        "cap_n": 0,
+        "cap_frac": 0.0
+      }
+    }
+  },
+  "critic_sign_at_final_decision": {
+    "cap": {
+      "n": 9,
+      "V_mean": -47.249,
+      "V_median": -34.034,
+      "V_positive_n": 2,
+      "V_positive_frac": 0.2222,
+      "pwin_mean": 0.391,
+      "pwin_gt_half_n": 3
+    },
+    "ordinary": {
+      "n": 1340,
+      "V_mean": -20.333,
+      "V_median": -22.993,
+      "V_positive_n": 68,
+      "V_positive_frac": 0.0507,
+      "pwin_mean": 0.1438,
+      "pwin_gt_half_n": 83
+    }
+  },
+  "stats": {
+    "fisher_exact_one_sided_cap_vs_ordinary": 0.0755,
+    "P_le_observed_positives_under_preclock_rate": 3.002e-07,
+    "preclock_baseline": "13/14 positive V at the final decision of a timeout loss, pre gen3_deadline_clock_v1"
+  },
+  "stall_rate_cross_check": {
+    "gen13_final_segment": {
+      "stalls_in_window": 50,
+      "window_minutes": 46,
+      "fps_at_read": 340,
+      "per_1M_steps": 53.3
+    },
+    "gen14_at_2M": {
+      "stalls_in_window": 50,
+      "window_minutes": 46,
+      "fps_at_read": 805,
+      "per_1M_steps": 22.5
+    },
+    "caveat": "Confounded by training stage and pool strength; read only as NOT ELEVATED, never as an improvement."
+  }
+}

@@ -771,3 +771,33 @@ protocol detail that decides ability-sourced cants: **`[of]` — not the `abilit
 re-attribution discriminator** (Damp blocks the OPPONENT's move and carries `[of]` → re-attribute;
 Truant blocks its OWN move, no `[of]` → keep the actor). A prefix-keyed rule would have fixed
 Damp and silently broken every Truant turn; both directions are test-pinned.
+
+### Result (2026-08-17, the §7 successor): stall blindness was a DELIVERY problem, it was already fixed, and COVERAGE was never the constraint
+
+The registered successor asked whether the critic's stall blindness is a COVERAGE problem the
+flywheel can fix or a representation problem needing input work. Measured on gen-13, no new
+battles — **the answer is neither, because the input work already shipped and discharged it.**
+
+* **Coverage REFUTED, robustly.** Cap-length (≥250-turn) trajectories are **3.0% of training
+  DECISIONS** against **0.21% of matched sentinel eval losses** — ~14× OVER-exposed. The value-loss
+  MASS half was not instrumented and does not need to be: §7's own over-confidence finding implies
+  stall residuals exceed average, so mass share ≥ decision share and 3.0% is a **lower bound**. When
+  an unmeasured quantity can only move a conclusion in the safe direction, say so and stop.
+* **The fix worked.** Positive-V-at-the-final-decision on timeout losses: **93% (13/14) pre-clock →
+  22% (2/9) on gen-13**; P(≤2 of 9 | 13/14) = 3.0e-07. `gen3_deadline_clock_v1` is the causal
+  candidate.
+* **The residual is NOT a result.** 22% vs 5.1% on ordinary losses is the right direction but
+  **Fisher p = 0.076 at n=9**. Registered with its power requirement (n ≈ 30) rather than reported.
+
+**Method, and the reason this went from "open frontier" to "closed" in one pass:** the eval
+denominator had to be **split by opponent class first**. All-opponent eval mixes bots (median 21
+turns) with pool sentinels (median 44) — the pooled number understates the sentinel stall share by
+4× and would have made training look *under*-exposed. **A rate is only comparable against the
+denominator that generated it**; the same trap as the eval-quota confound (trace counts are 1349
+loss / 1224 win and are NOT a win rate, because losses are deliberately over-sampled).
+
+Secondary, and the reason the first attempt returned `0 wins 0 losses`: **a schema guess is not a
+schema.** The query assumed `won` / `n_turns` at top level; the truth is `meta.result` /
+`meta.turns`, with V and P(win) in the sibling `states.npz` (`values`, `win_probs`). An empty
+result from a guessed field name is indistinguishable from a real absence — 2573 traces existed the
+whole time. Read one record before writing the query over ten thousand.

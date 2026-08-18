@@ -107,6 +107,43 @@ version, battle-CLUSTERED bootstrap, **and n specified on the confident subset**
 BETWEEN-RUN DIFFERENCE with its own CI — never two separate CIs, which is exactly how gen-13.5
 nearly manufactured a "gen-13 got worse."
 
+### §7 SUCCESSOR — EXECUTED 2026-08-17 (gen-13 data). Verdict: **coverage is REFUTED as the constraint; the delivery fix already landed and WORKED; the residual is real-directioned but UNDERPOWERED.**
+
+Three readings, all off gen-13 (`ai_v9_15_gen13_hb_events_stack_0817`), no new battles.
+
+**(a) Coverage — REFUTED, and robustly.** Training rollout, last launcher segment, 926 episodes:
+cap-length (≥ `MAX_TURNS` 250) episodes are **0.9% of episodes but 3.0% of DECISIONS**
+(2000/66881), and **8/8 of them are losses** (structural — the forfeit is charged to the tracked
+seat). Matched eval denominator, pool sentinels only (bots end games far shorter — median 21 turns
+vs 44, so the all-opponent number is not the comparison): cap-length is **0.21% of sentinel eval
+losses** (1/486). That is a **~14× OVER-exposure** in training relative to the eval losses it is
+supposed to cover. The flywheel's thermostat has nothing to fix here; "show the model more stall
+games" is not a lever.
+
+*The value-loss MASS half of the registered question was NOT measured* — it needs train-loop
+instrumentation. It does not have to be: §7's own finding (over-confidence ON stall losses) means
+stall residuals are LARGER than average, so mass share ≥ decision share. **3.0% is a lower bound**,
+and the conclusion only strengthens with the missing number.
+
+**(b) The representation fix already shipped, and it worked.** Same metric as the pre-clock
+baseline (sign of V at the FINAL decision of a timeout loss), which read **13/14 = 93% positive**
+before `gen3_deadline_clock_v1`. On gen-13, over all 9 cap-length eval losses carrying a
+`states.npz`: **2/9 = 22% positive** (mean V −47.2, median −34.0; P(win) > 0.5 in 3/9). Under the
+old 93% rate, P(≤2 of 9) = **3.0e-07** — the drop is not an n=9 accident. The `CLOCK_DIM = 3`
+deadline clock is the causal candidate and it discharged the blindness it was built for.
+
+**(c) The §7 residual is directionally present and NOT yet significant.** Cap-length losses sit at
+22% positive-V against **5.1% (68/1340) on ordinary losses** — a 4× elevation in the same direction
+§7's gap metric found, but **Fisher exact one-sided p = 0.076 at n=9**. This is not a result. It
+needs n ≈ 30+ cap-length losses; gen-14 supplies them at its observed rate. **Do not quote (c) as a
+finding** — it is a registered follow-up with a stated power requirement.
+
+**Bonus, gen-14 early health (not a §7 reading):** the frames deletion shows **no stall
+regression**. Matched 46-minute windows, gen-14 @2M vs gen-13's final segment @25M: **50 stall logs
+each**, i.e. 22.3 vs 54.1 per 1M steps once fps (811 vs 335) is divided out. The *direction* favours
+gen-14 but is confounded by training stage and pool strength (a stronger late-run pool grinds more),
+so it is read only as **NOT ELEVATED**, never as an improvement.
+
 ## 8. Re-entry condition for an α/β critic route (registered 2026-08-17)
 
 `value_intent` is deleted in gen-14, which removes the ONLY α/β→critic route (C1's "one input with
