@@ -911,3 +911,18 @@ VERDICT with a stated meaning (on/off is the wrong question; fix the promotion p
 sat in the project's throughput record. **When a benefit figure is about to become the denominator
 of a decision, go find the version measured on THIS config before using the version that is easiest
 to quote** — the two differed by 10 points and flipped the conclusion's character.
+
+### Method note (2026-08-17): fix the CLAIM, not just append the correction beneath it
+
+The power-claim correction above was first landed as a `> CORRECTION` block placed *below* the
+paragraph making the false claim, leaving the original sentence ("gen-14 supplies them at its
+observed rate") intact in the body. A reader hitting the paragraph first still reads the wrong
+thing, and only the diligent one reaches the retraction.
+
+That is the **same failure as the rust-bridge allowlist entry that survived its own fix** and then
+briefed a subagent from a false premise — recorded earlier in this ledger, and repeated here within
+hours, by the person who recorded it. **A correction that leaves the original claim standing is a
+second copy of the claim, not a repair.** Edit the claim; keep the correction block only as the
+provenance of WHY it changed. `ARCHITECTURE.md`'s standing rule ("state the new truth and delete the
+old") is the general form — it applies to planning docs and ledgers too, not only to the
+architecture record.

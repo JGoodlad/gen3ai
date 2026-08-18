@@ -135,8 +135,9 @@ deadline clock is the causal candidate and it discharged the blindness it was bu
 **(c) The §7 residual is directionally present and NOT yet significant.** Cap-length losses sit at
 22% positive-V against **5.1% (68/1340) on ordinary losses** — a 4× elevation in the same direction
 §7's gap metric found, but **Fisher exact one-sided p = 0.076 at n=9**. This is not a result. It
-needs n ≈ 30+ cap-length losses; gen-14 supplies them at its observed rate. **Do not quote (c) as a
-finding** — it is a registered follow-up with a stated power requirement.
+needs n ≈ 30+ cap-length losses, which **no single run at the current trace retention supplies** —
+see the correction immediately below for the route that does. **Do not quote (c) as a finding** — it
+is a registered follow-up with a stated power requirement.
 
 > **CORRECTION (same day, before anyone plans on it): gen-14 does NOT supply that power.**
 > An earlier draft of this section said it would. gen-13 retained **12** eval-trace step dirs
