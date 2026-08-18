@@ -1495,6 +1495,28 @@ run startup), `SnapshotPool._model_cache` keeps one compile per worker per snaps
 `_COMPILE_VALIDATED` puts every compile after a process's first on the cheap path. Nothing here
 needs fixing.
 
+**The one-time event IS addressable, and the flag for it already exists — `--compile-opponents-preload`.**
+The +1095 s is 48 workers each paying their process's FIRST compile, and fork-inheritance is exactly
+the thing that removes it: the preload compiles once in the forkserver and workers inherit the traced
+graph copy-on-write (**0.12 s per worker vs ~30 s**). Note the on-disk Inductor cache and the fork
+inheritance fix DIFFERENT halves — the disk cache removes codegen, the fork removes per-process
+dynamo tracing and guard construction, which is the half that was left.
+
+Why the cost landed at iteration 22 rather than at worker startup: **the pool is empty until the
+first promotion**, so workers have nothing to compile when they fork, and their first compile is
+deferred to the moment self-play activates.
+
+Two limits before turning it on:
+- It would SHRINK the event, not remove it — those 48 workers also each load a 41 MB checkpoint
+  (`load_model_snapshot` → deserialize → build policy), which no compile flag touches.
+- The 0.12 s figure is a standalone probe of STARTUP compiles, and the flag's live proof is a
+  **4-worker** run. A snapshot extractor compiled 2M steps AFTER the fork should still hit the
+  inherited dynamo state (same `forward` code object, same shapes) but that case is not directly
+  measured. And the hang this flag's predecessor caused was specifically at **48 workers** — it is
+  fail-loud now (it RAISES rather than wedging), so the risk is a loud crash at construction, not a
+  silent 13 h stall, but 48 envs is untested for the fixed version. **Worth trying on gen-15; do not
+  retrofit it onto a live run.**
+
 ⚠️ **A `[SELFPLAY EVAL] … [Ns]` line beside a slow iteration is NOT its cause — eval is genuinely
 non-blocking.** gen-13 ran an **1865 s** eval cycle inside a **395 s** iteration. Attributing
 iteration cost to an overlapping eval (or vice versa) is a window coincidence; separate them by the
