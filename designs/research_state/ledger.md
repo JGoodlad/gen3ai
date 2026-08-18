@@ -762,3 +762,12 @@ decoder); `CANT_REASONS_LIVE` extends it for the live path; the frozen one-hot R
 live-only reason loudly; and `test_the_archive_cant_vocabulary_is_FROZEN` pins the split plus
 live ⊇ archive in order. A grown-in-place vocabulary would have mis-sliced every archived
 history silently while returning a plausible dict.
+
+**Class audit COMPLETE (same day):** every clamp-into-a-table site in the model swept — 5 sites,
+**exactly one live instance** (`cant_emb`, fixed to `CANT_DIM_LIVE+1`); `faint_emb` /
+`itemtr_emb` sized from their live vocabs, the two `intent_conditional` move-num tables at 371
+rows vs max real num 370 — genuine no-op safety nets, not latent misreads. Also pinned, the
+protocol detail that decides ability-sourced cants: **`[of]` — not the `ability:` prefix — is the
+re-attribution discriminator** (Damp blocks the OPPONENT's move and carries `[of]` → re-attribute;
+Truant blocks its OWN move, no `[of]` → keep the actor). A prefix-keyed rule would have fixed
+Damp and silently broken every Truant turn; both directions are test-pinned.
