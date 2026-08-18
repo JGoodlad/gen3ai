@@ -153,7 +153,7 @@ The registry covers the **feature-extractor architecture toggles** — the thing
 `build_extractor_arch_kwargs`. Three neighbouring families are deliberately not here:
 
 - **Training-only loss coefficients** (`move_belief_coef`, `opp_belief_aux_coef`,
-  `spread_belief_coef`, `win_prob_coef`, …) — recorded on `ModelVersion` for provenance, never
+  `spread_belief_coef`, `win_prob_coef`, `td_aux_coef`, …) — recorded on `ModelVersion` for provenance, never
   version-gated, and they never reach the extractor. Two of them *do* appear indirectly: a
   coefficient is the CLI surface for the `opp_belief_slots` and `opp_intent` toggles, which is why
   those rows carry `derived=True` and name the coef.

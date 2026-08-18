@@ -84,7 +84,6 @@ digraph gen3_delivery {
   "belief_slots" -> "opp_mon" [color="#2f6f3e", style=solid, label="content w=128 ×6", tooltip="ABS · D_MODEL"];
   "beta_head" -> "loss.opp_intent_beta_ce" [color="#8a8a8a", style=dotted, label="aux", tooltip="train-only · training-only obs Dict key"];
   "beta_head" -> "pointer.move_logit" [color="#7d5bab", style=bold, label="cell w=6 ×4", tooltip="ABS/action · TEAM_SIZE"];
-  "beta_head" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=6", tooltip="ABS · TEAM_SIZE"];
   "damage_op" -> "E4_threat" [color="#2f6f3e", style=solid, label="content w=35 ×6", tooltip="ABS · MOVE_LATENT_DIM + 3"];
   "damage_op" -> "E5_tail" [color="#2f6f3e", style=solid, label="content w=4 ×6", tooltip="ABS · _EDGE_TAIL_CELL(4)"];
   "damage_op" -> "our_mon" [color="#2f6f3e", style=solid, label="content w=12 ×6", tooltip="ABS · _DMG_PER_MON"];
@@ -95,7 +94,6 @@ digraph gen3_delivery {
   "damage_op" -> "pointer.switch_logit" [color="#7d5bab", style=bold, label="cell w=15 ×6", tooltip="ABS/action · _PTR_SWITCH_CELL_IN"];
   "damage_op" -> "vf_projection" [color="#31538f", style=solid, label="concat w=256", tooltip="ABS · VALUE_SEED_K * VALUE_SEED_DIM"];
   "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=13", tooltip="ABS · value_threat_inject_dim()"];
-  "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];
   "damage_op" -> "vf_projection" [color="#2f6f3e", style=solid, label="content w=128", tooltip="ABS · D_MODEL"];

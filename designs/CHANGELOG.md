@@ -4913,3 +4913,66 @@ it would still return a plausible dict. So the archive vocabulary is FROZEN and
 live-only reason loudly rather than mis-encoding it.
 `event_window_test::test_the_archive_cant_vocabulary_is_FROZEN` makes the split enforced rather
 than intended, and pins live ⊇ archive *in order* so nobody reorders the archive either.
+## v92 — `gen3_td_consistency_aux_v1` (2026-08-17): the critic gets told that adjacent states are adjacent
+
+**Ledger C5, rung 2's build half.** Pre-registration:
+[`research_state/levers/td_consistency_aux.md`](research_state/levers/td_consistency_aux.md) —
+unchanged by this entry, and it stays that way; its rung-2 gates are frozen.
+
+The critic's only training signal is a per-state regression, `MSE(V(s_t), G_t)`. That pins each
+state's LEVEL and says nothing whatever about the DIFFERENCE between two adjacent states, so
+independent per-state noise ε arrives in `ΔV` at `2·Var(ε)` — precisely where the truth is nearly
+constant. C4 measured it: self-KO ΔV RMSE 4.95 against a constant predictor at 1.33. And because
+GAE reads ΔV, that dispersion is injected advantage noise on **every** transition, not only the
+dramatic ones. Rung 1 (offline, frozen tokens, same population as the C4 gate) met its
+pre-registered gate at λ=1.0 and λ=3.0 by adding the Bellman identity the critic already owes:
+
+```
+loss += λ · mean_pairs[ ( V(s_t) − r_t − γ·V(s_{t+1}) )² ]
+```
+
+This ships the live-training half as `--td-aux-coef` (default 0.0 = OFF, loss byte-identical).
+Both residual ends carry gradient — the residual-gradient (Baird) form the pre-registration
+specifies, whose double-sampling bias it also names as the thing to watch.
+
+**The engineering problem is not the loss, it is the pairs.** `RolloutBuffer.get()` yields a random
+permutation, so a PPO minibatch contains **no adjacent pairs at all**. `agents/training/td_aux.py`
+draws them from the buffer's surviving `[n_steps, n_envs]` structure as contiguous per-env runs
+(512 rows in runs of 16), which is also the "K+1 forwards serve K pairs" economy the
+pre-registration asks for — L states serve L−1 pairs, ~2× cheaper per pair than sampling pairs
+independently, and rung 1 found segment batching beat a random-permutation control by 12% anyway.
+Four correctness details, each of which fails silently if got wrong: the rows follow
+`swap_and_flatten`'s ENV-MAJOR convention (`row = env·n_steps + t`) and `_td_aux_term` RAISES if the
+buffer is not yet flattened rather than mis-pairing states with rewards; `rewards` and
+`episode_starts` are not in `get()`'s flatten list and are read in their native shape; a pair whose
+successor BEGINS an episode is **dropped, never zeroed** (zeroing would train `V(s_t) → r_t` at
+every battle end — and it disposes of SB3's time-limit bootstrap for free, since that row's
+successor always starts an episode); and the value comes from `policy.predict_values`, never a
+hand-rolled path, because that method is what routes to the DISTRIBUTIONAL head's mean under
+`--value-from-dist`, where the scalar `value_net` is frozen.
+
+**Units.** `predict_values` returns real-unit values and buffer rewards are real-unit, so the raw
+residual is real-unit — but under PopArt the value loss trains in normalized space, so the residual
+is divided by σ. That is exactly the normalized-space residual
+(`normalize(V) − normalize(r + γV′) = (V − r − γV′)/σ`, the μ cancels), so λ keeps rung-1's
+calibrated meaning in both regimes.
+
+**It folds per MINIBATCH, with its own sample and its own forward** — the search-teacher / OPD shape,
+not the once-per-`train()` probe shape. Those probes are read-only; this one carries gradient, and a
+once-per-`train()` fold would give it ONE contribution against the value loss's ~240, so λ would
+have to be ~240× the pre-registered band to mean the same thing. Cost is bounded by the 512-state
+constant rather than by `batch_size`: ≈10% of the train step at production shapes.
+
+Metrics under `td_aux/`: `resid_rms` (the headline, should FALL — the live counterpart of the
+offline dispersion instrument), `resid_mean` (SIGNED — rung 1 says this is dispersion suppression,
+so a drifting bias means the residual-gradient term is moving the LEVEL instead), plus `loss`,
+`n_pairs`, `scale` and `pair_drop_frac`. The trunk pull rides `grad/td_aux_share` /
+`grad/td_aux_policy_cosine`; it reaches the trunk through the critic path only.
+
+**Versioning:** `MODEL_CONFIG_VERSION` 91 → **92**, adding `td_aux_coef` — a `training_coef`-class
+field, so it is recorded for provenance and for flagless-resume read-back (`_resolve`) and is
+compared by NOTHING: not `check_compatible`, not any `check_*`. No `ARCH_SIGNATURE` bump; the
+extractor is untouched, which is also why the flag is deliberately absent from
+`agents/model/flag_registry.py` (that registry's scope is extractor toggles). A pre-v92 config
+defaults it to 0.0. Not yet run: the pre-registered rung-2 fork A/B (λ=1.0 and λ=3.0) is a separate
+decision.

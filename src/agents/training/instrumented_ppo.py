@@ -281,6 +281,24 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # OPD softmax temperature β for π' (built worker-side in produce.py); recorded here for provenance.
     opd_beta: float = 1.0
 
+    # TD-CONSISTENCY AUXILIARY (gen3_td_consistency_aux_v1; the live-training half of
+    # designs/research_state/levers/td_consistency_aux.md, ledger C5). The per-state value MSE never
+    # constrains ADJACENT-state differences, so ΔV inherits ~2x the state noise exactly where the truth
+    # is nearly constant. This adds an explicit Bellman residual over CONTIGUOUS pairs drawn from the
+    # rollout buffer's own [n_steps, n_envs] structure (PPO's minibatches are shuffled and contain no
+    # adjacent pairs at all):
+    #     td_aux_coef * mean[ ( V(s_t) - r_t - gamma*V(s_{t+1}) )^2 ]
+    # 0.0 = OFF and the whole block is skipped (loss byte-identical to today — `_td_aux_term` is not
+    # even called, so a broken sampler could not perturb an off run). Rung-1's pre-registered band is
+    # 1.0-3.0; lambda <= 0.1 measured WORSE than control, so do not use the small-coef regime.
+    # TRAINING-only (scales the loss, never a forward pass) -> NOT version-locked / NOT in
+    # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back, like
+    # opp_belief_aux_coef.
+    td_aux_coef: float = 0.0
+    # Process-local RNG for the contiguous-pair sampler, seeded from the global numpy stream at first
+    # use so a seeded run stays reproducible. Not saved (like _noise_ema_*).
+    _td_aux_rng = None
+
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
@@ -662,6 +680,69 @@ class InstrumentedMaskablePPO(MaskablePPO):
         tail = th.topk(flat, k).values.mean()   # mean of the worst-k squared errors (CVaR)
         return (1.0 - w) * mse + w * tail
 
+    def _td_aux_term(self, popart):
+        """The TD-consistency auxiliary for ONE minibatch: sample contiguous pairs, forward them,
+        return `(weighted_term, metrics)` — or `(None, {})` when nothing is pairable.
+
+        WHY ITS OWN SAMPLE AND ITS OWN FORWARD, per minibatch. Three constraints pin this shape:
+
+        * `rollout_data` cannot serve it. `RolloutBuffer.get()` yields a RANDOM PERMUTATION, so a
+          minibatch holds no adjacent pairs whatsoever — the pairs must be drawn from the buffer's
+          surviving `[n_steps, n_envs]` structure, which means a second forward either way.
+        * It runs PER MINIBATCH, not once per `train()` like the grad-balance / rank probes. Those
+          are read-only diagnostics; this one carries gradient, and a once-per-`train()` fold would
+          give it ONE gradient contribution against the value loss's `n_epochs x n_minibatches`
+          (~240 in production). λ would then have to be ~240x rung-1's calibrated 1.0-3.0 band to
+          mean the same thing, which throws away the one number the pre-registration fixed. The
+          search-teacher / OPD folds already establish this shape here (own sample, own forward,
+          every minibatch); this follows it.
+        * The cost is bounded by `TD_AUX_STATES` (512) rather than by `batch_size`, so the term is
+          ~10% of the train step at production shapes instead of doubling it.
+
+        It goes through `policy.predict_values`, never a hand-rolled value path: that method is what
+        routes to the DISTRIBUTIONAL head's mean under `--value-from-dist` (where the scalar
+        `value_net` is frozen) and applies PopArt's de-normalization. Reading `value_net` directly
+        would train a critic the run does not use.
+        """
+        from agents.training import td_aux as _td
+
+        buf = self.rollout_buffer
+        if not getattr(buf, "generator_ready", False):
+            # `state_rows` are in the post-`swap_and_flatten` (env-major) convention; indexing an
+            # un-flattened observation array with them would silently mis-pair states with rewards.
+            raise RuntimeError(
+                "_td_aux_term ran before rollout_buffer.get() flattened the observations — the "
+                "contiguous-pair rows are in the post-swap_and_flatten convention and would index "
+                "the wrong rows. Call it from INSIDE the minibatch loop.")
+
+        if self._td_aux_rng is None:
+            self._td_aux_rng = np.random.default_rng(int(np.random.randint(0, 2 ** 31 - 1)))
+
+        n_rows = int(buf.buffer_size) * int(buf.n_envs)
+        rows, pa_np, pb_np, n_cand = _td.sample_contiguous_pairs(
+            buf.episode_starts, min(_td.TD_AUX_STATES, n_rows), _td.TD_AUX_SEG_LEN, self._td_aux_rng)
+        if pa_np.size == 0:
+            return None, {}
+
+        obs = {k: buf.to_torch(v[rows]) for k, v in buf.observations.items()}
+        values = self.policy.predict_values(obs).flatten()          # [S] REAL-unit (see td_aux docs)
+        # `rewards` is NOT in get()'s flatten list, so it is still [n_steps, n_envs]; swap to the same
+        # env-major flat order the rows index.
+        rew_flat = np.asarray(buf.rewards).swapaxes(0, 1).reshape(-1)
+        rewards = buf.to_torch(rew_flat[rows]).flatten()            # [S] REAL-unit
+        pair_a = th.as_tensor(pa_np, dtype=th.long, device=values.device)
+        pair_b = th.as_tensor(pb_np, dtype=th.long, device=values.device)
+        # UNITS: the raw residual is real-unit (de-normalized V, raw reward). Under PopArt the value
+        # loss trains in NORMALIZED space, and dividing by sigma is exactly that space's residual
+        # (the mu cancels), so lambda keeps rung-1's meaning. sigma=1 with PopArt off.
+        scale = float(popart.sigma) if popart is not None else 1.0
+        out = _td.td_aux_loss(values, rewards, pair_a, pair_b,
+                              float(self.gamma), scale=scale, n_candidate=n_cand)
+        if out is None:
+            return None, {}
+        td_loss, metrics = out
+        return self.td_aux_coef * td_loss, metrics
+
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
             return collect_rollouts_async(
@@ -743,6 +824,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # verbatim rather than under a prefix.
         aux_metrics: dict[str, list[float]] = {}
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
+        td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
         belief_aux_on = self.opp_belief_aux_coef > 0.0
@@ -796,6 +878,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
         distill_on = (
             bool(getattr(self, "_distill_teachers", None)) and self.distill_coef != 0.0
         )
+        # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
+        # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
+        # byte-identical to today). See `_td_aux_term`.
+        td_aux_on = float(getattr(self, "td_aux_coef", 0.0)) > 0.0
 
         continue_training = True
 
@@ -1329,6 +1415,21 @@ class InstrumentedMaskablePPO(MaskablePPO):
                                 for _ok, _ov in _opd_m.items():
                                     opd_metrics.setdefault(_ok, []).append(float(_ov))
 
+                # +TD-AUX: the TD-consistency auxiliary. Its OWN contiguous sample + its OWN critic
+                # forward (the minibatch is shuffled — it holds no adjacent pairs), so it must run
+                # AFTER every loss that reads an extractor stash from THIS minibatch's
+                # evaluate_actions forward: the forward below replaces those stashes. Placed here,
+                # beside the other own-forward folds (search-teacher / OPD), for exactly that reason.
+                # `rank_probe` further below re-forwards `rollout_data.observations` itself, so it is
+                # unaffected. OFF → skipped (loss byte-identical).
+                td_aux_term = None
+                if td_aux_on:
+                    td_aux_term, _tdm = self._td_aux_term(popart)
+                    if td_aux_term is not None:
+                        loss = loss + td_aux_term
+                        for _tdk, _tdv in _tdm.items():
+                            td_aux_metrics.setdefault(_tdk, []).append(float(_tdv))
+
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
@@ -1354,6 +1455,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # under `shaping`, which is precisely when you need to know.
                 if opp_intent_term is not None:    aux_probe_terms["opp_intent"] = opp_intent_term
                 if opd_term is not None:           aux_probe_terms["opd"] = opd_term
+                # The TD term pulls the trunk through the CRITIC path only, so `grad/td_aux_share`
+                # against `grad/value_share` is the read for "is the consistency term crowding out
+                # the level regression it is supposed to complement".
+                if td_aux_term is not None:        aux_probe_terms["td_aux"] = td_aux_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1596,6 +1701,18 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if distill_metrics:
             for _dk, _dvals in distill_metrics.items():
                 self.logger.record(f"distill/{_dk}", float(np.mean(_dvals)))
+
+        # +TD-AUX: Bellman-residual diagnostics under their OWN `td_aux/` TB prefix. `resid_rms` is
+        # the headline — the quantity the term minimises, and the live counterpart of the offline
+        # ΔV-dispersion instrument the rung-1 gate used; it should FALL. `resid_mean` (SIGNED) is the
+        # no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias that
+        # drifts away from ~0 means the residual-gradient (Baird) term is shifting the level rather
+        # than tightening it — read it beside `train/explained_variance`. `scale` is the unit the
+        # residual is expressed in (PopArt's sigma; 1.0 with PopArt off), and `pair_drop_frac` is the
+        # fraction of candidate pairs lost to episode boundaries. Empty (off) → not logged.
+        if td_aux_metrics:
+            for _tdk, _tdvals in td_aux_metrics.items():
+                self.logger.record(f"td_aux/{_tdk}", float(np.mean(_tdvals)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

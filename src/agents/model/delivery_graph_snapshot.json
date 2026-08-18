@@ -9621,7 +9621,7 @@
       "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
       "src": "alpha_head",
       "type": "content",
-      "via": "the alpha PUBLICATION weighting IntentValueReduce / IntentThresholdValue / ValueIntentRoute \u2014 additive into value_pooled",
+      "via": "the alpha PUBLICATION weighting IntentValueReduce / IntentThresholdValue \u2014 additive into value_pooled",
       "width": 7
     },
     {
@@ -9671,15 +9671,6 @@
       "src": "belief_slots",
       "type": "content",
       "width": 128
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "TEAM_SIZE",
-      "src": "beta_head",
-      "type": "content",
-      "via": "the beta PUBLICATION \u2014 ValueIntentRoute, additive into value_pooled",
-      "width": 6
     },
     {
       "dst": "E4_threat[0]",
@@ -9887,16 +9878,6 @@
       "src": "damage_op",
       "type": "content",
       "via": "UnifiedValueReadout (UVR_K queries, per-source type embeddings, zero-init out projection) \u2014 additive into value_pooled \u2014 the per-our-mon incoming-row source",
-      "width": 128,
-      "zero_init": true
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "damage_op",
-      "type": "content",
-      "via": "ValueIntentRoute (published alpha/beta posteriors as distributions) \u2014 additive into value_pooled",
       "width": 128,
       "zero_init": true
     },

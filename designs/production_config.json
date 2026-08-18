@@ -88,7 +88,7 @@
   "value_entity_pool": true,
   "value_entity_pool_full": true,
   "value_from_dist": true,
-  "value_intent": true,
+  "value_intent": false,
   "value_tail_weight": 0.3,
   "value_threat_inject": true,
   "vf_coef": 0.5,

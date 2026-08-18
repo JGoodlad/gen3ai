@@ -344,11 +344,20 @@ def test_no_stale_declaration_survives_a_deleted_module(extractor, graph):
     """
     assert not module_coverage(extractor, graph), "preconditions: the live declarations are clean"
 
+    # A declared module may legitimately be ABSENT from the production build — flag-gated OFF is
+    # not deleted. `value_intent_route` is the live case: gen-14 runs with `--value-intent` off
+    # (dV 0.1560, condemned by gen-13.5 §2), and asserting child-membership here would have
+    # demanded deleting an entry whose class still exists, silently excusing the module if a
+    # later generation re-enabled it. The real invariant is that the CLASS is still reachable.
+    import agents.model.features_extractor as _fx
     children = {name for name, _ in extractor.named_children()}
     for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
-        assert name in children, (
-            f"{name!r} is declared in delivery_graph but is not a child of the extractor at the "
-            "production config — delete the entry")
+        if name in children:
+            continue
+        tokens = MODULE_GRAPH_TOKENS.get(name) or ()
+        assert any(hasattr(_fx, t) for t in tokens), (
+            f"{name!r} is declared in delivery_graph, is not a child of the extractor at the "
+            f"production config, AND none of its classes {tokens} resolve — delete the entry")
 
     MODULE_GRAPH_TOKENS["_ghost_module"] = ("nothing",)
     try:

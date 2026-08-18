@@ -220,11 +220,11 @@ Modules actually built under the production config (`named_children()`) — GENE
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
 hidden_opp_belief · intent_value_reduce · intent_move_cell · intent_threshold_move ·
-intent_threshold_value · intent_conditional · value_clock_route · value_intent_route ·
-t0_species_prior · belief_slots · belief_head · move_belief · spread_belief ·
-hp_type_belief_head · item_belief_head · damage_op · prefuse_proj · assembler · win_head ·
-value_dist_head · value_entity_pool · history_events · pre_proj_norm · projection ·
-value_pre_norm · value_projection · activation · alpha_head · beta_head
+intent_threshold_value · intent_conditional · value_clock_route · t0_species_prior ·
+belief_slots · belief_head · move_belief · spread_belief · hp_type_belief_head ·
+item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_dist_head ·
+value_entity_pool · history_events · pre_proj_norm · projection · value_pre_norm ·
+value_projection · activation · alpha_head · beta_head
 ```
 <!-- END GENERATED: modules -->
 
@@ -790,7 +790,7 @@ does nothing given another setting.
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
-| `value_intent` | `true` | ACTIVE |
+| `value_intent` | `false` | OFF |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |

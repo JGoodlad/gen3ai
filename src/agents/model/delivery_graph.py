@@ -153,10 +153,30 @@ def module_coverage(fe: Any, graph: Dict[str, Any]) -> Dict[str, str]:
     children = {name for name, _ in fe.named_children()}
     problems: Dict[str, str] = {}
 
+    # A declaration names a module that is ABSENT for one of two very different reasons, and
+    # conflating them is how a live module gets its entry deleted. DELETED-from-the-code is a
+    # stale declaration and must be reported; merely NOT ENABLED by this config is normal — the
+    # class still exists and would be undrawn the moment someone turns the flag back on.
+    # `named_children()` shows only BUILT modules, so it cannot tell them apart on its own;
+    # the class's importability can.
+    #
+    # Concretely: `value_intent_route` tripped this when production_config moved to gen-14, which
+    # runs with `--value-intent` OFF (dV 0.1560, condemned by gen-13.5 §2). Deleting the entry
+    # would have silently excused the module if a later generation re-enabled it.
+    # `features_extractor` is the documented re-export hub — every phase-module class resolves
+    # there regardless of which file defines it, which is exactly the property this needs (the
+    # class moved to `value_routes.py`, and a per-file probe would have called it deleted).
+    import agents.model.features_extractor as _fx
+
+    def _class_still_exists(tokens: Any) -> bool:
+        return any(hasattr(_fx, t) for t in (tokens or ()))
+
     for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
         if name not in children:
-            problems[name] = ("STALE declaration — the extractor has no child by this name at "
-                              "this config; delete the entry")
+            if _class_still_exists(MODULE_GRAPH_TOKENS.get(name)):
+                continue          # flag-gated OFF at this config, not deleted — keep the entry
+            problems[name] = ("STALE declaration — the extractor has no child by this name AND "
+                              "its class no longer exists; delete the entry")
         elif name in MODULE_GRAPH_TOKENS and name in NON_DELIVERY_MODULES:
             problems[name] = "declared BOTH mapped and non-delivery — pick one"
 

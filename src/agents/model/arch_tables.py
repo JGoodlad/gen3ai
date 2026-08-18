@@ -95,6 +95,10 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "item_belief_coef": "item_belief_head",     # v83
     "vf_coef": None,
     "value_tail_weight": None,
+    # v90 gen3_td_consistency_aux_v1 — a core train-loop term (the Bellman-residual consistency
+    # loss). No gating module: it reads the critic through `policy.predict_values`, so there is
+    # nothing in the extractor that could make it INERT.
+    "td_aux_coef": None,
 }
 
 _FALSY_STRINGS = {"none", "off", ""}

@@ -873,6 +873,7 @@ def current_model_version(
     threat_prob_outspeed: bool = False,
     hp_type_belief_coef: float = 0.0,
     item_belief_coef: float = 0.0,
+    td_aux_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     vf_coef: float = 0.5,
@@ -959,6 +960,7 @@ def current_model_version(
         win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
         spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
         hp_type_belief_coef=hp_type_belief_coef, item_belief_coef=item_belief_coef,
+        td_aux_coef=td_aux_coef,
     )
 
 

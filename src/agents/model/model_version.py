@@ -18,7 +18,14 @@ from typing import Any, Dict, List
 #   bit-exact ZERO after 25M steps). Route out-widths become D_MODEL and the vf concat
 #   narrows for flag-ON configs, so a <v89 checkpoint recording ANY of them ON carries
 #   shapes the surviving code cannot load — REFUSED (the v75 rule); OFF stamps forward.
-MODEL_CONFIG_VERSION = 91
+# v92 (gen3_td_consistency_aux_v1): `td_aux_coef` — the TD-consistency auxiliary's weight. A
+#   TRAINING-only loss coefficient (the opp_belief_aux_coef class): recorded for provenance and
+#   for flagless-resume read-back, never gated. A pre-v92 config defaults it to 0.0 = OFF.
+#   ⚠️ Built as v90 and RENUMBERED: v90 (gen3_frame_deletion_v1) and v91
+#   (gen3_event_semantics_v1) landed while this sat on a branch. No ARCH_SIGNATURE bump —
+#   the term is computed in the PPO step, never in the extractor forward, so a coef-0 build
+#   is byte-identical and there is nothing for `check_compatible` to gate.
+MODEL_CONFIG_VERSION = 92
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -440,6 +447,12 @@ class ModelVersion:
     # TRAINING-ONLY coefficient (gen3_item_belief_v1, NOT version-locked): the item CE aux weight.
     # Recorded for provenance + flagless-resume read-back. Only meaningful under item_belief=True.
     item_belief_coef: float = 0.0
+    # v90 TRAINING-ONLY coefficient (gen3_td_consistency_aux_v1, NOT version-locked): the weight of the
+    # Bellman-residual consistency term (V(s_t) − r_t − γ·V(s_{t+1}))² over contiguous rollout pairs.
+    # 0.0 = OFF (loss byte-identical). Scales a loss and touches no forward pass, so it is the
+    # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
+    # (`_resolve` reads this field), never compared by check_compatible or any check_*.
+    td_aux_coef: float = 0.0
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:
@@ -489,6 +502,7 @@ class ModelVersion:
         value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
         item_belief_coef: float = 0.0,
+        td_aux_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -679,6 +693,7 @@ class ModelVersion:
             value_from_dist=bool(policy_kwargs.get("value_from_dist", False)),
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
+            td_aux_coef=float(td_aux_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -1713,4 +1728,12 @@ def _migrate_config(data: dict) -> dict:
         # and the signature bumps, so `check_compatible` refuses a pre-v91 checkpoint before
         # this runs; the branch exists so the story sits beside the others on the record.
         data["config_version"] = 91
+    # v92 (gen3_td_consistency_aux_v1) — a TRAINING-only loss coefficient, so a pre-v92 checkpoint
+    # trained with the term OFF and the field simply defaults in. No forward, no weight shape, no
+    # gate: provenance + flagless-resume read-back only. This branch is REACHABLE (unlike v90/v91
+    # above, which the floor and the signature refuse first): a v91 checkpoint is at the floor and
+    # its config genuinely lacks the field.
+    if version < 92:
+        data.setdefault("td_aux_coef", 0.0)
+        data["config_version"] = 92
     return data

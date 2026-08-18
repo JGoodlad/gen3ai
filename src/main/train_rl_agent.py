@@ -378,6 +378,7 @@ def _model_hparams(model) -> dict:
         "spread_belief_coef": float(getattr(model, "spread_belief_coef", 0.0)),
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "item_belief_coef": float(getattr(model, "item_belief_coef", 0.0)),
+        "td_aux_coef": float(getattr(model, "td_aux_coef", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
@@ -564,6 +565,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
+        td_aux_coef=float(getattr(model, "td_aux_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -1448,6 +1450,19 @@ def build_parser() -> argparse.ArgumentParser:
                              "inherited on a flagless resume). Ignored when --value-dist-mode none. Lower "
                              "it if 'shaping' fights the policy (watch grad/value_dist_share / "
                              "grad/value_dist_policy_cosine — this head's own shared-trunk pull).")
+    parser.add_argument("--td-aux-coef", "--td_aux_coef", dest="td_aux_coef",
+                        type=float, default=None,
+                        help="TD-CONSISTENCY auxiliary weight (gen3_td_consistency_aux_v1): add "
+                             "coef * mean[(V(s_t) - r_t - gamma*V(s_t+1))^2] over CONTIGUOUS rollout "
+                             "pairs, on top of the per-state value loss. The per-state MSE never "
+                             "constrains adjacent-state DIFFERENCES, so dV inherits ~2x the state "
+                             "noise where the truth is nearly constant; this is the Bellman identity "
+                             "the critic already owes, made explicit. 0.0 = OFF (loss byte-identical). "
+                             "Pre-registered band 1.0-3.0 (3.0 is the favourite); coef <= 0.1 measured "
+                             "WORSE than control offline, so avoid the small-coef regime. TRAINING-only "
+                             "(not version-locked; inherited on a flagless resume). Costs one extra "
+                             "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
+                             "td_aux/resid_mean stay near 0.")
     parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
                         action=BoolFlag, default=None,
                         help="MoveLatentEncoder (gen3_unified_move_system_v1): a context-free, "
@@ -2110,6 +2125,7 @@ async def main():
     _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
+    _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like win_prob_coef)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
@@ -2246,6 +2262,10 @@ async def main():
         # A negative coef would INVERT the CE gradient. value_dist_coef is training-only (not
         # version-locked), so guard it here — the only gate.
         parser.error("--value-dist-coef must be >= 0 (0 = off; the mode controls on/off)")
+    if args.td_aux_coef is not None and args.td_aux_coef < 0.0:
+        # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
+        # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
+        parser.error("--td-aux-coef must be >= 0 (0 = off)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     if args.opd_coef and args.opd_coef > 0 and not args.search_teacher:
@@ -3615,6 +3635,7 @@ async def main():
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
+            td_aux_coef=args.td_aux_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3668,6 +3689,7 @@ async def main():
         model.item_belief_coef = args.item_belief_coef  # item CE weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
+        model.td_aux_coef = args.td_aux_coef  # TD-consistency aux weight (training-only; resume-mutable)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
         model.search_teacher_coef = args.search_teacher_coef
@@ -3924,6 +3946,7 @@ async def main():
         model.item_belief_coef = args.item_belief_coef  # item CE loss (0.0 = no direct CE)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
+        model.td_aux_coef = args.td_aux_coef  # TD-consistency aux (0.0 = off, loss byte-identical)
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef
         model.search_teacher_value_coef = args.search_teacher_value_coef
@@ -3976,6 +3999,7 @@ async def main():
             value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
+            td_aux_coef=args.td_aux_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

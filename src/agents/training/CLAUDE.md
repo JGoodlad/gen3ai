@@ -1766,6 +1766,91 @@ loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). The v10
 `eval/td_resid_tail` fall.
 Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
 
+## TD-consistency auxiliary (`--td-aux-coef`, `td_aux.py`)
+
+**What it fixes.** The critic's only signal is a PER-STATE regression, `MSE(V(s_t), G_t)`. That
+constrains each state's LEVEL and says nothing about the DIFFERENCE between two adjacent states — so
+independent per-state noise ε in V arrives in `ΔV` at `2·Var(ε)`, exactly where the truth is nearly
+constant. Since ΔV is what GAE reads, that is injected advantage noise on **every** transition, not
+just the dramatic ones. `--td-aux-coef λ` adds the Bellman identity the critic already owes, as an
+explicit loss:
+
+```
+loss += λ · mean_pairs[ ( V(s_t) − r_t − γ·V(s_{t+1}) )² ]
+```
+
+Both residual ends carry gradient (the residual-gradient / Baird form — see the *Cons* in the
+pre-registration). `λ = 0.0` is the default and the whole block is skipped, so an OFF run is
+byte-identical. **Pre-registered band: 1.0–3.0, 3.0 the favourite; `λ ≤ 0.1` measured significantly
+WORSE than control offline, so the small-coef regime is to be avoided, not treated as "a bit of the
+effect".** Full pre-registration (rung-1 evidence, the honest ceiling, the rung-2 gates):
+`designs/research_state/levers/td_consistency_aux.md` (ledger C5). Do not edit that file — it is the
+pre-registration.
+
+**Where the pairs come from — this is the whole engineering problem.** `RolloutBuffer.get()` yields
+a RANDOM PERMUTATION, so a PPO minibatch contains **no adjacent pairs at all**; the pairs have to be
+drawn from the buffer's surviving `[n_steps, n_envs]` structure. `td_aux.sample_contiguous_pairs`
+draws `TD_AUX_STATES` (512) rows as contiguous per-env runs of `TD_AUX_SEG_LEN` (16) and pairs their
+adjacent rows. Four facts make it correct:
+
+- **Row convention.** After the first `get()`, `observations` are `swap_and_flatten`ed to ENV-MAJOR
+  (`row = env·n_steps + t`), so temporal adjacency survives; the sampler returns rows in exactly
+  that convention and `_td_aux_term` **raises** if `generator_ready` is False rather than indexing
+  an un-flattened array (which would silently mis-pair states with rewards at any `n_envs > 1`).
+- **`rewards` / `episode_starts` are NOT in `get()`'s flatten list**, so they stay `[n_steps,
+  n_envs]` and are read in their native shape (rewards are swapped to env-major at use).
+- **Episode boundaries DROP the pair, never zero it.** `episode_starts[t+1] == 1` means the
+  successor begins a new episode, so (t, t+1) is not a transition; zeroing would train
+  `V(s_t) → r_t` at every battle end. This also disposes of SB3's time-limit bootstrap (which folds
+  `γ·V(s_term)` into the stored reward at the done step): that row's successor always starts an
+  episode, so the pair never forms.
+- **Segments, not random pairs.** L contiguous states serve L−1 pairs off L forwards — the
+  "K+1 forwards serve K pairs" economy the pre-registration calls for, ~2× cheaper per pair than
+  independent pair sampling. Rung 1 also found whole-battle batching beat a random-permutation
+  control by 12%, so the within-segment correlation is a feature.
+
+**It runs per MINIBATCH, with its own sample and its own critic forward** — modelled on the
+search-teacher / OPD folds, not on the once-per-`train()` diagnostic probes. Those are read-only;
+this one carries gradient, and a once-per-`train()` fold would give it ONE contribution against the
+value loss's `n_epochs × n_minibatches` (~240 in production), so λ would have to be ~240× rung-1's
+band to mean the same thing. Cost is bounded by `TD_AUX_STATES`, not by `batch_size`: one extra
+512-state critic forward per minibatch, ≈10% of the train step at production shapes.
+
+**The value path is `policy.predict_values`, never a hand-rolled one.** That method is what routes
+to the DISTRIBUTIONAL head's mean under `--value-from-dist` (where the scalar `value_net` is FROZEN)
+and applies PopArt's de-normalization — reading `value_net` directly would train a critic the run
+does not use.
+
+**Units.** `predict_values` returns REAL-unit values and the buffer's rewards are real-unit, so the
+raw residual is real-unit. But under PopArt the value loss trains in NORMALIZED space, so the
+residual is divided by σ — which *is* the normalized-space residual, since
+`normalize(V) − normalize(r + γV′) = (V − r − γV′)/σ` (the μ cancels). λ therefore keeps the meaning
+rung 1 calibrated in both regimes; σ = 1.0 with PopArt off.
+
+**Metrics (`td_aux/` prefix).** `resid_rms` is the headline — the quantity being minimised, the live
+counterpart of the offline ΔV-dispersion instrument, and it should FALL. `resid_mean` (SIGNED) is
+the no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias drifting
+away from ~0 means the residual-gradient term is shifting the LEVEL rather than tightening it — read
+it beside `train/explained_variance`. Also `loss`, `n_pairs`, `scale` (the σ the residual is
+expressed in) and `pair_drop_frac` (share of candidate pairs lost to episode boundaries). The
+shared-trunk pull rides `grad/td_aux_share` + `grad/td_aux_policy_cosine`; the term reaches the trunk
+through the CRITIC path only, so `td_aux_share` against `value_share` is the read for "is the
+consistency term crowding out the level regression it is meant to complement".
+
+**Class: `training_coef`.** Scales a loss, touches no forward pass ⇒ NO `ARCH_SIGNATURE` bump, NOT in
+`check_compatible` and no `check_*` of its own; recorded on `ModelVersion` (`MODEL_CONFIG_VERSION`
+v90) purely for provenance and so a **flagless resume inherits it** via `_resolve`, exactly like
+`--opp-belief-aux-coef`. It is deliberately NOT in `agents/model/flag_registry.py` — that registry's
+scope is extractor architecture toggles, and this reaches the extractor not at all.
+
+Tests: `td_aux_test.py` — the sampler (env-major row convention, (t, t+1) adjacency, boundary pairs
+DROPPED not zeroed, the all-boundary degenerate → `None` not 0.0, the segment economy, fail-loud on a
+flattened `episode_starts`), the residual math on a hand-built case, the PopArt scale identity, both
+ends carrying gradient, and on a REAL `train()`: coef-0 byte-identity (asserted twice — identical
+parameters AND the sampler monkeypatched to raise, so a future sampler change cannot perturb an off
+run), coef>0 moving the update and logging every metric, gradient landing on `value_net`, and the
+un-flattened-buffer refusal.
+
 ## Gradient accumulation (`--grad-accum-steps`)
 
 A **GPU-memory lever** for keeping a large effective batch when the full minibatch OOMs. Stock
