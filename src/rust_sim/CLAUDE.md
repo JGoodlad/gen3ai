@@ -7867,9 +7867,17 @@ expiry), SG2 (the both-sides tie), SG3 (Rest, see above), SG4 (the two Yawn halv
 revert-verified against the mutation it exists to catch, and MUT A (dropping the residual handler)
 fails SG1+SG2 while leaving SG3+SG4 green, which is the specificity you want.
 
-**⚠️ HONEST SCOPE — the fuzz did NOT exercise this.** A 150-battle `ourandom --protocol` run cast
-Safeguard **ZERO times** (the leech-seed / snatch / disable situation), so it neither validates nor
-invalidates the mechanic; what tests Safeguard is SG1-SG4. That run DID surface 3 `kind=seed`
+**⚠️ HONEST SCOPE — the fuzz did NOT exercise this, CONFIRMED AT SCALE.** A 150-battle
+`ourandom --protocol` run cast Safeguard **ZERO times**, and so did a follow-up **500-battle** run
+at a fresh seed (the leech-seed / snatch / disable situation). So the fuzz neither validates nor
+invalidates the mechanic; what tests Safeguard is SG1-SG4. **This is a standing property of the
+`ourandom` surface, not bad luck** — the generator renormalizes over engine-modeled moves and samples
+Smogon per-species move priors, so a move no sampled species commonly carries is simply never drawn.
+Do not plan a low-usage move's validation around this fuzzer.
+**CALIBRATION for future rounds:** that 500-battle run read **492 ok / 6 diverged / 0 panics**, ALL
+`kind=seed`, plus 2 correctly-allowlisted turn-0 construction artifacts — a **~1.2%** standing
+`kind=seed` rate on `ourandom`. Treat a comparable rate as the pre-existing ROUND-26 tail rather than
+a regression, and A/B before attributing any of it to a change. That run DID surface 3 `kind=seed`
 divergences, and an A/B settled them as **NOT this change**: neutralising every Safeguard path (so
 the counter can never be set) reproduces all three at the IDENTICAL kind and decision index. They
 are fresh samples of the pre-existing ROUND-26 decision-stream-desync tail, preserved under
