@@ -117,7 +117,7 @@ const MODELED_WEATHERBALL = new Set(['weatherball']);
 const MODELED_UPROAR = new Set(['uproar']);
 const MODELED_BP_CLUSTER = new Set(['revenge', 'smellingsalts', 'furycutter', 'dreameater', 'falseswipe']);
 const MODELED_LOCKIN = new Set(['outrage', 'petaldance', 'thrash']);
-const MODELED_LOCKIN_ROLLOUT = new Set(['rollout', 'iceball', 'defensecurl', 'rage', 'secretpower']);
+const MODELED_LOCKIN_ROLLOUT = new Set(['rollout', 'iceball', 'defensecurl', 'rage', 'secretpower', 'minimize', 'imprison']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
 // BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED
 // (the reactive volatile + recorder / the delta), no longer deferred.

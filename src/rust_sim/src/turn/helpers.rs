@@ -7,6 +7,36 @@ use crate::state::{Status, Weather};
 use super::*;
 
 impl crate::state::BattleState {
+    /// Is `move_id` blocked for `side`'s active by the FOE's live IMPRISON
+    /// (`gen3_imprison_v1`)? The rule is "the imprisoner KNOWS this move", so it is a
+    /// movepool intersection, not a stored list — which also means a Mimic that overwrote a
+    /// slot changes what is imprisoned, for free.
+    pub(crate) fn imprisoned_for(&self, side: usize, move_id: &str, dex: &Dex) -> bool {
+        let foe = 1 - side;
+        let fslot = self.sides[foe].active;
+        let fmon = &self.sides[foe].pokemon[fslot];
+        if !fmon.imprison || fmon.fainted {
+            return false;
+        }
+        (0..fmon.set.moves.len())
+            .filter_map(|k| self.move_at(foe, fslot, k, dex))
+            .any(|m| crate::dex::to_id(&m.id) == move_id)
+    }
+
+    /// Does `side`'s active KNOW at least one move the FOE also knows? Imprison's cast gate.
+    pub(crate) fn shares_a_move_with_foe(&self, side: usize, dex: &Dex) -> bool {
+        let slot = self.sides[side].active;
+        let foe = 1 - side;
+        let fslot = self.sides[foe].active;
+        let mine: Vec<String> = (0..self.sides[side].pokemon[slot].set.moves.len())
+            .filter_map(|k| self.move_at(side, slot, k, dex))
+            .map(|m| crate::dex::to_id(&m.id))
+            .collect();
+        (0..self.sides[foe].pokemon[fslot].set.moves.len())
+            .filter_map(|k| self.move_at(foe, fslot, k, dex))
+            .any(|m| mine.contains(&crate::dex::to_id(&m.id)))
+    }
+
     /// Execute ONE FULL turn cycle where both sides use a damaging move from their
     /// active mon's move slot (`p1_move_slot` / `p2_move_slot`, 0-based into the
     /// set's `moves`): the action-order shuffle, the per-action `eachEvent` shuffles,

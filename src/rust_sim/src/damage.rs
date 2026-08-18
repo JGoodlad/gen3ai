@@ -256,6 +256,9 @@ pub enum BpMod {
 /// via [`MoveInput::from_dex`], or hand-constructed for a synthetic move.
 #[derive(Debug, Clone)]
 pub struct MoveInput {
+    /// `flags.minimize` — doubles this move's damage against a MINIMIZED target at the final
+    /// ModifyDamage step (`gen3_minimize_v1`). Data-driven from the dex row.
+    pub minimize_doubles: bool,
     pub base_power: u16,
     /// `None` == typeless (`"???"` — no STAB, neutral effectiveness).
     pub move_type: Option<Type>,
@@ -272,6 +275,7 @@ impl MoveInput {
         let m = dex.moves(move_id)?;
         let id = crate::dex::to_id(move_id);
         Some(MoveInput {
+            minimize_doubles: m.minimize_doubles,
             base_power: m.base_power,
             move_type: m.move_type,
             category: m.category,
@@ -326,6 +330,11 @@ pub struct DamageContext {
     /// — `onSourceModifyAtk/SpA ×0.5`). The caller sets this when the defender has
     /// Thick Fat AND the move is Ice/Fire.
     pub defender_thick_fat: bool,
+    /// The DEFENDER holds the MINIMIZE volatile (`gen3_minimize_v1`). Combined with the
+    /// move's own `minimize_doubles` flag it doubles the damage at the FINAL ModifyDamage
+    /// step. Note gen-3 has no `onAccuracy` bypass, so this is the volatile's ONLY effect
+    /// beyond the evasion stage the accuracy pipeline already folds.
+    pub defender_minimized: bool,
     /// Hard immunity (an ability/Levitate immunity the caller resolved — e.g.
     /// Levitate vs Ground, Water Absorb vs Water). A type-chart `0×` is detected
     /// internally from the chart; this covers the ABILITY immunities the chart
@@ -626,7 +635,16 @@ fn modify_damage(base: u64, ctx: &DamageContext, type_mult: f64) -> DamageResult
         }
     }
 
-    // 11. ModifyDamage (final flat modifiers) — none in our scope → identity.
+    // 11. ModifyDamage — the sim's FINAL modifier, after the type multiplier and before the
+    //     randomizer (gen3 `scripts.ts:109`). MINIMIZE (`gen3_minimize_v1`) is the one member
+    //     in scope: the volatile's `onSourceModifyDamage` is
+    //     `if (move.flags['minimize']) return this.chainModify(2)`, so a move carrying the
+    //     FLAG deals double damage to a minimized target. Probe-measured EXACTLY ×2 on a
+    //     controlled pair (Double Team vs Minimize, same seed, byte-identical draw streams:
+    //     Stomp 86 → 172, Extrasensory 31 → 62, and Tackle — no flag — 48 in both).
+    if ctx.defender_minimized && ctx.mv.minimize_doubles {
+        bd = modify(bd, 2, 1);
+    }
 
     // 12 + 13. randomizer (85-100%) then final floor (min 1), over all 16 rolls.
     randomize_all(bd)
@@ -748,7 +766,7 @@ mod tests {
             let ctx = DamageContext {
                 attacker: a,
                 defender: d,
-                mv: MoveInput { base_power: 100, move_type: Some(Type::Fighting), category: MoveCategory::Physical, halves_defense: false },
+                mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: Some(Type::Fighting), category: MoveCategory::Physical, halves_defense: false },
                 crit,
                 weather: None,
                 reflect: false,
@@ -758,6 +776,7 @@ mod tests {
                 def_stat_mods: vec![],
                 bp_mods: vec![],
                 defender_thick_fat: false,
+                defender_minimized: false,
                 immune: false,
                 flash_fire: false,
             };

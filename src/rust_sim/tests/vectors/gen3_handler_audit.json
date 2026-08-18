@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 57,
-   "moves": 294,
-   "rows": 1061
+   "conditions": 59,
+   "moves": 296,
+   "rows": 1075
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1397,6 +1397,30 @@
    "anchor": "turn/moves.rs::run_move",
    "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
   },
+  "condition:imprison:onFoeBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:174a2b6b:onFoeBeforeMove(attacker, defender, move) { if (move.id !== \"struggle\" && this.effectState.source.hasMove(move.id) && !m",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the block: an ALREADY-QUEUED foe move that the imprisoner knows is CANT-ed (|cant|<foe>|move: Imprison|<Move>) with NO PP spent — the check sits before the PP region. A pick made on a LATER turn is instead REJECTED at request time by turn/driver.rs::move_decision_is_legal (checked separately from move_usable, which as a &MonState method cannot see the FOE). The request keeps the blocked slots at disabled:false and gains top-level maybeDisabled/maybeLocked (bridge.rs::serialize_active) — the HIDDEN-disable shape."
+  },
+  "condition:imprison:onFoeBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the block: an ALREADY-QUEUED foe move that the imprisoner knows is CANT-ed (|cant|<foe>|move: Imprison|<Move>) with NO PP spent — the check sits before the PP region. A pick made on a LATER turn is instead REJECTED at request time by turn/driver.rs::move_decision_is_legal (checked separately from move_usable, which as a &MonState method cannot see the FOE). The request keeps the blocked slots at disabled:false and gains top-level maybeDisabled/maybeLocked (bridge.rs::serialize_active) — the HIDDEN-disable shape."
+  },
+  "condition:imprison:onFoeDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:ee904d5e:onFoeDisableMove(pokemon) { for (const moveSlot of this.effectState.source.moveSlots) { if (moveSlot.id === \"struggle\") ",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the block: an ALREADY-QUEUED foe move that the imprisoner knows is CANT-ed (|cant|<foe>|move: Imprison|<Move>) with NO PP spent — the check sits before the PP region. A pick made on a LATER turn is instead REJECTED at request time by turn/driver.rs::move_decision_is_legal (checked separately from move_usable, which as a &MonState method cannot see the FOE). The request keeps the blocked slots at disabled:false and gains top-level maybeDisabled/maybeLocked (bridge.rs::serialize_active) — the HIDDEN-disable shape."
+  },
+  "condition:imprison:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:bd812db1:onStart(target) { this.add(\"-start\", target, \"move: Imprison\"); }",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
   "condition:leechseed:onResidual": {
    "disposition": "implemented",
    "fp": "fn:d527ddb8:onResidual(pokemon) { const target = this.getAtSlot(pokemon.volatiles[\"leechseed\"].sourceSlot); if (!target || target.fa",
@@ -1456,6 +1480,18 @@
    "fp": "fn:6eaeba2c:onSideStart(side) { this.add(\"-sidestart\", side, \"move: Light Screen\"); }",
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
+  },
+  "condition:minimize:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:67491e02:() => null",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen \"these moves cannot miss a minimized target\" rule does not exist here."
+  },
+  "condition:minimize:onSourceModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:4c4ee54a:onSourceModifyDamage(damage, source, target, move) { if (move.flags[\"minimize\"]) { return this.chainModify(2); } }",
+   "anchor": "damage.rs::modify_damage",
+   "reason": "step 11, the sim's FINAL ModifyDamage modifier (after the type multiplier, before the randomizer): a move carrying flags.minimize deals DOUBLE damage to a minimized target. Driven by the DATA flag (MoveData::minimize_doubles, newly extracted) rather than an id list, because the gen-3-legal carriers are exactly stomp/astonish/extrasensory/needlearm and bodyslam & co. only gained the flag in gen 9. Probe-measured EXACTLY x2 on a controlled Double-Team-vs-Minimize pair."
   },
   "condition:mirrorcoat:duration": {
    "disposition": "implemented",
@@ -4640,6 +4676,30 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:imprison:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
+  "move:imprison:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
+  "move:imprison:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:eb172e95:onTryHit(pokemon) { for (const target of pokemon.foes()) { for (const move of pokemon.moves) { if (target.moves.includes",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
+  "move:imprison:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"imprison\"",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
   "move:irondefense:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"def\":2}",
@@ -4902,6 +4962,30 @@
    "fp": "fn:1688b09e:onHit(target, source) { if (source.transformed || !target.lastMove || target.volatiles[\"substitute\"]) { return false; } ",
    "anchor": "turn.rs::run_status_move",
    "reason": "the mimic arm: sub / no-lastMove / failmimic (data-driven MoveData::fail_mimic) / already-known fails ([still]+-fail, draw-free); the copy overlays the slot {pp: min(5, base), maxpp: calculatePP(copied,3)} via MonState::mimic_overlay; restore_mimic_overlay reverts on switch-out/faint (MC95)"
+  },
+  "move:minimize:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"evasion\":1}",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen \"these moves cannot miss a minimized target\" rule does not exist here."
+  },
+  "move:minimize:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen \"these moves cannot miss a minimized target\" rule does not exist here."
+  },
+  "move:minimize:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen \"these moves cannot miss a minimized target\" rule does not exist here."
+  },
+  "move:minimize:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"minimize\"",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen \"these moves cannot miss a minimized target\" rule does not exist here."
   },
   "move:mirrorcoat:onTry": {
    "disposition": "implemented",

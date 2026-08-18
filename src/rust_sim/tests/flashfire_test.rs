@@ -438,9 +438,10 @@ fn flash_fire_boost_exact_max_roll() {
     // level 100, spa 300, spd 200, BP 95 (Flamethrower), Fire type, attacker Fire-type (STAB),
     // neutral defender (Normal). Special (gen-3 Fire is always Special via the type split).
     let ctx = |flash_fire: bool| DamageContext {
+        defender_minimized: false,
         attacker: Combatant { level: 100, spa_stat: 300, types: vec![Type::Fire], ..Default::default() },
         defender: Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() },
-        mv: MoveInput { base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },
+        mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },
         crit: false,
         weather: None,
         reflect: false,
@@ -464,7 +465,7 @@ fn flash_fire_boost_exact_max_roll() {
     // A NON-Fire move by an FF-armed attacker gets NO boost (the fold is Fire-gated — the caller
     // sets flash_fire only for a Fire move, but pin the calc too: a typeless move is unchanged).
     let non_fire = |flash_fire: bool| DamageContext {
-        mv: MoveInput { base_power: 95, move_type: None, category: MoveCategory::Special, halves_defense: false },
+        mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: None, category: MoveCategory::Special, halves_defense: false },
         ..ctx(flash_fire)
     };
     assert_eq!(
@@ -485,9 +486,10 @@ fn flash_fire_light_screen_chain_combine_exact() {
     // A special Fire hit into a Light-Screen defender, FF armed. Both FF (×1.5) and Light Screen
     // (×0.5) fire in ModifyDamagePhase1; the sim accumulates them → one modifier applied once.
     let ctx = |flash_fire: bool, light_screen: bool| DamageContext {
+        defender_minimized: false,
         attacker: Combatant { level: 100, spa_stat: 300, types: vec![Type::Fire], ..Default::default() },
         defender: Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() },
-        mv: MoveInput { base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },
+        mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },
         crit: false,
         weather: None,
         reflect: false,

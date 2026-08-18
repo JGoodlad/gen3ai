@@ -1832,6 +1832,53 @@ impl crate::state::BattleState {
         // only job is to DOUBLE Rollout / Ice Ball — which is why the two ship together. The
         // condition is `noCopy` with an `onRestart` returning null, so a re-use re-applies the
         // boost (subject to the ±6 clamp) and leaves the volatile as it was.
+        // ---- MINIMIZE (`gen3_minimize_v1`) ---------------------------------------
+        // Structurally Double Team plus a LIVE volatile. The +1 evasion is the visible half
+        // (the accuracy pipeline already folds the evasion stage); the volatile is the half
+        // that matters, because a move carrying `flags.minimize` deals DOUBLE damage to the
+        // holder. gen-3 has NO `onAccuracy` bypass — the later-gen "these moves cannot miss a
+        // minimized target" rule does not exist here. Never-miss, DRAW-FREE.
+        // ---- IMPRISON (`gen3_imprison_v1`) ---------------------------------------
+        // DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no `-end`
+        // line — it simply lasts while the caster is out. It succeeds iff the caster shares at
+        // least one move with the CURRENT foe; the restriction itself is re-derived as a
+        // movepool intersection each time it is consulted, so a Mimic that rewrites a slot
+        // changes what is imprisoned for free.
+        if move_id == "imprison" {
+            debug_assert!(never_miss, "imprison: expected the never-miss dex row");
+            if self.shares_a_move_with_foe(_side, dex) {
+                self.sides[_side].pokemon[_slot].imprison = true;
+                // [EMIT] `|-start|<u>|move: Imprison` (the `move: `-prefixed form).
+                if self.logging() {
+                    let u = self.mon_ref(_side, _slot, dex);
+                    self.log.volatile_start(&u, "move: Imprison");
+                }
+            } else if self.logging() {
+                // No shared move → the did-nothing `[still]` form + a bare -fail on the USER.
+                let u = self.mon_ref(_side, _slot, dex);
+                self.log.attr_last_move_still();
+                self.log.fail(&u, None, false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        if move_id == "minimize" {
+            debug_assert!(never_miss, "minimize: expected the never-miss dex row");
+            self.sides[_side].pokemon[_slot].minimize = true;
+            {
+                let idx = 6usize; // evasion
+                let cur = self.sides[_side].pokemon[_slot].boosts[idx] as i32;
+                let next = (cur + 1).clamp(-6, 6);
+                self.sides[_side].pokemon[_slot].boosts[idx] = next as i8;
+                if self.logging() {
+                    let delta = (next - cur) as i8;
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.boost_applied(&user, idx, 1, delta, next as i8);
+                }
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         if move_id == "defensecurl" {
             debug_assert!(never_miss, "defensecurl: expected the never-miss dex row");
             self.sides[_side].pokemon[_slot].defense_curl = true;

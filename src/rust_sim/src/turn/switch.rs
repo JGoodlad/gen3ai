@@ -236,6 +236,8 @@ impl crate::state::BattleState {
                 mon.rollout = None;
                 mon.defense_curl = false;
                 mon.rage = false;
+                mon.minimize = false;
+                mon.imprison = false;
                 mon.damaged_by_foe_this_turn = false;
                 mon.last_move_was_self_overwrite = false;
                 // clearVolatile also drops the FLASH FIRE activation on faint — a fainted FF
@@ -942,6 +944,8 @@ impl crate::state::BattleState {
             m.rollout = None;        // gen3_rollout_defensecurl_v1
             m.defense_curl = false;  // gen3_rollout_defensecurl_v1
             m.rage = false;          // gen3_rage_secretpower_v1
+            m.minimize = false;      // gen3_minimize_v1
+            m.imprison = false;      // gen3_imprison_v1 — lasts only while the caster is out
             m.damaged_by_foe_this_turn = false;
             // The FOCUS PUNCH + PURSUIT `duration: 1` volatiles clear on switch-out
             // (`clearVolatile`, `gen3_move_coverage_batch4_v1`). A switching FP user drops its

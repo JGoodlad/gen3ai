@@ -133,6 +133,19 @@ impl crate::state::BattleState {
                     // decision commits and runs Struggle. So reject ONLY when this specific slot is
                     // un-usable AND a different usable move exists. `move_usable` now folds in the
                     // Disable/Taunt selection restriction (dex read for Taunt's per-slot category).
+                    // IMPRISON (`gen3_imprison_v1`): a move the FOE has imprisoned is
+                    // REJECTED like any other un-usable slot — the sim answers
+                    // `|error|[Unavailable choice] Can't move: Foe's <Move> is disabled` and
+                    // RE-REQUESTS with that slot flipped to `disabled:true`. It is checked
+                    // separately from `move_usable` because the restriction lives on the FOE,
+                    // which `move_usable` (a &MonState method) cannot see.
+                    if let Some(m) = self.move_at(side, self.sides[side].active, mi, dex) {
+                        if self.imprisoned_for(side, &crate::dex::to_id(&m.id), dex)
+                            && !mon.must_struggle(dex)
+                        {
+                            return false;
+                        }
+                    }
                     if !mon.move_usable(mi, dex) && !mon.must_struggle(dex) {
                         return false;
                     }

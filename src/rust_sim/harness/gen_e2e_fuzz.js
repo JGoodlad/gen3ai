@@ -444,7 +444,7 @@ const MODELED_BP_CLUSTER_MOVES = new Set(['revenge', 'smellingsalts', 'furycutte
 // The LOCK-IN family (`gen3_lockin_family_v1`) — one shared `lockedmove` condition: a
 // random(2,4) duration drawn on the CAST, then confusion when it runs out.
 const MODELED_LOCKIN_MOVES = new Set(['outrage', 'petaldance', 'thrash']);
-const MODELED_LOCKIN_MOVES_ROLLOUT = new Set(['rollout', 'iceball', 'defensecurl', 'rage', 'secretpower']);
+const MODELED_LOCKIN_MOVES_ROLLOUT = new Set(['rollout', 'iceball', 'defensecurl', 'rage', 'secretpower', 'minimize', 'imprison']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE

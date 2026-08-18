@@ -919,7 +919,24 @@ fn serialize_active_with_disabled_source(
     } else {
         ""
     };
-    format!("{{\"moves\":{moves_json}{flag}}}")
+    // IMPRISON (`gen3_imprison_v1`): the restriction is HIDDEN. The imprisoned slots keep
+    // `disabled:false` and the request instead gains TOP-LEVEL `maybeDisabled` / `maybeLocked`
+    // flags — probe-captured. (A rejected pick then re-requests with that one slot flipped to
+    // `disabled:true,"disabledSource":""`, which the existing reject path already produces.)
+    // `maybeLocked` drops away on the re-request, so it is emitted only on a FRESH request.
+    let imprisoned_any = (0..state.sides[side].pokemon[state.sides[side].active].set.moves.len())
+        .filter_map(|k| state.move_at(side, state.sides[side].active, k, dex))
+        .any(|m| state.imprisoned_for(side, &crate::dex::to_id(&m.id), dex));
+    let imp = if imprisoned_any {
+        if trapped_firm {
+            ",\"maybeDisabled\":true"
+        } else {
+            ",\"maybeDisabled\":true,\"maybeLocked\":true"
+        }
+    } else {
+        ""
+    };
+    format!("{{\"moves\":{moves_json}{flag}{imp}}}")
 }
 
 /// Whether `side` has ≥1 live, non-active bench mon (mirrors `battle.canSwitch`).

@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs (7 SHIPPED, IMPRISON open)
+### THE BANKED SPEC QUEUE — 8 probe-settled specs, ALL SHIPPED (rounds 45-52)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -6581,7 +6581,7 @@ one non-obvious, because that trap is the reason the spec is worth more than the
 | ~~Fake Out~~ **SHIPPED** | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
 | ~~Conversion / Conversion 2~~ **SHIPPED** | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
 | ~~Torment~~ **SHIPPED** | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
-| Imprison | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
+| ~~Imprison~~ **SHIPPED** | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
 | ~~Weather Ball~~ **SHIPPED** | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
 | ~~Skill Swap~~ **SHIPPED** | `probe_skillswap.js` | swapped abilities do **NOT** re-fire `onStart` (so re-running switch-in makes Trace draw where the sim does not) — but `onEnd` DOES fire, and that is the only draw it creates |
 
@@ -8170,4 +8170,61 @@ sample any of them, so the pins are the gate. NOT pinned: Ice Ball's ladder spec
 Rollout's code path and its own probe row, but the pin drives Rollout), Rollout's
 `rolloutstorage` carry-over (gen4+ only), and the Defense Curl re-use case (the condition's
 `onRestart` returns null, so a second cast re-applies the boost and leaves the volatile alone).
+
+### ROUND 52 (FIX) — MINIMIZE + IMPRISON: the banked queue closes, and the census reaches 309
+
+`gen3_minimize_v1` + `gen3_imprison_v1`. **All eight banked specs are now shipped**, and every
+gen-3 move that used to panic at construction is modeled.
+
+- **MINIMIZE is NOT a pure self-boost.** Double Team and Minimize are structurally identical
+  declarative +1-evasion moves, but Minimize's volatile is LIVE in gen 3: its
+  `onSourceModifyDamage` **doubles the damage of any move carrying `flags.minimize`**. The gen-3
+  carriers are exactly **stomp / astonish / extrasensory / needlearm** — NOT bodyslam & co., which
+  gained the flag in gen 9, so a hand-list written from modern knowledge would be wrong. The flag
+  is therefore EXTRACTED (`sync.py` → `gen3_moves.json` → `MoveData::minimize_doubles`) and the
+  fold sits at damage step **11**, the sim's final `ModifyDamage` — after the type multiplier,
+  before the randomizer. gen-3 has NO `onAccuracy` bypass: the later-gen "these moves cannot miss
+  a minimized target" rule does not exist here (measured — Stomp into +3 evasion still rolls and
+  still misses).
+- **IMPRISON is a HIDDEN disable**, and that is the whole difficulty. It is entirely DRAW-FREE with
+  no accuracy roll, no duration, no residual tick and no `-end` line. It succeeds iff the caster
+  SHARES a move with the current foe. The restriction is re-derived as a movepool INTERSECTION
+  whenever consulted — so a Mimic that rewrites a slot changes what is imprisoned for free — and it
+  had to live outside `move_usable`, which as a `&MonState` method cannot see the FOE.
+  Its three surfaces: an already-QUEUED foe move is `|cant|`-ed with **no PP spent**; a pick made
+  on a LATER turn is REJECTED at request time; and the request itself keeps the blocked slots at
+  `disabled:false`, gaining top-level `maybeDisabled`/`maybeLocked` instead.
+
+**⚠️ THE DATA CHANGE WAS VERIFIED STRUCTURALLY, NOT BY EYEBALL.** Regenerating `gen3_moves.json`
+for one new boolean produced a **611-insertion / 241-deletion** diff, which looks alarming. Parsing
+both revisions and comparing field-by-field showed **zero existing fields changed** — every
+non-`minimize` line was a `"sound": false` gaining a trailing comma. A line diff could not have
+established that; the structural comparison could, and is what should be run whenever a generated
+data file is regenerated.
+
+**⚠️ THE `|cant|` ONLY FIRES FOR AN ALREADY-QUEUED MOVE.** IM1's first board cast Imprison on turn 1
+and had the foe attempt the shared move on turn 2 — which the LEGALITY path rejects, so no `|cant|`
+ever appeared and the pin read as "Imprison does nothing". The two surfaces are genuinely
+different, and testing the cant requires both mons acting on the SAME turn with the imprisoner
+faster. Same shape as Rage's window in ROUND 51.
+
+**Gates:** `cargo test --release --no-fail-fast` **706 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1075 rows**; extractor-parity
+5/5 and the gen3_data + observation suites 301/301 green (the data change is reproducible AND
+obs-neutral — the facade ignores `minimize`); `SCAN_UNIVERSE=1` **369 → 309 MODELED / 60 FAIL-LOUD
+/ 0 MISMODELED**. Mutations: removing the ModifyDamage fold fails only MZ1; removing the cant fails
+only IM1; removing the shared-move gate fails only IM2.
+
+**WHERE THE CENSUS NOW STANDS (369 gen-3-legal moves).** 309 modeled, **0 MISMODELED**, and the 60
+remaining fail-louds cluster into five families rather than a long tail:
+**(A) two-turn charge / recharge** (fly / dig / dive / bounce / razorwind / skullbash / skyattack +
+blastburn / frenzyplant / hydrocannon) — the machinery exists for Solar Beam and Hyper Beam; these
+need the semi-invulnerable `onInvulnerability` half. **(B) OHKO** (fissure / guillotine / horndrill
+/ sheercold) — accuracy-gated instakill plus the level gate. **(C) move-CALLERS** (assist /
+metronome / mirror move / nature power) — each calls another move, so each multiplies the surface.
+**(D) the Stockpile family** (stockpile / swallow / spit up) — one shared counter. **(E) ~31
+remaining STATUS utility** (attract / foresight / lock-on / mind reader / camouflage / ingrain /
+magic coat / mist / nightmare / role play / sketch / spite / the stat-drop tail …). Note the picker
+reports a slightly larger number than the census because it deliberately false-rejects two modeled
+things — the typed Hidden Powers and (carrier-conditionally) Sleep Talk.
 

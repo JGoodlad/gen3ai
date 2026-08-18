@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-57 conditions (engine state space + attached), 294 modeled moves
-→ **1061 (effect, hook) rows**.
+59 conditions (engine state space + attached), 296 modeled moves
+→ **1075 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1008 |
+| implemented | 1022 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -347,7 +347,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (257 rows: implemented=242, noop_justified=9, unreachable_justified=6)
+## condition (263 rows: implemented=248, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -452,6 +452,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | iceball | onLockMove | implemented | `turn/moves.rs::run_move` |
 | iceball | onResidual | implemented | `turn/moves.rs::run_move` |
 | iceball | onStart | implemented | `turn/moves.rs::run_move` |
+| imprison | onFoeBeforeMove | implemented | `turn/moves.rs::run_move` |
+| imprison | onFoeBeforeMovePriority | implemented | `turn/moves.rs::run_move` |
+| imprison | onFoeDisableMove | implemented | `turn/moves.rs::run_move` |
+| imprison | onStart | implemented | `turn/status_moves.rs::run_status_move` |
 | leechseed | onResidual | implemented | `turn.rs::apply_leech_seed` |
 | leechseed | onResidualOrder | implemented | `turn.rs::apply_leech_seed` |
 | leechseed | onResidualSubOrder | implemented | `turn.rs::apply_leech_seed` |
@@ -462,6 +466,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | lightscreen | onSideEnd | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideResidualOrder | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideStart | implemented | `turn.rs::modeled_screen_move` |
+| minimize | onRestart | implemented | `turn/status_moves.rs::run_status_move` |
+| minimize | onSourceModifyDamage | implemented | `damage.rs::modify_damage` |
 | mirrorcoat | duration | implemented | `state.rs::reactive` |
 | mirrorcoat | onDamage | implemented | `turn.rs::record_reactive_hit` |
 | mirrorcoat | onDamagePriority | implemented | `turn.rs::record_reactive_hit` |
@@ -609,7 +615,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (483 rows: implemented=479, noop_justified=2, unreachable_justified=2)
+## move (491 rows: implemented=487, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -814,6 +820,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | icepunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | iciclespear | multihit | implemented | `turn.rs::run_multihit` |
 | icywind | secondaries | implemented | `turn.rs::apply_secondaries` |
+| imprison | ignoreImmunity | implemented | `turn/status_moves.rs::run_status_move` |
+| imprison | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
+| imprison | onTryHit | implemented | `turn/status_moves.rs::run_status_move` |
+| imprison | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | irondefense | boosts | implemented | `turn.rs::self_boost_spec` |
 | irondefense | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | irondefense | neverMiss | implemented | `turn.rs::never_miss` |
@@ -858,6 +868,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | mimic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | mimic | neverMiss | implemented | `turn.rs::run_status_move` |
 | mimic | onHit | implemented | `turn.rs::run_status_move` |
+| minimize | boosts | implemented | `turn/status_moves.rs::run_status_move` |
+| minimize | ignoreImmunity | implemented | `turn/status_moves.rs::run_status_move` |
+| minimize | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
+| minimize | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | mirrorcoat | onTry | implemented | `turn.rs::run_fixed_damage_move` |
 | mirrorcoat | priority | implemented | `turn.rs::move_priority` |
 | mistball | secondaries | implemented | `turn.rs::apply_secondaries` |

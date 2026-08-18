@@ -525,6 +525,21 @@ add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('enco
 // SKILL SWAP (`gen3_skill_swap_v1`).
 add([mv('skillswap', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3\'s only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability.'));
+// MINIMIZE (`gen3_minimize_v1`).
+add([mv('minimize', 'volatileStatus'), mv('minimize', 'boosts'), mv('minimize', 'neverMiss'),
+     mv('minimize', 'ignoreImmunity'), cond('minimize', 'onRestart'), cond('minimize', 'noCopy')],
+  IMPL('turn/status_moves.rs::run_status_move', 'the minimize arm: never-miss, DRAW-FREE, +1 evasion (which the accuracy pipeline already folds) PLUS MonState::minimize. The volatile is what matters — gen-3 has NO onAccuracy bypass, so the later-gen "these moves cannot miss a minimized target" rule does not exist here.'));
+add([cond('minimize', 'onSourceModifyDamage')],
+  IMPL('damage.rs::modify_damage', 'step 11, the sim\'s FINAL ModifyDamage modifier (after the type multiplier, before the randomizer): a move carrying flags.minimize deals DOUBLE damage to a minimized target. Driven by the DATA flag (MoveData::minimize_doubles, newly extracted) rather than an id list, because the gen-3-legal carriers are exactly stomp/astonish/extrasensory/needlearm and bodyslam & co. only gained the flag in gen 9. Probe-measured EXACTLY x2 on a controlled Double-Team-vs-Minimize pair.'));
+
+// IMPRISON (`gen3_imprison_v1`).
+add([mv('imprison', 'volatileStatus'), mv('imprison', 'onTryHit'), mv('imprison', 'neverMiss'),
+     mv('imprison', 'ignoreImmunity'), cond('imprison', 'onStart')],
+  IMPL('turn/status_moves.rs::run_status_move', 'the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free.'));
+add([cond('imprison', 'onFoeBeforeMove'), cond('imprison', 'onFoeBeforeMovePriority'),
+     cond('imprison', 'onFoeDisableMove')],
+  IMPL('turn/moves.rs::run_move', 'the block: an ALREADY-QUEUED foe move that the imprisoner knows is CANT-ed (|cant|<foe>|move: Imprison|<Move>) with NO PP spent — the check sits before the PP region. A pick made on a LATER turn is instead REJECTED at request time by turn/driver.rs::move_decision_is_legal (checked separately from move_usable, which as a &MonState method cannot see the FOE). The request keeps the blocked slots at disabled:false and gains top-level maybeDisabled/maybeLocked (bridge.rs::serialize_active) — the HIDDEN-disable shape.'));
+
 // The LOCK-IN family (`gen3_lockin_family_v1`) — OUTRAGE / PETAL DANCE / THRASH.
 add([mv('outrage', 'self'), mv('petaldance', 'self'), mv('thrash', 'self'),
      cond('lockedmove', 'onStart'), cond('lockedmove', 'onRestart'), cond('lockedmove', 'onResidual'),

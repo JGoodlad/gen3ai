@@ -488,6 +488,19 @@ impl crate::state::BattleState {
         // UPROAR spends PP ONCE, on the CAST (`gen3_uproar_v1`, probed 16 -> 15 across a
         // 5-turn lock) — every CONTINUING turn is a lockedmove and skips deductPP, exactly
         // like Solar Beam's fire turn.
+        // --- IMPRISON (`gen3_imprison_v1`): a queued move the FOE has imprisoned is CANT-ed
+        //     here — DRAW-FREE, and NO PP is spent (the block sits before the deduct, which is
+        //     why it must precede the PP region rather than ride the immunity short-circuit).
+        //     [EMIT] `|cant|<user>|move: Imprison|<Move>`. ---
+        if !pursuit_strike && !sleep_talk_call && self.imprisoned_for(side, &move_id, dex) {
+            if self.logging() {
+                let u = self.mon_ref(side, slot, dex);
+                let name = dex.moves(&move_id).map(|m| m.name.clone()).unwrap_or_default();
+                self.log.cant(&u, "move: Imprison", Some(&name));
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         let locked_uproar =
             !pursuit_strike && move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_some();
         // OUTRAGE / PETAL DANCE / THRASH likewise spend PP once, on the CAST.
@@ -955,6 +968,16 @@ impl crate::state::BattleState {
         let mut ctx = self.build_damage_context(
             side, slot, foe, foe_slot, base_power, move_type, category, halves_def, dex,
         );
+        // MINIMIZE (`gen3_minimize_v1`): the MOVE half of the pair. `build_damage_context`
+        // has no move id in scope, so its `minimize_doubles` defaults false and is set here.
+        // The gen-3-legal carriers are exactly stomp / astonish / extrasensory / needlearm —
+        // read from the dex FLAG, not a hand-list, because bodyslam & co. gained the flag in
+        // gen 9 and a list written from modern knowledge would be wrong. None of the four is
+        // multi-hit or fixed-damage, so this single-hit site is the whole surface.
+        ctx.mv.minimize_doubles = dex
+            .moves(&to_id(&move_id))
+            .map(|m| m.minimize_doubles)
+            .unwrap_or(false);
 
         // --- WONDER GUARD (`gen3_wonder_guard_v1`): the SE-ONLY damage gate. The gen4-override
         //     (gen3-inherited) `onTryHit` blocks a DAMAGING move into a Wonder Guard holder unless
@@ -2042,6 +2065,7 @@ impl crate::state::BattleState {
                     has_guts: false,
                 },
                 mv: MoveInput {
+                    minimize_doubles: false,
                     base_power: 10,
                     move_type: None,
                     category: MoveCategory::Special,
@@ -2056,6 +2080,7 @@ impl crate::state::BattleState {
                 def_stat_mods: Vec::new(),
                 bp_mods: Vec::new(),
                 defender_thick_fat: false,
+                defender_minimized: false,
                 immune: false,
                 flash_fire: false,
             };
@@ -3227,6 +3252,7 @@ impl crate::state::BattleState {
             attacker: me.clone(),
             defender: me,
             mv: MoveInput {
+                minimize_doubles: false,
                 base_power: 40,
                 move_type: None, // typeless ('???') — no STAB, neutral
                 category: MoveCategory::Physical,
@@ -3241,6 +3267,7 @@ impl crate::state::BattleState {
             def_stat_mods,
             bp_mods: Vec::new(), // type-gated ('???' never matches) — none can fire
             defender_thick_fat: false,
+            defender_minimized: false,
             immune: false,
             // Flash Fire is Fire-type-gated; the typeless '???' self-hit is NOT Fire, so an
             // FF-armed mon that confusion-self-hits gets NO ×1.5 (probe-consistent). false.
@@ -3357,7 +3384,15 @@ impl crate::state::BattleState {
             has_guts: false,
         };
 
-        let mv = MoveInput { base_power, move_type, category, halves_defense: halves_def };
+        let mv = MoveInput {
+            // Defaulted here (no move id in scope); `run_move` sets it — together with
+            // `defender_minimized` — right after this returns, where the id IS in scope.
+            minimize_doubles: false,
+            base_power,
+            move_type,
+            category,
+            halves_defense: halves_def,
+        };
 
         // Runtime conditions the ability DMG_MOD folds gate on (`gen3_item_mechanics_v1`
         // ability side): a major status on either mon, and the attacker's PINCH state
@@ -3473,6 +3508,10 @@ impl crate::state::BattleState {
             attacker,
             defender,
             mv,
+            // MINIMIZE (`gen3_minimize_v1`): the DEFENDER's volatile. Paired with the move's
+            // own `minimize_doubles` flag (set by the caller, which has the move id) it
+            // doubles the damage at the FINAL ModifyDamage step.
+            defender_minimized: self.sides[foe].pokemon[foe_slot].minimize,
             crit: false, // set by the caller after the crit roll
             weather,
             // SCREENS (`gen3_move_coverage_batch2_v1`): the DEFENDER's side conditions halve

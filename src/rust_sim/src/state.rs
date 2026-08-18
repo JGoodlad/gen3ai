@@ -525,6 +525,19 @@ pub struct MonState {
     /// is "from casting Rage until I act again" — which is why the boost is only observable
     /// when the foe strikes on the SAME turn (or is faster on the next one). Probe-measured.
     pub rage: bool,
+    /// MINIMIZE's volatile (`gen3_minimize_v1`). Its own effect is the +1 evasion (which the
+    /// accuracy pipeline already folds), but the VOLATILE is live in gen 3: a move carrying
+    /// `flags.minimize` deals DOUBLE damage to the holder. Note gen-3 has NO `onAccuracy`
+    /// bypass — the later-gen "these moves can't miss a minimized target" rule does not
+    /// exist here (measured: Stomp into +3 evasion still rolls and still misses).
+    pub minimize: bool,
+    /// IMPRISON (`gen3_imprison_v1`): this mon has cast Imprison, so every move it KNOWS is
+    /// blocked for the FOE. There is no duration, no residual tick and no `-end` line — it
+    /// simply lasts while the caster is out. The restriction is HIDDEN in the request: the
+    /// foe's blocked moves still report `disabled:false`, and the request instead gains the
+    /// top-level `maybeDisabled` / `maybeLocked` flags. A rejected pick then re-requests with
+    /// that slot flipped to `disabled:true, disabledSource:""`.
+    pub imprison: bool,
     /// `pokemon.activeTurns` — the number of turns this mon has been active (`pokemon.ts:243`;
     /// set to 0 in `switchIn` [battle-actions.ts:137], `++`'d at `endTurn` [battle.ts:1762],
     /// AFTER the residual). Read by **Speed Boost** (`gen3_ability_batch1_v1`): its
@@ -1319,6 +1332,8 @@ impl MonState {
             rollout: None,
             defense_curl: false,
             rage: false,
+            minimize: false,
+            imprison: false,
             position,
             uid: position, // the construction-time index is the stable identity
             // `pokemon.speed` is initialized to the raw `storedStats.spe` (the

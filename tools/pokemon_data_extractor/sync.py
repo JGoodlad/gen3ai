@@ -795,6 +795,13 @@ def build_moves(gen):
             # obs-neutral; they exist for the `src/rust_sim` port's contact-proc + Soundproof gates.
             "contact": bool(flags.get("contact")),
             "sound": bool(flags.get("sound")),
+            # `minimize` — the MINIMIZE volatile's `onSourceModifyDamage` DOUBLES the damage
+            # of any move carrying this flag (`gen3_minimize_v1`). It is a FLAG, not an id
+            # list, and the gen-3-legal carriers are exactly stomp / astonish / extrasensory /
+            # needlearm — NOT bodyslam & co., which gained the flag in gen 9. Extracting it
+            # keeps the port from hand-maintaining that distinction. Obs-neutral like the two
+            # above (the facade ignores it).
+            "minimize": bool(flags.get("minimize")),
         }
         # gen3_move_coverage_batch5_v1: the SLEEP TALK pool-exclusion flags, enumerated
         # from the data (never hand-listed). `nosleeptalk` — the move cannot be called by

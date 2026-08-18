@@ -280,9 +280,10 @@ fn damage_golden_matches_showdown() {
             burned: def_status == "brn",
             has_guts: pokesim::dex::to_id(def_ability_id) == "guts",
         };
-        let mv = MoveInput { base_power: bp, move_type, category, halves_defense: halves_def };
+        let mv = MoveInput { minimize_doubles: false, base_power: bp, move_type, category, halves_defense: halves_def };
 
         let ctx = DamageContext {
+            defender_minimized: false,
             attacker,
             defender,
             mv,
@@ -333,9 +334,10 @@ fn damage_smoke() {
     // mods. base = tr(tr(tr(tr(2*100/5+2)*100*300)/200)/50) = tr(tr(tr(42*30000)/200)/50)
     //   = tr(tr(1260000/200)/50) = tr(6300/50) = 126; +2 = 128 (no crit/STAB/type).
     let base_ctx = |category, move_type, crit, atk, def, boosts_def: [i8; 5]| DamageContext {
+        defender_minimized: false,
         attacker: Combatant { level: 100, atk_stat: atk, spa_stat: atk, types: vec![Type::Normal], ..Default::default() },
         defender: Combatant { level: 100, def_stat: def, spd_stat: def, types: vec![Type::Normal], boosts: boosts_def, ..Default::default() },
-        mv: MoveInput { base_power: 100, move_type, category, halves_defense: false },
+        mv: MoveInput { minimize_doubles: false, base_power: 100, move_type, category, halves_defense: false },
         crit,
         weather: None,
         reflect: false,
@@ -372,9 +374,10 @@ fn damage_smoke() {
 
     // TYPE 0× (immunity) → 0 damage. A Ground move vs a Flying defender (chart 0×).
     let immune_ctx = DamageContext {
+        defender_minimized: false,
         attacker: Combatant { level: 100, atk_stat: 300, types: vec![Type::Ground], ..Default::default() },
         defender: Combatant { level: 100, def_stat: 200, types: vec![Type::Flying], ..Default::default() },
-        mv: MoveInput { base_power: 100, move_type: Some(Type::Ground), category: MoveCategory::Physical, halves_defense: false },
+        mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: Some(Type::Ground), category: MoveCategory::Physical, halves_defense: false },
         crit: false, weather: None, reflect: false, light_screen: false,
         atk_stat_mods: vec![], atk_direct_modify: None, def_stat_mods: vec![], bp_mods: vec![],
         defender_thick_fat: false, immune: false, flash_fire: false,

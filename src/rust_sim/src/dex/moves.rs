@@ -53,6 +53,12 @@ pub struct MoveData {
     /// IMMUNE to it. Of the modeled moves: Sing / Grass Whistle (sleep) + Roar (phaze) are sound;
     /// Whirlwind is NOT.
     pub is_sound: bool,
+    /// `flags.minimize` — the MINIMIZE volatile's `onSourceModifyDamage` DOUBLES this move's
+    /// damage against a minimized target (`gen3_minimize_v1`). Data-driven precisely because
+    /// the gen-3-legal carrier set (stomp / astonish / extrasensory / needlearm) is NOT the
+    /// modern one — bodyslam & co. gained the flag in gen 9, so a hand-list written from
+    /// current knowledge would be wrong.
+    pub minimize_doubles: bool,
     /// Whether the move CANNOT be called by Sleep Talk (`flags.nosleeptalk` →
     /// `noSleepTalk` in the data, `gen3_move_coverage_batch5_v1`). Sleep Talk's onHit
     /// builds its pool from the user's moveSlots keeping only
@@ -427,6 +433,7 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
                 no_pp_boosts: v.bool_or("noPPBoosts", false),
                 contact: v.bool_or("contact", false),
                 is_sound: v.bool_or("sound", false),
+                minimize_doubles: v.bool_or("minimize", false),
                 no_sleep_talk: v.bool_or("noSleepTalk", false),
                 is_charge: v.bool_or("isCharge", false),
                 fail_encore: v.bool_or("failEncore", false),

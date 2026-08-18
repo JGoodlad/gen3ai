@@ -3353,9 +3353,10 @@ fn pinch_bp_boost_fires_at_exactly_one_third_hp() {
         let att = Combatant { level: 100, spa_stat: 300, types: vec![Type::Water], ..Default::default() };
         let def = Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
+            defender_minimized: false,
             attacker: att,
             defender: def,
-            mv: MoveInput { base_power: 95, move_type: Some(Type::Water), category: MoveCategory::Special, halves_defense: false },
+            mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Water), category: MoveCategory::Special, halves_defense: false },
             crit: false, weather: None, reflect: false, light_screen: false,
             atk_stat_mods: vec![], atk_direct_modify: None, def_stat_mods: vec![],
             bp_mods: if pinch { vec![BpMod::Chain(3, 2)] } else { vec![] },
@@ -3390,9 +3391,10 @@ fn marvel_scale_is_a_defender_side_def_boost() {
         let att = Combatant { level: 100, atk_stat: 300, types: vec![Type::Normal], ..Default::default() };
         let def = Combatant { level: 100, def_stat: 250, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
+            defender_minimized: false,
             attacker: att,
             defender: def,
-            mv: MoveInput { base_power: 100, move_type: None, category: MoveCategory::Physical, halves_defense: false },
+            mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: None, category: MoveCategory::Physical, halves_defense: false },
             crit: false, weather: None, reflect: false, light_screen: false,
             atk_stat_mods: vec![],
             atk_direct_modify: None,
@@ -3449,10 +3451,11 @@ fn huge_power_is_x2_atk_physical_only() {
         let att = Combatant { level: 100, atk_stat: 300, spa_stat: 300, types: vec![Type::Normal], ..Default::default() };
         let def = Combatant { level: 100, def_stat: 250, spd_stat: 250, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
+            defender_minimized: false,
             attacker: att,
             defender: def,
             // A typeless move (no STAB) so the ×2 shows undiluted.
-            mv: MoveInput { base_power: 100, move_type: None, category: cat, halves_defense: false },
+            mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: None, category: cat, halves_defense: false },
             crit: false, weather: None, reflect: false, light_screen: false,
             atk_stat_mods: if huge { vec![AtkStatMod::Item { num: 2, den: 1 }] } else { vec![] },
             atk_direct_modify: None,
@@ -13522,6 +13525,167 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
     assert!(!st.is_trapped(1, &d), "PT4: the spin frees the victim");
     assert_eq!(seed_str(&out.decisions[1].seed_after), "4841,46532,32342,29009",
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
+}
+
+/// IM1 — IMPRISON: the cast succeeds only when the caster SHARES a move with the foe, and
+/// every shared move is then CANT-ed for the foe with no PP spent. Ground truth
+/// `harness/probe_imprison.js`.
+///
+/// ⚠️ THE RESTRICTION IS HIDDEN. The foe's blocked slots keep `disabled:false`; the request
+/// carries top-level `maybeDisabled`/`maybeLocked` instead. So the observable at the ENGINE
+/// level is the `|cant|` and the unspent PP, which is what this pin asserts — the request
+/// shape is asserted separately by the bridge layer.
+#[test]
+fn imprison_cants_a_shared_move_without_spending_pp() {
+    let d = dex();
+    // Both know Ice Beam; only the foe knows Body Slam.
+    let user = "Gengar||none|Levitate|imprison,icebeam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Cloyster||none|Sturdy|icebeam,bodyslam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let foe_pp0 = st.sides[1].pokemon[0].pp_of(0); // Ice Beam
+    let (_o, lines) = st.run_full_battle_logged(
+        // ⚠️ ONE turn, both acting. The `|cant|` only happens for a move that was ALREADY
+        // QUEUED when the Imprison landed — a pick made on a LATER turn is rejected at
+        // request time instead (the sim answers `|error|[Unavailable choice]` + a
+        // re-request), so a two-turn script would test the legality path, not the cant.
+        // Gengar (spe 110) outspeeds Cloyster (70), so the Imprison resolves first.
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-start|p1a: Gengar|move: Imprison"),
+        "IM1: the cast emits the move:-prefixed -start. got:\n{joined}"
+    );
+    assert!(
+        st.sides[0].pokemon[0].imprison,
+        "IM1: and the state records it"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|cant|p2a: Cloyster|move: Imprison|Ice Beam"),
+        "IM1: the SHARED move is cant-ed for the foe. got:\n{joined}"
+    );
+    assert_eq!(
+        st.sides[1].pokemon[0].pp_of(0),
+        foe_pp0,
+        "IM1: a cant-ed move spends NO PP"
+    );
+    // NON-VACUITY: the foe's UNSHARED move must be unaffected — otherwise "imprison blocks
+    // everything" would satisfy the assertions above.
+    assert!(
+        st.sides[1].pokemon[0].move_usable(1, &d),
+        "IM1: Body Slam is NOT shared, so it must stay usable"
+    );
+}
+
+/// IM2 — the cast FAILS draw-free when nothing is shared, in the `[still]` did-nothing form.
+#[test]
+fn imprison_fails_when_no_move_is_shared() {
+    let d = dex();
+    let user = "Gengar||none|Levitate|imprison,shadowball,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Cloyster||none|Sturdy|surf,bodyslam,rest|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "3,3,3,3";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(2))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert!(
+        !st.sides[0].pokemon[0].imprison,
+        "IM2: with nothing shared the volatile must NOT be set. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|move|p1a: Gengar|Imprison||[still]"),
+        "IM2: the failure takes the [still] did-nothing form. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-fail|p1a: Gengar"),
+        "IM2: with a bare -fail on the USER. got:\n{joined}"
+    );
+    // DRAW-FREE: a Splash control from the same start lands on the SAME seed.
+    let mut b2 = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st2 = b2.state_mut().expect("state");
+    st2.run_full_battle(&[ScriptDecision::both(Choice::Move(2), Choice::Move(2))], &d);
+    assert_eq!(
+        seed_str(&st.prng_seed()),
+        seed_str(&st2.prng_seed()),
+        "IM2: a failed Imprison draws NOTHING — it must match a Splash control exactly"
+    );
+}
+
+/// MZ1 — MINIMIZE is NOT a pure self-boost: its volatile is LIVE in gen 3, doubling the
+/// damage of any move carrying `flags.minimize`. Ground truth
+/// `harness/probe_doubleteam_minimize.js`.
+///
+/// ⚠️ THE CONTROLLED PAIR IS THE POINT. Double Team and Minimize both give +1 evasion, so an
+/// evasion-only model makes them interchangeable; the ONLY difference is the volatile. The
+/// pin therefore runs the identical board twice, changing just which +1-evasion move was
+/// used, and requires the flagged move to hit HARDER through Minimize while an UNflagged move
+/// is unchanged. That second half is what rules out "Minimize just lowers accuracy differently".
+#[test]
+fn minimize_doubles_a_flagged_move_but_leaves_others_alone() {
+    let d = dex();
+    // Stomp carries `flags.minimize`; Tackle does not. Both are Normal physical.
+    let attacker = "Miltank||none|Sturdy|stomp,tackle,splash|Hardy|85,85,85,85,85,85|F||||";
+    // `setup` 0 = Double Team (evasion only), 1 = Minimize (evasion + the volatile).
+    // ⚠️ BOTH setups give +1 evasion, so the attack can MISS — and at the first seed tried
+    // all four arms missed, reading as "Minimize does nothing". Sweep seeds until every arm
+    // connects; the non-vacuity assert below still guards it.
+    let dmg = |setup: usize, atk_move: usize, seed: &str| -> u16 {
+        let defender = format!(
+            "Clefable||none|Sturdy|doubleteam,minimize,splash|Hardy|85,85,85,85,85,85|F||||"
+        );
+        let mut b = Battle::start_with_switchins(&opts_cg(attacker, &defender, seed), &d)
+            .expect("start");
+        let st = b.state_mut().expect("state");
+        // The defender sets up; the attacker idles so the boards stay aligned.
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(2), Choice::Move(setup))],
+            &d,
+        );
+        let before = st.sides[1].pokemon[0].hp;
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(atk_move), Choice::Move(2))],
+            &d,
+        );
+        before - st.sides[1].pokemon[0].hp
+    };
+
+    let (mut stomp_dt, mut stomp_mz, mut tackle_dt, mut tackle_mz) = (0u16, 0u16, 0u16, 0u16);
+    for sd in [
+        "3,3,3,3", "11,11,11,11", "7,7,7,7", "1,2,3,4", "31,29,23,19", "5,9,13,17",
+        "44446,15321,46848,55374", "99,98,97,96",
+    ] {
+        let (a, b2, c, e) = (dmg(0, 0, sd), dmg(1, 0, sd), dmg(0, 1, sd), dmg(1, 1, sd));
+        if a > 0 && b2 > 0 && c > 0 && e > 0 {
+            stomp_dt = a;
+            stomp_mz = b2;
+            tackle_dt = c;
+            tackle_mz = e;
+            break;
+        }
+    }
+
+    // NON-VACUITY: both arms must actually connect, else the comparison is empty.
+    assert!(
+        stomp_dt > 0 && stomp_mz > 0 && tackle_dt > 0 && tackle_mz > 0,
+        "MZ1: every arm must connect (stomp {stomp_dt}/{stomp_mz}, tackle {tackle_dt}/{tackle_mz})"
+    );
+    assert!(
+        stomp_mz > stomp_dt + stomp_dt / 2,
+        "MZ1: Stomp carries flags.minimize, so it must roughly DOUBLE through Minimize \
+         ({stomp_mz} vs {stomp_dt} through Double Team)"
+    );
+    assert_eq!(
+        tackle_mz, tackle_dt,
+        "MZ1: Tackle has NO flags.minimize, so Minimize must leave it exactly unchanged"
+    );
 }
 
 /// RG1 — RAGE: the `singlemove` volatile raises the holder's Atk whenever a FOE lands a
