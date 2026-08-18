@@ -116,3 +116,17 @@ symptoms, not causes). The blunder-hunting vein is largely mined out. **Since 20
 gap, a working mechanism, and a confirmed *durable* payoff. Its scaling question is now ANSWERED: the
 limit is team COUNT, not conditioning, so the loop runs at N≤10 and repeats. The open questions are
 where the count cliff sits and whether the small diversity cost compounds across batches.
+
+**Programme sequencing (OWNER DECISION 2026-08-17): the conditional-mechanics SUBSTRATE builds
+BEFORE the flywheel era.** The full `pair_in` currency unification + mechanic cells + the OA
+shelf (opt-in/zero-init) are built unconditionally; the fingerprint aux and the entire flywheel
+program (automation, the week, the battery-as-cycle) are DEFERRED until it lands. Rationale,
+ratified: conditional mechanics are most valuable inside a STRATEGY that uses them (TTar Focus
+Punch vs Blissey, Pursuit into Gengar), the generalist sits below the elicitation threshold for
+such strategies, so **a G2/G3 null on the generalist is VINDICATE-ONLY — it cannot kill
+strategy-dependent machinery** (the third instance of the one-direction-of-error pattern:
+dV/coverage, delivery/concept, now elicitation/content) — and exploiters share the generalist's
+signature, so the substrate must exist before the population that would elicit it trains. The
+kill-capable gates MOVED, they did not die: **G7-pattern exploiter A/Bs** (~2M warm forks,
+substrate ON vs OFF, pre-registered per-mechanic behavioral readouts) are the decisive
+instruments. TD-aux/gen-15 and the stall-distribution probe are unaffected.
