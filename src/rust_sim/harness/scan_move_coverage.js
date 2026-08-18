@@ -113,6 +113,7 @@ const MODELED_SCREEN = new Set(['lightscreen', 'reflect']);
 // order 4 (they are 1 and 2), blocking FOE-sourced status + confusion instead of damage.
 const MODELED_SAFEGUARD = new Set(['safeguard']);
 const MODELED_CONVERSION = new Set(['conversion', 'conversion2']);
+const MODELED_WEATHERBALL = new Set(['weatherball']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
 // BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED
 // (the reactive volatile + recorder / the delta), no longer deferred.
@@ -155,7 +156,7 @@ const MODELED_PARTIALTRAP = new Set(['wrap', 'bind', 'firespin', 'clamp', 'whirl
 const FAILLOUD_CONSTRUCTION = new Set([
   'dreameater', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
-  'smellingsalts', 'thrash', 'uproar', 'weatherball',
+  'smellingsalts', 'thrash', 'uproar',
 ]);
 // Typed Hidden Power — the engine models these end-to-end (16 typed nums 355-370 + bare).
 // The bare `hiddenpower` id in a packed team resolves to a TYPED variant per the mon's IVs;
@@ -239,6 +240,9 @@ function classifyDamaging(m, id) {
   if (m.flags && m.flags.futuremove) return { cov: 'MISMODELED', mech: 'future-move (delayed strike)' }; // none left (DD/FS modeled)
   if (m.self && (m.self.boosts || m.self.volatileStatus)) return { cov: 'MISMODELED', mech: 'self-drop/lock' };
   if (m.forceSwitch) return { cov: 'MISMODELED', mech: 'phaze-damaging' }; // no gen3 damaging phaze
+  // WEATHER BALL carries an `onModifyMove`, so its MODELED verdict must be read BEFORE the
+  // generic mutate-reject below — otherwise the census reports a move the engine models.
+  if (MODELED_WEATHERBALL.has(id)) return { cov: 'MODELED', mech: 'weather-ball (gen3_weather_ball_v1)' };
   if (m.onModifyMove) return { cov: 'MISMODELED', mech: 'onModifyMove (acc/power mutate)' };
   if (m.beforeTurnCallback) return { cov: 'MISMODELED', mech: 'beforeTurn' }; // none left (FP/Pursuit/Counter/MC modeled)
   if (m.damageCallback || m.damage) return { cov: 'UNMODELED', mech: 'derived-fixed-damage' };

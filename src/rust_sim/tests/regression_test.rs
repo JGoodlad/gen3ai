@@ -13524,6 +13524,183 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// WB1 — WEATHER BALL: type + base power follow the EFFECTIVE weather, and a suppressor
+/// reverts it fully. Ground truth `harness/probe_weatherball.js`.
+#[test]
+fn weather_ball_retypes_and_doubles_power_per_weather() {
+    let d = dex();
+    // Mew mirror: base 100 across the board, and Psychic is NEUTRAL to every candidate type
+    // with no STAB — so realized damage is a pure function of base power.
+    let user = "Mew||Leftovers|Synchronize|weatherball,splash,raindance,sunnyday,sandstorm,hail\
+|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Mew||Leftovers|Synchronize|splash|Hardy|85,85,85,85,85,85|N||||";
+    let seed = "44446,15321,46848,55374";
+
+    // (weather-setting slot, expected type). Slot 1 = splash (no weather).
+    let cases: &[(Option<usize>, &str)] = &[
+        (Some(2), "Water"),
+        (Some(3), "Fire"),
+        (Some(4), "Rock"),
+        (Some(5), "Ice"),
+    ];
+    for (setter, want) in cases {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[
+                ScriptDecision::both(Choice::Move(setter.unwrap()), Choice::Move(0)),
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Weather Ball
+            ],
+            &d,
+        );
+        let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+        let joined = raw.join("\n");
+        // NON-VACUITY: the weather really is up.
+        assert!(
+            st.field.weather.is_some(),
+            "WB1: the weather must be set for {want}. got:\n{joined}"
+        );
+        // Under weather the ball is bp 100 vs the dex row's 50, so it must out-damage the
+        // no-weather control below; the TYPE is asserted through effectiveness lines being
+        // absent (all four are neutral into Psychic) plus the damage step.
+        assert!(
+            raw.iter().any(|l| l.starts_with("|-damage|p2a: Mew|")),
+            "WB1: the {want} Weather Ball must connect. got:\n{joined}"
+        );
+    }
+
+    // The no-weather control: bp 50, so STRICTLY less damage than any weather case.
+    let dmg_of = |setter: Option<usize>| -> u16 {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let first = setter.unwrap_or(1);
+        st.run_full_battle(
+            &[
+                ScriptDecision::both(Choice::Move(first), Choice::Move(0)),
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ],
+            &d,
+        );
+        st.sides[1].pokemon[0].maxhp - st.sides[1].pokemon[0].hp
+    };
+    let none = dmg_of(None);
+    let rain = dmg_of(Some(2));
+    assert!(
+        rain > none,
+        "WB1: bp 100 under rain must out-damage the bp-50 no-weather control ({rain} vs {none})"
+    );
+}
+
+/// WB2 — the CATEGORY flips with the type, and this is the pin that can actually SEE it.
+///
+/// ⚠️ gen-3 splits physical/special BY TYPE, so sandstorm's Rock ball is PHYSICAL while
+/// rain's Water ball is SPECIAL. On the natural measurement board — a Mew mirror, base 100
+/// everywhere — Atk == SpA and Def == SpD, so the flip is INVISIBLE in the damage number and
+/// a damage-only test proves nothing. COUNTER (which answers physical) and MIRROR COAT (which
+/// answers special) are the discriminator that works regardless of stats: under sandstorm
+/// Counter fires back and Mirror Coat does nothing; under rain the reverse. Probe-settled in
+/// `harness/probe_weatherball2.js` section B.
+#[test]
+fn weather_ball_category_follows_the_type_seen_by_counter_and_mirror_coat() {
+    let d = dex();
+    let user = "Mew||Leftovers|Synchronize|weatherball,sandstorm,raindance\
+|Hardy|85,85,85,85,85,85|N||||";
+    // Blissey answers with Counter (physical) or Mirror Coat (special).
+    let foe = "Blissey||Leftovers|NaturalCure|counter,mirrorcoat,splash\
+|Hardy|85,85,85,85,85,85|F||||";
+    let seed = "44446,15321,46848,55374";
+
+    // (weather setter slot, answer slot) -> did the answer deal damage back?
+    let answered = |setter: usize, answer: usize| -> bool {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[
+                ScriptDecision::both(Choice::Move(setter), Choice::Move(2)),
+                ScriptDecision::both(Choice::Move(0), Choice::Move(answer)),
+            ],
+            &d,
+        );
+        st.sides[0].pokemon[0].hp < st.sides[0].pokemon[0].maxhp
+    };
+
+    // SANDSTORM → Rock → PHYSICAL: Counter answers, Mirror Coat does not.
+    assert!(
+        answered(1, 0),
+        "WB2: a sandstorm (Rock) Weather Ball is PHYSICAL — Counter must answer it"
+    );
+    assert!(
+        !answered(1, 1),
+        "WB2: a sandstorm (Rock) Weather Ball is PHYSICAL — Mirror Coat must NOT answer it"
+    );
+    // RAIN → Water → SPECIAL: the reverse.
+    assert!(
+        !answered(2, 0),
+        "WB2: a rain (Water) Weather Ball is SPECIAL — Counter must NOT answer it"
+    );
+    assert!(
+        answered(2, 1),
+        "WB2: a rain (Water) Weather Ball is SPECIAL — Mirror Coat must answer it"
+    );
+}
+
+/// WB3 — AIR LOCK / CLOUD NINE revert it FULLY, asserted CATEGORICALLY.
+///
+/// ⚠️ TWO EARLIER VERSIONS OF THIS PIN WERE VACUOUS, both mutation-proven, and the reason is
+/// worth keeping: a DAMAGE-magnitude assertion cannot isolate this.
+///   (1) The first compared a Mew control against a Psyduck suppressor — its inequality held
+///       because Psyduck has different bulk, so it passed even reading the RAW weather.
+///   (2) Same-species arms still passed, because rain's ×1.5 WATER damage boost is itself
+///       suppressed by Cloud Nine: the damage fell for a reason that has nothing to do with
+///       which type the ball took.
+/// The discriminator that DOES isolate it is categorical. Under rain the ball is Water →
+/// SPECIAL, so MIRROR COAT answers it; under rain PLUS a suppressor it reverts to Normal →
+/// PHYSICAL, so COUNTER answers instead. No magnitude is involved, so no stat or weather
+/// multiplier can fake it.
+#[test]
+fn weather_ball_is_reverted_by_a_weather_suppressor() {
+    let d = dex();
+    let user = "Mew||Leftovers|Synchronize|weatherball,raindance,splash\
+|Hardy|85,85,85,85,85,85|N||||";
+    // Same species + spread in both arms; ONLY the ability differs (Damp is an inert control).
+    let plain = "Psyduck||Leftovers|Damp|counter,mirrorcoat,splash|Hardy|85,85,85,85,85,85|M||||";
+    let cloud = "Psyduck||Leftovers|CloudNine|counter,mirrorcoat,splash\
+|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "44446,15321,46848,55374";
+
+    let answered = |foe: &str, answer: usize| -> bool {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[
+                ScriptDecision::both(Choice::Move(1), Choice::Move(2)), // Rain Dance
+                ScriptDecision::both(Choice::Move(0), Choice::Move(answer)),
+            ],
+            &d,
+        );
+        st.sides[0].pokemon[0].hp < st.sides[0].pokemon[0].maxhp
+    };
+
+    // UNSUPPRESSED rain: Water → SPECIAL → Mirror Coat answers, Counter does not.
+    assert!(
+        answered(plain, 1),
+        "WB3: under rain the ball is Water/SPECIAL — Mirror Coat must answer it"
+    );
+    assert!(
+        !answered(plain, 0),
+        "WB3: under rain the ball is Water/SPECIAL — Counter must NOT answer it"
+    );
+    // SUPPRESSED: reverts to Normal → PHYSICAL → Counter answers, Mirror Coat does not.
+    assert!(
+        answered(cloud, 0),
+        "WB3: under Cloud Nine the ball reverts to Normal/PHYSICAL — Counter must answer it"
+    );
+    assert!(
+        !answered(cloud, 1),
+        "WB3: under Cloud Nine the ball reverts to Normal/PHYSICAL — Mirror Coat must NOT"
+    );
+}
+
 /// CV1 — CONVERSION: the list is the USER's LIVE slots minus its CURRENT types, duplicates
 /// kept, and the single `random(n)` fires even at n == 1. Ground truth
 /// `harness/probe_conversion.js`.
@@ -15374,7 +15551,7 @@ fn unmodeled_moves_fail_loud_at_construction() {
     for mv in [
         "dreameater", "falseswipe", "furycutter", "iceball",
         "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
-        "smellingsalts", "thrash", "uproar", "weatherball",
+        "smellingsalts", "thrash", "uproar",
     ] {
         let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

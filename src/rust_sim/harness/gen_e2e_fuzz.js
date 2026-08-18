@@ -124,7 +124,7 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: return/frustration/flail/reversal/lowkick are NO LONGER blocklisted — they are
   // MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch5_v1`) via
   // MODELED_BATCH5_VARBP_MOVES in `isModeledMove`.
-  'grassknot', 'magnitude', 'present', 'weatherball',
+  'grassknot', 'magnitude', 'present',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power: gated in `isModeledMove` by the `allowHiddenPower` param (the
   // byte fuzzer's `pool` mode admits it — engine models typed HP at fixed BP 70,
@@ -428,6 +428,9 @@ const MODELED_SAFEGUARD_MOVES = new Set(['safeguard']);
 // and ZERO draws on failure. Conversion 2's candidate list is built in the TYPEDEX FILE's key
 // order, which is neither alphabetical nor the port's enum order.
 const MODELED_CONVERSION_MOVES = new Set(['conversion', 'conversion2']);
+// WEATHER BALL (`gen3_weather_ball_v1`) — type + BP + CATEGORY all follow the EFFECTIVE
+// weather, resolved before the crit/damage draws so the whole thing is draw-neutral.
+const MODELED_WEATHERBALL_MOVES = new Set(['weatherball']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -787,6 +790,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       (YAWN_E2E_EXCLUDED ? false : MODELED_YAWN_MOVES.has(id)) ||
       MODELED_SAFEGUARD_MOVES.has(id) ||
       MODELED_CONVERSION_MOVES.has(id) ||
+      MODELED_WEATHERBALL_MOVES.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
@@ -862,6 +866,9 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.beforeMoveCallback) return false;
   if (m.priorityChargeCallback) return false;
   if (m.damageCallback) return false;
+  // Weather Ball's type/BP/category mutate via `onModifyMove`, and it IS modeled — admit it
+  // ahead of the generic reject (the Thunder / Beat Up precedent).
+  if (MODELED_WEATHERBALL_MOVES.has(id)) return true;
   if (m.onModifyMove) return false;
   // Secondary shape: 0 or 1 secondary, modeled cols only.
   const secs = m.secondaries || (m.secondary ? [m.secondary] : []);
@@ -1131,7 +1138,7 @@ const REJECT_SPECIES = new Set([]);
 const REJECT_MOVES = new Set([
   'dreameater', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
-  'smellingsalts', 'thrash', 'uproar', 'weatherball',
+  'smellingsalts', 'thrash', 'uproar',
 ]);
 function abilityAllowed(id) {
   const a = toId(id);

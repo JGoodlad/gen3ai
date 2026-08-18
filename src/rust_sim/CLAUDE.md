@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs (6 SHIPPED, 2 open)
+### THE BANKED SPEC QUEUE — 8 probe-settled specs (7 SHIPPED, 1 open)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -6582,7 +6582,7 @@ one non-obvious, because that trap is the reason the spec is worth more than the
 | ~~Conversion / Conversion 2~~ **SHIPPED** | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
 | ~~Torment~~ **SHIPPED** | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
 | Imprison | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
-| Weather Ball | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
+| ~~Weather Ball~~ **SHIPPED** | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
 | ~~Skill Swap~~ **SHIPPED** | `probe_skillswap.js` | swapped abilities do **NOT** re-fire `onStart` (so re-running switch-in makes Trace draw where the sim does not) — but `onEnd` DOES fire, and that is the only draw it creates |
 
 ### The `ab_replay` SUBSEQUENCE SEED ANCHOR — shipped, and it did NOT close the repro that motivated it
@@ -7945,4 +7945,57 @@ much faster foe act BEFORE Conversion 2 — its turn-3 action is now a SWITCH, w
 randbats surfaces; this is a coverage-gate unlock. Untested: Conversion 2 after a Struggle (the
 port records `"struggle"`, and since gen-3 struggle's dex type is already Normal the sim's explicit
 special-case is a no-op either way).
+
+### ROUND 48 (FIX) — WEATHER BALL, and THREE vacuous pins in a row on one mechanic
+
+`gen3_weather_ball_v1`. Census **295 → 296 MODELED / 73 fail-loud**, MISMODELED 0. The move's
+TYPE, BASE POWER and CATEGORY are all a function of the EFFECTIVE weather, resolved before the
+crit and damage draws — so the whole thing is DRAW-NEUTRAL. The dex row is Normal / bp 50 /
+Physical; under weather it becomes bp 100 and retypes rain→Water, sun→Fire, sandstorm→Rock,
+hail→Ice. Reading `effective_weather()` means a Cloud Nine / Air Lock holder on either side
+reverts it fully. The category is re-derived through the shared `derive_category`, so the gen-3
+type split PRODUCES it rather than it being a second hand-maintained id-list — the Hidden Power
+precedent immediately below it in `run_move`.
+
+**⚠️ THE CATEGORY FLIPS WITH THE TYPE, AND THE OBVIOUS TEST BOARD CANNOT SEE IT.** gen-3 splits
+physical/special by TYPE, so sandstorm's Rock ball is PHYSICAL while rain/sun/hail are SPECIAL. The
+natural measurement board is a Mew mirror — base 100 across the board, and Psychic neutral to every
+candidate type with no STAB — which is exactly what makes damage a clean function of base power AND
+exactly what makes the category flip INVISIBLE: Atk == SpA and Def == SpD, so the two categories
+produce the identical number. The discriminator that works regardless of stats is **COUNTER vs
+MIRROR COAT**: under sandstorm Counter answers the ball and Mirror Coat does nothing; under rain the
+reverse. That is what WB2 and WB3 assert.
+
+**⚠️ THE ROUND'S REAL LESSON: three of this mechanic's pins passed for the wrong reason, and only
+mutation found it.** The engine was right the whole time; the TESTS were the defect.
+1. **WB3 v1** compared a Mew control against a Psyduck suppressor. Its inequality held because
+   Psyduck has different bulk — it passed with the engine reading the RAW weather.
+2. **WB3 v2** used same-species arms differing only in ability, which should have isolated it. It
+   STILL passed under the mutation, because rain's ×1.5 WATER damage boost is *itself* suppressed by
+   Cloud Nine: the damage fell for a reason that has nothing to do with which type the ball took.
+3. **WB3 v3** abandoned magnitude entirely for the categorical Counter/Mirror-Coat test, and finally
+   bites — and bites ONLY WB3.
+The generalisable rule: **a magnitude assertion cannot isolate a mechanic when the thing you are
+suppressing also moves the magnitude by another route.** When two effects share an input (here,
+`effective_weather` feeds both the ball's type and the damage multiplier), a size comparison cannot
+attribute the change; find an assertion whose value is CATEGORICAL. This is the third vacuous pin
+this session — SG3 (unreachable guard) and the Conversion CV3/CV4 boards were the others — and all
+three were invisible to a green suite.
+
+**Gates:** `cargo test --release --no-fail-fast` **689 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1014 rows**; `SCAN_UNIVERSE=1`
+**369 → 296 MODELED / 73 FAIL-LOUD / 0 MISMODELED**. Mutation-verified: not re-deriving the category
+fails ONLY WB2; reading the raw weather instead of the effective one fails ONLY WB3.
+
+**A MIRROR-ORDER TRAP worth noting for the next admission.** Weather Ball carries an `onModifyMove`,
+and BOTH the picker (`gen_e2e_fuzz.js`) and the census (`scan_move_coverage.js`) reject that
+generically. Admitting a move therefore is not only *adding* it to a modeled set — the modeled check
+has to be read BEFORE the generic reject, or the picker silently never samples it and the census
+keeps reporting a move the engine models. Both needed reordering, and the symptom in each case was a
+quiet false negative rather than an error.
+
+**HONEST SCOPE.** Zero pool/randbats exposure — a coverage-gate unlock, and per ROUND 46 the
+`ourandom` fuzz will not sample it either. Untested: Weather Ball on its only natural gen-3 carrier,
+CASTFORM, where Forecast retypes the USER with the same weather so STAB composes
+(`harness/probe_weatherball3.js` captured that board but no pin drives it).
 

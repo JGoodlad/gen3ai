@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 51,
-   "moves": 279,
-   "rows": 1012
+   "moves": 280,
+   "rows": 1014
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -5925,6 +5925,18 @@
    "fp": "val:[{\"chance\":20,\"volatileStatus\":\"confusion\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:weatherball:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:486ee7e9:onModifyMove(move) { switch (this.field.effectiveWeather()) { case \"sunnyday\": move.type = \"Fire\"; move.category = \"Spec",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the weatherball id-gate: reads effective_weather() and rewrites TYPE + BASE POWER + CATEGORY before the crit/damage draws, so it is DRAW-NEUTRAL. rain->Water, sun->Fire, sandstorm->Rock, hail->Ice, all at bp 100; no effective weather leaves the dex row (Normal / 50 / Physical). The CATEGORY is re-derived through the shared derive_category so the gen-3 type split produces it rather than a second id-list — Rock is PHYSICAL while Water/Fire/Ice are SPECIAL. Because it reads effective_weather, a Cloud Nine / Air Lock holder on either side reverts it fully. Pinned by WB2/WB3 via Counter-vs-Mirror-Coat, which sees the category flip even on a board where Atk == SpA."
+  },
+  "move:weatherball:onModifyType": {
+   "disposition": "implemented",
+   "fp": "fn:b82dfbca:onModifyType(move, pokemon) { switch (pokemon.effectiveWeather()) { case \"sunnyday\": case \"desolateland\": move.type = \"F",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the weatherball id-gate: reads effective_weather() and rewrites TYPE + BASE POWER + CATEGORY before the crit/damage draws, so it is DRAW-NEUTRAL. rain->Water, sun->Fire, sandstorm->Rock, hail->Ice, all at bp 100; no effective weather leaves the dex row (Normal / 50 / Physical). The CATEGORY is re-derived through the shared derive_category so the gen-3 type split produces it rather than a second id-list — Rock is PHYSICAL while Water/Fire/Ice are SPECIAL. Because it reads effective_weather, a Cloud Nine / Air Lock holder on either side reverts it fully. Pinned by WB2/WB3 via Counter-vs-Mirror-Coat, which sees the category flip even on a board where Atk == SpA."
   },
   "move:whirlpool:volatileStatus": {
    "disposition": "implemented",

@@ -324,6 +324,42 @@ impl crate::state::BattleState {
         //     Counter still catches a physical-type bare HP and Mirror Coat never a bare HP —
         //     matching the sim's typed→bare collapse. DRAW-NEUTRAL (a deterministic IV read, no
         //     PRNG). ---
+        // --- WEATHER BALL (`gen3_weather_ball_v1`) — the move's TYPE, BASE POWER and
+        //     CATEGORY are all a function of the EFFECTIVE weather, resolved before the crit
+        //     and damage draws, so the whole thing is DRAW-NEUTRAL. The dex row is Normal /
+        //     bp 50 / Physical; under weather it becomes bp 100 and retypes:
+        //         rain -> Water, sun -> Fire, sandstorm -> Rock, hail -> Ice.
+        //
+        //     ⚠️ THE CATEGORY FLIPS WITH THE TYPE, and that is the part a careless test cannot
+        //     see. gen-3 splits phys/spec BY TYPE, so Rock (sandstorm) is PHYSICAL while
+        //     Water/Fire/Ice are SPECIAL — and on the natural measurement board (a Mew mirror,
+        //     base 100 across the board) Atk == SpA and Def == SpD, so the flip is INVISIBLE in
+        //     the damage number. The discriminator that does work regardless of stats is
+        //     COUNTER vs MIRROR COAT: under sandstorm Counter answers it and Mirror Coat does
+        //     nothing; under rain the reverse (probe `harness/probe_weatherball2.js` section B).
+        //     That is what the pin uses.
+        //
+        //     It reads `effective_weather()`, so a Cloud Nine / Air Lock holder on either side
+        //     reverts it fully to Normal / bp 50 / Physical. Re-deriving the category through
+        //     the shared `derive_category` (the Hidden Power precedent immediately below) is
+        //     what makes the split fall out of the type rather than being a second id-list. ---
+        let (move_type, base_power, category) = if move_id == "weatherball" {
+            let wt = match self.effective_weather(dex) {
+                Some(crate::state::Weather::Rain) => Some(Type::Water),
+                Some(crate::state::Weather::Sun) => Some(Type::Fire),
+                Some(crate::state::Weather::Sand) => Some(Type::Rock),
+                Some(crate::state::Weather::Hail) => Some(Type::Ice),
+                None => None,
+            };
+            match wt {
+                Some(t) => (Some(t), 100u16, crate::dex::moves::derive_category(3, 100, Some(t))),
+                // No effective weather: the dex row stands (Normal / 50 / Physical).
+                None => (move_type, base_power, category),
+            }
+        } else {
+            (move_type, base_power, category)
+        };
+
         let (move_type, category) = if move_id == "hiddenpower" {
             let hp_type = Type::from_name(crate::state::hidden_power_type(
                 &self.sides[side].pokemon[slot].set.ivs,

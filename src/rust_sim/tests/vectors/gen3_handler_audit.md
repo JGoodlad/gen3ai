@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-51 conditions (engine state space + attached), 279 modeled moves
-→ **1012 (effect, hook) rows**.
+51 conditions (engine state space + attached), 280 modeled moves
+→ **1014 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 959 |
+| implemented | 961 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -585,7 +585,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (458 rows: implemented=454, noop_justified=2, unreachable_justified=2)
+## move (460 rows: implemented=456, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -1029,6 +1029,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | vitalthrow | priority | implemented | `turn.rs::move_priority` |
 | volttackle | recoil | implemented | `turn.rs::apply_recoil` |
 | waterpulse | secondaries | implemented | `turn.rs::apply_secondaries` |
+| weatherball | onModifyMove | implemented | `turn/moves.rs::run_move` |
+| weatherball | onModifyType | implemented | `turn/moves.rs::run_move` |
 | whirlpool | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | whirlwind | forceSwitch | implemented | `turn.rs::drag_in` |
 | whirlwind | ignoreImmunity | implemented | `turn.rs::run_status_move` |

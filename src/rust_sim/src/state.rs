@@ -1183,7 +1183,7 @@ impl MonState {
         // genuine gen-3 sub-mechanic the engine would silently get WRONG (not a no-op):
         //   * variable/derived BP run at a FLAT wrong power: `eruption` (hp-scaled 150),
         //     `revenge` (×2 if damaged this turn), `smellingsalts` (×2 vs para + cures it),
-        //     `furycutter` (escalates per consecutive hit), `weatherball` (type+BP change
+        //     `furycutter` (escalates per consecutive hit), ~~`weatherball`~~ MODELED `gen3_weather_ball_v1` (type+BP+category change
         //     under weather);
         //   * the LOCK-IN family run as plain one-turn hits (no lock, no escalation, no
         //     end-of-lock confusion): `outrage`/`petaldance`/`thrash`, `rollout`/`iceball`
@@ -1205,7 +1205,7 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 14] = [
+        const UNMODELED_FAILLOUD_MOVES: [&str; 13] = [
             "dreameater",
             "falseswipe",
             "furycutter",
@@ -1219,7 +1219,6 @@ impl MonState {
             "smellingsalts",
             "thrash",
             "uproar",
-            "weatherball",
         ];
         if let Some(bad) = set
             .moves
