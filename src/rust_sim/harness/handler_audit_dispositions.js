@@ -522,6 +522,9 @@ add([cond('encore', 'onDisableMove')],
   IMPL('state.rs::move_usable', 'every non-encored slot is un-selectable while the volatile is up (the request disabled shape; a switch stays legal)'));
 add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('encore', 'onResidualSubOrder'), cond('encore', 'onEnd')],
   IMPL('turn.rs::run_residuals', 'the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end'));
+// SKILL SWAP (`gen3_skill_swap_v1`).
+add([mv('skillswap', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3\'s only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability.'));
 // RECYCLE (`gen3_recycle_v1`).
 add([mv('recycle', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the recycle arm: FAIL ([still]+bare -fail on the USER) if the mon already holds an item OR has no last_item; else clear last_item BEFORE restoring it and emit |-item|<u>|<Item>|[from] move: Recycle. NEVER-MISS so zero draws on both paths, landed=false. `last_item` is set ONLY by the eatItem/useItem sites (items.rs::eat_item, white_herb_restore) — never by takeItem (Knock Off / Thief / Trick), which is why a knocked-off item is not recyclable.'));

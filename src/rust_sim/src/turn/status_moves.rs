@@ -1587,6 +1587,89 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- SKILL SWAP (`gen3_skill_swap_v1`) — EXCHANGE the two actives' abilities.
+        //     PROBE-SETTLED (`harness/probe_skillswap.js`): never-miss, so the MOVE draws NOTHING;
+        //     `landed = false`; ONE emission, the gen<=4 `|-activate|<u>|Skill Swap|||[of] <t>`
+        //     with two EMPTY fields (no `-endability`, no `-ability`).
+        //
+        //     ⚠️ THE SWAPPED-IN ABILITIES DO **NOT** RE-FIRE THEIR SWITCH-IN `onStart` — the sim
+        //     gates those two `singleEvent('Start')` calls on `gen > 3`. Calling the port's
+        //     `single_event_ability_start` here (the obvious "abilities changed, re-run switch-in"
+        //     reading) desyncs three ways: a phantom Intimidate `-unboost`, a phantom `-weather`
+        //     that also overwrites the field, and — the draw-count killer — `trace_on_start`
+        //     consumes `random_below(1)`, so a swap involving Trace would DRAW where the sim does
+        //     not. Verified for Intimidate / Drizzle<->Drought / Sand Stream / Trace / Forecast.
+        //
+        //     But `onEnd` DOES fire, unconditionally, on BOTH outgoing abilities — and that is
+        //     the ONLY draw this move can create. It is the same block `execute_switch` runs for
+        //     a leaving mon: a `weather_negate` holder fires an `each_event_shuffle` +
+        //     `forecast_each_event` (worth a `random(0,2)` at a cached-speed TIE), and an ARMED
+        //     `flash_fire` emits its silent `-end` and must be CLEARED on the loser rather than
+        //     inherited by the receiver.
+        //
+        //     FAIL (the `[still]` + bare `-fail|<USER>` pair) iff EITHER side carries Wonder Guard
+        //     (gen-3's only `failskillswap`) or the two ability IDS are EQUAL. "No ability" is NOT
+        //     a failure on its own — `noability` swaps like any id; only noability-vs-noability
+        //     trips the same-id rule. Protect BLOCKS it; Substitute does NOT (`bypasssub`). ---
+        if move_id == "skillswap" {
+            debug_assert!(
+                never_miss,
+                "skillswap expected gen-3 never_miss (accuracy:true), got never_miss={never_miss}"
+            );
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let user_ab = to_id(&self.sides[_side].pokemon[_slot].ability);
+            let foe_ab = to_id(&self.sides[foe].pokemon[foe_slot].ability);
+            let wg = |a: &str| dex.ability(a).map(|x| x.wonder_guard).unwrap_or(false);
+            if user_ab == foe_ab || wg(&user_ab) || wg(&foe_ab) {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // [EMIT] the single gen<=4 activate line, BEFORE the two `End`s.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.skill_swap(&user, &target);
+            }
+            // The `End` half — run for BOTH outgoing abilities, source then target (the code
+            // order; unobservable because only flashfire emits and a two-emitter board is
+            // unreachable through the same-id gate).
+            for (s_i, sl) in [(_side, _slot), (foe, foe_slot)] {
+                let negates = {
+                    let m = &self.sides[s_i].pokemon[sl];
+                    dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
+                };
+                if negates {
+                    let order = self.each_event_shuffle();
+                    let eff = self.effective_weather_excluding(Some(s_i), dex);
+                    self.forecast_each_event(&order, eff, dex);
+                }
+                if self.sides[s_i].pokemon[sl].flash_fire {
+                    if self.logging() {
+                        let r = self.mon_ref(s_i, sl, dex);
+                        self.log.volatile_end_silent(&r, "ability: Flash Fire");
+                    }
+                    self.sides[s_i].pokemon[sl].flash_fire = false;
+                }
+            }
+            // The swap itself — `ability` ONLY. `execute_switch` already restores `set.ability`
+            // on re-entry, so the switch-out revert is free and no new field is needed.
+            let a = self.sides[_side].pokemon[_slot].ability.clone();
+            let b = self.sides[foe].pokemon[foe_slot].ability.clone();
+            self.sides[_side].pokemon[_slot].ability = b;
+            self.sides[foe].pokemon[foe_slot].ability = a;
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- RECYCLE (`gen3_recycle_v1`) — restore the item this mon CONSUMED ITSELF.
         //     PROBE-SETTLED (`harness/probe_recycle.js`): never-miss (accuracy `true`) so ZERO
         //     draws on BOTH the success and the failure path, and `landed = false` (pinned by a

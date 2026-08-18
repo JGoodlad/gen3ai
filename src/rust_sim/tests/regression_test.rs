@@ -13524,6 +13524,100 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// SS1 — SKILL SWAP (`gen3_skill_swap_v1`). Exchanges the two actives' abilities.
+///
+/// THE TRAP the pin exists for: the swapped-in abilities do **NOT** re-fire their switch-in
+/// `onStart` (the sim gates those calls on `gen > 3`). The obvious "abilities changed, so re-run
+/// switch-in" reading emits a phantom Intimidate `-unboost`, a phantom `-weather`, and — worst —
+/// makes Trace consume `random_below(1)` where the sim draws nothing. Ground truth
+/// `harness/probe_skillswap.js`.
+///
+/// So the pin uses an INTIMIDATE holder: a re-fired onStart would drop the foe's Attack a second
+/// time, which is directly observable in the boost array.
+#[test]
+fn skill_swap_exchanges_abilities_without_refiring_on_start() {
+    let d = dex();
+    // Gyarados leads with Intimidate (one -1 atk on the foe at switch-in). Swapping it AWAY must
+    // not fire it again, and swapping it ONTO the foe must not fire it either.
+    let p1 = "Alakazam||Leftovers|Synchronize|skillswap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Gyarados||Leftovers|Intimidate|splash,tackle|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let atk_before = st.sides[0].pokemon[0].boosts[1];
+    let (_o, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+
+    assert!(
+        raw.iter().any(|l| l == "|-activate|p1a: Alakazam|Skill Swap|||[of] p2a: Gyarados"),
+        "SS1: the gen<=4 form has TWO EMPTY fields and is the ONLY line emitted. got:\n{}",
+        raw.join("\n")
+    );
+    // Scope to AFTER the move line: the log opens with Intimidate's own switch-in announce
+    // (`|-ability|p2a: Gyarados|Intimidate|boost` + one `-unboost`), which is correct and must
+    // not be mistaken for a Skill-Swap emission.
+    let after: Vec<&String> = raw
+        .iter()
+        .skip_while(|l| !l.contains("|move|p1a: Alakazam|Skill Swap"))
+        .collect();
+    assert!(
+        !after.iter().any(|l| l.contains("-endability") || l.contains("|-ability|")),
+        "SS1: gen 3 emits NO -endability / -ability lines for the swap itself. got:\n{}",
+        raw.join("\n")
+    );
+    // ⚠️ WATCH BOTH SIDES. After the swap the USER holds Intimidate, so a re-fired onStart drops
+    // the *foe's* Attack, not the user's — an earlier draft counted only `p1a: Alakazam` unboosts
+    // and therefore PASSED with the re-fire injected, i.e. it was vacuous. The correct assertion
+    // is that the swap emits NO boost line at all: after the move line there must be no
+    // `-unboost`/`-boost`/`-weather` from any re-fired switch-in handler.
+    assert!(
+        !after.iter().any(|l| l.contains("|-unboost|") || l.contains("|-boost|")
+            || l.contains("|-weather|")),
+        "SS1: the swap must fire NO switch-in onStart — any boost/weather line after the move \
+         means `single_event_ability_start` was wrongly called. got:\n{}",
+        raw.join("\n")
+    );
+    // THE LOAD-BEARING ONE: no second Intimidate.
+    assert_eq!(
+        st.sides[0].pokemon[0].boosts[1], atk_before,
+        "SS1: swapping Intimidate must NOT re-fire its switch-in onStart — a second -unboost here \
+         means `single_event_ability_start` was wrongly called on the swap"
+    );
+    // The abilities really did exchange.
+    assert_eq!(pokesim::dex::to_id(&st.sides[0].pokemon[0].ability), "intimidate");
+    assert_eq!(pokesim::dex::to_id(&st.sides[1].pokemon[0].ability), "synchronize");
+}
+
+/// SS2 — SKILL SWAP FAILS on Wonder Guard or a same-ability pair (`gen3_skill_swap_v1`).
+/// Both take the `[still]` + bare `-fail|<USER>` form, draw-free.
+#[test]
+fn skill_swap_fails_on_wonder_guard_and_on_identical_abilities() {
+    let d = dex();
+    let run = |p1: &str, p2: &str| {
+        let mut b = Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d)
+            .expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+            &d,
+        );
+        let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+        let failed = raw.iter().any(|l| l == "|-fail|p1a: Alakazam")
+            && !raw.iter().any(|l| l.contains("Skill Swap|||[of]"));
+        (failed, raw.join("\n"))
+    };
+    let user = "Alakazam||Leftovers|Synchronize|skillswap,splash|Hardy|85,85,85,85,85,85|M||||";
+    let (wg_failed, wg_log) =
+        run(user, "Shedinja||Leftovers|WonderGuard|splash|Hardy|85,85,85,85,85,85|M||||");
+    assert!(wg_failed, "SS2: Wonder Guard is gen-3's only failskillswap. got:\n{wg_log}");
+    let (same_failed, same_log) =
+        run(user, "Espeon||Leftovers|Synchronize|splash|Hardy|85,85,85,85,85,85|M||||");
+    assert!(same_failed, "SS2: an identical ability pair fails (gen<=5 rule). got:\n{same_log}");
+}
+
 /// RC1 — RECYCLE (`gen3_recycle_v1`). Restores the item the mon CONSUMED ITSELF.
 ///
 /// THE DISCRIMINATOR IS WHICH PRIMITIVE REMOVED THE ITEM, not that the slot went empty: the sim's

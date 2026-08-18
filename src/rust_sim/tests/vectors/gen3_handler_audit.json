@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 50,
-   "moves": 274,
-   "rows": 990
+   "moves": 275,
+   "rows": 993
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -5206,6 +5206,24 @@
    "fp": "val:\"slp\"",
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:skillswap:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:skillswap:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:skillswap:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:d6688131:onHit(target, source, move) { return this.skillSwap(source, target); }",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3's only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability."
   },
   "move:slackoff:heal": {
    "disposition": "implemented",

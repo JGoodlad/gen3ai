@@ -919,6 +919,13 @@ impl ProtocolBuilder {
     }
     /// `|-activate|<mon>|<Effect>[|<detail>]` — an effect fires without start/end
     /// (Protect blocking, a Substitute absorbing with `[damage]`).
+    /// `|-activate|<user>|Skill Swap|||[of] <target>` — the gen&lt;=4 SKILL SWAP form
+    /// (`gen3_skill_swap_v1`). TWO EMPTY FIELDS where gen5+ names the two abilities, and NO
+    /// `-endability`/`-ability` lines at all. Probe-settled (`harness/probe_skillswap.js`);
+    /// `activate()` cannot express the empty pair, hence its own constructor.
+    pub fn skill_swap(&mut self, user: &MonRef, target: &MonRef) {
+        self.push_raw(format!("|-activate|{user}|Skill Swap|||[of] {target}"));
+    }
     pub fn activate(&mut self, mon: &MonRef, effect: &str, detail: Option<&str>) {
         match detail {
             Some(d) => self.push_raw(format!("|-activate|{mon}|{effect}|{d}")),

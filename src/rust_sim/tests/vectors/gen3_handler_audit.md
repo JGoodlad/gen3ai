@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-50 conditions (engine state space + attached), 274 modeled moves
-→ **990 (effect, hook) rows**.
+50 conditions (engine state space + attached), 275 modeled moves
+→ **993 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 937 |
+| implemented | 940 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -578,7 +578,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (443 rows: implemented=439, noop_justified=2, unreachable_justified=2)
+## move (446 rows: implemented=442, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -909,6 +909,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | silverwind | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sing | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sing | status | implemented | `turn.rs::modeled_status_move` |
+| skillswap | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| skillswap | neverMiss | implemented | `turn.rs::never_miss` |
+| skillswap | onHit | implemented | `turn.rs::run_status_move` |
 | slackoff | heal | implemented | `turn.rs::recovery_heal_amount` |
 | slackoff | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | slackoff | neverMiss | implemented | `turn.rs::never_miss` |
