@@ -2,8 +2,9 @@
 
 **Status:** 🔬 open — written 2026-08-17 alongside `gen3_frame_deletion_v1`, which SHIPS WITH THESE
 GAPS OPEN by owner decision. This document exists so they can be reconciled out of band rather than
-blocking gen-14. **Nothing here is a defect in the deletion.** It is the inventory of what the
-deletion costs, which the measurement that licensed it was structurally unable to report.
+blocking gen-14. The §3.1-3.3 gaps are not defects in the deletion — they are the inventory of what
+it costs, which the measurement that licensed it was structurally unable to report. **§3.5 and §3.7,
+added by the 2026-08-17 follow-up audit, ARE defects** and are marked as such.
 
 ---
 
@@ -54,7 +55,13 @@ Verified end to end: writing `cant_id` into an event row moves BOTH the policy a
 
 ---
 
-## 3. What ships OPEN — the three gaps
+## 3. What ships OPEN — the gaps
+
+**§3.1-3.3** are the original three, found by repointing the `feature_coverage` probes (what the
+deletion COST). **§3.4-3.7** were added by the 2026-08-17 follow-up audit, which asked the inverse
+question (what the window never carried) and additionally turned up **two live defects** — §3.5 (the
+move-magnitude column is GIGO) and §3.7 (`ability: Damp` crashes the obs encoder). Those two are
+NOT accepted losses; they are flagged for the owner.
 
 ### 3.1 `our_attempted_switch_spec` — which bench mon a refused switch aimed at
 
@@ -117,6 +124,146 @@ gen3 has THREE ways an item stops being held — **consumed** (berries, herbs), 
 Off, permanent in ADV), and **swapped/stolen** (Trick / Thief / Covet). A bare `consumed` flag
 leaves the conflation half-alive, which is the failure this fix exists to end. Use a TRANSITION
 ENUM on the ITEM row: `revealed / consumed / removed / swapped`.
+
+---
+
+### ⟨FOLLOW-UP AUDIT, 2026-08-17⟩ — §3.4 … §3.7
+
+The three gaps above were found by repointing the `feature_coverage` probes: they are facts the LAG
+FRAMES carried that the event window does not. A separate follow-up audit asked the inverse question
+— **not "what did the deletion cost" but "what did the window never carry in the first place"** — for
+three battle facts nobody had traced end to end. It found one more absence, one MISATTRIBUTION class
+(worse than an absence: the row reaches the network carrying a false number), and one **live crash in
+the just-shipped `cant_id` feature**.
+
+Method note, because it is why these were found at all: each verdict rests on **observed protocol from
+real bridge battles** (`gen3ou` via the node bridge, plus constructed single-turn scenarios through
+the omniscient `utils/bridge/damage_probe.js`), not on reading the fold's intent. Two of the four
+contradict what the code reads like it does. Probes:
+`src/agents/model/feature_coverage/substitute_confusion_feature_test.py` (19 passing + 8 strict-xfail).
+
+### 3.4 Substitute — a sub absorbing damage, and a sub BREAKING
+
+**Status:** absent. The ATTACKER's row is fine; the DEFENDER's sub is invisible.
+
+Measured protocol: a hit a Substitute absorbs emits **no `|-damage|` at all**. Sub survives →
+`|-activate|p1a: Blissey|Substitute|[damage]`; sub breaks → `|-end|p1a: Blissey|Substitute`. The
+effectiveness/crit trio DOES still fire either way (Showdown raises it inside `getDamage`, which
+`substitute.onTryPrimaryHit` calls) — live: `|-supereffective|p1a: Blissey` immediately before
+`|-end|`.
+
+**What survives:** the attacker's `EVENT_T_MOVE` row reads outcome **HIT** with **magnitude 0** —
+"it connected and did nothing" — plus the correct effectiveness one-hot. And `substitute` is a binary
+volatile slot in the active-context block, so *"a sub is up right now"* is explicit.
+
+**What is lost:** the TRANSITION. `|-activate|` folds to `EventKind.ACTIVATE` and `|-end|` to
+`EventKind.VOLATILE_END`; `EventWindowTracker.update` (`episode_tracker.py:365-496`) has a branch for
+neither, so **no row records a sub going up, chipping, or breaking**. "My sub just broke" is the most
+decision-relevant moment of a sub turn and the window is silent on it. Only weakly inferable:
+HIT-with-zero-magnitude is also what a hit on a **Protect**ed mon looks like once the immune one-hot
+is not set.
+
+**Judgement: middling-to-high.** Substitute is a top-tier gen3ou mechanic (Suicune / Snorlax /
+Jirachi sub-stalling is a whole archetype). **Fix sketch:** the same shape as the `cant_id` fix — an
+`EVENT_T_VOLATILE` row type with a small volatile-id column and a start/end/activate transition flag,
+which would also subsume Leech Seed, Taunt, Encore, Disable and confusion's own start/end.
+
+### 3.5 🚨 Residual damage is CREDITED TO THE ATTACKER'S MOVE — the magnitude column is GIGO
+
+**Status:** NOT a gap — a wrong number, shipped. **Flagged for the owner as fix-now-or-not; not
+touched here.**
+
+`EventWindowTracker` attaches a `DAMAGE` event to the other side's open MOVE record only when the
+damage has no `[from]` clause and lands on that move's recorded target. The clause test is
+`not e.value.get("from")` (`episode_tracker.py:400`) — but the parser writes the `[from]` clause to
+**`value["reason"]`** (`gen3_battle.py:502-503`, and 516-517 / 537-538). `value["from"]` is set only
+for MISS/FAIL move-suffixes (`gen3_battle.py:346,349`); a DAMAGE event never carries it. **The guard
+is dead code and always passes.**
+
+Consequence: every clause-carrying residual on the move's target that turn is SUMMED into the
+attacker's move magnitude — sandstorm, hail, burn, poison/toxic, Leech Seed, confusion self-hit,
+recoil. On a Tyranitar-sand board that is essentially every move row in the game.
+
+Measured live, not derived: a **0-BP `confuseray`** row read `hp_delta = -0.12`, and a **FAILED**
+`confuseray` read `-0.13` — those numbers are the confused Snorlax's own self-hits. Unit reproduction
+(`test_end_of_turn_residuals_are_not_credited_to_the_attackers_move`): a real 0.10 hit plus 0.0625
+sandstorm plus 0.0625 burn folds to `-0.225`.
+
+A second, independent path produces the same class **without any `[from]` clause**: Substitute's own
+25% HP cost is a bare `|-damage|` on the mon that is also the opponent's recorded target, so it is
+credited to the opponent's move. Live: `machamp seismictoss hp_delta = -0.2493` on a turn its Seismic
+Toss dealt **zero** (the sub ate it) — 0.2493 is exactly Blissey's 178/714 sub cost. Order-dependent:
+it only lands when the opponent moved first that turn, so the same board yields different magnitudes
+depending on speed order.
+
+**Why it was invisible:** `event_window_fuzz_test.py`'s independent oracle (`_oracle_rows`) reads the
+same wrong key, so the fuzz agrees with the bug. That is the mirror-oracle trap — an oracle derived
+from the implementation validates the implementation's mistakes.
+
+**Judgement: the highest-value item in this document, and the only one that is a defect rather than
+an accepted loss.** Fix sketch: read `value["reason"]`; add a typed `from_clause` accessor on
+`BattleEvent` so no third consumer can guess the key again; rewrite the fuzz oracle to read the
+accessor; and add an explicit "self-inflicted damage (Substitute cost, recoil, Struggle, Belly Drum,
+confusion) never attaches to the other side's move" rule, since target-identity alone cannot separate
+it.
+
+### 3.6 Confusion self-hit — a lost turn with no row
+
+**Status:** absent as a fact; actively MISREPORTED via §3.5.
+
+gen3 emits `|-activate|p2a: Snorlax|confusion` then `|-damage|p2a: Snorlax|87/100|[from] confusion`.
+There is **no `|move|` line and no `|cant|` line** — so confusion's absence from `CANT_REASONS` is the
+CORRECT modelling of the protocol, not an oversight.
+
+**What survives:** `confusion` is a binary volatile slot in the active-context block, so *"this mon is
+confused right now"* — and hence the standing 33% risk — is explicit.
+
+**What is lost:** the RESOLUTION. A confusion self-hit is strategically the twin of a full-paralysis
+`EVENT_T_CANT` row (a turn thrown away, plus self-damage), and it produces **zero rows**: the
+`-activate` is an `ACTIVATE` with no tracker branch, and the damage is filtered out of its own side's
+accounting. Worse, per §3.5 it is not merely dropped — it is re-credited to the OPPONENT's move row.
+So the window does not say "they lost a turn to confusion"; it says "our status move dealt 12%".
+
+**Judgement: middling on its own, higher once §3.5 is fixed** — with the residual guard repaired the
+damage would be correctly dropped and this becomes a clean absence rather than a lie. **Fix sketch:**
+the §3.4 `EVENT_T_VOLATILE` row covers confusion start/end; the self-hit itself wants either a
+dedicated row type or, cheaper, a `self_inflicted` flag on a damage-carrying row.
+
+### 3.7 🚨 `ability: Damp` is a `|cant|` reason the vocabulary lacks — it CRASHES the run
+
+**Status:** LIVE DEFECT in the just-shipped `cant_id` feature. **Flagged for the owner; not fixed
+here.**
+
+**Freeze is NOT the problem.** `constants.py`'s comment abbreviates the reason list as *"(full
+paralysis / sleep / flinch / recharge)"*; that is prose, not coverage. `frz` is `CANT_REASONS[1]` and
+always was. A census of every `add('cant', …)` over the gen3-reachable Showdown sources gives 13
+reasons; 12 are in the vocabulary.
+
+The thirteenth is **`ability: Damp`** (`data/abilities.ts:805`, `onAnyTryMove`, blocking Self-Destruct
+and Explosion; the rust port emits it too — `src/rust_sim/src/protocol.rs:690-692`). It is not modded
+out of gen3, Damp is gen3-legal on Psyduck/Golduck, the Poliwag line, Wooper/Quagsire, Politoed, the
+Horsea line and the Paras line, and Explosion is ubiquitous in gen3ou. So the reason is reachable in
+ordinary play.
+
+`normalize_cant_reason` is crash-don't-drop: it raises `UnknownCantReasonError`, which propagates out
+of `state_encoder.encode` (`state_encoder.py:355`) and kills the episode — and, in training, the run.
+**Reproduced on battle #1** of a scripted Quagsire-vs-Snorlax bridge battle.
+
+Note this is **not new with `cant_id`** — `TurnDeltaEncoder` normalised the same reasons — but the
+frame deletion made the event window the fact's only route, so the exposed surface did not shrink.
+
+**A second defect rides the same row, and adding `"damp"` alone would ship it.** Showdown puts this
+`|cant|` on the ABILITY HOLDER with the blocked move as its argument:
+`|cant|p1a: Quagsire|ability: Damp|Self-Destruct|[of] p2a: Snorlax`. Our fold therefore emits
+`actor=quagsire, side=ours, move_id=selfdestruct` — naming a mon that never had Self-Destruct as the
+one that could not move, while the side that actually lost its turn is the opponent. Live record:
+`{'t': 10, 'actor': 'quagsire', 'side': 'ours', 'move_id': 'selfdestruct', 'cant': 'ability: Damp'}`.
+
+**Judgement: fix-now candidate, owner's call.** Fix sketch: add `"damp"` to `CANT_REASONS`, AND
+re-attribute the row using the `[of]` clause (the blocked mover) so `side`/`actor` name the mon that
+lost the turn. The durable lesson matches §3.5's: the vocabulary was derived by reading
+`conditions.ts` (where 5 of the 13 live) rather than by censusing every `add('cant', …)` the format
+can reach, so the ability- and move-sourced reasons were assembled from recall.
 
 ---
 

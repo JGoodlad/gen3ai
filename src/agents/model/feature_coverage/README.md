@@ -29,6 +29,14 @@ the encoded vector. Here we drive the encoded vector through the network.
 - `switch_trap_boost_feature_test.py` — switch vs move / boost deltas (every
   stat ±) / forced-switch phase / move order / species block /
   attempted-switch-rejected (trapped pivot).
+- `substitute_confusion_feature_test.py` — the 2026-08-17 follow-up audit. **The one
+  file here that probes the FOLD (`EventWindowTracker`) rather than the network hop**,
+  because its questions are "does this fact produce a row at all" and "does the row say
+  something TRUE" — a row that reaches the network carrying a false number is worse than
+  one that never arrives, and `assert_delta_reaches_network` cannot see the difference.
+  Substitute absorption / confusion self-hit / the full `|cant|` vocabulary; every verdict
+  confirmed against real bridge-battle protocol. 19 passing + 8 strict-xfail (see
+  `designs/ai_v9/design_frame_deletion_coverage_gaps.md` §3.4-3.7).
 - `static_blocks_feature_test.py` — reachability sweep of the NON-history obs
   blocks: per-Pokémon (item-consumed, status, sleep/toxic counters, spread,
   PP/never-miss, HP-candidate, species_known), global env (weather one-hot +
@@ -58,6 +66,15 @@ a dead obs dim is the most valuable thing this suite can find.
   swept here moves both the policy and value heads.
 - **KO-before-acting** is encoded via `we_fainted` + an empty move block, NOT a
   `|cant|` reason (`"fainted"` is not in `CANT_REASONS`).
+- **`frz` IS in `CANT_REASONS`.** `constants.py` abbreviates the list as "(full
+  paralysis / sleep / flinch / recharge)"; that is prose, not coverage.
+- **`ability: Damp` is NOT**, and it is a gen3-reachable `|cant|` reason — so a
+  Damp mon blocking an Explosion CRASHES `state_encoder.encode`. Live defect, see
+  gaps §3.7.
+- **The event-window MOVE magnitude sums residual damage** (sandstorm/burn/
+  confusion/recoil) into the attacker's row: the tracker's `[from]`-clause guard
+  reads `value["from"]` but the parser writes `value["reason"]`. Live defect,
+  see gaps §3.5.
 - **Status index order** (`_STATUS_ORDER`): BRN, FNT, FRZ, PAR, PSN, SLP, TOX.
 - **Boost stat order** (`BOOST_STATS`): atk, def, spa, spd, spe, accuracy,
   evasion.
