@@ -292,14 +292,17 @@ def test_h_tier_arch_compiles_to_one_graph():
 
 @_skip_compile
 def test_intent_threshold_arch_compiles_to_one_graph():
-    """gen3_intent_threshold_v1 (v84) + gen3_intent_conditional_v1 (v85): production + BOTH
-    intent riders must hold the one-graph property before a run relies on
-    `--compile-opponents` with them on — the same launch-day blind spot the H-tier cells
-    close. Both paths are pure tensor ops over the op's stashes (gathers + α contractions),
-    so a break here means one of them stopped lowering."""
+    """gen3_intent_threshold_v1 (v84) + gen3_intent_conditional_v1 (v85) +
+    gen3_pair_outcome_v1 (v93): production + EVERY α move-cell rider must hold the one-graph
+    property before a run relies on `--compile-opponents` with them on — the same launch-day
+    blind spot the H-tier cells close. All three paths are pure tensor ops over the op's
+    stashes (gathers + α contractions), so a break here means one of them stopped lowering.
+    They ride ONE test rather than three because the expensive part is the dynamo pass, not
+    the arm; if it ever breaks, bisect by dropping one flag at a time."""
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
+                                            pair_outcome_cell=True,
                                             damage_matrices_outgoing=True,
                                             op_drop_renders=True, op_believed_lean=True,
                                             value_clock=True, value_intent=True)
@@ -313,6 +316,32 @@ def test_intent_threshold_arch_compiles_to_one_graph():
         got = torch.compile(fe.forward)(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
     assert err < 1e-5, f"compiled intent-threshold output diverged from eager: {err:.2e}"
+
+
+@_skip_compile
+def test_pair_outcome_fallback_arch_compiles_to_one_graph():
+    """gen3_pair_outcome_v1's R1 FALLBACK branch, which no other compile cell can reach.
+
+    With `--opp-intent` off the cell takes a DIFFERENT branch (`alpha_belief_mean` over the
+    belief weights, no softmax over published logits), and an untested default branch is
+    exactly the failure the seedless-bridge lesson records: every gate on that path was
+    inherently on the other branch, so the production default went unexercised no matter how
+    green the suite looked. Explain-only — the numeric agreement is covered by the arm above.
+    """
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(
+        pair_outcome_cell=True, opp_intent=False,
+        # every production flag whose  names opp_intent must come off with it
+        # (queried from the registry, not guessed: intent_value_reduce / intent_move_cell /
+        # intent_threshold / intent_conditional).
+        intent_value_reduce=False, intent_move_cell=False,
+        intent_threshold=False, intent_conditional=False)
+    assert fe.alpha_head is None, "this cell is meant to exercise the NO-intent fallback"
+    explained = torch._dynamo.explain(fe.forward)(
+        {"observation": torch.zeros(_BATCH, layout["total_dim"])})
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
 
 
 # ----------------------------------------------------------------- the other three matrix cells

@@ -106,6 +106,10 @@ TIER_OF: Dict[str, int] = {
     # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — the same
     # pointer-stash placement as intent_move_cell.
     "intent_conditional": 2,
+    # gen3_pair_outcome_v1 (v93): the α-reduced unified outcome vector, delivered to the pointer
+    # MOVE cell. Same T1-producer (the op builds `pair_in`) / T2-consumer (α contracts it) split
+    # as every other α cell — T2 is where α first exists.
+    "pair_outcome_move": 2,
     # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
     # (the first point where both operands exist) — a DELIVER-stage readout.
     "intent_value_reduce": 3,

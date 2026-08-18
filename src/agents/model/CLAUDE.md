@@ -39,7 +39,7 @@ Grouped into the four tiers the contract asserts:
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` (opt-in) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` (opt-in) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head`, `intent_threshold_value` / `value_clock_route` / `value_intent_route` (opt-in) |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
@@ -320,6 +320,7 @@ modules out of the extractor and the layout out of the op):
 | `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
 | `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
+| `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`. Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
 | `features_extractor.py` | `ProjectionAssembler` + the `Gen3FeaturesExtractor` orchestrator; **re-exports every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
 
@@ -828,6 +829,35 @@ to NAME `β`'s slots) → the summary invocation's `opp_intent` block → `engin
 replay's per-turn *expect* line (`src/main/prober/CLAUDE.md`). `β` names a slot by the model's OWN
 species posterior — the same content-addressing its training target uses — so the head and the
 sentence refer to one object.
+
+### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
+
+Five modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
+`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`. They share four
+conventions, and each one exists because breaking it fails silently:
+
+1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
+   of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
+   "swap `_chan_max`'s `how=`" plan is unbuildable for that reason, not for want of a knob.
+2. **Read `last_alpha_logits` (the PUBLICATION), never a raw stash** — and take the
+   **UNRENORMALIZED move slice**. The missing SWITCH mass is the literally-correct statement that a
+   switching opponent applies no outcome this turn; renormalizing asserts they attacked.
+3. **Align by CONSTRUCTION and fail loud on a width mismatch.** α's seats and the op's top-K are
+   the SAME axis (`intent_axis_alignment_test`); broadcasting a mismatch would pair each α weight
+   with the wrong opponent move while every shape check still passed — the named `op move-order`
+   bug class.
+4. **Zero-init the projection**, and let `restore_identity_init` capture it by observation (M1).
+
+`pair_outcome.py` adds two the others did not need, and both are worth copying:
+
+* **Stop-grad α unconditionally** on a POLICY-side consumer. `label_only` happens to cut the
+  PPO→`alpha_head` route today, but resting on it makes the route's EXISTENCE a function of a
+  TRAINING flag — one `--belief-grad-mode` change away from silently reopening.
+* **Give α a documented FALLBACK if the flag can stand alone.** With no intent head it uses the
+  shipped R1 `belief_mean` rung (`α := w/Σw`), re-exported from `pair_reduce` rather than
+  re-spelled. That makes the flag independently enableable and separates the DELIVERY claim from
+  the DISTRIBUTION claim — but the two are NOT the same object (presence belief vs usage belief,
+  and one sums to 1 where the other sums to `1 − α_SWITCH`), so say so loudly wherever it appears.
 
 ---
 

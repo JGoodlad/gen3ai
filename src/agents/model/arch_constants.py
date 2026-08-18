@@ -104,6 +104,23 @@ _INTENT_THRESH_RAW_VF = 3
 INTENT_COND_MOVE_DIM = 13
 _INTENT_COND_RAW = 13
 
+# gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1 + design_pair_reduction.md §2.1/§9a):
+# the UNIFIED PER-PAIR OUTCOME VECTOR — one `pair_in[k, j, :]` per (their believed move k, our mon
+# j) carrying damage AND status AND neutralization AND tempo in the SAME vector, reduced by ONE
+# shared α over the move axis and delivered to the pointer MOVE cell.
+#
+# `_PAIR_OUTCOME_DMG` is the op's existing pair-cell width (== `_INTENT_CELL_FEATURES`, the F axis
+# of `last_pair_cells`: [low, high, crit, ko_ramp, acc, is_phys]); `_PAIR_OUTCOME_NEW` is the eight
+# coordinates gen3_pair_outcome_v1 adds (6 per-identity status landing probabilities + neutralization
+# + tempo_cost — the full table with each coordinate's §9a admission answer lives in
+# `pair_outcome.py`). `_PAIR_OUTCOME_RAW` is their concatenation = the reduced row's width;
+# `PAIR_OUTCOME_MOVE_DIM` is the zero-init projection's output width (what the pointer move
+# scorer's in_features grow by when the flag is on).
+_PAIR_OUTCOME_DMG = 6
+_PAIR_OUTCOME_NEW = 8
+_PAIR_OUTCOME_RAW = _PAIR_OUTCOME_DMG + _PAIR_OUTCOME_NEW      # 14
+PAIR_OUTCOME_MOVE_DIM = _PAIR_OUTCOME_RAW
+
 
 # gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
 # zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the

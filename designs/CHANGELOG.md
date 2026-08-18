@@ -4976,3 +4976,112 @@ extractor is untouched, which is also why the flag is deliberately absent from
 `agents/model/flag_registry.py` (that registry's scope is extractor toggles). A pre-v92 config
 defaults it to 0.0. Not yet run: the pre-registered rung-2 fork A/B (λ=1.0 and λ=3.0) is a separate
 decision.
+
+---
+
+### v93 — `gen3_pair_outcome_v1` (2026-08-17): the UNIFIED per-pair OUTCOME VECTOR (Phase A)
+
+**Opt-in, `--pair-outcome-cell`, OFF in production.** Built unconditionally as zero-init machinery
+under the owner's programme sequencing (`research_state/README.md`, "substrate before flywheel");
+ENABLING waits on the exploiter gates. Phase A is the pointer-MOVE-cell half only — the switch cell
+and every β-conditioned cell are Phase B and are deliberately not built.
+
+**What it closes is a CURRENCY failure, one level below the reduction failure.** Traced to the sink
+that actually decides, `design_pair_reduction.md` §2.1 states it exactly: the pointer switch cell is
+fifteen numbers — ten damage, `p_outspeed`, `provenance`, and the Choice-Band tail — with **no
+status coordinate in any currency at all**. In production `threat_status_refine` is `False`, so
+incoming status reaches the policy ONLY through the `s3` edge family, i.e. as a softmax-normalised
+**ratio**. "They'll click Will-O-Wisp, so bring the Natural Cure mon" is therefore unrepresentable
+not because status was mis-reduced but because the two quantities never appear in the same vector in
+the same units, and no reducer however expressive repairs that. It is also the most economical
+reading of the **G1 n=299 null**: a 2800-dim SKYLINE over the un-collapsed pair grid could not beat
+the collapsed summary (R0 0.403±0.034 · SKYLINE 0.413±0.037), which says the quantity the decision
+turns on was never in the grid. So this entry does the thing §2.1 says binds FIRST — fix what the
+message CARRIES, then reduce it.
+
+**The vector.** `pair_in[their believed seat k, our mon j, :]`, width `_PAIR_OUTCOME_RAW` = **14**:
+the op's six existing damage channels (`[low, high, crit, ko_ramp, acc, is_phys]`, its
+`last_pair_cells`, unchanged) concatenated with eight new ones. Damage and status were computed in
+two functions with two reductions, and **one α cannot weight two tensors** — the unification IS
+component 1 of `design_opponent_intent.md` §5.1, not cleanup.
+
+| # | coordinate | how it is computed |
+|---|---|---|
+| 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` VERBATIM (the oracle-gated per-pivot immunity physics — type at our defender's types, ability block, already-statused, damage-gated secondaries) SPLIT by the seat's status IDENTITY. The identity is `MOVE_STATUS_IDENT` (NEW: a one-hot built from the raw `status_inflicted`, so **Toxic and Poison Powder stay apart** — `MOVE_STATUS_CAT` folds both into category 5 because they share the Steel/Poison immunity) for a dedicated status move, and `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary. Exact in practice: every gen3 move with a major secondary has exactly one |
+| 12 | `neutralization` | `Σ_s p_s · sev_s(j)` in units of *fraction of this mon's per-turn contribution destroyed*. `sev_brn = 0.5 · base_atk/(base_atk+base_spa)`; `sev_par = 0.25 + 0.75·Δp_outspeed` where Δ is the op's OWN outspeed logistic re-evaluated at ×0.25 speed; `sev_frz = sev_slp = 1.0`; `sev_psn = 1/8`, `sev_tox = 1/16`. **Every scalar is a gen3 RULE**, never a tuned prior — that is what lets it ship without a calibration artifact |
+| 13 | `tempo_cost` | `P(any major status) × undo_turns(j)`. `undo_turns` = 1 for a cure move (NEW `MOVE_CURES_SELF_STATUS`: Refresh / Heal Bell / Aromatherapy — the facade keeps `cures_self` and `cures_team` apart by SCOPE; here only "is this mon clean afterwards" matters), the op's own `rest_sleep_noeb` (2.0, derived from the verified sleep hazard table) for Rest, else 0. The receiver is OUR mon, so its moveset is exact and there is no marginalisation question on that axis |
+
+**Every new coordinate passes §9a's admission test** (*name two specific actions whose ordering it
+flips*), and the answers are recorded in `pair_outcome.py`'s docstring rather than asserted:
+the status columns flip **Swords Dance vs Earthquake** under a believed Spore (setup is worthless if
+you may never act again; the ten damage numbers are IDENTICAL in both branches because Spore deals
+none); `neutralization` flips **Substitute vs Calm Mind** on a physical attacker facing a likely
+Will-O-Wisp (damage-only reads BOTH branches at 0.0); `tempo_cost` flips **Substitute vs Toxic** (a
+sub spends a turn NOW to prevent a turn spent LATER — without the coordinate, "it lands and I cure
+it" and "it never lands" are the same state, so the sub is never worth its turn).
+
+**Two coordinates the design sketch listed are deliberately NOT shipped.** §5.1 lists
+`p_status_land` and `p_immobilize`; both are **linear functions** of the six per-identity columns,
+which pass through a `Linear` before anything else touches them, so §9a's derivability rule applies
+in its plain form (*derivable from what IS delivered → do not add it*). The un-collapsed vector is
+strictly richer — burn and sleep are not interchangeable to a physical attacker, and a single
+`p_major` scalar asserts they are. `pair_outcome_test` pins the absence so a future "restoration"
+has to delete a test first.
+
+**The reduction is Contract W, enforced by SHAPE.** `reduce_pair_in(α, pair_in, gate, active)` is
+`Σ_k α_k · pair_in[k, j, :]` and α carries **no channel axis and no defender axis**, so the flat
+block's nine-independent-maxima incoherence (**D2** — up to nine different opponent moves describing
+one defender) and a per-defender α (**D3** — Skarmory's row assuming Rock Slide while Blissey's
+assumes Thunderbolt, illegitimate because they choose without seeing which mon you bring) are both
+**shape errors** rather than properties a test hunts for. The load-bearing gate plants a
+per-channel maximum and asserts the contract catches it; verified failing against the planted
+violation.
+
+**α, and the fallback that makes the flag independently enableable.** With `--opp-intent` on, α is
+the softmax of the PUBLISHED α logits, **move slice only, UNRENORMALIZED** (the `IntentValueReduce`
+/ v84 / v85 precedent — the missing SWITCH mass is the literally-correct statement that a switching
+opponent applies no outcome to us this turn, so a high `α_SWITCH` shrinks every coordinate toward
+zero together, a coherence only expressible because they share one α) and **stop-grad
+unconditionally**: this is a POLICY-side consumer, and leaning on `belief_grad_mode=label_only` for
+the cut would make the route's EXISTENCE a function of a TRAINING flag. With `--opp-intent` OFF it
+falls back to the shipped **R1 `belief_mean`** rung, `α := w/Σw`, re-exported from `pair_reduce` so
+the two cannot drift. ⚠️ **The fallback is not a cheap α**: `w` is a PRESENCE belief and α is a
+USAGE belief — `α ≠ w` is the substantive modelling error the whole design names — and the fallback
+sums to 1 where the α path sums to `1 − α_SWITCH`, because with no intent head there is no switch
+belief to withhold mass for. What it buys is the separation §7a.2 asks for: the **DELIVERY** claim
+(a per-action absolute in the currency the decision needs) testable apart from the **DISTRIBUTION**
+claim. A seat closed by the meaningful-K gate is MASKED and its mass **not reassigned** — §4.2's "if
+we can't name it, we don't train on it", applied in the forward.
+
+**Delivery.** The reduced row for our ACTIVE defender rides every move cell through a zero-init
+`Linear(14, 14)` (`PAIR_OUTCOME_MOVE_DIM`), per-action ABSOLUTE — the channel measured to work
+(`d1` 12.17% / `d2` 19.25%) rather than the edge ratios the consequence families died on. The row
+carries no per-slot dependence, so it rides identically on all four slots like `intent_threshold`'s
+`p_ko` context channel; that is **not** a no-op, because the pointer scorer is an MLP over
+`(move token ‖ cell)` — a constant cell modulates how each different token is scored, and the switch
+logits (Phase B) do not receive it, so the move/switch balance moves too. A term that were merely
+additive on the logit would cancel in the softmax; this one does not.
+
+**Known limits, named rather than approximated:** status DURATION (`neutralization` is a per-turn
+rate, so sleep and freeze read equal even though gen3 freeze does not self-thaw — an
+expected-duration factor is not a rule and would have to be guessed); **physics mutation** (burning
+Milotic multiplies its Def by 1.5 and moves every subsequent number in the matrix — a statement about
+the successor state, out of scope for a one-ply reduction by §5.1); and a **held berry's auto-cure**
+(Lum cures at zero tempo and near-zero neutralization; folding it in would PRE-BLEND two
+probabilistic branches into one column, which §9's anti-patterns forbid).
+
+**Versioning:** `MODEL_CONFIG_VERSION` 92 → **93**, adding the `structural` field
+`pair_outcome_cell` with a `check_compatible` gate and a `<93 ⇒ False` migration. **No
+`ARCH_SIGNATURE` bump** — the module is flag-gated and OFF builds nothing, so an existing
+checkpoint's forward and `state_dict` are untouched (pinned: no module, no `state_dict` key, no
+extra dim, identical pi/vf). ON is identity-at-init, asserted on a REAL `MaskablePPO` policy (ledger
+M1 — the zero-init is captured by observation and re-zeroed after SB3's ortho pass). Also in this
+pass, no version bump: `SECONDARY_MAJOR_N` was declared in **two** files and is now imported from
+`damage_tables` by `damage_op_layout`.
+
+**Gates:** 37 new tests in `pair_outcome_test.py` (coordinate-by-coordinate correctness through the
+FULL op forward, the D2 planted-violation gate, the α fallback's exact identity with the shipped
+rung, seat masking, seat-permutation invariance, OFF byte-identity, real-policy identity-at-init,
+the version machinery, and the delivery-graph edges) plus a compile cell for the **fallback** branch
+— which no other cell can reach, and an untested default branch is exactly the failure the
+seedless-bridge lesson records. The ON+intent branch joins the existing one-graph intent cell.

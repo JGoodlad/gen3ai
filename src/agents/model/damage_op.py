@@ -82,6 +82,11 @@ class OpStashes:
     w_all: Optional[torch.Tensor] = None             # [B,n_moves] candidate weights (LIVE — dedup)
     pair_cells: Optional[torch.Tensor] = None        # [B,J,K,F] un-reduced cells (alpha consumers)
     pair_gate: Optional[torch.Tensor] = None         # [B,J,1] alive x has_opp
+    # gen3_pair_outcome_v1: the UNIFIED outcome vector — `pair_cells` (damage) concatenated with the
+    # eight status/neutralization/tempo coordinates, on the SAME (defender, seat) axes. ONE tensor,
+    # because one alpha cannot weight two (design_opponent_intent.md §5.1).
+    pair_in: Optional[torch.Tensor] = None           # [B,J,K,_PAIR_OUTCOME_RAW]
+    pair_seat_live: Optional[torch.Tensor] = None    # [B,K] the meaningful-K gate (unmodeled seats)
     reduced_extra: Optional[torch.Tensor] = None     # [B,6,extra] the pair-reduce rung output
     out_pko: Optional[torch.Tensor] = None           # [B,4,6] per-(our move, their mon) pko, PRE-gain
     raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
@@ -89,6 +94,7 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
+from agents.model.pair_outcome import PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -178,6 +184,11 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # Step 6's seam flag: the UN-reduced cells are stashed only when a downstream alpha
         # consumer asked for them. Off => None and zero extra work.
         self.stash_pair_cells: bool = False
+        # gen3_pair_outcome_v1: the same seam for the UNIFIED outcome vector. Setting it implies
+        # `stash_pair_cells` (the damage half IS the first six coordinates), and the extractor sets
+        # both together — but the implication is asserted in the forward rather than assumed, since
+        # a consumer that set only this one would otherwise get a silently narrower vector.
+        self.stash_pair_outcome: bool = False
         # gen3_op_stashes_v1: ALL per-forward side values live in ONE typed container, replaced
         # at forward entry (see OpStashes). The individual docs moved onto the dataclass fields;
         # the provenance tags (candidate dedup, lean forward, tensors views) are in CHANGELOG.
@@ -329,6 +340,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
     def last_pair_cells(self) -> Optional[torch.Tensor]: return self.stash.pair_cells
     @property
     def last_pair_gate(self) -> Optional[torch.Tensor]: return self.stash.pair_gate
+    @property
+    def last_pair_in(self) -> Optional[torch.Tensor]: return self.stash.pair_in
+    @property
+    def last_pair_seat_live(self) -> Optional[torch.Tensor]: return self.stash.pair_seat_live
     @property
     def last_reduced_extra(self) -> Optional[torch.Tensor]: return self.stash.reduced_extra
     @property
@@ -913,6 +928,31 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                 _pr_cells_raw.shape[-1])
             self.stash.pair_cells = _pr_cells_raw.gather(2, _idx)              # [B,J,K,F]
             self.stash.pair_gate = _pr_gate_raw
+            # gen3_pair_outcome_v1: the UNIFIED outcome vector. The damage cells just aligned to
+            # alpha's seat axis are its first six coordinates; the eight status / neutralization /
+            # tempo coordinates are computed on the SAME `last_topk_idx` selection and concatenated,
+            # so `pair_in` is ONE tensor over ONE (defender, seat) grid. That unification IS the
+            # prerequisite design_opponent_intent.md §5.1 names: "damage and status are computed in
+            # two functions with two reductions, and one alpha cannot weight two tensors."
+            if self.stash_pair_outcome:
+                _ti = self.last_topk_idx
+                if _ti is None:
+                    raise RuntimeError(
+                        "stash_pair_outcome is on but no top-K move-num selection was recorded — "
+                        "the status coordinates have no seat axis to be computed on. Requires "
+                        "damage_topk_k>0 (and the incoming matrix that computes it).")
+                _dmg = self.stash.pair_cells
+                _extra = self.pair_outcome_coords(
+                    ctx, _ti, _dmg[..., PAIR_OUTCOME_IDX["high"]],
+                    our_spe, opp_spe, opp_spe_std, d_base)
+                self.stash.pair_in = torch.cat([_dmg, _extra], dim=-1)         # [B,J,K,RAW]
+                # (`pair_seat_live` — the unmodeled-seat mask alpha must spend no mass on — is
+                # stashed by `_incoming_matrix`, which is where the meaningful-K gate is already
+                # computed. One computation, one home.)
+                if self.stash.pair_seat_live is None:
+                    raise RuntimeError(
+                        "stash_pair_outcome is on but the incoming matrix stashed no seat-liveness "
+                        "gate — an unmodeled 5th+ seat would be given alpha mass it cannot carry.")
 
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons' moves → opp active — the
         # switch-in offense read). Appended LAST so every existing offset is untouched.

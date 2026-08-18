@@ -49,6 +49,8 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
     _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
+    _NEUTRAL_BRN_ATK_LOSS, _NEUTRAL_PAR_FULL, _NEUTRAL_PSN_TICK, _NEUTRAL_TOX_FIRST_TICK,
+    _TEMPO_CURE_TURNS,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
@@ -76,6 +78,8 @@ class DamageOperatorBlocks:
         cb_phys_mult: float
         hp_bp: float
         hp_num: int
+        rest_num: int
+        rest_sleep_noeb: float
         stash: 'OpStashes'
         # Methods the COMPOSED class (`damage_op.DamageOperator`) owns and both mixins call.
         # Declared as callables rather than re-stated signatures: the definition is one file away
@@ -102,11 +106,13 @@ class DamageOperatorBlocks:
         MOVE_BP: torch.Tensor
         MOVE_EFFECT_FLAGS: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
+        MOVE_CURES_SELF_STATUS: torch.Tensor
         MOVE_INFLICTS_STATUS: torch.Tensor
         MOVE_IS_SLEEP: torch.Tensor
         MOVE_PHYS: torch.Tensor
         MOVE_SECONDARY: torch.Tensor
         MOVE_STATUS_CAT: torch.Tensor
+        MOVE_STATUS_IDENT: torch.Tensor
         MOVE_STATUS_TYPE_IMMUNE: torch.Tensor
         MOVE_TYPE_IDX: torch.Tensor
         SPECIES_EXP_MULT: torch.Tensor
@@ -688,6 +694,122 @@ class DamageOperatorBlocks:
                      * damage_gate * (1.0 - already[:, :, None])).clamp(max=1.0)              # [B,6,K]
         return torch.maximum(dedicated, secondary)                                            # [B,6,K]
 
+    def pair_outcome_coords(self, ctx: 'ExtractorContext', real_idx: torch.Tensor,
+                            pair_high: torch.Tensor, our_spe: torch.Tensor,
+                            opp_spe: torch.Tensor, opp_spe_std: torch.Tensor,
+                            d_base: torch.Tensor) -> torch.Tensor:
+        """gen3_pair_outcome_v1 — the EIGHT non-damage coordinates of the unified outcome vector,
+        per (our defender j, their believed seat k). `[B, 6, K, _PAIR_OUTCOME_NEW]`, in
+        `PAIR_OUTCOME_COORDS` order after the damage prefix:
+
+            [p_par, p_brn, p_frz, p_slp, p_psn, p_tox, neutralization, tempo_cost]
+
+        `real_idx` `[B,K]` are the top-K move NUMS (α's seat axis); `pair_high` `[B,6,K]` is the
+        already-aligned max-roll fraction (the same tensor `last_pair_cells[..., 1]` carries, passed
+        in rather than re-derived); the speed/stat args are the op forward's own locals, so the
+        physics here is the SAME physics the rest of the block was computed from.
+
+        **Nothing is invented.** The landing probability reuses `_incoming_status_lands` verbatim —
+        the oracle-gated per-pivot immunity physics (type @ our defender's types, ability block,
+        already-statused, damage-gated secondaries) — and this method only ever SPLITS it by
+        identity and multiplies it by quantities read off the defender's own stats. Every scalar
+        constant below is a gen3 RULE (burn halves Atk; paralysis is ×0.25 speed with a 25%
+        full-para roll; poison ticks 1/8, toxic starts at 1/16), never a tuned prior — the owner
+        rule is *provide facts, do not bake priors*.
+
+        ### The identity split, and why `MOVE_STATUS_CAT` could not do it
+        A seat inflicts a status by one of two mutually-exclusive routes, and `_incoming_status_lands`
+        takes their max:
+          * a DEDICATED status move → `MOVE_STATUS_IDENT` is its exact one-hot (built from the raw
+            `status_inflicted`, so **Toxic and Poison Powder stay apart** — `MOVE_STATUS_CAT` folds
+            both into category 5, since they share the Steel/Poison immunity);
+          * a DAMAGING move's major SECONDARY → the identity is `MOVE_SECONDARY`'s major prefix,
+            L1-normalized into a distribution (it is being used as an IDENTITY here; the magnitude
+            already rides `p_land`).
+        For every gen3 move that actually has a major secondary the normalized vector is a one-hot
+        (Body Slam para, Ice Beam freeze, …), so the split is EXACT in practice; a hypothetical
+        two-major-secondary move would split proportionally, which is the honest marginal.
+
+        ### `neutralization` — "how much of this mon is destroyed WITHOUT a KO"
+        `Σ_s p_s · sev_s(j)`, in units of *fraction of this mon's per-turn contribution lost*:
+          * **burn** → `0.5 · phys_share(j)`, `phys_share = base_atk/(base_atk+base_spa)`. Halving
+            Atk costs a special attacker nothing and a physical one half its offense; the split is
+            read off base stats, not assumed.
+          * **paralysis** → `0.25 + 0.75 · Δp_outspeed(j)`. The 25% is the full-para roll (a flat
+            action loss); the rest is how much of this mon's value rested on being fast, measured as
+            the op's OWN outspeed logistic evaluated at ×0.25 speed. A slow wall reads ~0.25; a
+            sweeper that was winning the speed tie reads ~1.0.
+          * **freeze / sleep** → 1.0. Total action denial while it lasts.
+          * **poison / toxic** → the first-turn residual fraction (1/8, 1/16).
+        ⚠️ **DURATION is not modelled** (see `pair_outcome.py`): this is a per-turn rate, so sleep
+        and freeze are equal here even though gen3 freeze does not self-thaw. Fixing that needs an
+        expected-duration number that is not a rule, so it is named rather than guessed.
+
+        ### `tempo_cost` — "turns of MY clock spent undoing it"
+        `P(any major status lands) · undo_turns(j)`, where `undo_turns` is read off THIS mon's OWN
+        moveset — the receiver is fully observed (`j` indexes OUR six), so there is no
+        marginalization question on this axis at all:
+          * a one-turn cure (Refresh / Heal Bell / Aromatherapy) → **1.0**;
+          * **Rest** → the op's own `rest_sleep_noeb` (2.0 turns, DERIVED from the verified sleep
+            hazard table, not a constant written here) — it undoes any status at a higher price;
+          * neither → **0.0**, which is the correct reading: nothing is spent because nothing is
+            undone. The permanent loss is `neutralization`'s job, and the two ride DECORRELATED
+            rather than pre-blended (§9's anti-pattern list).
+        A Lum Berry would cure at zero tempo and near-zero neutralization; items are not read here,
+        so a berry-holder reads as if it had no answer. Named in `pair_outcome.py`'s limits.
+        """
+        from agents.model.arch_constants import _PAIR_OUTCOME_NEW
+        B, eps = ctx.batch_size, 1e-8
+        K = real_idx.shape[-1]
+        # --- P(a major status lands on defender j from seat k) — the validated physics, unchanged ---
+        p_land = self._incoming_status_lands(ctx, real_idx, pair_high)              # [B,6,K]
+        # --- the seat's status IDENTITY as a distribution over the 6 major columns ---
+        ded = self.MOVE_STATUS_IDENT[real_idx]                                      # [B,K,6]
+        sec = self.MOVE_SECONDARY[real_idx][..., :_SECONDARY_MAJOR_N]               # [B,K,6]
+        sec_tot = sec.sum(dim=-1, keepdim=True)                                     # [B,K,1]
+        sec_ident = sec / sec_tot.clamp_min(eps) * (sec_tot > eps).to(sec.dtype)
+        ded_any = (ded.sum(dim=-1, keepdim=True) > 0.5).to(ded.dtype)
+        ident = ded_any * ded + (1.0 - ded_any) * sec_ident                         # [B,K,6]
+        p_ident = p_land[..., None] * ident[:, None, :, :]                          # [B,6,K,6]
+
+        # --- neutralization: the per-(defender, status) severity, all gen3 rules ---
+        phys = d_base[..., 1]                                                       # [B,6] base Atk
+        spec = d_base[..., 3]                                                       # [B,6] base SpA
+        phys_share = phys / (phys + spec).clamp_min(eps)                            # [B,6]
+        # How much of this mon's value rested on OUTSPEEDING — the op's own logistic, re-evaluated
+        # at paralysis speed. Nothing new is assumed about speed; the same estimator answers twice.
+        p_fast = self._p_outspeed(our_spe, opp_spe[:, None], opp_spe_std[:, None])          # [B,6]
+        p_fast_par = self._p_outspeed(our_spe * _DMG_PARA_SPEED, opp_spe[:, None],
+                                      opp_spe_std[:, None])                                 # [B,6]
+        d_fast = (p_fast - p_fast_par).clamp(min=0.0, max=1.0)                              # [B,6]
+        ones = torch.ones_like(phys_share)
+        sev = torch.stack([
+            _NEUTRAL_PAR_FULL + (1.0 - _NEUTRAL_PAR_FULL) * d_fast,   # par
+            _NEUTRAL_BRN_ATK_LOSS * phys_share,                       # brn
+            ones,                                                     # frz — total action denial
+            ones,                                                     # slp — total action denial
+            ones * _NEUTRAL_PSN_TICK,                                 # psn
+            ones * _NEUTRAL_TOX_FIRST_TICK,                           # tox
+        ], dim=-1)                                                                  # [B,6,6]
+        neutral = torch.einsum("bjks,bjs->bjk", p_ident, sev)                       # [B,6,K]
+
+        # --- tempo: P(any major status) x the turns THIS mon spends undoing it ---
+        our_moves = ctx.all_move_ids[:, :TEAM_SIZE]                                 # [B,6,max_moves]
+        has_cure = self.MOVE_CURES_SELF_STATUS[our_moves].amax(dim=-1)              # [B,6]
+        has_rest = (our_moves == self.rest_num).any(dim=-1).to(has_cure.dtype)      # [B,6]
+        undo_turns = torch.maximum(has_cure * _TEMPO_CURE_TURNS,
+                                   has_rest * self.rest_sleep_noeb)                 # [B,6]
+        p_major = p_ident.sum(dim=-1)                                               # [B,6,K]
+        tempo = p_major * undo_turns[:, :, None]                                    # [B,6,K]
+
+        out = torch.cat([p_ident, neutral[..., None], tempo[..., None]], dim=-1)
+        if out.shape[-1] != _PAIR_OUTCOME_NEW:
+            raise AssertionError(
+                f"pair_outcome_coords emitted {out.shape[-1]} coordinates but _PAIR_OUTCOME_NEW is "
+                f"{_PAIR_OUTCOME_NEW} — PAIR_OUTCOME_COORDS and this producer have drifted.")
+        assert out.shape[:3] == (B, TEAM_SIZE, K)
+        return out
+
     def _incoming_matrix(self, ctx: 'ExtractorContext', w_all: torch.Tensor, low_frac: torch.Tensor,
                          high_frac: torch.Tensor, crit_frac: torch.Tensor, ko_ramp: torch.Tensor,
                          acc_all: torch.Tensor, phys_all: torch.Tensor, move_latent_all: torch.Tensor,
@@ -747,6 +869,10 @@ class DamageOperatorBlocks:
         n_revealed = (ctx.all_move_ids[ar, opp_act] > 0).sum(-1)                   # [B]
         slot_live = ((torch.arange(K, device=device)[None, :] < 4)
                      | (n_revealed[:, None] < 4)).float()                          # [B,K]
+        # gen3_pair_outcome_v1: the same gate is the UNMODELED-SEAT mask the alpha reduction needs
+        # (a closed 5th+ slot describes nothing, so no usage mass may be spent on it). Stashed HERE
+        # rather than recomputed at the consumer — one computation, one home, no drift.
+        self.stash.pair_seat_live = slot_live.detach()
         header = torch.cat([latent_topk, w_topk[..., None], acc_topk[..., None],
                             phys_topk[..., None], eff_flags, sec], dim=-1)          # [B,K,_DMG_IMX_HEADER]
         header = header * (has_opp[:, None, None] * slot_live[:, :, None])

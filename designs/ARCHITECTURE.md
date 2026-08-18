@@ -239,7 +239,7 @@ happens to be written.
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` (opt-in, off) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` (opt-in, off) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -410,6 +410,35 @@ the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision g
 gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage baseline is
 `measurements/gen12_mechanic_usage_baseline.json` (Endure 0.0% / Sub 0.9% / Counter 5.6%).
 
+**Available but OFF: `pair_outcome_cell`** (v93, `gen3_pair_outcome_v1` — component 1 + 3 of
+`design_opponent_intent.md`, §2.1/§9a of `design_pair_reduction.md`). It closes a **currency**
+failure, not a reduction failure: incoming status reaches the policy only through the `s3` edge
+family, i.e. as a softmax-normalised RATIO, so "35% of my HP" and "80% chance of burn" never meet
+in one vector and no reducer can trade them. When on, the op builds ONE **`pair_in[their believed
+seat k, our mon j, :]`** of width `_PAIR_OUTCOME_RAW` = **14** — the six existing damage channels
+(`[low, high, crit, ko_ramp, acc, is_phys]`) concatenated with eight new ones:
+
+| # | coordinate | source |
+|---|---|---|
+| 6-11 | `p_par p_brn p_frz p_slp p_psn p_tox` | `_incoming_status_lands` (the per-pivot immunity physics, unchanged) SPLIT by the seat's status IDENTITY — `MOVE_STATUS_IDENT` for a dedicated status move (read from the raw `status_inflicted`, so **tox and psn stay apart** where `MOVE_STATUS_CAT` folds them), `MOVE_SECONDARY`'s L1-normalised major prefix for a damaging move's secondary |
+| 12 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO: burn → `0.5·base_atk/(base_atk+base_spa)`, paralysis → `0.25 + 0.75·Δp_outspeed` (the op's OWN outspeed logistic re-evaluated at ×0.25 speed), freeze/sleep → 1.0, psn/tox → the 1/8 and 1/16 residual ticks. Every scalar is a gen3 RULE; no tuned prior |
+| 13 | `tempo_cost` | `P(any major status) × undo_turns(j)` — 1 turn for a cure move (`MOVE_CURES_SELF_STATUS`: Refresh / Heal Bell / Aromatherapy), the op's own `rest_sleep_noeb` (2) for Rest, else 0. The receiver is OUR mon, so its moveset is exact and no marginalisation arises on that axis |
+
+ONE α over the move axis then reduces it — **Contract W**: α has no defender axis and no channel
+axis, so the flat block's nine-independent-maxima incoherence (D2) and a per-defender α (D3) are
+**shape errors** here rather than properties under test. α is the softmax of the PUBLISHED α
+logits, **move slice only, unrenormalized and stop-grad** (a high `α_SWITCH` correctly shrinks
+every coordinate toward zero; the detach is unconditional, so no PPO→`alpha_head` route depends on
+a training flag). **With `--opp-intent` OFF it falls back to the shipped R1 `belief_mean` rung
+(α := w/Σw)**, which is what makes the flag independently enableable — the DELIVERY claim is
+testable apart from the DISTRIBUTION claim. A seat closed by the meaningful-K gate is MASKED, its
+mass not reassigned. The reduced row for our ACTIVE defender rides every move cell as decorrelated
+context through a zero-init `Linear(14, 14)`.
+
+Phase A only: the switch cell and the β-conditioned cells are not built. Known limits, named
+rather than approximated: status DURATION, physics mutation (Marvel Scale), and a held berry's
+auto-cure.
+
 Route availability is **width-neutral by construction** (additive injection changes no
 projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
 a vf part from the forward that sized `value_pre_norm` — is unrepresentable. Both projection
@@ -485,6 +514,13 @@ Output layout is `[switch ×6, move ×4, struggle]` (`agents/action/constants.py
 | **move k** (logit 6+k) | the **refined E3 seat k** (`last_pointer_inputs[0]`, `[B,4,128]`) — post-attention, board-aware, already permuted sorted-by-id → **request** order by move-num identity | `[low, high, crit, pko, p_land, known, sec×7]` | **13** (`_PTR_MOVE_CELL`) |
 | **switch j** | our-team token *j* (`our_team_out[:, j]`, `[B,6,128]`) — the same post-transformer token the CLS pools read | the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` | **15** (`_PTR_SWITCH_CELL_IN`) |
 | **struggle** | none — context only | none | 0 |
+
+The move cell WIDENS under the opt-in α cells, each appending its own zero-init block:
+`intent_move_cell` (+`INTENT_MOVE_CELL_DIM`), `intent_threshold` (+`INTENT_THRESH_MOVE_DIM`),
+`intent_conditional` (+`INTENT_COND_MOVE_DIM`) and `pair_outcome_cell`
+(+`PAIR_OUTCOME_MOVE_DIM` = 14). `pointer_move_cell_dim` is the single sum the policy sizes the
+move scorer's `in_features` from — a missing block narrows the `Linear` rather than silently
+feeding it zeros at a learned weight.
 
 Scoring: `tanh(proj(token ⊕ cells) + ctx_proj(latent_pi))` → a zero-init `Linear(64, 1)`.
 Move logits are multiplied by `move_valid`, so an unresolved request slot contributes **exactly 0**

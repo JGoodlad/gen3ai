@@ -25,7 +25,7 @@ from typing import Any, Dict, List
 #   (gen3_event_semantics_v1) landed while this sat on a branch. No ARCH_SIGNATURE bump —
 #   the term is computed in the PPO step, never in the extractor forward, so a coef-0 build
 #   is byte-identical and there is nothing for `check_compatible` to gate.
-MODEL_CONFIG_VERSION = 92
+MODEL_CONFIG_VERSION = 93
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -377,6 +377,11 @@ class ModelVersion:
     # AND pointer-cell width change; shape-caught, the check names the cause.
     intent_conditional: bool = False
 
+    # v93 STRUCTURAL (gen3_pair_outcome_v1): the unified outcome vector's zero-init move-cell
+    # projection — a state_dict AND pointer-move-cell width change, so a mismatch would be
+    # shape-caught; the check names the cause.
+    pair_outcome_cell: bool = False
+
     # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
     # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
     # ONLY thing that rejects a mismatched resume).
@@ -646,6 +651,10 @@ class ModelVersion:
             intent_conditional=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "intent_conditional", False)
+            ),
+            pair_outcome_cell=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "pair_outcome_cell", False)
             ),
             op_drop_renders=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -1077,6 +1086,16 @@ class ModelVersion:
                 "The item-belief head adds trunk modules, so the flag is fixed for a run's "
                 "lifetime.\n"
                 "Resume with the matching --item-belief, or start a fresh run."
+            )
+        # gen3_pair_outcome_v1 (v93): one zero-init projection + a pointer-move-cell width
+        # change (state_dict).
+        if self.pair_outcome_cell != saved.pair_outcome_cell:
+            raise ModelVersionError(
+                f"pair_outcome_cell mismatch: saved={saved.pair_outcome_cell}, "
+                f"current={self.pair_outcome_cell}.\n"
+                "The unified outcome vector widens the pointer move cell, so the flag is fixed "
+                "for a run's lifetime.\n"
+                "Resume with the matching --pair-outcome-cell, or start a fresh run."
             )
         # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
         if self.intent_threshold != saved.intent_threshold:
@@ -1736,4 +1755,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 92:
         data.setdefault("td_aux_coef", 0.0)
         data["config_version"] = 92
+    # v93 (gen3_pair_outcome_v1) — a post-floor flag-gated module: absent means OFF, which is what
+    # every pre-v93 checkpoint trained under. Reachable for the same reason as v92's branch (a
+    # v91/v92 checkpoint is at or above the floor and genuinely lacks the field).
+    if version < 93:
+        data.setdefault("pair_outcome_cell", False)
+        data["config_version"] = 93
     return data

@@ -1288,6 +1288,26 @@ def build_parser() -> argparse.ArgumentParser:
                              "row set — + the refined GLOBAL token and the hidden-opp belief "
                              "queries. Requires --value-entity-pool. The Stage-3 successor for "
                              "every condemnable vf route. STRUCTURAL, version-checked.")
+    parser.add_argument("--pair-outcome-cell", "--pair_outcome_cell",
+                        dest="pair_outcome_cell", action=BoolFlag, default=None,
+                        help="gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1/§5.3 + "
+                             "design_pair_reduction.md §2.1/§9a): the UNIFIED per-pair OUTCOME "
+                             "VECTOR — one pair_in[their believed move k, our mon j] carrying "
+                             "damage AND status BY IDENTITY (par/brn/frz/slp/psn/tox) AND "
+                             "neutralization (how much of the mon is destroyed without a KO) AND "
+                             "tempo_cost (turns spent undoing it), all in the same vector — "
+                             "reduced by ONE α over the move axis (Contract W: one distribution, "
+                             "every channel, so per-channel maxima are a shape error) and "
+                             "delivered to the pointer MOVE cell. Closes the CURRENCY failure "
+                             "§2.1 names: status reached the policy only as a softmax-normalised "
+                             "edge RATIO, so \"35%% of my HP\" and \"80%% chance of burn\" never "
+                             "met in one vector. Phase A = the MOVE-cell half (the switch cell "
+                             "and the β cells are Phase B). Requires --damage-op and "
+                             "--damage-topk-k>0; --opp-intent-coef>0 is OPTIONAL — without it α "
+                             "falls back to the R1 belief_mean rung (α := w/Σw), so the DELIVERY "
+                             "claim is testable apart from the DISTRIBUTION claim. Zero-init "
+                             "projection so ON-at-init is bit-identical. STRUCTURAL, "
+                             "version-checked.")
     parser.add_argument("--intent-threshold", "--intent_threshold",
                         dest="intent_threshold", action=BoolFlag, default=None,
                         help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
@@ -2136,6 +2156,7 @@ async def main():
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
     _resolve("value_entity_pool_full", False)  # v82 structural, version-checked (full row set)
     _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
+    _resolve("pair_outcome_cell", False)   # v93 structural, version-checked (gen3_pair_outcome_v1)
     _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)

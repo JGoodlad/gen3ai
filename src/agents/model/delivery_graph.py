@@ -109,6 +109,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "intent_threshold_move": ("IntentThresholdMoveCell",),
     "intent_threshold_value": ("IntentThresholdValue",),
     "intent_conditional": ("IntentConditionalMoveCell",),
+    "pair_outcome_move": ("PairOutcomeMoveCell",),
     "intent_value_reduce": ("IntentValueReduce",),
     "value_clock_route": ("ValueClockRoute",),
     "value_intent_route": ("ValueIntentRoute",),
@@ -642,6 +643,18 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                note="gated to the mechanic that reads it — Focus Punch, "
                                     "Substitute, Endure, Destiny Bond, Endeavor — plus p_KO as "
                                     "decorrelated context on every slot"))
+    if getattr(fe, "pair_outcome_move", None) is not None:
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.PAIR_OUTCOME_MOVE_DIM, "PAIR_OUTCOME_MOVE_DIM",
+                               via="PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome "
+                                   "vector at our active defender)",
+                               zero_init=True,
+                               note="damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + "
+                                    "neutralization + tempo_cost, one vector one currency, "
+                                    "contracted by ONE alpha over their believed-move axis "
+                                    "(Contract W). Rides every move slot as decorrelated "
+                                    "context — the switch cell is Phase B"))
     if getattr(fe, "intent_conditional", None) is not None:
         for k in range(n_e3):
             edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
@@ -698,7 +711,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         _move_cell_consumers = [
             n for n, m in (("IntentMoveCell", getattr(fe, "intent_move_cell", None)),
                            ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
-                           ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)))
+                           ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
+                           ("PairOutcomeMoveCell", getattr(fe, "pair_outcome_move", None)))
             if m is not None]
         if _move_cell_consumers:
             for k in range(n_e3):

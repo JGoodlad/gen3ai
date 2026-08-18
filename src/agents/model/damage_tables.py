@@ -86,6 +86,14 @@ SECONDARY_COLS = (
     "par", "brn", "frz", "slp", "psn", "tox", "confusion", "flinch", "foe_statdrop", "self_boost",
 )
 N_SECONDARY = len(SECONDARY_COLS)            # 10
+# The MAJOR-status prefix of that axis — par,brn,frz,slp,psn,tox — the six gen3 major statuses, in
+# order, before the non-status effects (confusion/flinch/foe_statdrop/self_boost). `damage_op_layout`
+# re-exports this as `_SECONDARY_MAJOR_N`; it was declared twice until gen3_pair_outcome_v1.
+SECONDARY_MAJOR_N = 6
+_SECONDARY_MAJOR_COLS_N = SECONDARY_MAJOR_N
+assert SECONDARY_COLS[:SECONDARY_MAJOR_N] == ("par", "brn", "frz", "slp", "psn", "tox"), \
+    "SECONDARY_COLS' major-status prefix moved — MOVE_STATUS_IDENT and the op's _SEC_CAT_IDX both " \
+    "index it positionally."
 SECONDARY_FLINCH_IDX = SECONDARY_COLS.index("flinch")
 
 # Abilities that scale a move's SECONDARY-effect chance. Two ROLES (an attacker mult vs a defender
@@ -772,6 +780,23 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     """The per-move / per-ability / per-species status-landing tables (all on the gen3-data num axes):
 
       MOVE_STATUS_CAT[n_moves]                 long — 0 (not a status move) else the _STATUS_CAT / LEECH_SEED_CAT it inflicts
+      MOVE_STATUS_IDENT[n_moves, 6]            one-hot over SECONDARY_COLS[:6] (par,brn,frz,slp,psn,tox) for a
+                                               DEDICATED status move — the status IDENTITY, exact where
+                                               MOVE_STATUS_CAT is not: cat 5 collapses psn and tox (they share the
+                                               Steel/Poison immunity), and Toxic's escalating residual is a
+                                               different outcome from Poison Powder's flat 1/8. Sourced from
+                                               `MoveData.status_inflicted`, which distinguishes them. All-zero for
+                                               a damaging move (its identity rides MOVE_SECONDARY) and for Leech
+                                               Seed (no major-status column). gen3_pair_outcome_v1.
+      MOVE_CURES_SELF_STATUS[n_moves]          1.0 if using the move leaves its USER statusless in ONE turn —
+                                               `cures_self_status` (Refresh) OR `cures_team_status` (Heal Bell /
+                                               Aromatherapy, which cure the user as part of the party). The
+                                               facade keeps those two apart because they differ in SCOPE; here
+                                               only "is this mon clean afterwards" matters, so they merge.
+                                               REST is deliberately NOT here (the facade reports False for both):
+                                               it undoes a status at a different price — 2 turns asleep — which
+                                               the op prices from its own `rest_sleep_noeb`. The tempo_cost
+                                               coordinate's source. gen3_pair_outcome_v1.
       MOVE_INFLICTS_STATUS[n_moves]            1.0 if it is a dedicated status move (incl. Leech Seed)
       MOVE_IS_SLEEP[n_moves]                   1.0 if it inflicts sleep (the Sleep-Clause gate)
       MOVE_BLOCKED_IF_STATUSED[n_moves]        1.0 for a MAJOR status (can't double-apply); 0 for Leech Seed
@@ -782,6 +807,12 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     Type immunity is keyed by MOVE id (the gen3 rule): Thunder Wave→Ground, Toxic/Poison Gas/Poison Powder
     →Steel/Poison, Will-O-Wisp→Fire (Stun Spore/Glare paralysis has NO type immunity), + Leech Seed→Grass."""
     cat = torch.zeros(n_moves, dtype=torch.long)
+    # gen3_pair_outcome_v1: the DEDICATED status move's IDENTITY on the 6 major SECONDARY_COLS axis.
+    # `_STATUS_CAT` cannot serve here — it folds tox into psn — so this reads `status_inflicted`
+    # directly and keeps the two apart.
+    ident = torch.zeros(n_moves, _SECONDARY_MAJOR_COLS_N, dtype=torch.float32)
+    _ident_col = {c: i for i, c in enumerate(SECONDARY_COLS[:_SECONDARY_MAJOR_COLS_N])}
+    cures_self = torch.zeros(n_moves, dtype=torch.float32)
     inflicts = torch.zeros(n_moves, dtype=torch.float32)
     is_sleep = torch.zeros(n_moves, dtype=torch.float32)
     blocked_if_statused = torch.zeros(n_moves, dtype=torch.float32)
@@ -791,6 +822,10 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         num = md.num
         if not (0 <= num < n_moves) or num == HIDDEN_POWER_NUM:
             continue
+        # gen3_pair_outcome_v1 — set BEFORE the `c == 0` skip below: a cure move need not itself
+        # inflict a status (Refresh/Heal Bell do not), so populating it inside the status branch
+        # would silently drop most of the table.
+        cures_self[num] = 1.0 if (md.cures_self_status or md.cures_team_status) else 0.0
         if mid == _LEECH_SEED_ID:
             c = LEECH_SEED_CAT
         elif md.status_inflicted is not None:
@@ -800,6 +835,11 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         if c == 0:
             continue
         cat[num] = c
+        # gen3_pair_outcome_v1: the identity column, from the RAW status id (so tox != psn). Leech
+        # Seed has no major-status column and correctly stays all-zero.
+        _col = _ident_col.get(md.status_inflicted or "")
+        if _col is not None:
+            ident[num, _col] = 1.0
         inflicts[num] = 1.0
         is_sleep[num] = 1.0 if c == _SLP_CAT else 0.0
         blocked_if_statused[num] = 0.0 if c == LEECH_SEED_CAT else 1.0
@@ -841,6 +881,8 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
 
     return {
         "MOVE_STATUS_CAT": cat,
+        "MOVE_STATUS_IDENT": ident,
+        "MOVE_CURES_SELF_STATUS": cures_self,
         "MOVE_INFLICTS_STATUS": inflicts,
         "MOVE_IS_SLEEP": is_sleep,
         "MOVE_BLOCKED_IF_STATUSED": blocked_if_statused,

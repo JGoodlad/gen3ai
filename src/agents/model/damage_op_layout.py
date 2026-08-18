@@ -12,7 +12,12 @@ from agents.observation.constants import (
     TEAM_SIZE,
 )
 from agents.model.damage_tables import (N_SECONDARY as _N_SECONDARY,
-                                        SECONDARY_COLS as _SECONDARY_COLS)
+                                        SECONDARY_COLS as _SECONDARY_COLS,
+                                        # noqa: F401  (re-export — `_SECONDARY_MAJOR_N` is unused
+                                        # HERE but is the name `damage_op` / `damage_op_blocks`
+                                        # import from this module; gen3_pair_outcome_v1 moved the
+                                        # declaration to damage_tables, which now owns it)
+                                        SECONDARY_MAJOR_N as _SECONDARY_MAJOR_N)  # noqa: F401
 from agents.model.arch_constants import (  # noqa: F401  (re-export)
     ROLE_TOKEN_SIZE,
     PROJECTION_DIM,
@@ -221,8 +226,22 @@ _DMG_TOPK_DEFAULT_K = 6         # default K when enabled (owner 2026-08-06: K=6 
 # Map the 6 MAJOR-status secondary columns (par,brn,frz,slp,psn,tox) → the ABILITY_STATUS_BLOCK / status
 # category axis (par→1, brn→2, frz→3, slp→4, psn→5, tox→5), for the per-pivot incoming status-landing's
 # ability-immunity fold (Limber blocks Body Slam's para, etc.). SECONDARY_COLS order, first 6 cols.
-_SECONDARY_MAJOR_N = 6
+# `_SECONDARY_MAJOR_N` is IMPORTED from damage_tables (gen3_pair_outcome_v1 — it was declared in both
+# files); note the fold is LOSSY on the last pair, which is exactly why MOVE_STATUS_IDENT exists.
 _SECONDARY_TO_STATUS_CAT = (1, 2, 3, 4, 5, 5)
+
+# gen3_pair_outcome_v1: the `neutralization` / `tempo_cost` coordinates' scalars. EVERY ONE IS A
+# GEN3 RULE, not a tuned prior — that distinction is the owner constraint ("provide facts, do not
+# bake priors"), and it is what lets these ship without a calibration artifact. Sleep and freeze
+# take severity 1.0 inline in the producer (total action denial) rather than a named constant,
+# because there is no rule to name: 1.0 is the definition of "denied".
+_NEUTRAL_BRN_ATK_LOSS = 0.5        # burn halves Attack (the same 0.5 the damage path applies)
+_NEUTRAL_PAR_FULL = 0.25           # P(fully paralyzed) — a flat action loss, on top of _DMG_PARA_SPEED
+_NEUTRAL_PSN_TICK = 1.0 / 8.0      # poison residual, fraction of maxhp per turn
+_NEUTRAL_TOX_FIRST_TICK = 1.0 / 16.0   # toxic's FIRST tick; its escalation is a multi-turn fact the
+                                       # one-ply reduction does not represent (named in pair_outcome.py)
+_TEMPO_CURE_TURNS = 1.0            # a dedicated cure move costs exactly the turn it is used on.
+                                   # (REST's price is the op's own `rest_sleep_noeb`, not a constant.)
 
 
 # gen3_iterative_damage_v1: the ITERATIVE damage-refinement primitive. The full op runs ONCE post-transformer

@@ -40,6 +40,7 @@ from utils.logging.levels import LogLevel
 from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
     INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
+    PAIR_OUTCOME_MOVE_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
@@ -125,6 +126,7 @@ from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import (
     IntentThresholdMoveCell, IntentThresholdValue, ThresholdProbs, threshold_probs)
 from agents.model.intent_conditional import IntentConditionalMoveCell
+from agents.model.pair_outcome import PairOutcomeMoveCell, pair_alpha, reduce_pair_in
 from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
@@ -395,6 +397,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_move_cell: bool = False,
                  intent_threshold: bool = False,
                  intent_conditional: bool = False,
+                 pair_outcome_cell: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
                  value_clock: bool = False,
@@ -645,6 +648,27 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "intent_conditional=True requires damage_matrices_outgoing=True — the boom "
                     "trade-value cell reads the per-(our move, their mon) pko, which only the "
                     "outgoing matrix computes (an arrival's KO probability has no other source).")
+        # gen3_pair_outcome_v1 (v93, design_opponent_intent.md §5.1/§5.3): the UNIFIED per-pair
+        # OUTCOME VECTOR — damage AND status AND neutralization AND tempo in one vector in one
+        # currency — reduced by ONE alpha over the opponent's believed-move axis and delivered to
+        # the pointer MOVE cell. Phase A: the move-cell half only; the switch cell and the
+        # beta-conditioned cells are Phase B and are deliberately not built.
+        #
+        # ⚠️ It requires `damage_op` and NOT `opp_intent`, and the asymmetry is the point. The
+        # physics has exactly one source, so no op is fail-loud; but alpha has a shipped fallback
+        # (the R1 `belief_mean` rung, alpha := w/Sum w), so the flag is INDEPENDENTLY ENABLEABLE and
+        # a run can test the DELIVERY claim (a per-action absolute in the currency the decision
+        # needs) separately from the DISTRIBUTION claim (usage belief beats presence belief) —
+        # §7a.2's own suggestion. Degrading silently is the thing to avoid, so the fallback is
+        # documented, tested, and NOT the same object as alpha.
+        self.pair_outcome_move = None
+        if pair_outcome_cell:
+            self.pair_outcome_move = PairOutcomeMoveCell(PAIR_OUTCOME_MOVE_DIM)
+            if not damage_op:
+                raise ValueError(
+                    "pair_outcome_cell=True requires damage_op=True — the per-(their move, our mon) "
+                    "damage cells and the per-pivot status-landing physics are the outcome vector's "
+                    "only source; nothing else computes either.")
         # gen3_value_direct_routes_v1 (v87): two direct critic routes, both zero-init vf-tail
         # appends. The clock route has no dependency (the ctx always carries the global block);
         # the intent route consumes the α/β PUBLICATIONS and so requires the intent heads.
@@ -855,8 +879,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # before it. Without this the consumer sees `last_pair_cells is None` and — by design —
         # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
         if (self.intent_value_reduce is not None or self.intent_threshold_move is not None
-                or self.intent_conditional is not None):
+                or self.intent_conditional is not None or self.pair_outcome_move is not None):
             self.damage_op.stash_pair_cells = True  # type: ignore[union-attr]
+        # gen3_pair_outcome_v1: and the eight extra coordinates on top of them. Set together with
+        # `stash_pair_cells` above, never alone — the damage cells ARE the vector's first six
+        # coordinates, so a lone `stash_pair_outcome` would build a narrower vector than
+        # `PAIR_OUTCOME_COORDS` declares.
+        if self.pair_outcome_move is not None:
+            self.damage_op.stash_pair_outcome = True  # type: ignore[union-attr]
         # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
         if self.value_threat_inject:
             _built = self.damage_op.pair_reducer.extra_dim  # type: ignore[union-attr]
@@ -1305,7 +1335,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_threshold_v1: the five-mechanic threshold channels widen the move cell too.
         base += INTENT_THRESH_MOVE_DIM if self.intent_threshold_move is not None else 0
         # gen3_intent_conditional_v1: the Counter/flinch/Explosion/Pursuit cells likewise.
-        return base + (INTENT_COND_MOVE_DIM if self.intent_conditional is not None else 0)
+        base += INTENT_COND_MOVE_DIM if self.intent_conditional is not None else 0
+        # gen3_pair_outcome_v1: the α-reduced unified outcome vector at our ACTIVE defender.
+        return base + (PAIR_OUTCOME_MOVE_DIM if self.pair_outcome_move is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
         return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
@@ -1871,6 +1903,30 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 ctx.our_active_req_move_ids, _po,
                 self.last_beta_logits, self.damage_op.last_out_pko,  # type: ignore[union-attr]
                 ctx.opp_active_local)], dim=2)
+        # gen3_pair_outcome_v1 (v93): the UNIFIED outcome vector, α-contracted. The T1 producer
+        # (the op) built `pair_in` over the (our mon, their believed seat) grid; here at T2 — the
+        # first point where α exists — ONE distribution reduces it, and the row for our ACTIVE
+        # defender joins every move cell.
+        #
+        # α comes from the PUBLICATION when the intent head is on, and from the R1 `belief_mean`
+        # rung (α := w/Σw) when it is off. That fallback is what makes this flag independently
+        # enableable, and `pair_alpha` documents loudly that presence-belief and usage-belief are
+        # NOT the same object — the second is the whole point of the intent head.
+        if self.pair_outcome_move is not None:
+            _pin = self.damage_op.last_pair_in if self.damage_op is not None else None
+            _pw = self.damage_op.last_topk_w if self.damage_op is not None else None
+            if _pin is None or _pw is None:
+                raise RuntimeError(
+                    "pair_outcome_cell is on but the op stashed no unified outcome vector (or no "
+                    "top-K belief weights) — the cell would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
+                    "incoming matrix that computes it).")
+            _alpha = pair_alpha(self.last_alpha_logits, _pw,
+                                self.damage_op.last_pair_seat_live)  # type: ignore[union-attr]
+            _row = reduce_pair_in(
+                _alpha, _pin, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
+                ctx.our_active_idx)
+            _mcells = torch.cat([_mcells, self.pair_outcome_move(_row)], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)

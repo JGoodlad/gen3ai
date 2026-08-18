@@ -297,6 +297,18 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "boundary). Zero-init ⇒ ON-at-init bit-identical; G3-gated like "
                    "intent_threshold.",
               requires=("opp_intent", "damage_op", "damage_outgoing", "damage_matrices_outgoing")),
+    ModelFlag("pair_outcome_cell", False, Tier.CLI, Klass.STRUCTURAL, 93,
+              "the UNIFIED per-pair OUTCOME VECTOR + its α-weighted delivery: one "
+              "pair_in[their move k, our mon j] carrying damage AND status-by-identity AND "
+              "neutralization AND tempo_cost in the same currency, reduced by ONE α over the "
+              "move axis (Contract W) and delivered to the pointer MOVE cell",
+              note="design_opponent_intent.md §5.1/§5.3 + design_pair_reduction.md §2.1/§9a. "
+                   "Phase A — the MOVE-cell half; the switch cell and the β cells are Phase B. "
+                   "Requires damage_op (the physics has one source) but NOT opp_intent: with no "
+                   "intent head α falls back to the shipped R1 belief_mean rung (α := w/Σw), so "
+                   "the DELIVERY claim is testable apart from the DISTRIBUTION claim. Zero-init "
+                   "⇒ ON-at-init bit-identical.",
+              requires=("damage_op",)),
     ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
               "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
               "regions (omx/imx/OAX — serialization-only since the concat's deletion); "
