@@ -519,6 +519,23 @@ def _has_self_positive_boost(entry):
 # state would silently diverge the next time a move's accuracy is rolled against it.
 # Those moves stay UNMODELED (fail-loud in the engine), so they are not emitted here.
 _SELF_BOOST_STATS = frozenset({"atk", "def", "spa", "spd", "spe"})
+# The FOE STAT-DROP stats — a superset of `_SELF_BOOST_STATS` that additionally admits
+# `accuracy` / `evasion` (boost indices 5 / 6). Used ONLY by `_stat_drop_boosts`; the
+# self-boost/self-drop guards deliberately keep the narrower set (Double Team / Minimize
+# are self-EVASION and remain out of scope — Minimize also carries a volatileStatus).
+#
+# ⚠️ THIS USED TO EXCLUDE accuracy/evasion, and the stated reason — "the `src/rust_sim`
+# engine's evasion is not folded into the accuracy roll, so an accuracy/evasion drop would
+# silently desync" — is FALSE as of `gen3_accuracy_pipeline_v1`:
+# `src/turn/speed.rs::effective_accuracy` folds BOTH boosts[5] and boosts[6] through the
+# gen-3 `boostTable` before the roll, and that path is already load-bearing (Mud-Slap /
+# Muddy Water reach boosts[5] via `secondaryBoosts`). The exclusion outlived its own
+# justification and kept four moves fail-loud for no reason — `sandattack` alone carries
+# 0.72 of the gen3ou move-slot prior mass, the largest single remaining gap.
+# PROBE-SETTLED (`harness/probe_sandattack.js`): the stage is folded into the VALUE passed
+# to the accuracy draw, so the multiplier is readable straight off captured draw args
+# (acc -1 -> randomChance(75,100), -2 -> 60, -3 -> 50 …).
+_STAT_DROP_STATS = _SELF_BOOST_STATS | frozenset({"accuracy", "evasion"})
 
 
 def _self_boosts(entry):
@@ -603,9 +620,9 @@ def _stat_drop_boosts(entry):
     STATUS moves and the obs facade ignores it.
 
     Gated to a foe-targeting STATUS move (bp 0) whose ENTIRE effect is its declarative
-    top-level ``boosts`` map of FOE stat-DROPS in ``_SELF_BOOST_STATS`` (no accuracy/
-    evasion — the ``src/rust_sim`` engine's evasion is not folded into the accuracy roll,
-    so an accuracy/evasion drop would silently desync) — mirroring ``_self_boosts`` but for
+    top-level ``boosts`` map of FOE stat-DROPS in ``_STAT_DROP_STATS`` — which INCLUDES
+    ``accuracy``/``evasion`` (``gen3_sand_attack_v1``; the old exclusion's rationale is
+    stale, see ``_STAT_DROP_STATS``) — mirroring ``_self_boosts`` but for
     a ``target: normal`` move with NEGATIVE stages and no other effect (NO ``status``/
     ``volatileStatus``/``self``/``secondary``/``onHit``/``onTryHit``/``heal``). The
     ``src/rust_sim`` engine draws the accuracy roll then applies these draw-free via
@@ -622,7 +639,7 @@ def _stat_drop_boosts(entry):
         return None
     if any(v >= 0 for v in boosts.values()):  # a stat-DROP move (never a foe raise)
         return None
-    if any(stat not in _SELF_BOOST_STATS for stat in boosts):
+    if any(stat not in _STAT_DROP_STATS for stat in boosts):
         return None
     # Any other declarative effect disqualifies the pure stat-drop classification.
     if entry.get("status") or entry.get("volatileStatus") or entry.get("self") or entry.get("secondary"):

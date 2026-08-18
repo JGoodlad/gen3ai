@@ -98,9 +98,16 @@ const MODELED_RAPIDSPIN = new Set(['rapidspin']);
 const MODELED_CURE = new Set(['refresh', 'healbell', 'aromatherapy']);
 // + hail / sandstorm (`gen3_forecast_v1`, ROUND 35 — the last two C_WEATHER_SET members).
 const MODELED_WEATHER = new Set(['raindance', 'sunnyday', 'hail', 'sandstorm']);
-const MODELED_STATDROP = new Set([
-  'screech', 'charm', 'metalsound', 'featherdance', 'tickle', 'faketears', 'cottonspore', 'scaryface',
-]);
+const MODELED_STATDROP = new Set(
+  // DERIVED from `gen3_moves.json`'s `statDropBoosts`, mirroring how the harness's own
+  // MODELED_STATDROP_MOVES is derived — so relaxing the extractor guard (`gen3_sand_attack_v1`,
+  // which admitted sandattack/smokescreen/kinesis/flash) updates the census automatically instead
+  // of leaving it reporting a move as unmodeled after it was modeled.
+  Object.keys(rustMoves).filter((id) => {
+    const sd = rustMoves[id] && rustMoves[id].statDropBoosts;
+    return sd && typeof sd === 'object' && Object.keys(sd).length > 0;
+  })
+);
 const MODELED_SCREEN = new Set(['lightscreen', 'reflect']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
 // BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED

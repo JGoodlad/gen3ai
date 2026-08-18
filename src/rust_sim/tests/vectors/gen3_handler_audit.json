@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 49,
-   "moves": 265,
-   "rows": 969
+   "moves": 270,
+   "rows": 979
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -3609,6 +3609,18 @@
    "anchor": "turn.rs::run_multihit",
    "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
+  "move:confuseray:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:confuseray:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "secondaries.rs::add_confusion",
+   "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
+  },
   "move:confusion:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":10,\"volatileStatus\":\"confusion\"}]",
@@ -4040,6 +4052,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:flash:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"accuracy\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:flash:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:focuspunch:onTry": {
    "disposition": "implemented",
    "fp": "fn:dbac830a:onTry(pokemon) { if (pokemon.volatiles[\"focuspunch\"]?.lostFocus) { this.attrLastMove(\"[still]\"); this.add(\"cant\", pokemo",
@@ -4309,6 +4333,18 @@
    "fp": "val:2",
    "anchor": "turn.rs::CRIT_MULT",
    "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
+  },
+  "move:kinesis:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"accuracy\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:kinesis:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:knockoff:onAfterHit": {
    "disposition": "implemented",
@@ -4985,6 +5021,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:sandattack:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"accuracy\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:sandattack:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:sandstorm:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5194,6 +5242,18 @@
    "fp": "val:[{\"chance\":40,\"status\":\"psn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:smokescreen:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"accuracy\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:smokescreen:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:snatch:ignoreImmunity": {
    "disposition": "implemented",

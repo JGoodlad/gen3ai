@@ -13524,6 +13524,45 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// SA1 — SAND ATTACK (`gen3_sand_attack_v1`). The accuracy/evasion STAT-DROP unlock. This was
+/// NOT an engine gap: `speed.rs::effective_accuracy` (`gen3_accuracy_pipeline_v1`) has folded
+/// boosts[5]/boosts[6] through the gen-3 boostTable for a long time. It was a DATA gap — the
+/// extractor's `_stat_drop_boosts` guard excluded accuracy/evasion, justified by a claim ("the
+/// engine's evasion is not folded into the accuracy roll") that was FALSE by the time it mattered.
+/// Relaxing the guard admits exactly four moves: sandattack / smokescreen / kinesis / flash.
+///
+/// Ground truth `harness/probe_sandattack.js`: ONE `randomChance(100,100)` accuracy draw (acc 100,
+/// NOT never-miss), then a DRAW-FREE apply emitting `|-unboost|<target>|accuracy|1`. Sand Attack is
+/// NOT type-immune on a Ground target (Status ⇒ ignoreImmunity).
+///
+/// WRONG (pre-fix): `statDropBoosts` was absent, so the stat-drop arm was skipped and the move fell
+/// through to the unmodeled-status-move fail-loud panic.
+#[test]
+fn sand_attack_drops_accuracy_and_is_not_ground_immune() {
+    let d = dex();
+    let p1 = "Sandslash||Leftovers|SandVeil|sandattack,splash|Hardy|85,85,85,85,85,85|M||||";
+    // Marowak is GROUND — a Ground target must still take the drop (Status ignores type immunity).
+    let p2 = "Marowak||Leftovers|RockHead|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|-unboost|p2a: Marowak|accuracy|1"),
+        "SA1: a Ground target still takes the accuracy drop. got:\n{}",
+        raw.join("\n")
+    );
+    // boosts[5] is the ACCURACY stage — the index the old data guard was afraid of.
+    assert_eq!(
+        st.sides[1].pokemon[0].boosts[5], -1,
+        "SA1: the accuracy stage lands in boosts[5]"
+    );
+}
+
 /// CR1 — CONFUSE RAY (`gen3_confuse_ray_v1`). A VOLATILE-inflicting status move, so it lives
 /// outside `modeled_status_move` (which maps only MAJOR statuses) and used to hit that path's
 /// FAIL-LOUD panic. Ground truth `harness/probe_confuseray.js` (re-runnable):

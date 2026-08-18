@@ -157,8 +157,10 @@ Notes that bite:
   top-level `boosts` — Swords Dance `{atk:2}`, Dragon Dance `{atk:1,spe:1}`, Calm Mind `{spa:1,spd:1}`,
   Agility `{spe:2}`, Bulk Up / Amnesia / Tail Glow / the +Def & +Atk one-stat moves (17 in all). It is
   gated to the PURE setup moves: every boosted stat must be a POSITIVE battle stat in
-  `_SELF_BOOST_STATS` (atk/def/spa/spd/spe — accuracy/evasion are EXCLUDED, since the `src/rust_sim`
-  accuracy roll ignores the evasion table → a +evasion state would silently desync), and the move must
+  `_SELF_BOOST_STATS` (atk/def/spa/spd/spe — accuracy/evasion EXCLUDED here; note the parenthetical
+  that used to justify this by "the `src/rust_sim` accuracy roll ignores the evasion table" is
+  STALE, see `statDropBoosts` below — the live reason is that the +evasion moves are not pure
+  declarative self-boosts), and the move must
   carry NO other effect (NO `volatileStatus` → excludes Defense Curl/Minimize, NO `self`/`secondary`,
   NO `onHit`/`onTryHit`/`heal` → excludes Belly Drum's HP cost; Curse is `target:normal` → excluded).
   It exists for the **`src/rust_sim` Rust port** (the engine reads `selfBoosts` → `self_boost_spec` →
@@ -179,9 +181,19 @@ Notes that bite:
   move: Screech `{def:-2}`, Charm `{atk:-2}`, Metal Sound `{spd:-2}`, Feather Dance `{atk:-2}`, Tickle
   `{atk:-1,def:-1}`, Fake Tears `{spd:-2}`, Cotton Spore / Scary Face `{spe:-2}`. `_stat_drop_boosts`
   emits the `{stat:stages}` (all NEGATIVE) map for a `category:Status`, foe-targeting (`target:normal`)
-  move (bp 0) whose ENTIRE effect is its declarative top-level `boosts` of foe drops in the battle
-  stats (no accuracy/evasion, no `status`/`volatileStatus`/`self`/`secondary`/`onHit`/`heal`, and NO
-  `selfdestruct` — so Memento is excluded). It exists for the **`src/rust_sim` Rust port**
+  move (bp 0) whose ENTIRE effect is its declarative top-level `boosts` of foe drops in
+  `_STAT_DROP_STATS` — the battle stats **PLUS `accuracy`/`evasion`** (`gen3_sand_attack_v1`) — with no
+  `status`/`volatileStatus`/`self`/`secondary`/`onHit`/`heal`, and NO `selfdestruct` (so Memento is
+  excluded). ⚠️ **accuracy/evasion were EXCLUDED until 2026-08-18, and the stated reason — "the
+  `src/rust_sim` accuracy roll ignores the evasion table" — was FALSE by then**:
+  `gen3_accuracy_pipeline_v1` folds both boosts[5] and boosts[6] through the gen-3 `boostTable` in
+  `speed.rs::effective_accuracy`, a path already load-bearing for Mud-Slap. The stale exclusion kept
+  four moves fail-loud for nothing — `sandattack` (0.72 of the gen3ou move-slot prior mass, the
+  largest single gap), `smokescreen`, `kinesis`, `flash`. Probe: `harness/probe_sandattack.js`.
+  The narrower `_SELF_BOOST_STATS` still gates `_self_boosts`/`_self_drops`, correctly but for a
+  DIFFERENT reason than the one written there: Double Team is self-evasion and Minimize also carries
+  a `volatileStatus`, so neither is a pure declarative self-boost. Relaxing THAT guard is a separate,
+  unprobed question — do not assume this change covers it. It exists for the **`src/rust_sim` Rust port**
   (`MoveData::stat_drop_boosts` → the stat-drop arm in `run_status_move`, which draws the accuracy roll
   then applies the drop draw-free via `apply_secondary_boost`); obs-neutral (the facade ignores it).
   Refresh / Heal Bell / Aromatherapy reuse the pre-existing `curesSelfStatus` / `curesTeamStatus`

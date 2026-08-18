@@ -426,6 +426,14 @@ const MOVE_VOLATILE_ANCHOR = {
   taunt: IMPL('state.rs::taunt', 'the taunt volatile (gen3_taunt_disable_v1)'),
   disable: IMPL('state.rs::disable', 'the disable volatile (gen3_taunt_disable_v1)'),
   leechseed: IMPL('turn.rs::apply_leech_seed'),
+  // CONFUSE RAY (`gen3_confuse_ray_v1`) — the volatileStatus is `confusion`, applied by the
+  // SHARED `secondaries.rs::add_confusion` (the same path Water Pulse & co use), which owns the
+  // KO / already-confused / Own-Tempo gates and the random(2,6) duration draw. The move's own arm
+  // in `status_moves.rs` adds only the two MOVE-LEVEL emissions a secondary never produces
+  // (`[still]`+`-fail` when already confused, `-immune|…|confusion|[from] ability: Own Tempo`).
+  // ⚠️ This map is keyed by the VOLATILE NAME (`m.volatileStatus`), not the move id — the other
+  // entries just happen to share both spellings. Confuse Ray's volatile is `confusion`.
+  confusion: IMPL('secondaries.rs::add_confusion', 'the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)'),
 };
 
 function itemRule(row) {

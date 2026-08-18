@@ -6517,6 +6517,74 @@ asserting the mutation actually applied (`assert removed contains …`) before r
 revert-verification that does not verify the revert is worse than none, because it launders a guess into
 a fact.**
 
+### ROUND 44 (FIX) — the MOVE-COVERAGE wave: CONFUSE RAY + the accuracy-drop family, and 8 banked specs
+
+Two moves modeled and four more unlocked, taking the census **281 MODELED / 88 fail-loud → 286 / 83**
+with **MISMODELED still 0**. Both landed the same way: probe first, then the SMALLEST change that
+matches the captured behaviour, then the full ROUND-40 admission checklist.
+
+**CONFUSE RAY (`gen3_confuse_ray_v1`).** A VOLATILE-inflicting status move, so it sits outside
+`modeled_status_move` (which maps only MAJOR statuses) and hit that path's fail-loud. The hard half
+already existed — `secondaries.rs::add_confusion` owns the KO / already-confused / Own-Tempo gates
+and the `random(2,6)` duration draw — so the arm adds only the two MOVE-LEVEL emissions a secondary
+never produces: `[still]`+`-fail|<USER>` when already confused, and
+`-immune|<t>|confusion|[from] ability: Own Tempo`. Pin CR1, revert-verified against the original
+panic. Probe `harness/probe_confuseray.js`.
+
+**SAND ATTACK + SMOKE SCREEN + KINESIS + FLASH (`gen3_sand_attack_v1`) — a DATA fix with ZERO engine
+change, and the interesting part is WHY it was ever blocked.** The extractor's `_stat_drop_boosts`
+guard excluded accuracy/evasion, justified in its own docstring by *"the `src/rust_sim` engine's
+evasion is not folded into the accuracy roll, so an accuracy/evasion drop would silently desync."*
+**That was FALSE**: `speed.rs::effective_accuracy` (`gen3_accuracy_pipeline_v1`) folds BOTH boosts[5]
+and boosts[6] through the gen-3 `boostTable` before the roll, and that path is already load-bearing
+for Mud-Slap. The exclusion outlived its own justification and kept four moves fail-loud for nothing
+— `sandattack` alone is **0.72 of the gen3ou move-slot prior mass, the largest single gap**.
+Relaxing one guard line admits exactly those four; the regenerated `gen3_moves.json` diff is exactly
+4 rows gaining `statDropBoosts: {accuracy: -1}`, nothing added, nothing removed. Pin SA1 (including
+that a GROUND target still takes the drop — Status ignores type immunity). Probe
+`harness/probe_sandattack.js`, which also measures the stage table off the DRAW ARGS: acc −1 →
+`randomChance(75,100)`, −2 → 60, −3 → 50, and a bit-exactness trap — `100*T[1]` is
+`133.33333333333331`, NOT the naive `100*4/3`.
+
+**THREE MIRRORS BIT, AND TWO ARE NOW DERIVED SO THE CLASS CANNOT RECUR.** Admitting a move is not
+one edit, it is four, and each was found by a gate rather than by inspection:
+- `gen_e2e_fuzz.js::MODELED_STATDROP_MOVES` was a HARDCODED 8-id list — the data admitted four new
+  moves while the picker still excluded them, so the fuzz would never have chosen the very moves the
+  change unlocked. Now **DERIVED** from `statDropBoosts`, the `MODELED_SETUP_MOVES` precedent.
+- `scan_move_coverage.js`'s `MODELED_STATDROP` was hardcoded too — the census kept reporting the
+  moves unmodeled AFTER they were modeled. Now **DERIVED** the same way. (Removing the category
+  LABEL was not enough and looked like it worked: the census sits on the modeled SET.)
+- `handler_audit_test` failed until `confuseray` got a disposition — and the map is keyed by the
+  **VOLATILE NAME** (`confusion`), not the move id. The existing entries (`protect`, `taunt`,
+  `leechseed`) are both spellings at once, which disguises it.
+
+**HONEST SCOPE.** Exposure of all five moves on the POOL and randbats surfaces is ~zero; the 0.72 is
+on the Smogon-native `ourandom` surface and real ladder play. These are coverage-gate unlocks, not
+live-bug fixes, and the e2e golden md5 is UNCHANGED. The 200-battle `ourandom` fuzz run alongside
+Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, not the fuzz.
+
+**Gates:** `cargo test --release --no-fail-fast` **668 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
+change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
+
+### THE BANKED SPEC QUEUE — 8 probe-settled specs, NOT yet implemented
+
+Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
+exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
+before implementing; do not re-derive from source.** They are listed with the trap that makes each
+one non-obvious, because that trap is the reason the spec is worth more than the move.
+
+| move(s) | probe | the trap |
+|---|---|---|
+| Safeguard | `probe_safeguard.js` | two Safeguards **TIE at residual order 4** → an extra shuffle, invisible to any single-side test; and a blocked SECONDARY still rolls its `random(100)` |
+| Recycle | `probe_recycle.js` | the discriminator is WHICH primitive removed the item — `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT, so Knock Off is **not** recyclable |
+| Fake Out | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
+| Conversion / Conversion 2 | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
+| Torment | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
+| Imprison | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
+| Weather Ball | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
+| Skill Swap | `probe_skillswap.js` | swapped abilities do **NOT** re-fire `onStart` (so re-running switch-in makes Trace draw where the sim does not) — but `onEnd` DOES fire, and that is the only draw it creates |
+
 ### The `ab_replay` SUBSEQUENCE SEED ANCHOR — shipped, and it did NOT close the repro that motivated it
 
 `gen3_ab_replay_seed_anchor_subsequence_v1`. Round 26 left this as the scoped next step: port

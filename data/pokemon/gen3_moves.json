@@ -2946,7 +2946,10 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "accuracy": -1
+        }
     },
     "flatter": {
         "name": "Flatter",
@@ -4794,7 +4797,10 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "accuracy": -1
+        }
     },
     "knockoff": {
         "name": "Knock Off",
@@ -7545,7 +7551,10 @@
         "pp": 15,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "accuracy": -1
+        }
     },
     "sandstorm": {
         "name": "Sandstorm",
@@ -8440,7 +8449,10 @@
         "pp": 20,
         "noPPBoosts": false,
         "contact": false,
-        "sound": false
+        "sound": false,
+        "statDropBoosts": {
+            "accuracy": -1
+        }
     },
     "snatch": {
         "name": "Snatch",

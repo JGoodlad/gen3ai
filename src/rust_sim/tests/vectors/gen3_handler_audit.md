@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-49 conditions (engine state space + attached), 265 modeled moves
-→ **969 (effect, hook) rows**.
+49 conditions (engine state space + attached), 270 modeled moves
+→ **979 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 916 |
+| implemented | 926 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -575,7 +575,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (425 rows: implemented=421, noop_justified=2, unreachable_justified=2)
+## move (435 rows: implemented=431, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -642,6 +642,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | charm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | clamp | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | cometpunch | multihit | implemented | `turn.rs::run_multihit` |
+| confuseray | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| confuseray | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | confusion | secondaries | implemented | `turn.rs::apply_secondaries` |
 | constrict | secondaries | implemented | `turn.rs::apply_secondaries` |
 | cosmicpower | boosts | implemented | `turn.rs::self_boost_spec` |
@@ -714,6 +716,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | firespin | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | flamethrower | secondaries | implemented | `turn.rs::apply_secondaries` |
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
+| flash | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| flash | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
 | furyattack | multihit | implemented | `turn.rs::run_multihit` |
@@ -759,6 +763,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | irontail | secondaries | implemented | `turn.rs::apply_secondaries` |
 | jumpkick | onMoveFail | implemented | `turn.rs::apply_jump_kick_crash` |
 | karatechop | critRatio | implemented | `turn.rs::CRIT_MULT` |
+| kinesis | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| kinesis | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | knockoff | onAfterHit | implemented | `turn.rs::apply_item_removal` |
 | leafblade | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | leechlife | drain | implemented | `turn.rs::apply_drain` |
@@ -872,6 +878,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | rocktomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rollingkick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sacredfire | secondaries | implemented | `turn.rs::apply_secondaries` |
+| sandattack | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| sandattack | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sandstorm | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sandstorm | neverMiss | implemented | `turn.rs::never_miss` |
 | sandstorm | weather | implemented | `turn.rs::modeled_weather_set_move` |
@@ -907,6 +915,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | sludge | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sludgebomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | smog | secondaries | implemented | `turn.rs::apply_secondaries` |
+| smokescreen | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| smokescreen | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | snatch | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | snatch | neverMiss | implemented | `turn.rs::run_status_move` |
 | snatch | priority | implemented | `turn.rs::run_status_move` |

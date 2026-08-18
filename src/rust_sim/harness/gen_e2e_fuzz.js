@@ -541,9 +541,18 @@ const MODELED_CURE_MOVES = new Set(['refresh', 'healbell', 'aromatherapy']);
 // expiry; the sand+hail chips + immunities were already modeled for the ability weathers).
 // Probe: `harness/probe_r35_weather_moves.js` (tied-board byte + draw parity).
 const MODELED_WEATHER_MOVES = new Set(['raindance', 'sunnyday', 'hail', 'sandstorm']);
-const MODELED_STATDROP_MOVES = new Set([
-  'screech', 'charm', 'metalsound', 'featherdance', 'tickle', 'faketears', 'cottonspore', 'scaryface',
-]);
+// DERIVED from `gen3_moves.json`'s `statDropBoosts` — the `MODELED_SETUP_MOVES` precedent, so the
+// allow-list stays GIGO-proof and in lockstep with the engine instead of drifting from it.
+// It was a HARDCODED 8-id list until `gen3_sand_attack_v1`; relaxing the extractor's accuracy/
+// evasion guard then admitted `sandattack`/`smokescreen`/`kinesis`/`flash` to the DATA while the
+// hardcoded list still excluded them, so the picker would never have chosen the very moves the
+// change was made to unlock. Deriving it removes that failure mode entirely.
+const MODELED_STATDROP_MOVES = new Set(
+  Object.keys(rustMoves).filter((id) => {
+    const sd = rustMoves[id] && rustMoves[id].statDropBoosts;
+    return sd && typeof sd === 'object' && Object.keys(sd).length > 0;
+  })
+);
 const MODELED_SCREEN_MOVES = new Set(['lightscreen', 'reflect']);
 // BATCH2_E2E_EXCLUDED — whether to keep the batch-2 classes OUT of the e2e capstone's modeled
 // allow-list (the phaze-exclusion precedent). The engine models all four classes bit-for-bit
