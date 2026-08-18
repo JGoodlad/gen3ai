@@ -525,6 +525,14 @@ add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('enco
 // SKILL SWAP (`gen3_skill_swap_v1`).
 add([mv('skillswap', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3\'s only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability.'));
+// FAKE OUT (`gen3_fakeout_v1`).
+add([mv('fakeout', 'onTry')],
+  IMPL('turn/moves.rs::run_move', 'the first-turn gate: `active_move_actions > 1` short-circuits the move DRAW-FREE (before the accuracy roll) with the announce plus |-hint|Fake Out only works on your first turn out. — NO [still] attr, NO -fail, landed=false, and `once=false` so a repeat emits the hint EVERY time. PP is still paid (the sim deducts before onTry). The counter is MOVE ACTIONS, not turns: a CANT-ed turn increments it (the sim bumps activeMoveActions at the top of runMove, before BeforeMove) while a turn whose action was CANCELLED by gen-3 faint-cancels-all does not.'));
+add([mv('fakeout', 'priority')],
+  IMPL('turn/moves.rs::run_move', 'gen-3 Fake Out is priority +1 (NOT the modern +3) — read from the dex row by the ordinary action sort, no special case.'));
+add([mv('fakeout', 'secondaries')],
+  IMPL('turn/secondaries.rs::apply_secondaries', 'the chance-100 flinch secondary STILL rolls its random(100) — the ordinary secondary path, no special case.'));
+
 // RECYCLE (`gen3_recycle_v1`).
 add([mv('recycle', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the recycle arm: FAIL ([still]+bare -fail on the USER) if the mon already holds an item OR has no last_item; else clear last_item BEFORE restoring it and emit |-item|<u>|<Item>|[from] move: Recycle. NEVER-MISS so zero draws on both paths, landed=false. `last_item` is set ONLY by the eatItem/useItem sites (items.rs::eat_item, white_herb_restore) — never by takeItem (Knock Off / Thief / Trick), which is why a knocked-off item is not recyclable.'));

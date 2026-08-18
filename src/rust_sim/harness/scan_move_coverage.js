@@ -149,7 +149,7 @@ const MODELED_PARTIALTRAP = new Set(['wrap', 'bind', 'firespin', 'clamp', 'whirl
 // gen_e2e_fuzz.js::REJECT_MOVES). Checked FIRST in classifyDamaging: whatever sub-mechanic
 // bucket below would match, the engine panics before any of it can run.
 const FAILLOUD_CONSTRUCTION = new Set([
-  'dreameater', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'dreameater', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
   'smellingsalts', 'thrash', 'uproar', 'weatherball',
 ]);

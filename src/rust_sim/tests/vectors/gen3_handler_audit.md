@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-50 conditions (engine state space + attached), 275 modeled moves
-→ **993 (effect, hook) rows**.
+50 conditions (engine state space + attached), 276 modeled moves
+→ **996 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 940 |
+| implemented | 943 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -578,7 +578,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (446 rows: implemented=442, noop_justified=2, unreachable_justified=2)
+## move (449 rows: implemented=445, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -712,6 +712,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | extrasensory | secondaries | implemented | `turn.rs::apply_secondaries` |
 | extremespeed | priority | implemented | `turn.rs::move_priority` |
 | facade | onBasePower | implemented | `turn.rs::run_move` |
+| fakeout | onTry | implemented | `turn/moves.rs::run_move` |
+| fakeout | priority | implemented | `turn/moves.rs::run_move` |
+| fakeout | secondaries | implemented | `turn/secondaries.rs::apply_secondaries` |
 | faketears | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | faketears | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | featherdance | boosts | implemented | `turn.rs::stat_drop_boosts` |

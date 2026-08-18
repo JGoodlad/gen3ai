@@ -13524,6 +13524,140 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// FO1 — FAKE OUT (`gen3_fakeout_v1`). The first-turn gate counts MOVE ACTIONS, not turns.
+///
+/// Ground truth `harness/probe_fakeout.js`. The failure form is UNIQUE in this engine: the
+/// announce plus a `|-hint|`, with NO `[still]` attr and NO `-fail`, and `once = false` so a
+/// repeat emits one hint EVERY time. Zero draws on the block, but PP is already paid.
+///
+/// THE DISTINCTION THAT MATTERS: a turn spent CANT-ed still BURNS the gate (the sim increments
+/// `activeMoveActions` at the top of `runMove`, before BeforeMove), while a turn whose action was
+/// CANCELLED never reaches `runMove` and does not. An `active_turns` implementation passes the
+/// obvious cases and is silently wrong on that one — which is why the counter is its own field.
+#[test]
+fn fake_out_works_on_the_first_action_and_is_gated_after() {
+    let d = dex();
+    let user = "Persian||Leftovers|Limber|fakeout,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // T1 Fake Out — WORKS
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // T2 Fake Out — GATED
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let hint = "|-hint|Fake Out only works on your first turn out.";
+
+    // T1 landed: it DAMAGED and flinched. Asserted on the LOG, not the post-battle HP —
+    // Leftovers heals the target back to full by the end, so a residual HP read proves nothing.
+    let t1: Vec<&String> = raw.iter().take_while(|l| l.as_str() != hint).collect();
+    assert!(
+        t1.iter().any(|l| l.starts_with("|-damage|p2a: Snorlax|")),
+        "FO1: the first-action Fake Out must land and damage. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        t1.iter().any(|l| l.as_str() == "|cant|p2a: Snorlax|flinch"),
+        "FO1: the first-action Fake Out flinches (a chance-100 secondary). got:\n{}",
+        raw.join("\n")
+    );
+    // T2 blocked, in the unique hint form.
+    assert_eq!(
+        raw.iter().filter(|l| l.as_str() == hint).count(),
+        1,
+        "FO1: the SECOND use is gated and emits exactly one hint. got:\n{}",
+        raw.join("\n")
+    );
+    // The gate form carries NEITHER `[still]` NOR a `-fail` — unlike every other failing move.
+    let after: Vec<&String> = raw
+        .iter()
+        .skip_while(|l| l.as_str() != hint)
+        .collect();
+    assert!(
+        !raw.iter().any(|l| l.contains("Fake Out") && l.contains("[still]")),
+        "FO1: the gate does NOT use the `[still]` did-nothing form. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        !after.iter().any(|l| l.starts_with("|-fail|p1a: Persian")),
+        "FO1: the gate emits NO -fail. got:\n{}",
+        raw.join("\n")
+    );
+    assert_eq!(
+        st.sides[0].pokemon[0].active_move_actions, 2,
+        "FO1: the counter tracks MOVE ACTIONS — two runs, two increments"
+    );
+}
+
+/// FO2 — the CANCELLED-vs-CANT distinction that makes `active_turns` silently WRONG.
+///
+/// gen-3 faint-cancels-all removes a still-queued move when a mon faints
+/// (`cancel_active_actions`), and a cancelled action never reaches `runMove` — so it does
+/// NOT bump `activeMoveActions`. A turn spent ACTIVE but cancelled therefore does NOT burn
+/// the Fake Out gate, while an implementation keyed on `active_turns` would count it and
+/// wrongly refuse the punch. This is the ONLY reachable board where the two models differ:
+/// Fake Out is priority +1, so its user can never be pre-empted while USING it — the
+/// cancelled turn has to be one where the user queued something ELSE.
+///
+/// T1: Snorlax queues Splash; the faster Electrode Self-Destructs, faints, and cancels it.
+/// T2 (after p2's forced replacement): Fake Out is the user's FIRST move action, so it LANDS.
+#[test]
+fn fake_out_survives_a_turn_whose_action_was_cancelled_by_a_faint() {
+    let d = dex();
+    let user = "Snorlax||Leftovers|Immunity|fakeout,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Electrode||Leftovers|Static|selfdestruct,splash|Hardy|85,85,85,85,85,85|M||||]Pikachu||Leftovers|Static|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // T1 Splash vs Self-Destruct
+            ScriptDecision::one(1, Choice::Switch(1)),              // p2 replaces with Pikachu
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // T2 Fake Out — must LAND
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+
+    // NON-VACUITY: the cancel must actually have happened — Electrode fainted and Snorlax's
+    // Splash never resolved. Without this the test could pass on a board where Splash ran.
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|faint|p2a: Electrode"),
+        "FO2: the exploder must faint on T1. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        !raw.iter().any(|l| l.contains("|Splash|")),
+        "FO2: Snorlax's queued Splash must be CANCELLED, never executed. got:\n{}",
+        raw.join("\n")
+    );
+    // And `active_turns` must have advanced past 1, so an `active_turns`-keyed gate WOULD
+    // have fired here — that is what makes the assertion below discriminating.
+    assert!(
+        st.sides[0].pokemon[0].active_turns > 1,
+        "FO2: the user must have been active for >1 turn, else the two models agree"
+    );
+
+    assert!(
+        !raw.iter().any(|l| l.contains("Fake Out only works on your first turn out.")),
+        "FO2: a CANCELLED turn does not burn the gate — Fake Out must land. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(
+        raw.iter().any(|l| l.starts_with("|-damage|p2a: Pikachu|")),
+        "FO2: the ungated Fake Out must damage the replacement. got:\n{}",
+        raw.join("\n")
+    );
+    assert_eq!(
+        st.sides[0].pokemon[0].active_move_actions, 1,
+        "FO2: exactly ONE move ACTION ran (the cancelled Splash does not count)"
+    );
+}
+
 /// SS1 — SKILL SWAP (`gen3_skill_swap_v1`). Exchanges the two actives' abilities.
 ///
 /// THE TRAP the pin exists for: the swapped-in abilities do **NOT** re-fire their switch-in
@@ -14774,7 +14908,7 @@ fn unmodeled_moves_fail_loud_at_construction() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
     for mv in [
-        "dreameater", "fakeout", "falseswipe", "furycutter", "iceball",
+        "dreameater", "falseswipe", "furycutter", "iceball",
         "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
         "smellingsalts", "thrash", "uproar", "weatherball",
     ] {

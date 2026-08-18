@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 50,
-   "moves": 275,
-   "rows": 993
+   "moves": 276,
+   "rows": 996
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -4027,6 +4027,24 @@
    "fp": "fn:3f28aa69:onBasePower(basePower, pokemon) { if (pokemon.status && pokemon.status !== \"slp\") { return this.chainModify(2); } }",
    "anchor": "turn.rs::run_move",
    "reason": "the ×2-when-statused BP chain member (gen3_facade_v1 — id-gated at the facade site)"
+  },
+  "move:fakeout:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:f516a5b4:onTry(source) { if (source.activeMoveActions > 1) { this.hint(\"Fake Out only works on your first turn out.\"); return fal",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the first-turn gate: `active_move_actions > 1` short-circuits the move DRAW-FREE (before the accuracy roll) with the announce plus |-hint|Fake Out only works on your first turn out. — NO [still] attr, NO -fail, landed=false, and `once=false` so a repeat emits the hint EVERY time. PP is still paid (the sim deducts before onTry). The counter is MOVE ACTIONS, not turns: a CANT-ed turn increments it (the sim bumps activeMoveActions at the top of runMove, before BeforeMove) while a turn whose action was CANCELLED by gen-3 faint-cancels-all does not."
+  },
+  "move:fakeout:priority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "gen-3 Fake Out is priority +1 (NOT the modern +3) — read from the dex row by the ordinary action sort, no special case."
+  },
+  "move:fakeout:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":100,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn/secondaries.rs::apply_secondaries",
+   "reason": "the chance-100 flinch secondary STILL rolls its random(100) — the ordinary secondary path, no special case."
   },
   "move:faketears:boosts": {
    "disposition": "implemented",

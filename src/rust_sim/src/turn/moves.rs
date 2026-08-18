@@ -199,6 +199,13 @@ impl crate::state::BattleState {
         //     runs its FULL NORMAL draw chain. ---
         let sleep_talk_call = self.sleep_talk_call;
         self.sleep_talk_call = false;
+        // FAKE OUT (`gen3_fakeout_v1`): the sim increments `activeMoveActions` at the TOP of
+        // `runMove`, before BeforeMove/PP/announce — so a turn spent CANT-ed still burns the gate.
+        // Both transient callers below are `useMove` in the sim, which does NOT bump it.
+        if !pursuit_strike && !sleep_talk_call {
+            self.sides[side].pokemon[slot].active_move_actions =
+                self.sides[side].pokemon[slot].active_move_actions.saturating_add(1);
+        }
         let (never_miss, base_power) = if pursuit_strike {
             (true, base_power.saturating_mul(2))
         } else {
@@ -712,6 +719,28 @@ impl crate::state::BattleState {
             // touch any draw or state). Explosion is momentary — no persistent board state like
             // a substitute — so the e2e capstone reads THIS flag to count explosion decisions.
             self.pending_explosion_self_ko = true;
+        }
+
+        // --- FAKE OUT's FIRST-TURN GATE (`gen3_fakeout_v1`). The sim runs this as the move's
+        //     `onTry` at gen-3 `tryMoveHit`'s `singleEvent("Try", move)` — BEFORE invulnerability,
+        //     the type-immunity report, the accuracy roll and TryHit/Protect. So a blocked Fake
+        //     Out into a GHOST prints ONLY the hint, never `-immune`.
+        //
+        //     ZERO draws on the block, but PP IS already paid (and doubled under Pressure — the
+        //     deduction precedes the Try gate). The failure form is UNIQUE: the announce plus a
+        //     `|-hint|`, with NO `[still]` attr and NO `-fail`. `once = false`, so a repeat-spammed
+        //     Fake Out emits one hint EVERY time — the sim never dedupes it.
+        //
+        //     The predicate is `active_move_actions > 1` AFTER this run's increment: probe-settled
+        //     that a CANT turn burns the gate while a CANCELLED action does not. `landed = false`.
+        if move_id == "fakeout" && self.sides[side].pokemon[slot].active_move_actions > 1 {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, &move_name, Some(&target), false, false);
+                self.log.hint("Fake Out only works on your first turn out.", false);
+            }
+            return MoveResolution::done(false, false, false);
         }
 
         // --- 1. ACCURACY: random(100) < effAcc, drawn unless never_miss

@@ -1197,6 +1197,9 @@ impl crate::state::BattleState {
         // switches in does NOT boost on its entry turn (activeTurns 0 at that residual;
         // `endTurn` increments it to 1 afterward). `gen3_ability_batch1_v1`.
         self.sides[side].pokemon[active].active_turns = 0;
+        // FAKE OUT (`gen3_fakeout_v1`): the sim zeroes `activeMoveActions` in `switchIn`, so this
+        // ONE site covers voluntary switch, drag, forced replacement and Baton Pass.
+        self.sides[side].pokemon[active].active_move_actions = 0;
         // TRUANT arming (`truant.onSwitchIn`: `truantTurn = this.turn !== 0`,
         // `gen3_ability_batch4_v1`): every mid-battle entrant arms `true`; whether it then
         // LOAFS its first full turn depends on whether the order-27 residual still toggles

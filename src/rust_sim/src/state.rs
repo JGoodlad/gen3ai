@@ -813,6 +813,17 @@ pub struct MonState {
     /// Stored as a DISPLAY NAME, matching `item`, so the restore is verbatim.
     /// It PERSISTS across a switch-out (it is a Pokemon field, not a volatile).
     pub last_item: String,
+    /// The sim's `pokemon.activeMoveActions` — the count of MOVE ACTIONS this mon has taken since
+    /// it entered, for **FAKE OUT** (`gen3_fakeout_v1`).
+    ///
+    /// ⚠️ NOT `active_turns`, and the distinction is the whole mechanic. It counts ACTIONS, not
+    /// turns: a turn spent CANT-ed (flinch / full-para / asleep) still increments it and BURNS the
+    /// gate, while a turn whose action was CANCELLED by gen-3 faint-cancels-all does NOT — the
+    /// cancelled action never reaches `run_move`. Probe-settled (`harness/probe_fakeout.js`); an
+    /// `active_turns` implementation passes four of the five probed cases and is silently wrong on
+    /// the fifth, forever. Starts at 0 (unlike `active_turns`, which starts at 1) and resets to 0
+    /// on EVERY switch-in — voluntary, drag, forced replacement and Baton Pass alike.
+    pub active_move_actions: u32,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1182,9 +1193,8 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 15] = [
+        const UNMODELED_FAILLOUD_MOVES: [&str; 14] = [
             "dreameater",
-            "fakeout",
             "falseswipe",
             "furycutter",
             "iceball",
@@ -1284,6 +1294,7 @@ impl MonState {
             transform: None,
             torment: false,
             last_item: String::new(),
+            active_move_actions: 0,
         })
     }
 

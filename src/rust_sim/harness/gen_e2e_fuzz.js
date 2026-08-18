@@ -158,7 +158,10 @@ const MOVE_ID_BLOCKLIST = new Set([
   // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
   // (the other gen-3 sleepUsable move) stays out: its while-asleep execution + awake
   // onTry fail are unmodeled.
-  'fakeout', 'snore',
+  // NOTE: `fakeout` is NO LONGER blocklisted — MODELED (`gen3_fakeout_v1`) and ADMITTED via
+  // MODELED_FAKEOUT_MOVES. `snore` stays out (its while-asleep execution + awake onTry fail are
+  // unmodeled, and run_move fail-louds on it).
+  'snore',
   // NOTE: `destinybond` is NO LONGER blocklisted — MODELED bit-for-bit
   // (`gen3_move_coverage_batch6_v1`) and ADMITTED via MODELED_BATCH6_MOVES in the
   // Status branch of `isModeledMove`. `snatch` (the LAST gen-3 status move) is likewise
@@ -527,6 +530,9 @@ const MODELED_RECYCLE_MOVES = new Set(['recycle']);
 // SKILL SWAP (`gen3_skill_swap_v1`) — never-miss, draw-free, ONE gen<=4 activate line; the
 // swapped-in abilities do NOT re-fire onStart, but both outgoing abilities DO fire onEnd.
 const MODELED_SKILLSWAP_MOVES = new Set(['skillswap']);
+// FAKE OUT (`gen3_fakeout_v1`) — priority +1 (NOT the modern +3); the flinch is a chance-100
+// secondary that STILL rolls random(100); the first-turn gate counts ACTIONS, not turns.
+const MODELED_FAKEOUT_MOVES = new Set(['fakeout']);
 
 // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the four DRAW-friendly status-move
 // classes the port now models bit-for-bit (`gen_movecoverage_batch2_golden.js` /
@@ -748,7 +754,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       MODELED_RECOVERY_MOVES.has(id) || MODELED_PROTECT_MOVES.has(id) ||
       MODELED_HAZARD_MOVES.has(id) || MODELED_RESTRICTION_MOVES.has(id) ||
       MODELED_RECYCLE_MOVES.has(id) ||
-      MODELED_SKILLSWAP_MOVES.has(id) ||
+      MODELED_SKILLSWAP_MOVES.has(id) || MODELED_FAKEOUT_MOVES.has(id) ||
       // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the cure / weather-set /
       // stat-drop / screen classes, all category-Status + bit-for-bit modeled. INCLUDED
       // (BATCH2_E2E_EXCLUDED = false) since the e2e_182 Pressure×allyTeam PP-deduction fix
@@ -1113,7 +1119,7 @@ const REJECT_SPECIES = new Set([]);
 // (0 carriers in `data/teams/`; 0 in the ENTIRE curated gen3randombattle movepool —
 // 220 species / 393 sets, exhaustive), so populating this cannot shift the e2e golden.
 const REJECT_MOVES = new Set([
-  'dreameater', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'dreameater', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
   'smellingsalts', 'thrash', 'uproar', 'weatherball',
 ]);

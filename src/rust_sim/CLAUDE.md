@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs, NOT yet implemented
+### THE BANKED SPEC QUEUE — 8 probe-settled specs (4 SHIPPED in ROUND 45, 4 open)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -6577,13 +6577,13 @@ one non-obvious, because that trap is the reason the spec is worth more than the
 | move(s) | probe | the trap |
 |---|---|---|
 | Safeguard | `probe_safeguard.js` | two Safeguards **TIE at residual order 4** → an extra shuffle, invisible to any single-side test; and a blocked SECONDARY still rolls its `random(100)` |
-| Recycle | `probe_recycle.js` | the discriminator is WHICH primitive removed the item — `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT, so Knock Off is **not** recyclable |
-| Fake Out | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
+| ~~Recycle~~ **SHIPPED** | `probe_recycle.js` | the discriminator is WHICH primitive removed the item — `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT, so Knock Off is **not** recyclable |
+| ~~Fake Out~~ **SHIPPED** | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
 | Conversion / Conversion 2 | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
-| Torment | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
+| ~~Torment~~ **SHIPPED** | `probe_torment.js` | joins the endTurn **DisableMove tie group** (n−1 draws); permanent, so a duration would add a phantom handler |
 | Imprison | `probe_imprison.js` | the disable is **HIDDEN** — the request keeps `disabled:false` and gains `maybeDisabled`/`maybeLocked`; all-imprisoned SUBSTITUTES Struggle rather than rejecting |
 | Weather Ball | `probe_weatherball.js` | the CATEGORY flips with the type (sandstorm is PHYSICAL) — **a test board with Atk==SpA and Def==SpD cannot see it**; reads `effective_weather` so Air Lock reverts it fully |
-| Skill Swap | `probe_skillswap.js` | swapped abilities do **NOT** re-fire `onStart` (so re-running switch-in makes Trace draw where the sim does not) — but `onEnd` DOES fire, and that is the only draw it creates |
+| ~~Skill Swap~~ **SHIPPED** | `probe_skillswap.js` | swapped abilities do **NOT** re-fire `onStart` (so re-running switch-in makes Trace draw where the sim does not) — but `onEnd` DOES fire, and that is the only draw it creates |
 
 ### The `ab_replay` SUBSEQUENCE SEED ANCHOR — shipped, and it did NOT close the repro that motivated it
 
@@ -7761,3 +7761,57 @@ bit-for-bit RNG+state faithful; this layer is a **side output** of events that A
      event.rs Trace `-ability` "un-emitted" comment corrected (it IS emitted via
      `emit_ability_start_lines`). OBSERVATION-ONLY: the ENTIRE seed suite stays BYTE-IDENTICAL and the
      e2e golden md5 (`a23d77ac60d4af168b8a4428f0b465c9`) is UNCHANGED.
+
+### ROUND 45 (FIX) — draining the banked queue: TORMENT / ERUPTION / RECYCLE / SKILL SWAP / FAKE OUT
+
+Five moves modeled off the ROUND-44 banked specs, taking the census **286 MODELED / 83 fail-loud →
+292 / 77** with **MISMODELED still 0**. Each followed the same loop: re-run the banked probe to
+CONFIRM the spec against the live sim, implement the smallest change that matches the captured
+behaviour, then walk the full ROUND-40 admission checklist (engine → `UNMODELED_FAILLOUD_MOVES` →
+the `gen_e2e_fuzz.js` picker → `scan_move_coverage.js` → the handler audit → a revert-verified pin).
+
+- **TORMENT** (`gen3_torment_v1`) — a permanent `MonState::torment` volatile blocking a REPEAT of the
+  target's `last_move`. Two non-obvious halves: the `-start` line is the **BARE** `Torment`, not
+  `move: Torment`; and the volatile joins the endTurn **DisableMove tie group**, so a tormented mon
+  co-carrying taunt/disable/choicelock/encore adds one more handler to that n−1 shuffle count
+  (`speed.rs::disable_move_event_shuffle` gained `+ (mon.torment as usize)`). Being PERMANENT, it
+  registers NO residual duration handler — a duration would have added a phantom one.
+- **ERUPTION** (`gen3_eruption_v1`) — the un-modeled twin of the already-modeled Water Spout, so the
+  fix is one id added to the existing `bp = max(floor(150·hp/maxhp), 1)` gate. Draw-neutral (a
+  deterministic state read before the crit/damage draws).
+- **RECYCLE** (`gen3_recycle_v1`) — `MonState::last_item`, set by `eat_item` / `white_herb_restore`
+  and **deliberately NOT** by `apply_item_removal` or the Trick swap. That asymmetry IS the mechanic:
+  the sim's `eatItem`/`useItem` set `lastItem` while `takeItem` does not, so a Knock-Off'd item is not
+  recyclable. Never-miss, zero draws on both the success and the `[still]`+bare-`-fail` paths.
+- **SKILL SWAP** (`gen3_skill_swap_v1`) — the swap does NOT re-fire either ability's `onStart` (so
+  Trace must not re-draw), and the gen≤4 emission is the two-empty-field form
+  `|-activate|<u>|Skill Swap|||[of] <t>` (`protocol.rs::skill_swap`).
+- **FAKE OUT** (`gen3_fakeout_v1`) — gen-3 priority is **+1, not the modern +3**; the chance-100 flinch
+  secondary **still rolls** its `random(100)`; and the gate block draws NOTHING while PP is still paid.
+  Its failure form is unique in this engine: the announce plus a `|-hint|`, with NO `[still]` attr and
+  NO `-fail`, and `once=false` so a repeat emits the hint every time.
+
+**⚠️ THE FAKE OUT COUNTER IS `active_move_actions`, NOT `active_turns` — and that distinction is the
+whole mechanic.** The sim bumps `activeMoveActions` at the top of `runMove`, BEFORE `BeforeMove`, so a
+turn spent CANT-ed (flinch / full-para / asleep) still BURNS the gate, while a turn whose action was
+CANCELLED by gen-3 faint-cancels-all never reaches `runMove` and does NOT. An `active_turns`
+implementation agrees on every obvious board and is silently wrong on exactly one, which is why the
+pin pair is split: **FO1** (lands on the first action, gated after) passes under BOTH models, and
+**FO2** is the discriminator. Building FO2 needed a board where the user queued something OTHER than
+Fake Out — its +1 priority means the user can never be pre-empted while USING it — so it is Splash
+into a faster Self-Destruct, with the cancel and `active_turns > 1` both asserted so the test cannot
+pass vacuously. REVERT-VERIFIED with the right specificity: re-keying the gate to `active_turns` fails
+**only** FO2, and disabling the gate outright fails only FO1.
+
+**Gates:** `cargo test --release --no-fail-fast` **677 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED** (no pool team carries any of the five, so every
+committed golden is byte-identical); handler audit **996 rows** OK; `SCAN_UNIVERSE=1
+scan_move_coverage.js` **369 → 292 MODELED / 77 FAIL-LOUD / 0 MISMODELED**.
+
+**HONEST SCOPE.** Exposure of all five on the POOL and randbats surfaces is ~zero — these are
+coverage-gate unlocks, not live-bug fixes. Torment's tie-group contribution is pinned by a unit
+assertion rather than observed in a fuzz sample. The four remaining banked specs (Safeguard,
+Conversion/Conversion 2, Weather Ball, Uproar) plus Rollout/Ice Ball, Imprison and Minimize are still
+open; the Rollout pair REQUIRES Defense Curl in the same pass, and Weather Ball's category flip
+**cannot be detected by a test board with Atk==SpA and Def==SpD**.
+
