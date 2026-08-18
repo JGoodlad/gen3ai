@@ -1,0 +1,183 @@
+{
+  "provenance": {
+    "generation": 14,
+    "run": "ai_v9_16_gen14_framedel_v91_0817",
+    "checkpoint": null,
+    "step": 2359296,
+    "n_states": null,
+    "date": "2026-08-17",
+    "producer": "ad-hoc log analysis (launcher_child.log iteration dumps + [CompileExtractor] lines)",
+    "note": "Measured on a LIVE run at 2.26M/25M steps with ONE pool-refresh event observed. The per-run projection multiplies that single event by gen-13's observed snapshot count; it is an EXTRAPOLATION, not a measured full-run total."
+  },
+  "measurement": "pool_refresh_opponent_recompile_cost",
+  "config": {
+    "n_envs": 48,
+    "compile_opponents": true,
+    "compile_opponents_preload": false,
+    "startup_prewarm_s": 40.7,
+    "inductor_cache": "/tmp/gen3ai_inductor_cache (WARM)"
+  },
+  "baseline_iteration_wall_s": 123.7,
+  "events": [
+    {
+      "iteration": 22,
+      "wall_s": 1234.0,
+      "compiles": 48,
+      "excess_s": 1110.3
+    }
+  ],
+  "per_event_excess_s": 1110.3,
+  "per_event_excess_min": 18.5,
+  "steady_state_overhead_frac": 0.306,
+  "projected_25M_run": {
+    "snapshots_observed_gen13": 12,
+    "projected_events": 12.5,
+    "projected_lost_hours": 3.9
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "steps": 98304,
+      "wall_s": 142.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 2,
+      "steps": 196608,
+      "wall_s": 252.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 3,
+      "steps": 294912,
+      "wall_s": 110.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 4,
+      "steps": 393216,
+      "wall_s": 120.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 5,
+      "steps": 491520,
+      "wall_s": 115.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 6,
+      "steps": 589824,
+      "wall_s": 111.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 7,
+      "steps": 688128,
+      "wall_s": 109.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 8,
+      "steps": 786432,
+      "wall_s": 110.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 9,
+      "steps": 884736,
+      "wall_s": 106.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 10,
+      "steps": 983040,
+      "wall_s": 111.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 11,
+      "steps": 1081344,
+      "wall_s": 110.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 12,
+      "steps": 1179648,
+      "wall_s": 118.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 13,
+      "steps": 1277952,
+      "wall_s": 109.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 14,
+      "steps": 1376256,
+      "wall_s": 112.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 15,
+      "steps": 1474560,
+      "wall_s": 109.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 16,
+      "steps": 1572864,
+      "wall_s": 112.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 17,
+      "steps": 1671168,
+      "wall_s": 110.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 18,
+      "steps": 1769472,
+      "wall_s": 113.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 19,
+      "steps": 1867776,
+      "wall_s": 111.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 20,
+      "steps": 1966080,
+      "wall_s": 115.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 21,
+      "steps": 2064384,
+      "wall_s": 157.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 22,
+      "steps": 2162688,
+      "wall_s": 1234.0,
+      "compiles": 48
+    },
+    {
+      "iteration": 23,
+      "steps": 2260992,
+      "wall_s": 147.0,
+      "compiles": 0
+    },
+    {
+      "iteration": 24,
+      "steps": 2359296,
+      "wall_s": 155.0,
+      "compiles": 0
+    }
+  ]
+}

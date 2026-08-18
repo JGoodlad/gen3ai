@@ -825,3 +825,51 @@ which is the entire argument for pre-registering a form before you have a result
 
 Net: **no head-decoupling finding.** The stall over-confidence keeps its two dead mechanisms and
 gains no third.
+
+### Method (2026-08-17, the false stall): a monitor whose PATTERN can stop matching reports STUCK and NOT-MATCHING identically
+
+A stall watchdog fired: "gen-14 STALLED — steps frozen at 2064384 for 20 min." The run was fine.
+The watchdog scraped `total_timesteps *\| *[0-9]+` out of the child log — a regex that requires
+SB3's **wide** table padding. SB3 sizes that padding to the longest key in the dump, and the dump
+that iteration carried only the `time/` block (no `train/` keys), so the table rendered narrow:
+`| total_timesteps | 2162688  |`. The pattern stopped matching, `tail -1` kept returning the last
+line that *did* match, and a frozen READING was reported as a frozen RUN.
+
+**This is the third instance today of one failure mode, and the first in the false-POSITIVE
+direction.** The other two: an eval query that guessed `won`/`n_turns` and returned "0 wins 0
+losses" from 2573 present traces, and (gen-13.5) the `frames` audit arm that could not tell a
+deleted block from a disabled one. The general statement is now two-sided:
+
+> **An extraction whose pattern can silently stop matching cannot distinguish "the value did not
+> change" from "I no longer see the value" — and that ambiguity resolves as a FALSE ALARM just as
+> readily as a false all-clear.** Any scraped metric needs a liveness check on the SCRAPE (did the
+> pattern match a line newer than the last reading?), not only on the value.
+
+Fixed by matching `total_timesteps[ |]+[0-9]+` (padding-agnostic) and cross-checking the log's
+mtime and the process's CPU state before ever reporting a stall.
+
+**The investigation was not wasted — it found a real and much larger thing** (next entry): the
+20-minute iteration was genuine, just not a stall. Worth recording that the false alarm was
+*productive*, because the tempting lesson from "the watchdog was wrong" is to loosen the watchdog,
+and the right one is to make it self-diagnosing.
+
+### Result (2026-08-17): a self-play pool promotion costs ~18.5 min of wall-clock, and ~31% of the run
+
+Chasing the false stall found the iteration really did take **1234 s against a 123.7 s baseline**,
+with `[CompileExtractor]` firing **exactly 48 times = `n_envs`**. Every env worker owns its own
+`SnapshotPool`, which compiles lazily into a per-instance `_model_cache`, so one promotion is 48
+independent dynamo traces racing on 16 cores **behind the `SubprocVecEnv` barrier** that makes the
+rollout wait for the slowest. At roughly one snapshot per 2M steps that is **~31% of wall-clock**,
+projecting to **~3.9 h of a 25M run** (`measurements/gen14_pool_refresh_compile_cost.json`).
+
+**The startup prewarm cannot fix it, and neither can `--compile-opponents-preload`** — the Inductor
+cache was already WARM (codegen is weight-independent; `[CompilePrewarm]` logged 40.7 s at boot).
+What remains is per-PROCESS tracing and guard construction, which no on-disk cache removes and which
+a forkserver preload cannot anticipate 2M steps ahead. Written up with the candidate directions in
+`src/agents/training/CLAUDE.md` → Compiled CPU opponents; **n = 1 promotion**, so the per-run hours
+are a size, not a number, until a second event confirms them.
+
+The durable point: **`--compile-opponents` was measured and adopted on a STARTUP cost model, and its
+recurring cost was never measured at all.** A perf flag's bill can arrive on a schedule nobody
+profiled — here, one that is larger than the win the flag was adopted for is not, but is the same
+order.

@@ -1473,6 +1473,42 @@ the *check* creates no CUDA context either) — a compile test must never be wha
 Every skip NAMES the cause and the knob rather than saying "no CUDA device", because a silent skip
 on a box that is always training would turn the gate into a no-op that still reads green.
 
+### ⚠️ The RECURRING cost nobody had measured: every pool promotion recompiles in ALL N workers
+
+Everything above sizes **startup**. There is a second, larger bill that arrives *during* the run and
+is not startup at all — measured on gen-14, 2026-08-17
+(`designs/research_state/measurements/gen14_pool_refresh_compile_cost.json`):
+
+| | |
+|---|---|
+| baseline iteration | **123.7 s** |
+| the iteration a snapshot entered the pool | **1234 s** — `[CompileExtractor]` fires **48 times**, exactly `n_envs` |
+| excess | **+18.5 min, from ONE promotion** |
+| steady state (one snapshot ≈ every 2M steps) | **~31% of wall-clock** |
+| projected over a 25M run (gen-13 kept 12 snapshots) | **~3.9 h** |
+
+**Why the existing prewarm does not cover it.** The startup prewarm ran and worked (`[CompilePrewarm]
+warmed the Inductor cache in 40.7 s`), and codegen is weight-independent — so the on-disk cache was
+**already warm** for this snapshot. What each worker still pays is **dynamo tracing + guard
+construction, which is per-PROCESS and no on-disk cache can remove** (this file says so above; the
+pool path is where that residual becomes the headline). `SnapshotPool._get_model` compiles lazily
+into a per-instance `_model_cache`, and every env worker owns its own pool — so a promotion is 48
+independent cold traces racing on 16 cores, behind the `SubprocVecEnv` barrier that makes the rollout
+wait for the slowest.
+
+**Therefore `--compile-opponents-preload` does NOT fix this.** It compiles in the forkserver *before
+the workers exist*, so it cannot know a snapshot promoted 2M steps later. Do not reach for it here.
+
+**Nothing is fixed yet — this is a measured problem, not a solved one.** The candidate directions,
+none gated: stagger promotions so the traces do not all land in one barrier; let workers keep serving
+the previous opponent for one iteration while the new one compiles; or hold one compiled callable
+across snapshots (the deep fix, and the awkward one — `nn.Module` weights are attributes, so a new
+instance is a new dynamo guard set even though the *graph* is identical).
+
+**Caveat, stated plainly: n = 1 promotion.** The 18.5 min is one measured event on a live run; the
+per-run hours are that event multiplied by gen-13's snapshot count. Confirm against a second event
+before treating the projection as a number rather than a size.
+
 ## Compiled GPU trainer (`--compile-trainer`, opt-in)
 
 `torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step
