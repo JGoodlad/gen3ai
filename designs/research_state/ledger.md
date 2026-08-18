@@ -697,11 +697,20 @@ decision (the refused switch's target, the eight faint causes, item-consumed) �
 dependence reading and a per-fact coverage audit against the substitute. §4's falsification set
 (positive control, exact-zero null, independent route) is about trusting the *instrument*; this is
 about the *scope of the question* the instrument can answer, which no amount of
-instrument-hardening fixes. **Gap reconciliation ruling (same date):** close faint-cause +
-item-consumed at the next pre-launch signature window (the doc's option C — the non-inferable
-faint causes are exactly the stall-attrition class C6 flags, and a CONFLATED signal is worse than
-an absent one); ACCEPT the refused-switch-target loss (its fix strains the event-log-purity
-invariant for the narrowest fact; the rejection fact + trappedness survive on the slots).
+instrument-hardening fixes. **Gap reconciliation ruling (same date, refined on review):** close faint-cause + item-consumed
+at the next pre-launch signature window (the doc's option C — the non-inferable faint causes are
+exactly the stall-attrition class C6 flags, and a CONFLATED signal is worse than an absent one).
+**The item fix must cover the full item-GONE family, not just consumption**: gen3 has three such
+transitions — consumed (berries/herbs), removed (Knock Off, permanent in ADV), swapped/stolen
+(Trick/Thief/Covet) — so a bare `consumed` flag leaves the conflation half-alive; use a
+transition enum (`revealed/consumed/removed/swapped`) on the ITEM row. ACCEPT the
+refused-switch-target loss — **on VALUE grounds only** (the narrowest fact; the rejection fact +
+trappedness survive on the slots). ⚠️ The doc's "structurally unreachable" framing is CORRECTED:
+`record_choice_rejected` (`gen3_battle.py:202`) is called from the player layer, which knows the
+attempted action — "not on the wire" is not "not available at emission." The clean path, if this
+fact's value ever materializes, is EVENT-PAYLOAD ENRICHMENT at emission (the fact enters the LOG;
+the fold stays a pure function of the log; purity intact) — never option D's fold-time
+action-index threading. Recorded so the false impossibility doesn't outlive its context.
 
 Secondary, same pass — two test-integrity findings worth the family they belong to:
 * A bit-identity assertion can be testing the KERNEL rather than the property. The masked-extra-seat
