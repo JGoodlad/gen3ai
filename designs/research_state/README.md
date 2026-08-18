@@ -44,7 +44,8 @@ After **any** investigation that changes our belief, update this folder in the s
 
 > **Open throughput lever (2026-08-17):** `--compile-opponents` may be net-NEGATIVE at
 > production settings once self-play promotions are counted (~31% of wall-clock in
-> 48-worker recompiles vs a documented +33.3% rollout gain) →
+> 48-worker recompiles, which very nearly cancels the measured +43.7% rust rollout gain — the
+> arithmetic lands at -0.3%, a dead wash) →
 > [levers/compile_opponents_net_value.md](levers/compile_opponents_net_value.md).
 
 ## The amortizability gate — route every oracle finding through L1–L4

@@ -891,3 +891,23 @@ Recorded because the error has a shape worth recognising: **a power calculation 
 run as its source is only as good as the assumption about how much data that run keeps** — and
 retention is a FLAG, sitting far from the analysis, easy to never look at. Check the flag that
 governs the sample before promising the sample.
+
+### Correction to T1 (2026-08-17, within the hour): the applicable benefit is +43.7%, not +33.3% — and that makes it a WASH, not a loss
+
+T1's first arithmetic used the +33.3% compile benefit quoted in the root `CLAUDE.md` and concluded
+the flag was net **−7.5%**. That figure comes from a config that is not gen-14's. The applicable one
+is the 2×2 `{node,rust} × {compile off,on}` matrix at `--n-envs 48`: **+43.7% on rust** (417.0 →
+599.4), and gen-14 runs `--use-bridge rust`. Redone: uncompiled 553.0 fps vs compiled-effective
+551.4 fps = **−0.3%**.
+
+**The corrected claim is sharper, not weaker:** not "the flag loses" but *"a flag adopted for a
+measured +43.7% delivers approximately ZERO at production settings, because a recurring cost nobody
+profiled ate all of it."* The pre-registered gate was rewritten to match — a wash is now an explicit
+VERDICT with a stated meaning (on/off is the wrong question; fix the promotion path and recover the
++43.7%), rather than an ambiguous result to be interpreted after the fact.
+
+**The near-miss worth recording: the better number was already in my own notes.** The root
+`CLAUDE.md` figure was the one nearest to hand; the transport-specific matrix that actually applies
+sat in the project's throughput record. **When a benefit figure is about to become the denominator
+of a decision, go find the version measured on THIS config before using the version that is easiest
+to quote** — the two differed by 10 points and flipped the conclusion's character.

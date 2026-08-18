@@ -2,7 +2,7 @@
 
 **Status:** 🔬 open — one half measured, the other half never was · **Ledger id:** T1
 
-One-line claim: *`--compile-opponents` was adopted on a measured +33.3% rollout FPS and a STARTUP
+One-line claim: *`--compile-opponents` was adopted on a measured +43.7% rollout FPS (rust) and a STARTUP
 cost model; its RECURRING cost — every self-play promotion recompiles in all N env workers — was
 never measured, and at the documented benefit the two roughly cancel.*
 
@@ -20,15 +20,21 @@ never measured, and at the documented benefit the two roughly cancel.*
   each worker still pays is dynamo tracing + guard construction, 48 of them racing on 16 cores
   behind the `SubprocVecEnv` barrier. `--compile-opponents-preload` cannot help either — it runs in
   the forkserver before the workers exist.
-- **The benefit half** (from the existing docs, a DIFFERENT config): 406.5 → 541.8 fps at
-  `--n-envs 48`, **+33.3%** marginal training FPS; B=1 CPU forward 6.53×.
+- **The benefit half — use the RUST number, not the generic one.** The 2×2 matrix
+  {node,rust} × {compile off,on} at `--n-envs 48` on the literal arch (2026-08-03, `a5157cc`,
+  4 samples/arm, 48/48 workers compiled) measured the compile effect as **+43.7% on rust**
+  (417.0 → 599.4) and +35.1% on node (413.3 → 558.5). gen-14 runs `--use-bridge rust`, so **+43.7%
+  is the applicable figure**; the frequently-quoted +33.3% comes from a different config and
+  understates the benefit. B=1 CPU forward is 6.53×.
 
 ## Not-known (and this is the whole lever)
 
-- **Whether the flag is net positive at production settings.** Combining the two halves *as if the
-  +33.3% transfers*: uncompiled would run 596.2 fps with no promotion bill, versus 551.4 fps
-  effective compiled — **−7.5%, i.e. the flag would be a net LOSS**. Break-even is a benefit of
-  about **+50%**. At +20% it is −16.7%; at +50% it is +4.1%.
+- **Whether the flag is net positive at production settings — and the arithmetic says it is very
+  nearly a DEAD WASH.** Compiled effective throughput is 551.4 fps (promotions amortised in).
+  Uncompiled, at the rust benefit of +43.7%, would be 794.7/1.437 = **553.0 fps with no promotion
+  bill** — i.e. **−0.3%**, indistinguishable. At the node benefit (+35.1%) it is −6.3%; at the
+  generic +33.3%, −7.5%. **So the honest headline is not "the flag loses" but "a flag adopted for a
+  measured +43.7% delivers approximately ZERO at production settings."**
 - **That combination is NOT a measurement.** The +33.3% was taken on a different run config (no
   `--compile-trainer`, different arch generation), and the two numbers have never been observed in
   the same run. The sign of the net effect is genuinely unknown — this lever exists to get it.
@@ -64,7 +70,14 @@ Metric: **total wall-clock per 1M steps, promotions included** — not steady-st
 number that hid this in the first place.
 
 - **Go (drop the flag):** uncompiled is faster by >5% with the arms' ranges disjoint.
-- **Kill (keep the flag):** compiled is faster, or the difference is within ±5%.
+- **Kill (keep the flag):** compiled is faster by >5%, disjoint.
+- **The LIKELY outcome, given the arithmetic above, is neither — a wash inside ±5%.** Pre-register
+  what that means now, so it is not decided after the fact: **a wash is a verdict, and the verdict
+  is that on/off is the WRONG question.** It says the ~31% promotion bill has eaten a real +43.7%
+  win, and the money is in the third option — fix the promotion path (stagger promotions across the
+  barrier; serve the previous opponent for one iteration while the new one traces; or hold one
+  compiled callable across snapshots) and recover most of the +43.7% instead of choosing which half
+  to forfeit.
 - Either way, record the observed promotion count per arm — an arm that got lucky on promotions is
   not a comparison.
 
