@@ -521,6 +521,9 @@ const MODELED_SUBSTITUTE_MOVES = new Set(['substitute']);
 // (`gen_taunt_disable_golden.js` / `taunt_disable_test.rs` + the TD1-TD3 regression pins).
 // `torment` joins on `gen3_torment_v1` — the same selection-time family, minus the duration.
 const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable', 'torment']);
+// RECYCLE (`gen3_recycle_v1`) — restores the item the mon CONSUMED ITSELF (eatItem/useItem),
+// never one taken by Knock Off / Thief / Trick. Never-miss, zero draws.
+const MODELED_RECYCLE_MOVES = new Set(['recycle']);
 
 // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the four DRAW-friendly status-move
 // classes the port now models bit-for-bit (`gen_movecoverage_batch2_golden.js` /
@@ -741,6 +744,7 @@ function isModeledMove(id, allowHiddenPower = false) {
     return MODELED_STATUS_MOVES.has(id) || MODELED_SETUP_MOVES.has(id) ||
       MODELED_RECOVERY_MOVES.has(id) || MODELED_PROTECT_MOVES.has(id) ||
       MODELED_HAZARD_MOVES.has(id) || MODELED_RESTRICTION_MOVES.has(id) ||
+      MODELED_RECYCLE_MOVES.has(id) ||
       // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the cure / weather-set /
       // stat-drop / screen classes, all category-Status + bit-for-bit modeled. INCLUDED
       // (BATCH2_E2E_EXCLUDED = false) since the e2e_182 Pressure×allyTeam PP-deduction fix
@@ -1892,7 +1896,7 @@ module.exports = {
   MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
-  MODELED_RESTRICTION_MOVES, MODELED_BATCH3_MOVES,
+  MODELED_RESTRICTION_MOVES, MODELED_RECYCLE_MOVES, MODELED_BATCH3_MOVES,
   MODELED_CURE_MOVES, MODELED_WEATHER_MOVES, MODELED_STATDROP_MOVES, MODELED_SCREEN_MOVES,
   MODELED_PARTIALTRAP_MOVES,
   mulberry32, randInt, seedFrom, toId,

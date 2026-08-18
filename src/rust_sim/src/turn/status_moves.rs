@@ -1587,6 +1587,51 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- RECYCLE (`gen3_recycle_v1`) — restore the item this mon CONSUMED ITSELF.
+        //     PROBE-SETTLED (`harness/probe_recycle.js`): never-miss (accuracy `true`) so ZERO
+        //     draws on BOTH the success and the failure path, and `landed = false` (pinned by a
+        //     speed-tied mirror reading 7 = 7 = 7 draws — a true `landed` would fire the
+        //     in-tryMoveHit Update and add a tie-shuffle only on a speed tie, i.e. a latent
+        //     desync invisible on every distinct-speed board).
+        //
+        //     The gate is the sim's exactly: FAIL if the mon already holds an item OR has no
+        //     `last_item`. Both causes emit the same `[still]` + bare `-fail|<USER>` pair, so
+        //     their order is unobservable.
+        //
+        //     `last_item` is CLEARED BEFORE the restore (the sim does `lastItem = ""` then
+        //     `setItem`) — skip that and a Knock-Off-after-Recycle becomes re-recyclable forever,
+        //     a silent state divergence with no emission tell. `item_knocked_off` is deliberately
+        //     left UNTOUCHED: probe Q shows the flag survives a restore and still refuses a later
+        //     Thief. The restored item is re-usable the SAME turn via the existing runAction-tail
+        //     Update — do NOT call `run_update_items` inline here, that would double-fire it. ---
+        if move_id == "recycle" {
+            debug_assert!(
+                never_miss,
+                "recycle expected gen-3 never_miss (accuracy:true), got never_miss={never_miss}"
+            );
+            let mon = &self.sides[_side].pokemon[_slot];
+            if !mon.item.is_empty() || mon.last_item.is_empty() {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let restored = mon.last_item.clone();
+            {
+                let m = &mut self.sides[_side].pokemon[_slot];
+                m.last_item = String::new(); // CLEAR BEFORE the restore, mirroring the sim
+                m.item = restored.clone();
+            }
+            // [EMIT] `|-item|<user>|<Item>|[from] move: Recycle` — no `[of]` clause.
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.item_from_move(&user, &restored, "Recycle");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- TORMENT (`gen3_torment_v1`) — the CHEAPEST member of the move-restriction family:
         //     Taunt minus the duration and minus the execution-time cant. PROBE-SETTLED
         //     (`harness/probe_torment.js`): the cast draws EXACTLY ONE random(100) accuracy roll

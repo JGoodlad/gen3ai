@@ -800,6 +800,19 @@ pub struct MonState {
     /// `last_move` is already `None` for a Struggle, which reproduces the sim's
     /// `lastMove.id !== 'struggle'` exemption for free.
     pub torment: bool,
+    /// The item this mon CONSUMED ITSELF, for **RECYCLE** (`gen3_recycle_v1`) — the sim's
+    /// `pokemon.lastItem`.
+    ///
+    /// ⚠️ THE DISCRIMINATOR IS *WHICH PRIMITIVE REMOVED IT*, not that the slot went empty.
+    /// `eatItem`/`useItem` set it (a berry eaten at its own threshold, White Herb spent);
+    /// `takeItem` does NOT (Knock Off / Thief / Covet / Trick). So a Knock-Off'd item is NOT
+    /// recyclable while a berry eaten three turns earlier still is — probe-settled
+    /// (`harness/probe_recycle.js`). Setting this wherever the item merely LEAVES the mon is the
+    /// intuitive implementation and it is WRONG.
+    ///
+    /// Stored as a DISPLAY NAME, matching `item`, so the restore is verbatim.
+    /// It PERSISTS across a switch-out (it is a Pokemon field, not a volatile).
+    pub last_item: String,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1270,6 +1283,7 @@ impl MonState {
             yawn: None,
             transform: None,
             torment: false,
+            last_item: String::new(),
         })
     }
 

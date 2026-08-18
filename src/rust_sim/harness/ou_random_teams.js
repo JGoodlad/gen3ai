@@ -26,7 +26,7 @@
 // ENGINE-MODELED moves, so a generated team ALWAYS plays to completion (no fail-loud, no
 // truncated prefix). The cost is exactly the mass that renormalization moves: **1.33% of gen3ou
 // move-slot mass** sits on the 88 engine-unmodeled moves (measured over all 216 species' priors).
-// The top of that queue is `sandattack recycle confuseray safeguard conversion weatherball
+// The top of that queue is `safeguard conversion weatherball
 // fakeout imprison present skillswap` — model those and the gap closes. (torment and eruption
 // are DONE: `gen3_torment_v1` / `gen3_eruption_v1`.)
 // The 1.33% is DISCLOSED by `describeCoverage()` and printed in the fuzz banner, never silent.

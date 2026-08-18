@@ -13,6 +13,8 @@ impl crate::state::BattleState {
     fn eat_item(&mut self, side: usize, slot: usize, dex: &Dex) -> String {
         let item_id = to_id(&self.sides[side].pokemon[slot].item);
         let display = dex.item(&item_id).map(|i| i.name.clone()).unwrap_or(item_id);
+        // RECYCLE (`gen3_recycle_v1`): `eatItem` sets `lastItem`. Every berry eat funnels here.
+        self.sides[side].pokemon[slot].last_item = self.sides[side].pokemon[slot].item.clone();
         self.sides[side].pokemon[slot].item = String::new();
         if self.logging() {
             let m = self.mon_ref(side, slot, dex);
@@ -57,6 +59,9 @@ impl crate::state::BattleState {
                     *b = 0;
                 }
             }
+            // RECYCLE (`gen3_recycle_v1`): White Herb goes through `useItem`, which also sets
+            // `lastItem` — unlike the `takeItem` paths (Knock Off / Thief / Trick), which do not.
+            mon.last_item = mon.item.clone();
             mon.item = String::new(); // single-use consumption
         }
         if self.logging() {

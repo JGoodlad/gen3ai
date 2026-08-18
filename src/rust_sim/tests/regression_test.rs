@@ -13524,6 +13524,77 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// RC1 — RECYCLE (`gen3_recycle_v1`). Restores the item the mon CONSUMED ITSELF.
+///
+/// THE DISCRIMINATOR IS WHICH PRIMITIVE REMOVED THE ITEM, not that the slot went empty: the sim's
+/// `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT. So a berry eaten at its own threshold
+/// is restorable and a KNOCKED-OFF item is not — the intuitive "the item left, so remember it"
+/// implementation gets the second case backwards. Ground truth `harness/probe_recycle.js`.
+///
+/// The pin drives BOTH arms so the distinction is load-bearing: an eaten Lum restores, a
+/// knocked-off Leftovers does not.
+#[test]
+fn recycle_restores_an_eaten_berry_but_not_a_knocked_off_item() {
+    let d = dex();
+    // ARM A: the holder EATS its Lum Berry curing a self-inflicted status, then Recycles it back.
+    // Rest puts it to sleep -> Lum cures + is EATEN (an `eatItem`, so lastItem is set).
+    // Rest FAILS at full HP, so the foe chips first — then Rest sleeps the mon, the Lum cures
+    // that sleep and is EATEN (an `eatItem`, which is what sets `last_item`).
+    let a_user = "Snorlax||LumBerry|Immunity|recycle,rest,splash|Hardy|85,85,85,85,85,85|M||||";
+    // Seismic Toss (Fighting, fixed 100) — Night Shade is GHOST and a Normal-type Snorlax is
+    // IMMUNE to it, which silently left the mon at full HP and made Rest fail.
+    let foe = "Gengar||Leftovers|Levitate|seismictoss,knockoff|Hardy|85,85,85,85,85,85|M||||";
+    let mut ba = Battle::start_with_switchins(&opts_cg(a_user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let sa = ba.state_mut().expect("state");
+    let (_o, la) = sa.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // foe Seismic Toss -> chip
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Rest -> Lum cures + EATEN
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Recycle
+        ],
+        &d,
+    );
+    let raw_a: Vec<String> = la.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw_a.iter().any(|l| l.contains("|-item|p1a: Snorlax|Lum Berry|[from] move: Recycle")),
+        "RC1-A: an EATEN berry must be restored with the `[from] move: Recycle` tag. got:\n{}",
+        raw_a.join("\n")
+    );
+    assert_eq!(
+        pokesim::dex::to_id(&sa.sides[0].pokemon[0].item), "lumberry",
+        "RC1-A: the mon is holding the restored berry"
+    );
+
+    // ARM B: the foe KNOCKS OFF the item (a `takeItem`) -> Recycle must FAIL.
+    let b_user = "Snorlax||Leftovers|Immunity|recycle,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut bb = Battle::start_with_switchins(&opts_cg(b_user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let sb = bb.state_mut().expect("state");
+    let (_o2, lb) = sb.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // foe Knock Off
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Recycle
+        ],
+        &d,
+    );
+    let raw_b: Vec<String> = lb.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw_b.iter().any(|l| l.contains("Knock Off")),
+        "RC1-B: the board must actually knock the item off. got:\n{}",
+        raw_b.join("\n")
+    );
+    assert!(
+        !raw_b.iter().any(|l| l.contains("[from] move: Recycle")),
+        "RC1-B: a KNOCKED-OFF item is NOT recyclable (takeItem never sets lastItem). got:\n{}",
+        raw_b.join("\n")
+    );
+    assert!(
+        sb.sides[0].pokemon[0].item.is_empty(),
+        "RC1-B: the mon stays itemless"
+    );
+}
+
 /// ER1 — ERUPTION (`gen3_eruption_v1`). The HP-scaled BP twin of Water Spout: `bp =
 /// max(floor(150 * hp / maxhp), 1)`. PROBE-SETTLED side by side in
 /// `harness/probe_varbp_cluster.js` — the SAME resolved callback and dataBP 150, so at identical

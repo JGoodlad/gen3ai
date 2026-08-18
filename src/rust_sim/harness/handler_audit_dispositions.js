@@ -522,6 +522,9 @@ add([cond('encore', 'onDisableMove')],
   IMPL('state.rs::move_usable', 'every non-encored slot is un-selectable while the volatile is up (the request disabled shape; a switch stays legal)'));
 add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('encore', 'onResidualSubOrder'), cond('encore', 'onEnd')],
   IMPL('turn.rs::run_residuals', 'the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end'));
+// RECYCLE (`gen3_recycle_v1`).
+add([mv('recycle', 'onHit')],
+  IMPL('turn.rs::run_status_move', 'the recycle arm: FAIL ([still]+bare -fail on the USER) if the mon already holds an item OR has no last_item; else clear last_item BEFORE restoring it and emit |-item|<u>|<Item>|[from] move: Recycle. NEVER-MISS so zero draws on both paths, landed=false. `last_item` is set ONLY by the eatItem/useItem sites (items.rs::eat_item, white_herb_restore) — never by takeItem (Knock Off / Thief / Trick), which is why a knocked-off item is not recyclable.'));
 // TORMENT (`gen3_torment_v1`) — the condition's own hooks.
 add([cond('torment', 'onStart'), cond('torment', 'onDisableMove')],
   IMPL('turn.rs::run_status_move', 'the torment arm applies the volatile (bare `|-start|<t>|Torment`, NOT `move: Torment`); the onDisableMove restriction is folded into state.rs::move_usable against a LIVE `last_move`, and it JOINS the endTurn DisableMove tie group (speed.rs::disable_move_event_shuffle) — the only draw torment introduces'));

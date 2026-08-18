@@ -257,6 +257,8 @@ function classifyStatus(m, id) {
   if (MODELED_LEECH.has(id)) return { cov: 'MODELED', mech: 'leech-seed' };
   if (MODELED_SUBSTITUTE.has(id)) return { cov: 'MODELED', mech: 'substitute' };
   if (MODELED_RESTRICTION.has(id)) return { cov: 'MODELED', mech: 'taunt/disable/torment' };
+  // RECYCLE (`gen3_recycle_v1`) — restores a SELF-CONSUMED item; never-miss, draw-free.
+  if (id === 'recycle') return { cov: 'MODELED', mech: 'item-recycle' };
   // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — status-cure / weather-set /
   // stat-drop / screens, all MODELED bit-for-bit.
   if (MODELED_CURE.has(id)) return { cov: 'MODELED', mech: 'status-cure (batch 2)' };
@@ -331,7 +333,7 @@ function statusMechanic(m, id) {
   if (S('yawn')) return 'delayed-sleep (Yawn)';
   if (S('ingrain')) return 'residual-self-heal';
   if (S('roleplay') || S('skillswap')) return 'ability-swap';
-  if (S('recycle')) return 'item-recycle';
+  // (`recycle` is MODELED above — this label is now unreachable for it, kept for shape.)
   if (S('teeterdance')) return 'confuse';
   if (S('swagger') || S('flatter')) return 'boost+confuse';
   if (S('attract')) return 'attract';

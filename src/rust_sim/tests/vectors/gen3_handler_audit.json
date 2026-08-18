@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 50,
-   "moves": 272,
-   "rows": 987
+   "moves": 274,
+   "rows": 990
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -4942,6 +4942,24 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:recycle:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:recycle:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:recycle:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:62485b40:onHit(pokemon, source, move) { if (pokemon.item || !pokemon.lastItem) return false; const item = pokemon.lastItem; pokem",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the recycle arm: FAIL ([still]+bare -fail on the USER) if the mon already holds an item OR has no last_item; else clear last_item BEFORE restoring it and emit |-item|<u>|<Item>|[from] move: Recycle. NEVER-MISS so zero draws on both paths, landed=false. `last_item` is set ONLY by the eatItem/useItem sites (items.rs::eat_item, white_herb_restore) — never by takeItem (Knock Off / Thief / Trick), which is why a knocked-off item is not recyclable."
   },
   "move:reflect:ignoreImmunity": {
    "disposition": "implemented",
