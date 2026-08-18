@@ -41,6 +41,24 @@ never measured, and at the documented benefit the two roughly cancel.*
 - **n = 1 promotion** for the cost half. A second event would turn the per-run projection from a
   size into a number.
 
+- **The MECHANISM is now pinned, and it makes the projection stronger rather than weaker.** The
+  obvious hope — "the first promotion is the worst case; once the pool has many entries a new
+  snapshot is sampled rarely, so adoption spreads out and the herd disperses" — is **false**, and
+  measurably so. At the 2M promotion the pool held **exactly one entry**, so `sample()` returned it
+  with p = 1. But `recency_weight = 0.3` with PFSP off means the newest entry's weight is only
+  1.3 against 1.0, *and* each worker plays ~28 episodes per iteration (2048 steps ÷ ~72 mean turns).
+  P(a worker draws the new snapshot at least once in one iteration):
+
+  | pool size | 1 | 4 | 8 | 12 | 20 |
+  |---|---|---|---|---|---|
+  | p(new) per episode | 1.000 | 0.283 | 0.141 | 0.094 | 0.057 |
+  | **workers compiling in iteration 1 (of 48)** | **48.0** | **48.0** | **47.4** | **45.1** | **38.8** |
+
+  So the bill lands in ONE iteration at every realistic pool size. **Therefore the ×12.5
+  extrapolation is not the optimistic reading — it is the mechanism's prediction**, and it also
+  kills one candidate fix outright: **staggering must be an EXPLICIT delay, not a hoped-for
+  consequence of the sampling weights**, which are nowhere near sharp enough to spread the load.
+
 ## Pros
 
 - If the flag is net-negative, dropping it reclaims up to ~30% of every run's wall-clock for free —
