@@ -42,6 +42,11 @@ After **any** investigation that changes our belief, update this folder in the s
    it; one `git clean` from gone. A citation to an uncommitted file is a dangling pointer wearing
    provenance clothes.
 
+> **Open throughput lever (2026-08-17):** `--compile-opponents` may be net-NEGATIVE at
+> production settings once self-play promotions are counted (~31% of wall-clock in
+> 48-worker recompiles vs a documented +33.3% rollout gain) →
+> [levers/compile_opponents_net_value.md](levers/compile_opponents_net_value.md).
+
 ## The amortizability gate — route every oracle finding through L1–L4
 
 The falsifier is an **ORACLE** (hindsight + re-rolls), so *"a better action existed"* is its DEFAULT
