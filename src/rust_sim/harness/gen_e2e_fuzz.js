@@ -152,7 +152,9 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: futuresight/doomdesire are NO LONGER blocklisted — MODELED bit-for-bit AND
   // e2e-ADMITTED (`gen3_move_coverage_batch4c_v1`, BATCH4C_E2E_EXCLUDED=false) via
   // MODELED_BATCH4C_MOVES in `isModeledMove`.
-  'switcheroo', 'falseswipe',
+  // NOTE: `falseswipe` is NO LONGER blocklisted — MODELED (`gen3_bp_modifier_cluster_v1`,
+  // the onDamage priority--20 clamp to target.hp-1) and ADMITTED via MODELED_BP_CLUSTER_MOVES.
+  'switcheroo',
   // NOTE: `sleeptalk` is NO LONGER blocklisted — MODELED (`gen3_move_coverage_batch5_v1`);
   // its pickability is CARRIER-conditional (see `sleepTalkPoolModeled` in pickMove: the
   // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
@@ -434,6 +436,11 @@ const MODELED_WEATHERBALL_MOVES = new Set(['weatherball']);
 // UPROAR (`gen3_uproar_v1`) — a multi-turn LOCK whose random(2,6) duration is drawn ONCE on
 // the cast, plus a field-wide sleep block and a wake-on-hit. Locked turns spend no PP.
 const MODELED_UPROAR_MOVES = new Set(['uproar']);
+// The BP-MODIFIER / GATE cluster (`gen3_bp_modifier_cluster_v1`) — three basePowerCallbacks
+// (Revenge x2-if-hit, Smelling Salts x2-vs-par + cure, Fury Cutter's consecutive ladder), one
+// onTryImmunity (Dream Eater needs a SLEEPING, un-subbed target) and one onDamage clamp
+// (False Swipe leaves exactly 1 HP). All DRAW-NEUTRAL.
+const MODELED_BP_CLUSTER_MOVES = new Set(['revenge', 'smellingsalts', 'furycutter', 'dreameater', 'falseswipe']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -501,7 +508,9 @@ const MODELED_RECOIL_MOVES = new Set(['doubleedge', 'takedown', 'submission', 'v
 // excluded via the NOOP-ability filter). Dream Eater is EXCLUDED (its `onTryImmunity`
 // sleep-only gate is unmodeled). Clean gen-3 drain moves: Absorb / Mega Drain / Giga Drain /
 // Leech Life.
-const MODELED_DRAIN_MOVES = new Set(['absorb', 'megadrain', 'gigadrain', 'leechlife']);
+// `dreameater` JOINED this set with `gen3_bp_modifier_cluster_v1` — its sleep-only
+// `onTryImmunity` (target ASLEEP and un-subbed) is now modeled, so the drain half is ordinary.
+const MODELED_DRAIN_MOVES = new Set(['absorb', 'megadrain', 'gigadrain', 'leechlife', 'dreameater']);
 // SELF-DROP — the top-level `move.self.boosts` on a DAMAGING move (Overheat −2 SpA, Superpower
 // −1 Atk/−1 Def): the port applies the drop AND draws the gen3 `selfDrops` random(100) (the
 // `secondaryRoll`, applied unconditionally since `self.chance === undefined`) — NOT draw-free.
@@ -795,6 +804,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       MODELED_CONVERSION_MOVES.has(id) ||
       MODELED_WEATHERBALL_MOVES.has(id) ||
       MODELED_UPROAR_MOVES.has(id) ||
+      MODELED_BP_CLUSTER_MOVES.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
@@ -808,7 +818,7 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.multihit) return false;
   // RECOIL / DRAIN (`gen3_move_coverage_batch1_v1`) — a recoil/drain damaging move is admitted
   // ONLY if it is in the explicit modeled set (a recoil/drain move with an EXTRA unmodeled
-  // mechanic — Dream Eater's sleep-only `onTryImmunity` — stays out). Otherwise reject.
+  // mechanic — Dream Eater's sleep-only `onTryImmunity` — is now MODELED and IN). Otherwise reject.
   if (m.recoil && !MODELED_RECOIL_MOVES.has(id)) return false;
   if (m.drain && !MODELED_DRAIN_MOVES.has(id)) return false;
   // ITEM REMOVAL (Knock Off / Thief / Covet) + RAPID SPIN — a damaging `onAfterHit` move is
@@ -869,6 +879,12 @@ function isModeledMove(id, allowHiddenPower = false) {
   //     belt-and-braces).
   // (Plain `priority` is FINE — the port reads move.priority for action order; and a
   // draw-free `onTry`/`onHit` like Brick Break screen-break / Pay Day coins is kept.)
+  // ⚠️ THE ADMIT MUST PRECEDE EVERY GENERIC REJECT BELOW (basePowerCallback /
+  // onModifyMove / onTryImmunity / self.volatileStatus). Getting this wrong is a SILENT
+  // false negative — the picker simply never samples the move — which is why the admission
+  // checklist now ends with `assert isModeledMove(id) === true`.
+  if (MODELED_WEATHERBALL_MOVES.has(id) || MODELED_UPROAR_MOVES.has(id)
+      || MODELED_BP_CLUSTER_MOVES.has(id)) return true;
   if (m.basePowerCallback) return false;
   if (m.beforeTurnCallback) return false;
   if (m.beforeMoveCallback) return false;
@@ -876,7 +892,6 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.damageCallback) return false;
   // Weather Ball's type/BP/category mutate via `onModifyMove`, and it IS modeled — admit it
   // ahead of the generic reject (the Thunder / Beat Up precedent).
-  if (MODELED_WEATHERBALL_MOVES.has(id) || MODELED_UPROAR_MOVES.has(id)) return true;
   if (m.onModifyMove) return false;
   // Secondary shape: 0 or 1 secondary, modeled cols only.
   const secs = m.secondaries || (m.secondary ? [m.secondary] : []);
@@ -1144,9 +1159,9 @@ const REJECT_SPECIES = new Set([]);
 // (0 carriers in `data/teams/`; 0 in the ENTIRE curated gen3randombattle movepool —
 // 220 species / 393 sets, exhaustive), so populating this cannot shift the e2e golden.
 const REJECT_MOVES = new Set([
-  'dreameater', 'falseswipe', 'furycutter', 'iceball',
-  'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
-  'smellingsalts', 'thrash',
+  , 'iceball',
+  'outrage', 'petaldance', 'rage', 'rollout', 'secretpower',
+  'thrash',
 ]);
 function abilityAllowed(id) {
   const a = toId(id);

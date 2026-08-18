@@ -281,7 +281,46 @@ impl crate::state::BattleState {
         //     and at identical hp the two derive the identical BP (150/297 -> 75 for both). It is
         //     Fire/SPECIAL where Water Spout is Water/SPECIAL, which the type split already
         //     handles, so the only thing it needed was admission to this gate.
-        let base_power = if matches!(move_id.as_str(), "waterspout" | "eruption") {
+        // --- THE BP-MODIFIER CLUSTER (`gen3_bp_modifier_cluster_v1`) — three
+        //     `basePowerCallback`s over a NON-zero data row, all DRAW-NEUTRAL (deterministic
+        //     STATE reads, computed before the crit/damage draws). Ground truth
+        //     `harness/probe_bp_cluster_clean.js`, whose boards deliberately strip the two
+        //     confounds that made the first measurement unreadable: a CRIT is itself a ×2 that
+        //     mimics a BP doubling, and Fury Cutter's 95 accuracy means a MISS silently shifts
+        //     the whole ladder. ---
+        let base_power = if move_id == "revenge" {
+            // ×2 if the user was DAMAGED BY THIS TARGET this turn. Priority −4 means the foe's
+            // move almost always lands first, which is what makes the doubling the common case.
+            if self.sides[side].pokemon[slot].damaged_by_foe_this_turn {
+                base_power.saturating_mul(2)
+            } else {
+                base_power
+            }
+        } else if move_id == "smellingsalts" {
+            // ×2 vs a PARALYZED target (the onHit then CURES it — applied in the landed tail).
+            if self.sides[foe].pokemon[foe_slot].status == Some(Status::Paralysis) {
+                base_power.saturating_mul(2)
+            } else {
+                base_power
+            }
+        } else if move_id == "furycutter" {
+            // The sim ADDS the volatile from INSIDE `basePowerCallback` and then reads it, so
+            // the FIRST use is bp 10 × 1 and each CONSECUTIVE use doubles (multiplier `<< 1`
+            // while `< 16`), clamped to 160. `duration: 2` refreshed on every restart, so one
+            // non-Fury-Cutter turn lapses it.
+            let mult = match self.sides[side].pokemon[slot].fury_cutter {
+                None => 1u8,
+                Some((m, _)) => {
+                    if m < 16 {
+                        m * 2
+                    } else {
+                        m
+                    }
+                }
+            };
+            self.sides[side].pokemon[slot].fury_cutter = Some((mult, 2));
+            (base_power as u32 * mult as u32).clamp(1, 160) as u16
+        } else if matches!(move_id.as_str(), "waterspout" | "eruption") {
             let mon = &self.sides[side].pokemon[slot];
             ((150u32 * mon.hp as u32) / mon.maxhp as u32).max(1) as u16
         } else {
@@ -1007,7 +1046,16 @@ impl crate::state::BattleState {
         //     IMMUNE (not missed), regardless of the accuracy roll (verified vs the
         //     sim: Earthquake into a Flying/Levitate mon draws `randomChance(100,100)`
         //     then `-immune`). Drawing crit/damage here would desync every later draw. ---
-        if move_is_immune(&ctx, dex) {
+        // --- DREAM EATER's `onTryImmunity` (`gen3_bp_modifier_cluster_v1`): the target must
+        //     be ASLEEP and NOT behind a Substitute. It resolves at `runImmunity`, i.e. the
+        //     PRE-accuracy class (like Levitate), so it reports `|-immune|<target>` with a
+        //     BARE form (no `[from]`) — probe-confirmed against an awake foe. Folded in beside
+        //     the type/ability immunity so the whole short-circuit (accuracy drawn, then
+        //     `-immune`, NO crit/damage roll) is shared. ---
+        let dream_eater_blocked = move_id == "dreameater"
+            && !(matches!(self.sides[foe].pokemon[foe_slot].status, Some(Status::Sleep(_)))
+                && self.sides[foe].pokemon[foe_slot].substitute.is_none());
+        if dream_eater_blocked || move_is_immune(&ctx, dex) {
             // Whether THIS immunity is a gen3 `onTryHit`-class ABILITY immunity (Flash
             // Fire / Water Absorb / Volt Absorb) — those resolve AFTER the accuracy roll,
             // so a MISS shows `[miss]`+`-miss` (F2), unlike Levitate + type-chart 0× which
@@ -1373,6 +1421,18 @@ impl crate::state::BattleState {
             // a MOVE hit that would KO an endure-volatile holder is clamped to `hp − 1`,
             // `|-activate|…|move: Endure` emitted BEFORE the `|-damage|` (probe ED1).
             // DRAW-FREE. Fixed damage + each multihit strike have their own sites.
+            // FALSE SWIPE (`gen3_bp_modifier_cluster_v1`): an `onDamage` at priority -20 —
+            // `if (damage >= target.hp) return target.hp - 1` — so a would-be KO is clamped to
+            // leave exactly 1 HP. It is NOT a BP change: the probe shows the move computing
+            // 839 damage into a 17-HP target and the target ending at 1. Priority -20 puts it
+            // AFTER Endure, which is why it sits here rather than inside the damage calc.
+            // DRAW-FREE, and skipped for a sub-absorbed hit (the sub is not `target`).
+            let realized = if move_id == "falseswipe" && !absorbed {
+                let hp = self.sides[foe].pokemon[foe_slot].hp;
+                if realized >= hp && hp > 0 { hp - 1 } else { realized }
+            } else {
+                realized
+            };
             let realized = self.endure_clamp(foe, foe_slot, realized, dex);
             // FOCUS BAND (`gen3_ability_batch4_v1`): the onDamage roll draws AFTER the
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
@@ -1555,6 +1615,21 @@ impl crate::state::BattleState {
         //     continuing turn just re-runs the locked slot. A CAST that did not LAND (miss /
         //     type-IMMUNE Ghost / Protect-blocked) returned before this point, so it applies
         //     NO volatile and draws no duration, though its PP is already spent — probed. ---
+        // --- SMELLING SALTS' onHit CURE (`gen3_bp_modifier_cluster_v1`): after a landed hit,
+        //     a PARALYZED target is cured. The BP doubling above read the status BEFORE this,
+        //     which is the sim's order (basePowerCallback runs inside getDamage, onHit after).
+        //     DRAW-FREE. [EMIT] `|-curestatus|<target>|par|[msg]`. ---
+        if move_id == "smellingsalts"
+            && self.sides[foe].pokemon[foe_slot].status == Some(Status::Paralysis)
+            && !self.sides[foe].pokemon[foe_slot].fainted
+        {
+            self.sides[foe].pokemon[foe_slot].status = None;
+            if self.logging() {
+                let t = self.mon_ref(foe, foe_slot, dex);
+                self.log.curestatus(&t, "par", true);
+            }
+        }
+
         // --- UPROAR's WAKE (`gen3_uproar_v1`): a LANDED uproar cures `slp` on BOTH ACTIVES
         //     (the MOVE's own `onTryHit`, DRAW-FREE) — NOT on a miss, NOT on a type-IMMUNE
         //     target, and NEVER for a BENCHED sleeper. Emitted as a BARE

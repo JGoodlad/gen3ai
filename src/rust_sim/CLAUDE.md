@@ -8060,3 +8060,61 @@ flinch — none of which end the lock, each still ticking the duration), the loc
 faint and re-targeting the entrant, and the Yawn-at-10/19 vs uproar-expiry-at-10/11 ordering where
 the `-end` runs first and the yawn then lands.
 
+### ROUND 50 (FIX) — the BP-MODIFIER / GATE cluster: five moves, and a crit that nearly faked a result
+
+`gen3_bp_modifier_cluster_v1`. Census **297 → 302 MODELED / 67 fail-loud**, MISMODELED 0 — the
+biggest single-round census move so far. Five moves whose entire mechanic is a base-power
+modifier or a hit gate, all DRAW-NEUTRAL (deterministic state reads before the crit/damage draws):
+
+| move | mechanic |
+|---|---|
+| **Revenge** | BP ×2 if the user was DAMAGED BY THIS TARGET this turn; priority −4 so the foe usually lands first |
+| **Smelling Salts** | BP ×2 vs a PARALYZED target, then the `onHit` CURES the paralysis |
+| **Fury Cutter** | bp 10 × a multiplier that doubles per CONSECUTIVE use, capped at 160, lapsing after one gap |
+| **Dream Eater** | `onTryImmunity` — the target must be ASLEEP and un-subbed; ordinary drain otherwise |
+| **False Swipe** | an `onDamage` at priority −20 clamping a would-be KO to leave exactly 1 HP |
+
+**⚠️ A CRIT NEARLY FAKED A RESULT — the measurement lesson of this round.** The first Smelling
+Salts probe read **88 damage in BOTH arms** and the obvious reading was "gen-3 Smelling Salts does
+not double". It does. The control arm had CRITTED (`random(16)->0`), and a crit is itself a ×2, so
+the two arms doubled by different mechanisms and landed on the same number. The same probe's Fury
+Cutter ladder was unreadable for the sibling reason: at accuracy 95 the FIRST use MISSED, silently
+shifting every rung. The fix was a second, clean probe that tags every row with `CRIT` / `MISS` and
+reads ladders only from non-crit, non-miss turns — and, for Fury Cutter, a pin that reads the
+multiplier out of STATE rather than inferring it from damage, which dodges both confounds entirely.
+**Generalisable: when a mechanic's signature is "×2", every other ×2 in the engine is a confound.**
+
+**REVENGE gets its own state rather than reusing `reactive`.** `MonState::damaged_by_foe_this_turn`
+is set at the same site the Counter/Mirror-Coat recorder runs, but unconditionally: `reactive` is
+armed only while one of those two moves is SELECTED and is category-FILTERED (Counter takes
+physical, Mirror Coat special), whereas Revenge doubles off a hit of EITHER category with no
+reactive move anywhere in sight. Reusing it would have worked on exactly the boards that carry a
+Counter.
+
+**FURY CUTTER's lapse is a residual DURATION handler**, so it joins the NO_ORDER/subOrder-2 tie
+group alongside protect/flinch/stall — meaning a Fury Cutter mirror at equal speed adds a tied
+handler and therefore a shuffle draw. That is a draw-relevant consequence of a move whose visible
+mechanic is pure base power.
+
+**Gates:** `cargo test --release --no-fail-fast` **697 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1034 rows**; `SCAN_UNIVERSE=1`
+**369 → 302 MODELED / 67 FAIL-LOUD / 0 MISMODELED**. Five mutations, each caught by exactly one pin
+(BP1-BP5).
+
+**⚠️ THE MIRROR-ORDER TRAP, FOURTH AND FIFTH TIME — now with a concrete checklist step.** This
+cluster tripped it twice more: the picker rejects `basePowerCallback` generically (shadowing
+Revenge / Smelling Salts / Fury Cutter) and the census rejects `variable-BP` generically, so BOTH
+admits had to be hoisted above those rejects. Dream Eater additionally needed adding to
+`MODELED_DRAIN_MOVES`, and False Swipe was still sitting in `MOVE_ID_BLOCKLIST` — **four separate
+places, each failing SILENTLY**. The rule, now stated as a step rather than rediscovered per round:
+**after admitting a move, ASSERT `isModeledMove(id) === true` and re-run the census — do not assume
+set membership was sufficient.** A silent false negative here means the fuzzer never samples the
+very move you just modeled.
+
+**HONEST SCOPE.** Zero pool/randbats exposure for all five; per ROUND 46 the `ourandom` fuzz will
+not sample them either, so BP1-BP5 are the gate. NOT pinned: Dream Eater vs a SUBSTITUTED sleeping
+target (the `!volatiles['substitute']` half of the gate is implemented and probe-read from the
+resolved callback, but no board drives it), Fury Cutter's 160 cap being a CLAMP rather than the
+multiplier saturating (the multiplier cap at 16 is pinned, which reaches the same place), and
+False Swipe's interaction with Focus Band / Endure ordering beyond the priority −20 placement.
+

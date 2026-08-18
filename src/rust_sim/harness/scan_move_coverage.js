@@ -115,6 +115,7 @@ const MODELED_SAFEGUARD = new Set(['safeguard']);
 const MODELED_CONVERSION = new Set(['conversion', 'conversion2']);
 const MODELED_WEATHERBALL = new Set(['weatherball']);
 const MODELED_UPROAR = new Set(['uproar']);
+const MODELED_BP_CLUSTER = new Set(['revenge', 'smellingsalts', 'furycutter', 'dreameater', 'falseswipe']);
 // MODELED fixed-damage (`fixed_damage_amount` — engine runs these bit-for-bit).
 // BATCH 5 (`gen3_move_coverage_batch5_v1`): counter / mirrorcoat / endeavor are MODELED
 // (the reactive volatile + recorder / the delta), no longer deferred.
@@ -155,9 +156,9 @@ const MODELED_PARTIALTRAP = new Set(['wrap', 'bind', 'firespin', 'clamp', 'whirl
 // gen_e2e_fuzz.js::REJECT_MOVES). Checked FIRST in classifyDamaging: whatever sub-mechanic
 // bucket below would match, the engine panics before any of it can run.
 const FAILLOUD_CONSTRUCTION = new Set([
-  'dreameater', 'falseswipe', 'furycutter', 'iceball',
-  'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
-  'smellingsalts', 'thrash',
+  , 'iceball',
+  'outrage', 'petaldance', 'rage', 'rollout', 'secretpower',
+  'thrash',
 ]);
 // Typed Hidden Power — the engine models these end-to-end (16 typed nums 355-370 + bare).
 // The bare `hiddenpower` id in a packed team resolves to a TYPED variant per the mon's IVs;
@@ -195,6 +196,7 @@ function classifyDamaging(m, id) {
   if (MODELED_BATCH4B.has(id)) return { cov: 'MODELED', mech: 'multi-strike/weather-acc/variable-BP (batch 4b)' };
   if (MODELED_BATCH4C.has(id)) return { cov: 'MODELED', mech: 'turn-spanning (batch 4c)' };
   if (MODELED_VARBP.has(id)) return { cov: 'MODELED', mech: 'variable-BP (batch 5)' };
+  if (MODELED_BP_CLUSTER.has(id)) return { cov: 'MODELED', mech: 'bp-modifier cluster (gen3_bp_modifier_cluster_v1)' };
 
   // The REMAINING variable-BP moves with a bp-0 data row (Eruption / Grass Knot-class):
   // `derive_category` classifies a bp-0 move as Status → run_status_move's fail-loud

@@ -73,6 +73,13 @@ impl crate::state::BattleState {
         move_id: &str,
         dealt: u16,
     ) {
+        // REVENGE's record (`gen3_bp_modifier_cluster_v1`) is set FIRST and unconditionally:
+        // unlike `reactive` it is not armed by a selected move and not category-filtered, so
+        // it must be written even when this mon has no Counter / Mirror Coat pending. Same
+        // gate as the sim's `attackedBy` push — a DIRECT foe Move hit that dealt > 0.
+        if dealt > 0 {
+            self.sides[def_side].pokemon[def_slot].damaged_by_foe_this_turn = true;
+        }
         let Some(r) = self.sides[def_side].pokemon[def_slot].reactive.as_mut() else {
             return;
         };

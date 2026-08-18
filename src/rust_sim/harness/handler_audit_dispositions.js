@@ -525,6 +525,19 @@ add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('enco
 // SKILL SWAP (`gen3_skill_swap_v1`).
 add([mv('skillswap', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3\'s only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability.'));
+// The BP-MODIFIER / GATE cluster (`gen3_bp_modifier_cluster_v1`).
+add([mv('revenge', 'basePowerCallback'), mv('revenge', 'priority')],
+  IMPL('turn/moves.rs::run_move', 'BP x2 when the user was DAMAGED BY THIS TARGET this turn, read from the new MonState::damaged_by_foe_this_turn (the sim attackedBy[].thisTurn). Deliberately NOT reusing `reactive`, which is armed only while Counter/Mirror Coat is selected AND is category-filtered, whereas Revenge doubles off a hit of EITHER category with no reactive move in sight. Priority -4 comes from the dex row. DRAW-NEUTRAL.'));
+add([mv('smellingsalts', 'basePowerCallback'), mv('smellingsalts', 'onHit')],
+  IMPL('turn/moves.rs::run_move', 'BP x2 vs a PARALYZED target, then the onHit CURES it in the landed tail — the BP read happens FIRST, matching the sim (basePowerCallback inside getDamage, onHit after). Emits |-curestatus|<t>|par|[msg]. DRAW-NEUTRAL. NOTE the measurement trap recorded in ROUND 50: the first probe read the SAME damage in both arms because the control arm CRITTED, and a crit is itself a x2.'));
+add([mv('furycutter', 'basePowerCallback'), mv('furycutter', 'onHit'),
+     cond('furycutter', 'onStart'), cond('furycutter', 'onRestart'), cond('furycutter', 'duration')],
+  IMPL('turn/moves.rs::run_move', 'the consecutive-use ladder: the sim ADDS the volatile from INSIDE basePowerCallback then reads it, so the FIRST use is bp 10 x1 and each consecutive use doubles (multiplier << 1 while < 16), clamped to 160. MonState::fury_cutter carries (multiplier, duration); the duration-2 lapse is a NO_ORDER/subOrder-2 residual handler in turn/residuals.rs, so it JOINS that intra-mon tie group. DRAW-NEUTRAL in itself.'));
+add([mv('dreameater', 'onTryImmunity'), mv('dreameater', 'drain')],
+  IMPL('turn/moves.rs::run_move', 'the sleep-only gate: the target must be ASLEEP and NOT behind a Substitute, folded in beside the type/ability immunity so the whole short-circuit is shared (accuracy drawn, then a BARE |-immune|<t>, NO crit or damage roll). The drain [1,2] half is the ordinary modeled drain family.'));
+add([mv('falseswipe', 'onDamage'), mv('falseswipe', 'onDamagePriority')],
+  IMPL('turn/moves.rs::run_move', 'the onDamage clamp at priority -20: `if (damage >= target.hp) return target.hp - 1`, so a would-be KO leaves exactly 1 HP. It is NOT a BP change — the probe shows the move computing 839 damage into a 17-HP target and the target ending at 1. Priority -20 puts it AFTER Endure, which is why it sits at the apply site rather than inside the damage calc. Skipped for a sub-absorbed hit. DRAW-FREE.'));
+
 // UPROAR (`gen3_uproar_v1`).
 add([mv('uproar', 'self'), cond('uproar', 'onStart'), cond('uproar', 'durationCallback'),
      cond('uproar', 'onLockMove')],

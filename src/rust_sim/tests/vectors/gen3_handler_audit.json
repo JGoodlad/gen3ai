@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 52,
-   "moves": 281,
-   "rows": 1024
+   "conditions": 53,
+   "moves": 286,
+   "rows": 1034
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1282,6 +1282,24 @@
    "fp": "fn:e58c5c29:onStart(target, source, sourceEffect) { if (sourceEffect && sourceEffect.effectType === \"Ability\") { this.add(\"-status\",",
    "anchor": "turn.rs::try_set_status",
    "reason": "the status apply + |-status| emit (slp draws its random(2,6) duration at onStart)"
+  },
+  "condition:furycutter:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the consecutive-use ladder: the sim ADDS the volatile from INSIDE basePowerCallback then reads it, so the FIRST use is bp 10 x1 and each consecutive use doubles (multiplier << 1 while < 16), clamped to 160. MonState::fury_cutter carries (multiplier, duration); the duration-2 lapse is a NO_ORDER/subOrder-2 residual handler in turn/residuals.rs, so it JOINS that intra-mon tie group. DRAW-NEUTRAL in itself."
+  },
+  "condition:furycutter:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:5bce365e:onRestart() { if (this.effectState.multiplier < 16) { this.effectState.multiplier <<= 1; } this.effectState.duration = 2",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the consecutive-use ladder: the sim ADDS the volatile from INSIDE basePowerCallback then reads it, so the FIRST use is bp 10 x1 and each consecutive use doubles (multiplier << 1 while < 16), clamped to 160. MonState::fury_cutter carries (multiplier, duration); the duration-2 lapse is a NO_ORDER/subOrder-2 residual handler in turn/residuals.rs, so it JOINS that intra-mon tie group. DRAW-NEUTRAL in itself."
+  },
+  "condition:furycutter:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:7d15e763:onStart() { this.effectState.multiplier = 1; }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the consecutive-use ladder: the sim ADDS the volatile from INSIDE basePowerCallback then reads it, so the FIRST use is bp 10 x1 and each consecutive use doubles (multiplier << 1 while < 16), clamped to 160. MonState::fury_cutter carries (multiplier, duration); the duration-2 lapse is a NO_ORDER/subOrder-2 residual handler in turn/residuals.rs, so it JOINS that intra-mon tie group. DRAW-NEUTRAL in itself."
   },
   "condition:futuremove:onEnd": {
    "disposition": "implemented",
@@ -4052,6 +4070,18 @@
    "anchor": "turn.rs::fixed_damage_amount",
    "reason": "the fixed/level damage declarative (Seismic Toss/Night Shade level; Sonic Boom 20; Dragon Rage 40) — accuracy-only draw, no crit/damage roll (gen3_fixeddamage_v1; surfaced by the batch-5 blocklist un-shadowing)"
   },
+  "move:dreameater:drain": {
+   "disposition": "implemented",
+   "fp": "val:[1,2]",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the sleep-only gate: the target must be ASLEEP and NOT behind a Substitute, folded in beside the type/ability immunity so the whole short-circuit is shared (accuracy drawn, then a BARE |-immune|<t>, NO crit or damage roll). The drain [1,2] half is the ordinary modeled drain family."
+  },
+  "move:dreameater:onTryImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:a6bdc888:onTryImmunity(target) { return target.status === \"slp\" && !target.volatiles[\"substitute\"]; }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the sleep-only gate: the target must be ASLEEP and NOT behind a Substitute, folded in beside the type/ability immunity so the whole short-circuit is shared (accuracy drawn, then a BARE |-immune|<t>, NO crit or damage roll). The drain [1,2] half is the ordinary modeled drain family."
+  },
   "move:dynamicpunch:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":100,\"volatileStatus\":\"confusion\"}]",
@@ -4184,6 +4214,18 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
+  "move:falseswipe:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:ab0c540b:onDamage(damage, target, source, effect) { if (damage >= target.hp) return target.hp - 1; }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the onDamage clamp at priority -20: `if (damage >= target.hp) return target.hp - 1`, so a would-be KO leaves exactly 1 HP. It is NOT a BP change — the probe shows the move computing 839 damage into a 17-HP target and the target ending at 1. Priority -20 puts it AFTER Endure, which is why it sits at the apply site rather than inside the damage calc. Skipped for a sub-absorbed hit. DRAW-FREE."
+  },
+  "move:falseswipe:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-20",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the onDamage clamp at priority -20: `if (damage >= target.hp) return target.hp - 1`, so a would-be KO leaves exactly 1 HP. It is NOT a BP change — the probe shows the move computing 839 damage into a 17-HP target and the target ending at 1. Priority -20 puts it AFTER Endure, which is why it sits at the apply site rather than inside the damage calc. Skipped for a sub-absorbed hit. DRAW-FREE."
+  },
   "move:featherdance:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"atk\":-2}",
@@ -4261,6 +4303,12 @@
    "fp": "val:[2,5]",
    "anchor": "turn.rs::run_multihit",
    "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:furycutter:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:8bf4da7d:onHit(target, source) { source.addVolatile(\"furycutter\"); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the consecutive-use ladder: the sim ADDS the volatile from INSIDE basePowerCallback then reads it, so the FIRST use is bp 10 x1 and each consecutive use doubles (multiplier << 1 while < 16), clamped to 160. MonState::fury_cutter carries (multiplier, duration); the duration-2 lapse is a NO_ORDER/subOrder-2 residual handler in turn/residuals.rs, so it JOINS that intra-mon tie group. DRAW-NEUTRAL in itself."
   },
   "move:furyswipes:multihit": {
    "disposition": "implemented",
@@ -5165,6 +5213,12 @@
    "anchor": "turn.rs::run_rest",
    "reason": "the already-asleep / full-HP fail gates"
   },
+  "move:revenge:priority": {
+   "disposition": "implemented",
+   "fp": "val:-4",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "BP x2 when the user was DAMAGED BY THIS TARGET this turn, read from the new MonState::damaged_by_foe_this_turn (the sim attackedBy[].thisTurn). Deliberately NOT reusing `reactive`, which is armed only while Counter/Mirror Coat is selected AND is category-filtered, whereas Revenge doubles off a hit of EITHER category with no reactive move in sight. Priority -4 comes from the dex row. DRAW-NEUTRAL."
+  },
   "move:roar:forceSwitch": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5470,6 +5524,12 @@
    "fp": "val:[{\"chance\":30,\"status\":\"psn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:smellingsalts:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:372171fa:onHit(target) { if (target.status === \"par\") target.cureStatus(); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "BP x2 vs a PARALYZED target, then the onHit CURES it in the landed tail — the BP read happens FIRST, matching the sim (basePowerCallback inside getDamage, onHit after). Emits |-curestatus|<t>|par|[msg]. DRAW-NEUTRAL. NOTE the measurement trap recorded in ROUND 50: the first probe read the SAME damage in both arms because the control arm CRITTED, and a crit is itself a x2."
   },
   "move:smog:secondaries": {
    "disposition": "implemented",

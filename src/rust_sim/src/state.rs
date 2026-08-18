@@ -483,6 +483,21 @@ pub struct MonState {
     /// single-move `trapped:true` request shape for free. Cleared SILENTLY on switch-out and
     /// faint (a phazed-out uproarer emits no `-end`).
     pub uproar: Option<(u8, usize)>,
+    /// Was this mon DAMAGED BY THE CURRENT FOE this turn? (`gen3_bp_modifier_cluster_v1`.)
+    /// REVENGE's `basePowerCallback` doubles on `pokemon.attackedBy.some(p => p.source ===
+    /// target && p.damage > 0 && p.thisTurn)`. Deliberately NOT reusing `reactive`: that is
+    /// armed only while Counter / Mirror Coat is selected AND is category-FILTERED (Counter
+    /// takes physical, Mirror Coat special), whereas Revenge doubles off a hit of EITHER
+    /// category and must work with no reactive move in sight. Cleared at each turn's top
+    /// alongside the other `duration: 1` volatiles.
+    pub damaged_by_foe_this_turn: bool,
+    /// FURY CUTTER's consecutive-use volatile (`gen3_bp_modifier_cluster_v1`):
+    /// `Some((multiplier, duration))`. The resolved gen-3 callback ADDS the volatile from
+    /// inside `basePowerCallback` — `onStart` sets multiplier 1, `onRestart` doubles it while
+    /// `< 16` and refreshes `duration` to 2 — then reads it, so the FIRST use is bp 10 and
+    /// each consecutive use doubles to a 160 cap. `duration: 2` means ONE non-Fury-Cutter turn
+    /// lapses it (probe-confirmed: miss, other move, then back to bp 10).
+    pub fury_cutter: Option<(u8, u8)>,
     /// `pokemon.activeTurns` — the number of turns this mon has been active (`pokemon.ts:243`;
     /// set to 0 in `switchIn` [battle-actions.ts:137], `++`'d at `endTurn` [battle.ts:1762],
     /// AFTER the residual). Read by **Speed Boost** (`gen3_ability_batch1_v1`): its
@@ -1215,18 +1230,13 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 12] = [
-            "dreameater",
-            "falseswipe",
-            "furycutter",
+        const UNMODELED_FAILLOUD_MOVES: [&str; 7] = [
             "iceball",
             "outrage",
             "petaldance",
             "rage",
-            "revenge",
             "rollout",
             "secretpower",
-            "smellingsalts",
             "thrash",
         ];
         if let Some(bad) = set
@@ -1283,6 +1293,8 @@ impl MonState {
             types_override: None,
             last_move_used: None,
             uproar: None,
+            damaged_by_foe_this_turn: false,
+            fury_cutter: None,
             position,
             uid: position, // the construction-time index is the stable identity
             // `pokemon.speed` is initialized to the raw `storedStats.spe` (the

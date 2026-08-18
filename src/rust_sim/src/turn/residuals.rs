@@ -167,6 +167,22 @@ impl crate::state::BattleState {
                     handler: ResidualAction::ScreenDuration { side, is_reflect: true },
                 });
             }
+            // FURY CUTTER's `duration: 2` volatile (`gen3_bp_modifier_cluster_v1`) — a
+            // NO_ORDER/subOrder-2 DURATION handler like protect/flinch/stall, so it JOINS that
+            // intra-mon tie group (a mon carrying Fury Cutter plus another duration volatile
+            // adds a tied handler, and a Fury-Cutter MIRROR at equal speed ties across mons).
+            // Refreshed to 2 on every consecutive use, so ONE skipped turn runs it to 0.
+            if self.sides[side].pokemon[self.sides[side].active].fury_cutter.is_some() {
+                let sl = self.sides[side].active;
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed: self.sides[side].pokemon[sl].cached_speed as f64,
+                    sub_order: 2,
+                    effect_order: 0,
+                    handler: ResidualAction::FuryCutterDuration { side, slot: sl },
+                });
+            }
             if self.sides[side].pokemon[self.sides[side].active].uproar.is_some() {
                 let sl = self.sides[side].active;
                 handlers.push(EventHandler {
@@ -982,6 +998,20 @@ impl crate::state::BattleState {
                         }
                         continue; // duration-END → skip faintMessages (D4 order fix)
                     }
+                }
+                // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
+                // No emission (the sim's condition has no onEnd); the duration-END `continue`
+                // mirrors the other duration-only volatiles.
+                ResidualAction::FuryCutterDuration { side, slot } => {
+                    let Some((m, d)) = self.sides[side].pokemon[slot].fury_cutter else {
+                        continue;
+                    };
+                    if d <= 1 {
+                        self.sides[side].pokemon[slot].fury_cutter = None;
+                        continue;
+                    }
+                    self.sides[side].pokemon[slot].fury_cutter = Some((m, d - 1));
+                    continue;
                 }
                 // UPROAR's lock tick (`gen3_uproar_v1`). A LIVE tick emits the `[upkeep]`
                 // form; the tick that reaches 0 emits `-end` and takes the duration-END

@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-52 conditions (engine state space + attached), 281 modeled moves
-→ **1024 (effect, hook) rows**.
+53 conditions (engine state space + attached), 286 modeled moves
+→ **1034 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 971 |
+| implemented | 981 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -347,7 +347,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (241 rows: implemented=226, noop_justified=9, unreachable_justified=6)
+## condition (244 rows: implemented=229, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -433,6 +433,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | frz | onDamagingHit | implemented | `turn.rs::run_move` |
 | frz | onModifyMove | implemented | `turn.rs::run_move` |
 | frz | onStart | implemented | `turn.rs::try_set_status` |
+| furycutter | duration | implemented | `turn/moves.rs::run_move` |
+| furycutter | onRestart | implemented | `turn/moves.rs::run_move` |
+| furycutter | onStart | implemented | `turn/moves.rs::run_move` |
 | futuremove | onEnd | implemented | `turn.rs::apply_future_move` |
 | futuremove | onResidual | implemented | `turn.rs::apply_future_move` |
 | futuremove | onResidualOrder | implemented | `turn.rs::apply_future_move` |
@@ -593,7 +596,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (462 rows: implemented=458, noop_justified=2, unreachable_justified=2)
+## move (469 rows: implemented=465, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -716,6 +719,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | dragondance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | dragondance | neverMiss | implemented | `turn.rs::never_miss` |
 | dragonrage | damage | implemented | `turn.rs::fixed_damage_amount` |
+| dreameater | drain | implemented | `turn/moves.rs::run_move` |
+| dreameater | onTryImmunity | implemented | `turn/moves.rs::run_move` |
 | dynamicpunch | secondaries | implemented | `turn.rs::apply_secondaries` |
 | ember | secondaries | implemented | `turn.rs::apply_secondaries` |
 | encore | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -738,6 +743,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | fakeout | secondaries | implemented | `turn/secondaries.rs::apply_secondaries` |
 | faketears | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | faketears | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| falseswipe | onDamage | implemented | `turn/moves.rs::run_move` |
+| falseswipe | onDamagePriority | implemented | `turn/moves.rs::run_move` |
 | featherdance | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | featherdance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | feintattack | neverMiss | implemented | `turn.rs::never_miss` |
@@ -751,6 +758,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
 | furyattack | multihit | implemented | `turn.rs::run_multihit` |
+| furycutter | onHit | implemented | `turn/moves.rs::run_move` |
 | furyswipes | multihit | implemented | `turn.rs::run_multihit` |
 | futuresight | ignoreImmunity | implemented | `turn.rs::run_future_move_cast` |
 | futuresight | onTry | implemented | `turn.rs::run_future_move_cast` |
@@ -902,6 +910,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | rest | neverMiss | implemented | `turn.rs::never_miss` |
 | rest | onHit | implemented | `turn.rs::run_rest` |
 | rest | onTry | implemented | `turn.rs::run_rest` |
+| revenge | priority | implemented | `turn/moves.rs::run_move` |
 | roar | forceSwitch | implemented | `turn.rs::drag_in` |
 | roar | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | roar | priority | implemented | `turn.rs::move_priority` |
@@ -953,6 +962,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | sleeptalk | sleepUsable | implemented | `turn.rs::on_before_move` |
 | sludge | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sludgebomb | secondaries | implemented | `turn.rs::apply_secondaries` |
+| smellingsalts | onHit | implemented | `turn/moves.rs::run_move` |
 | smog | secondaries | implemented | `turn.rs::apply_secondaries` |
 | smokescreen | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | smokescreen | ignoreImmunity | implemented | `turn.rs::run_status_move` |

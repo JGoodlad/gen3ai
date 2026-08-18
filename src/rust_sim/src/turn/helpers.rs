@@ -257,6 +257,9 @@ impl crate::state::BattleState {
         for side in 0..2 {
             let a = self.sides[side].active;
             self.sides[side].pokemon[a].flinch = false;
+            // REVENGE's this-turn damage record (`gen3_bp_modifier_cluster_v1`) — the sim's
+            // `attackedBy[].thisTurn`, so it expires exactly like `flinch`.
+            self.sides[side].pokemon[a].damaged_by_foe_this_turn = false;
             // --- The `protect` this-turn volatile (`duration: 1`) expires at the next
             //     turn-top, exactly like `flinch` — clear it. The longer-lived `stall`
             //     volatile (`duration: 2`) is NOT touched here: its expiry happens at the

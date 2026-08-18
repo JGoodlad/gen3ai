@@ -13524,6 +13524,194 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// BP1 — REVENGE doubles when the user was DAMAGED BY THE TARGET this turn.
+///
+/// Priority −4 makes the foe's move land first, which is what makes the doubling the common
+/// case. Ground truth `harness/probe_bp_cluster_clean.js` (50 vs 24 on a Mew mirror).
+#[test]
+fn revenge_doubles_after_being_damaged_by_the_target() {
+    let d = dex();
+    let user = "Mew||none|Synchronize|revenge,splash|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Mew||none|Synchronize|tackle,splash|Hardy|85,85,85,85,85,85|N||||";
+    let seed = "3,3,3,3";
+    let dmg = |foe_move: usize| -> u16 {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(foe_move))],
+            &d,
+        );
+        st.sides[1].pokemon[0].maxhp - st.sides[1].pokemon[0].hp
+    };
+    let hit = dmg(0); // foe Tackles first → Revenge doubles
+    let calm = dmg(1); // foe Splashes → base power
+    assert!(
+        hit > calm + calm / 2,
+        "BP1: Revenge must roughly DOUBLE after being hit ({hit} vs {calm})"
+    );
+}
+
+/// BP2 — SMELLING SALTS doubles vs a PARALYZED target AND cures the paralysis.
+///
+/// ⚠️ The first attempt at this measurement read the SAME damage in both arms and nearly
+/// concluded "no doubling". It was a coincidence: the control arm CRITTED (`random(16)->0`),
+/// and a crit is itself a ×2. The board below uses a Sturdy foe (no Synchronize reflecting
+/// paralysis back at the user) and asserts the CURE as well, which no crit can fake.
+#[test]
+fn smelling_salts_doubles_on_a_paralyzed_target_and_cures_it() {
+    let d = dex();
+    let user = "Mew||none|Synchronize|thunderwave,smellingsalts,splash\
+|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Thunder Wave
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Salts vs par → 2x + cure
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Salts vs cured → base
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-status|p2a: Snorlax|par"),
+        "BP2: the foe must actually be paralyzed first. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-curestatus|p2a: Snorlax|par|[msg]"),
+        "BP2: a landed Smelling Salts CURES the paralysis. got:\n{joined}"
+    );
+    assert!(
+        st.sides[1].pokemon[0].status.is_none(),
+        "BP2: and the state agrees. got:\n{joined}"
+    );
+    // The two damage numbers, read off the -damage lines in order.
+    let dmgs: Vec<u16> = raw
+        .iter()
+        .filter_map(|l| {
+            let p = l.strip_prefix("|-damage|p2a: Snorlax|")?;
+            let hp: u16 = p.split('/').next()?.parse().ok()?;
+            Some(hp)
+        })
+        .collect();
+    assert!(dmgs.len() >= 2, "BP2: two Salts hits expected. got:\n{joined}");
+    let max = st.sides[1].pokemon[0].maxhp;
+    let first = max - dmgs[0];
+    let second = dmgs[0].saturating_sub(dmgs[1]);
+    assert!(
+        first > second + second / 2,
+        "BP2: the vs-paralyzed hit must roughly DOUBLE the cured one ({first} vs {second})"
+    );
+}
+
+/// BP3 — FURY CUTTER's consecutive-use ladder (10/20/40/80/160) and its `duration: 2` lapse.
+///
+/// ⚠️ Fury Cutter is accuracy 95, so a MISS silently shifts the whole ladder, and a CRIT is a
+/// ×2 that mimics a rung. The assertion is therefore RATIO-based over consecutive NON-crit,
+/// NON-miss hits rather than absolute numbers.
+#[test]
+fn fury_cutter_doubles_each_consecutive_use_and_lapses_after_one_gap() {
+    let d = dex();
+    let user = "Mew||none|Synchronize|furycutter,splash|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+
+    // The multiplier is pure STATE, so read it directly — that dodges both confounds.
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let mut ladder = Vec::new();
+    for _ in 0..5 {
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+            &d,
+        );
+        ladder.push(st.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m));
+    }
+    assert_eq!(
+        ladder,
+        vec![Some(1), Some(2), Some(4), Some(8), Some(16)],
+        "BP3: the multiplier doubles per consecutive use and caps at 16 (bp 160)"
+    );
+
+    // ONE non-Fury-Cutter turn lapses the duration-2 volatile → back to multiplier 1.
+    let mut b2 = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st2 = b2.state_mut().expect("state");
+    st2.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m), Some(1));
+    st2.run_full_battle(&[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d);
+    st2.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m),
+        Some(1),
+        "BP3: one skipped turn lapses the duration-2 volatile, so the ladder RESTARTS at 1"
+    );
+}
+
+/// BP4 — DREAM EATER's `onTryImmunity`: the target must be ASLEEP (and un-subbed).
+#[test]
+fn dream_eater_is_immune_against_an_awake_target() {
+    let d = dex();
+    let user = "Mew||none|Synchronize|spore,dreameater,splash|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // AWAKE → immune
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Spore
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // ASLEEP → connects
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-immune|p2a: Snorlax"),
+        "BP4: Dream Eater into an AWAKE target is immune. got:\n{joined}"
+    );
+    assert!(
+        raw.iter().any(|l| l.contains("|-status|p2a: Snorlax|slp")),
+        "BP4: the foe must then actually be asleep, else the second half is vacuous. \
+         got:\n{joined}"
+    );
+    assert!(
+        st.sides[1].pokemon[0].hp < st.sides[1].pokemon[0].maxhp,
+        "BP4: and Dream Eater then CONNECTS against the sleeping target. got:\n{joined}"
+    );
+}
+
+/// BP5 — FALSE SWIPE's `onDamage` clamp leaves the target on exactly 1 HP.
+///
+/// It is NOT a base-power change: the probe shows the move computing **839** damage into a
+/// 17-HP target and the target ending at 1.
+#[test]
+fn false_swipe_never_kos_and_leaves_exactly_one_hp() {
+    let d = dex();
+    let user = "Mew||none|Synchronize|falseswipe,splash|Hardy|85,85,85,85,85,85|N||||";
+    // A level-5 Magikarp: False Swipe out-damages its whole HP bar many times over.
+    let foe = "Magikarp||none|Swift Swim|splash|Hardy|0,0,0,0,0,0|M|0,0,0,0,0,0||5|";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    // NON-VACUITY: the move must genuinely out-damage the target, else the clamp is untested.
+    assert!(
+        st.sides[1].pokemon[0].maxhp < 30,
+        "BP5: the target must be frail enough that False Swipe WOULD KO it"
+    );
+    assert_eq!(
+        st.sides[1].pokemon[0].hp, 1,
+        "BP5: False Swipe clamps to exactly 1 HP and never faints the target"
+    );
+    assert!(!st.sides[1].pokemon[0].fainted, "BP5: and it is not fainted");
+}
+
 /// UP1 — UPROAR's LOCK: the duration is drawn ONCE on the cast, PP is spent ONCE, the user is
 /// locked to Uproar (a switch is rejected), and the residual emits `[upkeep]` each live turn
 /// then `-end` on expiry — with NO end-of-lock confusion. Ground truth
@@ -15707,9 +15895,9 @@ fn unmodeled_moves_fail_loud_at_construction() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
     for mv in [
-        "dreameater", "falseswipe", "furycutter", "iceball",
-        "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
-        "smellingsalts", "thrash",
+        "iceball",
+        "outrage", "petaldance", "rage", "rollout", "secretpower",
+        "thrash",
     ] {
         let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
