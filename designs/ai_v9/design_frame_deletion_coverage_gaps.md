@@ -58,19 +58,29 @@ Verified end to end: writing `cant_id` into an event row moves BOTH the policy a
 
 ### 3.1 `our_attempted_switch_spec` — which bench mon a refused switch aimed at
 
-**Status:** structurally unreachable, not merely unimplemented.
+**Status:** ACCEPTED on VALUE grounds. **⚠️ This section originally said "structurally unreachable"
+and that was WRONG — corrected on review (ledger, 2026-08-17), and the error is kept visible here
+because a false impossibility is the kind of claim that outlives its context and forecloses work
+nobody re-examines.**
 
-`Gen3Battle.record_choice_rejected` states it plainly: the attempted target *"is not on the wire and
-is recovered at fold time from the action index"*. `EventWindowTracker` folds from **events alone**,
-so no amount of column-adding closes this — the information is not in the event stream. Closing it
-means threading the action index into the event fold, which changes that tracker's contract.
+The mistaken reasoning: `Gen3Battle.record_choice_rejected` documents that the attempted target
+*"is not on the wire and is recovered at fold time from the action index"*, from which I concluded
+an events-only fold could never carry it. **"Not on the protocol wire" is not "not available at
+emission."** `record_choice_rejected` (`gen3_battle.py:202`) is called from the PLAYER layer, which
+knows the action it just attempted — the fact is right there when the event is created.
 
-**What survives:** the rejection FACT (`EVENT_T_SWITCH_REJECTED`), and trappedness itself, which
-rides the per-mon slots (`gen3_entity_rehome_v1`). **What is lost:** the identity of the refused
-target — the difference between "I am trapped" and "I tried to bring Skarmory and was refused".
+So the clean path exists and does not strain anything: **event-payload enrichment at emission** —
+the attempted target enters the event's `value` dict, the LOG gains the fact, and the fold stays a
+pure function of the log (the invariant that rules out recurrence in the first place). That is
+strictly NOT option D's fold-time action-index threading, which would have broken fold purity; the
+option-D framing was an artifact of the same error.
 
-**Judgement:** narrowest of the three. The trap-reveal signal is intact; only the target identity
-goes.
+**What survives today:** the rejection FACT (`EVENT_T_SWITCH_REJECTED`) and trappedness itself, on
+the per-mon slots (`gen3_entity_rehome_v1`). **What is lost:** the identity of the refused target —
+"I am trapped" vs "I tried to bring Skarmory and was refused".
+
+**Ruling: ACCEPT the loss, on value grounds only** — it is the narrowest of the three and the
+trap-reveal signal is intact. If its value ever materialises, enrich the payload.
 
 ### 3.2 `our_faint_causes` — why a mon fainted
 
@@ -100,8 +110,13 @@ as the `cant_id` fix** — ~32 obs dims, one tracker branch, one embedding.
 consumed and is now gone". Sitrus Berry eaten and Leftovers revealed produce the same row.
 
 **Judgement:** middling. Item identity is separately modelled (`--item-belief`, v83), so the belief
-stack knows what they hold; what is lost is the transition to holding-nothing. **Fix:** a
-`consumed` flag on the ITEM row, or a distinct `EVENT_T_ITEM_CONSUMED` type.
+stack knows what they hold; what is lost is the transition to holding-nothing.
+
+**Fix — and it must cover the full item-GONE FAMILY, not just consumption** (refined on review):
+gen3 has THREE ways an item stops being held — **consumed** (berries, herbs), **removed** (Knock
+Off, permanent in ADV), and **swapped/stolen** (Trick / Thief / Covet). A bare `consumed` flag
+leaves the conflation half-alive, which is the failure this fix exists to end. Use a TRANSITION
+ENUM on the ITEM row: `revealed / consumed / removed / swapped`.
 
 ---
 
@@ -138,11 +153,17 @@ have reported those as passes.**
 | **C. Close faint-cause + item-consumed** | + a `consumed` flag or a distinct event type | ~1.5 h |
 | **D. Close all three** | + thread the action index into the event fold (contract change) | ~3 h, and the last is the invasive one |
 
-**Recommendation: B, folded into gen-15 rather than retrofitted to gen-14.** Gen-14's job is to test
-the frame deletion; adding a column mid-generation would confound exactly the comparison it exists
-to make. If gen-14 comes back NON_INFERIOR, the deletion is vindicated and B is cheap polish. If it
-comes back INFERIOR, §2 of the gen-14 runbook already asks whether `event_seats` rose — and this
-document is the list of candidate explanations to check first.
+**RULED (owner, 2026-08-17, refined on review) — option C, at the next pre-launch signature
+window:** close faint-cause AND the item-GONE family; ACCEPT the refused-switch target on value
+grounds. My original recommendation of B is superseded on two counts: the non-inferable faint
+causes are exactly the stall-attrition class C6 flags, and **a CONFLATED signal is worse than an
+absent one** — which upgrades the item gap from "middling" to worth closing, since a single
+`ITEM_REVEAL` row that silently means four different things actively misleads.
+
+Gen-14 launched on the shipped state (the deletion + the cant fix), so these land at gen-15's
+signature window rather than being retrofitted mid-generation. If gen-14 comes back INFERIOR, §2 of
+the gen-14 runbook already asks whether `event_seats` rose — and this document is the list of
+candidate explanations to check first.
 
 ---
 
