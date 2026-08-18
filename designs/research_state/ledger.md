@@ -697,9 +697,16 @@ decision (the refused switch's target, the eight faint causes, item-consumed) �
 dependence reading and a per-fact coverage audit against the substitute. §4's falsification set
 (positive control, exact-zero null, independent route) is about trusting the *instrument*; this is
 about the *scope of the question* the instrument can answer, which no amount of
-instrument-hardening fixes. **Gap reconciliation ruling (same date, refined on review):** close faint-cause + item-consumed
-at the next pre-launch signature window (the doc's option C — the non-inferable faint causes are
-exactly the stall-attrition class C6 flags, and a CONFLATED signal is worse than an absent one).
+instrument-hardening fixes. **Gap reconciliation ruling (same date, refined TWICE on review):** close faint-cause +
+item-consumed — scope is the doc's option C (the non-inferable faint causes are exactly the
+stall-attrition class C6 flags, and a CONFLATED signal is worse than an absent one) — but
+**timing is the doc's §5 recommendation, adopted after an owner mis-ruling: GEN-15's window,
+never retrofitted into gen-14.** Gen-14's job is to attribute the frame deletion; a column added
+in the same bump confounds exactly that comparison (the owner's earlier "do it now, cheapest
+bump" branch is RETRACTED — bump economics lose to attribution). §6 is the standing check: gen-14
+NON_INFERIOR with `event_seats` dV risen above 2.7714 ⇒ the seats absorbed the frames' role,
+faint-cause demotes to cheap polish; the item transition enum proceeds regardless (the
+REVEAL-vs-gone conflation is an event-window defect independent of the frame deletion).
 **The item fix must cover the full item-GONE family, not just consumption**: gen3 has three such
 transitions — consumed (berries/herbs), removed (Knock Off, permanent in ADV), swapped/stolen
 (Trick/Thief/Covet) — so a bare `consumed` flag leaves the conflation half-alive; use a
