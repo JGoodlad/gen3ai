@@ -110,6 +110,11 @@ TIER_OF: Dict[str, int] = {
     # MOVE cell. Same T1-producer (the op builds `pair_in`) / T2-consumer (α contracts it) split
     # as every other α cell — T2 is where α first exists.
     "pair_outcome_move": 2,
+    # gen3_pair_outcome_switch_v1 / gen3_switch_branch_v1 (v94, Phase B): the same
+    # T1-producer / T2-consumer split — the op builds `pair_in` and the outgoing grid,
+    # α and β first exist at T2, and both cells run at the pointer stash.
+    "pair_outcome_switch": 2,
+    "switch_branch": 2,
     # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
     # (the first point where both operands exist) — a DELIVER-stage readout.
     "intent_value_reduce": 3,

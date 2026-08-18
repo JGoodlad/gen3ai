@@ -349,6 +349,7 @@ def build_damage_buffers(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_EFFECT_FLAGS": move_effect_flags,
         "ABILITY_DAMAGE_MULT": ability_damage_mult,
         "SPECIES_TYPE": species_types,
+        "SPECIES_IS_GHOST": build_species_is_ghost(species_types),
         "SPECIES_EXP_MULT": species_exp_mult,
         # full (mean,std) spread prior on the op too (SpreadBelief owns its own copy) — E[bulk] for an
         # unrevealed defender = P(species) @ means; the speed (mean,std) feeds the probabilistic outspeed.
@@ -635,6 +636,19 @@ def build_species_types(n_species: int) -> torch.Tensor:
         for j, tname in enumerate(sd.types[:2]):
             types[sd.num, j] = _T2I.get(tname, 0)
     return types
+
+
+def build_species_is_ghost(species_types: torch.Tensor) -> torch.Tensor:
+    """``[n_species]`` float — 1.0 where the species is Ghost-typed (either slot).
+
+    gen3_switch_branch_v1: `P(their slot j is Ghost)` = `P(species) @ this`, the leak-free
+    marginal a Rapid Spin needs about an UNREVEALED arrival (gen-3 Rapid Spin fails outright
+    against a Ghost — no damage and no hazard removal). Derived from ``SPECIES_TYPE`` rather than
+    re-read from the facade, so the two can never disagree about a forme. Non-persistent buffer."""
+    ghost = _T2I.get("GHOST")
+    if ghost is None:
+        raise ValueError("the TypeEncoder table has no GHOST id — SPECIES_IS_GHOST has no axis.")
+    return ((species_types[:, 0] == ghost) | (species_types[:, 1] == ghost)).float()
 
 
 def build_species_exp_mult(n_species: int, chart: torch.Tensor, ability_damage_mult: torch.Tensor,

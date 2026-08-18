@@ -110,6 +110,8 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "intent_threshold_value": ("IntentThresholdValue",),
     "intent_conditional": ("IntentConditionalMoveCell",),
     "pair_outcome_move": ("PairOutcomeMoveCell",),
+    "pair_outcome_switch": ("PairOutcomeSwitchCell",),
+    "switch_branch": ("SwitchBranchMoveCell",),
     "intent_value_reduce": ("IntentValueReduce",),
     "value_clock_route": ("ValueClockRoute",),
     "value_intent_route": ("ValueIntentRoute",),
@@ -665,6 +667,17 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                note="Counter & Mirror Coat (alpha-weighted phys/spec incoming), "
                                     "flinch, Protect, Explosion trade value (beta-weighted), "
                                     "Pursuit — the SWITCH mass carries meaning in every cell"))
+    if getattr(fe, "switch_branch", None) is not None:
+        for k in range(n_e3):
+            edges.append(_edge("damage_op", f"pointer.move_logit[{k}]", "cell",
+                               fx.SWITCH_BRANCH_MOVE_DIM, "SWITCH_BRANCH_MOVE_DIM",
+                               via="SwitchBranchMoveCell (published alpha AND beta x the op's "
+                                   "outgoing grid + the per-opp-slot GHOST marginal)",
+                               zero_init=True,
+                               note="OA2 — E[our move | they SWITCH] contracted over beta, kept "
+                                    "DECORRELATED from the stay branch (never the collapsed "
+                                    "mixture) — plus the Rapid Spin spinblock (the Pursuit "
+                                    "mirror, opposite valence) and Protect's attack mass"))
     if op.pointer_switch_cell_dim:
         for j in range(T):
             edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
@@ -672,6 +685,17 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                "_PTR_SWITCH_CELL_IN",
                                note="incoming row + CB tail (the OAX offense read was deleted "
                                     "with its flag — d2 carries the switch-in offense)"))
+    if getattr(fe, "pair_outcome_switch", None) is not None:
+        for j in range(T):
+            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
+                               fx.PAIR_OUTCOME_SWITCH_DIM, "PAIR_OUTCOME_SWITCH_DIM",
+                               via="PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED "
+                                   "outcome row + spin_denied)",
+                               zero_init=True,
+                               note="design_pair_reduction SS2.1's canonical defect at its own "
+                                    "sink: the switch cell above carries TEN damage numbers and "
+                                    "no status coordinate in any currency. Per-DEFENDER content, "
+                                    "one shared alpha (no J axis => D3 is a shape error)"))
 
     # --- OPPONENT INTENT: what alpha/beta READ, and where their publication lands ---------------
     # gen3_opp_intent_v1. Both heads were missing from this graph entirely, and the omission was
@@ -712,7 +736,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
             n for n, m in (("IntentMoveCell", getattr(fe, "intent_move_cell", None)),
                            ("IntentThresholdMoveCell", getattr(fe, "intent_threshold_move", None)),
                            ("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
-                           ("PairOutcomeMoveCell", getattr(fe, "pair_outcome_move", None)))
+                           ("PairOutcomeMoveCell", getattr(fe, "pair_outcome_move", None)),
+                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)))
             if m is not None]
         if _move_cell_consumers:
             for k in range(n_e3):
@@ -733,12 +758,24 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                pooled=True,
                                note="THE flag that lets the value gradient reach alpha_head at "
                                     "all, and therefore what puts alpha in the label_only set"))
-        if getattr(fe, "intent_conditional", None) is not None:
+        _beta_move_consumers = [
+            n for n, m in (("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
+                           ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)))
+            if m is not None]
+        if _beta_move_consumers:
             for k in range(n_e3):
                 edges.append(_edge("beta_head", f"pointer.move_logit[{k}]", "cell", T, "TEAM_SIZE",
-                                   via="the beta PUBLICATION weighting IntentConditionalMoveCell",
-                                   note="the Explosion trade-value cell: what they bring in is "
-                                        "what a boom trades against"))
+                                   via="the beta PUBLICATION weighting "
+                                       + " / ".join(_beta_move_consumers),
+                                   note="what they bring in is what our move actually lands on — "
+                                        "the Explosion trade's target, and OA2's whole subject"))
+        if getattr(fe, "pair_outcome_switch", None) is not None:
+            for j in range(T):
+                edges.append(_edge("alpha_head", f"pointer.switch_logit[{j}]", "cell",
+                                   _a_w, _a_c,
+                                   via="the alpha PUBLICATION weighting PairOutcomeSwitchCell",
+                                   note="the first alpha route to the SWITCH logits at all — "
+                                        "stop-grad unconditionally (a policy-side consumer)"))
         if fe.value_intent_route is not None:
             edges.append(_edge("beta_head", "vf_projection", "content", T, "TEAM_SIZE",
                                via="the beta PUBLICATION — ValueIntentRoute, additive into "

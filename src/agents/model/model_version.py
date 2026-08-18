@@ -25,7 +25,7 @@ from typing import Any, Dict, List
 #   (gen3_event_semantics_v1) landed while this sat on a branch. No ARCH_SIGNATURE bump —
 #   the term is computed in the PPO step, never in the extractor forward, so a coef-0 build
 #   is byte-identical and there is nothing for `check_compatible` to gate.
-MODEL_CONFIG_VERSION = 93
+MODEL_CONFIG_VERSION = 94
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -382,6 +382,13 @@ class ModelVersion:
     # shape-caught; the check names the cause.
     pair_outcome_cell: bool = False
 
+    # v94 STRUCTURAL (gen3_pair_outcome_switch_v1 / gen3_switch_branch_v1, substrate Phase B):
+    # `pair_outcome_switch` is the FIRST widener of the pointer SWITCH cell (state_dict AND
+    # switch-cell width); `switch_branch_cell` widens the MOVE cell with OA2 + the spinblock +
+    # Protect's attack mass. Both shape-caught; the checks below name the cause.
+    pair_outcome_switch: bool = False
+    switch_branch_cell: bool = False
+
     # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
     # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
     # ONLY thing that rejects a mismatched resume).
@@ -655,6 +662,14 @@ class ModelVersion:
             pair_outcome_cell=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "pair_outcome_cell", False)
+            ),
+            pair_outcome_switch=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "pair_outcome_switch", False)
+            ),
+            switch_branch_cell=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "switch_branch_cell", False)
             ),
             op_drop_renders=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -1096,6 +1111,26 @@ class ModelVersion:
                 "The unified outcome vector widens the pointer move cell, so the flag is fixed "
                 "for a run's lifetime.\n"
                 "Resume with the matching --pair-outcome-cell, or start a fresh run."
+            )
+        # gen3_pair_outcome_switch_v1 (v94): one zero-init projection + a pointer-SWITCH-cell
+        # width change (state_dict).
+        if self.pair_outcome_switch != saved.pair_outcome_switch:
+            raise ModelVersionError(
+                f"pair_outcome_switch mismatch: saved={saved.pair_outcome_switch}, "
+                f"current={self.pair_outcome_switch}.\n"
+                "The per-defender outcome row widens the pointer SWITCH cell, so the flag is "
+                "fixed for a run's lifetime.\n"
+                "Resume with the matching --pair-outcome-switch, or start a fresh run."
+            )
+        # gen3_switch_branch_v1 (v94): one zero-init projection + a pointer-move-cell width
+        # change (state_dict).
+        if self.switch_branch_cell != saved.switch_branch_cell:
+            raise ModelVersionError(
+                f"switch_branch_cell mismatch: saved={saved.switch_branch_cell}, "
+                f"current={self.switch_branch_cell}.\n"
+                "The OA2 / spinblock / Protect-mass cell widens the pointer move cell, so the "
+                "flag is fixed for a run's lifetime.\n"
+                "Resume with the matching --switch-branch-cell, or start a fresh run."
             )
         # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
         if self.intent_threshold != saved.intent_threshold:
@@ -1761,4 +1796,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 93:
         data.setdefault("pair_outcome_cell", False)
         data["config_version"] = 93
+    # v94 (substrate Phase B) — two post-floor flag-gated modules: absent means OFF, which is what
+    # every pre-v94 checkpoint trained under.
+    if version < 94:
+        data.setdefault("pair_outcome_switch", False)
+        data.setdefault("switch_branch_cell", False)
+        data["config_version"] = 94
     return data

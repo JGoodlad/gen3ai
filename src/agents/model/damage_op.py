@@ -89,12 +89,23 @@ class OpStashes:
     pair_seat_live: Optional[torch.Tensor] = None    # [B,K] the meaningful-K gate (unmodeled seats)
     reduced_extra: Optional[torch.Tensor] = None     # [B,6,extra] the pair-reduce rung output
     out_pko: Optional[torch.Tensor] = None           # [B,4,6] per-(our move, their mon) pko, PRE-gain
+    # gen3_switch_branch_v1 (v94): the SAME outgoing grid un-collapsed — `[low, high, crit, pko,
+    # type_mult]` per (our request move, their mon). `out_pko` is one channel of it and keeps its
+    # name for the v85 consumers; OA2 needs the magnitude and the effectiveness too, and
+    # re-slicing the flat render at a consumer would both break the one-slicer rule and read the
+    # learned-GAIN-scaled render values instead of the honest physics.
+    out_cells: Optional[torch.Tensor] = None         # [B,4,6,_DMG_OMX_CELL] PRE-gain
+    # gen3_switch_branch_v1 (v94): P(their slot j is Ghost) — the revealed types where the slot is
+    # revealed, the hidden-team species posterior marginalised through SPECIES_IS_GHOST where it is
+    # not. Leak-free (publications + the Smogon prior only), and computed HERE because the op owns
+    # BOTH the species posterior and the type table; a consumer deriving it would re-implement both.
+    opp_p_ghost: Optional[torch.Tensor] = None       # [B,6]
     raw_block: Optional[torch.Tensor] = None         # [B,out_dim] PRE-gain block (prober decode)
     tensors: Optional['OpTensors'] = None            # the post-gain typed views
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
-from agents.model.pair_outcome import PAIR_OUTCOME_IDX
+from agents.model.pair_outcome import GHOST_TYPE_IDX as _GHOST_TIDX, PAIR_OUTCOME_IDX
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -189,6 +200,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # both together — but the implication is asserted in the forward rather than assumed, since
         # a consumer that set only this one would otherwise get a silently narrower vector.
         self.stash_pair_outcome: bool = False
+        # gen3_switch_branch_v1 (v94): the seam for the per-opp-slot GHOST marginal. Off => None
+        # and zero extra work; on, it costs one `[B|B,6, n_species] @ [n_species]` matvec beside
+        # the species reads `_outgoing_matrix` already does.
+        self.stash_opp_ghost: bool = False
         # gen3_op_stashes_v1: ALL per-forward side values live in ONE typed container, replaced
         # at forward entry (see OpStashes). The individual docs moved onto the dataclass fields;
         # the provenance tags (candidate dedup, lean forward, tensors views) are in CHANGELOG.
@@ -348,6 +363,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
     def last_reduced_extra(self) -> Optional[torch.Tensor]: return self.stash.reduced_extra
     @property
     def last_out_pko(self) -> Optional[torch.Tensor]: return self.stash.out_pko
+    @property
+    def last_out_cells(self) -> Optional[torch.Tensor]: return self.stash.out_cells
+    @property
+    def last_opp_p_ghost(self) -> Optional[torch.Tensor]: return self.stash.opp_p_ghost
     @property
     def last_raw_block(self) -> Optional[torch.Tensor]: return self.stash.raw_block
     @property
@@ -890,12 +909,32 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
                                self._status_landing(ctx)], dim=1)  # [B, out_dim]
         # gen3_per_move_matrices_v1: the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp active+revealed
         # bench). Appended LAST so the existing incoming/outgoing offsets are untouched.
+        # gen3_switch_branch_v1 (v94): P(their slot j is Ghost). Independent of the matrices (it
+        # reads only the species posterior and the revealed types), so it sits outside the block
+        # below — but it is the SAME `unrevealed_species_probs` those reads use, which is what
+        # makes "the arrival that blocks Rapid Spin" and "the arrival our move lands on" the same
+        # belief rather than two.
+        if self.stash_opp_ghost:
+            _sp = self.unrevealed_species_probs(ctx, species_probs)      # [B,S] | [B,6,S]
+            _pg = _sp @ self.SPECIES_IS_GHOST                            # [B]   | [B,6]
+            if _pg.dim() == 1:
+                _pg = _pg[:, None].expand(B, TEAM_SIZE)
+            _og = slice(TEAM_SIZE, 2 * TEAM_SIZE)
+            _rev_ghost = ((ctx.type1_ids[:, _og] == _GHOST_TIDX)
+                          | (ctx.type2_ids[:, _og] == _GHOST_TIDX)).float()          # [B,6]
+            # A REVEALED slot's typing is fact, so the belief is used only where there is nothing
+            # to know — the same revealed/unrevealed split `_outgoing_matrix` applies to bulk.
+            self.stash.opp_p_ghost = torch.where(ctx.opp_believed_mask, _pg, _rev_ghost)
         if self.matrices_outgoing:
             _omx = self._outgoing_matrix(ctx, spread_belief, species_probs=species_probs)
             # gen3_op_lean_forward_v1: the typed pko stash consumers read (pre-gain — honest
             # probabilities, not the learned-gain-scaled render values).
-            self.stash.out_pko = _omx[:, :_DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL].reshape(
-                B, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)[..., _DMG_OMX_IDX_PKO]
+            # gen3_switch_branch_v1: the WHOLE cell grid is stashed and `out_pko` becomes a view of
+            # it — one reshape, not two, so the OA2 magnitudes and the v85 boom pko can never
+            # describe different worlds.
+            self.stash.out_cells = _omx[:, :_DMG_OUT_N_MOVES * TEAM_SIZE * _DMG_OMX_CELL].reshape(
+                B, _DMG_OUT_N_MOVES, TEAM_SIZE, _DMG_OMX_CELL)
+            self.stash.out_pko = self.stash.out_cells[..., _DMG_OMX_IDX_PKO]
             if not self.drop_renders:
                 block = torch.cat([block, _omx], dim=1)
         # gen3_per_move_matrices_v1: the INCOMING per-move DAMAGE MATRIX — the op's ONLY discrete

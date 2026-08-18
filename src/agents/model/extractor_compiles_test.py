@@ -298,7 +298,12 @@ def test_intent_threshold_arch_compiles_to_one_graph():
     blind spot the H-tier cells close. All three paths are pure tensor ops over the op's
     stashes (gathers + α contractions), so a break here means one of them stopped lowering.
     They ride ONE test rather than three because the expensive part is the dynamo pass, not
-    the arm; if it ever breaks, bisect by dropping one flag at a time."""
+    the arm; if it ever breaks, bisect by dropping one flag at a time.
+
+    ⚠️ The v94 Phase B pair is NOT here, and the reason is a MEASUREMENT: adding the two flags
+    took this cell 25.5 s → 73.1 s (Inductor lowers the widened pointer cells, not just traces
+    them), which overruns the 31 s default-tier budget and would push the whole thing out of the
+    routine gate. They get their own explain-only cell below."""
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
@@ -316,6 +321,34 @@ def test_intent_threshold_arch_compiles_to_one_graph():
         got = torch.compile(fe.forward)(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
     assert err < 1e-5, f"compiled intent-threshold output diverged from eager: {err:.2e}"
+
+
+@_skip_compile
+def test_switch_branch_and_pair_outcome_switch_compile_to_one_graph():
+    """The v94 Phase B pair (gen3_pair_outcome_switch_v1 + gen3_switch_branch_v1).
+
+    Two shapes here have a RECORDED history of refusing to lower, which is why the one-graph
+    property is gated rather than assumed: the switch cell is the FIRST module to widen the
+    pointer SWITCH stash (a new `torch.cat` on a path nothing had grown before), and the ghost
+    marginal is the first `unrevealed_species_probs` read OUTSIDE `_outgoing_matrix` — the same
+    `[B,6,S]`-expand whose spelling is load-bearing for Inductor's CPU scheduler
+    (`gen3_species_posterior_spelling_v1`, and the `[B,6,S]` expand that broke the gen-4 launch's
+    CompilePrewarm).
+
+    EXPLAIN-only, deliberately: the arm above measures 73 s with these two flags on and the
+    graph-break count is what `--compile-opponents` actually depends on. The numeric agreement of
+    a zero-init cell is bounded anyway — at init it contributes exactly 0 to every logit, which
+    the flags' own suites assert on a real `MaskablePPO` build.
+    """
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(pair_outcome_switch=True, switch_branch_cell=True,
+                                             damage_matrices_outgoing=True)
+    assert fe.pair_outcome_switch is not None and fe.switch_branch is not None
+    explained = torch._dynamo.explain(fe.forward)(
+        {"observation": torch.zeros(_BATCH, layout["total_dim"])})
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
 
 
 @_skip_compile

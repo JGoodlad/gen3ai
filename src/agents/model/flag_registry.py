@@ -309,6 +309,33 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "the DELIVERY claim is testable apart from the DISTRIBUTION claim. Zero-init "
                    "⇒ ON-at-init bit-identical.",
               requires=("damage_op",)),
+    ModelFlag("pair_outcome_switch", False, Tier.CLI, Klass.STRUCTURAL, 94,
+              "Phase B — the SAME α-reduced unified outcome row, per DEFENDER, delivered to the "
+              "pointer SWITCH cell (+ spin_denied: our Ghost candidate denying their believed "
+              "Rapid Spin, priced by the hazard stake it preserves)",
+              note="design_pair_reduction.md §2.1's CANONICAL defect, at its own sink: the switch "
+                   "logit's cell holds ten damage numbers, one speed number, two belief-mass "
+                   "numbers and NO status coordinate in any currency, so 'they will click "
+                   "Will-O-Wisp, bring the Natural Cure mon' is unrepresentable. The FIRST module "
+                   "to widen the switch cell. Requires damage_op but NOT pair_outcome_cell — the "
+                   "two deliver one tensor to two sinks and coupling them would make a result "
+                   "unattributable. Zero-init ⇒ ON-at-init bit-identical.",
+              requires=("damage_op",)),
+    ModelFlag("switch_branch_cell", False, Tier.CLI, Klass.STRUCTURAL, 94,
+              "Phase B — OA2, the SWITCH-BRANCH move cell: E[our move | they switch] contracted "
+              "over β (the arrival), kept DECORRELATED from the stay branch, plus the Rapid-Spin "
+              "spinblock (the Pursuit mirror: α_SWITCH × β × P(arrival is Ghost)) and Protect's "
+              "α-derived attack mass (the c4 successor — decay × will-they-attack)",
+              note="design_conditional_opponent_cells.md §2 + the owner's Rapid Spin / Protect "
+                   "specs. Requires opp_intent with NO fallback, and that is substantive: the R1 "
+                   "belief_mean rung is a presence belief over their MOVES and carries no switch "
+                   "class, so α_SWITCH would be identically 0 and every coordinate would assert "
+                   "'they never switch'. §4.1's hard prerequisite is CLOSED "
+                   "(gen3_unrevealed_outgoing_prior_v1 prices unrevealed arrivals against the "
+                   "expected-latent defender); the one residue is that pko stays NULLED there, so "
+                   "e_pko_switch is deflated in proportion to β's hidden mass while e_high_switch "
+                   "carries the magnitude. Zero-init ⇒ ON-at-init bit-identical.",
+              requires=("opp_intent", "damage_op", "damage_matrices_outgoing")),
     ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
               "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
               "regions (omx/imx/OAX — serialization-only since the concat's deletion); "

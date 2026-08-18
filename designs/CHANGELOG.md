@@ -5085,3 +5085,125 @@ rung, seat masking, seat-permutation invariance, OFF byte-identity, real-policy 
 the version machinery, and the delivery-graph edges) plus a compile cell for the **fallback** branch
 — which no other cell can reach, and an untested default branch is exactly the failure the
 seedless-bridge lesson records. The ON+intent branch joins the existing one-graph intent cell.
+
+---
+
+### v94 — `gen3_pair_outcome_switch_v1` + `gen3_switch_branch_v1` (2026-08-17): the SWITCH cell, and the switch BRANCH (Phase B)
+
+Phase B of the conditional-mechanics substrate, in one pass because the four items are one idea:
+**Phase A fixed what the message CARRIES; Phase B fixes WHERE it lands and adds the per-action,
+per-defender content Phase A deliberately did not build.** Two opt-in flags, both `structural`,
+both OFF in production, both byte-identical when off and identity-at-init when on.
+
+**1. `--pair-outcome-switch` — the SWITCH cell (`gen3_pair_outcome_switch_v1`).**
+`design_pair_reduction.md` §2.1's own defect, at its own sink. Phase A delivered our ACTIVE
+defender's α-reduced row to the pointer MOVE cells as *context*; §2.1 says in one line where the
+decision actually happens:
+
+> The decision *"they will click Will-O-Wisp, so bring the Natural Cure mon"* is made at the
+> **switch logit**. The switch logit's per-action cell contains **no status information at all**.
+
+`reduce_pair_in_all` runs Contract W at **every** defender — `Σ_k α_k · pair_in[k, j, :]`, `[B,6,14]`
+— and `PairOutcomeSwitchCell` projects mon *j*'s own row into mon *j*'s own switch cell through a
+zero-init `Linear(15, 15)`. It is the **first module ever to widen the pointer switch cell** (every
+earlier α consumer rides the move cells or the value tail; `_PTR_SWITCH_CELL_IN` had been 15 since
+the OAX tail's deletion). One α still serves all six rows, so **D3 — the per-defender α, "Skarmory's
+row assuming they click Rock Slide while Blissey's assumes Thunderbolt" — remains a SHAPE error**;
+the planted violation is gated. Equivariant in our team axis by construction. It requires
+`damage_op` and **not** `pair_outcome_cell`: the two deliver ONE tensor to TWO sinks, and coupling
+them would make a measured result unattributable to a sink.
+
+One extra per-defender coordinate rides with the row — `spin_denied` =
+`is_ghost(our mon j) · Σ_k α_k·is_rapidspin(k) · their_side_hazards`, the **defensive half of the
+Pursuit mirror**. A gen-3 Rapid Spin fails outright against a Ghost, so a Ghost switch-in is hazard
+insurance. Three independent events, so it is a CONJUNCTION and not one of §9's forbidden
+pre-blends of probabilistic BRANCHES; the hazard stake is what turns a fact into a value, and with
+no Spikes on their side the coordinate correctly reads 0.
+
+**§9a admission** (name two actions whose ordering it flips), both SWITCH pairs, both the design's
+own: **switch Swampert vs switch Celebi** into a Gengar believed to hold Will-O-Wisp + Thunderbolt —
+Swampert reads **0.0 in every damage coordinate in both branches** (Ground/Water is Electric-immune,
+burn deals no damage) and so wins forever, while `neutralization` says the burn destroys half of a
+physical Swampert's per-turn contribution; and **switch Starmie vs switch Milotic** into a believed
+Toxic, which tie on damage AND on `p_tox` and are separated only by `tempo_cost`. For `spin_denied`:
+**switch Gengar vs switch Blissey** into a Starmie believed to hold Rapid Spin with three layers up
+— the damage numbers prefer Blissey, the Spikes prefer Gengar.
+
+**2-4. `--switch-branch-cell` — OA2 + the spinblock + Protect (`gen3_switch_branch_v1`).**
+`design_conditional_opponent_cells.md` §2, plus two owner-specified mechanics that are the SAME
+contraction and therefore belong in the same vector: `Σ over their options of (usage probability) ×
+(a property of the option)`, over the branch in which they **switch**. Gen-3 is simultaneous-move,
+so `P(they switch)` is ONE scalar for the turn (§2.1) — but the CONSEQUENCE is per-move, because
+switches resolve first and our move lands on the ARRIVAL, which **β** names. Nine coordinates on the
+move cell through a zero-init `Linear(9, 9)`:
+
+* **OA2** — `e_high_switch` / `e_pko_switch` / `e_mult_switch` = `Σ_j β_j · omx[k, j, ·]` from the
+  outgoing matrix, plus `wasted_ko = pko_stay(k)·α_SWITCH` (§2.3's named interaction, *"don't click
+  the KO into the obvious switch"*) and the shared `a_switch` scalar. §2.3's rule is followed
+  literally: the branches ship **DECORRELATED** — the stay branch already rides the op's own move
+  cell — and never as the collapsed `(1−p)·stay + p·switch`. §9a: **click Earthquake vs click
+  Spikes** against a Skarmory at 30% that will obviously pivot (Earthquake's `pko_stay` is high,
+  its `e_high_switch` against the Gengar/Zapdos arrival is ~0, Spikes lands whatever arrives).
+* **Rapid Spin** — `p_spin_blocked = is_ghost(their active)·a_stay + α_SWITCH·Σ_j β_j·P(slot j is
+  Ghost)`, gated to the Rapid Spin request slot, with `spin_value_lost` = that × our-side hazards.
+  **The Pursuit mirror, explicitly**: v85's Pursuit is `α_SWITCH` against a property of the
+  DEPARTING mon, positive valence, no β (the sim strikes before the switch resolves); this is
+  `α_SWITCH` through β against a property of the ARRIVING mon, negative valence (Rapid Spin resolves
+  after). Same operator, opposite sign, and the difference is a fact about gen-3 resolution order,
+  not a modelling choice. In gen 3 Rapid Spin is **Normal**, so a Ghost final defender means no
+  damage AND no hazard removal — both halves of the click die together, which is why one probability
+  suffices. `P(slot is Ghost)` is leak-free: revealed types where revealed, the hidden-team species
+  posterior through a new `SPECIES_IS_GHOST` table where not. §9a: **click Rapid Spin vs click
+  Hydro Pump** with a Gengar on their bench and `α_SWITCH` high.
+* **Protect** — `protect_attack_mass = Σ_k α_k·is_damaging(k)` gated to Protect/Detect, and
+  `protect_blocked_mass` = that × the obs floored-doubling `p_success`. The **`c4` successor**: that
+  edge carries the mechanical consecutive-use decay and never asks *will they attack*. It is
+  decorrelated from, not redundant with, v85's `e_dmg_avoided` (`Σ_k α_k·high_k`) — that is a
+  MAGNITUDE where this is a MASS, and they come apart in both directions (a believed Spore has mass
+  and no magnitude; a 4×-resisted Hidden Power the reverse). `is_damaging` is typed from the data
+  facade, not from `high > 0`, so an immune damaging move cannot masquerade as a status move.
+  `c4`'s edge family is untouched. §9a: **click Protect vs click Recover** at 60% against an
+  opponent believed to be setting up.
+
+**This flag REQUIRES `opp_intent` with NO fallback, and the asymmetry with the pair-outcome pair is
+substantive rather than cautious.** The R1 `belief_mean` rung is a PRESENCE belief over their MOVES;
+it has no switch class at all, so `α_SWITCH` would be identically 0 and every coordinate would
+assert *"they never switch"*. A flag whose fallback silently states something false is worse than a
+flag that says it needs the head. β has no prior-shaped substitute either.
+
+**§4.1's HARD PREREQUISITE for OA2 is CLOSED, and this build depends on that.** OA2 was blocked
+because v34's outgoing matrix was REVEALED-gated, so a β that correctly puts mass on unrevealed
+slots would read ≈0 there — *"my move always lands on their active"*, misleading exactly when
+switching matters most, the typeless-HP "immune" GIGO class. `gen3_unrevealed_outgoing_prior_v1`
+prices an unrevealed slot against the EXPECTED-LATENT defender. **One residue is stated rather than
+hidden:** `pko` is still NULLED at unrevealed slots by the op's owner rule (a full-HP switch-in is
+~never OHKO'd), so `e_pko_switch` is systematically deflated in proportion to β's hidden mass —
+which is why `e_high_switch` ships beside it and carries the magnitude there.
+
+**Op-side producers.** Two new stashes, both behind the existing seam convention: `out_cells`
+`[B,4,6,5]` (the outgoing grid un-collapsed; `out_pko` becomes a **view** of it, so the OA2
+magnitudes and v85's boom pko can never describe different worlds) and `opp_p_ghost` `[B,6]` behind
+`stash_opp_ghost`. Both α and β are read from the PUBLICATIONS and **stop-grad unconditionally** —
+Phase A's rule, and the reason is that resting on `--belief-grad-mode label_only` makes a PPO route's
+EXISTENCE a function of a TRAINING flag.
+
+**Not modelled, named rather than approximated:** Rapid Spin also clears Leech Seed and partial-trap
+from its user, so `spin_denied` under-prices a spin blocked on a seeded opponent; a Ghost KO'd on the
+switch-in denies nothing; and `tempo_cost` still reads the mon's cure MOVESET, not the Natural Cure
+ABILITY — a Phase A coordinate question, deliberately not smuggled in with a delivery change.
+
+**Versioning:** `MODEL_CONFIG_VERSION` 93 → **94**, adding the `structural` fields
+`pair_outcome_switch` and `switch_branch_cell`, each with its own `check_compatible` gate and a
+`<94 ⇒ False` migration. **No `ARCH_SIGNATURE` bump** — both modules are flag-gated and OFF builds
+neither, so an existing checkpoint's forward and `state_dict` are untouched.
+
+**Gates:** 61 new tests across `pair_outcome_switch_test.py` (28) and `switch_branch_test.py` (33) —
+exact arithmetic on every coordinate, the D3 planted-violation gate, the two reducers' agreement at
+our active row (they are one contract with two gathers, and a drift would let the move cell and the
+switch cell describe two different opponents on the same turn), BOTH invariances (α's seat axis and
+β's their-bench axis, §5 gate 5), the `has_cand`-zero case (a uniform arrival belief is a claim, not
+an absence), the op's ghost marginal exact-where-revealed / posterior-where-not, stop-grad on both
+heads **verified failing on revert**, OFF byte-identity, real-`MaskablePPO` identity-at-init, the
+version machinery and the delivery-graph edges. A new explain-only compile cell covers the pair's
+one-graph property; it is separate from the v93 intent cell because **measured**, adding the two
+flags there took that cell 25.5 s → 73.1 s, overrunning the 31 s default-tier budget.

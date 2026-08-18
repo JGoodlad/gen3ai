@@ -239,7 +239,7 @@ happens to be written.
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` (opt-in, off) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` (opt-in, off) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -435,9 +435,50 @@ testable apart from the DISTRIBUTION claim. A seat closed by the meaningful-K ga
 mass not reassigned. The reduced row for our ACTIVE defender rides every move cell as decorrelated
 context through a zero-init `Linear(14, 14)`.
 
-Phase A only: the switch cell and the β-conditioned cells are not built. Known limits, named
-rather than approximated: status DURATION, physics mutation (Marvel Scale), and a held berry's
-auto-cure.
+Known limits of the coordinate table, named rather than approximated: status DURATION, physics
+mutation (Marvel Scale), and a held berry's auto-cure.
+
+**Available but OFF: `pair_outcome_switch`** (v94, `gen3_pair_outcome_switch_v1`). The same
+reduction, at **every** defender (`Σ_k α_k · pair_in[k, j, :]`), delivered to mon *j*'s own pointer
+**SWITCH** cell through a second zero-init projection. This is the sink `design_pair_reduction.md`
+§2.1 traced the defect to: the switch cell carries ten damage numbers, one speed number, two
+belief-mass numbers and **no status coordinate in any currency**, so *"they will click Will-O-Wisp,
+so bring the Natural Cure mon"* is unrepresentable there. It is the **first module to widen the
+switch cell**. One α still serves all six rows — D3 (a per-defender α) stays a shape error — and
+the module is equivariant in our team axis by construction. One extra per-defender coordinate rides
+with the row, `spin_denied` = `is_ghost(our mon j) · Σ_k α_k·is_rapidspin(k) · their_side_hazards`
+(the defensive half of the Pursuit mirror: a gen-3 Rapid Spin fails outright against a Ghost, so a
+Ghost switch-in is hazard insurance; the stake is what makes it a value rather than a fact).
+Requires `damage_op`, **not** `pair_outcome_cell` — the two deliver one tensor to two sinks and
+coupling them would make a measured result unattributable. `PAIR_OUTCOME_SWITCH_DIM` = **15**.
+
+**Available but OFF: `switch_branch_cell`** (v94, `gen3_switch_branch_v1` —
+`design_conditional_opponent_cells.md` §2's OA2, plus two owner-specified mechanics of the same
+shape). Everything in it is `Σ over their options of (usage probability) × (a property of the
+option)`, contracted over the branch in which they **switch**. Gen-3 is simultaneous-move, so
+`P(they switch)` is ONE scalar for the turn (§2.1); the CONSEQUENCE is per-move, because switches
+resolve first and our move lands on the arrival, which **β** names. Nine coordinates on the move
+cell:
+
+| # | coordinate | meaning |
+|---|---|---|
+| 0-2 | `e_high_switch` `e_pko_switch` `e_mult_switch` | `Σ_j β_j · omx[k, j, ·]` — the SWITCH branch of our own move, from the outgoing matrix. §2.3's rule is followed literally: the branches ship DECORRELATED (the stay branch already rides the op's move cell), never the collapsed `(1−p)·stay + p·switch` |
+| 3 | `wasted_ko` | `pko_stay(k) · α_SWITCH` — §2.3's named interaction, *"don't click the KO into the obvious switch"* |
+| 4 | `a_switch` | the ONE per-turn switch scalar, broadcast over all four slots |
+| 5-6 | `p_spin_blocked` `spin_value_lost` | `is_ghost(their active)·a_stay + α_SWITCH·Σ_j β_j·P(slot j is Ghost)`, gated to the Rapid Spin request slot, and that probability × our-side hazards. **The Pursuit mirror**: v85's Pursuit is `α_SWITCH` against a property of the DEPARTING mon with positive valence and no β (the sim strikes before the switch resolves); this is `α_SWITCH` through β against a property of the ARRIVING mon with negative valence (Rapid Spin resolves after). `P(slot is Ghost)` is leak-free — revealed types where revealed, the hidden-team species posterior through `SPECIES_IS_GHOST` where not |
+| 7-8 | `protect_attack_mass` `protect_blocked_mass` | `Σ_k α_k · is_damaging(k)` gated to Protect/Detect, and that × the obs `p_success` decay. The `c4` successor: Protect's cell carried the mechanical decay and never asked *will they attack*. Decorrelated from v85's `e_dmg_avoided`, which is a MAGNITUDE where this is a MASS — they come apart in both directions (a believed Spore has mass and no magnitude; a 4×-resisted Hidden Power the reverse). `is_damaging` is typed from the data facade, so an immune damaging move cannot masquerade as a status move |
+
+α and β are read from the PUBLICATIONS and **stop-grad unconditionally**. This flag **requires
+`opp_intent` with no fallback**, and the asymmetry with the pair-outcome pair is substantive: the
+R1 `belief_mean` rung is a PRESENCE belief over their MOVES and carries no switch class, so
+`α_SWITCH` would be identically 0 and every coordinate would assert *"they never switch"* — a
+claim, not an absence. §4.1's hard prerequisite for OA2 is **CLOSED**
+(`gen3_unrevealed_outgoing_prior_v1` prices an unrevealed arrival against the expected-latent
+defender); the one residue, stated rather than hidden, is that **`pko` stays NULLED at unrevealed
+slots** by the op's owner rule, so `e_pko_switch` is deflated in proportion to β's hidden mass
+while `e_high_switch` carries the magnitude there. `SWITCH_BRANCH_MOVE_DIM` = **9**. Not modelled:
+Rapid Spin also clears Leech Seed and partial-trap from its user, and a Ghost KO'd on the switch-in
+denies nothing.
 
 Route availability is **width-neutral by construction** (additive injection changes no
 projection width), so the old ede5a88 discovery-sizing bug class — a fall-through branch hiding
@@ -512,21 +553,25 @@ Output layout is `[switch ×6, move ×4, struggle]` (`agents/action/constants.py
 | Logit | Entity token | Physics cells | Cell width |
 |---|---|---|---|
 | **move k** (logit 6+k) | the **refined E3 seat k** (`last_pointer_inputs[0]`, `[B,4,128]`) — post-attention, board-aware, already permuted sorted-by-id → **request** order by move-num identity | `[low, high, crit, pko, p_land, known, sec×7]` | **13** (`_PTR_MOVE_CELL`) |
-| **switch j** | our-team token *j* (`our_team_out[:, j]`, `[B,6,128]`) — the same post-transformer token the CLS pools read | the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` | **15** (`_PTR_SWITCH_CELL_IN`) |
+| **switch j** | our-team token *j* (`our_team_out[:, j]`, `[B,6,128]`) — the same post-transformer token the CLS pools read | the incoming per-defender row (12) + `[phys_high_cb_j, pko_cb_j, p_cb]` | **15** (`_PTR_SWITCH_CELL_IN`), +15 under `pair_outcome_switch` |
 | **struggle** | none — context only | none | 0 |
 
 The move cell WIDENS under the opt-in α cells, each appending its own zero-init block:
 `intent_move_cell` (+`INTENT_MOVE_CELL_DIM`), `intent_threshold` (+`INTENT_THRESH_MOVE_DIM`),
-`intent_conditional` (+`INTENT_COND_MOVE_DIM`) and `pair_outcome_cell`
-(+`PAIR_OUTCOME_MOVE_DIM` = 14). `pointer_move_cell_dim` is the single sum the policy sizes the
-move scorer's `in_features` from — a missing block narrows the `Linear` rather than silently
-feeding it zeros at a learned weight.
+`intent_conditional` (+`INTENT_COND_MOVE_DIM`), `pair_outcome_cell`
+(+`PAIR_OUTCOME_MOVE_DIM` = 14) and `switch_branch_cell` (+`SWITCH_BRANCH_MOVE_DIM` = 9).
+`pointer_move_cell_dim` is the single sum the policy sizes the move scorer's `in_features` from —
+a missing block narrows the `Linear` rather than silently feeding it zeros at a learned weight.
+The **switch** cell likewise widens under `pair_outcome_switch` (+`PAIR_OUTCOME_SWITCH_DIM` = 15),
+summed by `pointer_switch_cell_dim`; until v94 nothing widened it at all.
 
 Scoring: `tanh(proj(token ⊕ cells) + ctx_proj(latent_pi))` → a zero-init `Linear(64, 1)`.
 Move logits are multiplied by `move_valid`, so an unresolved request slot contributes **exactly 0**
 rather than a score computed from a zero token.
 
-**What the switch logit does NOT see:** a per-candidate **offense** read. The OAX attacker row
+**What the switch logit does NOT see** (with every v94 flag off): a per-candidate **offense** read,
+and — the defect `design_pair_reduction.md` §2.1 names — any **status** coordinate in any currency
+(`pair_outcome_switch` is the opt-in that closes the second one). The OAX attacker row
 (`damage_matrices_outgoing_all`) was deleted with its flag (v88 `gen3_dead_flag_purge_v1` — never
 enabled in a gen-8+ run), so the switch cell is 15 dims and its physics is purely defensive
 (what this mon takes on the switch-in) plus whatever the trunk carried into `our_team_out`. The

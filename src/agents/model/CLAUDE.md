@@ -320,7 +320,8 @@ modules out of the extractor and the layout out of the op):
 | `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
 | `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
-| `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`. Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
+| `switch_branch.py` | `gen3_switch_branch_v1` — OA2 (E[our move \| they SWITCH], β-contracted, kept DECORRELATED from the stay branch), the Rapid-Spin spinblock (the Pursuit mirror) and Protect's α-derived attack mass. `SWITCH_BRANCH_COORDS` is the contract; each coordinate's §9a admission answer is in the module docstring |
+| `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`, plus Phase B's `reduce_pair_in_all` (Contract W at EVERY defender), `pair_alpha_full` (the three-way α split a SWITCH-branch consumer needs) and `PairOutcomeSwitchCell` (the FIRST module to widen the pointer SWITCH cell). Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
 | `features_extractor.py` | `ProjectionAssembler` + the `Gen3FeaturesExtractor` orchestrator; **re-exports every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
 
@@ -832,9 +833,10 @@ sentence refer to one object.
 
 ### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 
-Five modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
-`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`. They share four
-conventions, and each one exists because breaking it fails silently:
+Seven modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
+`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, and the v94 pair
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`. They share four conventions, and each one
+exists because breaking it fails silently:
 
 1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
    of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
@@ -858,6 +860,24 @@ conventions, and each one exists because breaking it fails silently:
   re-spelled. That makes the flag independently enableable and separates the DELIVERY claim from
   the DISTRIBUTION claim — but the two are NOT the same object (presence belief vs usage belief,
   and one sums to 1 where the other sums to `1 − α_SWITCH`), so say so loudly wherever it appears.
+
+**⚠️ "Give it a fallback" is not the same as "a fallback is meaningful", and v94 is where the two
+came apart.** `SwitchBranchMoveCell` REFUSES one and requires `opp_intent` instead: every coordinate
+it computes is conditioned on `α_SWITCH` or on β, and the R1 rung is a presence belief over their
+MOVES with no switch class at all — so the fallback would set `α_SWITCH ≡ 0` and make every
+coordinate assert *"they never switch."* **A flag whose fallback silently states something false is
+worse than a flag that says it needs the head.** The test for whether to build one is not "can I
+compute something", it is "is what I would compute an ABSENCE or a CLAIM". Same rule kills the
+tempting `softmax` over an all-`-inf` β row: that yields a UNIFORM arrival distribution, which is a
+claim; the shipped code gates it to exactly zero.
+
+**A per-DEFENDER delivery is not a per-defender BELIEF.** `reduce_pair_in_all` produces six rows,
+one per our mon, from ONE α — the reduction may vary per defender, the DISTRIBUTION may not (that is
+the whole content of §2's "D2 and D3 fall to ONE restriction"). α still has no `J` axis, so defect D3
+stays a shape error even in the phase whose entire job is producing a column of rows. When you add
+another per-defender consumer, take α from the same `pair_alpha` / `pair_alpha_full` ladder rather
+than computing a defender-conditioned one; the planted-violation test in
+`pair_outcome_switch_test.py` is what proves the structure is real rather than merely intended.
 
 ---
 

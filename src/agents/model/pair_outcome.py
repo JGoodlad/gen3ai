@@ -104,6 +104,65 @@ A seat that is not live — the meaningful-K gate, once all four of their moves 
 top-K slot is closed — is MASKED to zero mass and, like SWITCH, **not renormalized away**: an
 unmodeled seat's mass is simply not spent. That is the same rule §4.2 applies at the loss ("if we
 can't name it, we don't train on it"), applied in the forward.
+
+---
+
+# PHASE B — `gen3_pair_outcome_switch_v1` (v94): the SWITCH cell
+
+Phase A's row is our **ACTIVE** defender's, and it rides every move slot identically — *context*.
+That is not the decision §2.1 names, and the doc says so in one line:
+
+> The decision *"they will click Will-O-Wisp, so bring the Natural Cure mon"* is made at the
+> **switch logit**. The switch logit's per-action cell contains **no status information at all**.
+
+`--pair-outcome-switch` closes exactly that: `reduce_pair_in_all` runs Contract W at **every**
+defender j, and `PairOutcomeSwitchCell` projects mon j's own reduced row into mon j's own switch
+cell. Same α (one distribution, no defender axis — D3 is still a shape error); different delivery
+site, and the site is the whole point. Per-DEFENDER content is what Phase A deliberately did not
+build.
+
+### §9a — two SWITCH pairs whose ordering it flips, that the ten damage numbers cannot
+
+The admission test is *name two specific actions whose ordering it flips*. Both below are the
+design's own examples, and both are SWITCH-vs-SWITCH (the axis this phase moves):
+
+1. **switch Swampert vs switch Celebi**, into a Gengar believed to hold Will-O-Wisp +
+   Thunderbolt (`design_pair_reduction.md` §2.1's canonical pair). On damage alone Swampert reads
+   **0.0 in both branches** — Ground/Water is immune to Electric, and Will-O-Wisp deals no damage
+   — so the ten damage numbers rank it first forever. `neutralization` says the burn destroys half
+   of a physical Swampert's per-turn contribution; Celebi takes a real Thunderbolt but keeps all
+   of its own. The reduced row is the first place those two facts are in the same vector in the
+   same units.
+2. **switch Starmie vs switch Milotic**, into a believed Toxic. Both take **exactly zero damage**
+   this turn and both show the SAME `p_tox`, so damage and even the status probability tie them.
+   `tempo_cost` separates them: Starmie's Natural Cure discharges the poison for free the next
+   time it pivots, while Milotic must spend a TURN on Refresh (or 2 on Rest). "Absorbs it" and
+   "absorbs it and falls a turn behind a setup sweeper" were the same state until this coordinate.
+
+### The one EXTRA switch coordinate — `spin_denied`, the Pursuit mirror's defensive half
+
+Rapid Spin and Pursuit are the same contraction with opposite valence (see `switch_branch.py`,
+which owns the offensive half). The defensive half belongs on the SWITCH cell because the
+question it answers is *which mon do I bring*:
+
+    spin_denied[j] = is_ghost(our mon j) · (Σ_k α_k · is_rapidspin(k)) · their_side_hazards
+
+A gen-3 Rapid Spin fails outright against a Ghost — no damage AND no hazard removal — so a Ghost
+switch-in is hazard INSURANCE. Three factors, all independent events, so this is a CONJUNCTION and
+not one of §9's forbidden pre-blends of probabilistic BRANCHES: our mon's type is observed fact,
+`α_spin` is their usage belief, and the hazard stake is the board. The stake is what turns a fact
+into a value — with no Spikes on their side, denying the spin is worth exactly nothing, and the
+coordinate correctly reads 0.
+
+§9a: **switch Gengar vs switch Blissey** into a Starmie believed to hold Rapid Spin with three
+layers of our Spikes on their side. The ten damage numbers prefer Blissey (it eats Starmie's
+special attacks far better); `spin_denied` says Gengar keeps the Spikes, which is the larger
+quantity in a Spikes game. Nothing in the switch cell could express that before.
+
+**Not modelled here** (named, not hidden): Rapid Spin also clears Leech Seed and partial-trap from
+its user, so `spin_denied` under-prices a spin blocked on a seeded opponent; and a Ghost that is
+itself KO'd on the switch-in denies nothing. Both would need a second branch, and folding either
+in as a factor would assert a probability we do not compute.
 """
 from __future__ import annotations
 
@@ -111,7 +170,8 @@ from typing import Optional, Tuple
 
 import torch
 
-from agents.model.arch_constants import _PAIR_OUTCOME_DMG, _PAIR_OUTCOME_RAW
+from agents.model.arch_constants import (_PAIR_OUTCOME_DMG, _PAIR_OUTCOME_RAW,
+                                         _PAIR_OUTCOME_SWITCH_RAW)
 
 #: The reduced row's coordinate names, in order. Index 0.._PAIR_OUTCOME_DMG-1 are the op's own
 #: pair-cell channels (its `last_pair_cells` F axis, unchanged); the rest are gen3_pair_outcome_v1's.
@@ -132,6 +192,41 @@ assert len(PAIR_OUTCOME_COORDS) == _PAIR_OUTCOME_RAW, \
     "PAIR_OUTCOME_COORDS and _PAIR_OUTCOME_RAW disagree — one was edited without the other."
 assert PAIR_OUTCOME_COORDS[_PAIR_OUTCOME_DMG - 1] == "is_phys", \
     "_PAIR_OUTCOME_DMG no longer names the op's damage-cell prefix."
+
+#: gen3_pair_outcome_switch_v1 — the SWITCH cell's coordinate names, in order: mon j's own
+#: α-reduced outcome row followed by the per-defender extras. Same contract role as
+#: `PAIR_OUTCOME_COORDS`: the consumers and the tests read THIS, never a re-spelled index.
+PAIR_OUTCOME_SWITCH_COORDS: Tuple[str, ...] = PAIR_OUTCOME_COORDS + ("spin_denied",)
+PAIR_OUTCOME_SWITCH_IDX = {name: i for i, name in enumerate(PAIR_OUTCOME_SWITCH_COORDS)}
+
+assert len(PAIR_OUTCOME_SWITCH_COORDS) == _PAIR_OUTCOME_SWITCH_RAW, \
+    "PAIR_OUTCOME_SWITCH_COORDS and _PAIR_OUTCOME_SWITCH_RAW disagree — one was edited alone."
+
+#: The TypeEncoder id of GHOST (`agents.observation.types.TypeEncoder.TYPE_TO_IDX`). Resolved from
+#: that table at import rather than written as `14`, so a renumbering fails at import instead of
+#: silently pricing Dragon-typed switch-ins as spinblockers.
+def _ghost_type_idx() -> int:
+    from agents.observation.types import TypeEncoder
+    idx = TypeEncoder.TYPE_TO_IDX.get("GHOST")
+    if idx is None:
+        raise ValueError("TypeEncoder has no GHOST entry — the spinblock predicate has no axis.")
+    return int(idx)
+
+
+GHOST_TYPE_IDX = _ghost_type_idx()
+
+
+def rapid_spin_num() -> int:
+    """The dex num of Rapid Spin, from the data facade. Fails loud rather than returning a
+    sentinel: a missing num would make every spinblock coordinate silently read 0.0, which is
+    indistinguishable from "they have no spinner" and therefore from a null RESULT."""
+    from agents import gen3_data
+    md = gen3_data.moves.get("rapidspin")
+    if md is None:
+        raise ValueError("gen3_data.moves has no 'rapidspin' — the spinblock predicate would "
+                         "silently never fire.")
+    return int(md.num)
+
 
 _EPS = 1e-8
 
@@ -199,6 +294,118 @@ def reduce_pair_in(alpha: torch.Tensor, pair_in: torch.Tensor, gate: torch.Tenso
     rows = pair_in[ar, our_active_idx]                                   # [B,K,F]
     g = gate[ar, our_active_idx]                                         # [B,1]
     return torch.einsum("bk,bkf->bf", alpha, rows) * g                   # [B,F]
+
+
+def pair_alpha_full(alpha_logits: torch.Tensor,
+                    seat_live: Optional[torch.Tensor] = None
+                    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """The three-way split of the PUBLISHED α, for a consumer that needs the SWITCH branch.
+    `alpha_logits` `[B,K+1]` (last class = SWITCH) → `(alpha_moves [B,K], a_switch [B,1],
+    a_stay [B,1])`.
+
+    `pair_alpha` returns only the move slice, because Phase A's reduction is exactly the
+    "what lands on me if they attack" contraction and the missing SWITCH mass IS the shrink toward
+    zero. The Phase B cells need the switch mass as a first-class number (OA2's whole subject), so
+    this returns it explicitly rather than making each consumer re-softmax.
+
+    Three properties, all deliberate and all shared with `pair_alpha`:
+
+    * **stop-grad**, unconditionally — these are POLICY-side consumers, and resting on
+      `--belief-grad-mode label_only` to cut the PPO→`alpha_head` route makes the route's EXISTENCE
+      a function of a TRAINING flag (the v87 pattern, codified in `model/CLAUDE.md`).
+    * **masked seats' mass is NOT reassigned.** An unmodeled 5th+ seat describes nothing, so its
+      usage mass is simply not spent — which is why `a_stay` is computed as `Σ_k alpha_moves` and
+      NOT as `1 − a_switch`. The two differ exactly when a seat is masked, and the sum form is the
+      honest one (`a_stay + a_switch ≤ 1`).
+    * **no channel axis and no defender axis** — Contract W, enforced by the return shapes.
+    """
+    full = torch.softmax(alpha_logits.detach().float(), dim=-1).to(alpha_logits.dtype)
+    k = alpha_logits.shape[-1] - 1
+    alpha = full[:, :k]
+    if seat_live is not None:
+        alpha = alpha * seat_live.to(alpha.dtype)
+    return alpha, full[:, -1:], alpha.sum(-1, keepdim=True)
+
+
+def reduce_pair_in_all(alpha: torch.Tensor, pair_in: torch.Tensor,
+                       gate: torch.Tensor) -> torch.Tensor:
+    """Contract W at EVERY defender: `Σ_k α_k · pair_in[k, j, :]` → `[B,J,F]`.
+
+    `alpha` `[B,K]` · `pair_in` `[B,J,K,F]` · `gate` `[B,J,1]` (alive × has_opp).
+
+    This is `reduce_pair_in` with the `our_active_idx` gather removed, and the SAME α — no `J` axis
+    exists on it, so defect **D3** ("Skarmory's row assumes they click Rock Slide while Blissey's
+    assumes Thunderbolt") stays a shape error here even though this is the function that produces
+    six rows. That is the entire content of §2's "D2 and D3 fall to ONE restriction": the reduction
+    may vary per defender, the DISTRIBUTION may not.
+    """
+    if alpha.shape[-1] != pair_in.shape[2]:
+        raise ValueError(
+            f"alpha carries {alpha.shape[-1]} seats but pair_in has {pair_in.shape[2]} candidate "
+            "columns — the SAME axis (the `op move-order` bug class).")
+    return torch.einsum("bk,bjkf->bjf", alpha, pair_in) * gate                # [B,J,F]
+
+
+class PairOutcomeSwitchCell(torch.nn.Module):
+    """gen3_pair_outcome_switch_v1 — `(per-defender reduced rows, spinblock operands) → the extra
+    pointer-SWITCH-cell block [B, 6, out_dim]`.
+
+    The first module ever to widen the pointer SWITCH cell (every earlier α consumer rides the MOVE
+    cell), and that is the point: `design_pair_reduction.md` §2.1 traced the defect to the switch
+    logit specifically, where the cell is fifteen numbers of which **zero** are status in any
+    currency.
+
+    Unlike `PairOutcomeMoveCell` — whose single row rides all four slots as context — every row
+    here is mon j's OWN. That makes the module per-DEFENDER content, and it is equivariant in our
+    team axis by construction: permuting our six mons permutes `pair_in`'s J axis, permutes the
+    rows, and permutes the switch logits with them (the pointer head scores each from its own
+    token). α is untouched by that permutation because it has no J axis.
+
+    Zero-init projection ⇒ ON-at-init contributes exactly zero to every switch logit;
+    `restore_identity_init` captures it BY OBSERVATION (ledger M1 — SB3's ortho pass would
+    otherwise silently falsify the claim on the only construction path training uses).
+    """
+
+    n_switch: int = 6
+
+    def __init__(self, out_dim: int, in_dim: int = _PAIR_OUTCOME_SWITCH_RAW):
+        super().__init__()
+        self.out_dim = int(out_dim)
+        self.in_dim = int(in_dim)
+        self.proj = torch.nn.Linear(self.in_dim, self.out_dim)
+        torch.nn.init.zeros_(self.proj.weight)
+        torch.nn.init.zeros_(self.proj.bias)
+        self.register_buffer("spin_num",
+                             torch.tensor([rapid_spin_num()], dtype=torch.long),
+                             persistent=False)                                        # [1]
+
+    def forward(self, rows: torch.Tensor, alpha: torch.Tensor, topk_nums: torch.Tensor,
+                our_type1: torch.Tensor, our_type2: torch.Tensor,
+                their_side_hazards: torch.Tensor) -> torch.Tensor:
+        """`rows` `[B,6,F]` (the α-reduced outcome row per OUR mon j) · `alpha` `[B,K]` (the move
+        slice, already masked + stop-grad) · `topk_nums` `[B,K]` (the seats' move NUMS) ·
+        `our_type1`/`our_type2` `[B,6]` (TypeEncoder ids of our six mons) · `their_side_hazards`
+        `[B,1]` (the Spikes fraction WE have on THEIR side — what their spin would remove).
+
+        Fails loud on a row-width mismatch (`PAIR_OUTCOME_SWITCH_COORDS` and the producer drifting
+        apart) and on a seat-axis mismatch (the named `op move-order` bug class)."""
+        if rows.shape[-1] != self.in_dim - 1:
+            raise ValueError(
+                f"PairOutcomeSwitchCell was built for a {self.in_dim - 1}-wide outcome row but got "
+                f"{rows.shape[-1]} — PAIR_OUTCOME_SWITCH_COORDS and the op's producer have drifted.")
+        if alpha.shape[-1] != topk_nums.shape[-1]:
+            raise ValueError(
+                f"alpha carries {alpha.shape[-1]} seats but the op stashed {topk_nums.shape[-1]} "
+                "candidate nums — the SAME axis (the `op move-order` bug class).")
+        # α_spin: the ONE α contraction here, identical in shape to `intent_conditional`'s
+        # `e_reflect` / `e_status_avoided`. `is_ghost` is our own OBSERVED typing (our six mons are
+        # never hidden), so no belief enters the defender side at all.
+        is_spin_k = (topk_nums[..., None] == self.spin_num).any(-1).to(rows.dtype)     # [B,K]
+        a_spin = (alpha * is_spin_k).sum(-1, keepdim=True)                             # [B,1]
+        is_ghost = ((our_type1 == GHOST_TYPE_IDX) | (our_type2 == GHOST_TYPE_IDX)
+                    ).to(rows.dtype)                                                   # [B,6]
+        spin_denied = (is_ghost * a_spin * their_side_hazards)[:, :, None]             # [B,6,1]
+        return self.proj(torch.cat([rows, spin_denied], dim=-1))  # type: ignore[no-any-return]
 
 
 class PairOutcomeMoveCell(torch.nn.Module):

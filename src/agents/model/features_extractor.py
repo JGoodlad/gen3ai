@@ -40,7 +40,7 @@ from utils.logging.levels import LogLevel
 from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
     INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
-    PAIR_OUTCOME_MOVE_DIM,
+    PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
@@ -126,7 +126,9 @@ from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import (
     IntentThresholdMoveCell, IntentThresholdValue, ThresholdProbs, threshold_probs)
 from agents.model.intent_conditional import IntentConditionalMoveCell
-from agents.model.pair_outcome import PairOutcomeMoveCell, pair_alpha, reduce_pair_in
+from agents.model.pair_outcome import (
+    PairOutcomeMoveCell, PairOutcomeSwitchCell, pair_alpha, reduce_pair_in, reduce_pair_in_all)
+from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
@@ -398,6 +400,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  intent_threshold: bool = False,
                  intent_conditional: bool = False,
                  pair_outcome_cell: bool = False,
+                 pair_outcome_switch: bool = False,
+                 switch_branch_cell: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
                  value_clock: bool = False,
@@ -669,6 +673,46 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "pair_outcome_cell=True requires damage_op=True — the per-(their move, our mon) "
                     "damage cells and the per-pivot status-landing physics are the outcome vector's "
                     "only source; nothing else computes either.")
+        # gen3_pair_outcome_switch_v1 (v94, Phase B): the SAME reduced row, per DEFENDER, at the
+        # pointer SWITCH cell — the delivery §2.1 says the decision actually needs ("they will
+        # click Will-O-Wisp, so bring the Natural Cure mon" is made at the switch logit, whose cell
+        # holds ten damage numbers and no status coordinate in any currency). It is the FIRST
+        # module to widen the switch cell.
+        #
+        # It requires `damage_op` and NOT `pair_outcome_cell`, deliberately: the two deliver the
+        # same tensor to two different sinks, and making the switch half depend on the move half
+        # would mean the phase could never attribute a result to one of them. α uses the same
+        # `pair_alpha` ladder (publication, or the R1 belief_mean fallback), so this flag is
+        # independently enableable too.
+        self.pair_outcome_switch = None
+        if pair_outcome_switch:
+            self.pair_outcome_switch = PairOutcomeSwitchCell(PAIR_OUTCOME_SWITCH_DIM)
+            if not damage_op:
+                raise ValueError(
+                    "pair_outcome_switch=True requires damage_op=True — the unified outcome "
+                    "vector's only producer is the op's pair grid; nothing else computes it.")
+        # gen3_switch_branch_v1 (v94, Phase B): OA2 + the Rapid-Spin spinblock + Protect's
+        # α-conditioning, all per-request-slot, all the same contraction over the branch in which
+        # they SWITCH (`design_conditional_opponent_cells.md` §2 + the owner's two mechanics).
+        #
+        # ⚠️ Unlike the pair_outcome pair this one REQUIRES `opp_intent`, and the asymmetry is
+        # substantive rather than conservative: every coordinate here is conditioned on α_SWITCH or
+        # on β, and NEITHER has a fallback. The R1 `belief_mean` rung is a presence belief over
+        # their MOVES; it has no switch class at all, so `α_SWITCH` would be identically 0 and the
+        # whole cell would read "they never switch" — a claim, not an absence. β has no
+        # prior-shaped substitute either. A flag whose fallback silently asserts something false is
+        # worse than a flag that says it needs the head.
+        self.switch_branch = None
+        if switch_branch_cell:
+            self.switch_branch = SwitchBranchMoveCell(SWITCH_BRANCH_MOVE_DIM)
+            if not (opp_intent and damage_op and damage_matrices_outgoing):
+                raise ValueError(
+                    "switch_branch_cell=True requires opp_intent=True (α_SWITCH and β have no "
+                    "fallback — the R1 belief_mean rung is a presence belief over their MOVES and "
+                    "carries no switch class, so every coordinate would read 'they never switch'), "
+                    "damage_op=True, and damage_matrices_outgoing=True (OA2's per-(our move, their "
+                    "mon) grid is what makes β actionable; there is no other source for 'what my "
+                    "move does to the arrival').")
         # gen3_value_direct_routes_v1 (v87): two direct critic routes, both zero-init vf-tail
         # appends. The clock route has no dependency (the ctx always carries the global block);
         # the intent route consumes the α/β PUBLICATIONS and so requires the intent heads.
@@ -879,14 +923,18 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # before it. Without this the consumer sees `last_pair_cells is None` and — by design —
         # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
         if (self.intent_value_reduce is not None or self.intent_threshold_move is not None
-                or self.intent_conditional is not None or self.pair_outcome_move is not None):
+                or self.intent_conditional is not None or self.pair_outcome_move is not None
+                or self.pair_outcome_switch is not None):
             self.damage_op.stash_pair_cells = True  # type: ignore[union-attr]
         # gen3_pair_outcome_v1: and the eight extra coordinates on top of them. Set together with
         # `stash_pair_cells` above, never alone — the damage cells ARE the vector's first six
         # coordinates, so a lone `stash_pair_outcome` would build a narrower vector than
         # `PAIR_OUTCOME_COORDS` declares.
-        if self.pair_outcome_move is not None:
+        if self.pair_outcome_move is not None or self.pair_outcome_switch is not None:
             self.damage_op.stash_pair_outcome = True  # type: ignore[union-attr]
+        # gen3_switch_branch_v1: the per-opp-slot GHOST marginal the spinblock contracts β against.
+        if self.switch_branch is not None:
+            self.damage_op.stash_opp_ghost = True  # type: ignore[union-attr]
         # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
         if self.value_threat_inject:
             _built = self.damage_op.pair_reducer.extra_dim  # type: ignore[union-attr]
@@ -1337,10 +1385,15 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_intent_conditional_v1: the Counter/flinch/Explosion/Pursuit cells likewise.
         base += INTENT_COND_MOVE_DIM if self.intent_conditional is not None else 0
         # gen3_pair_outcome_v1: the α-reduced unified outcome vector at our ACTIVE defender.
-        return base + (PAIR_OUTCOME_MOVE_DIM if self.pair_outcome_move is not None else 0)
+        base += PAIR_OUTCOME_MOVE_DIM if self.pair_outcome_move is not None else 0
+        # gen3_switch_branch_v1: OA2 + spinblock + Protect's α-conditioning.
+        return base + (SWITCH_BRANCH_MOVE_DIM if self.switch_branch is not None else 0)
     @property
     def pointer_switch_cell_dim(self) -> int:
-        return self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
+        base = self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
+        # gen3_pair_outcome_switch_v1: the FIRST widener of the switch cell — mon j's own α-reduced
+        # outcome row + the spin-denial coordinate.
+        return base + (PAIR_OUTCOME_SWITCH_DIM if self.pair_outcome_switch is not None else 0)
 
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the
@@ -1927,6 +1980,55 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 _alpha, _pin, self.damage_op.last_pair_gate,  # type: ignore[arg-type,union-attr]
                 ctx.our_active_idx)
             _mcells = torch.cat([_mcells, self.pair_outcome_move(_row)], dim=2)
+        # gen3_pair_outcome_switch_v1 (v94): the SAME reduction, at EVERY defender, into the
+        # pointer SWITCH cell — `design_pair_reduction.md` §2.1's own defect, at its own sink. One
+        # α (no J axis ⇒ D3 stays a shape error) producing six rows, each riding its own mon's
+        # logit, so the module is equivariant in our team axis by construction.
+        if self.pair_outcome_switch is not None:
+            _pin_s = self.damage_op.last_pair_in if self.damage_op is not None else None
+            _pw_s = self.damage_op.last_topk_w if self.damage_op is not None else None
+            _tn_s = self.damage_op.last_topk_idx if self.damage_op is not None else None
+            if _pin_s is None or _pw_s is None or _tn_s is None:
+                raise RuntimeError(
+                    "pair_outcome_switch is on but the op stashed no unified outcome vector (or no "
+                    "top-K belief weights / move nums) — the cell would silently contribute "
+                    "nothing, which is indistinguishable from a null RESULT. Requires "
+                    "damage_topk_k>0 (and the incoming matrix that computes it).")
+            _alpha_s = pair_alpha(self.last_alpha_logits, _pw_s,
+                                  self.damage_op.last_pair_seat_live)  # type: ignore[union-attr]
+            _rows = reduce_pair_in_all(
+                _alpha_s, _pin_s, self.damage_op.last_pair_gate)  # type: ignore[arg-type,union-attr]
+            _scells = torch.cat([_scells, self.pair_outcome_switch(
+                _rows, _alpha_s, _tn_s,
+                ctx.type1_ids[:, :TEAM_SIZE], ctx.type2_ids[:, :TEAM_SIZE],
+                # index 1 of the hazard pair is THEIR side — the layers WE set, which is exactly
+                # what their Rapid Spin would remove and a Ghost switch-in would preserve.
+                ctx.spikes_feature[:, 1:2])], dim=2)
+        # gen3_switch_branch_v1 (v94): OA2 + the Rapid-Spin spinblock + Protect's α-conditioning —
+        # the per-request-slot content of the branch in which the OPPONENT switches. The last
+        # move-cell rider, and the only one that consumes β forward-side besides v85's boom trade.
+        if self.switch_branch is not None:
+            _oc = self.damage_op.last_out_cells if self.damage_op is not None else None
+            _pg = self.damage_op.last_opp_p_ghost if self.damage_op is not None else None
+            _tn_b = self.damage_op.last_topk_idx if self.damage_op is not None else None
+            _sl_b = self.damage_op.last_pair_seat_live if self.damage_op is not None else None
+            if (self.last_alpha_logits is None or self.last_beta_logits is None
+                    or _oc is None or _pg is None or _tn_b is None or _sl_b is None):
+                raise RuntimeError(
+                    "switch_branch_cell is on but α/β produced no logits or the op stashed no "
+                    "outgoing grid / ghost marginal / top-K selection — the cell would silently "
+                    "contribute nothing, which is indistinguishable from a null RESULT. Requires "
+                    "opp_intent + damage_matrices_outgoing + damage_topk_k>0 (and the incoming "
+                    "matrix that computes the seat axis).")
+            _po_b = ctx.pokemon_part[
+                torch.arange(ctx.batch_size, device=ctx.device), ctx.our_active_idx,
+                POKEMON_PROTECT_OFFSET][:, None]
+            _mcells = torch.cat([_mcells, self.switch_branch(
+                self.last_alpha_logits, self.last_beta_logits, _sl_b, _tn_b, _oc, _pg,
+                ctx.opp_active_local, ctx.our_active_req_move_ids, _po_b,
+                # index 0 of the hazard pair is OUR side — what OUR Rapid Spin would remove, and
+                # therefore the stake a spinblock destroys.
+                ctx.spikes_feature[:, 0:1])], dim=2)
         self.stash.pointer_inputs = PointerInputs(
             move_tokens=_tok_req, move_valid=_move_valid, team_tokens=our_team_out,
             move_cells=_mcells, switch_cells=_scells)

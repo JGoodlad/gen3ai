@@ -121,6 +121,30 @@ _PAIR_OUTCOME_NEW = 8
 _PAIR_OUTCOME_RAW = _PAIR_OUTCOME_DMG + _PAIR_OUTCOME_NEW      # 14
 PAIR_OUTCOME_MOVE_DIM = _PAIR_OUTCOME_RAW
 
+# gen3_pair_outcome_switch_v1 (v94, Phase B — design_pair_reduction.md §2.1's CANONICAL defect):
+# the same α-reduced outcome row, per DEFENDER, at the pointer SWITCH cell. Phase A delivered our
+# ACTIVE's row to the move cells as CONTEXT; §2.1's decision ("they will click Will-O-Wisp, so
+# bring the Natural Cure mon") is made at the SWITCH logit, whose cell holds ten damage numbers,
+# one speed number, two belief-mass numbers and NO status coordinate in any currency.
+#
+# `_PAIR_OUTCOME_SWITCH_EXTRA` is the one coordinate that is per-DEFENDER and is not part of the
+# reduced row: `spin_denied` (the Pursuit mirror's defensive half — our Ghost candidate denies
+# their believed Rapid Spin, priced by the hazard stake it preserves). The full table with each
+# coordinate's §9a admission answer lives in `pair_outcome.py`.
+_PAIR_OUTCOME_SWITCH_EXTRA = 1
+_PAIR_OUTCOME_SWITCH_RAW = _PAIR_OUTCOME_RAW + _PAIR_OUTCOME_SWITCH_EXTRA   # 15
+PAIR_OUTCOME_SWITCH_DIM = _PAIR_OUTCOME_SWITCH_RAW
+
+# gen3_switch_branch_v1 (v94, Phase B — design_conditional_opponent_cells.md §2 "OA2, the
+# SWITCH-BRANCH MOVE CELL", plus the owner's Rapid-Spin spinblock and the Protect α-conditioning):
+# per-request-slot content for the branch in which the OPPONENT SWITCHES. Gen-3 is
+# simultaneous-move, so P(they switch) is ONE scalar for the turn (§2.1) — but the CONSEQUENCE is
+# per-move, because switches resolve first and our move lands on the ARRIVAL, which β names.
+# `_SWITCH_BRANCH_RAW` is the coordinate count; the table with the §9a answers is in
+# `switch_branch.py`.
+_SWITCH_BRANCH_RAW = 9
+SWITCH_BRANCH_MOVE_DIM = _SWITCH_BRANCH_RAW
+
 
 # gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
 # zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the

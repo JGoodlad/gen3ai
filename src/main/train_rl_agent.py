@@ -1308,6 +1308,49 @@ def build_parser() -> argparse.ArgumentParser:
                              "claim is testable apart from the DISTRIBUTION claim. Zero-init "
                              "projection so ON-at-init is bit-identical. STRUCTURAL, "
                              "version-checked.")
+    parser.add_argument("--pair-outcome-switch", "--pair_outcome_switch",
+                        dest="pair_outcome_switch", action=BoolFlag, default=None,
+                        help="gen3_pair_outcome_switch_v1 (v94, substrate Phase B, "
+                             "design_pair_reduction.md §2.1): deliver the SAME α-reduced unified "
+                             "outcome row, PER DEFENDER, to the pointer SWITCH cell — the sink "
+                             "§2.1 says the decision is actually made at. Today that cell holds "
+                             "ten damage numbers, one speed number, two belief-mass numbers and "
+                             "NO status coordinate in any currency, so \"they will click "
+                             "Will-O-Wisp, so bring the Natural Cure mon\" is unrepresentable "
+                             "there; status reaches the policy only as a softmax-normalised s3 "
+                             "edge RATIO. Adds one per-defender coordinate of its own, "
+                             "spin_denied = is_ghost(our mon j) · α(their Rapid Spin) · the "
+                             "hazard stake on THEIR side — the defensive half of the Pursuit "
+                             "mirror. The FIRST module ever to widen the switch cell. Requires "
+                             "--damage-op and --damage-topk-k>0; NOT --pair-outcome-cell (the two "
+                             "deliver one tensor to two sinks and coupling them would make a "
+                             "result unattributable), NOT --opp-intent-coef (same R1 belief_mean "
+                             "fallback as Phase A). Zero-init projection so ON-at-init is "
+                             "bit-identical. STRUCTURAL, version-checked.")
+    parser.add_argument("--switch-branch-cell", "--switch_branch_cell",
+                        dest="switch_branch_cell", action=BoolFlag, default=None,
+                        help="gen3_switch_branch_v1 (v94, substrate Phase B, "
+                             "design_conditional_opponent_cells.md §2 = OA2): per-request-slot "
+                             "content for the branch in which the OPPONENT SWITCHES. Gen-3 is "
+                             "simultaneous-move so P(they switch) is ONE scalar for the turn, but "
+                             "switches resolve FIRST — our move lands on the ARRIVAL, which β "
+                             "names. Delivers E[high]/E[pko]/E[type mult] contracted over β, the "
+                             "shared α_SWITCH scalar and wasted_ko = pko_stay·α_SWITCH "
+                             "(\"don't click the KO into the obvious switch\"), all kept "
+                             "DECORRELATED from the stay branch per §2.3 — never the collapsed "
+                             "(1−p)·stay + p·switch. Plus two mechanics of the same shape: the "
+                             "RAPID SPIN spinblock (p_spin_blocked = is_ghost(their active)·P(stay) "
+                             "+ α_SWITCH·Σβ·P(arrival is Ghost) — the REVERSE of Pursuit "
+                             "trapping, since gen3 Rapid Spin is Normal and a Ghost final defender "
+                             "means no damage AND no hazard removal) and PROTECT's α-derived "
+                             "attack mass (the c4 successor: its cell carries the consecutive-use "
+                             "decay and never asked whether they will attack at all). Requires "
+                             "--opp-intent-coef>0 with NO fallback — the R1 belief_mean rung is a "
+                             "presence belief over their MOVES and has no switch class, so "
+                             "α_SWITCH would be identically 0 and every coordinate would assert "
+                             "\"they never switch\" — plus --damage-op, --damage-matrices "
+                             "outgoing and --damage-topk-k>0. Zero-init projection so ON-at-init "
+                             "is bit-identical. STRUCTURAL, version-checked.")
     parser.add_argument("--intent-threshold", "--intent_threshold",
                         dest="intent_threshold", action=BoolFlag, default=None,
                         help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
@@ -2157,6 +2200,8 @@ async def main():
     _resolve("value_entity_pool_full", False)  # v82 structural, version-checked (full row set)
     _resolve("item_belief", False)             # v83 structural, version-checked (gen3_item_belief_v1)
     _resolve("pair_outcome_cell", False)   # v93 structural, version-checked (gen3_pair_outcome_v1)
+    _resolve("pair_outcome_switch", False)  # v94 structural, version-checked (gen3_pair_outcome_switch_v1)
+    _resolve("switch_branch_cell", False)   # v94 structural, version-checked (gen3_switch_branch_v1)
     _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)

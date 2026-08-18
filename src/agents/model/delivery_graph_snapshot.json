@@ -9016,7 +9016,7 @@
     },
     {
       "dst": "pointer.move_logit[0]",
-      "note": "the Explosion trade-value cell: what they bring in is what a boom trades against",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
@@ -9025,7 +9025,7 @@
     },
     {
       "dst": "pointer.move_logit[1]",
-      "note": "the Explosion trade-value cell: what they bring in is what a boom trades against",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
@@ -9034,7 +9034,7 @@
     },
     {
       "dst": "pointer.move_logit[2]",
-      "note": "the Explosion trade-value cell: what they bring in is what a boom trades against",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
@@ -9043,7 +9043,7 @@
     },
     {
       "dst": "pointer.move_logit[3]",
-      "note": "the Explosion trade-value cell: what they bring in is what a boom trades against",
+      "note": "what they bring in is what our move actually lands on \u2014 the Explosion trade's target, and OA2's whole subject",
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
