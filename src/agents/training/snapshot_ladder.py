@@ -282,7 +282,17 @@ def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> di
         return {}  # sharded workers don't refit; caller fits once all shards finish
     print(f"[ladder] backfill over {len(steps)} snapshots = {len(pairs)} pairs "
           f"(measuring the missing ones @ {n_games} games)", flush=True)
-    _measure_missing(run_dir, pairs, n_games, concurrency, impl)
+    # TRIPWIRE: this mode is idempotent BY DESIGN — _measure_missing filters to pairs not yet in
+    # games.jsonl. On a COMPLETE ladder it therefore plays nothing and returns a healthy-looking
+    # refit, which reads exactly like "the games were added". It is not: a variance-reduction
+    # tie-break needs MORE games on pairs that already have some, and `load_games` sums duplicate
+    # lines by design. Say so out loud rather than let a no-op be mistaken for a measurement.
+    measured = _measure_missing(run_dir, pairs, n_games, concurrency, impl)
+    if measured == 0 and pairs:
+        print(f"[ladder] ⚠️  0 of {len(pairs)} pairs were missing — this mode measured NOTHING and "
+              f"CANNOT add variance-reduction games to an already-complete ladder. To tighten a "
+              f"contrast, append duplicate rows for existing pairs (load_games SUMS them); "
+              f"--backfill will not do it.", flush=True)
     return fit_ladder(run_dir)
 
 

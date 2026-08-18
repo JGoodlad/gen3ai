@@ -16,6 +16,41 @@ Riding along (hygiene only, no behavioural claim): the `seed` readout + `seed_di
 
 ---
 
+## RESULTS — battery COMPLETE 2026-08-18 (`measurements/gen14_endofrun_battery.json`)
+
+| § | reading | verdict |
+|---|---|---|
+| **1** | tail-4 Δ **−38.30**, SE 8.54, CI95 **[−55.04, −21.56]** after the 4× tie-break (400 games/pair) | **INFERIOR** |
+| **2** | `event_seats` 2.7714 → **3.5838** (+29.3%); share of `all_off` 0.488 → 0.636; `all_off` stable to 0.9% | **FRAMES EXONERATED — deletion stands** |
+| **3** | `intent_value_reduce` **0.3176** · `value_clock` **0.2169** (n=12,391, bar 0.39) | **both DELETE, no appeal** |
+| **4** | `threat` **1.0686** (19.0% of `all_off`) | **KEEP — permanently off the list** |
+| **5** | `r` **0.1385** vs bar 0.0430 (median family 0.0860) | **ALIVE — graduates from weak-pass** |
+
+**§1 detail.** Before the tie-break the same contrast read Δ −29.98, CI [−49.10, −10.87] =
+INCONCLUSIVE; the pre-authorised tie-break added 300 games/pair (100 → 400, tail-K untouched,
+26,400 games per run). The verdict flipped because the **point estimate moved** (−29.98 → −38.30),
+not because precision was bought — SE fell only 9.75 → 8.54. A parametric bootstrap (300 refits, no
+Hessian) agrees: Δ −37.49, CI [−54.18, −22.06]. **The SE is the PAIRED refit** (`c'Σc` over the full
+inverse-Hessian covariance); the naive diagonal-only form understates by ~40% and flipped the
+verdict twice before it was corrected.
+
+**§0's artifact-disagreement rule fired and mattered.** `main.endofrun`'s §1 line calls
+`main.elo.analyze()` — the SPARSE fit, which §0 designates as ORIENTATION and never the verdict. It
+read Δ −14.1, CI [−53.3, +25.1] = INCONCLUSIVE. **Reading it as the verdict would have passed this
+generation.**
+
+**§2 consequence.** The revert clause needs INFERIOR **and** seats-not-risen; the second clause did
+not fire, so the frame deletion is permanent and the −38 lives among the other three v91 bundle
+members. The successor is pre-registered separately in
+[`gigo_signal_probe.md`](gigo_signal_probe.md) (`8bd6a86`) — not duplicated here.
+
+**Incidental, kept because it nearly cost a live input.** `hidden_opp`: dV **0.0000**, kl_mean
+0.7396, flip_rate **39.6%**. Zero critic effect, large policy effect — "pi half KEEPS, VF half goes"
+confirmed as a measurement rather than assumed. Watch-item: `entity_pool` carries **97.4%** of the
+critic's route dependence with zero policy effect.
+
+---
+
 ## 0. Conventions inherited from gen-13's runbook (do not re-derive)
 
 - **The ELO artifact rule (§0 there).** The headline verdict is `snapshot_ladder/ladder.json`

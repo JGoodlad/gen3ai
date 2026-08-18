@@ -1,0 +1,116 @@
+{
+  "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v9_16_gen14_framedel_v91_0817/final_model.zip",
+  "n_states": 12391,
+  "coverage": {
+    "sampler": "stratified_round_robin_v1",
+    "seed": 0,
+    "n_states": 12391,
+    "n_files_read": 243,
+    "n_files_matched": 243,
+    "per_step": {
+      "step_24000000": 12391
+    },
+    "per_opponent": {
+      "aggressive": 431,
+      "aggressive_v2": 512,
+      "heuristic": 605,
+      "heuristic2": 765,
+      "random": 1316,
+      "sentinel_0": 1774,
+      "sentinel_1": 1019,
+      "sentinel_2": 1238,
+      "sentinel_3": 1171,
+      "sentinel_4": 911,
+      "setup_sweep": 544,
+      "setup_sweep_v2": 594,
+      "staller": 657,
+      "staller_v2": 854
+    }
+  },
+  "arms": {
+    "seed": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.0
+    },
+    "threat": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 1.06856369972229
+    },
+    "hidden_opp_both": {
+      "kl_mean": 0.7396345138549805,
+      "kl_p95": 2.8029189109802246,
+      "flip_rate": 0.3964167535305023,
+      "dv_mean": 0.0
+    },
+    "hidden_opp_pi": {
+      "kl_mean": 0.7396345138549805,
+      "kl_p95": 2.8029189109802246,
+      "flip_rate": 0.3964167535305023,
+      "dv_mean": 0.0
+    },
+    "hidden_opp_vf": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.0
+    },
+    "entity_pool": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 5.490457534790039
+    },
+    "intent_reduce": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.3175818920135498
+    },
+    "event_seats": {
+      "kl_mean": 0.3778301477432251,
+      "kl_p95": 1.4148191213607788,
+      "flip_rate": 0.35307884216308594,
+      "dv_mean": 3.5838334560394287
+    },
+    "vr_intent_value_reduce": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.3175818920135498
+    },
+    "vr_value_entity_pool": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 5.490457534790039
+    },
+    "vr_intent_threshold_value": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.13628171384334564
+    },
+    "vr_value_clock": {
+      "kl_mean": 0.0,
+      "kl_p95": 0.0,
+      "flip_rate": 0.0,
+      "dv_mean": 0.21694831550121307
+    },
+    "nmr": {
+      "kl_mean": 0.0023624920286238194,
+      "kl_p95": 0.009652143344283104,
+      "flip_rate": 0.028327012434601784,
+      "dv_mean": 0.0
+    },
+    "all_off": {
+      "kl_mean": 0.7396345138549805,
+      "kl_p95": 2.8029189109802246,
+      "flip_rate": 0.3964167535305023,
+      "dv_mean": 5.635113716125488
+    }
+  }
+}

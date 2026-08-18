@@ -37,6 +37,9 @@ sound when the metric is a within-run ratio.
 | `gen2_edge_family_audit_40M.json` | 2 | 40M | 4000 | 2026-08-06 | 11 families, end of run |
 | `gen25_edge_family_audit_25M.json` | 2.5 | 25M | 4000 | 2026-08-07 | 15 families, mid-run |
 | `gen13_stall_coverage.json` | 13 | 25M | 1349 | 2026-08-17 | **§7 successor** — stall-trajectory share of training decisions vs matched eval losses, + recorded critic sign at the final decision of a timeout loss (model-free; producer script committed beside it) |
+| `gen14_endofrun_battery.json` | 14 | 25M | 12391 | 2026-08-18 | **The §1–§5 end-of-run battery**: §1 INFERIOR (Δ −38.30, paired-refit CI [−55.0,−21.6], post 4× tie-break), §2 frames EXONERATED, §3 two DELETEs, §4 threat KEEP, §5 `r` ALIVE |
+| `gen14_route_audit_12391.json` | 14 | 25M | 12391 | 2026-08-18 | Raw critic-route arms behind §2/§3/§4 |
+| `gen14_family_audit_12391.json` | 14 | 25M | 12391 | 2026-08-18 | Raw edge-family ablation behind §5 |
 | `gen14_pool_refresh_compile_cost.json` | 14 | 4.0M | 2 events | 2026-08-17 | Cost of a self-play pool promotion under `--compile-opponents`: **+77 s recurring (~2.7%)**; the +1095 s first event is a one-time self-play activation, not a promotion |
 
 ## The two headline reads

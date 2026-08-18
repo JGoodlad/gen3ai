@@ -1,0 +1,258 @@
+{
+ "provenance": {
+  "generation": 14,
+  "run": "ai_v9_16_gen14_framedel_v91_0817",
+  "checkpoint": "final_model.zip",
+  "step": 25067520,
+  "n_states": 12391,
+  "date": "2026-08-18",
+  "producer": "main.endofrun + agents.model.critic_route_audit + edge_ablation_audit + a paired BT refit",
+  "registration": "designs/research_state/gen14_endofrun_runbook.md (pre-registered 2026-08-17, before launch)",
+  "note": "Every rule applied here was fixed before the number it governs existed. The \u00a71 tie-break was authorised after \u00a71 first read INCONCLUSIVE and executed with tail-K untouched."
+ },
+ "section_1_generation_gate": {
+  "verdict": "INFERIOR",
+  "artifact": "snapshot_ladder/ladder.json tail-4, matched snapshot count (12 each), at run END",
+  "rule": "NON_INFERIOR iff delta >= -15.0 AND CI95-low > -40.0; INFERIOR iff the whole CI < -15",
+  "before_tiebreak": {
+   "games_per_pair": 100,
+   "delta": -29.98,
+   "se_joint": 9.75,
+   "ci95": [
+    -49.1,
+    -10.87
+   ],
+   "verdict": "INCONCLUSIVE"
+  },
+  "after_tiebreak": {
+   "games_per_pair": 400,
+   "games_total_per_run": 26400,
+   "delta": -38.3,
+   "se_joint": 8.54,
+   "ci95": [
+    -55.04,
+    -21.56
+   ],
+   "verdict": "INFERIOR"
+  },
+  "bootstrap_crosscheck": {
+   "B": 300,
+   "delta": -37.49,
+   "se": 8.28,
+   "ci95": [
+    -54.18,
+    -22.06
+   ],
+   "verdict": "INFERIOR",
+   "note": "parametric over games, refit per draw, no Hessian"
+  },
+  "se_method": "PAIRED refit: full inverse-Hessian covariance, contrast c'Sigma c with c=1/4 on each run's tail-4. The NAIVE diagonal-only SE (5.20 post-tiebreak) understates by ~40% because tail nodes are jointly fit against shared anchors.",
+  "artifact_disagreement": "Reported per runbook section 0. main.elo's SPARSE fit -- which is what main.endofrun's step_elo actually calls -- read delta -14.1, CI [-53.3, +25.1], INCONCLUSIVE. The dense ladder.json is the designated headline; the sparse fit is ORIENTATION and never the verdict. Reading endofrun's section-1 line as the verdict would have passed this generation.",
+  "corroboration": {
+   "per_snapshot_delta": [
+    -21,
+    11,
+    -9,
+    -17,
+    -54,
+    -35,
+    -34,
+    -22,
+    -20,
+    -27,
+    -29,
+    -44
+   ],
+   "gen14_below_at": "11 of 12 matched snapshots"
+  },
+  "caveat": "Predicted SE 4.88, measured 8.54. Only the frozen-pair component scales with games; the bot/sentinel edges and the fit's prior do not. 4x games bought 12% SE, not 50% -- the verdict flipped on the POINT ESTIMATE moving (-29.98 -> -38.30), not on precision."
+ },
+ "section_2_frame_deletion": {
+  "verdict": "FRAMES EXONERATED \u2014 deletion stands, no revert",
+  "rule": "revert iff gen-14 INFERIOR AND event_seats did NOT rise above gen-13's 2.7714",
+  "event_seats_dv": {
+   "gen13": 2.7714,
+   "gen14": 3.5838334560394287,
+   "change_pct": 29.3
+  },
+  "event_seats_share_of_all_off": {
+   "gen13": 0.4875,
+   "gen14": 0.636
+  },
+  "all_off_scale_check": {
+   "gen13": 5.6847,
+   "gen14": 5.635113716125488,
+   "change_pct": -0.9,
+   "why": "cross-generation dV is only sound if the critic's scale is stable; it is, to 0.9%"
+  },
+  "consequence": "First clause fired, second did not. The -38 lives in the other three v91 bundle members; the GIGO accidental-signal probe is pre-registered in gigo_signal_probe.md (8bd6a86)."
+ },
+ "section_3_tiebreak_reaudits": {
+  "n_states": 12391,
+  "bar": 0.39,
+  "intent_value_reduce": {
+   "gen13": 0.3826,
+   "gen14": 0.3175818920135498,
+   "verdict": "DELETE"
+  },
+  "value_clock": {
+   "gen13": 0.337,
+   "gen14": 0.21694831550121307,
+   "verdict": "DELETE"
+  },
+  "note": "Both fell FURTHER at 2x the registered sample \u2014 not a marginal miss."
+ },
+ "section_4_threat_deadline": {
+  "dv": 1.06856369972229,
+  "pct_of_all_off": 19.0,
+  "bar": 0.39,
+  "verdict": "KEEP \u2014 permanently off the candidate list"
+ },
+ "section_5_r_family": {
+  "median_family_dv": 0.086,
+  "alive_bar": 0.043,
+  "r_dv": 0.1385,
+  "verdict": "ALIVE",
+  "note": "gen-13 passed weakly at 0.0571; here 0.1385 = 3.2x the bar. Graduates from weak-pass.",
+  "families": {
+   "all": 1.0399,
+   "d2": 0.7294,
+   "d1": 0.3615,
+   "d4": 0.2772,
+   "v": 0.2375,
+   "r": 0.1385,
+   "h": 0.1333,
+   "t": 0.0988,
+   "d3": 0.0868,
+   "x": 0.086,
+   "s3": 0.0417,
+   "g": 0.0382,
+   "c5": 0.0202,
+   "s1": 0.0129,
+   "c2": 0.0124,
+   "c1": 0.0105,
+   "c3": 0.0101,
+   "c4": 0.0032,
+   "concat": 0.0,
+   "concat_cells": 0.0
+  }
+ },
+ "hidden_opp_split": {
+  "dv_mean": 0.0,
+  "kl_mean": 0.7396345138549805,
+  "flip_rate": 0.3964167535305023,
+  "finding": "Zero CRITIC effect, 39.6% action flips. The runbook's 'pi half KEEPS, VF half goes' confirmed as a measurement. A dV-only reading would have severed a live policy input."
+ },
+ "route_arms": {
+  "all_off": {
+   "dv_mean": 5.6351,
+   "pct_all_off": 100.0,
+   "kl_mean": 0.7396,
+   "flip_rate": 0.3964
+  },
+  "entity_pool": {
+   "dv_mean": 5.4905,
+   "pct_all_off": 97.4,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "vr_value_entity_pool": {
+   "dv_mean": 5.4905,
+   "pct_all_off": 97.4,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "event_seats": {
+   "dv_mean": 3.5838,
+   "pct_all_off": 63.6,
+   "kl_mean": 0.3778,
+   "flip_rate": 0.3531
+  },
+  "threat": {
+   "dv_mean": 1.0686,
+   "pct_all_off": 19.0,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "intent_reduce": {
+   "dv_mean": 0.3176,
+   "pct_all_off": 5.6,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "vr_intent_value_reduce": {
+   "dv_mean": 0.3176,
+   "pct_all_off": 5.6,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "vr_value_clock": {
+   "dv_mean": 0.2169,
+   "pct_all_off": 3.8,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "vr_intent_threshold_value": {
+   "dv_mean": 0.1363,
+   "pct_all_off": 2.4,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "seed": {
+   "dv_mean": 0.0,
+   "pct_all_off": 0.0,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "hidden_opp_both": {
+   "dv_mean": 0.0,
+   "pct_all_off": 0.0,
+   "kl_mean": 0.7396,
+   "flip_rate": 0.3964
+  },
+  "hidden_opp_pi": {
+   "dv_mean": 0.0,
+   "pct_all_off": 0.0,
+   "kl_mean": 0.7396,
+   "flip_rate": 0.3964
+  },
+  "hidden_opp_vf": {
+   "dv_mean": 0.0,
+   "pct_all_off": 0.0,
+   "kl_mean": 0.0,
+   "flip_rate": 0.0
+  },
+  "nmr": {
+   "dv_mean": 0.0,
+   "pct_all_off": 0.0,
+   "kl_mean": 0.0024,
+   "flip_rate": 0.0283
+  }
+ },
+ "coverage": {
+  "sampler": "stratified_round_robin_v1",
+  "seed": 0,
+  "n_states": 12391,
+  "n_files_read": 243,
+  "n_files_matched": 243,
+  "per_step": {
+   "step_24000000": 12391
+  },
+  "per_opponent": {
+   "aggressive": 431,
+   "aggressive_v2": 512,
+   "heuristic": 605,
+   "heuristic2": 765,
+   "random": 1316,
+   "sentinel_0": 1774,
+   "sentinel_1": 1019,
+   "sentinel_2": 1238,
+   "sentinel_3": 1171,
+   "sentinel_4": 911,
+   "setup_sweep": 544,
+   "setup_sweep_v2": 594,
+   "staller": 657,
+   "staller_v2": 854
+  }
+ }
+}
