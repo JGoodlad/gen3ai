@@ -783,6 +783,8 @@ _SLP_CAT = 4
 LEECH_SEED_CAT = 6
 N_STATUS_CAT = 7                              # index 0 = "not a status move"; 1..5 majors; 6 = Leech Seed
 _LEECH_SEED_ID = "leechseed"
+# gen3_status_economy_v1: the ability whose gen3 rule is "the status is shed on switch-out".
+_NATURAL_CURE_ID = "naturalcure"
 # SSOT guard: every status id the gen3_mechanics ability-immunity rules name MUST map to a known category,
 # so a future gen3_mechanics edit (e.g. a new blocked status) fails LOUDLY at import here rather than
 # silently dropping that ability's block from SPECIES_STATUS_BLOCK_PRIOR / ABILITY_STATUS_BLOCK.
@@ -811,11 +813,25 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
                                                it undoes a status at a different price — 2 turns asleep — which
                                                the op prices from its own `rest_sleep_noeb`. The tempo_cost
                                                coordinate's source. gen3_pair_outcome_v1.
+      MOVE_CURES_TEAM_STATUS[n_moves]          1.0 for a PARTY-WIDE cure (Heal Bell / Aromatherapy) — the
+                                               CLERIC path's source (gen3_status_economy_v1). Kept APART from
+                                               MOVE_CURES_SELF_STATUS, which merges the two because only "is
+                                               this mon clean afterwards" mattered there. The scope is exactly
+                                               what makes the cleric path exist: a party-wide cure reaches a
+                                               mon sitting on the BENCH, so a teammate's Heal Bell is an undo
+                                               path for mon j; Refresh is not.
       MOVE_INFLICTS_STATUS[n_moves]            1.0 if it is a dedicated status move (incl. Leech Seed)
       MOVE_IS_SLEEP[n_moves]                   1.0 if it inflicts sleep (the Sleep-Clause gate)
       MOVE_BLOCKED_IF_STATUSED[n_moves]        1.0 for a MAJOR status (can't double-apply); 0 for Leech Seed
       MOVE_STATUS_TYPE_IMMUNE[n_moves, N_TYPE_IDX]   1.0 where a DEFENDER type is immune to THIS move's status
       ABILITY_STATUS_BLOCK[n_abilities, N_STATUS_CAT]   1.0 if the (revealed) ability hard-blocks that category
+      ABILITY_NATURAL_CURE[n_abilities]        1.0 at the Natural Cure row (gen3_status_economy_v1). NOT a
+                                               status BLOCK — the status lands in full and every per-turn
+                                               severity is paid while the mon stays in; what the ability buys
+                                               is an UNDO PATH (the status is shed on switch-out), which is
+                                               `tempo_cost`'s subject and not `ABILITY_STATUS_BLOCK`'s.
+                                               Resolved FAIL-LOUD so a data rename cannot silently make every
+                                               Natural Cure mon read as having no answer.
       SPECIES_STATUS_BLOCK_PRIOR[n_species, N_STATUS_CAT]   P(species' ability blocks) — Smogon-prior marginal
 
     Type immunity is keyed by MOVE id (the gen3 rule): Thunder Wave→Ground, Toxic/Poison Gas/Poison Powder
@@ -827,6 +843,8 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
     ident = torch.zeros(n_moves, _SECONDARY_MAJOR_COLS_N, dtype=torch.float32)
     _ident_col = {c: i for i, c in enumerate(SECONDARY_COLS[:_SECONDARY_MAJOR_COLS_N])}
     cures_self = torch.zeros(n_moves, dtype=torch.float32)
+    # gen3_status_economy_v1: the CLERIC table — party-wide cures only (Heal Bell / Aromatherapy).
+    cures_team = torch.zeros(n_moves, dtype=torch.float32)
     inflicts = torch.zeros(n_moves, dtype=torch.float32)
     is_sleep = torch.zeros(n_moves, dtype=torch.float32)
     blocked_if_statused = torch.zeros(n_moves, dtype=torch.float32)
@@ -840,6 +858,7 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         # inflict a status (Refresh/Heal Bell do not), so populating it inside the status branch
         # would silently drop most of the table.
         cures_self[num] = 1.0 if (md.cures_self_status or md.cures_team_status) else 0.0
+        cures_team[num] = 1.0 if md.cures_team_status else 0.0
         if mid == _LEECH_SEED_ID:
             c = LEECH_SEED_CAT
         elif md.status_inflicted is not None:
@@ -863,6 +882,17 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
             ti = _T2I.get(pt.name)
             if ti is not None:
                 type_immune[num, ti] = 1.0
+
+    # gen3_status_economy_v1: the Natural Cure row. Fails loud rather than staying all-zero — an
+    # all-zero table is indistinguishable from "no mon on either team has the ability", i.e. from a
+    # null RESULT, and it would silently restore the exact defect this closes.
+    ability_natural_cure = torch.zeros(n_abilities, dtype=torch.float32)
+    _nc = gen3_data.abilities.get(_NATURAL_CURE_ID)
+    if _nc is None or not (0 <= _nc.num < n_abilities):
+        raise ValueError(
+            f"gen3_data.abilities has no usable {_NATURAL_CURE_ID!r} row — the status-economy undo "
+            "path would silently never fire, which reads exactly like a mon with no answer.")
+    ability_natural_cure[_nc.num] = 1.0
 
     ability_block = torch.zeros(n_abilities, N_STATUS_CAT, dtype=torch.float32)
     for aid, statuses in ABILITY_STATUS_IMMUNITY.items():
@@ -897,11 +927,13 @@ def build_status_landing(n_moves: int, n_species: int, n_abilities: int) -> Dict
         "MOVE_STATUS_CAT": cat,
         "MOVE_STATUS_IDENT": ident,
         "MOVE_CURES_SELF_STATUS": cures_self,
+        "MOVE_CURES_TEAM_STATUS": cures_team,
         "MOVE_INFLICTS_STATUS": inflicts,
         "MOVE_IS_SLEEP": is_sleep,
         "MOVE_BLOCKED_IF_STATUSED": blocked_if_statused,
         "MOVE_STATUS_TYPE_IMMUNE": type_immune,
         "ABILITY_STATUS_BLOCK": ability_block,
+        "ABILITY_NATURAL_CURE": ability_natural_cure,
         "SPECIES_STATUS_BLOCK_PRIOR": species_block,
     }
 

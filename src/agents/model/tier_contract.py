@@ -115,6 +115,12 @@ TIER_OF: Dict[str, int] = {
     # α and β first exist at T2, and both cells run at the pointer stash.
     "pair_outcome_switch": 2,
     "switch_branch": 2,
+    # gen3_conditional_threat_v1 (v95, Phase C — OA1): same split again. The op stashes `pair_in`
+    # AND the per-(defender, seat) type multiplier at T1; α first exists at T2, and the cell runs
+    # at the pointer stash. (PV, its Phase-C partner, is NOT listed: it lives under `cls_pool` as
+    # a child module rather than as a top-level extractor child, so `cls_pool`'s own tier covers
+    # it — which is also what makes its vf-only property structural.)
+    "conditional_threat": 2,
     # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
     # (the first point where both operands exist) — a DELIVER-stage readout.
     "intent_value_reduce": 3,

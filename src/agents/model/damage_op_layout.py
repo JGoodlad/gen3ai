@@ -242,6 +242,17 @@ _NEUTRAL_TOX_FIRST_TICK = 1.0 / 16.0   # toxic's FIRST tick; its escalation is a
                                        # one-ply reduction does not represent (named in pair_outcome.py)
 _TEMPO_CURE_TURNS = 1.0            # a dedicated cure move costs exactly the turn it is used on.
                                    # (REST's price is the op's own `rest_sleep_noeb`, not a constant.)
+# gen3_status_economy_v1 — the two undo paths Phase A did not price. Both are TURN COUNTS derived
+# from one gen3 rule each; neither is a tuned prior, which is what lets them ship beside the block
+# above without a calibration artifact.
+_TEMPO_NATURAL_CURE_TURNS = 1.0    # Natural Cure sheds the status ON SWITCH-OUT, and a switch
+                                   # consumes exactly one of our actions — the SAME single turn a
+                                   # cure move costs. It needs no moveslot and no teammate, which is
+                                   # why it is a separate path and not a re-spelling of the cure one.
+_TEMPO_CLERIC_TURNS = 2.0          # the CLERIC path: switch to the teammate holding Heal Bell /
+                                   # Aromatherapy (1 turn) + click it (1 turn). Two actions, so 2.0.
+                                   # It exists at all only because the gen3 rule is PARTY-WIDE: the
+                                   # cure reaches mon j while mon j sits on the bench.
 
 
 # gen3_iterative_damage_v1: the ITERATIVE damage-refinement primitive. The full op runs ONCE post-transformer

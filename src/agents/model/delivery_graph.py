@@ -112,6 +112,7 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "pair_outcome_move": ("PairOutcomeMoveCell",),
     "pair_outcome_switch": ("PairOutcomeSwitchCell",),
     "switch_branch": ("SwitchBranchMoveCell",),
+    "conditional_threat": ("ConditionalThreatCell",),
     "intent_value_reduce": ("IntentValueReduce",),
     "value_clock_route": ("ValueClockRoute",),
     "value_intent_route": ("ValueIntentRoute",),
@@ -558,6 +559,19 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            pooled=True, zero_init=True,
                            note="an attention VALUE carries a magnitude where an attention BIAS "
                                 "cannot — 'this mon is about to lose 62% of its HP', per entity"))
+    # gen3_pair_value_route_v1 (v95, PV): the SAME mechanism carrying Phase A's UNIFIED outcome row
+    # — the first per-entity route by which the critic reads status / neutralization / tempo at all.
+    # It lives under `cls_pool` too, and is NOT in the v89 `_value_pooled_routes` seam: a post-pool
+    # additive route would have to collapse the J axis, and the only equivariant collapse is a sum.
+    if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
+        edges.append(_edge("damage_op", "vf_projection", "content",
+                           fx.PAIR_VALUE_ROUTE_DIM, "PAIR_VALUE_ROUTE_DIM",
+                           via="CLSPool.pair_value_proj (one SHARED Linear over the six rows) — "
+                               "token CONTENT on the value pool's copy of our mons",
+                           pooled=True, zero_init=True,
+                           note="design_opponent_intent SS7a(2): alpha-reduced pair_in per our mon "
+                                "j on mon j's own token. alpha is the R1 belief_mean rung by "
+                                "ORDERING (value_cls pools before the alpha head is scored)"))
     if fe.assembler.seed_readout is not None:
         edges.append(_edge("damage_op", "vf_projection", "concat",
                            fx.VALUE_SEED_K * fx.VALUE_SEED_DIM, "VALUE_SEED_K * VALUE_SEED_DIM",
@@ -696,6 +710,19 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                     "sink: the switch cell above carries TEN damage numbers and "
                                     "no status coordinate in any currency. Per-DEFENDER content, "
                                     "one shared alpha (no J axis => D3 is a shape error)"))
+    if getattr(fe, "conditional_threat", None) is not None:
+        for j in range(T):
+            edges.append(_edge("damage_op", f"pointer.switch_logit[{j}]", "cell",
+                               fx.CONDITIONAL_THREAT_SWITCH_DIM, "CONDITIONAL_THREAT_SWITCH_DIM",
+                               via="ConditionalThreatCell (OA1 — alpha-contracted pko*acc, the "
+                                   "bulk-independent type multiplier, and the two SS0.2(3) "
+                                   "margins against our own HP)",
+                               zero_init=True,
+                               note="design_conditional_opponent_cells SS1: the defensive pivot. "
+                                    "The coordinates the reduced outcome row cannot carry — a "
+                                    "product of two decorrelated channels, the one channel not "
+                                    "divided by the defender's bulk, and what a saturated P(KO) "
+                                    "hides"))
 
     # --- OPPONENT INTENT: what alpha/beta READ, and where their publication lands ---------------
     # gen3_opp_intent_v1. Both heads were missing from this graph entirely, and the omission was
@@ -769,11 +796,16 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                        + " / ".join(_beta_move_consumers),
                                    note="what they bring in is what our move actually lands on — "
                                         "the Explosion trade's target, and OA2's whole subject"))
-        if getattr(fe, "pair_outcome_switch", None) is not None:
+        _switch_cell_consumers = [
+            n for n, m in (("PairOutcomeSwitchCell", getattr(fe, "pair_outcome_switch", None)),
+                           ("ConditionalThreatCell", getattr(fe, "conditional_threat", None)))
+            if m is not None]
+        if _switch_cell_consumers:
             for j in range(T):
                 edges.append(_edge("alpha_head", f"pointer.switch_logit[{j}]", "cell",
                                    _a_w, _a_c,
-                                   via="the alpha PUBLICATION weighting PairOutcomeSwitchCell",
+                                   via="the alpha PUBLICATION weighting "
+                                       + " / ".join(_switch_cell_consumers),
                                    note="the first alpha route to the SWITCH logits at all — "
                                         "stop-grad unconditionally (a policy-side consumer)"))
         if fe.value_intent_route is not None:

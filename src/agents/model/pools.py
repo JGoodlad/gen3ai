@@ -6,6 +6,7 @@ re-exports every name here, so historical import paths still resolve.
 from agents.model.extractor_ctx import ExtractorContext
 import torch
 from typing import Dict, Any, Optional, Tuple
+from agents.model.pair_value_route import PairValueInject
 from agents.model.value_threat_inject import (ValueThreatInject)
 from agents.model.arch_constants import (D_MODEL,
     TRANSFORMER_N_HEADS,
@@ -27,7 +28,8 @@ class CLSPool(torch.nn.Module):
     transformer, so pooling over the 12 team tokens gives the value query a whole-board read.
     """
 
-    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0):
+    def __init__(self, layout: Dict[str, Any], value_threat_inject_dim: int = 0,
+                 pair_value_row_dim: int = 0):
         super().__init__()
         self.our_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
         self.their_cls = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -51,11 +53,23 @@ class CLSPool(torch.nn.Module):
             ValueThreatInject(value_threat_inject_dim, D_MODEL)
             if value_threat_inject_dim else None)
 
+        # gen3_pair_value_route_v1 (v95, PV — design_opponent_intent.md §7a(2)): the SAME mechanism
+        # carrying a DIFFERENT object — Phase A's unified outcome row (damage AND status AND
+        # neutralization AND tempo), which the critic has no other per-entity route to. Owned here
+        # for the same structural reason: the augmented tensor stays a LOCAL, so no policy-facing
+        # read can reach it and vf-only holds at ANY weight rather than by discipline. The two
+        # injections are independent and STACK — each adds its own zero-init delta to the same
+        # local copy, so enabling one says nothing about the other.
+        self.pair_value_proj = (
+            PairValueInject(pair_value_row_dim, D_MODEL) if pair_value_row_dim else None)
+
     def forward(self, our_team_out: torch.Tensor, their_team_out: torch.Tensor,
                 ctx: ExtractorContext,
-                threat_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                threat_rows: Optional[torch.Tensor] = None,
+                pair_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """our/their_team_out [B,6,D_MODEL]; `threat_rows` the op's reduced per-mon rows (required
-        only when value_threat_inject is built) → `(our_team_pooled, their_team_pooled,
+        only when value_threat_inject is built); `pair_rows` the α-reduced unified outcome rows
+        (required only when the pair-value route is built) → `(our_team_pooled, their_team_pooled,
         our_active_refined, value_pooled)`, each [B, D_MODEL]."""
         batch_size = ctx.batch_size
         our_cls_q   = self.our_cls.expand(batch_size, -1, -1)
@@ -84,6 +98,14 @@ class CLSPool(torch.nn.Module):
                     "`last_reduced_extra` is populated. A silent skip here would make the flag a "
                     "no-op that still passes every shape test.")
             our_for_value = self.value_threat_proj(our_team_out, threat_rows)
+        if self.pair_value_proj is not None:
+            if pair_rows is None:
+                raise ValueError(
+                    "pair_value_route is built but no α-reduced outcome rows were supplied — the "
+                    "op must run with damage_topk_k>0 and stash_pair_outcome so `last_pair_in` is "
+                    "populated. A silent skip here would make the flag a no-op that still passes "
+                    "every shape test, which is indistinguishable from a null RESULT.")
+            our_for_value = self.pair_value_proj(our_for_value, pair_rows)
         all_team_out = torch.cat([our_for_value, their_team_out], dim=1)            # [B, 12, 128]
         value_cls_q  = self.value_cls.expand(batch_size, -1, -1)
         value_pool_out, _ = self.value_cls_attn(value_cls_q, all_team_out, all_team_out,

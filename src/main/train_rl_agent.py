@@ -1351,6 +1351,48 @@ def build_parser() -> argparse.ArgumentParser:
                              "\"they never switch\" — plus --damage-op, --damage-matrices "
                              "outgoing and --damage-topk-k>0. Zero-init projection so ON-at-init "
                              "is bit-identical. STRUCTURAL, version-checked.")
+    parser.add_argument("--conditional-threat-cell", "--conditional_threat_cell",
+                        dest="conditional_threat_cell", action=BoolFlag, default=None,
+                        help="gen3_conditional_threat_v1 (v95, substrate Phase C, "
+                             "design_conditional_opponent_cells.md §1 = OA1): the CONDITIONAL "
+                             "THREAT CELL — \"they'll Ice Beam my Salamence; switch to the mon "
+                             "that eats Ice Beam\". Four α-contracted coordinates on the pointer "
+                             "SWITCH cell, each one a quantity Phase B's reduced outcome row "
+                             "structurally cannot carry: e_pko_acc = Σα·ko_ramp·acc (the product "
+                             "§0.2(2) says the OPERATOR must form — the two ride decorrelated and "
+                             "a thin tanh scorer does not multiply its own inputs), e_type_mult "
+                             "(the one cell channel NOT divided by the defender's own bulk, so a "
+                             "structural immunity reads apart from an incidental zero), and the "
+                             "two §0.2(3) MARGINS Σα·high − hp and Σα·crit − hp (>0 ⇒ dead) that "
+                             "say by how much a saturated P(KO) saturates. §1.2's λ-weighted `w` "
+                             "is deliberately NOT built: `pair_alpha` is the shipped distribution "
+                             "and a second one would be a second α. Requires --damage-op, "
+                             "--damage-matrices incoming and --damage-topk-k>0; NOT "
+                             "--opp-intent-coef (the R1 belief_mean fallback is meaningful here — "
+                             "every coordinate is a \"what lands on me if they attack\" "
+                             "contraction) and NOT --pair-outcome-switch (two quantities, one "
+                             "sink, attributable separately). Zero-init projection so ON-at-init "
+                             "is bit-identical. STRUCTURAL, version-checked.")
+    parser.add_argument("--pair-value-route", "--pair_value_route",
+                        dest="pair_value_route", action=BoolFlag, default=None,
+                        help="gen3_pair_value_route_v1 (v95, substrate Phase C, "
+                             "design_opponent_intent.md §7a(2) = PV): the α-reduced unified "
+                             "outcome row for our mon j injected as TOKEN CONTENT on mon j's own "
+                             "token inside CLSPool, on the VALUE pool's copy ONLY — so pi is "
+                             "bit-identical at ANY weight. It is the first per-entity route by "
+                             "which the CRITIC reads the status / neutralization / tempo currency "
+                             "at all (today incoming status reaches vf only as the s3 edge "
+                             "family's softmax-normalised RATIO). Token content rather than the "
+                             "v89 value-route seam: a post-pool additive route must collapse the "
+                             "team axis, and the only equivariant collapse is a sum — which "
+                             "cannot tell one mon losing 90%% of its bar from six losing 15%%. "
+                             "⚠️ α is the R1 belief_mean rung UNCONDITIONALLY — ORDERING, not "
+                             "preference: value_cls pools BEFORE the α/β heads are scored. "
+                             "⚠️ C4 RE-ENTRY CONDITION: any α/β-critic route may be BUILT opt-in "
+                             "but its ENABLING owes the C4-style offline gate first (ledger C6 — "
+                             "the delivery line is EXHAUSTED). Requires --damage-op and "
+                             "--damage-topk-k>0. Zero-init so ON-at-init is bit-identical. "
+                             "STRUCTURAL, version-checked.")
     parser.add_argument("--intent-threshold", "--intent_threshold",
                         dest="intent_threshold", action=BoolFlag, default=None,
                         help="gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 "
@@ -2202,6 +2244,8 @@ async def main():
     _resolve("pair_outcome_cell", False)   # v93 structural, version-checked (gen3_pair_outcome_v1)
     _resolve("pair_outcome_switch", False)  # v94 structural, version-checked (gen3_pair_outcome_switch_v1)
     _resolve("switch_branch_cell", False)   # v94 structural, version-checked (gen3_switch_branch_v1)
+    _resolve("conditional_threat_cell", False)  # v95 structural, version-checked (gen3_conditional_threat_v1)
+    _resolve("pair_value_route", False)     # v95 structural, version-checked (gen3_pair_value_route_v1)
     _resolve("intent_threshold", False)        # v84 structural, version-checked (gen3_intent_threshold_v1)
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)

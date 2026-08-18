@@ -145,6 +145,24 @@ PAIR_OUTCOME_SWITCH_DIM = _PAIR_OUTCOME_SWITCH_RAW
 _SWITCH_BRANCH_RAW = 9
 SWITCH_BRANCH_MOVE_DIM = _SWITCH_BRANCH_RAW
 
+# gen3_conditional_threat_v1 (v95, Phase C — design_conditional_opponent_cells.md §1 "OA1, the
+# CONDITIONAL THREAT CELL"): the defensive-pivot coordinates the α-reduced outcome row structurally
+# cannot carry — the accuracy-folded P(this mon dies) (§0.2(2)'s "precompute every nonlinearity of
+# two numbers in the op"), the bulk-INDEPENDENT expected type multiplier, and the two §0.2(3)
+# MARGINS (max roll and crit roll) that say by how much a saturated probability saturates. Delivered
+# to the pointer SWITCH cell. §1.2's `λ`-weighted `w` is NOT built — `pair_alpha` is the shipped
+# distribution and a second one would be a second α; the full substitution table and each
+# coordinate's §9a admission answer are in `conditional_threat.py`.
+_CONDITIONAL_THREAT_RAW = 4
+CONDITIONAL_THREAT_SWITCH_DIM = _CONDITIONAL_THREAT_RAW
+
+# gen3_pair_value_route_v1 (v95, Phase C — design_opponent_intent.md §7a(2), the equivariant CRITIC
+# route): the α-reduced unified outcome row for our mon j, injected as TOKEN CONTENT on mon j's own
+# token inside `CLSPool`, on the VALUE pool's copy only. Width == `_PAIR_OUTCOME_RAW`, because the
+# object delivered IS Phase A's row — the point is that the critic has never had the status /
+# neutralization / tempo currency in any per-entity form at all.
+PAIR_VALUE_ROUTE_DIM = _PAIR_OUTCOME_RAW
+
 
 # gen3_value_direct_routes_v1 (v87): two direct CRITIC routes appended at the vf tail, both
 # zero-init. VALUE_CLOCK_DIM — the deadline clock's 3 raw scalars projected for the critic (the

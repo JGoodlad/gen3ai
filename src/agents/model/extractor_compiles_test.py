@@ -352,6 +352,39 @@ def test_switch_branch_and_pair_outcome_switch_compile_to_one_graph():
 
 
 @_skip_compile
+def test_phase_c_conditional_threat_and_pair_value_route_compile_to_one_graph():
+    """The v95 Phase C pair (gen3_conditional_threat_v1 + gen3_pair_value_route_v1), in its OWN
+    cell for the reason Phase B's precedent records: folding new flags into the shared production
+    cell measured 25.5 s -> 73.1 s there, and a compile gate that overruns its budget gets skipped
+    rather than read.
+
+    Two shapes here are new to the compiler and neither was reachable before:
+      * OA1 is the SECOND module to widen the pointer SWITCH stash, so the `torch.cat` there now
+        runs twice on one path — and it reads `last_pair_type_mult`, a stash that did not exist;
+      * PV puts a SECOND token-content injection inside `CLSPool`, i.e. two chained adds onto the
+        value pool's local copy of our tokens. The first one (v64) is in the production arch, so
+        this is the first time the composition lowers at all.
+    Both flags ON together, plus Phase B's pair, because the switch cell's width is the thing they
+    all share and a per-flag cell would never exercise the stacked `cat`.
+
+    EXPLAIN-only, deliberately, and the same reasoning as the Phase-B cell: graph-break count is
+    what `--compile-opponents` depends on, and the numeric agreement of a zero-init module is
+    bounded at init anyway (it contributes exactly 0, which both suites assert on a real
+    `MaskablePPO` build).
+    """
+    torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_production_extractor(
+        conditional_threat_cell=True, pair_value_route=True, pair_outcome_switch=True)
+    assert fe.conditional_threat is not None
+    assert fe.cls_pool.pair_value_proj is not None and fe.pair_outcome_switch is not None
+    explained = torch._dynamo.explain(fe.forward)(
+        {"observation": torch.zeros(_BATCH, layout["total_dim"])})
+    assert explained.graph_break_count == 0, explained.break_reasons
+    assert explained.graph_count == 1
+
+
+@_skip_compile
 def test_pair_outcome_fallback_arch_compiles_to_one_graph():
     """gen3_pair_outcome_v1's R1 FALLBACK branch, which no other compile cell can reach.
 

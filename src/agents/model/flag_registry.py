@@ -336,6 +336,43 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "e_pko_switch is deflated in proportion to β's hidden mass while e_high_switch "
                    "carries the magnitude. Zero-init ⇒ ON-at-init bit-identical.",
               requires=("opp_intent", "damage_op", "damage_matrices_outgoing")),
+    ModelFlag("conditional_threat_cell", False, Tier.CLI, Klass.STRUCTURAL, 95,
+              "Phase C — OA1, the CONDITIONAL THREAT CELL (the defensive pivot): the four "
+              "α-contracted coordinates the reduced outcome row structurally cannot carry — "
+              "e_pko_acc (accuracy x P(KO), the product §0.2(2) says the OP must form), "
+              "e_type_mult (the one channel not divided by the defender's own bulk) and the two "
+              "§0.2(3) MARGINS against our own HP (max roll and crit roll), on the pointer SWITCH "
+              "cell",
+              note="design_conditional_opponent_cells.md §1 + §0.2. THREE of §1.2's clauses are "
+                   "SUPERSEDED and the substitutions are recorded in conditional_threat.py: the "
+                   "λ-weighted `w` is NOT built (pair_alpha is the shipped distribution; a second "
+                   "one would be a second α), `high`/`pko`/`status_lands` are already delivered by "
+                   "pair_outcome_switch, and §1.3's --damage-matrices-outgoing-all is VOID (deleted "
+                   "at v88). Requires damage_op + damage_matrices_incoming (the only producer of "
+                   "the per-(defender, seat) type multiplier AND of the top-K seat axis), NOT "
+                   "opp_intent — the R1 belief_mean fallback is MEANINGFUL here because every "
+                   "coordinate is a 'what lands on me if they attack' contraction. Independent of "
+                   "pair_outcome_switch on purpose: two quantities, one sink, attributable "
+                   "separately. Zero-init ⇒ ON-at-init bit-identical.",
+              requires=("damage_op", "damage_matrices_incoming")),
+    ModelFlag("pair_value_route", False, Tier.CLI, Klass.STRUCTURAL, 95,
+              "Phase C — PV, the pair-VALUE CRITIC route: the α-reduced unified outcome row for "
+              "our mon j injected as TOKEN CONTENT on mon j's own token inside CLSPool, on the "
+              "VALUE pool's copy only — the first per-entity route by which the critic reads the "
+              "status / neutralization / tempo currency at all (today it reaches vf only as the s3 "
+              "edge family's softmax-normalised RATIO)",
+              note="design_opponent_intent.md §7a(2). ⚠️ C4 RE-ENTRY CONDITION: any α/β-critic "
+                   "route may be BUILT opt-in but its ENABLING owes the C4-style offline gate "
+                   "first (ledger C6 — five v89 routes trained off zero with entity_pool carrying "
+                   "decisively and the critic's stall over-confidence did NOT move; the delivery "
+                   "line is EXHAUSTED). Token content, NOT the v89 _value_pooled_routes seam: a "
+                   "post-pool additive route must collapse the J axis and the only equivariant "
+                   "collapse is a sum, which cannot tell one mon losing 90% from six losing 15%. "
+                   "α is the R1 belief_mean rung UNCONDITIONALLY — ORDERING, not preference: "
+                   "value_cls pools before the α/β heads are scored, and §7a(2) pre-registers that "
+                   "substitution as the DELIVERY-claim test. vf-only at ANY weight (the augmented "
+                   "tensor is a local); zero-init ⇒ ON-at-init bit-identical. Requires damage_op.",
+              requires=("damage_op",)),
     ModelFlag("op_drop_renders", False, Tier.CLI, Klass.STRUCTURAL, 86,
               "design_op_tensors step 3: the op's flat forward block loses the three RENDER "
               "regions (omx/imx/OAX — serialization-only since the concat's deletion); "

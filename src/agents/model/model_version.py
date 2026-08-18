@@ -25,7 +25,15 @@ from typing import Any, Dict, List
 #   (gen3_event_semantics_v1) landed while this sat on a branch. No ARCH_SIGNATURE bump —
 #   the term is computed in the PPO step, never in the extractor forward, so a coef-0 build
 #   is byte-identical and there is nothing for `check_compatible` to gate.
-MODEL_CONFIG_VERSION = 94
+# v95 (substrate Phase C): `conditional_threat_cell` (OA1 — the defensive-pivot coordinates on the
+#   pointer SWITCH cell) and `pair_value_route` (PV — the α-reduced outcome row as TOKEN CONTENT on
+#   the critic's copy of our team tokens). Both opt-in, zero-init, OFF byte-identical. The same bump
+#   carries `gen3_status_economy_v1`, which AMENDS `tempo_cost`'s coordinate semantics under the
+#   existing `pair_outcome_*` flags (the Natural Cure ability + the bench-cleric path become undo
+#   paths; the reduction becomes a MIN over available paths). No ARCH_SIGNATURE bump — with the
+#   flags OFF the forward is byte-identical — but a <v95 config recording either pair_outcome flag
+#   ON is REFUSED rather than migrated, since it trained against different numbers.
+MODEL_CONFIG_VERSION = 95
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -389,6 +397,14 @@ class ModelVersion:
     pair_outcome_switch: bool = False
     switch_branch_cell: bool = False
 
+    # v95 STRUCTURAL (gen3_conditional_threat_v1 / gen3_pair_value_route_v1, substrate Phase C):
+    # `conditional_threat_cell` is OA1 — the SECOND widener of the pointer SWITCH cell (state_dict
+    # AND switch-cell width). `pair_value_route` is PV — one zero-init D_MODEL projection inside
+    # CLSPool (state_dict only; it injects ADDITIVELY, so no projection width moves and the version
+    # gate is the ONLY thing that rejects a mismatched resume). Both shape/gate-caught below.
+    conditional_threat_cell: bool = False
+    pair_value_route: bool = False
+
     # v86 STRUCTURAL (gen3_op_lean_forward_v1): drop_renders shrinks out_gain (state_dict
     # shape); believed_lean changes the d3 forward math (no shape — the version gate is the
     # ONLY thing that rejects a mismatched resume).
@@ -670,6 +686,14 @@ class ModelVersion:
             switch_branch_cell=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "switch_branch_cell", False)
+            ),
+            conditional_threat_cell=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "conditional_threat_cell", False)
+            ),
+            pair_value_route=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get(
+                    "pair_value_route", False)
             ),
             op_drop_renders=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -1131,6 +1155,27 @@ class ModelVersion:
                 "The OA2 / spinblock / Protect-mass cell widens the pointer move cell, so the "
                 "flag is fixed for a run's lifetime.\n"
                 "Resume with the matching --switch-branch-cell, or start a fresh run."
+            )
+        # gen3_conditional_threat_v1 (v95): one zero-init projection + a pointer-SWITCH-cell
+        # width change (state_dict).
+        if self.conditional_threat_cell != saved.conditional_threat_cell:
+            raise ModelVersionError(
+                f"conditional_threat_cell mismatch: saved={saved.conditional_threat_cell}, "
+                f"current={self.conditional_threat_cell}.\n"
+                "OA1's conditional-threat coordinates widen the pointer SWITCH cell, so the flag "
+                "is fixed for a run's lifetime.\n"
+                "Resume with the matching --conditional-threat-cell, or start a fresh run."
+            )
+        # gen3_pair_value_route_v1 (v95): one zero-init D_MODEL projection inside CLSPool. It
+        # injects ADDITIVELY, so NO width moves anywhere and nothing shape-based can see the
+        # difference except the extra state_dict key — the version gate carries this one.
+        if self.pair_value_route != saved.pair_value_route:
+            raise ModelVersionError(
+                f"pair_value_route mismatch: saved={saved.pair_value_route}, "
+                f"current={self.pair_value_route}.\n"
+                "PV adds a zero-init injection into the critic's copy of our team tokens, so the "
+                "flag is fixed for a run's lifetime.\n"
+                "Resume with the matching --pair-value-route, or start a fresh run."
             )
         # gen3_intent_threshold_v1 (v84): two zero-init projections + width changes (state_dict).
         if self.intent_threshold != saved.intent_threshold:
@@ -1802,4 +1847,24 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("pair_outcome_switch", False)
         data.setdefault("switch_branch_cell", False)
         data["config_version"] = 94
+    # v95 (substrate Phase C) — two post-floor flag-gated modules: absent means OFF, which is what
+    # every pre-v95 checkpoint trained under. ⚠️ v95 ALSO amends `pair_outcome_cell` /
+    # `pair_outcome_switch` COORDINATE SEMANTICS (gen3_status_economy_v1: `tempo_cost` gains the
+    # Natural Cure and bench-cleric undo paths and reduces by MIN rather than MAX). That is a
+    # forward-math change under an existing flag, so a checkpoint recording either flag ON below
+    # v95 trained against a DIFFERENT `tempo_cost` and is refused rather than migrated — the v75
+    # rule. No such checkpoint exists (neither flag has ever been enabled in a run), so this is a
+    # latent guard, not a migration path.
+    if version < 95:
+        if data.get("pair_outcome_cell") or data.get("pair_outcome_switch"):
+            raise ModelVersionError(
+                "This checkpoint recorded pair_outcome_cell/pair_outcome_switch ON at "
+                f"config_version {version}, before v95's gen3_status_economy_v1 amended the "
+                "`tempo_cost` coordinate (the Natural Cure ability and the bench-cleric path are "
+                "now undo paths, and the reduction is a MIN over available paths rather than a "
+                "MAX). The weights are unchanged but they were trained against different numbers, "
+                "so re-read this run from its own git_hash instead of migrating it.")
+        data.setdefault("conditional_threat_cell", False)
+        data.setdefault("pair_value_route", False)
+        data["config_version"] = 95
     return data

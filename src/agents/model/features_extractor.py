@@ -41,6 +41,7 @@ from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
     INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
     PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
+    CONDITIONAL_THREAT_SWITCH_DIM, PAIR_VALUE_ROUTE_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
     VALUE_SEED_K,
@@ -129,6 +130,8 @@ from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.pair_outcome import (
     PairOutcomeMoveCell, PairOutcomeSwitchCell, pair_alpha, reduce_pair_in, reduce_pair_in_all)
 from agents.model.switch_branch import SwitchBranchMoveCell
+from agents.model.conditional_threat import ConditionalThreatCell
+from agents.model.pair_value_route import PairValueInject  # noqa: F401  (re-export)
 from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
@@ -402,6 +405,8 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  pair_outcome_cell: bool = False,
                  pair_outcome_switch: bool = False,
                  switch_branch_cell: bool = False,
+                 conditional_threat_cell: bool = False,
+                 pair_value_route: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
                  value_clock: bool = False,
@@ -530,7 +535,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # (SB3 restores optimizer state positionally — reordering to suit this feature would corrupt
         # every resume). A post-construction assert below ties the two together.
         _vti_dim = value_threat_inject_dim() if bool(value_threat_inject) else 0
-        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim)
+        # gen3_pair_value_route_v1 (v95, PV): the SECOND token-content injection on the value pool's
+        # local copy — Phase A's unified outcome row, which is what the critic has never had in any
+        # per-entity currency. Built here (not through the v89 `_value_pooled_routes` seam) because
+        # a post-pool additive route would have to collapse the J axis, and the only equivariant
+        # collapse is a sum — see `pair_value_route.py` for the whole argument.
+        self.cls_pool = CLSPool(layout, value_threat_inject_dim=_vti_dim,
+                                pair_value_row_dim=(PAIR_VALUE_ROUTE_DIM
+                                                    if bool(pair_value_route) else 0))
         self.hidden_opp_belief = HiddenOppBeliefPool(opp_belief_cls_k) if opp_belief_cls_k > 0 else None
         # In-place hidden-opponent belief (the live design): distinct learned unknown-mon tokens fill
         # the un-revealed opp slots + a species/moves aux head supervises them. OFF reproduces the
@@ -713,6 +725,42 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "damage_op=True, and damage_matrices_outgoing=True (OA2's per-(our move, their "
                     "mon) grid is what makes β actionable; there is no other source for 'what my "
                     "move does to the arrival').")
+        # gen3_conditional_threat_v1 (v95, Phase C): OA1 — the defensive-pivot coordinates the
+        # α-reduced outcome row structurally cannot carry (the accuracy-folded P(this mon dies),
+        # the bulk-INDEPENDENT expected type multiplier, and the two §0.2(3) margins), on the
+        # pointer SWITCH cell.
+        #
+        # Requires `damage_op` and `damage_matrices_incoming`, and NOT `pair_outcome_switch`. The
+        # matrix requirement is real rather than defensive: it is the ONLY producer of the
+        # per-(defender, seat) type multiplier AND of the top-K selection α's seats align to. The
+        # independence from Phase B is deliberate for the same reason Phase B is independent of
+        # Phase A — the two widen one cell with different quantities, and coupling them would make
+        # a measured result unattributable to either. α uses the same `pair_alpha` ladder, so the
+        # R1 fallback keeps the flag independently enableable; that fallback is MEANINGFUL here
+        # (every coordinate is a "what lands on me if they attack" contraction, so the missing
+        # SWITCH mass correctly shrinks it toward zero) rather than the v94 case where it would
+        # have asserted something false.
+        self.conditional_threat = None
+        if conditional_threat_cell:
+            self.conditional_threat = ConditionalThreatCell(CONDITIONAL_THREAT_SWITCH_DIM)
+            if not (damage_op and damage_matrices_incoming):
+                raise ValueError(
+                    "conditional_threat_cell=True requires damage_op=True and "
+                    "damage_matrices_incoming=True — the incoming matrix is the only producer of "
+                    "the per-(our defender, their seat) type multiplier and of the top-K selection "
+                    "α's seats align to; nothing else computes either.")
+        # gen3_pair_value_route_v1 (v95, Phase C): PV — the same unified outcome row as TOKEN
+        # CONTENT on the CRITIC's copy of our tokens (design_opponent_intent.md §7a(2)). The module
+        # itself lives on `cls_pool` (so the augmented tensor stays a local and vf-only is
+        # structural); this flag records the decision and enforces the dependency.
+        #
+        # ⚠️ C4 RE-ENTRY CONDITION: any α/β-critic route may be BUILT opt-in but its ENABLING owes
+        # the C4-style offline gate first (ledger C6 — the delivery line is EXHAUSTED).
+        self.pair_value_route = bool(pair_value_route)
+        if self.pair_value_route and not damage_op:
+            raise ValueError(
+                "pair_value_route=True requires damage_op=True — the injected row IS the op's "
+                "unified `pair_in` outcome vector, and nothing else computes it.")
         # gen3_value_direct_routes_v1 (v87): two direct critic routes, both zero-init vf-tail
         # appends. The clock route has no dependency (the ctx always carries the global block);
         # the intent route consumes the α/β PUBLICATIONS and so requires the intent heads.
@@ -924,17 +972,24 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
         if (self.intent_value_reduce is not None or self.intent_threshold_move is not None
                 or self.intent_conditional is not None or self.pair_outcome_move is not None
-                or self.pair_outcome_switch is not None):
+                or self.pair_outcome_switch is not None or self.conditional_threat is not None
+                or self.pair_value_route):
             self.damage_op.stash_pair_cells = True  # type: ignore[union-attr]
         # gen3_pair_outcome_v1: and the eight extra coordinates on top of them. Set together with
         # `stash_pair_cells` above, never alone — the damage cells ARE the vector's first six
         # coordinates, so a lone `stash_pair_outcome` would build a narrower vector than
         # `PAIR_OUTCOME_COORDS` declares.
-        if self.pair_outcome_move is not None or self.pair_outcome_switch is not None:
+        if (self.pair_outcome_move is not None or self.pair_outcome_switch is not None
+                or self.conditional_threat is not None or self.pair_value_route):
             self.damage_op.stash_pair_outcome = True  # type: ignore[union-attr]
         # gen3_switch_branch_v1: the per-opp-slot GHOST marginal the spinblock contracts β against.
         if self.switch_branch is not None:
             self.damage_op.stash_opp_ghost = True  # type: ignore[union-attr]
+        # gen3_conditional_threat_v1: the per-(defender, seat) TYPE MULTIPLIER. Not a coordinate of
+        # `pair_in` (whose width is a contract three consumers read), so it gets its own seam —
+        # a pure `.detach()` of a tensor the incoming matrix already built, so zero extra math.
+        if self.conditional_threat is not None:
+            self.damage_op.stash_pair_type_mult = True  # type: ignore[union-attr]
         # op existed. If those ever disagree the flag is silently mis-wired, so assert the identity.
         if self.value_threat_inject:
             _built = self.damage_op.pair_reducer.extra_dim  # type: ignore[union-attr]
@@ -1393,7 +1448,10 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         base = self.damage_op.pointer_switch_cell_dim if self.damage_op is not None else 0
         # gen3_pair_outcome_switch_v1: the FIRST widener of the switch cell — mon j's own α-reduced
         # outcome row + the spin-denial coordinate.
-        return base + (PAIR_OUTCOME_SWITCH_DIM if self.pair_outcome_switch is not None else 0)
+        base += PAIR_OUTCOME_SWITCH_DIM if self.pair_outcome_switch is not None else 0
+        # gen3_conditional_threat_v1 (OA1): the SECOND — the four coordinates that row cannot carry.
+        return base + (CONDITIONAL_THREAT_SWITCH_DIM
+                       if self.conditional_threat is not None else 0)
 
     def _publish_belief(self, t: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
         """Hand a belief output to the FORWARD (reinject / the op / the edge cells / the seats / the
@@ -1807,10 +1865,31 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         #
         # CLS pools — derived ONCE, on the final team tokens, so the policy
         # pools, the value pool, and the side/aux readouts below ALL reflect the same state.
+        # gen3_pair_value_route_v1 (v95, PV — design_opponent_intent.md §7a(2)): the α-reduced
+        # unified outcome row per OUR mon j, as TOKEN CONTENT on the value pool's copy of mon j's
+        # token. ⚠️ α is the R1 `belief_mean` rung UNCONDITIONALLY, and that is ORDERING rather than
+        # preference: the α/β heads are scored BELOW this line, so the publication does not exist
+        # yet. §7a(2) pre-registers exactly this substitution, which separates the DELIVERY claim
+        # from the DISTRIBUTION claim — and `pair_alpha` documents loudly that a presence belief and
+        # a usage belief are not the same object.
+        _pv_rows = None
+        if self.pair_value_route:
+            _pv_pin = self.damage_op.last_pair_in if self.damage_op is not None else None
+            _pv_w = self.damage_op.last_topk_w if self.damage_op is not None else None
+            if _pv_pin is None or _pv_w is None:
+                raise RuntimeError(
+                    "pair_value_route is on but the op stashed no unified outcome vector (or no "
+                    "top-K belief weights) — the route would silently contribute nothing, which is "
+                    "indistinguishable from a null RESULT. Requires damage_topk_k>0 (and the "
+                    "incoming matrix that computes it).")
+            _pv_rows = reduce_pair_in_all(
+                pair_alpha(None, _pv_w, self.damage_op.last_pair_seat_live),  # type: ignore[union-attr]
+                _pv_pin, self.damage_op.last_pair_gate)  # type: ignore[arg-type,union-attr]
         our_team_pooled, their_team_pooled, our_active_refined, value_pooled = self.cls_pool(
             our_team_out, their_team_out, ctx,
             threat_rows=(self.damage_op.last_reduced_extra  # type: ignore[union-attr]
                          if self.value_threat_inject else None),
+            pair_rows=_pv_rows,
         )
         # gen3_pointer_native_v1 / gen3_entity_move_seats_v1: stash the pointer action head's
         # PER-ENTITY inputs for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head
@@ -2004,6 +2083,27 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                 # index 1 of the hazard pair is THEIR side — the layers WE set, which is exactly
                 # what their Rapid Spin would remove and a Ghost switch-in would preserve.
                 ctx.spikes_feature[:, 1:2])], dim=2)
+        # gen3_conditional_threat_v1 (v95): OA1 — the SECOND widener of the switch cell. Same α
+        # ladder, same (defender, seat) grid, DIFFERENT quantities: the accuracy-folded P(this mon
+        # dies) (§0.2(2) — a thin tanh scorer cannot multiply two of its own inputs), the
+        # bulk-INDEPENDENT expected type multiplier (the one cell channel `pair_in` never carried),
+        # and the two §0.2(3) MARGINS against our own HP. §1.2's λ-weighted `w` is NOT built — see
+        # the substitution table in `conditional_threat.py`.
+        if self.conditional_threat is not None:
+            _ct_pin = self.damage_op.last_pair_in if self.damage_op is not None else None
+            _ct_w = self.damage_op.last_topk_w if self.damage_op is not None else None
+            _ct_tm = self.damage_op.last_pair_type_mult if self.damage_op is not None else None
+            if _ct_pin is None or _ct_w is None or _ct_tm is None:
+                raise RuntimeError(
+                    "conditional_threat_cell is on but the op stashed no unified outcome vector / "
+                    "top-K belief weights / type multiplier — the cell would silently contribute "
+                    "nothing, which is indistinguishable from a null RESULT. Requires "
+                    "damage_topk_k>0 and the incoming matrix that computes both.")
+            _scells = torch.cat([_scells, self.conditional_threat(
+                pair_alpha(self.last_alpha_logits, _ct_w,
+                           self.damage_op.last_pair_seat_live),  # type: ignore[union-attr]
+                _ct_pin, _ct_tm, self.damage_op.last_pair_gate,  # type: ignore[union-attr]
+                ctx.hp_and_active[:, :TEAM_SIZE, 0])], dim=2)
         # gen3_switch_branch_v1 (v94): OA2 + the Rapid-Spin spinblock + Protect's α-conditioning —
         # the per-request-slot content of the branch in which the OPPONENT switches. The last
         # move-cell rider, and the only one that consumes β forward-side besides v85's boom trade.

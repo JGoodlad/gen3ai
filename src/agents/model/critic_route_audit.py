@@ -109,6 +109,30 @@ class _Arms:
         hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
         return hooks, _pre
 
+    def pair_value(self) -> tuple[list[Any], Any]:
+        """gen3_pair_value_route_v1 (v95, PV) — zero the α-reduced UNIFIED outcome rows on their way
+        into `CLSPool`, exactly as `threat()` does for v64's damage-only rows.
+
+        This arm IS the C4-style offline gate the route's re-entry condition names: it prices what
+        the critic actually leans on the status / neutralization / tempo currency for, in the same
+        |dV| units as every other route, on one trained run. vf-only by construction, so a nonzero
+        KL/flip reading here would itself be a finding (it would mean the injection leaked into pi).
+        """
+        fe = self.fe
+        hooks = []
+
+        def _pre(_m: Any, args: tuple[Any, ...],
+                 kwargs: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
+            pr = kwargs.get("pair_rows")
+            if pr is not None:
+                _pre.fired = True  # type: ignore[attr-defined]
+                kwargs = dict(kwargs)
+                kwargs["pair_rows"] = torch.zeros_like(pr)
+            return args, kwargs
+        _pre.fired = False  # type: ignore[attr-defined]
+        hooks.append(fe.cls_pool.register_forward_pre_hook(_pre, with_kwargs=True))
+        return hooks, _pre
+
     def event_seats(self) -> tuple[list[Any], dict[str, bool]]:
         """Key-mask ALL H-B event seats (force the pad mask True) — the design's "usage audit
         on the event seats" in the house ablation form: if the trunk learned to attend over
@@ -347,6 +371,8 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
         _run("seed", [arms.seed()])
     if getattr(fe, "value_threat_inject", False):
         _run("threat", [arms.threat()])
+    if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
+        _run("pair_value", [arms.pair_value()])
     if getattr(fe, "hidden_opp_belief", None) is not None:
         for mode in ("both", "pi", "vf"):
             _run(f"hidden_opp_{mode}", [arms.hidden_opp(mode)])
@@ -390,6 +416,8 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
         all_sets.append(arms.seed())
     if getattr(fe, "value_threat_inject", False):
         all_sets.append(arms.threat())
+    if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
+        all_sets.append(arms.pair_value())
     if getattr(fe, "hidden_opp_belief", None) is not None:
         all_sets.append(arms.hidden_opp("both"))
     if getattr(fe, "value_entity_pool", None) is not None:

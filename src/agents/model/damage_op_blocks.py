@@ -50,7 +50,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
     _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NEUTRAL_BRN_ATK_LOSS, _NEUTRAL_PAR_FULL, _NEUTRAL_PSN_TICK, _NEUTRAL_TOX_FIRST_TICK,
-    _TEMPO_CURE_TURNS,
+    _TEMPO_CLERIC_TURNS, _TEMPO_CURE_TURNS, _TEMPO_NATURAL_CURE_TURNS,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
@@ -80,6 +80,7 @@ class DamageOperatorBlocks:
         hp_num: int
         rest_num: int
         rest_sleep_noeb: float
+        stash_pair_type_mult: bool
         stash: 'OpStashes'
         # Methods the COMPOSED class (`damage_op.DamageOperator`) owns and both mixins call.
         # Declared as callables rather than re-stated signatures: the definition is one file away
@@ -98,6 +99,7 @@ class DamageOperatorBlocks:
         ABILITY_DAMAGE_MULT: torch.Tensor
         ABILITY_SECONDARY_BLOCK: torch.Tensor
         ABILITY_SECONDARY_MULT: torch.Tensor
+        ABILITY_NATURAL_CURE: torch.Tensor
         ABILITY_STATUS_BLOCK: torch.Tensor
         BASE_STATS: torch.Tensor
         CHART: torch.Tensor
@@ -107,6 +109,7 @@ class DamageOperatorBlocks:
         MOVE_EFFECT_FLAGS: torch.Tensor
         MOVE_FIXED_DAMAGE: torch.Tensor
         MOVE_CURES_SELF_STATUS: torch.Tensor
+        MOVE_CURES_TEAM_STATUS: torch.Tensor
         MOVE_INFLICTS_STATUS: torch.Tensor
         MOVE_IS_SLEEP: torch.Tensor
         MOVE_PHYS: torch.Tensor
@@ -746,17 +749,29 @@ class DamageOperatorBlocks:
         expected-duration number that is not a rule, so it is named rather than guessed.
 
         ### `tempo_cost` — "turns of MY clock spent undoing it"
-        `P(any major status lands) · undo_turns(j)`, where `undo_turns` is read off THIS mon's OWN
-        moveset — the receiver is fully observed (`j` indexes OUR six), so there is no
-        marginalization question on this axis at all:
-          * a one-turn cure (Refresh / Heal Bell / Aromatherapy) → **1.0**;
-          * **Rest** → the op's own `rest_sleep_noeb` (2.0 turns, DERIVED from the verified sleep
-            hazard table, not a constant written here) — it undoes any status at a higher price;
-          * neither → **0.0**, which is the correct reading: nothing is spent because nothing is
-            undone. The permanent loss is `neutralization`'s job, and the two ride DECORRELATED
-            rather than pre-blended (§9's anti-pattern list).
-        A Lum Berry would cure at zero tempo and near-zero neutralization; items are not read here,
-        so a berry-holder reads as if it had no answer. Named in `pair_outcome.py`'s limits.
+        `P(any major status lands) · undo_turns(j)`, where `undo_turns` is the CHEAPEST available
+        undo path for mon `j`. Every input is fully observed (`j` indexes OUR six — our movesets,
+        our abilities and our HP are all on the team sheet), so there is no marginalization question
+        on this axis at all. **gen3_status_economy_v1 completes the path set** — Phase A read only
+        the moveset, so a Natural Cure mon and a mon with no answer at all were the same number:
+
+        | path | condition | turns | the gen3 rule it comes from |
+        |---|---|---|---|
+        | self-cure move | mon j knows Refresh / Heal Bell / Aromatherapy | **1.0** | the cure consumes exactly the turn it is used on |
+        | **Natural Cure** | mon j's ABILITY is Natural Cure | **1.0** | the status is shed ON SWITCH-OUT, and a switch consumes exactly one of our actions — the same single turn, needing no moveslot and no teammate |
+        | Rest | mon j knows Rest | `rest_sleep_noeb` (**2.0**) | DERIVED from the verified sleep-hazard table, not a constant written here |
+        | **cleric** | ANY OTHER ALIVE mon of ours carries a PARTY-WIDE cure | **2.0** | switch to the cleric (1) + click Heal Bell (1); the party-wide scope is what lets it reach mon j on the BENCH |
+        | none | — | **0.0** | nothing is spent because nothing is undone |
+
+        Two consequences worth stating rather than discovering:
+          * the reduction is a **min over available paths**, not the old `max(cure, rest)` — a mon
+            carrying BOTH Refresh and Rest used to be priced at the move it would not click;
+          * `0.0` remains the "no path" sentinel, so it can never also mean "the path is free". That
+            is why Natural Cure is priced at its literal switch and not at 0.0, and why the ability
+            does NOT touch `neutralization` — see `pair_outcome.py`'s limits.
+        The permanent loss stays `neutralization`'s job, and the two ride DECORRELATED rather than
+        pre-blended (§9's anti-pattern list). A Lum Berry would cure at zero tempo and near-zero
+        neutralization; items are not read here, so a berry-holder reads as if it had no answer.
         """
         from agents.model.arch_constants import _PAIR_OUTCOME_NEW
         B, eps = ctx.batch_size, 1e-8
@@ -794,11 +809,39 @@ class DamageOperatorBlocks:
         neutral = torch.einsum("bjks,bjs->bjk", p_ident, sev)                       # [B,6,K]
 
         # --- tempo: P(any major status) x the turns THIS mon spends undoing it ---
+        # gen3_status_economy_v1: FOUR paths, and the price is the CHEAPEST available one. The old
+        # form was `max(cure, rest)`, which was a "pick the non-zero" idiom rather than a claim —
+        # and it read 2.0 for a mon carrying BOTH Refresh and Rest, i.e. it priced the undo at the
+        # move you would not click. A min-over-available-paths says what it means; 0.0 stays the
+        # sentinel for "no path exists", which is a DIFFERENT statement from "the path is free"
+        # (see the pair_outcome.py note on why Natural Cure could not be modelled as 0.0).
         our_moves = ctx.all_move_ids[:, :TEAM_SIZE]                                 # [B,6,max_moves]
         has_cure = self.MOVE_CURES_SELF_STATUS[our_moves].amax(dim=-1)              # [B,6]
         has_rest = (our_moves == self.rest_num).any(dim=-1).to(has_cure.dtype)      # [B,6]
-        undo_turns = torch.maximum(has_cure * _TEMPO_CURE_TURNS,
-                                   has_rest * self.rest_sleep_noeb)                 # [B,6]
+        # The ABILITY path. OUR six are fully observed (the team sheet), so `ability1_ids` holds the
+        # exact ability and no marginalization question arises on this axis — the same reason
+        # `tempo_cost` may read our own moveset directly.
+        has_nc = self.ABILITY_NATURAL_CURE[ctx.ability1_ids[:, :TEAM_SIZE]]         # [B,6]
+        # The CLERIC path: some OTHER mon of ours, ALIVE, carrying a PARTY-WIDE cure. `alive` is
+        # required because a fainted cleric is not a plan; `other` is required because a mon that
+        # carries Heal Bell ITSELF already has the 1-turn self-cure path above, and counting it
+        # twice would price its own answer at the more expensive number.
+        carries_cleric = self.MOVE_CURES_TEAM_STATUS[our_moves].amax(dim=-1)        # [B,6]
+        alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).to(has_cure.dtype)        # [B,6]
+        live_cleric = carries_cleric * alive                                        # [B,6]
+        has_other_cleric = (live_cleric.sum(dim=-1, keepdim=True)
+                            - live_cleric > 0.5).to(has_cure.dtype)                 # [B,6]
+        _INF = torch.full_like(has_cure, float('inf'))
+        paths = torch.stack([
+            torch.where(has_cure > 0.5, has_cure.new_full((), _TEMPO_CURE_TURNS), _INF),
+            torch.where(has_nc > 0.5, has_nc.new_full((), _TEMPO_NATURAL_CURE_TURNS), _INF),
+            torch.where(has_rest > 0.5, has_rest.new_full((), self.rest_sleep_noeb), _INF),
+            torch.where(has_other_cleric > 0.5,
+                        has_cure.new_full((), _TEMPO_CLERIC_TURNS), _INF),
+        ], dim=-1)                                                                  # [B,6,4]
+        cheapest = paths.amin(dim=-1)                                               # [B,6]
+        undo_turns = torch.where(torch.isfinite(cheapest), cheapest,
+                                 torch.zeros_like(cheapest))                        # [B,6]
         p_major = p_ident.sum(dim=-1)                                               # [B,6,K]
         tempo = p_major * undo_turns[:, :, None]                                    # [B,6,K]
 
@@ -863,6 +906,13 @@ class DamageOperatorBlocks:
         amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[:, :TEAM_SIZE]]            # [B,6,T]
         type_mult = (torch.gather(self.CHART[t1d], 2, idx2) * torch.gather(self.CHART[t2d], 2, idx2)
                      * torch.gather(amul, 2, idx2))                                 # [B,6,K]
+        # gen3_conditional_threat_v1 (v95, OA1): the multiplier stashed at the SAME alignment it is
+        # computed at — the alternative (a consumer re-deriving it from `topk_idx` + the chart) is
+        # the `op move-order` bug class with extra steps, since the real move-num gather (`real_idx`)
+        # and the ability fold both live here. UN-gated: the consumer applies alpha (already
+        # seat_live-masked) and `pair_gate`, exactly as the `pair_cells` path does.
+        if self.stash_pair_type_mult:
+            self.stash.pair_type_mult = type_mult.detach()                          # [B,6,K]
         status_topk = self._incoming_status_lands(ctx, real_idx, high_topk)        # [B,6,K]
         # --- meaningful-K gate (== _topk_block): once all 4 opp moves revealed, the 5th+ slot is closed ---
         opp_act = TEAM_SIZE + ctx.opp_active_local

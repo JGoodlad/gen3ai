@@ -87,6 +87,12 @@ class OpStashes:
     # because one alpha cannot weight two (design_opponent_intent.md §5.1).
     pair_in: Optional[torch.Tensor] = None           # [B,J,K,_PAIR_OUTCOME_RAW]
     pair_seat_live: Optional[torch.Tensor] = None    # [B,K] the meaningful-K gate (unmodeled seats)
+    # gen3_conditional_threat_v1 (v95, OA1): the per-(our defender j, their believed seat k) TYPE
+    # MULTIPLIER — the one channel `_incoming_matrix` computes at exactly alpha's seat alignment
+    # and then spends only on the flat render. It is NOT a coordinate of `pair_in`, deliberately:
+    # `pair_in`'s width is a shipped contract three consumers read, and the multiplier is the one
+    # quantity in the cell that is NOT divided by the defender's own bulk (see conditional_threat.py).
+    pair_type_mult: Optional[torch.Tensor] = None    # [B,J,K] UN-gated (the consumer applies alpha+gate)
     reduced_extra: Optional[torch.Tensor] = None     # [B,6,extra] the pair-reduce rung output
     out_pko: Optional[torch.Tensor] = None           # [B,4,6] per-(our move, their mon) pko, PRE-gain
     # gen3_switch_branch_v1 (v94): the SAME outgoing grid un-collapsed — `[low, high, crit, pko,
@@ -204,6 +210,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # and zero extra work; on, it costs one `[B|B,6, n_species] @ [n_species]` matvec beside
         # the species reads `_outgoing_matrix` already does.
         self.stash_opp_ghost: bool = False
+        # gen3_conditional_threat_v1 (v95): the seam for the per-(defender, seat) type multiplier.
+        # Off => None and zero extra work; on it is a pure `.detach()` of a tensor the incoming
+        # matrix already built, so it adds no arithmetic at all.
+        self.stash_pair_type_mult: bool = False
         # gen3_op_stashes_v1: ALL per-forward side values live in ONE typed container, replaced
         # at forward entry (see OpStashes). The individual docs moved onto the dataclass fields;
         # the provenance tags (candidate dedup, lean forward, tensors views) are in CHANGELOG.
@@ -359,6 +369,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
     def last_pair_in(self) -> Optional[torch.Tensor]: return self.stash.pair_in
     @property
     def last_pair_seat_live(self) -> Optional[torch.Tensor]: return self.stash.pair_seat_live
+    @property
+    def last_pair_type_mult(self) -> Optional[torch.Tensor]: return self.stash.pair_type_mult
     @property
     def last_reduced_extra(self) -> Optional[torch.Tensor]: return self.stash.reduced_extra
     @property

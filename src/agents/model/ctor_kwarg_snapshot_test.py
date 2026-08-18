@@ -48,6 +48,7 @@ CTOR_KWARGS_V89 = frozenset({
     "move_belief_mode", "move_candidate_floor", "move_latent", "move_prior_fusion",
     "observation_space", "op_believed_lean", "op_drop_renders", "opp_belief_cls_k",
     "pair_outcome_cell", "pair_outcome_switch", "switch_branch_cell",
+    "conditional_threat_cell", "pair_value_route",
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior", "threat_prob_outspeed",
     "value_clock", "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",

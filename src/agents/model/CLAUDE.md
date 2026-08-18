@@ -39,7 +39,7 @@ Grouped into the four tiers the contract asserts:
 |---|---|---|
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` (opt-in) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head`, `intent_threshold_value` / `value_clock_route` / `value_intent_route` (opt-in) |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
@@ -131,6 +131,12 @@ bit-identical at ANY weight — gated against a large random projection, not jus
 in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
 is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
 is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
+**v95 adds its SIBLING on the same local copy — `--pair-value-route` (PV,
+`design_opponent_intent.md` §7a(2)) — carrying Phase A's UNIFIED 14-coordinate `pair_in` row
+instead of v64's 13-wide damage summary, so the critic gets the six status identities,
+`neutralization` and `tempo_cost` per entity for the first time (they otherwise reach vf only as
+the `s3` edge family's softmax-normalised RATIO). The two stack additively and independently.
+⚠️ Its ENABLING owes the C4-style offline gate first (ledger C6); BUILDING it is free.
 (`BeliefHead` also carried an asymmetric SimSiam **latent** predictor until v75, regressing each
 believed slot toward the stop-grad `pokemon_encoder` role-token of the true hidden mon. It is DELETED —
 it was never fed forward, its own role-geometry probe concluded decodable != helps, and it cost ~13% of
@@ -321,6 +327,8 @@ modules out of the extractor and the layout out of the op):
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
 | `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
 | `switch_branch.py` | `gen3_switch_branch_v1` — OA2 (E[our move \| they SWITCH], β-contracted, kept DECORRELATED from the stay branch), the Rapid-Spin spinblock (the Pursuit mirror) and Protect's α-derived attack mass. `SWITCH_BRANCH_COORDS` is the contract; each coordinate's §9a admission answer is in the module docstring |
+| `conditional_threat.py` | `gen3_conditional_threat_v1` — **OA1**, the conditional THREAT cell (the defensive pivot): the four α-contracted coordinates the reduced outcome row structurally cannot carry (`e_pko_acc`, `e_type_mult`, `margin_high`, `margin_crit`), on the pointer SWITCH cell. `CONDITIONAL_THREAT_COORDS` is the contract; the module docstring holds the **substitution table** for the three §1.2 clauses that are superseded (no `λ`, no re-emitted row coordinates, `--damage-matrices-outgoing-all` void) plus each coordinate's §9a admission answer |
+| `pair_value_route.py` | `gen3_pair_value_route_v1` — **PV**, the pair-VALUE CRITIC route: Phase A's unified row as TOKEN CONTENT on our mon j's token, injected inside `CLSPool` on the value pool's copy. The docstring carries the **C4 re-entry condition**, why the v89 seam was rejected (a post-pool route must collapse the J axis), and why α is R1 by ORDERING |
 | `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`, plus Phase B's `reduce_pair_in_all` (Contract W at EVERY defender), `pair_alpha_full` (the three-way α split a SWITCH-branch consumer needs) and `PairOutcomeSwitchCell` (the FIRST module to widen the pointer SWITCH cell). Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
 | `features_extractor.py` | `ProjectionAssembler` + the `Gen3FeaturesExtractor` orchestrator; **re-exports every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
@@ -833,10 +841,11 @@ sentence refer to one object.
 
 ### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 
-Seven modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
-`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, and the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`. They share four conventions, and each one
-exists because breaking it fails silently:
+Nine modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
+`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
+`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` /
+`PairValueInject`. They share four conventions, and each one exists because breaking it fails
+silently:
 
 1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
    of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
@@ -870,6 +879,28 @@ worse than a flag that says it needs the head.** The test for whether to build o
 compute something", it is "is what I would compute an ABSENCE or a CLAIM". Same rule kills the
 tempting `softmax` over an all-`-inf` β row: that yields a UNIFORM arrival distribution, which is a
 claim; the shipped code gates it to exactly zero.
+
+**⚠️ WHERE a consumer sits in the phase chain decides WHICH α it can have — and v95's PV is the
+case where that is not a choice at all.** Every consumer above runs at the pointer stash, i.e. after
+the α/β heads are scored, so "read the PUBLICATION" is available to them. `PairValueInject` runs
+inside `CLSPool`, which pools at T2 **before** those heads exist, so it takes the R1 `belief_mean`
+rung **unconditionally — even with `--opp-intent` ON**. Say ORDERING, not "fallback": a fallback is
+something that fires when a head is absent, and calling this one that would invite a future edit to
+"upgrade" it to the publication, which is unbuildable without moving the pool. The gate asserts the
+injected rows are byte-identical across the intent flag AND that the two rungs genuinely differ on
+that seed, so the claim is live rather than vacuous. **The general rule: before choosing an α rung,
+locate the consumer in the tier chain — the answer may already be fixed.**
+
+**A critic-facing α consumer owes its own gradient guard.** `value_route_gradient_test.py` iterates
+`_value_pooled_routes`, so a route added to that seam is covered by construction — but the two
+token-content injections (`value_threat_proj` v64, `pair_value_proj` v95) are NOT in the seam, by
+design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
+a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. Both are zero-init, so a
+disconnected one is indistinguishable from one that learned nothing — the exact gen-12 dead-tail
+failure, one level up. The guard therefore carries a dedicated cell for them, and its real claim is
+*every zero-init projection the critic depends on receives critic gradient*, not *every seam entry
+does*. **When you add a critic-side enrichment anywhere other than the seam, extend that test in the
+same pass.**
 
 **A per-DEFENDER delivery is not a per-defender BELIEF.** `reduce_pair_in_all` produces six rows,
 one per our mon, from ONE α — the reduction may vary per defender, the DISTRIBUTION may not (that is

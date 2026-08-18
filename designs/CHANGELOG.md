@@ -5207,3 +5207,210 @@ heads **verified failing on revert**, OFF byte-identity, real-`MaskablePPO` iden
 version machinery and the delivery-graph edges. A new explain-only compile cell covers the pair's
 one-graph property; it is separate from the v93 intent cell because **measured**, adding the two
 flags there took that cell 25.5 s → 73.1 s, overrunning the 31 s default-tier budget.
+
+---
+
+### v95 — `gen3_conditional_threat_v1` + `gen3_pair_value_route_v1` + `gen3_status_economy_v1` (2026-08-17): OA1, the critic's route, and the status economy's missing paths (Phase C)
+
+**The last phase of the conditional-mechanics substrate.** Phase A (v93) unified the CURRENCY of
+what the opponent does to us; Phase B (v94) put that unified row on the SWITCH cell and added the
+β-conditioned cells; Phase C adds the coordinates the row structurally cannot carry, gives the
+CRITIC a route to any of it, and closes the coordinate gap Phase A named and Phase B deliberately
+did not smuggle in.
+
+Three items, two new opt-in flags, one in-place amendment. Every flag OFF ⇒ byte-identical.
+
+#### 1. `--conditional-threat-cell` — OA1, the CONDITIONAL THREAT CELL (`design_conditional_opponent_cells.md` §1)
+
+*"They'll Ice Beam my Salamence; switch to the mon that eats Ice Beam."* The **second** module ever
+to widen the pointer SWITCH cell (Phase B was the first), carrying four α-contracted coordinates —
+`CONDITIONAL_THREAT_SWITCH_DIM` = **4**, `conditional_threat.py`:
+
+| coordinate | what it is | why the reduced row cannot carry it |
+|---|---|---|
+| `e_pko_acc` | `Σ_k α_k · ko_ramp(k,j)·acc(k)` | §0.2(2): *precompute every nonlinearity of two numbers IN THE OP.* The two factors ride the row DECORRELATED and a thin `tanh` scorer does not multiply two of its own inputs |
+| `e_type_mult` | `Σ_k α_k · type_mult(k,j)` | the one cell channel NOT divided by the defender's own bulk — a structural immunity (`0.0`) apart from an incidental zero, and a read that survives the mon's HP moving |
+| `margin_high` / `margin_crit` | `Σ_k α_k·high(k,j) − hp_frac(j)`, and the same on the crit roll | §0.2(3): *probabilities SATURATE; ship the MARGIN too.* `pko` is flat across "barely survives" and "survives comfortably", and equally flat across "dies by 60% of its bar" and "dies by 2%" |
+
+**Three of §1.2's five clauses were SUPERSEDED and substituted rather than built** — the design
+predates both shipped phases, and the substitution table is in the module docstring so the next
+reader does not re-derive a plan from the old spec:
+
+* **`λ` and the `w = softmax(λ·threat + log belief)` weighting are NOT built.** `pair_alpha` is the
+  shipped distribution over the SAME seats; a second weighting would be a **second α**, i.e. exactly
+  the D2/D3 family Contract W makes a shape error, sitting beside the shipped one and disagreeing
+  with it. The cell owns two parameters — `proj.weight`, `proj.bias` — and a test pins that list.
+* **`high` / `pko` / `status_lands` are already delivered** by `--pair-outcome-switch` on this exact
+  cell; re-emitting them is duplicated delivery (it doubles a channel's effective weight and makes
+  an ablation unattributable), and `status_lands = Σ_s p_s` is additionally barred by §9a's
+  derivability rule.
+* **§1.3's "also turn on `--damage-matrices-outgoing-all`" is VOID** — that flag was deleted outright
+  at v88 (`gen3_dead_flag_purge_v1`), its OAX block with it, and re-adding one is not this phase's
+  licence.
+
+**§5's pre-registered gates, item by item:** §5.2 (ON == OFF bitwise at init on a REAL `MaskablePPO`
+policy) and §5.5 (our-bench permutation equivariance) are gated here; §5.3/§5.4 are OA2's and were
+gated at v94; §5.1's constructed-marginal convention is followed on every coordinate. §5.6's B=1 CPU
+delta is expected ~0 by construction — the type multiplier is a `.detach()` of a tensor
+`_incoming_matrix` already built.
+
+**New op seam:** `stash_pair_type_mult` → `OpStashes.pair_type_mult` `[B,6,K]`, stashed inside
+`_incoming_matrix` at exactly α's seat alignment. It is deliberately NOT a coordinate of `pair_in`
+(whose width is a contract three consumers read), and deliberately not re-derived at the consumer —
+the real move-num gather and the ability fold both live in the matrix, so re-deriving it is the
+`op move-order` bug class with extra steps.
+
+Requires `damage_op` + `damage_matrices_incoming`; **not** `opp_intent` — the R1 `belief_mean`
+fallback is MEANINGFUL here (every coordinate is a *what lands on me if they attack* contraction, so
+the unrenormalized slice's missing SWITCH mass correctly shrinks it toward zero), unlike the v94
+`switch_branch_cell` case where a fallback would have asserted *"they never switch"*. **Not**
+`pair_outcome_switch` either: two quantities, one sink, attributable separately.
+
+#### 2. `--pair-value-route` — PV, the pair-VALUE CRITIC route (`design_opponent_intent.md` §7a(2))
+
+Every other cell in this substrate delivers through `pointer_cells`, which is **policy-only**. PV
+sends the α-reduced unified row for our mon *j* to the critic as **TOKEN CONTENT on mon j's own
+token**, inside `CLSPool`, on the value pool's copy only — a second zero-init `Linear(14, 128)`
+beside v64's `value_threat_proj`, stacking additively and independently with it.
+
+**What it delivers that nothing else does:** v64 sends the `pair_reduce` rung's **13-wide DAMAGE**
+summary. PV sends `pair_in` — Phase A's unified **14**-coordinate row, whose last eight are the six
+status identities, `neutralization` and `tempo_cost`. The critic has no other per-entity route to
+any of them: incoming status reaches vf only as the `s3` edge family's softmax-normalised **RATIO**
+(`design_pair_reduction.md` §2.1). The two flags are therefore not two spellings of one arm.
+
+**Token content, NOT the v89 `_value_pooled_routes` seam — on structure, not taste.** A seam route
+yields one `[B, D_MODEL]` vector added AFTER pooling, so it would have to collapse the `J` axis
+itself, and the only equivariant collapse is a **sum** — which cannot tell *one mon about to lose
+90% of its bar* from *six mons losing 15% each*, and the first is a losing position while the second
+is a normal turn. Token content does not collapse: the row rides the token that already carries the
+mon's identity, HP and typing, and `value_cls`'s attention decides the weighting (§2b.2 — *you can
+only preserve an axis you have output slots for*; here the tokens ARE the slots). The cost of that
+choice is stated and paid: the seam's gradient guard does not cover it by construction, so
+`value_route_gradient_test.py` gained a dedicated cell asserting BOTH token-content injections
+receive critic gradient under BOTH parameterizations — the guard's real claim is *every zero-init
+projection the critic depends on gets gradient*, not *every seam entry does*.
+
+⚠️ **α here is the R1 `belief_mean` rung UNCONDITIONALLY, and that is ORDERING rather than
+preference.** `value_cls` pools at T2 **before** the α/β heads are scored, so the publication does
+not exist at that point in the forward; this is not a fallback that fires when a head is absent, and
+the gate asserts the injected rows are byte-identical with `--opp-intent` ON (plus that the two
+rungs genuinely differ on that seed, so the assertion is not vacuous). §7a(2) pre-registers exactly
+this substitution as the way to separate the DELIVERY claim from the DISTRIBUTION claim.
+
+⚠️ **THE C4 RE-ENTRY CONDITION, recorded verbatim in the flag registry, the CLI help, the module
+docstring and `ARCHITECTURE.md`:** *any α/β-critic route may be BUILT opt-in but its ENABLING owes
+the C4-style offline gate first.* Ledger row **C6** failed 2026-08-17 with route liveness PROVEN —
+all five v89 routes trained off zero and `entity_pool` carried decisively (dV 6.28 = 110% of
+all-off) — while the critic's stall-loss over-confidence **did not move** (gen-13 confident-band gap
++0.358, CI [0.23, 0.50]), and the delivery line was declared EXHAUSTED. Building this is cheap and
+reversible; enabling it without that gate is the thing C6 forbids.
+
+Requires `damage_op`. **Width-neutral** (additive injection), so nothing shape-based can see it
+except the extra `state_dict` key — the version gate is the only thing that rejects a mismatched
+resume, which is why it has one.
+
+**Its own audit arm ships with it.** `critic_route_audit` gains `pair_value` (zeroing the rows on
+their way into `CLSPool`, exactly as v64's `threat` arm does), included in `all_off` — so the
+C4-style offline gate the re-entry condition demands can be run the moment a checkpoint carries the
+route, in the same |dV| units as every other route. A nonzero KL/flip reading on that arm would
+itself be a finding: it would mean the injection had leaked into `pi`.
+
+#### 3. `gen3_status_economy_v1` — the two undo paths `tempo_cost` never had (AMENDMENT, no new flag)
+
+Phase A read `undo_turns(j)` off mon j's **moveset only**, and Phase B's own test carried the residue
+as a named limitation. Two paths were missing and both are real decisions:
+
+* **Natural Cure is an ABILITY.** A Natural Cure mon sheds its status on switch-out — it HAS an
+  answer — but Phase A priced it at **0.0**, the same number a mon with no answer at all reads. Two
+  opposite facts arriving as one number is the currency failure this module exists to close, one
+  level down.
+* **A cleric on the BENCH is an answer for the whole team.** Heal Bell / Aromatherapy are party-wide
+  in gen 3, so a statused mon that retreats behind the cleric is not stuck with it.
+
+`undo_turns(j)` is now the **cheapest available path**, each number a gen3 rule:
+
+| path | condition | turns | rule |
+|---|---|---|---|
+| self-cure move | mon j knows Refresh / Heal Bell / Aromatherapy | **1.0** | the cure consumes exactly the turn it is used on |
+| **Natural Cure** | mon j's ability is Natural Cure | **1.0** | the status is shed on switch-out, and a switch consumes exactly one of our actions — the same single turn, needing no moveslot and no teammate |
+| Rest | mon j knows Rest | **2.0** | the op's own `rest_sleep_noeb`, DERIVED from the verified sleep-hazard table |
+| **cleric** | any OTHER ALIVE mon of ours carries a party-wide cure | **2.0** | switch to the cleric (1) + click it (1); the party-wide scope is what lets it reach mon j on the bench |
+| none | — | **0.0** | nothing is spent because nothing is undone |
+
+Three consequences, all deliberate:
+
+1. **`min`, not the old `max(cure, rest)`.** The old form was a pick-the-nonzero idiom rather than a
+   claim, and it priced a mon holding BOTH Refresh and Rest at 2.0 — the move it would not click.
+2. **`0.0` cannot ALSO mean "free".** That is why Natural Cure is priced at its literal switch rather
+   than at 0: reading it as free ("you were pivoting anyway") is a claim about our own POLICY, not
+   about gen 3, and it would collide with the no-path sentinel besides.
+3. ⚠️ **`neutralization` deliberately does NOT read the ability — the one place the literal
+   instruction was declined, with the reason.** `neutralization` is a per-TURN rate; Natural Cure
+   changes the status's **DURATION**, and duration is the quantity Phase A explicitly refuses to
+   model without a rule to source a number from (the same refusal that leaves sleep and freeze
+   equal). An ability-keyed discount would be exactly the tuned prior the `_NEUTRAL_*` block forbids.
+   The PAIR identifies the case instead: `(neutralization full, tempo 1.0)` = *an answer exists at
+   one turn*; `(neutralization full, tempo 0.0)` = *no answer exists*. Those were one vector before.
+
+**The OTHER direction was checked and NOT built, as instructed.** Nothing prices OUR outgoing status
+against THEIR mons in an undo currency — `_status_landing` / `discrete_outgoing_status` compute
+P(lands) and nothing else — so there is no consumer for a Natural-Cure-by-ability-prior read on their
+side, and building one would be delivery with no sink.
+
+**§9a for the amendment.** *Natural Cure flips stay-and-absorb vs switch-out*: **click Protect vs
+switch Starmie out** with a Toxic already on it and a setup sweeper across — every damage number,
+every status probability and `neutralization` are identical in both branches, and `tempo_cost` read
+0.0 in both, i.e. *"this mon has no answer, so there is nothing to gain by leaving."* *The cleric
+discount flips absorb-the-Toxic vs hard-avoid*: **switch Swampert in vs switch Gengar in** against a
+believed Toxic with Blissey alive on our bench holding Heal Bell — `p_tox` and `neutralization` rank
+the immune Gengar first forever, while the cleric makes the Toxic on Swampert undoable at two turns
+rather than never. Kill the Blissey and the board ranks the other way, because the path is gated on
+the cleric being ALIVE.
+
+New data tables: `MOVE_CURES_TEAM_STATUS` (party-wide cures only — kept APART from
+`MOVE_CURES_SELF_STATUS`, which merges the two because only "is this mon clean afterwards" mattered
+there) and `ABILITY_NATURAL_CURE`, resolved FAIL-LOUD at build so a data rename cannot silently make
+every Natural Cure mon read as having no answer. New constants `_TEMPO_NATURAL_CURE_TURNS` = 1.0 and
+`_TEMPO_CLERIC_TURNS` = 2.0, beside the existing block and under the same rule (a gen3 rule, never a
+tuned prior).
+
+#### Versioning
+
+`MODEL_CONFIG_VERSION` 94 → **95**, adding the `structural` fields `conditional_threat_cell` and
+`pair_value_route`, each with its own `check_compatible` gate and a `<95 ⇒ False` migration.
+**No `ARCH_SIGNATURE` bump** — both modules are flag-gated and OFF builds neither.
+
+⚠️ **But the v95 migration REFUSES a `<95` config that recorded `pair_outcome_cell` or
+`pair_outcome_switch` ON**, because item 3 amends `tempo_cost`'s coordinate semantics under an
+EXISTING flag: such a checkpoint's weights are unchanged but were trained against different numbers,
+so it is re-read from its own `git_hash` rather than migrated (the v75 rule). No such checkpoint
+exists — neither flag has ever been enabled in a run, which is exactly why an in-place amendment was
+the right shape — so this is a latent guard, not a migration path.
+
+#### Gates
+
+**52 new tests.** `conditional_threat_test.py` (26): the coordinate table, the exact-arithmetic
+§9a case for `e_pko_acc` (α = ½/½ over {Blizzard 70% acc OHKOing mon 0, Thunderbolt 100% OHKOing mon
+1} — both mons read `Σα·ko_ramp` = 0.5 AND `Σα·acc` = 0.85, while P(dies) is **0.35** vs **0.50**),
+the immunity case for `e_type_mult` (α = (0.25, 0.75) over (2.0, 0.5) = **0.875**; **0.0** for the
+immune mon), both margins at both ends of the saturation (`+0.05` / `−0.32` and `+0.45` / `+0.08`),
+the gate, the **planted D3 violation** (a per-defender α is a shape error), the two seat-axis
+fail-louds, seat-permutation invariance and our-bench permutation EQUIvariance, the op seam
+(Ground-vs-Electric **2.0**, Ground-vs-Flying exactly **0.0**), OFF byte-identity, ON contributing
+exactly zero at init, the stacking order with Phase B, `requires=`, the fail-loud-not-zeros path, the
+version machinery and the delivery-graph edges. `pair_value_route_test.py` (21): the module's
+zero-init and shared-Linear equivariance, both fail-louds, the pool's refusal to skip silently, the
+injected row being `reduce_pair_in_all` under R1 **exactly**, **the ordering claim** (rows
+byte-identical with `--opp-intent` ON, and the two rungs proven to differ), pi bit-identity at an
+ARBITRARY weight (including the pointer head's team tokens), critic gradient under both
+parameterizations, stacking with `--value-threat-inject`, width-neutrality, real-`MaskablePPO`
+identity-at-init, the version machinery and the graph edge. `pair_outcome_test.py` (+6) and
+`pair_outcome_switch_test.py` (+1) cover the status economy on exact products of `p_major ×
+undo_turns`, including *"bring the Natural Cure mon"* end to end.
+
+A new explain-only compile cell (`test_phase_c_conditional_threat_and_pair_value_route_compile_to_
+one_graph`) covers both flags plus Phase B's pair together — separate from the shared production
+cell for the reason v94 measured (adding flags there took it 25.5 s → 73.1 s), and stacked because
+the switch cell's `torch.cat` now runs twice on one path and `CLSPool` now chains two token-content
+adds, neither of which was reachable before. mypy 0.

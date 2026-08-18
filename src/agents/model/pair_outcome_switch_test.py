@@ -292,11 +292,10 @@ def test_g0_the_switch_cell_separates_two_mons_a_damage_read_calls_identical():
     carries Refresh; the other does not. `tempo_cost` in each mon's OWN reduced row is the only
     thing that separates them, and before this phase that row never reached a switch logit at all.
 
-    ⚠️ Named limitation: the tempo source is the mon's own cure MOVESET (Refresh / Rest / Heal
-    Bell), NOT the Natural Cure ABILITY — Phase A's coordinate reads moves. A Natural Cure mon
-    therefore still reads `tempo_cost` 0, which is *correct for the reason it discharges for free*
-    but arrives by the wrong route; folding the ability in is a Phase A coordinate change, not a
-    delivery change, and is deliberately not smuggled in here.
+    (The Phase-B-era limitation note that stood here — "the tempo source is the mon's own cure
+    MOVESET, NOT the Natural Cure ABILITY" — is CLOSED by v95 `gen3_status_economy_v1`. The ability
+    and the bench cleric are now undo paths; the case below still uses Refresh vs nothing, so it
+    reads the same numbers it always did, and the ability's own case is the next test.)
     """
     from agents.observation.types import TypeEncoder
     T = TypeEncoder.TYPE_TO_IDX
@@ -328,6 +327,40 @@ def test_g0_the_switch_cell_separates_two_mons_a_damage_read_calls_identical():
     i_tempo = PAIR_OUTCOME_IDX["tempo_cost"]
     assert float(cure[i_tempo]) > 0.0
     assert float(nocure[i_tempo]) == 0.0
+
+
+def test_g0_bring_the_natural_cure_mon_is_finally_a_switch_cell_read():
+    """§2.1's literal sentence — *"they will click Will-O-Wisp, so bring the Natural Cure mon"* —
+    end to end, and the ONE case that needed both phases plus v95.
+
+    Two of our mons, identical species, identical typing, identical HP, identical (empty) movesets.
+    One has Natural Cure. Under a believed Will-O-Wisp every damage coordinate is 0.0 for both
+    (a burn deals none), `p_brn` is identical for both, and `neutralization` is identical for both
+    (the ability changes DURATION, not the per-turn rate — the deliberate limit). `tempo_cost` in
+    each mon's OWN switch row is the only separator, and it exists at all only because v95 taught
+    the coordinate to read the ability: before it, both read 0.0."""
+    from agents import gen3_data
+    from agents.observation.types import TypeEncoder
+    T = TypeEncoder.TYPE_TO_IDX
+    op, layout, DT = _real_op()
+    wow = DT._move_num("willowisp")
+    ctx = DT._topk_ctx(op, defenders=[(242, T["NORMAL"], T["NORMAL"])] * 2 + [(0, 0, 0)] * 4)
+    ctx.ability1_ids[0, 0] = int(gen3_data.abilities.get("naturalcure").num)
+    op(ctx, DT._logits_moves(layout["max_moves"], [wow]), None, DT._synth_latent(layout))
+    k = op.last_topk_idx[0].tolist().index(wow)
+    alpha = torch.zeros_like(op.last_topk_w)
+    alpha[:, k] = 1.0
+    rows = reduce_pair_in_all(alpha, op.last_pair_in, op.last_pair_gate)[0]
+    nc, plain = rows[0], rows[1]
+    for name in ("low", "high", "crit", "ko_ramp", "p_brn", "neutralization"):
+        i = PAIR_OUTCOME_IDX[name]
+        assert float(nc[i]) == pytest.approx(float(plain[i]), abs=1e-6), (
+            f"{name} must NOT move — the ability is an undo PATH, not a landing or severity change")
+    assert float(nc[PAIR_OUTCOME_IDX["p_brn"]]) > 0.0, "the burn must actually land"
+    i_tempo = PAIR_OUTCOME_IDX["tempo_cost"]
+    assert float(plain[i_tempo]) == 0.0
+    assert float(nc[i_tempo]) == pytest.approx(float(nc[PAIR_OUTCOME_IDX["p_brn"]]), rel=1e-6), (
+        "one switch = one of our turns, so the whole coordinate is P(burn) x 1.0")
 
 
 def test_g0_each_defenders_row_is_its_own_and_the_reduction_is_still_one_alpha():

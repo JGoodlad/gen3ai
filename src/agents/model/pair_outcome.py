@@ -34,7 +34,7 @@ where the canonical design example is a SWITCH pair it is given too, marked (Pha
 |---|---|---|---|
 | 0-5 | `p_par p_brn p_frz p_slp p_psn p_tox` | probability, per status IDENTITY | **click Swords Dance vs click Earthquake** under a believed Spore: setup is worthless if you may never act again, while the attack still banks damage — and the ten damage numbers are IDENTICAL in both branches, because Spore deals none. (Phase B: **switch Swampert vs switch Celebi** into a Gengar believed to hold Will-O-Wisp + Thunderbolt.) |
 | 6 | `neutralization` | fraction of this mon's per-turn contribution destroyed WITHOUT a KO | **click Substitute vs click Calm Mind** on a physical attacker facing a likely Will-O-Wisp: the sub blocks the burn and preserves Atk, CM does nothing about it. Damage-only reads BOTH branches at 0.0 incoming. |
-| 7 | `tempo_cost` | turns of OUR clock spent undoing it | **click Substitute vs click Toxic**: if the status will land and this mon carries a cure, the status costs a turn LATER, so spending a turn NOW to prevent it can be right. Without tempo, "it lands and I cure it" and "it never lands" are the SAME state, so the sub is never worth its turn. (Phase B: Milotic **Refreshes** the burn away — `neutralization` correctly reads ≈0 — but "absorbs it" and "absorbs it and falls a turn behind a setup sweeper" are otherwise indistinguishable.) |
+| 7 | `tempo_cost` | turns of OUR clock spent undoing it, by the CHEAPEST path (see the amendment below) | **click Substitute vs click Toxic**: if the status will land and this mon carries a cure, the status costs a turn LATER, so spending a turn NOW to prevent it can be right. Without tempo, "it lands and I cure it" and "it never lands" are the SAME state, so the sub is never worth its turn. (Phase B: Milotic **Refreshes** the burn away — `neutralization` correctly reads ≈0 — but "absorbs it" and "absorbs it and falls a turn behind a setup sweeper" are otherwise indistinguishable.) |
 
 Coordinates 0-5 hold the six columns the op's status physics already computes and then throws away;
 6 and 7 are the two `design_pair_reduction.md` §2.1 names as MISSING. The damage half (indices
@@ -64,6 +64,55 @@ interchangeable to a physical attacker, and a single `p_major` scalar asserts th
 * **A held berry's auto-cure.** A Lum Berry cures at 0 tempo AND ~0 neutralization; we model neither,
   so a berry-holding mon reads as if it had no answer. Folding it in would mean PRE-BLENDING two
   probabilistic branches into one column, which §9's anti-patterns forbid.
+
+### AMENDED at v95 — `gen3_status_economy_v1`, the two missing UNDO PATHS
+
+Phase A read `undo_turns(j)` off mon j's **moveset only**, and Phase B's own test carried the
+residue as a named limitation. Two paths were missing, and both are real decisions:
+
+* **Natural Cure is an ABILITY, not a move.** A Natural Cure mon sheds its status on switch-out, so
+  it has an answer — but Phase A priced it at **0.0**, which is the same number a mon with no answer
+  at all reads. Two opposite facts arriving as one number is precisely the currency failure this
+  module exists to close, one level down.
+* **A cleric on the BENCH is an answer for every mon on the team.** Heal Bell / Aromatherapy are
+  party-wide in gen 3, so a statused mon that can retreat behind the cleric is not stuck with it.
+  Phase A only ever looked at mon j's own four moves.
+
+`undo_turns(j)` is now the **cheapest available path** — `min` over {self-cure 1.0, Natural Cure
+1.0, Rest `rest_sleep_noeb`=2.0, cleric 2.0}, with `0.0` still meaning *no path exists*. The full
+table with each number's gen3 rule is in `DamageOperatorBlocks.pair_outcome_coords`. Three notes:
+
+1. **`min`, not the old `max(cure, rest)`.** The old form was a pick-the-nonzero idiom; it priced a
+   mon holding BOTH Refresh and Rest at 2.0 — the move it would not click.
+2. **`0.0` cannot ALSO mean "free".** That is the whole reason Natural Cure is priced at its literal
+   switch (one of our actions, a rule) rather than at 0. The alternative — reading it as "free
+   because you were pivoting anyway" — is a claim about our own POLICY, not about gen 3, and it
+   would collide with the no-path sentinel besides.
+3. ⚠️ **`neutralization` deliberately does NOT read the ability, and this is the one place the
+   literal instruction was declined.** `neutralization` is a per-TURN rate; Natural Cure changes the
+   status's **DURATION**, and duration is the quantity this module explicitly refuses to model
+   without a rule to source it from (see *Status DURATION* above — the same refusal that leaves
+   sleep and freeze equal). An ability-keyed discount factor would be exactly the tuned prior the
+   `_NEUTRAL_*` constant block forbids. So the Natural Cure fact rides `tempo_cost` alone, and the
+   PAIR is what identifies the case: `(neutralization full, tempo 1.0)` = "an answer exists at one
+   turn"; `(neutralization full, tempo 0.0)` = "no answer exists"; those were the same vector
+   before and are distinct now.
+
+**§9a for the amendment — the two actions each half flips:**
+
+* **Natural Cure** flips *stay-and-absorb vs switch-out* on a statused wall: **click Protect vs
+  switch Starmie out** with a Toxic already on Starmie and a setup sweeper across from it. Every
+  damage number, every status probability and `neutralization` are identical in the two branches —
+  the poison is already there — and before the amendment `tempo_cost` was 0.0 in both, which reads
+  *"this mon has no answer, so there is nothing to gain by leaving"*. At 1.0 it reads *"leaving IS
+  the answer, and it costs one turn"*, which is the ordering the position actually has.
+* **The cleric discount** flips *absorb-the-Toxic vs hard-avoid* when Heal Bell is on the bench:
+  **switch Swampert in vs switch Gengar in** against a believed Toxic, where Blissey is alive on our
+  bench holding Heal Bell. Gengar is immune and Swampert is not, so `p_tox` and `neutralization`
+  rank Gengar first forever; with the cleric alive the Toxic on Swampert is undoable at two turns
+  rather than never, and absorbing it with the mon that actually walls the board becomes the
+  cheaper line. Kill the Blissey and the same board should rank the other way — which it now does,
+  because the path is gated on the cleric being ALIVE.
 
 ## The reduction — ONE α, every channel (Contract W)
 

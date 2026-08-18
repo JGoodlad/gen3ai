@@ -26,6 +26,12 @@ _ALL_ROUTES_ON = dict(
     damage_topk_k=6, entity_topk_seats=6, opp_intent=True, opp_belief_slots=True,
     intent_value_reduce=True, value_entity_pool=True, value_entity_pool_full=True,
     intent_threshold=True, value_clock=True, value_intent=True,
+    # gen3_pair_value_route_v1 (v95, PV): deliberately NOT a seam route — it injects TOKEN CONTENT
+    # inside CLSPool, because a post-pool additive route would have to collapse the team axis and
+    # the only equivariant collapse is a sum. Included in the sweep anyway so the guard's real
+    # claim — *every zero-init projection the critic depends on receives critic gradient* — stays
+    # true of the whole critic surface rather than only of the seam.
+    pair_value_route=True,
 )
 # Flags that gate a value route (must stay in sync with _value_pooled_routes — pinned below by
 # the registry-coverage test, so a drift here is a failing test, not silent shrinkage).
@@ -33,12 +39,13 @@ _ROUTE_FLAGS = ("intent_value_reduce", "value_entity_pool", "intent_threshold",
                 "value_clock", "value_intent")
 
 
-def _build(dist_critic: bool, seed=7):
+def _build(dist_critic: bool, seed=7, **extra):
     mappings = load_mappings()
     layout = Gen3ObservationEncoder(mappings).get_layout()
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     torch.manual_seed(seed)
     kwargs = dict(_ALL_ROUTES_ON)
+    kwargs.update(extra)
     if dist_critic:
         kwargs.update(value_dist_mode="shaping", value_dist_bins=51,
                       value_dist_vmin=-12.0, value_dist_vmax=12.0)
@@ -98,6 +105,28 @@ def test_every_route_receives_critic_gradient(dist_critic):
             f"value route {name!r} received NO gradient from the "
             f"{'dist-head' if dist_critic else 'scalar'} critic — it is structurally "
             "disconnected (the gen-12 dead-tail bug).")
+
+
+@pytest.mark.parametrize("dist_critic", [True, False], ids=["value_from_dist", "scalar_vf"])
+def test_the_two_TOKEN_CONTENT_injections_also_receive_critic_gradient(dist_critic):
+    """The seam is not the whole critic surface, and pretending it is would be the SAME bug one
+    level up. `value_threat_inject` (v64) and `pair_value_route` (v95) enrich the value pool's copy
+    of our tokens from INSIDE `CLSPool`, so they never appear in `_value_pooled_routes` — and both
+    are zero-init, so a disconnected one would be silently indistinguishable from one that learned
+    nothing, exactly as the gen-12 dead-tail routes were."""
+    fe, layout = _build(dist_critic, **{"value_threat_inject": True})
+    fe.train()
+    torch.manual_seed(11)
+    pi, vf = fe({"observation": torch.rand(3, layout["total_dim"])})
+    loss = fe.last_value_dist_logits.sum() if dist_critic else vf.sum()
+    loss.backward()
+    for name in ("value_threat_proj", "pair_value_proj"):
+        proj = getattr(fe.cls_pool, name).proj
+        assert float(proj.weight.abs().max()) == 0.0, f"{name} must start zero-init"
+        g = proj.weight.grad
+        assert g is not None and float(g.abs().max()) > 0.0, (
+            f"token-content injection {name!r} received NO gradient from the "
+            f"{'dist-head' if dist_critic else 'scalar'} critic")
 
 
 def test_every_value_route_flag_flows_through_the_registry():
