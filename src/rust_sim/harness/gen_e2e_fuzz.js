@@ -124,7 +124,6 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: return/frustration/flail/reversal/lowkick are NO LONGER blocklisted — they are
   // MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch5_v1`) via
   // MODELED_BATCH5_VARBP_MOVES in `isModeledMove`.
-  'eruption',
   'grassknot', 'magnitude', 'present', 'weatherball',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power: gated in `isModeledMove` by the `allowHiddenPower` param (the
@@ -330,7 +329,9 @@ const BATCH4_E2E_EXCLUDED = false;
 // `onModifyMove`, so they'd else be dropped by those rejects below — `isModeledMove` ADMITS them by
 // an EARLY special-case (before those rejects), kept in lockstep with the id-gates in src/turn.rs
 // (`run_beat_up` / the waterspout BP override / the thunder weather-accuracy mutation).
-const MODELED_BATCH4B_MOVES = new Set(['beatup', 'thunder', 'waterspout']);
+// `eruption` joins on `gen3_eruption_v1` — the SAME HP-scaled BP callback as waterspout,
+// admitted to the same id-gate in turn/moves.rs.
+const MODELED_BATCH4B_MOVES = new Set(['beatup', 'thunder', 'waterspout', 'eruption']);
 const BATCH4B_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the GENERIC MULTI-STRIKE family: the
@@ -1104,7 +1105,7 @@ const REJECT_SPECIES = new Set([]);
 // (0 carriers in `data/teams/`; 0 in the ENTIRE curated gen3randombattle movepool —
 // 220 species / 393 sets, exhaustive), so populating this cannot shift the e2e golden.
 const REJECT_MOVES = new Set([
-  'dreameater', 'eruption', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'dreameater', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
   'smellingsalts', 'thrash', 'uproar', 'weatherball',
 ]);

@@ -130,7 +130,7 @@ const DEFERRED_FIXED_DAMAGE = new Set([
 //   BATCH 5  — the bp-0 VARIABLE-BP family (`variable_bp`): Return / Frustration /
 //              Flail / Reversal / Low Kick.
 const MODELED_BATCH4 = new Set(['focuspunch', 'pursuit']);
-const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout']);
+const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout', 'eruption']);  // gen3_eruption_v1
 const MODELED_BATCH4C = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight']);
 const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
@@ -149,7 +149,7 @@ const MODELED_PARTIALTRAP = new Set(['wrap', 'bind', 'firespin', 'clamp', 'whirl
 // gen_e2e_fuzz.js::REJECT_MOVES). Checked FIRST in classifyDamaging: whatever sub-mechanic
 // bucket below would match, the engine panics before any of it can run.
 const FAILLOUD_CONSTRUCTION = new Set([
-  'dreameater', 'eruption', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
+  'dreameater', 'fakeout', 'falseswipe', 'furycutter', 'iceball',
   'outrage', 'petaldance', 'rage', 'revenge', 'rollout', 'secretpower',
   'smellingsalts', 'thrash', 'uproar', 'weatherball',
 ]);

@@ -27,7 +27,8 @@
 // truncated prefix). The cost is exactly the mass that renormalization moves: **1.33% of gen3ou
 // move-slot mass** sits on the 88 engine-unmodeled moves (measured over all 216 species' priors).
 // The top of that queue is `sandattack recycle confuseray safeguard conversion weatherball
-// fakeout imprison present skillswap torment eruption` — model those and the gap closes.
+// fakeout imprison present skillswap` — model those and the gap closes. (torment and eruption
+// are DONE: `gen3_torment_v1` / `gen3_eruption_v1`.)
 // The 1.33% is DISCLOSED by `describeCoverage()` and printed in the fuzz banner, never silent.
 //
 // HIDDEN POWER (the one non-obvious mechanic). HP is ~12% of gen3ou move slots, so dropping it

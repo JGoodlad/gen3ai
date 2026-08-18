@@ -269,7 +269,12 @@ impl crate::state::BattleState {
         //     while hp>=1). The multiply MUST widen to u32 (`150·714` overflows u16). Routed
         //     like Pursuit's ×2 id-gate; the integer division `(150·hp)/maxhp` is exact-equal
         //     to the JS `Math.floor(150·hp/maxhp)` since `150·hp` is an exact integer. ---
-        let base_power = if move_id == "waterspout" {
+        //     ERUPTION joins it unchanged (`gen3_eruption_v1`): PROBE-SETTLED side by side in
+        //     `harness/probe_varbp_cluster.js` — the SAME resolved callback, the same dataBP 150,
+        //     and at identical hp the two derive the identical BP (150/297 -> 75 for both). It is
+        //     Fire/SPECIAL where Water Spout is Water/SPECIAL, which the type split already
+        //     handles, so the only thing it needed was admission to this gate.
+        let base_power = if matches!(move_id.as_str(), "waterspout" | "eruption") {
             let mon = &self.sides[side].pokemon[slot];
             ((150u32 * mon.hp as u32) / mon.maxhp as u32).max(1) as u16
         } else {

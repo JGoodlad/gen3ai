@@ -1169,9 +1169,8 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 16] = [
+        const UNMODELED_FAILLOUD_MOVES: [&str; 15] = [
             "dreameater",
-            "eruption",
             "fakeout",
             "falseswipe",
             "furycutter",

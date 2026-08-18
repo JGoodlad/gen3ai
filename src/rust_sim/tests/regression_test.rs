@@ -13524,6 +13524,64 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// ER1 — ERUPTION (`gen3_eruption_v1`). The HP-scaled BP twin of Water Spout: `bp =
+/// max(floor(150 * hp / maxhp), 1)`. PROBE-SETTLED side by side in
+/// `harness/probe_varbp_cluster.js` — the SAME resolved callback and dataBP 150, so at identical
+/// hp the two derive the IDENTICAL base power. It differs only in type (Fire vs Water).
+///
+/// WRONG (pre-fix): `eruption` was a CONSTRUCTION fail-loud — one of the 16 silent-desync moves —
+/// because it was absent from the Water Spout id-gate and would otherwise run at FLAT BP 150
+/// regardless of the user's HP.
+///
+/// ⚠️ IT MUST FIRE FROM REDUCED HP. The first draft fired at FULL HP, where the derivation yields
+/// exactly the dex BP 150 — so it passed with Eruption deleted from the gate, i.e. it was VACUOUS.
+/// Full HP is precisely the one value at which this mechanism is invisible. The user now spends
+/// Substitute first, whose cost is a deterministic floor(maxhp/4), putting it at 3/4 HP where the
+/// derived BP is 112 and a flat-150 implementation is plainly distinguishable.
+#[test]
+fn eruption_scales_with_hp_exactly_like_water_spout() {
+    let d = dex();
+    // Snorlax is neutral to BOTH Fire and Water, and the Normal-type users get no STAB on either,
+    // so the ONLY thing that can differ between the arms is the BP derivation.
+    let foe = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "44446,15321,46848,55374";
+    // T1 Substitute (costs exactly floor(maxhp/4)) -> T2 fire from 3/4 HP.
+    let run = |mv: &str, chip: bool| {
+        let user = format!(
+            "Kangaskhan||Leftovers|EarlyBird|{mv},substitute|Hardy|85,85,85,85,85,85|M||||"
+        );
+        let mut b = Battle::start_with_switchins(&opts_cg(&user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let mut script = Vec::new();
+        if chip {
+            script.push(ScriptDecision::both(Choice::Move(1), Choice::Move(0))); // Substitute
+        }
+        script.push(ScriptDecision::both(Choice::Move(0), Choice::Move(0)));     // the move
+        let _ = st.run_full_battle(&script, &d);
+        st.sides[1].pokemon[0].maxhp - st.sides[1].pokemon[0].hp                  // damage dealt
+    };
+
+    let dmg_full = run("eruption", false);
+    let dmg_chipped = run("eruption", true);
+    let ws_chipped = run("waterspout", true);
+
+    assert!(dmg_full > 0 && dmg_chipped > 0, "ER1: both arms must deal damage");
+    // THE LOAD-BEARING ASSERTION: the derivation must actually SCALE. At 3/4 HP the BP is 112,
+    // not 150 — a flat-BP implementation deals the same damage as the full-HP arm and fails here.
+    assert!(
+        dmg_chipped < dmg_full,
+        "ER1: Eruption from 3/4 HP must deal LESS than from full HP (bp 112 vs 150). Equal damage \
+         means the HP scaling never ran — i.e. Eruption is not on the Water Spout gate. \
+         full={dmg_full} chipped={dmg_chipped}"
+    );
+    // ...and it must scale by the SAME rule as its twin.
+    assert_eq!(
+        dmg_chipped, ws_chipped,
+        "ER1: Eruption and Water Spout share one callback, so at equal HP against a neutral \
+         target they must deal identical damage"
+    );
+}
+
 /// TM1 — TORMENT (`gen3_torment_v1`). The cheapest move-restriction: Taunt minus the duration and
 /// minus the execution-time cant. Ground truth `harness/probe_torment.js`.
 ///
@@ -14551,7 +14609,7 @@ fn unmodeled_moves_fail_loud_at_construction() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
     for mv in [
-        "dreameater", "eruption", "fakeout", "falseswipe", "furycutter", "iceball",
+        "dreameater", "fakeout", "falseswipe", "furycutter", "iceball",
         "outrage", "petaldance", "rage", "revenge", "rollout", "secretpower",
         "smellingsalts", "thrash", "uproar", "weatherball",
     ] {
