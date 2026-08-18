@@ -675,7 +675,12 @@ nominal 0.80. These are the pre-registered bars gen-11's label_only arm must bea
 
 `gen3_frame_deletion_v1` deleted the 7×159 TurnDelta lag frames on gen-13.5 §4's reading —
 `event_seats` dV **2.7714** vs `frames` **1.3015** (n=6000, falsified instrument: positive control
-+ exact-zero null arm). That reading is sound and is not retracted. What it could not report is the
++ exact-zero null arm). That reading is sound and is not retracted. **⟨CAVEAT added with v91⟩ both
+arms were measured on the magnitude-GIGO obs** (the residual-corrupted column, found after the
+deletion shipped) — the corruption was common to both sides so the RATIO is the defensible part,
+but the licence's absolute numbers carry it, and it **cannot be recomputed** (the frames are
+deleted). The standing hedge is gen-14's §1 non-inferiority + a fresh `event_seats` re-read on
+the corrected v91 column. What it could not report is the
 thing that mattered:
 
 > **dV answers "does the trained model LEAN on this block?" It does not answer "does every FACT in
@@ -710,7 +715,16 @@ REVEAL-vs-gone conflation is an event-window defect independent of the frame del
 **The item fix must cover the full item-GONE family, not just consumption**: gen3 has three such
 transitions — consumed (berries/herbs), removed (Knock Off, permanent in ADV), swapped/stolen
 (Trick/Thief/Covet) — so a bare `consumed` flag leaves the conflation half-alive; use a
-transition enum (`revealed/consumed/removed/swapped`) on the ITEM row. ACCEPT the
+transition enum (`revealed/consumed/removed/swapped`) on the ITEM row.
+**⟨SUPERSEDED IN PART, same day — v91 `gen3_event_semantics_v1`⟩** the gen-15 TIMING ruling was
+conditioned on gen-14's attribution being clean, and the magnitude-GIGO discovery broke that
+condition first: the GIGO fix forced a gen-14 restart regardless (training 25M on a
+known-corrupted column is strictly worse), and once gen-13-vs-gen-14 was already a ≥2-change
+comparison, bundling the two closures cost little marginal attribution and saved a generation.
+Both columns (faint_cause_id, item_transition — the full item-GONE enum as ruled) landed in the
+v91 restart; the gen-14 runbook is AMENDED (four-change bundle, §2 attribution explicitly
+weakened), not silently reinterpreted. The mis-ruling→retraction→supersession chain is kept
+verbatim above as the record. ACCEPT the
 refused-switch-target loss — **on VALUE grounds only** (the narrowest fact; the rejection fact +
 trappedness survive on the slots). ⚠️ The doc's "structurally unreachable" framing is CORRECTED:
 `record_choice_rejected` (`gen3_battle.py:202`) is called from the player layer, which knows the

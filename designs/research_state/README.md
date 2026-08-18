@@ -36,6 +36,11 @@ After **any** investigation that changes our belief, update this folder in the s
 4. **Apply the honesty gates** before promoting a finding to Known (see ledger.md → method): is it
    outcome-conditioning? falsifier-myopia? legitimate-in-context? exploration vs learned? Always
    adversarially verify a *confirming* measurement (we were overturned 3-for-3 by careful rechecks).
+5. **A measurement cited by a committed doc must itself be committed in the same pass.** Learned
+   2026-08-17: the gen-13.5 evidence base — including the dV readings that LICENSED a shipped,
+   irreversible deletion — sat uncommitted in a worktree while `designs/CLAUDE.md` already cited
+   it; one `git clean` from gone. A citation to an uncommitted file is a dangling pointer wearing
+   provenance clothes.
 
 ## The amortizability gate — route every oracle finding through L1–L4
 
