@@ -45,6 +45,18 @@ gen-12 traces, zero deviations from the registration.
 
 ## Next test
 
-- None on this lever. The stall-blindness investigation moves to the training-distribution
-  branch (measure loss-side stall mass in actual rollouts vs its share of eval losses), and the
-  gen-13 §7 critic-calibration gate remains the outcome measurement either way.
+- **None on this lever, and none on its successor either.** The training-distribution branch this
+  kill handed off to was MEASURED 2026-08-17 (`measurements/gen13_stall_coverage.json`) and is
+  **also dead**: cap-length trajectories are **3.0% of training DECISIONS** against **0.21% of
+  matched sentinel eval losses** — a ~14x OVER-exposure, the opposite sign from the hypothesis.
+  Rollouts are not starved of stall games; there is no distribution shortfall for the flywheel's
+  thermostat to correct.
+- Both explanations for the stall-class over-confidence are therefore dead — missing input (this
+  lever) and off-distribution (its successor) — while **the phenomenon itself still stands**
+  (gen-13.5 §7: mean gap +0.358, CI [0.227, 0.504]). That is the honest state: a real,
+  significant miscalibration with both leading mechanisms falsified. Anyone reviving this line
+  must bring a NEW mechanism and pre-register it; do not re-run either dead branch.
+- One thing the same pass DID discharge: the older PRE-CLOCK blindness (positive V at the final
+  decision of a timeout loss, 13/14 = 93%) now reads **2/9 = 22%**, P(<=2 of 9 | 13/14) = 3.0e-07.
+  `gen3_deadline_clock_v1` closed the defect it was built for. Do not cite the 13/14 figure as
+  current.

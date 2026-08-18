@@ -801,3 +801,27 @@ schema.** The query assumed `won` / `n_turns` at top level; the truth is `meta.r
 `meta.turns`, with V and P(win) in the sibling `states.npz` (`values`, `win_probs`). An empty
 result from a guessed field name is indistinguishable from a real absence — 2573 traces existed the
 whole time. Read one record before writing the query over ten thousand.
+
+### Method (2026-08-17, same pass): a POOLED correlation across battles is a Simpson trap — the §7 clustering rule killed my own finding
+
+Chasing a mechanism for the surviving stall over-confidence, the obvious candidate looked strong:
+V and the MC-supervised win-prob head are two heads on the same states, and **pooled** over the
+last 20 decisions of every loss they read `spearman(V, P(win)) = +0.563` on cap-length losses
+versus **+0.948** on ordinary ones. A head that decouples exactly where §7 finds over-confidence
+is a compelling story, and it is **wrong**.
+
+Re-read **per battle** — the form gen-14's runbook §7 pre-registered ("battle-CLUSTERED bootstrap,
+report the BETWEEN-RUN DIFFERENCE with its own CI, never two separate CIs") — the gap evaporates:
+mean per-battle ρ **0.740 (cap, n=9) vs 0.819 (ordinary, n=1340)**, difference **−0.079, CI95
+[−0.483, +0.143] — NOT significant**. The pooled number was between-battle level spread leaking
+into a within-battle statistic, and with only 9 cap battles that spread *is* the estimate.
+
+**The rule, stated generally: a correlation pooled over clusters answers a different question than
+the same correlation averaged within them, and when cluster count is small the pooled form is
+mostly between-cluster variance wearing a within-cluster label.** Compute per-cluster, bootstrap
+over clusters, and report the difference with one CI. Worth recording because the discipline that
+caught this was written down two hours earlier for a different purpose and then caught its author —
+which is the entire argument for pre-registering a form before you have a result to protect.
+
+Net: **no head-decoupling finding.** The stall over-confidence keeps its two dead mechanisms and
+gains no third.
