@@ -523,6 +523,42 @@ impl crate::state::BattleState {
                 return;
             }
         }
+        // (2b2) SAFEGUARD (`gen3_safeguard_v1`) — the side condition's `onSetStatus`
+        //       RETURNS false, DRAW-FREE (the gen3ou handler-sort shuffle above already
+        //       fired; safeguard's handler sorts into its OWN group, leaving the 2 Standard
+        //       clauses a size-2 tie, so the shuffle COUNT is unchanged and this is
+        //       SEED-NEUTRAL — the same pattern as a STATUS_IMMUNE ability).
+        //
+        //       PRECEDENCE (probe-settled): already-statused > status-TYPE immunity >
+        //       STATUS_IMMUNE ability > SAFEGUARD > sleep clause. Placed here accordingly —
+        //       a Limber mon behind a Safeguard shows the ABILITY line, not this one.
+        //
+        //       THE SELF-INFLICTED EXEMPTION: the sim's `onSetStatus` returns early when
+        //       `target === source`. A `source` of None (an ability reflect, a residual) is
+        //       NOT the target, so it IS blocked — matching Synchronize, which the probe
+        //       confirms is blocked AND announces.
+        //       ⚠️ THE `source != target` CLAUSE IS UNREACHABLE TODAY, and is kept only for
+        //       fidelity to the sim. gen-3's ONLY self-inflicted major status is REST, and
+        //       `run_rest` never calls this function — it inlines its own shuffle + ability
+        //       guard + `Status::Sleep(3)` set. So Rest is exempt because it does not pass
+        //       through here AT ALL, not because of this clause. Proven by mutation: deleting
+        //       the clause fails NO test, while adding a safeguard check inside `run_rest`
+        //       fails `safeguard_does_not_block_your_own_rest`. Do not read a green suite as
+        //       evidence this clause works; if a future path routes a self-status through
+        //       here, pin it then.
+        //       [EMIT] `|-activate|<target>|move: Safeguard` on the TARGET MON, for a
+        //       status-MOVE source only; a blocked SECONDARY is SILENT (its `random(100)`
+        //       still drew — the suppression is of the effect, not the roll).
+        if self.sides[foe].safeguard > 0
+            && !self.yawn_resolving
+            && source != Some((foe, foe_slot))
+        {
+            if announce_immune_block && self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.activate(&target, "move: Safeguard", None);
+            }
+            return;
+        }
         // (2c) SLEEP CLAUSE MOD (a clause `onSetStatus` RETURN false — DRAW-FREE; the
         //      handler-sort shuffle above already drew). ONLY in formats that carry it
         //      (gen3ou via `Standard`; NOT gen3customgame). A sleep move FAILS if any

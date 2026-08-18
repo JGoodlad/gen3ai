@@ -6567,7 +6567,7 @@ Confuse Ray was GREEN but did **not** sample it — what tests that arm is CR1, 
 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; extractor-parity + obs-golden **10/10** (the data
 change is reproducible AND obs-neutral — the facade ignores `statDropBoosts`); handler audit green.
 
-### THE BANKED SPEC QUEUE — 8 probe-settled specs (4 SHIPPED in ROUND 45, 4 open)
+### THE BANKED SPEC QUEUE — 8 probe-settled specs (5 SHIPPED, 3 open)
 
 Each is a re-runnable oracle in `harness/` whose header carries a SETTLED block: the draw model, the
 exact emission forms, the edges, and the named way a naive implementation desyncs. **Read the probe
@@ -6576,7 +6576,7 @@ one non-obvious, because that trap is the reason the spec is worth more than the
 
 | move(s) | probe | the trap |
 |---|---|---|
-| Safeguard | `probe_safeguard.js` | two Safeguards **TIE at residual order 4** → an extra shuffle, invisible to any single-side test; and a blocked SECONDARY still rolls its `random(100)` |
+| ~~Safeguard~~ **SHIPPED** | `probe_safeguard.js` | two Safeguards **TIE at residual order 4** → an extra shuffle, invisible to any single-side test; and a blocked SECONDARY still rolls its `random(100)` |
 | ~~Recycle~~ **SHIPPED** | `probe_recycle.js` | the discriminator is WHICH primitive removed the item — `eatItem`/`useItem` set `lastItem`, `takeItem` does NOT, so Knock Off is **not** recyclable |
 | ~~Fake Out~~ **SHIPPED** | `probe_fakeout.js` | gen-3 priority is **+1, not +3**; a CANCELLED action does not burn the first-turn gate but a CANT turn does, so `active_turns` is silently wrong |
 | Conversion / Conversion 2 | `probe_conversion.js` | `n == 1` **still draws**; the candidate list uses `types.names()` order, which matches neither our type chart nor the port's enum |
@@ -7814,4 +7814,69 @@ assertion rather than observed in a fuzz sample. The four remaining banked specs
 Conversion/Conversion 2, Weather Ball, Uproar) plus Rollout/Ice Ball, Imprison and Minimize are still
 open; the Rollout pair REQUIRES Defense Curl in the same pass, and Weather Ball's category flip
 **cannot be detected by a test board with Atk==SpA and Def==SpD**.
+
+### ROUND 46 (FIX) — SAFEGUARD: the ward, its residual tie, and the two OPPOSITE Yawn halves
+
+`gen3_safeguard_v1`. Census **292 MODELED / 77 fail-loud → 293 / 76**, MISMODELED still 0. The
+sixth banked spec, and the one with the most interlocking parts: a SideCondition, a residual, a
+status gate, a confusion gate, and a Yawn interaction that runs in BOTH directions.
+
+- **The cast is entirely DRAW-FREE.** Never-miss (`accuracy: true`) so no accuracy roll, and the
+  duration is a FIXED 5 — gen-3's `durationCallback` returns a constant, the `Persistent` +2 being
+  gen5+. An already-up re-cast is `addSideCondition`-false with no `onSideRestart`, so it takes the
+  `[still]` did-nothing form plus a BARE `-fail` on the **USER** (not the side, not the target).
+  Both `-sidestart` and `-sideend` carry the **BARE** name `Safeguard`; Light Screen prefixes
+  `move: `, and Safeguard does not.
+- **THE RESIDUAL TIE is the fact no single-side test can see.** Safeguard sits at side-residual
+  order 4 — the reflect(1) / lightscreen(2) / mist(3) family, all with an UNDEFINED subOrder — so
+  the only thing that ties it is the SAME condition on the OTHER side. BOTH sides warded draws ONE
+  extra `random(0,2)` per residual (probe-measured 8 → 9 draws on a mirror). This is the
+  `double_screen…` sibling and is pinned the same way: capture the two-ward seed, require it to
+  DIFFER from a one-ward control run from an identical start.
+- **The block is DRAW-FREE and SEED-NEUTRAL.** In gen3ou the blocked status still draws exactly ONE
+  handler-sort shuffle — safeguard's `onSetStatus` sorts into its OWN group, leaving the two
+  Standard clauses a size-2 tie, so the COUNT is unchanged (the STATUS_IMMUNE-ability pattern). The
+  attempt keeps its own accuracy roll and a blocked SECONDARY still rolls its `random(100)`: the
+  ward suppresses the EFFECT, never the ROLL. Precedence, probe-settled:
+  already-statused > status-TYPE immunity > STATUS_IMMUNE ability > **SAFEGUARD** > sleep clause.
+  `|-activate|<target>|move: Safeguard` for a status-MOVE source only; a blocked secondary is silent.
+
+**⚠️ YAWN RUNS IN BOTH DIRECTIONS, AND THAT IS THE POINT.** gen-3 safeguard's `onSetStatus` opens
+`if (effect.id === 'yawn') return;` — the exemption keys on the **EFFECT**, not the source — so a
+Yawn **CAST** into a live ward is BLOCKED while a **PENDING** Yawn's resolve sleeps its target
+straight THROUGH that same ward, drawing its `random(2,6)` normally. A model that treats Safeguard
+as a blanket sleep ward gets the resolve wrong; one that forgets the ward gets the cast wrong. The
+port carries the exemption as a transient `yawn_resolving` flag (the `pursuit_strike` /
+`sleep_talk_call` house pattern) set only around the residual's `trySetStatus`. Both halves are
+independently mutation-verified.
+
+**⚠️ A VACUOUS PIN, CAUGHT BY MUTATION — worth recording because the code READS correct.** The port
+faithfully carries the sim's `target === source` self-exemption in `try_set_status_impl`, and SG3
+("Rest works under your own Safeguard") passed. But deleting that clause failed **NO** test: gen-3's
+only self-inflicted major status is REST, and `run_rest` never calls `try_set_status_impl` — it
+inlines its own shuffle + ability guard + `Status::Sleep(3)` set. So Rest is exempt because it never
+reaches the clause AT ALL, and the clause is **UNREACHABLE TODAY**. It is kept for fidelity and
+labelled as dead at the site, and SG3 was re-verified against the mutation that IS realistic —
+adding a safeguard check inside `run_rest`, which it does catch. **A guard that looks load-bearing
+and a guard that IS load-bearing are distinguished by mutation, not by reading.**
+
+**Gates:** `cargo test --release --no-fail-fast` **681 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1006 rows** OK; `SCAN_UNIVERSE=1`
+**369 → 293 MODELED / 76 FAIL-LOUD / 0 MISMODELED**. Pins SG1 (cast / re-cast fail / block /
+expiry), SG2 (the both-sides tie), SG3 (Rest, see above), SG4 (the two Yawn halves) — each
+revert-verified against the mutation it exists to catch, and MUT A (dropping the residual handler)
+fails SG1+SG2 while leaving SG3+SG4 green, which is the specificity you want.
+
+**⚠️ HONEST SCOPE — the fuzz did NOT exercise this.** A 150-battle `ourandom --protocol` run cast
+Safeguard **ZERO times** (the leech-seed / snatch / disable situation), so it neither validates nor
+invalidates the mechanic; what tests Safeguard is SG1-SG4. That run DID surface 3 `kind=seed`
+divergences, and an A/B settled them as **NOT this change**: neutralising every Safeguard path (so
+the counter can never be set) reproduces all three at the IDENTICAL kind and decision index. They
+are fresh samples of the pre-existing ROUND-26 decision-stream-desync tail, preserved under
+`harness/sweep_sg_finds/`. Note the subtlety that makes a naive per-battle A/B impossible here:
+admitting a move to the picker shifts the choice-RNG, so a pre-admission run generates a DIFFERENT
+battle set — the neutralise-in-place A/B is what gives a true same-input comparison.
+Also unverified: the yawn-vs-sleep-immune-ability precedence (placed to match the general status
+order, but no probed board carries both), and Swagger's PARTIAL block (+2 Atk applies, only the
+confusion is warded) — Swagger is not modeled yet.
 

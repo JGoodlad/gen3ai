@@ -13524,6 +13524,233 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// SG1 — SAFEGUARD (`gen3_safeguard_v1`): the cast, the re-cast fail, the expiry, and the
+/// status BLOCK. Ground truth `harness/probe_safeguard.js`.
+///
+/// Every branch here is DRAW-FREE — the move is never-miss and the FIXED duration 5 is a
+/// deterministic `durationCallback` — so the pin asserts the exact emission forms, which is
+/// what a draw-free mechanic can actually be wrong about. Note the `-sidestart`/`-sideend`
+/// effect name is BARE `Safeguard` (Light Screen uses a `move: ` prefix; this does not), and
+/// the re-cast fail lands on the USER, not the side.
+#[test]
+fn safeguard_cast_blocks_status_then_expires_on_the_fifth_turn() {
+    let d = dex();
+    let user = "Snorlax||Leftovers|Immunity|safeguard,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Miltank||Leftovers|Scrappy|thunderwave,splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // T1 cast
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // T2 RE-cast → fail
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // T3 foe Thunder Wave → blocked
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // T4 idle
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // T5 idle → EXPIRY
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // T6 Thunder Wave now LANDS
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-sidestart|p1: P1|Safeguard"),
+        "SG1: the cast emits the BARE-named -sidestart. got:\n{joined}"
+    );
+    // The re-cast did NOTHING → the [still] retro-edit plus a BARE -fail on the USER.
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|move|p1a: Snorlax|Safeguard||[still]"),
+        "SG1: a re-cast while active takes the [still] did-nothing form. got:\n{joined}"
+    );
+    assert_eq!(
+        raw.iter().filter(|l| l.as_str() == "|-fail|p1a: Snorlax").count(),
+        1,
+        "SG1: exactly one bare -fail on the USER for the re-cast. got:\n{joined}"
+    );
+    // The BLOCK: the attempt keeps its own accuracy roll, then reports on the TARGET MON.
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-activate|p1a: Snorlax|move: Safeguard"),
+        "SG1: a blocked Thunder Wave activates Safeguard on the TARGET. got:\n{joined}"
+    );
+    // EXPIRY at the end of the FIFTH turn from the cast, and the block really does lift.
+    let sideend = raw
+        .iter()
+        .position(|l| l.as_str() == "|-sideend|p1: P1|Safeguard")
+        .unwrap_or_else(|| panic!("SG1: no -sideend emitted. got:\n{joined}"));
+    let par = raw
+        .iter()
+        .position(|l| l.as_str() == "|-status|p1a: Snorlax|par")
+        .unwrap_or_else(|| panic!("SG1: the post-expiry Thunder Wave must land. got:\n{joined}"));
+    assert!(
+        sideend < par,
+        "SG1: the expiry must PRECEDE the landing Thunder Wave. got:\n{joined}"
+    );
+    assert_eq!(st.sides[0].safeguard, 0, "SG1: the counter is spent");
+}
+
+/// SG2 — the BOTH-SIDES residual TIE, the one fact a single-side test cannot see.
+///
+/// Safeguard sits at side-residual order 4 with the same subOrder/speed as its screen
+/// siblings, so the SAME condition on the OTHER side is the only thing that ties it: two
+/// live Safeguards make the residual handler-sort draw ONE extra `random(0,2)`. Measured on
+/// a mirror in the probe as 8 draws/turn → 9. This is the `double_screen…` sibling, and the
+/// assertion is the same shape: capture the two-safeguard seed and require it to DIFFER from
+/// a one-safeguard control run from the identical start.
+#[test]
+fn both_sides_safeguard_ties_the_side_residual_and_draws_the_shuffle() {
+    let d = dex();
+    // A speed-TIED mirror: identical species + spread, so the residual handlers tie on speed
+    // and the ONLY difference between the two arms is the second Safeguard.
+    let a = "Snorlax||Leftovers|Immunity|safeguard,splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "44446,15321,46848,55374";
+
+    let run = |p2_first: Choice| -> String {
+        let mut b = Battle::start_with_switchins(&opts_cg(a, a, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[
+                ScriptDecision::both(Choice::Move(0), p2_first),        // p1 casts; p2 maybe
+                ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // both idle
+            ],
+            &d,
+        );
+        seed_str(&st.prng_seed())
+    };
+    let one = run(Choice::Move(1)); // p2 Splashes → ONE safeguard live
+    let two = run(Choice::Move(0)); // p2 casts too → BOTH live → the tie
+
+    // NON-VACUITY: the control arm really is one-sided.
+    {
+        let mut b = Battle::start_with_switchins(&opts_cg(a, a, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        st.run_full_battle(
+            &[ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+            &d,
+        );
+        assert!(
+            st.sides[0].safeguard > 0 && st.sides[1].safeguard == 0,
+            "SG2: the control must have exactly ONE side warded"
+        );
+    }
+    assert_ne!(
+        one, two,
+        "SG2: two live Safeguards must TIE at side-residual order 4 and draw one extra \
+         shuffle — the seeds cannot match a one-sided control"
+    );
+}
+
+/// SG3 — REST is not blocked by your OWN Safeguard (the sim's `onSetStatus` returns early
+/// when `target === source`). A model that blocked every status on a warded side would make
+/// Safeguard shut off its own team's Rest.
+///
+/// ⚠️ WHAT THIS PIN ACTUALLY GUARDS, stated precisely because the obvious reading is wrong:
+/// `run_rest` does not call `try_set_status_impl` at all — it inlines its own status path —
+/// so the `source != target` clause there is UNREACHABLE and deleting it fails NOTHING.
+/// Mutation-established: what this test catches is a safeguard check being added INSIDE
+/// `run_rest`, which is the realistic way someone breaks this.
+#[test]
+fn safeguard_does_not_block_your_own_rest() {
+    let d = dex();
+    let user = "Snorlax||Leftovers|Immunity|safeguard,rest,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Miltank||Leftovers|Scrappy|seismictoss,splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "44446,15321,46848,55374"), &d)
+        .expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(2), Choice::Move(0)), // chip us so Rest can heal
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // ward the side
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // REST under our own ward
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+
+    // NON-VACUITY: the ward is genuinely up when Rest resolves.
+    assert!(st.sides[0].safeguard > 0, "SG3: our own Safeguard must be live");
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-status|p1a: Snorlax|slp|[from] move: Rest"),
+        "SG3: Rest must still sleep its user through our own Safeguard. got:\n{joined}"
+    );
+    assert_eq!(
+        st.sides[0].pokemon[0].hp, st.sides[0].pokemon[0].maxhp,
+        "SG3: and it must still full-heal"
+    );
+    assert!(
+        !raw.iter().any(|l| l.contains("move: Safeguard")),
+        "SG3: a self-inflicted status emits NO Safeguard activate. got:\n{joined}"
+    );
+}
+
+/// SG4 — YAWN vs SAFEGUARD: the CAST is blocked, the pending RESOLVE is EXEMPT.
+///
+/// gen-3 safeguard's `onSetStatus` opens `if (effect.id === 'yawn') return;` — the exemption
+/// keys on the EFFECT, not the source — so these two are deliberately OPPOSITE. A model that
+/// treated Safeguard as a blanket sleep ward would get the resolve wrong; one that forgot the
+/// ward entirely would get the cast wrong. Ground truth `harness/probe_safeguard.js`.
+#[test]
+fn safeguard_blocks_a_yawn_cast_but_not_a_pending_yawn_resolve() {
+    let d = dex();
+    let foe = "Miltank||Leftovers|Scrappy|yawn,splash|Hardy|85,85,85,85,85,85|F||||";
+    let user = "Snorlax||Leftovers|Immunity|safeguard,splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "44446,15321,46848,55374";
+
+    // (a) CAST into a live ward → blocked, no volatile, no sleep.
+    {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[
+                ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // ward up
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Yawn into it
+                ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // would-be resolve turn
+            ],
+            &d,
+        );
+        let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+        let joined = raw.join("\n");
+        assert!(st.sides[0].safeguard > 0, "SG4a: the ward must be live");
+        assert!(
+            raw.iter().any(|l| l.as_str() == "|-activate|p1a: Snorlax|move: Safeguard"),
+            "SG4a: a blocked Yawn CAST activates Safeguard. got:\n{joined}"
+        );
+        assert!(
+            st.sides[0].pokemon[0].yawn.is_none(),
+            "SG4a: no yawn volatile is laid"
+        );
+        assert!(
+            !raw.iter().any(|l| l.contains("|slp")),
+            "SG4a: and nothing ever falls asleep. got:\n{joined}"
+        );
+    }
+
+    // (b) Yawn lands FIRST, the ward goes up after → the PENDING resolve sleeps through it.
+    {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Yawn lands (no ward yet)
+                ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // NOW ward up; yawn resolves
+            ],
+            &d,
+        );
+        let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+        let joined = raw.join("\n");
+        // NON-VACUITY: the ward really was live when the resolve fired.
+        assert!(
+            st.sides[0].safeguard > 0,
+            "SG4b: the ward must be up at the resolve, else this proves nothing"
+        );
+        assert!(
+            matches!(st.sides[0].pokemon[0].status, Some(pokesim::state::Status::Sleep(_))),
+            "SG4b: a PENDING yawn resolves THROUGH the ward. got:\n{joined}"
+        );
+    }
+}
+
 /// FO1 — FAKE OUT (`gen3_fakeout_v1`). The first-turn gate counts MOVE ACTIONS, not turns.
 ///
 /// Ground truth `harness/probe_fakeout.js`. The failure form is UNIQUE in this engine: the

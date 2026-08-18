@@ -147,6 +147,18 @@ impl crate::state::BattleState {
                 .and_then(|a| a.status_immune.as_ref())
                 .map(|si| si.blocks("slp"))
                 .unwrap_or(false);
+        // SAFEGUARD blocks a Yawn CAST (`gen3_safeguard_v1`) via the ward's
+        // `onTryAddVolatile` — `-activate|<target>|move: Safeguard`, no volatile, draw-free.
+        // ⚠️ Its precedence RELATIVE TO the sleep-immune ability is NOT probe-measured for
+        // yawn specifically; it is placed after `yawn_immune` to match the general status
+        // precedence (STATUS_IMMUNE ability > SAFEGUARD). A board carrying both is needed to
+        // settle it. The CAST block and the RESOLVE exemption are opposite by design.
+        let yawn_safeguarded = move_id == "yawn"
+            && !yawn_protect
+            && !yawn_statused
+            && !yawn_subbed
+            && !yawn_immune
+            && self.sides[foe].safeguard > 0;
         let yawn_still = yawn_statused || yawn_subbed;
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
@@ -1727,6 +1739,40 @@ impl crate::state::BattleState {
         //     (Taunt renders `move: Taunt`), and Substitute does NOT block it (`bypasssub`), while
         //     Protect DOES. The already-tormented re-cast takes the same `[still]` + `-fail` on the
         //     USER form Taunt uses — and STILL draws its accuracy roll. ---
+        // ---- SAFEGUARD (`gen3_safeguard_v1`) -------------------------------------
+        // A `target: allySide` SideCondition, never-miss (`accuracy: true`) → NO accuracy
+        // roll, and the add + its FIXED duration 5 (`durationCallback` returns a constant;
+        // Persistent is gen5+) draw NOTHING. So both branches are entirely DRAW-FREE, and
+        // `landed` is false (a status moveHit returns undefined → no in-tryMoveHit Update).
+        // Ground truth `harness/probe_safeguard.js`.
+        //
+        // It carries NO `protect` and NO `reflectable` flag, so a Protect does NOT block it
+        // and it is never bounced — hence no protect_blocks / substitute check here.
+        if move_id == "safeguard" {
+            debug_assert!(
+                never_miss && move_type == Some(Type::Normal),
+                "safeguard: expected the never-miss Normal dex row"
+            );
+            if self.sides[_side].safeguard > 0 {
+                // Already up: `addSideCondition` returns false (there is no onSideRestart),
+                // so the move DID NOTHING → the `[still]` retro-edit + a BARE `-fail` on the
+                // USER (not the side, not the target).
+                self.log.attr_last_move_still();
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.fail(&user, None, false);
+            } else {
+                self.sides[_side].safeguard = SAFEGUARD_DURATION;
+                // [EMIT] `|-sidestart|<side>|Safeguard` — the BARE effect name (Light Screen
+                // uses the `move: ` prefix; Safeguard and Reflect do not).
+                if self.logging() {
+                    let side_ref =
+                        crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);
+                    self.log.sidestart(&side_ref, "Safeguard");
+                }
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         if move_id == "torment" {
             // GIGO guard: the resolved gen-3 dex must agree (Dark, accuracy 100, not never-miss).
             debug_assert!(
@@ -2750,6 +2796,17 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (4a2) SAFEGUARD blocks the CAST (`gen3_safeguard_v1`) — the ward's
+            //       `onTryAddVolatile`, DRAW-FREE, no volatile.
+            //       [EMIT] `|-activate|<target>|move: Safeguard` on the TARGET MON.
+            //       The mirror image of the RESOLVE, which is EXEMPT (`yawn_resolving`).
+            if yawn_safeguarded {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "move: Safeguard", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
             // (4b) ALREADY-YAWNED GUARD (`gen3_yawn_recast_v1`) — the target ALREADY has a
             //      pending `yawn` volatile: Showdown's `addVolatile('yawn')` returns false (yawn
             //      has no `onRestart`), so the re-cast FAILS and the EXISTING yawn is UNCHANGED
@@ -2952,7 +3009,7 @@ impl crate::state::BattleState {
                 return MoveResolution::done(false, false, false);
             }
             // SUCCESS → the shared path draws random(2,6) and emits `-start|confusion`.
-            self.add_confusion(foe, foe_slot, dex);
+            self.add_confusion(foe, foe_slot, true, dex);
             return MoveResolution::done(false, false, false);
         }
 

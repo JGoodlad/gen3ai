@@ -120,7 +120,7 @@ impl crate::state::BattleState {
                         // successful add — do NOT emit it a second time here (the prior port
                         // double-emitted the Figy/Mago/Iapapa/Aguav/Wiki `-start confusion`,
                         // `gen3_omniscient_byte_fuzz_v1`).
-                        self.add_confusion(side, slot, dex);
+                        self.add_confusion(side, slot, false, dex);
                     }
                 }
             }

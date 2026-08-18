@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 50,
-   "moves": 276,
-   "rows": 996
+   "conditions": 51,
+   "moves": 277,
+   "rows": 1006
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1713,6 +1713,48 @@
    "fp": "fn:45b46426:onSideStart(side) { this.add(\"-sidestart\", side, \"Reflect\"); }",
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
+  },
+  "condition:safeguard:duration": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
+  },
+  "condition:safeguard:durationCallback": {
+   "disposition": "implemented",
+   "fp": "fn:9db853b4:durationCallback(target, source, effect) { if (source?.hasAbility(\"persistent\")) { this.add(\"-activate\", source, \"abilit",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
+  },
+  "condition:safeguard:onSetStatus": {
+   "disposition": "implemented",
+   "fp": "fn:667d5e4c:onSetStatus(status, target, source, effect) { if (!effect || !source) return; if (effect.id === \"yawn\") return; if (effe",
+   "anchor": "turn/status.rs::try_set_status_impl",
+   "reason": "the (2b2) block, DRAW-FREE: the gen3ou handler-sort shuffle already fired and safeguard sorts into its OWN group, leaving the 2 Standard clauses a size-2 tie — so the shuffle COUNT is unchanged and the block is SEED-NEUTRAL (the STATUS_IMMUNE-ability pattern). Precedence already-statused > type immunity > STATUS_IMMUNE ability > SAFEGUARD > sleep clause. Emits |-activate|<target>|move: Safeguard for a status-MOVE source only; a blocked SECONDARY is silent and its random(100) still drew. The self-inflicted exemption is unreachable today — run_rest inlines its own status path."
+  },
+  "condition:safeguard:onSideEnd": {
+   "disposition": "implemented",
+   "fp": "fn:feee14a5:onSideEnd(side) { this.add(\"-sideend\", side, \"Safeguard\"); }",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::SafeguardDuration at order 4 / SIDE_CONDITION_SUBORDER / speed 0 — the reflect(1)/lightscreen(2)/mist(3) sibling. Decrement, |-sideend|<side>|Safeguard at 0, then the D4 END-branch continue. Only the SAME condition on the OTHER side ties, and that tie is real: BOTH sides warded draws ONE extra random(0,2) per residual (probe-measured 8 -> 9 on a mirror), pinned by both_sides_safeguard_ties_the_side_residual_and_draws_the_shuffle."
+  },
+  "condition:safeguard:onSideResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "turn/residuals.rs::run_residuals",
+   "reason": "ResidualAction::SafeguardDuration at order 4 / SIDE_CONDITION_SUBORDER / speed 0 — the reflect(1)/lightscreen(2)/mist(3) sibling. Decrement, |-sideend|<side>|Safeguard at 0, then the D4 END-branch continue. Only the SAME condition on the OTHER side ties, and that tie is real: BOTH sides warded draws ONE extra random(0,2) per residual (probe-measured 8 -> 9 on a mirror), pinned by both_sides_safeguard_ties_the_side_residual_and_draws_the_shuffle."
+  },
+  "condition:safeguard:onSideStart": {
+   "disposition": "implemented",
+   "fp": "fn:b3748154:onSideStart(side, source) { if (source?.hasAbility(\"persistent\")) { this.add(\"-sidestart\", side, \"Safeguard\", \"[persiste",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
+  },
+  "condition:safeguard:onTryAddVolatile": {
+   "disposition": "implemented",
+   "fp": "fn:44506b4c:onTryAddVolatile(status, target, source, effect) { if (!effect || !source) return; if (effect.effectType === \"Move\" && e",
+   "anchor": "turn/secondaries.rs::add_confusion",
+   "reason": "the confusion half of the ward, gated BEFORE the onStart so the random(2,6) is NOT drawn (the Own Tempo shape). Announces only for a PRIMARY (Confuse Ray); a confusion SECONDARY is silent. The yawn arm of the sim handler is moot here — the port blocks a Yawn CAST at its own arm, and a PENDING yawn RESOLVE is exempt in the sim (`if (effect.id === 'yawn') return`)."
   },
   "condition:sandstorm:duration": {
    "disposition": "implemented",
@@ -5092,6 +5134,24 @@
    "fp": "val:[{\"chance\":50,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:safeguard:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
+  },
+  "move:safeguard:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
+  },
+  "move:safeguard:sideCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"safeguard\"",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the safeguard arm: never-miss so NO accuracy roll, and the FIXED duration 5 (gen-3 durationCallback returns a constant; the Persistent +2 is gen5+) means the cast is entirely DRAW-FREE. Sets SideState::safeguard = 5 and emits |-sidestart|<side>|Safeguard (the BARE name — Light Screen prefixes `move: `, this does not). An already-up re-cast is addSideCondition-false with no onSideRestart, so it takes the [still] did-nothing form plus a bare -fail on the USER, also draw-free. landed=false."
   },
   "move:sandattack:boosts": {
    "disposition": "implemented",

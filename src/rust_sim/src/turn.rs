@@ -322,6 +322,15 @@ const WHITE_HERB_RESIDUAL_ORDER: u64 = 29;
 /// stays first among the residuals (its old direct-decrement stream position). priority 0.
 const REFLECT_RESIDUAL_ORDER: u64 = 1;
 const LIGHT_SCREEN_RESIDUAL_ORDER: u64 = 2;
+/// SAFEGUARD's `onSideResidualOrder` (`gen3_safeguard_v1`). Probe-confirmed against its
+/// three SideCondition siblings — reflect 1, lightscreen 2, mist 3, safeguard 4 — all with
+/// an UNDEFINED `onSideResidualSubOrder`, so they share `SIDE_CONDITION_SUBORDER`. Only the
+/// SAME condition on the OTHER side ties, and BOTH sides carrying Safeguard is exactly that
+/// tie: it draws ONE extra `random(0,2)` per residual (measured 8 → 9 draws on a mirror).
+const SAFEGUARD_RESIDUAL_ORDER: u64 = 4;
+/// SAFEGUARD's FIXED duration. `durationCallback` returns 5 deterministically in gen-3 (the
+/// `Persistent` +2 is gen5+), so this is a constant and the cast draws nothing.
+const SAFEGUARD_DURATION: u8 = 5;
 /// A (non-slot) SIDE condition's residual subOrder — `resolvePriority`'s effectTypeOrder for a
 /// `Condition` whose `state.target instanceof Side` (not a slot condition) = **4**
 /// (`sim/battle.ts` `resolvePriority`). Unobservable for the sort ORDER (reflect 1 / lightscreen
@@ -593,6 +602,9 @@ enum ResidualAction {
     /// counter/effect (`reflect` → `Reflect`, `light_screen` → `move: Light Screen`). NO HP
     /// effect, DRAW-FREE apply; the effectHolder is the SIDE (a fainted active never skips it).
     ScreenDuration { side: usize, is_reflect: bool },
+    /// SAFEGUARD's side-condition duration tick (`gen3_safeguard_v1`), order 4 / subOrder 4 /
+    /// speed 0 — the reflect/lightscreen sibling. Decrement, `|-sideend|<side>|Safeguard` at 0.
+    SafeguardDuration { side: usize },
 }
 
 /// The per-mon outcome of a turn (what THIS step validates against the sim).

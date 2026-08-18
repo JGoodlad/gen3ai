@@ -205,7 +205,7 @@ impl crate::state::BattleState {
             // random(100) itself was already drawn by the caller (a landed-but-gated
             // confusion STILL drew the random(100) but draws NO random(2,6)).
             "confusion" => {
-                self.add_confusion(foe, foe_slot, dex);
+                self.add_confusion(foe, foe_slot, false, dex);
             }
             // The STRUCTURED stat-boost secondaries (foe stat-drop / self stat-raise) —
             // DRAW-FREE; apply the (stat, stages) from the move's secondary_boosts spec
@@ -236,7 +236,18 @@ impl crate::state::BattleState {
     /// only reaches here on a landed damaging hit, so it is N/A here.
     /// On a SUCCESSFUL add it draws ONE `random(2,6)` (the onStart duration, min=2 for
     /// a move source → 2..5 turns) into the `confusion: Option<u8>` counter.
-    pub(crate) fn add_confusion(&mut self, foe: usize, foe_slot: usize, _dex: &Dex) {
+    ///
+    /// `announce` is the safeguard/`-activate` gate — TRUE when the confusion is a status
+    /// MOVE's PRIMARY effect (Confuse Ray), FALSE for a damaging move's SECONDARY (Water
+    /// Pulse) or a berry. It mirrors `try_set_status_impl`'s `announce_immune_block`: a
+    /// safeguard-blocked SECONDARY is SILENT, and its `random(100)` already drew either way.
+    pub(crate) fn add_confusion(
+        &mut self,
+        foe: usize,
+        foe_slot: usize,
+        announce: bool,
+        _dex: &Dex,
+    ) {
         let mon = &self.sides[foe].pokemon[foe_slot];
         // KO'd target: no add (and a confused-then-fainted mon can't be re-confused).
         if mon.fainted || mon.hp == 0 {
@@ -248,6 +259,18 @@ impl crate::state::BattleState {
         }
         // OWN TEMPO: the onTryAddVolatile immunity returns before onStart → NO draw.
         if to_id(&mon.ability) == "owntempo" {
+            return;
+        }
+        // SAFEGUARD (`gen3_safeguard_v1`): the side condition's `onTryAddVolatile` blocks
+        // confusion too, BEFORE the onStart → the `random(2,6)` is NOT drawn (the same
+        // draw-suppressing shape as Own Tempo). A confusion SECONDARY's own `random(100)`
+        // already drew in the caller. Probe-settled; note Swagger is PARTIAL — its +2 Atk
+        // still applies and only the confusion is blocked (Swagger is not modeled yet).
+        if self.sides[foe].safeguard > 0 {
+            if announce && self.logging() {
+                let m = self.mon_ref(foe, foe_slot, _dex);
+                self.log.activate(&m, "move: Safeguard", None);
+            }
             return;
         }
         // SUCCESSFUL add → the onStart duration draw random(2,6) (2..5 turns).

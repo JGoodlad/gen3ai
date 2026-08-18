@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-50 conditions (engine state space + attached), 276 modeled moves
-→ **996 (effect, hook) rows**.
+51 conditions (engine state space + attached), 277 modeled moves
+→ **1006 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 943 |
+| implemented | 953 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -347,7 +347,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (226 rows: implemented=211, noop_justified=9, unreachable_justified=6)
+## condition (233 rows: implemented=218, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -505,6 +505,13 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | reflect | onSideEnd | implemented | `turn.rs::run_residuals` |
 | reflect | onSideResidualOrder | implemented | `turn.rs::run_residuals` |
 | reflect | onSideStart | implemented | `turn.rs::modeled_screen_move` |
+| safeguard | duration | implemented | `turn/status_moves.rs::run_status_move` |
+| safeguard | durationCallback | implemented | `turn/status_moves.rs::run_status_move` |
+| safeguard | onSetStatus | implemented | `turn/status.rs::try_set_status_impl` |
+| safeguard | onSideEnd | implemented | `turn/residuals.rs::run_residuals` |
+| safeguard | onSideResidualOrder | implemented | `turn/residuals.rs::run_residuals` |
+| safeguard | onSideStart | implemented | `turn/status_moves.rs::run_status_move` |
+| safeguard | onTryAddVolatile | implemented | `turn/secondaries.rs::add_confusion` |
 | sandstorm | duration | implemented | `turn.rs::apply_weather_chip` |
 | sandstorm | durationCallback | implemented | `turn.rs::apply_weather_chip` |
 | sandstorm | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
@@ -578,7 +585,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (449 rows: implemented=445, noop_justified=2, unreachable_justified=2)
+## move (452 rows: implemented=448, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -890,6 +897,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | rocktomb | secondaries | implemented | `turn.rs::apply_secondaries` |
 | rollingkick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sacredfire | secondaries | implemented | `turn.rs::apply_secondaries` |
+| safeguard | ignoreImmunity | implemented | `turn/status_moves.rs::run_status_move` |
+| safeguard | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
+| safeguard | sideCondition | implemented | `turn/status_moves.rs::run_status_move` |
 | sandattack | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | sandattack | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sandstorm | ignoreImmunity | implemented | `turn.rs::run_status_move` |

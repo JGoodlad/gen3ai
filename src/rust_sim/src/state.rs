@@ -1545,6 +1545,14 @@ pub struct SideState {
     /// PHYSICAL damage (`DamageContext::reflect`) and expires with `|-sideend|…|Reflect`. 0 at
     /// construction.
     pub reflect: u8,
+    /// The **SAFEGUARD** side-condition remaining-turn counter (`gen3_safeguard_v1`).
+    /// A SIDE condition, not a volatile — it PERSISTS across switches and protects the
+    /// ENTRANT, and there is nothing for Baton Pass to copy. Set to a FIXED 5 at cast
+    /// (`durationCallback` returns 5 deterministically — Persistent is gen5+), ticked
+    /// down by the order-4 side residual, `|-sideend|` at 0. While > 0 the side's mons
+    /// are immune to FOE-sourced major status + confusion; a SELF-inflicted status
+    /// (Rest) passes, and a PENDING Yawn's resolve is exempt. 0 at construction.
+    pub safeguard: u8,
     /// The **WISH** pending slot-condition (`side.slotConditions[0].wish`,
     /// `gen3_move_coverage_batch3_v1`): `Some((duration, wisher_name))` when a Wish cast on
     /// THIS side is pending. `None` = no pending Wish (the construction-time value).
@@ -1714,6 +1722,13 @@ pub struct BattleState {
     /// bare `useMove`). Never set during a normal move; not persisted (a transient like
     /// `pending_explosion_self_ko` but read+cleared, not per-turn).
     pub pursuit_strike: bool,
+    /// TRANSIENT: set only around the YAWN residual's `trySetStatus('slp')` call
+    /// (`gen3_safeguard_v1`). gen-3 safeguard's `onSetStatus` opens with
+    /// `if (effect.id === 'yawn') return;` — the exemption keys on the EFFECT, not the
+    /// source — so a PENDING Yawn sleeps its target THROUGH an active Safeguard (drawing
+    /// its `random(2,6)` normally) even though a Yawn CAST into that same ward is blocked.
+    /// The `pursuit_strike` / `sleep_talk_call` pattern: never persisted, never observed.
+    pub yawn_resolving: bool,
     /// The PER-TURN **first-mover override** for a PURSUIT-INTERRUPT turn
     /// (`gen3_move_coverage_batch4_v1`). On a turn where a mon VOLUNTARILY switches out and the
     /// foe's Pursuit interrupts it, the sim emits the pursuer's `|move|Pursuit` line FIRST (from
@@ -1795,6 +1810,7 @@ impl BattleState {
             log: crate::protocol::ProtocolBuilder::new(),
             faint_emit_queue: Vec::new(),
             pursuit_strike: false,
+            yawn_resolving: false,
             sleep_talk_call: false,
             pursuit_first_mover: None,
             quick_claw_roll: false,
@@ -1936,6 +1952,7 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
         spikes: 0,        // no side conditions at construction
         light_screen: 0,  // gen3_move_coverage_batch2_v1
         reflect: 0,       // gen3_move_coverage_batch2_v1
+        safeguard: 0,     // gen3_safeguard_v1
         wish_pending: None,         // gen3_move_coverage_batch3_v1
         baton_pass_pending: false,  // gen3_move_coverage_batch3_v1
         future_move: None,          // gen3_move_coverage_batch4c_v1

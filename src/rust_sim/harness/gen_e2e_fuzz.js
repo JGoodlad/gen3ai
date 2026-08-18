@@ -420,6 +420,10 @@ const HAZE_E2E_EXCLUDED = false;
 // admitting it can grow the filter-clean pool; a plain regen reproduces the committed golden iff the
 // sampled teams don't carry it.
 const MODELED_YAWN_MOVES = new Set(['yawn']);
+// SAFEGUARD (`gen3_safeguard_v1`) — a never-miss allySide SideCondition. The CAST is
+// entirely DRAW-FREE; the block is too, and BOTH sides carrying it TIE at residual order 4
+// for one extra shuffle. Blocks FOE-sourced major status + confusion; a SELF Rest passes.
+const MODELED_SAFEGUARD_MOVES = new Set(['safeguard']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -777,6 +781,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||
       // YAWN (`gen3_yawn_v1`) — the delayed-sleep move, category Status + bit-for-bit modeled.
       (YAWN_E2E_EXCLUDED ? false : MODELED_YAWN_MOVES.has(id)) ||
+      MODELED_SAFEGUARD_MOVES.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));

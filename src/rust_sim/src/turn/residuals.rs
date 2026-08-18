@@ -167,6 +167,16 @@ impl crate::state::BattleState {
                     handler: ResidualAction::ScreenDuration { side, is_reflect: true },
                 });
             }
+            if self.sides[side].safeguard > 0 {
+                handlers.push(EventHandler {
+                    order: SAFEGUARD_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::SafeguardDuration { side },
+                });
+            }
             if self.sides[side].light_screen > 0 {
                 handlers.push(EventHandler {
                     order: LIGHT_SCREEN_RESIDUAL_ORDER,
@@ -940,6 +950,28 @@ impl crate::state::BattleState {
                         continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
+                // SAFEGUARD's duration tick (`gen3_safeguard_v1`) — the reflect/lightscreen
+                // sibling at order 4. Same D4 END-branch `continue`: a side condition cannot
+                // faint anything, and order 4 runs before every order-8/10 handler, so nothing
+                // is deferred yet — but keep the sim's branch exact.
+                ResidualAction::SafeguardDuration { side } => {
+                    if self.sides[side].safeguard == 0 {
+                        continue;
+                    }
+                    self.sides[side].safeguard -= 1;
+                    if self.sides[side].safeguard == 0 {
+                        // [EMIT] `|-sideend|<side>|Safeguard` (the BARE effect name — the
+                        // `-sidestart` form matches, unlike Light Screen's `move: ` prefix).
+                        if self.logging() {
+                            let side_ref = crate::protocol::ProtocolBuilder::side_ref(
+                                side,
+                                &self.sides[side].name,
+                            );
+                            self.log.sideend(&side_ref, "Safeguard");
+                        }
+                        continue; // duration-END → skip faintMessages (D4 order fix)
+                    }
+                }
                 // MUSTRECHARGE duration handler on the Hyper Beam CAST turn
                 // (`gen3_perside_residual_faint_upkeep_order_v1` D4 fix). `mustrecharge` is
                 // `duration: 2`, so its only residual tick decrements 2 → 1 (NON-zero → the sim's
@@ -1024,7 +1056,12 @@ impl crate::state::BattleState {
                         // Move, so `src_move` is `None` → the plain `-status` branch).
                         let src_side = 1 - side;
                         let src_slot = self.sides[src_side].active;
+                        // A PENDING Yawn is EXEMPT from Safeguard (the sim's onSetStatus
+                        // returns early on `effect.id === 'yawn'`), unlike a Yawn CAST — the
+                        // exemption keys on the EFFECT, so it rides a transient flag.
+                        self.yawn_resolving = true;
                         self.try_set_status(side, slot, "slp", Some((src_side, src_slot)), dex);
+                        self.yawn_resolving = false;
                         // duration-END → skip the per-handler faintMessages, mirroring the sim's
                         // `fieldEvent('Residual')` `handler.state.duration-- → end() → continue`
                         // (the D4 order fix). Setting sleep cannot faint, so this only preserves the
