@@ -54,10 +54,26 @@ never measured, and at the documented benefit the two roughly cancel.*
   | p(new) per episode | 1.000 | 0.283 | 0.141 | 0.094 | 0.057 |
   | **workers compiling in iteration 1 (of 48)** | **48.0** | **48.0** | **47.4** | **45.1** | **38.8** |
 
-  So the bill lands in ONE iteration at every realistic pool size. **Therefore the ×12.5
-  extrapolation is not the optimistic reading — it is the mechanism's prediction**, and it also
-  kills one candidate fix outright: **staggering must be an EXPLICIT delay, not a hoped-for
-  consequence of the sampling weights**, which are nowhere near sharp enough to spread the load.
+  That model PREDICTS the bill lands in one iteration at every pool size. **Treat it as a
+  prediction, not a finding — it is currently UNTESTED, and the only adjacent data does not
+  support extrapolating from the measured event.**
+
+  **⚠️ The measured event was the WORST CASE and must not be multiplied naively.** gen-14's
+  promotion went into a pool holding **exactly one entry**, so `sample()` returned the new snapshot
+  with p = 1 and all 48 workers adopted it immediately. A promotion into a MATURE pool is
+  **unmeasured**. The nearest evidence points cheaper: gen-13's retained segment shows compile
+  bursts of 42–48 costing only **+2.2 to +8.3 min** — but those are spread across **10–11 DISTINCT
+  snapshots** and follow a launcher restart, so they measure **restart warm-up, not promotion**, and
+  cannot settle the question either way. (They do price the restart itself: ~8 min per 3 h restart,
+  a smaller recurring cost that the startup table above already covers in principle.)
+
+  **So the ×12.5 projection is an UPPER BOUND, not an estimate**, and the per-run "~3.9 h" should be
+  read that way until a promotion into a multi-entry pool is timed. gen-14's 4M promotion is exactly
+  that test and costs nothing but attention.
+
+  One implication does survive regardless: if staggering is wanted, **it must be an EXPLICIT delay**
+  — `recency_weight = 0.3` (newest weight 1.3 vs 1.0, PFSP off) is nowhere near sharp enough to
+  spread the load by itself.
 
 ## Pros
 

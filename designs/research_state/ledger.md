@@ -926,3 +926,32 @@ second copy of the claim, not a repair.** Edit the claim; keep the correction bl
 provenance of WHY it changed. `ARCHITECTURE.md`'s standing rule ("state the new truth and delete the
 old") is the general form — it applies to planning docs and ledgers too, not only to the
 architecture record.
+
+### Correction (2026-08-17, ~40 min after shipping it): the promotion-cost projection was an UPPER BOUND sold as an estimate
+
+Two claims shipped tonight need pulling back, and the pull-back came from chasing the mechanism
+rather than from anyone objecting.
+
+1. **"~3.9 h per 25M run" multiplied the ONE measured promotion by gen-13's snapshot count.** But
+   that promotion went into a pool holding **exactly one entry** — `sample()` returned the new
+   snapshot with p = 1, so all 48 workers adopted it in the same iteration. **It is the worst case
+   by construction**, and a promotion into a mature pool is unmeasured. Restated as an upper bound
+   everywhere it appears.
+2. **"The herd does not disperse with pool size" was a MODEL presented as a finding.** The
+   arithmetic (recency 1.3 vs 1.0, ~28 episodes per env per iteration → 45 of 48 workers compile in
+   iteration 1 even at N=12) is sound *given its assumptions*, but nothing has tested it. Demoted to
+   a stated prediction with the test named.
+
+**What nearly happened, and the lesson:** gen-13's log looked like the confirming second data point
+— 42–48-compile bursts, plainly visible. They cost only +2.2 to +8.3 min, and had I stopped at the
+counts I would have "confirmed" a cheaper number. Breaking the bursts down by SNAPSHOT showed they
+span **10–11 distinct snapshots** and sit right after a launcher restart: they are **restart
+warm-up, a different event entirely**, and evidence for neither the high nor the low figure.
+
+> **A burst that matches your event's SIZE is not your event.** Before a second occurrence confirms
+> or refutes the first, check that it is the same *kind* of occurrence — here, one snapshot × N
+> workers (promotion) versus N snapshots × few workers (restart). The counts were nearly identical;
+> the composition was not, and only the composition carried the meaning.
+
+Same family as the pooled-correlation trap earlier today: **an aggregate that does not break down by
+the dimension that defines the event will happily aggregate two different events into one number.**

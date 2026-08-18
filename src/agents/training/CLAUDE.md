@@ -1485,7 +1485,7 @@ is not startup at all — measured on gen-14, 2026-08-17
 | the iteration a snapshot entered the pool | **1234 s** — `[CompileExtractor]` fires **48 times**, exactly `n_envs` |
 | excess | **+18.5 min, from ONE promotion** |
 | steady state (one snapshot ≈ every 2M steps) | **~31% of wall-clock** |
-| projected over a 25M run (gen-13 kept 12 snapshots) | **~3.9 h** |
+| projected over a 25M run (gen-13 kept 12 snapshots) | **≤ ~3.9 h — an UPPER BOUND, not an estimate** |
 
 **Why the existing prewarm does not cover it.** The startup prewarm ran and worked (`[CompilePrewarm]
 warmed the Inductor cache in 40.7 s`), and codegen is weight-independent — so the on-disk cache was
@@ -1505,9 +1505,13 @@ the previous opponent for one iteration while the new one compiles; or hold one 
 across snapshots (the deep fix, and the awkward one — `nn.Module` weights are attributes, so a new
 instance is a new dynamo guard set even though the *graph* is identical).
 
-**Caveat, stated plainly: n = 1 promotion.** The 18.5 min is one measured event on a live run; the
-per-run hours are that event multiplied by gen-13's snapshot count. Confirm against a second event
-before treating the projection as a number rather than a size.
+**Caveat, stated plainly: n = 1 promotion, and it was the WORST CASE.** That promotion went into a
+pool holding **exactly one entry**, so `sample()` returned the new snapshot with p = 1 and all 48
+workers adopted it at once. A promotion into a MATURE pool is unmeasured, and the nearest evidence
+points cheaper: gen-13's retained segment shows 42–48-compile bursts costing only +2.2 to +8.3 min —
+but those span **10–11 distinct snapshots** and follow a launcher restart, so they price *restart
+warm-up*, not promotion. **Read the per-run hours as an UPPER BOUND** until a promotion into a
+multi-entry pool is timed.
 
 ## Compiled GPU trainer (`--compile-trainer`, opt-in)
 
