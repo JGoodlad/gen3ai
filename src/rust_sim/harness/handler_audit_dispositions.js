@@ -433,6 +433,11 @@ const MOVE_VOLATILE_ANCHOR = {
   // (`[still]`+`-fail` when already confused, `-immune|…|confusion|[from] ability: Own Tempo`).
   // ⚠️ This map is keyed by the VOLATILE NAME (`m.volatileStatus`), not the move id — the other
   // entries just happen to share both spellings. Confuse Ray's volatile is `confusion`.
+  // TORMENT (`gen3_torment_v1`) — a PERMANENT selection-time restriction folded into
+  // `state.rs::move_usable` (it blocks `last_move`, read LIVE). Deliberately NO residual
+  // duration handler: gen-3 torment has no `duration`/`onResidual`, and a phantom one would
+  // tie the NO_ORDER/subOrder-2 protect/stall/flinch group.
+  torment: IMPL('state.rs::move_usable', 'the torment volatile — blocks the LAST-USED slot, permanent until switch-out (gen3_torment_v1)'),
   confusion: IMPL('secondaries.rs::add_confusion', 'the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)'),
 };
 
@@ -517,6 +522,11 @@ add([cond('encore', 'onDisableMove')],
   IMPL('state.rs::move_usable', 'every non-encored slot is un-selectable while the volatile is up (the request disabled shape; a switch stays legal)'));
 add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('encore', 'onResidualSubOrder'), cond('encore', 'onEnd')],
   IMPL('turn.rs::run_residuals', 'the order-10/subOrder-14 tick (ResidualAction::EncoreDuration): decrement + the 0-PP EARLY -end (MC82) + the expiry -end'));
+// TORMENT (`gen3_torment_v1`) — the condition's own hooks.
+add([cond('torment', 'onStart'), cond('torment', 'onDisableMove')],
+  IMPL('turn.rs::run_status_move', 'the torment arm applies the volatile (bare `|-start|<t>|Torment`, NOT `move: Torment`); the onDisableMove restriction is folded into state.rs::move_usable against a LIVE `last_move`, and it JOINS the endTurn DisableMove tie group (speed.rs::disable_move_event_shuffle) — the only draw torment introduces'));
+add([cond('torment', 'onEnd')],
+  IMPL('turn.rs::execute_switch', 'UNREACHABLE in gen 3: nothing removes the volatile mid-battle (no duration, no onResidual), and clearVolatile wipes it SILENTLY without firing End — so the port clears the flag on switch-out/faint and deliberately emits NO `|-end|<t>|Torment`. Emitting one would be a pure protocol divergence; the byte form is UNVERIFIED because no probe can reach it.'));
 add([mv('encore', 'volatileStatus'), mv('encore', 'ignoreImmunity')],
   IMPL('turn.rs::run_status_move', 'the encore arm applies the volatile; Status-default ignoreImmunity (no type gate)'));
 add([mv('destinybond', 'onPrepareHit'), mv('destinybond', 'volatileStatus'), cond('destinybond', 'onStart')],

@@ -788,6 +788,18 @@ pub struct MonState {
     /// through this record's base fields (`bridge::details` / `serialize_mon` /
     /// `helpers::display_name`).
     pub transform: Option<TransformOverlay>,
+    /// **TORMENT** (`gen3_torment_v1`) — the foe cannot select the move it used LAST.
+    ///
+    /// A `bool`, not a counter: gen-3 torment has NO `duration` and NO `onResidual`, so it is
+    /// PERMANENT until the mon leaves the field, and it must NOT register a residual duration
+    /// handler (a phantom one would join the NO_ORDER/subOrder-2 protect/stall/flinch tie group
+    /// and draw a shuffle the sim never draws). Probe: `harness/probe_torment.js`.
+    ///
+    /// The restricted move is read LIVE from `last_move` at every legality check rather than
+    /// stored — the sim's `onDisableMove` re-reads `pokemon.lastMove.id` each request, and
+    /// `last_move` is already `None` for a Struggle, which reproduces the sim's
+    /// `lastMove.id !== 'struggle'` exemption for free.
+    pub torment: bool,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1258,6 +1270,7 @@ impl MonState {
             switchin_foe_uid: None,
             yawn: None,
             transform: None,
+            torment: false,
         })
     }
 
@@ -1389,6 +1402,16 @@ impl MonState {
             if k == disabled_slot {
                 return false;
             }
+        }
+        // TORMENT (`gen3_torment_v1`): the slot used LAST is un-usable while the volatile is up.
+        // Read LIVE from `last_move` — the sim's `onDisableMove` disables `lastMove.id` at every
+        // request build, so a Mimic that rewrote the slot must not keep disabling the old id.
+        // `last_move_was_self_overwrite` is the Mimic guard Disable already uses
+        // (`gen3_mimic_disable_self_overwrite_v1`): the sim's `disableMove` finds no matching
+        // slot then, so nothing is disabled. `last_move == None` after a Struggle IS the sim's
+        // `lastMove.id !== 'struggle'` exemption, which is why Struggle frees the slot next turn.
+        if self.torment && !self.last_move_was_self_overwrite && self.last_move == Some(k) {
+            return false;
         }
         // ENCORE (`gen3_move_coverage_batch6_v1`, `encore.onDisableMove`): every slot
         // EXCEPT the encored one is un-usable while the volatile is up (the request

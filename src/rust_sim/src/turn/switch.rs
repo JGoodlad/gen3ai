@@ -226,6 +226,7 @@ impl crate::state::BattleState {
                 // on faint (`gen3_taunt_disable_v1`): a fainted mon carries no selection
                 // restriction, and its replacement enters with no lastMove.
                 mon.taunt = None;
+                mon.torment = false; // gen3_torment_v1 — SILENT, clearVolatile fires no onEnd
                 mon.disable = None;
                 mon.last_move = None;
                 mon.last_move_was_self_overwrite = false;
@@ -877,6 +878,7 @@ impl crate::state::BattleState {
             // `last_move` clears (`pokemon.lastMove` is reset on switch-out — a switched-in mon
             // has no lastMove, so a Disable into it fails draw-free). VERIFIED vs the sim.
             m.taunt = None;
+            m.torment = false; // gen3_torment_v1 — SILENT, and NOT in the Baton-Pass set (noCopy)
             m.disable = None;
             m.last_move = None;
             m.last_move_was_self_overwrite = false;

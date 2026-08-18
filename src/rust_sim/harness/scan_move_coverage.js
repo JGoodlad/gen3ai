@@ -73,7 +73,7 @@ const MODELED_SUBSTITUTE = new Set(['substitute']);
 // apply_wish + the copyVolatileFrom snapshot in execute_switch).
 const MODELED_BATCH3 = new Set(['curse', 'wish', 'batonpass']);
 // Selection-restriction (`MODELED_RESTRICTION_MOVES` — taunt/disable).
-const MODELED_RESTRICTION = new Set(['taunt', 'disable']);
+const MODELED_RESTRICTION = new Set(['taunt', 'disable', 'torment']);  // gen3_torment_v1
 // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the FINAL UNMODELED tail,
 // all category-Status, MODELED bit-for-bit (the batch-6 arms in src/turn.rs +
 // gen_movecoverage_batch6_golden.js + the MC79+ pins): Encore / Destiny Bond / Endure /
@@ -256,7 +256,7 @@ function classifyStatus(m, id) {
   if (MODELED_PHAZE.has(id)) return { cov: 'MODELED', mech: 'phaze' };
   if (MODELED_LEECH.has(id)) return { cov: 'MODELED', mech: 'leech-seed' };
   if (MODELED_SUBSTITUTE.has(id)) return { cov: 'MODELED', mech: 'substitute' };
-  if (MODELED_RESTRICTION.has(id)) return { cov: 'MODELED', mech: 'taunt/disable' };
+  if (MODELED_RESTRICTION.has(id)) return { cov: 'MODELED', mech: 'taunt/disable/torment' };
   // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — status-cure / weather-set /
   // stat-drop / screens, all MODELED bit-for-bit.
   if (MODELED_CURE.has(id)) return { cov: 'MODELED', mech: 'status-cure (batch 2)' };

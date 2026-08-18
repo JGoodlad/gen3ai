@@ -13524,6 +13524,108 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// TM1 — TORMENT (`gen3_torment_v1`). The cheapest move-restriction: Taunt minus the duration and
+/// minus the execution-time cant. Ground truth `harness/probe_torment.js`.
+///
+/// Pins the three things a naive implementation gets wrong:
+///   * the `-start` detail is the BARE `Torment` (Taunt renders `move: Taunt`);
+///   * the restriction blocks the move used LAST and is read LIVE (so it MOVES as `last_move` does);
+///   * a re-cast into an already-tormented foe takes the `[still]` + `-fail|<USER>` form and STILL
+///     draws its accuracy roll.
+/// It is PERMANENT — no duration, no residual handler. A phantom duration handler would join the
+/// NO_ORDER/subOrder-2 protect/stall/flinch tie group and draw a shuffle the sim never draws.
+#[test]
+fn torment_blocks_the_last_used_move_and_is_permanent() {
+    let d = dex();
+    let p1 = "Gengar||Leftovers|Levitate|torment,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|tackle,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    // T1: the foe uses Tackle (slot 0) so it has a `last_move`; we Torment it.
+    let (_o, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|-start|p2a: Snorlax|Torment"),
+        "TM1: the -start detail is the BARE `Torment`, not `move: Torment`. got:\n{}",
+        raw.join("\n")
+    );
+    assert!(st.sides[1].pokemon[0].torment, "TM1: the volatile is set on the TARGET");
+    // The slot the foe used last is now unusable; its OTHER slot still is.
+    assert!(
+        !st.sides[1].pokemon[0].move_usable(0, &d),
+        "TM1: the LAST-USED slot is blocked"
+    );
+    assert!(
+        st.sides[1].pokemon[0].move_usable(1, &d),
+        "TM1: every other slot stays usable — torment blocks ONE move, not all"
+    );
+    // PERMANENT: no duration to tick, so it is still live many turns later.
+    let _ = st.run_full_battle(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+        ],
+        &d,
+    );
+    assert!(
+        st.sides[1].pokemon[0].torment,
+        "TM1: torment is PERMANENT — it must not tick away like Taunt"
+    );
+}
+
+/// TM2 — TORMENT JOINS THE endTurn `DisableMove` TIE GROUP (`gen3_torment_v1`).
+///
+/// THE SILENT ONE, and the reason torment is not observation-only. Its `onDisableMove` handler
+/// ties with taunt / disable / choicelock / encore on the same mon, so n handlers draw n-1
+/// `random` calls per endTurn — one call BEFORE the Quick Claw. Omitting it is exactly RB1
+/// (`gen3_encore_disable_move_shuffle_v1`): invisible to every state/HP assertion, surfacing only
+/// as a downstream seed divergence.
+///
+/// ⚠️ THE ARMS MUST DIFFER ONLY IN `n`. The first draft of this test cast Torment in one arm and
+/// Splash in the other, so the seeds differed because of the ACCURACY ROLL — it passed with the
+/// torment term deleted from `disable_move_event_shuffle`, i.e. it was VACUOUS. Both arms now cast
+/// Torment identically; the ONLY difference is the foe's item, which decides whether a choicelock
+/// handler exists (n=2 vs n=1). Neither foe holds Leftovers, so no residual-heal handler joins the
+/// separate residual tie group and confounds the comparison.
+#[test]
+fn torment_adds_the_disable_move_tie_shuffle_draw() {
+    let d = dex();
+    let user = "Gengar||Leftovers|Levitate|torment,splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "44446,15321,46848,55374";
+    // A: a CHOICE-BAND foe acquires a choicelock handler on its first move -> torment makes n=2.
+    let foe_locked = "Snorlax||ChoiceBand|Immunity|tackle,splash|Hardy|85,85,85,85,85,85|M||||";
+    // B: the SAME foe with NO item -> no choicelock -> torment alone leaves n=1 (no tie, no draw).
+    let foe_free = "Snorlax|||Immunity|tackle,splash|Hardy|85,85,85,85,85,85|M||||";
+
+    let run = |foe: &str| {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let out = st.run_full_battle(
+            &[
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // foe Tackles
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // p1 TORMENTS (both arms)
+            ],
+            &d,
+        );
+        (seed_str(&out.decisions[1].seed_after), st.sides[1].pokemon[0].torment)
+    };
+    let (seed_locked, torment_a) = run(foe_locked);
+    let (seed_free, torment_b) = run(foe_free);
+
+    assert!(torment_a && torment_b, "TM2: BOTH arms must actually land the torment");
+    assert_ne!(
+        seed_locked, seed_free,
+        "TM2: the n=2 arm (torment + choicelock) must consume ONE MORE endTurn DisableMove \
+         tie-shuffle draw than the n=1 arm (torment alone), so their post-turn seeds cannot \
+         match. Equal seeds mean torment was never counted in `disable_move_event_shuffle`."
+    );
+}
+
 /// DT1 — DOUBLE TEAM (`gen3_double_team_v1`). The SELF-evasion sibling of SA1's foe accuracy-drop,
 /// and the SECOND stale-justification unlock: `_self_boosts` excluded accuracy/evasion for the same
 /// reason `_stat_drop_boosts` did, and that reason was equally false. Double Team is a PURE

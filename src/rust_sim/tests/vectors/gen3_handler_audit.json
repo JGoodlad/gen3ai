@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 49,
-   "moves": 271,
-   "rows": 982
+   "conditions": 50,
+   "moves": 272,
+   "rows": 987
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1979,6 +1979,24 @@
    "fp": "fn:66b572fc:onStart(target) { this.add(\"-start\", target, \"move: Taunt\"); }",
    "anchor": "state.rs::taunt",
    "reason": "the FIXED duration-2 taunt volatile (gen3_taunt_disable_v1); start/end lines emitted at the arm/expiry"
+  },
+  "condition:torment:onDisableMove": {
+   "disposition": "implemented",
+   "fp": "fn:e9369097:onDisableMove(pokemon) { if (pokemon.lastMove && pokemon.lastMove.id !== \"struggle\") pokemon.disableMove(pokemon.lastMov",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the torment arm applies the volatile (bare `|-start|<t>|Torment`, NOT `move: Torment`); the onDisableMove restriction is folded into state.rs::move_usable against a LIVE `last_move`, and it JOINS the endTurn DisableMove tie group (speed.rs::disable_move_event_shuffle) — the only draw torment introduces"
+  },
+  "condition:torment:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:6d3304f2:onEnd(pokemon) { this.add(\"-end\", pokemon, \"Torment\"); }",
+   "anchor": "turn.rs::execute_switch",
+   "reason": "UNREACHABLE in gen 3: nothing removes the volatile mid-battle (no duration, no onResidual), and clearVolatile wipes it SILENTLY without firing End — so the port clears the flag on switch-out/faint and deliberately emits NO `|-end|<t>|Torment`. Emitting one would be a pure protocol divergence; the byte form is UNVERIFIED because no probe can reach it."
+  },
+  "condition:torment:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:3ae7b825:onStart(pokemon, source, effect) { if (pokemon.volatiles[\"dynamax\"]) { delete pokemon.volatiles[\"torment\"]; return false",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the torment arm applies the volatile (bare `|-start|<t>|Torment`, NOT `move: Torment`); the onDisableMove restriction is folded into state.rs::move_usable against a LIVE `last_move`, and it JOINS the endTurn DisableMove tie group (speed.rs::disable_move_event_shuffle) — the only draw torment introduces"
   },
   "condition:tox:onResidual": {
    "disposition": "implemented",
@@ -5649,6 +5667,18 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:torment:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:torment:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"torment\"",
+   "anchor": "state.rs::move_usable",
+   "reason": "the torment volatile — blocks the LAST-USED slot, permanent until switch-out (gen3_torment_v1)"
   },
   "move:toxic:ignoreImmunity": {
    "disposition": "implemented",

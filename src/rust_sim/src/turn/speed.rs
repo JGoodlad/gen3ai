@@ -162,10 +162,16 @@ impl crate::state::BattleState {
             // the size->=2 endTurn DisableMove tie-shuffle. A LONE-encore mon (n stays 1) draws
             // nothing new. Omitting encore mis-counted the handler set → a MISSING draw one call
             // before the Quick Claw on an encore+choicelock/taunt/disable endTurn.
+            // TORMENT (`gen3_torment_v1`) registers an `onDisableMove` handler like the rest,
+            // so it JOINS this tie group. It is the ONLY draw torment introduces — and the whole
+            // reason it is not observation-only. Omitting it drops one `random` per endTurn, one
+            // call before the Quick Claw, on any tormented mon co-carrying a Choice lock / Taunt /
+            // Disable / Encore: the exact shape of RB1 (`gen3_encore_disable_move_shuffle_v1`).
             let n = (mon.taunt.is_some() as usize)
                 + (mon.disable.is_some() as usize)
                 + (mon.choice_locked_move.is_some() as usize)
-                + (mon.encore.is_some() as usize);
+                + (mon.encore.is_some() as usize)
+                + (mon.torment as usize);
             if n >= 2 {
                 // The n handlers all tie (same mon's speed + Condition sort key) → speed_sort
                 // shuffles a size-n tie group, drawing n-1 `random(range)` calls. Model it with

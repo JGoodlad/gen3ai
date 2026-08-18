@@ -1587,6 +1587,62 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- TORMENT (`gen3_torment_v1`) — the CHEAPEST member of the move-restriction family:
+        //     Taunt minus the duration and minus the execution-time cant. PROBE-SETTLED
+        //     (`harness/probe_torment.js`): the cast draws EXACTLY ONE random(100) accuracy roll
+        //     and nothing else; the volatile is PERMANENT (no `duration`, no `onResidual`, so NO
+        //     residual handler — a phantom one would tie the protect/stall/flinch group); and the
+        //     restriction is SELECTION-TIME ONLY (no `onBeforeMove`, so a move already SELECTED
+        //     when torment lands still EXECUTES — there is no `|cant|`).
+        //
+        //     Two byte details that differ from Taunt: the `-start` detail is the BARE `Torment`
+        //     (Taunt renders `move: Taunt`), and Substitute does NOT block it (`bypasssub`), while
+        //     Protect DOES. The already-tormented re-cast takes the same `[still]` + `-fail` on the
+        //     USER form Taunt uses — and STILL draws its accuracy roll. ---
+        if move_id == "torment" {
+            // GIGO guard: the resolved gen-3 dex must agree (Dark, accuracy 100, not never-miss).
+            debug_assert!(
+                !never_miss && accuracy == 100 && move_type == Some(Type::Dark),
+                "torment expected gen-3 Dark / accuracy 100 / not never_miss, got \
+                 accuracy={accuracy} never_miss={never_miss} type={move_type:?}"
+            );
+            // (1) ACCURACY — drawn on EVERY cast, including one that will fail as already-tormented.
+            if !never_miss {
+                let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
+                if !acc_hit {
+                    if self.logging() {
+                        let user = self.mon_ref(_side, _slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
+                        self.log.miss(&user, Some(&target));
+                    }
+                    return MoveResolution::done(true, false, false);
+                }
+            }
+            // (2) PROTECT BLOCK. No Substitute check — torment carries `bypasssub`.
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) APPLY (DRAW-FREE), or the already-tormented `[still]`+`-fail|<USER>` form.
+            if !self.sides[foe].pokemon[foe_slot].torment {
+                self.sides[foe].pokemon[foe_slot].torment = true;
+                // [EMIT] `|-start|<target>|Torment` — the BARE name, NOT `move: Torment`.
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.volatile_start(&target, "Torment");
+                }
+            } else if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.attr_last_move_still();
+                self.log.fail(&user, None, false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- DISABLE (`disable` — a foe-targeting `volatileStatus:'disable'` Status move, type
         //     Normal, accuracy 55). Disables the FOE's LAST-USED move for a RANDOM duration. The
         //     gen-3 path, VERIFIED bit-for-bit vs the omniscient sim

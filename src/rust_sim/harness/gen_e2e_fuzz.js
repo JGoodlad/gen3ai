@@ -518,7 +518,8 @@ const MODELED_SUBSTITUTE_MOVES = new Set(['substitute']);
 // restriction (`move_usable`/`must_struggle` -> forced Struggle), the execution-time
 // onBeforeMove cants, and the residual duration ticks bit-for-bit
 // (`gen_taunt_disable_golden.js` / `taunt_disable_test.rs` + the TD1-TD3 regression pins).
-const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable']);
+// `torment` joins on `gen3_torment_v1` — the same selection-time family, minus the duration.
+const MODELED_RESTRICTION_MOVES = new Set(['taunt', 'disable', 'torment']);
 
 // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — the four DRAW-friendly status-move
 // classes the port now models bit-for-bit (`gen_movecoverage_batch2_golden.js` /

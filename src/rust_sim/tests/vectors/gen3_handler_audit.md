@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-49 conditions (engine state space + attached), 271 modeled moves
-→ **982 (effect, hook) rows**.
+50 conditions (engine state space + attached), 272 modeled moves
+→ **987 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 929 |
+| implemented | 934 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -347,7 +347,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (223 rows: implemented=208, noop_justified=9, unreachable_justified=6)
+## condition (226 rows: implemented=211, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -550,6 +550,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | taunt | onResidualOrder | implemented | `turn.rs::run_residuals` |
 | taunt | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | taunt | onStart | implemented | `state.rs::taunt` |
+| torment | onDisableMove | implemented | `turn.rs::run_status_move` |
+| torment | onEnd | implemented | `turn.rs::execute_switch` |
+| torment | onStart | implemented | `turn.rs::run_status_move` |
 | tox | onResidual | implemented | `turn.rs::tox_stage` |
 | tox | onResidualOrder | implemented | `turn.rs::tox_stage` |
 | tox | onResidualSubOrder | implemented | `turn.rs::tox_stage` |
@@ -575,7 +578,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (438 rows: implemented=434, noop_justified=2, unreachable_justified=2)
+## move (440 rows: implemented=436, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -983,6 +986,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | thunderwave | status | implemented | `turn.rs::modeled_status_move` |
 | tickle | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | tickle | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| torment | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| torment | volatileStatus | implemented | `state.rs::move_usable` |
 | toxic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | toxic | status | implemented | `turn.rs::modeled_status_move` |
 | transform | ignoreImmunity | implemented | `turn.rs::run_status_move` |
