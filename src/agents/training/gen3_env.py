@@ -20,8 +20,6 @@ from agents.observation.belief_labels import (
     build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
     build_item_labels, zero_item_labels,
 )
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.model.damage_tables import invert_nature_evs, _hp_typed_nums, HIDDEN_POWER_NUM
 from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
@@ -39,6 +37,11 @@ from utils.logging.levels import LogLevel
 # defensive-exploration entropy boost) only when it has taken at least this much chip — below the threshold a
 # heal restores too little to be worth exploring (a Wish cast at full HP for a teammate is the accepted miss).
 _DEFENSIVE_HEAL_HP = 0.85
+
+
+# gen3_frame_deletion_v1: the deepest context read left is `build_delta`'s `_history[-2]`.
+# 1 gives that (the tracker keeps cap+1 contexts) with no slack for a deleted feature.
+_TRACKER_HISTORY_CAP = 1
 
 
 class Gen3Env(SinglesEnv):
@@ -273,7 +276,9 @@ class Gen3Env(SinglesEnv):
         }
 
         self.reward_manager: RewardFunction = reward_fn or Gen3RewardManager(log_level=self.log_level)
-        self._tracker = EpisodeTracker(history_cap=N_HISTORY_TURNS)
+        # gen3_frame_deletion_v1: the lag frames are gone, so the tracker only needs the
+        # one-step window `build_delta` folds over (see EpisodeTracker.__init__).
+        self._tracker = EpisodeTracker(history_cap=_TRACKER_HISTORY_CAP)
         # Share ONE ProgressClock between obs and reward (design §5.1): the tracker owns it (updated
         # at embed time so the obs is fresh); the reward READS its stashed last_penalty. Set the
         # clock's per-run penalty magnitude once from the reward config (single source of truth).
@@ -292,10 +297,6 @@ class Gen3Env(SinglesEnv):
         # content-addressing) until this one-step delay was added. Same timing trap as the delta.
         self._opp_slot_map_prev = {}
         self._intent_delta = None    # same delta, NOT consumed — the alpha/beta label reads this
-        self._turn_delta_encoder = TurnDeltaEncoder(
-            mappings.get("moves", {}),
-            mappings.get("species", {}),
-        )
 
     def embed_battle(self, battle):
         # Record FIRST so the tracker's HP-candidate state reflects the just-fired
@@ -339,14 +340,13 @@ class Gen3Env(SinglesEnv):
                 # beta's coordinate frame, snapshotted from the SAME obs vector the model reads
                 # (so `species_known` here is byte-identical to what BeliefSlots keyed on).
                 self._snapshot_opp_slot_map(obs)
-            prev_mask = self._tracker.prev_mask
-            history_vecs = self._tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
         else:
             obs = self.observation_encoder.encode(battle)
-            prev_mask = np.ones(11, dtype=np.float32)
-            history_vecs = np.zeros((N_HISTORY_TURNS, self._turn_delta_encoder.dimension), dtype=np.float32)
 
-        return np.concatenate([obs, prev_mask, history_vecs.flatten()])
+        # gen3_frame_deletion_v1: the obs IS the encoder's output. The prev-turn action mask and
+        # the N-turn TurnDelta lag frames used to be concatenated here; both are deleted, and the
+        # H-B event window (built inside `encode`) is what carries "what happened" now.
+        return obs
 
     def action_masks(self) -> np.ndarray:
         ctx = self._tracker.last_ctx

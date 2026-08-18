@@ -12,20 +12,6 @@ from agents.observation.constants import (
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
 )
-from agents.observation.turn_delta_encoder import (
-    TURN_DELTA_DIM,
-    EFF_DIM,
-    ORDER_DIM,
-    TURN_DELTA_EMBEDDED_IDS,
-    TURN_DELTA_SCALAR_OFFSETS,
-)
-
-# Strategic TurnDelta slice: always the tail of the TurnDelta block (effectiveness + order).
-# Kept exported because external tests reference these constants.
-
-
-TD_STRATEGIC_DIM    = EFF_DIM * 2 + ORDER_DIM      # 10: our_eff(4) + opp_eff(4) + order(2)
-TD_STRATEGIC_OFFSET = TURN_DELTA_DIM - TD_STRATEGIC_DIM  # 29
 
 # Token group ids for the unified transformer's type embedding.
 TOKEN_TYPE_OUR_TEAM = 0
@@ -61,20 +47,6 @@ def locate_active_slot(active_flags: torch.Tensor) -> torch.Tensor:
         torch.zeros(B, dtype=torch.long, device=active_flags.device),
     )
 
-
-def turn_delta_embed_dim(layout: Dict[str, Any]) -> int:
-    """Width of one embedded TurnDelta slot, derived from the embedded-ID manifest.
-
-    Each entry in TURN_DELTA_EMBEDDED_IDS contributes its table's embedding dim;
-    every non-embedded slot position contributes 1 (pass-through scalar). No
-    hand-maintained counts — add an ID to the manifest and this updates itself."""
-    dim_by_kind = {
-        "move": layout['move_embedding_dim'],
-        "type": layout['type_embedding_dim'],
-        "species": layout['species_embedding_dim'],
-    }
-    embedded: int = sum(dim_by_kind[kind] for _, kind in TURN_DELTA_EMBEDDED_IDS)
-    return embedded + len(TURN_DELTA_SCALAR_OFFSETS)
 
 
 def slice_pokemon_categoricals(pokemon_part: torch.Tensor, layout: Dict[str, Any]) -> Dict[str, torch.Tensor]:
@@ -169,21 +141,22 @@ class ExtractorContext:
     # id can never reach a Linear (the embedded-ID manifest rule).
     last_move_ids: torch.Tensor
     # Reactive / global feature slices. (gen3_entity_rehome_v1: matchups_all and
-    # struggle_feature are GONE with their obs blocks — the D/V edges own pair physics.)
-    move_mask: torch.Tensor
+    # struggle_feature are GONE with their obs blocks — the D/V edges own pair physics.
+    # gen3_frame_deletion_v1: move_mask / switch_mask / struggle_mask are GONE with the
+    # prev-turn action-mask block — every consumer now reads a CURRENT-turn source.)
     # gen3_op_move_align_v1: OUR active mon's 4 moves in REQUEST-slot order (action 6+k) — the
     # DamageOperator's OUTGOING per-move blocks read THESE (not all_move_ids[our_active], which is
     # sorted-by-id) so their per-move output aligns with the action logits. [B,4] each:
     #   our_active_req_move_ids       — dex num (HP → 237 regardless of type)
     #   our_active_req_move_type_ids  — TypeEncoder index (our own Hidden Power is typed)
     #   our_active_req_move_legal     — current-decision choosability (1=choosable now), request order
-    # (NB move_mask above is the PREV-turn, sorted-by-id mask used as a per-mon-block feature — a
-    # different order + freshness, deliberately NOT what the op outgoing should use.)
+    # `our_active_req_move_legal` is ALSO what the role encoder's per-move-slot validity feature
+    # reads (gen3_frame_deletion_v1). It used to read the prev-turn `move_mask`, which was both
+    # stale and sorted-by-id while the slots it gated are request-order — the exact mismatch that
+    # made the op stop reading it. One source now serves both consumers.
     our_active_req_move_ids: torch.Tensor
     our_active_req_move_type_ids: torch.Tensor
     our_active_req_move_legal: torch.Tensor
-    switch_mask: torch.Tensor
-    struggle_mask: torch.Tensor
     turn_feature: torch.Tensor
     weather_feature: torch.Tensor
     fainted_feature: torch.Tensor
@@ -213,7 +186,6 @@ class ExtractorContext:
     # all-True row" NaN-safety invariant, which must not be able to drift between two call sites.
     all_fainted: torch.Tensor
     # Transformer / projection inputs.
-    turn_history_raw: torch.Tensor
     our_ctx_raw: torch.Tensor
     opp_ctx_raw: torch.Tensor
     non_matchup_rest: torch.Tensor
@@ -256,48 +228,11 @@ class Embeddings(torch.nn.Module):
         _hp_rows = [TypeEncoder.TYPE_TO_IDX[t.name] for t in HIDDEN_POWER_TYPE_ORDER]
         self.register_buffer('hp_type_idx_map', torch.tensor(_hp_rows, dtype=torch.long))
 
-        self._td_embed_dim = turn_delta_embed_dim(layout)
-
-        # Embedded-ID manifest (single source of truth, from turn_delta_encoder).
-        # Precompute, per embedding table, the LongTensor of slot positions that
-        # route to it (in manifest order), and the pass-through scalar positions.
-        # Registered as buffers so they move with .to(device) and never desync from
-        # the encoder layout. embed_delta_slot is then a pure table-driven gather.
-        _kind_to_table = {
-            "move": "move_embedding", "type": "type_embedding", "species": "species_embedding",
-        }
-        # Ordered list of (table_attr, position) following the manifest order, so the
-        # concatenation order of embedded outputs matches the manifest exactly.
-        self._td_embed_plan = tuple(
-            (_kind_to_table[kind], pos) for pos, kind in TURN_DELTA_EMBEDDED_IDS
-        )
-        self.register_buffer(
-            "_td_scalar_idx",
-            torch.tensor(TURN_DELTA_SCALAR_OFFSETS, dtype=torch.long),
-            persistent=False,  # derived from constants — not a learned/saved tensor
-        )
-
     def hp_soft_type(self, hp_probs: torch.Tensor) -> torch.Tensor:
         """[B, 12, 16] HP candidate-type distribution → [B, 12, type_emb] soft type embedding."""
         hp_type_rows = self.type_embedding(self.hp_type_idx_map)   # [16, type_emb]
         return hp_probs @ hp_type_rows  # type: ignore[no-any-return]
 
-    def embed_delta_slot(self, slot: torch.Tensor) -> torch.Tensor:
-        """Embed one [B, TURN_DELTA_DIM] raw TurnDelta vector → [B, _td_embed_dim].
-
-        Fully manifest-driven: TURN_DELTA_EMBEDDED_IDS (in turn_delta_encoder) declares
-        which slot positions carry raw embedding IDs and which table each routes to.
-        Every other position is a pass-through scalar. There are NO hardcoded positions
-        here — the encoder and extractor read the same manifest, so a raw id can never
-        silently leak through as a scalar."""
-        parts = []
-        for table_attr, pos in self._td_embed_plan:
-            table = getattr(self, table_attr)
-            idx = slot[:, pos].long().clamp(0, table.num_embeddings - 1)
-            parts.append(table(idx))
-        # Pass-through scalars, gathered in ascending-position order.
-        parts.append(slot.index_select(1, self._td_scalar_idx))
-        return torch.cat(parts, dim=1)
 
 
 class ObsUnpack(torch.nn.Module):
@@ -332,16 +267,10 @@ class ObsUnpack(torch.nn.Module):
         x = obs["observation"]
         batch_size = x.shape[0]
 
-        # num_moves drives the prev-mask + matchup slices below; the per-mon move-slot slicing moved to
-        # slice_pokemon_categoricals (so moves_info/moves_layout/m_slot_layout are no longer needed here).
-        num_moves = len(layout['pokemon']['moves']['layout']['slots'])
 
-        # prev_mask (ACTION_SPACE_SIZE) + turn-history block (N * TURN_DELTA_DIM) from obs tail.
-        prev_mask = x[:, sl['prev_action_mask']]
-        turn_history_raw = x[:, sl['turn_history']]
-        switch_mask  = prev_mask[:, 0:TEAM_SIZE]
-        move_mask    = prev_mask[:, TEAM_SIZE:TEAM_SIZE + num_moves]
-        struggle_mask = prev_mask[:, TEAM_SIZE + num_moves:TEAM_SIZE + num_moves + 1]
+        # gen3_frame_deletion_v1: the obs tail (prev-turn action mask + the N×TURN_DELTA_DIM lag
+        # frames) is DELETED, so there is nothing to slice here. `num_moves` above still drives
+        # the per-mon move-slot slicing.
 
         # Team blocks (per-mon slot count/width derive from the schema block itself).
         _team = sl['our_team']
@@ -443,7 +372,6 @@ class ObsUnpack(torch.nn.Module):
             type1_ids=type1_ids, type2_ids=type2_ids,
             hp_probs=hp_probs, hp_and_active=hp_and_active,
             last_move_ids=last_move_ids,
-            move_mask=move_mask, switch_mask=switch_mask, struggle_mask=struggle_mask,
             our_active_req_move_ids=our_active_req_move_ids,
             our_active_req_move_type_ids=our_active_req_move_type_ids,
             our_active_req_move_legal=our_active_req_move_legal,
@@ -454,7 +382,6 @@ class ObsUnpack(torch.nn.Module):
             opp_believed_mask=opp_believed_mask,
             opp_addressable=opp_addressable,
             all_fainted=all_fainted,
-            turn_history_raw=turn_history_raw,
             our_ctx_raw=our_ctx_raw, opp_ctx_raw=opp_ctx_raw, non_matchup_rest=non_matchup_rest,
             pair_history=pair_history,
             event_window=event_window,

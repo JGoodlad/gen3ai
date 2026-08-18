@@ -1,7 +1,7 @@
 """gen3_event_window_v1 (Tier H-B) — the event fold, the obs block, and the seat consumer.
 
 Three layers, one file: EventWindowTracker's fold rules (attach/idempotence/actives/forced
-windows), the encoder's 19-column row contract (offsets, padding-at-front, recency), and the
+windows), the encoder's 20-column row contract (offsets, padding-at-front, recency), and the
 EventSeats module's build/mask contract (OFF builds nothing; PAD rows get zero attention weight
 by key-mask; ON forward reads the block).
 """
@@ -11,8 +11,8 @@ import torch
 
 from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
 from agents.observation.constants import (
-    EVENT_T_BOOST, EVENT_T_FAINT, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED, EVENT_T_SWITCH_IN,
-    EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
+    EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED,
+    EVENT_T_SWITCH_IN, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
 )
 from agents.training.episode_tracker import EventWindowTracker
 
@@ -164,9 +164,52 @@ def test_event_seats_off_builds_nothing_on_reads_block():
     assert not torch.allclose(pi1, pi2) or not torch.allclose(vf1, vf2)
 
 
-def test_v81_migration_stamps_and_defaults_off():
-    from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config
+def test_pre_floor_config_is_refused():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90 (ARCH_SIGNATURE bumped), so a
+    pre-floor config is REFUSED rather than migrated — the floor's stated purpose: "refuses
+    pre-floor configs outright instead of walking dead branches". This asserts the behaviour
+    that is now true rather than propping up a branch nothing can reach."""
+    from agents.model.model_version import ModelVersionError, _migrate_config
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 80})
 
-    out = _migrate_config({"config_version": 80, "obs_dim": 1, "n_actions": 11})
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 81
-    assert out["history_events"] is False
+
+
+# ---------------------------------------------------------------------------
+# gen3_frame_deletion_v1 — EVENT_T_CANT, the lag frames' one unsubstituted fact
+# ---------------------------------------------------------------------------
+
+def test_cant_event_folds_with_its_reason():
+    """A `|cant|` must produce a CANT row carrying its REASON as `cant_id`.
+
+    This exists because it shipped broken for one commit. The fold read `e.cause`, which
+    `BattleEvent` does not define (`e.reason` is the accessor) — so EVERY live battle in which a
+    mon was fully paralysed / asleep / flinched / recharging raised `AttributeError` mid-fold.
+    The whole unit tier passed clean: nothing there drives a real event log, so the crash only
+    appeared in the sim tier (16 failures across the bridge, better-line, falsifier and obs-parity
+    suites — all one bug). This test is the cheap deterministic guard that would have caught it,
+    and it fails if the attribute name is ever changed back."""
+    from agents.observation.gen3_effects import cant_reason_id
+    t = EventWindowTracker(maxlen=16)
+    t.update(1, [_ev(1, 1, EventKind.SWITCH, OURS, "snorlax", prev_active=None)], "snorlax", "gengar")
+    t.update(2, [_ev(2, 2, EventKind.CANT, OURS, "snorlax", reason="par")], "snorlax", "gengar")
+    rows = [r for r in t.window() if r["t"] == EVENT_T_CANT]
+    assert len(rows) == 1, f"expected exactly one CANT row, got {len(rows)}"
+    r = rows[0]
+    assert r["actor"] == "snorlax" and r["side"] == OURS
+    assert r["cant"] == "par", f"the reason must survive the fold verbatim, got {r['cant']!r}"
+    assert cant_reason_id(r["cant"]) > 0, "a real reason must map to a nonzero id"
+
+
+def test_cant_reason_ids_are_distinct_and_zero_means_none():
+    """Distinct reasons must get distinct ids, and 0 must be reserved for 'not a cant row'.
+
+    A collapse here is silent: the row still exists, the column still reads nonzero, and the model
+    simply cannot tell paralysis from sleep. (The sibling status mapping DID collapse this way
+    during the frame-deletion work — a Status enum's `.value` is an int, so every status hashed to
+    one id — which is why this is asserted rather than assumed.)"""
+    from agents.observation.gen3_effects import CANT_REASONS, cant_reason_id
+    assert cant_reason_id(None) == 0
+    ids = {r: cant_reason_id(r) for r in CANT_REASONS}
+    assert 0 not in ids.values(), "0 is reserved for 'no cant' and must not collide with a reason"
+    assert len(set(ids.values())) == len(CANT_REASONS), f"reason ids collide: {ids}"

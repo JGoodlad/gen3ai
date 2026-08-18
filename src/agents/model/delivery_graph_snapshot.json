@@ -10096,7 +10096,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[10]",
@@ -10105,7 +10105,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[11]",
@@ -10114,7 +10114,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[12]",
@@ -10123,7 +10123,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[13]",
@@ -10132,7 +10132,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[14]",
@@ -10141,7 +10141,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[15]",
@@ -10150,7 +10150,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[16]",
@@ -10159,7 +10159,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[17]",
@@ -10168,7 +10168,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[18]",
@@ -10177,7 +10177,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[19]",
@@ -10186,7 +10186,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[1]",
@@ -10195,7 +10195,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[20]",
@@ -10204,7 +10204,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[21]",
@@ -10213,7 +10213,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[22]",
@@ -10222,7 +10222,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[23]",
@@ -10231,7 +10231,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[24]",
@@ -10240,7 +10240,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[25]",
@@ -10249,7 +10249,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[26]",
@@ -10258,7 +10258,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[27]",
@@ -10267,7 +10267,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[28]",
@@ -10276,7 +10276,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[29]",
@@ -10285,7 +10285,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[2]",
@@ -10294,7 +10294,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[30]",
@@ -10303,7 +10303,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[31]",
@@ -10312,7 +10312,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[3]",
@@ -10321,7 +10321,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[4]",
@@ -10330,7 +10330,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[5]",
@@ -10339,7 +10339,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[6]",
@@ -10348,7 +10348,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[7]",
@@ -10357,7 +10357,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[8]",
@@ -10366,7 +10366,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "event[9]",
@@ -10375,7 +10375,7 @@
       "src": "obs.event_window",
       "type": "content",
       "via": "EventSeats (own kind/status embeddings + the SHARED species/move tables + 13 raw scalars -> Linear -> D_MODEL + event_marker)",
-      "width": 19
+      "width": 20
     },
     {
       "dst": "obs_unpack",
@@ -10383,7 +10383,7 @@
       "source_constant": "schema.slices()['event_window']",
       "src": "obs.event_window",
       "type": "content",
-      "width": 608
+      "width": 640
     },
     {
       "dst": "obs_unpack",
@@ -10430,26 +10430,10 @@
     {
       "dst": "obs_unpack",
       "note": "validated tiling \u2014 the slice map is proven exact at construction",
-      "source_constant": "schema.slices()['prev_action_mask']",
-      "src": "obs.prev_action_mask",
-      "type": "content",
-      "width": 11
-    },
-    {
-      "dst": "obs_unpack",
-      "note": "validated tiling \u2014 the slice map is proven exact at construction",
       "source_constant": "schema.slices()['reactive']",
       "src": "obs.reactive",
       "type": "content",
       "width": 17
-    },
-    {
-      "dst": "obs_unpack",
-      "note": "validated tiling \u2014 the slice map is proven exact at construction",
-      "source_constant": "schema.slices()['turn_history']",
-      "src": "obs.turn_history",
-      "type": "content",
-      "width": 1113
     },
     {
       "dst": "pokemon_encoder.move_network",
@@ -11397,10 +11381,10 @@
     }
   ],
   "meta": {
-    "arch_signature": "gen3_ctx_dedup_v1",
-    "base_seats": 20,
+    "arch_signature": "gen3_frame_deletion_v1",
+    "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 89,
+    "config_version": 90,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -11428,8 +11412,8 @@
       "aux"
     ],
     "extra_seats": 16,
-    "n_tokens": 36,
-    "obs_dim": 3529,
+    "n_tokens": 29,
+    "obs_dim": 2437,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
     "vf_projection_in": 1177
@@ -11636,7 +11620,7 @@
       "kind": "obs_block",
       "offset": 1797,
       "stage": "T0",
-      "width": 608
+      "width": 640
     },
     {
       "id": "obs.global_env",
@@ -11667,25 +11651,11 @@
       "width": 180
     },
     {
-      "id": "obs.prev_action_mask",
-      "kind": "obs_block",
-      "offset": 2405,
-      "stage": "T0",
-      "width": 11
-    },
-    {
       "id": "obs.reactive",
       "kind": "obs_block",
       "offset": 1600,
       "stage": "T0",
       "width": 17
-    },
-    {
-      "id": "obs.turn_history",
-      "kind": "obs_block",
-      "offset": 2416,
-      "stage": "T0",
-      "width": 1113
     },
     {
       "id": "obs.global_env.clock",
@@ -11806,339 +11776,297 @@
     },
     {
       "id": "E3_move[0]",
-      "index": 20,
+      "index": 13,
       "kind": "seat",
       "token_type": "OUR_MOVE"
     },
     {
       "id": "E3_move[1]",
-      "index": 21,
+      "index": 14,
       "kind": "seat",
       "token_type": "OUR_MOVE"
     },
     {
       "id": "E3_move[2]",
-      "index": 22,
+      "index": 15,
       "kind": "seat",
       "token_type": "OUR_MOVE"
     },
     {
       "id": "E3_move[3]",
-      "index": 23,
+      "index": 16,
       "kind": "seat",
       "token_type": "OUR_MOVE"
     },
     {
       "id": "E4_threat[0]",
-      "index": 24,
+      "index": 17,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E4_threat[1]",
-      "index": 25,
+      "index": 18,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E4_threat[2]",
-      "index": 26,
+      "index": 19,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E4_threat[3]",
-      "index": 27,
+      "index": 20,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E4_threat[4]",
-      "index": 28,
+      "index": 21,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E4_threat[5]",
-      "index": 29,
+      "index": 22,
       "kind": "seat",
       "token_type": "THEIR_THREAT"
     },
     {
       "id": "E5_tail[0]",
-      "index": 30,
+      "index": 23,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "E5_tail[1]",
-      "index": 31,
+      "index": 24,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "E5_tail[2]",
-      "index": 32,
+      "index": 25,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "E5_tail[3]",
-      "index": 33,
+      "index": 26,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "E5_tail[4]",
-      "index": 34,
+      "index": 27,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "E5_tail[5]",
-      "index": 35,
+      "index": 28,
       "kind": "seat",
       "token_type": "THEIR_THREAT+tail_marker"
     },
     {
       "id": "event[0]",
-      "index": 36,
+      "index": 29,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
       "id": "event[10]",
-      "index": 46,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[11]",
-      "index": 47,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[12]",
-      "index": 48,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[13]",
-      "index": 49,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[14]",
-      "index": 50,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[15]",
-      "index": 51,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[16]",
-      "index": 52,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[17]",
-      "index": 53,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[18]",
-      "index": 54,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[19]",
-      "index": 55,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[1]",
-      "index": 37,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[20]",
-      "index": 56,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[21]",
-      "index": 57,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[22]",
-      "index": 58,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[23]",
-      "index": 59,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[24]",
-      "index": 60,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[25]",
-      "index": 61,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[26]",
-      "index": 62,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[27]",
-      "index": 63,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[28]",
-      "index": 64,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[29]",
-      "index": 65,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[2]",
-      "index": 38,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[30]",
-      "index": 66,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[31]",
-      "index": 67,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "event[3]",
       "index": 39,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[4]",
+      "id": "event[11]",
       "index": 40,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[5]",
+      "id": "event[12]",
       "index": 41,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[6]",
+      "id": "event[13]",
       "index": 42,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[7]",
+      "id": "event[14]",
       "index": 43,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[8]",
+      "id": "event[15]",
       "index": 44,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "event[9]",
+      "id": "event[16]",
       "index": 45,
       "kind": "seat",
       "token_type": "HISTORY"
     },
     {
-      "id": "global",
-      "index": 19,
+      "id": "event[17]",
+      "index": 46,
       "kind": "seat",
-      "token_type": "GLOBAL"
+      "token_type": "HISTORY"
     },
     {
-      "id": "history[0]",
+      "id": "event[18]",
+      "index": 47,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[19]",
+      "index": 48,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[1]",
+      "index": 30,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[20]",
+      "index": 49,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[21]",
+      "index": 50,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[22]",
+      "index": 51,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[23]",
+      "index": 52,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[24]",
+      "index": 53,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[25]",
+      "index": 54,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[26]",
+      "index": 55,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[27]",
+      "index": 56,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[28]",
+      "index": 57,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[29]",
+      "index": 58,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[2]",
+      "index": 31,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[30]",
+      "index": 59,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[31]",
+      "index": 60,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[3]",
+      "index": 32,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[4]",
+      "index": 33,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[5]",
+      "index": 34,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[6]",
+      "index": 35,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[7]",
+      "index": 36,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[8]",
+      "index": 37,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "event[9]",
+      "index": 38,
+      "kind": "seat",
+      "token_type": "HISTORY"
+    },
+    {
+      "id": "global",
       "index": 12,
       "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[1]",
-      "index": 13,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[2]",
-      "index": 14,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[3]",
-      "index": 15,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[4]",
-      "index": 16,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[5]",
-      "index": 17,
-      "kind": "seat",
-      "token_type": "HISTORY"
-    },
-    {
-      "id": "history[6]",
-      "index": 18,
-      "kind": "seat",
-      "token_type": "HISTORY"
+      "token_type": "GLOBAL"
     },
     {
       "id": "opp_mon[0]",

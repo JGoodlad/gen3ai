@@ -11,7 +11,6 @@ embed_battle / calc_reward / action_to_order / step):
   * **parse + event-log fold** — the real `Gen3Battle.parse_message` (protocol → state +
     BattleEvent log), timed by subclassing the battle class the bridge feeds.
   * **obs build** — `get_mask` + `tracker.record` + `state_encoder.encode` +
-    `prev_N_delta_vecs` (the deque-cached turn history).
   * **reward** — `tracker.build_delta` (TurnDelta fold) + `reward_manager.process_turn_reward`.
   * **action map** — `Gen3ActionMapper.action_to_order`.
   * **tracker** — `advance` + `reward_manager.record_action`.
@@ -55,9 +54,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.reward_manager import Gen3RewardManager
 from utils.bridge.local_battle_runner import run_local_battles
@@ -113,7 +110,6 @@ class _TrainerTurnPlayer(Player):
         super().__init__(*args, **kwargs)
         maps = load_mappings()
         self.obs_enc = get_observation_encoder(maps)
-        self.td_enc = TurnDeltaEncoder(maps.get("moves", {}), maps.get("species", {}))
         self._trackers: Dict[str, EpisodeTracker] = {}
         self._rewards: Dict[str, Gen3RewardManager] = {}
         self.acc = _StageAcc()
@@ -128,7 +124,7 @@ class _TrainerTurnPlayer(Player):
     def _state_for(self, tag: str):
         tr = self._trackers.get(tag)
         if tr is None:
-            tr = EpisodeTracker(history_cap=N_HISTORY_TURNS)
+            tr = EpisodeTracker(history_cap=1)
             self._trackers[tag] = tr
             self._rewards[tag] = Gen3RewardManager()  # QUIET by default
         return tr, self._rewards[tag]
@@ -171,8 +167,6 @@ class _TrainerTurnPlayer(Player):
         timed("obs: tracker.record", lambda: tr.record(battle, mask))
         timed("obs: state_encoder.encode",
               lambda: self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker))
-        timed("obs: turn-history (cached)",
-              lambda: tr.prev_N_delta_vecs(N_HISTORY_TURNS, self.td_enc, battle=battle))
 
         # --- reward (Gen3Env.calc_reward) ---
         delta = timed("reward: build_delta", lambda: tr.build_delta(battle=battle))
@@ -212,7 +206,7 @@ class _TrainerTurnPlayer(Player):
 _GROUPS = [
     ("parse + event-log fold", ["parse"]),
     ("obs build", ["obs: legal + mask", "obs: tracker.record",
-                   "obs: state_encoder.encode", "obs: turn-history (cached)"]),
+                   "obs: state_encoder.encode"]),
     ("reward (TurnDelta fold)", ["reward: build_delta", "reward: process_turn_reward"]),
     ("action map", ["action map"]),
     ("tracker advance/record", ["tracker advance/record"]),

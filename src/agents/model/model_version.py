@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 #   bit-exact ZERO after 25M steps). Route out-widths become D_MODEL and the vf concat
 #   narrows for flag-ON configs, so a <v89 checkpoint recording ANY of them ON carries
 #   shapes the surviving code cannot load — REFUSED (the v75 rule); OFF stamps forward.
-MODEL_CONFIG_VERSION = 89
+MODEL_CONFIG_VERSION = 90
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -39,7 +39,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_ctx_dedup_v1"
+ARCH_SIGNATURE = "gen3_frame_deletion_v1"
 
 # The migration floor: the first MODEL_CONFIG_VERSION stamped with the current ARCH_SIGNATURE.
 # Every `if version < N` migration branch with N <= this floor could only ever produce a config
@@ -49,7 +49,7 @@ ARCH_SIGNATURE = "gen3_ctx_dedup_v1"
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 76
+MIGRATION_FLOOR = 90
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -57,6 +57,7 @@ MIGRATION_FLOOR = 76
 SIGNATURE_FIRST_VERSION = {
     "gen3_deadline_clock_v1": 67,
     "gen3_ctx_dedup_v1": 76,
+    "gen3_frame_deletion_v1": 90,
 }
 
 
@@ -89,7 +90,6 @@ class ModelVersion:
     projection_dim: int
     move_net_hidden: List[int]
     role_encoder_hidden: List[int]
-    n_history_turns: int
 
     # From policy_kwargs in train_rl_agent.py
     net_arch: List[int]
@@ -495,7 +495,6 @@ class ModelVersion:
             MOVE_NET_HIDDEN,
             ROLE_ENCODER_HIDDEN,
             NET_ARCH,
-            N_HISTORY_TURNS,
         )
         return cls(
             config_version=MODEL_CONFIG_VERSION,
@@ -516,7 +515,6 @@ class ModelVersion:
             projection_dim=PROJECTION_DIM,
             move_net_hidden=list(MOVE_NET_HIDDEN),
             role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
-            n_history_turns=N_HISTORY_TURNS,
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
             vf_coef=vf_coef,
             bias_additivity=float(getattr(reward_config, "bias_additivity", 1.0)),
@@ -722,7 +720,6 @@ class ModelVersion:
             "type_embedding_dim", "max_types",
             "role_token_size", "projection_dim",
             "move_net_hidden", "role_encoder_hidden",
-            "n_history_turns",
             "net_arch",
         }
         current = asdict(self)
@@ -1698,4 +1695,14 @@ def _migrate_config(data: dict) -> dict:
                     "exist. This checkpoint trained under a forward the current code cannot "
                     "rebuild; re-read it from the git_hash in its metadata.json.")
         data["config_version"] = 89
+    if version < 90:
+        # gen3_frame_deletion_v1: the 7x159 TurnDelta lag frames and the 11-dim prev-turn
+        # action mask are DELETED from the observation (3529 -> 2437, net -1092 after the
+        # H-B window's new cant column). This is a `_WEIGHT_FIELDS` break on `total_dim`
+        # anyway, and it bumps ARCH_SIGNATURE, so `check_compatible` refuses a pre-v90
+        # checkpoint before this ever runs. The block exists so the FIELD drops cleanly for
+        # anything that reads a migrated dict directly, and so the reason is on the record
+        # beside the other version stories rather than only in the changelog.
+        data.pop("n_history_turns", None)
+        data["config_version"] = 90
     return data

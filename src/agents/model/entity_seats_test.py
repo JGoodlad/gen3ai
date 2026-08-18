@@ -111,11 +111,30 @@ def test_masked_extra_seats_do_not_change_the_team_tokens():
         types = torch.full((5,), TOKEN_TYPE_THEIR_THREAT, dtype=torch.long)
         pad = torch.ones(2, 5, dtype=torch.bool)                        # ALL masked
         our_b, their_b, _ = tt(role, ctx, fe.embeddings, extra=(extra_tokens, types, pad))
-    assert torch.equal(our_a, our_b)
-    assert torch.equal(their_a, their_b)
 
+        # gen3_frame_deletion_v1: this asserted `torch.equal` until the trunk lost its 7 history
+        # seats (20 tokens -> 13). Bit-equality then failed at 4.77e-07 — and that number was
+        # testing the KERNEL, not the masking: `scaled_dot_product_attention` picks a different
+        # reduction order at n=18 vs n=13, so the two forwards differ in the last float32 bit
+        # whatever the mask does. The property this test exists for is CONTENT-INDEPENDENCE, so
+        # assert that directly. Both controls are load-bearing:
+        #   * 100x louder garbage must not move the output — a real leak scales with the leaked
+        #     values, kernel noise does not.
+        #   * two different garbage draws must be BIT-identical — this is the exact statement
+        #     "the masked seats contributed nothing", and it is stronger than the old equality,
+        #     which a leak of a CONSTANT would have passed.
+        extra_loud = extra_tokens * 100.0
+        our_c, their_c, _ = tt(role, ctx, fe.embeddings, extra=(extra_loud, types, pad))
+        extra_other = torch.randn(2, 5, D_MODEL) * 1000.0
+        our_d, their_d, _ = tt(role, ctx, fe.embeddings, extra=(extra_other, types, pad))
 
-# ------------------------------------------------------- the real extractor forward
+        assert torch.equal(our_b, our_c), "output moved when the MASKED seats got louder — a leak"
+        assert torch.equal(our_b, our_d), "output depends on MASKED seat content — a leak"
+        assert torch.equal(their_b, their_c) and torch.equal(their_b, their_d)
+        # And the masked forward still matches the no-extra forward to float32 precision.
+        assert torch.allclose(our_a, our_b, atol=1e-6, rtol=0)
+        assert torch.allclose(their_a, their_b, atol=1e-6, rtol=0)
+
 def test_e3_only_forward_stashes_refined_dmodel_tokens():
     fe = _make().eval()
     with torch.no_grad():

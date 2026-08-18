@@ -7,7 +7,9 @@ layer captures that without reimplementing poke-env (as-built record:
 
 **Status: live and CONSUMED across training (ai_v4 is closed out).** The per-decision
 `TurnDelta` history block folds entirely from the log (`build_from_events`, see "Per-decision
-history fold" below) and feeds the obs turn-history; the action masker/mapper read the
+history fold" below). `gen3_frame_deletion_v1` deleted its OBS encoding (the lag frames) —
+`TurnDelta` itself is unchanged and is still the reward manager's per-decision input, the reward
+tracker's fold and the α/β intent-label source; the action masker/mapper read the
 LiveView / LegalActions / TurnView surfaces; and the reward manager reads `LiveView` too. Our
 non-`battle/` code is held to the strict boundary by `src/agents/strict_api_lock_test.py` (the
 lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is the `LiveView`
@@ -102,7 +104,8 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   **boost-stage delta** (`SETBOOST`/`clearboost`/`invert`/`copy`/`swap` carry no realized stage
   amount in the event payload — only an `op`). The per-decision snapshot itself relocated to
   `training/battle_snapshot.py` (`BattleContext`, still the reward `record_action` / mapper /
-  `prev_mask` source; it is a documented seam exempted in `strict_api_lock_test`). The legacy
+  action source; it is a documented seam exempted in `strict_api_lock_test`. Its `prev_mask`
+  role went with the prev-turn action-mask obs block, `gen3_frame_deletion_v1`). The legacy
   diff detective `TurnDelta.build` is **retired from every production path** and lives in
   `training/turn_delta_legacy.py` (test-support only, retained for the poke-env-gap fuzz
   harnesses). Value-identity is pinned by the 15-min `turn_delta_fold_equivalence_fuzz_test.py`

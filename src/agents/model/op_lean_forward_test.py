@@ -23,7 +23,7 @@ import torch
 from agents.model.damage_op import _DMG_OMX_IDX_PKO, _DMG_OMX_CELL, _DMG_OUT_N_MOVES
 from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.model_version import (
-    MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
+    ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -138,12 +138,14 @@ def test_believed_lean_changes_the_lean_physics():
 # ------------------------------------------------------------------- version machinery
 
 
-def test_migration_defaults_off():
-    migrated = _migrate_config({"config_version": 85})
-    assert migrated["op_drop_renders"] is False
-    assert migrated["op_believed_lean"] is False
-    assert migrated["config_version"] >= 86
-    assert MODEL_CONFIG_VERSION >= 86
+def test_pre_floor_config_is_refused():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90 (ARCH_SIGNATURE bumped), so a
+    pre-floor config is REFUSED rather than migrated — the floor's stated purpose: "refuses
+    pre-floor configs outright instead of walking dead branches". This asserts the behaviour
+    that is now true rather than propping up a branch nothing can reach."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 85})
 
 
 @pytest.mark.parametrize("field", ["op_drop_renders", "op_believed_lean"])

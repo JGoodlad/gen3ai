@@ -114,20 +114,10 @@ def test_status_item_dims_are_scalars():
         assert pos in scalar_set, f"item_used dim {pos} missing from scalar offsets"
 
 
-def test_status_item_dims_in_extractor_scalar_gather():
-    """Extractor's _td_scalar_idx must include all status/item-used positions."""
-    model, _, _ = feature_model()
-    scalar_idx = set(model.embeddings._td_scalar_idx.tolist())
-
-    all_offsets = (
-        list(range(OFFSET_OUR_STATUS_APPLIED,  OFFSET_OUR_STATUS_APPLIED  + STATUS_DIM))
-        + list(range(OFFSET_OUR_STATUS_CURED,  OFFSET_OUR_STATUS_CURED   + STATUS_DIM))
-        + list(range(OFFSET_OPP_STATUS_APPLIED, OFFSET_OPP_STATUS_APPLIED + STATUS_DIM))
-        + list(range(OFFSET_OPP_STATUS_CURED,  OFFSET_OPP_STATUS_CURED   + STATUS_DIM))
-        + [OFFSET_OUR_ITEM_USED, OFFSET_OPP_ITEM_USED]
-    )
-    for pos in all_offsets:
-        assert pos in scalar_idx, f"dim {pos} not in extractor scalar gather"
+# gen3_frame_deletion_v1: `test_status_item_dims_in_extractor_scalar_gather` is DELETED —
+# it read `embeddings._td_scalar_idx`, the lag frame's manifest. The rule it enforced (no
+# Linear ever reads a raw id) is pinned once, on the block that carries ids now, by
+# `failed_protect_feature_test.test_no_linear_reads_a_raw_event_id`.
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +303,10 @@ def test_opp_status_cured_reaches_network(status: Status):
 # 4. NETWORK — item-used bit reaches both heads
 # ---------------------------------------------------------------------------
 
+@pytest.mark.xfail(strict=True, reason=(
+    "gen3_frame_deletion_v1: this fact has NO event-window home — see "
+    "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
+    "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
 def test_our_item_used_reaches_network():
     model, layout, _ = feature_model()
     assert_delta_reaches_network(
@@ -323,6 +317,10 @@ def test_our_item_used_reaches_network():
     )
 
 
+@pytest.mark.xfail(strict=True, reason=(
+    "gen3_frame_deletion_v1: this fact has NO event-window home — see "
+    "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
+    "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
 def test_opp_item_used_reaches_network():
     model, layout, _ = feature_model()
     assert_delta_reaches_network(

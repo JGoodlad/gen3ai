@@ -4755,3 +4755,73 @@ omitted dependency carries no information and reporting it would make the tool c
 **Versioning:** none — validation only, no state_dict, arch, or forward-math change; every valid
 config builds exactly as before. Production sha probe `001e1140…` before and after (self-measured,
 same probe/config).
+
+---
+
+### v90 — `gen3_frame_deletion_v1`: the TurnDelta lag frames and the prev-turn action mask are DELETED
+
+**Obs 3529 → 2437** (−1092: the 1124 tail dims out, 32 new event-window dims in).
+`ARCH_SIGNATURE` `gen3_ctx_dedup_v1` → **`gen3_frame_deletion_v1`**, `MIGRATION_FLOOR` 76 → 90.
+Fresh weights: no pre-v90 checkpoint loads.
+
+**The licence.** Gen-13.5 §4 measured the frames' critic dependence against the H-B event seats
+that were built to replace them: `event_seats` dV **2.7714** vs `frames` **1.3015**, ratio 0.47
+(`gen13_frames_arm_section4.json`, n=6000, falsified instrument — positive control + exact-zero
+null arm). The seats carry roughly twice the dependence of the block they were meant to supersede,
+so the frames were kept as a second, weaker copy of a job already being done.
+
+**What went, precisely.** Two obs blocks at the END of the vector (so no offset moved):
+the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames. With them:
+`N_HISTORY_TURNS`; `TurnDeltaEncoder`'s obs role (the module survives — the prober decodes archived
+runs with it); `EpisodeTracker.prev_N_delta_vecs` / `_encode_delta_slot` / the memoized
+`_hist_vec_cache` / `prev_mask`; `Embeddings.embed_delta_slot`; `TeamTransformer.history_proj` and
+`turn_history_pos_emb` and the 7 HISTORY seats (trunk tokens 20 → 13); `turn_delta_embed_dim`;
+`TD_STRATEGIC_DIM`/`_OFFSET`; the `ModelVersion.n_history_turns` field; and the layout's
+`turn_history_offset` / `turn_history_dim` / `n_history_turns` / `turn_delta_dim` / `prev_mask_dim`
+keys. **`TurnDelta` itself STAYS** — it is the reward manager's per-decision input (~25 terms), the
+reward tracker's fold, the battle recorder's source and the α/β intent label. Only its obs
+encoding died.
+
+**Two facts had no substitute. One was closed, one was not, and the difference is the point.**
+A dV reading says whether the trained model LEANS on a block; it says nothing about whether each
+fact in it has a home elsewhere. Auditing the coverage probes field-by-field against the 19 event
+columns found two:
+
+1. **`cant_reason` — CLOSED.** "This mon could not move, and why" (full paralysis / sleep / flinch
+   / recharge) reached the model only through the frames. `EventKind.CANT` was already in the
+   battle event log *with its reason*, and `TurnDelta` already folded it — but `EventWindowTracker`
+   emitted nine event types and CANT was not one. Now it emits `EVENT_T_CANT` (vocabulary 10 → 11)
+   with the reason in a NEW column 19 `cant_id` (`EVENT_TOKEN_DIM` 19 → 20), a 1-based index into
+   `gen3_effects.CANT_REASONS` via the new `cant_reason_id()`, which shares `normalize_cant_reason`
+   with the existing one-hot so the vocabulary tripwire stays single-sourced. `EventSeats` gains a
+   `cant_emb` sized `CANT_DIM + 1` from that same vocabulary, so adding a gen3 cant reason widens
+   both sides at once instead of silently clamping. It gets its OWN column rather than riding
+   `status_id`: the two are mutually exclusive by `type_id`, so overloading would encode compactly
+   and read wrongly, and a consumer that forgot the type check would take a cant reason for a
+   status.
+2. **`our_attempted_switch_spec` — NOT closed, knowingly.** Which bench mon a refused switch was
+   aimed at. This one is structural rather than an omission: `Gen3Battle.record_choice_rejected`
+   records that the attempted target "is not on the wire and is recovered at fold time from the
+   action index", and the event window folds from EVENTS ALONE — closing it would change that
+   tracker's contract, not add a missing row. What survives is the rejection FACT
+   (`EVENT_T_SWITCH_REJECTED`) and trappedness itself (per-mon slots, `gen3_entity_rehome_v1`);
+   what is lost is the identity of the refused target.
+
+**One feature was RE-SOURCED rather than deleted.** The role encoder's per-move-slot validity read
+`ctx.move_mask` — the PREVIOUS turn's legality in SORTED-BY-ID order — while the move slots it
+gates are REQUEST-order aligned (`gen3_op_move_align_v1`). Stale *and* misindexed; the damage op
+had already abandoned it for `our_active_req_move_legal` ("a stale + misordered gate") and left
+this consumer behind. It now reads that same tensor: identical `[B, 4]` shape, current-decision
+choosability, correctly aligned. `switch_validity` and `struggle_from_prev` are deleted outright
+(role input narrows by 2) — current switch legality rides the Dict obs `action_mask`, and
+forced-Struggle is "every `active_req_moves` legal bit is zero", the same derivation that already
+retired the `forced_struggle` scalar.
+
+**Tests were REPOINTED, not dropped, wherever the claim survived the block.** The typed-Hidden-Power
+fuzz check (a known GIGO class — a typed HP collapsing to the bare 237 num is what made the
+opponent's HP read as "immune") now reads the event window's move-num column instead of the frames.
+The trapping-signals end-to-end check now asserts an `EVENT_T_SWITCH_REJECTED` row exists whenever
+`delta.attempted_switch_rejected`, and carries an explicit note about the target identity it can no
+longer check. `phase_modules_test` gained positive assertions that `total_dim == base_dim`, that the
+five deleted layout keys are ABSENT, and that `ctx` no longer exposes `move_mask`/`switch_mask`/
+`struggle_mask` — a deletion asserted is a deletion that cannot silently come back.

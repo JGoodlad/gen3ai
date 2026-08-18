@@ -1194,21 +1194,34 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) § Observation.** That file is derived from the
 code and the live run config; this summary is the orientation only.
 
-The observation is a flat **2669-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
-11-dim `action_mask`, delivered as a Dict obs. (`gen3_entity_rehome_v1`: the 288-dim matchup
-matrices and the derived reactive scalars are DELETED — pair physics is GPU-side in the D/V edge
-families; protect/trapped/maybe_trapped ride the per-mon slots.)
+The observation is a flat **2437-dim float32 vector** (`Gen3ObservationEncoder.dimension`) plus an
+11-dim `action_mask`, delivered as a Dict obs.
 
 | Block | Dims | Offset |
 |---|---|---|
-| Our team (6 × `POKEMON_FULL_DIM` 116) | 696 | 0 |
-| Opp team (6 × 116) | 696 | 696 |
-| Active context ×2 (boosts 14 + volatiles `VOLATILE_DIM` 44) | 116 | 1392 |
-| Global env (`GLOBAL_ENV_DIM`) | 20 | 1508 |
-| Board (5 raw scalars + 12 active-req-moves) | 17 | 1528 |
-| Prev-turn action mask | 11 | 1545 |
-| Turn history (`N_HISTORY_TURNS` 7 × `TURN_DELTA_DIM` 159) | 1113 | 1556 |
-| **Total** | **2669** | |
+| Our team (6 × `POKEMON_FULL_DIM` 122) | 732 | 0 |
+| Opp team (6 × 122) | 732 | 732 |
+| Active context ×2 (boosts 14 + volatiles `VOLATILE_DIM` 44) | 116 | 1464 |
+| Global env (`GLOBAL_ENV_DIM`) | 20 | 1580 |
+| Board (5 raw scalars + 12 active-req-moves) | 17 | 1600 |
+| Pair history (6×6×5, Tier H-A2) | 180 | 1617 |
+| Event window (32 × 20 typed event records, Tier H-B) | 640 | 1797 |
+| **Total** | **2437** | |
+
+⚠️ **This table was stale by two generations before 2026-08-17** — it still described a 2669-dim
+vector after H-A (`gen3_pair_history_v1`) and H-B (`gen3_event_window_v1`) had added 852 dims
+between them. Read [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) or
+`Gen3ObservationEncoder.get_layout()` when the number matters; this summary is orientation.
+
+`gen3_frame_deletion_v1`: the **7 × 159 TurnDelta lag frames and the 11-dim prev-turn action mask
+are DELETED** — the event window is the last block, so `total_dim == base_dim` and the encoder's
+output IS the observation (`Gen3Env.embed_battle` appends nothing). The licence was gen-13.5 §4:
+the H-B event seats measured dV 2.7714 against the frames' 1.3015, so the frames were a second,
+weaker copy of a job the seats already do. `TurnDelta` itself SURVIVES — it is the reward
+manager's per-decision input and the α/β label source; only its obs encoding died. Two facts had
+no substitute: `cant_reason` was CLOSED (a new `EVENT_T_CANT` + column 19 `cant_id`), and
+`our_attempted_switch_spec` is knowingly LOST (the attempted target is recovered from the action
+index, not from the wire, so an events-only window structurally cannot carry it).
 
 Every offset is computed from named constants in `agents/observation/constants.py` — **never
 hardcode an index**; read `Gen3ObservationEncoder.get_layout()`.

@@ -669,3 +669,42 @@ REAL protocol or the fixture silently pins zeros.*
 P(loss)=0.15 at the FINAL decision of a turn-249 cap loss). Quantile coverage (mid-PIT of
 realized MC returns, ALL outcomes, 109k decisions): pit_mean **0.396**, coverage80 **0.44** vs
 nominal 0.80. These are the pre-registered bars gen-11's label_only arm must beat (runbook §3).
+
+### Method (2026-08-17): a dV ablation cannot license an irreversible deletion on its own
+
+`gen3_frame_deletion_v1` deleted the 7×159 TurnDelta lag frames on gen-13.5 §4's reading —
+`event_seats` dV **2.7714** vs `frames` **1.3015** (n=6000, falsified instrument: positive control
++ exact-zero null arm). That reading is sound and is not retracted. What it could not report is the
+thing that mattered:
+
+> **dV answers "does the trained model LEAN on this block?" It does not answer "does every FACT in
+> this block have a home elsewhere?"** — and the two come apart in one direction specifically: a
+> fact with NO substitute reads LOW on dV exactly when the model never learned to use it. Low
+> dependence is equally consistent with *redundant* and with *delivered so badly it was never
+> learned*, and the second reading argues for fixing delivery rather than deleting the fact. An
+> ablation cannot separate them, because both produce the same number.
+
+Found by a different method — enumerating the fields the `feature_coverage` probes vary and checking
+each against the event window's columns (a COVERAGE audit, not a dependence measurement). Result:
+one fact with no home was **closed before shipping** (`cant_reason` — "could not move, and why";
+`EventKind.CANT` was in the event log *with its reason* and folded by `TurnDelta`, but
+`EventWindowTracker` emitted nine types and CANT was not one), and three ship OPEN by owner
+decision (the refused switch's target, the eight faint causes, item-consumed) — enumerated in
+[`ai_v9/design_frame_deletion_coverage_gaps.md`](../ai_v9/design_frame_deletion_coverage_gaps.md).
+
+**Proposed standing rule:** an irreversible block deletion needs BOTH a dependence reading and a
+per-fact coverage audit against the substitute. §4's falsification set (positive control, exact-zero
+null, independent route) is about trusting the *instrument*; this is about the *scope of the
+question* the instrument can answer, which no amount of instrument-hardening fixes.
+
+Secondary, same pass — two test-integrity findings worth the family they belong to:
+* A bit-identity assertion can be testing the KERNEL rather than the property. The masked-extra-seat
+  test's `torch.equal` failed at **4.77e-07** when the trunk went 20 → 13 tokens; it was SDPA
+  choosing a different reduction order at the new sequence length. Proven by two controls: 100×
+  louder garbage moved the delta not at all, and two different garbage draws gave **bit-identical**
+  output. Rewritten around content-independence, which is strictly stronger than the equality.
+* A "constructed scenario" test can ride an UNCONSTRUCTED axis and pass by draw. A C2 consequence
+  assertion indexed opp local slot 0 — whatever the seeded random obs put there — and passed
+  pre-deletion because seed 103 happened to land well; the obs getting 1092 dims shorter changed the
+  draw and it failed. Seed-shopping would have buried that; it now asserts the wiring property it
+  was documented to test (30/30 seeds, vs 7/8 for the old form).

@@ -642,12 +642,18 @@ def test_offsets_resolve_matches_layout():
     # between reactive and base; the H-B event window follows (total 3529).
     assert off.wish_our_off == 1603   # OFFSET_REACTIVE(1600) + wish_floating_our offset(3)
     assert off.wish_opp_off == 1604   # OFFSET_REACTIVE(1600) + wish_floating_opp offset(4)
-    assert off.total_dim == 3529      # 2921 + 608 event window (gen3_event_window_v1)
+    # gen3_frame_deletion_v1: 3529 -> 2437. The event window is now the LAST block, so
+    # total == base; the -1124 lag-frame/prev-mask tail is partly offset by the +32 the
+    # window gained for its new `cant_id` column (32 rows x 19 -> x 20).
+    assert off.total_dim == 2437
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()
-    assert off.turn_history_offset == lay["turn_history_offset"]
-    assert off.turn_history_dim == lay["n_history_turns"] * lay["turn_delta_dim"]
+    assert off.turn_history_offset == lay.get("turn_history_offset", 0)
+    # gen3_frame_deletion_v1: absent keys ⇒ 0, which is how `Offsets` says "no lag-frame block".
+    # Kept (rather than deleted) because the prober still reads ARCHIVED runs whose layouts DO
+    # carry them, and 0-vs-present is exactly the branch its saliency views switch on.
+    assert off.turn_history_dim == lay.get("n_history_turns", 0) * lay.get("turn_delta_dim", 0)
 
 
 # A synthetic layout WITH the incoming-damage block, for the belief-decode tests. Active flag is

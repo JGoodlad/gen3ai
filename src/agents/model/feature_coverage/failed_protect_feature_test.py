@@ -32,7 +32,6 @@ from agents.model.feature_coverage._support import (
     encode_delta,
     obs_with_delta,
     obs_zero,
-    history_slot_offset,
     assert_reaches_network,
     read_block,
 )
@@ -82,10 +81,10 @@ def test_outcome_dims_reach_extractor_as_scalars():
         assert pos not in embedded, f"outcome dim {pos} wrongly declared as embedded id"
         assert pos in TURN_DELTA_SCALAR_OFFSETS, f"outcome dim {pos} missing from scalar offsets"
 
-    model, _, _ = feature_model()
-    scalar_idx = set(model.embeddings._td_scalar_idx.tolist())
-    for pos in outcome_positions:
-        assert pos in scalar_idx, f"outcome dim {pos} not in extractor scalar gather"
+    # gen3_frame_deletion_v1: the extractor-side gather assertion moved to
+    # `test_no_linear_reads_a_raw_event_id` below — the lag frame's manifest is deleted, the
+    # rule it enforced is not. The TurnDelta-side assertions above still stand: the encoder
+    # survives and the prober reads archived runs with it.
 
 
 # ---------------------------------------------------------------------------
@@ -107,13 +106,45 @@ def test_failed_vs_successful_protect_distinguishable_by_network():
     obs_fail = obs_with_delta(layout, _protect_delta("fail"))
     obs_hit = obs_with_delta(layout, _protect_delta("hit"))
 
-    # Precondition: the two differ ONLY within the outcome one-hot block
-    # (fail=[0,0,1] vs hit=[1,0,0] differ at dims 0 and 2; the middle is zero in
-    # both — so the diff is a non-empty subset of the block).
+    # Precondition: the two observations differ ONLY in the outcome columns of the ONE event row
+    # they write. gen3_frame_deletion_v1 re-homed this from the lag frame's outcome one-hot to the
+    # event window's hit/miss/fail columns (6..8); the claim is the same and is what makes the
+    # network assertion below attributable — if they differed anywhere else, a moved output would
+    # not be evidence about the outcome at all.
+    from agents.observation.constants import (
+        OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM,
+    )
     diff = (obs_fail - obs_hit).abs().squeeze(0).numpy()
     nonzero = set(np.where(diff > 0)[0].tolist())
-    slot = history_slot_offset(layout)
-    block = set(slot + OFFSET_OUR_MOVE_OUTCOME + i for i in range(OUTCOME_DIM))
-    assert nonzero and nonzero <= block, "fail vs hit differ outside the outcome block"
+    row_off = OFFSET_EVENT_WINDOW + (EVENT_WINDOW_N - 1) * EVENT_TOKEN_DIM
+    block = {row_off + c for c in (6, 7, 8)}
+    assert nonzero and nonzero <= block, (
+        f"fail vs hit differ outside the event row's outcome columns: "
+        f"{sorted(nonzero - block)}")
 
     assert_reaches_network(model, obs_fail, obs_hit, "failed vs successful Protect")
+
+
+def test_no_linear_reads_a_raw_event_id():
+    """gen3_frame_deletion_v1 successor to the `_td_scalar_idx` gather assertions.
+
+    Those pinned the lag frame's embedded-ID manifest: a raw dex num must reach an EMBEDDING
+    table, never a Linear (a known bug class here — a species num fed to a Linear is a magnitude,
+    not an identity). The frames are gone, but the H-B event window carries the SAME kind of raw
+    ids and states the same rule, so the invariant moves rather than dies: `EventSeats` must route
+    every id column through a table and let only the true scalars ride raw."""
+    from agents.observation.constants import EVENT_TOKEN_DIM
+    model, _, _ = feature_model()
+    es = model.history_events
+    assert es is not None, "the fixture must build history_events=True"
+    ID_COLS = {0: "kind_emb", 1: "species", 3: "species", 4: "move", 15: "status_emb", 19: "cant_emb"}
+    SCALAR_COLS = {2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17}
+    VALID_COL = {18}
+    assert set(ID_COLS) | SCALAR_COLS | VALID_COL == set(range(EVENT_TOKEN_DIM)), (
+        "every event column must be classified as an embedded id, a raw scalar, or the pad flag — "
+        "an unclassified column is one nobody decided the routing for")
+    assert es._N_SCALARS == len(SCALAR_COLS), (
+        f"EventSeats says {es._N_SCALARS} raw scalars, the column map says {len(SCALAR_COLS)} — "
+        "if a column changed routing, one of the two was not updated")
+    for attr in ("kind_emb", "status_emb", "cant_emb"):
+        assert hasattr(es, attr), f"EventSeats lost its {attr} table"

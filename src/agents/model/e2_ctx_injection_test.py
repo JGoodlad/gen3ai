@@ -2,9 +2,9 @@
 block lands on its ACTIVE mon's role-encoder row — and ONLY there (bench rows read zeros).
 
 The injection slice sits right after `pokemon_enriched` in the role-encoder input concat
-(`[pokemon_enriched | active_ctx_inject | context_broadcasted | switch_validity |
+(`[pokemon_enriched | active_ctx_inject | context_broadcasted |
 struggle_from_prev]`), so its columns are located from the tail: the last
-`active_ctx_dim + global_ctx + 1 + 1` columns start it. A hook on the role encoder's first
+`active_ctx_dim + global_ctx` columns start it. A hook on the role encoder's first
 Linear captures the real input — the test would fail if the scatter indexed the wrong slot,
 the wrong side, or the concat order moved without this file being updated.
 """
@@ -65,7 +65,12 @@ def test_active_ctx_lands_on_the_active_rows_only(fe_and_layout):
         # moment the group grew; the extractor's matching literals were removed in the same pass).
         gl["clock"]["dim"] + gl["weather"]["dim"] + layout["reactive_layout"]["fainted"]["dim"]
         + gl["hazards"]["dim"] + gl["screens"]["dim"]           # global_context
-        + 1 + 1                                                  # switch_validity + struggle
+        # gen3_frame_deletion_v1: `+ 1 + 1` for switch_validity + struggle_from_prev used to
+        # sit here. Both were PREV-TURN features fed by the deleted action-mask block, so the
+        # role input now ENDS at global_context. Same trap the note above records — a literal
+        # encoding a width that lives elsewhere — which is why this presented as "the E2
+        # injection broke" when the injection was untouched (measured: tail_after = 22 = the
+        # global_ctx sum, injection exactly where it belongs).
     )
     inj_end = x.shape[1] - tail_after_inject
     inj = x[:, inj_end - ACTIVE_CONTEXT_DIM: inj_end]            # the injection slice [12, 58]

@@ -27,13 +27,6 @@ from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_CO
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
 # unconditional; this is only the height of the liftable base a legal-unobserved move starts from.
 from agents.model.damage_tables import _PRIOR_FLOOR
-from agents.observation.turn_delta_encoder import (
-    TURN_DELTA_DIM,
-    EFF_DIM,
-    ORDER_DIM,
-    TURN_DELTA_EMBEDDED_IDS,
-    TURN_DELTA_SCALAR_OFFSETS,
-)
 from agents.action.constants import ACTION_SPACE_SIZE
 from utils.logging.levels import LogLevel
 
@@ -58,7 +51,6 @@ from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
     MOVE_LATENT_DIM,
     ROLE_ENCODER_HIDDEN,
     NET_ARCH,
-    N_HISTORY_TURNS,
     POINTER_HIDDEN,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
@@ -74,10 +66,9 @@ from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
 # scripts and history all import from it) and the orchestrator consumes most of it.
 # ============================================================================
 from agents.model.extractor_ctx import (  # noqa: F401
-    Embeddings, ExtractorContext, NUM_TOKEN_TYPES, ObsUnpack, PointerInputs, TD_STRATEGIC_DIM,
-    TD_STRATEGIC_OFFSET, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_HISTORY, TOKEN_TYPE_OUR_MOVE,
+    Embeddings, ExtractorContext, NUM_TOKEN_TYPES, ObsUnpack, PointerInputs, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_HISTORY, TOKEN_TYPE_OUR_MOVE,
     TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_TEAM, TOKEN_TYPE_THEIR_THREAT, locate_active_slot,
-    slice_pokemon_categoricals, turn_delta_embed_dim,
+    slice_pokemon_categoricals,
 )
 from agents.model.encoders import (  # noqa: F401
     MoveLatentEncoder, PokemonEncoder,

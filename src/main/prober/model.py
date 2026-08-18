@@ -264,8 +264,13 @@ class ObsOffsets:
     om_off: int            # our_matchups block (144 dims); 0 = absent (gen3_entity_rehome_v1 deleted it)
     tm_off: int            # their_matchups block (144 dims); 0 = absent (gen3_entity_rehome_v1 deleted it)
     active_block_dim: int  # our active-pokemon block span [0:active_block_dim)
-    turn_history_offset: int
-    turn_history_dim: int  # n_history_turns * turn_delta_dim
+    # gen3_frame_deletion_v1: these three are 0 on a current-architecture run — the lag-frame
+    # block no longer exists. They stay (defaulted, never KeyError'd) because the prober's job
+    # spans ARCHIVED runs, whose layouts still carry the block and whose saliency views should
+    # keep working. Every consumer already guards on `<= 0`, which is what makes 0 mean "absent"
+    # rather than "at offset 0".
+    turn_history_offset: int = 0
+    turn_history_dim: int = 0  # n_history_turns * turn_delta_dim
     turn_delta_dim: int = 0  # one TurnDelta slot's width — slices turn_history into per-turn saliency
     # gen3_cpu_damage_deleted_v1: the 4 active-move type-multiplier scalars were DELETED from the obs
     # (the DamageOperator's outgoing per-move block carries real damage instead). 0 = absent, and every
@@ -301,9 +306,9 @@ class ObsOffsets:
             om_off=(C.OFFSET_REACTIVE + rl["our_matchups"]["offset"]) if "our_matchups" in rl else 0,
             tm_off=(C.OFFSET_REACTIVE + rl["their_matchups"]["offset"]) if "their_matchups" in rl else 0,
             active_block_dim=99,  # the launcher CLI's "our active pokemon block(99)"
-            turn_history_offset=lay["turn_history_offset"],
-            turn_history_dim=lay["n_history_turns"] * lay["turn_delta_dim"],
-            turn_delta_dim=lay["turn_delta_dim"],
+            turn_history_offset=lay.get("turn_history_offset", 0),
+            turn_history_dim=lay.get("n_history_turns", 0) * lay.get("turn_delta_dim", 0),
+            turn_delta_dim=lay.get("turn_delta_dim", 0),
             incoming_off=C.OFFSET_REACTIVE + inc.get("offset", 0) if inc else 0,
             incoming_dim=inc.get("dim", 0),
             incoming_per_mon=inc.get("per_mon", 5),
@@ -401,7 +406,7 @@ class ProbeModel:
                    global_off=gp["start"], global_dim=gp["dim"],
                    pokemon_encoder=enc.pokemon_encoder,
                    our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM,
-                   turn_delta_encoder=enc.turn_delta_encoder,
+                   turn_delta_encoder=getattr(enc, 'turn_delta_encoder', None),
                    dropped_kwargs=dropped)
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
@@ -650,7 +655,7 @@ class ProbeModel:
 
         d = getattr(F, "D_MODEL", "?")
         layers = getattr(F, "TRANSFORMER_N_LAYERS", "?")
-        hist = getattr(F, "N_HISTORY_TURNS", "?")
+        hist = getattr(F, "N_HISTORY_TURNS", 0)   # gen3_frame_deletion_v1: absent ⇒ 0 frames
         tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
         proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))
         pin = getattr(ex, "projection_input_dim", "?")

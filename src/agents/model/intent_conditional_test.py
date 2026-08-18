@@ -303,10 +303,13 @@ def test_full_intent_stack_builds_and_runs():
 # ------------------------------------------------------------------- version machinery
 
 
-def test_migration_defaults_off():
-    migrated = _migrate_config({"config_version": 84})
-    assert migrated["intent_conditional"] is False
-    assert migrated["config_version"] >= 85
+def test_pre_floor_config_is_refused():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90, so this pre-floor config is now
+    REFUSED rather than migrated — the floor's stated purpose ("refuses pre-floor configs outright
+    instead of walking dead branches"). The assertion follows the behaviour: what must hold is that
+    the old version is rejected with a diagnosis, not that a dead branch still defaults a field."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 84})
     assert MODEL_CONFIG_VERSION >= 85
 
 

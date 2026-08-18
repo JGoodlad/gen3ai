@@ -143,12 +143,9 @@ def build_schema(layout: Dict) -> ObsSchema:
         blocks.append(Block("event_window", layout["event_window_offset"], ew_dim,
                             doc=(f"H-B: last {layout['event_window_n']} event records × "
                                  f"{layout['event_token_dim']} cols (typed, most-recent last)")))
-    blocks += [
-        Block("prev_action_mask", layout["base_dim"], layout["prev_mask_dim"]),
-        Block("turn_history", layout["turn_history_offset"],
-              layout["n_history_turns"] * layout["turn_delta_dim"],
-              doc=f"{layout['n_history_turns']} × {layout['turn_delta_dim']}-dim TurnDelta"),
-    ]
+    # gen3_frame_deletion_v1: the prev_action_mask + turn_history tail blocks are DELETED, so
+    # the event window is the last block and base_dim == total_dim. The tiling proof below is
+    # what makes that a checked fact rather than an assumption.
     return ObsSchema(total_dim=layout["total_dim"], blocks=blocks).validate()
 
 

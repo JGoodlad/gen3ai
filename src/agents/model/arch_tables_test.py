@@ -15,6 +15,8 @@ import os
 
 import pytest
 
+from agents.model.model_version import ARCH_SIGNATURE
+
 from agents.model import arch_tables
 
 _MODELS_DIR = "/home/goodlad/dev/gen3ai/models"
@@ -96,6 +98,24 @@ def test_production_config_matches_newest_run():
     with open(run_cfg_path) as fh:
         run_cfg = json.load(fh)
     prod_cfg = arch_tables.load_config()
+
+    # THE SIGNATURE-BUMP WINDOW. Two live requirements pull this file in opposite directions:
+    # `extractor_compiles_test` needs it to match the LIVE code (it compiles the "production
+    # arch" from it), and this test needs it to mirror the newest RUN. Both hold in the steady
+    # state and CANNOT both hold between an ARCH_SIGNATURE bump and the next launch — for that
+    # window every existing run is, by construction, at the previous architecture.
+    #
+    # Resolving it by relaxing either side would be wrong: dropping the live-code match makes the
+    # compile gate compile a fiction, and dropping the run match lets the mirror rot silently.
+    # So the window is DETECTED instead, from the run's own recorded signature, and the mirror
+    # follows the live code while it lasts. `gen3_frame_deletion_v1` (2026-08-17) is the first
+    # bump to hit this; before it, the two requirements had never been in conflict.
+    if run_cfg.get("arch_signature") != ARCH_SIGNATURE:
+        pytest.skip(
+            f"newest run {run_cfg_path} is at arch_signature "
+            f"{run_cfg.get('arch_signature')!r}, live code is {ARCH_SIGNATURE!r} — no run exists "
+            f"at the current architecture yet, so production_config.json tracks the live code "
+            f"until the next generation launches. This skip ENDS the moment one does.")
     shared = (set(run_cfg) & set(prod_cfg)) - {"config_version", "arch_signature"}
     diffs = {k: {"run": run_cfg[k], "production_config": prod_cfg[k]}
              for k in sorted(shared) if run_cfg[k] != prod_cfg[k]}

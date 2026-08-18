@@ -150,6 +150,11 @@ class TestSwitchVsMove:
             msg="switch vs move — both heads should move",
         )
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_frame_deletion_v1: a TurnDelta is a per-turn AGGREGATE and the event window is a "
+        "SEQUENCE, so a two-sided turn needs SEVERAL event rows; `delta_to_event_cols` emits one. "
+        "See designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (`delta_to_event_rows`). "
+        "Strict xfail: it flips RED the moment the translator becomes multi-row."))
     def test_switch_to_species_identity_distinguishable(self):
         """Switching to Tyranitar vs Salamence should differ in network output."""
         model, layout, _ = feature_model()
@@ -297,6 +302,11 @@ class TestSpeciesBlock:
         enc_b = encode_delta(anchor_delta(opp_prev_active="metagross"))
         assert enc_a[OFFSET_OPP_ACTOR_SPECIES] != enc_b[OFFSET_OPP_ACTOR_SPECIES]
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_frame_deletion_v1: a TurnDelta is a per-turn AGGREGATE and the event window is a "
+        "SEQUENCE, so a two-sided turn needs SEVERAL event rows; `delta_to_event_cols` emits one. "
+        "See designs/ai_v9/design_frame_deletion_coverage_gaps.md §4 (`delta_to_event_rows`). "
+        "Strict xfail: it flips RED the moment the translator becomes multi-row."))
     def test_actor_species_reaches_network(self):
         """Changing our_prev_active (actor species) changes network output."""
         model, layout, _ = feature_model()
@@ -345,6 +355,10 @@ class TestAttemptedSwitchRejected:
             f"attempted_switch_to species should be 0 when no rejection, got {val}"
         )
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
+        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
     def test_rejected_switch_reaches_network(self):
         """A rejected switch should alter network output vs a normal delta."""
         model, layout, _ = feature_model()
@@ -358,6 +372,10 @@ class TestAttemptedSwitchRejected:
             msg="rejected-switch vs normal — network must register trap signal",
         )
 
+    @pytest.mark.xfail(strict=True, reason=(
+        "gen3_frame_deletion_v1: this fact has NO event-window home — see "
+        "designs/ai_v9/design_frame_deletion_coverage_gaps.md §3. It ships OPEN by owner "
+        "decision; strict xfail so closing the gap turns this RED instead of silently passing."))
     def test_rejected_switch_vs_normal_switch_distinguishable(self):
         """A rejected pivot is distinguishable from a successful switch."""
         model, layout, _ = feature_model()

@@ -39,6 +39,7 @@ from .constants import (
 )
 from poke_env.battle.abstract_battle import AbstractBattle
 from typing import Dict, Any, List, Optional, Tuple
+from agents.observation.gen3_effects import cant_reason_id
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
@@ -95,7 +96,9 @@ def get_observation_encoder(mappings: Dict[str, Any]) -> "Gen3ObservationEncoder
 class Gen3ObservationEncoder(ObservationEncoder):
     """
     Top-level encoder that orchestrates the entire Gen 3 observation vector.
-    Total dimensions: base_dimension + 11 (prev_mask) + N_HISTORY_TURNS * TURN_DELTA_DIM
+    Total dimensions: base_dimension. gen3_frame_deletion_v1 deleted the two tail blocks
+    (the 11-dim prev-turn action mask and the N x TURN_DELTA_DIM lag frames), so the vector
+    is now exactly what the block encoders write — there is no appended tail.
     """
     
     def __init__(self, mappings: Optional[Dict[str, Any]] = None) -> None:
@@ -135,12 +138,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.reactive_encoder = ReactiveEncoder(
             ability_priors=mappings.get("ability_priors", {}),
         )
-        from agents.observation.turn_delta_encoder import TurnDeltaEncoder, TURN_DELTA_DIM as _TD_DIM
-        self.turn_delta_encoder = TurnDeltaEncoder(
-            mappings.get("moves", {}),
-            mappings.get("species", {}),
-        )
-        self._turn_delta_dim = _TD_DIM
         self.current_battle_id = None
 
     @property
@@ -151,10 +148,10 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
     @property
     def dimension(self) -> int:
-        """Full observation dimension including the 11-dim prev-mask and N-turn history block."""
-        from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
-        from agents.model.features_extractor import N_HISTORY_TURNS
-        return self.base_dimension + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
+        """Full observation dimension. gen3_frame_deletion_v1: identical to `base_dimension` —
+        the prev-mask and lag-frame tail blocks are gone. Kept as a distinct property because
+        every consumer reads `dimension`, and a future tail block would land here again."""
+        return self.base_dimension
 
     # Why the `type: ignore[override]` below — LiveView-subject encoder; the ABC still
     # declares the pre-ai_v4 `encode(item, battle)`. See ActiveContextEncoder.encode.
@@ -353,6 +350,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
                     vec[_o + 10 + int(_r["eff"])] = 1.0
                 vec[_o + 14] = 1.0 if _r["we_first"] else 0.0
                 vec[_o + 15] = float(_r["status"])
+                # gen3_frame_deletion_v1: `.get` because only the CANT branch sets the key —
+                # every other record type leaves it absent, which must read as a clean 0.
+                vec[_o + 19] = float(cant_reason_id(_r.get("cant")))
                 _ago = max(0, _cur - int(_r["turn"]))
                 vec[_o + 16] = math.log1p(min(_ago, 10)) / math.log(11.0)
                 vec[_o + 17] = float(_r["forced_window"])
@@ -378,8 +378,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         }
 
     def get_layout(self) -> Dict[str, Any]:
-        from agents.observation.turn_delta_encoder import TURN_DELTA_DIM as _TD_DIM
-        from agents.model.features_extractor import N_HISTORY_TURNS as _N_HIST
         pokemon_layout = self.pokemon_encoder.get_layout()
         return {
             "parts": {
@@ -415,13 +413,12 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 }
             },
             "pokemon": pokemon_layout,
-            "total_dim": self.dimension,    # base + 11 prev_mask + N * TURN_DELTA_DIM (159) turn_history
-            "base_dim": self.base_dimension, # raw encoder output without prev_mask or turn_history
-            "prev_mask_dim": 11,
-            "turn_delta_dim": _TD_DIM,
-            "n_history_turns": _N_HIST,
-            "turn_history_offset": self.base_dimension + 11,
-            "turn_history_dim": _N_HIST * _TD_DIM,
+            # gen3_frame_deletion_v1: total_dim == base_dim; the prev_mask_dim / turn_delta_dim /
+            # n_history_turns / turn_history_offset / turn_history_dim keys are DELETED with their
+            # blocks. Consumers that sliced by them (ObsUnpack, the prober's offsets, the schema)
+            # are updated in the same pass — a key left behind reading 0 would be sliced silently.
+            "total_dim": self.dimension,
+            "base_dim": self.base_dimension,
             "active_context_dim": ACTIVE_CONTEXT_DIM,
             "pair_history_offset": OFFSET_PAIR_HISTORY,
             "pair_history_dim": PAIR_HISTORY_DIM,
@@ -485,11 +482,9 @@ class Gen3ObservationEncoder(ObservationEncoder):
         reactive_vec = vector[OFFSET_REACTIVE : OFFSET_REACTIVE + REACTIVE_DIM]
         desc["momentum"] = self.reactive_encoder.describe_vector(reactive_vec)
 
-        # 5. TurnDelta tail (present when the full obs is passed, not just base)
-        td_start = self.base_dimension + 11
-        if len(vector) >= td_start + self._turn_delta_dim:
-            td_vec = vector[td_start : td_start + self._turn_delta_dim]
-            desc["turn_delta"] = self.turn_delta_encoder.describe_vector(td_vec)
+        # gen3_frame_deletion_v1: there is no TurnDelta tail to describe — the obs ends at base.
+        # What HAPPENED last turn is read from the H-B event window instead (`event_window`),
+        # which is the block that replaced these frames.
 
         return desc
 

@@ -16,16 +16,12 @@ from agents.model.features_extractor import (
     ExtractorContext,
     HiddenOppBeliefPool,
     locate_active_slot,
-    turn_delta_embed_dim,
     ROLE_TOKEN_SIZE,
     D_MODEL,
-    N_HISTORY_TURNS,
 )
 import pytest
 from agents.observation.constants import POKEMON_FULL_DIM, TEAM_SIZE
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from agents.action.constants import ACTION_SPACE_SIZE
 
 
 def _make_model(**extractor_kwargs):
@@ -86,15 +82,21 @@ def test_obsunpack_species_id_slice_is_exact():
     assert ctx.species_ids[0, 0].item() == 0
 
 
-def test_obsunpack_history_span_is_exact():
+def test_obsunpack_has_no_history_tail():
+    """gen3_frame_deletion_v1: the obs ENDS at the event window — there is no lag-frame tail.
+
+    Asserted rather than merely deleted: `total_dim == base_dim` is the whole claim of the
+    deletion at this layer, and a future appended block that forgets to update `base_dimension`
+    would reintroduce exactly the silent-slice bug this file exists to catch."""
     model, layout = _make_model()
-    hist_start = layout["base_dim"] + ACTION_SPACE_SIZE
-    obs = _zeros(layout)
-    obs[0, hist_start : hist_start + TURN_DELTA_DIM] = 1.0  # fill the oldest slot
-    ctx = model.unpack({"observation": obs})
-    assert ctx.turn_history_raw.shape == (1, N_HISTORY_TURNS * TURN_DELTA_DIM)
-    assert torch.allclose(ctx.turn_history_raw[0, :TURN_DELTA_DIM], torch.ones(TURN_DELTA_DIM))
-    assert ctx.turn_history_raw[0, TURN_DELTA_DIM:].abs().sum() == 0
+    assert layout["total_dim"] == layout["base_dim"]
+    for gone in ("turn_history_offset", "turn_history_dim", "n_history_turns",
+                 "turn_delta_dim", "prev_mask_dim"):
+        assert gone not in layout, f"{gone} outlived the block it described"
+    ctx = model.unpack({"observation": _zeros(layout)})
+    assert not hasattr(ctx, "turn_history_raw")
+    for gone in ("move_mask", "switch_mask", "struggle_mask"):
+        assert not hasattr(ctx, gone), f"ctx.{gone} outlived the prev-action-mask block"
 
 
 def test_obsunpack_active_idx_and_fainted_mask():
@@ -269,11 +271,12 @@ def test_embeddings_hp_soft_type_is_weighted_lookup():
     assert torch.allclose(soft, expected, atol=1e-6)
 
 
-def test_embeddings_delta_slot_width_matches_history_proj():
-    model, layout = _make_model()
-    out = model.embeddings.embed_delta_slot(torch.zeros(2, TURN_DELTA_DIM))
-    assert out.shape == (2, turn_delta_embed_dim(layout))
-    assert out.shape[1] == model.team_transformer.history_proj.in_features
+def test_no_delta_slot_embedder_or_history_projection():
+    """gen3_frame_deletion_v1: `embed_delta_slot` and `history_proj` are DELETED with the frames."""
+    model, _ = _make_model()
+    assert not hasattr(model.embeddings, "embed_delta_slot")
+    assert not hasattr(model.team_transformer, "history_proj")
+    assert not hasattr(model.team_transformer, "turn_history_pos_emb")
 
 
 def test_embeddings_hp_type_map_matches_type_encoder_order():

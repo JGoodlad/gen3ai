@@ -218,6 +218,21 @@ def normalize_cant_reason(reason: Optional[str]) -> str:
     return norm
 
 
+def cant_reason_id(reason: Optional[str]) -> int:
+    """Cant reason -> a 1-based id into :data:`CANT_REASONS`; ``None`` -> 0.
+
+    The EMBEDDING-routed counterpart of :func:`encode_cant_reason` (which one-hots into
+    ``CANT_DIM``). 1-based so 0 can mean "not a cant row" in the H-B event window's
+    ``cant_id`` column, where every non-CANT record must read a distinguishable zero.
+    Shares :func:`normalize_cant_reason`, so both encodings accept exactly the same
+    vocabulary and a reason unknown to one is unknown to the other — the tripwire stays
+    single-sourced rather than being duplicated with a chance to drift.
+    """
+    if reason is None:
+        return 0
+    return _CANT_INDEX[normalize_cant_reason(reason)] + 1
+
+
 def encode_cant_reason(reason: Optional[str]) -> np.ndarray:
     """One-hot a normalised cant reason into a :data:`CANT_DIM` vector. ``reason=None``
     (the side acted normally / switched) → all zeros, NOT a crash."""

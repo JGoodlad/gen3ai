@@ -9,11 +9,6 @@ from poke_env.battle.abstract_battle import DamagingMoveEvent
 
 from agents.enums import PokemonType
 
-from agents.action.constants import MOVE_START, MOVE_END
-from agents.action.ordering_integrity import (
-    reorder_move_bits_to_sorted,
-    assert_sorted_validity_correct,
-)
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from agents.training.hidden_power_tracker import HiddenPowerTracker
@@ -24,7 +19,6 @@ if TYPE_CHECKING:
     from agents.enums import Status
 
     from agents.battle.live_view import LiveView
-    from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 
 
 @dataclass(frozen=True)
@@ -319,7 +313,7 @@ class PairHistoryTracker:
 from agents.observation.constants import (          # noqa: E402
     EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
     EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_ITEM_REVEAL, EVENT_T_HAZARD,
-    EVENT_T_SWITCH_REJECTED,
+    EVENT_T_SWITCH_REJECTED, EVENT_T_CANT,
 )
 
 # Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's
@@ -481,6 +475,18 @@ class EventWindowTracker:
                     "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
                     "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
                 })
+            elif k is EventKind.CANT and sp:
+                # gen3_frame_deletion_v1: "this mon could not move, and why" (full paralysis /
+                # sleep / flinch / recharge). The battle event log always carried it and the
+                # TurnDelta fold read it into `*_cant_reason`, but it reached the model ONLY
+                # through the lag frames — this window emitted no row. With those frames
+                # deleted this is the fact's only route, so it gets its own type + column.
+                self._append({
+                    "t": EVENT_T_CANT, "actor": sp, "side": side, "target": None,
+                    "move_id": e.cant_move, "hp_delta": 0.0, "missed": False,
+                    "failed": True, "crit": False, "eff": 0, "we_first": False,
+                    "status": 0, "cant": e.reason, "turn": et,
+                })
             elif k is EventKind.CHOICE_REJECTED:
                 self._append({
                     "t": EVENT_T_SWITCH_REJECTED, "actor": self._our_active, "side": OURS,
@@ -516,13 +522,17 @@ class EpisodeTracker:
     """
 
     def __init__(self, history_cap: Optional[int] = None):
-        """``history_cap`` = the N passed to :meth:`prev_N_delta_vecs` (i.e.
-        ``N_HISTORY_TURNS``). When set, the rolling history is bounded so a long game /
-        250-turn stall can't accumulate hundreds of ``BattleContext``s (each carrying
-        ``obs``+``mask``). ``prev_N_delta_vecs`` reaches ``_history[-2-i]`` (→ -(N+1)) and
-        ``_actions``/``_cursors[-1-i]`` (→ -N), so we keep N+1 contexts and N aux entries;
-        the ``len(actions)==len(cursors)==len(history)-1`` invariant is preserved by those
-        maxlens. ``None`` ⇒ unbounded (short-episode callers: inference, tests)."""
+        """``history_cap`` bounds the rolling context window so a long game / 250-turn
+        stall can't accumulate hundreds of ``BattleContext``s (each carrying ``obs``+``mask``).
+
+        gen3_frame_deletion_v1 SHRANK what needs keeping. The deep reach was
+        ``prev_N_delta_vecs``, which walked back N slots to build the obs lag frames; with
+        those frames deleted the deepest read left is ``build_delta``'s ``_history[-2]``
+        (plus ``_cursors[-1]``), so a cap of 1 already satisfies every consumer. The
+        parameter stays because the ``_hist_max = cap + 1`` / ``_aux_max = cap`` sizing is
+        what preserves the ``len(actions)==len(cursors)==len(history)-1`` invariant, and
+        because a future consumer wanting depth should ASK for it rather than inherit a
+        window sized for a deleted feature. ``None`` ⇒ unbounded (inference, tests)."""
         self._our_slots = SlotRegistry()
         self._opp_slots = SlotRegistry()
         _hist_max = (history_cap + 1) if history_cap else None
@@ -541,12 +551,6 @@ class EpisodeTracker:
         # Tier H-A (gen3_pair_history_v1): last-action + pair-history counters, same window.
         self._pair_history = PairHistoryTracker()
         self._event_window = EventWindowTracker()
-        # Memoized turn-history: encoded TurnDelta vectors, oldest-left/newest-right.
-        # A past turn's window is bounded and immutable (see prev_N_delta_vecs), so its
-        # encoded vector never changes — we encode only the NEWEST delta each step and
-        # reuse the rest, instead of re-folding+re-encoding all N slots every step.
-        self._hist_vec_cache: "deque[np.ndarray]" = deque(maxlen=_aux_max)
-        self._n_cached_deltas: int = 0   # total completed deltas the cache has encoded
         # MONOTONIC count of completed turn transitions this episode. NOT len(_history)-1,
         # which caps once the (bounded) history deque starts dropping — using the capped
         # length would make the cache miss new turns and serve stale ones.
@@ -576,45 +580,12 @@ class EpisodeTracker:
     def last_ctx(self) -> Optional[BattleContext]:
         return self._history[-1] if self._history else None
 
-    @property
-    def prev_mask(self) -> np.ndarray:
-        """Previous turn's action mask, as an obs feature.
-
-        The MOVE bits are reordered from action/request order into sorted-by-id
-        order so they line up with the active mon's move slots in the feature
-        extractor (which reads moves via ``get_sorted_moves``). Without this the
-        validity bit for one move lands on a different move's embedding — silent
-        when all moves are legal, wrong on disabled/zero-PP turns. All-ones if no
-        previous turn recorded yet.
-
-        If our active mon CHANGED since the previous decision (a switch / forced
-        replacement), the previous mask's MOVE bits describe the PREVIOUS mon's moves
-        (sorted by that mon's ids), so they don't correspond to THIS mon's sorted move
-        slots — the validity bit lands on an unrelated move. In that case the move bits
-        are reset to the no-prior-info default (all-ones, like the first-turn case); the
-        SWITCH bits stay (team-ordered, mon-independent). ``active_move_ids`` is a safe
-        discriminator: it differs whenever the moveset differs, and is equal only when
-        the sorted order already aligns. (gen3_move_slot_align_v1 — same alignment class.)"""
-        if len(self._history) >= 2:
-            prev_ctx = self._history[-2]
-            reordered = reorder_move_bits_to_sorted(
-                prev_ctx.mask.astype(np.float32), prev_ctx.active_move_ids
-            )
-            assert_sorted_validity_correct(
-                reordered, prev_ctx.mask, prev_ctx.active_move_ids
-            )
-            cur_ctx = self._history[-1]
-            if cur_ctx.active_move_ids != prev_ctx.active_move_ids:
-                reordered[MOVE_START:MOVE_END] = 1.0
-            return reordered
-        return np.ones(11, dtype=np.float32)
-
     def record(self, battle, mask: np.ndarray, legal=None) -> BattleContext:
         """Build and store a context snapshot for the current turn.
 
         Also commits the pending _last_action and event_cursor as the action
-        and window-start taken FROM the previous context, so prev_N_delta_vecs()
-        can reconstruct all N deltas. Updates the HiddenPowerTracker BEFORE the
+        and window-start taken FROM the previous context, so ``build_delta`` can fold the
+        completed turn. Updates the HiddenPowerTracker BEFORE the
         env encodes the observation, so the encoded obs includes the just-fired
         HP's narrowing.
 
@@ -662,27 +633,24 @@ class EpisodeTracker:
             list(self._history),
             list(self._actions),
             list(self._cursors),
-            list(self._hist_vec_cache),
             self._n_transitions,
             self._last_cursor,
             self._last_action,
         )
 
     def restore(self, snap: tuple) -> None:
-        """Restore the state captured by :meth:`snapshot`, undoing the ``record()`` (and any
-        memoized delta) that a stale, re-decided decision applied — so the committed
+        """Restore the state captured by :meth:`snapshot`, undoing the ``record()`` that a
+        stale, re-decided decision applied — so the committed
         turn-history never keeps a phantom turn. Rebuilding each deque from its snapshot list
         re-establishes the *exact* pre-attempt contents, including an entry ``maxlen`` would
         have since dropped, so the rollback is exact even when a deque sat at its cap."""
-        history, actions, cursors, hist_vec, n_transitions, last_cursor, last_action = snap
+        history, actions, cursors, n_transitions, last_cursor, last_action = snap
         self._history.clear()
         self._history.extend(history)
         self._actions.clear()
         self._actions.extend(actions)
         self._cursors.clear()
         self._cursors.extend(cursors)
-        self._hist_vec_cache.clear()
-        self._hist_vec_cache.extend(hist_vec)
         self._n_transitions = n_transitions
         self._last_cursor = last_cursor
         self._last_action = last_action
@@ -825,89 +793,12 @@ class EpisodeTracker:
                 _pa.species if (_pa is not None and not _pa.fainted) else None)
         return delta
 
-    def _encode_delta_slot(self, i: int, encoder, battle) -> np.ndarray:
-        """Encode the TurnDelta for history slot ``i`` (0 = most-recent), folded over its
-        OWN bounded decision window: ``[cursors[-1-i] : cursors[-i])`` (``end=None`` ⇒ to
-        "now" for the most-recent slot). The upper bound is what makes the slot represent
-        its own turn and the per-step cost bounded; the most-recent slot's ``end=None``
-        resolves to the same cursor that bounds it on the NEXT step, so a cached vector is
-        bit-identical to recomputing it later — which is why the deque memoization is safe.
-
-        Always folds via ``build_from_events``. ``battle=None`` (or a battle without an event
-        log) ⇒ an empty window per slot — the standalone/test path.
-        """
-        action = self._actions[-1 - i]
-        ctx_prev = self._history[-2 - i]
-        ctx_curr = self._history[-1 - i]
-        if battle is not None and hasattr(battle, "events_between") and self._cursors:
-            start = self._cursors[-1 - i]
-            end = None if i == 0 else self._cursors[-i]
-            events = battle.events_between(start, end)
-        else:
-            events = []
-        delta = TurnDelta.build_from_events(ctx_prev, ctx_curr, action, events)
-        return encoder.encode(delta)
-
-    def prev_N_delta_vecs(
-        self, n: int, encoder: "TurnDeltaEncoder", battle=None
-    ) -> np.ndarray:
-        """Return (n, TURN_DELTA_DIM) array of encoded TurnDeltas, oldest-first.
-
-        Index n-1 is the most recent delta (same data as build_delta()). Turns not yet
-        played are zero-padded. Pass ``battle`` (Gen3Battle) to use the event-fold path.
-
-        Each past turn's bounded window is immutable, so on the event path we **encode only
-        the newly-completed delta(s) and reuse the cached rest** (deque memoization) — one
-        fold+encode per step instead of N. The output is identical to recomputing every
-        slot from scratch.
-        """
-        result = np.zeros((n, encoder.dimension), dtype=np.float32)
-        use_events = battle is not None and hasattr(battle, "events_between")
-        available = min(n, len(self._history) - 1, len(self._actions))
-        if use_events:
-            available = min(available, len(self._cursors))
-        if available <= 0:
-            return result
-
-        if not use_events:
-            # Standalone / no-event-log path: recompute every slot, uncached (each folds
-            # over an empty window — the current-board snapshot for HP).
-            for i in range(available):
-                result[n - 1 - i] = self._encode_delta_slot(i, encoder, battle)
-            return result
-
-        # Event path: extend the deque by the newly-completed delta(s) only. Use the
-        # MONOTONIC transition count (not len(_history)-1, which caps with the deque).
-        total_completed = self._n_transitions
-        new = total_completed - self._n_cached_deltas
-        if new == 1:
-            # Common case: one turn finished since last call → encode just slot 0.
-            self._hist_vec_cache.append(
-                self._encode_delta_slot(0, encoder, battle)
-            )
-        elif new != 0:
-            # Rare (calls skipped, or first call mid-episode): rebuild the kept tail.
-            self._hist_vec_cache.clear()
-            for i in range(available - 1, -1, -1):  # oldest-kept first → newest appended last
-                self._hist_vec_cache.append(
-                    self._encode_delta_slot(i, encoder, battle)
-                )
-        self._n_cached_deltas = total_completed
-
-        for k, vec in enumerate(reversed(self._hist_vec_cache)):  # newest first
-            if k >= n:
-                break
-            result[n - 1 - k] = vec
-        return result
-
     def reset(self) -> None:
         self._our_slots.reset()
         self._opp_slots.reset()
         self._history.clear()
         self._actions.clear()
         self._cursors.clear()
-        self._hist_vec_cache.clear()
-        self._n_cached_deltas = 0
         self._n_transitions = 0
         self._last_action = -1
         self._last_cursor = 0

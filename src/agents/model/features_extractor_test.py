@@ -15,16 +15,12 @@ from agents.model.features_extractor import (
     Gen3FeaturesExtractor,
     ROLE_TOKEN_SIZE,
     D_MODEL,
-    N_HISTORY_TURNS,
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,
     TRANSFORMER_FFN_DIM,
     NUM_TOKEN_TYPES,
-    TD_STRATEGIC_DIM,
-    TD_STRATEGIC_OFFSET,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 
 
 def _make_model():
@@ -53,12 +49,6 @@ def test_d_model_matches_role_token_size():
     assert D_MODEL == ROLE_TOKEN_SIZE
 
 
-def test_td_strategic_constants_consistent():
-    from agents.observation.turn_delta_encoder import EFF_DIM, ORDER_DIM
-    assert TD_STRATEGIC_DIM == EFF_DIM * 2 + ORDER_DIM
-    assert TD_STRATEGIC_OFFSET + TD_STRATEGIC_DIM == TURN_DELTA_DIM
-
-
 # ---------------------------------------------------------------------------
 # Module presence — proves the design's component list is implemented
 # ---------------------------------------------------------------------------
@@ -67,8 +57,6 @@ def test_unified_transformer_modules_exist():
     model, _ = _make_model()
     tt = model.team_transformer
     assert hasattr(tt, "token_type_emb")
-    assert hasattr(tt, "turn_history_pos_emb")
-    assert hasattr(tt, "history_proj")
     assert hasattr(tt, "global_proj")
     assert hasattr(tt, "transformer_layers")
     cp = model.cls_pool
@@ -95,6 +83,8 @@ def test_removed_modules_absent():
         "our_pool_query", "their_pool_query", "our_pool_attn", "their_pool_attn",
         "active_ctx_to_role", "td_conditioner",
         "turn_history_attn", "turn_history_norm",
+        # gen3_frame_deletion_v1 — deleted with the lag frames:
+        "history_proj", "turn_history_pos_emb",
         "status_embedding",
     ):
         assert not hasattr(model, removed), f"v3 module {removed!r} should be removed in v4"
@@ -104,19 +94,6 @@ def test_token_type_embedding_shape():
     model, _ = _make_model()
     assert model.team_transformer.token_type_emb.num_embeddings == NUM_TOKEN_TYPES
     assert model.team_transformer.token_type_emb.embedding_dim == D_MODEL
-
-
-def test_turn_history_pos_emb_shape():
-    model, _ = _make_model()
-    assert model.team_transformer.turn_history_pos_emb.num_embeddings == N_HISTORY_TURNS
-    assert model.team_transformer.turn_history_pos_emb.embedding_dim == D_MODEL
-
-
-def test_history_proj_shape():
-    model, _ = _make_model()
-    tt = model.team_transformer
-    assert tt.history_proj.in_features == tt._td_embed_dim
-    assert tt.history_proj.out_features == D_MODEL
 
 
 def test_global_proj_shape():
@@ -147,10 +124,16 @@ def test_cls_parameters_shape():
 
 
 def test_token_count_matches_design():
-    """Total token sequence length = 2 * TEAM_SIZE + N_HISTORY_TURNS + 1 (global)."""
+    """Base token sequence length = 2 * TEAM_SIZE + 1 (global).
+
+    gen3_frame_deletion_v1 dropped the N_HISTORY_TURNS history seats that used to sit between
+    the team tokens and the global one. That is the load-bearing half: every edge family
+    addressing the GLOBAL seat computes its index as `2 * TEAM_SIZE`, and every `extra` seat
+    (E3/E4, the H-B event seats) is `_total_tokens + k` — so a stale count here would silently
+    write whole edge families onto the wrong tokens rather than raise."""
     from agents.observation.constants import TEAM_SIZE
     model, _ = _make_model()
-    assert model.team_transformer._total_tokens == 2 * TEAM_SIZE + N_HISTORY_TURNS + 1
+    assert model.team_transformer._total_tokens == 2 * TEAM_SIZE + 1
 
 
 # ---------------------------------------------------------------------------
@@ -201,112 +184,6 @@ def test_opp_active_context_changes_output():
 # Turn history — masking, positional encoding, attention path all live
 # ---------------------------------------------------------------------------
 
-def _history_start(layout: dict) -> int:
-    return layout["base_dim"] + 11
-
-
-def test_history_most_recent_slot_changes_output():
-    model, layout = _make_model()
-    start = _history_start(layout)
-    last_slot_start = start + (N_HISTORY_TURNS - 1) * TURN_DELTA_DIM
-
-    obs_zero = _zero_obs(layout)
-    obs_hist = obs_zero.clone()
-    obs_hist[0, last_slot_start] = 1.0
-
-    with torch.no_grad():
-        out_zero, _ = model.forward_internal({"observation": obs_zero})
-        out_hist, _ = model.forward_internal({"observation": obs_hist})
-    assert not torch.allclose(out_zero, out_hist)
-
-
-def test_history_oldest_slot_changes_output():
-    model, layout = _make_model()
-    start = _history_start(layout)
-
-    obs_zero = _zero_obs(layout)
-    obs_hist = obs_zero.clone()
-    obs_hist[0, start] = 1.0
-
-    with torch.no_grad():
-        out_zero, _ = model.forward_internal({"observation": obs_zero})
-        out_hist, _ = model.forward_internal({"observation": obs_hist})
-    assert not torch.allclose(out_zero, out_hist)
-
-
-def test_history_two_distinct_slots_produce_distinct_outputs():
-    """Putting the same signal in different history positions yields different outputs."""
-    model, layout = _make_model()
-    start = _history_start(layout)
-
-    obs_a = _zero_obs(layout)
-    obs_b = _zero_obs(layout)
-    obs_a[0, start] = 1.0
-    obs_b[0, start + TURN_DELTA_DIM] = 1.0
-
-    with torch.no_grad():
-        out_a, _ = model.forward_internal({"observation": obs_a})
-        out_b, _ = model.forward_internal({"observation": obs_b})
-    assert not torch.allclose(out_a, out_b)
-
-
-def test_history_pos_embedding_wired_in():
-    """Zeroing turn_history_pos_emb must change the output when history is non-zero."""
-    model, layout = _make_model()
-    start = _history_start(layout)
-
-    obs = _zero_obs(layout)
-    obs[0, start] = 1.0
-
-    with torch.no_grad():
-        out_before, _ = model.forward_internal({"observation": obs})
-        for p in model.team_transformer.turn_history_pos_emb.parameters():
-            p.zero_()
-        out_after, _ = model.forward_internal({"observation": obs})
-    assert not torch.allclose(out_before, out_after)
-
-
-def test_history_proj_wired_in():
-    """Zeroing the history projection must change the output for non-zero history."""
-    model, layout = _make_model()
-    start = _history_start(layout)
-
-    obs = _zero_obs(layout)
-    obs[0, start + 10] = 0.5  # touch a scalar dim of a history slot
-
-    with torch.no_grad():
-        out_before, _ = model.forward_internal({"observation": obs})
-        for p in model.team_transformer.history_proj.parameters():
-            p.zero_()
-        out_after, _ = model.forward_internal({"observation": obs})
-    assert not torch.allclose(out_before, out_after)
-
-
-def test_history_empty_slot_masking():
-    """
-    Filling an empty (all-zero) history slot with non-zero scalars must change the
-    output — proves the empty-history key_padding_mask correctly marks zero slots
-    as padding only while they are exactly zero.
-    """
-    model, layout = _make_model()
-    start = _history_start(layout)
-
-    obs_zero = _zero_obs(layout)
-    obs_filled = obs_zero.clone()
-    # Touch a scalar dim of the first (oldest) slot: TURN_DELTA_DIM index 10 is
-    # `our_hp_delta` — a continuous scalar, never used as an ID.
-    obs_filled[0, start + 10] = 0.25
-
-    with torch.no_grad():
-        out_zero, _ = model.forward_internal({"observation": obs_zero})
-        out_filled, _ = model.forward_internal({"observation": obs_filled})
-    assert not torch.allclose(out_zero, out_filled)
-
-
-# ---------------------------------------------------------------------------
-# Transformer responsiveness — confirm the unified path is wired
-# ---------------------------------------------------------------------------
-
 def test_transformer_layer_wired_in():
     """Zeroing all parameters of the first transformer layer must change the output."""
     model, layout = _make_model()
@@ -315,7 +192,10 @@ def test_transformer_layer_wired_in():
     obs = _zero_obs(layout)
     ctx_start = layout["parts"]["context"]["start"]
     obs[0, ctx_start] = 1.0
-    obs[0, _history_start(layout) + 10] = 0.3
+    # gen3_frame_deletion_v1: the second non-zero poke used to land in the lag frames. Use the
+    # H-A2 pair-history block instead — still a real, tokenised input, so the test keeps its
+    # point (a non-trivial forward), rather than degrading to an all-but-one-zero obs.
+    obs[0, layout['pair_history_offset'] + 3] = 0.3
 
     with torch.no_grad():
         out_before, _ = model.forward_internal({"observation": obs})

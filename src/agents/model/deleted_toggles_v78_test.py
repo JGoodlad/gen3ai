@@ -55,7 +55,7 @@ def _v77_config(**extra) -> dict:
         "ability_embedding_dim": 16, "max_abilities": 100, "type_embedding_dim": 16,
         "max_types": 20, "total_dim": 2669, "active_context_dim": 58,
         "role_token_size": 128, "projection_dim": 512, "move_net_hidden": [96, 32],
-        "role_encoder_hidden": [256, 128], "n_history_turns": 7, "net_arch": [512, 512],
+        "role_encoder_hidden": [256, 128], "net_arch": [512, 512],
     }
     data.update(_DELETED_OFF)
     data.update(extra)
@@ -63,17 +63,14 @@ def _v77_config(**extra) -> dict:
 
 
 # --------------------------------------------------------------------------- the config JSON side
-def test_an_off_v77_config_migrates_and_constructs():
-    """The production case: every deleted key pops, and `cls(**data)` then succeeds.
-
-    POP, not setdefault — `from_json_file` does `ModelVersion(**data)`, so a surviving stale key is
-    an unexpected-keyword `TypeError` long before anything readable happens.
-    """
-    out = _migrate_config(_v77_config())
-    assert out["config_version"] == MODEL_CONFIG_VERSION
-    for dead in _DELETED_OFF:
-        assert dead not in out, f"{dead!r} survived the v78 migration — cls(**data) will TypeError"
-    ModelVersion(**out)          # the real consumer; must not raise
+def test_an_off_v77_config_is_refused_below_the_floor():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90, so a v77 config no longer migrates at
+    all — it is refused as pre-generation. The ORIGINAL claim (every deleted key pops, then
+    `cls(**data)` succeeds) is now unreachable through this path, and the surviving guarantee is
+    the stronger one: such a checkpoint cannot be loaded into the current architecture by any
+    route. The dataclass-side assertion below still pins that the fields are gone."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config(_v77_config())
 
 
 def test_the_deleted_fields_are_gone_from_the_dataclass():
@@ -87,17 +84,30 @@ def test_a_config_that_recorded_a_deleted_MODULE_is_refused(key, on_value):
     with pytest.raises(ModelVersionError) as exc:
         _migrate_config(_v77_config(**{key: on_value}))
     msg = str(exc.value)
-    assert key in msg and "no longer supported" in msg
+    # gen3_frame_deletion_v1: the FLOOR now refuses first, so the diagnosis names the version
+    # boundary rather than the individual module. Both messages must still carry `git_hash` —
+    # that is the part which makes a refusal a code-version boundary instead of data loss, and
+    # it is the assertion worth keeping whichever guard fires.
     assert "git_hash" in msg, (
         "a refusal must say how to READ the checkpoint anyway (its own metadata.json git_hash) — "
         "otherwise it reads as data loss rather than a code-version boundary.")
 
 
 def test_the_migration_floor_did_not_move():
-    """v78 is a POST-floor deletion: OFF is byte-identical, so no ARCH_SIGNATURE bump and no floor
-    raise. If the floor ever reaches 78 these branches become dead code and should be deleted."""
-    assert MIGRATION_FLOOR == 76
-    assert MODEL_CONFIG_VERSION >= 78
+    """This tripwire fired exactly as designed, and the note is the point.
+
+    It was written when v78 was a POST-floor deletion (OFF byte-identical ⇒ no ARCH_SIGNATURE bump,
+    no floor raise) and it said: "If the floor ever reaches 78 these branches become dead code and
+    should be deleted." gen3_frame_deletion_v1 bumped the signature, which the floor contract
+    requires be matched by a floor raise IN THE SAME COMMIT — so the floor went 76 → 90 and every
+    v77–v89 migration branch is now unreachable.
+
+    FOLLOW-UP, deliberately NOT done here: those dead branches should be deleted. That is a
+    separable cleanup and mixing a ~13-branch deletion into a behavioural change the owner has to
+    review would make both harder to read. The tests that exercised them now assert the refusal,
+    so nothing claims to cover a branch it cannot reach."""
+    assert MIGRATION_FLOOR == 90
+    assert MODEL_CONFIG_VERSION >= 90
 
 
 # ------------------------------------------------------------------------ the pickled-kwargs side

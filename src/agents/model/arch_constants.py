@@ -20,7 +20,6 @@ MOVE_LATENT_HIDDEN = 64           # hidden width of the MoveLatentEncoder MLP
 MOVE_LATENT_DIM = 32              # output dim of the per-move latent (grading is cosine in this space)
 ROLE_ENCODER_HIDDEN = [256, 128]  # [hidden, output] of per-Pokémon role encoder
 NET_ARCH = [512, 512]             # MLP policy layers (SB3 policy_kwargs["net_arch"])
-N_HISTORY_TURNS = 7               # number of consecutive TurnDeltas in the observation
 # gen3_pointer_native_v1: the pointer action head's shared scorer hidden width (the ONLY action head —
 # no flat action_net exists in this generation; see Gen3DualHeadMaskablePolicy._build).
 POINTER_HIDDEN = 64               # hidden width of the pointer move/switch/struggle scorers

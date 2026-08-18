@@ -2,12 +2,12 @@
   "ability_embedding_dim": 16,
   "active_context_dim": 58,
   "all_shaping_pbrs": false,
-  "arch_signature": "gen3_ctx_dedup_v1",
+  "arch_signature": "gen3_frame_deletion_v1",
   "attend_unrevealed_opponents": true,
   "belief_grad_mode": "shaping",
   "bias_additivity": 1.0,
   "bias_redesign": false,
-  "config_version": 89,
+  "config_version": 90,
   "consequence_topk": 6,
   "damage_candidate_k": 0,
   "damage_matrices_incoming": true,
@@ -48,7 +48,6 @@
     32
   ],
   "move_prior_fusion": true,
-  "n_history_turns": 7,
   "net_arch": [
     512,
     512
@@ -77,7 +76,7 @@
   "switch_bias_weight": 0.0,
   "t0_species_prior": true,
   "threat_prob_outspeed": false,
-  "total_dim": 3529,
+  "total_dim": 2437,
   "type_embedding_dim": 16,
   "use_popart": true,
   "value_clock": true,

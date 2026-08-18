@@ -3,7 +3,7 @@
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
 """
-from agents.model.extractor_ctx import Embeddings, ExtractorContext, NUM_TOKEN_TYPES, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_HISTORY, TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_TEAM, turn_delta_embed_dim
+from agents.model.extractor_ctx import Embeddings, ExtractorContext, NUM_TOKEN_TYPES, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_TEAM
 import torch
 from torch.utils.checkpoint import checkpoint
 from typing import Callable, Dict, Any, Optional, Tuple
@@ -11,11 +11,8 @@ from agents.observation.constants import (
     TEAM_SIZE,
     GLOBAL_ENV_DIM,
 )
-from agents.observation.turn_delta_encoder import (
-    TURN_DELTA_DIM,
-)
 
-from agents.model.arch_constants import (N_HISTORY_TURNS,
+from agents.model.arch_constants import (
     D_MODEL,
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,
@@ -214,7 +211,7 @@ class EdgeBias(torch.nn.Module):
             self._write_block(bias, self.d4_map(cells["d4"]), our, opp)
         if self.c4_map is not None and cells.get("c4") is not None:
             # C4 connects the Protect-family E3 seats to the GLOBAL seat.
-            g = 2 * TEAM_SIZE + N_HISTORY_TURNS
+            g = 2 * TEAM_SIZE
             self._write_block(bias, self.c4_map(cells["c4"][:, :, None, :]),
                               slice(base_seats, base_seats + 4), slice(g, g + 1))
         if self.r_map is not None and cells.get("r") is not None:
@@ -227,14 +224,14 @@ class EdgeBias(torch.nn.Module):
                               slice(n_tok - N, n_tok), slice(0, 2 * TEAM_SIZE))
         if self.g_map is not None and cells.get("g") is not None:
             # G rides the same (mon, GLOBAL seat) route as X — schedule facts are board-level.
-            g = 2 * TEAM_SIZE + N_HISTORY_TURNS
+            g = 2 * TEAM_SIZE
             g_our, g_opp = cells["g"]
             self._write_block(bias, self.g_map(g_our[:, :, None, :]), our, slice(g, g + 1))
             self._write_block(bias, self.g_map(g_opp[:, :, None, :]), opp, slice(g, g + 1))
         if self.x_map is not None and cells.get("x") is not None:
-            # X connects each mon to the GLOBAL seat (index 2·TEAM_SIZE + N_HISTORY_TURNS): entry/
+            # X connects each mon to the GLOBAL seat (index 2·TEAM_SIZE): entry/
             # exit costs are board-level facts, composable with every mon token through it.
-            g = 2 * TEAM_SIZE + N_HISTORY_TURNS
+            g = 2 * TEAM_SIZE
             x_our, x_opp = cells["x"]
             self._write_block(bias, self.x_map(x_our[:, :, None, :]), our, slice(g, g + 1))
             self._write_block(bias, self.x_map(x_opp[:, :, None, :]), opp, slice(g, g + 1))
@@ -262,10 +259,10 @@ class EdgeBias(torch.nn.Module):
 
 class TeamTransformer(torch.nn.Module):
     """Unified transformer over the entity seats: 6 our + 6 their team role tokens +
-    N_HISTORY_TURNS history + 1 global, plus (gen3_entity_move_seats_v1) any `extra` entity
-    seats appended after the global token (E3 our-move + E4 threat-move seats today). Adds
-    token-type and history-positional embeddings, applies the encoder stack with a
-    fainted/empty-history/seat key-padding mask, returns the two team token blocks + the
+    1 global, plus (gen3_entity_move_seats_v1) any `extra` entity seats appended after the
+    global token (E3 our-move + E4 threat-move seats today). Adds
+    token-type embeddings, applies the encoder stack with a
+    fainted/seat key-padding mask, returns the two team token blocks + the
     refined extra seats."""
 
     def __init__(self, layout: Dict[str, Any]):
@@ -278,10 +275,6 @@ class TeamTransformer(torch.nn.Module):
         # from --grad-checkpointing via _apply_grad_checkpointing(); a no-op under inference.
         self.grad_checkpointing = False
         self.token_type_emb = torch.nn.Embedding(NUM_TOKEN_TYPES, D_MODEL)
-
-        self._td_embed_dim = turn_delta_embed_dim(layout)
-        self.history_proj = torch.nn.Linear(self._td_embed_dim, D_MODEL)
-        self.turn_history_pos_emb = torch.nn.Embedding(N_HISTORY_TURNS, D_MODEL)
 
         reactive_layout = layout['reactive_layout']
         _board_scalar_dim = reactive_layout['active_req_moves']['offset']
@@ -301,8 +294,7 @@ class TeamTransformer(torch.nn.Module):
 
         self._our_token_slice = slice(0, TEAM_SIZE)
         self._their_token_slice = slice(TEAM_SIZE, 2 * TEAM_SIZE)
-        self._history_token_slice = slice(2 * TEAM_SIZE, 2 * TEAM_SIZE + N_HISTORY_TURNS)
-        self._total_tokens = 2 * TEAM_SIZE + N_HISTORY_TURNS + 1   # team×2 + history + global
+        self._total_tokens = 2 * TEAM_SIZE + 1   # team×2 + global
 
     def forward(self, role_tokens: torch.Tensor, ctx: ExtractorContext,
                 embeddings: Embeddings,
@@ -320,17 +312,6 @@ class TeamTransformer(torch.nn.Module):
         batch_size = ctx.batch_size
         device = ctx.device
 
-        # History tokens — embed each raw TurnDelta, project to d_model, add positional encoding.
-        history_slots = ctx.turn_history_raw.view(batch_size, N_HISTORY_TURNS, TURN_DELTA_DIM)
-        empty_history = (history_slots.abs().sum(dim=-1) == 0)  # [B, N]
-        embedded_history = torch.stack(
-            [embeddings.embed_delta_slot(history_slots[:, t, :]) for t in range(N_HISTORY_TURNS)],
-            dim=1,
-        )
-        history_tokens = self.history_proj(embedded_history)
-        positions = torch.arange(N_HISTORY_TURNS, device=device)
-        history_tokens = history_tokens + self.turn_history_pos_emb(positions)
-
         # Global token — active contexts + non-matchup scalars projected into d_model.
         global_token_input = torch.cat([ctx.our_ctx_raw, ctx.opp_ctx_raw, ctx.non_matchup_rest], dim=1)
         global_token = self.global_proj(global_token_input).unsqueeze(1)
@@ -342,15 +323,13 @@ class TeamTransformer(torch.nn.Module):
         tt = self.token_type_emb
         our_team_tokens   = our_team_tokens   + tt(torch.full((1,), TOKEN_TYPE_OUR_TEAM,   dtype=torch.long, device=device))
         their_team_tokens = their_team_tokens + tt(torch.full((1,), TOKEN_TYPE_THEIR_TEAM, dtype=torch.long, device=device))
-        history_tokens    = history_tokens    + tt(torch.full((1,), TOKEN_TYPE_HISTORY,    dtype=torch.long, device=device))
         global_token      = global_token      + tt(torch.full((1,), TOKEN_TYPE_GLOBAL,     dtype=torch.long, device=device))
 
-        tokens = torch.cat([our_team_tokens, their_team_tokens, history_tokens, global_token], dim=1)
+        tokens = torch.cat([our_team_tokens, their_team_tokens, global_token], dim=1)
         global_pad = torch.zeros(batch_size, 1, dtype=torch.bool, device=device)
         key_padding_mask = torch.cat([
             ctx.fainted_mask_ours,
             ctx.fainted_mask_opp,
-            empty_history,
             global_pad,
         ], dim=1)
         if extra is not None:
@@ -432,16 +411,23 @@ class EventSeats(torch.nn.Module):
 
     _KIND_EMB = 16
     _STATUS_EMB = 8
+    _CANT_EMB = 6
     _N_SCALARS = 13          # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         from agents.observation.constants import N_EVENT_TYPES
+        from agents.observation.gen3_effects import CANT_DIM
         self.n = layout['event_window_n']
         self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)
         self.status_emb = torch.nn.Embedding(8, self._STATUS_EMB)
+        # gen3_frame_deletion_v1: the cant reason (col 19), 0 = not a CANT row. Sized
+        # CANT_DIM + 1 from the SAME vocabulary the encoder writes ids from, so adding a
+        # gen3 cant reason widens both sides at once instead of silently clamping here.
+        self.cant_emb = torch.nn.Embedding(CANT_DIM + 1, self._CANT_EMB)
         in_dim = (self._KIND_EMB + 2 * layout['species_embedding_dim'] +
-                  layout['move_embedding_dim'] + self._STATUS_EMB + self._N_SCALARS)
+                  layout['move_embedding_dim'] + self._STATUS_EMB + self._CANT_EMB +
+                  self._N_SCALARS)
         self.proj = torch.nn.Linear(in_dim, D_MODEL)
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.event_marker = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -454,6 +440,7 @@ class EventSeats(torch.nn.Module):
         target = ev[:, :, 3].long().clamp(min=0)
         move = ev[:, :, 4].long().clamp(min=0)
         status = ev[:, :, 15].long().clamp(min=0, max=7)
+        cant = ev[:, :, 19].long().clamp(min=0, max=self.cant_emb.num_embeddings - 1)
         # the 12 raw scalars: side(2) mag(5) outcome(6:9) crit(9) eff(10:14) we_first(14)
         # ago(16) forced(17) — columns 2,5..14,16,17
         scalars = torch.cat([ev[:, :, 2:3], ev[:, :, 5:15], ev[:, :, 16:18]], dim=-1)
@@ -463,6 +450,7 @@ class EventSeats(torch.nn.Module):
             embeddings.species_embedding(target),
             embeddings.move_embedding(move),
             self.status_emb(status),
+            self.cant_emb(cant),
             scalars,
         ], dim=-1)
         tokens = self.norm(self.proj(row)) + self.event_marker

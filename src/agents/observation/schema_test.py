@@ -14,8 +14,11 @@ _layout = _enc.get_layout()
 def test_schema_tiles_the_live_encoder_exactly():
     sch = build_schema(_layout)                      # validate() runs inside
     assert sch.total_dim == _enc.dimension == _layout["total_dim"]
-    assert sch.block("turn_history").offset == _layout["turn_history_offset"]
-    assert sch.block("prev_action_mask").offset == _layout["base_dim"]
+    # gen3_frame_deletion_v1: the event window is the LAST block and base == total. Asserted
+    # positively (rather than the two old block offsets simply deleted) so the tiling claim stays
+    # anchored at the END of the vector — which is exactly where an appended block would break it.
+    assert sch.blocks[-1].name == "event_window"
+    assert sch.blocks[-1].offset + sch.blocks[-1].dim == _layout["base_dim"] == _enc.dimension
     # The reactive children must tile the whole reactive block (the sub-layout is complete).
     r = sch.block("reactive")
     assert sum(c.dim for c in r.children) == r.dim
@@ -29,8 +32,7 @@ def test_generated_slices_and_space_match_the_live_encoder():
 
     sch = build_schema(_layout)
     sl = sch.slices()
-    assert sl["turn_history"] == slice(_layout["turn_history_offset"], _enc.dimension)
-    assert sl["prev_action_mask"].start == _layout["base_dim"]
+    assert sl["event_window"].stop == _enc.dimension
     assert sl["reactive.active_req_moves"].start == (
         _layout["parts"]["reactive"]["start"] + _layout["reactive_layout"]["active_req_moves"]["offset"])
     # Every slice must sit inside the vector and child slices inside their parent.

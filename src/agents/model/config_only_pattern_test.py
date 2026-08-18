@@ -59,7 +59,7 @@ def _version_with(**overrides) -> ModelVersion:
         item_embedding_dim=1, max_items=1, ability_embedding_dim=1, max_abilities=1,
         type_embedding_dim=1, max_types=1, total_dim=1, active_context_dim=1,
         role_token_size=1, projection_dim=1, move_net_hidden=[1], role_encoder_hidden=[1],
-        n_history_turns=1, net_arch=[1],
+        net_arch=[1],
     )
     base.update(overrides)
     return ModelVersion(**base)

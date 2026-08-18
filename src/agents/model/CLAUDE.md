@@ -245,12 +245,16 @@ inject ADDITIVELY into `value_pooled`, and the intent cells widen the pointer st
    boosts+volatiles block scattered onto its ACTIVE mon's row (bench rows zero) — the entity owns
    its own ctx; the global-token/projection routes remain (additive). Pinned by
    `e2_ctx_injection_test.py`.
-4. **`TeamTransformer`** — builds a 20-token sequence (6 our-team + 6 their-team role tokens +
-   `N_HISTORY_TURNS`=7 history tokens + 1 global token), adds token-type and history-positional
-   embeddings, and runs a `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model
+4. **`TeamTransformer`** — builds a **13**-token sequence (6 our-team + 6 their-team role tokens
+   + 1 global token). `gen3_frame_deletion_v1` deleted the `N_HISTORY_TURNS` history seats along
+   with the lag frames that fed them (20 → 13), and that count is load-bearing rather than
+   cosmetic: every edge family addressing the GLOBAL seat indexes it as `2·TEAM_SIZE`, and every
+   `extra` seat (E3/E4, the H-B event seats) as `_total_tokens + k`, so a stale count writes whole
+   families onto the wrong tokens instead of raising. Adds token-type embeddings, and runs a
+   `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model
    128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
-   that masks fainted team slots and empty history slots. History tokens come from
-   `embed_delta_slot`; the global token from the two active-contexts + non-matchup scalars.
+   that masks fainted team slots. The global token comes from the two active-contexts +
+   non-matchup scalars; `embed_delta_slot` and `history_proj` are deleted.
    Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
    `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
    saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,

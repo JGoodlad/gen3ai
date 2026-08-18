@@ -57,9 +57,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.battle_event import UnknownMessageType, UnsupportedMessageType
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions, LegalMove, LegalSwitch
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.state_encoder import Gen3ObservationEncoder
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 
 _LOG = logging.getLogger("bc.log_reader")
@@ -80,7 +78,7 @@ _SKIP_KEYWORDS = frozenset({
 class Decision:
     """One reconstructed voluntary decision from the chosen side's perspective."""
 
-    obs: np.ndarray            # full observation vector (encode + prev_mask + history)
+    obs: np.ndarray            # full observation vector (gen3_frame_deletion_v1: == encode output)
     mask: np.ndarray           # (11,) int8 synthesised action mask
     human_action: int          # action index the human actually took
     action_type: str           # "move" | "switch"
@@ -205,9 +203,6 @@ class SpectatorLogReader:
     def __init__(self, mappings: dict, encoder: Optional[Gen3ObservationEncoder] = None):
         self._mappings = mappings
         self._encoder = encoder or Gen3ObservationEncoder(mappings)
-        self._tde = TurnDeltaEncoder(
-            mappings.get("moves", {}), mappings.get("species", {})
-        )
 
     # -- legal-set synthesis -------------------------------------------------
     def _synth_legal(self, battle: Gen3Battle, used_move_id: Optional[str]) -> LegalActions:
@@ -266,9 +261,7 @@ class SpectatorLogReader:
             battle, hp_tracker=tracker.hidden_power_tracker, legal=legal,
             progress_clock=tracker.progress_clock,
         )
-        prev_mask = tracker.prev_mask
-        history = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._tde, battle=battle)
-        full = np.concatenate([obs, prev_mask, history.flatten()]).astype(np.float32)
+        full = obs.astype(np.float32)
         return full, mask
 
     # -- main entry ----------------------------------------------------------

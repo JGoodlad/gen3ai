@@ -144,8 +144,6 @@ class PokemonEncoder(torch.nn.Module):
             + layout['move_embedding_dim']              # H-A1: embedded LAST-ACTION move (active slots)
             + self._active_ctx_dim                      # E2: own side's active ctx (active slot only)
             + _global_ctx_dim                           # broadcasted global context
-            + 1                                         # switch_validity
-            + 1                                         # struggle_from_prev
         )
         self.role_token_size = ROLE_TOKEN_SIZE
         self.role_encoder = torch.nn.Sequential(
@@ -240,11 +238,17 @@ class PokemonEncoder(torch.nn.Module):
         move_context = torch.cat([hp_feature, turn_expanded, weather_expanded, fainted_expanded, spikes_expanded], dim=2)
         move_context_final = move_context.unsqueeze(2).expand(-1, -1, num_moves, -1)
 
-        # Move validity from prev_mask: only the active slot gets the real move mask;
-        # bench slots get all-ones. The active flag is the LAST dim of `hp_and_active`.
+        # Move validity: only the active slot gets a real mask; bench slots get all-ones.
+        # gen3_frame_deletion_v1 — the SOURCE changed with the prev-mask block's deletion, and
+        # the new one is strictly better on both axes this feature is read on. `ctx.move_mask`
+        # was the PREVIOUS turn's legality in SORTED-BY-ID order, while the move slots it gates
+        # are REQUEST-order aligned (gen3_op_move_align_v1) — stale AND misindexed, which is why
+        # the damage op abandoned it for `our_active_req_move_legal` and left this consumer
+        # behind. That tensor is current-decision choosability in request order: same [B, 4]
+        # shape, same meaning, correctly aligned to the slot it gates.
         move_validity_ours = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=ctx.device)
         move_validity_ours[torch.arange(batch_size, device=ctx.device), ctx.our_active_idx] = \
-            ctx.move_mask.unsqueeze(-1).float()
+            ctx.our_active_req_move_legal.unsqueeze(-1).float()
         move_validity_opp  = torch.ones(batch_size, TEAM_SIZE, num_moves, 1, device=ctx.device)
         move_validity = torch.cat([move_validity_ours, move_validity_opp], dim=1)
 
@@ -321,11 +325,12 @@ class PokemonEncoder(torch.nn.Module):
         ], dim=1)
         context_broadcasted = global_context.unsqueeze(1).expand(-1, n_poke, -1)
 
-        switch_validity_ours = ctx.switch_mask.unsqueeze(2)
-        switch_validity_opp  = torch.ones(batch_size, TEAM_SIZE, 1, device=ctx.device)
-        switch_validity = torch.cat([switch_validity_ours, switch_validity_opp], dim=1)
-
-        struggle_from_prev = ctx.struggle_mask.unsqueeze(1).expand(-1, n_poke, -1)
+        # gen3_frame_deletion_v1: switch_validity and struggle_from_prev are GONE with the
+        # prev-turn action-mask block. Both were PREVIOUS-turn facts standing in for present
+        # ones the obs already carries fresher: current switch legality rides the Dict obs
+        # `action_mask` the pointer head consumes, and forced-Struggle is exactly "every
+        # `active_req_moves` legal bit is zero" — the same derivation that retired the
+        # `forced_struggle` scalar itself (constants.py).
 
         # gen3_entity_rehome_v1 (E2 injection): scatter each side's active-context block onto its
         # ACTIVE mon's row — the entity owns its own boosts/volatiles (bench rows stay zero).
@@ -337,8 +342,7 @@ class PokemonEncoder(torch.nn.Module):
         active_ctx_inject[batch_idx, TEAM_SIZE + ctx.opp_active_local] = ctx.opp_ctx_raw
 
         pokemon_enriched_with_context = torch.cat([
-            pokemon_enriched, active_ctx_inject, context_broadcasted, switch_validity,
-            struggle_from_prev
+            pokemon_enriched, active_ctx_inject, context_broadcasted
         ], dim=2)
 
         role_tokens = self.role_encoder(

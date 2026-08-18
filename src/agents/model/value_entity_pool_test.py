@@ -16,7 +16,7 @@ pytest.importorskip("sb3_contrib")
 from agents.model.arch_constants import UVR_K, D_MODEL
 from agents.model.features_extractor import UnifiedValueReadout
 from agents.model.identity_init_test import _build_real_policy
-from agents.model.model_version import MODEL_CONFIG_VERSION, _migrate_config
+from agents.model.model_version import _migrate_config
 
 
 @pytest.fixture(scope="module")
@@ -90,11 +90,14 @@ def test_op_variant_fails_loud_without_rows():
             torch.zeros(1, 12, dtype=torch.bool))
 
 
-def test_v80_migration_stamps_and_defaults_off():
-    data = {"config_version": 79, "obs_dim": 1, "n_actions": 11}
-    out = _migrate_config(dict(data))
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 80
-    assert out["value_entity_pool"] is False
+def test_v80_config_is_refused_below_the_migration_floor():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90, so this pre-floor config is now
+    REFUSED rather than migrated — the floor's stated purpose ("refuses pre-floor configs outright
+    instead of walking dead branches"). The assertion follows the behaviour: what must hold is that
+    the old version is rejected with a diagnosis, not that a dead branch still defaults a field."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 79, "obs_dim": 1, "n_actions": 11})
 
 
 # ---------------------------------------------------------------- the v80 x v74 interaction
@@ -194,7 +197,11 @@ def test_full_pool_adds_global_and_belief_rows_and_stays_zero_init():
     assert base.policy.features_extractor.value_entity_pool.source_emb.shape[0] == 3
 
 
-def test_v82_migration_stamps_and_defaults_off():
-    out = _migrate_config({"config_version": 81, "obs_dim": 1, "n_actions": 11})
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 82
-    assert out["value_entity_pool_full"] is False
+def test_v82_config_is_refused_below_the_migration_floor():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90, so this pre-floor config is now
+    REFUSED rather than migrated — the floor's stated purpose ("refuses pre-floor configs outright
+    instead of walking dead branches"). The assertion follows the behaviour: what must hold is that
+    the old version is rejected with a diagnosis, not that a dead branch still defaults a field."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 81, "obs_dim": 1, "n_actions": 11})

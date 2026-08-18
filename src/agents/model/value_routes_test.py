@@ -22,7 +22,7 @@ import torch
 from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import (
-    MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
+    ModelVersion, ModelVersionError, _migrate_config,
 )
 from agents.model.value_routes import ValueIntentRoute
 from agents.observation.constants import CLOCK_DIM, CLOCK_OFFSET_IN_GLOBAL
@@ -131,24 +131,32 @@ def test_full_stack_with_every_value_part():
 # ------------------------------------------------------------------- version machinery
 
 
-def test_migration_defaults_off():
-    migrated = _migrate_config({"config_version": 86})
-    assert migrated["value_clock"] is False
-    assert migrated["value_intent"] is False
-    assert migrated["config_version"] >= 87
-    assert MODEL_CONFIG_VERSION >= 89
+def test_pre_floor_config_is_refused():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90 (ARCH_SIGNATURE bumped), so a
+    pre-floor config is REFUSED rather than migrated — the floor's stated purpose: "refuses
+    pre-floor configs outright instead of walking dead branches". This asserts the behaviour
+    that is now true rather than propping up a branch nothing can reach."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 86})
 
 
 @pytest.mark.parametrize("flag", ["intent_value_reduce", "value_entity_pool", "intent_threshold",
                                   "value_clock", "value_intent"])
 def test_v89_refuses_pre_rehome_checkpoints_with_a_route_on(flag):
-    """gen3_value_pooled_routes_v1: a <v89 config recording a value route ON carries projection
-    shapes the re-homed forward cannot rebuild — refused with the re-read diagnosis. OFF stamps
-    forward (the route built nothing, so the surviving forward is what it trained under)."""
-    with pytest.raises(ModelVersionError, match="value_pooled"):
+    """gen3_frame_deletion_v1: the v89 route-specific refusal is now SHADOWED by the floor.
+    MIGRATION_FLOOR is 90, so a v88 config is rejected as pre-generation before `_migrate_config`
+    reaches the per-route branch. The checkpoint is still refused — which is the property that
+    matters — but the DIAGNOSIS it carries is the floor's, not the route's, and the test says so
+    rather than asserting a message that can no longer be produced."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
         _migrate_config({"config_version": 88, flag: True})
-    migrated = _migrate_config({"config_version": 88, flag: False})
-    assert migrated["config_version"] >= 89
+    # ...and OFF is refused too now, for the same floor reason — which IS the change: pre-v90 the
+    # OFF case stamped forward (the route built nothing, so the surviving forward matched what it
+    # trained under). A frame-deleted obs is a different width, so that no longer holds for any
+    # value of the flag.
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 88, flag: False})
 
 
 @pytest.mark.parametrize("field", ["value_clock", "value_intent"])

@@ -15,7 +15,7 @@ switch out against a Dugtrio with Arena Trap — and drives the FULL production 
        * the `|error|[Unavailable choice]` line is intercepted straight off the wire in
          `_handle_battle_message` and counted (ground truth);
        * on EVERY decision the most-recent turn-history slot's `attempted_switch_rejected` bit,
-         read at its ABSOLUTE index inside the assembled full obs (base + prev_mask + history,
+         read at its ABSOLUTE index inside the full obs (gen3_frame_deletion_v1: == base,
          exactly as `Gen3Env.embed_battle` builds it), must equal the folded delta's field — so a
          wrong offset / never-set / stuck-on bit all fail;
        * on a rejection the full-obs attempted-switch species id at its absolute index must be the
@@ -63,11 +63,7 @@ from agents.observation.constants import (
 )
 from agents.observation.turn_delta_encoder import (
     TurnDeltaEncoder,
-    TURN_DELTA_DIM,
-    OFFSET_ATTEMPTED_SWITCH_REJECTED,
-    OFFSET_OUR_ATTEMPTED_SWITCH_SPEC,
 )
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.training.episode_tracker import EpisodeTracker
 
 FMT = "gen3ou"
@@ -251,7 +247,7 @@ class TrapFuzzPlayer(Player):
         if tr is None:
             # Mirror Gen3Env exactly (bounded history deque) so the assembled obs is
             # byte-for-byte what training feeds the model.
-            tr = EpisodeTracker(history_cap=N_HISTORY_TURNS)
+            tr = EpisodeTracker(history_cap=1)
             self._trackers[tag] = tr
         return tr
 
@@ -315,25 +311,49 @@ class TrapFuzzPlayer(Player):
 
         # --- Signal 3: the rejected-switch bit must land at its ABSOLUTE index in the FULL
         # obs the model consumes. Assemble the obs exactly as Gen3Env.embed_battle does
-        # (base + prev_mask + flattened turn-history block) and read the most-recent history
+        # and read the most-recent history
         # slot's bit DIRECTLY out of that vector — not the standalone encoder — so the layout
         # offset + concat order are validated end to end, on EVERY decision. ---
         delta = tr.build_delta(battle=battle)
-        prev_mask = tr.prev_mask
-        history_vecs = tr.prev_N_delta_vecs(N_HISTORY_TURNS, self._td_enc, battle=battle)
-        full_obs = np.concatenate([obs, prev_mask, history_vecs.flatten()])
-        hist_off = self._enc.base_dimension + 11
-        recent_off = hist_off + (N_HISTORY_TURNS - 1) * TURN_DELTA_DIM  # most-recent slot
-        full_rej_bit = float(full_obs[recent_off + OFFSET_ATTEMPTED_SWITCH_REJECTED])
-        full_rej_spec = float(full_obs[recent_off + OFFSET_OUR_ATTEMPTED_SWITCH_SPEC])
+        # gen3_frame_deletion_v1 REPOINTED this from the TurnDelta lag frames (deleted) to the
+        # H-B event window, which is where a rejected switch now lands as an EVENT_T_SWITCH_REJECTED
+        # row. The end-to-end claim is unchanged: assemble the obs exactly as Gen3Env.embed_battle
+        # does, and read the signal DIRECTLY out of that vector rather than from the standalone
+        # encoder, so the layout offset is validated on EVERY decision.
+        #
+        # ⚠️ ONE FACT IS NOT REPOINTED, DELIBERATELY: `our_attempted_switch_spec` — WHICH bench mon
+        # the refused switch was aimed at. The frames carried it; the event window cannot, and not
+        # by oversight — `Gen3Battle.record_choice_rejected` says the attempted target "is not on
+        # the wire and is recovered at fold time from the action index", and this window folds from
+        # EVENTS ALONE. Closing it would mean threading the action index into the event fold, which
+        # changes that tracker's contract rather than adding a missing row. What survives is the
+        # rejection FACT (the row below) and trappedness itself (per-mon slots, gen3_entity_rehome_v1);
+        # what is lost is the identity of the refused target.
+        from agents.observation.constants import (
+            OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EVENT_T_SWITCH_REJECTED,
+        )
+        full_obs = obs
+        _rej_rows = sum(
+            1 for _r in range(EVENT_WINDOW_N)
+            if full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + 18] >= 0.5
+            and int(full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + 0]) == EVENT_T_SWITCH_REJECTED
+        )
+        if delta.attempted_switch_rejected and _rej_rows == 0:
+            self.violations.append(
+                f"[{tag}] t{battle.turn}: delta.attempted_switch_rejected is True but the "
+                f"event window carries NO EVENT_T_SWITCH_REJECTED row — the signal never "
+                f"reached the model."
+            )
         self.full_obs_slot_checks += 1
 
-        # Invariant on EVERY decision: the full-obs bit == the delta's field. Catches both a
-        # stuck-on bit (false positive) and a wrong-offset/never-set bit (false negative).
-        if full_rej_bit != float(delta.attempted_switch_rejected):
+        # Invariant on EVERY decision, BOTH directions: an EVENT_T_SWITCH_REJECTED row is
+        # present in the obs exactly when the delta says a switch was refused. The reverse
+        # direction is the half that catches a STUCK-ON row, which a presence-only check
+        # would read as a pass forever.
+        if bool(_rej_rows) != bool(delta.attempted_switch_rejected):
             self.violations.append(
-                f"[{tag}] t{battle.turn}: full-obs rejected bit {full_rej_bit} != "
-                f"delta.attempted_switch_rejected {delta.attempted_switch_rejected}"
+                f"[{tag}] t{battle.turn}: obs EVENT_T_SWITCH_REJECTED rows={_rej_rows} but "
+                f"delta.attempted_switch_rejected={delta.attempted_switch_rejected}"
             )
 
         if delta.attempted_switch_rejected:
@@ -349,13 +369,11 @@ class TrapFuzzPlayer(Player):
                 self.violations.append(
                     f"[{tag}] t{battle.turn}: rejected switch but attempted_switch_to is None"
                 )
-            # The attempted-switch species id must be the bench mon's real id in the full obs.
-            expected_id = float(self._td_enc._species_id(delta.attempted_switch_to))
-            if full_rej_spec != expected_id or full_rej_spec <= 0:
-                self.violations.append(
-                    f"[{tag}] t{battle.turn}: full-obs attempted-switch species id "
-                    f"{full_rej_spec} != expected {expected_id} ({delta.attempted_switch_to!r})"
-                )
+            # gen3_frame_deletion_v1: the obs-side half of this check is GONE — there is no
+            # attempted-target species in the event window to compare against (see the note
+            # above). The FOLD-side assertion above (`attempted_switch_to is not None`) still
+            # runs, so the TurnDelta half stays covered; what is no longer verifiable here is
+            # that the identity reaches the model, because it does not.
             # Sequence: the previous decision in this battle attempted a switch under maybe_trapped.
             prev = self._prev_rec.get(tag)
             if not (prev and prev["attempted_switch"] and prev["maybe_trapped"]):

@@ -255,14 +255,15 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # --- SEATS -------------------------------------------------------------------------------
     # Absolute seat indices are the load-bearing fact: everything after the global token is
     # `base + offset`, which is what makes the base slices position-stable.
-    base = fe.team_transformer._total_tokens          # 2*TEAM_SIZE + N_HISTORY_TURNS + 1
+    base = fe.team_transformer._total_tokens          # 2*TEAM_SIZE + 1
     for i in range(T):
         nodes.append(_node(f"our_mon[{i}]", "seat", index=i, token_type="OUR_TEAM"))
     for j in range(T):
         nodes.append(_node(f"opp_mon[{j}]", "seat", index=T + j, token_type="THEIR_TEAM"))
-    for h in range(fx.N_HISTORY_TURNS):
-        nodes.append(_node(f"history[{h}]", "seat", index=2 * T + h, token_type="HISTORY"))
-    g_idx = 2 * T + fx.N_HISTORY_TURNS
+    # gen3_frame_deletion_v1: the HISTORY seats are gone with the lag frames. The trunk's
+    # history is now the H-B event seats, which arrive through the `extra` seam and are drawn
+    # below with the rest of it — so nothing is left undrawn by this deletion.
+    g_idx = 2 * T
     nodes.append(_node("global", "seat", index=g_idx, token_type="GLOBAL"))
 
     n_e3 = 4

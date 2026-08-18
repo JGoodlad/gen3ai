@@ -343,7 +343,22 @@ def test_status_consequence_channels():
     assert float(cells[:, 2, 0, 2].abs().max()) < 1e-6, "WoW has no para channel"
     assert float(cells[:, 1:3, :, 5:].abs().max()) < 1e-6, "para/burn have no sleep channels"
     # The land channel rides the validated per-pair kernel (nonzero on the gated pair).
-    assert float(cells[:, 1, 0, 1].min()) > 0.0
+    # The land channel rides the validated per-pair kernel. gen3_frame_deletion_v1 CHANGED THIS
+    # ASSERTION, and the reason matters more than the edit: it read
+    # `cells[:, 1, 0, 1].min() > 0.0` — "opp LOCAL SLOT 0 is landable in both batch rows" — which
+    # is not a constructed property of this scenario at all. Slot 0 is whatever the seeded random
+    # obs put there; `opp_active_local` alone varies (measured [2, 0] at seed 103), and the land
+    # gate depends on that slot's own type/ability/status. It passed pre-deletion by DRAW: the obs
+    # got 1092 dims shorter, `torch.randn(seed=103)` therefore filled different values, and one
+    # row's slot 0 stopped being landable. Nothing about the kernel changed.
+    #
+    # Seed-shopping to a passing seed would bury that. What the line is FOR — per its own comment —
+    # is that the kernel is wired and produces a nonzero on a gated pair, so assert exactly that:
+    # every batch row has at least one landable opp slot for the T-Wave row. Verified across seeds
+    # 100-129: 30/30, where the old form held for 7 of 8. The substantive claims above (the
+    # para outspeed flip, the burn tick, the zero channels) are untouched and were never fragile —
+    # `d_their_outspeed` measured 0.813 on every seed tried.
+    assert float(cells[:, 1, :, 1].max(dim=1).values.min()) > 0.0
 
 
 def test_toxic_and_sleep_consequences():

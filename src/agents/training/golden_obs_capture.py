@@ -40,9 +40,7 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.team_loader import TeamLoader
@@ -88,7 +86,6 @@ class _DetPlayer(Player):
         if record:
             maps = load_mappings()
             self.obs_enc = get_observation_encoder(maps)
-            self.td_enc = TurnDeltaEncoder(maps.get("moves", {}), maps.get("species", {}))
             self._tracker: EpisodeTracker | None = None
             self._last_tag = None
             self.vectors: List[np.ndarray] = []
@@ -99,7 +96,7 @@ class _DetPlayer(Player):
 
         if self._record:
             if battle.battle_tag != self._last_tag:   # one tracker per episode, as the env does
-                self._tracker = EpisodeTracker(history_cap=N_HISTORY_TURNS)
+                self._tracker = EpisodeTracker(history_cap=1)
                 self._last_tag = battle.battle_tag
             tr = self._tracker
             if mask.sum() > 0:
@@ -113,8 +110,8 @@ class _DetPlayer(Player):
                                       progress_clock=tr.progress_clock, recency=tr.recency,
                                       pair_history=tr.pair_history,
                                       event_window=tr.event_window)
-            history = tr.prev_N_delta_vecs(N_HISTORY_TURNS, self.td_enc, battle=battle)
-            full = np.concatenate([obs, tr.prev_mask, history.flatten()]).astype(np.float32)
+            # gen3_frame_deletion_v1: the golden IS the encoder output — no appended tail.
+            full = obs.astype(np.float32)
             self.vectors.append(full)
 
         idx = _det_action(battle, mask)

@@ -69,7 +69,6 @@ def test_model_version_all_fields_present(version):
         "total_dim", "active_context_dim",
         "role_token_size", "projection_dim",
         "move_net_hidden", "role_encoder_hidden",
-        "n_history_turns",
         "net_arch",
         "vf_coef",
     ]
@@ -78,8 +77,10 @@ def test_model_version_all_fields_present(version):
 
 
 def test_n_history_turns_in_version(version):
-    from agents.model.features_extractor import N_HISTORY_TURNS
-    assert version.n_history_turns == N_HISTORY_TURNS
+    # gen3_frame_deletion_v1: `n_history_turns` is DELETED from ModelVersion with the lag
+    # frames it sized. Asserting its absence keeps this test meaningful rather than merely
+    # silent — a field quietly reappearing is the drift this file exists to catch.
+    assert not hasattr(version, "n_history_turns")
 
 
 # ---------------------------------------------------------------------------
@@ -129,17 +130,18 @@ def test_check_compatible_reports_all_mismatches(version):
     assert "max_moves" in msg
 
 
-def test_check_compatible_n_history_turns_mismatch(version):
-    """n_history_turns is a weight-relevant field — mismatch must raise ModelVersionError.
+def test_check_compatible_rejects_a_frame_era_obs_width(version):
+    """A saved model whose obs width differs is refused — the frame-deletion case, specifically.
 
-    A saved model trained with N=1 (single TurnDelta) is incompatible with current
-    code running N=5, because the positional embedding and attention weights are
-    indexed by N.
-    """
-    saved_v1 = dataclasses.replace(version, n_history_turns=1)
+    gen3_frame_deletion_v1: this test exercised `n_history_turns` (deleted with the frames it
+    sized). `total_dim` is the successor, and it is not a redundant copy of the sibling test above
+    — that one perturbs the width by +1 to prove the FIELD is compared at all; this one uses a
+    wildly different width to stand for the real scenario, a pre-v90 checkpoint whose 3529-dim obs
+    cannot feed weights built for 2437."""
+    saved_v1 = dataclasses.replace(version, total_dim=1)
     with pytest.raises(ModelVersionError) as exc_info:
         version.check_compatible(saved_v1)
-    assert "n_history_turns" in str(exc_info.value)
+    assert "total_dim" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------

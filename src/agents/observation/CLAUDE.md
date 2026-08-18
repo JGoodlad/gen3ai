@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2669-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2437-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
@@ -91,8 +91,10 @@ Judge by these load-independent metrics, in priority order:
    not the absolute. A jump of **>10%** above this is a regression — investigate.
 2. **cProfile `tottime` top-of-list structure.** A *new* function climbing into the top ~10,
    or a known hot function's **call count** ballooning, means you added work to a hot loop.
-3. **Component ratios** (`state_encoder.encode` vs cached turn-history vs `live_view`) and the
-   **deque-cache multiplier** (`Nx saved`). If the turn-history "cached" line stops being a
+3. **Component ratios** (`state_encoder.encode` vs `live_view`). The turn-history component and
+   its deque-cache multiplier are GONE with the lag frames (`gen3_frame_deletion_v1`), so the
+   build is now `encode` + `live_view` only. Historically, if the turn-history "cached" line
+   stopped being a
    single encode (`~12x saved` collapses toward `1x`), the deque memoization broke.
 
 A value-neutral refactor that adds <10% calls/encode and doesn't reshuffle the tottime top is
@@ -110,7 +112,9 @@ headline on purpose (load-dependent); the **call counts and ordering are the con
 > `_joint_expectation`) no longer exists. The block is kept for the v48-era shape until the
 > next full re-baseline.
 >
-> **Current headline (re-baselined 2026-08-16, idle box, `--reps 200`, obs 3529)** — and a
+> **Current headline (re-baselined 2026-08-16, idle box, `--reps 200`, obs 3529 — i.e. BEFORE
+> `gen3_frame_deletion_v1` took the obs to 2437; the deletion only REMOVES work from this path,
+> so the figures below are an upper bound until the next re-baseline)** — and a
 > MEASUREMENT-HONESTY correction: until this date the benchmark (like the golden capture)
 > never ran `update_progress_clock` and threaded none of the tracker-fed blocks, so every
 > "encode ≈ 0.25 ms" figure timed the progress-clock/recency/H-A/H-B writes as SKIPPED —
@@ -123,11 +127,10 @@ headline on purpose (load-dependent); the **call counts and ordering are the con
 > assembly in the tracker) is the obvious first optimization.
 
 ```
-PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, history slots N, opp mons w/ revealed moves 5/6)
+PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, opp mons w/ revealed moves 5/6)
 
   full per-decision obs build  :  ~0.5–1.2 ms   (LOAD-DEPENDENT — not a regression signal)
     state_encoder.encode       :  ~79% of build
-    turn-history (cached, 1 enc):  ~6% of build   (recompute-all-10 is ~11–13x slower → deque cache working)
     live_view() alone          :  ~15% of build
 
   Total: ~2.74M function calls / 400 reps  ==>  ~6.85k calls per encode   <-- PRIMARY REGRESSION METRIC
@@ -183,7 +186,9 @@ does, something bypassed the chart). The matchup block (`reactive.encode`) and t
   process-global cache off the *live* `move.category`, NOT a `gen3_data.moves` re-derivation,
   which disagrees for fixed-power moves). Do not reintroduce a per-cell / per-slot property
   read.
-- **Breaking the turn-history deque cache** (`EpisodeTracker.prev_N_delta_vecs`): if the
+- ~~**Breaking the turn-history deque cache** (`EpisodeTracker.prev_N_delta_vecs`)~~ — DELETED
+  with the lag frames (`gen3_frame_deletion_v1`); kept struck through because the shape of the
+  hazard recurs for any future memoized block. Historically: if the
   benchmark's "recompute all 10" multiplier collapses toward 1×, you've reintroduced the
   per-step O(N) re-encode.
 - **Wrapping live mons in proxy objects** with `__getattr__` (the deleted
@@ -292,7 +297,12 @@ by their mon i while our mon j was active, shared-field turns, pairing recency; 
 over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it**
 (`gen3_event_window_v1`, v81): the **608-dim event window** (`OFFSET_EVENT_WINDOW`, 32 × 19
 typed event records — the column contract is documented at `EVENT_TOKEN_DIM` in
-`constants.py`) closes base at 2405; total obs **3529**. Folded by the EpisodeTracker-owned
+`constants.py`) closes base at 2437, and **`gen3_frame_deletion_v1` made it the LAST block**:
+the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames that used to follow are
+DELETED, so `total_dim == base_dim` and `encode`'s output IS the observation. The window grew a
+20th column (`cant_id`) in the same pass — the one lag-frame fact with no substitute. What that
+deletion cost, and the three facts that ship WITHOUT a substitute, is
+`designs/ai_v9/design_frame_deletion_coverage_gaps.md`. Folded by the EpisodeTracker-owned
 `EventWindowTracker` (same window, same alive-filtered resync), threaded via
 `encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
 NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).

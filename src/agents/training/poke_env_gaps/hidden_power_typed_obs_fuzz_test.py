@@ -41,7 +41,6 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
-from agents.model.features_extractor import N_HISTORY_TURNS
 from agents.observation.constants import OFFSET_OUR_TEAM, OFFSET_OPP_TEAM, POKEMON_FULL_DIM, POKEMON_VECTOR_DIM
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
@@ -51,6 +50,7 @@ from utils.bridge.local_battle_runner import run_local_battles
 
 _HP_NUM = 237            # the OPPONENT's / typeless bare-Hidden-Power num (gen3_typed_hidden_power_ids_v1)
 _OUR_HP_NUMS = frozenset(range(355, 371))   # OUR typed Hidden Power distinct nums (355-370)
+_BARE_HP_NUM = 237            # the TYPELESS Hidden Power num — our side must never emit it
 _TYPELESS_TYPE_IDS = {0, 1}   # 0 = the "unknown" sentinel, 1 = Normal (HP is never Normal in gen3)
 
 
@@ -89,9 +89,8 @@ class _HPTypedPlayer(Player):
             battle, hp_tracker=self.tracker.hidden_power_tracker, legal=legal,
             progress_clock=self.tracker.progress_clock,
         )
-        prev_mask = self.tracker.prev_mask
-        history = self.tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self.encoder.turn_delta_encoder, battle=battle)
-        return np.concatenate([obs, prev_mask, history.flatten()])
+        # gen3_frame_deletion_v1: no prev-mask / history tail — the obs is the encoder output.
+        return obs
 
     def _decoded_moves(self, vec, side_offset):
         """The 6 per-mon move-name lists for a side (HP types via moves.describe_vector)."""
@@ -132,25 +131,29 @@ class _HPTypedPlayer(Player):
                 elif m == "hiddenpower":
                     s.opp_hp_seen += 1
 
-        # 2. TURN-HISTORY our_move HP must fold to its DISTINCT num (355-370) AND carry its real type
-        #    (type_id ∉ {0,1}) — never the typeless bare-237 (which would mean the fold lost our type).
-        td_dim = self.encoder.turn_delta_encoder.dimension
-        hist_off = len(vec) - N_HISTORY_TURNS * td_dim
-        for h in range(N_HISTORY_TURNS):
-            td = self.encoder.turn_delta_encoder.describe_vector(vec[hist_off + h * td_dim: hist_off + (h + 1) * td_dim])
-            om = td.get("our_move")
-            if not om:
-                continue
-            mid = int(om.get("move_id", 0))
-            if mid in _OUR_HP_NUMS:                       # our typed HP in the history
-                if int(om.get("type_id", 0)) in _TYPELESS_TYPE_IDS:
-                    s.fail({"check": "our_history_hp_distinct_but_typeless", "turn": battle.turn,
-                            "hist_slot": h, "move_id": mid, "type_id": om.get("type_id")})
-                else:
-                    s.our_hp_history_checked += 1
-            elif mid == _HP_NUM:                          # our_move folded as the typeless 237 — the bug
-                s.fail({"check": "our_history_hp_BARE_237", "turn": battle.turn, "hist_slot": h,
-                        "type_id": om.get("type_id"), "move_type": om.get("move_type")})
+        # 2. EVENT-WINDOW our_move HP must carry its DISTINCT num (355-370) — never the
+        #    typeless bare-237, which would mean the fold lost our type.
+        #    gen3_frame_deletion_v1 REPOINTED this check: it used to read the TurnDelta lag
+        #    frames, which are deleted. The guard itself is unchanged in meaning and is NOT
+        #    droppable — a typed HP collapsing to bare 237 is the exact GIGO that made the
+        #    opponent's Hidden Power read as "immune", so it keeps a home on whichever block
+        #    carries move history. That block is now the H-B event window: column 4 is the
+        #    move num, written from the same `gen3_movedex` lookup the frames used.
+        from agents.observation.constants import (
+            OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EVENT_T_MOVE,
+        )
+        for _r in range(EVENT_WINDOW_N):
+            _o = OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM
+            if vec[_o + 18] < 0.5 or int(vec[_o + 0]) != EVENT_T_MOVE:
+                continue                                   # pad row, or not a move
+            if vec[_o + 2] < 0.5:
+                continue                                   # not OUR side
+            mid = int(vec[_o + 4])
+            if mid == _BARE_HP_NUM:
+                s.fail({"check": "our_event_hp_collapsed_to_bare_237", "turn": battle.turn,
+                        "event_row": _r, "move_num": mid})
+            elif mid in _OUR_HP_NUMS:
+                s.our_hp_history_checked += 1
 
     def choose_move(self, battle):
         try:

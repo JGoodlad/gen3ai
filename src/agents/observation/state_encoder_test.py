@@ -7,12 +7,13 @@ from .state_encoder import Gen3ObservationEncoder, load_mappings
 
 # Computed from live constants so they track architecture changes (no magic numbers).
 from agents.observation.constants import OFFSET_EVENT_WINDOW, EVENT_WINDOW_DIM
-from agents.model.features_extractor import N_HISTORY_TURNS
-from agents.observation.turn_delta_encoder import TURN_DELTA_DIM
 
 # gen3_pair_history_v1: base ends after the H-A2 pair block.
 EXPECTED_BASE_DIM = OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM
-EXPECTED_OBS_DIM = EXPECTED_BASE_DIM + 11 + N_HISTORY_TURNS * TURN_DELTA_DIM
+# gen3_frame_deletion_v1: the prev-mask + lag-frame tail is DELETED, so the full obs
+# IS the base. Kept as a separate name so a future appended block has an obvious
+# home, and so its absence reads as a visible equality rather than a silent one.
+EXPECTED_OBS_DIM = EXPECTED_BASE_DIM
 
 
 def test_encoder_dimension():
@@ -36,7 +37,7 @@ def test_encoder_output_shape():
     battle.turn = 0
 
     obs = encoder.encode(battle)
-    assert obs.shape == (EXPECTED_BASE_DIM,)  # encode() returns base dims; prev_mask appended by embed_battle
+    assert obs.shape == (EXPECTED_BASE_DIM,)  # gen3_frame_deletion_v1: encode() output IS the full obs
 
 
 def test_encoder_and_features_extractor_are_compatible():

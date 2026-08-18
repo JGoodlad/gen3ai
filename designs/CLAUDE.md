@@ -145,6 +145,15 @@ entity/edge INVENTORY (E1–E9, D/S/C/V/T/X, the nothing-lost audit) stays in
 `design_entity_graph.md`. The ai_v8 `next_run_plan.md` staging predates the reset —
 generation-crossing items there are superseded; re-triage the rest individually.
 
+**E9 history is CLOSED OUT with `gen3_frame_deletion_v1` (2026-08-17):** the H-B event window
+replaced the 7×159 TurnDelta lag frames, which are deleted (obs 3529 → 2437). Its open
+reconciliation is [`design_frame_deletion_coverage_gaps.md`](ai_v9/design_frame_deletion_coverage_gaps.md)
+— the three facts that ship WITHOUT an event-window home (the refused switch's target, the eight
+faint causes, item-consumed), plus the methodological finding behind them: **a dV ablation says
+whether the model LEANS on a block and cannot say whether each FACT in it has a home elsewhere**,
+and a fact with no substitute reads LOW on dV exactly when the model never learned to use it. The
+doc proposes the standing rule that an irreversible block deletion needs BOTH readings.
+
 ### ai_v10 (OPEN — the exploiter-SCALING chapter)
 Opened 2026-08-16. **Nothing built.** One document:
 [`design_exploiter_scaling.md`](ai_v10/design_exploiter_scaling.md) — why exploiter competence

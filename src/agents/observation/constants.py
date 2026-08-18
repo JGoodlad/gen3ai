@@ -220,12 +220,20 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 #   10-13 effectiveness one-hot neutral/super/resist/immune (moves only)
 #   14 we_first (this side moved first that turn)   15 status_id (0 none; brn..tox = 1..6)
 #   16 turns_ago (log-saturated, the recency curve) 17 forced_window (post-faint phase tag)
-#   18 valid (1 = a real event, 0 = pad)
+#   18 valid (1 = a real event, 0 = pad)                19 cant_id (embedding-routed)
+# `cant_id` (gen3_frame_deletion_v1) is 0 on every non-CANT row and 1..CANT_DIM on a CANT row,
+# indexing `gen3_effects.CANT_REASONS` (+1, so 0 stays "none"). It exists because deleting the
+# TurnDelta lag frames deleted the ONLY route by which "my mon could not move last turn, and
+# why" (full paralysis / sleep / flinch / recharge) reached the model: `EventKind.CANT` was in
+# the battle event log with its reason and the TurnDelta fold read it, but this window emitted
+# no row for it. It gets its OWN column rather than riding `status_id` — the two are mutually
+# exclusive by `type_id`, so overloading would encode compactly and read wrongly, and a
+# consumer that forgot to check the type would silently take a cant reason for a status.
 # N sized lean (events-not-turns: ~8-12 game turns) pending the usage audit the design
 # prescribes; the raw ids are consumed ONLY by the flag-gated event-seat encoder (no Linear
 # ever reads this block directly, so the manifest zeroing rule is satisfied by construction).
 EVENT_WINDOW_N = 32
-EVENT_TOKEN_DIM = 19
+EVENT_TOKEN_DIM = 20
 EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 608
 
 # The H-B event-type vocabulary (column 0 of every event row; 0 = PAD). Stable ids — they are
@@ -242,7 +250,8 @@ EVENT_T_BOOST = 6
 EVENT_T_ITEM_REVEAL = 7
 EVENT_T_HAZARD = 8
 EVENT_T_SWITCH_REJECTED = 9
-N_EVENT_TYPES = 10
+EVENT_T_CANT = 10          # gen3_frame_deletion_v1 — the lag frames' one unsubstituted fact
+N_EVENT_TYPES = 11
 
 # Top-level Offsets — all derived from the named constants. ONLY the expressions are
 # load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated

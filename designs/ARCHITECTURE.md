@@ -49,7 +49,7 @@ export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **3529** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2437** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -63,11 +63,11 @@ Every number below comes from `agents/observation/constants.py` and
 | Global env | 1580 | 1600 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
 | Board (reactive) | 1600 | 1617 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
 | Pair history — 6×6×5 h[i,j] | 1617 | 1797 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
-| Event window — 32 × 19 event records | 1797 | 2405 | 608 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
-| *(= `base_dim`)* | | 2405 | | |
-| Prev-turn action mask | 2405 | 2416 | 11 | `ACTION_SPACE_SIZE` |
-| Turn history — 7 × TurnDelta | 2416 | 3529 | 1113 | `N_HISTORY_TURNS` (7) × `TURN_DELTA_DIM` (159) |
-| **Total** | | **3529** | | `Gen3ObservationEncoder.dimension` |
+| Event window — 32 × 20 event records | 1797 | 2437 | 640 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
+| **Total** *(= `base_dim`)* | | **2437** | | `Gen3ObservationEncoder.dimension` |
+
+The event window is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
+observation. There is no appended tail — `Gen3Env.embed_battle` returns `encode(...)` unchanged.
 
 **The event window** (Tier H-B, `gen3_event_window_v1`): the last 32 decision-relevant EVENTS as
 typed 19-column records — type id · actor/target species + side · move id · attributed
@@ -171,11 +171,31 @@ learn.
 
 `BOOSTS_DIM` 14 + `VOLATILES_DIM` 44 (`gen3_effects.VOLATILE_DIM`, source-derived).
 
-### 1.6 Turn history — 7 slots × 159 dims
+### 1.6 What happened last turn
 
-Folded from the event log (`agents/battle/`). Per-slot layout, and the embedded-ID manifest that
-routes raw ids to embedding tables, live in `src/agents/observation/CLAUDE.md`. The 7 comes from
-`N_HISTORY_TURNS` in `arch_constants.py`.
+Carried by the **event window** (§1.1), not by lag frames. The 7 × 159 TurnDelta frames and the
+11-dim prev-turn action mask are DELETED; `TurnDelta` itself survives as the reward manager's
+per-decision input and as the α/β intent label source, but it no longer has an obs encoding.
+
+Every fact the frames delivered has an event-window column — move id, outcome, crit,
+effectiveness, status applied/cured, boosts, switch-ins, forced-switch phase, move order —
+with one addition and one accepted loss:
+
+- **`cant_id` (column 19) was ADDED for the deletion.** "This mon could not move, and why" (full
+  paralysis / sleep / flinch / recharge) had NO event-window column: `EventKind.CANT` was in the
+  battle event log with its reason and the TurnDelta fold read it, but the window emitted no row.
+  It now emits `EVENT_T_CANT` with the reason as a 1-based id into `gen3_effects.CANT_REASONS`
+  (0 = not a cant row). It has its own column rather than riding `status_id` — the two are
+  mutually exclusive by `type_id`, so overloading would encode compactly and read wrongly.
+- **`our_attempted_switch_spec` is LOST, knowingly.** When a switch is refused while trapped, the
+  window records that it happened (`EVENT_T_SWITCH_REJECTED`) but not WHICH bench mon was aimed
+  at. That is structural, not an omission: `Gen3Battle.record_choice_rejected` documents that the
+  attempted target "is not on the wire and is recovered at fold time from the action index", and
+  this window folds from events alone. Trappedness itself still reaches the model through the
+  per-mon slots (`gen3_entity_rehome_v1`).
+
+Per-slot layout of the event record, and the embedded-ID manifest that routes raw ids to
+embedding tables, live in `src/agents/observation/CLAUDE.md`.
 
 ---
 
@@ -226,7 +246,7 @@ stashed for the aux loss and never fed forward, which is exactly what its T2 dec
 
 The concrete steps:
 
-1. **`ObsUnpack`** — slices the 2921-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2437-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
@@ -281,7 +301,6 @@ The concrete steps:
 | `ACTIVE_CTX_HIDDEN` | `[64, 32]` | " |
 | `POINTER_HIDDEN` | 64 | " |
 | `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 | " |
-| `N_HISTORY_TURNS` | 7 | " |
 | `NET_ARCH` (SB3 mlp_extractor) | `[512, 512]` | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
@@ -299,8 +318,9 @@ species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 | **E4** opp threat moves | 24–29 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
 | **E5** tail threats | 30–35 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])` |
 
-`entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + N_HISTORY_TURNS + 1` = 20,
-so **every extra seat index is `20 + offset`** — that is what makes the base slices position-stable.
+`entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13 (the
+`N_HISTORY_TURNS` history seats went with the lag frames), so **every extra seat index is
+`13 + offset`** — that is what makes the base slices position-stable.
 E5 deliberately reuses `TOKEN_TYPE_THEIR_THREAT` rather than adding a 7th token-type row (growing
 the table changes every model's state_dict).
 

@@ -20,7 +20,6 @@ from agents.battle.live_view import LegalActions
 
 from agents.action.mapper import Gen3ActionMapper, StaleDecisionError
 from agents.action.mask_generator import Gen3ActionMasker
-from agents.observation.turn_delta_encoder import TurnDeltaEncoder
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from agents.inference.belief_decode import decode_species_belief
@@ -31,7 +30,6 @@ from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when 
 # opponent re-decides on the now-current request instead of raising — the server is waiting on
 # our move, so the battle settles within a couple of re-decides. See choose_move().
 _OPP_REDECIDE_MAX = 8
-from agents.model.features_extractor import N_HISTORY_TURNS
 
 
 class Gen3Player(Player):
@@ -51,7 +49,6 @@ class Gen3Player(Player):
         self._stall_config = stall_config or StallConfig()
         self._stall_loggers: dict[str, StallLogger] = {}
         self._trackers: dict[str, EpisodeTracker] = {}
-        self._turn_delta_encoder: Optional[TurnDeltaEncoder] = None
 
     async def _battle_against(self, *opponents, n_battles: int):
         """FUNDAMENTAL connect-or-raise guard around poke-env's battle flow.
@@ -171,12 +168,6 @@ class Gen3Player(Player):
             if self.mappings is None:
                 self.mappings = load_mappings()
             self.observation_encoder = get_observation_encoder(self.mappings)
-        if self._turn_delta_encoder is None:
-            self._turn_delta_encoder = TurnDeltaEncoder(
-                self.mappings.get("moves", {}) if self.mappings else {},
-                self.mappings.get("species", {}) if self.mappings else {},
-            )
-
         legal, mask, tracker = self.track_decision(battle)
 
         # Thread the same legality snapshot into the encoder for its trapped / maybe_trapped
@@ -189,11 +180,10 @@ class Gen3Player(Player):
             event_window=tracker.event_window,
         )
 
-        prev_mask = tracker.prev_mask
-        history_vecs = tracker.prev_N_delta_vecs(N_HISTORY_TURNS, self._turn_delta_encoder, battle=battle)
 
         return {
-            "observation": np.concatenate([obs, prev_mask, history_vecs.flatten()]),
+            # gen3_frame_deletion_v1: the obs IS the encoder output (no appended tail).
+            "observation": obs,
             "action_mask": mask,
         }
 

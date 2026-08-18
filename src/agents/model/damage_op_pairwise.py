@@ -26,7 +26,6 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
     MOVE_LATENT_DIM,
     ROLE_ENCODER_HIDDEN,
     NET_ARCH,
-    N_HISTORY_TURNS,
     D_MODEL,
     TRANSFORMER_N_LAYERS,
     TRANSFORMER_N_HEADS,

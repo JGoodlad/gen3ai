@@ -185,10 +185,14 @@ def test_bank_loss_and_row():
 # ------------------------------------------------------------------ version machinery
 
 
-def test_migration_defaults_item_belief_off():
-    migrated = _migrate_config({"config_version": 82})
-    assert migrated["item_belief"] is False
-    assert migrated["config_version"] >= 83
+def test_pre_floor_config_is_refused():
+    """gen3_frame_deletion_v1 raised MIGRATION_FLOOR to 90, so this pre-floor config is now
+    REFUSED rather than migrated — the floor's stated purpose ("refuses pre-floor configs outright
+    instead of walking dead branches"). The assertion follows the behaviour: what must hold is that
+    the old version is rejected with a diagnosis, not that a dead branch still defaults a field."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 82})
     assert MODEL_CONFIG_VERSION >= 83
 
 
