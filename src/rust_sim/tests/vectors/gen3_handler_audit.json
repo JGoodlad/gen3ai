@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 63,
-   "conditions": 53,
-   "moves": 286,
-   "rows": 1034
+   "conditions": 57,
+   "moves": 294,
+   "rows": 1061
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1017,6 +1017,12 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the |-start|<foe>|Curse|[of] <user> line — EMITTED at the ghost-curse lay (volatile_start_of)"
   },
+  "condition:defensecurl:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:67491e02:() => null",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move."
+  },
   "condition:destinybond:onBeforeMove": {
    "disposition": "implemented",
    "fp": "fn:9a159a99:onBeforeMove(pokemon, target, move) { if (move.id === \"destinybond\") return; this.debug(\"removing Destiny Bond before at",
@@ -1367,6 +1373,30 @@
    "anchor": "turn.rs::weather_immune",
    "reason": "the maxhp/16 weather chip (typed + Sand Veil immunities folded)"
   },
+  "condition:iceball:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:iceball:onLockMove": {
+   "disposition": "implemented",
+   "fp": "val:\"iceball\"",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:iceball:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:bc9a12ea:onResidual(target) { if (target.lastMove && target.lastMove.id === \"struggle\") { delete target.volatiles[\"iceball\"]; } }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:iceball:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:d3c88d05:onStart() { this.effectState.hitCount = 0; this.effectState.contactHitCount = 0; }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
   "condition:leechseed:onResidual": {
    "disposition": "implemented",
    "fp": "fn:d527ddb8:onResidual(pokemon) { const target = this.getAtSlot(pokemon.volatiles[\"leechseed\"].sourceSlot); if (!target || target.fa",
@@ -1654,6 +1684,30 @@
    "anchor": "turn.rs::execute_switch",
    "reason": "the interrupt: on a VOLUNTARY (is_voluntary) switch-out of the pursued mon, cancelMove the pursuer + run Pursuit at ×2 never-miss BEFORE the swap (gen3_move_coverage_batch4_v1); Baton Pass/drag/faint-replacement do NOT intercept"
   },
+  "condition:rage:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:939a79f8:onBeforeMove(pokemon) { this.debug(\"removing Rage before attack\"); pokemon.removeVolatile(\"rage\"); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder's Atk by one stage (draw-free, +/-6 clamped), and the HOLDER'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder's next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like \"Rage does nothing\"."
+  },
+  "condition:rage:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:100",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder's Atk by one stage (draw-free, +/-6 clamped), and the HOLDER'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder's next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like \"Rage does nothing\"."
+  },
+  "condition:rage:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:45711f94:onHit(target, source, move) { if (target !== source && move.category !== \"Status\") { this.boost({ atk: 1 }); } }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder's Atk by one stage (draw-free, +/-6 clamped), and the HOLDER'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder's next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like \"Rage does nothing\"."
+  },
+  "condition:rage:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:d5f458bd:onStart(pokemon) { this.add(\"-singlemove\", pokemon, \"Rage\"); }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder's Atk by one stage (draw-free, +/-6 clamped), and the HOLDER'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder's next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like \"Rage does nothing\"."
+  },
   "condition:raindance:duration": {
    "disposition": "implemented",
    "fp": "val:5",
@@ -1731,6 +1785,30 @@
    "fp": "fn:45b46426:onSideStart(side) { this.add(\"-sidestart\", side, \"Reflect\"); }",
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
+  },
+  "condition:rollout:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:rollout:onLockMove": {
+   "disposition": "implemented",
+   "fp": "val:\"rollout\"",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:rollout:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:e58a8523:onResidual(target) { if (target.lastMove && target.lastMove.id === \"struggle\") { delete target.volatiles[\"rollout\"]; } }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "condition:rollout:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:d3c88d05:onStart() { this.effectState.hitCount = 0; this.effectState.contactHitCount = 0; }",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
   },
   "condition:safeguard:duration": {
    "disposition": "implemented",
@@ -3909,6 +3987,30 @@
    "anchor": "state.rs::curse",
    "reason": "the `curse` volatile marker laid on the foe (Some(source_side))"
   },
+  "move:defensecurl:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":1}",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move."
+  },
+  "move:defensecurl:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move."
+  },
+  "move:defensecurl:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move."
+  },
+  "move:defensecurl:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"defensecurl\"",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move."
+  },
   "move:destinybond:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -4502,6 +4604,18 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:iceball:onAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:03188ac1:onAfterMove(source, target, move) { const iceballData = source.volatiles[\"iceball\"]; if (iceballData && iceballData.hitC",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "move:iceball:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:999ae9c7:onModifyMove(move, pokemon, target) { if (pokemon.volatiles[\"iceball\"] || pokemon.status === \"slp\" || !target) return; p",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
   "move:icebeam:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":10,\"status\":\"frz\"}]",
@@ -4879,6 +4993,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:outrage:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"lockedmove\"}",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "all three share ONE `lockedmove` condition, so MonState::locked_move serves them all. A random(2,4) duration is drawn ONCE on the CAST turn after the damage; the user is locked that many turns (folded into move_locked(), which supplies the trapped:true single-move request and the switch reject); PP is spent once. The condition emits NO -start line — only the [from]lockedmove attr on continuing turns. When the counter runs out at the residual the user is CONFUSED via add_confusion (its own random(2,6)), and SLEEP breaks the lock FIRST and cleanly with no confusion. The sim's two interacting counters (duration 2 refreshed by onRestart plus a trueDuration ticked at the residual) have the net observable \"the user uses the move trueDuration times\", which is what was MEASURED rather than derived."
+  },
   "move:overheat:self": {
    "disposition": "implemented",
    "fp": "val:{\"boosts\":{\"spa\":-2}}",
@@ -4926,6 +5046,12 @@
    "fp": "fn:cc6a0b5f:onHitField(target, source, move) { let result = false; let message = false; for (const pokemon of this.getAllActive()) {",
    "anchor": "turn.rs::run_status_move",
    "reason": "the perishsong arm: getAllActive in SIDE order — Soundproof -immune (counted as a result), fresh counters Some(4), ONE -fieldactivate iff >=1 newly applied, the all-counted [still]+-fail, the >=1-immune SILENT re-cast; ZERO draws every branch"
+  },
+  "move:petaldance:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"lockedmove\"}",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "all three share ONE `lockedmove` condition, so MonState::locked_move serves them all. A random(2,4) duration is drawn ONCE on the CAST turn after the damage; the user is locked that many turns (folded into move_locked(), which supplies the trapped:true single-move request and the switch reject); PP is spent once. The condition emits NO -start line — only the [from]lockedmove attr on continuing turns. When the counter runs out at the residual the user is CONFUSED via add_confusion (its own random(2,6)), and SLEEP breaks the lock FIRST and cleanly with no confusion. The sim's two interacting counters (duration 2 refreshed by onRestart plus a trueDuration ticked at the residual) have the net observable \"the user uses the move trueDuration times\", which is what was MEASURED rather than derived."
   },
   "move:pinmissile:multihit": {
    "disposition": "implemented",
@@ -5075,6 +5201,12 @@
    "fp": "val:1",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:rage:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"rage\"}",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder's Atk by one stage (draw-free, +/-6 clamped), and the HOLDER'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder's next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like \"Rage does nothing\"."
   },
   "move:raindance:ignoreImmunity": {
    "disposition": "implemented",
@@ -5267,6 +5399,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:rollout:onAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:825eec0f:onAfterMove(source, target, move) { const rolloutData = source.volatiles[\"rollout\"]; if (rolloutData && rolloutData.hitC",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
+  "move:rollout:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:c9d0ec89:onModifyMove(move, pokemon, target) { if (pokemon.volatiles[\"rollout\"] || pokemon.status === \"slp\" || !target) return; p",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once."
+  },
   "move:sacredfire:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":50,\"status\":\"brn\"}]",
@@ -5350,6 +5494,18 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:secretpower:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:914a6d04:onModifyMove(move, pokemon) { if (this.field.isTerrain(\"\")) return; move.secondaries = []; if (this.field.isTerrain(\"ele",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "NO port code: gen-3 has no terrain, so the handler's first line `if (this.field.isTerrain(\"\")) return;` returns early and the base 30% paralysis secondary stands. Secret Power is therefore an ORDINARY 70-BP Normal physical move on the existing flat-secondary path. Probe-verified rather than assumed — \"carries an onModifyMove\" reads as MISMODELED until you check what it does with no terrain."
+  },
+  "move:secretpower:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
   "move:seismictoss:damage": {
    "disposition": "implemented",
@@ -5877,6 +6033,12 @@
    "fp": "fn:bc2f9627:onAfterHit(target, source, move) { if (source.item || source.volatiles[\"gem\"]) { return; } const yourItem = target.takeI",
    "anchor": "turn.rs::apply_item_removal",
    "reason": "the Knock Off/Thief/Covet item removal (Sticky Hold block + the gen3 itemKnockedOff gate)"
+  },
+  "move:thrash:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"lockedmove\"}",
+   "anchor": "turn/moves.rs::run_move",
+   "reason": "all three share ONE `lockedmove` condition, so MonState::locked_move serves them all. A random(2,4) duration is drawn ONCE on the CAST turn after the damage; the user is locked that many turns (folded into move_locked(), which supplies the trapped:true single-move request and the switch reject); PP is spent once. The condition emits NO -start line — only the [from]lockedmove attr on continuing turns. When the counter runs out at the residual the user is CONFUSED via add_confusion (its own random(2,6)), and SLEEP breaks the lock FIRST and cleanly with no confusion. The sim's two interacting counters (duration 2 refreshed by onRestart plus a trueDuration ticked at the residual) have the net observable \"the user uses the move trueDuration times\", which is what was MEASURED rather than derived."
   },
   "move:thunder:onModifyMove": {
    "disposition": "implemented",

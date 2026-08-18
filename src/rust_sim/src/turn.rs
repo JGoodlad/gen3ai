@@ -643,6 +643,8 @@ enum ResidualAction {
     UproarDuration { side: usize, slot: usize },
     /// FURY CUTTER's `duration: 2` lapse (`gen3_bp_modifier_cluster_v1`), NO_ORDER/sub 2.
     FuryCutterDuration { side: usize, slot: usize },
+    /// The OUTRAGE / PETAL DANCE / THRASH lock tick (`gen3_lockin_family_v1`), NO_ORDER/sub 2.
+    LockedMoveDuration { side: usize, slot: usize },
 }
 
 /// The per-mon outcome of a turn (what THIS step validates against the sim).

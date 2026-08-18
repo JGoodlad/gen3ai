@@ -288,7 +288,21 @@ impl crate::state::BattleState {
         //     confounds that made the first measurement unreadable: a CRIT is itself a ×2 that
         //     mimics a BP doubling, and Fury Cutter's 95 accuracy means a MISS silently shifts
         //     the whole ladder. ---
-        let base_power = if move_id == "revenge" {
+        let base_power = if matches!(move_id.as_str(), "rollout" | "iceball") {
+            // --- ROLLOUT / ICE BALL (`gen3_rollout_defensecurl_v1`): bp doubles per EXECUTION
+            //     (30/60/120/240/480 — probe-measured 30/57/101/213 as HP deltas), and doubles
+            //     AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204,
+            //     i.e. each rung ×2). The count is EXECUTIONS, not turns: a MISS never reaches
+            //     the callback so it does not advance the ladder. No duration draw — the lock
+            //     is a fixed 5 executions. DRAW-NEUTRAL. ---
+            let hits = self.sides[side].pokemon[slot].rollout.map(|(h, _)| h).unwrap_or(0);
+            let curled = self.sides[side].pokemon[slot].defense_curl;
+            let mut bp = base_power as u32 * (1u32 << hits.min(4));
+            if curled {
+                bp *= 2;
+            }
+            bp.min(u16::MAX as u32) as u16
+        } else if move_id == "revenge" {
             // ×2 if the user was DAMAGED BY THIS TARGET this turn. Priority −4 means the foe's
             // move almost always lands first, which is what makes the doubling the common case.
             if self.sides[side].pokemon[slot].damaged_by_foe_this_turn {
@@ -476,6 +490,14 @@ impl crate::state::BattleState {
         // like Solar Beam's fire turn.
         let locked_uproar =
             !pursuit_strike && move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_some();
+        // OUTRAGE / PETAL DANCE / THRASH likewise spend PP once, on the CAST.
+        // ROLLOUT / ICE BALL also spend PP once, on the first execution.
+        let locked_rollout = !pursuit_strike
+            && matches!(move_id.as_str(), "rollout" | "iceball")
+            && self.sides[side].pokemon[slot].rollout.is_some();
+        let locked_lockin = !pursuit_strike
+            && matches!(move_id.as_str(), "outrage" | "petaldance" | "thrash")
+            && self.sides[side].pokemon[slot].locked_move.is_some();
 
         // The PRE-move Choice-lock snapshot (`gen3_move_coverage_batch5_v1`, the Sleep
         // Talk `onTryHit` choicelock gate): the lock the PP block below sets for THIS
@@ -550,7 +572,7 @@ impl crate::state::BattleState {
         //     `useMoveInner` lockedmove path skips `deductPP` (`gen3_move_coverage_
         //     batch4c_v1`; probed: PP is paid ONCE, at the CHARGE — 16→15, or 16→14 under
         //     a Pressure foe — and the fire turn leaves it untouched).
-        if !struggle && !locked_fire && !locked_uproar {
+        if !struggle && !locked_fire && !locked_uproar && !locked_lockin && !locked_rollout {
             let pressure_extra = pressure_targets_foe
                 && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "pressure";
             let deduct = if pressure_extra { 2 } else { 1 };
@@ -586,6 +608,10 @@ impl crate::state::BattleState {
         // `gen3_mimic_disable_self_overwrite_v1`: reset the self-overwrite flag for EVERY move;
         // the Mimic success block re-sets it TRUE after it overlays its own slot.
         self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;
+        // RAGE's volatile is removed by the HOLDER's OWN next move (`onBeforeMove` at
+        // priority 100) — so the boost window is exactly "from casting Rage until I act
+        // again". Cleared AFTER the Rage arm below re-sets it for a fresh cast.
+        self.sides[side].pokemon[slot].rage = false;
         } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
 
         // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
@@ -1469,6 +1495,21 @@ impl crate::state::BattleState {
             // gen3 category (Struggle passes Physical explicitly; a variable-BP move was
             // re-categorized Physical at its BP override). DRAW-FREE.
             self.record_reactive_hit(foe, foe_slot, category, &move_id, dealt);
+            // RAGE (`gen3_rage_secretpower_v1`): a non-Status FOE move that HITS a mon holding
+            // the `rage` volatile raises THAT mon's Atk by one stage. DRAW-FREE, ±6 clamped.
+            if dealt > 0
+                && category != MoveCategory::Status
+                && self.sides[foe].pokemon[foe_slot].rage
+                && !self.sides[foe].pokemon[foe_slot].fainted
+            {
+                let cur = self.sides[foe].pokemon[foe_slot].boosts[1] as i32;
+                let next = (cur + 1).clamp(-6, 6);
+                self.sides[foe].pokemon[foe_slot].boosts[1] = next as i8;
+                if self.logging() && next != cur {
+                    let m = self.mon_ref(foe, foe_slot, dex);
+                    self.log.boost_applied(&m, 1, 1, (next - cur) as i8, next as i8);
+                }
+            }
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y
             // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A 0-damage
             // move that reaches here (none modeled) would still emit — matching the
@@ -1649,6 +1690,39 @@ impl crate::state::BattleState {
                     }
                 }
             }
+        }
+
+        // --- THE LOCK-IN FAMILY (`gen3_lockin_family_v1`): OUTRAGE / PETAL DANCE / THRASH
+        //     share ONE `lockedmove` condition. The duration is a `random(2,4)` (→ 2 or 3)
+        //     drawn ONCE on the CAST turn, after the damage. Unlike Uproar the condition emits
+        //     NO `-start` line — only the `[from]lockedmove` attr on each continuing turn's
+        //     announce — and unlike Uproar the lock ends in CONFUSION at the residual. ---
+        // ROLLOUT / ICE BALL advance the execution counter on every LANDED hit; the lock ends
+        // after the 5th (`gen3_rollout_defensecurl_v1`).
+        if matches!(move_id.as_str(), "rollout" | "iceball") {
+            let hits = self.sides[side].pokemon[slot].rollout.map(|(h, _)| h).unwrap_or(0) + 1;
+            self.sides[side].pokemon[slot].rollout = if hits >= 5 {
+                None
+            } else {
+                Some((hits, move_index))
+            };
+        }
+
+        // RAGE (`gen3_rage_secretpower_v1`) arms its `singlemove` volatile on a landed hit.
+        // [EMIT] `|-singlemove|<user>|Rage`.
+        if move_id == "rage" {
+            self.sides[side].pokemon[slot].rage = true;
+            if self.logging() {
+                let u = self.mon_ref(side, slot, dex);
+                self.log.singlemove(&u, "Rage");
+            }
+        }
+
+        if matches!(move_id.as_str(), "outrage" | "petaldance" | "thrash")
+            && self.sides[side].pokemon[slot].locked_move.is_none()
+        {
+            let n = self.prng.random_range(2, 4) as u8;
+            self.sides[side].pokemon[slot].locked_move = Some((n, move_index));
         }
 
         if move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_none() {

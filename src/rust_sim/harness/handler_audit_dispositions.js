@@ -525,6 +525,32 @@ add([cond('encore', 'onResidual'), cond('encore', 'onResidualOrder'), cond('enco
 // SKILL SWAP (`gen3_skill_swap_v1`).
 add([mv('skillswap', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3\'s only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability.'));
+// The LOCK-IN family (`gen3_lockin_family_v1`) — OUTRAGE / PETAL DANCE / THRASH.
+add([mv('outrage', 'self'), mv('petaldance', 'self'), mv('thrash', 'self'),
+     cond('lockedmove', 'onStart'), cond('lockedmove', 'onRestart'), cond('lockedmove', 'onResidual'),
+     cond('lockedmove', 'onEnd'), cond('lockedmove', 'onLockMove'), cond('lockedmove', 'duration'),
+     cond('lockedmove', 'noCopy')],
+  IMPL('turn/moves.rs::run_move', 'all three share ONE `lockedmove` condition, so MonState::locked_move serves them all. A random(2,4) duration is drawn ONCE on the CAST turn after the damage; the user is locked that many turns (folded into move_locked(), which supplies the trapped:true single-move request and the switch reject); PP is spent once. The condition emits NO -start line — only the [from]lockedmove attr on continuing turns. When the counter runs out at the residual the user is CONFUSED via add_confusion (its own random(2,6)), and SLEEP breaks the lock FIRST and cleanly with no confusion. The sim\'s two interacting counters (duration 2 refreshed by onRestart plus a trueDuration ticked at the residual) have the net observable "the user uses the move trueDuration times", which is what was MEASURED rather than derived.'));
+
+// ROLLOUT / ICE BALL + DEFENSE CURL (`gen3_rollout_defensecurl_v1`).
+add([mv('rollout', 'basePowerCallback'), mv('rollout', 'onModifyMove'), mv('rollout', 'onAfterMove'),
+     mv('iceball', 'basePowerCallback'), mv('iceball', 'onModifyMove'), mv('iceball', 'onAfterMove'),
+     cond('rollout', 'onStart'), cond('rollout', 'onResidual'), cond('rollout', 'onLockMove'),
+     cond('rollout', 'duration'),
+     cond('iceball', 'onStart'), cond('iceball', 'onResidual'), cond('iceball', 'onLockMove'),
+     cond('iceball', 'duration')],
+  IMPL('turn/moves.rs::run_move', 'the ladder: bp doubles per EXECUTION (30/60/120/240/480 — probe-measured as HP deltas 30/57/101/213) over a fixed 5-execution lock with NO duration draw, and doubles AGAIN while the user carries the DEFENSE CURL volatile (probe: 56/108/204). The count is EXECUTIONS, not turns — a MISS never reaches the callback so it does not advance the ladder. MonState::rollout carries (hits, slot) and folds into move_locked(); PP is spent once.'));
+add([mv('defensecurl', 'volatileStatus'), mv('defensecurl', 'boosts'), mv('defensecurl', 'neverMiss'),
+     mv('defensecurl', 'ignoreImmunity'), cond('defensecurl', 'onRestart'), cond('defensecurl', 'noCopy')],
+  IMPL('turn/status_moves.rs::run_status_move', 'the defensecurl arm: never-miss, DRAW-FREE, a declarative +1 Def plus MonState::defense_curl — the volatile exists to DOUBLE Rollout / Ice Ball, which is why the two are modeled in the same pass. The boost is applied inline rather than through the data-driven selfBoosts field, because the extractor deliberately excludes any move that also carries a volatileStatus and widening that rule would be a data change for one stat on one move.'));
+
+// RAGE + SECRET POWER (`gen3_rage_secretpower_v1`).
+add([mv('rage', 'self'), cond('rage', 'onStart'), cond('rage', 'onHit'),
+     cond('rage', 'onBeforeMove'), cond('rage', 'onBeforeMovePriority')],
+  IMPL('turn/moves.rs::run_move', 'MonState::rage, announced `|-singlemove|<u>|Rage` on a landed cast. While it is up, every non-Status FOE move that HITS the holder raises the holder\'s Atk by one stage (draw-free, +/-6 clamped), and the HOLDER\'S OWN next move removes it (onBeforeMove priority 100). That window is why the boost is only observable when the foe strikes between the Rage and the holder\'s next action — a board where the holder moves first every turn reads atk=0 throughout and looks exactly like "Rage does nothing".'));
+add([mv('secretpower', 'onModifyMove')],
+  IMPL('turn/moves.rs::run_move', 'NO port code: gen-3 has no terrain, so the handler\'s first line `if (this.field.isTerrain("")) return;` returns early and the base 30% paralysis secondary stands. Secret Power is therefore an ORDINARY 70-BP Normal physical move on the existing flat-secondary path. Probe-verified rather than assumed — "carries an onModifyMove" reads as MISMODELED until you check what it does with no terrain.'));
+
 // The BP-MODIFIER / GATE cluster (`gen3_bp_modifier_cluster_v1`).
 add([mv('revenge', 'basePowerCallback'), mv('revenge', 'priority')],
   IMPL('turn/moves.rs::run_move', 'BP x2 when the user was DAMAGED BY THIS TARGET this turn, read from the new MonState::damaged_by_foe_this_turn (the sim attackedBy[].thisTurn). Deliberately NOT reusing `reactive`, which is armed only while Counter/Mirror Coat is selected AND is category-filtered, whereas Revenge doubles off a hit of EITHER category with no reactive move in sight. Priority -4 comes from the dex row. DRAW-NEUTRAL.'));

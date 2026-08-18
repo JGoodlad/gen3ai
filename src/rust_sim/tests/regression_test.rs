@@ -13524,6 +13524,276 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// RG1 — RAGE: the `singlemove` volatile raises the holder's Atk whenever a FOE lands a
+/// damaging move while it is up, and the HOLDER'S OWN next move removes it.
+///
+/// ⚠️ THE WINDOW IS WHAT MAKES THIS TESTABLE. `onBeforeMove` runs at priority 100, so the
+/// volatile is gone before the holder acts again — the boost is only observable when the foe
+/// strikes BETWEEN the Rage and the holder's next action. The first probe of this move used a
+/// board where the holder moved first every turn and read `atk=0` throughout, which reads
+/// exactly like "Rage does nothing". Nidoking outspeeds Snorlax, so the foe's Tackle lands
+/// inside the window on the SAME turn.
+#[test]
+fn rage_boosts_attack_when_the_foe_hits_inside_the_window() {
+    let d = dex();
+    let user = "Nidoking||none|PoisonPoint|rage,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||none|Sturdy|tackle,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Rage, then Tackle lands
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // again
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-singlemove|p1a: Nidoking|Rage"),
+        "RG1: casting Rage announces the singlemove volatile. got:\n{joined}"
+    );
+    // NON-VACUITY: the foe must actually have hit inside the window.
+    assert!(
+        raw.iter().any(|l| l.starts_with("|-damage|p1a: Nidoking|")),
+        "RG1: the foe must land a damaging move for the boost to be testable. got:\n{joined}"
+    );
+    assert!(
+        st.sides[0].pokemon[0].boosts[1] >= 1,
+        "RG1: a foe hit inside the window raises the rager's Atk (got {})",
+        st.sides[0].pokemon[0].boosts[1]
+    );
+}
+
+/// RG2 — SECRET POWER is an ORDINARY 70-BP Normal move in gen 3.
+///
+/// Its `onModifyMove` swaps the secondary by TERRAIN, and gen-3 has no terrain at all — the
+/// handler's first line is `if (this.field.isTerrain("")) return;`, so it returns early and
+/// the base 30% paralysis secondary stands. Worth a pin precisely because "this move carries
+/// an onModifyMove" reads as MISMODELED until you check what it does with no terrain.
+#[test]
+fn secret_power_keeps_its_base_paralysis_secondary_with_no_terrain() {
+    let d = dex();
+    let user = "Nidoking||none|PoisonPoint|secretpower,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+    // Sweep seeds until the 30% secondary lands at least once — a single seed would leave the
+    // "it still has its secondary" claim resting on luck.
+    let mut ever_par = false;
+    for seed in ["3,3,3,3", "11,11,11,11", "7,7,7,7", "1,2,3,4"] {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        for _ in 0..4 {
+            st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        }
+        assert!(
+            st.sides[1].pokemon[0].hp < st.sides[1].pokemon[0].maxhp,
+            "RG2: Secret Power must deal ordinary damage"
+        );
+        if st.sides[1].pokemon[0].status == Some(pokesim::state::Status::Paralysis) {
+            ever_par = true;
+            break;
+        }
+    }
+    assert!(
+        ever_par,
+        "RG2: the base 30% paralysis secondary must still fire — gen-3 has no terrain, so the \
+         onModifyMove returns early and must NOT clear the secondary"
+    );
+}
+
+/// RO1 — ROLLOUT / ICE BALL: the base power doubles per EXECUTION over a 5-execution lock,
+/// and DEFENSE CURL doubles every rung again. Ground truth
+/// `harness/probe_rollout_defensecurl.js` (HP deltas 30/57/101/213, and 56/108/204 curled).
+///
+/// ⚠️ The count is EXECUTIONS, not turns — a MISS never reaches the callback, so it does not
+/// advance the ladder. The pin therefore reads the counter out of STATE and compares damage
+/// only between two runs that differ solely by Defense Curl.
+#[test]
+fn rollout_doubles_per_execution_and_defense_curl_doubles_it_again() {
+    let d = dex();
+    let user = "Marowak||none|RockHead|rollout,splash,defensecurl|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "3,3,3,3";
+
+    // The execution counter advances 1,2,3,4 and the lock ENDS after the 5th.
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let pp0 = st.sides[0].pokemon[0].pp_of(0);
+    let mut counter = Vec::new();
+    for _ in 0..5 {
+        st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        counter.push(st.sides[0].pokemon[0].rollout.map(|(h, _)| h));
+    }
+    assert!(
+        counter.iter().any(|c| c.is_some()),
+        "RO1: the lock must arm at all — got {counter:?}"
+    );
+    assert_eq!(
+        counter.last().copied().flatten(),
+        None,
+        "RO1: the lock ENDS after the 5th execution — got {counter:?}"
+    );
+    assert_eq!(
+        st.sides[0].pokemon[0].pp_of(0),
+        pp0 - 1,
+        "RO1: PP is spent ONCE for the whole 5-execution lock"
+    );
+
+    // DEFENSE CURL doubles the rung. Same seed, same script shape, one extra setup turn — and
+    // the comparison is made on the FIRST Rollout of each run so the ladder position matches.
+    // ⚠️ Rollout is accuracy 90, so a fixed seed can MISS and silently make the comparison
+    // vacuous (the first draft asserted against a 0-damage control). Sweep seeds and use the
+    // first where BOTH arms connect; the assertion below then guards non-vacuity anyway.
+    let first_hit = |curl: bool, seed: &str| -> u16 {
+        let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        if curl {
+            st.run_full_battle(&[ScriptDecision::both(Choice::Move(2), Choice::Move(0))], &d);
+            assert!(st.sides[0].pokemon[0].defense_curl, "RO1: the curl must land");
+        } else {
+            st.run_full_battle(&[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d);
+        }
+        let before = st.sides[1].pokemon[0].hp;
+        st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        before - st.sides[1].pokemon[0].hp
+    };
+    let mut plain = 0u16;
+    let mut curled = 0u16;
+    for sd in ["3,3,3,3", "11,11,11,11", "7,7,7,7", "1,2,3,4", "31,29,23,19"] {
+        let p = first_hit(false, sd);
+        let c = first_hit(true, sd);
+        if p > 0 && c > 0 {
+            plain = p;
+            curled = c;
+            break;
+        }
+    }
+    assert!(
+        plain > 0 && curled > 0,
+        "RO1: no seed had BOTH arms connect — the comparison would be vacuous"
+    );
+    assert!(
+        curled > plain + plain / 2,
+        "RO1: Defense Curl must roughly DOUBLE the rung ({curled} vs {plain})"
+    );
+}
+
+/// RO2 — DEFENSE CURL's own effect: a never-miss, draw-free +1 Def, plus the volatile that
+/// Rollout reads. Both halves matter — the boost is what the move does, the volatile is why it
+/// had to be modeled alongside Rollout.
+#[test]
+fn defense_curl_raises_defense_and_sets_the_volatile() {
+    let d = dex();
+    let user = "Marowak||none|RockHead|defensecurl,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    assert_eq!(
+        st.sides[0].pokemon[0].boosts[2], 1,
+        "RO2: Defense Curl raises Def by one stage"
+    );
+    assert!(
+        st.sides[0].pokemon[0].defense_curl,
+        "RO2: and sets the volatile Rollout reads"
+    );
+}
+
+/// LI1 — the LOCK-IN family (OUTRAGE / PETAL DANCE / THRASH): a `random(2,4)` duration drawn
+/// ONCE on the cast, the user locked for exactly that many turns, PP spent once, then
+/// CONFUSION when the lock runs out. Ground truth `harness/probe_lockin_family.js`.
+///
+/// All three share ONE `lockedmove` condition, so the pin walks all three ids rather than
+/// trusting that a single representative generalises.
+#[test]
+fn the_lock_in_family_locks_for_its_rolled_duration_then_confuses() {
+    let d = dex();
+    for (mv, slot) in [("outrage", 0usize), ("petaldance", 0), ("thrash", 0)] {
+        let user = format!(
+            "Dragonite||none|InnerFocus|{mv},splash|Hardy|85,85,85,85,85,85|M||||"
+        );
+        let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
+        let mut b = Battle::start_with_switchins(&opts_cg(&user, foe, "3,3,3,3"), &d)
+            .expect("start");
+        let st = b.state_mut().expect("state");
+        let pp0 = st.sides[0].pokemon[0].pp_of(slot);
+
+        // Turn 1: the cast arms the lock with a rolled duration of 2 or 3.
+        st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+        let rolled = st.sides[0].pokemon[0]
+            .locked_move
+            .map(|(n, _)| n)
+            .unwrap_or_else(|| panic!("LI1 [{mv}]: the cast must arm the lock"));
+        assert!(
+            (1..=3).contains(&rolled),
+            "LI1 [{mv}]: the duration is a random(2,4) → 2 or 3 (one already ticked), got {rolled}"
+        );
+        // The user is LOCKED: a switch must be refused.
+        assert!(
+            st.sides[0].pokemon[0].move_locked(),
+            "LI1 [{mv}]: the user must be move-locked while the volatile is live"
+        );
+
+        // Run it out. The lock ends in CONFUSION — which is what separates this family from
+        // Uproar, whose lock ends cleanly.
+        for _ in 0..4 {
+            st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+            if st.sides[0].pokemon[0].locked_move.is_none() {
+                break;
+            }
+        }
+        assert!(
+            st.sides[0].pokemon[0].locked_move.is_none(),
+            "LI1 [{mv}]: the lock must run out within its rolled duration"
+        );
+        assert!(
+            st.sides[0].pokemon[0].confusion.is_some(),
+            "LI1 [{mv}]: the user is CONFUSED when the lock ends (unlike Uproar)"
+        );
+        // PP is spent ONCE for the whole lock, not once per turn.
+        assert_eq!(
+            st.sides[0].pokemon[0].pp_of(slot),
+            pp0 - 1,
+            "LI1 [{mv}]: PP is deducted once, on the CAST — every continuing turn is a lockedmove"
+        );
+    }
+}
+
+/// LI2 — SLEEP breaks the lock cleanly, with NO end-of-lock confusion.
+///
+/// The sim's `onResidual` deletes the volatile when the user is asleep, BEFORE the duration
+/// is consulted — so an asleep user never takes the confusion. A model that only counted the
+/// duration down would confuse it anyway.
+#[test]
+fn sleep_breaks_the_lock_in_without_confusing_the_user() {
+    let d = dex();
+    let user = "Dragonite||none|InnerFocus|outrage,splash|Hardy|85,85,85,85,85,85|M||||";
+    // The foe Spores the locked user, which should end the lock silently.
+    let foe = "Butterfree||none|Sturdy|spore,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(1))], &d);
+    assert!(
+        st.sides[0].pokemon[0].locked_move.is_some(),
+        "LI2: the lock must be live before the Spore, else this proves nothing"
+    );
+    st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+
+    // NON-VACUITY: the user really is asleep.
+    assert!(
+        matches!(st.sides[0].pokemon[0].status, Some(pokesim::state::Status::Sleep(_))),
+        "LI2: the Spore must land for this pin to test the sleep branch"
+    );
+    assert!(
+        st.sides[0].pokemon[0].locked_move.is_none(),
+        "LI2: sleep BREAKS the lock at the residual"
+    );
+    assert!(
+        st.sides[0].pokemon[0].confusion.is_none(),
+        "LI2: and it breaks it CLEANLY — no end-of-lock confusion"
+    );
+}
+
 /// BP1 — REVENGE doubles when the user was DAMAGED BY THE TARGET this turn.
 ///
 /// Priority −4 makes the foe's move land first, which is what makes the doubling the common
@@ -15891,22 +16161,25 @@ fn modeled_and_inert_items_still_build_fine() {
 /// fuzzed surfaces (0 pool carriers; 0 in the entire curated randbats movepool) — this is a
 /// LATENT-HAZARD guard, the moves sibling of `unmodeled_items_fail_loud_at_construction`.
 #[test]
-fn unmodeled_moves_fail_loud_at_construction() {
+fn the_construction_fail_loud_seam_is_empty_but_still_wired() {
+    // ⚠️ `UNMODELED_FAILLOUD_MOVES` is now EMPTY — every gen-3 move that used to panic at
+    // construction is MODELED. The old per-move loop would therefore assert NOTHING, which is
+    // exactly the vacuous-test shape this suite keeps catching, so it is replaced rather than
+    // left iterating an empty list.
+    //
+    // The SEAM is deliberately kept (as an empty array) for the next deferral, and this pin
+    // guards the property that actually matters now: every id the seam used to carry must
+    // still CONSTRUCT. If someone re-adds an entry, `unmodeled_moves_fail_loud_at_construction`
+    // should come back with it.
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
     for mv in [
-        "iceball",
-        "outrage", "petaldance", "rage", "rollout", "secretpower",
-        "thrash",
+        "dreameater", "falseswipe", "furycutter", "iceball", "outrage", "petaldance", "rage",
+        "revenge", "rollout", "secretpower", "smellingsalts", "thrash",
     ] {
-        let carrier = format!("Snorlax|||immunity|{mv},bodyslam|Adamant|252,252,,,,|||||");
-        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d)
-        }));
-        assert!(
-            caught.is_err(),
-            "move {mv} is UNMODELED-but-ran and must fail loud at construction, not desync silently"
-        );
+        let user = format!("Marowak|||rockhead|{mv}|Adamant|252,252,,,,|||||");
+        Battle::start_with_switchins(&opts_cg(&user, foe, "1,2,3,4"), &d)
+            .unwrap_or_else(|e| panic!("{mv} must construct now that it is modeled: {e:?}"));
     }
 }
 

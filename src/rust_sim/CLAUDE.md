@@ -8118,3 +8118,56 @@ resolved callback, but no board drives it), Fury Cutter's 160 cap being a CLAMP 
 multiplier saturating (the multiplier cap at 16 is pinned, which reaches the same place), and
 False Swipe's interaction with Focus Band / Endure ordering beyond the priority −20 placement.
 
+### ROUND 51 (FIX) — the LAST construction fail-loud falls: lock-in family, Rollout+Defense Curl, Rage, Secret Power
+
+`gen3_lockin_family_v1` + `gen3_rollout_defensecurl_v1` + `gen3_rage_secretpower_v1`. Census
+**302 → 309 MODELED / 60 fail-loud**, MISMODELED 0 — and **`UNMODELED_FAILLOUD_MOVES` is now
+EMPTY**. Every gen-3 move that used to PANIC at construction is modeled; the 60 remaining
+fail-louds are all runtime guards on status-move arms.
+
+- **OUTRAGE / PETAL DANCE / THRASH** share ONE `lockedmove` condition, so one field serves all
+  three. A `random(2,4)` duration is drawn ONCE on the cast, after the damage; the user is locked
+  that many turns; PP is spent once; and when the counter runs out at the residual the user is
+  **CONFUSED** — which is precisely what separates this family from Uproar, whose lock ends
+  cleanly. **SLEEP breaks the lock first and cleanly, with no confusion.** The sim's condition
+  carries TWO interacting counters (`duration: 2` refreshed by `onRestart`, plus a `trueDuration`
+  ticked at the residual); rather than reimplement that interaction, the net observable — "the user
+  uses the move `trueDuration` times" — was MEASURED across seeds.
+- **ROLLOUT / ICE BALL + DEFENSE CURL** had to ship together, because Rollout's callback ends
+  `if (pokemon.volatiles['defensecurl']) bp *= 2`. The ladder is **5 EXECUTIONS, not turns** —
+  30/60/120/240/480, measured as HP deltas 30/57/101/213 — with **no duration draw at all**, and
+  Defense Curl doubles every rung (measured 56/108/204). A MISS never reaches the callback, so it
+  does not advance the ladder.
+- **RAGE** is a `singlemove` volatile: while it is up, every non-Status FOE move that HITS the
+  holder raises the holder's Atk, and the **holder's own next move removes it**.
+- **SECRET POWER needed NO port code at all.** Its `onModifyMove` swaps the secondary by TERRAIN,
+  and gen-3 has no terrain — the handler's first line returns early, so the base 30% paralysis
+  secondary stands and the move is an ordinary 70-BP Normal physical hit on the existing path.
+  Probe-verified rather than assumed: "carries an `onModifyMove`" reads as MISMODELED until you
+  check what it does with no terrain.
+
+**⚠️ RAGE'S WINDOW IS WHAT MAKES IT TESTABLE, AND THE FIRST PROBE MISSED IT.** `onBeforeMove` runs
+at priority 100, so the volatile is gone before the holder acts again — the boost is observable
+ONLY when the foe strikes BETWEEN the Rage and the holder's next action. The first board had the
+holder moving first every turn and read `atk=0` throughout, which looks exactly like "Rage does
+nothing". Re-probed with the foe landing inside the window it reads `+1` per hit. **A mechanic with
+a narrow live window needs a board built around that window, or the measurement reads as absence.**
+
+**⚠️ AN EMPTY GUARD LIST MAKES ITS OWN TEST VACUOUS.** With the seam emptied,
+`unmodeled_moves_fail_loud_at_construction` became a `for` loop over zero items — passing while
+asserting nothing, the exact shape this suite keeps catching. It is REPLACED by
+`the_construction_fail_loud_seam_is_empty_but_still_wired`, which walks all twelve retired ids and
+requires each to CONSTRUCT. The seam itself is deliberately kept as an empty array for the next
+deferral.
+
+**Gates:** `cargo test --release --no-fail-fast` **703 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1061 rows**; `SCAN_UNIVERSE=1`
+**369 → 309 MODELED / 60 FAIL-LOUD / 0 MISMODELED**. Mutations: dropping the end-of-lock confusion
+fails only LI1; removing the sleep break fails only LI2; spending PP per locked turn fails only LI1.
+
+**HONEST SCOPE.** Zero pool/randbats exposure throughout; per ROUND 46 the `ourandom` fuzz will not
+sample any of them, so the pins are the gate. NOT pinned: Ice Ball's ladder specifically (it shares
+Rollout's code path and its own probe row, but the pin drives Rollout), Rollout's
+`rolloutstorage` carry-over (gen4+ only), and the Defense Curl re-use case (the condition's
+`onRestart` returns null, so a second cast re-applies the boost and leaves the volatile alone).
+

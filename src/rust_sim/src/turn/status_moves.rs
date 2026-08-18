@@ -1827,6 +1827,33 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // ---- DEFENSE CURL (`gen3_rollout_defensecurl_v1`) ------------------------
+        // Never-miss, DRAW-FREE: a declarative +1 Def plus the `defensecurl` volatile, whose
+        // only job is to DOUBLE Rollout / Ice Ball — which is why the two ship together. The
+        // condition is `noCopy` with an `onRestart` returning null, so a re-use re-applies the
+        // boost (subject to the ±6 clamp) and leaves the volatile as it was.
+        if move_id == "defensecurl" {
+            debug_assert!(never_miss, "defensecurl: expected the never-miss dex row");
+            self.sides[_side].pokemon[_slot].defense_curl = true;
+            // The +1 Def, applied exactly as the self-boost branch does (clamped, and a
+            // PRIMARY self-boost emits the line even at a 0 delta). NOT routed through the
+            // data-driven `selfBoosts` field: the extractor deliberately excludes any move
+            // that also carries a `volatileStatus`, and widening that rule would be a data
+            // change (extractor-parity + obs-golden) for one stat on one move.
+            {
+                let idx = 2usize; // Def
+                let cur = self.sides[_side].pokemon[_slot].boosts[idx] as i32;
+                let next = (cur + 1).clamp(-6, 6);
+                self.sides[_side].pokemon[_slot].boosts[idx] = next as i8;
+                if self.logging() {
+                    let delta = (next - cur) as i8;
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.boost_applied(&user, idx, 1, delta, next as i8);
+                }
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         if move_id == "safeguard" {
             debug_assert!(
                 never_miss && move_type == Some(Type::Normal),

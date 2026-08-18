@@ -441,6 +441,10 @@ const MODELED_UPROAR_MOVES = new Set(['uproar']);
 // onTryImmunity (Dream Eater needs a SLEEPING, un-subbed target) and one onDamage clamp
 // (False Swipe leaves exactly 1 HP). All DRAW-NEUTRAL.
 const MODELED_BP_CLUSTER_MOVES = new Set(['revenge', 'smellingsalts', 'furycutter', 'dreameater', 'falseswipe']);
+// The LOCK-IN family (`gen3_lockin_family_v1`) — one shared `lockedmove` condition: a
+// random(2,4) duration drawn on the CAST, then confusion when it runs out.
+const MODELED_LOCKIN_MOVES = new Set(['outrage', 'petaldance', 'thrash']);
+const MODELED_LOCKIN_MOVES_ROLLOUT = new Set(['rollout', 'iceball', 'defensecurl', 'rage', 'secretpower']);
 const YAWN_E2E_EXCLUDED = false;
 
 // TRICK (`gen3_trick_v1`) — a category-Status ITEM-SWAP move (`target: normal`, accuracy 100 → ONE
@@ -805,6 +809,8 @@ function isModeledMove(id, allowHiddenPower = false) {
       MODELED_WEATHERBALL_MOVES.has(id) ||
       MODELED_UPROAR_MOVES.has(id) ||
       MODELED_BP_CLUSTER_MOVES.has(id) ||
+      MODELED_LOCKIN_MOVES.has(id) ||
+      MODELED_LOCKIN_MOVES_ROLLOUT.has(id) ||
       // TRICK (`gen3_trick_v1`) — the item-SWAP move, category Status + bit-for-bit modeled.
       (TRICK_E2E_EXCLUDED ? false : MODELED_TRICK_MOVES.has(id)) ||
       (PHAZE_E2E_EXCLUDED ? false : MODELED_PHAZE_MOVES.has(id));
@@ -859,6 +865,9 @@ function isModeledMove(id, allowHiddenPower = false) {
   // this generic reject (the Weather Ball ordering trap again: the symptom of getting this
   // wrong is a silent false negative, not an error).
   if (MODELED_UPROAR_MOVES.has(id)) return true;
+  if (MODELED_WEATHERBALL_MOVES.has(id) || MODELED_UPROAR_MOVES.has(id)
+      || MODELED_BP_CLUSTER_MOVES.has(id) || MODELED_LOCKIN_MOVES.has(id)
+      || MODELED_LOCKIN_MOVES_ROLLOUT.has(id)) return true;
   if (m.self && m.self.volatileStatus) return false;
   if (m.self && m.self.boosts && !MODELED_SELFDROP_MOVES.has(id)) return false;
   // PARTIAL TRAP (`gen3_partial_trap_v1`) — ADMITTED HERE, before the blanket `m.volatileStatus`
@@ -883,8 +892,6 @@ function isModeledMove(id, allowHiddenPower = false) {
   // onModifyMove / onTryImmunity / self.volatileStatus). Getting this wrong is a SILENT
   // false negative — the picker simply never samples the move — which is why the admission
   // checklist now ends with `assert isModeledMove(id) === true`.
-  if (MODELED_WEATHERBALL_MOVES.has(id) || MODELED_UPROAR_MOVES.has(id)
-      || MODELED_BP_CLUSTER_MOVES.has(id)) return true;
   if (m.basePowerCallback) return false;
   if (m.beforeTurnCallback) return false;
   if (m.beforeMoveCallback) return false;
@@ -1159,9 +1166,9 @@ const REJECT_SPECIES = new Set([]);
 // (0 carriers in `data/teams/`; 0 in the ENTIRE curated gen3randombattle movepool —
 // 220 species / 393 sets, exhaustive), so populating this cannot shift the e2e golden.
 const REJECT_MOVES = new Set([
-  , 'iceball',
-  'outrage', 'petaldance', 'rage', 'rollout', 'secretpower',
-  'thrash',
+  , 
+  
+  
 ]);
 function abilityAllowed(id) {
   const a = toId(id);

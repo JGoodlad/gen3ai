@@ -498,6 +498,33 @@ pub struct MonState {
     /// each consecutive use doubles to a 160 cap. `duration: 2` means ONE non-Fury-Cutter turn
     /// lapses it (probe-confirmed: miss, other move, then back to bp 10).
     pub fury_cutter: Option<(u8, u8)>,
+    /// The shared `lockedmove` volatile for OUTRAGE / PETAL DANCE / THRASH
+    /// (`gen3_lockin_family_v1`): `Some((remaining_turns, move_index))`. All three carry the
+    /// SAME condition, so one field serves them all. The duration is a `random(2,4)` (→ 2 or
+    /// 3) drawn ONCE on the CAST turn, after the damage — measured, not derived: the sim's
+    /// condition has two interacting counters (`duration: 2` refreshed by `onRestart`, plus a
+    /// `trueDuration` ticked at the residual) whose NET observable is simply "the user uses
+    /// the move `trueDuration` times". When the lock runs out at the residual the user is
+    /// CONFUSED (its own `random(2,6)`) — unlike Uproar, which ends cleanly. Folds into
+    /// `move_locked()`. Sleep BREAKS the lock at the residual with NO confusion.
+    pub locked_move: Option<(u8, usize)>,
+    /// ROLLOUT / ICE BALL's lock (`gen3_rollout_defensecurl_v1`): `Some((hits_so_far, slot))`.
+    /// UNLIKE the outrage family there is NO duration draw — the lock is a fixed **5
+    /// EXECUTIONS**, and the base power doubles per execution (30/60/120/240/480), doubled
+    /// AGAIN while the user carries the Defense Curl volatile. Probe-measured as per-turn HP
+    /// deltas rather than derived, because a MISS does not advance the counter and a CRIT
+    /// mimics a rung.
+    pub rollout: Option<(u8, usize)>,
+    /// The DEFENSE CURL volatile (`gen3_rollout_defensecurl_v1`). Its own effect is the
+    /// declarative +1 Def, but the volatile exists to double Rollout / Ice Ball — which is why
+    /// the two had to be modeled in the same pass. Cleared on switch-out and faint.
+    pub defense_curl: bool,
+    /// RAGE's `singlemove` volatile (`gen3_rage_secretpower_v1`). While it is up, every
+    /// non-Status FOE move that HITS the holder raises the holder's Atk by one stage. It is
+    /// removed by the HOLDER's own next move (`onBeforeMove` at priority 100), so the window
+    /// is "from casting Rage until I act again" — which is why the boost is only observable
+    /// when the foe strikes on the SAME turn (or is faster on the next one). Probe-measured.
+    pub rage: bool,
     /// `pokemon.activeTurns` — the number of turns this mon has been active (`pokemon.ts:243`;
     /// set to 0 in `switchIn` [battle-actions.ts:137], `++`'d at `endTurn` [battle.ts:1762],
     /// AFTER the residual). Read by **Speed Boost** (`gen3_ability_batch1_v1`): its
@@ -1230,14 +1257,7 @@ impl MonState {
         // The seam's negative controls: `a_ditto_without_transform_builds_fine` /
         // `transform_carriers_build_now_that_transform_is_modeled` stop an over-broad guard
         // from silently returning.
-        const UNMODELED_FAILLOUD_MOVES: [&str; 7] = [
-            "iceball",
-            "outrage",
-            "petaldance",
-            "rage",
-            "rollout",
-            "secretpower",
-            "thrash",
+        const UNMODELED_FAILLOUD_MOVES: [&str; 0] = [
         ];
         if let Some(bad) = set
             .moves
@@ -1295,6 +1315,10 @@ impl MonState {
             uproar: None,
             damaged_by_foe_this_turn: false,
             fury_cutter: None,
+            locked_move: None,
+            rollout: None,
+            defense_curl: false,
+            rage: false,
             position,
             uid: position, // the construction-time index is the stable identity
             // `pokemon.speed` is initialized to the raw `storedStats.spe` (the
@@ -1405,6 +1429,11 @@ impl MonState {
             // UPROAR locks the same way (`gen3_uproar_v1`): the request offers ONLY Uproar and
             // is `trapped:true`, so folding it here gives the whole FIRM shape for free.
             || self.uproar.is_some()
+            // The OUTRAGE / PETAL DANCE / THRASH lock (`gen3_lockin_family_v1`) locks the
+            // same way — the request offers only the locked move and is `trapped:true`.
+            || self.locked_move.is_some()
+            // ROLLOUT / ICE BALL lock for 5 executions (`gen3_rollout_defensecurl_v1`).
+            || self.rollout.is_some()
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an

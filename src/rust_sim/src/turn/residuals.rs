@@ -172,6 +172,19 @@ impl crate::state::BattleState {
             // intra-mon tie group (a mon carrying Fury Cutter plus another duration volatile
             // adds a tied handler, and a Fury-Cutter MIRROR at equal speed ties across mons).
             // Refreshed to 2 on every consecutive use, so ONE skipped turn runs it to 0.
+            // The OUTRAGE / PETAL DANCE / THRASH lock (`gen3_lockin_family_v1`) — a
+            // NO_ORDER/subOrder-2 duration handler like the rest of the volatile group.
+            if self.sides[side].pokemon[self.sides[side].active].locked_move.is_some() {
+                let sl = self.sides[side].active;
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed: self.sides[side].pokemon[sl].cached_speed as f64,
+                    sub_order: 2,
+                    effect_order: 0,
+                    handler: ResidualAction::LockedMoveDuration { side, slot: sl },
+                });
+            }
             if self.sides[side].pokemon[self.sides[side].active].fury_cutter.is_some() {
                 let sl = self.sides[side].active;
                 handlers.push(EventHandler {
@@ -998,6 +1011,33 @@ impl crate::state::BattleState {
                         }
                         continue; // duration-END → skip faintMessages (D4 order fix)
                     }
+                }
+                // The LOCK-IN tick (`gen3_lockin_family_v1`). On the tick that runs the
+                // counter out the user is CONFUSED — its own `random(2,6)`, routed through
+                // `add_confusion` so Own Tempo / already-confused / Safeguard all gate it
+                // exactly as they do for any other confusion source. SLEEP breaks the lock
+                // FIRST and cleanly: the sim's `onResidual` deletes the volatile before the
+                // duration is consulted, so an asleep user is never confused by it.
+                ResidualAction::LockedMoveDuration { side, slot } => {
+                    let Some((turns, k)) = self.sides[side].pokemon[slot].locked_move else {
+                        continue;
+                    };
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    if matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))) {
+                        self.sides[side].pokemon[slot].locked_move = None;
+                        continue;
+                    }
+                    if turns <= 1 {
+                        self.sides[side].pokemon[slot].locked_move = None;
+                        // The end-of-lock confusion (announce = false: this is not a status
+                        // MOVE's primary effect, so a Safeguard block here is silent).
+                        self.add_confusion(side, slot, false, dex);
+                        continue; // duration-END → skip faintMessages
+                    }
+                    self.sides[side].pokemon[slot].locked_move = Some((turns - 1, k));
+                    continue;
                 }
                 // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
                 // No emission (the sim's condition has no onEnd); the duration-END `continue`
