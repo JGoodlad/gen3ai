@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 49,
-   "moves": 270,
-   "rows": 979
+   "moves": 271,
+   "rows": 982
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -3859,6 +3859,24 @@
    "fp": "val:[2,5]",
    "anchor": "turn.rs::run_multihit",
    "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
+  },
+  "move:doubleteam:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"evasion\":1}",
+   "anchor": "turn.rs::self_boost_spec",
+   "reason": "the pure self-boost setup arm (gen3_moves.json selfBoosts, GIGO-proof lockstep)"
+  },
+  "move:doubleteam:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:doubleteam:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
   },
   "move:dragonbreath:secondaries": {
    "disposition": "implemented",

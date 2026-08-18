@@ -1023,6 +1023,20 @@ def build_self_boost_tables(n_moves: int) -> Dict[str, torch.Tensor]:
         if md is None or not md.self_boosts or not (0 <= md.num < n_moves):
             continue
         for stat, stages in md.self_boosts:
+            # SKIP any stat outside the five BATTLE stats this table has columns for.
+            # `accuracy`/`evasion` are real gen-3 self-boost stats (Double Team,
+            # `gen3_double_team_v1`) but the DamageOperator prices only the five, so an
+            # evasion row has "no priced consequence" — exactly the degradation this
+            # docstring already promises for Defense Curl / Minimize. Skipping keeps the
+            # tensor BIT-IDENTICAL to before the data gained those rows.
+            # ⚠️ This used to be a bare `.index(stat)`, which RAISED `ValueError: tuple.index(x):
+            # x not in tuple` the moment the extractor admitted `evasion` — 321 test failures from
+            # a one-row data change. The extractor's `_self_boosts` guard was load-bearing for TWO
+            # consumers, not one: the rust engine (whose stated reason had gone stale) AND this
+            # table (whose reason is LIVE). Neither the extractor-parity nor the obs-golden gate
+            # covers it, because neither builds the damage tables.
+            if stat not in _SELF_BOOST_STAT_ORDER:
+                continue
             t[md.num, _SELF_BOOST_STAT_ORDER.index(stat)] = float(stages)
     sd = gen3_data.moves.get("swordsdance")
     if sd is None or float(t[sd.num, 0]) != 2.0:

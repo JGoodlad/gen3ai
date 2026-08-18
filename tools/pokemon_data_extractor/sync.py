@@ -537,6 +537,23 @@ _SELF_BOOST_STATS = frozenset({"atk", "def", "spa", "spd", "spe"})
 # (acc -1 -> randomChance(75,100), -2 -> 60, -3 -> 50 …).
 _STAT_DROP_STATS = _SELF_BOOST_STATS | frozenset({"accuracy", "evasion"})
 
+# The SELF-BOOST stats. `_SELF_BOOST_STATS` plus `evasion`, for `_self_boosts` ONLY
+# (`gen3_double_team_v1`). A DEDICATED set rather than widening `_SELF_BOOST_STATS` in place,
+# because `_self_drops` also reads that one and widening it there would be silent scope creep —
+# vacuous today (no gen-3 damaging move carries accuracy/evasion in `self.boosts`), a trap later.
+# `accuracy` is deliberately ABSENT: no gen-3 move raises its own accuracy, so admitting it would
+# be dead surface. PROBE-SETTLED (`harness/probe_doubleteam_minimize.js`): Double Team is a PURE
+# declarative self-boost — never-miss, draw-free, no volatileStatus — structurally identical to
+# Swords Dance with only the stat differing, and `speed.rs::effective_accuracy` already folds
+# boosts[6] through the boostTable in the DIVIDE direction (measured +1 -> 75, +3 -> 50, +6 ->
+# 33.333333333333336, matching the attacker-side table exactly).
+# ⚠️ MINIMIZE stays OUT, and NOT merely by the `volatileStatus` gate below: its gen-3 volatile is
+# LIVE — `onSourceModifyDamage` doubles any move carrying `flags.minimize` (gen-3 carriers:
+# stomp / astonish / extrasensory / needlearm ONLY; bodyslam gained the flag in gen 9). That is
+# real engine work at the LATE ModifyDamage fold, and the ×2 SURVIVES Haze while the stage does
+# not — so it must not be keyed on `boosts[6] > 0`.
+_SELF_BOOST_RAISE_STATS = _SELF_BOOST_STATS | frozenset({"evasion"})
+
 
 def _self_boosts(entry):
     """The STRUCTURED PRIMARY self-boost spec for a PURE setup move (gen3_setup_moves_v1):
@@ -567,7 +584,7 @@ def _self_boosts(entry):
         return None
     if any(v <= 0 for v in boosts.values()):
         return None
-    if any(stat not in _SELF_BOOST_STATS for stat in boosts):
+    if any(stat not in _SELF_BOOST_RAISE_STATS for stat in boosts):
         return None
     # Any other declarative effect disqualifies the pure-setup classification.
     if entry.get("volatileStatus") or entry.get("self") or entry.get("secondary"):

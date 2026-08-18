@@ -2079,7 +2079,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
-        "isSnatchable": true
+        "isSnatchable": true,
+        "selfBoosts": {
+            "evasion": 1
+        }
     },
     "dragonbreath": {
         "name": "Dragon Breath",

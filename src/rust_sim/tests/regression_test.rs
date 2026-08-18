@@ -13524,6 +13524,39 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// DT1 — DOUBLE TEAM (`gen3_double_team_v1`). The SELF-evasion sibling of SA1's foe accuracy-drop,
+/// and the SECOND stale-justification unlock: `_self_boosts` excluded accuracy/evasion for the same
+/// reason `_stat_drop_boosts` did, and that reason was equally false. Double Team is a PURE
+/// declarative self-boost — never-miss, DRAW-FREE, no volatileStatus — structurally Swords Dance
+/// with a different stat, so it needed no engine work at all.
+///
+/// Ground truth `harness/probe_doubleteam_minimize.js`. That probe also settled why MINIMIZE stays
+/// fail-loud: its gen-3 volatile is LIVE (it doubles any move carrying `flags.minimize` — in gen 3
+/// exactly stomp/astonish/extrasensory/needlearm), which is real engine work at the late
+/// ModifyDamage fold, and the x2 SURVIVES Haze while the evasion stage does not.
+#[test]
+fn double_team_raises_evasion_and_folds_into_the_accuracy_roll() {
+    let d = dex();
+    let p1 = "Ditto||Leftovers|Limber|doubleteam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Snorlax||Leftovers|Immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle =
+        Battle::start_with_switchins(&opts_cg(p1, p2, "44446,15321,46848,55374"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|-boost|p1a: Ditto|evasion|1"),
+        "DT1: the cast raises evasion by one stage. got:\n{}",
+        raw.join("\n")
+    );
+    // boosts[6] is the EVASION stage — the index the old data guard was afraid of, and the one
+    // `speed.rs::effective_accuracy` already folds through the boostTable in the DIVIDE direction.
+    assert_eq!(st.sides[0].pokemon[0].boosts[6], 1, "DT1: evasion lands in boosts[6]");
+}
+
 /// SA1 — SAND ATTACK (`gen3_sand_attack_v1`). The accuracy/evasion STAT-DROP unlock. This was
 /// NOT an engine gap: `speed.rs::effective_accuracy` (`gen3_accuracy_pipeline_v1`) has folded
 /// boosts[5]/boosts[6] through the gen-3 boostTable for a long time. It was a DATA gap — the

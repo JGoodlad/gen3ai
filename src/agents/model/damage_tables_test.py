@@ -10,7 +10,8 @@ import pytest
 import torch
 
 from agents import gen3_data
-from agents.model.damage_tables import (build_move_prior_logits, HIDDEN_POWER_NUM, _PRIOR_FLOOR,
+from agents.model.damage_tables import (build_move_prior_logits, build_self_boost_tables,
+                                        HIDDEN_POWER_NUM, _PRIOR_FLOOR,
                                         _ILLEGAL_PROB, _MIN_PRIOR_FLOOR)
 
 _N_SPECIES = 600
@@ -249,3 +250,41 @@ def test_move_prior_does_not_double_count_formes():
     snum, mnum = _num("castform", "raindance")
     want = gen3_data.priors.moves("castform")["raindance"]
     assert torch.sigmoid(logits[snum, mnum]).item() == pytest.approx(want, abs=1e-4)
+
+
+def test_move_self_boosts_ignores_non_battle_stats_instead_of_raising() -> None:
+    """A gen-3 self-boost stat OUTSIDE the five battle stats must be SKIPPED, not fatal.
+
+    REGRESSION (2026-08-18, `gen3_double_team_v1`). `MOVE_SELF_BOOSTS` is `[n_moves, 5]` over
+    (atk, def, spa, spd, spe) and indexed with a bare `_SELF_BOOST_STAT_ORDER.index(stat)`. The
+    moment the extractor admitted Double Team's `selfBoosts: {evasion: 1}`, that raised
+    `ValueError: tuple.index(x): x not in tuple` at MODEL-INIT — **321 test failures from a
+    one-row data change**.
+
+    The durable lesson is about SCOPE, not about evasion: the extractor's `_self_boosts` guard was
+    load-bearing for TWO consumers, and only one of them was the reason written down. The rust
+    engine's stated reason ("the accuracy roll ignores the evasion table") had gone stale and was
+    safe to relax; THIS table's reason is live. Neither `extractor_parity_test` nor the obs golden
+    covers it, because neither builds the damage tables — so relaxing a data guard needs the FULL
+    suite, not the two gates that look topical.
+
+    Evasion legitimately has no priced consequence in the DamageOperator, so skipping it leaves the
+    tensor bit-identical to before the data changed — which is what this asserts.
+    """
+    n_moves = 400
+    t = build_self_boost_tables(n_moves)["MOVE_SELF_BOOSTS"]
+
+    # Double Team carries `selfBoosts: {evasion: 1}` in the data; its row must be ALL ZERO here
+    # (no column exists for evasion) rather than raising or landing in a battle-stat column.
+    dt = gen3_data.moves.get("doubleteam")
+    assert dt is not None and dt.self_boosts, (
+        "doubleteam must carry selfBoosts in the data — if this fails the extractor guard "
+        "regressed, not the table"
+    )
+    assert float(t[dt.num].abs().sum()) == 0.0, (
+        f"Double Team must contribute NOTHING to MOVE_SELF_BOOSTS, got {t[dt.num].tolist()}"
+    )
+
+    # The canonical battle-stat carrier is unaffected — the skip must not swallow real rows.
+    sd = gen3_data.moves.get("swordsdance")
+    assert sd is not None and float(t[sd.num, 0]) == 2.0, "Swords Dance must still price +2 atk"

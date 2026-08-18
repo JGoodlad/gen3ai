@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-49 conditions (engine state space + attached), 270 modeled moves
-→ **979 (effect, hook) rows**.
+49 conditions (engine state space + attached), 271 modeled moves
+→ **982 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 926 |
+| implemented | 929 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -575,7 +575,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (435 rows: implemented=431, noop_justified=2, unreachable_justified=2)
+## move (438 rows: implemented=434, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -684,6 +684,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | doubleedge | recoil | implemented | `turn.rs::apply_recoil` |
 | doublekick | multihit | implemented | `turn.rs::run_multihit` |
 | doubleslap | multihit | implemented | `turn.rs::run_multihit` |
+| doubleteam | boosts | implemented | `turn.rs::self_boost_spec` |
+| doubleteam | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| doubleteam | neverMiss | implemented | `turn.rs::never_miss` |
 | dragonbreath | secondaries | implemented | `turn.rs::apply_secondaries` |
 | dragondance | boosts | implemented | `turn.rs::self_boost_spec` |
 | dragondance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
