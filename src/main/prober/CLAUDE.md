@@ -1233,7 +1233,7 @@ anonymous; `falsify_scan` / `calibration` need the shared password. `--impl {nod
 offline replay/search driver those two spawn — a **startup** flag, matching `ProbeSession`'s
 session-wide treatment of `impl` rather than a per-request knob.
 
-**Local only — not on g5d.io** (no unit, no tunnel entry). From elsewhere:
+**Deployed at prober.g5d.io** (reads anonymous, probes password-gated/fail-closed; verified serving 2026-08-19). Local remains the debugging default — from elsewhere:
 `ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`.
 
 Full detail — the one rule (every number comes back from a session method verbatim), the job
