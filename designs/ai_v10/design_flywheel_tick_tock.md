@@ -81,8 +81,23 @@ marginal slices still pay as coverage grows.
 - **Per-fold promotion gate**: dense-ladder non-inferiority vs the previous base at matched
   snapshot count; a failed fold never becomes the base; every base snapshot retained.
 - **Per-teacher attribution** at each fold (piloting delta on its slice); the K dial moves on it.
-- **Era success metrics, pre-registered before revolution 1**: anchored-ELO trajectory across
-  bases; per-slice piloting; T1.2 compounding (do later revolutions get cheaper?).
+- **SUCCESS — the owner's definition (2026-08-18): TWO distill iterations with ELO
+  improvement.** "I want to show the flywheel is working and the generalist is getting better."
+  Measured form, fixed now so noise can't renegotiate it: each revolution's fold must be
+  point-POSITIVE on the dense ladder vs the previous base (matched snapshot count, paired
+  refit), and the TWO-revolution CUMULATIVE delta must be SEPARABLE (CI excluding 0). Per-node
+  SE ≈ 10 makes single-revolution separability optional; the cumulative bar is the claim. The
+  D1 precedent says the bar is realistic: one fold measured +69 with disjoint CIs.
+- **The HEADROOM instrument (the owner's framing)**: exploiters run ~100% vs bots where the
+  generalist runs ~90% — bots are not the goal, but the gap PROVES meaningful headroom exists.
+  Formalized per fold as **headroom capture**: on each slice, headroom = teacher_wr −
+  generalist_wr (equal-pilot, same opponents); after the fold, report the fraction captured
+  (post-fold generalist wr − pre-fold, over the headroom). D1's precedent: 0.438 → 0.710
+  against a teacher's 0.72 ≈ 93% captured. A fold that passes promotion but captures little
+  headroom is a WARNING even when ELO drifts up — the flywheel's mechanism is headroom
+  conversion, and this metric watches the mechanism, not just the outcome.
+- Supporting metrics: anchored-ELO trajectory across bases; per-slice piloting; T1.2
+  compounding (do later revolutions get cheaper?).
 - **Kill**: two consecutive revolutions with flat ELO AND flat piloting ⇒ the flywheel is not
   the lever; the era ends and the ledger says so.
 
