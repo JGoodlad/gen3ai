@@ -74,7 +74,7 @@
       {% endfor %}
       {% if d.opp_intent.top and d.opp_intent.top.is_switch and d.opp_intent.beta %}
       {# β only earns space up here when α actually expects the switch. #}
-      <span class="opt inmon">→ in: {{ d.opp_intent.beta[0].species or "slot " ~ d.opp_intent.beta[0].slot }}
+      <span class="opt inmon">→ in: {{ "slot " ~ d.opp_intent.beta[0].slot }} · {{ d.opp_intent.beta[0].species or "?" }}
         <span class="p">{{ m.pct(d.opp_intent.beta[0].p, 0) }}</span></span>
       {% endif %}
     </p>
@@ -216,7 +216,7 @@
             {% for c in d.opp_intent.beta %}
             <li>
               <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
-              <span class="lbl">{{ c.species or "slot " ~ c.slot }}</span>
+              <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}</span>
               <span class="p">{{ m.pct(c.p, 1) }}</span>
             </li>
             {% endfor %}

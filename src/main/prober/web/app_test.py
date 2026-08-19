@@ -999,7 +999,7 @@ def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
     # fixture's second decision — and the slot is named by the species posterior, not left an index.
     sw = raw["turns"][1]["decisions"][0]["opp_intent"]
     assert sw["top"]["is_switch"] is True
-    assert "→ in: blissey" in html
+    assert "→ in: slot" in html and "· blissey" in html  # slot index now shown (three hidden slots can share a top-1 belief)
     # The full distribution + β live in the drop-down, next to our own policy distribution.
     assert "opponent intent — what it expected THEM to do" in html
     assert "if they switch, who comes in" in html

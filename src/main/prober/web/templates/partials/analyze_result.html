@@ -178,7 +178,7 @@
       {% for c in a.opp_intent.beta %}
       <li>
         <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
-        <span class="lbl">{{ c.species or "slot " ~ c.slot }}</span>
+        <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}</span>
         <span class="p">{{ m.pct(c.p, 1) }}</span>
       </li>
       {% endfor %}
