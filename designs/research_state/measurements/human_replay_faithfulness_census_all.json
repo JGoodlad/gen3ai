@@ -1,0 +1,254 @@
+{
+  "provenance": {
+    "replay_dir": "/home/goodlad/dev/gen3ai/replays/showdown/gen3ou",
+    "files_available": 263159,
+    "requested_n": 1200,
+    "files_contributing": 1200,
+    "min_rating": 0,
+    "seed": 1
+  },
+  "counts": {
+    "files_seen": 1285,
+    "files_no_rating": 31,
+    "files_no_win": 0,
+    "sides_attempted": 2508,
+    "sides_exception": 101,
+    "sides_zero_decisions": 22,
+    "decisions": 57318,
+    "excl_switch_unrevealed": 0,
+    "excl_move_unmapped": 280,
+    "excl_empty_mask": 0
+  },
+  "rating": {
+    "n": 2407,
+    "mean": 1281.22,
+    "pctiles": {
+      "p10": 1062,
+      "p50": 1275,
+      "p90": 1509,
+      "max": 1808
+    },
+    "buckets": {
+      "1400-1499": [
+        336,
+        13.96
+      ],
+      "1500-1599": [
+        195,
+        8.1
+      ],
+      "1600-1699": [
+        78,
+        3.24
+      ],
+      "1700+": [
+        7,
+        0.29
+      ],
+      "<1400": [
+        1791,
+        74.41
+      ]
+    }
+  },
+  "decisions_per_side": {
+    "mean": 23.81,
+    "pctiles": {
+      "p10": 7,
+      "p50": 22,
+      "p90": 40,
+      "max": 281
+    }
+  },
+  "turns_per_game": {
+    "mean": 25.35,
+    "pctiles": {
+      "p10": 8,
+      "p50": 24,
+      "p90": 42,
+      "max": 331
+    }
+  },
+  "own_team_mons_revealed": {
+    "1": [
+      66,
+      2.74
+    ],
+    "2": [
+      122,
+      5.07
+    ],
+    "3": [
+      174,
+      7.23
+    ],
+    "4": [
+      246,
+      10.22
+    ],
+    "5": [
+      407,
+      16.91
+    ],
+    "6": [
+      1392,
+      57.83
+    ]
+  },
+  "own_moves_revealed_per_mon": {
+    "0": [
+      1376,
+      11.28
+    ],
+    "1": [
+      3839,
+      31.46
+    ],
+    "2": [
+      3608,
+      29.57
+    ],
+    "3": [
+      2374,
+      19.45
+    ],
+    "4": [
+      1006,
+      8.24
+    ]
+  },
+  "own_mon_item_known_pct": 4.28,
+  "own_mon_ability_known_pct": 7.31,
+  "legal_moves_in_synth_mask": {
+    "0": [
+      1172,
+      2.04
+    ],
+    "1": [
+      10069,
+      17.57
+    ],
+    "2": [
+      16978,
+      29.62
+    ],
+    "3": [
+      16991,
+      29.64
+    ],
+    "4": [
+      12108,
+      21.12
+    ]
+  },
+  "action_type": {
+    "move": [
+      41368,
+      72.17
+    ],
+    "switch": [
+      15950,
+      27.83
+    ]
+  },
+  "faithfulness_tier": {
+    "A_full": [
+      9303,
+      16.23
+    ],
+    "B_near": [
+      16967,
+      29.6
+    ],
+    "C_thin": [
+      17984,
+      31.38
+    ],
+    "D_hopeless": [
+      13064,
+      22.79
+    ]
+  },
+  "faithfulness_tier_by_outcome": {
+    "win": {
+      "A_full": [
+        4373,
+        15.13
+      ],
+      "B_near": [
+        8926,
+        30.89
+      ],
+      "C_thin": [
+        9007,
+        31.17
+      ],
+      "D_hopeless": [
+        6594,
+        22.82
+      ]
+    },
+    "loss": {
+      "A_full": [
+        4861,
+        17.29
+      ],
+      "B_near": [
+        7958,
+        28.31
+      ],
+      "C_thin": [
+        8842,
+        31.45
+      ],
+      "D_hopeless": [
+        6453,
+        22.95
+      ]
+    },
+    "unknown": {
+      "A_full": [
+        69,
+        22.7
+      ],
+      "B_near": [
+        83,
+        27.3
+      ],
+      "C_thin": [
+        135,
+        44.41
+      ],
+      "D_hopeless": [
+        17,
+        5.59
+      ]
+    }
+  },
+  "mean_mons_revealed_by_outcome": {
+    "win": 4.84,
+    "loss": 5.29,
+    "unknown": 6.0
+  },
+  "opponent_action_label_alignment": {
+    "both_sides_games": 1185,
+    "union_turns": 29826,
+    "paired_turns": 27059,
+    "one_side_games": 15,
+    "paired_pct_of_union": 90.72
+  },
+  "mask_hazard_games_pct": {
+    "cant": 62.58,
+    "choice_band": 1.42,
+    "encore": 0.67,
+    "partial_trap": 0.25,
+    "struggle": 0.42,
+    "taunt": 11.0,
+    "trap_ability": 0.58,
+    "trapper_species": 51.75
+  },
+  "exceptions": {
+    "UnknownVolatileError": 95,
+    "ValueError": 6
+  }
+}

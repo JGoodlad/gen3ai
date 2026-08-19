@@ -1,0 +1,25 @@
+{
+  "provenance": {
+    "generation": "n/a \u2014 model-free corpus census",
+    "run": "n/a",
+    "checkpoint": "n/a",
+    "step": null,
+    "date": "2026-08-18",
+    "producer": "shuf -n 20000 over the corpus | grep '^|player|p' | awk (see designs/ai_v11/design_human_replay_objectives.md \u00a75.7)",
+    "git_hash": "66ccf212e328a0c26bda426491e469093010985d",
+    "corpus": "replays/showdown/gen3ou (LOCAL-ONLY, gitignored) \u2014 263,159 .log files, 2.8 GB, 72 date folders 2026-05-18..2026-08-02",
+    "n_files": 20000,
+    "n_rated_sides": 39242,
+    "n_unrated_sides": 758,
+    "note": "Ladder-rating distribution of the corpus, side-level, from the |player| line's rating field. Feeds the \u00a75.7 rating-floor decision table (owner decision D3)."
+  },
+  "mean_rating": 1273.6,
+  "share_of_rated_sides_at_or_above": {
+    "1200": 0.609,
+    "1400": 0.251,
+    "1500": 0.108,
+    "1600": 0.033,
+    "1700": 0.005,
+    "1800": 0.0002
+  }
+}
