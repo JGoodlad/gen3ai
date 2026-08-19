@@ -289,15 +289,30 @@ Three things about it are deliberate:
   (every trace before v67) — no line, never an empty one and never a fabricated 0%.
 - **It says whether the model SAW THE LOSS COMING, twice.** Above the replay, the battle-level
   verdict — a `blind loss` / `knew @ turn N` badge and `engine.awareness_text`'s sentence,
-  printed, never re-worded here. Then under each decision's critic row, a **P(loss) strip** with
-  the 50% bar drawn on it, tinted and railed from the sustained onset on, so scrolling the replay
-  SHOWS where the read turned rather than asking the reader to trust the badge. The strip is a bar
-  and not a number because the fact is a CROSSING, which a column of percentages hides. Beside it
-  sits **`tail`** — the catastrophic-band mass — because tail mass piling up under a still-positive
-  mean is the stall signature, and it is precisely what the scalar V on the same line cannot show.
-  Both are suppressed below a **0.5% legibility floor**, the same one `awareness_text` applies:
-  "tail 0%" reads as a finding when it is rounding noise. Absent entirely on a run with no dist
-  head — never a 0%, which would be a claim the trace cannot support.
+  printed, never re-worded here. Then under each decision's critic row, a **`P(win) · dist` strip**
+  with the 50% bar drawn on it, tinted and railed from the sustained onset on, so scrolling the
+  replay SHOWS where the read turned rather than asking the reader to trust the badge. The strip is
+  a bar and not a number because the fact is a CROSSING, which a column of percentages hides.
+  Beside it sits **`tail`** — the catastrophic-band mass — because tail mass piling up under a
+  still-positive mean is the stall signature, and it is precisely what the scalar V on the same
+  line cannot show. Both are suppressed below a **0.5% legibility floor**, the same one
+  `awareness_text` applies: "tail 0%" reads as a finding when it is rounding noise. Absent entirely
+  on a run with no dist head — never a 0%, which would be a claim the trace cannot support.
+
+  **It reads as P(WIN), not P(loss) — ONE direction per card**, matching the win-prob head on the
+  line above, so higher always means better and the fill shrinks as the position sours (a SHORT bar
+  is the dangerous one, the same association `.hpfill` already builds on this page). Two different
+  quantities are therefore both called P(win) here, and they must stay distinguishable: the head is
+  a **calibrated classifier**, the strip is the **return distribution's own mass above zero**. The
+  strip carries `· dist` for exactly that reason. `p_win` is computed in `awareness.py` and shipped
+  on the payload rather than flipped in the template — `1 - x` in a view is a view deriving a
+  number. Every THRESHOLD stays defined on `p_loss > 0.5`: this is a presentation of one crossing,
+  not a second definition of it.
+- **Every number in the critic row explains itself, in two places.** Each carries a `title` that
+  says what it IS and how to read it (V's zero is not "even"; ΔP is percentage POINTS, not a "%";
+  TD δ is the critic's surprise), and because **a tooltip does not exist on a touch device** — and
+  this is the one view built to be read on a phone — the same explanations are collected once in a
+  collapsed **legend** at the top of the page rather than repeated under fifty turn cards.
 - **P(win) sits beside V, not instead of it** (`win_prob`/`delta_win_prob`, in percentage POINTS
   via the `signed_pp` macro — a difference of probabilities is not a "%"). V is a shaped,
   discounted return whose zero is not "even" (a measured self-mirror 50/50 reads about −6.5), so
@@ -335,7 +350,7 @@ with no distributional head, which is most of them.
 
 | where | what it adds |
 |---|---|
-| `/battle` | the battle verdict above the replay + a per-decision **P(loss) strip** (see above) |
+| `/battle` | the battle verdict above the replay + a per-decision **`P(win) · dist` strip** (see above) |
 | `/scan` | `knew @` and `lead` columns beside each crater — `BLIND` badged when it never saw it coming |
 | `/triage` | a `blind` / `median lead` column per category, **beside** the lever, never folded into it |
 | `/` | the run-level panel: the aggregate against the published **gen-10 baseline** |
@@ -363,6 +378,24 @@ losses**): `awareness_scan()` **5.4 s** cold, against `scan()`'s 2.0 s warm — 
 both taken on a box carrying a live trainer, so treat them as upper bounds.
 `render_integration_test.py` requires a completed swap there — a route returning 200 to a test
 client would not catch the panel spinning forever.
+
+### Every hand-off points HERE, not at a retired terminal
+
+`/analyze` is a web view. It loads the checkpoint and renders faithfulness, beliefs, threat
+tables, intervention and saliency in the browser — but until 2026-08-18 the replay's drop-down
+footer, its per-decision button, the page lede and the `scan` table all told the reader to go and
+run a CLI command *"or the TUI"*, a surface **retired on 2026-08-13**. The feature was built,
+shipped and reachable, and the copy around it said it lived somewhere that no longer existed.
+
+Both the replay and every `scan` row now LINK straight to `/analyze?run=…&battle=…&inv=N`; the
+CLI equivalent stays offered beside it, because that is a real second surface. Pinned by
+`test_every_hand_off_goes_to_the_web_view_not_a_retired_terminal`, which also asserts the string
+"the TUI" appears in neither view — the cheapest possible guard against the same copy drifting
+back.
+
+**The lesson is about docs, not code:** a retirement has to sweep the *user-facing copy*, not just
+the module. Deleting `app.py` left ten pointers to it in templates, and every one of them read as
+an instruction.
 
 ### `/analyze` — the one view that loads a checkpoint
 

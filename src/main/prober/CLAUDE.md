@@ -592,8 +592,11 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `td_residual` · `reward_total` + components · `events` · `flags`) — now with the two readings the
   scalar V cannot supply: the win-prob head's calibrated **`win_prob`/`delta_win_prob`** (V is a
   shaped, discounted return whose zero is NOT "even", so only this one reads as odds) and the
-  distributional head's **`p_loss`/`p_tail`/`knew`** (the awareness fold, joined by decision index;
-  `knew` is true from the sustained onset onward). All `None`/`False` on a run without those heads.
+  distributional head's **`p_loss`/`p_win`/`p_tail`/`knew`** (the awareness fold, joined by decision
+  index; `knew` is true from the sustained onset onward). `p_win` is `1 - p_loss` carried on the
+  payload rather than left to each surface to flip — a view computing `1 - x` is a view deriving a
+  number — and it is what `/battle` renders, so one card reads in ONE direction. Every threshold
+  stays defined on `p_loss`. All `None`/`False` on a run without those heads.
   Plus the per-decision DETAIL a
   deeper read wants — the full recorded **`actions`** distribution (`label`/`prob`/`valid`/`chosen`,
   passed through in the recorder's action-index order, NEVER re-sorted — see the move-label gotcha

@@ -977,8 +977,11 @@ def test_the_turn_dropdown_carries_the_model_free_detail(client):
     assert "class=\"dist\"" in html, "no action distribution"
     assert "raw Showdown protocol" not in html, (
         "the fixture has no *_replay.html sibling, so the protocol panel must not claim one")
-    # And it says where the model-dependent analysis actually lives, rather than just omitting it.
-    assert "need the" in html and "main.prober.query analyze" in html
+    # And it says where the model-dependent analysis actually lives — as a LINK, because /analyze
+    # is a web view. It used to point at the Textual TUI, which was retired 2026-08-13.
+    assert "/analyze?run=" in html, "the drop-down still dead-ends instead of linking to /analyze"
+    assert "main.prober.query analyze" in html, "the CLI equivalent should still be offered"
+    assert "the TUI" not in html, "the replay still refers readers to a surface that no longer exists"
 
 
 def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
@@ -1051,20 +1054,31 @@ def test_every_decision_carries_the_distributions_own_read_under_the_critic_row(
     raw = ProbeSession(run).battle_turns(
         [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
     rows = [d for t in raw["turns"] for d in t["decisions"]]
-    assert 'class="ploss' in html
-    assert html.count('class="ploss') == len(rows), "a decision is missing its P(loss) strip"
-    assert "ploss knew" in html, "the onset marker never rendered"
-    assert html.count("ploss knew") == sum(1 for d in rows if d["knew"])
+    assert 'class="pwin' in html
+    assert html.count('class="pwin') == len(rows), "a decision is missing its P(win) strip"
+    assert "pwin knew" in html, "the onset marker never rendered"
+    assert html.count("pwin knew") == sum(1 for d in rows if d["knew"])
+    # Rendered as P(win) — one direction per card — and every value is the session's own p_win.
+    for d in rows:
+        assert f'aria-label="P(win) {d["p_win"] * 100:.0f}%"' in html
 
 
 def test_the_replay_shows_the_calibrated_win_prob_beside_v(client, run):
     """P(win) BESIDE V, not instead of it: V is a shaped, discounted return whose zero is not
     'even', so only the calibrated number reads as odds."""
     html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
-    assert "P(win)" in html and "ΔP" in html and "pp</span>" in html
-    # …and absent entirely on a trace with no win-prob head, which is the ordinary case.
+    assert "ΔP" in html and "pp</span>" in html
+    # TWO different quantities are both called P(win) on this card — the calibrated HEAD and the
+    # distributional strip — so they must stay distinguishable. The strip carries `· dist`.
+    assert "P(win) · dist" in html, "the strip must not share a bare name with the head"
+    # …and the head is absent entirely on a trace without it, which is the ordinary case. That
+    # battle still has a dist strip, so `"P(win)" not in ...` would no longer test anything.
     other = client.get("/battle", params={"battle": "step_2000000/aggressive_v2/loss_001"}).text
-    assert "P(win)" not in other
+    # The marker has to be ROW-SHAPED, and two looser attempts show why: the bare term "ΔP" also
+    # appears in the page's legend, and "pp</span>" is a substring of "opp</span>" — the opponent
+    # label on every board. `ΔP <span` is the rendered row and nothing else.
+    assert "ΔP <span" not in other, "the win-prob head rendered on a trace that has none"
+    assert "P(win) · dist" in other, "the distributional strip should still render there"
 
 
 def test_a_run_with_no_dist_head_renders_no_awareness_rather_than_zeros(client, run):
@@ -1130,6 +1144,35 @@ def test_the_awareness_panel_says_so_when_the_run_has_no_dist_head(tmp_path):
         body = c.get("/partials/awareness").text
     assert "no distributional value head" in body
     assert "gen-10 baseline" not in body
+
+
+def test_every_hand_off_goes_to_the_web_view_not_a_retired_terminal(client, run):
+    """`/analyze` IS a web view — it loads the checkpoint and renders faithfulness, beliefs, threat
+    tables and saliency in the browser. The replay and the scan table both used to tell readers to
+    go and run a CLI command "or the TUI", a surface RETIRED on 2026-08-13, which is how a working
+    feature ends up looking absent. Every such hand-off is now a link."""
+    replay = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    assert "/analyze?run=" in replay
+    assert "the TUI" not in replay
+
+    scan = client.get("/partials/scan", params={"outcome": "loss"}).text
+    assert "/analyze?run=" in scan, "a scan row still dead-ends at a command to copy"
+    assert "the TUI" not in scan
+    # The CLI equivalent stays offered — it is a real second surface, unlike the TUI.
+    assert "main.prober.query analyze" in replay and "main.prober.query analyze" in scan
+
+
+def test_the_critic_row_explains_every_number_it_prints(client):
+    """These are the six most cryptic numbers on the page. Each carries a `title`, and because a
+    tooltip does not exist on a touch device — and this view is explicitly built for one — the same
+    explanations are collected once in a visible legend."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    for term in ("V(s) — the critic's expected", "VALUE CLIFF", "calibrated", "percentage POINTS",
+                 "TD residual", "environment reward"):
+        assert term in html, f"the critic row prints a number with no explanation of {term!r}"
+    assert "how to read a turn card" in html, "no visible legend — tooltips alone fail on a phone"
+    # V's zero is the single most misreadable thing on the row, so it is stated in BOTH places.
+    assert html.count("not 'even'") + html.count('not "even"') >= 1
 
 
 def test_the_action_distribution_marks_illegal_actions_without_alarming(client, run):

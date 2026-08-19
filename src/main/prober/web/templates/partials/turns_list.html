@@ -103,59 +103,76 @@
     <ul class="log"><li class="muted">{{ d.events | join(" · ") }}</li></ul>
     {% endif %}
 
-    {# The critic's read, last: what the game did comes before what the model made of it. #}
+    {# The critic's read, last: what the game did comes before what the model made of it.
+
+       EVERY item carries a title that explains what it IS and how to read it, not just what it is
+       called — these are the six most cryptic numbers on the page, and a reader who has to hold
+       "V's zero is not even" in their head from a doc somewhere else will misread the row. The
+       same explanations are collected once, visibly, in the legend at the top of the page: a
+       `title` is invisible on a phone, and this view is built to be read on one. #}
     <p class="critic">
-      <span title="the critic's value of this state">V {{ m.num(d.value) }}</span>
-      <span title="change in V to the next decision — the value cliff a loss is diagnosed by">ΔV {{ m.signed(d.delta_v) }}</span>
+      <span title="V(s) — the critic's expected SHAPED, DISCOUNTED return from this state. Its zero is NOT 'even': a measured self-mirror 50/50 reads about −6.5, so read it against that offset rather than against 0. For odds you can read directly, use P(win).">V {{ m.num(d.value) }}</span>
+      <span title="How far V moved from this decision to the next. A large negative step is a VALUE CLIFF — the moment the critic's read of the game fell apart, and the metric `scan` ranks battles by to find the turn a loss turned.">ΔV {{ m.signed(d.delta_v) }}</span>
       {% if d.win_prob is not none %}
       {# P(win) beside V, not instead of it: V is a SHAPED, discounted return whose zero is not
          "even" (a measured self-mirror 50/50 reads about −6.5), so the two disagree in sign all
          the time and only the calibrated one is readable as odds. Absent on a run with no
          win-prob head — the great majority of traces. #}
-      <span title="the win-prob head's calibrated P(win) for this state — the interpretable [0,1] complement to V, whose zero is NOT 'even'">P(win) {{ m.pct(d.win_prob, 0) }}</span>
-      <span title="change in the calibrated P(win) to the next decision: how much this move moved the odds, in percentage points">ΔP {{ m.signed_pp(d.delta_win_prob) }}</span>
+      <span title="The win-prob head's CALIBRATED probability of winning from this state — the interpretable [0,1] complement to V. Unlike V, 50% here really is even. (The P(win) · dist strip below is a different estimator of the same thing: the return distribution's own mass above zero.)">P(win) {{ m.pct(d.win_prob, 0) }}</span>
+      <span title="How much this move moved the win odds, in percentage POINTS — a difference of two probabilities, which is not a '%'. +1.3pp means the odds improved by 1.3 points (e.g. 82% → 83.3%).">ΔP {{ m.signed_pp(d.delta_win_prob) }}</span>
       {% endif %}
-      <span title="TD residual r + γV(s′) − V(s): how SURPRISED the critic was">TD δ {{ m.signed(d.td_residual) }}</span>
-      <span title="the env reward for this step{% for k, v in d.reward_components.items() %} · {{ k }}: {{ v }}{% endfor %}">
+      <span title="TD residual δ = r + γV(s′) − V(s) — how SURPRISED the critic was by what happened. Near 0 = the turn went as it expected; large NEGATIVE = the outcome was much worse than predicted, which is what `scan --metric td_residual` ranks by.">TD δ {{ m.signed(d.td_residual) }}</span>
+      <span title="The environment reward for this step — the total across every shaping term.{% for k, v in d.reward_components.items() %} · {{ k }}: {{ v }}{% endfor %}{% if d.reward_components %} (The ⓘ means a per-term breakdown is in `details` below.){% endif %}">
         r {{ m.signed(d.reward_total) }}{% if d.reward_components %}<span class="muted"> ⓘ</span>{% endif %}</span>
+      {# THE HAND-OFF. `/analyze` is a WEB view — it loads the checkpoint and renders faithfulness,
+         beliefs, threat tables and saliency — so this is a link, not an instruction to go and run
+         something. It used to say "CLI/TUI only", which stopped being true when the Textual TUI
+         was retired (2026-08-13) and the view was ported here; the copy button stays beside it for
+         anyone who does want the command. #}
       <span class="cmd">
+        <a class="linky" href="/analyze?run={{ run | urlencode }}&amp;battle={{ turns.short_id | urlencode }}&amp;inv={{ d.inv }}"
+           title="Open this decision in /analyze — the full forensic read (faithfulness · beliefs · threat tables · intervention · saliency). It loads the checkpoint, so it works on a run at the CURRENT architecture and diagnoses the drift on any other.">analyze #{{ d.inv }}</a>
         <button class="linky copybtn" type="button"
                 data-copy="python -m main.prober.query analyze {{ turns.id }} {{ d.inv }}"
-                title="Copy the analyze command for this decision (loads the checkpoint — CLI/TUI only)">
-          analyze #{{ d.inv }}</button>
+                title="Copy the equivalent CLI command for this decision.">copy cmd</button>
       </span>
     </p>
 
-    {% if d.p_loss is not none %}
+    {% if d.p_win is not none %}
     {# THE DISTRIBUTION'S OWN READ, under the scalar it cannot be recovered from. V is one number;
-       this is P(return < 0) and the catastrophic-band mass beneath it, and the whole point of the
+       this is P(return > 0) and the catastrophic-band mass beneath it, and the whole point of the
        dist head is the case where those two disagree — tail mass piling up while the MEAN still
        looks healthy is the stall signature a scalar critic structurally cannot show.
        `knew` marks the sustained-onset stretch, so scrolling the replay shows exactly where the
-       model started calling it. #}
-    <p class="ploss {{ 'knew' if d.knew }}">
-      <span class="k" title="P(return &lt; 0) under this decision's predicted return distribution — the distributional head's own read of 'am I losing', in real return units.">P(loss)</span>
-      <span class="strip" role="img" aria-label="P(loss) {{ m.pct(d.p_loss, 0) }}">
-        {# Sized from the session's own p_loss; the 50% mark is where knew_by_turn's bar sits, so
-           the reader can see the crossing rather than take the badge's word for it. #}
-        <span class="fill" style="width: {{ (d.p_loss * 100) | round(1) }}%"></span>
+       model started calling it.
+
+       Rendered as P(WIN), like the win-prob head on the line above: ONE direction per card, where
+       higher always reads as better. Both are P(win) and they are NOT the same number — this one
+       is the distributional critic's own mass above zero, that one is the calibrated head — so the
+       label carries `· dist` rather than letting two different quantities share a name. #}
+    <p class="pwin {{ 'knew' if d.knew }}">
+      <span class="k" title="P(return &gt; 0) under this decision's predicted return distribution — the DISTRIBUTIONAL critic's own read, in real return units. Distinct from the win-prob head's calibrated P(win) above: same direction, different estimator.">P(win) · dist</span>
+      <span class="strip" role="img" aria-label="P(win) {{ m.pct(d.p_win, 0) }}">
+        {# Sized from the session's own p_win; the 50% mark is where the verdict's crossing sits, so
+           the reader can see it rather than take the badge's word for it. #}
+        <span class="fill" style="width: {{ (d.p_win * 100) | round(1) }}%"></span>
         <span class="bar50"></span>
       </span>
-      <span class="v">{{ m.pct(d.p_loss, 0) }}</span>
+      <span class="v">{{ m.pct(d.p_win, 0) }}</span>
       {# The same 0.5% legibility floor `engine.awareness_text` applies to its stall clause: below
          it this prints "tail 0%", which reads as a finding when it is rounding noise. #}
       {% if d.p_tail and d.p_tail >= 0.005 %}
       <span class="tail" title="P(return ≤ the catastrophic threshold — the bottom 10% of the support): the band a cap/stall loss lands in. Mass here while V still reads healthy is the stall signature.">tail {{ m.pct(d.p_tail, 0) }}</span>
       {% endif %}
-      {% if d.knew %}<span class="knewmark" title="At or after knew_by_turn: from here P(loss) &gt; 50% held all the way to the end.">▸ calling it</span>{% endif %}
+      {% if d.knew %}<span class="knewmark" title="At or after knew_by_turn: from here P(win) stayed under 50% all the way to the end.">▸ calling it</span>{% endif %}
     </p>
     {% endif %}
 
-    {# THE DROP-DOWN — the TUI's per-decision detail, restricted to what is MODEL-FREE.
+    {# THE DROP-DOWN — the per-decision detail, restricted to what is MODEL-FREE.
        Collapsed by default because the point of the replay is reading the game; this is what you
        open when one turn looks wrong. Everything the checkpoint would be needed for (faithfulness,
-       saliency, beliefs, the DamageOperator threat tables) stays in the TUI, and the footer says
-       so rather than leaving you wondering where it went. #}
+       saliency, beliefs, the DamageOperator threat tables) lives in `/analyze`, and the footer
+       LINKS there rather than leaving you wondering where it went. #}
     <details class="more">
       <summary>details</summary>
       <div class="moregrid">
@@ -264,9 +281,10 @@
 
       </div>
       <p class="muted small">
-        Model-free. The policy's re-run distribution, beliefs, threat tables and saliency need the
-        checkpoint loaded — those are
-        <code>python -m main.prober.query analyze {{ turns.short_id }} {{ d.inv }}</code> or the TUI.
+        Model-free — everything above needs no checkpoint. The policy's re-run distribution,
+        beliefs, threat tables and saliency DO, and they live one click away in
+        <a class="rowlink" href="/analyze?run={{ run | urlencode }}&amp;battle={{ turns.short_id | urlencode }}&amp;inv={{ d.inv }}">analyze #{{ d.inv }}</a>
+        (or <code>python -m main.prober.query analyze {{ turns.short_id }} {{ d.inv }}</code>).
       </p>
     </details>
   </div>

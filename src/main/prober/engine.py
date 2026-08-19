@@ -1180,23 +1180,28 @@ def awareness_text(aw: "dict | None") -> str:
     """The one-line rendering of a battle's 'did it KNOW?' verdict (`main/prober/awareness.py`),
     so the CLI and the web replay say the same sentence about the same fold.
 
-    `never saw it coming — P(loss) never held above 50% to the end` ·
+    `never saw it coming — P(win) never fell below 50% to the end` ·
     `knew by turn 34 — 12 turns of warning` · and, when the stall signature fired, the clause that
     names it: `· stall signature: 41% tail mass at turn 28 while the mean still read positive`.
-    Empty string on `None` (no dist head / fewer than 2 recorded distributions)."""
+    Empty string on `None` (no dist head / fewer than 2 recorded distributions).
+
+    Phrased in P(WIN) throughout, matching the strip and the win-prob head beside it: one direction
+    on one card, where higher always reads as better. The underlying test is unchanged (it is
+    defined on `p_loss > 0.5` sustained) — `P(win) below 50%` is the same crossing said the other
+    way up."""
     if not aw:
         return ""
     knew, lead = aw.get("knew_by_turn"), aw.get("lead_time")
     if aw.get("blind_loss"):
-        text = "never saw it coming — P(loss) never held above 50% to the end"
+        text = "never saw it coming — P(win) never fell below 50% to the end"
     elif knew is None:
-        # Not a loss, and P(loss) never sustained: the ordinary shape of a win.
-        text = "P(loss) never held above 50% to the end"
+        # Not a loss, and it never sustained: the ordinary shape of a win.
+        text = "P(win) never fell below 50% to the end"
     elif aw.get("outcome") == "loss":
         turns = "turn" if lead == 1 else "turns"
         text = f"knew by turn {knew} — {lead} {turns} of warning"
     else:
-        text = f"P(loss) held above 50% from turn {knew} to the end"
+        text = f"P(win) held below 50% from turn {knew} to the end"
     div, div_turn = aw.get("mean_tail_divergence") or 0.0, aw.get("divergence_turn")
     # ≥0.5% is a RENDERING floor, not a semantic threshold: below it the clause prints
     # "0% tail mass", which reads as a finding when it is rounding noise. Which values count as

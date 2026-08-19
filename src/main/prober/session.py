@@ -649,7 +649,8 @@ class ProbeSession:
                 # V cannot show tail mass piling up while the mean still reads healthy — that is
                 # exactly the stall signature — so these ride beside V rather than replacing it.
                 # `knew` is true from the sustained-onset decision onward (see `_awareness_by_decision`).
-                **(aware_by_dec.get(i) or {"p_loss": None, "p_tail": None, "knew": False}),
+                **(aware_by_dec.get(i)
+                   or {"p_loss": None, "p_win": None, "p_tail": None, "knew": False}),
                 "reward_total": _r(rtotal),
                 # `RewardBreakdown.to_dict()` is `{"total": …}` plus ONE STRING PER GROUP
                 # ("base": "pbrs_material=-0.44"), not a nested components dict — so the components
@@ -1798,7 +1799,7 @@ class ProbeSession:
 
     @staticmethod
     def _awareness_by_decision(aw: "dict | None") -> dict:
-        """`{inv: {p_loss, p_tail, knew}}` from the battle-level verdict — the per-DECISION view of
+        """`{inv: {p_loss, p_win, p_tail, knew}}` from the battle-level verdict — the per-DECISION view of
         the same fold, keyed by the decision index the verdict records (never by game turn: a
         faint puts two decisions on one turn). `knew` marks the decisions at or after the sustained
         onset, i.e. the stretch the model was already reading as lost — and it keys off the onset
@@ -1808,9 +1809,14 @@ class ProbeSession:
             return {}
         onset = aw.get("knew_from_decision")
         out = {}
-        for inv, pl, pt in zip(aw.get("decisions") or (),
-                               aw.get("p_loss") or (), aw.get("p_tail") or ()):
-            out[inv] = {"p_loss": pl, "p_tail": pt,
+        for inv, pl, pw, pt in zip(aw.get("decisions") or (),
+                                   aw.get("p_loss") or (), aw.get("p_win") or (),
+                                   aw.get("p_tail") or ()):
+            # BOTH directions ride the row: `p_win` is what the replay renders (one direction per
+            # card, higher = better, matching the win-prob head beside it) and `p_loss` is what the
+            # thresholds are defined on. A surface flipping one into the other itself would be a
+            # view deriving a number.
+            out[inv] = {"p_loss": pl, "p_win": pw, "p_tail": pt,
                         "knew": onset is not None and inv >= onset}
         return out
 

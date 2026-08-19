@@ -7,8 +7,8 @@
 {{ m.chart("scan", spec) }}
 <p class="muted" data-count="{{ rows | length }}">
   {{ rows | length }} battle{{ "" if rows|length == 1 else "s" }}, worst turning point each —
-  most negative first. <strong>Pick a row and take its id onward:</strong> this view finds
-  <em>where</em> a loss turned; explaining <em>why</em> is <code>analyze</code> in the TUI or the CLI.
+  most negative first. This view finds <em>where</em> a loss turned; <strong>analyze</strong> on
+  each row explains <em>why</em>, in the browser.
 </p>
 <div class="scroll-x">
 <table>
@@ -32,7 +32,7 @@
     <th class="num" title="lead_time — turns of warning between knew_by_turn and the last decision.">lead</th>
     <th title="Model-free flags on this decision">flags</th>
     <th>events</th>
-    <th title="Copy the battle id for the CLI or the TUI">take it onward</th>
+    <th title="Open the game around this turn, or the decision itself in analyze">take it onward</th>
   </tr></thead>
   <tbody>
   {% for r in rows %}
@@ -66,9 +66,13 @@
            exact decision, so "where it went wrong" becomes "here is the game around it". #}
         <a class="linky" href="/battle?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&start={{ w.turn }}#inv-{{ w.inv }}"
            title="Read the game around turn {{ w.turn }}">turns</a>
+        {# Straight to the decision itself. `/analyze` loads the checkpoint and renders the whole
+           forensic read in the browser, so the row no longer dead-ends in a command to copy. #}
+        <a class="linky" href="/analyze?run={{ run | urlencode }}&battle={{ r.short_id | urlencode }}&inv={{ w.inv }}"
+           title="The full forensic read of decision {{ w.inv }} — faithfulness, beliefs, threat tables, saliency">analyze</a>
         <button class="linky copybtn" type="button"
                 data-copy="python -m main.prober.query analyze {{ r.id }} {{ w.inv }}"
-                title="Copy: python -m main.prober.query analyze &lt;id&gt; {{ w.inv }}">copy cmd</button>
+                title="Copy the equivalent CLI command">copy cmd</button>
         <button class="linky copybtn" type="button"
                 data-copy="{{ r.id }}" title="Copy the battle id">id</button>
       </td>

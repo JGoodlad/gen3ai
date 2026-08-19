@@ -8,8 +8,8 @@
   <code>ProbeSession.battle_turns()</code> — one game, turn by turn: the board each decision was
   made on, an ordered battle log of what then happened, and the critic's read of it. Model-free
   (no checkpoint), so it opens instantly. For <em>why</em> a decision was made — the policy's
-  alternatives, beliefs and saliency — the surface is
-  <code>python -m main.prober.query analyze &lt;id&gt; &lt;inv&gt;</code> or the TUI.
+  alternatives, beliefs, threat tables and saliency — every turn links to
+  <strong>analyze</strong>, which loads the checkpoint and shows all of it in the browser.
 </p>
 
 {% if empty %}
@@ -107,6 +107,58 @@
     {% endif %}
   </p>
   {% endif %}
+</section>
+
+<section class="card">
+  <details class="legend-card">
+    <summary>how to read a turn card</summary>
+    <dl class="legend-dl">
+      <dt>V</dt>
+      <dd>The critic's expected <strong>shaped, discounted return</strong> from this state.
+        <strong>Its zero is not "even"</strong> — a measured self-mirror 50/50 reads about −6.5 —
+        so read it against that offset, not against 0.</dd>
+
+      <dt>ΔV</dt>
+      <dd>How far V moved to the next decision. A large negative step is a <strong>value
+        cliff</strong>: the moment the critic's read of the game fell apart. It is what
+        <a class="rowlink" href="/scan{% if run %}?run={{ run | urlencode }}{% endif %}">scan</a>
+        ranks battles by.</dd>
+
+      <dt>P(win)</dt>
+      <dd>The win-prob head's <strong>calibrated</strong> probability of winning — the readable
+        complement to V. Here 50% really is even. Absent on runs without that head.</dd>
+
+      <dt>ΔP</dt>
+      <dd>How much the move moved the odds, in percentage <strong>points</strong> (a difference of
+        two probabilities is not a "%"). <code>+1.3pp</code> = 82% → 83.3%.</dd>
+
+      <dt>TD δ</dt>
+      <dd>The critic's <strong>surprise</strong>: δ = r + γV(s′) − V(s). Near zero = the turn went
+        as expected; large negative = much worse than it predicted.</dd>
+
+      <dt>r</dt>
+      <dd>The environment reward for the step, across every shaping term. <strong>ⓘ</strong> means
+        the per-term breakdown is in <em>details</em>.</dd>
+
+      <dt>P(win) · dist</dt>
+      <dd>A <strong>different estimator</strong> of the same question: the distributional critic's
+        own mass above zero, drawn as a bar with the 50% mark on it so the crossing is visible. The
+        bar turns red and gains a rail once the model is <strong>calling the game</strong> — from
+        the first decision whose P(win) stays under 50% to the end. <strong>tail</strong> beside it
+        is the catastrophic-band mass: piling up while V still looks healthy is the stall
+        signature, and it is exactly what a single number cannot show.</dd>
+
+      <dt>expect</dt>
+      <dd>What the model thought the <strong>opponent</strong> was about to do (the α/β heads) — a
+        belief, not the board. The one line separating a turn played AROUND a threat from one it
+        never saw coming.</dd>
+
+      <dt>analyze</dt>
+      <dd>Opens the full forensic read of that decision — faithfulness, beliefs, threat tables,
+        intervention, saliency. It loads the checkpoint, so it works on a run at the current
+        architecture and diagnoses the drift on any other.</dd>
+    </dl>
+  </details>
 </section>
 
 {% include "partials/turns_list.html" %}

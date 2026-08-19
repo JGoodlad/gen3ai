@@ -75,6 +75,12 @@ class AwarenessVerdict:
     # decisions into one. A surface that wants "this decision's P(loss)" needs this.
     decisions: "tuple[int, ...]"
     p_loss: "tuple[float, ...]"
+    # The SAME fold read the other way up: `p_win[i] == 1 - p_loss[i]`. Carried rather than left to
+    # each surface to flip, because a view that computes `1 - x` is a view deriving a number, and
+    # the whole point of this layer is that the CLI and the browser cannot disagree about one. Every
+    # THRESHOLD below stays defined on p_loss (> 0.5 sustained) — this is a presentation of the same
+    # crossing, not a second definition of it.
+    p_win: "tuple[float, ...]"
     p_tail: "tuple[float, ...]"
     knew_by_turn: Optional[int]
     # The DECISION the onset happened at, not just its turn. Two decisions can share a turn, and
@@ -174,6 +180,7 @@ def build_awareness(dists: Sequence[Optional[np.ndarray]],
         turns=tuple(t for _j, t, _p in rows),
         decisions=tuple(j for j, _t, _p in rows),
         p_loss=tuple(round(x, 4) for x in p_loss),
+        p_win=tuple(round(1.0 - x, 4) for x in p_loss),
         p_tail=tuple(round(x, 4) for x in p_tail),
         knew_by_turn=knew_by_turn,
         knew_from_decision=(rows[knew_idx][0] if knew_idx is not None else None),
