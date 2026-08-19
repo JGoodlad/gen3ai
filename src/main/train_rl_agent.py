@@ -457,6 +457,7 @@ def _model_hparams(model) -> dict:
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "item_belief_coef": float(getattr(model, "item_belief_coef", 0.0)),
         "td_aux_coef": float(getattr(model, "td_aux_coef", 0.0)),
+        "intent_label_bot_weight": float(getattr(model, "intent_label_bot_weight", 1.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
@@ -644,6 +645,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
         td_aux_coef=float(getattr(model, "td_aux_coef", 0.0)),
+        intent_label_bot_weight=float(getattr(model, "intent_label_bot_weight", 1.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")
@@ -1567,6 +1569,22 @@ def build_parser() -> argparse.ArgumentParser:
                              "coarse call -log(sum of believed-slot mass) without asserting WHICH "
                              "member, which is the part we cannot label. Scales on top of "
                              "--opp-intent-coef. 0.0 = OFF (byte-identical). Training-only.")
+    parser.add_argument("--intent-label-bot-weight", "--intent_label_bot_weight",
+                        dest="intent_label_bot_weight", type=float, default=None,
+                        help="Per-sample weight on the OPPONENT-INTENT (alpha/beta) labels produced "
+                             "against a heuristic BOT (gen3_intent_label_bot_weight_v1); every other "
+                             "opponent class (pool / stable / exploiter) stays 1.0. Bots play "
+                             "strategies that are not the meta, and the self-play ramp trains 100%% vs "
+                             "bots until the pool seeds, so early intent supervision is "
+                             "bot-DOMINATED (gen-11: 100%% of supervised rows at 2M, ~7%% from 6M on) "
+                             "and the head can imprint on a decision tree. Folded BEFORE the mean at "
+                             "the same n_sup denominator, so the --opp-intent-coef semantics are "
+                             "unchanged; 0.0 trains on no bot rows at all. Applies to alpha/beta ONLY "
+                             "— never to the species/move/item/spread/HP-type belief labels, which "
+                             "are TEAM truth and valid whoever pilots the team. Watch "
+                             "opp_intent/label_bot_frac (the exposure) and opp_intent/alpha_acc_pool "
+                             "(the metric that must not fall). 1.0 = OFF (loss bit-identical). "
+                             "TRAINING-only (not version-locked; inherited on a flagless resume).")
     parser.add_argument("--opp-intent-coef", "--opp_intent_coef", dest="opp_intent_coef",
                         type=float, default=0.0,
                         help="OPPONENT-INTENT aux (gen3_opp_intent_v1, v67): supervise ALPHA — a "
@@ -2301,6 +2319,7 @@ async def main():
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
+    _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like win_prob_coef)
     _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
@@ -2440,6 +2459,11 @@ async def main():
         # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
         # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
         parser.error("--td-aux-coef must be >= 0 (0 = off)")
+    if args.intent_label_bot_weight is not None and args.intent_label_bot_weight < 0.0:
+        # A negative weight would train alpha/beta to be MAXIMALLY wrong about bots — the opposite
+        # of "train on them less". 0.0 (ignore bot rows entirely) is the intended floor.
+        # Training-only (not version-locked), so this parser check is the only gate.
+        parser.error("--intent-label-bot-weight must be >= 0 (0 = train on no bot rows; 1 = off)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     if args.opd_coef and args.opd_coef > 0 and not args.search_teacher:
@@ -3851,6 +3875,7 @@ async def main():
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
+            intent_label_bot_weight=args.intent_label_bot_weight,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -3905,6 +3930,8 @@ async def main():
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
         model.td_aux_coef = args.td_aux_coef  # TD-consistency aux weight (training-only; resume-mutable)
+        # gen3_intent_label_bot_weight_v1: alpha/beta label weight on BOT-opponent rows (1.0 = off).
+        model.intent_label_bot_weight = args.intent_label_bot_weight
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
         # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
         model.search_teacher_coef = args.search_teacher_coef
@@ -4165,6 +4192,8 @@ async def main():
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
         model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
         model.td_aux_coef = args.td_aux_coef  # TD-consistency aux (0.0 = off, loss byte-identical)
+        # gen3_intent_label_bot_weight_v1: alpha/beta label weight on BOT-opponent rows (1.0 = off).
+        model.intent_label_bot_weight = args.intent_label_bot_weight
         # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
         model.search_teacher_coef = args.search_teacher_coef
         model.search_teacher_value_coef = args.search_teacher_value_coef
@@ -4218,6 +4247,7 @@ async def main():
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
+            intent_label_bot_weight=args.intent_label_bot_weight,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

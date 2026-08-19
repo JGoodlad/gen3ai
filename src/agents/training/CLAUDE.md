@@ -2356,6 +2356,80 @@ supervision.
   --unified-moves both --spread-belief --hp-type-belief-coef 0.05`)
   confirms the roundtrip + `belief/hptype_*`.
 
+## Opponent-class label weight (`--intent-label-bot-weight`, default 1.0 = OFF)
+
+`gen3_intent_label_bot_weight_v1` — a per-sample weight on the opponent-intent (α/β) LABELS
+produced against a heuristic **bot**; every other opponent class (pool / stable / exploiter) keeps
+1.0. It exists because a bot's tendencies are not the meta's, and the curriculum guarantees the
+head meets them first: `heuristic_fraction` is **0% self-play below `SELF_PLAY_START`**, so a fresh
+generation trains 100% vs bots until the pool seeds. Measured on gen-11, supervised intent rows ran
+**100% bot at 2M and ~7% from 6M on** — and bot rows score differently (info gain 0.124 nats vs
+pool 0.254, accuracy flat ~0.50 all run). The risk this knob addresses is imprinting: α/β learning
+a decision tree during the ramp and carrying it into pool play.
+
+**The mechanism.** It reuses the EXISTING identity source — the `opp_class` obs key
+(`gen3_opp_class_v1`), tagged once per episode by `MaskableAgentWrapper._select_episode_opponent`,
+pushed onto the env at `reset()`, emitted beside the α/β labels by `Gen3Env._opp_intent_labels`,
+shifted with them by `align_labels_to_predictions`, and already read in `train()` for the
+stratified metrics. **No new obs key was added**; the key that splits the dashboards is now also
+the key that weights the loss. `agents.model.opp_intent.intent_losses` takes a `bot_label_weight`
+and folds it as
+
+```
+loss = Σ_i w_i · ce_i / n_sup        w_i = W on bot rows, 1.0 elsewhere
+```
+
+— weighted **before the mean, at the unchanged `n_sup` denominator**. Normalising by `Σw` instead
+would make a 100%-bot minibatch identical to an unweighted one, i.e. do nothing in exactly the
+regime the knob exists for; with `n_sup` a `w ≡ 1` batch reproduces the plain mean, so the
+`--opp-intent-coef` semantics are untouched.
+
+**Composition with the masks.** The masks run FIRST. A row masked by `INTENT_IGNORE` (unmodeled
+seat, unrevealed β switch-in, non-switch decision) is dropped, and the weight multiplies only the
+survivors — a masked bot row contributes nothing at any weight, and `W = 0` legally means "score
+bot rows for the metrics, train on none of them".
+
+**It is confined to α/β and that is a design claim, not an oversight.** The other supervised
+beliefs — species, move, item, spread, nature/EV, HP-type — are **team truth**: what the
+opponent's team IS does not depend on who is piloting it, so discounting a bot's rows there would
+throw away valid labels. Only INTENT is behaviour. The `belief_bank` rows never see `opp_class`
+(pinned by `opp_class_plumbing_test::test_only_the_intent_loss_takes_the_weight`).
+
+**Diagnostic: `opp_intent/label_bot_frac`** — the bot share of the α rows actually SUPERVISED this
+minibatch. The per-class `alpha_n_supervised_*` counts carry the same information but are gated on
+≥2 rows and are counts, so nothing reported the ratio. It is emitted **whether or not the weight is
+set**, because the decision to set it is made off this number. The existing stratified metrics are
+untouched — they measure the head, and a weighted loss must not move an accuracy.
+
+**Default 1.0 is a deliberate no-op.** At 1.0 the original unweighted `cross_entropy` call is taken
+unchanged, so the loss is **bit-identical** (not merely close — pinned by exact equality over three
+opponent mixes). Lowering it is a **generation/fork decision, not this change**: it moves the
+supervision distribution, so it belongs at a launch boundary where it can be attributed.
+
+**Pre-registered decision path.** Decide at the gen-16 launch, beside the B-move supervision call:
+run the fork A/B **W=1.0 vs W=0.25**, gated on **`opp_intent/alpha_acc_pool`** (the `_pool` suffix,
+never the bare key — the bare one is a moving mix). W=0.25 wins only if `alpha_acc_pool` is
+non-inferior or better; a fall there means bot rows were carrying real signal and the knob goes
+back to 1.0. `label_bot_frac` sizes the manipulation before the arm is run — if it is already ~0 at
+the steps that matter, the arm is not worth a generation slot.
+
+**Class: `training_coef`.** It scales a loss and touches no forward pass ⇒ no `ARCH_SIGNATURE`
+bump, not in `check_compatible`, no `check_*` of its own; recorded on `ModelVersion`
+(`MODEL_CONFIG_VERSION` v97) for provenance and so a **flagless resume inherits it** via `_resolve`,
+exactly like `--td-aux-coef`. It is deliberately NOT in `agents/model/flag_registry.py` — that
+registry's scope is extractor architecture toggles, and this reaches the extractor not at all
+(same call as `--td-aux-coef`).
+
+Tests: `agents/model/intent_label_bot_weight_test.py` (bit-identity at 1.0 on every mix, the
+hand-computed weighted mean, the all-bot scale-down, non-bot classes never discounted, W=0 killing
+the gradient, proportional gradient scaling, mask composition on both axes, β taking the same
+per-row vector, `label_bot_frac`, the stratified metrics unmoved, the CLI/ModelVersion/migration
+legs) and `agents/training/opp_class_plumbing_test.py` (the whole `opp_class` chain, which nothing
+covered before it became load-bearing: the two hand-mirrored class tables agreeing, the wrapper tag
+per opponent kind, the reset-time push onto the env, the env emission, the one-ahead shift, the
+episode-boundary drop, buffer shuffle-alignment on a real `MaskableDictRolloutBuffer`, and the
+train-loop call site).
+
 ## Win-probability head (`--win-prob-mode` / `--win-prob-coef`)
 
 The training half of the tri-state win-probability head (model side: `src/agents/model/CLAUDE.md` →

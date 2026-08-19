@@ -304,6 +304,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.
     # 0.0 = OFF and the loss is byte-identical; training-only, resume-mutable (no module changes).
     beta_setvalued_coef: float = 0.0
+    # gen3_intent_label_bot_weight_v1: per-sample weight on α/β label rows whose opponent was a
+    # heuristic BOT (`opp_class == 0`); every other class stays 1.0. 1.0 = OFF and the loss is
+    # bit-identical (the unweighted `cross_entropy` call is taken unchanged). Training-only,
+    # resume-mutable. Applies to the INTENT losses only — never to the BeliefBank rows, which are
+    # team truth rather than behaviour. See `agents.model.opp_intent.intent_losses`.
+    intent_label_bot_weight: float = 1.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee
@@ -1127,9 +1133,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             _sv = set_valued_switch_loss(_bl, _bel.float(), _miss)
                             oi_m_extra_rows = float(_miss.float().sum())
                         _ocls = _obs.get("opp_class")
+                        # gen3_intent_label_bot_weight_v1: `--intent-label-bot-weight` discounts the
+                        # α/β labels produced against a heuristic BOT (bots play strategies that are
+                        # not the meta, and the self-play ramp makes early supervision bot-dominated).
+                        # It lands HERE and NOWHERE ELSE. The BeliefBank rows below — species, move,
+                        # item, spread, nature/EV, HP-type — are TEAM truth: what their team IS holds
+                        # regardless of who pilots it, so weighting those by opponent class would
+                        # discard valid labels. Only INTENT is behaviour. Default 1.0 takes the
+                        # original unweighted `cross_entropy` call, bit-identical.
                         oi_loss, oi_m = intent_losses(
                             _al, _atgt, _bl, _btgt,
-                            opp_class=(_ocls.long() if _ocls is not None else None))
+                            opp_class=(_ocls.long() if _ocls is not None else None),
+                            bot_label_weight=float(
+                                getattr(self, "intent_label_bot_weight", 1.0)))
                         # THE number that says whether content-addressing recovered anything.
                         # Without it, a no-op looks identical to a working feature (the same
                         # blindness that let a zero-supervision alpha pass a green smoke).

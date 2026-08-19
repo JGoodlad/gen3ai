@@ -38,7 +38,11 @@ the generation rewards genuine strategic understanding rather than raw damage ou
 - **The prober** — a forensic replay inspector (web UI): for any lost game it can attribute the
   loss to **luck vs. mistake by re-rolling the actual dice**, replay counterfactual moves against
   the real opponent to a win/loss, and beam-search for a better line by cloning mid-battle
-  simulator states.
+  simulator states. **A live instance browses real training runs at
+  [prober.g5d.io](https://prober.g5d.io)** — pick a run, open a battle, and read a game
+  turn-by-turn with what the model believed, what it expected the opponent to do, and what the
+  critic thought of every decision. No install needed; it's the fastest way to see what this
+  project actually does.
 
 ## Engineering culture
 

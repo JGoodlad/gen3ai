@@ -1080,11 +1080,12 @@ refuses the run.
 password** (`GEN3AI_PROBER_PASSWORD_FILE`, set at boot on this box). It fails closed — no password
 configured means the probes are off, not open. `--open` is the laptop opt-out.
 
-**Local only — it is NOT on g5d.io.** Unlike tensorboard (`:6006`) and the model viewer
-(`:6007`), there is no systemd unit and no tunnel entry; it binds loopback on **6008** and you
-start it when you want it. From another machine:
-`ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`. What a `prober.g5d.io` deploy
-would take is in `scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*.
+**Deployed at [prober.g5d.io](https://prober.g5d.io)** (verified serving 2026-08-19; reads are
+anonymous, the minutes-long probes stay password-gated — the app fails closed without the
+password file). The local path still works and is still the debugging default: it binds loopback
+on **6008** (`python -m main.prober.web models/`), or from another machine
+`ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io`. Deploy specifics live in
+`scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*.
 
 FastAPI + uvicorn (the minutes-long `falsify_scan`/`calibration` probes run as background jobs the
 page polls, so they never block the event loop), server-rendered Jinja2 + HTMX (no build step, no

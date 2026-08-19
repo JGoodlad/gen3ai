@@ -243,6 +243,28 @@ def info_gain_nats(logits: torch.Tensor, target: torch.Tensor) -> float:
 #: import the training package.
 OPP_CLASS_NAMES = {0: "bot", 1: "pool", 2: "stable", 3: "exploiter"}
 
+#: The one class the label weight below discounts. Named rather than spelled `0` at the use site,
+#: because `OPP_CLASS_NAMES[0]` and this constant must always be the same row.
+OPP_CLASS_BOT = 0
+
+
+def intent_label_weights(opp_class: Optional[torch.Tensor], bot_weight: float,
+                         like: torch.Tensor) -> Optional[torch.Tensor]:
+    """Per-row supervision weight for the α/β labels: ``bot_weight`` on bot rows, 1.0 elsewhere.
+
+    Returns ``None`` — meaning "do not weight at all" — when there is nothing to key on
+    (``opp_class`` absent) or when the weight is exactly 1.0. That ``None`` is load-bearing: the
+    callers use it to take the ORIGINAL unweighted `cross_entropy` call, so the default config is
+    bit-identical rather than merely numerically equal.
+
+    ``like`` supplies dtype/device (the logits).
+    """
+    if opp_class is None or bot_weight == 1.0:
+        return None
+    oc = opp_class.reshape(-1).to(like.device)
+    ones = torch.ones(oc.shape, dtype=like.dtype, device=like.device)
+    return torch.where(oc == OPP_CLASS_BOT, ones * float(bot_weight), ones)
+
 
 def set_valued_switch_loss(beta_logits: torch.Tensor, believed_mask: torch.Tensor,
                            rows: torch.Tensor) -> Optional[torch.Tensor]:
@@ -423,15 +445,44 @@ def switch_coverage_metrics(kind: torch.Tensor, need: Optional[torch.Tensor],
 def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[torch.Tensor],
                   beta_logits: Optional[torch.Tensor], beta_target: Optional[torch.Tensor],
                   opp_class: Optional[torch.Tensor] = None,
+                  bot_label_weight: float = 1.0,
                   ) -> Tuple[torch.Tensor, Dict[str, float]]:
     """Cross-entropy on both axes, each over only its supervised rows, plus the diagnostics.
 
     Every rate is reported against a denominator that says what it is over. `alpha_mask_rate` is
     the fraction of decisions with NO usable label — the belief's coverage failure, surfaced here
     because otherwise a rising `α` accuracy on a shrinking supervised subset looks like progress.
+
+    **`bot_label_weight` (`--intent-label-bot-weight`, `gen3_intent_label_bot_weight_v1`) is a
+    per-sample weight on rows whose opponent was a heuristic BOT** (`opp_class == OPP_CLASS_BOT`);
+    every other class keeps 1.0. It exists because a bot's tendencies are not the meta's: the
+    self-play ramp trains 100% vs bots until the pool seeds, so early α/β supervision is
+    bot-DOMINATED (measured on gen-11: supervised rows 100% bot at 2M, ~7% from 6M on) and the head
+    can imprint on a decision tree before it ever sees a player.
+
+    **Semantics: folded BEFORE the mean, and the denominator stays `n_sup`** — `Σ w_i·ce_i / n_sup`,
+    NOT `Σ w_i·ce_i / Σ w_i`. Normalising by `Σw` would make a 100%-bot minibatch identical to an
+    unweighted one, i.e. exactly nothing during the ramp this knob exists for. With the chosen
+    denominator, `w ≡ 1` reproduces the plain mean, so the existing `opp_intent_coef` semantics are
+    unchanged and a mixed batch is discounted in proportion to its bot share.
+
+    **It COMPOSES with the masks, it does not interact with them.** A row masked by `INTENT_IGNORE`
+    (unmodeled seat, unrevealed β switch-in, non-switch decision) is dropped FIRST; the weight then
+    multiplies only the survivors. A masked bot row contributes nothing at any weight, and `w = 0`
+    is a legal setting that means "score bot rows for the metrics but train on none of them".
+
+    **It is deliberately confined to α/β.** The other supervised beliefs — species / move / item /
+    spread / HP-type — are TEAM truth: what the opponent's team IS does not depend on who is
+    piloting it, so discounting a bot's rows there would throw away valid labels. Only INTENT is
+    behaviour, and only behaviour is opponent-specific.
     """
     metrics: Dict[str, float] = {}
     total = None
+    # None ⇒ "no weighting" ⇒ take the original unweighted call below (bit-identical default).
+    w_all = intent_label_weights(
+        opp_class, bot_label_weight,
+        alpha_logits if alpha_logits is not None else (
+            beta_logits if beta_logits is not None else torch.zeros(())))
 
     if alpha_logits is not None and alpha_target is not None:
         sup = alpha_target != INTENT_IGNORE
@@ -439,13 +490,29 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
         metrics["opp_intent/alpha_mask_rate"] = 1.0 - n_sup / max(alpha_target.numel(), 1)
         metrics["opp_intent/alpha_n_supervised"] = float(n_sup)
         if n_sup > 0:
-            la = torch.nn.functional.cross_entropy(
-                alpha_logits, alpha_target, ignore_index=INTENT_IGNORE)
+            if w_all is None:
+                la = torch.nn.functional.cross_entropy(
+                    alpha_logits, alpha_target, ignore_index=INTENT_IGNORE)
+            else:
+                # Mask FIRST (the survivors), weight SECOND, and divide by `n_sup` — see the
+                # docstring for why the denominator is the row COUNT and not `Σw`.
+                per = torch.nn.functional.cross_entropy(
+                    alpha_logits[sup], alpha_target[sup], reduction="none")
+                la = (per * w_all[sup]).sum() / n_sup
             total = la if total is None else total + la
             with torch.no_grad():
                 tgt = alpha_target[sup]
                 k = alpha_logits.shape[-1] - 1
                 metrics["opp_intent/alpha_loss"] = float(la.detach())
+                if opp_class is not None:
+                    # THE EXPOSURE NUMBER for `--intent-label-bot-weight`: what share of the rows
+                    # α actually trained on this minibatch came from a bot. The per-class
+                    # `alpha_n_supervised_*` counts below carry the same information, but they are
+                    # gated on ≥2 rows and are counts, so nothing reports the RATIO — and a ratio
+                    # nobody reports is a ratio nobody reads. Emitted whether or not the weight is
+                    # set, because the decision to set it is made off this number.
+                    metrics["opp_intent/label_bot_frac"] = float(
+                        (opp_class.reshape(-1)[sup] == OPP_CLASS_BOT).float().mean())
                 metrics.update(_alpha_subset_metrics(alpha_logits[sup], tgt, k))
                 # STRATIFY BY OPPONENT KIND — EVERY axis, not just the headline. The pooled number
                 # averages over populations where "predict their move" is a different problem:
@@ -479,8 +546,16 @@ def intent_losses(alpha_logits: Optional[torch.Tensor], alpha_target: Optional[t
         metrics["opp_intent/beta_mask_rate"] = 1.0 - n_sup / max(beta_target.numel(), 1)
         metrics["opp_intent/beta_n_supervised"] = float(n_sup)
         if n_sup > 0:
-            lb = torch.nn.functional.cross_entropy(
-                beta_logits, beta_target, ignore_index=INTENT_IGNORE)
+            if w_all is None:
+                lb = torch.nn.functional.cross_entropy(
+                    beta_logits, beta_target, ignore_index=INTENT_IGNORE)
+            else:
+                # Same rule as α, and the SAME weight vector — β's supervised subset is only the
+                # voluntary switches, so its bot share differs from α's, but the per-ROW weight
+                # cannot: both losses grade the same opponent's behaviour on the same decision.
+                per = torch.nn.functional.cross_entropy(
+                    beta_logits[sup], beta_target[sup], reduction="none")
+                lb = (per * w_all[sup]).sum() / n_sup
             total = lb if total is None else total + lb
             with torch.no_grad():
                 metrics["opp_intent/beta_loss"] = float(lb.detach())

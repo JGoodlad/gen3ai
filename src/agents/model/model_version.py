@@ -48,7 +48,13 @@ from typing import Any, Dict, List
 #   which is what bumps ARCH_SIGNATURE: `value_projection` narrows and `assembler.seed_readout.*`
 #   leaves the state_dict, and NOTHING in the config records either, so the signature is the only
 #   gate that can reject a pre-v96 checkpoint with a diagnosis instead of an opaque torch error.
-MODEL_CONFIG_VERSION = 96
+# v97 (gen3_intent_label_bot_weight_v1): `intent_label_bot_weight` — the per-sample weight on the
+#   opponent-intent (alpha/beta) LABELS produced against a heuristic BOT. A TRAINING-only loss
+#   weight (the td_aux_coef class): recorded for provenance and for flagless-resume read-back,
+#   never gated. It scales a loss term computed in the PPO step and touches no forward pass, so a
+#   default (1.0) build is bit-identical and there is nothing for `check_compatible` to compare.
+#   A pre-v97 config defaults it to 1.0 = OFF. No ARCH_SIGNATURE bump.
+MODEL_CONFIG_VERSION = 97
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -542,6 +548,13 @@ class ModelVersion:
     # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field), never compared by check_compatible or any check_*.
     td_aux_coef: float = 0.0
+    # gen3_intent_label_bot_weight_v1 (config v97): per-sample weight on the opponent-intent
+    # (alpha/beta) label rows whose opponent was a heuristic BOT (`opp_class == 0`); every other
+    # class stays 1.0. 1.0 = OFF (the unweighted cross_entropy call is taken unchanged, so the loss
+    # is bit-identical). The td_aux_coef class exactly: it scales a loss, touches no forward pass,
+    # so it is recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads this
+    # field) and is never compared by check_compatible or any check_*.
+    intent_label_bot_weight: float = 1.0
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:
@@ -592,6 +605,7 @@ class ModelVersion:
         hp_type_belief_coef: float = 0.0,
         item_belief_coef: float = 0.0,
         td_aux_coef: float = 0.0,
+        intent_label_bot_weight: float = 1.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -794,6 +808,7 @@ class ModelVersion:
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
             td_aux_coef=float(td_aux_coef),
+            intent_label_bot_weight=float(intent_label_bot_weight),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -1917,4 +1932,11 @@ def _migrate_config(data: dict) -> dict:
                     "To re-read this checkpoint, use the git_hash in its own metadata.json.")
     if version < 96:
         data["config_version"] = 96
+    # v97 (gen3_intent_label_bot_weight_v1) — a TRAINING-only loss weight, so a pre-v97 checkpoint
+    # trained with it OFF and the field simply defaults in. No forward, no weight shape, no gate:
+    # provenance + flagless-resume read-back only. Same shape as v92's td_aux_coef branch, and
+    # reachable for the same reason (a post-floor checkpoint genuinely lacks the field).
+    if version < 97:
+        data.setdefault("intent_label_bot_weight", 1.0)
+        data["config_version"] = 97
     return data
