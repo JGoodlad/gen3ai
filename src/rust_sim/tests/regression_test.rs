@@ -13527,6 +13527,75 @@ fn partial_trap_rapid_spin_clears_it_with_the_non_silent_end() {
         "PT4: the spin's release is DRAW-FREE (the real sim's post-turn seed)");
 }
 
+/// CB1 — THE CAP IS APPLIED BEFORE THE TryBoost EVENT.
+///
+/// `Battle.boost` runs `getCappedBoost` FIRST, so a target already at the −6 Atk FLOOR has
+/// Intimidate's `{atk:-1}` reduced to `{atk:0}` before Clear Body's handler ever sees it —
+/// and that handler only announces when it actually DELETES a negative key. So at the floor
+/// the immunity does NOT fire and the delta-0 `|-unboost|…|atk|0` prints instead.
+///
+/// PROBE-MEASURED (`harness/probe_intimidate_clearbody_floor.js`): Atk stage 0 and −3 give the
+/// Clear Body `-fail`; stage −6 gives `-unboost|atk|0`. Both branches are asserted, because a
+/// model that simply stopped announcing Clear Body would satisfy the floor half alone.
+/// Found by the 17,575-battle `ourandom` byte fuzz (repro `rmsz2yo80_ab_510_18`), where a
+/// Regirock had driven its OWN Atk to the floor with Superpower — whose self-drop Clear Body
+/// correctly ignores — and a Baton-Passed Salamence then Intimidated it.
+#[test]
+fn clear_body_does_not_announce_when_the_drop_is_already_capped() {
+    let d = dex();
+    // Steelix survives repeated Superpowers (huge Def, resists Fighting), so the foe can reach
+    // the floor without the board desyncing on a KO.
+    let p1 = "Steelix||Leftovers|Sturdy|splash|Impish|252,,252,,,|M||||]Salamence||none|Intimidate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let p2 = "Regirock||Leftovers|ClearBody|superpower,splash|Impish|252,,252,,,|N||||";
+
+    // `drops` self-Superpowers, then Salamence switches in and Intimidates.
+    let run = |drops: usize| -> (i8, Vec<String>) {
+        let mut b = Battle::start_with_switchins(&opts_cg(p1, p2, "3,3,3,3"), &d).expect("start");
+        let st = b.state_mut().expect("state");
+        for _ in 0..drops {
+            st.run_full_battle(
+                &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+                &d,
+            );
+        }
+        let atk = st.sides[1].pokemon[0].boosts[0];
+        let (_o, lines) = st.run_full_battle_logged(
+            &[ScriptDecision::both(Choice::Switch(1), Choice::Move(1))],
+            &d,
+        );
+        (atk, lines.into_iter().map(|l| l.0).collect())
+    };
+
+    // ABOVE the floor → Clear Body announces and BLOCKS.
+    let (atk0, above) = run(0);
+    assert_eq!(atk0, 0, "CB1: the control must start at stage 0");
+    assert!(
+        above
+            .iter()
+            .any(|l| l.contains("|-fail|p2a: Regirock|unboost|[from] ability: Clear Body")),
+        "CB1: above the floor, Clear Body must announce its block. got:\n{}",
+        above.join("\n")
+    );
+
+    // AT the floor → the cap zeroes the drop first, so Clear Body is silent and the delta-0
+    // line prints instead.
+    let (atk6, at_floor) = run(6);
+    assert_eq!(
+        atk6, -6,
+        "CB1: the foe must actually REACH the floor, else this half tests nothing"
+    );
+    assert!(
+        at_floor.iter().any(|l| l.as_str() == "|-unboost|p2a: Regirock|atk|0"),
+        "CB1: at the floor the capped drop emits the delta-0 line. got:\n{}",
+        at_floor.join("\n")
+    );
+    assert!(
+        !at_floor.iter().any(|l| l.contains("Clear Body")),
+        "CB1: and Clear Body must NOT announce — the cap ran before its handler. got:\n{}",
+        at_floor.join("\n")
+    );
+}
+
 /// HP1 — the DISABLE `-start` line collapses a TYPED Hidden Power to the BARE name.
 ///
 /// gen-3 hides the Hidden Power TYPE, so EVERY emitted line reads `Hidden Power` — never the

@@ -1,0 +1,661 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ourandom master_seed=30260818 run_id=rmsz2yo80 chunk=510
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_510_18
+TEAM	ab_510_18	p1	Smeargle||lumberry|owntempo|batonpass,spore,spikes,substitute|Jolly|252,4,,,,252|M||||]Gengar||leftovers|levitate|thunderbolt,hiddenpowergrass,taunt,explosion|Timid|,,,252,4,252|M|30,,30,30,,|||]Celebi||leftovers|naturalcure|perishsong,leechseed,recover,batonpass|Timid|252,,,76,,180|N||||]Metagross||lumberry|clearbody|meteormash,hiddenpowerfire,earthquake,rockslide|Adamant|68,252,,,,188|N|30,,30,30,,30|||]Tyranitar||lumberry|sandstream|hiddenpowerbug,earthquake,rockslide,toxic|Jolly|4,252,,,,252|M|,30,,,30,30|||]Salamence||leftovers|intimidate|brickbreak,rockslide,earthquake,dragondance|Adamant|116,252,,,,140|M||||
+TEAM	ab_510_18	p2	Magneton||magnet|magnetpull|thunderbolt,hiddenpowerfire,sunnyday,screech|Modest|,,,252,4,252|N|30,,30,30,,30|||]Kingdra||leftovers|swiftswim|hydropump,surf,icebeam,substitute|Modest|104,,,252,,152|M||||]Regirock||choiceband|clearbody|superpower,hiddenpowerrock,rockslide,explosion|Adamant|252,252,,,4,|N|,30,30,,30,30|||]Snorlax||leftovers|immunity|return,selfdestruct,focuspunch,rest|Adamant|12,216,104,,176,|M||||]Porygon2||leftovers|trace|thunderwave,recover,thunderbolt,icebeam|Bold|252,,200,,56,|N||||]Cloyster||leftovers|shellarmor|icebeam,surf,spikes,explosion|Timid|72,,,8,244,184|M||||
+FMT	ab_510_18	gen3ou
+INIT	ab_510_18	22400,44263,53254,64444	3739344203	0
+DEC	ab_510_18	0	move	0	0	m3	m2	39542,19801,451,35823	Smeargle	236	314	0	-	0	0	0	0	0	0	6	Magneton	240	240	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_510_18	1	move	0	0	m0	m1	39542,19801,451,35823	Smeargle	236	314	0	-	0	0	0	0	0	0	6	Magneton	240	240	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_510_18	2	switch	1	0	s4	-	15047,36347,64942,58515	Tyranitar	342	342	0	-	0	0	0	0	0	0	6	Magneton	240	240	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_510_18	3	move	0	0	m1	m2	9814,35486,8464,25124	Tyranitar	342	342	0	-	0	0	0	0	0	0	6	Magneton	0	240	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_510_18	4	switch	0	1	-	s5	45497,25890,44830,39671	Tyranitar	342	342	0	-	0	0	0	0	0	0	6	Cloyster	259	259	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_510_18	5	move	0	0	m2	m2	33581,56902,52467,56170	Tyranitar	342	342	0	-	0	0	0	0	0	0	6	Cloyster	88	259	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_510_18	6	move	0	0	m0	m1	40640,46513,4805,6307	Tyranitar	342	342	0	-	0	0	0	0	0	0	6	Cloyster	39	259	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_510_18	7	move	0	0	s1	m1	44328,30365,60088,11783	Gengar	140	260	0	-	0	0	0	0	0	0	6	Cloyster	39	259	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	8	move	0	0	m0	s2	30598,29973,30992,15290	Gengar	140	260	0	-	0	0	0	0	0	0	6	Regirock	260	364	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_510_18	9	move	0	0	m3	s3	2391,56020,54406,61967	Gengar	0	260	1	fnt	0	0	0	0	0	0	5	Snorlax	137	464	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_510_18	10	switch	1	0	s2	-	16403,40558,855,9646	Celebi	354	404	0	-	0	0	0	0	0	0	5	Snorlax	137	464	0	-	0	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_510_18	11	move	0	0	m2	m2	42196,50214,11980,30818	Celebi	326	404	0	-	0	0	0	0	0	0	5	Snorlax	137	464	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	12	move	0	0	s1	m3	31987,51299,38437,56599	Tyranitar	300	342	0	-	0	0	0	0	0	0	5	Snorlax	464	464	0	slp	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	13	move	0	0	m2	m1	48186,50020,50462,59402	Tyranitar	300	342	0	-	0	0	0	0	0	0	5	Snorlax	305	464	0	slp	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	14	move	0	0	m2	m1	39848,18784,3962,19705	Tyranitar	300	342	0	-	0	0	0	0	0	0	5	Snorlax	148	464	0	slp	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	15	move	0	0	s4	s4	20178,41986,33808,5315	Smeargle	178	314	0	-	0	0	0	0	0	0	5	Porygon2	374	374	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	16	move	0	0	m3	s3	11854,33996,35568,10930	Smeargle	81	314	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_510_18	17	move	0	0	m0	m0	11854,33996,35568,10930	Smeargle	81	314	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	18	switch	1	0	s1	-	63989,49225,58444,3265	Celebi	276	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-1	-1	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_510_18	19	move	0	0	m2	m0	52876,54892,26629,41724	Celebi	341	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-2	-2	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	20	move	0	0	m2	m0	58899,58243,53798,56531	Celebi	198	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-3	-3	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	21	move	0	0	m2	m0	19762,58082,25641,36470	Celebi	364	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-4	-4	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	22	move	0	0	m2	m0	10583,21577,10461,4053	Celebi	371	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-5	-5	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	23	move	0	0	m0	m0	37901,35156,35863,18336	Celebi	345	404	0	-	0	0	0	0	0	0	5	Regirock	260	364	0	-	-6	-6	0	0	0	0	5	p1	1	0	0	0	1
+DEC	ab_510_18	24	move	0	0	s1	m0	34963,1973,20811,44852	Smeargle	0	314	1	fnt	0	0	0	0	0	0	4	Regirock	260	364	0	-	-6	-6	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	25	switch	1	0	s1	-	36416,38282,20017,37447	Celebi	295	404	0	-	0	0	0	0	0	0	4	Regirock	260	364	0	-	-6	-6	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_510_18	26	move	0	0	m3	m0	36416,38282,20017,37447	Celebi	295	404	0	-	0	0	0	0	0	0	4	Regirock	260	364	0	-	-6	-6	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_510_18	27	switch	1	0	s5	-	14909,6411,47498,46330	Salamence	330	360	0	-	0	0	0	0	0	0	4	Regirock	260	364	0	-	-6	-6	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_510_18	28	move	0	0	m3	m0	7858,5619,33965,3663	Salamence	304	360	0	-	1	0	0	0	1	0	4	Regirock	0	364	1	fnt	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_510_18	29	switch	0	1	-	s4	44247,10243,44350,35566	Salamence	304	360	0	-	1	0	0	0	1	0	4	Snorlax	148	464	0	slp	0	0	0	0	0	0	4	none	1	0	0	0	0
+DEC	ab_510_18	30	move	0	0	m0	m2	41276,9261,16140,243	Salamence	304	360	0	-	1	0	0	0	1	0	4	Snorlax	0	464	1	fnt	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_510_18	31	switch	0	1	-	s1	57012,38704,55050,2466	Salamence	304	360	0	-	1	0	0	0	1	0	4	Kingdra	317	317	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_510_18	32	move	0	0	m0	m2	60117,1034,571,50043	Salamence	0	360	1	fnt	0	0	0	0	0	0	3	Kingdra	165	317	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_510_18	33	switch	1	0	s5	-	12395,8646,6580,37194	Celebi	245	404	0	-	0	0	0	0	0	0	3	Kingdra	165	317	0	-	0	0	0	0	0	0	3	none	1	0	0	0	0
+DEC	ab_510_18	34	move	0	0	m2	m1	58501,54486,25531,49726	Celebi	327	404	0	-	0	0	0	0	0	0	3	Kingdra	165	317	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_510_18	35	move	0	0	m1	m1	15860,40074,52544,14141	Celebi	288	404	0	-	0	0	0	0	0	0	3	Kingdra	126	317	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_510_18	36	move	0	0	m2	m3	11766,43194,38583,3796	Celebi	404	404	0	-	0	0	0	0	0	0	3	Kingdra	8	317	0	-	0	0	0	0	0	0	3	p1	1	0	0	0	0
+DEC	ab_510_18	37	move	0	0	m0	m0	35332,3760,41340,9985	Celebi	311	404	0	-	0	0	0	0	0	0	3	Kingdra	0	317	1	fnt	0	0	0	0	0	0	2	p1	1	0	0	0	1
+DEC	ab_510_18	38	switch	0	1	-	s3	61064,10462,63509,60811	Celebi	311	404	0	-	0	0	0	0	0	0	3	Porygon2	374	374	0	-	0	0	0	0	0	0	2	none	1	0	0	0	0
+DEC	ab_510_18	39	move	0	0	m2	m1	6082,44130,49081,47514	Celebi	404	404	0	-	0	0	0	0	0	0	3	Porygon2	374	374	0	-	0	0	0	0	0	0	2	p1	1	0	0	0	0
+DEC	ab_510_18	40	move	0	0	m1	s2	48245,39066,38795,2620	Celebi	404	404	0	-	0	0	0	0	0	0	3	Cloyster	7	259	0	-	0	0	0	0	0	0	2	p2	1	0	0	0	0
+DEC	ab_510_18	41	move	0	0	m0	m2	48245,39066,38795,2620	Celebi	0	404	1	fnt	0	0	0	0	0	0	2	Cloyster	0	259	1	fnt	0	0	0	0	0	0	1	p1	2	0	0	0	1
+DEC	ab_510_18	42	switch	1	1	s4	s2	53147,25287,61911,34190	Tyranitar	243	342	0	-	0	0	0	0	0	0	2	Porygon2	374	374	0	-	0	0	0	0	0	0	1	none	2	0	0	0	0
+DEC	ab_510_18	43	move	0	0	m1	m1	17888,53908,7241,39490	Tyranitar	243	342	0	-	0	0	0	0	0	0	2	Porygon2	374	374	0	-	0	0	0	0	0	0	1	p1	2	0	0	0	0
+DEC	ab_510_18	44	move	0	0	m1	m2	33627,29893,46447,11754	Tyranitar	168	342	0	-	0	0	0	0	0	0	2	Porygon2	282	374	0	-	0	0	0	0	0	0	1	p1	2	0	0	0	0
+DEC	ab_510_18	45	move	0	0	m3	m0	4709,46441,18725,26713	Tyranitar	168	342	0	-	0	0	0	0	0	0	2	Porygon2	259	374	0	tox	0	0	0	0	0	0	1	p1	2	0	0	0	0
+DEC	ab_510_18	46	move	0	0	m3	m0	57879,57699,39293,56925	Tyranitar	168	342	0	par	0	0	0	0	0	0	2	Porygon2	213	374	0	tox	0	0	0	0	0	0	1	p1	2	0	0	0	0
+DEC	ab_510_18	47	move	0	0	m0	m0	56194,62184,20844,21931	Tyranitar	168	342	0	par	0	0	0	0	0	0	2	Porygon2	73	374	0	tox	0	0	0	0	0	0	1	p2	2	0	0	0	0
+DEC	ab_510_18	48	move	0	0	m0	m0	7394,14836,40708,42405	Tyranitar	168	342	0	par	0	0	0	0	0	0	2	Porygon2	0	374	1	tox	0	0	0	0	0	0	0	p2	2	0	0	0	0
+END	ab_510_18	1	p1
+L	ab_510_18	0	|t:|<NORMALIZED>
+L	ab_510_18	1	|gametype|singles
+L	ab_510_18	2	|player|p1|P1||
+L	ab_510_18	3	|player|p2|P2||
+L	ab_510_18	4	|gen|3
+L	ab_510_18	5	|tier|[Gen 3] OU
+L	ab_510_18	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_510_18	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_510_18	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_510_18	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_510_18	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_510_18	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_510_18	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_510_18	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_510_18	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_510_18	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_510_18	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_510_18	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_510_18	18	|
+L	ab_510_18	19	|t:|<NORMALIZED>
+L	ab_510_18	20	|teamsize|p1|6
+L	ab_510_18	21	|teamsize|p2|6
+L	ab_510_18	22	|start
+L	ab_510_18	23	|switch|p1a: Smeargle|Smeargle, M|314/314
+L	ab_510_18	24	|switch|p2a: Magneton|Magneton|240/240
+L	ab_510_18	25	|turn|1
+L	ab_510_18	26	|
+L	ab_510_18	27	|t:|<NORMALIZED>
+L	ab_510_18	28	|move|p1a: Smeargle|Substitute|p1a: Smeargle
+L	ab_510_18	29	|-start|p1a: Smeargle|Substitute
+L	ab_510_18	30	|-damage|p1a: Smeargle|236/314
+L	ab_510_18	31	|move|p2a: Magneton|Sunny Day|p2a: Magneton
+L	ab_510_18	32	|-weather|SunnyDay
+L	ab_510_18	33	|
+L	ab_510_18	34	|-weather|SunnyDay|[upkeep]
+L	ab_510_18	35	|upkeep
+L	ab_510_18	36	|turn|2
+L	ab_510_18	37	|
+L	ab_510_18	38	|t:|<NORMALIZED>
+L	ab_510_18	39	|move|p1a: Smeargle|Baton Pass|p1a: Smeargle
+L	ab_510_18	40	|
+L	ab_510_18	41	|t:|<NORMALIZED>
+L	ab_510_18	42	|switch|p1a: Tyranitar|Tyranitar, M|342/342|[from] Baton Pass
+L	ab_510_18	43	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_510_18	44	|move|p2a: Magneton|Hidden Power|p1a: Tyranitar
+L	ab_510_18	45	|-resisted|p1a: Tyranitar
+L	ab_510_18	46	|-activate|p1a: Tyranitar|Substitute|[damage]
+L	ab_510_18	47	|
+L	ab_510_18	48	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	49	|upkeep
+L	ab_510_18	50	|turn|3
+L	ab_510_18	51	|
+L	ab_510_18	52	|t:|<NORMALIZED>
+L	ab_510_18	53	|move|p1a: Tyranitar|Earthquake|p2a: Magneton
+L	ab_510_18	54	|-supereffective|p2a: Magneton
+L	ab_510_18	55	|-damage|p2a: Magneton|0 fnt
+L	ab_510_18	56	|faint|p2a: Magneton
+L	ab_510_18	57	|
+L	ab_510_18	58	|t:|<NORMALIZED>
+L	ab_510_18	59	|switch|p2a: Cloyster|Cloyster, M|259/259
+L	ab_510_18	60	|
+L	ab_510_18	61	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	62	|-damage|p2a: Cloyster|243/259|[from] Sandstorm
+L	ab_510_18	63	|-heal|p2a: Cloyster|259/259|[from] item: Leftovers
+L	ab_510_18	64	|upkeep
+L	ab_510_18	65	|turn|4
+L	ab_510_18	66	|
+L	ab_510_18	67	|t:|<NORMALIZED>
+L	ab_510_18	68	|move|p2a: Cloyster|Spikes|p1a: Tyranitar
+L	ab_510_18	69	|-sidestart|p1: P1|Spikes
+L	ab_510_18	70	|move|p1a: Tyranitar|Rock Slide|p2a: Cloyster
+L	ab_510_18	71	|-supereffective|p2a: Cloyster
+L	ab_510_18	72	|-damage|p2a: Cloyster|88/259
+L	ab_510_18	73	|
+L	ab_510_18	74	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	75	|-damage|p2a: Cloyster|72/259|[from] Sandstorm
+L	ab_510_18	76	|-heal|p2a: Cloyster|88/259|[from] item: Leftovers
+L	ab_510_18	77	|upkeep
+L	ab_510_18	78	|turn|5
+L	ab_510_18	79	|
+L	ab_510_18	80	|t:|<NORMALIZED>
+L	ab_510_18	81	|move|p2a: Cloyster|Surf|p1a: Tyranitar
+L	ab_510_18	82	|-supereffective|p1a: Tyranitar
+L	ab_510_18	83	|-end|p1a: Tyranitar|Substitute
+L	ab_510_18	84	|move|p1a: Tyranitar|Hidden Power|p2a: Cloyster
+L	ab_510_18	85	|-damage|p2a: Cloyster|39/259
+L	ab_510_18	86	|
+L	ab_510_18	87	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	88	|-damage|p2a: Cloyster|23/259|[from] Sandstorm
+L	ab_510_18	89	|-heal|p2a: Cloyster|39/259|[from] item: Leftovers
+L	ab_510_18	90	|upkeep
+L	ab_510_18	91	|turn|6
+L	ab_510_18	92	|
+L	ab_510_18	93	|t:|<NORMALIZED>
+L	ab_510_18	94	|switch|p1a: Gengar|Gengar, M|260/260
+L	ab_510_18	95	|move|p2a: Cloyster|Surf|p1a: Gengar
+L	ab_510_18	96	|-damage|p1a: Gengar|140/260
+L	ab_510_18	97	|
+L	ab_510_18	98	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	99	|-damage|p1a: Gengar|124/260|[from] Sandstorm
+L	ab_510_18	100	|-damage|p2a: Cloyster|23/259|[from] Sandstorm
+L	ab_510_18	101	|-heal|p1a: Gengar|140/260|[from] item: Leftovers
+L	ab_510_18	102	|-heal|p2a: Cloyster|39/259|[from] item: Leftovers
+L	ab_510_18	103	|upkeep
+L	ab_510_18	104	|turn|7
+L	ab_510_18	105	|
+L	ab_510_18	106	|t:|<NORMALIZED>
+L	ab_510_18	107	|switch|p2a: Regirock|Regirock|364/364
+L	ab_510_18	108	|move|p1a: Gengar|Thunderbolt|p2a: Regirock
+L	ab_510_18	109	|-damage|p2a: Regirock|260/364
+L	ab_510_18	110	|
+L	ab_510_18	111	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	112	|-damage|p1a: Gengar|124/260|[from] Sandstorm
+L	ab_510_18	113	|-heal|p1a: Gengar|140/260|[from] item: Leftovers
+L	ab_510_18	114	|upkeep
+L	ab_510_18	115	|turn|8
+L	ab_510_18	116	|
+L	ab_510_18	117	|t:|<NORMALIZED>
+L	ab_510_18	118	|switch|p2a: Snorlax|Snorlax, M|464/464
+L	ab_510_18	119	|move|p1a: Gengar|Explosion|p2a: Snorlax
+L	ab_510_18	120	|-damage|p2a: Snorlax|137/464
+L	ab_510_18	121	|faint|p1a: Gengar
+L	ab_510_18	122	|
+L	ab_510_18	123	|t:|<NORMALIZED>
+L	ab_510_18	124	|switch|p1a: Celebi|Celebi|404/404
+L	ab_510_18	125	|-damage|p1a: Celebi|354/404|[from] Spikes
+L	ab_510_18	126	|
+L	ab_510_18	127	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	128	|-damage|p1a: Celebi|329/404|[from] Sandstorm
+L	ab_510_18	129	|-damage|p2a: Snorlax|108/464|[from] Sandstorm
+L	ab_510_18	130	|-heal|p1a: Celebi|354/404|[from] item: Leftovers
+L	ab_510_18	131	|-heal|p2a: Snorlax|137/464|[from] item: Leftovers
+L	ab_510_18	132	|upkeep
+L	ab_510_18	133	|turn|9
+L	ab_510_18	134	|
+L	ab_510_18	135	|t:|<NORMALIZED>
+L	ab_510_18	136	|-singleturn|p2a: Snorlax|move: Focus Punch
+L	ab_510_18	137	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	138	|-heal|p1a: Celebi|404/404
+L	ab_510_18	139	|move|p2a: Snorlax|Focus Punch|p1a: Celebi
+L	ab_510_18	140	|-resisted|p1a: Celebi
+L	ab_510_18	141	|-damage|p1a: Celebi|326/404
+L	ab_510_18	142	|
+L	ab_510_18	143	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	144	|-damage|p1a: Celebi|301/404|[from] Sandstorm
+L	ab_510_18	145	|-damage|p2a: Snorlax|108/464|[from] Sandstorm
+L	ab_510_18	146	|-heal|p1a: Celebi|326/404|[from] item: Leftovers
+L	ab_510_18	147	|-heal|p2a: Snorlax|137/464|[from] item: Leftovers
+L	ab_510_18	148	|upkeep
+L	ab_510_18	149	|turn|10
+L	ab_510_18	150	|
+L	ab_510_18	151	|t:|<NORMALIZED>
+L	ab_510_18	152	|switch|p1a: Tyranitar|Tyranitar, M|342/342
+L	ab_510_18	153	|-damage|p1a: Tyranitar|300/342|[from] Spikes
+L	ab_510_18	154	|move|p2a: Snorlax|Rest|p2a: Snorlax
+L	ab_510_18	155	|-status|p2a: Snorlax|slp|[from] move: Rest
+L	ab_510_18	156	|-heal|p2a: Snorlax|464/464 slp|[silent]
+L	ab_510_18	157	|
+L	ab_510_18	158	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	159	|-damage|p2a: Snorlax|435/464 slp|[from] Sandstorm
+L	ab_510_18	160	|-heal|p2a: Snorlax|464/464 slp|[from] item: Leftovers
+L	ab_510_18	161	|upkeep
+L	ab_510_18	162	|turn|11
+L	ab_510_18	163	|
+L	ab_510_18	164	|t:|<NORMALIZED>
+L	ab_510_18	165	|move|p1a: Tyranitar|Rock Slide|p2a: Snorlax
+L	ab_510_18	166	|-damage|p2a: Snorlax|305/464 slp
+L	ab_510_18	167	|cant|p2a: Snorlax|slp
+L	ab_510_18	168	|
+L	ab_510_18	169	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	170	|-damage|p2a: Snorlax|276/464 slp|[from] Sandstorm
+L	ab_510_18	171	|-heal|p2a: Snorlax|305/464 slp|[from] item: Leftovers
+L	ab_510_18	172	|upkeep
+L	ab_510_18	173	|turn|12
+L	ab_510_18	174	|
+L	ab_510_18	175	|t:|<NORMALIZED>
+L	ab_510_18	176	|move|p1a: Tyranitar|Rock Slide|p2a: Snorlax
+L	ab_510_18	177	|-damage|p2a: Snorlax|148/464 slp
+L	ab_510_18	178	|cant|p2a: Snorlax|slp
+L	ab_510_18	179	|
+L	ab_510_18	180	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	181	|-damage|p2a: Snorlax|119/464 slp|[from] Sandstorm
+L	ab_510_18	182	|-heal|p2a: Snorlax|148/464 slp|[from] item: Leftovers
+L	ab_510_18	183	|upkeep
+L	ab_510_18	184	|turn|13
+L	ab_510_18	185	|
+L	ab_510_18	186	|t:|<NORMALIZED>
+L	ab_510_18	187	|switch|p1a: Smeargle|Smeargle, M|236/314
+L	ab_510_18	188	|-damage|p1a: Smeargle|197/314|[from] Spikes
+L	ab_510_18	189	|switch|p2a: Porygon2|Porygon2|374/374
+L	ab_510_18	190	|-ability|p2a: Porygon2|Own Tempo|Trace|[from] ability: Trace|[of] p1a: Smeargle
+L	ab_510_18	191	|
+L	ab_510_18	192	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	193	|-damage|p1a: Smeargle|178/314|[from] Sandstorm
+L	ab_510_18	194	|-damage|p2a: Porygon2|351/374|[from] Sandstorm
+L	ab_510_18	195	|-heal|p2a: Porygon2|374/374|[from] item: Leftovers
+L	ab_510_18	196	|upkeep
+L	ab_510_18	197	|turn|14
+L	ab_510_18	198	|
+L	ab_510_18	199	|t:|<NORMALIZED>
+L	ab_510_18	200	|switch|p2a: Regirock|Regirock|260/364
+L	ab_510_18	201	|move|p1a: Smeargle|Substitute|p1a: Smeargle
+L	ab_510_18	202	|-start|p1a: Smeargle|Substitute
+L	ab_510_18	203	|-damage|p1a: Smeargle|100/314
+L	ab_510_18	204	|
+L	ab_510_18	205	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	206	|-damage|p1a: Smeargle|81/314|[from] Sandstorm
+L	ab_510_18	207	|upkeep
+L	ab_510_18	208	|turn|15
+L	ab_510_18	209	|
+L	ab_510_18	210	|t:|<NORMALIZED>
+L	ab_510_18	211	|move|p1a: Smeargle|Baton Pass|p1a: Smeargle
+L	ab_510_18	212	|
+L	ab_510_18	213	|t:|<NORMALIZED>
+L	ab_510_18	214	|switch|p1a: Celebi|Celebi|326/404|[from] Baton Pass
+L	ab_510_18	215	|-damage|p1a: Celebi|276/404|[from] Spikes
+L	ab_510_18	216	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	217	|-resisted|p1a: Celebi
+L	ab_510_18	218	|-end|p1a: Celebi|Substitute
+L	ab_510_18	219	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	220	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	221	|
+L	ab_510_18	222	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	223	|-damage|p1a: Celebi|251/404|[from] Sandstorm
+L	ab_510_18	224	|-heal|p1a: Celebi|276/404|[from] item: Leftovers
+L	ab_510_18	225	|upkeep
+L	ab_510_18	226	|turn|16
+L	ab_510_18	227	|
+L	ab_510_18	228	|t:|<NORMALIZED>
+L	ab_510_18	229	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	230	|-heal|p1a: Celebi|404/404
+L	ab_510_18	231	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	232	|-resisted|p1a: Celebi
+L	ab_510_18	233	|-damage|p1a: Celebi|341/404
+L	ab_510_18	234	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	235	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	236	|
+L	ab_510_18	237	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	238	|-damage|p1a: Celebi|316/404|[from] Sandstorm
+L	ab_510_18	239	|-heal|p1a: Celebi|341/404|[from] item: Leftovers
+L	ab_510_18	240	|upkeep
+L	ab_510_18	241	|turn|17
+L	ab_510_18	242	|
+L	ab_510_18	243	|t:|<NORMALIZED>
+L	ab_510_18	244	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	245	|-heal|p1a: Celebi|404/404
+L	ab_510_18	246	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	247	|-resisted|p1a: Celebi
+L	ab_510_18	248	|-crit|p1a: Celebi
+L	ab_510_18	249	|-damage|p1a: Celebi|198/404
+L	ab_510_18	250	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	251	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	252	|
+L	ab_510_18	253	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	254	|-damage|p1a: Celebi|173/404|[from] Sandstorm
+L	ab_510_18	255	|-heal|p1a: Celebi|198/404|[from] item: Leftovers
+L	ab_510_18	256	|upkeep
+L	ab_510_18	257	|turn|18
+L	ab_510_18	258	|
+L	ab_510_18	259	|t:|<NORMALIZED>
+L	ab_510_18	260	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	261	|-heal|p1a: Celebi|400/404
+L	ab_510_18	262	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	263	|-resisted|p1a: Celebi
+L	ab_510_18	264	|-damage|p1a: Celebi|364/404
+L	ab_510_18	265	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	266	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	267	|
+L	ab_510_18	268	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	269	|-damage|p1a: Celebi|339/404|[from] Sandstorm
+L	ab_510_18	270	|-heal|p1a: Celebi|364/404|[from] item: Leftovers
+L	ab_510_18	271	|upkeep
+L	ab_510_18	272	|turn|19
+L	ab_510_18	273	|
+L	ab_510_18	274	|t:|<NORMALIZED>
+L	ab_510_18	275	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	276	|-heal|p1a: Celebi|404/404
+L	ab_510_18	277	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	278	|-resisted|p1a: Celebi
+L	ab_510_18	279	|-damage|p1a: Celebi|371/404
+L	ab_510_18	280	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	281	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	282	|
+L	ab_510_18	283	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	284	|-damage|p1a: Celebi|346/404|[from] Sandstorm
+L	ab_510_18	285	|-heal|p1a: Celebi|371/404|[from] item: Leftovers
+L	ab_510_18	286	|upkeep
+L	ab_510_18	287	|turn|20
+L	ab_510_18	288	|
+L	ab_510_18	289	|t:|<NORMALIZED>
+L	ab_510_18	290	|move|p1a: Celebi|Perish Song|p1a: Celebi
+L	ab_510_18	291	|-start|p1a: Celebi|perish3|[silent]
+L	ab_510_18	292	|-start|p2a: Regirock|perish3|[silent]
+L	ab_510_18	293	|-fieldactivate|move: Perish Song
+L	ab_510_18	294	|move|p2a: Regirock|Superpower|p1a: Celebi
+L	ab_510_18	295	|-resisted|p1a: Celebi
+L	ab_510_18	296	|-damage|p1a: Celebi|345/404
+L	ab_510_18	297	|-unboost|p2a: Regirock|atk|1
+L	ab_510_18	298	|-unboost|p2a: Regirock|def|1
+L	ab_510_18	299	|
+L	ab_510_18	300	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	301	|-damage|p1a: Celebi|320/404|[from] Sandstorm
+L	ab_510_18	302	|-heal|p1a: Celebi|345/404|[from] item: Leftovers
+L	ab_510_18	303	|-start|p1a: Celebi|perish3
+L	ab_510_18	304	|-start|p2a: Regirock|perish3
+L	ab_510_18	305	|upkeep
+L	ab_510_18	306	|turn|21
+L	ab_510_18	307	|
+L	ab_510_18	308	|t:|<NORMALIZED>
+L	ab_510_18	309	|switch|p1a: Smeargle|Smeargle, M|81/314
+L	ab_510_18	310	|-damage|p1a: Smeargle|42/314|[from] Spikes
+L	ab_510_18	311	|move|p2a: Regirock|Superpower|p1a: Smeargle
+L	ab_510_18	312	|-supereffective|p1a: Smeargle
+L	ab_510_18	313	|-damage|p1a: Smeargle|0 fnt
+L	ab_510_18	314	|faint|p1a: Smeargle
+L	ab_510_18	315	|
+L	ab_510_18	316	|t:|<NORMALIZED>
+L	ab_510_18	317	|switch|p1a: Celebi|Celebi|345/404
+L	ab_510_18	318	|-damage|p1a: Celebi|295/404|[from] Spikes
+L	ab_510_18	319	|
+L	ab_510_18	320	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	321	|-damage|p1a: Celebi|270/404|[from] Sandstorm
+L	ab_510_18	322	|-heal|p1a: Celebi|295/404|[from] item: Leftovers
+L	ab_510_18	323	|-start|p2a: Regirock|perish2
+L	ab_510_18	324	|upkeep
+L	ab_510_18	325	|turn|22
+L	ab_510_18	326	|
+L	ab_510_18	327	|t:|<NORMALIZED>
+L	ab_510_18	328	|move|p1a: Celebi|Baton Pass|p1a: Celebi
+L	ab_510_18	329	|
+L	ab_510_18	330	|t:|<NORMALIZED>
+L	ab_510_18	331	|switch|p1a: Salamence|Salamence, M|360/360|[from] Baton Pass
+L	ab_510_18	332	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_510_18	333	|-unboost|p2a: Regirock|atk|0
+L	ab_510_18	334	|move|p2a: Regirock|Superpower|p1a: Salamence
+L	ab_510_18	335	|-resisted|p1a: Salamence
+L	ab_510_18	336	|-damage|p1a: Salamence|330/360
+L	ab_510_18	337	|
+L	ab_510_18	338	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	339	|-damage|p1a: Salamence|308/360|[from] Sandstorm
+L	ab_510_18	340	|-heal|p1a: Salamence|330/360|[from] item: Leftovers
+L	ab_510_18	341	|-start|p2a: Regirock|perish1
+L	ab_510_18	342	|upkeep
+L	ab_510_18	343	|turn|23
+L	ab_510_18	344	|
+L	ab_510_18	345	|t:|<NORMALIZED>
+L	ab_510_18	346	|move|p1a: Salamence|Dragon Dance|p1a: Salamence
+L	ab_510_18	347	|-boost|p1a: Salamence|atk|1
+L	ab_510_18	348	|-boost|p1a: Salamence|spe|1
+L	ab_510_18	349	|move|p2a: Regirock|Struggle|p1a: Salamence
+L	ab_510_18	350	|-damage|p1a: Salamence|304/360
+L	ab_510_18	351	|-damage|p2a: Regirock|254/364|[from] Recoil|[of] p1a: Salamence
+L	ab_510_18	352	|
+L	ab_510_18	353	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	354	|-damage|p1a: Salamence|282/360|[from] Sandstorm
+L	ab_510_18	355	|-heal|p1a: Salamence|304/360|[from] item: Leftovers
+L	ab_510_18	356	|-start|p2a: Regirock|perish0
+L	ab_510_18	357	|upkeep
+L	ab_510_18	358	|faint|p2a: Regirock
+L	ab_510_18	359	|
+L	ab_510_18	360	|t:|<NORMALIZED>
+L	ab_510_18	361	|switch|p2a: Snorlax|Snorlax, M|148/464 slp
+L	ab_510_18	362	|turn|24
+L	ab_510_18	363	|
+L	ab_510_18	364	|t:|<NORMALIZED>
+L	ab_510_18	365	|-singleturn|p2a: Snorlax|move: Focus Punch
+L	ab_510_18	366	|move|p1a: Salamence|Brick Break|p2a: Snorlax
+L	ab_510_18	367	|-supereffective|p2a: Snorlax
+L	ab_510_18	368	|-damage|p2a: Snorlax|0 fnt
+L	ab_510_18	369	|faint|p2a: Snorlax
+L	ab_510_18	370	|
+L	ab_510_18	371	|t:|<NORMALIZED>
+L	ab_510_18	372	|switch|p2a: Kingdra|Kingdra, M|317/317
+L	ab_510_18	373	|
+L	ab_510_18	374	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	375	|-damage|p1a: Salamence|282/360|[from] Sandstorm
+L	ab_510_18	376	|-damage|p2a: Kingdra|298/317|[from] Sandstorm
+L	ab_510_18	377	|-heal|p1a: Salamence|304/360|[from] item: Leftovers
+L	ab_510_18	378	|-heal|p2a: Kingdra|317/317|[from] item: Leftovers
+L	ab_510_18	379	|upkeep
+L	ab_510_18	380	|turn|25
+L	ab_510_18	381	|
+L	ab_510_18	382	|t:|<NORMALIZED>
+L	ab_510_18	383	|move|p1a: Salamence|Brick Break|p2a: Kingdra
+L	ab_510_18	384	|-damage|p2a: Kingdra|165/317
+L	ab_510_18	385	|move|p2a: Kingdra|Ice Beam|p1a: Salamence
+L	ab_510_18	386	|-supereffective|p1a: Salamence
+L	ab_510_18	387	|-damage|p1a: Salamence|0 fnt
+L	ab_510_18	388	|faint|p1a: Salamence
+L	ab_510_18	389	|
+L	ab_510_18	390	|t:|<NORMALIZED>
+L	ab_510_18	391	|switch|p1a: Celebi|Celebi|295/404
+L	ab_510_18	392	|-damage|p1a: Celebi|245/404|[from] Spikes
+L	ab_510_18	393	|
+L	ab_510_18	394	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	395	|-damage|p1a: Celebi|220/404|[from] Sandstorm
+L	ab_510_18	396	|-damage|p2a: Kingdra|146/317|[from] Sandstorm
+L	ab_510_18	397	|-heal|p1a: Celebi|245/404|[from] item: Leftovers
+L	ab_510_18	398	|-heal|p2a: Kingdra|165/317|[from] item: Leftovers
+L	ab_510_18	399	|upkeep
+L	ab_510_18	400	|turn|26
+L	ab_510_18	401	|
+L	ab_510_18	402	|t:|<NORMALIZED>
+L	ab_510_18	403	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	404	|-heal|p1a: Celebi|404/404
+L	ab_510_18	405	|move|p2a: Kingdra|Surf|p1a: Celebi
+L	ab_510_18	406	|-resisted|p1a: Celebi
+L	ab_510_18	407	|-damage|p1a: Celebi|327/404
+L	ab_510_18	408	|
+L	ab_510_18	409	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	410	|-damage|p1a: Celebi|302/404|[from] Sandstorm
+L	ab_510_18	411	|-damage|p2a: Kingdra|146/317|[from] Sandstorm
+L	ab_510_18	412	|-heal|p1a: Celebi|327/404|[from] item: Leftovers
+L	ab_510_18	413	|-heal|p2a: Kingdra|165/317|[from] item: Leftovers
+L	ab_510_18	414	|upkeep
+L	ab_510_18	415	|turn|27
+L	ab_510_18	416	|
+L	ab_510_18	417	|t:|<NORMALIZED>
+L	ab_510_18	418	|move|p1a: Celebi|Leech Seed|p2a: Kingdra
+L	ab_510_18	419	|-start|p2a: Kingdra|move: Leech Seed
+L	ab_510_18	420	|move|p2a: Kingdra|Surf|p1a: Celebi
+L	ab_510_18	421	|-resisted|p1a: Celebi
+L	ab_510_18	422	|-damage|p1a: Celebi|249/404
+L	ab_510_18	423	|
+L	ab_510_18	424	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	425	|-damage|p1a: Celebi|224/404|[from] Sandstorm
+L	ab_510_18	426	|-damage|p2a: Kingdra|146/317|[from] Sandstorm
+L	ab_510_18	427	|-heal|p1a: Celebi|249/404|[from] item: Leftovers
+L	ab_510_18	428	|-heal|p2a: Kingdra|165/317|[from] item: Leftovers
+L	ab_510_18	429	|-damage|p2a: Kingdra|126/317|[from] Leech Seed|[of] p1a: Celebi
+L	ab_510_18	430	|-heal|p1a: Celebi|288/404|[silent]
+L	ab_510_18	431	|upkeep
+L	ab_510_18	432	|turn|28
+L	ab_510_18	433	|
+L	ab_510_18	434	|t:|<NORMALIZED>
+L	ab_510_18	435	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	436	|-heal|p1a: Celebi|404/404
+L	ab_510_18	437	|move|p2a: Kingdra|Substitute|p2a: Kingdra
+L	ab_510_18	438	|-start|p2a: Kingdra|Substitute
+L	ab_510_18	439	|-damage|p2a: Kingdra|47/317
+L	ab_510_18	440	|
+L	ab_510_18	441	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	442	|-damage|p1a: Celebi|379/404|[from] Sandstorm
+L	ab_510_18	443	|-damage|p2a: Kingdra|28/317|[from] Sandstorm
+L	ab_510_18	444	|-heal|p1a: Celebi|404/404|[from] item: Leftovers
+L	ab_510_18	445	|-heal|p2a: Kingdra|47/317|[from] item: Leftovers
+L	ab_510_18	446	|-damage|p2a: Kingdra|8/317|[from] Leech Seed|[of] p1a: Celebi
+L	ab_510_18	447	|upkeep
+L	ab_510_18	448	|turn|29
+L	ab_510_18	449	|
+L	ab_510_18	450	|t:|<NORMALIZED>
+L	ab_510_18	451	|move|p1a: Celebi|Perish Song|p1a: Celebi
+L	ab_510_18	452	|-start|p1a: Celebi|perish3|[silent]
+L	ab_510_18	453	|-start|p2a: Kingdra|perish3|[silent]
+L	ab_510_18	454	|-fieldactivate|move: Perish Song
+L	ab_510_18	455	|move|p2a: Kingdra|Hydro Pump|p1a: Celebi
+L	ab_510_18	456	|-resisted|p1a: Celebi
+L	ab_510_18	457	|-damage|p1a: Celebi|311/404
+L	ab_510_18	458	|
+L	ab_510_18	459	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	460	|-damage|p1a: Celebi|286/404|[from] Sandstorm
+L	ab_510_18	461	|-damage|p2a: Kingdra|0 fnt|[from] Sandstorm
+L	ab_510_18	462	|faint|p2a: Kingdra
+L	ab_510_18	463	|-heal|p1a: Celebi|311/404|[from] item: Leftovers
+L	ab_510_18	464	|-start|p1a: Celebi|perish3
+L	ab_510_18	465	|upkeep
+L	ab_510_18	466	|
+L	ab_510_18	467	|t:|<NORMALIZED>
+L	ab_510_18	468	|switch|p2a: Porygon2|Porygon2|374/374
+L	ab_510_18	469	|-ability|p2a: Porygon2|Natural Cure|Trace|[from] ability: Trace|[of] p1a: Celebi
+L	ab_510_18	470	|turn|30
+L	ab_510_18	471	|
+L	ab_510_18	472	|t:|<NORMALIZED>
+L	ab_510_18	473	|move|p1a: Celebi|Recover|p1a: Celebi
+L	ab_510_18	474	|-heal|p1a: Celebi|404/404
+L	ab_510_18	475	|move|p2a: Porygon2|Recover||[still]
+L	ab_510_18	476	|-fail|p2a: Porygon2|heal
+L	ab_510_18	477	|
+L	ab_510_18	478	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	479	|-damage|p1a: Celebi|379/404|[from] Sandstorm
+L	ab_510_18	480	|-damage|p2a: Porygon2|351/374|[from] Sandstorm
+L	ab_510_18	481	|-heal|p1a: Celebi|404/404|[from] item: Leftovers
+L	ab_510_18	482	|-heal|p2a: Porygon2|374/374|[from] item: Leftovers
+L	ab_510_18	483	|-start|p1a: Celebi|perish2
+L	ab_510_18	484	|upkeep
+L	ab_510_18	485	|turn|31
+L	ab_510_18	486	|
+L	ab_510_18	487	|t:|<NORMALIZED>
+L	ab_510_18	488	|switch|p2a: Cloyster|Cloyster, M|39/259
+L	ab_510_18	489	|move|p1a: Celebi|Leech Seed|p2a: Cloyster
+L	ab_510_18	490	|-start|p2a: Cloyster|move: Leech Seed
+L	ab_510_18	491	|
+L	ab_510_18	492	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	493	|-damage|p1a: Celebi|379/404|[from] Sandstorm
+L	ab_510_18	494	|-damage|p2a: Cloyster|23/259|[from] Sandstorm
+L	ab_510_18	495	|-heal|p1a: Celebi|404/404|[from] item: Leftovers
+L	ab_510_18	496	|-heal|p2a: Cloyster|39/259|[from] item: Leftovers
+L	ab_510_18	497	|-damage|p2a: Cloyster|7/259|[from] Leech Seed|[of] p1a: Celebi
+L	ab_510_18	498	|-start|p1a: Celebi|perish1
+L	ab_510_18	499	|upkeep
+L	ab_510_18	500	|turn|32
+L	ab_510_18	501	|
+L	ab_510_18	502	|t:|<NORMALIZED>
+L	ab_510_18	503	|move|p1a: Celebi|Perish Song|p1a: Celebi
+L	ab_510_18	504	|-start|p2a: Cloyster|perish3|[silent]
+L	ab_510_18	505	|-fieldactivate|move: Perish Song
+L	ab_510_18	506	|move|p2a: Cloyster|Spikes|p1a: Celebi
+L	ab_510_18	507	|-sidestart|p1: P1|Spikes
+L	ab_510_18	508	|
+L	ab_510_18	509	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	510	|-damage|p1a: Celebi|379/404|[from] Sandstorm
+L	ab_510_18	511	|-damage|p2a: Cloyster|0 fnt|[from] Sandstorm
+L	ab_510_18	512	|faint|p2a: Cloyster
+L	ab_510_18	513	|-heal|p1a: Celebi|404/404|[from] item: Leftovers
+L	ab_510_18	514	|-start|p1a: Celebi|perish0
+L	ab_510_18	515	|upkeep
+L	ab_510_18	516	|faint|p1a: Celebi
+L	ab_510_18	517	|
+L	ab_510_18	518	|t:|<NORMALIZED>
+L	ab_510_18	519	|switch|p1a: Tyranitar|Tyranitar, M|300/342
+L	ab_510_18	520	|switch|p2a: Porygon2|Porygon2|374/374
+L	ab_510_18	521	|-damage|p1a: Tyranitar|243/342|[from] Spikes
+L	ab_510_18	522	|-ability|p2a: Porygon2|Sand Stream|Trace|[from] ability: Trace|[of] p1a: Tyranitar
+L	ab_510_18	523	|turn|33
+L	ab_510_18	524	|
+L	ab_510_18	525	|t:|<NORMALIZED>
+L	ab_510_18	526	|move|p1a: Tyranitar|Earthquake|p2a: Porygon2
+L	ab_510_18	527	|-damage|p2a: Porygon2|280/374
+L	ab_510_18	528	|move|p2a: Porygon2|Recover|p2a: Porygon2
+L	ab_510_18	529	|-heal|p2a: Porygon2|374/374
+L	ab_510_18	530	|
+L	ab_510_18	531	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	532	|-damage|p2a: Porygon2|351/374|[from] Sandstorm
+L	ab_510_18	533	|-heal|p2a: Porygon2|374/374|[from] item: Leftovers
+L	ab_510_18	534	|upkeep
+L	ab_510_18	535	|turn|34
+L	ab_510_18	536	|
+L	ab_510_18	537	|t:|<NORMALIZED>
+L	ab_510_18	538	|move|p1a: Tyranitar|Earthquake|p2a: Porygon2
+L	ab_510_18	539	|-damage|p2a: Porygon2|282/374
+L	ab_510_18	540	|move|p2a: Porygon2|Thunderbolt|p1a: Tyranitar
+L	ab_510_18	541	|-damage|p1a: Tyranitar|168/342
+L	ab_510_18	542	|
+L	ab_510_18	543	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	544	|-damage|p2a: Porygon2|259/374|[from] Sandstorm
+L	ab_510_18	545	|-heal|p2a: Porygon2|282/374|[from] item: Leftovers
+L	ab_510_18	546	|upkeep
+L	ab_510_18	547	|turn|35
+L	ab_510_18	548	|
+L	ab_510_18	549	|t:|<NORMALIZED>
+L	ab_510_18	550	|move|p1a: Tyranitar|Toxic|p2a: Porygon2
+L	ab_510_18	551	|-status|p2a: Porygon2|tox
+L	ab_510_18	552	|move|p2a: Porygon2|Thunder Wave|p1a: Tyranitar
+L	ab_510_18	553	|-status|p1a: Tyranitar|par
+L	ab_510_18	554	|-enditem|p1a: Tyranitar|Lum Berry|[eat]
+L	ab_510_18	555	|-curestatus|p1a: Tyranitar|par|[msg]
+L	ab_510_18	556	|
+L	ab_510_18	557	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	558	|-damage|p2a: Porygon2|259/374 tox|[from] Sandstorm
+L	ab_510_18	559	|-heal|p2a: Porygon2|282/374 tox|[from] item: Leftovers
+L	ab_510_18	560	|-damage|p2a: Porygon2|259/374 tox|[from] psn
+L	ab_510_18	561	|upkeep
+L	ab_510_18	562	|turn|36
+L	ab_510_18	563	|
+L	ab_510_18	564	|t:|<NORMALIZED>
+L	ab_510_18	565	|move|p1a: Tyranitar|Toxic|p2a: Porygon2
+L	ab_510_18	566	|-fail|p2a: Porygon2|tox
+L	ab_510_18	567	|move|p2a: Porygon2|Thunder Wave|p1a: Tyranitar
+L	ab_510_18	568	|-status|p1a: Tyranitar|par
+L	ab_510_18	569	|
+L	ab_510_18	570	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	571	|-damage|p2a: Porygon2|236/374 tox|[from] Sandstorm
+L	ab_510_18	572	|-heal|p2a: Porygon2|259/374 tox|[from] item: Leftovers
+L	ab_510_18	573	|-damage|p2a: Porygon2|213/374 tox|[from] psn
+L	ab_510_18	574	|upkeep
+L	ab_510_18	575	|turn|37
+L	ab_510_18	576	|
+L	ab_510_18	577	|t:|<NORMALIZED>
+L	ab_510_18	578	|move|p2a: Porygon2|Thunder Wave|p1a: Tyranitar
+L	ab_510_18	579	|-fail|p1a: Tyranitar|par
+L	ab_510_18	580	|move|p1a: Tyranitar|Hidden Power|p2a: Porygon2
+L	ab_510_18	581	|-damage|p2a: Porygon2|142/374 tox
+L	ab_510_18	582	|
+L	ab_510_18	583	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	584	|-damage|p2a: Porygon2|119/374 tox|[from] Sandstorm
+L	ab_510_18	585	|-heal|p2a: Porygon2|142/374 tox|[from] item: Leftovers
+L	ab_510_18	586	|-damage|p2a: Porygon2|73/374 tox|[from] psn
+L	ab_510_18	587	|upkeep
+L	ab_510_18	588	|turn|38
+L	ab_510_18	589	|
+L	ab_510_18	590	|t:|<NORMALIZED>
+L	ab_510_18	591	|move|p2a: Porygon2|Thunder Wave|p1a: Tyranitar
+L	ab_510_18	592	|-fail|p1a: Tyranitar|par
+L	ab_510_18	593	|cant|p1a: Tyranitar|par
+L	ab_510_18	594	|
+L	ab_510_18	595	|-weather|Sandstorm|[upkeep]
+L	ab_510_18	596	|-damage|p2a: Porygon2|50/374 tox|[from] Sandstorm
+L	ab_510_18	597	|-heal|p2a: Porygon2|73/374 tox|[from] item: Leftovers
+L	ab_510_18	598	|-damage|p2a: Porygon2|0 fnt|[from] psn
+L	ab_510_18	599	|faint|p2a: Porygon2
+L	ab_510_18	600	|
+L	ab_510_18	601	|win|P1

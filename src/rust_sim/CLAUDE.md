@@ -8300,3 +8300,52 @@ quietly corrected.
 the collapse fails both the accessor test AND the ROUND-53 pin `HP1`; planting a `raw_name()`
 caller in an emitter fails the allowlist gate by name and line.
 
+### ROUND 55 (FIX) — the boost CAP runs BEFORE the TryBoost event
+
+`gen3_boost_cap_before_tryboost_v1`. The 6-hour `ourandom` byte fuzz finished at **17,575
+battles / 0 panics / 5 divergences** (25 correctly allowlisted turn-0 construction artifacts).
+One was the ROUND-53 Hidden Power leak — already fixed, and it replays `ok`. One was NEW and real:
+
+```
+sim:  |-unboost|p2a: Regirock|atk|0
+port: |-fail|p2a: Regirock|unboost|[from] ability: Clear Body|[of] p2a: Regirock
+```
+
+**`Battle.boost` runs `getCappedBoost` BEFORE `runEvent('TryBoost')`.** So a target already at
+the −6 Atk floor has Intimidate's `{atk:-1}` reduced to `{atk:0}` before Clear Body's handler
+sees it — and that handler only announces when it actually DELETES a negative key. At the floor
+there is nothing to delete, so **the immunity does not fire at all** and the delta-0
+`|-unboost|…|atk|0` prints instead. The port checked the ability FIRST and announced the block
+unconditionally.
+
+PROBE-MEASURED (`harness/probe_intimidate_clearbody_floor.js`), and the gradient is the proof:
+Atk stage **0 → Clear Body `-fail`**, **−3 → Clear Body `-fail`**, **−6 → `-unboost|atk|0`**.
+
+**⚠️ THE BOARD IS WHY THIS SURVIVED 17k BATTLES.** It needs a Clear Body mon at the Atk FLOOR
+facing an incoming Intimidate — and Clear Body blocks foe-sourced drops, so the ONLY way there is
+the mon dropping its OWN Atk, which Clear Body correctly ignores (`target === source`). In the
+repro a Regirock Superpowered itself to −6 and a **Baton-Passed** Salamence then switched in.
+Three independent mechanics had to compose.
+
+**The same ordering bug existed on the MOVE path** (`apply_secondary_boost`'s primary-drop
+announce) and is fixed with it: a Screech into a Clear Body mon already at −6 Def must likewise
+stay silent. That site had no repro — it was found by asking where else the same predicate lived,
+which is the habit the round-54 accessor work was about.
+
+**⚠️ MY FIRST PROBE MEASURED NOTHING AND LOOKED CONCLUSIVE.** It used a Zigzagoon as the
+Superpower target; Superpower KO'd it on turn 1, every later blind write desynced, and the foe's
+Atk only ever reached **−1** — comfortably above the floor, so BOTH arms showed the Clear Body
+`-fail` and the obvious reading was "the floor makes no difference". Re-run with a Steelix (huge
+Def, resists Fighting) it reaches −6 and the difference appears. **A probe whose setup silently
+fails reads exactly like a null result.**
+
+**Gates:** `cargo test --release --no-fail-fast` **710 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; revert-verified pin `CB1` (which asserts BOTH
+branches — a model that merely stopped announcing Clear Body would satisfy the floor half alone)
+plus corpus fixture `74_clear_body_capped_drop_no_announce.txt`.
+
+**The run's other THREE divergences are all `kind=seed`, and an A/B proves they are NOT this
+change**: neutralising the fix reproduces all three at the identical kind and decision index
+(dec 26 / 42 / 1). They are fresh samples of the pre-existing ROUND-26 decision-stream-desync
+tail, preserved under `/tmp/long_fuzz/divergences/`.
+

@@ -728,7 +728,18 @@ impl crate::state::BattleState {
                 self.log.ability(&mon, "Intimidate", Some("boost"));
                 let foe_ability = to_id(&self.sides[foe].pokemon[foe_slot].ability);
                 let foe_ref = self.mon_ref(foe, foe_slot, dex);
-                if matches!(foe_ability.as_str(), "clearbody" | "whitesmoke" | "hypercutter") {
+                // ⚠️ THE CAP IS APPLIED BEFORE THE TryBoost EVENT (`gen3_boost_cap_before_
+                // tryboost_v1`). `Battle.boost` runs `getCappedBoost` FIRST, so a target
+                // already at the −6 Atk FLOOR has its `{atk:-1}` reduced to `{atk:0}` before
+                // Clear Body's handler ever sees it — and that handler only fires when it
+                // actually DELETES a negative key. So at the floor the immunity does NOT
+                // announce; the delta-0 `|-unboost|…|atk|0` prints instead.
+                // PROBE-MEASURED (`harness/probe_intimidate_clearbody_floor.js`): stage 0 and
+                // −3 give the Clear Body `-fail`, stage −6 gives `-unboost|atk|0`.
+                let at_floor = self.sides[foe].pokemon[foe_slot].boosts[0] <= -6;
+                if !at_floor
+                    && matches!(foe_ability.as_str(), "clearbody" | "whitesmoke" | "hypercutter")
+                {
                     let stat = unboost_fail_stat_token(&foe_ability); // Hyper Cutter → "Attack"
                     let display = dex
                         .ability(&foe_ability)

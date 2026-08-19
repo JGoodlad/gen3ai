@@ -340,10 +340,14 @@ impl crate::state::BattleState {
         // single-stat blockers (Hyper Cutter / Keen Eye) carry their `unboost|<Stat>` token
         // (`unboost_fail_stat_token`), the whole-table ones (Clear Body / White Smoke) none.
         if is_primary_drop && !want_self && self.logging() {
-            let any_blocked = spec
-                .boosts
-                .iter()
-                .any(|&(idx, _)| stat_drop_blocked(&foe_ability, idx));
+            // ⚠️ Same cap-before-TryBoost rule as Intimidate
+            // (`gen3_boost_cap_before_tryboost_v1`): a stat ALREADY at the −6 floor has its
+            // drop capped to 0 before the handler runs, so the blocker does not announce for
+            // that stat. Only a stat with a surviving negative delta counts as blocked.
+            let any_blocked = spec.boosts.iter().any(|&(idx, _)| {
+                stat_drop_blocked(&foe_ability, idx)
+                    && self.sides[t_side].pokemon[t_slot].boosts[idx] > -6
+            });
             if any_blocked {
                 let name = _dex.ability(&foe_ability).map(|a| a.name.clone()).unwrap_or_else(|| foe_ability.clone());
                 let stat = unboost_fail_stat_token(&foe_ability);
