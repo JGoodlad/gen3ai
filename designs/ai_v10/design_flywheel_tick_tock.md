@@ -109,6 +109,23 @@ distill-mix config · the promotion gate + computed per-revolution report into
 `research_state/measurements/`. The launch-diff gate wraps every launch. Owner touchpoints per
 revolution: the slice curation (§3) and the fold go/no-go if the preview is ambiguous.
 
+## 6b. Gen-16 prerequisites (owner additions, 2026-08-18)
+
+- **PFSP** (Prioritized Fictitious Self-Play — opponent sampling weighted toward pool members
+  the learner loses to). Phase-1 is BUILT (`--pfsp-scale` + `--pool-spread`, OFF byte-identical,
+  never production-enabled). Gen-16 needs it ON: before that, a REVIVAL VERIFICATION (the code
+  predates several refactor waves — smoke it, re-run its tests, confirm byte-identity OFF and
+  sane sampling ON) and a pre-registered enable note in gen-16's launch diff.
+- **Per-team win-rate tracking vs the pool** — first-class, not scratch scripts: the training
+  loop already knows which team each episode pilots (team_sha) and its outcome; track a running
+  per-team win rate, emit sparse TB summaries (top/bottom-k + aggregates) and a periodic
+  full-table artifact (team_sha-keyed, archetype-joined). This is the data source for THREE
+  consumers at once: the deficit thermostat (§9 of the scaling doc), HEADROOM CAPTURE's
+  denominator (§5), and slice curation evidence. ⚠️ The measured confound rides along: raw
+  per-team win rate conflates PILOT COMPETENCE with TEAM STRENGTH (the ai_v8 team-PFSP lesson)
+  — the thermostat and any prioritization must normalize against a team-strength baseline
+  (e.g. the team's pool-average win rate under a reference pilot), never raw wr.
+
 ## 7. Open items this doc does NOT decide
 
 Tick length (steps per tick — likely the existing 25M-generation rhythm shortened; decide from
