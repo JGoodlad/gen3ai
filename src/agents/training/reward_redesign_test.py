@@ -19,6 +19,21 @@ from agents.training.progress_clock import (
 )
 
 
+def _mgr_additive_bias(**kw):
+    """A manager in the ADDITIVE-BIAS regime — i.e. `--no-all-shaping-pbrs`.
+
+    Since 2026-08-18 the DEFAULT config is `--all-shaping-pbrs` (the validated ai_v8 composition):
+    the four end-state potentials FOLD and every BIAS term but `no_progress_tax` is ZEROED. A test
+    that wants to see a BIAS term fire, or to observe the potentials' OFF branch, must therefore
+    STATE the fallback regime rather than inherit it from a default that no longer means that.
+
+    `src/main/reward_defaults_test.py` owns the default composition itself; this helper keeps the
+    per-term mechanics tests readable about which regime they exercise.
+    """
+    kw.setdefault("config", RewardConfig(all_shaping_pbrs=False))
+    return Gen3RewardManager(**kw)
+
+
 # --------------------------------------------------------------------------- #
 # Minimal LiveView / battle / delta stubs for Φ_mat + the fold.                 #
 # --------------------------------------------------------------------------- #
@@ -256,10 +271,12 @@ class TestStatusPBRS(unittest.TestCase):
         self.assertAlmostEqual(m._compute_phi_status(opp_live), +STATUS_TEMPO_WEIGHT, places=6)
         self.assertAlmostEqual(m._compute_phi_status(our_live), -STATUS_TEMPO_WEIGHT, places=6)
 
-    def test_fold_gated_off_by_default(self):
-        """Default run (redesign OFF): pbrs_status ≡ 0 and _prev_phi_status stays None even with a
-        sleeping opp mon → byte-identical to before Φ_status existed."""
-        m = Gen3RewardManager()   # default: bias_redesign False
+    def test_fold_gated_off_without_either_switch(self):
+        """`--no-all-shaping-pbrs` and no `--bias-redesign`: pbrs_status ≡ 0 and _prev_phi_status
+        stays None even with a sleeping opp mon (the count-diff `status` BIAS pays the standing
+        value there instead, so folding Φ_status would double-count). This was the DEFAULT until
+        2026-08-18; it is now the fallback, and `test_fold_active_by_default` covers the default."""
+        m = _mgr_additive_bias()
         live1 = _full_team_live()
         m.process_turn_reward(_Battle(live1, turn=1), _delta())
         live2 = _full_team_live(); self._set_status(live2, "opp", 0, "slp")
@@ -423,10 +440,13 @@ class TestBiasDrops(unittest.TestCase):
 
     def test_drop_redundant_zeros_stall_tax_end_to_end(self):
         """A real turn past STALL_TAX_START_TURN charges stall_tax; the flag zeros it in the breakdown."""
-        m_off = Gen3RewardManager()
+        # Both arms are in the additive-BIAS regime: --all-shaping-pbrs (the DEFAULT since
+        # 2026-08-18) already zeroes stall_tax, which would make --drop-redundant-bias untestable.
+        m_off = _mgr_additive_bias()
         m_off.process_turn_reward(_Battle(_full_team_live(), turn=120), _delta())
         self.assertLess(m_off._last_breakdown.stall_tax, 0.0)   # charged when off
-        m_on = Gen3RewardManager(config=RewardConfig(drop_redundant_bias=True))
+        m_on = _mgr_additive_bias(config=RewardConfig(all_shaping_pbrs=False,
+                                                      drop_redundant_bias=True))
         m_on.process_turn_reward(_Battle(_full_team_live(), turn=120), _delta())
         self.assertEqual(m_on._last_breakdown.stall_tax, 0.0)   # dropped when on
 
@@ -555,9 +575,10 @@ class TestHazardPBRS(unittest.TestCase):
         live.ours.side_conditions = {"spikes": 1}
         self.assertAlmostEqual(m._compute_phi_hazard(live), HAZARD_WEIGHT * (3 - 1), places=6)
 
-    def test_fold_gated_off_by_default(self):
-        """Default run (all_shaping_pbrs OFF): pbrs_hazard ≡ 0, _prev_phi_hazard stays None."""
-        m = Gen3RewardManager()
+    def test_fold_gated_off_under_no_all_shaping_pbrs(self):
+        """`--no-all-shaping-pbrs`: pbrs_hazard ≡ 0, _prev_phi_hazard stays None (the spikes /
+        futile_spikes BIAS terms carry hazard value there). DEFAULT-ON since 2026-08-18."""
+        m = _mgr_additive_bias()
         m.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
         live2 = _full_team_live(); live2.opp.side_conditions = {"spikes": 1}
         m.process_turn_reward(_Battle(live2, turn=2), _delta(our_move_id="spikes"))
@@ -646,8 +667,9 @@ class TestBoostPBRS(unittest.TestCase):
         m.process_turn_reward(_Battle(fainted, turn=2), _delta(we_fainted=True))
         self.assertLess(m._last_breakdown.pbrs_boost, 0.0)
 
-    def test_fold_gated_off_by_default(self):
-        m = Gen3RewardManager()
+    def test_fold_gated_off_under_no_all_shaping_pbrs(self):
+        """DEFAULT-ON since 2026-08-18; this pins the fallback's OFF branch."""
+        m = _mgr_additive_bias()
         live = _full_team_live(); live.ours.active.boosts = {"atk": 3}
         m.process_turn_reward(_Battle(live, turn=1), _delta())
         self.assertEqual(m._last_breakdown.pbrs_boost, 0.0)
@@ -710,8 +732,9 @@ class TestOppBoostsPBRS(unittest.TestCase):
         live = _full_team_live(); live.opp.active.boosts = {"atk": 2, "def": -2}
         self.assertAlmostEqual(m._compute_phi_opp_boosts(live), -OPP_BOOST_WEIGHT * 2, places=6)
 
-    def test_fold_disabled_by_default(self):
-        m = Gen3RewardManager()
+    def test_fold_disabled_under_no_all_shaping_pbrs(self):
+        """DEFAULT-ON since 2026-08-18; this pins the fallback's OFF branch."""
+        m = _mgr_additive_bias()
         live = _full_team_live(); live.opp.active.boosts = {"atk": 3}
         m.process_turn_reward(_Battle(live, turn=1), _delta())
         self.assertEqual(m._last_breakdown.pbrs_opp_boosts, 0.0)
@@ -768,9 +791,9 @@ class TestRoarPBRS(unittest.TestCase):
         live = _full_team_live(); live.opp.active.boosts = {"atk": 2, "spe": 1, "def": -1}
         self.assertAlmostEqual(m._compute_phi_roar(live), -ROAR_BOOST_WEIGHT * 3, places=6)
 
-    def test_fold_disabled_by_default(self):
-        """Default (no all_shaping_pbrs) → byte-identical: pbrs_roar stays 0, prev stays None."""
-        m = Gen3RewardManager()
+    def test_fold_disabled_under_no_all_shaping_pbrs(self):
+        """The fallback regime: pbrs_roar stays 0, prev stays None. DEFAULT-ON since 2026-08-18."""
+        m = _mgr_additive_bias()
         live = _full_team_live(); live.opp.active.boosts = {"atk": 3}
         m.process_turn_reward(_Battle(live, turn=1), _delta())
         self.assertEqual(m._last_breakdown.pbrs_roar, 0.0)
@@ -835,12 +858,23 @@ class TestEndStateDrops(unittest.TestCase):
             setattr(bd, f, 1.0)
         return bd
 
-    def test_default_is_noop(self):
-        m = Gen3RewardManager()   # both flags default False
+    def test_both_flags_off_is_a_noop(self):
+        """The fallback regime leaves every BIAS term standing. Was the DEFAULT until 2026-08-18 —
+        `test_default_keeps_only_the_stall_tilt` below now covers the default."""
+        m = _mgr_additive_bias()
         bd = self._bd_all_bias_nonzero()
         m._apply_pbrs_suppression(bd)
         for f in bd.registry_fields(RewardClass.BIAS):
-            self.assertEqual(getattr(bd, f), 1.0, f"{f} must be untouched by default")
+            self.assertEqual(getattr(bd, f), 1.0, f"{f} must be untouched with both flags off")
+
+    def test_default_keeps_only_the_stall_tilt(self):
+        """THE DEFAULT COMPOSITION, asserted through the suppression path a real turn takes: a
+        default-constructed manager zeroes every BIAS term except `no_progress_tax`."""
+        m = Gen3RewardManager()   # --all-shaping-pbrs ON, --stall-pbrs off
+        bd = self._bd_all_bias_nonzero()
+        m._apply_pbrs_suppression(bd)
+        survivors = [f for f in bd.registry_fields(RewardClass.BIAS) if getattr(bd, f) != 0.0]
+        self.assertEqual(survivors, [self._KEPT_BY_ALL])
 
     def test_all_shaping_zeros_everything_but_stall_tilt(self):
         """--all-shaping-pbrs zeros every BIAS term EXCEPT no_progress_tax (the kept anti-stall tilt) —
@@ -855,8 +889,9 @@ class TestEndStateDrops(unittest.TestCase):
                 self.assertEqual(getattr(bd, f), 0.0, f"{f} should be zeroed by --all-shaping-pbrs")
 
     def test_stall_pbrs_zeros_only_the_stall_terms(self):
-        """--stall-pbrs alone zeros no_progress_tax + stall_tax; non-stall BIAS is untouched."""
-        m = Gen3RewardManager(config=RewardConfig(stall_pbrs=True))
+        """--stall-pbrs alone zeros no_progress_tax + stall_tax; non-stall BIAS is untouched.
+        ALONE means without --all-shaping-pbrs, which since 2026-08-18 must be said explicitly."""
+        m = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=False, stall_pbrs=True))
         bd = self._bd_all_bias_nonzero()
         m._apply_pbrs_suppression(bd)
         for f in self._STALL:
@@ -877,7 +912,7 @@ class TestEndStateDrops(unittest.TestCase):
         live.ours.active.move_ids = ("tackle",)
         delta = _delta(opp_fainted=True, our_move_id="tackle",
                        opp_hp_delta=np.array([-0.5, 0, 0, 0, 0, 0], dtype=np.float32))
-        m_off = Gen3RewardManager()
+        m_off = _mgr_additive_bias()
         m_off.process_turn_reward(_Battle(live, turn=1), delta)
         self.assertAlmostEqual(m_off._last_breakdown.finishing_blow, FINISHING_BLOW_BONUS, places=6)
         m_on = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
@@ -890,7 +925,7 @@ class TestEndStateDrops(unittest.TestCase):
         opp_event = SimpleNamespace(move_id="explosion", effectiveness=0.0, target_species=None)
         delta = _delta(opp_damaging_event=opp_event, we_fainted=False,
                        our_hp_delta=np.zeros(6, dtype=np.float32))
-        m_off = Gen3RewardManager()
+        m_off = _mgr_additive_bias()
         m_off.process_turn_reward(_Battle(_full_team_live(), turn=1), delta)
         self.assertAlmostEqual(m_off._last_breakdown.explosion_block, EXPLOSION_BLOCK_BONUS, places=6)
         m_on = Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True))
@@ -939,8 +974,8 @@ class TestAllShapingPbrsNoOpDefault(unittest.TestCase):
     """Global no-op-equivalence: with all_shaping_pbrs=False the four pbrs_* fields stay 0 and the
     four _prev_phi_* slots stay None across a multi-window episode (byte-identical default)."""
 
-    def test_default_leaves_new_pbrs_inert(self):
-        m = Gen3RewardManager(progress_clock=ProgressClock())   # default: flag OFF
+    def test_no_all_shaping_pbrs_leaves_new_pbrs_inert(self):
+        m = _mgr_additive_bias(progress_clock=ProgressClock())
         livesteps = [
             _full_team_live(),
             (lambda l: (setattr(l.opp, "side_conditions", {"spikes": 1}), l)[1])(_full_team_live()),
@@ -1501,7 +1536,11 @@ class TestSwitchBias(unittest.TestCase):
     decision-time snapshots (`_prev_active_ko_risk` / `_prev_safe_pivot`), which is what the fold sets."""
 
     def _mgr(self, weight):
-        return Gen3RewardManager(config=RewardConfig(switch_bias_weight=weight))
+        # `--no-all-shaping-pbrs`: these are BIAS-class terms, and the DEFAULT composition (since
+        # 2026-08-18) zeroes every BIAS term but `no_progress_tax`. The lever is only reachable in
+        # the additive-BIAS regime, so the regime is stated rather than inherited.
+        return Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=False,
+                                                     switch_bias_weight=weight))
 
     def _armed(self, weight, risk=0.7, safe=True):
         """A manager with the decision-time threat snapshot pre-set (as the fold would)."""
@@ -1757,9 +1796,13 @@ class TestRewardConfigSingleSource(unittest.TestCase):
         self.assertAlmostEqual(rc.gamma, 0.9999)   # fixed PPO discount, never from args
 
     def test_from_args_defaults_match_explicit(self):
+        """The explicit values here ARE the dataclass defaults — including the two flipped on
+        2026-08-18 (`all_shaping_pbrs=True`, `draw_penalty=-35.0`). `reward_defaults_test.py`
+        separately pins that the argparse defaults agree with these."""
         from types import SimpleNamespace
         args = SimpleNamespace(bias_additivity=1.0, mat_alive_weight=1.25, no_progress_penalty=0.15,
-                               switch_bias_weight=0.0, bias_redesign=False, draw_penalty=-30.0)
+                               switch_bias_weight=0.0, bias_redesign=False, draw_penalty=-35.0,
+                               all_shaping_pbrs=True, stall_pbrs=False)
         self.assertEqual(RewardConfig.from_args(args), RewardConfig())
 
     def test_from_dict_round_trips(self):

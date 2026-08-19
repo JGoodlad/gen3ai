@@ -81,6 +81,55 @@ class ModelVersionError(Exception):
     pass
 
 
+# The resume-IMMUTABLE reward hparams, in the order `check_reward_config` reports them, each mapped
+# to the value a config-shaped object is read with when it lacks the field. The DEFAULTS here track
+# `agents.training.reward_manager.RewardConfig` and are pinned against it by
+# `src/main/reward_defaults_test.py` — a divergence would make an absent field mean one thing to the
+# reward and another to the version record, which is the drift class this whole file guards.
+_REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
+    "bias_additivity": 1.0,
+    "mat_alive_weight": 1.25,
+    "bias_redesign": False,
+    "switch_bias_weight": 0.0,
+    "draw_penalty": -35.0,
+    "self_ko_hp_penalty": 0.0,
+    "drop_redundant_bias": False,
+    "drop_switch_bias": False,
+    "all_shaping_pbrs": True,
+    "stall_pbrs": False,
+    "no_progress_penalty": 0.15,
+}
+
+# field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
+# opt-out spelling); floats take their value positionally.
+_REWARD_FIELD_FLAGS: Dict[str, str] = {
+    "bias_additivity": "--bias-additivity",
+    "mat_alive_weight": "--mat-alive-weight",
+    "bias_redesign": "--bias-redesign",
+    "switch_bias_weight": "--switch-bias-weight",
+    "draw_penalty": "--draw-penalty",
+    "self_ko_hp_penalty": "--self-ko-hp-penalty",
+    "drop_redundant_bias": "--drop-redundant-bias",
+    "drop_switch_bias": "--drop-switch-bias",
+    "all_shaping_pbrs": "--all-shaping-pbrs",
+    "stall_pbrs": "--stall-pbrs",
+    "no_progress_penalty": "--no-progress-penalty",
+}
+
+
+def _reward_flag_repr(name: str, value: Any) -> str:
+    """The exact CLI text that would set reward field `name` to `value` — what a resume must re-pass.
+
+    Bools render as the bare flag or its `--no-` negation rather than `--flag false`: both parse
+    (BoolFlag takes a value too), but the negation is the spelling the help text and the docs use,
+    and an error message that teaches a second spelling costs more than it saves.
+    """
+    flag = _REWARD_FIELD_FLAGS[name]
+    if isinstance(value, bool):
+        return flag if value else f"--no-{flag[2:]}"
+    return f"{flag} {value!r}"
+
+
 @dataclass
 class ModelVersion:
     # Schema and architecture identity
@@ -123,9 +172,11 @@ class ModelVersion:
     mat_alive_weight: float = 1.25
     bias_redesign: bool = False
     switch_bias_weight: float = 0.0   # v5: belief-risk-scaled stay-into-KO BIAS lever (default OFF)
-    # v7: terminal reward for a DRAW / 250-turn timeout. -30.0 = the prior behavior (tie == decisive
-    # loss). Resume-immutable VALUE-meaning (check_reward_config), excluded from the weight-shape check.
-    draw_penalty: float = -30.0
+    # v7: terminal reward for a DRAW / 250-turn timeout. Resume-immutable VALUE-meaning
+    # (check_reward_config), excluded from the weight-shape check. The default tracks
+    # RewardConfig.draw_penalty (flipped -30.0 -> -35.0, owner decision 2026-08-18) so a version
+    # built with no reward_config records what a default run actually trains with.
+    draw_penalty: float = -35.0
     # v12: de-bias cleanup — zero audit-flagged distorting BIAS terms. Resume-immutable VALUE-meaning
     # (check_reward_config), excluded from the weight-shape check. False = the prior behavior.
     drop_redundant_bias: bool = False   # drop stall_tax + matchup_penalty (redundant w/ clock+draw / pbrs_belief)
@@ -133,7 +184,11 @@ class ModelVersion:
 
     # v13/v14: end-state PBRS switches + the now-immutable no-progress penalty (Φ_progress's weight).
     # all_shaping_pbrs = "everything but stall"; stall_pbrs (v14) = the "stall" switch (Φ_progress).
-    all_shaping_pbrs: bool = False
+    # `all_shaping_pbrs` defaults TRUE, tracking RewardConfig (owner decision 2026-08-18 — the
+    # validated ai_v8 composition). Every config at/above MIGRATION_FLOOR records the key explicitly,
+    # so this default is reached only by a ModelVersion built with no reward_config at all; keeping
+    # it in step with RewardConfig is what stops such a version recording a composition no run uses.
+    all_shaping_pbrs: bool = True
     stall_pbrs: bool = False
     no_progress_penalty: float = 0.15
 
@@ -564,11 +619,14 @@ class ModelVersion:
             mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
             bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
             switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
-            draw_penalty=float(getattr(reward_config, "draw_penalty", -30.0)),
+            # The two getattr fallbacks below track the RewardConfig defaults (owner decision
+            # 2026-08-18): a version built with reward_config=None must record the composition a
+            # default run actually trains with, not the superseded one.
+            draw_penalty=float(getattr(reward_config, "draw_penalty", -35.0)),
             self_ko_hp_penalty=float(getattr(reward_config, "self_ko_hp_penalty", 0.0)),
             drop_redundant_bias=bool(getattr(reward_config, "drop_redundant_bias", False)),
             drop_switch_bias=bool(getattr(reward_config, "drop_switch_bias", False)),
-            all_shaping_pbrs=bool(getattr(reward_config, "all_shaping_pbrs", False)),
+            all_shaping_pbrs=bool(getattr(reward_config, "all_shaping_pbrs", True)),
             stall_pbrs=bool(getattr(reward_config, "stall_pbrs", False)),
             no_progress_penalty=float(getattr(reward_config, "no_progress_penalty", 0.15)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
@@ -1484,49 +1542,42 @@ class ModelVersion:
 
     def check_reward_config(self, reward_config: Any) -> None:
         """Raise ModelVersionError if the resume `reward_config` differs from this saved config's
-        reward hparams (bias_additivity / mat_alive_weight / bias_redesign). Like check_vf_coef:
+        reward hparams (bias_additivity / mat_alive_weight / bias_redesign / …). Like check_vf_coef:
         these are VALUE-meaning (changing them mid-run silently shifts the reward), NOT weight-shape,
         so they are enforced ONLY on the training-resume path and excluded from check_compatible().
-        Call as: saved_version.check_reward_config(args_reward_config)."""
-        req_ba = float(getattr(reward_config, "bias_additivity", 1.0))
-        req_maw = float(getattr(reward_config, "mat_alive_weight", 1.25))
-        req_br = bool(getattr(reward_config, "bias_redesign", False))
-        req_sbw = float(getattr(reward_config, "switch_bias_weight", 0.0))
-        req_dp = float(getattr(reward_config, "draw_penalty", -30.0))
-        req_skp = float(getattr(reward_config, "self_ko_hp_penalty", 0.0))
-        req_drb = bool(getattr(reward_config, "drop_redundant_bias", False))
-        req_dsb = bool(getattr(reward_config, "drop_switch_bias", False))
-        req_asp = bool(getattr(reward_config, "all_shaping_pbrs", False))
-        req_sp = bool(getattr(reward_config, "stall_pbrs", False))
-        req_npp = float(getattr(reward_config, "no_progress_penalty", 0.15))
-        problems = []
-        if not math.isclose(self.bias_additivity, req_ba, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  bias_additivity: saved={self.bias_additivity!r}, requested={req_ba!r}")
-        if not math.isclose(self.mat_alive_weight, req_maw, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  mat_alive_weight: saved={self.mat_alive_weight!r}, requested={req_maw!r}")
-        if self.bias_redesign != req_br:
-            problems.append(f"  bias_redesign: saved={self.bias_redesign!r}, requested={req_br!r}")
-        if not math.isclose(self.switch_bias_weight, req_sbw, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  switch_bias_weight: saved={self.switch_bias_weight!r}, requested={req_sbw!r}")
-        if not math.isclose(self.draw_penalty, req_dp, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  draw_penalty: saved={self.draw_penalty!r}, requested={req_dp!r}")
-        if not math.isclose(self.self_ko_hp_penalty, req_skp, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  self_ko_hp_penalty: saved={self.self_ko_hp_penalty!r}, requested={req_skp!r}")
-        if self.drop_redundant_bias != req_drb:
-            problems.append(f"  drop_redundant_bias: saved={self.drop_redundant_bias!r}, requested={req_drb!r}")
-        if self.drop_switch_bias != req_dsb:
-            problems.append(f"  drop_switch_bias: saved={self.drop_switch_bias!r}, requested={req_dsb!r}")
-        if self.all_shaping_pbrs != req_asp:
-            problems.append(f"  all_shaping_pbrs: saved={self.all_shaping_pbrs!r}, requested={req_asp!r}")
-        if self.stall_pbrs != req_sp:
-            problems.append(f"  stall_pbrs: saved={self.stall_pbrs!r}, requested={req_sp!r}")
-        if not math.isclose(self.no_progress_penalty, req_npp, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"  no_progress_penalty: saved={self.no_progress_penalty!r}, requested={req_npp!r}")
+        Call as: saved_version.check_reward_config(args_reward_config).
+
+        The error NAMES the fix. That matters more than usual since 2026-08-18, when
+        `--all-shaping-pbrs` defaulted ON and `--draw-penalty` to -35.0: every pre-flip run now
+        mismatches on a flagless resume, and a diff that only reports "saved=X, requested=Y" leaves
+        the reader to reconstruct the flag spelling (including that the opt-out is
+        `--no-all-shaping-pbrs`, not `--all-shaping-pbrs false`, and that the negation of a float
+        flag is just the old number).
+        """
+        problems, repass, recorded_pairs = [], [], []
+        for name, default in _REWARD_IMMUTABLE_FIELDS.items():
+            wanted = getattr(reward_config, name, default)
+            saved = getattr(self, name)
+            if isinstance(default, bool):
+                saved, wanted = bool(saved), bool(wanted)
+                differs = saved != wanted
+            else:
+                saved, wanted = float(saved), float(wanted)
+                differs = not math.isclose(saved, wanted, rel_tol=1e-9, abs_tol=1e-12)
+            if differs:
+                problems.append(f"  {name}: saved={saved!r}, requested={wanted!r}")
+                recorded_pairs.append(f"{name}={saved!r}")
+                repass.append(_reward_flag_repr(name, saved))
         if problems:
+            recorded = ", ".join(recorded_pairs)
             raise ModelVersionError(
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
                 "(changing them silently shifts the reward / objective):\n" + "\n".join(problems) +
-                "\n\nFix: resume with the saved values, or start a fresh run."
+                f"\n\nThis run recorded {recorded}.\n"
+                f"Fix: re-pass `{' '.join(repass)}` to resume it, or start a fresh run.\n"
+                "(The reward DEFAULTS changed on 2026-08-18 — --all-shaping-pbrs now defaults ON "
+                "and --draw-penalty to -35.0 — so a run started under the old defaults must state "
+                "them explicitly on every resume.)"
             )
 
 

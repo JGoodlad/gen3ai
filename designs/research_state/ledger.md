@@ -1003,8 +1003,12 @@ an owner having to catch it.
 ### Method (2026-08-18): the reward composition drifted SILENTLY at the v8→v9 boundary — and fork pools start empty
 
 **Defect 2 — the reward drift.** All 20 `ai_v8_*` runs trained with `--all-shaping-pbrs` ON
-(1 TERMINAL + 8 PBRS + 1 BIAS — near-policy-invariant); **every** `ai_v9_*` run through gen-14
-ran it OFF (1 TERMINAL + 3 PBRS + **28 fully-additive BIAS terms** at λ=1.0). No recorded
+(1 TERMINAL + **7** PBRS + 1 BIAS — near-policy-invariant; corrected 2026-08-18 by the measured
+census: `pbrs_progress` is stall-pbrs-gated and inactive in both regimes, so the registry class
+size 8 overcounts); **every** `ai_v9_*` run through gen-14 ran it OFF (1 TERMINAL + **2** PBRS +
+**26 active additive BIAS terms** at λ=1.0 — the hand-count's 3/28 didn't subtract the
+weight-gated terms; `reward_class_composition()` is now the census of record and lands in every
+run's metadata.json). The SHAPE claim is unchanged: one acknowledged bias vs a couple dozen. No recorded
 rationale anywhere; `ai_v9_01–08` record no launcher_command; the likely story is the
 fresh-generation reset recomposed commands and the flag simply wasn't carried. Invisible because
 it is training-only, bumps no signature, and is absent from `check_compatible`. It does NOT

@@ -18,6 +18,24 @@ from agents.training.turn_delta import TurnDelta
 from poke_env.battle.abstract_battle import DamagingMoveEvent
 from utils.logging.levels import LogLevel
 
+from agents.training.reward_manager import RewardConfig
+
+
+def Gen3RewardManagerBiasRegime(*a, **kw):
+    """A reward manager in the ADDITIVE-BIAS regime (`--no-all-shaping-pbrs`).
+
+    Almost every test in this file exercises ONE BIAS term (finishing_blow, se_switch,
+    dead_matchup_tax, the spikes/roar/status family, ...). Since 2026-08-18 the DEFAULT config is
+    `--all-shaping-pbrs`, which ZEROES every BIAS term except `no_progress_tax` — so a
+    default-constructed manager emits none of them and these tests would all read 0.0 while
+    testing nothing. The regime therefore has to be STATED rather than inherited from a default.
+
+    Division of labour: `src/main/reward_defaults_test.py` owns the DEFAULT composition (and pins
+    that it has exactly one BIAS term); this file owns what each BIAS term DOES when it is live.
+    """
+    kw.setdefault("config", RewardConfig(all_shaping_pbrs=False))
+    return Gen3RewardManager(*a, **kw)
+
 
 def _explosion_event(user_species="gengar", target_species="pikachu", effectiveness=1.0):
     """Build a DamagingMoveEvent for Explosion — used in TestExplosionReward.
@@ -300,7 +318,7 @@ def _make_mon(type1_name, type2_name=None, moves=None, status=None, ability=None
 
 class TestRewardManagerBasics(unittest.TestCase):
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_attack_tracking(self):
         self.manager.record_action(_ctx(turn=1), 6)
@@ -335,7 +353,7 @@ class TestSwitchSubsidy(unittest.TestCase):
     """Switch subsidy must be credited in the SAME turn as the switch action."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_voluntary_switch_subsidy_same_turn(self):
         # Slot map: pikachu=0, raichu=1.  Action 1 = switch to raichu.
@@ -403,7 +421,7 @@ class TestSeSwitchBonus(unittest.TestCase):
     """SE switch bonus fires for both revealed moves and type-advantage fallback."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _do_switch(self, our_mon, opp_mon):
         """Trigger one switch turn and return the reward."""
@@ -460,7 +478,7 @@ class TestSeSwitchBonus(unittest.TestCase):
 
 class TestSpikes(unittest.TestCase):
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_spikes_layer_bonus(self):
         self.manager.record_action(_ctx(turn=1), 6)
@@ -503,7 +521,7 @@ class TestSpikes(unittest.TestCase):
 
 class TestMatchupPenalty(unittest.TestCase):
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _se_battle(self):
         """Battle where opponent has a revealed SE move vs our mon."""
@@ -640,7 +658,7 @@ class TestPivotProtect(unittest.TestCase):
     """_pivot_protect_bonus: fires on Protect/Detect/Endure."""
 
     def _run(self, move_id):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         delta = _pivot_delta(move_id)
         battle = _pivot_battle(_type_mon("NORMAL"), _opp_with_status_move(move_id))
         return sum(manager._compute_pivot_bonus(delta, battle))
@@ -662,7 +680,7 @@ class TestPivotStatus(unittest.TestCase):
     """_pivot_status_bonus: type and already-statused immunity."""
 
     def _run(self, move_id, new_mon):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         delta = _pivot_delta(move_id)
         battle = _pivot_battle(new_mon, _opp_with_status_move(move_id))
         return sum(manager._compute_pivot_bonus(delta, _live_view(battle)))
@@ -717,7 +735,7 @@ class TestPivotDamage(unittest.TestCase):
     _MOVE_BY_TYPE = {"FIRE": "flamethrower", "GROUND": "earthquake", "ICE": "icebeam"}
 
     def _run(self, new_mon, prev_mon, move_type_name, base_power=80):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         move_id = self._MOVE_BY_TYPE[move_type_name.upper()]
         opp = MagicMock()
         opp.moves = {move_id: MagicMock()}   # only the revealed move_id matters (type via movedex)
@@ -752,21 +770,21 @@ class TestPivotDamage(unittest.TestCase):
         self.assertAlmostEqual(result, 0.0, places=5)
 
     def test_opponent_switched_no_bonus(self):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         delta = _pivot_delta(None, opp_switch_to="newmon")
         battle = _pivot_battle(_type_mon("WATER"), MagicMock())
         result = sum(manager._compute_pivot_bonus(delta, battle))
         self.assertAlmostEqual(result, 0.0, places=5)
 
     def test_no_opp_move_id_no_bonus(self):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         delta = _pivot_delta(None)
         battle = _pivot_battle(_type_mon("WATER"), MagicMock())
         result = sum(manager._compute_pivot_bonus(delta, battle))
         self.assertAlmostEqual(result, 0.0, places=5)
 
     def test_not_a_switch_no_bonus(self):
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         result = sum(manager._compute_pivot_bonus(_delta(), MagicMock()))
         self.assertAlmostEqual(result, 0.0, places=5)
 
@@ -794,7 +812,7 @@ class TestPivotDamage(unittest.TestCase):
         # instead of recomputing from move.type × types. This decouples reward
         # signal from any drift between our local mechanics and Showdown's.
         from poke_env.battle.pokemon_type import PokemonType
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         move = MagicMock()
         move.base_power = 80
         move.type = PokemonType.FIRE
@@ -821,7 +839,7 @@ class TestPivotDamage(unittest.TestCase):
         # Stale delta.opp_move_id (e.g. from a force-replace cycle where opp_mon.last_move
         # is from a different mon) gets superseded by the event's confirmed move_id.
         from poke_env.battle.pokemon_type import PokemonType
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         # opp's revealed moves include both moves; delta.opp_move_id is the stale one,
         # but the event identifies the actual move that fired this turn.
         stale_move = MagicMock()
@@ -851,7 +869,7 @@ class TestPivotDamage(unittest.TestCase):
 
 class TestRoarBonus(unittest.TestCase):
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_failed_roar_penalty(self):
         self.manager.record_action(_ctx(turn=1), 6)
@@ -876,7 +894,7 @@ class TestRoarBonus(unittest.TestCase):
 
 class TestFutileAttack(unittest.TestCase):
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_futile_attack_penalty_fires_when_opp_net_healed(self):
         self.manager.record_action(_ctx(turn=1), 6)
@@ -959,7 +977,7 @@ class TestFutileImmuneAttack(unittest.TestCase):
         )
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         move_mock = MagicMock()
         move_mock.base_power = 95
         our_mon = MagicMock()
@@ -1005,7 +1023,7 @@ class TestEscapeThreatSwitch(unittest.TestCase):
     """escape_threat_switch bonus fires when switching out of a known SE threat."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _set_se_threat(self, threatened: bool):
         self.manager._prev_opp_se_threat = threatened
@@ -1057,7 +1075,7 @@ class TestOriginalScenario(unittest.TestCase):
         (The old code produced ≈ -0.66 because subsidy was delayed one turn
          and the SE bonus never fired on an unrevealed mon.)
         """
-        manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
         # Slot 0 = Zapdos (current active), slot 2 = Tyranitar
         ctx = _ctx(
@@ -1171,8 +1189,7 @@ class TestStallTax(unittest.TestCase):
     """Stall tax now starts EARLY (turn 60) and RAMPS with turns past the start."""
 
     def _stall_tax_at_turn(self, turn):
-        from agents.training.reward_manager import Gen3RewardManager
-        rm = Gen3RewardManager()
+        rm = Gen3RewardManagerBiasRegime()
         battle = _battle()
         battle.turn = turn
         rm.process_turn_reward(battle, _delta())
@@ -1223,7 +1240,7 @@ class TestRepetitionTaxEscalation(unittest.TestCase):
     """Repetition tax is LINEAR and UNCAPPED; zero-effect repeats cost much more."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _repeat_attack(self, n_times, opp_hp_delta=-0.1):
         """Attack with action=6 n_times; return list of rewards.
@@ -1316,7 +1333,7 @@ class TestFutileSetup(unittest.TestCase):
     """futile_setup fires when a boost move had no mechanical effect."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_penalty_when_boost_delta_zero(self):
         self.manager.record_action(_ctx(), 6)
@@ -1355,7 +1372,7 @@ class TestSetupLowHP(unittest.TestCase):
     """setup_low_hp penalises boost moves chosen below 40% HP."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _setup_at_hp(self, hp_fraction: float) -> float:
         boost_delta = np.zeros(7, dtype=np.int8)
@@ -1393,7 +1410,7 @@ class TestStatusWasted(unittest.TestCase):
     """status_wasted fires when status move had no effect."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _status_move_turn(self, move_id: str, opp_status_applied: bool) -> float:
         from poke_env.battle.status import Status
@@ -1432,7 +1449,7 @@ class TestBoostUtilized(unittest.TestCase):
     """boost_utilized rewards attacking with active stat boosts."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _attack_with_boosts(self, atk_boost: int = 0, spa_boost: int = 0,
                              opp_hp_delta: float = -0.3) -> float:
@@ -1489,7 +1506,7 @@ class TestExplosionReward(unittest.TestCase):
     """Explosion: victim gets no extra penalty; surviving gets bonus; block gets extra."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _make_exploder_battle(self, we_fainted=False, our_hp_delta=0.0):
         opp_mon = MagicMock()
@@ -1570,7 +1587,7 @@ class TestSeSwitchBonusFixed(unittest.TestCase):
     """se_switch must not fire on forced post-faint switches or vs fainted opponents."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def test_no_se_bonus_on_forced_faint_switch(self):
         """Post-faint replacement into SE matchup must NOT earn the bonus."""
@@ -1599,7 +1616,7 @@ class TestSeSwitchOpponentTracking(unittest.TestCase):
     """Per-mon opponent tracker gates se_switch to prevent switch loops."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _do_voluntary_switch(self, our_mon, opp_mon, turn=1):
         """Trigger one voluntary switch turn and return the breakdown."""
@@ -1761,7 +1778,7 @@ class TestFinishingBlow(unittest.TestCase):
     """finishing_blow bonus fires on damaging-move KOs."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _do_attack_ko(self, our_mon, opp_fainted=True, our_move_id="earthquake",
                       our_failed_to_move=False, our_switch_to=None, opp_hp_before=0.12):
@@ -1804,7 +1821,7 @@ class TestFinishingBlow(unittest.TestCase):
         NEUTRAL via Φ_mat (both sides lose one alive mon + its HP → ΔΦ_mat=0), and finishing_blow
         is suppressed on self-faint, so the +0.5 cannot tip it positive. (The empty-team mock reads
         Φ_mat as the neutral 0; the full Φ_mat economics are in TestMaterialPBRS.)"""
-        mgr = Gen3RewardManager(log_level=LogLevel.QUIET)
+        mgr = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         our = _make_mon("NORMAL", moves=[("explosion", "NORMAL", 250)])
         ctx = _ctx_with_boosts(our_hp_val=1.0, opp_hp_val=1.0)
         mgr.record_action(ctx, 6)
@@ -1904,7 +1921,7 @@ class TestBouncingTaxEscalation(unittest.TestCase):
     """A→B→A→B oscillation pays an escalating bouncing tax (was flat -0.15)."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _oscillate(self, turns=4):
         """Run an A↔B oscillation and return the bouncing tax on each switch turn."""
@@ -1970,7 +1987,7 @@ class TestDeadMatchupTax(unittest.TestCase):
     """Escalating tax for staying in when every damaging move is 0× vs the opp active."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     def _stay_in(self, our_mon, opp_mon, move_id="thunderbolt"):
         self.manager.record_action(_ctx(), 6)
@@ -2054,7 +2071,7 @@ class TestDeadMatchupTax(unittest.TestCase):
         # Each successive stay is more negative (escalation).
         self.assertLess(stay_rewards[-1], stay_rewards[0])
         # A switch from the same trapped state yields a clearly positive subsidy instead.
-        mgr2 = Gen3RewardManager(log_level=LogLevel.QUIET)
+        mgr2 = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
         ctx = _ctx(our_active="zapdos", slot_map={"zapdos": 0, "swampert": 1})
         mgr2.record_action(ctx, 1)
         switch_reward = mgr2.process_turn_reward(_battle(), _delta(our_switch_to="swampert"))
@@ -2105,7 +2122,7 @@ class TestPbrsSwitchShaping(unittest.TestCase):
         """Φ RISES when a doomed mon is moved off the field (the credit-assignment bridge). Same
         belief block (slot 0 is a certain-KO mon); only the active flag moves — isolating the
         active-gating: only the ACTIVE mon's KO-risk discounts its material."""
-        rm = Gen3RewardManager()
+        rm = Gen3RewardManagerBiasRegime()
         block = _belief_block({0: (1.0, 0.0)})           # slot 0: P(KO)=1, slower → risk 1.0
         doomed_active = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
         phi_doomed, risk = self._phi(rm, doomed_active, block)
@@ -2118,7 +2135,7 @@ class TestPbrsSwitchShaping(unittest.TestCase):
 
     def test_faint_never_raises_phi(self):
         """An isolated our-mon faint must NOT increase Φ — kills the reward-for-fainting hazard."""
-        rm = Gen3RewardManager()
+        rm = Gen3RewardManagerBiasRegime()
         block = _belief_block({0: (1.0, 0.0)})
         alive = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
         phi_before, _ = self._phi(rm, alive, block)
@@ -2129,7 +2146,7 @@ class TestPbrsSwitchShaping(unittest.TestCase):
         self.assertAlmostEqual(phi_after, PBRS_RISK_WEIGHT * 4.0, places=5)    # lost 1 HP-unit
 
     def test_phi_nonnegative_and_bounded(self):
-        rm = Gen3RewardManager()
+        rm = Gen3RewardManagerBiasRegime()
         block = _belief_block({i: (1.0, 0.0) for i in range(6)})  # only the active mon discounts
         mons = [_fake_lp(1.0, active=(i == 0)) for i in range(6)]
         phi, _ = self._phi(rm, mons, block)
@@ -2139,7 +2156,7 @@ class TestPbrsSwitchShaping(unittest.TestCase):
     def test_belief_regate_fires_matchup_penalty_with_no_revealed_se(self):
         """The escape/stay re-gate fires on the incoming-KO belief even when the OLD revealed-SE
         gate is silent — the fix for the 71% dark majority."""
-        rm = Gen3RewardManager()
+        rm = Gen3RewardManagerBiasRegime()
         rm._prev_opp_se_threat = False                    # the revealed-SE gate is OFF
         delta = SimpleNamespace(our_switch_to=None)
         rm._prev_active_ko_risk = SWITCH_RISK_THRESHOLD + 0.1
@@ -2156,7 +2173,7 @@ class TestBeliefRiskOutspeedIndex(unittest.TestCase):
     (crit_delta) silently neutralised that outspeed discount on every non-force-switch turn."""
 
     def setUp(self):
-        self.manager = Gen3RewardManager(log_level=LogLevel.QUIET)
+        self.manager = Gen3RewardManagerBiasRegime(log_level=LogLevel.QUIET)
 
     @staticmethod
     def _live_one_active():

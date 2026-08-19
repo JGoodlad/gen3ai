@@ -951,10 +951,32 @@ does nothing given another setting.
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 
-`draw_penalty` −30.0 · `no_progress_penalty` 0.15 · `mat_alive_weight` 1.25 · `bias_additivity` 1.0
-· `self_ko_hp_penalty` 0.0 · `switch_bias_weight` 0.0 · `bias_redesign` false ·
-`drop_redundant_bias` false · `drop_switch_bias` false · `all_shaping_pbrs` false · `stall_pbrs`
-false.
+`all_shaping_pbrs` **true** · `draw_penalty` **−35.0** · `no_progress_penalty` 0.15 ·
+`mat_alive_weight` 1.25 · `bias_additivity` 1.0 · `self_ko_hp_penalty` 0.0 ·
+`switch_bias_weight` 0.0 · `bias_redesign` false · `drop_redundant_bias` false ·
+`drop_switch_bias` false · `stall_pbrs` false.
+
+These are the DEFAULTS as well as the production values. The **composition** they resolve to is
+**1 TERMINAL + 7 PBRS + 1 BIAS (`no_progress_tax`)** — every non-stall shaping term is a
+telescoping potential, and the anti-stall tilt is the single acknowledged objective bias. A launch
+STATES this: `train_rl_agent` prints `[Reward] composition: …`
+(`reward_manager.format_reward_composition`) and records the census into `metadata.json` as
+`reward_composition` (`reward_manager.reward_class_composition`).
+
+`--no-all-shaping-pbrs` is the fallback, and it is a different objective, not a smaller one:
+2 potentials and **26 additive BIAS terms**, with `no_progress_tax` itself disarmed (its clock
+charge gates on `bias_redesign OR all_shaping_pbrs`).
+
+`stall_pbrs` stays off deliberately. Turning it on additionally zeroes `no_progress_tax` and folds
+Φ_progress instead — the zero-BIAS destination, but a separate single-variable step, since the
+stall tilt carries a documented stall-regression risk.
+
+**Resume:** every field here is enforced on the training-resume path only. A run recorded under the
+pre-2026-08-18 defaults (`all_shaping_pbrs` false, `draw_penalty` −30.0 — every `ai_v9_*` run
+through gen-14) therefore FATALs on a flagless resume and must re-pass
+`--no-all-shaping-pbrs --draw-penalty -30.0`; the error names the flags. Frozen eval / pool /
+distill opponents are unaffected — `check_compatible` excludes reward fields, because their forward
+never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 

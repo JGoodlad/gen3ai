@@ -24,6 +24,7 @@ def save_model_snapshot(
     hparams: Optional[dict] = None,
     cli_args: Optional[dict] = None,
     original_command: Optional[str] = None,
+    reward_composition: Optional[dict] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -36,6 +37,12 @@ def save_model_snapshot(
     `launcher_command` (read from the `LAUNCHER_COMMAND` env the launcher sets) are recorded and
     carried forward across the many overwriting saves, so the exact invocation survives on every
     run, including launcher-managed ones (which don't write a `command.txt`).
+
+    `reward_composition` is the per-class ACTIVE-term census of the run's reward
+    (`agents.training.reward_manager.reward_class_composition`), carried forward like `cli_args`.
+    It is recorded because `model_config.json` states the reward FLAGS while nothing stated what
+    they COMPOSE TO — the gap the silent v8->v9 composition drift lived in — and because it is the
+    field a launch-diff gate compares between a new generation and its reference.
 
     `original_command` is the **immutable** original invocation that CREATED the model — the
     launcher command under a launcher, else this process's `sys.argv`. Unlike `cli_args` (which
@@ -61,6 +68,7 @@ def save_model_snapshot(
     existing_launcher_command = None
     existing_original_command = None
     existing_matchup_history = []
+    existing_reward_composition = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -70,6 +78,7 @@ def save_model_snapshot(
             existing_launcher_command = existing.get("launcher_command")
             existing_original_command = existing.get("original_command")
             existing_matchup_history = existing.get("matchup_history", [])
+            existing_reward_composition = existing.get("reward_composition")
 
     metadata: Dict[str, Any] = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -88,6 +97,11 @@ def save_model_snapshot(
     cli = cli_args if cli_args is not None else existing_cli_args
     if cli is not None:
         metadata["cli_args"] = cli
+    # The reward COMPOSITION census — same carry-forward rule as cli_args, so the many saves that
+    # don't know the reward config (periodic checkpoints, the eval best-model copy) preserve it.
+    composition = reward_composition if reward_composition is not None else existing_reward_composition
+    if composition is not None:
+        metadata["reward_composition"] = composition
     launcher_command = os.environ.get("LAUNCHER_COMMAND") or existing_launcher_command
     if launcher_command:
         metadata["launcher_command"] = launcher_command

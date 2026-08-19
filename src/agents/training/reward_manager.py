@@ -84,12 +84,16 @@ class RewardConfig:
     # turns_since_progress OBS scalar is present either way (the clock always tracks it); only the
     # PENALTY + the reframes are gated, so both arms share one architecture (and can A/B by resume).
     bias_redesign: bool = False
-    # Terminal reward for a DRAW / 250-turn timeout (no winner). -30.0 = the prior behavior (a tie was
-    # scored identically to a decisive loss). Set MORE negative (e.g. -35) to make stalling to the turn
-    # cap strictly worse than losing cleanly — removes the discount-driven micro-incentive to delay an
-    # inevitable loss and discourages no-progress stall-wars. A decisive loss stays -VICTORY_VALUE.
+    # Terminal reward for a DRAW / 250-turn timeout (no winner). More negative than a decisive loss
+    # makes stalling to the turn cap strictly worse than losing cleanly — it removes the
+    # discount-driven micro-incentive to delay an inevitable loss and discourages no-progress
+    # stall-wars. A decisive loss stays -VICTORY_VALUE.
+    # DEFAULT -35.0 (owner decision 2026-08-18): the value every validated ai_v8 run trained with.
+    # -30.0 (a tie scored identically to a decisive loss) was the historical default and was tuned
+    # under the ADDITIVE-bias regime, which the composition below no longer runs — see the
+    # `all_shaping_pbrs` note. Pass `--draw-penalty -30` for the old value.
     # Per-run constant, resume-immutable (recorded in model_config.json, value-checked).
-    draw_penalty: float = -30.0
+    draw_penalty: float = -35.0
     # Decision-time-HP-scaled self-KO penalty weight. 0.0 = OFF (default → byte-unchanged). >0 charges
     # −w·(our active HP fraction at decision time) when our mon self-KOs (Explosion / Self-Destruct +
     # we_fainted). The symmetric material PBRS prices a healthy 1-for-1 trade at ~0, so the critic
@@ -110,15 +114,22 @@ class RewardConfig:
     drop_redundant_bias: bool = False
     drop_switch_bias: bool = False
     # End-state PBRS rollout, split into TWO independent switches (design §2.6/§2.7 + boost/opp-boost
-    # /progress potentials). Both OFF (default) = byte-identical to v12. Resume-immutable, value-checked
-    # (check_reward_config). NOT weight-shape (no ARCH_SIGNATURE bump).
+    # /progress potentials). Resume-immutable, value-checked (check_reward_config). NOT weight-shape
+    # (no ARCH_SIGNATURE bump).
     #
     # `all_shaping_pbrs` = "everything but stall". ON: (1) fold Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status
     #   (PBRS class), (2) ZERO every BIAS term EXCEPT the anti-stall tilt `no_progress_tax` — so all
     #   NON-stall shaping becomes policy-invariant. (The bad turn-ramp `stall_tax`, which taxed winning
     #   long games, IS zeroed; the progress-aware `no_progress_tax`, which protects winning stalls, is the
     #   one BIAS term kept — and it is itself activated here so the stall tilt works without --bias-redesign.)
-    all_shaping_pbrs: bool = False
+    #
+    # DEFAULT ON (owner decision 2026-08-18). Every validated ai_v8 run trained with it; every ai_v9 run
+    # through gen-14 trained WITHOUT it, with no recorded rationale — a SILENT composition drift at the
+    # generation boundary (designs/research_state/ledger.md → "the reward composition drifted SILENTLY at
+    # the v8→v9 boundary"). It was invisible because it is training-only, bumps no signature, and is
+    # absent from check_compatible. The default now equals the validated composition; `--no-all-shaping-pbrs`
+    # is the fallback, and `reward_class_composition` below makes the choice visible at every launch.
+    all_shaping_pbrs: bool = True
     # `stall_pbrs` = "stall". ON: fold Φ_progress (PBRS) and ZERO `no_progress_tax` + `stall_tax`, so the
     #   anti-stall signal is policy-invariant too. Run --all-shaping-pbrs WITH --stall-pbrs for a FULLY-PBRS
     #   reward (TERMINAL + PBRS only, zero bias); run --all-shaping-pbrs WITHOUT it to keep the no_progress
@@ -320,6 +331,105 @@ class RewardBreakdown:
             if parts:
                 result[group_name] = " ".join(parts)
         return result
+
+
+# --- The reward COMPOSITION announcer (gen3_reward_composition_v1) -------------------------------
+# The v8→v9 reward drift (designs/research_state/ledger.md, 2026-08-18) was invisible because
+# nothing ever STATED what the reward was made of: `--all-shaping-pbrs` simply stopped being passed
+# at a generation boundary, and every ai_v9 run through gen-14 trained a fully-additive 26-term
+# BIAS objective where the validated ai_v8 composition was near-policy-invariant. Nothing
+# failed; no signature moved; `check_compatible` does not look at reward hparams. This is the
+# counter-measure and the seed of the launch-diff gate: ONE pure function that turns a config into a
+# per-class census, printed at startup and recorded into metadata.json.
+#
+# ACTIVE means "this CONFIG does not structurally force the term to zero". It is a statement about
+# the configuration, not about a battle — an active term is still 0.0 on most turns.
+#
+# Duck-typed on purpose: it reads the reward field NAMES, so a `RewardConfig`, a `ModelVersion`
+# (which records the same fields) or a plain argparse namespace all work.
+
+# The hand-coded switch-strategy subsidy `--drop-switch-bias` removes. Declared once here and
+# consumed by BOTH `_apply_bias_drops` (which zeroes them) and the census below, so the two can
+# never disagree about what the flag drops.
+SWITCH_BIAS_DROP_FAMILY = (
+    "switch_base", "switch_bouncing_tax", "escape_threat_switch", "se_switch",
+    "pivot_protect", "pivot_status", "pivot_damage", "sleep_out", "sleep_in",
+)
+
+
+def _rc(config, name, default):
+    """Read a reward field off any config-shaped object (RewardConfig / ModelVersion / namespace)."""
+    return getattr(config, name, default)
+
+
+def _pbrs_term_active(config, name: str) -> bool:
+    """Is PBRS term `name` reachable under `config`? Mirrors the `_fold_*_pbrs` early-returns."""
+    asp = bool(_rc(config, "all_shaping_pbrs", True))
+    if name == "pbrs_status":          # _fold_status_pbrs
+        return bool(_rc(config, "bias_redesign", False)) or asp
+    if name == "pbrs_progress":        # _fold_progress_pbrs
+        return bool(_rc(config, "stall_pbrs", False))
+    if name in ("pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"):
+        return asp
+    return True                        # pbrs_material / pbrs_belief are unconditional
+
+
+def _bias_term_active(config, name: str) -> bool:
+    """Is BIAS term `name` reachable under `config`? Mirrors `_apply_pbrs_suppression`,
+    `_apply_bias_drops`, `_apply_progress_clock` and the three weight-gated terms."""
+    asp = bool(_rc(config, "all_shaping_pbrs", True))
+    stall = bool(_rc(config, "stall_pbrs", False))
+    if name == "no_progress_tax":
+        # Charged only under --bias-redesign OR --all-shaping-pbrs; --stall-pbrs then zeroes it
+        # (Φ_progress carries the anti-stall signal policy-invariantly instead).
+        return (bool(_rc(config, "bias_redesign", False)) or asp) and not stall
+    if asp:
+        return False                   # everything-but-stall → every other BIAS term is zeroed
+    if name == "stall_tax":
+        return not (stall or bool(_rc(config, "drop_redundant_bias", False)))
+    if name == "matchup_penalty":
+        return not bool(_rc(config, "drop_redundant_bias", False))
+    if name in SWITCH_BIAS_DROP_FAMILY:
+        return not bool(_rc(config, "drop_switch_bias", False))
+    if name in ("stay_risk_tax", "escape_risk_bonus"):
+        return float(_rc(config, "switch_bias_weight", 0.0)) > 0.0
+    if name == "self_ko_penalty":
+        return float(_rc(config, "self_ko_hp_penalty", 0.0)) > 0.0
+    return True
+
+
+def reward_class_composition(config) -> dict:
+    """The per-class ACTIVE-term census of `config` — what this run's reward is MADE OF.
+
+    Returns ``{"terminal": n, "pbrs": n, "bias": n, "bias_terms": [names], "pbrs_terms": [names]}``.
+    `bias_terms` is the one a reader actually acts on: the BIAS class is the only one that biases
+    the converged optimum, so naming its members is naming the run's hand-coded incentives.
+    """
+    reg = RewardBreakdown._REGISTRY
+    pbrs = [n for n, c in reg.items() if c is RewardClass.PBRS and _pbrs_term_active(config, n)]
+    bias = [n for n, c in reg.items() if c is RewardClass.BIAS and _bias_term_active(config, n)]
+    terminal = [n for n, c in reg.items() if c is RewardClass.TERMINAL]
+    return {"terminal": len(terminal), "pbrs": len(pbrs), "bias": len(bias),
+            "bias_terms": bias, "pbrs_terms": pbrs}
+
+
+def format_reward_composition(config) -> str:
+    """One human line: ``[Reward] composition: 1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)``.
+
+    Printed at startup so a launch STATES its reward composition instead of implying it. With no
+    BIAS terms the tail reads ``(none — fully policy-invariant)``; with many it truncates, because
+    the count is the signal and the long additive list is the pathology, not the detail.
+    """
+    comp = reward_class_composition(config)
+    names = comp["bias_terms"]
+    if not names:
+        tail = "none — fully policy-invariant"
+    elif len(names) <= 6:
+        tail = ", ".join(names)
+    else:
+        tail = ", ".join(names[:6]) + f", … +{len(names) - 6} more"
+    return (f"[Reward] composition: {comp['terminal']} TERMINAL + {comp['pbrs']} PBRS "
+            f"+ {comp['bias']} BIAS ({tail})")
 
 
 HP_VALUE = 2.0
@@ -1502,15 +1612,10 @@ class Gen3RewardManager:
             bd.stall_tax = 0.0
             bd.matchup_penalty = 0.0
         if self.config.drop_switch_bias:
-            bd.switch_base = 0.0
-            bd.switch_bouncing_tax = 0.0
-            bd.escape_threat_switch = 0.0
-            bd.se_switch = 0.0
-            bd.pivot_protect = 0.0
-            bd.pivot_status = 0.0
-            bd.pivot_damage = 0.0
-            bd.sleep_out = 0.0
-            bd.sleep_in = 0.0
+            # SWITCH_BIAS_DROP_FAMILY is the single source of truth — shared with
+            # `_bias_term_active`, so the census can't disagree with what is actually zeroed.
+            for _name in SWITCH_BIAS_DROP_FAMILY:
+                setattr(bd, _name, 0.0)
 
     def _apply_pbrs_suppression(self, bd: "RewardBreakdown") -> None:
         """End-state PBRS cleanup — two independent switches. Called BEFORE _apply_bias_drops /

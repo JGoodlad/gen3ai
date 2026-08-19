@@ -950,11 +950,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "safe pivot exists (−w·risk) + rewards escaping it. BIAS-class, so it also "
                         "rides --bias-additivity (λ=1 additive vs λ=0 telescoping A/B). Resume-immutable.")
     parser.add_argument("--draw-penalty", "--draw_penalty", dest="draw_penalty", type=float,
-                        default=-30.0, help="Terminal reward for a DRAW / 250-turn timeout (no "
-                        "winner). Default -30.0 = same as a decisive loss (behavior unchanged). Set "
-                        "more negative (e.g. -35) to make stalling to the turn cap strictly worse "
-                        "than losing cleanly — discourages no-progress stall-wars. A decisive loss "
-                        "stays -30. Resume-immutable (recorded + value-checked in model_config.json).")
+                        default=-35.0, help="Terminal reward for a DRAW / 250-turn timeout (no "
+                        "winner). DEFAULT -35.0 = the validated ai_v8 value: stalling to the turn "
+                        "cap is strictly worse than losing cleanly, which cancels the discount-driven "
+                        "micro-incentive to delay an inevitable loss. A decisive loss stays -30. Pass "
+                        "-30 for the historical default (a tie scored as a decisive loss), which was "
+                        "tuned under the additive-BIAS regime --all-shaping-pbrs replaces. "
+                        "Resume-immutable (recorded + value-checked in model_config.json).")
     parser.add_argument("--self-ko-hp-penalty", "--self_ko_hp_penalty", dest="self_ko_hp_penalty",
                         type=float, default=0.0,
                         help="Decision-time-HP-scaled penalty (-w*hp) for self-KOing a mon via "
@@ -977,13 +979,15 @@ def build_parser() -> argparse.ArgumentParser:
                         "pbrs_belief + win/loss, so hand-rewarding it distorts the objective. Default OFF "
                         "= byte-identical. Resume-immutable, value-checked.")
     parser.add_argument("--all-shaping-pbrs", "--all_shaping_pbrs", dest="all_shaping_pbrs",
-                        action=BoolFlag, default=False, help="END-STATE PBRS, 'everything but stall': "
+                        action=BoolFlag, default=True, help="END-STATE PBRS, 'everything but stall': "
                         "fold Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status (telescoping, policy-invariant) "
                         "and ZERO every BIAS term EXCEPT the anti-stall tilt no_progress_tax — so all "
                         "non-stall shaping is policy-invariant (the bad turn-ramp stall_tax is zeroed). "
-                        "Default OFF = byte-identical. Pair with --stall-pbrs for a FULLY-PBRS reward, or "
-                        "use alone to keep the no_progress stall tilt as the one acknowledged BIAS. "
-                        "Resume-immutable, value-checked.")
+                        "DEFAULT ON = the validated ai_v8 composition (1 TERMINAL + 7 PBRS + 1 BIAS); "
+                        "--no-all-shaping-pbrs is the fallback and restores the fully-additive "
+                        "26-term BIAS objective every ai_v9 run drifted into. Pair with --stall-pbrs for "
+                        "a FULLY-PBRS reward, or use alone to keep the no_progress stall tilt as the one "
+                        "acknowledged BIAS. Resume-immutable, value-checked.")
     parser.add_argument("--stall-pbrs", "--stall_pbrs", dest="stall_pbrs",
                         action=BoolFlag, default=False, help="END-STATE PBRS, 'stall': fold Φ_progress "
                         "(telescoping anti-stall over the turns_since_progress clock) and ZERO "
@@ -3342,11 +3346,19 @@ async def main():
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # factory passes it to every env's reward manager. Default = the single-variable run.
-    from agents.training.reward_manager import RewardConfig
+    from agents.training.reward_manager import (
+        RewardConfig, format_reward_composition, reward_class_composition)
     # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
     # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
     reward_config = RewardConfig.from_args(args)
     reward_factory = functools.partial(Gen3RewardManager, config=reward_config)
+    # STATE the reward composition rather than implying it. The v8->v9 drift was invisible because a
+    # launch never said what its reward was made of; this line, and the `reward_composition` block it
+    # records into metadata.json, are what a launch-diff gate compares.
+    reward_composition = reward_class_composition(reward_config)
+    # `emit` prints when there is no launcher pipe, so this reaches BOTH a bare run's stdout and the
+    # launcher Events panel — the composition must never be visible in only one of them.
+    emit(format_reward_composition(reward_config))
 
     # Running parallel environments
     n_envs = 1 if args.debug else args.n_envs
@@ -4053,7 +4065,8 @@ async def main():
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
-            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
+            save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
 
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
@@ -4107,11 +4120,13 @@ async def main():
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
-            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args)
+            save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
             print(f"Training complete. Model saved to {final_path}")
             best_model_dir = os.path.join(model_dir, "best_model")
             if os.path.isdir(best_model_dir):
-                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args)
+                save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
             if _run_eval:
                 await evaluate_model_random(model)
     else:
@@ -4246,7 +4261,8 @@ async def main():
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
-        save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
+        save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
 
         _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
@@ -4291,11 +4307,13 @@ async def main():
         _write_latest_txt(model_dir, "final_model.zip")
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
         record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
-        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args)
+        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
-            save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args)
+            save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
+                                reward_composition=reward_composition)
         if _run_eval:
             await evaluate_model_random(model)
 

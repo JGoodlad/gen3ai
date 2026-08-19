@@ -44,7 +44,7 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
-from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_manager import Gen3RewardManager, RewardConfig
 from agents.training.slot_registry import SlotRegistry
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.teambuilder import Gen3Teambuilder
@@ -117,9 +117,18 @@ class _BattleState:
     """Per-battle pair of reward managers driven IDENTICALLY (determinism check) plus the
     context/slot bookkeeping needed to fold each turn's TurnDelta from the event log."""
 
+    # `--no-all-shaping-pbrs`, STATED rather than inherited. This harness's trustworthiness rests
+    # on its per-field activation counts ("it actually exercised the switch / status / spikes
+    # signals"), and the DEFAULT composition (since 2026-08-18) zeroes every BIAS term but
+    # `no_progress_tax` — so a default manager here would report a clean run over a class it never
+    # touched. The additive-BIAS regime is a strict superset of the fields the default emits, so
+    # this is the configuration that maximises what finiteness / self-consistency / determinism
+    # actually cover.
+    _CONFIG = RewardConfig(all_shaping_pbrs=False)
+
     def __init__(self):
-        self.mgr_a = Gen3RewardManager()
-        self.mgr_b = Gen3RewardManager()
+        self.mgr_a = Gen3RewardManager(config=self._CONFIG)
+        self.mgr_b = Gen3RewardManager(config=self._CONFIG)
         self.prev_ctx: Optional[BattleContext] = None
         self.last_action: Optional[int] = None
         self.prev_cursor: int = 0   # event_cursor when prev_ctx was latched

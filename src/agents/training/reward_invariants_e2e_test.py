@@ -60,6 +60,7 @@ from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import TurnDelta
 from agents.training.reward_manager import (
     BOOST_MOVES,
+    RewardConfig,
     EXPLOSION_BLOCK_BONUS,
     FAILED_ROAR_PENALTY,
     MAT_HP_WEIGHT,
@@ -564,8 +565,12 @@ class RewardInvariantFuzzPlayer(Player):
     def _get_state(self, battle) -> _BattleState:
         tag = battle.battle_tag
         if tag not in self._per_battle:
+            # `--no-all-shaping-pbrs`, STATED rather than inherited: the per-signal invariants and
+            # the `fires_by_signal` counters below are almost all BIAS-class, and the DEFAULT
+            # composition (since 2026-08-18) zeroes every BIAS term but `no_progress_tax` — a
+            # default manager would produce a clean run over signals that never fired.
             self._per_battle[tag] = _BattleState(
-                reward_fn=Gen3RewardManager(),
+                reward_fn=Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=False)),
             )
         return self._per_battle[tag]
 

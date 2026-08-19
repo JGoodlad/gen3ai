@@ -289,8 +289,9 @@ def test_check_reward_config_draw_penalty_mismatch_raises(version):
 
 
 def test_check_reward_config_draw_penalty_default_matches(version):
-    """A fresh default run (draw_penalty -30) matches a default saved config (no raise)."""
-    dataclasses.replace(version, draw_penalty=-30.0).check_reward_config(_reward_cfg())
+    """A fresh default run matches a default saved config (no raise). The default is -35.0 since
+    2026-08-18; the -30.0 <-> -35.0 resume FATAL is pinned in src/main/reward_defaults_test.py."""
+    dataclasses.replace(version, draw_penalty=-35.0).check_reward_config(_reward_cfg())
 
 
 def test_check_compatible_ignores_draw_penalty(version):
@@ -340,17 +341,18 @@ def test_migrate_v11_adds_debias_flags_default(version):
 @pytest.mark.parametrize("field", ["all_shaping_pbrs", "no_progress_penalty"])
 def test_check_reward_config_v13_field_mismatch_raises(version, field):
     """all_shaping_pbrs + no_progress_penalty are resume-immutable (they change the reward) — drift FATAL."""
-    diff = {"all_shaping_pbrs": True, "no_progress_penalty": 0.30}[field]
+    diff = {"all_shaping_pbrs": False, "no_progress_penalty": 0.30}[field]
     saved = dataclasses.replace(version, **{field: diff})
     with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_reward_config(_reward_cfg(**{field: {"all_shaping_pbrs": False,
+        saved.check_reward_config(_reward_cfg(**{field: {"all_shaping_pbrs": True,
                                                          "no_progress_penalty": 0.15}[field]}))
     assert field in str(exc_info.value)
 
 
 def test_check_reward_config_v13_default_matches(version):
-    """A fresh default run (flag OFF, penalty 0.15) matches a default-OFF saved config (no raise)."""
-    dataclasses.replace(version, all_shaping_pbrs=False,
+    """A fresh default run matches a saved config recorded with the same defaults (no raise).
+    all_shaping_pbrs DEFAULTS ON since 2026-08-18 (the validated ai_v8 composition)."""
+    dataclasses.replace(version, all_shaping_pbrs=True,
                         no_progress_penalty=0.15).check_reward_config(_reward_cfg())
 
 
@@ -370,7 +372,9 @@ def test_all_shaping_pbrs_recorded_and_config_version(layout):
     assert v.all_shaping_pbrs is True and v.no_progress_penalty == 0.25
     assert v.config_version == MODEL_CONFIG_VERSION
     v0 = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    assert v0.all_shaping_pbrs is False and v0.no_progress_penalty == 0.15
+    # With NO reward_config the getattr fallbacks apply, and they track RewardConfig's defaults —
+    # so a version built without one records the composition a default run actually trains with.
+    assert v0.all_shaping_pbrs is True and v0.no_progress_penalty == 0.15
 
 
 def test_migrate_v12_adds_v13_fields_default(version):

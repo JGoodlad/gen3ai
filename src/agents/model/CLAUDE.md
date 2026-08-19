@@ -659,16 +659,18 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
 (`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
 `switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5),
-`draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — default −30.0 = a tie scores
-as a decisive loss; set lower to make a stall-to-cap strictly worse), `self_ko_hp_penalty`
+`draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — **DEFAULT −35.0**, so a
+stall-to-cap is strictly worse than a clean loss; `-30` restores the historical value, where a tie
+scored as a decisive loss), `self_ko_hp_penalty`
 (`--self-ko-hp-penalty`, the HP-scaled self-KO penalty — default 0.0 = OFF; >0 charges −w·hp when
 our mon self-KOs via Explosion/Self-Destruct, since the symmetric material PBRS prices a healthy 1-for-1
 trade at ~0 and the critic then over-values it), the de-bias cleanup pair `drop_redundant_bias` +
 `drop_switch_bias` (`--drop-redundant-bias` / `--drop-switch-bias` — zero the audit-flagged
 distorting BIAS terms: stall_tax + matchup_penalty redundant with the no-progress clock/`--draw-penalty`
 and `pbrs_belief`; the hand-coded switch subsidy), and the **two end-state PBRS switches**
-`all_shaping_pbrs` + `stall_pbrs` plus `no_progress_penalty` (`--all-shaping-pbrs` / `--stall-pbrs` /
-`--no-progress-penalty`): `all_shaping_pbrs` = "everything but stall" — folds
+`all_shaping_pbrs` (**DEFAULT ON**) + `stall_pbrs` (default off) plus `no_progress_penalty`
+(`--all-shaping-pbrs` / `--stall-pbrs` / `--no-progress-penalty`):
+`all_shaping_pbrs` = "everything but stall" — folds
 Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status and **zeros every BIAS term except the anti-stall tilt
 `no_progress_tax`** (so all non-stall shaping is policy-invariant; the bad turn-ramp `stall_tax` is
 zeroed); `stall_pbrs` = "stall" — folds Φ_progress and zeros `no_progress_tax`+`stall_tax`. Run BOTH ⇒
@@ -682,6 +684,20 @@ proportional roar-out-boosts shaping; safe since both telescope to 0.) All are r
 shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
 `ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
 old checkpoints don't fail an arch check — a fresh run is needed to measure them.
+
+🚨 **Two of these defaults FLIPPED on 2026-08-18** (`all_shaping_pbrs` false→**true**,
+`draw_penalty` −30.0→**−35.0**), restoring the validated ai_v8 composition after the ledger recorded
+that the flag had silently stopped being passed at the v8→v9 generation boundary. Consequences that
+belong to THIS file: (1) the `ModelVersion` field defaults and `_REWARD_IMMUTABLE_FIELDS`'
+per-field fallbacks track `RewardConfig`'s, so a version built with `reward_config=None` records
+what a default run actually trains with — pinned by `src/main/reward_defaults_test.py`; (2) every
+pre-flip run now FATALs on a FLAGLESS resume, which is correct (a live run's reward must never flip
+under it) and is why `check_reward_config`'s error NAMES the flags to re-pass
+(`--no-all-shaping-pbrs --draw-penalty -30.0`) rather than only printing a diff; (3) frozen
+eval/pool/distill opponents are untouched, because reward fields stay out of `check_compatible`.
+The composition each config resolves to — and the announcer that states it at launch — is in
+`src/agents/training/CLAUDE.md` → *The reward COMPOSITION*.
+
 The live `MODEL_CONFIG_VERSION` is in `model_version.py`; per-version entries are in `designs/CHANGELOG.md`.
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**

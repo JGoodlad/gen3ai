@@ -126,13 +126,16 @@ prober **understated the training penalty on every stall/no-op turn**; now the r
 training (the gate is still `all_shaping_pbrs`/`bias_redesign` in the run's `RewardConfig`, so a
 default-config run stays byte-identical).
 
-**Anti-stall terminal (`--draw-penalty`, default −30.0 = byte-unchanged).** The trainee FORFEITS a
+**Anti-stall terminal (`--draw-penalty`, DEFAULT −35.0).** The trainee FORFEITS a
 stalled battle at the turn cap (`gen3_env` `ForfeitBattleOrder` at turn ≥ `StallConfig.threshold`), so
 a 250-turn stall ends as a forfeit-**loss** (`lost=True`), NOT a tie. The terminal therefore detects a
 timeout by **`live.turn >= _TIMEOUT_TURN_CAP`** (synced to `StallConfig.threshold`), not by won/lost:
-`if won: +30; elif finished: draw_penalty if timed_out else −30`. Set `--draw-penalty -35` to make a
-stall-to-cap strictly worse than a clean loss (cancels the γ=0.9999 discount pull of delaying an
-inevitable −30). Resume-immutable, value-checked (`MODEL_CONFIG_VERSION 6→7`, `check_reward_config`).
+`if won: +30; elif finished: draw_penalty if timed_out else −30`. At the default −35.0 a stall-to-cap
+is strictly worse than a clean loss, which cancels the γ=0.9999 discount pull of delaying an inevitable
+−30. `--draw-penalty -30` restores the historical default (a tie scored identically to a decisive
+loss); it was tuned under the additive-BIAS regime `--all-shaping-pbrs` replaces, which is why the two
+defaults flipped together (owner decision 2026-08-18 — see **The reward COMPOSITION** below).
+Resume-immutable, value-checked (`MODEL_CONFIG_VERSION 6→7`, `check_reward_config`).
 
 **Staged rollout (`RewardConfig.bias_redesign`, `--bias-redesign`, default OFF).** OFF = the
 **single-variable default run**: today's anti-spam taxes + roar/status/spikes, so the ONLY reward
@@ -202,10 +205,11 @@ The historical worst distorter — `finishing_blow` rewarding a self-KO Explosio
 (guarded + the `+2.0` literal deleted), so it is not in scope. Tests:
 `reward_redesign_test.py::TestBiasDrops` + `snapshot_test.py` (resume-immutability + v12→v13 migration).
 
-**End-state PBRS — TWO switches (`--all-shaping-pbrs` + `--stall-pbrs`, both default OFF; v14/v15).** The
-FINAL stage of the staged PBRS rollout: convert the last BIAS shaping to policy-invariant telescoping
-potentials. Deliberately TWO switches so the stall tilt (which carries a documented regression risk) can
-be A/B'd separately from everything else.
+**End-state PBRS — TWO switches (`--all-shaping-pbrs`, DEFAULT ON; `--stall-pbrs`, default OFF;
+v14/v15).** The FINAL stage of the staged PBRS rollout: convert the last BIAS shaping to
+policy-invariant telescoping potentials. Deliberately TWO switches so the stall tilt (which carries a
+documented regression risk) can be A/B'd separately from everything else — which is also why only the
+first of them defaults on.
 - **`--all-shaping-pbrs` ("everything but stall")** — (1) **folds** `Φ_hazard` =
   `HAZARD_WEIGHT`·(opp − our spike layers, design §2.6), `Φ_boost` = `BOOST_WEIGHT`·Σmax(0,our-active
   boost)·hp_frac, `Φ_opp_boosts` = −`OPP_BOOST_WEIGHT`·Σmax(0,opp-active boost), **and `Φ_status`**
@@ -227,13 +231,54 @@ terminal `--draw-penalty` remains the objective anchor either way). The zeroing 
 `all_shaping_pbrs`; zeroing the two stall terms under `stall_pbrs`), called **after** all PBRS folds +
 the `_last_attack_had_effect` read and **before** `_apply_bias_drops` → `_fold_bias_refund`, so zeroed
 terms leave the bias accumulator. Each new fold early-returns unless its switch is set, so with both OFF
-the `_prev_phi_*` slots stay None and the four `pbrs_*` fields stay 0.0 → **byte-identical default**
-(pinned by the no-op-equivalence + registry-coverage tests). Composes with the v13 drops (orthogonal,
-run after). Resume-immutable + value-checked alongside the **now-recorded `no_progress_penalty`**
+the `_prev_phi_*` slots stay None and the four `pbrs_*` fields stay 0.0 — the byte-identical
+`--no-all-shaping-pbrs` baseline (pinned by the no-op-equivalence + registry-coverage tests).
+Composes with the v13 drops (orthogonal,
+run after). `--no-all-shaping-pbrs` is the fallback and restores the additive objective in full.
+Resume-immutable + value-checked alongside the **now-recorded `no_progress_penalty`**
 (Φ_progress's weight) — `MODEL_CONFIG_VERSION` v14/v15, `check_reward_config`, no `ARCH_SIGNATURE` bump.
 Tests: `reward_redesign_test.py::{TestProgressPBRS, TestHazardPBRS, TestBoostPBRS, TestOppBoostsPBRS,
 TestEndStateDrops, TestAllShapingPbrsNoOpDefault}` + `snapshot_test.py` (resume-immutability + v13→v14 +
 v14→v15 migration).
+
+### The reward COMPOSITION — stated at launch, recorded in `metadata.json`
+
+**A launch says what its reward is MADE OF.** `reward_class_composition(config)` (pure, in
+`reward_manager.py`) returns the per-class ACTIVE-term census —
+`{terminal, pbrs, bias, bias_terms, pbrs_terms}` — where ACTIVE means *"this config does not
+structurally force the term to zero"* (it mirrors the `_fold_*_pbrs` early-returns,
+`_apply_pbrs_suppression`, `_apply_bias_drops`, `_apply_progress_clock`, and the three weight-gated
+terms). `format_reward_composition` renders the one line `train_rl_agent` emits at startup, to
+stdout AND the launcher Events panel; the dict is written to `metadata.json` as
+`reward_composition`, carried forward across saves like `cli_args`. It is duck-typed on field
+names, so a recorded `ModelVersion` can be censused offline without reconstructing its config.
+
+| config | composition |
+|---|---|
+| **default** | `1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)` |
+| `--no-all-shaping-pbrs` | `1 TERMINAL + 2 PBRS + 26 BIAS` |
+| `--stall-pbrs` (with the default) | `1 TERMINAL + 8 PBRS + 0 BIAS` — the zero-bias destination |
+
+**Why it exists.** The v8→v9 drift (`designs/research_state/ledger.md`, 2026-08-18):
+`--all-shaping-pbrs` simply stopped being passed at the fresh-generation boundary, so every
+`ai_v9_*` run through gen-14 trained the 26-term additive objective while every validated `ai_v8_*`
+run had trained the near-policy-invariant one. Nothing failed. Reward config is **training-only** —
+no `ARCH_SIGNATURE` bump, absent from `check_compatible` — and no launch line stated the
+composition, so the change was unobservable for a year. The census is the counter-measure and the
+seed of the **launch-diff gate** the ledger registers: the field a new generation's resolved
+command is diffed against its reference generation's.
+
+⚠️ **The ledger's prose says "8 PBRS + 1 BIAS" (v8) and "3 PBRS + 28 BIAS" (v9); the census says
+7/1 and 2/26.** The census is the measured one and the difference is definitional, not a
+disagreement about the regimes: it counts terms a config can actually EMIT, where the hand-count
+took the PBRS registry class size (8) — `pbrs_progress` gates on `--stall-pbrs`, which is off in
+both regimes — and did not subtract the weight-gated BIAS terms (`stay_risk_tax` /
+`escape_risk_bonus` at `switch_bias_weight` 0, `self_ko_penalty` at `self_ko_hp_penalty` 0). The
+shape claim the ledger makes — ONE acknowledged bias term vs a couple of dozen additive ones —
+holds exactly.
+
+Pins: `src/main/reward_defaults_test.py` (both defaults, both opt-outs, both compositions, the
+`RewardConfig` ↔ `ModelVersion` default agreement, and the actionable resume FATAL).
 
 ## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
 
