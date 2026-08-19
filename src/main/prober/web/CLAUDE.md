@@ -422,6 +422,15 @@ sparkline, where "sharp vs wide vs bimodal" — the entire point of the head —
 about eight characters), and the operator's `incoming_matrix` is a real **heatmap table** (opp
 candidate move × our mon), where the terminal had to fake a 2-D grid as an indented list.
 
+**The beliefs section carries TWO readings of the species belief, and the order is load-bearing**
+(`#beliefs-exclusive`, `a.exclusive_belief`). The raw per-slot marginals come first — that is what
+the model actually believes — and the **species-clause reading** sits below it: the most likely
+hidden team gen3 would allow, plus the slots where the two readings disagree. The panel is
+deliberately QUIET when the belief was already coherent (one line, no second table) and it says in
+its own copy that it changes nothing. Measured on gen-15, **14.2% of decisions display two hidden
+slots naming the same mon**, which is the case it exists for; see `src/main/prober/CLAUDE.md` →
+*The SPECIES-CLAUSE reading* for what it is not.
+
 **The counterfactual tier rides `/analyze`** — `lookahead`, `better_line` and
 `replay_counterfactual` are per-DECISION probes, so they launch from the bottom of this page
 pre-filled with the current battle + inv, rather than getting a page of their own. They spawn Node

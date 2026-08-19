@@ -276,12 +276,53 @@ section** (key `b`, `_render_beliefs`). Two belief forms, best-available wins:
 - **Anonymous belief** (`a.belief`, `BeliefView`, `app._append_belief`) as the fallback (no reconstruction
   record / websocket trace): the per-unrevealed-slot top-k `species NN%` guesses without a true-mon match.
 
+### The SPECIES-CLAUSE reading (`a.exclusive_belief`) — what it is and what it is NOT
+
+`BeliefHead` publishes one **independent** softmax per hidden slot, so nothing in its
+parameterization can express *"at most one of you is Salamence"*. Measured on gen-15, three hidden
+slots read P(Salamence) = 0.39 / 0.60 / 0.39 at one decision — an expected count of 1.38 on a team
+the species clause caps at 1. `engine.build_exclusive_belief` (over the pure operator
+`agents.inference.species_exclusivity`) applies that constraint at READ time and publishes an
+`ExclusiveBeliefView` beside the raw one: the adjusted per-slot rows, a **point team hypothesis**
+(the greedy no-duplicates assignment — most likely team consistent with the clause), and the raw
+belief's incoherence headline.
+
+> ⚠️ **The model's belief is `a.belief`, the raw marginals. `a.exclusive_belief` is a reading aid.**
+> Both are always rendered; showing only the adjusted view would substitute the prober's arithmetic
+> for the model's actual state, which is the same class of dishonesty the whole tool exists to
+> avoid. The panel says so in its own copy, and `app_test.py` pins that it does.
+
+**It hangs off the RE-COMPUTED branch only, never the summary fallback** — the summary's `belief`
+block carries the top-3 per slot, whose rows do not sum to 1, so running the operator on them would
+answer a different question while looking identical. That is also why `battle_turns` / `/battle`
+(model-free by construction) do **not** carry it.
+
+**Two DIFFERENT defects, kept apart** (both on the view, neither folded into the other):
+
+| field | defect | measured on gen-15 (3000 decisions, `tmp/species_exclusivity_measure.py`) |
+|---|---|---|
+| `max_expected_count` / `illegal_mass` | the DISTRIBUTION is jointly illegal (E[count] > 1) | 2.5% → 3.5% of decisions; peak 1.70 |
+| `duplicate_top1` | the DISPLAY is illegal — two hidden slots NAME the same mon | 6.5% → 14.2% of decisions (@2M → @6M), 29.9% at 4 hidden slots |
+| `revealed_leak_max` | mass on an already-revealed species — flatly wrong under any reading | **clean**: max 3.2e-4, i.e. the `SPECIES_CLAUSE_LOGIT` floor |
+
+The duplicate-top-1 case is the common one and the whole reason this view exists: two slots can share
+an expected count of 0.74 — which no clause forbids — while the panel still reads *"both hidden mons
+are Salamence"*.
+
+⚠️ **The clean leak reading is a property of `--species-prior-fusion`, not of the publication path.**
+That flag floors a revealed species at `SPECIES_CLAUSE_LOGIT` (~1e-6) inside the fused prior. Nothing
+downstream masks: `belief_decode.decode_species_belief` and `engine.belief_view_from_logits` both
+softmax the FULL species vocab. So on a fusion-OFF run the leak is unbounded and untested — do not
+carry "the belief never leaks onto revealed mons" as a general fact.
+
 The belief itself is **re-computed from the loaded model** each analysis (`ProbeModel.belief` → the belief
 head's per-slot species logits + believed mask → `engine.belief_view_from_logits`; one clean forward, since
 the intervention-sweep/saliency passes clobber the extractor's stash), so it works for **any belief-on
 checkpoint** — including runs whose recorder predates the summary's per-decision `belief` block. `engine.build_belief`
 reads that summary block as a **model-free fallback** (available even without a captured `.npz`). Both
-`belief` and `belief_truth` ride the `analyze` JSON output (`asdict`). `None`/absent on a belief-off run (then
+`belief`, `exclusive_belief` and `belief_truth` ride the `analyze` JSON output (`asdict` —
+`ExclusiveBeliefView.coherent` is a stored FIELD rather than a property for exactly that reason).
+`None`/absent on a belief-off run (then
 only the revealed mons show). **Mon names are
 blue** (`_MON_COLOR`); **disabled slots** (a fainted mon / an illegal switch / a no-PP move) render
 **grey** (`_DISABLED_GREY`), NOT the red of a low value — so "dead/unavailable" reads differently
@@ -299,6 +340,9 @@ The **Beliefs** section (`b`, open by default) is the model's **world-model vs g
 be first-class for the learned GPU obs (every datum tagged `🔷 GPU`; `_render_beliefs` + the
 `_beliefs_*_text` helpers). Six self-hiding sub-panels (each blank when its belief leg is off; a fully-off
 checkpoint shows one "belief heads not enabled" note):
+- **species clause — the coherent reading** (`a.exclusive_belief`) — the point team hypothesis, plus the
+  hidden slots where the raw top-1 and the clause-consistent read DISAGREE. Silent (one line) when the raw
+  belief was already coherent. See *The SPECIES-CLAUSE reading* above for what it is not.
 - **species belief vs TRUE team** — reuses `_append_belief_truth` (privileged, Hungarian-matched, `✓/≈/✗`)
   or the anonymous `_append_belief` fallback (no `reconstruction.json`).
 - **move belief** (✓ revealed · ≈ believed unseen) — the revealed opp's still-unseen moves (`a.move_belief`,

@@ -1321,6 +1321,26 @@ _FULL_ANALYSIS = {
     "obs_mismatch": [2667, 2669],
     "field": {"weather": "sandstorm", "spikes_opp": 1, "wish_our": True},
     "belief": None,
+    # The species-clause reading, INCOHERENT on purpose: slots 2 and 4 both name blissey (which no
+    # gen3 team allows) and slot 4 additionally carries mass on the already-revealed tyranitar.
+    "exclusive_belief": {
+        "slots": [
+            {"slot": 2, "top": [["blissey", 0.55], ["snorlax", 0.25]],
+             "raw_top1": "blissey", "raw_top1_prob": 0.62,
+             "adj_top1": "blissey", "adj_top1_prob": 0.55,
+             "differs": False, "total_variation": 0.07,
+             "hypothesis": "blissey", "hypothesis_differs": False},
+            {"slot": 4, "top": [["snorlax", 0.41], ["blissey", 0.30]],
+             "raw_top1": "tyranitar", "raw_top1_prob": 0.44,
+             "adj_top1": "snorlax", "adj_top1_prob": 0.41,
+             "differs": True, "total_variation": 0.46,
+             "hypothesis": "snorlax", "hypothesis_differs": True},
+        ],
+        "team_hypothesis": ["blissey", "snorlax"],
+        "revealed": ["tyranitar"],
+        "max_expected_count": 1.24, "illegal_mass": 0.24, "duplicate_top1": 1,
+        "revealed_leak_max": 0.44, "converged": True, "iterations": 31, "coherent": False,
+    },
     "opp_intent": {"alpha": [{"name": "earthquake", "p": 0.5, "is_switch": False},
                              {"name": "SWITCH", "p": 0.3, "is_switch": True}],
                    "beta": [{"slot": 2, "p": 0.6, "species": "blissey"},
@@ -2022,3 +2042,81 @@ def test_a_counterfactual_battle_token_is_never_joined_to_a_path(client, path, f
     r = client.post(path, data={"battle": "../../../etc/passwd", "inv": "0", **fields})
     assert r.status_code == 404
     assert "passwd" not in r.text
+
+
+# ---------------------------------------------------------------------------
+# The species-clause reading (`exclusive_belief`)
+# ---------------------------------------------------------------------------
+
+def test_the_clause_reading_shows_the_coherent_team_and_names_only_the_DISAGREEMENTS(client):
+    """The panel's job is to hand a reader a team gen3 actually allows, and to be QUIET otherwise.
+    So: the hypothesis line always renders, and per-slot rows appear ONLY where the raw top-1 and
+    the clause-consistent read disagree — a row per hidden slot would be visual noise on the slots
+    that were never in question."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "species clause" in body
+    assert "most likely hidden team consistent with the clause" in body
+    # The hypothesis names both mons…
+    assert "blissey" in body and "snorlax" in body
+    # …and the ONE disagreeing slot is listed with both readings side by side.
+    assert "raw tyranitar" in body and "clause snorlax" in body
+    # The agreeing slot (2) contributes no row of its own.
+    assert "raw blissey" not in body
+    # The incoherence headline is stated as numbers, not adjectives.
+    assert "peak expected count 1.24" in body
+    assert "duplicated top-1 guess" in body
+
+
+def test_the_clause_reading_says_it_is_a_READING_AID_and_never_replaces_the_raw_belief(client):
+    """The model's belief is the raw marginals. A surface that quietly showed only the adjusted
+    view would substitute our arithmetic for the model's state — the interpretability failure this
+    panel exists to fix, one level up. Both must be on the page, and the panel must SAY which is
+    which."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    assert "reading aid" in body
+    assert "does not change what the model believes" in body
+    # The raw belief panel is still there — `belief_truth` is the fixture's raw form.
+    assert "species belief vs the TRUE team" in body
+    assert body.index("species belief vs the TRUE team") < body.index("species clause")
+
+
+def test_a_COHERENT_belief_collapses_to_one_line_instead_of_a_duplicate_table(client):
+    """When nothing was adjusted, drawing a second table identical to the first is worse than
+    saying so — and the reader still needs to know the check RAN."""
+    import copy
+    a = copy.deepcopy(_FULL_ANALYSIS)
+    a["exclusive_belief"] = {
+        "slots": [{"slot": 2, "top": [["blissey", 0.62]], "raw_top1": "blissey",
+                   "raw_top1_prob": 0.62, "adj_top1": "blissey", "adj_top1_prob": 0.62,
+                   "differs": False, "total_variation": 0.0,
+                   "hypothesis": "blissey", "hypothesis_differs": False}],
+        "team_hypothesis": ["blissey"], "revealed": ["tyranitar"],
+        "max_expected_count": 0.62, "illegal_mass": 0.0, "duplicate_top1": 0,
+        "revealed_leak_max": 0.0, "converged": True, "iterations": 0, "coherent": True,
+    }
+    _stub_analyze(client, a)
+    body = _fragment(client)
+    assert "already coherent here" in body
+    assert "Nothing was adjusted" in body
+    assert "raw blissey" not in body, "a coherent belief must not draw per-slot disagreement rows"
+
+
+def test_a_NON_CONVERGED_clause_reading_refuses_to_claim_consistency(client):
+    """An unreachable constraint set means the adjusted rows do NOT satisfy the clause. Presenting
+    them as if they did is the one thing this panel must never do."""
+    import copy
+    a = copy.deepcopy(_FULL_ANALYSIS)
+    a["exclusive_belief"] = dict(a["exclusive_belief"], converged=False)
+    _stub_analyze(client, a)
+    body = _fragment(client)
+    assert "constraint set was unreachable" in body
+    assert "best-effort only" in body
+
+
+def test_the_clause_panel_is_absent_on_a_belief_off_run(client):
+    """Flag-gated like every other panel here: absent must mean "the head was off", never an empty
+    box that reads as a broken probe."""
+    _stub_analyze(client, _BARE_ANALYSIS)
+    assert "species clause" not in _fragment(client)

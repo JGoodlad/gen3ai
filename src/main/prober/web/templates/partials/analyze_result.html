@@ -425,6 +425,68 @@
   </div>
   {% endif %}
 
+  {# ── the SPECIES-CLAUSE reading — beside the raw belief above, never instead of it ─────── #}
+  {% if a.exclusive_belief %}
+  {% set ex = a.exclusive_belief %}
+  <div class="panel" id="beliefs-exclusive">
+    <h3>species clause — the coherent reading
+      <span class="muted small">reading aid · the belief above is the model's</span>
+    </h3>
+    <p class="muted small">
+      The belief head publishes one INDEPENDENT posterior per hidden slot, so nothing in it can say
+      &ldquo;at most one of you is Salamence&rdquo;. This line applies the species clause after the
+      fact, so the team shown is one gen3 actually allows.
+      It does not change what the model believes &mdash; the panel above does.
+    </p>
+
+    <p class="belief-hypothesis">
+      <span class="muted small">most likely hidden team consistent with the clause:</span>
+      {% for sp in ex.team_hypothesis %}<span class="species">{{ sp }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+    </p>
+
+    {% if not ex.converged %}
+    <p class="banner warn small">
+      ⚠ the constraint set was unreachable for this belief &mdash; the adjusted rows are NOT
+      clause-consistent and the hypothesis above is best-effort only.
+    </p>
+    {% endif %}
+
+    {% if ex.coherent %}
+    <p class="muted small">
+      The raw belief was already coherent here &mdash; peak expected count
+      {{ '%.2f'|format(ex.max_expected_count) }} (the clause allows 1.00), no two hidden slots share
+      a top-1 guess, and no mass sits on a revealed mon. Nothing was adjusted.
+    </p>
+    {% else %}
+    <ul class="beliefs">
+      {% for s in ex.slots %}
+      {% if s.differs or s.hypothesis_differs %}
+      <li>
+        <span class="marker near" title="the raw top-1 and the clause-consistent read disagree here">≈</span>
+        <span class="species">slot {{ s.slot }}</span>
+        <span class="guess">
+          <span class="g" title="the model's own most-likely species for this slot">raw {{ s.raw_top1 }} {{ m.pct(s.raw_top1_prob, 0) }}</span>
+          <span class="g istrue" title="most likely under the species clause">clause {{ s.adj_top1 }} {{ m.pct(s.adj_top1_prob, 0) }}</span>
+          {% if s.hypothesis and s.hypothesis != s.adj_top1 %}
+          <span class="g" title="this slot's entry in the no-duplicates team assignment">team {{ s.hypothesis }}</span>
+          {% endif %}
+        </span>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    <p class="muted small">
+      peak expected count {{ '%.2f'|format(ex.max_expected_count) }} (clause allows 1.00) ·
+      illegal mass {{ '%.3f'|format(ex.illegal_mass) }} ·
+      {{ ex.duplicate_top1 }} duplicated top-1 guess{{ '' if ex.duplicate_top1 == 1 else 'es' }}
+      {%- if ex.revealed_leak_max > 1e-4 %} · up to {{ m.pct(ex.revealed_leak_max, 1) }} of a slot's
+      mass sits on an ALREADY-REVEALED mon{% endif %}.
+      Only the slots where the two readings DISAGREE are listed.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if a.move_belief %}
   <div class="panel">
     <h3>move belief — <span class="marker hit">✓</span> revealed ·

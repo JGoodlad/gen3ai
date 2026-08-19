@@ -1789,3 +1789,110 @@ def test_a_voluntary_switch_still_outranks_both():
     entries = build_result_timeline(outcome, "raikou", "jirachi", "move_selection",
                                     move_order_hint="we_first")
     assert entries[0]["side"] == "opp", "the opponent's voluntary switch must resolve first"
+
+
+# ---------------------------------------------------------------------------
+# The SPECIES-CLAUSE reading of the belief (`build_exclusive_belief`)
+# ---------------------------------------------------------------------------
+
+def test_exclusive_belief_is_none_when_no_slot_is_hidden():
+    """Same "nothing to show" contract as `belief_view_from_logits`, so the raw and the adjusted
+    blocks appear and disappear together instead of one surviving the other."""
+    from main.prober.engine import build_exclusive_belief
+    assert build_exclusive_belief(np.zeros((6, 10)), np.zeros(6, bool), [], maps=_maps10()) is None
+
+
+def test_exclusive_belief_reports_a_COHERENT_belief_as_coherent_and_changes_nothing():
+    """Two hidden slots confidently naming DIFFERENT mons: no clause is violated, so the adjusted
+    top-1s equal the raw ones, every row moved zero, and `coherent` is True — which is what lets a
+    surface print one line instead of an identical second table."""
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    logits[1, 4] = 6.0
+    logits[2, 7] = 6.0
+    mask = np.array([False, True, True, False, False, False])
+    v = build_exclusive_belief(logits, mask, [], maps=_maps10())
+    assert v.coherent
+    assert v.duplicate_top1 == 0
+    assert v.max_expected_count <= 1.0
+    assert v.illegal_mass == 0.0
+    assert [s.adj_top1 for s in v.slots] == ["sp4", "sp7"]
+    assert not any(s.differs or s.hypothesis_differs for s in v.slots)
+    assert all(s.total_variation == 0.0 for s in v.slots)
+    assert v.iterations == 0
+
+
+def test_exclusive_belief_flags_a_DUPLICATE_top1_even_when_the_expected_count_is_LEGAL():
+    """The defect a reader actually sees, and the one this whole view is for. Two hidden slots both
+    naming sp4 at ~0.38 give an expected count of ~0.76 — no clause forbids it — while the panel
+    still reads "both hidden mons are sp4", which no gen3 team can be. `duplicate_top1` must fire
+    and the point hypothesis must name two different mons."""
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    logits[1, 4] = 1.0; logits[1, 5] = 0.9; logits[1, 6] = 0.7
+    logits[2, 4] = 1.0; logits[2, 6] = 0.9; logits[2, 7] = 0.7
+    mask = np.array([False, True, True, False, False, False])
+    v = build_exclusive_belief(logits, mask, [], maps=_maps10())
+    assert v.max_expected_count <= 1.0          # the DISTRIBUTION is legal…
+    assert v.duplicate_top1 == 1                # …but the DISPLAY is not
+    assert not v.coherent
+    assert len(set(v.team_hypothesis)) == 2
+    assert sum(s.hypothesis_differs for s in v.slots) == 1
+
+
+def test_exclusive_belief_caps_an_over_full_species_and_keeps_rows_normalized():
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    for slot in (1, 2, 3):
+        logits[slot, 4] = 2.0; logits[slot, 5] = 1.0
+    mask = np.array([False, True, True, True, False, False])
+    v = build_exclusive_belief(logits, mask, [], maps=_maps10())
+    assert v.max_expected_count > 1.0           # the RAW headline, pre-adjustment
+    assert v.illegal_mass > 0.0
+    assert v.converged
+    assert sum(p for _, p in v.slots[0].top) <= 1.0 + 1e-9
+    # Every slot's adjusted sp4 mass is below its raw mass — the constraint only ever removes.
+    for s in v.slots:
+        adj4 = dict(s.top).get("sp4", 0.0)
+        assert adj4 < s.raw_top1_prob
+
+
+def test_exclusive_belief_measures_and_removes_mass_on_a_REVEALED_species():
+    """Stage-0's defect, kept distinct from joint incoherence: a hidden bench slot cannot be the mon
+    standing on the field. `revealed_leak_max` REPORTS it on the raw belief; the adjusted rows carry
+    none of it."""
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    logits[1, 3] = 3.0        # sp3 is REVEALED — this is the leak
+    logits[1, 7] = 2.0
+    mask = np.array([False, True, False, False, False, False])
+    v = build_exclusive_belief(logits, mask, ["sp3"], maps=_maps10())
+    assert v.revealed_leak_max > 0.5
+    assert not v.coherent
+    assert "sp3" not in dict(v.slots[0].top)
+    assert v.slots[0].raw_top1 == "sp3"          # the model's OWN read is preserved verbatim…
+    assert v.slots[0].adj_top1 == "sp7"          # …beside the clause-consistent one
+    assert v.slots[0].differs
+    assert v.revealed == ("sp3",)
+
+
+def test_exclusive_belief_ignores_a_revealed_species_outside_the_vocab():
+    """An unrecognised name is DROPPED, not guessed at — a wrong num would zero an innocent
+    species' column, which is worse than one missing constraint."""
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    logits[1, 3] = 3.0
+    mask = np.array([False, True, False, False, False, False])
+    v = build_exclusive_belief(logits, mask, ["not-a-real-mon"], maps=_maps10())
+    assert v.revealed_leak_max == 0.0
+    assert v.slots[0].adj_top1 == "sp3"
+
+
+def test_exclusive_belief_slot_indices_are_the_real_opp_slots():
+    """Rows are hidden slots only, so a view labelling them 0..H−1 would name the wrong mon."""
+    from main.prober.engine import build_exclusive_belief
+    logits = np.full((6, 10), -8.0)
+    logits[3, 4] = 5.0; logits[5, 7] = 5.0
+    mask = np.array([False, False, False, True, False, True])
+    v = build_exclusive_belief(logits, mask, [], maps=_maps10())
+    assert [s.slot for s in v.slots] == [3, 5]

@@ -319,6 +319,67 @@ class BeliefView:
 
 
 @dataclass(frozen=True)
+class ExclusiveSlotView:
+    """One hidden slot read under the SPECIES CLAUSE — the exclusivity-adjusted counterpart of a
+    `BeliefSlotView`, carried BESIDE it and never in place of it.
+
+    `top` is the adjusted top-k. `raw_top1` / `adj_top1` are the model's own most-likely species and
+    the adjusted one; `differs` is the only case worth drawing, and `total_variation` says how far
+    the row actually moved (½·Σ|adjusted − raw|), so a surface can stay silent on a 0.001 shift.
+    `hypothesis` is this slot's entry in the greedy no-duplicates POINT assignment, which can differ
+    from `adj_top1` even when the distributions barely move — two slots may legally share an expected
+    count below 1 while still both NAMING the same mon."""
+    slot: int
+    top: "tuple[tuple[str, float], ...]"
+    raw_top1: str
+    raw_top1_prob: float
+    adj_top1: str
+    adj_top1_prob: float
+    differs: bool
+    total_variation: float
+    hypothesis: "str | None"
+    hypothesis_differs: bool
+
+
+@dataclass(frozen=True)
+class ExclusiveBeliefView:
+    """The species-clause READING of the hidden-opponent belief — a display aid, NOT the belief.
+
+    ⚠️ **The model's belief is `BeliefView`, the raw per-slot marginals.** The belief head publishes
+    one independent softmax per hidden slot, so nothing in it can express "at most one of you is
+    Salamence"; this view applies that constraint after the fact
+    (`agents.inference.species_exclusivity`) so a reader is not handed a team no gen3 rule allows. It
+    is always shown ALONGSIDE the raw view — replacing the raw view would substitute our arithmetic
+    for the model's actual state, which is the interpretability failure this exists to fix, one level
+    up.
+
+    `team_hypothesis` is the single most likely hidden team consistent with the clause (greedy
+    no-duplicates assignment — `coherent_team_hypothesis` documents why greedy and not Hungarian).
+    `max_expected_count` / `illegal_mass` are the RAW belief's incoherence headline: the peak
+    per-species expected count over the hidden slots, and Σ_s max(0, E[count(s)] − 1).
+    `duplicate_top1` counts hidden slots sharing a top-1 species — a weaker and (measured) far more
+    common defect than `max_expected_count > 1`, and the one a reader actually sees.
+    `revealed_leak_max` is the largest per-slot mass sitting on an ALREADY-REVEALED species, a
+    different and flatly-wrong failure rather than a marginal-vs-joint subtlety.
+    `converged` False means the constraint set was unreachable and the adjusted rows do NOT satisfy
+    the column cap — a surface must not then present them as clause-consistent."""
+    slots: "tuple[ExclusiveSlotView, ...]"
+    team_hypothesis: "tuple[str, ...]"
+    revealed: "tuple[str, ...]"
+    max_expected_count: float
+    illegal_mass: float
+    duplicate_top1: int
+    revealed_leak_max: float
+    converged: bool
+    iterations: int
+    # True when the RAW belief already satisfied the clause — nothing was adjusted, so a surface can
+    # say so in one line instead of drawing an identical second table. A stored FIELD rather than a
+    # property on purpose: `asdict` drops properties, so the CLI JSON would omit it and every
+    # consumer would re-derive the same three-way test — a view deriving a number.
+    coherent: bool = True
+
+
+@dataclass(frozen=True)
 class OppIntentOption:
     """One option `α` put mass on: a NAMED believed move of the opponent's, or the `SWITCH` option.
 
@@ -509,7 +570,9 @@ class InvocationAnalysis:
     obs_mismatch: "tuple[int, int] | None" = None  # (trace_obs_dim, encoder_dim) when they differ → obs-offset
     #                                                 panels (incoming/threat/crit/saliency) are UNRELIABLE
     field: "dict | None" = None                    # weather/spikes/screens (decoded from obs)
-    belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots)
+    belief: "BeliefView | None" = None             # hidden-opp species belief (anonymous slots) — THE MODEL'S ACTUAL BELIEF
+    exclusive_belief: "ExclusiveBeliefView | None" = None  # the SPECIES-CLAUSE reading of `belief` — a display
+    #                                                 aid computed at read time, never a replacement (see the dataclass)
     opp_intent: "OppIntentView | None" = None      # α/β: what the model expected THEM to do; None unless --opp-intent-coef>0
     belief_truth: "BeliefTruthView | None" = None  # privileged truth + slot-matched guess (None unless recon+belief)
     opp_full_team: "OppFullTeamView | None" = None  # WHOLE opp team + revealed-or-not tags (None w/o reconstruction)
@@ -1409,6 +1472,82 @@ def revealed_opp_species(board: "BoardView | None") -> "tuple[str, ...]":
     return tuple(s for s in seen if s and s != "NONE")
 
 
+def build_exclusive_belief(species_logits, believed_mask, revealed_species,
+                           top_k: int = BELIEF_TOPK, maps=None) -> "ExclusiveBeliefView | None":
+    """The SPECIES-CLAUSE reading of the belief head's per-slot species logits.
+
+    Same inputs as `belief_view_from_logits` plus the opponent's REVEALED species (names, from
+    `revealed_opp_species`); returns the adjusted per-slot distributions, the point team hypothesis,
+    and the raw belief's incoherence headline. `None` when no slot is believed — the same "nothing to
+    show" contract as `belief_view_from_logits`, so a surface's two blocks appear and disappear
+    together.
+
+    **This does not change the belief.** It is computed at READ time from the published marginals and
+    is carried beside them; see `ExclusiveBeliefView` for why both are always shown. Nothing here
+    feeds a model, a loss, or an obs — wiring an aggregate consumer is a separate, evidence-gated
+    decision (the `tmp/species_exclusivity_measure.py` artifact is that evidence)."""
+    from agents.inference.species_exclusivity import (
+        coherent_team_hypothesis, exclusive_team_posterior_info)
+
+    num_to_id, id_to_num = maps or _species_maps()
+    logits = np.asarray(species_logits, dtype=np.float64)
+    mask = np.asarray(believed_mask, dtype=bool)
+    hidden = [i for i in range(logits.shape[0]) if i < mask.shape[0] and bool(mask[i])]
+    if not hidden:
+        return None
+
+    # Revealed NAMES → the belief axis's NUMS. A name the vocab does not know is dropped rather than
+    # guessed: a wrong num would zero an innocent species' column, which is a worse answer than one
+    # missing constraint.
+    revealed_names = tuple(revealed_species or ())
+    revealed_nums = sorted({n for n in (id_to_num.get(_norm_species(s)) for s in revealed_names)
+                            if n is not None})
+
+    raw = np.stack([_softmax(logits[i]) for i in hidden])                   # [H, S]
+    adj, info = exclusive_team_posterior_info(raw, revealed_species=revealed_nums)
+    hyp = coherent_team_hypothesis(adj, revealed_species=revealed_nums,
+                                   num_to_name=num_to_id, slot_ids=hidden)
+
+    k = max(0, min(top_k, logits.shape[1]))
+    raw_top1 = [int(np.argmax(raw[h])) for h in range(len(hidden))]
+    slots = []
+    for h, slot in enumerate(hidden):
+        order = np.argsort(adj[h])[::-1][:k]
+        a1 = int(order[0]) if order.size else -1
+        r1 = raw_top1[h]
+        slots.append(ExclusiveSlotView(
+            slot=slot,
+            top=tuple((num_to_id.get(int(n), f"num_{int(n)}"), float(adj[h][n])) for n in order),
+            raw_top1=num_to_id.get(r1, f"num_{r1}"),
+            raw_top1_prob=float(raw[h][r1]),
+            adj_top1=num_to_id.get(a1, f"num_{a1}") if a1 >= 0 else "",
+            adj_top1_prob=float(adj[h][a1]) if a1 >= 0 else 0.0,
+            differs=bool(a1 >= 0 and a1 != r1),
+            total_variation=float(info.total_variation[h]),
+            hypothesis=hyp[h]["species"],
+            hypothesis_differs=bool(hyp[h]["differs"]),
+        ))
+
+    return ExclusiveBeliefView(
+        slots=tuple(slots),
+        team_hypothesis=tuple(h["species"] for h in hyp if h["species"]),
+        revealed=revealed_names,
+        max_expected_count=float(info.max_expected_count_before),
+        illegal_mass=float(info.illegal_mass_before),
+        duplicate_top1=len(raw_top1) - len(set(raw_top1)),
+        revealed_leak_max=float(info.revealed_leak_before.max()) if len(hidden) else 0.0,
+        converged=bool(info.converged),
+        iterations=int(info.iterations),
+        # The leak bar is 1e-4, not 0: `--species-prior-fusion` floors a revealed species at
+        # SPECIES_CLAUSE_LOGIT (1e-6) rather than at -inf, so a few 1e-6 entries are the FLOOR
+        # doing its job, not a defect. Measured on 3000 gen-15 decisions the leak never exceeded
+        # 3.2e-4, so a 0.0 bar would have called every decision incoherent.
+        coherent=bool(float(info.max_expected_count_before) <= 1.0 + 1e-9
+                      and len(raw_top1) == len(set(raw_top1))
+                      and float(info.revealed_leak_before.max()) <= 1e-4),
+    )
+
+
 def _norm_move(move: str) -> str:
     """Move id normalised for the revealed-vs-truth compare: lowercase, alnum-only, so the revealed
     display form (`hiddenpower(bug)`) matches the truth id (`hiddenpowerbug`) — both collapse to the
@@ -2123,6 +2262,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     next_board = (build_board(invs[inv_index + 1], team, our_hp_types)
                   if inv_index + 1 < len(invs) else None)
     belief = build_belief(inv)       # model-free summary fallback (re-computed below when a model + state exist)
+    exclusive_belief = None          # MODEL-ONLY: needs the full posterior, not the summary's top-3
     belief_truth = None
     # α/β — model-free from the trace, and it STAYS model-free (unlike `belief`, which prefers a
     # re-computed read): the intent heads are supervised against what the opponent then did, so the
@@ -2198,6 +2338,13 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             mb = belief_view_from_logits(sp_logits, bmask)
             if mb is not None:
                 belief = mb
+            # The species-clause READING, beside the raw marginals — never instead of them. It needs
+            # the FULL posterior, which is why it hangs off the re-computed branch and not off the
+            # summary fallback: the summary's `belief` block carries only the top-3 per slot, whose
+            # rows do not sum to 1, so an operator run on them would answer a different question
+            # while looking identical.
+            exclusive_belief = build_exclusive_belief(
+                sp_logits, bmask, revealed_opp_species(board))
             if opp_team:
                 belief_truth = build_belief_truth(sp_logits, bmask, revealed_opp_species(board), opp_team)
 
@@ -2311,7 +2458,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         warnings=(), outcome=outcome, value=value, win_prob=win_prob, value_dist=value_dist,
         rerun_argmax=rerun_argmax, agrees=agrees, flags=flags, cure_options=self_cure_options(inv),
         board=board, next_board=next_board,
-        obs_mismatch=obs_mismatch, field=field, belief=belief, belief_truth=belief_truth,
+        obs_mismatch=obs_mismatch, field=field, belief=belief,
+        exclusive_belief=exclusive_belief, belief_truth=belief_truth,
         opp_intent=opp_intent,
         damage_op=damage_op, move_belief=move_belief, spread_belief=spread_belief,
         opp_full_team=opp_full_team,
