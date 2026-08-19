@@ -1,5 +1,12 @@
 # design — LEARNING FROM HUMAN LADDER REPLAYS: an objective ladder ordered by OOD-robustness
 
+> **STATUS (owner ruling, 2026-08-18): PUNTED — a refined draft, NOT ready for
+> implementation.** The census ran and the OOD taxonomy stands, but the partial-information
+> nuance is exactly why this needs more refinement before any rung is built or scheduled. Not a
+> gen-17 commitment; the active programme is the exploiter–generalist flywheel. Re-open by
+> owner decision only; the Phase-0 numbers and kill conditions remain valid inputs when that
+> happens.
+
 > **[STATE 2026-08-18]** Opened as the first ai_v11 document. **Nothing here is built.** The §5
 > census numbers are NEW and were measured this session against the live corpus and the live
 > `agents.bc.log_reader`; every one carries its n and its seed. §3's ladder is **pre-registered and

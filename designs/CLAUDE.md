@@ -179,7 +179,7 @@ leaky bucket, P(team)=1/N), **H_capacity** (zero-sum), **H_conflict** (pairwise 
 kill the hypothesis — written because the same session produced two clean mechanistic stories that
 measurement killed outright.
 
-### ai_v11 (OPEN — the human-ladder-replay chapter)
+### ai_v11 (PUNTED draft — OPEN — the human-ladder-replay chapter)
 Opened 2026-08-18. **Nothing built.** One document,
 [`design_human_replay_objectives.md`](ai_v11/design_human_replay_objectives.md), plus a
 [`todo.md`](ai_v11/todo.md). Where ai_v9 is the entity graph inside one battle and ai_v10 is what
