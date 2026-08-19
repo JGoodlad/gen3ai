@@ -25,6 +25,7 @@ Emits launcher events on promotion and bot-regression warnings (⚠️).
 
 from __future__ import annotations
 
+import glob
 import os
 import shutil
 import subprocess
@@ -299,12 +300,49 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # here. train_rl_agent's _maybe_seed_pool seeds at startup if already competent, and
         # _collect_pending seeds the moment the model first crosses the threshold mid-run. So a
         # weak model never seeds a near-random opponent into the pool.
+        self._warn_if_fork_pool_empty()
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
         # Restore the last eval step so a resume doesn't re-eval the same checkpoint
         # immediately (it waits for the next cadence boundary instead).
         self._last_eval_step = latest_recorded_eval_step(self._model_dir, self._resume_eval_metadata)
+
+    def _warn_if_fork_pool_empty(self) -> None:
+        """A FORK that starts with an empty pool trains against BOTS, not selves — say so.
+
+        `SnapshotPool` derives its state entirely from the run directory, so a fork into a NEW
+        run dir starts with NO snapshots even though `--self-play` is on and the ramp is fully
+        open (a forked model is already competent, so the win-rate gate passes immediately).
+        Self-play then silently falls back to the bot pool until the fork seeds its own first
+        snapshot — which for a short fork can be most or all of the run.
+
+        Measured 2026-08-18 (`ai_v9_17_tdaux_*`, 3M-step forks off a 25M base): the base trained
+        against 12 snapshots at Pool 76%; the forks ended with 1, 2 and 1, one of them still at
+        Pool 0.0% at 26M. Essentially all 9M fork-steps were bot games, which silently voided the
+        external validity of a three-arm A/B whose gates were defined on the self-play regime.
+
+        The fix at the call site is one copy: the pool has no manifest, so copying the base run's
+        `snapshots/*.zip` into the fork's `snapshots/` before launch seeds it.
+        """
+        if self._model_dir is None:
+            return
+        try:
+            n = len(glob.glob(os.path.join(self._model_dir, "snapshots", "snapshot_*.zip")))
+        except OSError:
+            return
+        if n:
+            return
+        msg = ("⚠️  [SELFPLAY] the snapshot pool is EMPTY at startup — until this run seeds its "
+               "first snapshot, --self-play falls back to the BOT pool and no self-opponent is "
+               "played. If this is a FORK meant to continue the base's self-play regime, stop and "
+               "seed it: cp <base_run>/snapshots/snapshot_*.zip <this_run>/snapshots/ . A short "
+               "fork can finish before it ever seeds one (measured: 3M-step forks ended with 1-2 "
+               "snapshots vs the base's 12).")
+        try:
+            emit(msg)          # prints when standalone, goes to the launcher event stream otherwise
+        except Exception:      # noqa: BLE001 — a warning must never break a run
+            print(msg, flush=True)
 
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
