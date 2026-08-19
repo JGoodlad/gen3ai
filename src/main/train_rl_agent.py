@@ -1357,15 +1357,6 @@ def build_parser() -> argparse.ArgumentParser:
                              "steps (so long-lived workers track the moving policy). Default 500k.")
     parser.add_argument("--teacher-gen-battles", "--teacher_gen_battles", dest="teacher_gen_battles",
                         type=int, default=12, help="Persistent mode: battles generated per worker iteration.")
-    parser.add_argument("--intent-value-reduce", "--intent_value_reduce",
-                        dest="intent_value_reduce", action=BoolFlag, default=None,
-                        help="STEP 6 (gen3_intent_value_reduce_v1): CONSUME alpha. Reduces the "
-                             "operator's un-reduced per-(our mon, believed move) cells by alpha "
-                             "into an expected-incoming-threat row per mon, appended to the "
-                             "CRITIC's features through a zero-init projection. The op itself is "
-                             "untouched (still hard-max) — alpha is scored downstream of it and "
-                             "cannot weight its internal reduction. Requires --opp-intent-coef>0 "
-                             "and --damage-op. STRUCTURAL, version-checked.")
     parser.add_argument("--intent-move-cell", "--intent_move_cell",
                         dest="intent_move_cell", action=BoolFlag, default=None,
                         help="G3 (gen3_intent_move_cell_v1, design_conditional_execution.md): the "
@@ -1514,24 +1505,6 @@ def build_parser() -> argparse.ArgumentParser:
                              "252-EV/boosting-nature fiction — the B-spread correctness fix at the "
                              "last de-timid site the edges read. Requires --spread-belief and "
                              "--damage-op. Forward-math only. STRUCTURAL, version-checked.")
-    parser.add_argument("--value-clock", "--value_clock",
-                        dest="value_clock", action=BoolFlag, default=None,
-                        help="gen3_value_direct_routes_v1 (v87): the deadline clock's 3 raw "
-                             "scalars (log-elapsed, remaining-linear, log-remaining) through a "
-                             "zero-init projection onto the CRITIC — the explicit route the v67 "
-                             "clock fix was validated for (a positive V on the final decision in "
-                             "13 of 14 timeout losses was the motivating read; its indirect nmr "
-                             "route was audited dead). vf only; pi untouched at any weight. "
-                             "STRUCTURAL, version-checked.")
-    parser.add_argument("--value-intent", "--value_intent",
-                        dest="value_intent", action=BoolFlag, default=None,
-                        help="gen3_value_direct_routes_v1 (v87): the published α/β posteriors AS "
-                             "DISTRIBUTIONS to the critic (α over its K belief-sorted seats + "
-                             "SWITCH, β over the 6 team slots), zero-init, vf only. α previously "
-                             "reached the critic only as a weighting inside intent_value_reduce's "
-                             "physics cells and β not at all — the block was ORDERING, dissolved "
-                             "by the post-assembler tail. Requires --opp-intent-coef>0. "
-                             "STRUCTURAL, version-checked.")
     parser.add_argument("--intent-conditional", "--intent_conditional",
                         dest="intent_conditional", action=BoolFlag, default=None,
                         help="gen3_intent_conditional_v1 (v85, design_conditional_execution.md "
@@ -2329,7 +2302,6 @@ async def main():
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
-    _resolve("intent_value_reduce", False)     # v74 structural, version-checked (step 6)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)
@@ -2344,8 +2316,6 @@ async def main():
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
-    _resolve("value_clock", False)             # v87 structural, version-checked (gen3_value_direct_routes_v1)
-    _resolve("value_intent", False)            # v87 structural, version-checked (gen3_value_direct_routes_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

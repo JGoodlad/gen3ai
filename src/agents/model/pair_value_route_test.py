@@ -332,10 +332,16 @@ def test_zero_init_survives_a_real_MaskablePPO_build():
 # ------------------------------------------------------------------------------ version machinery
 
 
-def test_migration_defaults_the_flag_off():
-    out = _migrate_config({"config_version": 94})
-    assert out["pair_value_route"] is False
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 95
+def test_a_pre_floor_config_is_REFUSED_not_defaulted():
+    """The critic-route deletion wave bumped ARCH_SIGNATURE, so MIGRATION_FLOOR rose to 96
+    and this v94 config is now refused outright rather than walked through the v95 branch
+    that defaults `pair_value_route`. That is the floor's stated purpose ("refuses pre-floor
+    configs outright instead of walking dead branches"), and the assertion follows the
+    BEHAVIOUR: what must hold is that a stale config is rejected with a diagnosis, not that
+    an unreachable branch still defaults a field."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 94})
+    assert MODEL_CONFIG_VERSION >= 95
 
 
 def test_check_compatible_gates_the_flag():

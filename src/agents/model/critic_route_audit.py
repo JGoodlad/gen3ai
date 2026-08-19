@@ -3,20 +3,25 @@
 Measures, on a TRAINED checkpoint over stratified eval-trace states, how much the policy and
 critic lean on each of the parallel critic magnitude routes carried since the concat's death:
 
-  arm `seed`        — zero the assembler's `seed_rows` (the MultiSeedValueReadout window)
   arm `threat`      — zero `CLSPool`'s `threat_rows` (the --value-threat-inject token content)
-  arm `hidden_opp`  — zero the 768-dim HiddenOppBeliefPool concat: `_both`, `_pi`, `_vf`
+  arm `pair_value`  — zero `CLSPool`'s `pair_rows` (the v95 PV shelf; the C4 gate its enabling owes)
+  arm `hidden_opp`  — zero the HiddenOppBeliefPool concat (POLICY-side since the wave)
   arm `entity_pool` — zero the unified entity pool's output (gen3_unified_value_readout_v1,
                       the Stage-3 successor route; present only on a --value-entity-pool run)
-  arm `intent_reduce` — zero the α-weighted IntentValueReduce vf term (v74; present only on an
-                      --intent-value-reduce run — gen-9 through gen-11 all train it)
   arm `event_seats` — key-mask ALL H-B event seats (the design's seat USAGE audit in ablation
                       form; present only on a --history-events run; NOT a zero-init route —
                       nonzero at init is expected, the verdict is read on a TRAINED run)
   arm `nmr`         — zero `non_matchup_rest` at the assembler (the LAST positional head
-                      concat, both heads; the Phase-3 item-2 deletion evidence — separate
-                      from all_off, which stays the belief/magnitude-route joint)
+                      concat; POLICY-side since the wave deleted its vf half)
   arm `all_off`     — every present magnitude route together (the joint ceiling; nmr excluded)
+
+**THE INSTRUMENT IS SMALLER THAN IT WAS, and the missing arms are the finding.** The
+critic-route deletion wave retired `seed` (dV 0.0000 bit-exact, twice), `intent_reduce` (0.3176 at
+2× sample), the `vr_*` arms for `intent_threshold_value` / `value_clock` / `value_intent`, and the
+`_vf` half of `hidden_opp`. An arm whose subject no longer exists is not a null reading, it is a
+DEAD INSTRUMENT — leaving it would either fabricate a 0.0 row or trip `_assert_fired` on every
+run, and both read as measurements. The generic `value_route` arm STAYS (it now covers one route)
+because that is the mechanism by which the next route is auditable the day it is written.
 
 Each arm reports masked KL / argmax flips (policy) and |dV| (critic) against the unablated
 forward, the same instrument family as `edge_ablation_audit` (whose state sampling and KL
@@ -26,7 +31,8 @@ verdict comes from quantile-coverage calibration, not ablation.
 
 ⚠️ Run this from the RUN'S OWN pinned worktree (`git worktree add <dir> <metadata git_hash>`),
 copying this file in if the run predates it — a checkpoint is only loadable under the code
-that trained it. All APIs used here exist since v64 (threat_rows) / v76 (seed_rows).
+that trained it — and after the critic-route deletion wave a PRE-v96 checkpoint additionally
+needs its own copy of this file, because the arms it deletes cannot be reconstructed from HEAD.
 
 Usage:
   export PYTHONPATH=$PYTHONPATH:src
@@ -74,24 +80,6 @@ class _Arms:
     def __init__(self, fe: Any) -> None:
         self.fe = fe
 
-    def seed(self) -> tuple[list[Any], Any]:
-        fe = self.fe
-        hooks = []
-
-        def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
-            _op = fe.damage_op
-            _rows: Any = (_op.last_tensors.incoming_rows
-                          if _op is not None and _op.last_tensors is not None else None)
-            if args and args[-1] is not None and args[-1] is _rows:
-                # `fired` is a hand-set attribute on the hook function object (the arm's own
-                # did-it-match flag); mypy models a function as attribute-less.
-                _pre.fired = True  # type: ignore[attr-defined]
-                return args[:-1] + (torch.zeros_like(args[-1]),)
-            return args
-        _pre.fired = False  # type: ignore[attr-defined]
-        hooks.append(fe.assembler.register_forward_pre_hook(_pre))
-        return hooks, _pre
-
     def threat(self) -> tuple[list[Any], Any]:
         fe = self.fe
         hooks = []
@@ -100,7 +88,8 @@ class _Arms:
                  kwargs: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
             tr = kwargs.get("threat_rows")
             if tr is not None:
-                # hand-set did-it-match flag on the hook function object (see `seed`).
+                # hand-set did-it-match flag on the hook function object; mypy models a
+                # function as attribute-less.
                 _pre.fired = True  # type: ignore[attr-defined]
                 kwargs = dict(kwargs)
                 kwargs["threat_rows"] = torch.zeros_like(tr)
@@ -148,19 +137,6 @@ class _Arms:
             return tokens, torch.ones_like(pad)
         return [fe.history_events.register_forward_hook(_hook)], marker
 
-    def intent_reduce(self) -> tuple[list[Any], dict[str, bool]]:
-        """Zero the α-weighted IntentValueReduce term (v74, vf-only zero-init concat) — the
-        critic-side α consumer gen-9+ trains. Its arm belongs in the same §2 consolidation as
-        seed/threat: the runbook's Phase-3 list names it, and without an arm the route would be
-        adjudicated by argument instead of measurement."""
-        fe = self.fe
-        marker = {"fired": False}
-
-        def _hook(_m: Any, _args: Any, output: Any) -> Any:
-            marker["fired"] = True
-            return torch.zeros_like(output)
-        return [fe.intent_value_reduce.register_forward_hook(_hook)], marker
-
     def value_route(self, name: str) -> tuple[list[Any], dict[str, bool]]:
         """Zero ONE v89 `value_pooled` route by NAME, at the `_value_pooled_routes` registry seam.
 
@@ -171,9 +147,9 @@ class _Arms:
         `intent_threshold_value`: they shipped in v87/v84, trained live through all of gen-13, and
         had no arm at all when the §2 verdict was computed.
 
-        It also gives a free cross-check on the two routes that DO have bespoke arms
-        (`entity_pool`, `intent_reduce`) — two independent mechanisms reading the same route
-        should agree, and a disagreement means one of them is measuring the wrong thing.
+        It also gives a free cross-check on the one route that ALSO has a bespoke arm
+        (`entity_pool`) — two independent mechanisms reading one route should agree, and a
+        disagreement means one of them is measuring the wrong thing.
 
         Implemented by wrapping the bound generator (the seam is a method, not a module, so there
         is no hook to register). `fired` is set only when the named route is actually yielded, so
@@ -257,9 +233,10 @@ class _Arms:
 
     def nmr(self) -> tuple[list[Any], dict[str, bool]]:
         """Zero `ctx.non_matchup_rest` at the assembler — the LAST positional head concat
-        (global env + board scalars, both heads). Its content also rides the global token
-        through the trunk, so this arm measures the DIRECT-shortcut dependency the Phase-3
-        item-2 deletion needs evidence for (cleanup journey §5.2)."""
+        (global env + board scalars). Its content also rides the global token through the trunk,
+        so this arm measures the DIRECT-shortcut dependency the Phase-3 item-2 deletion needs
+        evidence for (cleanup journey §5.2). Since the critic-route wave deleted its VF half on a
+        0.0000 reading, the arm is POLICY-side: a nonzero `dv_mean` here would be a finding."""
         import dataclasses
 
         fe = self.fe
@@ -286,33 +263,24 @@ class _Arms:
             return torch.zeros_like(output)
         return [fe.value_entity_pool.register_forward_hook(_hook)], marker
 
-    def hidden_opp(self, mode: str) -> tuple[list[Any], dict[str, bool]]:
-        """mode ∈ {'both', 'pi', 'vf'} — patch the assembler's belief argument per head."""
+    def hidden_opp(self) -> tuple[list[Any], dict[str, bool]]:
+        """Zero the assembler's belief argument.
+
+        This used to take a `mode ∈ {'both','pi','vf'}` and run the assembler TWICE to split the
+        heads. **The split is now structural rather than instrumental**: the pool feeds only pi,
+        because gen-14 measured the vf half at dV 0.0000 while the pi half flipped 39.6% of
+        argmaxes, and the wave deleted exactly the dead half. Keeping a three-mode arm would
+        report `_both` and `_pi` as two different numbers that are now identically equal, which is
+        the shape of a reading nobody can interpret."""
         fe = self.fe
-        orig = fe.assembler.forward
         marker = {"fired": False}
 
-        def patched(our_p: Any, their_p: Any, our_act: Any, val_p: Any, ctx: Any,
-                    hidden_opp_belief: Any = None, seed_rows: Any = None) -> Any:
-            if hidden_opp_belief is None:
-                return orig(our_p, their_p, our_act, val_p, ctx,
-                            hidden_opp_belief=None, seed_rows=seed_rows)
+        def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
+            if len(args) < 6 or args[5] is None:
+                return args
             marker["fired"] = True
-            z = torch.zeros_like(hidden_opp_belief)
-            if mode == "both":
-                return orig(our_p, their_p, our_act, val_p, ctx,
-                            hidden_opp_belief=z, seed_rows=seed_rows)
-            pi_z, vf_z = orig(our_p, their_p, our_act, val_p, ctx,
-                              hidden_opp_belief=z, seed_rows=seed_rows)
-            pi_r, vf_r = orig(our_p, their_p, our_act, val_p, ctx,
-                              hidden_opp_belief=hidden_opp_belief, seed_rows=seed_rows)
-            return (pi_z, vf_r) if mode == "pi" else (pi_r, vf_z)
-
-        fe.assembler.forward = patched
-        class _H:
-            def remove(self_inner) -> None:
-                fe.assembler.forward = orig
-        return [_H()], marker
+            return args[:5] + (torch.zeros_like(args[5]),) + args[6:]
+        return [fe.assembler.register_forward_pre_hook(_pre)], marker
 
 
 def _assert_fired(name: str, markers: Sequence[Any]) -> None:
@@ -329,11 +297,7 @@ def _assert_fired(name: str, markers: Sequence[Any]) -> None:
 def _route_is_enabled(fe: Any, name: str) -> bool:
     """Is this v89 value route BUILT on `fe`? Keyed on the module the seam actually calls, so a
     renamed attribute fails here (arm absent, visible in the report) rather than silently."""
-    attr = {"intent_value_reduce": "intent_value_reduce",
-            "value_entity_pool": "value_entity_pool",
-            "intent_threshold_value": "intent_threshold_value",
-            "value_clock": "value_clock_route",
-            "value_intent": "value_intent_route"}[name]
+    attr = {"value_entity_pool": "value_entity_pool"}[name]
     return getattr(fe, attr, None) is not None
 
 
@@ -367,27 +331,22 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
             "dv_mean": float((base_v - v).abs().mean()),
         }
 
-    if getattr(fe.assembler, "seed_readout", None) is not None:
-        _run("seed", [arms.seed()])
     if getattr(fe, "value_threat_inject", False):
         _run("threat", [arms.threat()])
     if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
         _run("pair_value", [arms.pair_value()])
     if getattr(fe, "hidden_opp_belief", None) is not None:
-        for mode in ("both", "pi", "vf"):
-            _run(f"hidden_opp_{mode}", [arms.hidden_opp(mode)])
+        _run("hidden_opp", [arms.hidden_opp()])
     if getattr(fe, "value_entity_pool", None) is not None:
         _run("entity_pool", [arms.entity_pool()])
-    if getattr(fe, "intent_value_reduce", None) is not None:
-        _run("intent_reduce", [arms.intent_reduce()])
     if getattr(fe, "history_events", None) is not None:
         _run("event_seats", [arms.event_seats()])
     # Every v89 value_pooled route, keyed off the registry seam itself so the arm set cannot drift
-    # from the route set. `vr_entity_pool` / `vr_intent_value_reduce` deliberately DUPLICATE the
-    # bespoke `entity_pool` / `intent_reduce` arms — two mechanisms reading one route should agree,
-    # and a disagreement means one of them measures the wrong thing.
-    for _vr in ("intent_value_reduce", "value_entity_pool", "intent_threshold_value",
-                "value_clock", "value_intent"):
+    # from the route set. `vr_value_entity_pool` deliberately DUPLICATES the bespoke `entity_pool`
+    # arm — two mechanisms reading one route should agree, and a disagreement means one of them
+    # measures the wrong thing. The seam has ONE member since the deletion wave; the loop stays
+    # because its whole value is covering the NEXT one automatically.
+    for _vr in ("value_entity_pool",):
         if _route_is_enabled(fe, _vr):
             _run(f"vr_{_vr}", [arms.value_route(_vr)])
     # The §4 DENOMINATOR. Run unconditionally — the frames are unconditional obs content, and the
@@ -412,18 +371,14 @@ def audit(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray", batch: int 
     # carries the content through the trunk).
     _run("nmr", [arms.nmr()])
     all_sets = []
-    if getattr(fe.assembler, "seed_readout", None) is not None:
-        all_sets.append(arms.seed())
     if getattr(fe, "value_threat_inject", False):
         all_sets.append(arms.threat())
     if getattr(fe.cls_pool, "pair_value_proj", None) is not None:
         all_sets.append(arms.pair_value())
     if getattr(fe, "hidden_opp_belief", None) is not None:
-        all_sets.append(arms.hidden_opp("both"))
+        all_sets.append(arms.hidden_opp())
     if getattr(fe, "value_entity_pool", None) is not None:
         all_sets.append(arms.entity_pool())
-    if getattr(fe, "intent_value_reduce", None) is not None:
-        all_sets.append(arms.intent_reduce())
     if all_sets:
         _run("all_off", all_sets)
     for _k, _why in skipped.items():

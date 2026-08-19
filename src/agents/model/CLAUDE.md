@@ -40,7 +40,7 @@ Grouped into the four tiers the contract asserts:
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head`, `intent_threshold_value` / `value_clock_route` / `value_intent_route` (opt-in) |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
 module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
@@ -99,17 +99,16 @@ below `_MIN_PRIOR_FLOOR` (1e-3) is a hard `ValueError` — the collapse is unrep
 than merely unlikely, because a collapsed floor silently turns the legality gate into the rarity
 prune that previously crippled surprise-move anticipation. **gen3_no_concat_v1 (v61): its flat block no longer enters either
 projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
-the critic via the `MultiSeedValueReadout` (k=4×64 seed queries over the per-our-mon rows, vf-only,
-with the `value_seeds/*` TB collapse contract logged every train() by `seed_diagnostics.py`, which
-stays). **v80 built its designed SUCCESSOR, opt-in and OFF in production:**
-`UnifiedValueReadout` (`--value-entity-pool`, `gen3_unified_value_readout_v1` — Stage-3
-T3-DELIVER of `design_unified_belief.md` §3): ONE attention pool over the critic's entity rows
-(the 12 team tokens + the op's per-our-mon incoming rows, per-source type embeddings, UVR_K=4
-queries, zero-init out projection, vf-only after the assembler so pi is untouched at any
-weight). The gen-11 `critic_route_audit` — which carries an `entity_pool` arm — adjudicates the
-seed/threat routes; a condemned route's next generation enables this in the same config
-(`value_entity_pool_test.py` pins the contract).
-**TWO PRESSURES WERE APPLIED TO THOSE SEEDS AND BOTH ARE NOW DELETED (v78)** — the record is kept
+the critic through `UnifiedValueReadout` (`--value-entity-pool`, `gen3_unified_value_readout_v1` —
+Stage-3 T3-DELIVER of `design_unified_belief.md` §3): ONE attention pool over the critic's entity
+rows (the 12 team tokens + the op's per-our-mon incoming rows, per-source type embeddings, UVR_K=4
+queries, zero-init out projection, injected into `value_pooled` so pi is untouched at any weight).
+v61's stopgap — the `MultiSeedValueReadout`, k=4×64 seed queries over the same rows — was the
+critic's window in between, and the **critic-route deletion wave DELETED it** along with its
+`value_seeds/*` TB collapse contract: dV **0.0000 bit-exact** on two consecutive end-of-run audits,
+against the entity pool's 5.490 (97% of the whole critic route joint). The succession the v80 flag
+was built for is complete; `value_entity_pool_test.py` pins the contract.
+**TWO PRESSURES WERE APPLIED TO THOSE SEEDS AND BOTH WERE DELETED (v78)** — the record is kept
 because the finding is what closed the line, not the code. `--value-seed-vicreg-coef` (v62,
 `seed_vicreg.py`) was the repulsive one: gen-6 satisfied every VICReg term while
 `out_effective_rank` stayed 1.05, because the deviations occupied <1 direction (three seeds
@@ -181,8 +180,9 @@ no incentive to encode hidden state — still feeding the policy. That combinati
    reinjection adapters have no supervised loss, so PPO is their ONLY gradient source.
 
 Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
-`AlphaIntentHead` (reachable only under `--intent-value-reduce`, published unconditionally so
-enabling that flag later cannot reopen the route). `BeliefHead`, `WinProbHead`, `PubValHead`,
+`AlphaIntentHead` (published unconditionally, so enabling a consumer later cannot reopen the route
+— and since the critic-route deletion wave took every α→vf route, α now reaches the objective only
+through the POLICY, via the pointer cells). `BeliefHead`, `WinProbHead`, `PubValHead`,
 and `BetaSwitchHead` are structurally label-only in every mode — asserted in
 `belief_label_only_gate_test.py`, not assumed, so a head that starts feeding forward fails a test
 instead of quietly rejoining the PPO objective.
@@ -212,12 +212,17 @@ The embedding tables live in a shared `Embeddings` module passed as a forward ar
 phases that need them, so they register exactly once. An immutable `ExtractorContext` produced
 by `ObsUnpack` carries the ~30 unpacked tensors downstream, keeping each phase's signature
 narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1`):
-`compute_projection_widths(layout, opp_belief_cls_k=…, damage_op=…)` in
-`features_extractor.py` mirrors `ProjectionAssembler.forward`'s concat exactly — only three
-inputs move a width (the layout's `non_matchup_rest` tail; the hidden-opp belief pool,
-`k·D_MODEL` on both heads; the op, which appends the critic's `VALUE_SEED_K·VALUE_SEED_DIM`
-seed window, vf only). Every other flag is width-neutral by construction: the v89 value routes
-inject ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, not pi/vf.
+`compute_projection_widths(layout, opp_belief_cls_k=…)` in `features_extractor.py` mirrors
+`ProjectionAssembler.forward`'s concat exactly. **`vf` is a CONSTANT `D_MODEL`** — the
+critic-route deletion wave retired the whole post-assembler vf tail (the seed window; the
+hidden-opp belief's vf half; the `non_matchup_rest` vf concat), so `vf_combined IS value_pooled`,
+the same tensor the dist-head critic reads. That is the structural cure for the v89/M2
+orphaned-branch class rather than another instance of it: there is no second vf path left for a
+critic parameterization to bypass. Only TWO inputs still move `pi`: the layout's
+`non_matchup_rest` tail, and the hidden-opp belief pool (`k·D_MODEL`, **policy side only** — its
+vf half read dV 0.0000 while its pi half flipped 39.6% of argmaxes, so the deletion had to be
+per-head). Every other flag is width-neutral by construction: the v89 value routes inject
+ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, not pi/vf.
 
 > 🚨 **The old construction-time DISCOVERY forward is DELETED — its job is now a TEST.**
 > `__init__` used to measure the widths by running a dummy `forward_internal` with
@@ -309,7 +314,14 @@ Rules to preserve:
 
 Two split rounds, both **pure relocations** — same classes, same constants, same forward math
 (`gen3_damage_op_split_v1` 2026-08-01 carved out the op; the 2026-08-16 round carved the phase
-modules out of the extractor and the layout out of the op):
+modules out of the extractor and the layout out of the op). The critic-route deletion wave then
+REMOVED two files rather than reshuffling any — `value_routes.py` (`ValueClockRoute` /
+`ValueIntentRoute`) and `intent_value_reduce.py` — plus `seed_diagnostics.py`. **The five
+surviving critic-side files stay as they are**: three distinct delivery MECHANISMS (the v89 seam
+in `value_readouts.py`; the two `CLSPool` token-content injections in `value_threat_inject.py` and
+`pair_value_route.py`) plus the two producers (`pair_outcome.py`, `conditional_threat.py`).
+Merging any of them would put two mechanisms behind one filename, which is the property this
+table exists to prevent:
 
 | file | holds |
 |---|---|
@@ -321,7 +333,8 @@ modules out of the extractor and the layout out of the op):
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
 | `aux_value_heads.py` | `WinProbHead`, `ValueDistHead` |
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
-| `value_readouts.py` | `MultiSeedValueReadout`, `UnifiedValueReadout` |
+| `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
+| `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |
 | `damage_op_layout.py` | every `_DMG_*` offset/width constant, `OpTensors`, `decode_damage_block` — the block's shape contract |
 | `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
@@ -534,7 +547,7 @@ runs on frozen eval/pool/distill opponents too, whose forward is identical regar
 ### Dependencies — `requires=`, and why both directions are enforced
 
 A flag's DEPENDENCIES used to live only as ~30 hand-written `raise ValueError` lines inside
-`Gen3FeaturesExtractor.__init__` ("intent_value_reduce requires opp_intent", "value_entity_pool_full
+`Gen3FeaturesExtractor.__init__` ("intent_threshold requires opp_intent", "value_entity_pool_full
 requires value_entity_pool", …). Nothing outside that function knew them, so `checkargs` could not
 warn about an unsatisfiable command, the generated table could not show the graph, and answering
 "what is the minimum config that turns X on?" meant reading the constructor.
@@ -605,7 +618,7 @@ NOT cover it: the pickled kwargs carry no `config_version` for a floor to apply 
 2. **`_migrate_config`** needs a matching entry only if the name could still appear in a config at
    or above `MIGRATION_FLOOR`; below the floor the blanket PRE-GENERATION refusal already owns the
    config half. That asymmetry is pinned by `dead_kwargs_sanitize_test.py`.
-3. **Update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V89`** — last, and only after steps 1–2.
+3. **Update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96`** — last, and only after steps 1–2.
 
 That snapshot is the tripwire, and it exists because the machinery cannot detect this failure about
 itself: the sanitizer is a CURATED list, so a forgotten name produces no error at deletion time and
@@ -908,8 +921,11 @@ that seed, so the claim is live rather than vacuous. **The general rule: before 
 locate the consumer in the tier chain — the answer may already be fixed.**
 
 **A critic-facing α consumer owes its own gradient guard.** `value_route_gradient_test.py` iterates
-`_value_pooled_routes`, so a route added to that seam is covered by construction — but the two
-token-content injections (`value_threat_proj` v64, `pair_value_proj` v95) are NOT in the seam, by
+`_value_pooled_routes` — since the deletion wave a ONE-member seam (`value_entity_pool`), kept
+generic precisely because its value is covering the NEXT route the day it is written, which is
+exactly what did not happen for the four it lost. A route added to that seam is covered by
+construction; the two token-content injections (`value_threat_proj` v64, `pair_value_proj` v95)
+are NOT in the seam, by
 design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
 a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. Both are zero-init, so a
 disconnected one is indistinguishable from one that learned nothing — the exact gen-12 dead-tail

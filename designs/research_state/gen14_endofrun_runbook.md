@@ -49,6 +49,17 @@ members. The successor is pre-registered separately in
 confirmed as a measurement rather than assumed. Watch-item: `entity_pool` carries **97.4%** of the
 critic's route dependence with zero policy effect.
 
+**✅ EXECUTED 2026-08-18 — v96 `gen3_critic_route_wave_v1`.** §3's two deletions landed together
+with the five other registered items (the v61 seed readout + `seed_diagnostics` + the
+`value_seeds/*` contract; the `hidden_opp` VF half; the `nmr` VF concat; `value_intent`;
+`intent_threshold`'s p_KO vf route). All three unconditional members were vf-TAIL, so removing
+them leaves `vf_combined == value_pooled` — the M2 orphaned-branch class becomes unrepresentable.
+−540,786 params on the production config, policy logits + critic value byte-identical.
+`ARCH_SIGNATURE` bumped (nothing in `model_config.json` records the seed readout, so it is the
+only gate that can refuse a pre-v96 checkpoint with a diagnosis) ⇒ **gen-16 is fresh weights**.
+§4's KEEP and §5's ALIVE were honoured; the dead edge families were spared deliberately (generalist
+nulls are vindicate-only for strategy-dependent machinery).
+
 ---
 
 ## 0. Conventions inherited from gen-13's runbook (do not re-derive)

@@ -27,7 +27,7 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.arch_constants import D_MODEL, VALUE_SEED_DIM, VALUE_SEED_K
+from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor, compute_projection_widths
 from agents.model.value_route_gradient_test import _ALL_ROUTES_ON
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -58,11 +58,12 @@ _DAMAGE_OP_MIN = dict(attend_unrevealed_opponents=True, move_belief_mode="reveal
 _COMBOS = {
     "minimal": {},
     "all_routes_on": dict(_ALL_ROUTES_ON),
-    # -- the hidden-opp belief pool: the ONE flag that widens BOTH heads (k * D_MODEL);
-    #    two different k so a hardcoded k=6 cannot pass.
+    # -- the hidden-opp belief pool: the one remaining width-moving flag (k * D_MODEL on
+    #    the POLICY head only, since the wave deleted its vf half); two different k so a
+    #    hardcoded k=6 cannot pass.
     "belief_pool_k6": dict(attend_unrevealed_opponents=True, opp_belief_cls_k=6),
     "belief_pool_k3": dict(attend_unrevealed_opponents=True, opp_belief_cls_k=3),
-    # -- the seed window: damage_op appends VALUE_SEED_K*VALUE_SEED_DIM to vf ONLY.
+    # -- the op: width-neutral on BOTH heads since the seed window's deletion.
     "damage_op_min": dict(_DAMAGE_OP_MIN),
     "damage_op_plus_pool": dict(_DAMAGE_OP_MIN, opp_belief_cls_k=6),
     # -- width-neutral families (each must move NEITHER width off its base).
@@ -87,8 +88,7 @@ def _build(kwargs):
 def _assert_widths(fe, kwargs):
     """The verifier: measured REAL-forward widths == the static arithmetic == the built modules."""
     exp_pi, exp_vf = compute_projection_widths(
-        _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0),
-        damage_op=kwargs.get("damage_op", False))
+        _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0))
     g = torch.Generator().manual_seed(11)
     obs = {"observation": torch.rand(3, _LAYOUT["total_dim"], generator=g)}
     with torch.no_grad():
@@ -128,13 +128,17 @@ def test_production_config_widths():
 
 
 def test_arithmetic_deltas_without_building():
-    """The pure-helper contract, no model build: k moves both heads by k*D_MODEL; the op
-    moves vf ONLY, by exactly the seed window."""
+    """The pure-helper contract, no model build: k moves the POLICY head by k*D_MODEL and
+    leaves the critic alone.
+
+    `vf` is a CONSTANT `D_MODEL` since the critic-route deletion wave — no flag moves it, because
+    `vf_combined IS value_pooled` and every surviving critic route injects additively. That is a
+    stronger statement than "the arithmetic is right": there is no longer a vf concat for a route
+    to be appended to outside the seam, so the ede5a88 mis-sizing class has nothing to act on.
+    """
     base_pi, base_vf = compute_projection_widths(_LAYOUT)
+    assert base_vf == D_MODEL
     for k in (1, 3, 6):
         pi, vf = compute_projection_widths(_LAYOUT, opp_belief_cls_k=k)
         assert pi == base_pi + k * D_MODEL
-        assert vf == base_vf + k * D_MODEL
-    pi, vf = compute_projection_widths(_LAYOUT, damage_op=True)
-    assert pi == base_pi
-    assert vf == base_vf + VALUE_SEED_K * VALUE_SEED_DIM
+        assert vf == D_MODEL, "the hidden-opp belief's vf half was deleted — vf must not move"

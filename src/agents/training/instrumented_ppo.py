@@ -820,8 +820,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
-        # key (`value_seeds/*` from the seed-collapse contract, `opp_intent/*`), so they are recorded
-        # verbatim rather than under a prefix.
+        # key (`opp_intent/*`), so they are recorded verbatim rather than under a prefix.
         aux_metrics: dict[str, list[float]] = {}
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
@@ -1723,19 +1722,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
             self.logger.record("popart/mu", float(self.policy.popart.mu))
             self.logger.record("popart/sigma", float(self.policy.popart.sigma))
             self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))
-        # gen3_no_concat_v1 (v61): the multi-seed critic readout's collapse monitors — the TB
-        # contract in agents/model/seed_diagnostics.py (query/output cosine, UNCENTERED effective
-        # rank, the VICReg variance target), logged every train() so a collapsing seed set is
-        # visible from step 0 (the z_arch post-hoc-discovery failure, never again). The
-        # pre-registered VICReg trigger lives in that module's docstring — decide from the plot.
-        _sr = getattr(getattr(self.policy.features_extractor, "assembler", None), "seed_readout", None)
-        if _sr is not None and _sr.last_outputs is not None:
-            from agents.model.seed_diagnostics import seed_collapse_diagnostics
-            for k, v in seed_collapse_diagnostics(_sr.queries.detach(),
-                                                  _sr.last_outputs.detach()).items():
-                self.logger.record(k, v)
-        # +SEED-VICReg terms (only when the regularizer is active): watch vicreg_var_term fall as
-        # seeds/out_effective_rank rises toward k — the un-collapse confirmation the gen-6 enable
-        # is judged by.
+        # (v61's `value_seeds/*` seed-collapse contract was logged here. The multi-seed critic
+        # readout it monitored is DELETED — dV 0.0000 bit-exact on two consecutive end-of-run
+        # audits — so the monitor went with it. Its finding survives in designs/CHANGELOG.md.)
         for _sk, _svals in aux_metrics.items():
             self.logger.record(_sk, float(np.mean(_svals)))

@@ -5,12 +5,17 @@ is that every route carrying one is either a RATIO or a POOLED scalar:
 
   * the `d3` edge family writes an attention BIAS — softmax-normalised, so it can say *"this
     defender is threatened MORE than that one"* and structurally cannot say *"by 62% of max HP"*;
-  * `MultiSeedValueReadout`'s k seeds each emit a convex combination of the SAME six kv rows, and
-    both pressures we have tried on them (VICReg repulsion, per-seed quantile assignment) leave the
-    differentiation ~1-DIMENSIONAL — measured centered PR 0.846 / 0.835 at matched checkpoints, and
-    gen-7's `out_effective_rank` reaching only 1.157 against a ceiling of k=4. A shared readout
-    constrains the component along its own weight vector and nothing orthogonal to it, so seed
-    MULTIPLICITY is not the missing axis.
+  * v61's `MultiSeedValueReadout` (now DELETED — see below) had k seeds each emitting a convex
+    combination of the SAME six kv rows, and both pressures tried on them (VICReg repulsion,
+    per-seed quantile assignment) left the differentiation ~1-DIMENSIONAL — measured centered PR
+    0.846 / 0.835 at matched checkpoints, and gen-7's `out_effective_rank` reaching only 1.157
+    against a ceiling of k=4. A shared readout constrains the component along its own weight
+    vector and nothing orthogonal to it, so seed MULTIPLICITY was not the missing axis.
+
+**This route WON the argument, and the alternative is gone.** The critic-route deletion wave
+retired the seed readout on dV **0.0000 bit-exact across two consecutive end-of-run audits**, while
+`threat` — this module — read **1.0686** (19.0% of the whole route joint) and had its registered
+deadline discharged. Its docstring keeps the seed history because the *reason* is the durable part.
 
 This module takes the third route the design names: put the magnitude in the critic's pool as TOKEN
 CONTENT. For each of OUR mons `j`, the op's α-weighted incoming row `Σ_k α_k · pair_in[k, j, :]` is

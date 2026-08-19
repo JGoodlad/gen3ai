@@ -17,7 +17,6 @@ from agents.observation.constants import (
     POKEMON_SPREAD_DIM,
     POKEMON_CONDITION_OFFSET,
     POKEMON_SLEEP_BELIEF_OFFSET,
-    CLOCK_OFFSET_IN_GLOBAL, CLOCK_DIM,
 )
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
@@ -37,15 +36,13 @@ from utils.logging.levels import LogLevel
 # gen3_arch_constants_v1: the architecture constants now live in `arch_constants.py` so
 # `damage_op.py` can import them without a cycle. Re-exported here UNCHANGED — this module
 # remains the documented import surface (`from agents.model.features_extractor import D_MODEL`).
-from agents.model.arch_constants import (_INTENT_CELL_FEATURES,
+from agents.model.arch_constants import (
     INTENT_THRESH_MOVE_DIM, INTENT_COND_MOVE_DIM,
     INTENT_MOVE_CELL_DIM, _INTENT_MOVE_CELL_RAW,
     PAIR_OUTCOME_MOVE_DIM, PAIR_OUTCOME_SWITCH_DIM, SWITCH_BRANCH_MOVE_DIM,
     CONDITIONAL_THREAT_SWITCH_DIM, PAIR_VALUE_ROUTE_DIM,
     UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
       # noqa: F401  (re-export
-    VALUE_SEED_K,
-    VALUE_SEED_DIM,
     ROLE_TOKEN_SIZE,
     PROJECTION_DIM,
     MOVE_NET_HIDDEN,
@@ -95,9 +92,7 @@ from agents.model.aux_value_heads import (  # noqa: F401
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,
 )
-from agents.model.value_readouts import (  # noqa: F401
-    MultiSeedValueReadout, UnifiedValueReadout,
-)
+from agents.model.value_readouts import UnifiedValueReadout  # noqa: F401
 
 
 
@@ -122,17 +117,15 @@ from agents.model.value_readouts import (  # noqa: F401
 # historical import path still resolves (the prober, model_version, snapshot and the tests all do
 # `from agents.model.features_extractor import DamageOperator / decode_damage_block / _DMG_*`).
 from agents.model.t0_species import T0SpeciesPrior
-from agents.model.intent_value_reduce import IntentValueReduce
 from agents.model.intent_move_cell import IntentMoveCell
 from agents.model.intent_threshold import (
-    IntentThresholdMoveCell, IntentThresholdValue, ThresholdProbs, threshold_probs)
+    IntentThresholdMoveCell, ThresholdProbs, threshold_probs)
 from agents.model.intent_conditional import IntentConditionalMoveCell
 from agents.model.pair_outcome import (
     PairOutcomeMoveCell, PairOutcomeSwitchCell, pair_alpha, reduce_pair_in, reduce_pair_in_all)
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.conditional_threat import ConditionalThreatCell
 from agents.model.pair_value_route import PairValueInject  # noqa: F401  (re-export)
-from agents.model.value_routes import ValueClockRoute, ValueIntentRoute
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
 from agents.model.damage_op import (  # noqa: F401,E501  (re-export)
@@ -271,23 +264,27 @@ class ExtractorStashes:
     belief_supervision: Dict[str, Optional[torch.Tensor]] = field(default_factory=dict)
 
 
-def compute_projection_widths(layout: Dict[str, Any], *, opp_belief_cls_k: int = 0,
-                              damage_op: bool = False) -> Tuple[int, int]:
+def compute_projection_widths(layout: Dict[str, Any], *,
+                              opp_belief_cls_k: int = 0) -> Tuple[int, int]:
     """The `(pi, vf)` projection-input widths as STATIC ARITHMETIC (gen3_static_widths_v1).
 
     Mirrors `ProjectionAssembler.forward`'s concat exactly — this is the single place that
     arithmetic lives, and `projection_width_test.py` sweeps flag combos asserting a REAL
     forward's measured widths equal it (the old construction-time discovery forward,
-    preserved as the verifier). Only THREE inputs move a width: the layout (the
-    `non_matchup_rest` scalar tail), the hidden-opp belief pool (`opp_belief_cls_k`
-    queries × D_MODEL, both heads), and the op (whose presence appends the critic's
-    multi-seed window, vf only). Every other flag is width-neutral by construction: the
-    v89 value routes inject ADDITIVELY into `value_pooled`, the intent cells widen the
-    pointer stash (not pi/vf), and the token-stream enrichments change content, not shape.
+    preserved as the verifier).
 
-    Pure — importable and unit-testable without building a model. `damage_op` gates the
-    seed window because the assembler builds `MultiSeedValueReadout` iff the op exists,
-    and the op (when built) runs every forward, so its `incoming_rows` are always fed.
+    **`vf` is now a CONSTANT** (`D_MODEL`). The critic-route deletion wave retired the whole
+    post-assembler vf tail — the seed window, the hidden-opp belief's vf half and the
+    `non_matchup_rest` vf concat — so `vf_combined IS value_pooled`, the same tensor the
+    dist-head critic reads. That is the structural cure for the v89/M2 bug class rather than
+    another instance of it: there is no longer a vf branch that `--value-from-dist` can orphan.
+    Only TWO inputs still move `pi`: the layout (the `non_matchup_rest` scalar tail) and the
+    hidden-opp belief pool (`opp_belief_cls_k` queries × D_MODEL, policy side only). Every
+    other flag is width-neutral by construction: the v89 value routes inject ADDITIVELY into
+    `value_pooled`, the intent cells widen the pointer stash (not pi/vf), and the token-stream
+    enrichments change content, not shape.
+
+    Pure — importable and unit-testable without building a model.
     """
     from agents.observation.schema import build_schema
     sl = build_schema(layout).slices()
@@ -297,70 +294,65 @@ def compute_projection_widths(layout: Dict[str, Any], *, opp_belief_cls_k: int =
     belief = opp_belief_cls_k * D_MODEL
     # pi: our_team_pooled + their_team_pooled + our_active_refined (D_MODEL each) + tail + belief.
     pi = 3 * D_MODEL + non_matchup_rest + belief
-    # vf: value_pooled (D_MODEL) + tail + belief + the critic's multi-seed window (op only).
-    vf = D_MODEL + non_matchup_rest + belief + ((VALUE_SEED_K * VALUE_SEED_DIM) if damage_op else 0)
+    # vf: value_pooled, and nothing else.
+    vf = D_MODEL
     return pi, vf
 
 
 class ProjectionAssembler(torch.nn.Module):
     """Assembles the pre-projection inputs for BOTH heads.
 
-    Policy input: team pools + our active token + the non-matchup scalar tail.
-    Value input: the value-dedicated pool + the same scalar tail (+ the critic's seed window).
+    Policy input: team pools + our active token + the non-matchup scalar tail (+ the hidden-opp
+    belief when built). Value input: `value_pooled`, and nothing else.
+
+    **THE VALUE TAIL IS GONE, and that is the point.** The critic-route deletion wave retired
+    all three of its members on measured evidence — the v61 seed window (dV 0.0000 bit-exact on
+    two consecutive end-of-run audits), the hidden-opp belief's vf half (0.0000, while its PI
+    half flips 39.6% of argmaxes and therefore STAYS), and the `non_matchup_rest` vf concat
+    (0.0000, its content substituting through the global token per C1). So `vf_combined IS
+    value_pooled` — the very tensor `--value-from-dist`'s critic reads — which makes the v89/M2
+    orphaned-branch bug class *unrepresentable* rather than merely fixed: there is no second vf
+    path left for a critic parameterization to bypass. Every critic enrichment now goes through
+    one of two declared seams, `_value_pooled_routes` (additive, gradient-guarded) or the two
+    `CLSPool` token-content injections.
 
     gen3_ctx_dedup_v1: the per-side ENCODED active contexts (`active_ctx_encoder` on the raw
     58-dim boosts+volatiles blocks) are DELETED from both heads. They were duplicated delivery
     with a 1:1 entity-native replacement already live: the E2 injection scatters each side's
     FULL raw ctx block onto its ACTIVE mon's role token (`gen3_entity_rehome_v1`, pinned by
     `e2_ctx_injection_test.py`), and the global token carries both raw blocks as a second
-    route — so every scalar the encoder saw reaches both heads through the trunk, entity-
-    attached instead of positionally concatenated. `non_matchup_rest` STAYS: its only token
-    route is the global token, which no pool reads directly, so the concat is currently its
-    one direct path to the heads (no 1:1 replacement — its re-home is a separate decision).
+    route. `non_matchup_rest` stays on the POLICY side: its only token route is the global
+    token, which no pool reads directly, so the pi concat is still its one direct head path.
     """
 
-    def __init__(self, layout: Dict[str, Any], seed_per_mon: int = 0):
+    def __init__(self, layout: Dict[str, Any]):
         super().__init__()
-        # gen3_no_concat_v1: the critic's multi-seed window (None when the config has no op —
-        # then there are no our_mon rows to read and vf keeps its pooled-only shape).
-        self._seed_per_mon = seed_per_mon
-        self.seed_readout = MultiSeedValueReadout(seed_per_mon) if seed_per_mon > 0 else None
 
     def forward(self, our_team_pooled: torch.Tensor, their_team_pooled: torch.Tensor,
                 our_active_refined: torch.Tensor, value_pooled: torch.Tensor,
                 ctx: ExtractorContext,
-                hidden_opp_belief: Optional[torch.Tensor] = None,
-                seed_rows: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                hidden_opp_belief: Optional[torch.Tensor] = None
+                ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Concatenate the per-head pre-projection inputs → `(pi_combined, vf_combined)` [B, *].
-        `hidden_opp_belief` [B, K*D_MODEL] feeds both heads when built; `seed_rows` (the op's typed
-        incoming rows [B,6,per_mon]) feeds the critic's multi-seed readout, vf only."""
+        `hidden_opp_belief` [B, K*D_MODEL] feeds the POLICY head when built (its vf half was
+        audited dead and deleted); the value half is `value_pooled` alone."""
         pi_parts = [our_team_pooled, their_team_pooled, our_active_refined,
                     ctx.non_matchup_rest]
-        vf_parts = [value_pooled, ctx.non_matchup_rest]
         # gen3_no_concat_v1 (v61): THE OP HEAD-CONCAT IS DEAD. The 660-dim flat block no longer
         # enters either head — its measured end-state (gen-4, stratified, 53ef270): net policy
         # dependence +0.00%, all-edges-off ABOVE the concat arm on flips, and the critic's
         # magnitude content decodable without it (act_threat vf r² 0.418 concat-zeroed). The op
         # itself lives on: pointer cells (policy, lossless per-action), prefuse token injection,
-        # the D/S/C/V/T/X edge cells, and `last_raw_block` for the probes. The critic's
-        # replacement window is the multi-seed readout below (vf only).
-        # Hidden-opponent belief (flag-guarded; None when off) feeds BOTH heads — the policy reads
-        # the threat over the hidden team, the value reads its winning-ness. Appended last so the
-        # off-by-default block layout is unchanged (`compute_projection_widths` sizes the
-        # projections; a new width-contributing part must be added THERE too — the sweep test
-        # fails on any drift).
+        # the D/S/C/V/T/X edge cells, and `last_raw_block` for the probes; the critic reads it
+        # through `--value-entity-pool`, which carries 97% of the critic's route dependence.
+        # Hidden-opponent belief (flag-guarded; None when off) feeds the POLICY head — it reads
+        # the threat over the hidden team. Appended last so the off-by-default block layout is
+        # unchanged (`compute_projection_widths` sizes the projections; a new width-contributing
+        # part must be added THERE too — the sweep test fails on any drift).
         if hidden_opp_belief is not None:
             pi_parts.append(hidden_opp_belief)
-            vf_parts.append(hidden_opp_belief)
-        # gen3_no_concat_v1 / gen3_op_tensors_views_v1: the multi-seed critic readout over the
-        # op's per-our-mon rows — now handed in as the TYPED view (`OpTensors.incoming_rows`,
-        # post-gain), so the assembler holds no flat-block offsets. vf ONLY.
-        if seed_rows is not None and self.seed_readout is not None:
-            alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
-            vf_parts.append(self.seed_readout(seed_rows, alive))
         pi_combined = torch.cat(pi_parts, dim=1)
-        vf_combined = torch.cat(vf_parts, dim=1)
-        return pi_combined, vf_combined
+        return pi_combined, value_pooled
 
 
 class Gen3FeaturesExtractor(torch.nn.Module):
@@ -398,7 +390,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  opp_intent: bool = False, species_prior_fusion: bool = False,
                  t0_species_prior: bool = False,
                  opp_intent_grad_mode: str = "detached",
-                 intent_value_reduce: bool = False,
                  intent_move_cell: bool = False,
                  intent_threshold: bool = False,
                  intent_conditional: bool = False,
@@ -409,8 +400,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  pair_value_route: bool = False,
                  op_drop_renders: bool = False,
                  op_believed_lean: bool = False,
-                 value_clock: bool = False,
-                 value_intent: bool = False,
                  value_entity_pool: bool = False,
                  value_entity_pool_full: bool = False,
                  item_belief: bool = False,
@@ -580,25 +569,9 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # is computed against a different distribution. Independent of `species_prior_fusion`: that
         # flag fuses the prior into the T2 aux READOUT, this one feeds the T1 physics, and either is
         # useful without the other.
-        # gen3_intent_value_reduce_v1 (step 6). Requires BOTH operands to exist, and both
-        # requirements are fail-loud rather than silently degrading: no alpha => nothing to weight
-        # with; no op => nothing to weight. `stash_pair_cells` is what makes the op keep the
-        # un-reduced tensor at all, so an off run pays nothing.
-        self.intent_value_reduce = None
-        if intent_value_reduce:
-            self.intent_value_reduce = IntentValueReduce(
-                TEAM_SIZE, _INTENT_CELL_FEATURES, D_MODEL)
-            if not opp_intent:
-                raise ValueError(
-                    "intent_value_reduce=True requires opp_intent=True — the reduction is WEIGHTED "
-                    "BY alpha, and with no alpha head there is no distribution to weight with.")
-            if not damage_op:
-                raise ValueError(
-                    "intent_value_reduce=True requires damage_op=True — it reduces the operator's "
-                    "un-reduced per-(our mon, believed move) cells, which nothing else produces.")
         # gen3_intent_move_cell_v1 (G3, design_conditional_execution.md): the POLICY-side alpha
         # consumer — the c2 status-consequence family re-delivered through the pointer MOVE cell,
-        # alpha-conditioned. Same fail-loud requirement shape as intent_value_reduce: no alpha =>
+        # alpha-conditioned. Fail-loud on both operands rather than silently degrading: no alpha =>
         # nothing to weight with; no op => no c2 physics to deliver.
         self.intent_move_cell = None
         if intent_move_cell:
@@ -613,14 +586,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     "intent_move_cell=True requires damage_op=True — it re-delivers the "
                     "operator's c2 status-consequence physics, which nothing else produces.")
         # gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 step 3): the
-        # α-weighted THRESHOLD operator — five mechanics through the pointer MOVE cell plus the
-        # p_KO critic route (ledger H1). One flag builds BOTH consumers; the shared probs are
-        # computed once at the pointer stash (T2) and the vf half reads the stash at T3.
+        # α-weighted THRESHOLD operator — five mechanics (Focus Punch / Substitute / Endure /
+        # Destiny Bond / Endeavor) through the pointer MOVE cell. The flag used to build a SECOND
+        # consumer, the p_KO vf route; the critic-route deletion wave retired it (dV 0.155 / 0.136,
+        # below the 0.39 bar and registered no-appeal). **The POLICY-side context stays** — that is
+        # the half every audit found live, and `intent_threshold_test.py` pins it.
         self.intent_threshold_move = None
-        self.intent_threshold_value = None
         if intent_threshold:
             self.intent_threshold_move = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
-            self.intent_threshold_value = IntentThresholdValue(D_MODEL)
             if not opp_intent:
                 raise ValueError(
                     "intent_threshold=True requires opp_intent=True — every threshold form is "
@@ -761,17 +734,14 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             raise ValueError(
                 "pair_value_route=True requires damage_op=True — the injected row IS the op's "
                 "unified `pair_in` outcome vector, and nothing else computes it.")
-        # gen3_value_direct_routes_v1 (v87): two direct critic routes, both zero-init vf-tail
-        # appends. The clock route has no dependency (the ctx always carries the global block);
-        # the intent route consumes the α/β PUBLICATIONS and so requires the intent heads.
-        self.value_clock_route = ValueClockRoute() if value_clock else None
-        self.value_intent_route = None
-        if value_intent:
-            if not opp_intent:
-                raise ValueError(
-                    "value_intent=True requires opp_intent=True — the route feeds the critic "
-                    "the α/β posteriors, and with no intent heads there is nothing to feed.")
-            self.value_intent_route = ValueIntentRoute(entity_topk_seats)
+        # (v87's two direct critic routes — `--value-clock` and `--value-intent` — are DELETED in
+        # the critic-route deletion wave. `value_intent` read dV 0.156 against a 0.39 bar; its
+        # RE-ENTRY CONDITION SURVIVES THE DELETION: any future α/β-to-critic proposal passes the
+        # C4-style offline gate FIRST. It is cheap to rebuild through the `_value_pooled_routes`
+        # seam — it was deleted because the measurement says the critic does not use it, not
+        # because the idea is unsound. `value_clock` read 0.2169 at 2× sample, and C1 had already
+        # measured the clock CONTENT reaching the critic through the trunk at ~83% of an HP
+        # control's responsiveness — substitution, which is what makes the deletion low-risk.)
         if opp_intent_grad_mode not in ("detached", "shaping"):
             raise ValueError(
                 f"opp_intent_grad_mode must be 'detached' or 'shaping', got "
@@ -966,11 +936,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                           if damage_op else None)
         # Tie the two ends together NOW rather than discovering a width mismatch in a forward pass:
         # `cls_pool`'s projection was sized from the pure helper hundreds of lines above, before the
-        # gen3_intent_value_reduce_v1 (step 6): ask the op to KEEP its un-reduced cells. Set here,
-        # after the op exists, because the flag lives on the op but is owned by a consumer built
-        # before it. Without this the consumer sees `last_pair_cells is None` and — by design —
-        # raises rather than contributing zeros, since a silent no-op reads exactly like a null.
-        if (self.intent_value_reduce is not None or self.intent_threshold_move is not None
+        # Ask the op to KEEP its un-reduced pair cells. Set here, after the op exists, because
+        # the flag lives on the op but is owned by consumers built before it. Without this a
+        # consumer sees `last_pair_cells is None` and — by design — raises rather than
+        # contributing zeros, since a silent no-op reads exactly like a null.
+        if (self.intent_threshold_move is not None
                 or self.intent_conditional is not None or self.pair_outcome_move is not None
                 or self.pair_outcome_switch is not None or self.conditional_threat is not None
                 or self.pair_value_route):
@@ -1109,11 +1079,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # Stored on the root so arch_toggles_from_model can thread it to the eval/self-play workers
         # (the move-prior gate is a version-checked forward-behavior toggle).
         self.move_candidate_floor = move_candidate_floor
-        # Value-head active readout (weight-shape via flag): adds our_active_refined (D_MODEL) to the
-        # value projection. OFF reproduces the baseline value head byte-for-byte (no ARCH_SIGNATURE bump).
-        self.assembler = ProjectionAssembler(
-            layout,
-            seed_per_mon=(self.damage_op.per_mon if self.damage_op is not None else 0))
+        self.assembler = ProjectionAssembler(layout)
 
         # Auxiliary WIN-PROBABILITY head (tri-state `win_prob_mode`): a calibrated P(win|state) readout
         # off `value_pooled`. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection dims
@@ -1198,15 +1164,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # test `projection_width_test.py` preserves the old mechanism AS THE VERIFIER: it runs
         # a real forward per flag combo and asserts the measured widths equal this arithmetic.
         self.projection_input_dim, self.value_projection_input_dim = compute_projection_widths(
-            layout, opp_belief_cls_k=opp_belief_cls_k, damage_op=damage_op)
-        # Tie the vf seed-window term to the constructed readout — a drift between the
-        # arithmetic's constants and the assembler's module is a construction-time crash here,
-        # never a first-forward shape error.
-        if self.assembler.seed_readout is not None:
-            assert self.assembler.seed_readout.out_dim == VALUE_SEED_K * VALUE_SEED_DIM, (
-                f"compute_projection_widths' seed-window term "
-                f"({VALUE_SEED_K * VALUE_SEED_DIM}) has drifted from "
-                f"MultiSeedValueReadout.out_dim ({self.assembler.seed_readout.out_dim})")
+            layout, opp_belief_cls_k=opp_belief_cls_k)
 
         # Two projection heads, both → PROJECTION_DIM. Pre-projection LayerNorm equalises
         # per-block scales. The value head reads the value-dedicated CLS pool (Option C):
@@ -1977,7 +1935,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # (the op's T1 operand stash from above, and alpha, T2, scored from the seats and pools).
         # The consumer reads `last_alpha_logits` — the PUBLICATION, stop-grad under
         # `belief_grad_mode=label_only` — never a raw stash, so label_only keeps cutting the
-        # PPO→alpha_head route through this path exactly as it does for intent_value_reduce.
+        # PPO→alpha_head route through this path exactly as it does for every other consumer.
         if self.intent_move_cell is not None:
             if self.last_alpha_logits is None or _imc_ops is None:
                 raise RuntimeError(
@@ -2144,10 +2102,11 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # gen3_value_pooled_routes_v1 (v89): the value routes INJECT into `value_pooled` —
         # the tensor the dist-head critic actually reads — instead of the post-assembler vf
         # concat, which `--value-from-dist` structurally bypassed (verified on gen-12:
-        # `value_entity_pool.out_proj` and `intent_value_reduce.proj` bit-exact ZERO after
-        # 25M steps, while `value_threat_proj` — the one value_pooled route — trained to
-        # 0.117). `vf_parts[0] is value_pooled`, so the SAME wiring feeds `value_net` when
-        # the scalar critic is on: one wiring, both parameterizations. Every route stays
+        # `value_entity_pool.out_proj` and the then-live α-reduce projection bit-exact ZERO
+        # after 25M steps, while `value_threat_proj` — the one value_pooled route — trained
+        # to 0.117). Since the critic-route deletion wave `vf_combined IS value_pooled`, so
+        # the SAME tensor feeds `value_net` when the scalar critic is on: one wiring, both
+        # parameterizations, and no second vf branch for either to orphan. Every route stays
         # zero-init (cold start adds exactly 0) and vf-only at ANY weight (pi never reads
         # value_pooled). Additive injection changes no width, so route availability can
         # never mis-size `value_pre_norm` — the ede5a88 discovery bug class is gone by
@@ -2183,9 +2142,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.stash.value_dist_logits = self.value_dist_head(vd_in)
         out: Tuple[torch.Tensor, torch.Tensor] = self.assembler(
                              our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
-                             ctx, belief,
-                             self.damage_op.last_tensors.incoming_rows  # type: ignore[union-attr]
-                             if damage_block is not None else None)
+                             ctx, belief)
         return out
 
     def _value_pooled_routes(self, ctx: ExtractorContext, our_team_out: torch.Tensor,
@@ -2197,16 +2154,16 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         (`value_route_gradient_test.py`) iterates exactly this generator, so a route added here
         is covered by construction — and a route added ANYWHERE ELSE is the bug this seam
         exists to prevent. Contract per route: zero-init output projection (cold start adds 0),
-        raise when ON but inputs are missing (silence is indistinguishable from a null result)."""
-        if self.intent_value_reduce is not None:
-            _cells = self.damage_op.last_pair_cells if self.damage_op is not None else None
-            if _cells is None or self.last_alpha_logits is None:
-                raise RuntimeError(
-                    "intent_value_reduce is on but the op stashed no un-reduced cells or alpha "
-                    "produced no logits — the term would silently contribute nothing, which is "
-                    "indistinguishable from a null RESULT.")
-            yield "intent_value_reduce", self.intent_value_reduce(
-                self.last_alpha_logits, _cells, self.damage_op.last_pair_gate)  # type: ignore[union-attr]
+        raise when ON but inputs are missing (silence is indistinguishable from a null result).
+
+        FOUR of its five original members were retired by the critic-route deletion wave —
+        `intent_value_reduce` (dV 0.3176), `intent_threshold_value` (0.155/0.136), `value_clock`
+        (0.2169) and `value_intent` (0.156), all against a 0.39 bar, the first two re-audited at
+        2× sample first. `value_entity_pool` is what the audit picked: dV 5.490, **97% of the
+        whole critic route joint**. The seam stays at one entry ON PURPOSE — it is the mechanism
+        that makes the NEXT route auditable and gradient-guarded the day it is written, and at
+        one entry it costs a `for` loop.
+        """
         if self.value_entity_pool is not None:
             _op_rows = (self.damage_op.last_tensors.incoming_rows  # type: ignore[union-attr]
                         if (self.damage_op is not None and damage_block is not None) else None)
@@ -2219,22 +2176,6 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                     _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, D_MODEL)
             yield "value_entity_pool", self.value_entity_pool(
                 our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive, **_uvr_kw)
-        if self.intent_threshold_value is not None:
-            if self._thresh_probs is None:
-                raise RuntimeError(
-                    "intent_threshold is on but the pointer stash computed no threshold "
-                    "probs — the vf route would silently contribute nothing.")
-            yield "intent_threshold_value", self.intent_threshold_value(*self._thresh_probs)
-        if self.value_clock_route is not None:
-            _clock = ctx.non_matchup_rest[:, CLOCK_OFFSET_IN_GLOBAL:CLOCK_OFFSET_IN_GLOBAL + CLOCK_DIM]
-            yield "value_clock", self.value_clock_route(_clock)
-        if self.value_intent_route is not None:
-            if self.last_alpha_logits is None or self.last_beta_logits is None:
-                raise RuntimeError(
-                    "value_intent is on but alpha/beta produced no logits — the route would "
-                    "silently contribute nothing.")
-            yield "value_intent", self.value_intent_route(
-                self.last_alpha_logits, self.last_beta_logits)
 
     def forward(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Returns a (pi_features, vf_features) tuple — both [B, PROJECTION_DIM].

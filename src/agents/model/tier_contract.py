@@ -93,16 +93,10 @@ TIER_OF: Dict[str, int] = {
     # stash by the T2 alpha publication into the pointer MOVE cell. T2 by the same logic as
     # `alpha_head` itself: it answers "what are my moves worth", post-attention.
     "intent_move_cell": 2,
-    # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator's two consumers — the
-    # move-cell half runs at the pointer stash beside intent_move_cell (T2); the p_KO critic
-    # half reads the T2-stashed probs after the assembler (T3, the intent_value_reduce
-    # placement).
+    # gen3_intent_threshold_v1 (v84): the α-weighted threshold operator, at the pointer stash
+    # beside intent_move_cell (T2). Its p_KO CRITIC half (`intent_threshold_value`, T3) was
+    # deleted by the critic-route deletion wave; the move cell is the whole flag now.
     "intent_threshold_move": 2,
-    "intent_threshold_value": 3,
-    # gen3_value_direct_routes_v1 (v87): the deadline-clock and α/β direct critic routes —
-    # post-assembler vf-tail appends, the same DELIVER placement as intent_value_reduce.
-    "value_clock_route": 3,
-    "value_intent_route": 3,
     # gen3_intent_conditional_v1 (v85): the Counter/flinch/Explosion/Pursuit cells — the same
     # pointer-stash placement as intent_move_cell.
     "intent_conditional": 2,
@@ -121,16 +115,15 @@ TIER_OF: Dict[str, int] = {
     # a child module rather than as a top-level extractor child, so `cls_pool`'s own tier covers
     # it — which is also what makes its vf-only property structural.)
     "conditional_threat": 2,
-    # gen3_intent_value_reduce_v1: the CRITIC-side alpha consumer, applied after the assembler
-    # (the first point where both operands exist) — a DELIVER-stage readout.
-    "intent_value_reduce": 3,
     # T3 DELIVER — the pooled contract and the readouts taken off it.
     "hidden_opp_belief": 3,
     "assembler": 3,
     "win_head": 3,
     "value_dist_head": 3,
-    # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool — applied
-    # after the assembler on the value half, the same DELIVER placement as intent_value_reduce.
+    # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool, injected into
+    # `value_pooled` through the v89 seam. Since the critic-route deletion wave it is the ONLY
+    # member of that seam — and the only DELIVER-stage critic route other than the two `cls_pool`
+    # token-content injections.
     "value_entity_pool": 3,
     # gen3_event_window_v1 (v81): event seats are TRUNK INPUT built pre-transformer from the
     # obs block — T1 REASON, exactly like entity_seats.

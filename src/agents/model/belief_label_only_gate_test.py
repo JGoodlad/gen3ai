@@ -296,44 +296,56 @@ def test_readout_heads_are_structurally_label_only_in_every_mode():
 # Contracts that keep the machinery honest
 # --------------------------------------------------------------------------------------------
 
-def test_alpha_is_cut_under_intent_value_reduce():
-    """`AlphaIntentHead` is the head that would have been missed.
+def test_alpha_is_cut_at_its_PUBLICATION_boundary():
+    """`AlphaIntentHead` is the head that would have been missed — and the way it is covered
+    changed with the critic-route deletion wave, so read this before "restoring" the old form.
 
-    It is a pure readout UNTIL `--intent-value-reduce`, which appends an alpha-weighted threat term
-    to the CRITIC half — so that flag, and nothing about alpha itself, is what puts the value
-    gradient on `alpha_head`. Both directions are asserted on the same config, because "cut" is only
-    meaningful next to a live control.
+    THE OLD FORM. This test used to enable `--intent-value-reduce` (a CRITIC route that consumed
+    α) and assert end-to-end that `alpha_head` collects PPO gradient under `shaping` and none
+    under `label_only`. The wave deleted that route AND every other α→vf route, so there is no
+    longer any critic-side consumer to build the control on.
+
+    WHY IT IS NOT SIMPLY RE-POINTED AT A POLICY CONSUMER. Both candidate families fail as
+    controls, for opposite reasons, and both failures are silent:
+      * the SWITCH-cell consumers (`ConditionalThreatCell`, `PairOutcomeSwitchCell`,
+        `SwitchBranchMoveCell`) stop-grad α **unconditionally** by the policy-side convention, so
+        no gradient reaches `alpha_head` through them in ANY mode — a control that reads 0 under
+        `shaping` too, i.e. vacuous;
+      * the MOVE-cell consumers (`IntentMoveCell`, `IntentThresholdMoveCell`) DO carry the
+        gradient, but this file's uniform-random obs floors every move dex num to 0, so
+        `_request_order_move_tokens` resolves nothing, the pointer head masks all four MOVE
+        logits, and the branch is un-differentiated. Also vacuous, also silently.
+
+    So the claim is asserted where it is actually made: at the **publish boundary**. `label_only`
+    means `_publish_belief` stop-grads α's logits, so the published tensor carries no graph back to
+    `alpha_head` — which is a STRONGER statement than any single consumer's, because it holds for
+    every consumer, including ones added later. `shaping` is the live control on the same config.
     """
-    # intent_value_reduce gathers the op's held pair cells onto alpha's seat axis, so it needs the
-    # top-K candidate index — i.e. the incoming matrix (which needs move_latent, already in _CFG).
-    intent = dict(opp_intent=True, entity_topk_seats=6, intent_value_reduce=True,
+    intent = dict(opp_intent=True, entity_topk_seats=6,
                   damage_topk_k=6, damage_matrices_incoming=True)
 
-    def _alpha_grad(mode):
+    built = {}
+
+    def _published(mode):
         model, enc = _build_real_policy(belief_grad_mode=mode, **intent)
-        # `IntentValueReduce.proj` is ZERO-INIT, so at init no gradient reaches alpha through it and
-        # BOTH arms would read 0 — the route is closed at step 0 and opens as proj trains. Gate the
-        # trained regime against a large random projection, not just at init (the standing rule for
-        # the zero-init couplings here); otherwise "cut" would be indistinguishable from "not yet
-        # connected" and this test would pass no matter what label_only did.
-        with torch.no_grad():
-            model.policy.features_extractor.intent_value_reduce.proj.weight.normal_(0.0, 0.5)
-        _ppo_backward(model, enc)
-        return _grad_mass(model, ("alpha_head",)), model, enc
+        fe = model.policy.features_extractor
+        fe(_obs(enc))
+        assert fe.alpha_head is not None and fe.last_alpha_logits is not None
+        built[mode] = (model, enc)
+        return fe.last_alpha_logits
 
-    live, _, _ = _alpha_grad("shaping")
-    assert live > 0.0, (
-        "no value gradient reached alpha_head even under shaping — --intent-value-reduce did not "
-        "build the route, so the cut asserted below would be vacuous."
-    )
+    live = _published("shaping")
+    assert live.requires_grad and live.grad_fn is not None, (
+        "α's publication carries no graph even under `shaping` — the head is not differentiable "
+        "here at all, so the cut asserted below would be vacuous.")
 
-    cut, model, enc = _alpha_grad("label_only")
-    assert cut == 0.0, (
-        f"label_only left the intent-value-reduce route to alpha_head live ({cut} vs {live} under "
-        "shaping) — the critic can still train the intent head."
-    )
+    cut = _published("label_only")
+    assert not cut.requires_grad, (
+        "label_only published α with a live graph — every forward consumer (present and future) "
+        "can therefore train the intent head from the PPO objective.")
 
-    # ...and its own supervised loss must still reach it.
+    # ...and its own supervised loss must still reach it under label_only.
+    model, enc = built["label_only"]
     fe = model.policy.features_extractor
     model.policy.zero_grad(set_to_none=True)
     fe(_obs(enc))

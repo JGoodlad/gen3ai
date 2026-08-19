@@ -41,7 +41,7 @@ def test_build_parser_is_importable_without_running_main():
 def test_known_option_strings_covers_a_live_flag():
     known = known_option_strings()
     assert "--steps" in known and known["--steps"] == "steps"
-    assert "--value-clock" in known, "a v87 flag should be present on a v89 tree"
+    assert "--pair-value-route" in known, "a v95 flag should be present on a v96 tree"
 
 
 # ------------------------------------------------------------------ the checker itself
@@ -122,9 +122,13 @@ def test_a_satisfied_dependency_is_silent():
 
 def test_a_zero_COEFFICIENT_disables_a_derived_toggle():
     """`opp_intent` is set by `--opp-intent-coef`, where 0 is OFF — the one place a numeric value,
-    not a mode string, decides whether a dependency is satisfied."""
-    pairs = unsatisfiable_pairs(["--value-intent", "--opp-intent-coef", "0"])
-    assert [(f, d) for f, d, _ in pairs] == [("value_intent", "opp_intent")]
+    not a mode string, decides whether a dependency is satisfied.
+
+    (This used `--value-intent` until the critic-route deletion wave deleted that flag;
+    `--intent-threshold` carries the same single `opp_intent` dependency plus `damage_op`, so the
+    assertion names both rather than assuming a one-element list.)"""
+    pairs = unsatisfiable_pairs(["--intent-threshold", "--damage-op", "--opp-intent-coef", "0"])
+    assert [(f, d) for f, d, _ in pairs] == [("intent_threshold", "opp_intent")]
 
 
 def test_check_reports_both_failure_kinds_in_one_pass():

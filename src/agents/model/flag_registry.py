@@ -55,7 +55,7 @@ THE FOUR CLASSES say what a mismatch MEANS, which is what picks the gate:
 
 DEPENDENCIES (``requires``). A sixth surface used to exist and was not listed above, because it was
 not a surface at all — it was ~30 hand-written ``raise ValueError`` lines in
-``Gen3FeaturesExtractor.__init__`` saying things like *"intent_value_reduce requires opp_intent"*.
+``Gen3FeaturesExtractor.__init__`` saying things like *"intent_threshold requires opp_intent"*.
 Nothing outside that function knew them, so the launcher could not warn about an unsatisfiable
 combination, ``designs/flag_registry.md`` could not show the graph, and there was no way to ask
 "what is the minimum config that turns X on?" without reading the constructor.
@@ -242,9 +242,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "feed the T1 physics the model's own species belief, not the static usage table"),
     ModelFlag("opp_intent_grad_mode", "detached", Tier.CLI, Klass.STRUCTURAL, 73,
               "whether alpha/beta's gradient reaches the shared trunk (detached|shaping)"),
-    ModelFlag("intent_value_reduce", False, Tier.CLI, Klass.STRUCTURAL, 74,
-              "append the alpha-weighted expected incoming threat to the critic's features",
-              requires=("opp_intent", "damage_op")),
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
               "the pointer MOVE cell",
@@ -253,8 +250,10 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "the entity pool's COMPLETE row set: + the refined global token and the "
               "hidden-opp belief queries",
               note="requires value_entity_pool; a separate flag/shape so v80-table checkpoints "
-                   "(gen-12 trains one) keep loading. The one successor for every vf route the "
-                   "critic_route_audit may condemn (nmr concat, hidden-opp vf, seed, threat).",
+                   "keep loading. It is the SUCCESSOR the critic-route deletion wave actually "
+                   "landed on — the nmr vf concat, the hidden-opp vf half and the seed readout "
+                   "are all deleted, and this pool carries 97% of the critic's route "
+                   "dependence (gen-14, dV 5.490 of all_off 5.635).",
               requires=("value_entity_pool",)),
     ModelFlag("history_events", False, Tier.CLI, Klass.STRUCTURAL, 81,
               "Tier H-B: the obs event-window records join the trunk as event SEATS "
@@ -264,10 +263,10 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("value_entity_pool", False, Tier.CLI, Klass.STRUCTURAL, 80,
               "Stage-3 T3-DELIVER: ONE attention pool over the critic's entity rows (12 team "
               "tokens + op incoming rows), zero-init, vf-only",
-              note="the designed SUCCESSOR contract of the bolt-on vf routes (seed readout / "
-                   "threat-inject) — those are adjudicated by the gen-11 critic_route_audit; "
-                   "this exists so a condemned route has a replacement the next generation can "
-                   "enable in the same config."),
+              note="the designed SUCCESSOR contract of the bolt-on vf routes, and the one the "
+                   "critic_route_audit picked: gen-14 dV 5.490 vs threat 1.069 and every other "
+                   "route below 0.32. The seed readout it succeeded is deleted; threat-inject "
+                   "KEEPS (its deadline discharged at 1.0686)."),
     ModelFlag("item_belief", False, Tier.CLI, Klass.STRUCTURAL, 83,
               "the hidden-ITEM belief head: per-opp-slot posterior over item nums, Smogon "
               "usage prior ⊕ zero-init trunk delta; the op's p_cb unrevealed branch consumes "
@@ -278,12 +277,14 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "~behavior-preserving at init and the delta must EARN its movement."),
     ModelFlag("intent_threshold", False, Tier.CLI, Klass.STRUCTURAL, 84,
               "the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / "
-              "Endure / Destiny Bond / Endeavor through the pointer MOVE cell, plus p_KO "
-              "(the calibrated am-I-about-to-die) to the critic",
+              "Endure / Destiny Bond / Endeavor through the pointer MOVE cell (+ p_KO as "
+              "per-slot context)",
               note="design_conditional_execution.md §3.0 build-order step 3. Requires "
-                   "opp_intent + damage_op (+ the top-K pair-cell stash at runtime). Both "
-                   "projections zero-init ⇒ ON-at-init bit-identical; the p_KO critic half "
-                   "is the ledger-H1 payoff and stands whatever the G3 verdict says.",
+                   "opp_intent + damage_op (+ the top-K pair-cell stash at runtime). The "
+                   "projection is zero-init ⇒ ON-at-init bit-identical. The flag used to "
+                   "build a SECOND consumer, the p_KO vf route (the ledger-H1 payoff); the "
+                   "critic-route deletion wave retired that half on dV 0.155/0.136 against a "
+                   "0.39 bar. This flag is now POLICY-ONLY, and that is deliberate.",
               requires=("opp_intent", "damage_op")),
     ModelFlag("intent_conditional", False, Tier.CLI, Klass.STRUCTURAL, 85,
               "the remaining α-conditioned mechanic cells: Counter/Mirror Coat's category "
@@ -387,19 +388,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="requires spread_belief + damage_op. Forward-math only (no state_dict "
                    "change): the version gate is the ONLY thing rejecting a mismatched resume.",
               requires=("spread_belief", "damage_op")),
-    ModelFlag("value_clock", False, Tier.CLI, Klass.STRUCTURAL, 87,
-              "the v67 deadline clock's 3 raw scalars through a zero-init projection, vf only "
-              "— the explicit critic route the clock fix was validated for",
-              note="its indirect route (the nmr concat) was audited dead; a critic cannot "
-                   "price a deadline it cannot see."),
-    ModelFlag("value_intent", False, Tier.CLI, Klass.STRUCTURAL, 87,
-              "the published α/β posteriors AS DISTRIBUTIONS to the critic (α over K "
-              "belief-sorted seats + SWITCH, β over the 6 slots), zero-init, vf only",
-              note="requires opp_intent. α previously reached vf only as a weighting inside "
-                   "intent_value_reduce's cells; β not at all — the block was ORDERING, which "
-                   "the post-assembler tail dissolves. Publications ⇒ label_only keeps the "
-                   "PPO→α/β route cut.",
-              requires=("opp_intent",)),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

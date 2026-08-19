@@ -11,6 +11,13 @@ one backward pass, assert nonzero gradient.
 Generic by construction: the routes are enumerated from `_value_pooled_routes` — THE registry
 the forward itself consumes — not a hand-kept list, so a route added to the seam is covered
 automatically, and a route added anywhere else fails `test_every_value_route_flag_flows_through_the_registry`.
+
+⚠️ THE SEAM HAS ONE MEMBER SINCE THE CRITIC-ROUTE DELETION WAVE (`value_entity_pool`, dV 5.490 =
+97% of the whole critic route joint). The other four — `intent_value_reduce` 0.3176,
+`intent_threshold_value` 0.155/0.136, `value_clock` 0.2169, `value_intent` 0.156, all against a
+0.39 bar — are deleted. This file keeps its full generic machinery anyway, and that is deliberate:
+its value is covering the NEXT route on the day it is written, which is precisely what did NOT
+happen for the four it just lost.
 """
 import gymnasium as gym
 import numpy as np
@@ -24,8 +31,7 @@ _ALL_ROUTES_ON = dict(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
     move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
     damage_topk_k=6, entity_topk_seats=6, opp_intent=True, opp_belief_slots=True,
-    intent_value_reduce=True, value_entity_pool=True, value_entity_pool_full=True,
-    intent_threshold=True, value_clock=True, value_intent=True,
+    value_entity_pool=True, value_entity_pool_full=True, intent_threshold=True,
     # gen3_pair_value_route_v1 (v95, PV): deliberately NOT a seam route — it injects TOKEN CONTENT
     # inside CLSPool, because a post-pool additive route would have to collapse the team axis and
     # the only equivariant collapse is a sum. Included in the sweep anyway so the guard's real
@@ -35,8 +41,7 @@ _ALL_ROUTES_ON = dict(
 )
 # Flags that gate a value route (must stay in sync with _value_pooled_routes — pinned below by
 # the registry-coverage test, so a drift here is a failing test, not silent shrinkage).
-_ROUTE_FLAGS = ("intent_value_reduce", "value_entity_pool", "intent_threshold",
-                "value_clock", "value_intent")
+_ROUTE_FLAGS = ("value_entity_pool",)
 
 
 def _build(dist_critic: bool, seed=7, **extra):
@@ -56,11 +61,7 @@ def _build(dist_critic: bool, seed=7, **extra):
 def _route_projs(fe):
     """The zero-init OUTPUT projection of every route the forward's registry yields."""
     projs = {
-        "intent_value_reduce": fe.intent_value_reduce.proj,
         "value_entity_pool": fe.value_entity_pool.out_proj,
-        "intent_threshold_value": fe.intent_threshold_value.proj,
-        "value_clock": fe.value_clock_route.proj,
-        "value_intent": fe.value_intent_route.proj,
     }
     for name, proj in projs.items():
         assert float(proj.weight.abs().max()) == 0.0, f"{name} must start zero-init"
@@ -134,15 +135,17 @@ def test_every_value_route_flag_flows_through_the_registry():
     way (e.g. a new vf-tail concat) is exactly the wiring this guard exists to forbid."""
     fe, layout = _build(dist_critic=True)
     names = set(_registry_names(fe, layout))
-    assert names == {"intent_value_reduce", "value_entity_pool", "intent_threshold_value",
-                     "value_clock", "value_intent"}, names
+    assert names == {"value_entity_pool"}, names
     # and the flag list this file parametrizes over covers every registry entry's flag
     for flag in _ROUTE_FLAGS:
-        assert getattr(fe, {"intent_value_reduce": "intent_value_reduce",
-                            "value_entity_pool": "value_entity_pool",
-                            "intent_threshold": "intent_threshold_value",
-                            "value_clock": "value_clock_route",
-                            "value_intent": "value_intent_route"}[flag]) is not None
+        assert getattr(fe, {"value_entity_pool": "value_entity_pool"}[flag]) is not None
+    # The DELETED routes must stay deleted: a re-added attribute here means someone rebuilt a
+    # condemned route without re-running the audit that condemned it.
+    for gone in ("intent_value_reduce", "intent_threshold_value",
+                 "value_clock_route", "value_intent_route"):
+        assert not hasattr(fe, gone), (
+            f"{gone} is back on the extractor — it was deleted by the critic-route wave on a "
+            "measured dV below the 0.39 bar. Re-enabling it owes a fresh audit, not a revert.")
 
 
 def test_routes_are_vf_only_at_any_weight():
@@ -165,8 +168,8 @@ def test_routes_are_vf_only_at_any_weight():
 
 
 def test_zero_init_makes_on_at_init_exact():
-    """All five routes ON contribute exactly zero at init: value_pooled consumers (the dist
-    head) see bit-identical inputs vs the routes-off build under the same seed."""
+    """Every route ON contributes exactly zero at init: value_pooled consumers (the dist head)
+    see bit-identical inputs vs the routes-off build under the same seed."""
     fe_on, layout = _build(dist_critic=True)
     torch.manual_seed(11)
     obs = {"observation": torch.rand(3, layout["total_dim"])}

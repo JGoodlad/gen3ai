@@ -13,7 +13,6 @@ import types
 import numpy as np
 import gymnasium as gym
 import torch
-from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
 import pytest
 
 from agents.model.features_extractor import (
@@ -229,12 +228,12 @@ def test_off_path_projection_dims_unchanged_by_damage_op():
     base, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed")
     on, _ = _make_model(attend_unrevealed_opponents=True, move_belief_mode="revealed", damage_op=True)
     assert base.damage_op is None and on.damage_op is not None
-    # gen3_no_concat_v1: the flat block no longer enters EITHER projection — pi is
-    # untouched by the op; vf gains exactly the multi-seed readout window (k*dim),
-    # independent of the op's out_dim.
+    # gen3_no_concat_v1: the flat block no longer enters EITHER projection, and since the
+    # critic-route deletion wave retired the multi-seed readout the op adds NO width to vf
+    # either. Both head widths are now independent of the op's out_dim — `vf_combined` is
+    # `value_pooled` alone, and every critic route is an additive injection into it.
     assert on.projection_input_dim - base.projection_input_dim == 0
-    assert (on.value_projection_input_dim - base.value_projection_input_dim
-            == VALUE_SEED_K * VALUE_SEED_DIM)
+    assert on.value_projection_input_dim - base.value_projection_input_dim == 0
 
 
 def test_dependency_guard_requires_revealed_or_both():

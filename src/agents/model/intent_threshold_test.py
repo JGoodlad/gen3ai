@@ -2,16 +2,19 @@
 
 What must hold (design_conditional_execution.md §6 G0/G1 + the house rules):
   * OFF is the default and builds NOTHING — no modules, no extra dims, no state_dict keys.
-  * ON contributes EXACTLY zero to the pointer move cells AND the critic at init (both
-    projections zero-init, captured by the identity-init sweep — ledger M1).
+  * ON contributes EXACTLY zero to the pointer move cells at init (the projection is
+    zero-init, captured by the identity-init sweep — ledger M1).
+  * ⚠️ THE POLICY HALF SURVIVES THE CRITIC-ROUTE DELETION WAVE. v84 built TWO consumers off
+    one flag; the wave deleted the p_KO vf route (`IntentThresholdValue`, dV 0.155 then 0.136
+    against a 0.39 bar) and KEPT the pointer MOVE cell, which is a per-action channel measured
+    in KL/flips, not |dV|. `test_the_p_ko_policy_context_survives_the_vf_route_deletion` is the
+    pin: p_KO must still reach the move logits, and moving it must still move them.
   * The contraction math: p_KO is the α-weighted sum of the op's per-candidate KO ramps;
     SWITCH mass shrinks every threshold probability toward zero (unrenormalized slice); a
     threshold on the roll distribution is not a function of its mean (the §3.0 point).
   * Seat-permutation invariance: jointly permuting α's move seats and the operand columns
     leaves every probability unchanged.
   * An axis-width mismatch and a missing-stash forward FAIL LOUD (the `op move-order` class).
-  * The vf tail's discovery branch FALLS THROUGH with every other value flag on (the ede5a88
-    lesson — a returned pair would hide parts appended below it from the sizing forward).
   * The v84 version machinery: migration default OFF + the check_compatible gate.
 """
 import dataclasses
@@ -21,12 +24,10 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.arch_constants import (
-    D_MODEL, INTENT_THRESH_MOVE_DIM,
-)
+from agents.model.arch_constants import INTENT_THRESH_MOVE_DIM
 from agents.model.features_extractor import Gen3FeaturesExtractor, TEAM_SIZE
 from agents.model.intent_threshold import (
-    IntentThresholdMoveCell, IntentThresholdValue, threshold_probs,
+    IntentThresholdMoveCell, threshold_probs,
 )
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
@@ -174,15 +175,12 @@ def test_move_cell_gates_route_each_mechanic():
     assert float(out2[..., :5].abs().max()) == 0.0
 
 
-def test_both_heads_are_zero_init():
+def test_the_move_cell_is_zero_init():
     m = IntentThresholdMoveCell(INTENT_THRESH_MOVE_DIM)
-    v = IntentThresholdValue(D_MODEL)
     assert float(m.proj.weight.abs().max()) == 0.0
-    assert float(v.proj.weight.abs().max()) == 0.0
     out = m(torch.rand(2, 1), torch.rand(2, 1), torch.rand(2, 1),
             torch.tensor([[264, 164, 203, 194]] * 2))
     assert float(out.abs().max()) == 0.0
-    assert float(v(torch.rand(2, 1), torch.rand(2, 1), torch.rand(2, 1)).abs().max()) == 0.0
 
 
 # ------------------------------------------------------------------- extractor wiring
@@ -191,12 +189,11 @@ def test_both_heads_are_zero_init():
 def test_off_builds_no_module_and_no_extra_dims():
     fe_off, _ = _build(**{**_ON_KWARGS, "intent_threshold": False})
     fe_on, _ = _build(**_ON_KWARGS)
-    assert fe_off.intent_threshold_move is None and fe_off.intent_threshold_value is None
+    assert fe_off.intent_threshold_move is None
     assert not any("intent_threshold" in k for k in fe_off.state_dict())
     assert fe_on.pointer_move_cell_dim == fe_off.pointer_move_cell_dim + INTENT_THRESH_MOVE_DIM
-    # gen3_value_pooled_routes_v1: the vf half injects into value_pooled — width-neutral
+    # Both HEAD widths are untouched: the cell widens the pointer stash, not pi/vf.
     assert fe_on.value_projection.in_features == fe_off.value_projection.in_features
-    # pi is untouched at ANY weight — the projection widths agree
     assert fe_on.projection.in_features == fe_off.projection.in_features
 
 
@@ -206,10 +203,9 @@ def test_on_forward_runs_and_contributes_zero_at_init():
     pi, vf = fe(obs)
     assert pi.shape[1] == vf.shape[1]
     assert fe._thresh_probs is not None
-    # both projections are in the identity-init capture set (M1: the sweep re-zeros them
-    # after SB3's ortho pass on a real policy build)
+    # the projection is in the identity-init capture set (M1: the sweep re-zeros it after
+    # SB3's ortho pass on a real policy build)
     assert "intent_threshold_move.proj" in fe._identity_init_zeroed
-    assert "intent_threshold_value.proj" in fe._identity_init_zeroed
 
 
 def test_missing_stash_fails_loud():
@@ -228,14 +224,73 @@ def test_requires_opp_intent_and_damage_op():
                   "opp_intent": True})
 
 
-def test_discovery_falls_through_with_every_value_flag_on():
-    """The ede5a88 pin, extended: intent_value_reduce + value_entity_pool + intent_threshold
-    all on must build (each discovery branch contributes a shaped zero and FALLS THROUGH) and
-    run a real forward at the discovered widths."""
+def test_every_surviving_value_flag_together_still_builds_and_runs():
+    """The ede5a88 pin's descendant. The bug it guarded (a construction-time discovery forward
+    whose early return hid every vf part below it) is now structurally impossible — widths are
+    static arithmetic and every value route injects additively — so what is left to assert is the
+    composition: the surviving route stack plus intent_threshold must build and run."""
     fe, layout = _build(**{**_ON_KWARGS, "opp_belief_slots": True,
-                           "intent_value_reduce": True, "value_entity_pool": True})
+                           "value_entity_pool": True, "value_threat_inject": True})
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape
+
+
+# -------------------------------------------- THE PIN: the POLICY half survives the wave
+
+
+def test_the_p_ko_policy_context_survives_the_vf_route_deletion():
+    """`--intent-threshold` keeps its POINTER MOVE CELL. Do not sweep it up with the vf route.
+
+    The critic-route deletion wave retired `IntentThresholdValue` — the p_KO vf injection —
+    because it measured dV 0.155 (gen-13) and 0.136 (gen-14, n=12,391) against a 0.39 bar. The
+    POLICY-side p_KO context on the move cells (v84) is a DIFFERENT object measured in DIFFERENT
+    units, was never part of that verdict, and is ON in production.
+
+    Three facts, each of which would have to be false for the policy half to have died with the
+    vf half:
+      1. the module exists and widens the pointer MOVE cell by `INTENT_THRESH_MOVE_DIM`;
+      2. nothing named `intent_threshold_value` is left anywhere on the extractor — so a future
+         reader cannot resurrect the vf route by accident;
+      3. **it is LIVE, not merely present**: perturbing the threshold probabilities the cell
+         consumes moves the pointer MOVE logits. Asserted with a real forward + a non-zero
+         projection (zero-init would make any pin vacuous), which is the difference between
+         "the wiring is there" and "the wiring carries something".
+    """
+    fe, layout = _build(**_ON_KWARGS)
+    assert fe.intent_threshold_move is not None
+    assert not hasattr(fe, "intent_threshold_value")
+    assert not any("intent_threshold_value" in k for k in fe.state_dict())
+
+    # (3) — de-zero the cell's projection so its contribution is observable at all, then move
+    # p_KO and watch the MOVE logits follow.
+    torch.nn.init.normal_(fe.intent_threshold_move.proj.weight, std=0.5)
+    obs = _obs(layout)
+    fe.eval()
+
+    from agents.model.intent_threshold import threshold_probs as _tp
+
+    def _logits(scale):
+        import agents.model.features_extractor as _fx
+        real = _fx.threshold_probs
+
+        def patched(*a, **k):
+            pr = real(*a, **k)
+            return type(pr)(p_ko=pr.p_ko * scale, p_sub_broken=pr.p_sub_broken,
+                            p_fp_broken=pr.p_fp_broken)
+        _fx.threshold_probs = patched
+        try:
+            with torch.no_grad():
+                fe(obs)
+            return fe.last_pointer_inputs.move_cells.clone()
+        finally:
+            _fx.threshold_probs = real
+
+    assert _tp is not None                      # the producer is still importable
+    base = _logits(1.0)
+    moved = _logits(0.0)
+    assert not torch.equal(base, moved), (
+        "zeroing p_KO left the pointer MOVE cells bit-identical — the POLICY-side threshold "
+        "context is dead, which is exactly what this pin exists to catch.")
 
 
 # ------------------------------------------------------------------- version machinery

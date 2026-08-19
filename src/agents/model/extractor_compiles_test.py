@@ -309,8 +309,7 @@ def test_intent_threshold_arch_compiles_to_one_graph():
     fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
                                             pair_outcome_cell=True,
                                             damage_matrices_outgoing=True,
-                                            op_drop_renders=True, op_believed_lean=True,
-                                            value_clock=True, value_intent=True)
+                                            op_drop_renders=True, op_believed_lean=True)
     obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
     explained = torch._dynamo.explain(fe.forward)(obs)
     assert explained.graph_break_count == 0, explained.break_reasons
@@ -398,11 +397,10 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor(
         pair_outcome_cell=True, opp_intent=False,
-        # every production flag whose  names opp_intent must come off with it
-        # (queried from the registry, not guessed: intent_value_reduce / intent_move_cell /
-        # intent_threshold / intent_conditional).
-        intent_value_reduce=False, intent_move_cell=False,
-        intent_threshold=False, intent_conditional=False)
+        # every production flag whose `requires` names opp_intent must come off with it
+        # (queried from the registry, not guessed: intent_move_cell / intent_threshold /
+        # intent_conditional).
+        intent_move_cell=False, intent_threshold=False, intent_conditional=False)
     assert fe.alpha_head is None, "this cell is meant to exercise the NO-intent fallback"
     explained = torch._dynamo.explain(fe.forward)(
         {"observation": torch.zeros(_BATCH, layout["total_dim"])})

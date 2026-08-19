@@ -237,9 +237,11 @@ def test_opp_belief_cls_k_grows_projection_by_k_times_dmodel(k):
     base, _ = _make_model()
     on, _ = _make_model(attend_unrevealed_opponents=True, opp_belief_cls_k=k)
     assert on.hidden_opp_belief is not None and on.hidden_opp_belief.k == k
-    # Belief feeds BOTH heads, so both projection inputs grow by exactly k*D_MODEL.
+    # POLICY ONLY since the critic-route deletion wave: pi grows by exactly k*D_MODEL and vf
+    # does not move. `test_the_hidden_opp_belief_pi_half_is_a_live_policy_input` below is the
+    # pin on WHY that asymmetry is the right one.
     assert on.projection_input_dim == base.projection_input_dim + k * D_MODEL
-    assert on.value_projection_input_dim == base.value_projection_input_dim + k * D_MODEL
+    assert on.value_projection_input_dim == base.value_projection_input_dim
 
 
 def test_opp_belief_cls_k_requires_unmask():
@@ -431,45 +433,71 @@ def test_projection_assembler_width_and_passthrough():
     # rides the active tokens via the E2 injection + the global token).
     # Policy input: our/their pools + active + non-matchup tail.
     pi_width = 3 * D_MODEL + K
-    # Value input: value pool + non-matchup tail (no team pools / active).
-    vf_width = D_MODEL + K
+    # Value input: `value_pooled`, and nothing else. The critic-route deletion wave retired the
+    # whole vf tail — the seed window, the hidden-opp vf half, and the `non_matchup_rest` vf part
+    # (dV 0.0000; C1 measured its content substituting through the global token).
+    vf_width = D_MODEL
     assert pi_combined.shape == (B, pi_width)
     assert vf_combined.shape == (B, vf_width)
-    # The non-matchup tail is concatenated verbatim into both heads.
+    # The non-matchup tail is concatenated verbatim into the POLICY head.
     assert torch.allclose(pi_combined[:, -K:], non_matchup)
-    assert torch.allclose(vf_combined[:, -K:], non_matchup)
+    # And the value half IS `value_pooled` — the same tensor the dist-head critic reads, which
+    # is what makes the v89/M2 orphaned-vf-branch class unrepresentable rather than merely fixed.
+    assert vf_combined is value_pool
 
 
-def test_projection_assembler_concat_is_dead_and_seeds_ride_vf_only():
-    """gen3_no_concat_v1 (v61): the flat damage block NEVER enters pi, and enters vf only
-    through the multi-seed readout (k*dim, computed from the per-mon rows — not verbatim).
-    A no-op assembler (seed_per_mon=0, the op-less config) ignores the block entirely."""
-    from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
-    from agents.observation.constants import TEAM_SIZE
+def test_the_assembler_owns_no_parameters_at_all():
+    """gen3_no_concat_v1 (v61) killed the op head-concat; the critic-route deletion wave killed
+    the multi-seed readout that replaced its value window. What is left of `ProjectionAssembler`
+    is a pure concat — it holds NO parameters, so there is nothing in it left to be dead."""
+    from agents.model.features_extractor import ProjectionAssembler
     model, layout = _make_model()
-    active_ctx_dim = layout["active_context_dim"]
-    B, K = 2, 7
-    per_mon = 12
+    asm = ProjectionAssembler(layout)
+    assert list(asm.parameters()) == []
+    assert list(model.assembler.state_dict()) == []
+
+
+def test_the_hidden_opp_belief_pi_half_is_a_live_policy_input():
+    """⚠️ THE PIN. The hidden-opp belief pool feeds the POLICY, and only the policy.
+
+    The critic-route deletion wave deleted its **vf half** on a measured dV of exactly 0.0000
+    (gen-14, n=12,391). At the SAME measurement its **pi half** changed the argmax action on
+    **39.6%** of states (KL 0.7396). Those two numbers came out of one arm, and the ledger keeps
+    the incident because reading the module-level verdict — "hidden_opp: dV 0.0000, delete it" —
+    would have removed the single largest policy input in the report.
+
+    So the asymmetry is the whole point, and this test asserts BOTH halves of it:
+      * the belief still reaches pi, and reaches it LIVE — perturbing the published belief moves
+        the policy features (not merely "the concat is `k*D_MODEL` wide", which a dead-but-wired
+        route also satisfies);
+      * it does NOT reach vf, at ANY weight — the value half is `value_pooled` and cannot see it.
+    """
+    from agents.model.features_extractor import ProjectionAssembler
+    model, layout = _make_model()
+    B, K, k = 2, 7, 4
     args = (torch.randn(B, D_MODEL), torch.randn(B, D_MODEL),
             torch.randn(B, D_MODEL), torch.randn(B, D_MODEL))
-    hp_active = torch.zeros(B, 2 * TEAM_SIZE, 3)
-    hp_active[:, :, 0] = 1.0                                    # everyone alive
     ctx = _dummy_ctx(
-        our_ctx_raw=torch.randn(B, active_ctx_dim),
-        opp_ctx_raw=torch.randn(B, active_ctx_dim),
+        our_ctx_raw=torch.randn(B, layout["active_context_dim"]),
+        opp_ctx_raw=torch.randn(B, layout["active_context_dim"]),
         non_matchup_rest=torch.randn(B, K),
-        hp_and_active=hp_active,
     )
-    from agents.model.features_extractor import ProjectionAssembler
-    asm = ProjectionAssembler(layout, seed_per_mon=per_mon)
-    pi0, vf0 = asm(*args, ctx)
-    rows = torch.randn(B, TEAM_SIZE, per_mon)                   # the typed incoming-rows view
-    pi1, vf1 = asm(*args, ctx, seed_rows=rows)
-    assert pi1.shape[1] == pi0.shape[1], "the rows must NEVER widen pi (the concat is dead)"
-    assert vf1.shape[1] - vf0.shape[1] == VALUE_SEED_K * VALUE_SEED_DIM
-    assert torch.equal(pi1, pi0), "pi must be bit-identical with and without the rows"
-    # And an op-less assembler ignores the rows on vf too.
-    asm0 = ProjectionAssembler(layout, seed_per_mon=0)
-    pi2, vf2 = asm0(*args, ctx, seed_rows=rows)
-    pi3, vf3 = asm0(*args, ctx)
-    assert torch.equal(pi2, pi3) and torch.equal(vf2, vf3)
+    asm = ProjectionAssembler(layout)
+    belief_a = torch.randn(B, k * D_MODEL)
+    belief_b = torch.randn(B, k * D_MODEL)
+
+    pi_none, vf_none = asm(*args, ctx)
+    pi_a, vf_a = asm(*args, ctx, hidden_opp_belief=belief_a)
+    pi_b, vf_b = asm(*args, ctx, hidden_opp_belief=belief_b)
+
+    # (1) the POLICY half is live: present, correctly wide, and responsive to its content.
+    assert pi_a.shape[1] == pi_none.shape[1] + k * D_MODEL
+    assert not torch.equal(pi_a, pi_b), (
+        "two different beliefs produced bit-identical policy features — the pi half is dead, "
+        "which is the exact trap the wave's per-head deletion exists to avoid.")
+    assert torch.allclose(pi_a[:, -k * D_MODEL:], belief_a)
+
+    # (2) the VALUE half cannot see it, at any weight — vf IS value_pooled.
+    assert vf_a.shape[1] == vf_none.shape[1] == D_MODEL
+    assert torch.equal(vf_a, vf_b) and torch.equal(vf_a, vf_none)
+    assert vf_a is args[3]

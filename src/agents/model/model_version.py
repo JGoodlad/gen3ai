@@ -12,7 +12,8 @@ from typing import Any, Dict, List
 # why) lives in designs/CHANGELOG.md under 'The MODEL_CONFIG_VERSION narrative' — moved
 # there 2026-08-16; it is history, and this file keeps only the live machinery.
 # v89 (gen3_value_pooled_routes_v1): the five value routes (intent_value_reduce v74,
-#   value_entity_pool v80/82, intent_threshold's vf half v84, value_clock/value_intent v87)
+#   value_entity_pool v80/82, intent_threshold's vf half v84, value_clock/value_intent v87 —
+#   four of the five are DELETED at v96; `value_entity_pool` is the one that carried)
 #   INJECT into `value_pooled` instead of the post-assembler vf concat, which
 #   `--value-from-dist` structurally bypassed (gen-12 proof: their zero-init projections
 #   bit-exact ZERO after 25M steps). Route out-widths become D_MODEL and the vf concat
@@ -33,7 +34,21 @@ from typing import Any, Dict, List
 #   paths; the reduction becomes a MIN over available paths). No ARCH_SIGNATURE bump — with the
 #   flags OFF the forward is byte-identical — but a <v95 config recording either pair_outcome flag
 #   ON is REFUSED rather than migrated, since it trained against different numbers.
-MODEL_CONFIG_VERSION = 95
+# v96 (gen3_critic_route_wave_v1) — THE CRITIC-ROUTE DELETION WAVE. Seven audited-dead critic
+#   routes are deleted in one pass, and with them the whole post-assembler vf tail:
+#     * the v61 MultiSeedValueReadout + seed_diagnostics + the `value_seeds/*` TB contract
+#       (dV 0.0000 bit-exact, gen-13 AND gen-14)
+#     * the hidden-opp belief's VF half ONLY — its PI half flips 39.6% of argmaxes and STAYS
+#     * the `non_matchup_rest` VF concat (0.0000; C1 measured the content substituting
+#       through the global token) — its PI concat STAYS
+#     * `value_intent` (0.156) · `intent_threshold`'s vf half (0.155/0.136) ·
+#       `intent_value_reduce` (0.3176 at 2x) · `value_clock` (0.2169 at 2x), all vs a 0.39 bar
+#   Three FIELDS go with them (`intent_value_reduce`, `value_clock`, `value_intent`); the other
+#   four were unconditional or ride a surviving flag. `vf_combined` is now `value_pooled` alone,
+#   which is what bumps ARCH_SIGNATURE: `value_projection` narrows and `assembler.seed_readout.*`
+#   leaves the state_dict, and NOTHING in the config records either, so the signature is the only
+#   gate that can reject a pre-v96 checkpoint with a diagnosis instead of an opaque torch error.
+MODEL_CONFIG_VERSION = 96
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -54,7 +69,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_event_semantics_v1"
+ARCH_SIGNATURE = "gen3_critic_route_wave_v1"
 
 # The migration floor: the first MODEL_CONFIG_VERSION stamped with the current ARCH_SIGNATURE.
 # Every `if version < N` migration branch with N <= this floor could only ever produce a config
@@ -64,7 +79,7 @@ ARCH_SIGNATURE = "gen3_event_semantics_v1"
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 91
+MIGRATION_FLOOR = 96
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -74,6 +89,7 @@ SIGNATURE_FIRST_VERSION = {
     "gen3_ctx_dedup_v1": 76,
     "gen3_frame_deletion_v1": 90,
     "gen3_event_semantics_v1": 91,
+    "gen3_critic_route_wave_v1": 96,
 }
 
 
@@ -401,12 +417,6 @@ class ModelVersion:
     # and a flip mid-run silently changes WHAT THE TRUNK IS BEING TRAINED TO DO.
     opp_intent_grad_mode: str = "detached"
 
-    # v74 STRUCTURAL (gen3_intent_value_reduce_v1, step 6): alpha-weighted expected incoming threat
-    # appended to the critic's features. WIDENS vf_projection, so unlike the other intent toggles a
-    # mismatch WOULD be shape-caught — the check is here anyway so the failure names the cause
-    # instead of surfacing as an opaque size error deep in a load.
-    intent_value_reduce: bool = False
-
     # v77 STRUCTURAL (gen3_intent_move_cell_v1, G3): the POLICY-side alpha consumer — the c2
     # status-consequence family re-delivered through the pointer MOVE cell, alpha-conditioned.
     # WIDENS the pointer move scorer's in_features (a state_dict change on the POLICY, not the
@@ -465,10 +475,6 @@ class ModelVersion:
     # ONLY thing that rejects a mismatched resume).
     op_drop_renders: bool = False
     op_believed_lean: bool = False
-
-    # v87 STRUCTURAL (gen3_value_direct_routes_v1): both widen the value projection.
-    value_clock: bool = False
-    value_intent: bool = False
 
     # v81 STRUCTURAL (gen3_event_window_v1, Tier H-B): the event-seat consumer of the obs
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
@@ -701,10 +707,6 @@ class ModelVersion:
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "opp_intent_grad_mode", "detached")
             ),
-            intent_value_reduce=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "intent_value_reduce", False)
-            ),
             intent_move_cell=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "intent_move_cell", False)
@@ -760,14 +762,6 @@ class ModelVersion:
             op_believed_lean=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "op_believed_lean", False)
-            ),
-            value_clock=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "value_clock", False)
-            ),
-            value_intent=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get(
-                    "value_intent", False)
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
@@ -1139,13 +1133,6 @@ class ModelVersion:
         # the policy and critic were trained against would silently change under them.
         # gen3_intent_grad_mode_v1 (v73): flipping this mid-run changes what the shared trunk is
         # being trained to do, with no shape anywhere to notice.
-        if self.intent_value_reduce != saved.intent_value_reduce:
-            raise ModelVersionError(
-                f"intent_value_reduce mismatch: saved={saved.intent_value_reduce}, "
-                f"current={self.intent_value_reduce}.\n"
-                "Step 6 widens the critic's pre-projection features, so it is fixed for a run's "
-                "lifetime.\nResume with the matching --intent-value-reduce, or start a fresh run."
-            )
         # gen3_intent_move_cell_v1 (v77): widens the pointer move scorer's in_features (a policy
         # state_dict change), so a mismatch would be shape-caught — this names the cause instead.
         if self.intent_move_cell != saved.intent_move_cell:
@@ -1268,21 +1255,6 @@ class ModelVersion:
                 "The believed-lean d3 physics are a forward-math change with no shape, so this "
                 "gate is the ONLY thing that rejects a mismatched resume.\n"
                 "Resume with the matching --op-believed-lean, or start a fresh run."
-            )
-        # gen3_value_direct_routes_v1 (v87): both widen the value projection (state_dict).
-        if self.value_clock != saved.value_clock:
-            raise ModelVersionError(
-                f"value_clock mismatch: saved={saved.value_clock}, "
-                f"current={self.value_clock}.\n"
-                "The direct clock route widens the value projection, so the flag is fixed for "
-                "a run's lifetime.\nResume with the matching --value-clock, or start a fresh run."
-            )
-        if self.value_intent != saved.value_intent:
-            raise ModelVersionError(
-                f"value_intent mismatch: saved={saved.value_intent}, "
-                f"current={self.value_intent}.\n"
-                "The direct intent route widens the value projection, so the flag is fixed for "
-                "a run's lifetime.\nResume with the matching --value-intent, or start a fresh run."
             )
         # gen3_event_window_v1 (v81): builds the EventSeats consumer (a state_dict change).
         if self.history_events != saved.history_events:
@@ -1825,9 +1797,9 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("op_believed_lean", False)
         data["config_version"] = 86
     if version < 87:
-        # gen3_value_direct_routes_v1: post-floor flag-gated pair — absent means OFF.
-        data.setdefault("value_clock", False)
-        data.setdefault("value_intent", False)
+        # gen3_value_direct_routes_v1 introduced value_clock/value_intent here. Both FIELDS are
+        # deleted at v96 (gen3_critic_route_wave_v1), so there is nothing left to default in —
+        # the v96 block below POPs them instead, and refuses a recorded-ON value.
         data["config_version"] = 87
     # v88 (gen3_dead_flag_purge_v1) — runs for EVERY version (the keys must leave the config
     # whatever vintage wrote them). A recorded ON value named parameters/widths the surviving
@@ -1918,4 +1890,31 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("conditional_threat_cell", False)
         data.setdefault("pair_value_route", False)
         data["config_version"] = 95
+    # v96 (gen3_critic_route_wave_v1) — the critic-route deletion wave. Three fields LEAVE the
+    # config (`intent_value_reduce`, `value_clock`, `value_intent`), so they must be POPped or a
+    # later `cls(**data)` TypeErrors on the stale key. The v75 rule decides the two cases: a
+    # recorded ON value named PARAMETERS the surviving extractor has no home for, so it is
+    # REFUSED with the re-read diagnosis; OFF pops silently (the route built nothing, so an OFF
+    # checkpoint's weights are unaffected by the deletion).
+    #
+    # ⚠️ Like the v90/v91 branches, this one is UNREACHABLE in practice — the wave bumps
+    # ARCH_SIGNATURE, so MIGRATION_FLOOR rises to 96 and every pre-v96 config is refused by the
+    # pre-generation gate above before it gets here. It is written anyway for two reasons: the
+    # reason belongs on the record beside the other version stories, and the parallel judgment
+    # that IS reachable — `snapshot._DEAD_FEK_JUDGED`, which sanitizes a checkpoint's PICKLED
+    # `features_extractor_kwargs` and has no floor to hide behind — must not be the only place
+    # this decision is written down.
+    for _dead in ("intent_value_reduce", "value_clock", "value_intent"):
+        if _dead in data:
+            if data.pop(_dead):
+                raise ModelVersionError(
+                    f"{_dead}=True is no longer supported (gen3_critic_route_wave_v1, config "
+                    "v96): the critic route behind it is DELETED, so this checkpoint's weights "
+                    "include a projection the current extractor has no home for.\n"
+                    "Every route in the wave was audited dead, or below the 0.39 dV bar twice, "
+                    "on the end-of-run critic_route_audit; `--value-entity-pool` — which carries "
+                    "97% of the critic's route dependence — is the successor.\n"
+                    "To re-read this checkpoint, use the git_hash in its own metadata.json.")
+    if version < 96:
+        data["config_version"] = 96
     return data

@@ -103,19 +103,15 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "history_events": ("EventSeats",),
     "cls_pool": ("CLSPool",),
     "prefuse_proj": ("prefuse_proj",),
-    "assembler": ("ProjectionAssembler", "MultiSeedValueReadout"),
+    "assembler": ("ProjectionAssembler",),
     "value_entity_pool": ("UnifiedValueReadout",),
     "intent_move_cell": ("IntentMoveCell",),
     "intent_threshold_move": ("IntentThresholdMoveCell",),
-    "intent_threshold_value": ("IntentThresholdValue",),
     "intent_conditional": ("IntentConditionalMoveCell",),
     "pair_outcome_move": ("PairOutcomeMoveCell",),
     "pair_outcome_switch": ("PairOutcomeSwitchCell",),
     "switch_branch": ("SwitchBranchMoveCell",),
     "conditional_threat": ("ConditionalThreatCell",),
-    "intent_value_reduce": ("IntentValueReduce",),
-    "value_clock_route": ("ValueClockRoute",),
-    "value_intent_route": ("ValueIntentRoute",),
 }
 
 #: Parametered modules that deliberately draw NO edge, each with the reason. An entry here is a
@@ -165,11 +161,12 @@ def module_coverage(fe: Any, graph: Dict[str, Any]) -> Dict[str, str]:
     # the class's importability can.
     #
     # Concretely: `value_intent_route` tripped this when production_config moved to gen-14, which
-    # runs with `--value-intent` OFF (dV 0.1560, condemned by gen-13.5 §2). Deleting the entry
-    # would have silently excused the module if a later generation re-enabled it.
+    # ran with `--value-intent` OFF (dV 0.1560). Deleting the entry would have silently excused the
+    # module if a later generation re-enabled it — the RIGHT answer there was to keep the entry.
+    # (That route has since been deleted outright by the critic-route wave, which is the OTHER
+    # branch: the class is gone from the code, so its entry goes too.)
     # `features_extractor` is the documented re-export hub — every phase-module class resolves
-    # there regardless of which file defines it, which is exactly the property this needs (the
-    # class moved to `value_routes.py`, and a per-file probe would have called it deleted).
+    # there regardless of which file defines it, which is exactly the property this needs.
     import agents.model.features_extractor as _fx
 
     def _class_still_exists(tokens: Any) -> bool:
@@ -572,32 +569,21 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                            note="design_opponent_intent SS7a(2): alpha-reduced pair_in per our mon "
                                 "j on mon j's own token. alpha is the R1 belief_mean rung by "
                                 "ORDERING (value_cls pools before the alpha head is scored)"))
-    if fe.assembler.seed_readout is not None:
-        edges.append(_edge("damage_op", "vf_projection", "concat",
-                           fx.VALUE_SEED_K * fx.VALUE_SEED_DIM, "VALUE_SEED_K * VALUE_SEED_DIM",
-                           via="MultiSeedValueReadout (k seed queries over the per-our-mon "
-                               "incoming rows, OpTensors.incoming_rows)", pooled=True,
-                           note="the critic's magnitude window after the concat's death"))
     # gen3_value_pooled_routes_v1 (v89): every value route is an ADDITIVE zero-init injection
-    # into `value_pooled` — the tensor the dist-head critic reads AND `vf_parts[0]` — never a
-    # vf-concat part (the concat route was structurally bypassed by --value-from-dist; gen-12's
-    # route projections were bit-exact zero after 25M steps).
-    if fe.intent_value_reduce is not None:
-        edges.append(_edge("damage_op", "vf_projection", "content",
-                           fx.D_MODEL, "D_MODEL",
-                           via="IntentValueReduce (alpha-weighted pair-cell rows) — additive "
-                               "into value_pooled", pooled=True,
-                           zero_init=True))
+    # into `value_pooled` — which, since the critic-route deletion wave, IS `vf_combined`. There
+    # is no vf CONCAT left to draw: the seed window, the hidden-opp vf half and the nmr vf part
+    # were all audited dead and deleted, so every critic edge below is `content`, not `concat`.
     if fe.hidden_opp_belief is not None:
-        for head in FORWARD_SINKS:
-            edges.append(_edge("hidden_opp_belief", head, "concat",
-                               fe.opp_belief_cls_k * fx.D_MODEL, "opp_belief_cls_k * D_MODEL",
-                               via="HiddenOppBeliefPool", pooled=True))
+        # POLICY only. The vf half read dV 0.0000 and was deleted; the pi half flips 39.6% of
+        # argmaxes on gen-14, which is why the deletion had to be per-head rather than per-module.
+        edges.append(_edge("hidden_opp_belief", "pi_projection", "concat",
+                           fe.opp_belief_cls_k * fx.D_MODEL, "opp_belief_cls_k * D_MODEL",
+                           via="HiddenOppBeliefPool", pooled=True))
     if getattr(fe, "value_entity_pool", None) is not None:
         # gen3_unified_value_readout_v1 (v80, Stage-3 T3-DELIVER): the critic's ONE entity pool
-        # — the designed successor of the seed/threat bolt-on routes above (OFF in production
-        # until the critic-route audit adjudicates them). Sources = every team token (+ the op's
-        # per-our-mon rows when the op exists), so it draws with the per-mon edge shape.
+        # — the designed successor of the bolt-on vf routes, and the one the audit picked (gen-14
+        # dV 5.490 = 97% of all_off). Sources = every team token (+ the op's per-our-mon rows when
+        # the op exists), so it draws with the per-mon edge shape.
         _uvr_via = ("UnifiedValueReadout (UVR_K queries, per-source type embeddings, "
                     "zero-init out projection) — additive into value_pooled")
         for i in range(T):
@@ -612,22 +598,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                fx.D_MODEL, "D_MODEL",
                                via=_uvr_via + " — the per-our-mon incoming-row source",
                                pooled=True, zero_init=True))
-    if fe.intent_threshold_value is not None:
-        edges.append(_edge("damage_op", "vf_projection", "content",
-                           fx.D_MODEL, "D_MODEL",
-                           via="IntentThresholdValue (p_KO / p_sub / p_fp, alpha-contracted) — "
-                               "additive into value_pooled", pooled=True, zero_init=True))
-    if fe.value_clock_route is not None:
-        edges.append(_edge("obs.global_env.clock", "vf_projection", "content",
-                           fx.D_MODEL, "D_MODEL",
-                           via="ValueClockRoute (the 3 raw clock scalars) — additive into "
-                               "value_pooled", pooled=True, zero_init=True))
-    if fe.value_intent_route is not None:
-        edges.append(_edge("damage_op", "vf_projection", "content",
-                           fx.D_MODEL, "D_MODEL",
-                           via="ValueIntentRoute (published alpha/beta posteriors as "
-                               "distributions) — additive into value_pooled",
-                           pooled=True, zero_init=True))
 
     # --- CELL EDGES: per-action physics --------------------------------------------------------
     if op.pointer_move_cell_dim:
@@ -773,18 +743,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                        + " / ".join(_move_cell_consumers),
                                    note="stop-grad under belief_grad_mode=label_only; the CELL "
                                         "widths ride the parallel damage_op edges"))
-        _val_consumers = [
-            n for n, m in (("IntentValueReduce", fe.intent_value_reduce),
-                           ("IntentThresholdValue", fe.intent_threshold_value),
-                           ("ValueIntentRoute", fe.value_intent_route))
-            if m is not None]
-        if _val_consumers:
-            edges.append(_edge("alpha_head", "vf_projection", "content", _a_w, _a_c,
-                               via="the alpha PUBLICATION weighting " + " / ".join(_val_consumers)
-                                   + " — additive into value_pooled",
-                               pooled=True,
-                               note="THE flag that lets the value gradient reach alpha_head at "
-                                    "all, and therefore what puts alpha in the label_only set"))
         _beta_move_consumers = [
             n for n, m in (("IntentConditionalMoveCell", getattr(fe, "intent_conditional", None)),
                            ("SwitchBranchMoveCell", getattr(fe, "switch_branch", None)))
@@ -808,10 +766,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
                                        + " / ".join(_switch_cell_consumers),
                                    note="the first alpha route to the SWITCH logits at all — "
                                         "stop-grad unconditionally (a policy-side consumer)"))
-        if fe.value_intent_route is not None:
-            edges.append(_edge("beta_head", "vf_projection", "content", T, "TEAM_SIZE",
-                               via="the beta PUBLICATION — ValueIntentRoute, additive into "
-                                   "value_pooled", pooled=True))
 
     # --- SIDE READOUTS off `value_pooled` -------------------------------------------------------
     # Neither head is a concat part (that is the point — a privileged/outcome label must not reach

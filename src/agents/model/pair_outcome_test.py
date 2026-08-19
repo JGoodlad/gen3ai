@@ -604,7 +604,7 @@ def test_it_stacks_with_the_other_alpha_cells():
     """All four move-cell consumers on at once must build and run at the summed width — the
     ede5a88 lesson applied to the pointer stash."""
     fe, layout = _build(**_ON_KWARGS, opp_intent=True, intent_threshold=True,
-                        intent_move_cell=True, intent_value_reduce=True,
+                        intent_move_cell=True,
                         value_entity_pool=True)
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape
@@ -634,10 +634,16 @@ def test_zero_init_survives_a_real_MaskablePPO_build():
 # ------------------------------------------------------------------------------ version machinery
 
 
-def test_migration_defaults_the_flag_off():
-    out = _migrate_config({"config_version": 92})
-    assert out["pair_outcome_cell"] is False
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 93
+def test_a_pre_floor_config_is_REFUSED_not_defaulted():
+    """The critic-route deletion wave bumped ARCH_SIGNATURE, so MIGRATION_FLOOR rose to 96
+    and this v92 config is now refused outright rather than walked through the v93 branch
+    that defaults `pair_outcome_cell`. That is the floor's stated purpose ("refuses pre-floor
+    configs outright instead of walking dead branches"), and the assertion follows the
+    BEHAVIOUR: what must hold is that a stale config is rejected with a diagnosis, not that
+    an unreachable branch still defaults a field."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config({"config_version": 92})
+    assert MODEL_CONFIG_VERSION >= 93
 
 
 def test_check_compatible_gates_the_flag():

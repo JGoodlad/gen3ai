@@ -9251,26 +9251,7 @@
       "width": 15
     },
     {
-      "dst": "vf_projection",
-      "note": "the critic's magnitude window after the concat's death",
-      "pooled": true,
-      "source_constant": "VALUE_SEED_K * VALUE_SEED_DIM",
-      "src": "damage_op",
-      "type": "concat",
-      "via": "MultiSeedValueReadout (k seed queries over the per-our-mon incoming rows, OpTensors.incoming_rows)",
-      "width": 256
-    },
-    {
       "dst": "pi_projection",
-      "pooled": true,
-      "source_constant": "opp_belief_cls_k * D_MODEL",
-      "src": "hidden_opp_belief",
-      "type": "concat",
-      "via": "HiddenOppBeliefPool",
-      "width": 768
-    },
-    {
-      "dst": "vf_projection",
       "pooled": true,
       "source_constant": "opp_belief_cls_k * D_MODEL",
       "src": "hidden_opp_belief",
@@ -9615,16 +9596,6 @@
       "width": 128
     },
     {
-      "dst": "vf_projection",
-      "note": "THE flag that lets the value gradient reach alpha_head at all, and therefore what puts alpha in the label_only set",
-      "pooled": true,
-      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
-      "src": "alpha_head",
-      "type": "content",
-      "via": "the alpha PUBLICATION weighting IntentValueReduce / IntentThresholdValue \u2014 additive into value_pooled",
-      "width": 7
-    },
-    {
       "dst": "opp_mon[0]",
       "note": "in-place; pre-transformer",
       "source_constant": "D_MODEL",
@@ -9849,26 +9820,6 @@
       "type": "content",
       "via": "CLSPool.value_threat_proj (one SHARED Linear over the six rows) \u2014 token CONTENT on the value pool's copy of our mons",
       "width": 13,
-      "zero_init": true
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "damage_op",
-      "type": "content",
-      "via": "IntentThresholdValue (p_KO / p_sub / p_fp, alpha-contracted) \u2014 additive into value_pooled",
-      "width": 128,
-      "zero_init": true
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "damage_op",
-      "type": "content",
-      "via": "IntentValueReduce (alpha-weighted pair-cell rows) \u2014 additive into value_pooled",
-      "width": 128,
       "zero_init": true
     },
     {
@@ -10373,16 +10324,6 @@
       "src": "obs.global_env",
       "type": "content",
       "width": 20
-    },
-    {
-      "dst": "vf_projection",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "obs.global_env.clock",
-      "type": "content",
-      "via": "ValueClockRoute (the 3 raw clock scalars) \u2014 additive into value_pooled",
-      "width": 128,
-      "zero_init": true
     },
     {
       "dst": "obs_unpack",
@@ -11362,10 +11303,10 @@
     }
   ],
   "meta": {
-    "arch_signature": "gen3_event_semantics_v1",
+    "arch_signature": "gen3_critic_route_wave_v1",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 91,
+    "config_version": 96,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -11397,7 +11338,7 @@
     "obs_dim": 2501,
     "op_out_dim": 138,
     "pi_projection_in": 1177,
-    "vf_projection_in": 1177
+    "vf_projection_in": 128
   },
   "nodes": [
     {
@@ -11507,7 +11448,7 @@
     },
     {
       "id": "vf_projection",
-      "in_features": 1177,
+      "in_features": 128,
       "kind": "head",
       "out_features": 512
     },

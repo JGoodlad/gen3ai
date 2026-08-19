@@ -89,7 +89,7 @@ def test_full_intent_stack_runs_lean():
     """v77+v84+v85 all consume STASHES, so the lean block must feed them unchanged."""
     fe, layout = _build(**_ON_KWARGS, op_drop_renders=True, intent_move_cell=True,
                         intent_threshold=True, intent_conditional=True,
-                        opp_belief_slots=True, intent_value_reduce=True,
+                        opp_belief_slots=True,
                         value_entity_pool=True)
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape

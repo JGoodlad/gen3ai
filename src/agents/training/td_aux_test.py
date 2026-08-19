@@ -239,7 +239,8 @@ def test_the_coef_is_recorded_and_inherited_on_a_flagless_resume():
     forwards no `--td-aux-coef`. `_resolve` does `getattr(saved_version, name, default)`, so a coef
     that is NOT a ModelVersion field silently reverts to 0.0 on every restart."""
     import json
-    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, _migrate_config)
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion,
+                                            ModelVersionError, _migrate_config)
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
@@ -252,17 +253,22 @@ def test_the_coef_is_recorded_and_inherited_on_a_flagless_resume():
     other = ModelVersion.from_layout_and_policy_kwargs(layout, pk, td_aux_coef=0.0)
     other.check_compatible(v)          # must not raise
 
-    # A pre-v92 config simply defaults to OFF — no forward, no shape, nothing to refuse.
-    # v91, NOT 89: MIGRATION_FLOOR is 91 (gen3_event_semantics_v1), so an 89 config is refused
-    # outright as pre-generation and this branch would never be reached. The property under test
-    # is that the field DEFAULTS IN across a real, reachable migration — so it has to start from
-    # a version the floor actually admits.
+    # THE MIGRATION LEG IS NOW UNREACHABLE, and asserting the refusal is the honest form.
+    # v96 (`gen3_critic_route_wave_v1`) bumped ARCH_SIGNATURE, which the floor contract requires
+    # be matched by a floor raise in the same commit — so MIGRATION_FLOOR is 96 and EVERY
+    # `if version < N` branch, including v92's `setdefault("td_aux_coef", 0.0)`, sits below it.
+    # A config that lacks the field can therefore only be a pre-generation one, and the floor
+    # refuses it outright rather than defaulting a field into a checkpoint whose weights this
+    # code cannot load anyway. A test may not claim to cover a branch the floor makes
+    # unreachable (the v90 precedent), so what is asserted is the behaviour: refusal with a
+    # diagnosis. Every config at or above the floor carries `td_aux_coef` explicitly, which is
+    # what makes the flagless-resume read-back above the property that still matters.
     pre_v92 = json.loads(v.to_json())
     pre_v92.pop("td_aux_coef")
     pre_v92["config_version"] = 91
-    migrated = _migrate_config(pre_v92)
-    assert migrated["td_aux_coef"] == 0.0
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION|floor"):
+        _migrate_config(pre_v92)
+    assert MODEL_CONFIG_VERSION >= 92
 
 
 def test_it_refuses_to_run_before_the_buffer_is_flattened():

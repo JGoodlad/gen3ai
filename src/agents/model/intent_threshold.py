@@ -31,14 +31,14 @@ eff 0 ⇒ high 0 ⇒ it does not break the punch.
                     shape, re-thresholded at the sub's HP — a threshold on the roll distribution
                     is not a function of its mean, which is why `max` could never produce it)
 
-All three use the **UNRENORMALIZED** move slice of α (the `IntentValueReduce` precedent): the
+All three use the **UNRENORMALIZED** move slice of α (the α-consumer convention): the
 missing SWITCH mass is the literally-correct statement that a switching opponent deals no damage
 this turn, so a high α_SWITCH must shrink every threshold probability toward zero.
 
-## Delivery — two consumers, two tiers, one producer
+## Delivery — the POLICY cell (the vf route was audited dead and deleted)
 
 `threshold_probs` (pure, parameter-free) runs ONCE at the pointer stash (T2, where α first
-exists); its outputs are consumed by BOTH heads:
+exists) and feeds the pointer MOVE cell:
 
 * **`IntentThresholdMoveCell`** (T2) — per-request-slot channels through the pointer MOVE cell
   (the per-action-absolute channel measured to work: `d1` 12.17% / `d2` 19.25%), gated by which
@@ -46,13 +46,21 @@ exists); its outputs are consumed by BOTH heads:
   is_endure·p_ko, is_dbond·p_ko, is_endeavor·(1−p_ko), p_ko]` — the probability and the mechanic
   gate are provided as facts (§1's convention); the head forms the products it needs. The last
   channel is the decorrelated `p_ko` context on every slot.
-* **`IntentThresholdValue`** (T3) — `[p_ko, p_sub_broken, p_fp_broken]` injected additively
-  into `value_pooled` (gen3_value_pooled_routes_v1 — the tensor the dist-head critic reads). This half stands on its own whatever
-  the G3 verdict says about the mechanic cells: H1 measured the critic over-valuing a healthy
-  self-KO trade (dV ≈ +2.9 vs a −2.7 reward) because "am I about to die" reached it only as a max.
+**`IntentThresholdValue` (T3) is DELETED.** v84 also sent `[p_ko, p_sub_broken, p_fp_broken]`
+into `value_pooled`, on the ledger-H1 argument that the critic over-values a healthy self-KO trade
+(dV ≈ +2.9 vs a −2.7 reward) because "am I about to die" reached it only as a max. **The argument
+did not survive measurement**: the vf route read dV **0.155** (gen-13) and **0.136** (gen-14,
+n=12,391) against a 0.39 bar, so the critic-route deletion wave retired it with no appeal. What
+H1 asked for is still on the table — it just is not this delivery, and any successor owes the
+C4-style offline gate first (ledger C6: the delivery line is EXHAUSTED).
 
-Both projections are ZERO-INIT (`restore_identity_init` captures them by observation — ledger M1),
-so ON-at-init is bit-identical on both heads and any measured effect on a trained run is learned.
+⚠️ **The POLICY half above is NOT part of that verdict and must not be swept up with it.** The
+mechanic cell is a per-action pointer channel, measured in KL/flips rather than |dV|, and the
+deletion wave deliberately left `--intent-threshold` ON in production; `intent_threshold_test.py`
+pins the policy path surviving.
+
+The move-cell projection is ZERO-INIT (`restore_identity_init` captures it by observation —
+ledger M1), so ON-at-init is bit-identical and any measured effect on a trained run is learned.
 Seat-permutation invariant by construction: the only seat-indexed computation is `Σ_k α_k · f_k`.
 """
 from __future__ import annotations
@@ -61,9 +69,7 @@ from typing import NamedTuple
 
 import torch
 
-from agents.model.arch_constants import (
-    _INTENT_THRESH_RAW_MOVE, _INTENT_THRESH_RAW_VF,
-)
+from agents.model.arch_constants import _INTENT_THRESH_RAW_MOVE
 
 # The five mechanics' move NUMS (gen3_data.moves, read 2026-08-16): focuspunch 264,
 # substitute 164, endure 203, destinybond 194, endeavor 283. Resolved from the data facade at
@@ -157,20 +163,3 @@ class IntentThresholdMoveCell(torch.nn.Module):
             p_ko.expand_as(is_fp),               # decorrelated context on every slot
         ], dim=-1)                                                          # [B,4,6]
         return self.proj(raw)  # type: ignore[no-any-return]  # [B,4,out]
-
-
-class IntentThresholdValue(torch.nn.Module):
-    """`threshold probs → a vf-only additive block [B, out]`. Zero-init ⇒ OFF-at-init exact.
-
-    The `p_KO` critic route — independently useful whatever the G3 verdict (ledger H1)."""
-
-    def __init__(self, out_dim: int):
-        super().__init__()
-        self.out_dim = int(out_dim)
-        self.proj = torch.nn.Linear(_INTENT_THRESH_RAW_VF, self.out_dim)
-        torch.nn.init.zeros_(self.proj.weight)
-        torch.nn.init.zeros_(self.proj.bias)
-
-    def forward(self, p_ko: torch.Tensor, p_sub_broken: torch.Tensor,
-                p_fp_broken: torch.Tensor) -> torch.Tensor:
-        return self.proj(torch.cat([p_ko, p_sub_broken, p_fp_broken], dim=-1))  # type: ignore[no-any-return]  # [B,out]

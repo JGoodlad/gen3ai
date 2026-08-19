@@ -185,25 +185,24 @@ def test_pointer_logits_are_fed_by_their_own_entity(graph):
 
 
 def test_the_op_reaches_the_heads_by_its_post_concat_routes_only(graph):
-    """gen3_no_concat_v1 (v61): the op's flat block enters NEITHER head — the graph previously
-    still drew the dead 660-dim op->head concat edges (stale since the deletion; this test pinned
-    them). The true routes now: pi gets the op ONLY via pointer cells / prefuse / edge biases
-    (no op->pi concat at all), and vf's window is the MultiSeedValueReadout over the typed
-    per-our-mon rows (pooled, k*dim wide) — the critic's magnitude read after the concat's
-    death."""
-    from agents.model.arch_constants import VALUE_SEED_K, VALUE_SEED_DIM
-    pi_concat = [e for e in graph["edges"]
-                 if e["type"] == "concat" and e["src"] == "damage_op"
-                 and e["dst"] == "pi_projection"]
-    assert pi_concat == [], f"the op->pi concat is DEAD (v61); the graph draws {pi_concat}"
-    vf_concat = [e for e in graph["edges"]
-                 if e["type"] == "concat" and e["src"] == "damage_op"
-                 and e["dst"] == "vf_projection"]
-    assert len(vf_concat) >= 1, "the critic lost its op window — no op->vf route in the graph"
-    seed = [e for e in vf_concat if "MultiSeedValueReadout" in e.get("via", "")]
-    assert len(seed) == 1, f"expected the seed-readout route, got {vf_concat}"
-    assert seed[0]["width"] == VALUE_SEED_K * VALUE_SEED_DIM
-    assert seed[0]["pooled"] is True, "the seed readout is an attention pool, not a raw slice"
+    """gen3_no_concat_v1 (v61) killed the op->pi concat; the critic-route deletion wave killed the
+    last op->vf CONCAT with it (the MultiSeedValueReadout window, dV 0.0000 bit-exact on two
+    consecutive end-of-run audits).
+
+    So the claim is now symmetric and stronger: **the op enters NEITHER head by concat.** pi gets
+    it via pointer cells / prefuse / edge biases; vf gets it as additive CONTENT — the entity
+    pool through the v89 seam, and the two `CLSPool` token-content injections."""
+    for head in ("pi_projection", "vf_projection"):
+        stale = [e for e in graph["edges"]
+                 if e["type"] == "concat" and e["src"] == "damage_op" and e["dst"] == head]
+        assert stale == [], f"the op->{head} CONCAT is dead; the graph draws {stale}"
+    content = [e for e in graph["edges"]
+               if e["type"] == "content" and e["src"] == "damage_op"
+               and e["dst"] == "vf_projection"]
+    assert content, "the critic lost every op route — no op->vf content edge in the graph"
+    assert all(e["pooled"] for e in content), (
+        "an op->vf content edge is not pooled; every surviving critic route is an attention "
+        "pool or a per-entity token injection, never a raw slice")
 
 
 def test_the_active_ctx_concat_is_dead(graph):

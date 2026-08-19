@@ -57,7 +57,7 @@ def test_zero_init_survives_policy_build_and_contributes_zero(model_and_enc):
 
 def test_pi_untouched_at_any_weight_and_vf_fires(model_and_enc):
     """vf-ONLY by placement: randomizing the pool's output weights must move vf and leave pi
-    bit-identical — the intent_value_reduce structural property, not an init coincidence."""
+    bit-identical — a structural property, not an init coincidence."""
     model, enc = model_and_enc
     fe = model.policy.features_extractor
     obs = _obs(enc)
@@ -107,21 +107,30 @@ def test_v80_config_is_refused_below_the_migration_floor():
 # critic was built one pool-width short and died on the first real forward with
 # `normalized_shape=[1241] ... got [*, 1369]`.
 #
-# Why nothing caught it: every test above builds `value_entity_pool=True` ALONE, and the intent
-# tests build `intent_value_reduce=True` alone. The bug lives only in the intersection, and an
-# intersection nobody constructs is an intersection nobody tests. Production wanted both on the
-# very next run.
+# Why nothing caught it: every test above built `value_entity_pool=True` ALONE, and the intent
+# tests built their own flag alone. The bug lived only in the intersection, and an intersection
+# nobody constructs is an intersection nobody tests. Production wanted both on the very next run.
+#
+# The intersection partner has CHANGED. `intent_value_reduce` — the other value part at the time —
+# was deleted by the critic-route wave (dV 0.3176 at 2x sample, below the 0.39 bar). The surviving
+# critic surface is the entity pool (the seam) plus the two `CLSPool` TOKEN-CONTENT injections, so
+# that is what these now intersect. The claim is unchanged and, if anything, stronger: no
+# combination of critic enrichments moves any projection width, because there is no vf concat left
+# for one to be appended to.
 
-def _build_both():
-    """Both value parts on — the production gen-12 shape.
+_CRITIC_STACK = dict(
+    attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
+    move_latent=True, damage_op=True, damage_outgoing=True, damage_matrices_incoming=True,
+    damage_topk_k=6, entity_topk_seats=6, opp_intent=True,
+)
 
-    Reuses `intent_value_reduce_test._build`'s base, which is the known-good set for that half
-    (the reduce needs opp_intent for a distribution, the op's top-K cells to weight, and both
-    damage matrices to compute them), and adds the v80 pool on top. Borrowed rather than re-typed
-    so this test cannot drift from the config the intent tests prove.
-    """
-    from agents.model.intent_value_reduce_test import _build
-    return _build(intent_value_reduce=True, value_entity_pool=True)
+
+def _build_both(**over):
+    """Every surviving critic route on at once — the production shape."""
+    kw = dict(_CRITIC_STACK, value_entity_pool=True, value_entity_pool_full=True,
+              value_threat_inject=True, intent_threshold=True)
+    kw.update(over)
+    return _build_real_policy(**kw)
 
 
 def test_the_vf_projection_is_sized_for_BOTH_value_parts():
@@ -129,7 +138,7 @@ def test_the_vf_projection_is_sized_for_BOTH_value_parts():
     (gen3_static_widths_v1 — the broad flag sweep lives in `projection_width_test.py`)."""
     model, enc = _build_both()
     fe = model.policy.features_extractor
-    if fe.intent_value_reduce is None or fe.value_entity_pool is None:
+    if fe.value_entity_pool is None or fe.cls_pool.value_threat_proj is None:
         pytest.skip("this build resolved without both value parts; nothing to intersect")
     with torch.no_grad():
         _pi, vf = fe.forward_internal(_obs(enc, n=3))
@@ -155,16 +164,17 @@ def test_route_availability_is_width_neutral_by_construction():
     The ede5a88 bug class — a discovery branch exiting early and hiding a value part from the
     forward that sizes `value_pre_norm` — is now UNREPRESENTABLE: every value route injects
     additively into `value_pooled`, so no combination of routes changes any projection width.
-    The strongest form of the old claim: the vf projection input is IDENTICAL with both parts
-    on and both off."""
-    from agents.model.intent_value_reduce_test import _build
-    model_on, _ = _build(intent_value_reduce=True, value_entity_pool=True)
-    model_off, _ = _build(intent_value_reduce=False, value_entity_pool=False)
+    Since the critic-route deletion wave the claim is stronger still: `vf_combined IS
+    value_pooled`, so the vf projection input is `D_MODEL` FLAT — not merely equal across
+    route combinations, but a constant no flag can move."""
+    from agents.model.arch_constants import D_MODEL as _D
+    model_on, _ = _build_both()
+    model_off, _ = _build_real_policy(**_CRITIC_STACK)
     fe_on = model_on.policy.features_extractor
     fe_off = model_off.policy.features_extractor
-    assert fe_on.value_projection_input_dim == fe_off.value_projection_input_dim
+    assert fe_on.value_projection_input_dim == fe_off.value_projection_input_dim == _D
     assert (fe_on.value_pre_norm.normalized_shape[0]
-            == fe_off.value_pre_norm.normalized_shape[0])
+            == fe_off.value_pre_norm.normalized_shape[0] == _D)
 
 
 # ------------------------------------------------------------------ v82: the FULL row set

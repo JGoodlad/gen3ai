@@ -63,32 +63,34 @@ def test_zero_init_families_measure_exactly_zero():
     pol, obs, masks = _fixture()
     rep = audit(pol, obs, masks, batch=4)
     for fam, r in rep.items():
-        if fam in ("concat", "concat_cells"):
-            continue                                     # the op arms measure a LIVE block
+        if fam == "concat_cells":
+            continue                                     # the op arm measures a LIVE block
         assert r["kl_mean"] == 0.0 and r["flip_rate"] == 0.0 and r["dv_mean"] == 0.0, fam
 
 
-def test_op_concat_arms_measure_a_live_block_and_restore():
-    """The op-concat arms: on an UNTRAINED net the damage block is real physics feeding random
-    projection weights, so zeroing it at the assembler must register (kl > 0) while the zero-init
-    edge families still read exactly 0 — and the audit's own bitwise-baseline assert guarantees
-    the hook/patch restore. concat_cells additionally zeroes the pointer cells, so it can only be
-    >= concat on the policy KL."""
+def test_the_op_cells_arm_is_present_isolated_and_restores():
+    """`concat_cells` — the surviving op arm — must be present, isolated from the edge families,
+    and bitwise-restoring (the audit's own baseline assert guarantees the last).
+
+    On an UNTRAINED net its policy KL is 0 by construction: the pointer head's cell input columns
+    are ZERO-INIT (identity-at-init, M1-guarded), so the op's cells contribute nothing to the
+    logits until they train. Its effect exists only on a trained checkpoint — gen-14 reads KL
+    0.5682 / flips 0.3105, the largest policy dependence in that report — so this test asserts the
+    MECHANISM (present, fires, isolated, restores) and leaves the magnitude to the real audit.
+
+    Its twin `concat` is DELETED. It zeroed the assembler's trailing positional argument, which
+    stopped being the op concat at v61 and became `seed_rows` at v76 — so for three generations it
+    reported the multi-seed critic readout under the name of a block that no longer existed. The
+    critic-route wave then deleted that readout too. **An arm whose subject is gone re-points at
+    whatever occupies the slot; it does not go quiet.**"""
     pol, obs, masks = _fixture()
     rep = audit(pol, obs, masks, batch=4)
-    assert "concat" in rep and "concat_cells" in rep
-    # gen3_no_concat_v1: the flat block no longer enters pi, so the `concat` arm measures the
-    # SEED-READOUT route — |dV| must register (the seeds read the per-mon rows), while the
-    # policy KL from that arm alone is structurally 0. `concat_cells` still zeroes the pointer
-    # cells too, which DO feed the policy — its KL must register.
-    assert rep["concat"]["kl_mean"] == 0.0, "the concat arm can no longer move pi (it is dead)"
-    assert rep["concat"]["dv_mean"] > 0.0, "zeroing the seed rows must register on the critic"
-    # The pointer head's cell input columns are ZERO-INIT (identity-at-init, M1-guarded), so on
-    # an UNTRAINED net concat_cells cannot move pi either — its policy effect only exists on a
-    # trained checkpoint (where the audits measure it at 30%+ flips). At init: same |dV| route.
-    assert rep["concat_cells"]["kl_mean"] >= 0.0
-    assert rep["concat_cells"]["dv_mean"] >= rep["concat"]["dv_mean"] * 0.99
-    assert rep["d1"]["kl_mean"] == 0.0, "edge families stay isolated from the op arms"
+    assert "concat_cells" in rep
+    assert "concat" not in rep, "the `concat` arm has no subject — it must not report a row"
+    assert set(rep["concat_cells"]) == {"kl_mean", "kl_p95", "flip_rate", "dv_mean"}
+    assert rep["concat_cells"]["kl_mean"] == 0.0, (
+        "the pointer cell columns are zero-init, so an UNTRAINED net cannot move pi through them")
+    assert rep["d1"]["kl_mean"] == 0.0, "edge families stay isolated from the op arm"
 
 
 def test_randomized_family_is_isolated_and_restored():

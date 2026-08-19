@@ -13,12 +13,20 @@ re-measured over a set of REAL decision states:
 A family whose numbers sit at ~0 after training is decorative (its map stayed ≈0 or attention
 ignores it); a large one is load-bearing. The ``all`` row ablates every family at once.
 
-Two additional OP-CONCAT arms answer the question the family rows can't — the roadmap's
-head-concat DELETION counterfactual: ``concat`` zeroes the op's damage block at the
-`ProjectionAssembler` ONLY (edges, the prefuse token injection and the pointer head's op cells
-all stay — exactly what deleting the concat would leave), and ``concat_cells`` additionally
-zeroes the pointer cells (the op fully absent from the heads — the modern P1 ceiling). A small
-``concat`` number on a TRAINED edge checkpoint is the redundancy evidence deletion needs.
+One additional OP arm answers the question the family rows can't: ``concat_cells`` zeroes the
+pointer head's op CELLS, i.e. the op fully absent from the heads — the modern P1 ceiling. On
+gen-14 it reads KL 0.5682 / flips 0.3105, the single largest policy dependence in this report,
+which is why it is a live tripwire rather than scaffolding.
+
+**Its twin ``concat`` is DELETED, and the reason is worth keeping.** That arm was built for the
+v61 op head-concat deletion counterfactual, and it worked by zeroing the assembler's LAST
+positional argument. The concat died at v61; from v76 that argument was ``seed_rows``, so for
+three generations ``concat`` silently measured the MULTI-SEED CRITIC READOUT under the name of a
+block that no longer existed — and duly reported 0.0000 on every axis (gen-14, n=12,391),
+identical to the dedicated ``seed`` arm in ``critic_route_audit``. The critic-route deletion wave
+deleted the seed readout, so the arm now has no subject at all. **An instrument that outlives its
+subject does not go quiet; it re-points at whatever is left at that offset and keeps printing
+numbers.** Same lesson as the allowlist entry that outlived its own fix.
 
 States come from eval-trace ``states.npz`` files (the arrays the run's eval recorder writes and
 the prober reads — pass one or more paths/globs). There is deliberately NO random-obs mode for
@@ -117,61 +125,40 @@ def audit(policy: Any, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 51
         report[f] = _ablate([f])
     report["all"] = _ablate(fams)
 
-    # --- the op-concat arms (the DELETION counterfactual the family rows can't measure) ---
-    # The roadmap's op-concat deletion question is about REDUNDANCY: with the edges + prefuse
-    # injection + pointer cells all still live, how much does the policy still lean on the raw
-    # 807-dim block at the projection concat? `concat` zeroes damage_block at the
-    # ProjectionAssembler ONLY (exactly what deleting the concat would remove); `concat_cells`
-    # ALSO zeroes the pointer head's op cells (the op fully absent from the heads — the modern
-    # P1 ceiling). Neither touches the edge biases or the prefuse token injection.
+    # --- the op arm the family rows can't measure -----------------------------------------
+    # `concat_cells` zeroes the pointer head's op CELLS: the op fully absent from the heads (the
+    # modern P1 ceiling). It does NOT touch the edge biases or the prefuse token injection, so
+    # what it isolates is exactly the per-action absolute channel. Its `concat` twin — which
+    # zeroed the assembler's trailing positional argument — is deleted; see the module docstring
+    # for why an arm that outlived its subject is worse than no arm.
     if getattr(fe, "damage_op", None) is not None and fe.last_damage_block is not None:
-        pa = fe.assembler
+        orig_cells = fe.damage_op.pointer_cells
+        fired = {"v": False}
 
-        def _zero_db_hook(_module: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
-            # gen3_op_tensors_views_v1: the assembler receives the TYPED incoming-rows view
-            # (`OpTensors.incoming_rows`), not the flat block — match it by identity against
-            # the op's own stash so a signature drift here fails the identity check loudly
-            # (the arm asserts it fired, below) instead of silently measuring nothing.
-            _rows: Any = (fe.damage_op.last_tensors.incoming_rows
-                          if fe.damage_op.last_tensors is not None else None)
-            if args and args[-1] is not None and args[-1] is _rows:
-                # `fired` is a hand-set attribute on the hook function object (the arm's own
-                # did-it-match flag); mypy models a function as attribute-less.
-                _zero_db_hook.fired = True  # type: ignore[attr-defined]
-                return args[:-1] + (torch.zeros_like(args[-1]),)
-            return args
-        _zero_db_hook.fired = False  # type: ignore[attr-defined]
+        def _zeroed(db: Any) -> Any:
+            fired["v"] = True
+            return tuple(torch.zeros_like(t) for t in orig_cells(db))
 
-        def _measure_with(zero_cells: bool) -> dict[str, float]:
-            h = pa.register_forward_pre_hook(_zero_db_hook)
-            orig_cells = fe.damage_op.pointer_cells
-            if zero_cells:
-                fe.damage_op.pointer_cells = lambda db: tuple(
-                    torch.zeros_like(t) for t in orig_cells(db))
-            try:
-                _zero_db_hook.fired = False  # type: ignore[attr-defined]
-                p, v = _forward_all()
-                if not _zero_db_hook.fired:  # type: ignore[attr-defined]
-                    raise RuntimeError(
-                        "the concat-arm assembler hook never matched its argument — the "
-                        "assembler's seed-rows identity drifted and the arm measured nothing.")
-            finally:
-                h.remove()
-                fe.damage_op.pointer_cells = orig_cells
-            kl = _masked_kl(base_p, p, masks_t)
-            return {
-                "kl_mean": float(kl.mean()),
-                "kl_p95": float(kl.quantile(0.95)),
-                "flip_rate": float((base_p.argmax(-1) != p.argmax(-1)).float().mean()),
-                "dv_mean": float((base_v - v).abs().mean()),
-            }
-
-        report["concat"] = _measure_with(zero_cells=False)
-        report["concat_cells"] = _measure_with(zero_cells=True)
-        # The hook is identity when removed — re-measuring base must reproduce it bitwise.
+        fe.damage_op.pointer_cells = _zeroed
+        try:
+            p, v = _forward_all()
+        finally:
+            fe.damage_op.pointer_cells = orig_cells
+        if not fired["v"]:
+            raise RuntimeError(
+                "the concat_cells arm's pointer_cells patch was never called — the op's pointer "
+                "surface moved and the arm measured nothing.")
+        kl = _masked_kl(base_p, p, masks_t)
+        report["concat_cells"] = {
+            "kl_mean": float(kl.mean()),
+            "kl_p95": float(kl.quantile(0.95)),
+            "flip_rate": float((base_p.argmax(-1) != p.argmax(-1)).float().mean()),
+            "dv_mean": float((base_v - v).abs().mean()),
+        }
+        # The patch is identity when restored — re-measuring base must reproduce it bitwise.
         chk_p, chk_v = _forward_all()
         assert torch.equal(chk_p, base_p) and torch.equal(chk_v, base_v), \
-            "op-arm restore failed — the hook/patch leaked into the baseline"  # noqa: S101
+            "op-arm restore failed — the patch leaked into the baseline"  # noqa: S101
     return report
 
 

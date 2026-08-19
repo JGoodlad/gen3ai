@@ -5414,3 +5414,129 @@ one_graph`) covers both flags plus Phase B's pair together — separate from the
 cell for the reason v94 measured (adding flags there took it 25.5 s → 73.1 s), and stacked because
 the switch cell's `torch.cat` now runs twice on one path and `CLSPool` now chains two token-content
 adds, neither of which was reachable before. mypy 0.
+
+---
+
+## v96 — `gen3_critic_route_wave_v1` (2026-08-18): the critic-route deletion wave — seven audited-dead routes, and the whole vf tail with them
+
+**Seven items, one pass, every one of them registered no-appeal before the number existed.** The
+gen-14 end-of-run battery (`measurements/gen14_route_audit_12391.json`, n=12,391 stratified states
+off `ai_v9_16_gen14_framedel_v91_0817/final_model.zip`) closed the critic-route consolidation the
+cleanup journey opened at Phase 3. What survives is `value_entity_pool` (dV **5.490** = 97% of
+`all_off` 5.635), `threat` (**1.0686**, its registered deadline discharged) and the PV shelf.
+
+| deleted | measured | verdict |
+|---|---|---|
+| the v61 `MultiSeedValueReadout` + `seed_diagnostics` + the `value_seeds/*` TB contract | **0.0000 bit-exact**, gen-13 AND gen-14 | dead twice |
+| the `hidden_opp_belief` **VF half only** | dV **0.0000** (its PI half: KL 0.7396, flips **39.6%**) | dead half deleted, live half KEPT |
+| the `non_matchup_rest` **VF concat** | dV **0.0000** (C1: the content substitutes through the global token) | dead half deleted, pi concat KEPT |
+| `value_intent` | 0.156 vs a 0.39 bar | NULL |
+| `intent_threshold`'s p_KO **vf route** (`IntentThresholdValue`) | 0.155 (gen-13), 0.136 (gen-14) | NULL — the POLICY move cell KEPT |
+| `intent_value_reduce` | **0.3176** at 2× sample | below bar twice |
+| `value_clock` | **0.2169** at 2× sample | below bar twice |
+
+**The structural payoff is bigger than the sum of the parts: `vf_combined` IS `value_pooled`.** All
+three unconditional deletions were members of the post-assembler vf tail, so removing them leaves
+the value head reading exactly one tensor — the same one `--value-from-dist`'s dist-head critic
+reads. That makes the **v89/M2 orphaned-branch bug class unrepresentable** rather than merely
+fixed: there is no longer a second vf path for a critic parameterization to bypass. `vf` becomes a
+CONSTANT `D_MODEL` in `compute_projection_widths` (no flag can move it), `ProjectionAssembler`
+holds **zero parameters**, and every critic enrichment now goes through one of two declared seams —
+`_value_pooled_routes` (additive, gradient-guarded) or the two `CLSPool` token-content injections.
+
+**Measured on the live gen-15 production config** (`tmp/wave_byte_identity.py`, a real
+`MaskablePPO` build so SB3's ortho pass and `restore_identity_init` both run): **2,611,948 →
+2,071,162 parameters, −540,786 (−20.7%)**; 15 `state_dict` keys deleted (`assembler.seed_readout.*`
+×3 and `intent_threshold_value.proj.*` ×2, over the three extractor aliases) and
+`value_projection.in_features` **1177 → 128**. With the surviving parameters carried across
+verbatim, the policy logits and the critic value are **BYTE-IDENTICAL** (sha `fdeefba75e34de5e` /
+`8ffe3e2883c80555` before and after). That is the honest form of the OFF-equivalence claim here:
+gen-15 records all three deleted FLAGS off, and the unconditional deletions were structurally dead
+under `value_from_dist`.
+
+**⚠️ `value_intent`'s RE-ENTRY CONDITION SURVIVES ITS DELETION** and is written into three places
+(the registry tombstone in `features_extractor.__init__`, `_value_pooled_routes`' docstring, and
+`pair_value_route.py`, which inherits it): *any future α/β-to-critic proposal passes the C4-style
+offline gate FIRST* (ledger C6 — the delivery line is EXHAUSTED). It was deleted because the
+measurement says the critic does not use it, not because the idea is unsound, and the seam makes
+rebuilding it cheap.
+
+#### The per-head deletions, and why they had to be per-head
+
+`hidden_opp` and `nmr` were each deleted on ONE HALF of one arm. The ledger keeps the hidden-opp
+incident because reading the module-level verdict — *"dV 0.0000, delete it"* — would have removed
+the single largest policy input in the report. `phase_modules_test.py::
+test_the_hidden_opp_belief_pi_half_is_a_live_policy_input` is the pin: the belief must still reach
+pi and still MOVE it (two different beliefs must not produce identical policy features — a
+dead-but-wired route satisfies a width assertion), and must not reach vf at any weight.
+`intent_threshold_test.py::test_the_p_ko_policy_context_survives_the_vf_route_deletion` is the
+same pin for the p_KO half: the flag stays ON in production, the move cell is measured in KL/flips
+rather than |dV|, and perturbing p_KO must still move the pointer MOVE cells.
+
+#### The instruments: an arm that outlives its subject RE-POINTS, it does not go quiet
+
+`critic_route_audit` loses the `seed` and `intent_reduce` arms, the `vr_*` arms for the three
+deleted seam routes, and the `hidden_opp` `both`/`pi`/`vf` split (now one arm — the split became
+structural, and reporting `_both` and `_pi` as two identically-equal numbers is uninterpretable).
+The generic `value_route` arm STAYS at one member: its whole value is covering the next route on
+the day it is written.
+
+**`edge_ablation_audit`'s `concat` arm is deleted with a note, and it is the cautionary case.** It
+was built for the v61 op-concat deletion counterfactual and worked by zeroing the assembler's LAST
+positional argument. The concat died at v61; from v76 that argument was `seed_rows`. So for three
+generations it silently measured the multi-seed CRITIC READOUT under the name of a block that no
+longer existed — and duly reported 0.0000 on every axis at n=12,391, identical to the dedicated
+`seed` arm. Its twin `concat_cells` is a genuine live tripwire (KL **0.5682**, flips **0.3105** on
+gen-14 — the largest policy dependence in that report) and STAYS, re-implemented to patch
+`pointer_cells` alone. Same family as the allowlist entry that outlived its own fix.
+
+#### Migration, and the ARCH_SIGNATURE decision
+
+`ARCH_SIGNATURE` bumps to `gen3_critic_route_wave_v1` and `MIGRATION_FLOOR` follows to 96, per the
+floor contract. **The bump is not optional and the reason is the interesting part**: `value_projection`
+narrows and `assembler.seed_readout.*` leaves the `state_dict`, but NOTHING in `model_config.json`
+records either — the seed readout was never a flag. Without the bump a gen-15 checkpoint would pass
+`check_compatible` and then die on an opaque torch shape error inside `MaskablePPO.load`, which is
+precisely the failure the signature exists to convert into a diagnosis. Consequence to state
+plainly: **gen-16 is fresh weights**, and gen-15 is its eval reference and pool seed, never a warm
+start.
+
+Three FIELDS leave the config (`intent_value_reduce`, `value_clock`, `value_intent`). Both halves of
+the v75 rule are written: `_migrate_config`'s v96 block (unreachable under the new floor, like
+v90/v91's, and present for the record) and `snapshot._DEAD_FEK_JUDGED`, which IS reachable because a
+checkpoint's pickled `features_extractor_kwargs` carry no `config_version` for a floor to catch.
+Recorded ON ⇒ REFUSED with the re-read-from-`git_hash` diagnosis (each built a projection module, so
+popping would hand SB3 an unplaceable `state_dict`); recorded OFF ⇒ popped silently. It matters
+immediately: gen-15 records all three OFF, while the `ai_v9_17_tdaux_lam*` forks recorded
+`intent_value_reduce` and `value_clock` ON and are therefore refused with a diagnosis rather than
+TypeError-ing.
+
+#### Files
+
+DELETED: `value_routes.py` (+test), `intent_value_reduce.py` (+test), `seed_diagnostics.py`
+(+test), `MultiSeedValueReadout` from `value_readouts.py`, `IntentThresholdValue` from
+`intent_threshold.py`, the `VALUE_SEED_K` / `VALUE_SEED_DIM` / `_INTENT_CELL_FEATURES` /
+`_INTENT_THRESH_RAW_VF` constants, the `value_seeds/*` emission in `instrumented_ppo`, and three
+rows from `flag_registry` (49 → 46 toggles).
+
+#### Gates
+
+The pi-half and p_KO pins above; the `value_route_gradient_test` sweep re-pointed at the surviving
+route set (still generic over `_value_pooled_routes` under both critic parameterizations, plus a
+new cell asserting the four deleted attributes stay deleted); `critic_route_audit_test` gains
+`test_the_deleted_vf_routes_stay_deleted`; `projection_width_test` now asserts `vf == D_MODEL`
+rather than an arithmetic; `phase_modules_test` asserts `ProjectionAssembler` owns no parameters at
+all. Five `test_migration_defaults_the_flag_off` cases become `test_a_pre_floor_config_is_REFUSED_
+not_defaulted` (the v90 precedent — a test may not claim to cover a branch the floor makes
+unreachable). `belief_label_only_gate_test`'s α cell moved to the PUBLICATION boundary and its
+docstring records WHY both obvious re-pointings are vacuous: the SWITCH-cell α consumers stop-grad
+α unconditionally, and this file's uniform-random obs masks all four MOVE logits. Artifact chain
+regenerated top-down (delivery graph → viewer → `arch_tables` → `flag_registry.md`), all
+`--check`-green; mypy 0.
+
+⚠️ **One side effect worth flagging**: `arch_tables_test::test_production_config_matches_newest_run`
+now SKIPS, because the signature bump opens the documented signature-bump window (no run exists at
+the current architecture). It was RED before this change on four fields; two of them
+(`intent_value_reduce`, `value_clock`) are moot now, and the other two (`all_shaping_pbrs`,
+`draw_penalty`) were corrected to the live defaults in the same pass so the mirror is not left
+silently stale behind a skip.

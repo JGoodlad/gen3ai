@@ -4,7 +4,8 @@ The audit exists to run ONCE per generation on a trained checkpoint, so its fail
 silent staleness: a hook that stops matching its argument measures nothing while producing a
 plausible report. These tests pin (a) every arm FIRES on a live-route policy, (b) the zero-init
 routes read exactly zero at init (threat's W_inj, the pointer-side KL), (c) the fail-loud path
-raises when a hook never matches.
+raises when a hook never matches, and (d) the arms the critic-route deletion wave RETIRED stay
+retired — an arm whose subject is gone does not report a null, it re-points.
 """
 import numpy as np
 import pytest
@@ -19,8 +20,7 @@ from agents.model.identity_init_test import _build_real_policy
 def model_and_enc():
     return _build_real_policy(opp_belief_cls_k=6, attend_unrevealed_opponents=True,
                               value_threat_inject=True, value_entity_pool=True,
-                              opp_intent=True, entity_topk_seats=6,
-                              intent_value_reduce=True, damage_topk_k=6,
+                              opp_intent=True, entity_topk_seats=6, damage_topk_k=6,
                               damage_matrices_incoming=True)
 
 
@@ -37,15 +37,18 @@ def test_every_arm_fires_and_reports(model_and_enc):
     # The arm set is CONDITIONAL on the build, deliberately, and the two ways it varies are
     # different in kind:
     #   * `vr_*` arms exist per ENABLED value route (the generic registry-keyed arm), so this
-    #     fixture — which enables intent_value_reduce and value_entity_pool — gets exactly two.
-    #     That is the property that stops the arm set drifting from the route set.
+    #     fixture — which enables value_entity_pool, the ONE surviving seam member — gets exactly
+    #     one. That is the property that stops the arm set drifting from the route set.
     #   * `frames` is absent because gen3_frame_deletion_v1 DELETED its subject at v90. The arm
     #     raises if asked directly and the runner skips it with a printed reason; what it must
     #     never do is appear here with a 0.0, which would read as "the frames were worthless"
     #     rather than "the frames are gone".
-    assert set(rep) == {"seed", "threat", "hidden_opp_both", "hidden_opp_pi",
-                        "hidden_opp_vf", "entity_pool", "intent_reduce", "nmr", "all_off",
-                        "vr_intent_value_reduce", "vr_value_entity_pool"}
+    #   * `seed`, `intent_reduce` and the `hidden_opp_{both,pi,vf}` SPLIT are absent for a
+    #     stronger reason still: the critic-route deletion wave deleted their subjects, and an
+    #     arm that outlives its subject re-points at whatever is left rather than going quiet
+    #     (see `edge_ablation_audit`'s deleted `concat` arm for the case where that happened).
+    assert set(rep) == {"threat", "hidden_opp", "entity_pool", "nmr", "all_off",
+                        "vr_value_entity_pool"}
     assert "frames" not in rep, "an unmeasurable arm must be ABSENT, never a fabricated row"
     for arm, row in rep.items():
         assert set(row) == {"kl_mean", "kl_p95", "flip_rate", "dv_mean"}
@@ -61,24 +64,32 @@ def test_zero_init_routes_read_zero_at_init(model_and_enc):
     assert rep["threat"]["dv_mean"] == 0.0
     # the v80 entity pool's out projection is zero-init, so its arm reads a strict no-op cold
     assert rep["entity_pool"]["dv_mean"] == 0.0
-    # IntentValueReduce's projection is zero-init too — same strict cold no-op
-    assert rep["intent_reduce"]["dv_mean"] == 0.0
-    # nmr rides straight into the projections (no zero-init between), so it MUST move the
-    # critic even at init — a zero here means the hook stopped reaching the concat.
-    assert rep["nmr"]["dv_mean"] > 0.0
+    # nmr and hidden_opp ride straight into the POLICY projection (no zero-init between), and
+    # since the wave deleted both of their vf halves their |dV| is now structurally ZERO — a
+    # nonzero reading on either would mean a concat leaked back onto the critic.
+    assert rep["nmr"]["dv_mean"] == 0.0
+    assert rep["hidden_opp"]["dv_mean"] == 0.0
     for arm, row in rep.items():
-        if arm == "nmr":
-            continue                     # nmr is a live concat, not a zero-init route
         assert row["kl_mean"] == 0.0 and row["flip_rate"] == 0.0, (arm, row)
 
 
-def test_live_routes_move_the_critic(model_and_enc):
+def test_the_deleted_vf_routes_stay_deleted(model_and_enc):
+    """The wave's standing claim, asserted as an arm-set property.
+
+    `seed`, `intent_reduce` and the `hidden_opp_vf` split measured dV **0.0000 bit-exact** on two
+    consecutive end-of-run audits, and their subjects are deleted. Re-adding an arm here without
+    re-adding a subject would produce a row that reads as a measurement of something; re-adding a
+    SUBJECT without re-running the audit that condemned it is the thing this guards against."""
     model, enc = model_and_enc
     obs, masks = _states(enc)
     rep = audit(model.policy, obs, masks, batch=8)
-    assert rep["seed"]["dv_mean"] > 0.0, "the seed window feeds vf even at init"
-    assert rep["hidden_opp_vf"]["dv_mean"] > 0.0
-    assert rep["hidden_opp_both"]["dv_mean"] > 0.0
+    for gone in ("seed", "intent_reduce", "hidden_opp_vf", "hidden_opp_pi", "hidden_opp_both",
+                 "vr_value_clock", "vr_value_intent", "vr_intent_threshold_value",
+                 "vr_intent_value_reduce"):
+        assert gone not in rep, f"arm {gone!r} is back without a subject"
+    fe = model.policy.features_extractor
+    assert getattr(fe.assembler, "seed_readout", None) is None
+    assert list(fe.assembler.parameters()) == []
 
 
 def test_event_seats_arm_fires_on_a_history_events_build():
@@ -100,6 +111,6 @@ def test_a_dead_hook_fails_loud():
     class _Cold:
         fired = False
 
-    with pytest.raises(RuntimeError, match="seed.*never matched"):
-        _assert_fired("seed", [_Cold()])
+    with pytest.raises(RuntimeError, match="threat.*never matched"):
+        _assert_fired("threat", [_Cold()])
     _assert_fired("ok", [{"fired": True}])   # dict-style marker, fired: no raise

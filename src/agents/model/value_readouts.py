@@ -1,58 +1,34 @@
-"""Critic-side readouts: MultiSeedValueReadout (k seeds over the op rows) and UnifiedValueReadout (the entity pool).
+"""The critic's entity pool: `UnifiedValueReadout`.
 
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
+
+`MultiSeedValueReadout` — v61's k-seed window over the op's per-our-mon rows — lived here until
+the critic-route deletion wave. It measured dV **0.0000, bit-exact, on two consecutive
+end-of-run audits** (gen-13 and gen-14 at n=12,391), and it is deleted with the rest of the
+post-assembler vf tail. Its own collapse contract (`seed_diagnostics.py`, `value_seeds/*`) went
+with it. The seed line's finding is preserved in `designs/CHANGELOG.md`: a SHARED readout can
+only constrain each seed's component along its own weight vector, so multiplicity was never the
+missing axis — which is why both pressures applied to it (VICReg v62, quantile v63) were
+themselves deleted at v78.
 """
 import torch
 from typing import Optional
 from agents.model.arch_constants import (UVR_K, UVR_DIM, _UVR_N_SOURCES, _UVR_N_SOURCES_FULL,
-      # noqa: F401  (re-export
-    VALUE_SEED_K,
-    VALUE_SEED_DIM,
     D_MODEL,
 )
-
-
-
-
-class MultiSeedValueReadout(torch.nn.Module):
-    """gen3_no_concat_v1 (v61): the critic's magnitude window after the op head-concat's death.
-
-    k learned SEED QUERIES cross-attend over the op's per-our-mon incoming rows (`our_mon`,
-    [B, 6, per_mon]) — readout MULTIPLICITY, the axis ledger-P3 never tested (it refuted WIDTH:
-    one pooled query at 384 dims read no better; k independent queries is a different object).
-    Output [B, k*dim] rides vf_parts ONLY (the policy keeps its lossless per-action pointer
-    cells). Known failure mode: SEED COLLAPSE (the z_arch precedent) — every forward stashes
-    (queries, outputs) and instrumented_ppo logs the `seeds/*` TB contract from
-    `seed_diagnostics.py`; the VICReg trigger is pre-registered there. Attention is explicit
-    (softmax over 6 mons per seed) — tiny, and the k×6 pattern is itself diagnosable."""
-
-    def __init__(self, per_mon: int, k: int = VALUE_SEED_K, dim: int = VALUE_SEED_DIM):
-        super().__init__()
-        self.k, self.dim = k, dim
-        self.queries = torch.nn.Parameter(torch.randn(k, dim) * (dim ** -0.5))
-        self.kv_proj = torch.nn.Linear(per_mon, dim)
-        self.out_dim = k * dim
-        self.last_outputs: Optional[torch.Tensor] = None   # [B, k, dim] — the TB monitor read
-
-    def forward(self, our_mon_rows: torch.Tensor, alive: torch.Tensor) -> torch.Tensor:
-        """our_mon_rows [B, 6, per_mon]; alive [B, 6] float (dead mons key-masked)."""
-        kv = self.kv_proj(our_mon_rows)                                    # [B, 6, dim]
-        att = torch.einsum("kd,bmd->bkm", self.queries, kv) * (self.dim ** -0.5)
-        att = att + (alive.clamp(max=1.0)[:, None, :] - 1.0) * 1e9        # mask dead mons
-        att = torch.softmax(att, dim=-1)                                   # [B, k, 6]
-        out = torch.einsum("bkm,bmd->bkd", att, kv)                        # [B, k, dim]
-        self.last_outputs = out
-        return out.reshape(out.shape[0], self.out_dim)
 
 
 class UnifiedValueReadout(torch.nn.Module):
     """gen3_unified_value_readout_v1 (v80) — Stage-3 T3-DELIVER, the critic's ONE entity pool.
 
-    `design_unified_belief.md` §3: today the critic reads magnitude through parallel bolt-on
+    `design_unified_belief.md` §3: the critic used to read magnitude through parallel bolt-on
     routes (the value CLS pool, the seed readout over op rows, the threat-inject, the hidden-opp
-    concat) — two of which exist only because the others could not reach vf. This module is the
-    designed successor CONTRACT: one attention pool over the critic's ENTITY-ROW SET — the 12
+    concat) — two of which existed only because the others could not reach vf. This module is
+    the designed successor CONTRACT, and the succession is now COMPLETE: the critic-route
+    deletion wave retired the seed readout, the hidden-opp vf half and the nmr vf concat, and
+    this pool carries **96–97% of the critic's whole route dependence** (gen-14, dV 5.490 of
+    all_off 5.635). One attention pool over the critic's ENTITY-ROW SET — the 12
     post-transformer team tokens plus (when the op exists) its 6 per-our-mon incoming rows —
     each row projected to a shared `UVR_DIM` and tagged with a learned per-SOURCE type
     embedding, pooled by `UVR_K` learned queries. Permutation-invariant over entities by
@@ -62,12 +38,11 @@ class UnifiedValueReadout(torch.nn.Module):
     Ships OPT-IN and ZERO-INIT: the output projection starts at exactly 0, so a cold-start
     forward contributes nothing (the M1 identity-at-init contract), and the flag OFF builds
     nothing (byte-identical baseline). vf-ONLY — the output is concatenated after the assembler
-    on the value half, so the policy is untouched at ANY weight, not merely at init (the
-    intent_value_reduce placement). It does NOT replace the routes it succeeds — the gen-11
-    critic-route audit adjudicates those (`critic_route_audit.py`); this exists so a condemned
-    route has a successor the next generation can enable in the same config.
+    into `value_pooled` (the v89 seam), so the policy is untouched at ANY weight, not merely at
+    init. It did NOT replace the routes it succeeds by fiat — the critic_route_audit adjudicated
+    those (`critic_route_audit.py`), and this pool won.
 
-    Attention is EXPLICIT (softmax over ≤18 rows per query, the MultiSeedValueReadout pattern)
+    Attention is EXPLICIT (softmax over ≤18 rows per query, the explicit-softmax pattern)
     rather than nn.MultiheadAttention: a degenerate all-masked row set (an all-fainted
     board) degrades to a uniform average instead of NaN, and the k×N pattern is
     stashed for diagnostics (`last_att`)."""

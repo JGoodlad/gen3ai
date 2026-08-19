@@ -37,22 +37,25 @@ from agents.model.snapshot import _DEAD_FEK_INERT, _DEAD_FEK_JUDGED
 # `features_extractor_kwargs` as a toggle.
 _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_level"})
 
-# THE SNAPSHOT — every parameter of `Gen3FeaturesExtractor.__init__` except `self`, as of v89.
+# THE SNAPSHOT — every parameter of `Gen3FeaturesExtractor.__init__` except `self`, as of v96
+# (gen3_critic_route_wave_v1: `intent_value_reduce`, `value_clock` and `value_intent` LEFT the
+# constructor with the critic routes they built, and each is now a `_DEAD_FEK_JUDGED` entry —
+# refused when a checkpoint recorded it ON, popped when OFF).
 # Sorted, so a diff reads as one line added or one line removed.
-CTOR_KWARGS_V89 = frozenset({
+CTOR_KWARGS_V96 = frozenset({
     "attend_unrevealed_opponents", "belief_grad_mode", "consequence_topk", "damage_candidate_k",
     "damage_matrices_incoming", "damage_matrices_outgoing", "damage_op", "damage_outgoing",
     "damage_topk_k", "edge_bias_families", "entity_tail_seats", "entity_topk_seats",
     "history_events", "hp_belief_mode", "intent_conditional", "intent_move_cell",
-    "intent_threshold", "intent_value_reduce", "item_belief", "layout", "log_level", "mappings",
+    "intent_threshold", "item_belief", "layout", "log_level", "mappings",
     "move_belief_mode", "move_candidate_floor", "move_latent", "move_prior_fusion",
     "observation_space", "op_believed_lean", "op_drop_renders", "opp_belief_cls_k",
     "pair_outcome_cell", "pair_outcome_switch", "switch_branch_cell",
     "conditional_threat_cell", "pair_value_route",
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior", "threat_prob_outspeed",
-    "value_clock", "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",
-    "value_entity_pool", "value_entity_pool_full", "value_intent", "value_threat_inject",
+    "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",
+    "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
     "win_prob_mode",
 })
 
@@ -81,13 +84,13 @@ def test_constructor_kwargs_match_the_snapshot():
     live = _live_kwargs()
     # A non-flag param leaving is a refactor of SB3 plumbing, not a dead-flag decision — it still
     # fails (the snapshot is the contract) but it does not get the dead-list instruction.
-    removed = sorted((CTOR_KWARGS_V89 - live) - _NON_FLAG_PARAMS)
-    plumbing = sorted((CTOR_KWARGS_V89 - live) & _NON_FLAG_PARAMS)
-    added = sorted(live - CTOR_KWARGS_V89)
+    removed = sorted((CTOR_KWARGS_V96 - live) - _NON_FLAG_PARAMS)
+    plumbing = sorted((CTOR_KWARGS_V96 - live) & _NON_FLAG_PARAMS)
+    added = sorted(live - CTOR_KWARGS_V96)
     assert not plumbing, (
         f"{plumbing} left the constructor. These are SB3's construction contract / our injected "
         "data handles, not flags, so no dead-list entry applies — but every caller that builds an "
-        "extractor by keyword passes them. Update CTOR_KWARGS_V89 once the call sites agree.")
+        "extractor by keyword passes them. Update CTOR_KWARGS_V96 once the call sites agree.")
     assert not removed, (
         f"{len(removed)} kwarg(s) left Gen3FeaturesExtractor.__init__: {removed}\n"
         "Every archived checkpoint still has them pickled in its "
@@ -105,9 +108,9 @@ def test_constructor_kwargs_match_the_snapshot():
         "  3. If it also lives in model_config.json AND the config could be at or above "
         "MIGRATION_FLOOR, give model_version._migrate_config the matching entry; below the floor "
         "the blanket PRE-GENERATION refusal already covers the config half.\n"
-        "  4. THEN remove it from CTOR_KWARGS_V89 here.")
+        "  4. THEN remove it from CTOR_KWARGS_V96 here.")
     assert not added, (
-        f"new constructor kwarg(s) {added} — add them to CTOR_KWARGS_V89 in this file. (Adding is "
+        f"new constructor kwarg(s) {added} — add them to CTOR_KWARGS_V96 in this file. (Adding is "
         "safe: an OLD checkpoint simply does not record the name, and SB3 uses the default.)")
 
 

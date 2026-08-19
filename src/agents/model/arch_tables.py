@@ -48,7 +48,7 @@ _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
     ("value_dist_head", "value_dist_head"),
     ("alpha_head", "alpha_head"),
     ("beta_head", "beta_head"),
-    ("intent_value_reduce", "intent_value_reduce"),
+    ("value_entity_pool", "value_entity_pool"),
     ("value_threat_inject", "cls_pool.value_threat_proj"),
 )
 
@@ -77,7 +77,8 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "value_dist_vmin": "value_dist_head",
     "value_dist_vmax": "value_dist_head",
     "value_threat_inject": "cls_pool.value_threat_proj",
-    "intent_value_reduce": "intent_value_reduce",
+    "value_entity_pool": "value_entity_pool",
+    "value_entity_pool_full": "value_entity_pool",
 }
 
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one
@@ -168,11 +169,13 @@ def modules_section(fe: Any) -> str:
 def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[str, int, str]]]:
     """The concat parts of each head, IN ORDER, derived from the live instance.
 
-    The order mirrors `ProjectionAssembler.forward` (pi: pools, active, non_matchup_rest, then the
-    optional hidden-opp belief; vf: value pool, non_matchup_rest, optional active readout, optional
-    hidden-opp belief, optional seed readout) plus `forward_internal`'s post-assembler
-    `intent_value_reduce` concat (vf only). Totals are asserted against the real `in_features`
-    by `_assert_totals`, so a drift in either the order or the parts fails loudly.
+    The order mirrors `ProjectionAssembler.forward` — pi: pools, active, non_matchup_rest, then
+    the optional hidden-opp belief; **vf: `value_pooled`, and that is the whole list.** The
+    critic-route deletion wave retired the entire vf tail (the seed window, the hidden-opp belief's
+    vf half and the nmr vf part were all audited dead), so `vf_combined IS value_pooled` and every
+    surviving critic enrichment is an ADDITIVE injection that changes no width. Totals are asserted
+    against the real `in_features` by `_assert_totals`, so a drift in either the order or the parts
+    fails loudly.
     """
     from agents.model import features_extractor as fx
 
@@ -187,17 +190,11 @@ def head_input_parts(fe: Any) -> Tuple[List[Tuple[str, int, str]], List[Tuple[st
     ]
     vf: List[Tuple[str, int, str]] = [
         ("`value_pooled`", D, "`CLSPool.value_cls` over **all 12** team tokens"),
-        ("`non_matchup_rest`", nmr, "shared with pi"),
     ]
     if fe.hidden_opp_belief is not None:
-        row = ("`hidden_opp_belief`", fe.opp_belief_cls_k * D,
-               f"`HiddenOppBeliefPool` — k={fe.opp_belief_cls_k} × `D_MODEL`")
-        pi.append(row)
-        vf.append(row)
-    sr = fe.assembler.seed_readout
-    if sr is not None and fe.damage_op is not None:
-        vf.append(("seed readout", sr.k * sr.dim,
-                   f"`MultiSeedValueReadout` — k={sr.k} × {sr.dim} over `OpTensors.incoming_rows`"))
+        pi.append(("`hidden_opp_belief`", fe.opp_belief_cls_k * D,
+                   f"`HiddenOppBeliefPool` — k={fe.opp_belief_cls_k} × `D_MODEL` "
+                   "(POLICY only — the vf half read dV 0.0000 and was deleted)"))
     # gen3_value_pooled_routes_v1 (v89): the value routes are ADDITIVE injections into
     # `value_pooled` — width-neutral for the projections, so they do NOT appear as vf concat
     # parts here; the flag table + delivery graph carry them.

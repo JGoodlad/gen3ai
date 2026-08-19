@@ -11,8 +11,8 @@ stale twice:
 | | |
 |---|---|
 | Production run | `models/ai_v9_14_gen12_h_entitypool_shaping_0816/` (gen-12, launched 2026-08-16) — `model_config.json` `config_version` **80**, `arch_signature` **`gen3_ctx_dedup_v1`**; the `h` family + `--value-entity-pool` LIVE; trains on its own pinned worktree |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 81 / `gen3_ctx_dedup_v1`) |
-| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema**. It is currently in a **signature-bump window**: `gen3_frame_deletion_v1` (v90) moved HEAD past every existing run, so the file tracks the LIVE code until gen-14 (`ai_v9_16_gen14_framedel_0817`) writes its own `model_config.json`. Two requirements pull it in opposite directions here — the compile gate needs it to match live code, the drift gate needs it to mirror the newest run — and they cannot both hold inside the window, so `arch_tables_test` DETECTS the window from the run's recorded signature rather than either side being relaxed. It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 96 / `gen3_critic_route_wave_v1`) |
+| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema**. It is currently in a **signature-bump window**: `gen3_critic_route_wave_v1` (v96) moved HEAD past every existing run, so the file tracks the LIVE code until the next generation writes its own `model_config.json`. Two requirements pull it in opposite directions here — the compile gate needs it to match live code, the drift gate needs it to mirror the newest run — and they cannot both hold inside the window, so `arch_tables_test` DETECTS the window from the run's recorded signature rather than either side being relaxed. It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -219,12 +219,11 @@ Modules actually built under the production config (`named_children()`) — GENE
 <!-- BEGIN GENERATED: modules -->
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
-hidden_opp_belief · intent_value_reduce · intent_move_cell · intent_threshold_move ·
-intent_threshold_value · intent_conditional · value_clock_route · t0_species_prior ·
-belief_slots · belief_head · move_belief · spread_belief · hp_type_belief_head ·
-item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_dist_head ·
-value_entity_pool · history_events · pre_proj_norm · projection · value_pre_norm ·
-value_projection · activation · alpha_head · beta_head
+hidden_opp_belief · intent_move_cell · intent_threshold_move · intent_conditional ·
+t0_species_prior · belief_slots · belief_head · move_belief · spread_belief ·
+hp_type_belief_head · item_belief_head · damage_op · prefuse_proj · assembler · win_head ·
+value_dist_head · value_entity_pool · history_events · pre_proj_norm · projection ·
+value_pre_norm · value_projection · activation · alpha_head · beta_head
 ```
 <!-- END GENERATED: modules -->
 
@@ -361,49 +360,60 @@ HEAD, are generated below — never hand-edit inside the markers.
 | `their_team_pooled` | 128 | `CLSPool.their_cls` over their 6 |
 | `our_active_refined` | 128 | our active slot's refined token |
 | `non_matchup_rest` | 25 | global env + board scalars (`_non_matchup_rest_dim`) |
-| `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
+| `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` (POLICY only — the vf half read dV 0.0000 and was deleted) |
 | **total** | **1177** | == `projection.in_features`, asserted at generation |
 
-**`vf_projection` — `Linear(1177, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
+**`vf_projection` — `Linear(128, 512)`** (LayerNorm → Linear → ReLU). Input concat, in order:
 
 | Part | Dims | Source |
 |---|---|---|
 | `value_pooled` | 128 | `CLSPool.value_cls` over **all 12** team tokens |
-| `non_matchup_rest` | 25 | shared with pi |
-| `hidden_opp_belief` | 768 | `HiddenOppBeliefPool` — k=6 × `D_MODEL` |
-| seed readout | 256 | `MultiSeedValueReadout` — k=4 × 64 over `OpTensors.incoming_rows` |
-| **total** | **1177** | == `value_projection.in_features`, asserted at generation |
+| **total** | **128** | == `value_projection.in_features`, asserted at generation |
 <!-- END GENERATED: head-inputs -->
 
 **Every value route INJECTS into `value_pooled`** (v89 `gen3_value_pooled_routes_v1`): the
 routes below add a zero-init `D_MODEL` contribution to the tensor the dist-head critic actually
 reads (and `vf_parts[0]`, so the scalar critic sees the same wiring). The old post-assembler
 vf-concat delivery was structurally bypassed by `--value-from-dist` — gen-12 proof:
-`value_entity_pool.out_proj` and `intent_value_reduce.proj` bit-exact ZERO after 25M steps,
-while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
+`value_entity_pool.out_proj` and the then-live α-reduce projection bit-exact ZERO after 25M
+steps, while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
 gradient-connectivity guard (`value_route_gradient_test.py`) backprops the critic through every
 registered route each suite run, under BOTH critic parameterizations.
+
+**The seam has ONE member** (v96 `gen3_critic_route_wave_v1`). Four of its five original routes
+were deleted on measured dependence against a 0.39 dV bar: `intent_value_reduce` 0.3176 and
+`value_clock` 0.2169 (both re-audited at 2× sample first), `intent_threshold`'s p_KO vf half
+0.155/0.136, and `value_intent` 0.156. `value_intent`'s **re-entry condition survives its
+deletion**: any future α/β-to-critic proposal passes the C4-style offline gate FIRST (ledger C6 —
+the delivery line is EXHAUSTED). The seam itself is kept generic at one entry because its value is
+covering the NEXT route on the day it is written.
 
 **ON in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3 T3-DELIVER of
 `design_unified_belief.md` §3). ONE attention pool over the critic's entity-row set (the 12
 post-transformer team tokens + the op's 6 per-our-mon incoming rows, each projected to
 `UVR_DIM`=64 with a per-source type embedding, `UVR_K`=4 queries, explicit NaN-safe softmax)
 adds its zero-init `D_MODEL` output into `value_pooled` — the policy is untouched at
-any weight. It is the designed SUCCESSOR contract of the two bolt-on vf routes below (seed
-readout, threat-inject); it runs here ALONGSIDE them rather than replacing them, so the
-`critic_route_audit` (which carries `entity_pool`, `intent_reduce`, `nmr` and `event_seats`
-arms) can price all three against each other on one trained run. **`value_entity_pool_full`**
-(v82, OFF) completes the row set — +the refined GLOBAL token and +the hidden-opp belief
-queries — so the `nmr` concat and the hidden-opp vf half also have their successor here (its
-own flag/shape: gen-12's v80-shape pool keeps loading under `full=False`).
+any weight. It was the designed SUCCESSOR contract of the bolt-on vf routes, it ran ALONGSIDE
+them for two generations so the `critic_route_audit` could price them against each other on one
+trained run, and **it WON**: gen-14 read it at dV **5.490 = 97% of `all_off` 5.635**, against
+`threat` 1.0686 and every other route below 0.32. The succession is complete — the seed readout,
+the `nmr` vf concat and the hidden-opp vf half are all deleted at v96, and this pool plus
+`--value-threat-inject` are what the critic reads. **`value_entity_pool_full`** (v82, **ON**)
+completes the row set — +the refined GLOBAL token and +the hidden-opp belief queries — which is
+where the content of the two deleted concats now lives (its own flag/shape: a v80-shape pool
+keeps loading under `full=False`).
 
-**Available but OFF: `intent_threshold`** (v84, `gen3_intent_threshold_v1` — the §3.0
-threshold operator of `design_conditional_execution.md`). When on, `threshold_probs` contracts
-the op's per-candidate pair cells with the published α into `p_KO` / `p_sub_broken` /
-`p_fp_broken`, and two zero-init projections deliver them: five mechanic channels (Focus
-Punch / Substitute / Endure / Destiny Bond / Endeavor) through the pointer MOVE cell
-(+`INTENT_THRESH_MOVE_DIM`), and the `[p_KO, …]` block into `value_pooled` — the ledger-H1
-payoff (the critic's "am I about to die" was a hard max). **`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
+**ON in production: `intent_threshold`** (v84, `gen3_intent_threshold_v1` — the §3.0
+threshold operator of `design_conditional_execution.md`). `threshold_probs` contracts the op's
+per-candidate pair cells with the published α into `p_KO` / `p_sub_broken` / `p_fp_broken`, and
+ONE zero-init projection delivers five mechanic channels (Focus Punch / Substitute / Endure /
+Destiny Bond / Endeavor) plus `p_KO` as per-slot context through the pointer MOVE cell
+(+`INTENT_THRESH_MOVE_DIM`). ⚠️ **v84 also built a SECOND consumer — the `[p_KO, …]` vf route,
+the ledger-H1 payoff — and v96 DELETED it** (dV 0.155 on gen-13, 0.136 on gen-14, against a 0.39
+bar). What H1 asked for stands; this delivery of it did not, and any successor owes the C4-style
+offline gate first. The POLICY half is a per-action pointer channel measured in KL/flips rather
+than |dV|, was never part of that verdict, and is pinned by `intent_threshold_test.py`.
+**`intent_conditional`** (v85) is its sibling: the Counter/Mirror-Coat category sums,
 flinch's `(1−α_SWITCH)` term, Explosion's execute/into-switch facts and Pursuit's ×2 never-miss
 doubling trigger (the port-verified departing-target rule — no β), one more zero-init block on
 the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision gated on
@@ -510,25 +520,31 @@ projection width), so the old ede5a88 discovery-sizing bug class — a fall-thro
 a vf part from the forward that sized `value_pre_norm` — is unrepresentable. Both projection
 input widths are **static arithmetic** (`compute_projection_widths`, `gen3_static_widths_v1`;
 the construction-time discovery forward is deleted): pi = 3·D_MODEL + the `non_matchup_rest`
-scalar tail + k·D_MODEL (hidden-opp belief pool, `opp_belief_cls_k`); vf = D_MODEL + tail +
-k·D_MODEL + the multi-seed window (`VALUE_SEED_K·VALUE_SEED_DIM`, present iff the op is built).
-`projection_width_test.py` verifies the arithmetic against a real forward per flag combo. Any
-NEW value route goes through `_value_pooled_routes` (the registry the gradient guard iterates)
-— never a new vf-concat part.
+scalar tail + k·D_MODEL (hidden-opp belief pool, `opp_belief_cls_k`, POLICY side only);
+**vf = D_MODEL, a constant no flag can move**. `projection_width_test.py` verifies the arithmetic
+against a real forward per flag combo. Any NEW value route goes through `_value_pooled_routes`
+(the registry the gradient guard iterates) — never a new vf-concat part; there is no vf concat.
 
-The value head does **not** read `our_active_refined` (the old `value_active_readout` toggle is
-deleted — v88 `gen3_dead_flag_purge_v1`), and does not
-read either team pool. Its board summary is `value_pooled` plus the **multi-seed window**: k=4
-learned queries cross-attend (explicit softmax, dead mons key-masked) over the op's per-our-mon
-incoming rows — the critic's magnitude read after the concat's death, MULTIPLICITY not width
-(ledger P3 refuted width only). Every `train()` logs the `value_seeds/*` collapse contract
-(`agents/model/seed_diagnostics.py`: query/output cosine, uncentered effective rank, the VICReg
-variance target) with the VICReg trigger pre-registered in that module — the z_arch lesson,
-mechanized. **The trigger FIRED on gen-5** (`value_seeds/out_effective_rank` 1.0 sustained
-196k→15.7M steps — the k=4 outputs identical).
+**`vf_combined` IS `value_pooled`** (v96 `gen3_critic_route_wave_v1`). The value head reads one
+tensor and nothing else: not `our_active_refined` (the `value_active_readout` toggle was deleted
+at v88), not either team pool, not the `non_matchup_rest` scalar tail, not the hidden-opp belief.
+The whole post-assembler vf tail was retired on measurement — its three members read dV **0.0000**
+on gen-14 at n=12,391 (`nmr` and `hidden_opp_vf`) and **0.0000 bit-exact on two consecutive
+audits** (the seed window). Since `--value-from-dist`'s critic reads `value_pooled` directly, this
+also makes the v89/M2 orphaned-vf-branch class **unrepresentable** rather than merely fixed: both
+critic parameterizations now read the same tensor, and there is no second path for either to
+bypass. Every critic enrichment is an additive injection into `value_pooled` (the v89 seam) or a
+token-content injection on the value pool's local copy inside `CLSPool`.
 
-**Two pressures were then applied to those seeds, and BOTH are deleted (v78). The measurement is
-why.** `--value-seed-vicreg-coef` (v62) was the repulsive one — a scale-relative
+**The v61 multi-seed window is DELETED with the rest of that tail.** It was k=4 learned queries
+cross-attending over the op's per-our-mon incoming rows — MULTIPLICITY rather than width (ledger
+P3 refuted width only) — and it carried the `value_seeds/*` collapse contract, which went with it.
+**The trigger it existed to catch FIRED on gen-5** (`out_effective_rank` 1.0 sustained
+196k→15.7M steps — the k=4 outputs identical), and the two pressures then applied to it are the
+reason the line closed:
+
+**Both pressures are deleted (v78). The measurement is why.**
+`--value-seed-vicreg-coef` (v62) was the repulsive one — a scale-relative
 variance+**covariance** floor on the seed outputs. Gen-6 ran it and every term moved (std_rel
 0.002 → 0.53, correlation → 0.19) while effective rank stayed **1.05**, because the deviations
 occupy **less than one direction** (centered PR 0.846): seeds 0/1/2 kept near-identical attention
@@ -542,9 +558,8 @@ and it worked on its own terms (`quantile_crossing_rate` 0.456 → **0.000**, `q
 **The structural reason is shared, which is what closed the line**: a **shared** readout constrains
 only each seed output's component along its own weight vector, leaving every orthogonal direction
 free. Seed MULTIPLICITY is therefore not the axis the critic was missing, and no coefficient on
-either term reaches it — so both flags and both modules were deleted rather than retuned.
-`seed_diagnostics.py`, the MEASUREMENT that produced these numbers, **stays** and still logs the
-`value_seeds/*` contract every `train()`.
+either term reaches it — so both flags and both modules were deleted rather than retuned, and the
+READOUT itself followed at v96 once two end-of-run audits read its dependence at 0.0000.
 
 **That null is what `--value-threat-inject` (v64) responds to.**
 
@@ -594,7 +609,8 @@ BUILT opt-in but its ENABLING owes the C4-style offline gate first.* Ledger **C6
 2026-08-17 with route liveness PROVEN — all five v89 routes trained off zero and `entity_pool`
 carried decisively (dV 6.28 = 110% of all-off), yet the critic's stall-loss over-confidence did not
 move (gen-13 confident-band gap +0.358, CI [0.23, 0.50]) — and the delivery line was declared
-EXHAUSTED. Requires `damage_op`. Width-neutral (additive), so the version gate is the ONLY thing
+EXHAUSTED — and the critic-route deletion wave then executed the four route deletions that verdict
+licensed. Requires `damage_op`. Width-neutral (additive), so the version gate is the ONLY thing
 that rejects a mismatched resume. `critic_route_audit` carries a **`pair_value` arm** (and includes
 it in `all_off`), so that gate is runnable the moment a checkpoint carries the route.
 
@@ -654,10 +670,10 @@ logit is exactly 0 at step 0 ⇒ uniform-over-legal.
 `_get_action_dist_from_latent(latent_pi)`; every value path is
 `forward_critic(vf_features) → _critic_value`, which never touches it. So the per-action `cell`
 channel exists for the actor and **not** for the critic — the critic's op-physics routes are the
-`MultiSeedValueReadout` window over the typed `incoming_rows`, `--value-threat-inject`'s token
-content on the value pool's copy, and (when on) the `intent_value_reduce` / entity-pool /
-threshold-p_KO injections into `value_pooled` — all vf-only, all reading the op through
-`OpTensors` views rather than flat offsets.
+entity pool's injection into `value_pooled` (dV 5.490 — 97% of the whole critic route joint),
+`--value-threat-inject`'s token content on the value pool's copy (1.0686), and, when on, PV's
+unified-row sibling beside it — all vf-only, all reading the op through `OpTensors` views rather
+than flat offsets.
 
 ### 3.4 Side readouts
 
@@ -910,7 +926,6 @@ does nothing given another setting.
 | `intent_conditional` | `true` | ACTIVE |
 | `intent_move_cell` | `true` | ACTIVE |
 | `intent_threshold` | `true` | ACTIVE |
-| `intent_value_reduce` | `true` | ACTIVE |
 | `item_belief` | `true` | ACTIVE |
 | `move_belief_mode` | `"both"` | ACTIVE |
 | `move_candidate_floor` | `0.02` | ACTIVE |
@@ -927,14 +942,12 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
-| `value_clock` | `true` | ACTIVE |
 | `value_dist_bins` | `51` | ACTIVE |
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |
 | `value_dist_vmin` | `-12.0` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
-| `value_intent` | `false` | OFF |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |

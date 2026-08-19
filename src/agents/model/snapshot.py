@@ -688,7 +688,21 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # logits), so True is the v71 shape exactly — a byte-identical state_dict in
                     # front of a `DamageOperator._nature_marg_ko` kernel that no longer exists.
                     # False = mean-field, which is what the op still computes, so False pops.
-                    ("spread_belief_nature_marginalize", False))
+                    ("spread_belief_nature_marginalize", False),
+                    # v96 (gen3_critic_route_wave_v1): three deleted CRITIC routes. Each ON value
+                    # built a zero-init projection module, so it named PARAMETERS the surviving
+                    # extractor has no home for ⇒ refused (the v75 rule); OFF pops silently,
+                    # because the route built nothing at all. This is the REACHABLE half of the
+                    # judgment — `_migrate_config`'s v96 block says the same thing about the config
+                    # JSON, but MIGRATION_FLOOR 96 refuses a pre-v96 config before it runs, whereas
+                    # the pickled kwargs carry no `config_version` for any floor to catch. It
+                    # matters immediately: gen-15's config records all three OFF (they pop), while
+                    # the `ai_v9_17_tdaux_lam*` forks recorded intent_value_reduce=True and
+                    # value_clock=True and are therefore refused WITH the re-read diagnosis rather
+                    # than TypeError-ing inside SB3's rebuild.
+                    ("intent_value_reduce", False),
+                    ("value_clock", False),
+                    ("value_intent", False))
 
 
 def sanitize_dead_extractor_kwargs(fek: dict) -> bool:

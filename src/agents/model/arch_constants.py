@@ -31,30 +31,19 @@ TRANSFORMER_N_LAYERS = 2
 TRANSFORMER_N_HEADS = 4
 TRANSFORMER_FFN_DIM = 256
 
-# gen3_no_concat_v1 (v61, the gen-5 world): the multi-seed CRITIC readout that replaces the op
-# head-concat's value window — k learned queries cross-attend over the op's per-our-mon rows
-# (the `our_mon` arity-1 tensor), giving the critic readout MULTIPLICITY (P3 refuted width,
-# never multiplicity). k*dim rides vf_parts only. Ships WITH the seeds/* TB collapse monitors
-# (seed_diagnostics.py) and the pre-registered VICReg trigger.
-VALUE_SEED_K = 4
-VALUE_SEED_DIM = 64
-
-# gen3_intent_value_reduce_v1 (step 6): the alpha-weighted threat term appended to the CRITIC's
-# pre-projection features. `_INTENT_CELL_FEATURES` is the F axis of the operator's un-reduced
-# `cells_pr` stack (low/high/crit/ko_ramp/acc/phys_mask) — change one and the other must follow.
-_INTENT_CELL_FEATURES = 6
+# v61's `VALUE_SEED_K` / `VALUE_SEED_DIM` (the multi-seed critic readout's shape) and v74's
+# `_INTENT_CELL_FEATURES` (the α-weighted vf term's cell axis) are DELETED in the critic-route
+# deletion wave along with the modules they sized. The op's un-reduced pair-cell F axis
+# [low, high, crit, ko_ramp, acc, is_phys] is still named — once, as `_PAIR_OUTCOME_DMG` below.
 
 # gen3_unified_value_readout_v1 (v80, Stage-3 T3-DELIVER, design_unified_belief.md §3): ONE
 # attention pool over the critic's ENTITY-ROW SET (the 12 post-transformer team tokens + the op's
-# 6 per-our-mon incoming rows), the designed successor of the bolt-on vf routes (seed readout /
-# threat-inject) the gen-11 critic-route audit adjudicates. K learned queries over rows projected
-# to a shared UVR_DIM (with a per-SOURCE type embedding), zero-init output projection to
-# UVR_OUT_DIM riding vf only. `_UVR_N_SOURCES` axes: 0=our mon token, 1=their mon token,
-# 2=op incoming row.
-# gen3_value_pooled_routes_v1 (v89): the value routes (intent_value_reduce, entity pool,
-# threshold-vf, clock, intent) INJECT additively into value_pooled, so their output width
-# is D_MODEL by definition — the old per-route width constants are deleted with the
-# vf-tail concat they sized.
+# 6 per-our-mon incoming rows) — the designed successor of the bolt-on vf routes, and the one the
+# critic-route audit picked (dV 5.490 = 97% of all_off on gen-14). K learned queries over rows
+# projected to a shared UVR_DIM (with a per-SOURCE type embedding), zero-init output projection to
+# D_MODEL. `_UVR_N_SOURCES` axes: 0=our mon token, 1=their mon token, 2=op incoming row.
+# gen3_value_pooled_routes_v1 (v89): a value route INJECTS additively into value_pooled, so its
+# output width is D_MODEL by definition — there are no per-route width constants.
 UVR_K = 4
 UVR_DIM = 64
 _UVR_N_SOURCES = 3
@@ -75,15 +64,14 @@ _INTENT_MOVE_CELL_RAW = 7
 # gen3_intent_threshold_v1 (v84, design_conditional_execution.md §3.0 / build-order step 3): the
 # α-weighted THRESHOLD operator `p_thresh(τ, ⋛) = Σ_k α_k · 1[damage(k, me) ⋛ τ]` — one
 # contraction over the op's already-computed per-candidate cells that lands five mechanics at
-# once (Focus Punch / Substitute / Endure / Destiny Bond / Endeavor) plus `p_KO`, the calibrated
-# "am I about to die this turn" the critic previously inferred from a hard max (ledger H1).
-# `_INTENT_THRESH_RAW_MOVE` is the per-request-slot raw stack
-# [fp_execute, sub_survives, endure_pko, dbond_pko, endeavor_survive, p_ko_context];
-# `_INTENT_THRESH_RAW_VF` is the critic's raw stack [p_ko, p_sub_broken, p_fp_broken].
-# The DIM constants are the two zero-init projections' output widths.
+# once (Focus Punch / Substitute / Endure / Destiny Bond / Endeavor) plus `p_KO` as per-slot
+# context. `_INTENT_THRESH_RAW_MOVE` is the per-request-slot raw stack
+# [fp_execute, sub_survives, endure_pko, dbond_pko, endeavor_survive, p_ko_context] and
+# `INTENT_THRESH_MOVE_DIM` the zero-init projection's output width. (`_INTENT_THRESH_RAW_VF` —
+# the critic's [p_ko, p_sub_broken, p_fp_broken] stack — is deleted with `IntentThresholdValue`
+# in the critic-route deletion wave: dV 0.155 / 0.136 against a 0.39 bar. The POLICY cell STAYS.)
 INTENT_THRESH_MOVE_DIM = 6
 _INTENT_THRESH_RAW_MOVE = 6
-_INTENT_THRESH_RAW_VF = 3
 
 # gen3_intent_conditional_v1 (v85, design_conditional_execution.md build steps 4+7): the
 # remaining α-conditioned mechanic cells — Counter / Mirror Coat (the category test), flinch's
@@ -109,8 +97,8 @@ _INTENT_COND_RAW = 13
 # j) carrying damage AND status AND neutralization AND tempo in the SAME vector, reduced by ONE
 # shared α over the move axis and delivered to the pointer MOVE cell.
 #
-# `_PAIR_OUTCOME_DMG` is the op's existing pair-cell width (== `_INTENT_CELL_FEATURES`, the F axis
-# of `last_pair_cells`: [low, high, crit, ko_ramp, acc, is_phys]); `_PAIR_OUTCOME_NEW` is the eight
+# `_PAIR_OUTCOME_DMG` is the op's existing pair-cell width — the F axis of `last_pair_cells`:
+# [low, high, crit, ko_ramp, acc, is_phys]; `_PAIR_OUTCOME_NEW` is the eight
 # coordinates gen3_pair_outcome_v1 adds (6 per-identity status landing probabilities + neutralization
 # + tempo_cost — the full table with each coordinate's §9a admission answer lives in
 # `pair_outcome.py`). `_PAIR_OUTCOME_RAW` is their concatenation = the reduced row's width;

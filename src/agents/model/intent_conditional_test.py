@@ -294,7 +294,7 @@ def test_full_intent_stack_builds_and_runs():
     """v77 + v84 + v85 all on — the three move-cell wideners must coexist, and the discovery
     forward must size every one (the ede5a88 class, pointer edition)."""
     fe, layout = _build(**{**_ON_KWARGS, "intent_move_cell": True, "intent_threshold": True,
-                           "opp_belief_slots": True, "intent_value_reduce": True,
+                           "opp_belief_slots": True,
                            "value_entity_pool": True})
     pi, vf = fe(_obs(layout))
     assert pi.shape == vf.shape

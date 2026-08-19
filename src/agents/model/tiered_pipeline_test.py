@@ -249,12 +249,15 @@ def test_real_policy_forward_runs_and_the_block_reaches_the_heads():
     with torch.no_grad():
         pi, vf = fe(obs)
     assert pi.shape == vf.shape == (2, fe.projection_dim)
-    # gen3_no_concat_v1: the block no longer widens the projections; the op reaches the heads
-    # via the pointer cells / prefuse injection / the vf-only seed window instead.
-    assert fe.assembler.seed_readout is not None
-    assert fe.assembler.seed_readout.last_outputs is not None, "the seed window must have run"
+    # gen3_no_concat_v1: the block no longer widens the projections; the op reaches the POLICY
+    # via the pointer cells / prefuse injection / the edge biases, and the CRITIC via
+    # `--value-entity-pool` (the vf-only seed window that used to serve that role was deleted by
+    # the critic-route wave on a bit-exact 0.0000 dV, twice).
+    assert getattr(fe.assembler, "seed_readout", None) is None
     assert fe.projection_input_dim < fe.damage_op.out_dim + 471, \
         "pi regained op width — the concat came back"
+    assert fe.value_projection_input_dim == fe.cls_pool.value_cls.shape[-1], \
+        "vf regained a tail part — it must be `value_pooled` alone"
 
 
 # --------------------------------------------------------------------------- versioning
