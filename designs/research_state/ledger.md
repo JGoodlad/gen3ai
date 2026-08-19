@@ -999,3 +999,30 @@ attentional: for any measured cost that is about to become a DECISION input, req
 that the second observation be a different instance rather than a repeat of the first.** Applied
 here it would have cost one 20-minute wait and saved a shipped lever, five corrected documents, and
 an owner having to catch it.
+
+### Method (2026-08-18): the reward composition drifted SILENTLY at the v8→v9 boundary — and fork pools start empty
+
+**Defect 2 — the reward drift.** All 20 `ai_v8_*` runs trained with `--all-shaping-pbrs` ON
+(1 TERMINAL + 8 PBRS + 1 BIAS — near-policy-invariant); **every** `ai_v9_*` run through gen-14
+ran it OFF (1 TERMINAL + 3 PBRS + **28 fully-additive BIAS terms** at λ=1.0). No recorded
+rationale anywhere; `ai_v9_01–08` record no launcher_command; the likely story is the
+fresh-generation reset recomposed commands and the flag simply wasn't carried. Invisible because
+it is training-only, bumps no signature, and is absent from `check_compatible`. It does NOT
+explain gen-14's −38 (constant across gen-11…14). **Consequence: every v9-era finding about
+reward/critic interplay is REGIME-SCOPED** — H1's magnitudes, C4's ΔG target, and any
+"PBRS is advantage-invariant" claim applied to the 3 surviving PBRS terms, not the composition
+v8 validated. Recovery: gen-15 re-baselines on the v8 composition as a near-single-variable
+change vs gen-14. **Guard (build with the recovery): a LAUNCH-DIFF gate** — a new generation's
+full resolved command is diffed against the designated reference generation's recorded command,
+and every difference must be explicitly acknowledged at launch (the flag-registry pattern applied
+to launches; this exact drift becomes unrepresentable).
+
+**Defect 1 — fork pools start empty.** `SnapshotPool` is directory-derived with no manifest, so
+a fork's run dir has NO pool: `--self-play` with the ramp fully on silently trains against the
+8 bots. The TD-aux rung-2 arms spent ~9M steps in the bots regime — internally valid λ A/B,
+externally invalid for the registered gates (gate 3 unmeasurable, gate 2 read off the wrong
+trade distribution). Salvage recorded as BOTS-REGIME evidence only (mechanism healthy: resid
+centred, value_loss −25%, EV up). Fix: pre-seed the base's snapshot zips into each arm before
+launch (same signature, they load; seed set identical across arms). **Guard: at launch,
+`--self-play` + an empty pool + a fork (`--model` given) warns loudly / requires an explicit
+pool-seeding choice** — a silent regime substitution becomes a stated decision.
