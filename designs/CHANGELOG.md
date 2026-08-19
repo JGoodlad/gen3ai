@@ -5540,3 +5540,66 @@ the current architecture). It was RED before this change on four fields; two of 
 (`intent_value_reduce`, `value_clock`) are moot now, and the other two (`all_shaping_pbrs`,
 `draw_penalty`) were corrected to the live defaults in the same pass so the mirror is not left
 silently stale behind a skip.
+
+## v97 — `gen3_intent_label_bot_weight_v1` (2026-08-18): the intent head stops learning bots at full price
+
+The opponent-intent heads are supervised by **what the opponent actually did** — and for the first
+stretch of every fresh generation, that opponent is a bot. `heuristic_fraction` holds self-play at
+**0% below `SELF_PLAY_START`**, so α/β's entire early curriculum is a set of scripted decision
+trees. Measured on gen-11: supervised intent rows ran **100% bot at 2M and ~7% from 6M on**, and
+bot rows score differently in a way that says they are a different problem — info gain **0.124 nats
+vs pool 0.254**, with bot accuracy flat at ~0.50 for the whole run. The hazard is imprinting: the
+head fits a decision tree while that is all it is shown, and carries the fit into pool play.
+
+`--intent-label-bot-weight W` (default **1.0 = OFF**) is the per-sample answer. `W` multiplies the
+α and β label losses on rows whose opponent class is `bot`; pool / stable / exploiter keep 1.0.
+
+```
+loss = Σ_i w_i · ce_i / n_sup          w_i = W on bot rows, 1.0 elsewhere
+```
+
+**The denominator is the decision.** Weighting before the mean at the unchanged `n_sup` keeps the
+`--opp-intent-coef` semantics (`w ≡ 1` is the plain mean) AND makes the knob bite where it must:
+normalising by `Σw` instead would render a 100%-bot minibatch identical to an unweighted one — i.e.
+do nothing for the whole ramp this exists for. Masks compose rather than collide: `INTENT_IGNORE`
+rows are dropped FIRST and the weight multiplies only survivors, so no weight can resurrect a
+masked label and `W = 0` legally means "score bot rows for the metrics, train on none of them".
+
+**No new plumbing.** The identity source is the EXISTING `opp_class` obs key (`gen3_opp_class_v1`,
+v-none — it was never a config field), tagged per episode by `MaskableAgentWrapper`, pushed onto
+the env at `reset()`, emitted beside the α/β labels, shifted with them by
+`align_labels_to_predictions`, and already read in `train()` for the stratified metrics. The key
+that splits the dashboards now also weights the loss. That promotion is why
+`opp_class_plumbing_test.py` exists: the chain had **zero** test coverage while it was
+metrics-only, and a break in it stops being a mislabelled chart the moment it decides supervision.
+
+**Confined to α/β, deliberately.** The other supervised beliefs — species, move, item, spread,
+nature/EV, HP-type — are **team truth**: what their team IS does not depend on who is piloting it,
+so an opponent-class discount there would discard valid labels. Only INTENT is behaviour. The
+`belief_bank` rows never see `opp_class`, pinned as a source fact.
+
+New diagnostic **`opp_intent/label_bot_frac`** — the bot share of the α rows actually SUPERVISED
+this minibatch. The per-class `alpha_n_supervised_*` counts carried the same information but are
+gated on ≥2 rows and are counts, so nothing reported the ratio; it is emitted whether or not the
+weight is set, because the decision to set it is made off this number. Every existing stratified
+metric is unmoved — they measure the head, and a weighted loss must not move an accuracy.
+
+**Class `training_coef`, and the default is a bit-identity, not an approximation.** At `W = 1.0`
+the original unweighted `cross_entropy` call is taken unchanged (the weight helper returns `None`),
+so the loss is equal to the last bit — asserted by exact equality over three opponent mixes rather
+than `approx`. It scales a loss and touches no forward pass ⇒ **no `ARCH_SIGNATURE` bump**, absent
+from `check_compatible`, no `check_*`; recorded on `ModelVersion` for provenance and so a flagless
+resume inherits it via `_resolve`, exactly like `td_aux_coef`. Not in `flag_registry.py` — that
+registry's scope is extractor architecture toggles, and this reaches the extractor not at all.
+`MIGRATION_FLOOR` stays 96, so the v97 branch is the rare REACHABLE one: a v96 config sits at the
+floor and genuinely lacks the field, which defaults to 1.0 = OFF.
+
+**LOWERING it is a generation decision, not this change.** Pre-registered: fork A/B **W=1.0 vs
+W=0.25** at the gen-16 launch beside the B-move supervision call, gated on
+**`opp_intent/alpha_acc_pool`** (the `_pool` suffix — the bare key is a moving mix). W=0.25 wins
+only on non-inferiority or better; a fall convicts the premise, meaning bot rows were carrying real
+signal. `label_bot_frac` sizes the manipulation before the arm is spent.
+
+End-to-end on a `--debug` CPU smoke (100% bots, so `label_bot_frac` reads exactly 1.0):
+`opp_intent/alpha_loss` **1.99 → 1.84** at W=1.0 against **0.49 → 0.48** at W=0.25 — the designed
+factor of four, in a real training loop rather than a unit test.
