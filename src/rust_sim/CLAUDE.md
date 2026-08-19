@@ -8250,8 +8250,7 @@ committed e2e corpus nor any dedicated golden pairs them. It took five figures o
 lesson is about the SHAPE of the earlier fix rather than its content: BF1 collapsed the name at
 three call sites and the fourth was written the same way, from `MoveData.name`, somewhere else in
 the file.** A fix expressed as "collapse it at these sites" leaves every future site free to
-re-introduce it; the durable version would be a single accessor that cannot return the typed name
-to an emitter.
+re-introduce it. **CLOSED STRUCTURALLY in ROUND 54 below** — the field is now private.
 
 **Gates:** `cargo test --release --no-fail-fast` **707 passed / 0 failed**; e2e golden md5
 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1075 rows**. Pinned by the
@@ -8261,4 +8260,43 @@ Disable is accuracy 55) AND frozen as byte-fuzz corpus fixture
 fix and `kind=protocol` without it.
 
 **The run's OTHER divergence is the known `kind=seed` tail** (ROUND 26's class), unrelated.
+
+### ROUND 54 (FIX) — closing the Hidden-Power-name class STRUCTURALLY
+
+`gen3_hidden_power_name_accessor_v1`. ROUND 53 fixed the fourth leak site and NOTED that the
+durable answer was an accessor. A note is not a fix — this is the fix.
+
+**`MoveData::name` is now PRIVATE.** Two accessors replace it:
+- **`display_name()`** — collapses a TYPED Hidden Power to the bare `Hidden Power`. The ONLY
+  thing a protocol emitter may use.
+- **`raw_name()`** — the typed name, explicitly documented as never-for-emission.
+
+Privatising it turned "remember to collapse this" into a COMPILE ERROR, and the compiler then
+enumerated all **14** call sites for free. Twelve were emitters (now `display_name`); exactly two
+are legitimately raw and both are non-protocol: the **OWNER-ONLY request display** in `bridge.rs`
+(a side may know its own HP type — the sim renders `Hidden Power <Type> <BP>` there deliberately)
+and **packed-team round-tripping** in `team.rs` (which must re-pack the bytes Showdown emitted).
+
+The ROUND-53 inline collapse is deleted — it is now the accessor's job.
+
+**TWO GATES**, both revert-verified:
+1. `display_name_collapses_every_typed_hidden_power` — all 16 typed ids plus the bare one, with a
+   NON-VACUITY assert that `raw_name` really does carry the typed name (otherwise the collapse
+   would be proving nothing), plus an ordinary move as a control.
+2. `raw_name_callers_are_an_enumerated_allowlist` — scans `src/` and requires the `raw_name()`
+   callers to be EXACTLY `{bridge.rs, team.rs}`. A new one fails loudly with the file and line, so
+   adding an escape becomes a deliberate decision rather than an accident.
+
+**⚠️ THE GATE'S OWN FIRST DRAFT WAS BLIND, AND MUTATION CAUGHT IT.** It skipped the file holding
+the accessor with `!p.ends_with("moves.rs")` — which also excluded **`src/turn/moves.rs`**, the
+single biggest emitter in the crate and precisely the file most likely to leak. A planted
+`raw_name()` call there PASSED. Fixed to compare the relative path (`dex/moves.rs`). **A gate
+that exempts a file by filename suffix will exempt every file with that name** — the lesson is the
+same shape as the leak it was written to prevent, which is why it is recorded here rather than
+quietly corrected.
+
+**Gates:** `cargo test --release --no-fail-fast` **709 passed / 0 failed**; e2e golden md5
+`3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1075 rows**. Mutations: deleting
+the collapse fails both the accessor test AND the ROUND-53 pin `HP1`; planting a `raw_name()`
+caller in an emitter fails the allowlist gate by name and line.
 

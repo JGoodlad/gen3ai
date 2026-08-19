@@ -78,7 +78,7 @@ impl crate::state::BattleState {
                 None,         // no status
                 false,        // not a protect move
                 false,        // targets the foe, not self
-                m.name.clone(), // "Struggle"
+                m.display_name().to_string(), // "Struggle"
                 m.contact,    // Struggle IS a contact move (gen-3 `flags.contact`) → it CAN proc a contact ability
                 pressure_targets_foe(&m.target), // Struggle target=normal → foe in pressureTargets
             )
@@ -122,7 +122,7 @@ impl crate::state::BattleState {
                     m.status_inflicted.clone(),
                     m.is_protect,
                     eff_target == "self",
-                    m.name.clone(),
+                    m.display_name().to_string(),
                     m.contact,
                     pressure_targets_foe(eff_target),
                 )
@@ -495,7 +495,7 @@ impl crate::state::BattleState {
         if !pursuit_strike && !sleep_talk_call && self.imprisoned_for(side, &move_id, dex) {
             if self.logging() {
                 let u = self.mon_ref(side, slot, dex);
-                let name = dex.moves(&move_id).map(|m| m.name.clone()).unwrap_or_default();
+                let name = dex.moves(&move_id).map(|m| m.display_name().to_string()).unwrap_or_default();
                 self.log.cant(&u, "move: Imprison", Some(&name));
             }
             return MoveResolution::done(false, false, false);
@@ -2975,7 +2975,7 @@ impl crate::state::BattleState {
                         .get(move_index)
                         .filter(|mid| is_defrost_move(&to_id(mid)))
                         .and_then(|mid| dex.moves(mid))
-                        .map(|m| m.name.clone())
+                        .map(|m| m.display_name().to_string())
                 };
                 if let Some(mv_name) = defrost_move {
                     // DEFROST: the move proceeds while frozen; `frz.onModifyMove`
@@ -3057,7 +3057,7 @@ impl crate::state::BattleState {
                             .moves
                             .get(move_index)
                             .and_then(|mid| dex.moves(mid))
-                            .map(|m| m.name.clone())
+                            .map(|m| m.display_name().to_string())
                             .unwrap_or_default();
                         self.log.cant(&mon_ref, "Disable", Some(&mv_name));
                     }
@@ -3168,7 +3168,7 @@ impl crate::state::BattleState {
                     .moves
                     .get(move_index)
                     .and_then(|mid| dex.moves(mid))
-                    .map(|m| m.name.clone())
+                    .map(|m| m.display_name().to_string())
                     .unwrap_or_default();
                 self.log.cant(&mon_ref, "move: Taunt", Some(&mv_name));
             }

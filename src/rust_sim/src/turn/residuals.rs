@@ -2036,7 +2036,7 @@ impl crate::state::BattleState {
         let slot = self.sides[side].active;
         let move_name = dex
             .moves(&fm.move_id)
-            .map(|m| m.name.clone())
+            .map(|m| m.display_name().to_string())
             .unwrap_or_else(|| fm.move_id.clone());
         if self.sides[side].pokemon[slot].fainted {
             // A fainted occupant skips the strike (`futuremove.onEnd`'s early-return); the sim

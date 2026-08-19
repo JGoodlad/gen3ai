@@ -986,7 +986,7 @@ impl crate::state::BattleState {
                 if lm.id.starts_with("hiddenpower") {
                     ("hiddenpower".to_string(), "Hidden Power".to_string(), lm.pp.min(5), lm.max_pp())
                 } else {
-                    (lm.id.clone(), lm.name.clone(), lm.pp.min(5), lm.max_pp())
+                    (lm.id.clone(), lm.display_name().to_string(), lm.pp.min(5), lm.max_pp())
                 }
             };
             let mslot = (0..self.sides[_side].pokemon[_slot].set.moves.len()).find(|&k| {
@@ -2123,21 +2123,11 @@ impl crate::state::BattleState {
                     .moves
                     .get(last_slot)
                     .and_then(|mid| dex.moves(mid))
-                    .map(|m| {
-                        // TYPED HIDDEN POWER collapses to the BARE `Hidden Power` here too
-                        // (`gen3_disable_hidden_power_name_v1`). gen-3 hides the HP type, so
-                        // EVERY emitted line reads `Hidden Power` — the `|move|`/`|cant|`
-                        // announces were collapsed by the round-8 BF1 fix, but THIS
-                        // `-start|…|Disable|<MoveName>` kept the typed dex display name and
-                        // leaked it (`Hidden Power Grass`). Found by the long `ourandom`
-                        // byte fuzz at 10,775 battles — a Disable onto a typed-HP lastMove is
-                        // rare enough that no earlier gate reached it.
-                        if crate::dex::to_id(&m.id).starts_with("hiddenpower") {
-                            "Hidden Power".to_string()
-                        } else {
-                            m.name.clone()
-                        }
-                    })
+                    // `display_name` collapses a TYPED Hidden Power to the bare name. This
+                    // site leaked it (`Hidden Power Grass`) until
+                    // `gen3_disable_hidden_power_name_v1`; the accessor now makes that
+                    // unrepresentable rather than something each emitter must remember.
+                    .map(|m| m.display_name().to_string())
                     .unwrap_or_default();
                 self.log.volatile_start(&target, &format!("Disable|{mv_name}"));
             }

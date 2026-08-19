@@ -569,7 +569,10 @@ fn side_move_id(mon: &MonState, mv: &str) -> String {
 fn active_move_display(mv: &str, dex: &Dex, hp_bp: u8) -> (String, String) {
     let id = crate::dex::to_id(mv);
     let data = dex.moves(&id);
-    let name = data.map(|d| d.name.clone()).unwrap_or_else(|| mv.to_string());
+    // raw_name: the REQUEST's `move` field legitimately shows the TYPED name + BP, and the
+    // request is OWNER-ONLY — the type is not hidden from its own side. The typed branch just
+    // below builds that display. This is the one emitter-adjacent raw use, and it is correct.
+    let name = data.map(|d| d.raw_name().to_string()).unwrap_or_else(|| mv.to_string());
     if id.starts_with("hiddenpower") && id != "hiddenpower" {
         // Typed HP: bare id + "<Name> <BP>" (name already reads "Hidden Power <Type>").
         return ("hiddenpower".to_string(), format!("{name} {hp_bp}"));

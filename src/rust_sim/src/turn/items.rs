@@ -303,7 +303,7 @@ impl crate::state::BattleState {
                     if self.logging() {
                         let move_name = dex
                             .moves(&self.sides[side].pokemon[slot].set.moves[k])
-                            .map(|mv| mv.name.clone())
+                            .map(|mv| mv.display_name().to_string())
                             .unwrap_or_default();
                         let m = self.mon_ref(side, slot, dex);
                         self.log.push_raw(format!("|-activate|{m}|item: {name}|{move_name}|[consumed]"));

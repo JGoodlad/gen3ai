@@ -11,7 +11,16 @@ use std::collections::HashMap;
 pub struct MoveData {
     pub id: String,
     pub num: u16,
-    pub name: String,
+    /// The dex display name. **PRIVATE ON PURPOSE** (`gen3_hidden_power_name_accessor_v1`):
+    /// for a TYPED Hidden Power (nums 355-370) this is the typed name — `Hidden Power Grass` —
+    /// and gen-3 HIDES the HP type, so emitting it is an INFORMATION LEAK, not a cosmetic byte
+    /// difference. Reach it through [`MoveData::display_name`] (collapses typed HP, the ONLY
+    /// thing an emitter may use) or [`MoveData::raw_name`] (explicit, never for emission).
+    ///
+    /// This was a leak TWICE — the round-8 BF1 fix collapsed three announce sites, and a
+    /// FOURTH (the Disable `-start`) was later written the same way from this field and leaked
+    /// again for months. Privacy makes the mistake unrepresentable rather than a convention.
+    name: String,
     /// `None` == typeless (`"???"`, e.g. Curse).
     pub move_type: Option<Type>,
     pub base_power: u16,
@@ -190,6 +199,25 @@ pub fn boost_stat_index(stat: &str) -> Option<usize> {
 }
 
 impl MoveData {
+    /// The name an EMITTER may use. Collapses a TYPED Hidden Power to the bare
+    /// `Hidden Power`, because gen-3 hides the HP type (hidden information). Every
+    /// `|move|` / `|cant|` / `|-start|` / fail line must go through this.
+    pub fn display_name(&self) -> &str {
+        if self.id.starts_with("hiddenpower") {
+            "Hidden Power"
+        } else {
+            &self.name
+        }
+    }
+
+    /// The RAW dex name, typed Hidden Power included. **Never emit this.** It exists for
+    /// non-protocol consumers — packed-team round-tripping, diagnostics — where the typed
+    /// name is the correct value. If you are formatting a `|...|` line, you want
+    /// [`MoveData::display_name`].
+    pub fn raw_name(&self) -> &str {
+        &self.name
+    }
+
     pub fn is_damaging(&self) -> bool {
         self.base_power > 0
     }
@@ -450,4 +478,99 @@ pub(super) fn parse(root: &Json, gen: u8) -> Result<HashMap<String, MoveData>, S
         );
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod hidden_power_name_tests {
+    use super::*;
+
+    /// `display_name` collapses EVERY typed Hidden Power (nums 355-370) plus the bare one,
+    /// and leaves everything else alone. gen-3 HIDES the HP type, so a typed name reaching a
+    /// `|...|` line is an information LEAK — the opponent is not supposed to know the type.
+    #[test]
+    fn display_name_collapses_every_typed_hidden_power() {
+        let d = crate::dex::Dex::for_gen(3);
+        let mut seen = 0usize;
+        for t in [
+            "bug", "dark", "dragon", "electric", "fighting", "fire", "flying", "ghost",
+            "grass", "ground", "ice", "poison", "psychic", "rock", "steel", "water",
+        ] {
+            let id = format!("hiddenpower{t}");
+            let m = d.moves(&id).unwrap_or_else(|| panic!("{id} must exist"));
+            assert_eq!(
+                m.display_name(),
+                "Hidden Power",
+                "{id}: display_name must hide the TYPE"
+            );
+            // NON-VACUITY: the raw name really is the typed one, so the collapse is doing work.
+            assert_ne!(
+                m.raw_name(),
+                "Hidden Power",
+                "{id}: raw_name is expected to carry the typed name — if it does not, this test \
+                 proves nothing about the collapse"
+            );
+            seen += 1;
+        }
+        assert_eq!(seen, 16, "all 16 typed Hidden Powers must be covered");
+
+        let bare = d.moves("hiddenpower").expect("bare HP");
+        assert_eq!(bare.display_name(), "Hidden Power");
+
+        // And an ORDINARY move is untouched by the collapse.
+        let tackle = d.moves("tackle").expect("tackle");
+        assert_eq!(tackle.display_name(), "Tackle");
+        assert_eq!(tackle.raw_name(), "Tackle");
+    }
+
+    /// THE STRUCTURAL GATE. `MoveData::name` is PRIVATE, so an emitter physically cannot reach
+    /// the typed name — it must go through `display_name` (collapsed) or `raw_name` (explicit).
+    /// This test pins the small, deliberate set of `raw_name` callers so the exception cannot
+    /// quietly grow: a new one is a decision someone has to make on purpose.
+    ///
+    /// The leak shipped TWICE before this — round-8 BF1 collapsed three announce sites by hand,
+    /// and a FOURTH written the same way leaked for months. Enumerating the escapes is what
+    /// turns "remember to collapse it" into something the compiler and this test enforce.
+    #[test]
+    fn raw_name_callers_are_an_enumerated_allowlist() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut found: Vec<String> = Vec::new();
+        let mut stack = vec![root];
+        while let Some(dir) = stack.pop() {
+            for e in std::fs::read_dir(&dir).expect("readdir") {
+                let p = e.expect("entry").path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().is_some_and(|x| x == "rs") {
+                    let txt = std::fs::read_to_string(&p).expect("read");
+                    for (i, line) in txt.lines().enumerate() {
+                        // ⚠️ Skip ONLY this file (where the accessor is defined). An earlier
+                        // draft used `!p.ends_with("moves.rs")`, which ALSO excluded
+                        // `src/turn/moves.rs` — the single biggest emitter in the crate, i.e.
+                        // exactly the file most likely to leak. Mutation testing caught it:
+                        // a raw_name() call planted there passed the gate. Compare the full
+                        // relative path, never a filename suffix.
+                        let is_this_file = p.ends_with("dex/moves.rs");
+                        if line.contains("raw_name()") && !is_this_file {
+                            found.push(format!(
+                                "{}:{}",
+                                p.file_name().unwrap().to_string_lossy(),
+                                i + 1
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        found.sort();
+        let files: Vec<&str> = found.iter().map(|f| f.split(':').next().unwrap()).collect();
+        assert_eq!(
+            files,
+            vec!["bridge.rs", "team.rs"],
+            "raw_name() has a NEW caller. It is correct in exactly two places — the OWNER-ONLY \
+             request display (bridge.rs) and packed-team round-tripping (team.rs). Anything \
+             formatting a `|...|` protocol line must use display_name(), or it LEAKS the Hidden \
+             Power type. If the new caller is genuinely non-protocol, add it here deliberately. \
+             found: {found:?}"
+        );
+    }
 }

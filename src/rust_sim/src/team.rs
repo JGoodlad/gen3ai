@@ -259,7 +259,9 @@ fn build_set(fields: &[&str], dex: &Dex) -> Result<PokemonSet, String> {
     //    Valid gen-3 sets carry 1–4 real moves; the empty-token case is latent.
     set.moves = fields[4]
         .split(',')
-        .map(|tok| unpack_name(tok, |id| dex.moves(id).map(|m| m.name.clone())))
+        // raw_name: packed-team round-tripping, not protocol emission — the typed name IS
+        // the correct value here (it must re-pack to what Showdown emitted).
+        .map(|tok| unpack_name(tok, |id| dex.moves(id).map(|m| m.raw_name().to_string())))
         .collect();
 
     // 6. nature — raw name kept (case-preserving).
