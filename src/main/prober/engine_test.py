@@ -1683,3 +1683,109 @@ def test_build_switch_in_outgoing_none_without_details():
                             opp=SimpleNamespace(active_species="swampert", active_hp="100%"))
     assert build_switch_in_outgoing(board, None, None) is None
     assert build_switch_in_outgoing(board, [{"species": "celebi"}], []) is None
+
+# -- move order read off the raw protocol log --------------------------------------------------
+#
+# The TurnDelta's `move_order` is decoded from the OBS, so it only exists on the model-loading
+# path; measured over five runs, ZERO decisions carry one in a model-free `battle_turns` read. The
+# replay therefore had to declare the order unknown whenever both sides moved — 56.3% of decisions
+# with a timeline (measured on ai_v9_17_tdaux_lam3, 389 decisions). The protocol log states the
+# execution order outright, and this is the fixture it states it in: the exact turn a reader
+# reported as permanently "unordered".
+
+_TURN_7 = (
+    "|turn|7",
+    "|",
+    "|move|p1a: Jirachi|Protect|p1a: Jirachi",
+    "|-singleturn|p1a: Jirachi|Protect",
+    "|move|p2a: Raikou|Thunderbolt|p1a: Jirachi",
+    "|-activate|p1a: Jirachi|Protect",
+    "|",
+    "|-heal|p1a: Jirachi|165/404|[from] item: Leftovers",
+    "|-heal|p2a: Raikou|88/100 par|[from] item: Leftovers",
+    "|upkeep",
+)
+
+
+def test_move_order_is_read_off_the_protocol_for_either_side():
+    """The log lists `|move|` lines in EXECUTION order, so the answer is a reading, not a guess —
+    and which of p1/p2 is 'us' is resolved by matching the actor's nickname to the active species,
+    never by assuming we are p1. Same turn, both perspectives."""
+    from main.prober.engine import move_order_from_protocol
+
+    assert move_order_from_protocol(_TURN_7, "jirachi", "raikou") == "we_first"
+    assert move_order_from_protocol(_TURN_7, "raikou", "jirachi") == "opp_first"
+    # Display forms and ids both normalize.
+    assert move_order_from_protocol(_TURN_7, "Jirachi", "Raikou") == "we_first"
+
+
+def test_move_order_refuses_rather_than_guessing():
+    """Every `None` here is a case where the log cannot settle it, and a 50/50 dressed up as a
+    reading would be worse than the honest 'not recorded' the renderer already handles."""
+    from main.prober.engine import move_order_from_protocol
+
+    # A MIRROR: the nickname names both sides equally.
+    assert move_order_from_protocol(_TURN_7, "jirachi", "jirachi") is None
+    # A nicknamed mon matches neither active.
+    nicked = ("|turn|7", "|move|p1a: Sparky|Thunderbolt|p2a: Jirachi")
+    assert move_order_from_protocol(nicked, "raikou", "jirachi") is None
+    # No move lines at all (a switch-only turn), and no protocol at all.
+    assert move_order_from_protocol(("|turn|7", "|switch|p1a: Jirachi|Jirachi|404/404"),
+                                    "jirachi", "raikou") is None
+    assert move_order_from_protocol(None, "jirachi", "raikou") is None
+    assert move_order_from_protocol((), "jirachi", "raikou") is None
+    # A missing species on either side cannot be matched against.
+    assert move_order_from_protocol(_TURN_7, "", "raikou") is None
+
+
+def test_the_timeline_orders_by_the_protocol_when_the_turndelta_did_not_record_it():
+    """The end-to-end effect: both sides moved, no recorded `move_order` — previously flagged
+    `order_certain=False` and rendered without a sequence. The protocol settles it, and the SLOWER
+    side's line now comes second."""
+    from main.prober.engine import build_result_timeline, move_order_from_protocol
+
+    outcome = {"our": {"action": "protect", "hp_delta": "0%"},
+               "opp": {"action": "thunderbolt", "hp_delta": "0%"}}
+    hint = move_order_from_protocol(_TURN_7, "jirachi", "raikou")
+
+    without = build_result_timeline(outcome, "jirachi", "raikou", "move_selection")
+    assert not all(e.get("order_certain", True) for e in without if e["kind"] == "move"), (
+        "fixture must be a genuinely ambiguous turn for this test to mean anything")
+
+    with_hint = build_result_timeline(outcome, "jirachi", "raikou", "move_selection",
+                                      move_order_hint=hint)
+    assert all(e.get("order_certain", True) for e in with_hint if e["kind"] == "move")
+    assert [e["side"] for e in with_hint if e["kind"] == "move"] == ["we", "opp"]
+
+    # …and the other way round, so the assertion above is about the DATA and not the default.
+    flipped = build_result_timeline(
+        {"our": {"action": "thunderbolt", "hp_delta": "0%"},
+         "opp": {"action": "protect", "hp_delta": "0%"}},
+        "raikou", "jirachi", "move_selection",
+        move_order_hint=move_order_from_protocol(_TURN_7, "raikou", "jirachi"))
+    assert [e["side"] for e in flipped if e["kind"] == "move"] == ["opp", "we"]
+
+
+def test_a_recorded_move_order_still_wins_over_the_protocol():
+    """The TurnDelta value folds from the real event-log sequence the analysis was built on. The
+    protocol read is a FALLBACK for when there is none — it must not override the record."""
+    from main.prober.engine import build_result_timeline
+
+    outcome = {"our": {"action": "protect", "hp_delta": "0%"},
+               "opp": {"action": "thunderbolt", "hp_delta": "0%"},
+               "move_order": "opp_first"}
+    entries = build_result_timeline(outcome, "jirachi", "raikou", "move_selection",
+                                    move_order_hint="we_first")
+    assert [e["side"] for e in entries if e["kind"] == "move"] == ["opp", "we"]
+
+
+def test_a_voluntary_switch_still_outranks_both():
+    """A switch resolves before a move, which is mechanics rather than a recording — neither the
+    record nor the protocol hint may reorder that."""
+    from main.prober.engine import build_result_timeline
+
+    outcome = {"our": {"action": "thunderbolt", "hp_delta": "0%"},
+               "opp": {"action": "switched_to:blissey", "hp_delta": "0%"}}
+    entries = build_result_timeline(outcome, "raikou", "jirachi", "move_selection",
+                                    move_order_hint="we_first")
+    assert entries[0]["side"] == "opp", "the opponent's voluntary switch must resolve first"

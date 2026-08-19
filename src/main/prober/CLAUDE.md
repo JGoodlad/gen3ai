@@ -204,9 +204,18 @@ target's before→after HP (`before = after + damage`, `after` from `next_board`
 metagross`. Lines read **top-to-bottom in execution order** (a voluntary switch resolves first, else
 the TurnDelta `move_order`, which folds from the **real event-log sequence** — `TurnView._compute_move_order`
 reads the order of `|move|` events, not a speed heuristic — so **no `«1st»` tag**). When BOTH sides moved
-but `move_order` wasn't recorded (a no-state / model-free decision), the engine flags the entries
-`order_certain=False` and the renderer drops the implied sequence (neutral `·` bullets + a *(move order
-not recorded)* note) instead of guessing. One line per move / switch / forced replacement /
+but `move_order` wasn't recorded (a no-state / model-free decision), the engine first tries to READ
+the order off the turn's raw protocol slice — `engine.move_order_from_protocol`, since the sim emits
+`|move|` lines in EXECUTION order, which is the fact rather than an inference from it — and only
+flags `order_certain=False` (neutral `·` bullets + a *(move order not recorded)* note) when even
+that cannot settle it. **This is the common path, not an edge case:** `move_order` is decoded from
+the OBS, so it exists only on the model-loading route — measured over five runs, ZERO decisions
+carry one in a model-free `battle_turns` read, and the note fired on **56.3%** of decisions with a
+timeline (389 decisions, ai_v9_17_tdaux_lam3). With the protocol read it is **3.6%**. Sides are
+identified by matching the actor's nickname to the two active species, never by assuming we are
+`p1`; a mirror match, a real nickname, or a switch-only turn all return `None` and keep the honest
+"not recorded" rather than a coin-flip. A RECORDED `move_order` still wins — it folds from the event
+log the analysis was built on — and a voluntary switch outranks both, because that is mechanics. One line per move / switch / forced replacement /
 standalone faint, each carrying a **`⚡CRIT`** tag, a **`→ atk+1`** boost (Meteor Mash / Intimidate),
 an applied **status** (`opp thunderwave → milotic PAR`), or a **"couldn't move (asleep/…)"** note
 (crit + boost + cant + move_order + **effectiveness** decoded from the NEXT decision's TurnDelta via
@@ -584,8 +593,9 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   boosts · item · moves · revealed bench), what was **chosen** + its recorded probability, the
   ordered **`timeline`** of what then happened (`engine.build_result_timeline` entries, each with a
   `text` field rendered by `engine.timeline_entry_text` so no surface re-derives the sentence),
-  `order_certain` (false ⇒ both sides moved and `move_order` wasn't recorded, so top-to-bottom is
-  NOT the real sequence — say so, never guess), **`opp_intent`** (the v67 `α`/`β` read — `alpha`
+  `order_certain` (false ⇒ both sides moved, `move_order` wasn't recorded, AND the turn's protocol
+  slice could not settle it either — so top-to-bottom is NOT the real sequence; say so, never
+  guess. The protocol read takes this from 56.3% of decisions to 3.6% — see the timeline section), **`opp_intent`** (the v67 `α`/`β` read — `alpha`
   ranked NAMED options + `SWITCH`, `beta` the named candidate switch-ins, `top`, `switch_p`, and a
   `text` rendered by `engine.opp_intent_text` so no surface re-derives the sentence; `None` on a run
   without the heads, which is every trace before v67), and the critic's read (`value` · `delta_v` ·

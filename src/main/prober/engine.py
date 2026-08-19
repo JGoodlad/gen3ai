@@ -677,6 +677,48 @@ def protocol_for_turn(lines: "tuple[str, ...]", turn: int) -> "tuple[str, ...]":
     return tuple(out)
 
 
+def move_order_from_protocol(lines: "tuple[str, ...] | None",
+                             our_active: str, opp_active: str) -> "str | None":
+    """Who moved FIRST this turn, read off the raw Showdown log: ``"we_first"`` / ``"opp_first"``,
+    or ``None`` when it cannot be established beyond doubt.
+
+    The TurnDelta records `move_order`, but only a decision captured WITH state carries one — on a
+    model-free / older trace it is absent, and the timeline then has to drop the implied sequence
+    rather than guess. The protocol slice for that same turn does not have that gap: the sim emits
+    ``|move|`` lines IN EXECUTION ORDER, which is the fact itself rather than an inference from it.
+
+        |move|p1a: Jirachi|Protect|p1a: Jirachi
+        |move|p2a: Raikou|Thunderbolt|p1a: Jirachi
+
+    Sides are identified by matching the actor's NICKNAME to the two active species, not by
+    assuming we are `p1`. Our teams are packed without nicknames, so Showdown uses the species —
+    but a nicknamed mon would not match, and the honest answer there is `None` (keep today's
+    behaviour) rather than a 50/50 guess dressed up as a reading.
+
+    Returns `None` when: there are no move lines, the first actor matches neither active, or BOTH
+    actives are the same species (a mirror, where the nickname cannot disambiguate the sides).
+    """
+    ours, opps = _norm_species(our_active), _norm_species(opp_active)
+    if not ours or not opps or ours == opps:
+        return None                      # a mirror: the nickname names both sides equally
+    for ln in lines or ():
+        if not ln.startswith("|move|"):
+            continue
+        parts = ln.split("|")
+        if len(parts) < 3:
+            continue
+        actor = parts[2]                 # e.g. "p1a: Jirachi"
+        nick = _norm_species(actor.split(":", 1)[1] if ":" in actor else actor)
+        if not nick:
+            continue
+        if nick == ours:
+            return "we_first"
+        if nick == opps:
+            return "opp_first"
+        return None                      # a nickname we cannot place — do not guess from later lines
+    return None
+
+
 def build_our_hp_types(team_details: "list[dict] | None") -> "dict[str, str]":
     """`{norm_species: 'hiddenpower(bug)'}` from a reconstruction `team_details` list — the typed
     Hidden Power display id for each own mon, so a bare own HP (all the request carries before reveal)
@@ -891,7 +933,8 @@ def _loss_pct(hp_delta: "str | None") -> "float | None":
 
 def build_result_timeline(outcome: dict, our_species: str, opp_species: str, phase: str = "",
                           our_hp_before=None, opp_hp_before=None,
-                          our_hp_after=None, opp_hp_after=None) -> "list[dict]":
+                          our_hp_after=None, opp_hp_after=None,
+                          move_order_hint: "str | None" = None) -> "list[dict]":
     """Ordered, one-line-per-action model of what HAPPENED after a decision (the RESULT panel). Pure.
 
     Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
@@ -998,11 +1041,15 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             entries.append({"side": "we", "kind": "send_in", "sent_in": pa_our.get("switch_to", "")})
     else:
         we_e, opp_e = _entry_for("we"), _entry_for("opp")
-        # Execution order: a voluntary switch precedes a move; else the TurnDelta move_order; else ours.
+        # Execution order: a voluntary switch precedes a move; else the recorded move_order; else
+        # ours. `move_order_hint` is the SAME fact read off the raw protocol log when the TurnDelta
+        # did not record one (see `move_order_from_protocol`) — the recorded value still wins,
+        # since it comes from the event log the fold was built on.
+        recorded_order = out.get("move_order") or move_order_hint
         we_first = True
         if pa_opp["kind"] == "switch" and pa_our["kind"] == "move":
             we_first = False
-        elif pa_our["kind"] != "switch" and out.get("move_order") == "opp_first":
+        elif pa_our["kind"] != "switch" and recorded_order == "opp_first":
             we_first = False
         entries = [e for e in ([we_e, opp_e] if we_first else [opp_e, we_e]) if e is not None]
         # Order certainty: top-to-bottom is REAL only when a voluntary switch fixes it (switches
@@ -1011,7 +1058,7 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
         # went first, so flag it and let the renderer drop the implied sequence instead of guessing.
         def _moved(e):
             return bool(e and e.get("kind") == "move" and not e.get("cant"))
-        order_certain = (out.get("move_order") in ("we_first", "opp_first")) or not (
+        order_certain = (recorded_order in ("we_first", "opp_first")) or not (
             _moved(we_e) and _moved(opp_e))
         for e in entries:
             if e.get("kind") == "move":
@@ -1028,15 +1075,23 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
     return entries
 
 
-def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict) -> "list[dict]":
+def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
+                  protocol: "tuple[str, ...] | None" = None) -> "list[dict]":
     """`build_result_timeline` wired to a decision: the actives' HP this turn (before) + the resolved
-    HP at the next decision (after, from ``next_board``)."""
+    HP at the next decision (after, from ``next_board``).
+
+    `protocol` is this turn's raw Showdown slice. When the TurnDelta recorded no `move_order`, the
+    order is read off those `|move|` lines instead of being surrendered as unknown — the log states
+    the execution order outright."""
+    our_sp = inv.get("our", {}).get("species", "")
+    opp_sp = inv.get("opp", {}).get("species", "")
     return build_result_timeline(
-        outcome, inv.get("our", {}).get("species", ""), inv.get("opp", {}).get("species", ""),
+        outcome, our_sp, opp_sp,
         inv.get("phase", ""),
         our_hp_before=inv.get("our", {}).get("hp"), opp_hp_before=inv.get("opp", {}).get("hp"),
         our_hp_after=(next_board.ours.active_hp if next_board else None),
         opp_hp_after=(next_board.opp.active_hp if next_board else None),
+        move_order_hint=move_order_from_protocol(protocol, our_sp, opp_sp),
     )
 
 

@@ -611,7 +611,13 @@ class ProbeSession:
             v, v_next = self._v(values, i), self._v(values, i + 1)
             wp, wp_next = _npz_win_prob(npz, i), _npz_win_prob(npz, i + 1)
             next_board = boards[i + 1] if i + 1 < len(boards) else None
-            entries = _timeline_for(inv, next_board, outcome)
+            # This turn's raw protocol slice rides along: when the TurnDelta recorded no
+            # `move_order`, the engine reads the real execution order off the log's `|move|` lines
+            # rather than declaring it unknown. Sliced once here and reused for the row's
+            # `protocol` field below, so the parse is not repeated per decision.
+            proto_slice = (tuple(protocol_for_turn(protocol, int(inv.get("turn") or 0)))
+                           if protocol else ())
+            entries = _timeline_for(inv, next_board, outcome, protocol=proto_slice)
             row = {
                 "inv": i,
                 "turn": inv.get("turn"),
@@ -669,8 +675,7 @@ class ProbeSession:
                 # The raw Showdown lines for this decision's TURN — the exact mechanics the summary
                 # collapses (per-hit damage, a miss, an immunity, the switch-in). Empty when the
                 # trace has no `*_replay.html` sibling.
-                "protocol": list(protocol_for_turn(protocol, int(inv.get("turn") or 0)))
-                            if protocol else [],
+                "protocol": list(proto_slice),
             }
             key = row["turn"]
             if key not in by_turn:
