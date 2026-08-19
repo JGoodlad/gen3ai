@@ -64,6 +64,7 @@ def save_model_snapshot(
     meta_path = os.path.join(model_dir, "metadata.json")
     existing_history = {}
     existing_latest_eval = None
+    existing_team_wr = None
     existing_cli_args = None
     existing_launcher_command = None
     existing_original_command = None
@@ -74,6 +75,7 @@ def save_model_snapshot(
             existing = json.load(f)
             existing_history = existing.get("snapshot_history", {})
             existing_latest_eval = existing.get("latest_eval")
+            existing_team_wr = existing.get("team_win_rates")
             existing_cli_args = existing.get("cli_args")
             existing_launcher_command = existing.get("launcher_command")
             existing_original_command = existing.get("original_command")
@@ -117,6 +119,8 @@ def save_model_snapshot(
         metadata["snapshot_history"] = existing_history
     if existing_latest_eval is not None:
         metadata["latest_eval"] = existing_latest_eval
+    if existing_team_wr is not None:
+        metadata["team_win_rates"] = existing_team_wr
     # MATCHUP ERA HISTORY (append-only): `cli_args` records only the LATEST process's declared
     # matchup — a manual resume that changes the matchup (a new --trainee-team / --exploiter /
     # --bot-weights) would silently overwrite what earlier eras trained against. Each era's
@@ -136,6 +140,23 @@ def save_model_snapshot(
         metadata["matchup_history"] = matchup_history
     with open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
+
+
+def record_team_win_rates(model_dir: str, table: dict) -> None:
+    """Write the per-team win-rate table to metadata.json as a top-level `team_win_rates` block.
+
+    The owner's recording rule (design_flywheel_tick_tock.md §6b): per-team rates ride the run's
+    EXISTING metadata channel beside `latest_eval`'s per-opponent records — one artifact per run
+    holding the whole competitive story — and are deliberately NOT emitted to TensorBoard.
+    `save_model_snapshot` carries the block forward across checkpoints like `latest_eval`."""
+    meta_path = os.path.join(model_dir, "metadata.json")
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path) as f:
+            meta = json.load(f)
+    meta["team_win_rates"] = table
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
 
 
 def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:

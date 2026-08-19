@@ -752,6 +752,29 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   samples, and the trainer-side pool used for honest sentinel-weight telemetry); off → no extra IPC and the
   legacy sampling/eviction byte-for-byte.
 
+  **REVIVAL VERIFICATION (2026-08-18) — it SURVIVED; nothing needed repair.** PFSP was built
+  ai_v8-era and never production-enabled, so gen-16 wanting it ON required checking whether code
+  that no test-suite failure would have protected still worked across the fresh-generation reset,
+  the frame deletion and two signature bumps. It did: **70/70 existing tests green unmodified**, and
+  every call site is intact — both `SnapshotPool` constructions (env-worker + trainer-side), the
+  `_update_pfsp_ema` fold in `_collect_pending`, the `_prune_and_push_pfsp` env push, the
+  `summary.json` `pfsp_win_rates` resume-load, and `MaskableAgentWrapper.set_opponent_win_rates`.
+  A `--debug --self-play --debug-eval --pfsp-scale 2.0 --pool-spread` CPU smoke ran to
+  `Training complete` (exit 0). **What that smoke does NOT show, and why it can't:** pool seeding is
+  gated on `win_rate_vs_bots >= SELF_PLAY_START` (0.55) and a fresh debug model sits at ~4%, so the
+  pool stays empty and PFSP never weights anything — the smoke proves the flags launch and thread,
+  not that they skew.
+  **The gap the revival actually closed was in the TESTS, not the code.** Every pre-existing test
+  exercised ONE link with the other side mocked (pool math / callback EMA / wrapper forwarding), so
+  a green suite said nothing about the composition — the thing a revival has to prove. Two
+  end-to-end tests now run measured win-rates through callback → `env_method` → wrapper →
+  `SnapshotPool` → `sample()`: `test_measured_winrates_skew_real_sampling_end_to_end` asserts the
+  empirical 40k-draw distribution matches the analytic weights (at `pfsp_scale=2.0`, win-rates
+  0.1/0.5/0.9 and recency off ⇒ factors 2.8/2.0/1.2 ⇒ shares **0.467 / 0.333 / 0.200**, and the
+  self we lose to is drawn **2.33×** as often as the one we dominate), and
+  `test_pfsp_off_makes_no_push_and_no_skew_end_to_end` asserts the same composition at
+  `pfsp_scale=0` makes **no IPC call at all** and leaves the draw uniform under the same win-rates.
+
   **Honest caveats (it's a partial-coverage curriculum, not a full PFSP league):** (1) only the
   **`--n-sentinels` (default 5) evenly-spaced sentinels** the eval measures per cycle get a fresh win-rate —
   the other snapshots fall back to the cohort
@@ -1186,6 +1209,94 @@ symmetric variance), **`onesided`** (measure + bias, losing side held at MAX).
 - **Tests.** `utils/teambuilder_test.py` (off==uniform RNG-identical, weighted sampling, record/drain,
   the cap+floor weight math), `team_pfsp_callback_test.py` (cross-worker aggregation, the pool-size GIGO
   guard, the `update_every` throttle, None-worker filtering).
+
+## Per-team win-rate tracking (`--team-wr-tracking`, DEFAULT ON, `team_winrate_callback.py`)
+
+A first-class running record of how the trainee does **piloting each team**, keyed by `team_sha`.
+The training loop always knew which team an episode piloted and how it ended; nothing kept the
+record, so the three flywheel consumers that need it — the deficit thermostat, **headroom
+capture's denominator**, and slice-curation evidence — each had to be a scratch script. This is
+**instrumentation only: no prioritization consumer ships with it**, by design.
+
+⚠️ **THE CONFOUND, and it is written into the artifact rather than only into this file.** A raw
+per-team win rate conflates **PILOT COMPETENCE with TEAM STRENGTH** (the ai_v8 team-PFSP finding:
+team-PFSP win rate was confounded by team strength). "Our win rate with team T is low" does not
+mean "we pilot T badly". Anything that spends budget on this signal must first normalize against a
+**team-strength baseline** — e.g. T's pool-average win rate under a reference pilot. The artifact
+carries that sentence in its `notes` field so it travels with the numbers, plus the reminder to
+read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where every team reads
+~0.99.
+
+- **The seam is an `env_method` PULL, not an info-dict thread — and that is the async decision.**
+  Each worker's `Gen3Teambuilder` accumulates a windowed per-team, per-opponent-class count
+  (`record_team_wr_outcome`), fed by `MaskableAgentWrapper._maybe_record_team_wr` at the terminal
+  step beside the existing `win_outcome` capture; `TeamWinRateCallback._on_rollout_end` drains
+  every worker (`drain_team_wr_counts`) at a rollout boundary. **This works identically under
+  `SubprocVecEnv` and `--async-rollout`** because `AsyncSubprocVecEnv.env_method` is drain-safe (it
+  stashes in-flight step results before the barrier RPC), whereas an info-dict route would have to
+  know which buffer ROW a terminal landed on — knowledge only the async collector has, which is why
+  the team-PFSP precedent avoided that route for the same reason.
+  `test_aggregation_reads_env_method_and_never_the_info_dicts` pins it by feeding the callback a
+  deliberately contradictory `self.locals["infos"]` and asserting the result ignores it.
+- **The default uniform draw stays RNG-identical.** With `--team-pfsp off` (the default)
+  `_draw_team` is `random.choice(self.packed_teams)`, which returns the team and not its index. The
+  index is recovered by a **reverse dict lookup** (`_pool_index_by_packed`, built at construction),
+  never by re-drawing it — so the byte-identity baseline is untouched
+  (`test_default_uniform_draw_is_rng_identical_with_tracking`). Side effect worth knowing:
+  `--team-block-episodes` caches `_last_pool_idx` for the block, which on the default path used to
+  be `None`, so a blocked default run can now attribute its whole block to the team it held.
+- **Stratified by opponent class** (`MaskableAgentWrapper.OPP_CLASS_*` / `OPP_CLASS_NAMES`), so a
+  rate can always be split back out by who it was measured against. A bias/distill-pinned yield
+  (`_last_pool_idx is None`) is never attributed to a pool team.
+- **NO TensorBoard emission — owner rule** (design_flywheel_tick_tock.md §6b: per-team series
+  would be noisy spam; "let's not spam it if the data won't be nice"). Pinned by
+  `test_NOTHING_is_emitted_to_tensorboard` — a future "just one scalar" regression fails there.
+- **The table rides `metadata.json`** as the top-level `team_win_rates` block (written via
+  `snapshot.record_team_win_rates`, carried forward across checkpoints by `save_model_snapshot`
+  exactly like `latest_eval` — one artifact per run holding per-team AND per-opponent records
+  side by side):
+  `{step, updated_at, n_teams_seen, n_games, opp_classes, notes, teams: {sha: {n, wins, wr,
+  archetype, by_class}}}`. **RAW COUNTS, not a smoothed rate** — headroom capture needs a
+  denominator, which is exactly what team-PFSP's EMA throws away. `archetype` is joined via
+  `load_team_archetypes` on the same `team_sha`. **Restart-safe by load-and-continue**, and keyed
+  by sha rather than pool index so a pool that was reordered or resized between runs still joins
+  (`test_reload_is_keyed_by_sha_so_a_REORDERED_pool_still_joins`). A corrupt file starts fresh.
+- **GIGO guard, throwing.** Counts arrive per pool INDEX and are keyed to a sha by the worker's own
+  key list; if any worker's list disagrees the callback **raises**. Same pool SIZE is not the same
+  pool ORDER, and a diverged order would attribute every per-team number to the wrong team.
+- **Deliberately NOT coupled to `--team-pfsp`, and the overlap is real enough to state.**
+  `--team-pfsp measure` also tracks a per-team win rate and also writes an archetype-joined
+  `team_winrates.json`. Four differences make it unusable as this instrument: it is **off by
+  default**; it measures **self-play POOL battles only** (bots wash out its weighting signal), so a
+  pre-self-play generation records nothing; it keys per pool **INDEX** with the sha only for an
+  audit line; and it stores an **EMA rate**, not counts. The two share the builder's "which team
+  did I just yield" draw index (`_last_pool_idx`) and **nothing else** — separate counter tables,
+  separate accessors, separate artifacts, deliberately differently-named files
+  (`team_win_rates.json` vs `team_winrates.json`). If the owner later wants one tracker,
+  consolidating team-PFSP's `measure` mode onto this table is the direction, not the reverse.
+- **Flag class: training-runtime, like `--team-pfsp`.** Never reaches the extractor, scales no loss,
+  changes no weight shape ⇒ **no `ARCH_SIGNATURE` bump, not in `model_config.json`/`ModelVersion`,
+  not in `check_compatible`, and deliberately not in `agents/model/flag_registry.py`** (that
+  registry's scope is extractor architecture toggles — the `--td-aux-coef` /
+  `--intent-label-bot-weight` precedent, which are recorded on `ModelVersion` only because they
+  scale a loss and want flagless-resume inheritance; this one does neither). Forwarded verbatim by
+  the launcher like any non-launcher flag. `--no-team-wr-tracking` opts out (no callback, no
+  `env_method`, the wrapper hook returns immediately).
+- **Verified end to end** by a `--debug --steps 4000` CPU smoke: **96 teams / 103 games** recorded,
+  archetypes joined (`semi_stall`, `balance`, `hyper_offense`), `by_class` correctly all-`bot` on a
+  fresh run, the `notes` caveat present, and `teams/n_teams_seen` / `teams/n_games` on the TB
+  event file. The four `wr_*` scalars need a team past the 10-game floor, which a 719-team uniform
+  pool does not reach in 4000 steps — a `--trainee-team`-pinned smoke exercises them, and all six
+  keys are pinned numerically by `test_sparse_tb_keys_are_summaries_not_one_series_per_team`.
+- **Tests.** `team_winrate_callback_test.py` (29): the `team_sha` convention agreement with
+  `team_archetypes.team_sha` incl. strip-normalization, the RNG-identity claim, the builder
+  accumulator + drain-zeroing + bias-yield exclusion + PFSP-table independence, the wrapper hook and
+  its off path, the callback's running math across workers AND windows, per-class restriction,
+  `min_games`, the `update_every` throttle, None-worker filtering, the throwing order guard, the TB
+  key set with hand-computed values, the artifact shape + confound note, the archetype join and its
+  missing-artifact fallback, restart reload incl. the reordered-pool case and a corrupt file, and
+  the `env_method`-not-infos seam claim. Plus `utils/teambuilder_test.py` (the off-path RNG identity
+  now also asserts the index resolves while PFSP still ignores it).
 
 ## ELO / skill rating (`elo.py`, `bot_elo_calibration.py`, `main.elo`)
 
