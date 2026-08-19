@@ -1115,3 +1115,35 @@ decisions, 128 changed columns, all four `EFF_*` and nothing else). **The coroll
 witness — and here it had been written from the same wrong belief, so the only disagreeing
 party left was production traffic.** The eff columns have been zero-information for every
 generation since v81; gen-16 (fresh weights) is the first that can learn from them.
+
+### Sentinel sweep, gen-15 (2026-08-19, 843 battles, opus agent; scripts /tmp only)
+
+**The repeated-bait class is real, symmetric, and NOT what loses games.** 13.9% of sentinel
+battles carry a bait repeated ≥2× (one signature — EQ→Salamence — is 68% of loop events); a loop
+step costs median ΔV −4.31 / ΔP(win) −0.096; 32% of bait whiffs re-click a pair already watched
+whiff IN THE SAME BATTLE at median p 0.963 with another legal move available 91% of the time. But
+the mirror commits it at ~the same rate (14.5% vs our 16.7%), the worst-looping battles are 84.6%
+WINS, and bait turns are 0.0% of the top-100 loss craters (base 2.74%) — a tempo leak in games
+already being ground out, not the loss mechanism. **Losses are CRITIC SURPRISE**: on the top-50
+craters the win-prob head read median 0.827 before → 0.224 after; 68% sat above 0.75 on the very
+decision that lost the game.
+
+**β is NOT stateless — the same-day n=1 claim is RETRACTED as a DISPLAY ARTIFACT.** β points at a
+SLOT; the species printed beside it is `top_species_per_slot`'s posterior decode, UNSUPERVISED on
+revealed slots, and it names a mon not on the opponent's team in 73.3% of 6876 pivots (88.3% on
+revealed slots). "porygon2 71%, twice" was in fact slot 2 = Salamence, CORRECT, twice. At scale:
+β slot accuracy 52.0% first-time → 65.9% repeat → 82.1% on loop steps (fixed-candidate-count
+control 40.7%→68.6% vs 25% chance); α calls SWITCH on 76.2% of loop steps. **The gap is
+ACTUATION, not perception** — the pointer head fires the immune move at p≈0.96 with both heads
+right — which independently derives the case for v94 `switch_branch` (OA2: E[our move | SWITCH],
+β-weighted arrivals — BUILT, OFF, gen-16's enablement). Method lesson beside the sweep's rule
+(b): **a rendered LABEL riding a pointer is not the pointer's prediction** — the head was graded
+by content-addressing while the display re-derived the name from an unsupervised source; fix
+tracked (record-time naming from the revealed team + read-time caveat).
+
+Riders with counts: 35.7% of all cure clicks (Refresh/Heal Bell/Aromatherapy/Rest, n=569)
+outright FAIL; 31.0% of Protect clicks fail (consecutive-use); ~10% of ALL our executed moves
+accomplish nothing, ~2/3 of it deterministic-not-luck. `no_progress` tax fires on 28.0% of
+decisions in 99.9% of battles (closer to a constant offset than a signal — reward-audit item).
+Loop rate RISES over training (5.0% @4M → 21.1% @20M) while β improves and sentinel win% stays
+gate-pinned — both heads improving while the behaviour they should inform worsens.
