@@ -118,10 +118,14 @@ revolution: the slice curation (§3) and the fold go/no-go if the preview is amb
   sane sampling ON) and a pre-registered enable note in gen-16's launch diff.
 - **Per-team win-rate tracking vs the pool** — first-class, not scratch scripts: the training
   loop already knows which team each episode pilots (team_sha) and its outcome; track a running
-  per-team win rate, emit sparse TB summaries (top/bottom-k + aggregates) and a periodic
-  full-table artifact (team_sha-keyed, archetype-joined). This is the data source for THREE
-  consumers at once: the deficit thermostat (§9 of the scaling doc), HEADROOM CAPTURE's
-  denominator (§5), and slice curation evidence. ⚠️ The measured confound rides along: raw
+  per-team win rate. **Recording channel (owner refinement, 2026-08-18): NO TensorBoard
+  emission** — per-team series would be noisy spam ("let's not spam it if the data won't be
+  nice") — **the table rides the run's existing `metadata.json`** (the channel that already
+  carries `latest_eval`'s per-opponent win rates and `reward_composition`), team_sha-keyed and
+  archetype-joined, refreshed on the same cadence as the other metadata blocks, restart-safe.
+  One artifact per run holding per-team AND per-opponent records side by side. This is the data
+  source for THREE consumers at once: the deficit thermostat (§9 of the scaling doc), HEADROOM
+  CAPTURE's denominator (§5), and slice curation evidence. ⚠️ The measured confound rides along: raw
   per-team win rate conflates PILOT COMPETENCE with TEAM STRENGTH (the ai_v8 team-PFSP lesson)
   — the thermostat and any prioritization must normalize against a team-strength baseline
   (e.g. the team's pool-average win rate under a reference pilot), never raw wr.
