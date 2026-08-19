@@ -79,6 +79,24 @@ shifts in the event-seat rows** — gen-16 is the first generation training with
 EFF columns live (they were DEAD through gen-15; fixed `f05764e`). **That is a feature of this run,
 not noise**, and must not be read as a substrate effect.
 
+**AMENDMENT (owner, 2026-08-19) — the consequence families get an EXPOSURE-CONDITIONED read.**
+A family gated on a mechanic reads dead by DILUTION when the audited decisions don't carry the
+mechanic: c1's cell only exists when a boost move sits on an E3 seat, c5 needs Baton Pass, x needs
+a Pursuit carrier. For each of c1/c2/c3/c4/c5/x report BOTH:
+- **EXPOSURE** — the fraction (and raw count) of audited decisions where the family's gate is
+  OPEN: a boost move offered (c1) · a status move (c2) · recovery (c3) · Protect (c4) · Baton
+  Pass (c5) · a believed Pursuit carrier opposite (x);
+- **KL / flips / dV CONDITIONED on exposure**, alongside the pooled numbers (continuity with the
+  gen-4/gen-14 tables).
+**A deletion license requires the CONDITIONED read at noise — a diluted zero licenses nothing.**
+Where the exposed n is too small for a stable read, say so and defer that family's verdict to the
+EXPLOITER GATES, whose teams were chosen carrier-first (boom teams, CMPass, TSS) and are the
+designed bench for exactly these mechanics. Context: on gen-14's pooled table the entire c-block
+spans KL 0.00001–0.00233 against d1's 0.062 — the conditioned read decides whether that is
+irrelevance or dilution, and per the standing dependence-vs-coverage rule, families whose facts
+lack a substrate successor (c1's post-setup hypothetical, c3's heal-vs-KO flip, c5's inheritance)
+additionally need a per-fact coverage ruling before any code is deleted.
+
 ## 5. α/β `_pool` readouts + the switch-coverage matrix
 
 Baselines in the ledger's sweep section. Report both; they are the belief-side companions to B4.
