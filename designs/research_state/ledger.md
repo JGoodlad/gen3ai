@@ -1147,3 +1147,28 @@ accomplish nothing, ~2/3 of it deterministic-not-luck. `no_progress` tax fires o
 decisions in 99.9% of battles (closer to a constant offset than a signal — reward-audit item).
 Loop rate RISES over training (5.0% @4M → 21.1% @20M) while β improves and sentinel win% stays
 gate-pinned — both heads improving while the behaviour they should inform worsens.
+
+### α/β injection probe, gen-15 (2026-08-19, causal intervention at ff1daae, exact-tier snapshots)
+
+**H1 ("the policy ignores α/β") REFUTED; H2 ("no route exists") CONFIRMED — by intervention, not
+correlation.** Forward hooks forced the PUBLISHED α/β to 100% certainty (verified at the stash;
+faithfulness max|Δp| 5e-4 = the trace rounding floor). On 8 bait decisions × 3 battles: **0 argmax
+flips in 40 arm-decisions, max KL 6.1e-6; the β arm is bit-exactly zero** (all four consumer cell
+blocks max|Δ| 0.0e+0), and α+β is byte-identical to α alone. Full α-simplex sweep: Δ(switch − EQ)
+≈ 0.0099 nats against an 11-nat gap. **The positive control passes emphatically**: the same α
+sweep on a Claydol-holding-Explosion decision moves P(explosion) by **41.4 points** — the
+machinery is live and strong exactly where a mechanic gate opens. **The smoking gun**: the op's
+own `out_pko` already holds "Earthquake KOs their Salamence with p=0.000", β points at that slot,
+and the ONE channel contracting `out_pko` with β is multiplied by `is_boom` — our move being
+Explosion/Selfdestruct. The number exists, the pointer is right, the product is ×0. **OA2
+(`switch_branch`, v94, OFF) is precisely the missing arrival channel — its gen-16 enablement is
+now priced by intervention** (third independent derivation: design → sweep → injection).
+
+Riders worth keeping: (1) **the α→CRITIC route is substantial while α→policy is ~1e-2 nats** —
+`IntentThresholdValue` |W|₁ 15.4 moves V up to 1.24 across the simplex; the critic already prices
+intent, the policy structurally cannot. (2) `intent_conditional` is the most-learned α consumer
+(|W|₁ 22.7) with 12/13 channels mechanic-gated — the learned capacity is spent on the
+boom/Pursuit/Protect/Counter minority. (3) `IntentThresholdMoveCell` is near-untrained (|W|₁
+0.48) vs its value-side twin (15.4) on IDENTICAL inputs — the policy side found nothing usable in
+threshold probs delivered without an arrival axis. Consumer gates behaved exactly as pre-stated
+from source — the §9a admission-answer discipline paid off as predictability under intervention.
