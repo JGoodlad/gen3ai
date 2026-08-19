@@ -411,6 +411,7 @@ class EventSeats(torch.nn.Module):
 
     _KIND_EMB = 16
     _STATUS_EMB = 8
+    _STATUS_ROWS = 8         # the column-15 table WIDTH (>= N_EVENT_STATUS; asserted below)
     _CANT_EMB = 6
     _FAINT_EMB = 5
     _ITEMTR_EMB = 4
@@ -418,13 +419,23 @@ class EventSeats(torch.nn.Module):
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
-        from agents.observation.constants import N_EVENT_TYPES
+        from agents.observation.constants import N_EVENT_STATUS, N_EVENT_TYPES
         from agents.observation.gen3_effects import CANT_DIM_LIVE
         from agents.observation.constants import N_ITEM_TRANSITIONS
         from agents.battle.turn_view import FAINT_CAUSE_DIM
         self.n = layout['event_window_n']
         self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)
-        self.status_emb = torch.nn.Embedding(8, self._STATUS_EMB)
+        # `_STATUS_ROWS` is a WIDTH (a weight shape, so it is frozen); `N_EVENT_STATUS` is the
+        # live PRODUCER vocabulary. Keeping them apart, with the assert between, is the
+        # clamp-sweep contract: gen-3's status set is closed at six so the two spare rows are a
+        # deliberate no-op safety net, but growing the vocabulary past the table must FAIL here
+        # rather than clamp a new id onto `tox` (the `cant_emb`/`damp` misread, where an
+        # out-of-range id acquires a specific WRONG meaning instead of erroring).
+        assert N_EVENT_STATUS <= self._STATUS_ROWS, (
+            f"the H-B status vocabulary grew to {N_EVENT_STATUS} ids but EventSeats' table has "
+            f"{self._STATUS_ROWS} rows — widen `_STATUS_ROWS` (a retrain-class weight-shape "
+            "change) rather than letting the forward clamp the new id onto the last row.")
+        self.status_emb = torch.nn.Embedding(self._STATUS_ROWS, self._STATUS_EMB)
         # gen3_frame_deletion_v1: the cant reason (col 19), 0 = not a CANT row. Sized from
         # CANT_DIM_**LIVE**, not CANT_DIM — the archive vocabulary is frozen at 12 to keep
         # TURN_DELTA_DIM at 159 for the prober, while the live one grew to 13 with `damp`
@@ -450,7 +461,7 @@ class EventSeats(torch.nn.Module):
         actor = ev[:, :, 1].long().clamp(min=0)
         target = ev[:, :, 3].long().clamp(min=0)
         move = ev[:, :, 4].long().clamp(min=0)
-        status = ev[:, :, 15].long().clamp(min=0, max=7)
+        status = ev[:, :, 15].long().clamp(min=0, max=self.status_emb.num_embeddings - 1)
         cant = ev[:, :, 19].long().clamp(min=0, max=self.cant_emb.num_embeddings - 1)
         faint = ev[:, :, 20].long().clamp(min=0, max=self.faint_emb.num_embeddings - 1)
         itemtr = ev[:, :, 21].long().clamp(min=0, max=self.itemtr_emb.num_embeddings - 1)

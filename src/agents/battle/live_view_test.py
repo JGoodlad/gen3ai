@@ -367,3 +367,49 @@ def test_no_weather_is_empty_not_crash():
     w = _battle([["", "turn", "2"]]).live_view().weather
     assert isinstance(w, LiveWeather)
     assert w.weather is None and w.is_permanent is False
+
+
+def test_the_INCREMENTAL_weather_cache_agrees_with_the_log_fold():
+    """The two weather folds are hand-written MIRRORS, and only ONE of them is live.
+
+    `LiveView.from_battle` prefers `battle.live_weather()` — the O(1) state
+    `Gen3Battle._update_weather` folds on append — and falls back to `_fold_weather` over the
+    event log only for a plain Battle. So every weather test above measures the CACHE, and a
+    drift in either direction would leave the fallback (and any consumer holding a bare event
+    list) silently disagreeing with production, with a docstring in both files asserting they
+    are "identical" and nothing checking it.
+
+    The cases are chosen to hit each branch the two implementations duplicate: a bare set, an
+    ability-caused set, an `[upkeep]` tick that must not reset the start turn, an upkeep with no
+    prior set (the mid-battle-join branch), a clear, and a re-set after a clear.
+    """
+    from agents.battle.live_view import _fold_weather
+
+    b = _battle([
+        ["", "-weather", "Sandstorm", "[from] ability: Sand Stream", "[of] p1a: Tyra"],
+        ["", "turn", "2"],
+        ["", "-weather", "Sandstorm", "[upkeep]"],
+        ["", "turn", "3"],
+        ["", "-weather", "none"],
+        ["", "turn", "4"],
+        ["", "-weather", "RainDance"],
+        ["", "turn", "5"],
+        ["", "-weather", "RainDance", "[upkeep]"],
+    ])
+    cached = b.live_weather()
+    folded = _fold_weather(b.events, b.turn)
+    assert cached == folded, (
+        f"the incremental weather cache ({cached}) disagrees with the log fold ({folded}) — "
+        "production reads the CACHE, so this is a live wrong answer, not a stale fallback.")
+    # the case is non-degenerate: it really exercises permanence, clearing and re-setting
+    assert folded.weather == "raindance" and folded.is_permanent is False
+
+
+def test_the_weather_MIRROR_check_would_catch_a_drift():
+    """Falsifiability control for the test above — a planted divergence must be visible."""
+    from agents.battle.live_view import _fold_weather
+
+    b = _battle([["", "-weather", "Sandstorm", "[from] ability: Sand Stream"],
+                 ["", "turn", "2"]])
+    b._weather_permanent = False            # plant exactly the drift the mirror can suffer
+    assert b.live_weather() != _fold_weather(b.events, b.turn)

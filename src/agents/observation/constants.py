@@ -277,6 +277,17 @@ ITEM_TR_REMOVED = 3    # |-enditem| [from] Knock Off — gone for the rest of th
 ITEM_TR_SWAPPED = 4    # |-enditem| [from] Trick / Thief / Covet — the OPPONENT now holds it
 N_ITEM_TRANSITIONS = 5
 
+# The STATUS vocabulary of column 15, here for the same reason `EVENT_T_*` is: it is the obs
+# contract, written by `episode_tracker.EventWindowTracker` and embedded by
+# `team_transformer.EventSeats`, and a vocabulary that lives only at the producer is one the
+# consumer's table can be sized wrong against. 0 = none; gen-3's status set is CLOSED at six.
+# `EventSeats` asserts its table covers `N_EVENT_STATUS` at construction and clamps from the
+# table's own width, so growing this dict fails LOUD instead of clamping a new id onto `tox`
+# (the `cant_emb`/`damp` failure — an out-of-range id at an embedding table does not error, it
+# acquires a specific WRONG meaning).
+EVENT_STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
+N_EVENT_STATUS = max(EVENT_STATUS_IDS.values()) + 1      # 7 — ids 0..6 inclusive
+
 # Top-level Offsets — all derived from the named constants. ONLY the expressions are
 # load-bearing: never write the evaluated numbers here (two doc audits found stale evaluated
 # values misleading readers who grepped by eye — read `Gen3ObservationEncoder.get_layout()`

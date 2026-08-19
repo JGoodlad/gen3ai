@@ -42,19 +42,23 @@ def test_measure_once_contract(tmp_path, monkeypatch):
         return 60, 100  # wins_a, finished
 
     monkeypatch.setattr(sl, "_play_pair", fake_play)
-    # stub the heavy loaders _measure_missing pulls in
-    import types
-    monkeypatch.setattr(sl, "_measure_missing", sl._measure_missing)  # keep real
-    # patch the imports used inside _measure_missing
-    monkeypatch.setitem(
-        __import__("sys").modules, "agents.observation.state_encoder",
-        types.SimpleNamespace(load_mappings=lambda: {}))
-    monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None, raising=False)
+    # Stub the heavy loaders `_measure_missing` imports INSIDE its body. Patch ATTRIBUTES on the
+    # real modules — never `sys.modules[...]` with a SimpleNamespace, which is what made this test
+    # order-dependent: replacing `agents.observation.state_encoder` wholesale broke the very next
+    # `agents.model.snapshot` import (`from ...state_encoder import Gen3ObservationEncoder`), so
+    # the test passed only when some EARLIER test in the session had already imported snapshot.
+    # A function-local `from X import y` re-reads the attribute at call time, so this is enough.
+    import agents.model.snapshot            # noqa: F401 — import before patching, not after
+    import agents.observation.state_encoder  # noqa: F401
+    import utils.team_loader                 # noqa: F401
+
+    monkeypatch.setattr("agents.observation.state_encoder.load_mappings", lambda: {})
+    monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None)
 
     class _Loader:
         def get_all_teams(self): return ["t"]
         def get_sample_teams(self): return ["t"]
-    monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader, raising=False)
+    monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader)
 
     n = sl._measure_missing(run, [(208, 224), (208, 240)], n_games=100, concurrency=1, impl="node")
     assert (208, 224) not in played      # already measured → skipped

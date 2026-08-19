@@ -160,3 +160,55 @@ def test_set_belief_grad_mode_updates_all_three_places():
     import pytest
     with pytest.raises(ValueError):
         fe.set_belief_grad_mode("bogus")
+
+
+def test_every_head_that_READS_a_grad_flag_is_actually_STAMPED_with_one():
+    """The hand-kept-list half of the belief-grad contract (positional-binding sweep).
+
+    `_stamp_belief_grad_flags` names its heads in a LITERAL tuple, and each head reads its flag as
+    `getattr(self, "detach_read", False)` — an `nn.Module` raises `AttributeError` for an unset
+    name, so the default silently means "gradients flow". Those two facts compose into a silent
+    regression: a belief head added to the extractor but forgotten in the tuple keeps route B (or
+    route C) LIVE under `--belief-grad-mode detached` / `label_only`, with no error, no metric
+    move, and a mode string in `model_config.json` that says otherwise.
+
+    So the pin is DISCOVERY-based rather than another hand list: find every child module whose
+    forward source actually reads a flag, and demand the stamp reached it. A new head is covered
+    the day it reads the flag, which is the day it starts caring.
+    """
+    import inspect
+
+    from agents.model.identity_init_test import _build_real_policy
+
+    model, _enc = _build_real_policy(
+        opp_belief_slots=True, attend_unrevealed_opponents=True, move_belief_mode="both",
+        move_prior_fusion=True, spread_belief=True, damage_op=True, damage_outgoing=True,
+        belief_grad_mode="label_only")
+    fe = model.policy.features_extractor
+
+    readers = {"detach_read": [], "publish_detach": []}
+    for name, child in fe.named_children():
+        try:
+            src = inspect.getsource(type(child))
+        except (OSError, TypeError):        # a compiled / dynamically-built child
+            continue
+        for flag in readers:
+            if f'"{flag}"' in src or f"self.{flag}" in src:
+                readers[flag].append((name, child))
+
+    assert readers["detach_read"], (
+        "no child module reads `detach_read` — the discovery is vacuous, so this test would "
+        "pass no matter what the stamper forgot. Widen the fixture's flags.")
+
+    for flag, found in readers.items():
+        for name, child in found:
+            assert hasattr(child, flag), (
+                f"`{name}` READS `{flag}` in its forward but `_stamp_belief_grad_flags` never SET "
+                f"it, so it falls back to the getattr default False — i.e. this head keeps its "
+                f"gradient route LIVE under every belief_grad_mode, silently. Add it to the "
+                f"stamper's tuple.")
+    # and the stamp carries the MODE, not just some value
+    for name, child in readers["publish_detach"]:
+        assert child.publish_detach is True, (
+            f"`{name}` was stamped, but with the wrong value for label_only — publish_detach "
+            "must be True in that mode or route C stays open.")

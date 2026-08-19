@@ -35,10 +35,11 @@ from agents.gen3_data import moves as gen3_movedex
 from agents.observation.constants import (
     EVENT_T_BOOST, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL, EVENT_T_MOVE,
     EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED, EVENT_T_SWITCH_IN, EVENT_T_SWITCH_REJECTED,
-    EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
+    EVENT_STATUS_IDS, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N,
+    OFFSET_EVENT_WINDOW,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-from agents.training.episode_tracker import EpisodeTracker, _EVENT_STATUS_IDS
+from agents.training.episode_tracker import EpisodeTracker
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
@@ -65,6 +66,23 @@ class _Stats:
     decisions: int = 0
     checked: int = 0
     failures: list = field(default_factory=list)
+
+
+def attributable_damage(e) -> bool:
+    """Does this DAMAGE event count toward the mover's move magnitude?
+
+    Only clause-free damage does: a `[from]` clause means sandstorm / burn / Leech Seed /
+    Recoil, not the move's hit. **Read it through `from_clause`, NEVER `value["from"]`** — the
+    parser writes the clause to `value["reason"]` on DAMAGE/HEAL/SETHP/STATUS and to
+    `value["from"]` on the effect kinds, so the raw key is unconditionally None here.
+
+    Module-level and named precisely so this file's ORACLE can be unit-tested against the trap
+    rather than only against a live battle. It read `value.get("from")` until the
+    positional-binding sweep: an always-falsy guard, which made the independent oracle repeat
+    the very consumer-side key drift (`from` vs `reason`) the tracker had already been fixed
+    for — a fuzz that mirrors its subject's mistake cannot catch that mistake coming back.
+    """
+    return e.from_clause is None
 
 
 def _oracle_rows(battle, resync_log):
@@ -117,7 +135,7 @@ def _oracle_rows(battle, resync_log):
         elif k is EventKind.DAMAGE and side:
             mover = OPP if side == OURS else OURS
             om = open_move.get(mover)
-            if (om is not None and om["turn"] == et and not e.value.get("from")
+            if (om is not None and om["turn"] == et and attributable_damage(e)
                     and sp and om["target"] == sp and e.amount is not None):
                 om["mag"] += float(e.amount)
         elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side:
@@ -159,7 +177,7 @@ def _oracle_rows(battle, resync_log):
                                 else EVENT_T_STATUS_CURED),
                              actor=sp, side=side, target=None, move=None, mag=0.0,
                              hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0, wf=False,
-                             status=_EVENT_STATUS_IDS.get(e.status or "", 0),
+                             status=EVENT_STATUS_IDS.get(str(e.status or "").lower(), 0),
                              turn=et, fw=flags()))
         elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp and emit(seq):
             amt = float(e.amount or 0.0)

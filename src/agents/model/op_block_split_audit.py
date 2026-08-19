@@ -20,6 +20,18 @@ and its 24.2%/9.6M zero-arm zeroes BOTH together. Three questions that split ans
 
 Cell layout (from `decode_damage_block`): cell(i=our mon, k=move) at
 `cells_base + (i*K + k)*_DMG_IMX_CELL`, channels [low, high, crit, pko, type_mult, status_lands].
+
+⚠️ **`--site assembler` now REFUSES on any post-v96 architecture, and the reason is the same one
+that killed `edge_ablation_audit`'s `concat` arm.** It bound the assembler's LAST POSITIONAL
+argument and compared it by identity against the op's `incoming_rows` view. The assembler has
+taken no op tensor since v61 (`gen3_no_concat_v1` deleted the head concat) / v96 (the
+critic-route wave deleted the seed readout that replaced it), so that identity was
+unconditionally False, the pre-hook returned its arguments untouched, and every arm reported
+**0.0000 on every axis** — a table of zeros that reads as "the block was worthless", not as
+"the block is gone". The subject is now resolved BY NAME (`assembler_site_subject` /
+`check_assembler_site`, `_ASSEMBLER_BLOCK_ARG_NAMES`), its absence raises before any state is
+collected, and a hook that never fires raises too. Use `--site op`. Gate:
+`op_block_split_audit_test.py`.
 """
 import argparse
 import json
@@ -43,6 +55,46 @@ def collect(patterns: Sequence[str], max_states: int, seed: int = 0,
     from agents.model.audit_states import collect_states
 
     return collect_states(patterns, max_states, seed=seed)
+
+
+#: The op-block arguments `--site assembler` has ever patched, newest name first. Resolved BY
+#: NAME against `ProjectionAssembler.forward`'s live signature — never by position. The arm used
+#: to bind the assembler's LAST POSITIONAL argument, which is the exact mechanism that let
+#: `edge_ablation_audit`'s `concat` arm measure the multi-seed readout for three generations
+#: under the name of a block deleted at v61.
+_ASSEMBLER_BLOCK_ARG_NAMES = ("seed_rows", "damage_block", "incoming_rows")
+
+
+def assembler_site_subject(assembler: Any) -> "str | None":
+    """Which op-block argument `--site assembler` can patch on THIS architecture, or None.
+
+    `None` means the site has no subject: gen3_no_concat_v1 (v61) took the flat head concat and
+    the critic-route deletion wave (v96) took the seed readout that replaced it, so
+    `ProjectionAssembler.forward` no longer receives any op tensor at all. The caller must
+    REFUSE — an arm with no subject that keeps running reports 0.0 on every row, and a table of
+    zeros reads as "the block was worthless", not as "the block is gone".
+    """
+    import inspect
+
+    params = set(inspect.signature(assembler.forward).parameters)
+    for name in _ASSEMBLER_BLOCK_ARG_NAMES:
+        if name in params:
+            return name
+    return None
+
+
+def check_assembler_site(assembler: Any) -> str:
+    """Resolve the `--site assembler` subject or RAISE, naming the replacement site."""
+    name = assembler_site_subject(assembler)
+    if name is None:
+        raise RuntimeError(
+            "`--site assembler` has no subject on this architecture: ProjectionAssembler.forward "
+            f"takes none of {_ASSEMBLER_BLOCK_ARG_NAMES} — the op head-concat died at v61 "
+            "(gen3_no_concat_v1) and the seed readout that replaced it died at v96 (the "
+            "critic-route deletion wave). Use `--site op`, which patches the DamageOperator's "
+            "returned block and covers every block-mediated route; or audit a pre-v96 checkpoint "
+            "from the commit its metadata.json git_hash names.")
+    return name
 
 
 def arms(op: Any) -> Dict[str, torch.Tensor]:
@@ -102,10 +154,10 @@ def main() -> None:
     ap.add_argument("checkpoint")
     ap.add_argument("--states", nargs="+", required=True)
     ap.add_argument("--site", choices=("assembler", "op"), default="assembler",
-                    help="WHERE to intervene. 'assembler' (legacy default): the assembler's "
-                         "damage_block argument — under gen3_no_concat_v1 (v61+) this reaches "
-                         "ONLY the critic's seed-readout rows, so use it to isolate the vf "
-                         "route. 'op': the DamageOperator's returned block, before any consumer "
+                    help="WHERE to intervene. 'assembler' (LEGACY, and it has no subject on any "
+                         "post-v96 architecture — it REFUSES rather than reporting zeros): the "
+                         "assembler's op-block argument, resolved by NAME. 'op': the "
+                         "DamageOperator's returned block, before any consumer "
                          "binds it — covers pointer cells (pi) + seed rows (vf) + the stash; "
                          "the honest post-concat site for design_pair_reduction.md §8.1 step 0.")
     ap.add_argument("--max-states", type=int, default=6000)
@@ -130,6 +182,8 @@ def main() -> None:
     fe = policy.features_extractor
     op = fe.damage_op
     assert op is not None, "checkpoint has no damage op"
+    if a.site == "assembler":       # refuse BEFORE the state collection, not after it
+        check_assembler_site(fe.assembler)
     obs_np, masks_np, coverage = collect(a.states, a.max_states)
     N = len(obs_np)
     dev = next(policy.parameters()).device
@@ -166,6 +220,8 @@ def main() -> None:
 
         hook = None
         if cols is not None and a.site == "assembler":
+            block_arg = check_assembler_site(fe.assembler)
+            fired = {"v": False}
             # LEGACY SITE (pre-v61 semantics): patch what the assembler consumes of the block.
             # Under gen3_no_concat_v1 that is only the per-mon rows (the seed readout), so this
             # site measures the CRITIC route alone and reads structural zeros for every arm
@@ -173,16 +229,20 @@ def main() -> None:
             # gen3_op_tensors_views_v1: the assembler now receives the TYPED rows view, so the
             # perturbation runs in FLAT col coordinates on a clone of the block and the rows
             # view of THAT clone is substituted — same semantics, same col-space.
-            def _pre(_module: Any, args: Tuple[Any, ...]) -> Tuple[Any, ...]:
-                _rows: Any = (fe.damage_op.last_tensors.incoming_rows
-                              if fe.damage_op.last_tensors is not None else None)
-                if args and args[-1] is not None and args[-1] is _rows:
-                    flat = _perturb(fe.last_damage_block.clone())
-                    rows = flat[:, :TEAM_SIZE * op.per_mon].reshape(
-                        flat.shape[0], TEAM_SIZE, op.per_mon)
-                    return args[:-1] + (rows,)
-                return args
-            hook = fe.assembler.register_forward_pre_hook(_pre)
+            def _pre(_module: Any, args: Tuple[Any, ...],
+                     kwargs: Dict[str, Any]) -> Tuple[Tuple[Any, ...], Dict[str, Any]]:
+                # Bound BY NAME (`block_arg`), so the arm can only ever patch the argument it
+                # was built for. A positional bind here re-points at whatever occupies the slot.
+                if kwargs.get(block_arg) is None:
+                    return args, kwargs
+                flat = _perturb(fe.last_damage_block.clone())
+                rows = flat[:, :TEAM_SIZE * op.per_mon].reshape(
+                    flat.shape[0], TEAM_SIZE, op.per_mon)
+                fired["v"] = True
+                kwargs = dict(kwargs)
+                kwargs[block_arg] = rows
+                return args, kwargs
+            hook = fe.assembler.register_forward_pre_hook(_pre, with_kwargs=True)
         elif cols is not None:
             # --site op: patch the op's RETURN VALUE, before ANY consumer binds it — the local
             # `damage_block` the extractor stashes (last_damage_block), slices for the pointer
@@ -215,6 +275,10 @@ def main() -> None:
         finally:
             if hook is not None:
                 hook.remove()
+        if cols is not None and a.site == "assembler" and not fired["v"]:
+            raise RuntimeError(
+                "the assembler arm's hook never matched its named argument — the arm measured "
+                "NOTHING while producing a plausible all-zero report. Use `--site op`.")
         if cols is None:
             return (torch.cat(ps), torch.cat(vs), torch.cat(raws),
                     torch.cat(acts), torch.cat(hps))

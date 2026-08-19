@@ -262,6 +262,64 @@ def test_from_clause_reads_both_storage_keys():
     assert _ev(3, 1, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30).from_clause is None
 
 
+def test_the_fuzz_ORACLE_reads_the_from_clause_too():
+    """The mirrored-oracle half of the same defect (positional-binding sweep).
+
+    `test_residual_damage_is_not_folded_into_the_move_magnitude` pins the TRACKER. The
+    independent fold in `event_window_fuzz_test` — the thing that is supposed to catch the
+    tracker regressing — kept the ORIGINAL `e.value.get("from")` spelling, which is
+    unconditionally falsy on DAMAGE. An oracle that repeats its subject's key drift cannot
+    detect that drift coming back, and 30 battles of green fuzz would say nothing about it."""
+    from agents.training.poke_env_gaps.event_window_fuzz_test import attributable_damage
+
+    hit = _ev(1, 2, EventKind.DAMAGE, OURS, "snorlax", amount=-0.30)
+    sand = _ev(2, 2, EventKind.DAMAGE, OURS, "snorlax", amount=-0.0625, reason="Sandstorm")
+    assert attributable_damage(hit) is True
+    assert attributable_damage(sand) is False, (
+        "the oracle counted sandstorm chip as part of the move's hit — it is reading "
+        "`value['from']`, which DAMAGE never carries, instead of `from_clause`.")
+
+
+def test_an_unknown_status_name_CRASHES_rather_than_reading_as_none():
+    """Crash-don't-drop at the H-B status vocabulary (the `normalize_cant_reason` contract).
+
+    `_EVENT_STATUS_IDS.get(name, 0)` coded any unrecognised status as 0 — the id that MEANS
+    "no status". A parser or vocabulary drift would therefore tell the model the opponent was
+    clean on a turn it was badly poisoned, with no metric anywhere to show it."""
+    from agents.training.episode_tracker import _event_status_id
+
+    assert _event_status_id(None) == 0 and _event_status_id("") == 0
+    assert _event_status_id("tox") == 6 and _event_status_id("TOX") == 6
+    with pytest.raises(ValueError, match="unknown status"):
+        _event_status_id("frostbite")
+    # …but a `[...]` protocol modifier in the status slot is ABSENCE, not a bad name. The parser
+    # reads the status positionally, and a real `|-curestatus|` from Heal Bell / Aromatherapy
+    # lands `'[from] move: Aromatherapy'` there — caught by the routine gate on live battles when
+    # this guard first shipped without the distinction.
+    assert _event_status_id("[from] move: Aromatherapy") == 0
+    assert _event_status_id("[silent]") == 0
+
+
+def test_the_status_seat_table_covers_the_producer_vocabulary():
+    """The clamp-sweep contract at the sixth site the model-wide sweep did not reach.
+
+    `EventSeats.status_emb` was `Embedding(8)` with a literal `clamp(max=7)` — a WIDTH and a
+    CLAMP both spelled as bare numbers, with the producer's vocabulary living in a different
+    package. Gen-3's status set is closed, so the spare rows are a genuine no-op safety net;
+    what was missing is the relationship that makes a grown vocabulary FAIL instead of clamping
+    a new id onto `tox`."""
+    from agents.model.team_transformer import EventSeats
+    from agents.observation.constants import EVENT_STATUS_IDS, N_EVENT_STATUS
+
+    assert N_EVENT_STATUS == max(EVENT_STATUS_IDS.values()) + 1
+    assert N_EVENT_STATUS <= EventSeats._STATUS_ROWS
+    seats = EventSeats({"event_window_n": 4, "species_embedding_dim": 8,
+                        "move_embedding_dim": 8})
+    assert seats.status_emb.num_embeddings == EventSeats._STATUS_ROWS
+    # every live id addresses its OWN row — none of them is the clamp target
+    assert max(EVENT_STATUS_IDS.values()) < seats.status_emb.num_embeddings - 1
+
+
 # ---------------------------------------------------------------------------
 # gen3_damp_cant_v1 — the ability-sourced cant (register §3.7)
 # ---------------------------------------------------------------------------

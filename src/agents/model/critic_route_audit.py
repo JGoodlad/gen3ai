@@ -241,15 +241,16 @@ class _Arms:
 
         fe = self.fe
         marker = {"fired": False}
+        i = _arg_index(fe.assembler.forward, "ctx")
 
         def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
-            ctx = args[4]
+            ctx = args[i]
             nmr_t = getattr(ctx, "non_matchup_rest", None)
             if nmr_t is None:
                 return args
             marker["fired"] = True
             new_ctx = dataclasses.replace(ctx, non_matchup_rest=torch.zeros_like(nmr_t))
-            return args[:4] + (new_ctx,) + args[5:]
+            return args[:i] + (new_ctx,) + args[i + 1:]
         return [fe.assembler.register_forward_pre_hook(_pre)], marker
 
     def entity_pool(self) -> tuple[list[Any], dict[str, bool]]:
@@ -274,13 +275,36 @@ class _Arms:
         the shape of a reading nobody can interpret."""
         fe = self.fe
         marker = {"fired": False}
+        i = _arg_index(fe.assembler.forward, "hidden_opp_belief")
 
         def _pre(_m: Any, args: tuple[Any, ...]) -> tuple[Any, ...]:
-            if len(args) < 6 or args[5] is None:
+            if len(args) <= i or args[i] is None:
                 return args
             marker["fired"] = True
-            return args[:5] + (torch.zeros_like(args[5]),) + args[6:]
+            return args[:i] + (torch.zeros_like(args[i]),) + args[i + 1:]
         return [fe.assembler.register_forward_pre_hook(_pre)], marker
+
+
+def _arg_index(fn: Any, param: str) -> int:
+    """The POSITION of `param` in `fn`'s signature, resolved at hook-registration time.
+
+    A `register_forward_pre_hook` without `with_kwargs` only ever sees positional args, so an
+    arm that patches one has to know an index — but it must not HARDCODE one. The `_assert_fired`
+    staleness guard catches an argument that DISAPPEARS (the hook stops matching); it cannot
+    catch an argument INSERTED before the subject, which silently re-points the arm at the new
+    occupant while every marker still fires. That is the `concat` failure exactly, one level in.
+    Resolving the index from the live signature by NAME makes both directions loud: a rename
+    raises here, an insertion moves the index with the subject.
+    """
+    import inspect
+
+    params = list(inspect.signature(fn).parameters)
+    if param not in params:
+        raise RuntimeError(
+            f"the audit's arm binds `{param}`, which is not an argument of {fn.__qualname__} "
+            f"(it takes {params}) — the route identity drifted and the arm would measure the "
+            "wrong thing rather than nothing.")
+    return params.index(param)
 
 
 def _assert_fired(name: str, markers: Sequence[Any]) -> None:

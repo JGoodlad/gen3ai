@@ -50,8 +50,26 @@ from utils.teambuilder import Gen3Teambuilder
 BATTLE_FORMAT = "gen3ou"
 _TOL = 1e-4
 _TURN_CAP = 120
-_WISH_OUR = OFFSET_REACTIVE + 17
-_WISH_OPP = OFFSET_REACTIVE + 18
+def wish_obs_offsets() -> "tuple[int, int]":
+    """The two `wish_floating` obs columns, from the reactive block's DECLARED layout.
+
+    They were hardcoded `OFFSET_REACTIVE + 17 / + 18` — and `REACTIVE_DIM` is **17**, so both
+    literals pointed PAST the reactive block entirely, at `OFFSET_PAIR_HISTORY + 0 / + 1`. The
+    oracle was therefore comparing its Wish expectation against the pair-history block, which is
+    zero on most turns, so the fuzz's completeness half could only ever read "the encoder never
+    floats a Wish". The live columns are `+3 / +4`, and reading them by NAME is what stops the
+    next re-home doing this again — the reactive block has already lost `protect_odds` and
+    `trapped` to the per-mon slots once (`gen3_entity_rehome_v1`), which is exactly when these
+    literals went stale.
+    """
+    from agents.observation.reactive import ReactiveEncoder
+
+    lay = ReactiveEncoder().get_layout()
+    return (OFFSET_REACTIVE + lay["wish_floating_our"]["offset"],
+            OFFSET_REACTIVE + lay["wish_floating_opp"]["offset"])
+
+
+_WISH_OUR, _WISH_OPP = wish_obs_offsets()
 
 # Curated team (both sides): 3 Wish users + 2 Roar phazers + Spikes → wish-passing, phaze-drag, and
 # hazard-death edge cases all occur under random play.

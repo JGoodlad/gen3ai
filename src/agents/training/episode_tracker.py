@@ -319,7 +319,33 @@ from agents.observation.constants import (          # noqa: E402
 
 # Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's
 # vocabulary; kept as an ID here (the consumer embeds) rather than a one-hot (obs stays lean).
-_EVENT_STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
+def _event_status_id(status: "str | None") -> int:
+    """The H-B column-15 id for a status name — CRASH, don't drop (the `normalize_cant_reason`
+    contract). An absent status is legitimately 0; an unrecognised NAME is a parser or
+    vocabulary drift, and silently coding it as 0 would tell the model "no status" on a turn
+    the opponent was, say, badly poisoned — an unfalsifiable GIGO with no metric to show it.
+    Gen-3's status set is closed, so an unrecognised WORD is always a defect somewhere upstream.
+
+    **A `[...]` token is ABSENCE, not a bad name, and the distinction is the whole subtlety.**
+    `_build_event` reads the status positionally (`sm[3]`), and some real Showdown lines put a
+    protocol modifier there instead — measured live: `|-curestatus|` from Heal Bell /
+    Aromatherapy yields `'[from] move: Aromatherapy'`. That line genuinely carries no status
+    name, so 0 is the correct id (and is what shipped); what must never pass silently is a
+    plain word the vocabulary does not know.
+    """
+    from agents.observation.constants import EVENT_STATUS_IDS
+
+    if not status:
+        return 0
+    key = str(status).strip().lower()
+    if key.startswith("["):        # a protocol modifier in the status slot ⇒ no status on the line
+        return 0
+    if key not in EVENT_STATUS_IDS:
+        raise ValueError(
+            f"unknown status {status!r} for the H-B event window — the vocabulary is "
+            f"{sorted(EVENT_STATUS_IDS)} (agents.observation.constants.EVENT_STATUS_IDS). "
+            "Add it there (and widen EventSeats' table) rather than letting it read as 'none'.")
+    return EVENT_STATUS_IDS[key]
 
 
 # gen3_event_semantics_v1 — the two classifiers the H-B rows need.
@@ -503,7 +529,7 @@ class EventWindowTracker:
                     "actor": sp, "side": side, "target": None, "move_id": None,
                     "hp_delta": 0.0, "missed": False, "failed": False, "crit": False,
                     "eff": 0, "we_first": False,
-                    "status": _EVENT_STATUS_IDS.get(e.status or "", 0), "turn": et,
+                    "status": _event_status_id(e.status), "turn": et,
                 })
             elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp:
                 amt = float(e.amount or 0.0)

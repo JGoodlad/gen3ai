@@ -57,6 +57,14 @@ def _assembler_arm(fe: Any, mode: str, hdr: "tuple[int, int] | None" = None) -> 
     if mode == "none":
         yield
         return
+    # The arms below patch an assembler argument named `seed_rows`. It does not exist on any
+    # post-v96 assembler (gen3_no_concat_v1 killed the head concat at v61; the critic-route
+    # deletion wave killed the seed readout that replaced it), and the wrapper's `orig(...,
+    # seed_rows=...)` call would surface as an unrelated-looking TypeError deep inside a
+    # forward. Say so instead — and resolve the name rather than a position, which is what let
+    # `edge_ablation_audit`'s `concat` arm silently re-point for three generations.
+    from agents.model.op_block_split_audit import check_assembler_site
+    check_assembler_site(fe.assembler)
     orig = fe.assembler.forward
 
     def patched(our_p: Any, their_p: Any, our_act: Any, val_p: Any, ctx: Any,

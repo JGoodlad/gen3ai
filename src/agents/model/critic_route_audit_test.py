@@ -103,6 +103,32 @@ def test_event_seats_arm_fires_on_a_history_events_build():
     assert rep["event_seats"]["kl_mean"] > 0.0 or rep["event_seats"]["dv_mean"] > 0.0
 
 
+def test_the_assembler_arms_bind_their_argument_by_NAME_not_by_position():
+    """The positional-binding sweep's fix for `nmr` / `hidden_opp`.
+
+    Both patch a POSITIONAL pre-hook argument, so both need an index — but `_assert_fired` only
+    catches an argument that DISAPPEARS. An argument INSERTED before the subject shifts the
+    occupant while every marker still fires, which is the `concat` failure exactly: the arm
+    keeps printing numbers, for the wrong tensor, under the old name. Resolving the index from
+    the live signature makes an insertion move the index WITH the subject and a rename raise.
+    """
+    from agents.model.critic_route_audit import _arg_index
+    from agents.model.features_extractor import ProjectionAssembler
+
+    asm = ProjectionAssembler({})
+    assert _arg_index(asm.forward, "ctx") == 4
+    assert _arg_index(asm.forward, "hidden_opp_belief") == 5
+
+    # an argument inserted ahead of the subject moves the index rather than the meaning
+    def _widened(our, their, active, value, brand_new, ctx, hidden_opp_belief=None):
+        return None
+    assert _arg_index(_widened, "ctx") == 5
+    assert _arg_index(_widened, "hidden_opp_belief") == 6
+
+    with pytest.raises(RuntimeError, match="seed_rows.*not an argument"):
+        _arg_index(asm.forward, "seed_rows")
+
+
 def test_a_dead_hook_fails_loud():
     """The staleness guard: a marker that never fired must RAISE with the arm named, never
     return a plausible zero report."""

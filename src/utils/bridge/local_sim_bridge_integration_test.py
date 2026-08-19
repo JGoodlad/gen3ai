@@ -55,7 +55,13 @@ def test_local_battles_complete():
 
     assert p1.n_finished_battles == 3
     assert p2.n_finished_battles == 3
-    assert p1.n_won_battles + p2.n_won_battles == 3  # every battle had a winner
+    # A DRAW is a legal gen3 outcome (`|tie|` — mutual Explosion/Destiny Bond, the turn cap), so
+    # `won + won == 3` flakes on a draw and would say "the bridge lost a battle". What the bridge
+    # actually owes is that every battle RESOLVED and no result was invented: the wins partition a
+    # subset of the finished battles, and the balance are ties.
+    wins = p1.n_won_battles + p2.n_won_battles
+    ties = sum(1 for b in p1._battles.values() if b.finished and not b.won and not b.lost)
+    assert wins + ties == 3, f"3 battles, {wins} won + {ties} tied — a battle resolved to nothing"
     for battle in p1._battles.values():
         assert battle.finished
         assert battle.player_role == "p1"   # role resolved from |player| vs username

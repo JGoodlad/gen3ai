@@ -74,3 +74,29 @@ def test_request_slots_fallback_to_available_moves_without_legal():
     battle = SimpleNamespace(active_pokemon=SimpleNamespace(moves={}), available_moves=am)
 
     assert _request_slot_moves(battle, legal=None) == am
+
+
+def test_the_wish_fuzz_reads_the_DECLARED_wish_columns():
+    """The Wish oracle's obs offsets must land on the reactive block's declared columns.
+
+    `wish_floating_fuzz_test` hardcoded `OFFSET_REACTIVE + 17 / + 18`. `REACTIVE_DIM` is 17, so
+    both literals sat one and two positions PAST the block — in `OFFSET_PAIR_HISTORY` — and the
+    fuzz's completeness half was reading a different block's zeros as "the encoder floated no
+    Wish". It went stale silently when `gen3_entity_rehome_v1` shrank the reactive block, which
+    is why the pin is on the RELATIONSHIP (offsets ↔ layout ↔ block bound) and not on a number.
+    """
+    from agents.observation.constants import OFFSET_PAIR_HISTORY, OFFSET_REACTIVE, REACTIVE_DIM
+    from agents.observation.reactive import ReactiveEncoder
+    from agents.training.poke_env_gaps.wish_floating_fuzz_test import wish_obs_offsets
+
+    lay = ReactiveEncoder().get_layout()
+    our, opp = wish_obs_offsets()
+    assert our == OFFSET_REACTIVE + lay["wish_floating_our"]["offset"]
+    assert opp == OFFSET_REACTIVE + lay["wish_floating_opp"]["offset"]
+    # …and inside the block at all — the assertion the literals failed
+    assert OFFSET_REACTIVE <= our < OFFSET_REACTIVE + REACTIVE_DIM, (
+        f"wish_our offset {our} is outside the reactive block "
+        f"[{OFFSET_REACTIVE}, {OFFSET_REACTIVE + REACTIVE_DIM}) — it reads "
+        f"{'pair_history' if our >= OFFSET_PAIR_HISTORY else 'some earlier block'}")
+    assert OFFSET_REACTIVE <= opp < OFFSET_REACTIVE + REACTIVE_DIM
+    assert our != opp

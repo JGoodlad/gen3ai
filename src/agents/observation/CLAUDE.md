@@ -194,6 +194,40 @@ does, something bypassed the chart). The matchup block (`reactive.encode`) and t
 - **Wrapping live mons in proxy objects** with `__getattr__` (the deleted
   `_AbilityOverrideMon`): `__getattr__` is slow and gets hit once per attribute per cell.
 
+## ⚠️ A fuzz ORACLE binds to the layout too — by NAME, never by literal
+
+The positional-binding sweep (2026-08-18) found two live misbinds on this directory's *readers*,
+both silent, both in code whose job was to catch exactly this class:
+
+- **`wish_floating_fuzz_test` read `OFFSET_REACTIVE + 17 / + 18`, and `REACTIVE_DIM` is 17** — so
+  both literals pointed PAST the reactive block, at `OFFSET_PAIR_HISTORY + 0 / + 1`. The oracle
+  compared its Wish expectation against a different block's (usually zero) content, so the
+  completeness half could only ever read *"the encoder never floats a Wish."* They went stale the
+  day `gen3_entity_rehome_v1` shrank the block. Fixed by resolving them from
+  `ReactiveEncoder().get_layout()`; pinned by
+  `reactive_test::test_the_wish_fuzz_reads_the_DECLARED_wish_columns`, which asserts the
+  relationship (offset ↔ declared column ↔ inside the block bound), not a number.
+- **`event_window_fuzz_test`'s independent fold guarded residual damage with
+  `e.value.get("from")` on a DAMAGE event** — the key DAMAGE never carries (the parser writes the
+  `[from]` clause to `value["reason"]` there and to `value["from"]` on the effect kinds). That is
+  the *same* key drift the tracker was already fixed for, so the oracle could not have caught the
+  bug coming back. Fixed to `e.from_clause`, behind the named `attributable_damage` predicate so
+  the oracle is unit-testable against the trap
+  (`event_window_test::test_the_fuzz_ORACLE_reads_the_from_clause_too`).
+
+Same lesson, twice: **an oracle that mirrors its subject's key choice is not an independent
+check.** Derive the oracle's addresses from the DECLARED layout (`get_layout()`,
+`build_schema(layout).slices()`) or from the raw protocol — never from a literal, and never from
+the consumer's own accessor.
+
+The H-B event window's column-15 **status vocabulary** now lives here too, as
+`constants.EVENT_STATUS_IDS` / `N_EVENT_STATUS`, for the reason `EVENT_T_*` does: it is the obs
+contract, written by `episode_tracker` and embedded by `team_transformer.EventSeats`. The
+producer CRASHES on an unrecognised status rather than coding it 0 = "none"
+(`_event_status_id`, the `normalize_cant_reason` contract), and `EventSeats` asserts its table
+covers the vocabulary and clamps from the table's own width — so growing the dict fails loud
+instead of clamping a new id onto `tox`.
+
 ## Value-correctness (separate from perf, but also gated)
 
 Changes to *what the vector contains* are validated by the bridge-backed fuzz tests

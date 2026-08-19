@@ -1047,3 +1047,47 @@ v89/M2 orphaned-branch class is now unrepresentable — no second vf path exists
 the honest evidence-tiering note that the three unconditional 0.0000s were partly structural
 under `value_from_dist` (bypassed-by-flag as well as measured-dead; the verdicts were
 no-appeal either way, and the wave removes the bypass rather than relying on it).
+
+### Method (2026-08-18, the positional-binding sweep): the census, and its FIVE live sites
+
+Class audit in the clamp sweep's format — enumerate every site where an instrument, consumer or
+oracle binds to its subject by POSITION / SLOT / INDEX / KEY-CONVENTION rather than by
+name-with-a-guard, verdict each, fix the live ones, pin the safe ones. **~60 sites across 7
+classes; exactly FIVE live.** The denominator is the point: four of the seven classes came back
+clean or pinned, so the genre is narrower than the five known instances suggested — but every one
+of the five was SILENT, and three of them lived in code whose entire job was to catch this class.
+
+The five, by mechanism:
+
+1. `op_block_split_audit --site assembler` — bound the assembler's LAST POSITIONAL argument and
+   compared it by identity to the op's rows view. No op tensor has reached the assembler since v61
+   / v96, so the identity was unconditionally False, the pre-hook returned untouched, and every arm
+   printed **0.0000** — the `concat` failure verbatim, one file over, still live after the wave
+   deleted its twin.
+2. `concat_readout_probe._assembler_arm` — patched a `seed_rows` kwarg that no longer exists;
+   surfaced as an unrelated-looking `TypeError` deep inside a forward.
+3. `wish_floating_fuzz_test` — `OFFSET_REACTIVE + 17/+18` against `REACTIVE_DIM == 17`, i.e. both
+   columns landed in `OFFSET_PAIR_HISTORY`. The oracle's completeness half could only ever read
+   "the encoder never floats a Wish". Stale since `gen3_entity_rehome_v1`.
+4. `event_window_fuzz_test` — the independent fold guarded residual damage with
+   `e.value.get("from")` on DAMAGE, the key DAMAGE never carries. **The oracle repeated the exact
+   key drift its subject had been fixed for**, so it could not have caught the regression.
+5. `episode_tracker._EVENT_STATUS_IDS.get(name, 0)` — an unrecognised status silently became id 0,
+   which MEANS "no status". Now crashes (`normalize_cant_reason`'s contract).
+
+Two durable rules fell out. **(a) A fail-loud staleness guard covers DELETION, not INSERTION.**
+`critic_route_audit`'s `_assert_fired` catches a hook whose argument disappears; it cannot catch an
+argument inserted BEFORE the subject, which shifts the occupant while every marker still fires —
+the `concat` shape exactly, at one remove. `nmr`/`hidden_opp` now resolve their index from the live
+signature by NAME. **(b) An oracle that mirrors its subject's key choice is not an independent
+check** (sites 3 and 4, and site 4 is the sharper form: the production code was already correct).
+Also swept and clean-or-pinned: obs-slice literals outside `constants.py` (one live, above; the
+rest are sub-block columns still gated by named block offsets, plus six deliberate dim tripwires),
+kind-dependent event-value keys (`EVENT_VALUE_KEYS` declares the REQUIRED set per kind — optional
+keys have no schema, recorded as a known gap), and `getattr`-with-default (the reward-config
+fallbacks are pinned by `reward_defaults_test`). Pins added where correct-but-unguarded: the
+belief-grad stamper's hand-kept head list is now covered by a DISCOVERY test (find every child
+whose forward reads `detach_read`/`publish_detach`, demand it was stamped — a forgotten head kept
+its gradient route live under `detached`/`label_only`, silently), and the two hand-mirrored weather
+folds (`Gen3Battle._update_weather` is the LIVE one; `live_view._fold_weather` is the fallback
+every weather test exercised) now have an equality test plus a planted-drift control.
