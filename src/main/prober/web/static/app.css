@@ -375,6 +375,33 @@ p.critic { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 2px;
 p.critic span[title] { cursor: help; }
 p.critic .cmd { margin-left: auto; }
 
+/* A tappable metric, and the panel a tap opens ------------------------------------------------
+ *
+ * The dotted underline is the DISCOVERABILITY half: a `title` gives a desktop reader a cursor cue
+ * and a touch reader nothing at all, so without a visible affordance nobody learns these numbers
+ * explain themselves. `cursor: help` already existed for hover; this adds the mark that survives
+ * on a phone.
+ */
+p.critic .metric, p.pwin .metric { text-decoration: underline dotted var(--line);
+                                   text-underline-offset: 3px; }
+p.critic .metric:hover, p.pwin .metric:hover { text-decoration-color: var(--accent); }
+/* The explanation lands directly under the row it belongs to, indented so it reads as a note on
+   that row rather than as another line of data. */
+p.metric-help { margin: 2px 0 6px; padding: 6px 10px; font-size: 12.5px; line-height: 1.45;
+                color: var(--text); background: var(--surface-2); border-radius: 6px;
+                border-left: 2px solid var(--accent); }
+p.metric-help strong { font-family: var(--mono); color: var(--accent); }
+/* The no-JS route to the same explanations: a plain anchor to the page legend. Small, dim, and
+   always present, so the answer is reachable from the row even with scripting off. */
+a.whatsthis { color: var(--dim); text-decoration: none; border: 1px solid var(--line);
+              border-radius: 50%; width: 15px; height: 15px; line-height: 13px;
+              display: inline-block; text-align: center; font-size: 10.5px; }
+a.whatsthis:hover { color: var(--accent); border-color: var(--accent); }
+/* Opening the legend when it is the jump target — a collapsed <details> the reader lands on is a
+   dead end on the devices this fallback exists for. */
+details.legend-card:target { }
+details.legend-card:target > summary { color: var(--accent); font-weight: 700; }
+
 /* The visible legend for a turn card ---------------------------------------------------------
  *
  * Every number in the critic row also carries a `title`, but a tooltip DOES NOT EXIST on a touch

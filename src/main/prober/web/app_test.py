@@ -1258,6 +1258,10 @@ def test_the_critic_row_explains_every_number_it_prints(client):
                  "TD residual", "environment reward"):
         assert term in html, f"the critic row prints a number with no explanation of {term!r}"
     assert "how to read a turn card" in html, "no visible legend — tooltips alone fail on a phone"
+    # …and each number is TAPPABLE, because a `title` has no touch equivalent and this view is
+    # built to be read on a phone. The class is what app.js's delegated handler keys on.
+    assert html.count('class="metric"') >= 6, "the critic row's numbers are not tappable"
+    assert 'class="k metric"' in html, "the P(win)·dist label is not tappable"
     # V's zero is the single most misreadable thing on the row, so it is stated in BOTH places.
     assert html.count("not 'even'") + html.count('not "even"') >= 1
 

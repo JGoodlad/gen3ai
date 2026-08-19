@@ -102,6 +102,7 @@
     d.charts = String(specNodes(document).length);
     d.chartMarks = String(markCount(document));
     d.rows = String(rowCount(document));
+    d.metrics = String(document.querySelectorAll(".metric[title]").length);
     d.swaps = String(swaps);
 
     /* Layout measurements — the responsive claims, made checkable.
@@ -303,6 +304,50 @@
     if (evt.defaultPrevented || evt.metaKey || evt.ctrlKey || evt.shiftKey) { return; }
     if (window.getSelection && String(window.getSelection())) { return; }  /* selecting text */
     window.location.href = row.dataset.href;
+  });
+
+  /* TAP A NUMBER, GET ITS EXPLANATION — because `title` does not exist on touch.
+   *
+   * Every metric on a turn card carries a `title` that says what it is and how to read it. That
+   * covers desktop hover and it covers nothing else: a tooltip has no tap equivalent, and this is
+   * the one view built to be read on a phone. So a tap on a `.metric` renders its OWN title into a
+   * panel directly under that row — at the point of use, rather than sending the reader back to
+   * the legend at the top of a 50-turn page.
+   *
+   * The `title` stays the single source of the text: nothing is duplicated into a data attribute
+   * that could drift from the tooltip, and with JS off the hover path and the page legend both
+   * still work. Tapping the same metric again closes it (a toggle, not a stack of panels).
+   */
+  function metricHelp(el) {
+    var row = el.closest("p");
+    if (!row) { return; }
+    var label = (el.textContent || "").trim().split(/\s+/)[0] || "this";
+    var existing = row.nextElementSibling;
+    var isPanel = existing && existing.classList.contains("metric-help");
+    if (isPanel && existing.dataset.forMetric === label) {
+      existing.remove();                     /* same metric tapped twice = close */
+      document.body.dataset.metrichelp = "";
+      return;
+    }
+    if (isPanel) { existing.remove(); }
+    var panel = document.createElement("p");
+    panel.className = "metric-help";
+    panel.dataset.forMetric = label;
+    var strong = document.createElement("strong");
+    strong.textContent = label + " ";
+    panel.appendChild(strong);
+    panel.appendChild(document.createTextNode(el.getAttribute("title") || ""));
+    row.parentNode.insertBefore(panel, row.nextSibling);
+    /* The render test reads this back to prove the whole chain ran, not merely that a class exists. */
+    document.body.dataset.metrichelp = label;
+  }
+
+  document.body.addEventListener("click", function (evt) {
+    var el = evt.target.closest && evt.target.closest(".metric[title]");
+    if (!el) { return; }
+    if (evt.target.closest("a, button")) { return; }   /* the analyze link / copy button win */
+    evt.preventDefault();
+    metricHelp(el);
   });
 
   /* A failed fetch must be visible on the page, not only in the console. */

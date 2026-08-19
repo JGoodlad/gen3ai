@@ -358,6 +358,25 @@ def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server):
         "card layout and the phone rules above need rethinking, not a scrollbar")
 
 
+def test_the_replay_metrics_are_tappable_in_the_browser(server):
+    """The `title` tooltips have no TOUCH equivalent, so each metric is also tappable and the page
+    carries a no-JS anchor to its legend. What a `--dump-dom` browser can prove is that the markup
+    reached the live DOM and that app.js's own selector matches it — `metrics` is counted by that
+    selector, not by the test.
+
+    ⚠ COVERAGE LIMIT, stated rather than implied: `--dump-dom` cannot dispatch a click, so the tap
+    BEHAVIOUR (the panel opening, its toggle) is not gated here — only that every piece it needs is
+    present. Closing that would take a CDP driver, which this suite deliberately does not have.
+    """
+    data = _probe(_chrome(), server, _REPLAY)
+    assert int(data["metrics"]) >= 6, (
+        "no tappable metrics in the live DOM — app.js's `.metric[title]` selector matches nothing, "
+        "so a tap would explain nothing on a phone")
+    dom = _dump_dom(_chrome(), server + _REPLAY)
+    assert 'id="turncard-legend"' in dom, "the legend has no anchor for the no-JS fallback to reach"
+    assert 'class="whatsthis"' in dom, "no per-row link to the legend"
+
+
 def test_the_battle_replay_is_side_by_side_on_a_desktop(server):
     """The other half of the same claim: reflowing on a phone must not mean a phone layout on a
     1280px screen, where the two boards belong on one line for read-across."""

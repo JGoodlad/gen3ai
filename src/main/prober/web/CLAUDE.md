@@ -344,11 +344,20 @@ Three things about it are deliberate:
   recorder an id (`drillpeck`), so it needs normalizing plus a Hidden Power rule — a bare
   `hiddenpower` (an opponent's un-revealed HP) matches any typed HP option, but never the reverse,
   since a specific recorded type must not match a different believed one.
-- **Every number in the critic row explains itself, in two places.** Each carries a `title` that
-  says what it IS and how to read it (V's zero is not "even"; ΔP is percentage POINTS, not a "%";
-  TD δ is the critic's surprise), and because **a tooltip does not exist on a touch device** — and
-  this is the one view built to be read on a phone — the same explanations are collected once in a
-  collapsed **legend** at the top of the page rather than repeated under fifty turn cards.
+- **Every number in the critic row explains itself, THREE ways** — because the first two were not
+  enough on the device this view is built for. Each carries a `title` (what it IS and how to read
+  it: V's zero is not "even"; ΔP is percentage POINTS, not a "%"; TD δ is the critic's surprise),
+  and the same explanations are collected once in a collapsed **legend** at the top of the page.
+  **A `title` has NO touch equivalent**, though, and the legend is at the top of a 50-turn page, so
+  a reader at turn 13 on a phone had no way to ask — which is exactly how it was reported. So:
+  - **tap a number** and `app.js` renders THAT metric's own `title` into a panel directly under its
+    row (`.metric` + the delegated handler; the title stays the single source, so nothing is
+    duplicated into a data attribute that could drift from the tooltip);
+  - a **`?` link on every row** anchors to `#turncard-legend` — the no-JS, always-works route.
+  The dotted underline is the discoverability half: without a visible affordance nobody learns a
+  number can be tapped. ⚠ `--dump-dom` cannot dispatch a click, so the browser gate proves the
+  markup and app.js's own selector match the live DOM (`metrics`), NOT the panel opening — stated
+  in the test rather than implied by a green tick.
 - **P(win) sits beside V, not instead of it** (`win_prob`/`delta_win_prob`, in percentage POINTS
   via the `signed_pp` macro — a difference of probabilities is not a "%"). V is a shaped,
   discounted return whose zero is not "even" (a measured self-mirror 50/50 reads about −6.5), so
