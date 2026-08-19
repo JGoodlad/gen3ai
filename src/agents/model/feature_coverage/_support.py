@@ -134,19 +134,29 @@ def obs_with_event(layout, slot_from_recent: int = 0, **cols) -> torch.Tensor:
     masked observations and pass vacuously.
     """
     from agents.observation.constants import (
-        OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM,
+        OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EventCol as C,
     )
     assert 0 <= slot_from_recent < EVENT_WINDOW_N
     obs = obs_zero(layout)
     row = EVENT_WINDOW_N - 1 - slot_from_recent
     off = OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM
+    # gen3_event_col_names_v1: the friendly probe names map onto `EventCol` MEMBERS, not onto
+    # integers. This dict used to be a third hand-kept copy of the column contract (producer,
+    # consumer, and here), i.e. a third thing to forget when a column moves.
     named = {
-        "type_id": 0, "actor": 1, "actor_side": 2, "target": 3, "move_num": 4, "magnitude": 5,
-        "hit": 6, "miss": 7, "fail": 8, "crit": 9,
-        "eff_neutral": 10, "eff_super": 11, "eff_resist": 12, "eff_immune": 13,
-        "we_first": 14, "status_id": 15, "turns_ago": 16, "forced_window": 17, "valid": 18,
-        "cant_id": 19, "faint_cause_id": 20, "item_transition": 21,
+        "type_id": C.TYPE, "actor": C.ACTOR_SPECIES, "actor_side": C.ACTOR_SIDE,
+        "target": C.TARGET_SPECIES, "move_num": C.MOVE, "magnitude": C.MAGNITUDE,
+        "hit": C.OUT_HIT, "miss": C.OUT_MISS, "fail": C.OUT_FAIL, "crit": C.CRIT,
+        "eff_neutral": C.EFF_NEUTRAL, "eff_super": C.EFF_SUPER,
+        "eff_resist": C.EFF_RESIST, "eff_immune": C.EFF_IMMUNE,
+        "we_first": C.WE_FIRST, "status_id": C.STATUS, "turns_ago": C.TURNS_AGO,
+        "forced_window": C.FORCED_WINDOW, "valid": C.VALID,
+        "cant_id": C.CANT, "faint_cause_id": C.FAINT_CAUSE,
+        "item_transition": C.ITEM_TRANSITION,
     }
+    assert set(named.values()) == set(C), (
+        "the probe's friendly names must cover every EventCol member — a new column with no "
+        "name here is one no feature-coverage probe can write")
     cols.setdefault("valid", 1.0)
     for k, v in cols.items():
         assert k in named, f"unknown event column {k!r} (have: {sorted(named)})"

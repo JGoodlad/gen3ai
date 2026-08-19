@@ -11,12 +11,14 @@ import torch
 pytest.importorskip("sb3_contrib")
 
 from agents.model.features_extractor import _event_reference_cells
-from agents.observation.constants import EVENT_T_MOVE, EVENT_TOKEN_DIM
+from agents.observation.constants import EVENT_T_MOVE, EVENT_TOKEN_DIM, EventCol as C
 
 
 def _ev_row(actor=0.0, side=0.0, target=0.0, valid=1.0):
     r = torch.zeros(EVENT_TOKEN_DIM)
-    r[0], r[1], r[2], r[3], r[18] = EVENT_T_MOVE, actor, side, target, valid
+    r[C.TYPE] = EVENT_T_MOVE
+    r[C.ACTOR_SPECIES], r[C.ACTOR_SIDE], r[C.TARGET_SPECIES] = actor, side, target
+    r[C.VALID] = valid
     return r
 
 

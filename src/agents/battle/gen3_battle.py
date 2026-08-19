@@ -343,10 +343,10 @@ class Gen3Battle(Battle):
         toks = set(sm[3:])
         if "[miss]" in toks:
             out.append(self._from_ident(
-                EventKind.MISS, sm, sm[2], value={"op": "miss", "from": "move-suffix"}))
+                EventKind.MISS, sm, sm[2], value={"from": "move-suffix"}))
         if "[notarget]" in toks:
             out.append(self._from_ident(
-                EventKind.FAIL, sm, sm[2], value={"op": "fail", "from": "move-suffix"}))
+                EventKind.FAIL, sm, sm[2], value={"from": "move-suffix"}))
         return out
 
     @staticmethod
@@ -388,10 +388,10 @@ class Gen3Battle(Battle):
             pre["target_species"] = tmon.species if tmon else None
             pre["target_status"] = tmon.status.name if tmon and tmon.status else None
         elif keyword in ("-damage", "-heal", "-sethp"):
+            # `hp_before` is PRE-LINE state and is needed to compute the signed `amount`; it is
+            # deliberately NOT carried on the event (gen3_event_value_schema_v1 — no consumer
+            # ever read it, and `amount` + `hp_after` already pin the transition).
             pre["hp_before"] = self._hp_fraction(split_message[2])
-        elif keyword in ("switch", "drag"):
-            side = self._side_of(split_message[2])
-            pre["prev_active"] = self._active_species(side) if side else None
         return pre
 
     # ------------------------------------------------------------------ #
@@ -477,13 +477,10 @@ class Gen3Battle(Battle):
 
         # ---- switches ----
         if kind in (EventKind.SWITCH, EventKind.DRAG):
-            return self._from_ident(
-                kind, sm, sm[2],
-                value={
-                    "prev_active": pre.get("prev_active"),
-                    "details": sm[3] if len(sm) > 3 else "",
-                },
-            )
+            # gen3_event_value_schema_v1: `prev_active` and `details` are DELETED. Nothing read
+            # either — the TurnDelta fold takes its `our_prev_active` from the decision
+            # snapshot's active, not from here, and the details string is verbatim in `raw`.
+            return self._from_ident(kind, sm, sm[2])
 
         # ---- faint ----
         if kind is EventKind.FAINT:
@@ -496,7 +493,6 @@ class Gen3Battle(Battle):
             hp_before = pre.get("hp_before", hp_after)
             value = {
                 "amount": hp_after - hp_before,
-                "hp_before": hp_before,
                 "hp_after": hp_after,
             }
             if "from" in cause:
@@ -510,7 +506,6 @@ class Gen3Battle(Battle):
             hp_before = pre.get("hp_before", hp_after)
             value = {
                 "hp": hp_after,
-                "hp_before": hp_before,
                 "amount": hp_after - hp_before,  # signed delta, like DAMAGE/HEAL
             }
             if "from" in cause:
@@ -572,7 +567,6 @@ class Gen3Battle(Battle):
                 kind, sm, side=mover,
                 actor=self._active_species(mover),
                 target=self._species_of(target_ident),
-                value={"op": keyword.lstrip("-")},
             )
 
         # ---- effectiveness: attach to the resolving mover ----
@@ -640,10 +634,9 @@ class Gen3Battle(Battle):
 
         # ---- prepare / mustrecharge ----
         if kind is EventKind.PREPARE:
-            return self._from_ident(
-                kind, sm, sm[2],
-                value={"move": to_id_str(sm[3]) if len(sm) > 3 else None},
-            )
+            # gen3_event_value_schema_v1: the charging move id is DELETED — no consumer read it
+            # (the typed accessor is `.move_id`, a different key), and `raw` keeps it verbatim.
+            return self._from_ident(kind, sm, sm[2])
         if kind is EventKind.MUSTRECHARGE:
             return self._from_ident(kind, sm, sm[2])
 
@@ -656,12 +649,11 @@ class Gen3Battle(Battle):
         if kind is EventKind.FORMECHANGE:
             return self._from_ident(
                 kind, sm, sm[2],
-                value={"details": sm[3] if len(sm) > 3 else "", "op": keyword.lstrip("-")},
+                value={"op": keyword.lstrip("-")},
             )
         if kind is EventKind.SWAP:
-            return self._from_ident(
-                kind, sm, sm[2], value={"detail": sm[3] if len(sm) > 3 else ""}
-            )
+            # gen3_event_value_schema_v1: `detail` DELETED (unread; verbatim in `raw`).
+            return self._from_ident(kind, sm, sm[2])
 
         # Should be unreachable: EVENT policy without a builder branch.
         raise AssertionError(f"no event builder for keyword {keyword!r} (kind {kind!r})")

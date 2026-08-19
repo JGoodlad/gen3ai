@@ -137,18 +137,19 @@ class _HPTypedPlayer(Player):
         #    frames, which are deleted. The guard itself is unchanged in meaning and is NOT
         #    droppable — a typed HP collapsing to bare 237 is the exact GIGO that made the
         #    opponent's Hidden Power read as "immune", so it keeps a home on whichever block
-        #    carries move history. That block is now the H-B event window: column 4 is the
-        #    move num, written from the same `gen3_movedex` lookup the frames used.
+        #    carries move history. That block is now the H-B event window: `EventCol.MOVE` is
+        #    the move num, written from the same `gen3_movedex` lookup the frames used.
         from agents.observation.constants import (
             OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EVENT_T_MOVE,
+            EventCol as C,
         )
         for _r in range(EVENT_WINDOW_N):
             _o = OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM
-            if vec[_o + 18] < 0.5 or int(vec[_o + 0]) != EVENT_T_MOVE:
+            if vec[_o + C.VALID] < 0.5 or int(vec[_o + C.TYPE]) != EVENT_T_MOVE:
                 continue                                   # pad row, or not a move
-            if vec[_o + 2] < 0.5:
+            if vec[_o + C.ACTOR_SIDE] < 0.5:
                 continue                                   # not OUR side
-            mid = int(vec[_o + 4])
+            mid = int(vec[_o + C.MOVE])
             if mid == _BARE_HP_NUM:
                 s.fail({"check": "our_event_hp_collapsed_to_bare_237", "turn": battle.turn,
                         "event_row": _r, "move_num": mid})

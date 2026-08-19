@@ -329,17 +329,42 @@ tracker also feeds the **180-dim pair-history block** after reactive
 (`OFFSET_PAIR_HISTORY`, 6×6×5 `h[i,j]` tendency counters — switch-ins/attacks/status-clicks
 by their mon i while our mon j was active, shared-field turns, pairing recency; log-saturated
 over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it**
-(`gen3_event_window_v1`, v81): the **608-dim event window** (`OFFSET_EVENT_WINDOW`, 32 × 19
-typed event records — the column contract is documented at `EVENT_TOKEN_DIM` in
-`constants.py`) closes base at 2437, and **`gen3_frame_deletion_v1` made it the LAST block**:
+(`gen3_event_window_v1`, v81): the **event window** (`OFFSET_EVENT_WINDOW`,
+`EVENT_WINDOW_N` × `EVENT_TOKEN_DIM` typed event records) closes base, and
+**`gen3_frame_deletion_v1` made it the LAST block**:
 the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames that used to follow are
 DELETED, so `total_dim == base_dim` and `encode`'s output IS the observation. The window grew a
-20th column (`cant_id`) in the same pass — the one lag-frame fact with no substitute. What that
+`cant_id` column in the same pass — the one lag-frame fact with no substitute. What that
 deletion cost, and the three facts that ship WITHOUT a substitute, is
 `designs/ai_v9/design_frame_deletion_coverage_gaps.md`. Folded by the EpisodeTracker-owned
 `EventWindowTracker` (same window, same alive-filtered resync), threaded via
 `encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
 NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).
+
+> **The per-row COLUMN CONTRACT is `constants.EventCol`** (`gen3_event_col_names_v1`) — an
+> `IntEnum`, ONE declaration that BOTH ends import: the producer (`state_encoder.encode`) and
+> the consumer (`team_transformer.EventSeats.forward` + `_event_reference_cells`), plus the
+> feature-coverage probe helper (`feature_coverage/_support.py::obs_with_event_row`) and every
+> oracle that reads the block (`event_window_fuzz_test`, `trapping_signals_fuzz_test`,
+> `hidden_power_typed_obs_fuzz_test`). It replaced a comment plus ~30 bare integer literals
+> spread across five files — a producer/consumer pair bound by POSITION with nothing relating
+> them, the class the 2026-08-18 positional-binding sweep convicted five times. **Never write a
+> bare column index**; the members ARE ints, so `vec[_o + EventCol.CRIT]` is the same arithmetic
+> and the same emitted bytes (byte-identity confirmed on the 991-decision golden capture).
+> The two CONTIGUOUS one-hot groups have their own names (`EVENT_OUTCOME_GROUP`,
+> `EVENT_EFF_GROUP`) because both are written by INDEXING (`EFF_NEUTRAL + eff`), so their order
+> is load-bearing: reordering a member relabels every historical row with no shape change.
+> `event_window_test.py` pins all of it — the members TILE `range(EVENT_TOKEN_DIM)` with no gaps
+> or overlaps, the groups are contiguous and in the TurnDelta effectiveness-code order, the two
+> ends resolve to the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
+> map's id/scalar classification.
+>
+> ⚠️ **The event-window fuzz oracle models 19 of the 22 columns**, and now SAYS so
+> (`_ORACLE_UNMODELED_COLS` = `CANT` / `FAINT_CAUSE` / `ITEM_TRANSITION`). It previously compared
+> a 19-tuple against a 22-wide row with `zip`, which stops at the shorter — so those three were
+> unchecked with nothing recording it. Closing the gap is a modelling job (the oracle emits no
+> CANT row and derives no faint cause or item transition), not a formatting one.
+
 Unit gate: `training/event_window_test.py`; the event-fold FUZZ (the pair-history pattern) is
 the pre-enable gate. **Appended tail**
 (state_encoder): `POKEMON_TRAPPED_OFFSET` (119) + `POKEMON_MAYBE_TRAPPED_OFFSET` (120) — the

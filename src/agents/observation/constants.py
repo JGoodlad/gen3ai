@@ -1,3 +1,6 @@
+from enum import IntEnum
+from types import SimpleNamespace
+
 # Sub-dimensions
 SPECIES_ID_DIM = 1 # ID for embedding
 ITEM_ID_DIM = 1    # Only the first slot is the ID; was 16 (wasted)
@@ -211,17 +214,10 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 # Tier H-B (gen3_event_window_v1, design_history_entity.md §3 H-B): the last-N
 # decision-relevant EVENTS as typed records — the sequential residue the compiled tiers
 # cannot carry. One row per event, most-recent LAST, zero rows = padding (valid=0).
-# Columns (EVENT_TOKEN_DIM):
-#   0 type_id (EVENT_T_* vocab; embedding-routed)   1 actor_species_num (embedding-routed)
-#   2 actor_side (+1 ours / -1 opp / 0)             3 target_species_num (embedding-routed)
-#   4 move_num (embedding-routed; 0 none)           5 magnitude (move: attributed hp_delta;
-#                                                      boost: signed stage delta / 6)
-#   6-8 outcome one-hot hit/miss/fail (moves only)  9 crit
-#   10-13 effectiveness one-hot neutral/super/resist/immune (moves only)
-#   14 we_first (this side moved first that turn)   15 status_id (0 none; brn..tox = 1..6)
-#   16 turns_ago (log-saturated, the recency curve) 17 forced_window (post-faint phase tag)
-#   18 valid (1 = a real event, 0 = pad)                19 cant_id (embedding-routed)
-#   20 faint_cause_id (embedding-routed)                21 item_transition (embedding-routed)
+# The COLUMN CONTRACT is `EventCol` below — a named declaration BOTH sides import, never a
+# literal at either end (gen3_event_col_names_v1). See the enum's docstring for the semantics
+# of each column; what follows is the design rationale for the three id columns.
+#
 # `cant_id` (gen3_frame_deletion_v1) is 0 on every non-CANT row and 1..CANT_DIM on a CANT row,
 # indexing `gen3_effects.CANT_REASONS` (+1, so 0 stays "none"). It exists because deleting the
 # TurnDelta lag frames deleted the ONLY route by which "my mon could not move last turn, and
@@ -250,6 +246,98 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 EVENT_WINDOW_N = 32
 EVENT_TOKEN_DIM = 22
 EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 608
+
+
+class EventCol(IntEnum):
+    """The 22 columns of ONE H-B event token row — the single declaration the producer
+    (`state_encoder.encode`) and the consumer (`team_transformer.EventSeats.forward`) BOTH
+    import (gen3_event_col_names_v1).
+
+    Before this existed the contract was a comment plus ~30 bare integer literals split across
+    two files, i.e. exactly the shape the 2026-08-18 positional-binding sweep convicted five
+    times: a producer and a consumer bound to the same subject by POSITION, able to disagree
+    silently because nothing relates them. Inserting a column meant hand-shifting both sides and
+    a third set of literals in the feature-coverage tests. Now a column is named once; the
+    layout invariants (total width, no gaps, no overlaps, the two contiguous one-hot groups) are
+    asserted by `event_window_test::test_event_column_map_*`.
+
+    IntEnum, not a bare block of ints, for two reasons: the members ARE ints (so
+    `vec[_o + EventCol.CRIT]` is the same arithmetic and the same emitted bytes), and the class
+    is ENUMERABLE — the coverage test can demand that the members tile `range(EVENT_TOKEN_DIM)`
+    exactly, which a loose block of module-level ints cannot express.
+
+    Columns:
+      TYPE            0  event-type id (`EVENT_T_*` vocab; embedding-routed)
+      ACTOR_SPECIES   1  actor species dex num (embedding-routed; 0 none)
+      ACTOR_SIDE      2  +1 ours / −1 opp / 0 neither
+      TARGET_SPECIES  3  target species dex num (embedding-routed; 0 none)
+      MOVE            4  move dex num (embedding-routed; 0 none)
+      MAGNITUDE       5  MOVE: attributed hp_delta; BOOST: signed stage delta / 6
+      OUT_HIT..FAIL   6-8   outcome one-hot (moves only) — CONTIGUOUS
+      CRIT            9  critical hit
+      EFF_NEUTRAL..IMMUNE 10-13  effectiveness one-hot (moves only) — CONTIGUOUS, and indexed
+                          by an offset (`EFF_NEUTRAL + eff`), so the order is load-bearing
+      WE_FIRST        14 this side moved first that turn
+      STATUS          15 status id (0 none; brn..tox = 1..6 — `EVENT_STATUS_IDS`)
+      TURNS_AGO       16 log-saturated recency (time as CONTENT, never as a lag index)
+      FORCED_WINDOW   17 post-faint forced-switch phase tag
+      VALID           18 1 = a real event, 0 = pad row (the key mask)
+      CANT            19 cant-reason id (embedding-routed; 0 on every non-CANT row)
+      FAINT_CAUSE     20 faint-cause id (embedding-routed; 0 on every non-FAINT row)
+      ITEM_TRANSITION 21 `ITEM_TR_*` (embedding-routed; 0 on every non-ITEM row)
+    """
+
+    TYPE = 0
+    ACTOR_SPECIES = 1
+    ACTOR_SIDE = 2
+    TARGET_SPECIES = 3
+    MOVE = 4
+    MAGNITUDE = 5
+    OUT_HIT = 6
+    OUT_MISS = 7
+    OUT_FAIL = 8
+    CRIT = 9
+    EFF_NEUTRAL = 10
+    EFF_SUPER = 11
+    EFF_RESIST = 12
+    EFF_IMMUNE = 13
+    WE_FIRST = 14
+    STATUS = 15
+    TURNS_AGO = 16
+    FORCED_WINDOW = 17
+    VALID = 18
+    CANT = 19
+    FAINT_CAUSE = 20
+    ITEM_TRANSITION = 21
+
+
+# The two CONTIGUOUS one-hot groups, named so a consumer slices them by group rather than by
+# re-deriving `lo:lo+width` from two literals. `EFF_GROUP` order is load-bearing: the producer
+# writes `EFF_NEUTRAL + eff` where `eff` is the TurnDelta effectiveness code.
+EVENT_OUTCOME_GROUP = (EventCol.OUT_HIT, EventCol.OUT_MISS, EventCol.OUT_FAIL)
+EVENT_EFF_GROUP = (EventCol.EFF_NEUTRAL, EventCol.EFF_SUPER,
+                   EventCol.EFF_RESIST, EventCol.EFF_IMMUNE)
+
+# `EVENT_COL` — the PLAIN-INT mirror of `EventCol`, generated from the enum BY NAME so the two
+# cannot drift (`event_window_test` asserts they agree member for member). It exists because
+# both live consumers are cost-sensitive in ways an `IntEnum` member is bad at, and the mirror
+# fixes both at zero semantic cost — the values are identical, so every forward and every
+# emitted byte is unchanged:
+#
+#  * `state_encoder.encode` writes up to `EVENT_WINDOW_N` × `EVENT_TOKEN_DIM` cells per decision
+#    on the obs hot path. MEASURED 2026-08-18 over 224 writes: bare literals 10.18 us, an
+#    `EventCol` member 13.81 us (+36%), this mirror 11.54 us (+13%) — i.e. the enum would cost
+#    ~11 us of a ~363 us encode, the mirror ~4 us. Enum member access is a `LOAD_ATTR` through
+#    `EnumType`; `SimpleNamespace` is a plain instance-dict hit.
+#  * `team_transformer` (`EventSeats.forward`, `_event_reference_cells`) is inside the TRACED
+#    graph, and `torch.fx` renders an enum member into generated code as its REPR —
+#    `<EventCol.TYPE: 0>` — which is not valid Python. `torch.compile` then dies with
+#    `InternalTorchDynamoError: SyntaxError: invalid syntax (<eval_with_key>.N)` far from the
+#    cause. (Measured: it failed 8 of `extractor_compiles_test`'s cells and passes on the mirror.)
+#
+# Use `EventCol` when you want the DECLARATION (tests, enumeration, `set(EventCol)`); use
+# `EVENT_COL` at a write/read site. Never a bare integer, at either.
+EVENT_COL = SimpleNamespace(**{c.name: int(c) for c in EventCol})
 
 # The H-B event-type vocabulary (column 0 of every event row; 0 = PAD). Stable ids — they are
 # an embedding table's axis. The fold that EMITS them lives in

@@ -6,29 +6,34 @@ It forces the one scenario the three signals exist for — a grounded mon that k
 switch out against a Dugtrio with Arena Trap — and drives the FULL production pipeline (mask →
 ``EpisodeTracker.record`` → obs encode → TurnDelta fold) exactly as ``Gen3Env`` does, asserting:
 
-  Signal 1 (trapped obs bit)       : the FULL obs at `OFFSET_REACTIVE + trapped` == legal.trapped
-     on EVERY decision.
-  Signal 2 (maybe_trapped obs bit) : the FULL obs at `OFFSET_REACTIVE + maybe_trapped` ==
+Both obs homes below were RE-POINTED by later work and this header now states where they
+actually are — it described the deleted reactive block and the deleted TurnDelta lag frames for
+long enough to be worth calling out (`gen3_entity_rehome_v1`, `gen3_frame_deletion_v1`):
+
+  Signal 1 (trapped obs bit)       : the FULL obs at OUR ACTIVE MON'S SLOT +
+     `POKEMON_TRAPPED_OFFSET` == legal.trapped on EVERY decision (the reactive scalars are
+     DELETED — the trapping bits ride the trapped ENTITY, and bench slots must stay 0).
+  Signal 2 (maybe_trapped obs bit) : same slot + `POKEMON_MAYBE_TRAPPED_OFFSET` ==
      legal.maybe_trapped on EVERY decision.
   Signal 3 (rejected-switch history): validated END TO END against INDEPENDENT raw-protocol truth,
      not our own fold —
        * the `|error|[Unavailable choice]` line is intercepted straight off the wire in
          `_handle_battle_message` and counted (ground truth);
-       * on EVERY decision the most-recent turn-history slot's `attempted_switch_rejected` bit,
-         read at its ABSOLUTE index inside the full obs (gen3_frame_deletion_v1: == base,
-         exactly as `Gen3Env.embed_battle` builds it), must equal the folded delta's field — so a
-         wrong offset / never-set / stuck-on bit all fail;
-       * on a rejection the full-obs attempted-switch species id at its absolute index must be the
-         bench mon we pressed (non-zero, matching), `our_switch_to` must be None (the switch never
-         executed), and the rejection must be preceded by a maybe_trapped switch attempt;
+       * on EVERY decision the H-B EVENT WINDOW (the lag frames are deleted) must carry an
+         `EVENT_T_SWITCH_REJECTED` row exactly when the folded delta says a switch was refused —
+         read at its ABSOLUTE index inside the full obs, assembled exactly as
+         `Gen3Env.embed_battle` builds it, so a wrong offset / never-set / stuck-on row all fail;
+       * on a rejection `our_switch_to` must be None (the switch never executed) and
+         `attempted_switch_to` must name the bench mon we pressed — on the DELTA, since the
+         attempted target is deliberately NOT re-homed into the obs (see the note at the check);
        * FINAL cross-check: raw-protocol [Unavailable choice] count == folded history-bit count
          (no miss, no double-count, no fabrication).
   Mask invariant (regression)      : trapped == True ⇒ ZERO switch bits in the mask.
 
 Coverage (all required for PASS): some decision is maybe_trapped with switches offered (pre-reveal);
 some decision is trapped with switches masked off (post-reveal); at least one rejection seen on the
-raw wire AND folded into history; reactive bits + full-obs slots validated on every decision with
-zero mismatches.
+raw wire AND folded into history; per-mon trapping bits + full-obs event rows validated on every
+decision with zero mismatches.
 
 P1 leads a grounded mon and always tries to switch (to provoke the reveal). P2 runs Dugtrio with
 Arena Trap and only clicks moves (keeps Dugtrio in). Both run Gen3Battle so the out-of-band
@@ -331,12 +336,13 @@ class TrapFuzzPlayer(Player):
         # what is lost is the identity of the refused target.
         from agents.observation.constants import (
             OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EVENT_T_SWITCH_REJECTED,
+            EventCol as C,
         )
         full_obs = obs
         _rej_rows = sum(
             1 for _r in range(EVENT_WINDOW_N)
-            if full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + 18] >= 0.5
-            and int(full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + 0]) == EVENT_T_SWITCH_REJECTED
+            if full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + C.VALID] >= 0.5
+            and int(full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + C.TYPE]) == EVENT_T_SWITCH_REJECTED
         )
         if delta.attempted_switch_rejected and _rej_rows == 0:
             self.violations.append(

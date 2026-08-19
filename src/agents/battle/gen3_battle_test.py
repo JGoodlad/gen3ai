@@ -174,6 +174,56 @@ def test_event_payload_schema_holds():
         assert not missing, f"{e.kind.name} event missing payload keys {missing}: {e}"
 
 
+def test_no_event_carries_an_UNDECLARED_payload_key():
+    """The other half of the schema (gen3_event_value_schema_v1).
+
+    `EVENT_VALUE_KEYS` is a LOWER bound — it catches a FORGOTTEN key and is blind to an
+    invented or renamed one, which is the direction that fails silently: a consumer reading a
+    key the producer stopped writing (or never wrote) gets `None` and reads it as "absent". The
+    positional-binding sweep's fourth live site was exactly that shape, in an ORACLE. Declaring
+    the full vocabulary makes required ∪ optional EXACT, so the drift fails at the producer."""
+    from agents.battle.battle_event import declared_value_keys, undeclared_value_keys
+    g3 = make(Gen3Battle)
+    feed(g3, CANONICAL)
+    assert g3.events, "the canonical feed must produce events or this proves nothing"
+    for e in g3.events:
+        extra = undeclared_value_keys(e)
+        assert not extra, (
+            f"{e.kind.name} event carries UNDECLARED payload key(s) {sorted(extra)} — declare "
+            f"them in EVENT_VALUE_KEYS (a consumer may rely on it) or EVENT_OPTIONAL_KEYS "
+            f"(it may be absent). Declared: {sorted(declared_value_keys(e.kind))}. Event: {e}")
+
+
+def test_the_two_schema_halves_cover_the_same_kinds_and_never_overlap():
+    """A kind declared in one half and not the other is a half-written schema; a key in BOTH
+    halves is a contradiction (a consumer cannot both rely on it and not)."""
+    from agents.battle.battle_event import EVENT_OPTIONAL_KEYS
+    assert set(EVENT_VALUE_KEYS) == set(EVENT_OPTIONAL_KEYS), (
+        "every kind must appear in BOTH schema halves — missing from optional: "
+        f"{sorted(k.name for k in set(EVENT_VALUE_KEYS) - set(EVENT_OPTIONAL_KEYS))}; "
+        f"missing from required: "
+        f"{sorted(k.name for k in set(EVENT_OPTIONAL_KEYS) - set(EVENT_VALUE_KEYS))}")
+    for kind, req in EVENT_VALUE_KEYS.items():
+        clash = req & EVENT_OPTIONAL_KEYS[kind]
+        assert not clash, f"{kind.name} declares {sorted(clash)} as BOTH required and optional"
+
+
+def test_the_undeclared_key_guard_FAILS_on_a_planted_key():
+    """The guard above passes trivially if `declared_value_keys` is over-permissive — plant an
+    undeclared key and prove it is caught. (The control the sweep's rules ask for: a check that
+    has never been seen to fail is a check nobody has verified.)"""
+    from agents.battle.battle_event import BattleEvent, undeclared_value_keys
+    clean = BattleEvent(seq=1, turn=1, kind=EventKind.MOVE, side="ours",
+                        actor_species="tyranitar", value={"move_id": "rockslide"})
+    assert undeclared_value_keys(clean) == frozenset()
+    planted = BattleEvent(seq=2, turn=1, kind=EventKind.MOVE, side="ours",
+                          actor_species="tyranitar",
+                          value={"move_id": "rockslide", "from": "sleeptalk"})
+    assert undeclared_value_keys(planted) == frozenset({"from"}), (
+        "MOVE does not declare a `from` key (delegation rides `from_move`) — the guard must "
+        "catch it, or the whole schema is decorative")
+
+
 def test_event_log_fabricates_nothing_and_preserves_order():
     """The event log invents nothing and reorders nothing: every event's ``raw`` is a
     real line from the protocol archive, and the events appear in archive order.

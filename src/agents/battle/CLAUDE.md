@@ -25,6 +25,29 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   is classified `EVENT` / `STATE_ONLY` / `CONTROL` / `COSMETIC` / `UNSUPPORTED`; an
   unclassified or non-gen3 keyword **raises** (a deliberate tripwire). The conservation
   invariant (`Gen3Battle.assert_conservation()`) proves no line is silently dropped.
+- **The `value` PAYLOAD schema has TWO halves, and both are enforced**
+  (`gen3_event_value_schema_v1`). `EVENT_VALUE_KEYS` declares the **required** keys per kind —
+  a consumer may rely on them — and is the guard against the Focus-Punch class of loss (a
+  builder that FORGETS a key). `EVENT_OPTIONAL_KEYS` declares the rest of the vocabulary; the
+  union is `declared_value_keys(kind)`, and `undeclared_value_keys(event)` must be EMPTY on
+  every emitted event. **The second half exists because the first is a LOWER bound**: it is
+  blind to a key that is invented or renamed, which is the direction that fails silently — a
+  consumer reading a key the producer never writes just gets `None` and reads it as "absent".
+  That is not hypothetical: the positional-binding sweep's fourth live site was the
+  event-window fuzz guarding residual damage with `value.get("from")` on a DAMAGE event, a key
+  DAMAGE has never carried (the `[from]` clause is `value["reason"]` there and `value["from"]`
+  on the effect kinds). **Adding a payload key means declaring it in the same pass**, in one
+  half or the other. Gates: `gen3_battle_test.py` (the canonical feed, both directions, the
+  two halves covering the same kinds without overlap, and a PLANTED undeclared key proving the
+  check can fail) + `event_log_fuzz_test.py` (the long tail of real gen3ou lines).
+  Six keys were pruned when the second half landed, each verified unread: `hp_before`
+  (DAMAGE/HEAL/SETHP — `amount` + `hp_after` already pin the transition), `prev_active` and
+  `details` (SWITCH/DRAG — the fold takes `our_prev_active` from the decision snapshot, and the
+  details string is verbatim in `raw`), `details` (FORMECHANGE), `detail` (SWAP), `move`
+  (PREPARE — the typed accessor is `.move_id`, a different key), and the CONSTANT `op` on
+  CRIT/MISS/FAIL (identical to the kind). ⚠️ **`op` was NOT dead in general** and is kept
+  everywhere it discriminates — most sharply on CLEARBOOST, where seven protocol keywords
+  collapse into one kind and `op` is the only thing separating Haze from Psych Up.
 - **`TurnView`** (`turn_view.py`) — the **history** read surface ("what happened, in
   order"). Folds one turn's events into per-side intent (`move_id`, `switched`,
   `cant_reason`/`cant_move`, `crit`/`missed`/`failed`, `effectiveness`, `damaging_move`,

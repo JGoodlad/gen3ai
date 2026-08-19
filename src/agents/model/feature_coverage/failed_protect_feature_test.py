@@ -112,12 +112,12 @@ def test_failed_vs_successful_protect_distinguishable_by_network():
     # network assertion below attributable — if they differed anywhere else, a moved output would
     # not be evidence about the outcome at all.
     from agents.observation.constants import (
-        OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM,
+        OFFSET_EVENT_WINDOW, EVENT_WINDOW_N, EVENT_TOKEN_DIM, EVENT_OUTCOME_GROUP,
     )
     diff = (obs_fail - obs_hit).abs().squeeze(0).numpy()
     nonzero = set(np.where(diff > 0)[0].tolist())
     row_off = OFFSET_EVENT_WINDOW + (EVENT_WINDOW_N - 1) * EVENT_TOKEN_DIM
-    block = {row_off + c for c in (6, 7, 8)}
+    block = {row_off + int(c) for c in EVENT_OUTCOME_GROUP}
     assert nonzero and nonzero <= block, (
         f"fail vs hit differ outside the event row's outcome columns: "
         f"{sorted(nonzero - block)}")
@@ -133,14 +133,19 @@ def test_no_linear_reads_a_raw_event_id():
     not an identity). The frames are gone, but the H-B event window carries the SAME kind of raw
     ids and states the same rule, so the invariant moves rather than dies: `EventSeats` must route
     every id column through a table and let only the true scalars ride raw."""
-    from agents.observation.constants import EVENT_TOKEN_DIM
+    from agents.observation.constants import EVENT_TOKEN_DIM, EventCol as C
     model, _, _ = feature_model()
     es = model.history_events
     assert es is not None, "the fixture must build history_events=True"
-    ID_COLS = {0: "kind_emb", 1: "species", 3: "species", 4: "move", 15: "status_emb",
-                19: "cant_emb", 20: "faint_emb", 21: "itemtr_emb"}
-    SCALAR_COLS = {2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17}
-    VALID_COL = {18}
+    # gen3_event_col_names_v1: the routing decision is stated per NAMED column, so adding a
+    # column to `EventCol` fails this classification until someone decides its routing.
+    ID_COLS = {C.TYPE: "kind_emb", C.ACTOR_SPECIES: "species", C.TARGET_SPECIES: "species",
+               C.MOVE: "move", C.STATUS: "status_emb", C.CANT: "cant_emb",
+               C.FAINT_CAUSE: "faint_emb", C.ITEM_TRANSITION: "itemtr_emb"}
+    SCALAR_COLS = {C.ACTOR_SIDE, C.MAGNITUDE, C.OUT_HIT, C.OUT_MISS, C.OUT_FAIL, C.CRIT,
+                   C.EFF_NEUTRAL, C.EFF_SUPER, C.EFF_RESIST, C.EFF_IMMUNE, C.WE_FIRST,
+                   C.TURNS_AGO, C.FORCED_WINDOW}
+    VALID_COL = {C.VALID}
     assert set(ID_COLS) | SCALAR_COLS | VALID_COL == set(range(EVENT_TOKEN_DIM)), (
         "every event column must be classified as an embedded id, a raw scalar, or the pad flag — "
         "an unclassified column is one nobody decided the routing for")

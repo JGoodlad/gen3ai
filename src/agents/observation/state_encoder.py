@@ -34,6 +34,7 @@ from .constants import (
     EVENT_TOKEN_DIM,
     EVENT_WINDOW_DIM,
     EVENT_T_MOVE,
+    EVENT_COL,
     ACTIVE_CONTEXT_DIM,
     GLOBAL_ENV_DIM
 )
@@ -321,11 +322,19 @@ class Gen3ObservationEncoder(ObservationEncoder):
 
         # 7. Tier H-B (gen3_event_window_v1): the last-N event records, oldest-first, padded
         # with zero rows at the FRONT (most-recent event is always the last valid row — a
-        # stable read for the flag-gated event-seat encoder). Ids are embedding ids (the
-        # column comment in constants.py); no Linear reads this block raw. None (standalone/
-        # test path) leaves the block zero like the other optional trackers.
+        # stable read for the flag-gated event-seat encoder). Ids are embedding ids; no Linear
+        # reads this block raw. None (standalone/test path) leaves the block zero like the
+        # other optional trackers.
+        #
+        # gen3_event_col_names_v1: every column is addressed through `EventCol`, the ONE
+        # declaration `team_transformer.EventSeats` also reads. Bare integer literals here (and
+        # matching ones there) were a producer/consumer pair bound by position with nothing
+        # relating them — the class the positional-binding sweep convicted five times. The
+        # members are ints, so this compiles to the same arithmetic and emits the same bytes.
         if event_window is not None:
             from agents import gen3_data
+            _c = EVENT_COL       # the PLAIN-INT mirror (see constants.py) + a LOAD_FAST alias:
+                                 # an EventCol member here costs ~36% of this write loop
             _rows = event_window.window()[-EVENT_WINDOW_N:]
             _cur = event_window.turn
             _base = OFFSET_EVENT_WINDOW + (EVENT_WINDOW_N - len(_rows)) * EVENT_TOKEN_DIM
@@ -334,34 +343,36 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 _actor = gen3_data.species.get(_r["actor"]) if _r["actor"] else None
                 _target = gen3_data.species.get(_r["target"]) if _r["target"] else None
                 _mv = gen3_movedex.get(_r["move_id"]) if _r["move_id"] else None
-                vec[_o + 0] = float(_r["t"])
-                vec[_o + 1] = float(_actor.num) if _actor is not None else 0.0
-                vec[_o + 2] = (1.0 if _r["side"] == "ours"
-                               else (-1.0 if _r["side"] == "opp" else 0.0))
-                vec[_o + 3] = float(_target.num) if _target is not None else 0.0
-                vec[_o + 4] = float(_mv.num) if _mv is not None else 0.0
+                vec[_o + _c.TYPE] = float(_r["t"])
+                vec[_o + _c.ACTOR_SPECIES] = float(_actor.num) if _actor is not None else 0.0
+                vec[_o + _c.ACTOR_SIDE] = (1.0 if _r["side"] == "ours"
+                                           else (-1.0 if _r["side"] == "opp" else 0.0))
+                vec[_o + _c.TARGET_SPECIES] = float(_target.num) if _target is not None else 0.0
+                vec[_o + _c.MOVE] = float(_mv.num) if _mv is not None else 0.0
                 _mag = _r["hp_delta"]
-                vec[_o + 5] = (max(-1.0, min(1.0, _mag)) if _r["t"] == EVENT_T_MOVE
-                               else max(-1.0, min(1.0, _mag / 6.0)))
+                vec[_o + _c.MAGNITUDE] = (max(-1.0, min(1.0, _mag)) if _r["t"] == EVENT_T_MOVE
+                                          else max(-1.0, min(1.0, _mag / 6.0)))
                 if _r["t"] == EVENT_T_MOVE:
-                    vec[_o + 6] = 0.0 if (_r["missed"] or _r["failed"]) else 1.0
-                    vec[_o + 7] = 1.0 if _r["missed"] else 0.0
-                    vec[_o + 8] = 1.0 if _r["failed"] else 0.0
-                    vec[_o + 9] = 1.0 if _r["crit"] else 0.0
-                    vec[_o + 10 + int(_r["eff"])] = 1.0
-                vec[_o + 14] = 1.0 if _r["we_first"] else 0.0
-                vec[_o + 15] = float(_r["status"])
+                    vec[_o + _c.OUT_HIT] = 0.0 if (_r["missed"] or _r["failed"]) else 1.0
+                    vec[_o + _c.OUT_MISS] = 1.0 if _r["missed"] else 0.0
+                    vec[_o + _c.OUT_FAIL] = 1.0 if _r["failed"] else 0.0
+                    vec[_o + _c.CRIT] = 1.0 if _r["crit"] else 0.0
+                    # the eff one-hot is INDEXED, not written per column — `EVENT_EFF_GROUP`'s
+                    # order is the contract and its contiguity is asserted by event_window_test.
+                    vec[_o + _c.EFF_NEUTRAL + int(_r["eff"])] = 1.0
+                vec[_o + _c.WE_FIRST] = 1.0 if _r["we_first"] else 0.0
+                vec[_o + _c.STATUS] = float(_r["status"])
                 # gen3_frame_deletion_v1: `.get` because only the CANT branch sets the key —
                 # every other record type leaves it absent, which must read as a clean 0.
-                vec[_o + 19] = float(cant_reason_id(_r.get("cant")))
+                vec[_o + _c.CANT] = float(cant_reason_id(_r.get("cant")))
                 # gen3_event_semantics_v1 — same `.get` reasoning: only the FAINT / ITEM branches
                 # set their key, and every other row must read a clean 0.
-                vec[_o + 20] = float(faint_cause_id(_r.get("faint_cause")))
-                vec[_o + 21] = float(_r.get("item_tr", 0))
+                vec[_o + _c.FAINT_CAUSE] = float(faint_cause_id(_r.get("faint_cause")))
+                vec[_o + _c.ITEM_TRANSITION] = float(_r.get("item_tr", 0))
                 _ago = max(0, _cur - int(_r["turn"]))
-                vec[_o + 16] = math.log1p(min(_ago, 10)) / math.log(11.0)
-                vec[_o + 17] = float(_r["forced_window"])
-                vec[_o + 18] = 1.0
+                vec[_o + _c.TURNS_AGO] = math.log1p(min(_ago, 10)) / math.log(11.0)
+                vec[_o + _c.FORCED_WINDOW] = float(_r["forced_window"])
+                vec[_o + _c.VALID] = 1.0
 
         return vec
 

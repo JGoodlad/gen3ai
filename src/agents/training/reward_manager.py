@@ -173,8 +173,11 @@ class RewardBreakdown:
     # every loss −30. = γ·Φ_mat(s′) − Φ_mat(s), Φ_mat(terminal)=0. Replaces the old unconditional
     # hp_ours/hp_opp/faint_ours/faint_opp base spine (the clutch-vs-dominant fix).
     pbrs_material: float = 0.0
-    explosion: float = 0.0         # vestigial: the survive-Explosion credit is now carried by Φ_mat
-                                   # (opp lost a mon); the old +2.0 literal is deleted (design §2.5)
+    # (An `explosion` field sat here until 2026-08-18 as a "vestigial" placeholder — the +2.0
+    # literal was deleted in design §2.5 and the survive-Explosion credit rides Φ_mat. Nothing
+    # ever assigned it again, so it was a permanent 0.0 that still counted as an ACTIVE BIAS
+    # term in `reward_class_composition` — a census meant to name a run's hand-coded incentives
+    # was naming one that could not fire. Removed; the additive-regime BIAS count is 25, not 26.)
     explosion_block: float = 0.0   # Ghost immune or Protect blocked opponent Explosion
     finishing_blow: float = 0.0    # damaging move secured the KO
     self_ko_penalty: float = 0.0   # HP-scaled penalty for self-KOing a (healthy) mon — Explosion/
@@ -266,7 +269,7 @@ class RewardBreakdown:
         "pbrs_boost": RewardClass.PBRS, "pbrs_opp_boosts": RewardClass.PBRS,
         "pbrs_roar": RewardClass.PBRS,
         # everything else is BIAS:
-        "explosion": RewardClass.BIAS, "explosion_block": RewardClass.BIAS,
+        "explosion_block": RewardClass.BIAS,
         "finishing_blow": RewardClass.BIAS, "self_ko_penalty": RewardClass.BIAS,
         "roar": RewardClass.BIAS,
         "futile_attack": RewardClass.BIAS, "futile_setup": RewardClass.BIAS,
@@ -286,7 +289,7 @@ class RewardBreakdown:
 
     # Groups ordered by how frequently they produce non-zero values (for the compact string only).
     _GROUPS: ClassVar[tuple] = (
-        ("base",   ("win_loss", "pbrs_material", "explosion", "explosion_block", "finishing_blow",
+        ("base",   ("win_loss", "pbrs_material", "explosion_block", "finishing_blow",
                     "self_ko_penalty")),
         ("attack", ("roar", "futile_attack", "futile_setup", "setup_low_hp",
                     "boost_utilized", "status_wasted", "repetition_tax", "struggle_tax")),

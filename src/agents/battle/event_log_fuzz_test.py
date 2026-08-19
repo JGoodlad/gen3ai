@@ -39,7 +39,9 @@ from poke_env.player import RandomPlayer
 from poke_env.player.player import Player
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
-from agents.battle.battle_event import EVENT_VALUE_KEYS, OPP, OURS, EventKind
+from agents.battle.battle_event import (
+    EVENT_VALUE_KEYS, OPP, OURS, EventKind, declared_value_keys, undeclared_value_keys,
+)
 from agents.battle.gen3_battle import Gen3Battle
 from agents.observation.gen3_effects import encode_volatiles, normalize_cant_reason
 from agents.battle.turn_view import TurnView
@@ -171,13 +173,24 @@ def validate_battle(battle: Gen3Battle) -> List[str]:
     except AssertionError as e:
         problems.append(f"[{tag}] conservation: {e}")
 
-    # 1b) payload schema — every event carries its kind's required keys (the
-    #     structural no-silent-loss guard, checked here across ALL real kinds)
+    # 1b) payload schema — BOTH directions, checked here across ALL real kinds:
+    #     REQUIRED keys present (the structural no-silent-loss guard) AND no UNDECLARED key
+    #     (gen3_event_value_schema_v1 — the direction that fails silently, since a consumer
+    #     reading a key the producer never writes just gets None and reads it as "absent").
+    #     The unit schema test runs the same two checks on the CANONICAL scripted feed; this is
+    #     the one that sees the long tail of real gen3ou lines the script never contains.
     for e in battle.events:
         missing = EVENT_VALUE_KEYS.get(e.kind, frozenset()) - set(e.value)
         if missing:
             problems.append(
                 f"[{tag}] seq{e.seq} {e.kind.name} missing payload keys {missing}"
+            )
+        extra = undeclared_value_keys(e)
+        if extra:
+            problems.append(
+                f"[{tag}] seq{e.seq} {e.kind.name} carries UNDECLARED payload key(s) "
+                f"{sorted(extra)} — declare them in EVENT_VALUE_KEYS or EVENT_OPTIONAL_KEYS "
+                f"(declared: {sorted(declared_value_keys(e.kind))}); raw={e.raw}"
             )
 
     # 1c) live view — current-board snapshot is faithful to poke-env's state and

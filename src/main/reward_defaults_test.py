@@ -7,7 +7,10 @@ through gen-14 trained with neither, with no recorded rationale anywhere. The fl
 carried across the fresh-generation reset. It was invisible for a year because the reward config is
 **training-only** — it bumps no `ARCH_SIGNATURE`, is absent from `check_compatible`, and no launch
 line ever stated what the reward was composed of. Nothing failed; the objective just quietly became
-a fully-additive 26-term BIAS where the validated one was near-policy-invariant.
+a fully-additive 25-term BIAS where the validated one was near-policy-invariant.
+(The count read 26 until 2026-08-18, when the dead `RewardBreakdown.explosion` field — a
+permanent 0.0 nothing had assigned since design §2.5 deleted its literal — was removed. The
+census counts terms a config can EMIT, so a field that could never fire was over-counting it.)
 
 So the two defaults are pinned here BY VALUE, beside their opt-outs, in the shape
 `compile_defaults_test.py` established for the same class of change (an inverted default is
@@ -17,7 +20,7 @@ Three things this file holds that a `assert default is True` would not:
 
 1. **The composition pins.** The counts and the BIAS term list under each of the two regimes, so
    the drift class is legible forever: the default composition has ONE acknowledged bias term, and
-   the fallback has 26. A future edit that silently re-adds an additive term fails here.
+   the fallback has 25. A future edit that silently re-adds an additive term fails here.
 2. **The actionable resume error.** Flipping a resume-immutable default makes every pre-flip run
    mismatch on a flagless resume — correct and required (a live run's reward must never flip under
    it), but only useful if the error names the flags to re-pass.
@@ -151,13 +154,14 @@ def test_default_composition_is_the_v8_shape():
 
 
 def test_no_all_shaping_pbrs_composition_is_the_v9_shape():
-    """The fallback restores the fully-additive objective: 2 potentials and 26 BIAS terms, none of
-    them telescoping. This is what every ai_v9 run through gen-14 trained."""
+    """The fallback restores the fully-additive objective: 2 potentials and 25 BIAS terms, none of
+    them telescoping. This is what every ai_v9 run through gen-14 trained (as 26 terms — one of
+    them, `explosion`, was a dead field that could never fire and is now deleted)."""
     comp = reward_class_composition(_v9_config())
     assert comp["terminal"] == 1
     assert comp["pbrs"] == 2
     assert set(comp["pbrs_terms"]) == {"pbrs_material", "pbrs_belief"}
-    assert comp["bias"] == 26
+    assert comp["bias"] == 25
     # `no_progress_tax` is the one BIAS term the v9 regime does NOT have — its clock charge is gated
     # on `bias_redesign OR all_shaping_pbrs`, so turning the flag off also disarms the stall tilt.
     assert "no_progress_tax" not in comp["bias_terms"]
@@ -167,7 +171,7 @@ def test_no_all_shaping_pbrs_composition_is_the_v9_shape():
 def test_the_two_regimes_are_the_whole_point_of_the_census():
     """Stated as a single comparison so the drift is one assertion, not two files."""
     v8, v9 = reward_class_composition(RewardConfig()), reward_class_composition(_v9_config())
-    assert v8["bias"] == 1 and v9["bias"] == 26
+    assert v8["bias"] == 1 and v9["bias"] == 25
 
 
 def test_composition_covers_the_registry_exactly():
@@ -193,9 +197,9 @@ def test_the_announcer_line_names_the_sole_bias_term():
 
 
 def test_the_announcer_truncates_the_additive_pathology_but_keeps_the_count():
-    """26 term names is not a line anyone reads; the COUNT is the signal."""
+    """25 term names is not a line anyone reads; the COUNT is the signal."""
     line = format_reward_composition(_v9_config())
-    assert "26 BIAS" in line and "+20 more" in line and len(line) < 200
+    assert "25 BIAS" in line and "+19 more" in line and len(line) < 200
 
 
 def test_the_announcer_says_so_when_there_is_no_bias_left():

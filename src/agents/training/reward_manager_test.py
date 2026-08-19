@@ -1527,11 +1527,11 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # literal deleted; Φ_mat prices the trade
+        assert not hasattr(bd, "explosion")   # the dead field is DELETED (2026-08-18)
 
     def test_survive_explosion_no_literal_bonus(self):
         """The +2.0 explosion literal is DELETED (design §2.5) — the survive-the-Explosion credit is
-        now carried by Φ_mat (opp lost a mon, we lost none). bd.explosion stays 0; block bonus still
+        now carried by Φ_mat (opp lost a mon, we lost none). the `explosion` FIELD is deleted; block bonus still
         fires only on a no-damage block."""
         self.manager.record_action(_ctx(), 6)
         battle = self._make_exploder_battle()
@@ -1540,7 +1540,7 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)        # literal gone
+        assert not hasattr(bd, "explosion")   # the dead field is DELETED (2026-08-18)
         self.assertAlmostEqual(bd.explosion_block, 0.0, places=5)  # took damage, no block bonus
 
     def test_block_bonus_when_ghost_or_protect_immune(self):
@@ -1553,7 +1553,7 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event())
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)
+        assert not hasattr(bd, "explosion")   # the dead field is DELETED (2026-08-18)
         self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
 
     def test_explosion_not_triggered_without_event(self):
@@ -1566,7 +1566,7 @@ class TestExplosionReward(unittest.TestCase):
                    our_hp_delta=0.0)
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)
+        assert not hasattr(bd, "explosion")   # the dead field is DELETED (2026-08-18)
         self.assertAlmostEqual(bd.explosion_block, 0.0, places=5)
 
     def test_explosion_block_bonus_from_event_effectiveness(self):
@@ -1579,7 +1579,7 @@ class TestExplosionReward(unittest.TestCase):
                    opp_damaging_event=_explosion_event(effectiveness=0.0))
         self.manager.process_turn_reward(battle, d)
         bd = self.manager._last_breakdown
-        self.assertAlmostEqual(bd.explosion, 0.0, places=5)  # literal deleted (design §2.5)
+        assert not hasattr(bd, "explosion")   # the dead field is DELETED (2026-08-18)
         self.assertAlmostEqual(bd.explosion_block, EXPLOSION_BLOCK_BONUS, places=5)
 
 

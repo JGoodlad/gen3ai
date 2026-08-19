@@ -13,6 +13,7 @@ from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
 from agents.observation.constants import (
     EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED,
     EVENT_T_SWITCH_IN, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
+    EVENT_EFF_GROUP, EVENT_OUTCOME_GROUP, EventCol as C,
 )
 from agents.training.episode_tracker import EventWindowTracker
 
@@ -119,18 +120,18 @@ def test_encoder_writes_rows_back_padded_and_typed():
     vec = enc.encode(_B(), event_window=t)
     block = vec[OFFSET_EVENT_WINDOW:OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM] \
         .reshape(EVENT_WINDOW_N, EVENT_TOKEN_DIM)
-    n_valid = int(block[:, 18].sum())
+    n_valid = int(block[:, C.VALID].sum())
     assert n_valid == 7
     assert float(block[: EVENT_WINDOW_N - n_valid].sum()) == 0.0     # front padding all-zero
     move_row = block[EVENT_WINDOW_N - n_valid + 2]                   # our rockslide
-    assert move_row[0] == EVENT_T_MOVE
-    assert move_row[2] == 1.0                                        # our side
-    assert move_row[4] > 0                                           # move num present
-    assert move_row[5] == pytest.approx(-0.31)                       # attributed damage
-    assert move_row[9] == 1.0 and move_row[11] == 1.0                # crit + supereffective
+    assert move_row[C.TYPE] == EVENT_T_MOVE
+    assert move_row[C.ACTOR_SIDE] == 1.0                             # our side
+    assert move_row[C.MOVE] > 0                                      # move num present
+    assert move_row[C.MAGNITUDE] == pytest.approx(-0.31)             # attributed damage
+    assert move_row[C.CRIT] == 1.0 and move_row[C.EFF_SUPER] == 1.0  # crit + supereffective
     faint_row = block[EVENT_WINDOW_N - 1]
-    assert faint_row[0] == EVENT_T_FAINT and faint_row[2] == -1.0
-    assert 0.0 <= float(block[:, 16].max()) <= 1.0                   # recency in range
+    assert faint_row[C.TYPE] == EVENT_T_FAINT and faint_row[C.ACTOR_SIDE] == -1.0
+    assert 0.0 <= float(block[:, C.TURNS_AGO].max()) <= 1.0          # recency in range
 
 
 def test_event_seats_off_builds_nothing_on_reads_block():
@@ -144,8 +145,8 @@ def test_event_seats_off_builds_nothing_on_reads_block():
     assert any("history_events.proj" in k for k in on.policy.state_dict())
     # PAD rows are key-masked; a real row is not
     ev = torch.zeros(2, EVENT_WINDOW_N, EVENT_TOKEN_DIM)
-    ev[:, -1, 0] = EVENT_T_MOVE
-    ev[:, -1, 18] = 1.0
+    ev[:, -1, C.TYPE] = EVENT_T_MOVE
+    ev[:, -1, C.VALID] = 1.0
     tokens, pad = fe.history_events(ev, fe.embeddings)
     assert tokens.shape == (2, EVENT_WINDOW_N, tokens.shape[-1])
     assert bool(pad[:, :-1].all()) and not bool(pad[:, -1].any())
@@ -156,7 +157,7 @@ def test_event_seats_off_builds_nothing_on_reads_block():
     obs2 = obs.clone()
     sl = slice(OFFSET_EVENT_WINDOW, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM)
     obs2[:, sl] = 0.0
-    obs2[:, OFFSET_EVENT_WINDOW + 18] = 1.0          # one valid pad-ish row, different content
+    obs2[:, OFFSET_EVENT_WINDOW + C.VALID] = 1.0     # one valid pad-ish row, different content
     o2 = {"observation": obs2, "action_mask": torch.ones(2, 11)}
     with torch.no_grad():
         pi1, vf1 = fe(o1)
@@ -393,3 +394,91 @@ def test_the_archive_cant_vocabulary_is_FROZEN():
     assert CANT_DIM == 12 and TURN_DELTA_DIM == 159, "the ARCHIVE format moved — the prober will mis-slice"
     assert CANT_REASONS_LIVE[:len(CANT_REASONS)] == CANT_REASONS, "live must EXTEND the archive, never reorder it"
     assert "damp" in CANT_REASONS_LIVE and "damp" not in CANT_REASONS
+
+
+# ---------------------------------------------------------------------------
+# gen3_event_col_names_v1 — the 22-column contract as a NAMED declaration
+# ---------------------------------------------------------------------------
+# `EventCol` is imported by BOTH `state_encoder` (the producer) and
+# `team_transformer.EventSeats` (the consumer), plus the feature-coverage probes and every
+# oracle. Before it existed the contract was a comment plus ~30 bare integers spread over five
+# files, which is the shape the positional-binding sweep convicted five times: two ends bound to
+# the same subject by POSITION, with nothing relating them. These tests are what make the
+# declaration load-bearing rather than decorative.
+
+
+def test_event_column_map_tiles_the_token_exactly():
+    """The members must TILE `range(EVENT_TOKEN_DIM)` — no gaps, no overlaps, no overflow.
+
+    A gap is a column nobody writes and the consumer still slices (reading a constant 0 as a
+    feature); an overlap is two facts sharing an address, which reads as whichever wrote last.
+    Neither raises anywhere on its own — the token is a flat float row."""
+    values = [int(c) for c in C]
+    assert len(set(values)) == len(values), f"EventCol has DUPLICATE column indices: {values}"
+    assert sorted(values) == list(range(EVENT_TOKEN_DIM)), (
+        f"EventCol must cover 0..{EVENT_TOKEN_DIM - 1} exactly, got {sorted(values)} — "
+        "widening the token means adding a member AND bumping EVENT_TOKEN_DIM")
+
+
+def test_the_two_one_hot_groups_are_contiguous_and_in_order():
+    """Both groups are written by INDEXING, so their order and contiguity are the contract.
+
+    `state_encoder` writes the effectiveness one-hot as `EFF_NEUTRAL + eff` where `eff` is the
+    TurnDelta effectiveness code (0 neutral / 1 super / 2 resist / 3 immune), and `EventSeats`
+    takes the raw scalars as one `MAGNITUDE..WE_FIRST` slice that spans both groups. Reorder a
+    member and the producer writes 'resisted' where the consumer reads 'super effective' — a
+    pure relabelling with no shape change, so nothing else would notice."""
+    for group, name in ((EVENT_OUTCOME_GROUP, "EVENT_OUTCOME_GROUP"),
+                        (EVENT_EFF_GROUP, "EVENT_EFF_GROUP")):
+        cols = [int(c) for c in group]
+        assert cols == list(range(cols[0], cols[0] + len(cols))), (
+            f"{name} must be CONTIGUOUS and ascending (it is indexed as base+offset): {cols}")
+    assert [int(c) for c in EVENT_EFF_GROUP] == [C.EFF_NEUTRAL, C.EFF_SUPER,
+                                                 C.EFF_RESIST, C.EFF_IMMUNE], (
+        "the eff order is the TurnDelta effectiveness code order — reordering silently "
+        "relabels every historical row")
+    # The consumer's scalar run spans MAGNITUDE..WE_FIRST inclusive; both one-hots sit inside it,
+    # which is why EventSeats can take three slices instead of thirteen columns.
+    assert C.MAGNITUDE < C.OUT_HIT and C.EFF_IMMUNE < C.WE_FIRST
+
+
+def test_producer_and_consumer_import_the_SAME_declaration():
+    """Not "agree on the numbers" — are the SAME object.
+
+    Two modules each holding their own copy of the map would pass every value assertion above
+    right up until one of them was edited. The point of the declaration is that there is one.
+    (Both read it through the `EVENT_COL` plain-int mirror, itself generated from `EventCol` —
+    see `test_the_plain_int_mirror_agrees_with_the_enum_member_for_member`.)"""
+    from agents.observation.constants import EVENT_COL
+    from agents.observation import state_encoder as _producer
+    from agents.model import team_transformer as _consumer
+    assert _producer.EVENT_COL is EVENT_COL
+    assert _consumer.EVENT_COL is EVENT_COL
+
+
+def test_event_seats_scalar_count_matches_the_column_map():
+    """`EventSeats._N_SCALARS` is a WEIGHT SHAPE (it sizes `proj`'s input), and the column map
+    is what it is supposed to count. A column that changes routing — id ↔ raw scalar — moves
+    that width, and a stale `_N_SCALARS` builds a Linear of the wrong size against a `torch.cat`
+    of the right one, which raises far from the cause."""
+    from agents.model.team_transformer import EventSeats
+    ids = {C.TYPE, C.ACTOR_SPECIES, C.TARGET_SPECIES, C.MOVE, C.STATUS,
+           C.CANT, C.FAINT_CAUSE, C.ITEM_TRANSITION}
+    scalars = set(C) - ids - {C.VALID}
+    assert EventSeats._N_SCALARS == len(scalars), (
+        f"EventSeats._N_SCALARS={EventSeats._N_SCALARS} but the column map says {len(scalars)} "
+        f"raw scalars ({sorted(int(c) for c in scalars)})")
+
+
+def test_the_plain_int_mirror_agrees_with_the_enum_member_for_member():
+    """`EVENT_COL` is a generated mirror, so this is a tautology TODAY — its value is that it
+    stays one. Both live consumers read the MIRROR, not the enum, for reasons that have nothing
+    to do with the contract (`state_encoder` because an enum member's `LOAD_ATTR` costs ~36% of
+    the obs write loop; `team_transformer` because `torch.fx` renders an enum member as its repr
+    `<EventCol.TYPE: 0>` into generated graph code, which is a SyntaxError at compile). A future
+    edit that hand-writes an entry into the mirror instead of deriving it fails here."""
+    from agents.observation.constants import EVENT_COL
+    mirror = {k: v for k, v in vars(EVENT_COL).items() if not k.startswith("_")}
+    assert mirror == {c.name: int(c) for c in C}
+    assert all(type(v) is int for v in mirror.values()), (
+        "the mirror must hold PLAIN ints — an IntEnum member here defeats both of its purposes")

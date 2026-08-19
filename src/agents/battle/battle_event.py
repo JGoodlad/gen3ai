@@ -186,29 +186,31 @@ EVENT_KIND: Dict[str, EventKind] = {
 }
 
 
-# Per-kind REQUIRED payload keys. The schema test (battle_event_test.py) asserts that
-# every emitted event of a given kind carries at least these keys in ``value`` — the
-# structural guard against the Focus-Punch class of loss (a fact silently dropped
-# because the consumer's vocabulary didn't have a slot for it). Optional keys
-# (``from`` / ``of`` / ``from_move`` / ``target_status`` / ``hp_before`` …) are not
-# listed; add a key here the moment a consumer must be able to rely on it.
+# Per-kind REQUIRED payload keys. The schema test (``gen3_battle_test.py``) and the event-log
+# fuzz assert that every emitted event of a given kind carries at least these keys in
+# ``value`` — the structural guard against the Focus-Punch class of loss (a fact silently
+# dropped because the consumer's vocabulary didn't have a slot for it). Add a key here the
+# moment a consumer must be able to rely on it.
 EVENT_VALUE_KEYS: Dict[EventKind, frozenset] = {
     EventKind.MOVE: frozenset({"move_id"}),
-    EventKind.SWITCH: frozenset({"prev_active"}),
-    EventKind.DRAG: frozenset({"prev_active"}),
+    EventKind.SWITCH: frozenset(),
+    EventKind.DRAG: frozenset(),
     EventKind.FAINT: frozenset(),
     EventKind.DAMAGE: frozenset({"amount"}),
     EventKind.HEAL: frozenset({"amount"}),
     EventKind.BOOST: frozenset({"stat", "amount"}),
     EventKind.UNBOOST: frozenset({"stat", "amount"}),
     EventKind.SETBOOST: frozenset({"stat", "amount"}),
+    # `op` is the ONLY discriminator here: SEVEN protocol keywords (-clearboost /
+    # -clearallboost / -clearnegativeboost / -clearpositiveboost / -invertboost / -copyboost /
+    # -swapboost) collapse into this one kind, so dropping it would erase which one happened.
     EventKind.CLEARBOOST: frozenset({"op"}),
     EventKind.STATUS: frozenset({"status"}),
     EventKind.CURESTATUS: frozenset({"status"}),
     EventKind.CANT: frozenset({"reason"}),
-    EventKind.CRIT: frozenset({"op"}),
-    EventKind.MISS: frozenset({"op"}),
-    EventKind.FAIL: frozenset({"op"}),
+    EventKind.CRIT: frozenset(),
+    EventKind.MISS: frozenset(),
+    EventKind.FAIL: frozenset(),
     EventKind.IMMUNE: frozenset({"multiplier"}),
     EventKind.RESISTED: frozenset({"multiplier"}),
     EventKind.SUPEREFFECTIVE: frozenset({"multiplier"}),
@@ -221,11 +223,11 @@ EVENT_VALUE_KEYS: Dict[EventKind, frozenset] = {
     EventKind.VOLATILE_START: frozenset({"effect"}),
     EventKind.VOLATILE_END: frozenset({"effect"}),
     EventKind.ACTIVATE: frozenset({"effect"}),
-    EventKind.PREPARE: frozenset({"move"}),
+    EventKind.PREPARE: frozenset(),
     EventKind.MUSTRECHARGE: frozenset(),
     EventKind.TRANSFORM: frozenset(),
-    EventKind.FORMECHANGE: frozenset({"details"}),
-    EventKind.SWAP: frozenset({"detail"}),
+    EventKind.FORMECHANGE: frozenset(),
+    EventKind.SWAP: frozenset(),
     EventKind.SETHP: frozenset({"hp"}),
     # CHOICE_REJECTED carries an optional ``reason`` (the verbatim error text) but requires
     # no key — the rejection itself is the fact, and the attempted slot is recovered at fold
@@ -234,6 +236,85 @@ EVENT_VALUE_KEYS: Dict[EventKind, frozenset] = {
     # explicit rather than relying on its frozenset() default.
     EventKind.CHOICE_REJECTED: frozenset(),
 }
+
+
+# Per-kind OPTIONAL payload keys — the OTHER half of the schema (gen3_event_value_schema_v1).
+#
+# `EVENT_VALUE_KEYS` alone is a LOWER bound: it catches a builder that FORGETS a key, and is
+# blind to one that INVENTS or RENAMES one. That asymmetry is not hypothetical here — the
+# positional-binding sweep's fourth live site was the event-window fuzz guarding residual
+# damage with ``value.get("from")`` on a DAMAGE event, a key DAMAGE has never carried (the
+# parser writes the ``[from]`` clause to ``value["reason"]`` there and to ``value["from"]`` on
+# the effect kinds). A consumer reading an absent key gets ``None`` and reads it as "absent",
+# which is why that class is always silent. Declaring the FULL vocabulary makes
+# required ∪ optional an EXACT set: a producer that starts emitting an undeclared key fails at
+# the producer, in the same pass that introduced it.
+#
+# The convention this encodes: `required` = a consumer may rely on it; `optional` = the builder
+# may emit it, and nothing may assume it. A key in NEITHER set is a bug in one of them.
+EVENT_OPTIONAL_KEYS: Dict[EventKind, frozenset] = {
+    # `target_status` is written on every MOVE (value may be None); `from_move` only on a
+    # delegated move (Sleep Talk / Metronome).
+    EventKind.MOVE: frozenset({"target_status", "from_move"}),
+    EventKind.SWITCH: frozenset(),
+    EventKind.DRAG: frozenset(),
+    EventKind.FAINT: frozenset(),
+    # `hp_after` is the post-line HP fraction the TurnDelta fold reads; `reason` is the
+    # ``[from]`` clause (residual/hazard/ability attribution).
+    EventKind.DAMAGE: frozenset({"hp_after", "reason"}),
+    EventKind.HEAL: frozenset({"hp_after", "reason"}),
+    EventKind.SETHP: frozenset({"amount", "reason"}),
+    EventKind.BOOST: frozenset(),
+    EventKind.UNBOOST: frozenset(),
+    EventKind.SETBOOST: frozenset(),
+    EventKind.CLEARBOOST: frozenset(),
+    EventKind.STATUS: frozenset({"reason"}),
+    # Constant (`curestatus` is the only keyword mapping to this kind), so it discriminates
+    # nothing — declared rather than required.
+    EventKind.CURESTATUS: frozenset({"op"}),
+    # gen3_damp_cant_v1: an ability-sourced cant is filed against the ability HOLDER and names
+    # the mon that really lost its turn in `[of]`, resolved here at emission.
+    EventKind.CANT: frozenset({"move", "of", "of_side", "of_actor"}),
+    # The legacy `|move|…|[miss]` / `[notarget]` suffix form emits a synthetic outcome event
+    # tagged ``from="move-suffix"`` so the two protocol spellings are distinguishable.
+    EventKind.CRIT: frozenset({"from"}),
+    EventKind.MISS: frozenset({"from"}),
+    EventKind.FAIL: frozenset({"from"}),
+    EventKind.IMMUNE: frozenset(),
+    EventKind.RESISTED: frozenset(),
+    EventKind.SUPEREFFECTIVE: frozenset(),
+    EventKind.ITEM: frozenset({"from", "of"}),
+    EventKind.ENDITEM: frozenset({"from", "of"}),
+    EventKind.ABILITY: frozenset({"op", "from", "of"}),
+    EventKind.WEATHER: frozenset({"from", "of"}),
+    # start/end discriminators — one kind, two keywords.
+    EventKind.FIELD: frozenset({"op"}),
+    EventKind.SIDE: frozenset({"op"}),
+    EventKind.VOLATILE_START: frozenset({"op", "from", "of"}),
+    EventKind.VOLATILE_END: frozenset({"op", "from", "of"}),
+    EventKind.ACTIVATE: frozenset({"from", "of"}),
+    EventKind.PREPARE: frozenset(),
+    EventKind.MUSTRECHARGE: frozenset(),
+    EventKind.TRANSFORM: frozenset(),
+    EventKind.FORMECHANGE: frozenset({"op"}),
+    EventKind.SWAP: frozenset(),
+    EventKind.CHOICE_REJECTED: frozenset({"reason"}),
+}
+
+
+def declared_value_keys(kind: EventKind) -> frozenset:
+    """The FULL declared payload vocabulary for ``kind`` — required ∪ optional.
+
+    A key outside this set is undeclared: either the builder invented it or the schema was not
+    updated with it. Both are the same defect from a consumer's point of view, because an
+    undeclared key is one nobody has committed to keeping.
+    """
+    return EVENT_VALUE_KEYS.get(kind, frozenset()) | EVENT_OPTIONAL_KEYS.get(kind, frozenset())
+
+
+def undeclared_value_keys(event: "BattleEvent") -> frozenset:
+    """The keys ``event.value`` carries that its kind's schema does not declare (usually empty)."""
+    return frozenset(event.value) - declared_value_keys(event.kind)
 
 
 @dataclass(frozen=True)

@@ -36,7 +36,7 @@ from agents.observation.constants import (
     EVENT_T_BOOST, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL, EVENT_T_MOVE,
     EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED, EVENT_T_SWITCH_IN, EVENT_T_SWITCH_REJECTED,
     EVENT_STATUS_IDS, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N,
-    OFFSET_EVENT_WINDOW,
+    OFFSET_EVENT_WINDOW, EVENT_EFF_GROUP, EventCol as C,
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
@@ -200,19 +200,43 @@ def _oracle_rows(battle, resync_log):
     return rows
 
 
+# gen3_event_col_names_v1: the three columns this oracle does NOT model, STATED rather than
+# silently truncated. `_want_vec` used to return a 19-tuple compared with `zip(got, want)`
+# against a 22-wide row — and `zip` stops at the shorter, so `CANT` / `FAINT_CAUSE` /
+# `ITEM_TRANSITION` were unchecked with nothing saying so. The oracle emits no CANT row and
+# derives no faint cause or item transition, so covering them is a modelling job, not a
+# formatting one; until then the gap is declared and the coverage assert below keeps it honest.
+_ORACLE_UNMODELED_COLS = frozenset({C.CANT, C.FAINT_CAUSE, C.ITEM_TRANSITION})
+
+
 def _want_vec(r, cur_turn):
+    """The oracle's expected row, keyed by NAMED column — never a positional tuple."""
     side = 1.0 if r["side"] == OURS else (-1.0 if r["side"] == OPP else 0.0)
     is_move = r["t"] == EVENT_T_MOVE
     mag = max(-1.0, min(1.0, r["mag"])) if is_move else max(-1.0, min(1.0, r["mag"] / 6.0))
-    eff = [0.0] * 4
-    if is_move:
-        eff[int(r["eff"])] = 1.0
-    return (float(r["t"]), _sp_num(r["actor"]), side, _sp_num(r["target"]),
-            _mv_num(r["move"]), mag,
-            (r["hit"] if is_move else 0.0), (r["miss"] if is_move else 0.0),
-            (r["fail"] if is_move else 0.0), (r["crit"] if is_move else 0.0),
-            *eff, (1.0 if r["wf"] else 0.0), float(r["status"]),
-            _norm(max(0, cur_turn - int(r["turn"]))), float(r["fw"]), 1.0)
+    want = {
+        C.TYPE: float(r["t"]),
+        C.ACTOR_SPECIES: _sp_num(r["actor"]),
+        C.ACTOR_SIDE: side,
+        C.TARGET_SPECIES: _sp_num(r["target"]),
+        C.MOVE: _mv_num(r["move"]),
+        C.MAGNITUDE: mag,
+        C.OUT_HIT: (r["hit"] if is_move else 0.0),
+        C.OUT_MISS: (r["miss"] if is_move else 0.0),
+        C.OUT_FAIL: (r["fail"] if is_move else 0.0),
+        C.CRIT: (r["crit"] if is_move else 0.0),
+        C.WE_FIRST: (1.0 if r["wf"] else 0.0),
+        C.STATUS: float(r["status"]),
+        C.TURNS_AGO: _norm(max(0, cur_turn - int(r["turn"]))),
+        C.FORCED_WINDOW: float(r["fw"]),
+        C.VALID: 1.0,
+    }
+    for i, col in enumerate(EVENT_EFF_GROUP):
+        want[col] = 1.0 if (is_move and int(r["eff"]) == i) else 0.0
+    assert set(want) | _ORACLE_UNMODELED_COLS == set(C), (
+        "the oracle must state an expectation for every EventCol member or declare it "
+        f"unmodelled — missing: {sorted(set(C) - set(want) - _ORACLE_UNMODELED_COLS)}")
+    return want
 
 
 class _EventWindowFuzzPlayer(Player):
@@ -252,7 +276,7 @@ class _EventWindowFuzzPlayer(Player):
             got = tuple(float(x) for x in block[n_pad + ri])
             want = _want_vec(r, cur_turn)
             s.checked += 1
-            if any(abs(g - w) > _TOL for g, w in zip(got, want)):
+            if any(abs(got[int(c)] - w) > _TOL for c, w in want.items()):
                 rec = dict(tag=tag, turn=cur_turn, row=ri, got=got, want=want, record=r)
                 if not s.failures:
                     rec["trace"] = [

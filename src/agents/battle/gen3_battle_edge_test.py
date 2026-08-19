@@ -57,7 +57,12 @@ def test_phaze_roared_out():
     assert v.ours.moved is False
     drag = next(e for e in b.events_for_turn(1) if e.kind is EventKind.DRAG)
     assert drag.side == "ours"
-    assert drag.value["prev_active"] == "tyranitar"
+    assert drag.actor_species == "blissey"          # the mon dragged IN
+    # gen3_event_value_schema_v1: the DRAG payload is EMPTY — `prev_active`/`details` were
+    # deleted (unread by anything; the outgoing mon is `v.ours.switched_to`'s counterpart in
+    # the fold's own snapshot, and the details string is verbatim in `raw`).
+    assert drag.value == {}
+    assert "Blissey, L100, F" in drag.raw
 
 
 # --------------------------------------------------------------------------- #

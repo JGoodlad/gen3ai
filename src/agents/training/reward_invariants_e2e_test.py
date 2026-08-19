@@ -21,7 +21,7 @@ Architecture:
 
 Coverage — one invariant per non-zero-able field on `RewardBreakdown`:
   base       : hp_ours, hp_opp, faint_ours, faint_opp, win_loss,
-               explosion, explosion_block, finishing_blow
+               explosion_block, finishing_blow
   attack     : roar (success + failed), futile_attack (general + immune),
                futile_setup, setup_low_hp, boost_utilized, status_wasted
   field      : spikes (layer add + waste)
@@ -281,15 +281,15 @@ def _check_invariants(
     elif bd.win_loss != 0.0:
         viol(f"win_loss={bd.win_loss:.4f} fired without terminal state")
 
-    # --- explosion_block (event-driven). The +2.0 explosion LITERAL is deleted (design §2.5) —
-    # bd.explosion is always 0; the survive-Explosion credit rides Φ_mat. Only the block bonus (no
-    # damage / 0× immunity) remains, inside the `not we_fainted` gate. ---
+    # --- explosion_block (event-driven). The +2.0 explosion LITERAL was deleted in design §2.5
+    # and the survive-Explosion credit rides Φ_mat; the `bd.explosion` FIELD that held its place
+    # is deleted too (2026-08-18), so the "must always be 0" invariant that used to sit here is
+    # now structural — there is no field to be non-zero. Only the block bonus (no damage / 0×
+    # immunity) remains, inside the `not we_fainted` gate. ---
     opp_event = delta.opp_damaging_event
     is_opp_explosion = (
         opp_event is not None and opp_event.move_id in ("explosion", "selfdestruct")
     )
-    if bd.explosion != 0.0:
-        viol(f"explosion={bd.explosion:.4f} — the literal is deleted; must always be 0")
     if is_opp_explosion and not delta.we_fainted:
         block_expected = (
             float(delta.our_hp_delta.sum()) == 0.0 or opp_event.effectiveness == 0.0
@@ -739,7 +739,7 @@ async def main(n_battles: int = 30) -> None:
     # These are the dataclass field names mapped to which counter they bump.
     expected_signals = {
         "faint_ours", "faint_opp", "win_loss_win", "win_loss_lose",
-        "explosion", "explosion_block", "finishing_blow",
+        "explosion_block", "finishing_blow",
         "roar_failed", "roar_success", "futile_attack",
         "futile_setup", "setup_low_hp", "boost_utilized", "status_wasted",
         "spikes", "matchup_penalty",

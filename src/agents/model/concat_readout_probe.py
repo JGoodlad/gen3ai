@@ -8,10 +8,15 @@ Three pre-registered arm families on one stratified state sample:
    directly (the block enters `ProjectionAssembler.forward` once for each head, appended
    last — the probe composes each arm from two assembler calls, one with the block zeroed,
    taking pi from one and vf from the other; exact, no internal replication).
-2. **Redundancy arm** — zero the E4 threat-seat tokens alone, the concat's `imx_HEADERS`
-   slice alone, and both together. The headers are bit-for-bit the E4 seat input content, so:
-   flat-alone ≈ both  ⇒ the entity route goes unused (readout hypothesis CONFIRMED);
-   both ≫ each alone  ⇒ the routes are complementary (delivery still matters).
+2. **Redundancy arm** — ⚠️ **GONE, and it cannot be repaired in place.** It zeroed the E4
+   threat-seat tokens alone, the concat's `imx_HEADERS` slice alone, and both together; the
+   headers being bit-for-bit the E4 seat input content is what made the comparison mean
+   something (flat-alone ≈ both ⇒ the entity route goes unused). Post-v61/v96 the headers do
+   not reach the assembler AT ALL — `headers_off` is structurally a no-op there, and the E4
+   half's call sites were unreachable behind `check_assembler_site`'s refusal. Both halves are
+   deleted (2026-08-18) rather than left printing 0.0000 into a report, which is precisely the
+   `concat`-arm failure this file's own `_assembler_arm` comment warns about. Reviving it means
+   auditing a pre-v96 checkpoint from the commit its `metadata.json` git_hash names.
 3. **Conditional coverage** — the coverage-probe targets (labels EXACT from the op's own
    in_matrix cells) refit on pi/vf features WITH the concat zeroed at the projections:
    does the critic's one measured magnitude read (`act_threat` vf r² ≈ 0.33 at baseline)
@@ -92,27 +97,18 @@ def _assembler_arm(fe: Any, mode: str, hdr: "tuple[int, int] | None" = None) -> 
         fe.assembler.forward = orig
 
 
-@contextlib.contextmanager
-def _e4_seats_off(fe: Any) -> Iterator[None]:
-    """Zero the E4 threat-seat tokens in the trunk's `extra` pack (E3 [0:4], E4 [4:4+K],
-    E5 tail after — layout per EntityMoveSeats)."""
-    tt = fe.team_transformer
-    orig = tt.forward
-    k = fe.entity_seats.topk_seats
-
-    def patched(*args: Any, extra: Any = None, **kw: Any) -> Any:
-        if extra is not None and k > 0:
-            tokens, types, pad = extra
-            tokens = tokens.clone()
-            tokens[:, 4:4 + k] = 0.0
-            extra = (tokens, types, pad)
-        return orig(*args, extra=extra, **kw)
-
-    tt.forward = patched
-    try:
-        yield
-    finally:
-        tt.forward = orig
+# `_e4_seats_off` — the §9.1 REDUNDANCY arm's other half — is DELETED (2026-08-18).
+#
+# It zeroed the E4 threat-seat tokens in the trunk's `extra` pack, and its only meaning was as
+# the comparison partner of `imx_headers_off`: *flat-alone ≈ both* would have said the entity
+# route goes unused. Both of its call sites sat AFTER the `_assembler_arm` loop, and
+# `_assembler_arm` now calls `check_assembler_site`, which RAISES unconditionally on any
+# post-v96 architecture (the assembler takes no block argument at all). So `main()` cannot
+# reach them: the arm was unreachable code whose partner arm no longer exists.
+#
+# It was also bound to the `extra` pack by POSITION (`tokens[:, 4:4 + k]`, assuming E3 occupies
+# [0:4]) — the class the 2026-08-18 sweep convicted five times. Reviving it on a pre-v96
+# checkpoint means resolving the E4 span from `EntityMoveSeats` by name, not restoring this.
 
 
 @torch.no_grad()
@@ -232,15 +228,6 @@ def main() -> None:
             p, v = _measure(policy, obs_np, masks_np, a.batch)
         arms[name] = _vs_base(p, v, bp, bv)
         print(f"{name:>22}: {arms[name]}")
-    with _e4_seats_off(fe):
-        p, v = _measure(policy, obs_np, masks_np, a.batch)
-    arms["e4_seats_off"] = _vs_base(p, v, bp, bv)
-    print(f"{'e4_seats_off':>22}: {arms['e4_seats_off']}")
-    with _e4_seats_off(fe), _assembler_arm(fe, "headers_off", hdr):
-        p, v = _measure(policy, obs_np, masks_np, a.batch)
-    arms["e4_and_headers_off"] = _vs_base(p, v, bp, bv)
-    print(f"{'e4_and_headers_off':>22}: {arms['e4_and_headers_off']}")
-
     cov = _coverage_fit(policy, fe, obs_np, masks_np, a.batch)
     print("coverage:", json.dumps(cov, default=str)[:400])
 

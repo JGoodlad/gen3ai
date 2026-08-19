@@ -3,11 +3,17 @@
 Two things are validated against REAL in-process bridge battles (no server), and a violation
 of either raises immediately:
 
-  A. OBS CORRECTNESS (exact, per decision). The two reactive scalars — vec[OFFSET_REACTIVE+15]
-     (our active) and vec[OFFSET_REACTIVE+16] (opp active) — MUST equal
+  A. OBS CORRECTNESS (exact, per decision). ``gen3_entity_rehome_v1`` DELETED the two reactive
+     scalars this test used to read (``OFFSET_REACTIVE+15/+16``): protect odds now ride EVERY
+     mon's slot at ``POKEMON_PROTECT_OFFSET``, because every mon owns its own stall state (the
+     counter resets on switch, so a benched mon truthfully reads 1.0). Both sides' ACTIVE slot —
+     located by the slot's own ACTIVE flag, and addressed through the DECLARED layout rather
+     than a literal — MUST equal
      ``gen3_mechanics.protect_success_probability(mon.protect_counter)`` for the live mon, read
      through the SAME LiveView the encoder uses. This pins the wiring (poke-env counter →
-     LiveView → encoder → correct offset → correct floored-doubling formula) and the offsets.
+     LiveView → encoder → correct per-mon offset → correct floored-doubling formula).
+     ⚠️ Until 2026-08-18 this file was UNRUNNABLE — its ``layout["protect_odds_our"]`` lookup
+     KeyError'd on the re-homed layout, so it had been dead-loud since the re-home.
 
   B. EMPIRICAL % (the "are the probabilities actually right" check). One side spams Protect and
      the opponent always attacks; we intercept the raw |...| protocol to reconstruct, per protect
@@ -43,7 +49,9 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from agents.battle.gen3_battle import Gen3Battle
 from agents.gen3_mechanics import protect_success_probability
-from agents.observation.constants import OFFSET_REACTIVE
+from agents.observation.constants import (
+    POKEMON_ACTIVE_OFFSET, POKEMON_FULL_DIM, TEAM_SIZE,
+)
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from utils.teambuilder import Gen3Teambuilder
 from utils.bridge.local_battle_runner import run_local_battles
@@ -195,9 +203,19 @@ class _ProtectFuzzPlayer(Player):
         super().__init__(*args, **kwargs)
         self.stats = stats
         self.encoder = Gen3ObservationEncoder(load_mappings())
-        layout = self.encoder.reactive_encoder.get_layout()
-        self._our_off = OFFSET_REACTIVE + layout["protect_odds_our"]["offset"]
-        self._opp_off = OFFSET_REACTIVE + layout["protect_odds_opp"]["offset"]
+        # gen3_entity_rehome_v1: the two reactive scalars are GONE — protect odds ride EVERY
+        # mon's slot at `POKEMON_PROTECT_OFFSET`. Both addresses are resolved from the DECLARED
+        # layout (`get_layout()`), never a literal, so the next re-home moves them with it.
+        layout = self.encoder.get_layout()
+        self._team_start = {
+            "our": layout["parts"]["our_team"]["start"],
+            "opp": layout["parts"]["opp_team"]["start"],
+        }
+        self._slot_dim = POKEMON_FULL_DIM
+        self._protect_col = layout["pokemon"]["protect_odds"]["offset"]
+        # The ACTIVE flag is written by `state_encoder` (not the per-mon encoder), so it has no
+        # `layout["pokemon"]` entry — the named constant IS its declaration.
+        self._active_col = POKEMON_ACTIVE_OFFSET
         # protocol-tracking state (per battle tag)
         self._consec = defaultdict(lambda: defaultdict(int))   # tag -> mon -> consecutive successes
         self._pending = {}                                     # tag -> (mon, k) | None
@@ -216,22 +234,35 @@ class _ProtectFuzzPlayer(Player):
         s.decisions += 1
         vec = self.encoder.encode(battle)
 
-        # The encoder reads protect_counter through the LiveView; mirror its None-guard exactly
-        # (opp_active None → the encoder leaves 0.0, NOT protect_success_probability(0)=1.0).
+        # gen3_entity_rehome_v1: read each side's ACTIVE SLOT, located by the slot's own active
+        # flag rather than by assuming a team-list position (the encoder orders slots by its
+        # team list; a positional assumption here would be the oracle mirroring its subject).
         exp_our = protect_success_probability(active.protect_counter)
         exp_opp = protect_success_probability(opp.protect_counter) if opp is not None else 0.0
-        got_our = float(vec[self._our_off])
-        got_opp = float(vec[self._opp_off])
+        got_our = self._active_protect(vec, "our")
+        got_opp = self._active_protect(vec, "opp")
 
         s.counter_hist[int(active.protect_counter)] += 1
         s.max_counter_seen = max(s.max_counter_seen, int(active.protect_counter))
 
-        if abs(got_our - exp_our) > _TOL or abs(got_opp - exp_opp) > _TOL:
+        # An opponent with no active mon has no slot flagged active — the field is then ABSENT,
+        # which the old reactive block spelled as a 0.0 scalar. Keep the same expectation.
+        if got_our is None or abs(got_our - exp_our) > _TOL or \
+                abs((0.0 if got_opp is None else got_opp) - exp_opp) > _TOL:
             s.obs_fail += 1
             s.record({"check": "obs_scalar_mismatch", "turn": battle.turn,
                       "our_counter": int(active.protect_counter), "our_got": got_our, "our_exp": exp_our,
                       "opp_counter": (int(opp.protect_counter) if opp is not None else None),
                       "opp_got": got_opp, "opp_exp": exp_opp})
+
+    def _active_protect(self, vec, side: str):
+        """The protect-odds field on `side`'s ACTIVE mon slot, or None if no slot is flagged."""
+        base = self._team_start[side]
+        for i in range(TEAM_SIZE):
+            start = base + i * self._slot_dim
+            if float(vec[start + self._active_col]) > 0.5:
+                return float(vec[start + self._protect_col])
+        return None
 
     # ---------------------------------------------------------------- Part B (protocol)
     async def _handle_battle_message(self, split_messages):

@@ -10,6 +10,7 @@ from typing import Callable, Dict, Any, Optional, Tuple
 from agents.observation.constants import (
     TEAM_SIZE,
     GLOBAL_ENV_DIM,
+    EVENT_COL,
 )
 
 from agents.model.arch_constants import (
@@ -381,11 +382,14 @@ def _event_reference_cells(event_window: torch.Tensor,
     a mirror species on the other team can never false-link. PAD rows (valid=0) contribute
     nothing. Pure (no parameters) so the identity is testable without a forward."""
     ev = event_window
+    C = EVENT_COL                  # PLAIN ints — an IntEnum member breaks torch.fx code-gen
     sm = species_ids.float()[:, None, :]                                       # [B,1,12]
     ss = torch.cat([torch.ones(TEAM_SIZE), -torch.ones(TEAM_SIZE)]) \
         .to(ev.device)[None, None, :]                                          # [1,1,12]
-    valid = (ev[:, :, 18] > 0.5)[:, :, None]
-    actor, tgt, eside = ev[:, :, 1:2], ev[:, :, 3:4], ev[:, :, 2:3]
+    valid = (ev[:, :, C.VALID] > 0.5)[:, :, None]
+    actor = ev[:, :, C.ACTOR_SPECIES:C.ACTOR_SPECIES + 1]
+    tgt = ev[:, :, C.TARGET_SPECIES:C.TARGET_SPECIES + 1]
+    eside = ev[:, :, C.ACTOR_SIDE:C.ACTOR_SIDE + 1]
     is_actor = (actor == sm) & (actor > 0) & (eside == ss) & valid             # [B,N,12]
     is_target = (tgt == sm) & (tgt > 0) & (-eside == ss) & valid
     return torch.stack([is_actor.float(), is_target.float()], dim=-1)
@@ -415,7 +419,10 @@ class EventSeats(torch.nn.Module):
     _CANT_EMB = 6
     _FAINT_EMB = 5
     _ITEMTR_EMB = 4
-    _N_SCALARS = 13          # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced
+    # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced. Cross-checked against
+    # the `EventCol` map by feature_coverage/failed_protect_feature_test, which classifies every
+    # column as an embedded id / a raw scalar / the pad flag and demands the counts agree.
+    _N_SCALARS = 13
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
@@ -456,18 +463,31 @@ class EventSeats(torch.nn.Module):
 
     def forward(self, ev: torch.Tensor, embeddings: 'Embeddings'
                 ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """ev [B, N, EVENT_TOKEN_DIM] → (seat tokens [B, N, D_MODEL], pad [B, N] bool)."""
-        kind = ev[:, :, 0].long().clamp(min=0)
-        actor = ev[:, :, 1].long().clamp(min=0)
-        target = ev[:, :, 3].long().clamp(min=0)
-        move = ev[:, :, 4].long().clamp(min=0)
-        status = ev[:, :, 15].long().clamp(min=0, max=self.status_emb.num_embeddings - 1)
-        cant = ev[:, :, 19].long().clamp(min=0, max=self.cant_emb.num_embeddings - 1)
-        faint = ev[:, :, 20].long().clamp(min=0, max=self.faint_emb.num_embeddings - 1)
-        itemtr = ev[:, :, 21].long().clamp(min=0, max=self.itemtr_emb.num_embeddings - 1)
-        # the 12 raw scalars: side(2) mag(5) outcome(6:9) crit(9) eff(10:14) we_first(14)
-        # ago(16) forced(17) — columns 2,5..14,16,17
-        scalars = torch.cat([ev[:, :, 2:3], ev[:, :, 5:15], ev[:, :, 16:18]], dim=-1)
+        """ev [B, N, EVENT_TOKEN_DIM] → (seat tokens [B, N, D_MODEL], pad [B, N] bool).
+
+        gen3_event_col_names_v1: every column is named through `EventCol`, the SAME declaration
+        `state_encoder` writes from (via the `EVENT_COL` plain-int mirror — see its comment in
+        `constants.py`; an IntEnum member cannot survive torch.fx code-gen). Bare literals on
+        both sides were a producer/consumer pair related by nothing but a comment."""
+        C = EVENT_COL
+        kind = ev[:, :, C.TYPE].long().clamp(min=0)
+        actor = ev[:, :, C.ACTOR_SPECIES].long().clamp(min=0)
+        target = ev[:, :, C.TARGET_SPECIES].long().clamp(min=0)
+        move = ev[:, :, C.MOVE].long().clamp(min=0)
+        status = ev[:, :, C.STATUS].long().clamp(min=0, max=self.status_emb.num_embeddings - 1)
+        cant = ev[:, :, C.CANT].long().clamp(min=0, max=self.cant_emb.num_embeddings - 1)
+        faint = ev[:, :, C.FAINT_CAUSE].long().clamp(min=0, max=self.faint_emb.num_embeddings - 1)
+        itemtr = ev[:, :, C.ITEM_TRANSITION].long().clamp(
+            min=0, max=self.itemtr_emb.num_embeddings - 1)
+        # The 13 raw scalars, as three contiguous runs: ACTOR_SIDE; MAGNITUDE..WE_FIRST (which
+        # spans the outcome + eff one-hots and CRIT); TURNS_AGO..FORCED_WINDOW. Slicing by named
+        # endpoints rather than literals is what makes `_N_SCALARS` checkable against the column
+        # map (feature_coverage/failed_protect_feature_test) instead of hand-kept.
+        scalars = torch.cat([
+            ev[:, :, C.ACTOR_SIDE:C.ACTOR_SIDE + 1],
+            ev[:, :, C.MAGNITUDE:C.WE_FIRST + 1],
+            ev[:, :, C.TURNS_AGO:C.FORCED_WINDOW + 1],
+        ], dim=-1)
         row = torch.cat([
             self.kind_emb(kind),
             embeddings.species_embedding(actor),
@@ -480,5 +500,5 @@ class EventSeats(torch.nn.Module):
             scalars,
         ], dim=-1)
         tokens = self.norm(self.proj(row)) + self.event_marker
-        pad = ev[:, :, 18] < 0.5                                     # valid=0 ⇒ masked
+        pad = ev[:, :, C.VALID] < 0.5                                # valid=0 ⇒ masked
         return tokens, pad
