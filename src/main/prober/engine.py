@@ -388,6 +388,11 @@ class OppIntentOption:
     name: str
     p: float
     is_switch: bool
+    #: Did the opponent actually DO this? Carried on the option rather than left to a surface to
+    #: match, for the same reason as `is_switch`: the recorded action is an id (`drillpeck`) and the
+    #: option is a display name (`Drill Peck`), so the comparison needs normalization and a Hidden
+    #: Power rule — two surfaces doing that separately is two chances to get it wrong.
+    was_actual: bool = False
 
 
 @dataclass(frozen=True)
@@ -421,6 +426,13 @@ class OppIntentView:
     beta: "tuple[OppIntentCandidate, ...]"
     top: "OppIntentOption | None"       # the single most-expected option
     switch_p: "float | None"            # P(they SWITCH) — None when α did not carry the option
+    #: What the opponent ACTUALLY did this turn, as a display string ("Drill Peck", "SWITCH"), or
+    #: None when the trace did not record it. The prediction is only readable next to the outcome:
+    #: α saying "Drill Peck 41%" is a different fact depending on whether Drill Peck is what came.
+    actual: "str | None" = None
+    #: True when `actual` is a move α never named — the interesting miss, and NOT the same as α
+    #: simply ranking it low.
+    actual_unlisted: bool = False
 
 
 @dataclass(frozen=True)
@@ -1250,6 +1262,86 @@ def build_belief(inv: dict) -> "BeliefView | None":
 SWITCH_OPTION = "SWITCH"
 
 
+#: Self-play pool opponents are named `sentinel_<k>` and the index is a STRENGTH RANK, not a
+#: creation order: **sentinel_0 is the strongest**. The labels float — a promotion re-seats every
+#: sentinel — so the number means "k-th best self right now" and nothing about age.
+_SENTINEL_RE = re.compile(r"^sentinel_(\d+)$")
+
+
+def opponent_rank(name: str, tiebreak: int = 0) -> "tuple[int, int, int]":
+    """Sort key putting the SENTINELS first, strongest first, then everything else unchanged.
+
+    A sentinel is the trainee's own recent self, so it is the opponent whose games say most about
+    where the model is now — and on a run with five of them they were scattered alphabetically
+    among nine bots, which is a scanning task rather than a choice. Bots keep their incoming order
+    (`tiebreak`) rather than being re-sorted: this key answers "which of these matters most", and
+    inventing a strength order for the fixed bots is a different claim, which the ELO ladder owns.
+
+    Not a presentation detail smuggled into a view: the CLI and the browser should agree about
+    which opponent leads a list, so the rule lives here with the reason attached.
+    """
+    m = _SENTINEL_RE.match(str(name or ""))
+    if m:
+        return (0, int(m.group(1)), tiebreak)      # sentinel_0 first — it is the STRONGEST self
+    return (1, 0, tiebreak)
+
+
+def sort_opponents(names: "list[str] | tuple[str, ...]") -> "list[str]":
+    """`opponent_rank` applied to a list of opponent names, preserving the original order within
+    the non-sentinel group."""
+    return [n for _k, n in sorted(((opponent_rank(n, i), n) for i, n in enumerate(names or ())),
+                                  key=lambda pair: pair[0])]
+
+
+def _opp_actual_action(inv: dict) -> "tuple[str | None, bool]":
+    """`(move_id, was_a_voluntary_switch)` for what the OPPONENT actually did this turn.
+
+    The recorder writes one string and it carries more than one shape: a bare move id
+    (`drillpeck`), a move whose result forced a replacement (`dragonclaw → skarmory_sent_in` — that
+    is still a MOVE, the send-in is its consequence), a voluntary pivot (`switched_to:blissey`),
+    and a post-faint replacement (`swampert_sent_in`, which is not a chosen action at all).
+    """
+    action = str(((inv.get("outcome") or {}).get("opp") or {}).get("action") or "").strip()
+    if not action or action == "none":
+        return None, False
+    if action.startswith("switched_to:"):
+        return None, True
+    head = action.split("→")[0].strip()          # drop a forced-replacement consequence
+    if not head or head.endswith("_sent_in"):
+        return None, False                        # a replacement is not a choice
+    return head, False
+
+
+def _matches_move(display_name: str, move_id: str) -> bool:
+    """Does an α option name the move the opponent used? Compared on normalized ids, because α
+    carries display names (`Drill Peck`) and the recorder an id (`drillpeck`).
+
+    Hidden Power needs its own rule in ONE direction only: α names the model's BELIEVED type
+    (`Hidden Power Grass`) while an opponent's un-revealed HP is recorded bare (`hiddenpower`), so a
+    bare id matches any typed HP option. The reverse is not allowed — a specific recorded type must
+    not match a different believed one.
+    """
+    a, b = _norm_species(display_name), _norm_species(move_id)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    return b == "hiddenpower" and a.startswith("hiddenpower")
+
+
+def _move_display(move_id: str) -> str:
+    """A move id as the card should show it when α never listed it (`drillpeck` → `Drill Peck`),
+    via the data facade so the spelling matches everywhere else. Falls back to the raw id."""
+    try:
+        from agents.gen3_data import moves as _moves
+        name = (_moves.raw().get(move_id) or {}).get("name")
+        if name:
+            return str(name)
+    except Exception:                     # noqa: BLE001 — a display name is never worth raising for
+        pass
+    return move_id
+
+
 def build_opp_intent(inv: dict) -> "OppIntentView | None":
     """What the model expected the OPPONENT to do — model-free, from the summary invocation's
     `opp_intent` block (`RLPlayer._opp_intent` → `BattleRecorder.record`).
@@ -1261,11 +1353,16 @@ def build_opp_intent(inv: dict) -> "OppIntentView | None":
     raw = inv.get("opp_intent")
     if not raw:
         return None
-    alpha = []
+    did_move, did_switch = _opp_actual_action(inv)
+    alpha, matched = [], False
     for entry in raw.get("alpha") or []:
         name = str(entry.get("name", "?"))
+        is_switch = name == SWITCH_OPTION
+        hit = (did_switch and is_switch) or (
+            not is_switch and did_move is not None and _matches_move(name, did_move))
+        matched = matched or hit
         alpha.append(OppIntentOption(name=name, p=float(entry.get("p", 0.0)),
-                                     is_switch=name == SWITCH_OPTION))
+                                     is_switch=is_switch, was_actual=hit))
     if not alpha:
         return None
     beta = tuple(
@@ -1274,7 +1371,16 @@ def build_opp_intent(inv: dict) -> "OppIntentView | None":
         for e in (raw.get("beta") or [])
     )
     switch = next((o.p for o in alpha if o.is_switch), None)
-    return OppIntentView(alpha=tuple(alpha), beta=beta, top=alpha[0], switch_p=switch)
+    # What they actually picked, named the way α names things. When α listed it, reuse ITS spelling
+    # so the card reads "Drill Peck" in both places rather than "Drill Peck" and "drillpeck".
+    if did_switch:
+        actual = SWITCH_OPTION
+    elif did_move is not None:
+        actual = next((o.name for o in alpha if o.was_actual), _move_display(did_move))
+    else:
+        actual = None
+    return OppIntentView(alpha=tuple(alpha), beta=beta, top=alpha[0], switch_p=switch,
+                         actual=actual, actual_unlisted=bool(actual and not matched))
 
 
 def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:

@@ -1896,3 +1896,41 @@ def test_exclusive_belief_slot_indices_are_the_real_opp_slots():
     mask = np.array([False, False, False, True, False, True])
     v = build_exclusive_belief(logits, mask, [], maps=_maps10())
     assert [s.slot for s in v.slots] == [3, 5]
+
+# -- opponent ordering: sentinels first, strongest first ---------------------------------------
+
+def test_sentinel_zero_is_the_STRONGEST_and_sorts_first():
+    """The index is a STRENGTH RANK, not a creation order — `sentinel_0` is the best self in the
+    pool and the labels float, so a promotion re-seats every sentinel. Getting this backwards is
+    the whole risk of the feature: it would put the WEAKEST opponent at the top of the list and
+    read as if it were the most informative."""
+    from main.prober.engine import opponent_rank, sort_opponents
+
+    assert opponent_rank("sentinel_0") < opponent_rank("sentinel_1")
+    assert opponent_rank("sentinel_1") < opponent_rank("sentinel_4")
+    # …and every sentinel outranks every bot.
+    assert opponent_rank("sentinel_9") < opponent_rank("aggressive")
+
+    got = sort_opponents(["random", "sentinel_2", "heuristic", "sentinel_0", "sentinel_1"])
+    assert got[:3] == ["sentinel_0", "sentinel_1", "sentinel_2"]
+
+
+def test_sentinels_sort_NUMERICALLY_not_lexically():
+    """`sentinel_10` after `sentinel_9`, which a plain string sort gets wrong — and a pool that
+    grows past ten is the only place the bug would ever show."""
+    from main.prober.engine import sort_opponents
+
+    assert sort_opponents(["sentinel_10", "sentinel_2", "sentinel_9"]) == [
+        "sentinel_2", "sentinel_9", "sentinel_10"]
+
+
+def test_non_sentinels_keep_the_order_they_arrived_in():
+    """The key answers "which of these matters most", and inventing a strength order for the fixed
+    bots is a different claim that the ELO ladder owns. So they are moved as a block, not sorted."""
+    from main.prober.engine import sort_opponents
+
+    assert sort_opponents(["zeta", "alpha", "sentinel_0", "mid"]) == [
+        "sentinel_0", "zeta", "alpha", "mid"]
+    # A name that merely looks sentinel-ish is not one.
+    assert sort_opponents(["sentinel_x", "sentinel_0"]) == ["sentinel_0", "sentinel_x"]
+    assert sort_opponents([]) == []

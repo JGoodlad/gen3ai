@@ -165,9 +165,13 @@ def build(root: str) -> str:
                   [_inv(1, "icebeam", -0.5, hp=("100%", "100%"), opp_intent=_INTENT_ATTACK,
                         outcome={"our": {"action": "icebeam", "hp_delta": "-22%"},
                                  "opp": {"action": "earthquake", "hp_delta": "-31%"}}),
+                   # `hydropump` is deliberately a move α NEVER NAMED (_INTENT_SWITCH lists SWITCH,
+                   # earthquake and toxic): the card marks that case differently from a move the
+                   # model merely ranked low, and without one of each in the fixture only the
+                   # agreeing path would ever render.
                    _inv(2, "roost", -2.0, faint=True, hp=("78%", "69%"), opp_intent=_INTENT_SWITCH,
                         outcome={"our": {"action": "roost", "hp_delta": "-100%"},
-                                 "opp": {"action": "earthquake", "hp_delta": "0%"}})],
+                                 "opp": {"action": "hydropump", "hp_delta": "0%"}})],
                   # The loss it DID see coming, and the reason these values go NEGATIVE: P(loss) is
                   # a consequence of where the recorded V sits, so a battle the model called is a
                   # battle whose V went under water. It crosses at the second decision and holds to

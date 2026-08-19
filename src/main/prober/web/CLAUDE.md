@@ -209,6 +209,20 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
   on a button or link) **and** a real `<a>` in the id cell — the `<a>` is what makes it work with
   JavaScript off, gives the row a keyboard tab stop, and lets open-in-new-tab behave; a JS-only row
   click has none of those.
+- **SENTINELS COME FIRST on `/battles`** — in the opponent dropdown (`_opponents`) and in the rows
+  themselves (`_by_opponent_strength`), both through the one shared key `engine.opponent_rank`. A
+  sentinel is the trainee against a recent SELF, so those games say most about where the model is
+  now; scattered alphabetically among nine fixed bots they were something to hunt for, and with the
+  200-row cap a sentinel game could be cut entirely by an alphabetical accident.
+  ⚠ **`sentinel_0` is the STRONGEST, not the oldest.** The index is a strength rank and the labels
+  FLOAT — a promotion re-seats every sentinel — so ascending index is descending strength. Getting
+  that backwards would put the weakest opponent at the top of the list while looking equally
+  deliberate, which is why `test_sentinel_zero_is_the_STRONGEST_and_sorts_first` says so in its
+  name. The fixed bots are moved as a BLOCK in their existing order rather than re-sorted: ranking
+  them by strength is a different claim, and the ELO ladder owns it.
+  `/api/battles` is deliberately NOT reordered — row order is a presentation choice about which
+  rows a human meets first, and a machine client asked for the run's battles, not for this page's
+  opinion about them.
 - **The run picker is grouped by generation** (`_group_runs`): 79 flat near-identical names like
   `ai_v9_06_gen5_no_concat_0809` is a scanning task, not a choice.
 - **Cryptic columns explain themselves** via `title=` (`inv`, `ΔV`, `TD δ`), and `wp_coverage=0`
@@ -308,6 +322,18 @@ Three things about it are deliberate:
   on the payload rather than flipped in the template — `1 - x` in a view is a view deriving a
   number. Every THRESHOLD stays defined on `p_loss > 0.5`: this is a presentation of one crossing,
   not a second definition of it.
+- **It says WHAT THEY PICKED, on the card.** `expect` is a prediction, and a prediction is only
+  readable next to its outcome — "Drill Peck 41%" means one thing when Drill Peck is what came and
+  another when it was not. So the option the opponent actually took is marked in the `α` line, and
+  a `they` line under it names the pick outright. Until 2026-08-18 that comparison needed either
+  expanding `details` or reading the move back out of the battle log.
+  **`not expected` is the case worth seeing from across the page**: `α` never listed the move at
+  all, which is a different failure from ranking it low (measured on a real turn — the model
+  expected a SWITCH plus four moves; they used Dragon Claw). The match is
+  `engine.build_opp_intent`'s, not a view's: `α` carries display names (`Drill Peck`) and the
+  recorder an id (`drillpeck`), so it needs normalizing plus a Hidden Power rule — a bare
+  `hiddenpower` (an opponent's un-revealed HP) matches any typed HP option, but never the reverse,
+  since a specific recorded type must not match a different believed one.
 - **Every number in the critic row explains itself, in two places.** Each carries a `title` that
   says what it IS and how to read it (V's zero is not "even"; ΔP is percentage POINTS, not a "%";
   TD δ is the critic's surprise), and because **a tooltip does not exist on a touch device** — and

@@ -642,7 +642,11 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   guess. The protocol read takes this from 56.3% of decisions to 3.6% — see the timeline section), **`opp_intent`** (the v67 `α`/`β` read — `alpha`
   ranked NAMED options + `SWITCH`, `beta` the named candidate switch-ins, `top`, `switch_p`, and a
   `text` rendered by `engine.opp_intent_text` so no surface re-derives the sentence; `None` on a run
-  without the heads, which is every trace before v67), and the critic's read (`value` · `delta_v` ·
+  without the heads, which is every trace before v67 — plus **`actual`**, what the opponent then
+  DID, with the matching `alpha` option flagged `was_actual` and `actual_unlisted` when `α` never
+  named it at all. A prediction is only readable beside its outcome, and the match needs
+  normalizing (`α` holds display names, the recorder an id) plus a Hidden-Power rule, so it is done
+  once here rather than in each surface), and the critic's read (`value` · `delta_v` ·
   `td_residual` · `reward_total` + components · `events` · `flags`) — now with the two readings the
   scalar V cannot supply: the win-prob head's calibrated **`win_prob`/`delta_win_prob`** (V is a
   shaped, discounted return whose zero is NOT "even", so only this one reads as odds) and the

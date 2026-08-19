@@ -46,6 +46,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from main.prober.engine import opponent_rank, sort_opponents
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
 from main.prober.web.jobs import JobRegistry
@@ -645,7 +646,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
         step = _newest_step(data)
         rows, rerr = guarded(lambda: session(pick(run)).battles(step=step))
-        shown, total = _cap(rows, _BATTLE_PAGE)
+        # SENTINELS FIRST — a game against a recent self says more about where the model is now
+        # than one against a fixed bot, and the 200-row cap below means a sentinel game could
+        # otherwise be cut entirely by an alphabetical accident.
+        shown, total = _cap(_by_opponent_strength(rows), _BATTLE_PAGE)
         return page(request, "battles.html", "battles", name, summary=data,
                     error=err or rerr, opponents=_opponents(data), selected_step=step,
                     rows=shown, total=total, capped=_BATTLE_PAGE)
@@ -756,7 +760,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         sess = session(pick(run))
         rows, err = guarded(lambda: sess.battles(
             outcome=outcome or None, opponent=opponent or None, step=_form_int(step)))
-        shown, total = _cap(rows, _BATTLE_PAGE)
+        shown, total = _cap(_by_opponent_strength(rows), _BATTLE_PAGE)
         # `run` rides along because each row links into /battle, which resolves a battle WITHIN a
         # run — a link that dropped it would silently open the default run's battle instead.
         return fragment(request, "partials/battles_table.html", rows=shown, error=err,
@@ -1209,6 +1213,19 @@ _BATTLE_PICK = 100
 _TURN_PAGE = 50
 
 
+def _by_opponent_strength(rows: "list[dict]") -> "list[dict]":
+    """Battle rows with the SENTINEL games first, strongest sentinel first (`engine.opponent_rank`).
+
+    Ordering happens here rather than in the session for the same reason `_newest_first` does: it
+    is a presentation choice about which rows a reader should meet first, and `/api/battles` stays
+    byte-identical to `ProbeSession.battles()` — a machine client asked for the run's battles, not
+    for this page's opinion about them. Within a group the session's own order is preserved.
+    """
+    return [r for _k, _i, r in sorted(
+        ((opponent_rank(r.get("opponent", ""), i), i, r) for i, r in enumerate(rows or ())),
+        key=lambda t: (t[0], t[1]))]
+
+
 def _newest_first(rows: "list[dict]") -> "list[dict]":
     """Battles by most recent eval step first. `ProbeSession.battles()` orders by step ASCENDING
     (the trace tree's natural order), which is the opposite of what a reader wants offered first.
@@ -1297,11 +1314,19 @@ def _newest_step(summary: "dict | None") -> "int | None":
 
 
 def _opponents(summary: "dict | None") -> "list[str]":
-    """Every opponent name in the run, for the filter dropdowns. Sorted and de-duplicated across
-    steps, because an opponent appears once per step it was evaluated at."""
-    if not summary:
-        return []
-    return sorted({o["name"] for s in summary.get("steps", []) for o in s.get("opponents", [])})
+    """The opponent names for a filter dropdown, SENTINELS FIRST and strongest first.
+
+    A sentinel is the trainee's own recent self, so its games say most about where the model is
+    now — and scattered alphabetically among nine fixed bots they were something to hunt for rather
+    than something to pick. The order is `engine.opponent_rank`, so the CLI and this page cannot
+    disagree about which opponent leads a list (and `sentinel_0` is the STRONGEST, not the oldest).
+    """
+    # Alphabetical FIRST, then re-ranked: `sort_opponents` preserves the incoming order within the
+    # non-sentinel group, so this keeps the bots exactly where they used to be and only lifts the
+    # sentinels out of the middle of them.
+    names = sorted({o["name"] for s in (summary or {}).get("steps", [])
+                    for o in s.get("opponents", []) if o.get("name")})
+    return sort_opponents(names)
 
 
 def _job_view(kind: str, result: "dict | None") -> dict:

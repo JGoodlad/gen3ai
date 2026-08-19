@@ -94,6 +94,37 @@ def test_api_triage_matches_the_session(client, run):
     assert client.get("/api/triage").json() == ProbeSession(run).triage()
 
 
+def test_the_battles_view_puts_the_sentinels_first(client, run):
+    """Both halves the reader sees: the filter dropdown and the rows themselves. A sentinel game is
+    the trainee against a recent SELF, so it says more about where the model is now than a fixed
+    bot does — and with the 200-row cap an alphabetical accident could cut it entirely."""
+    from main.prober.web.app import _by_opponent_strength, _opponents
+
+    summary = ProbeSession(run).run_summary()
+    names = _opponents(summary)
+    assert names, "fixture has no opponents"
+
+    # The fixture's opponents are bots, so the ORDERING rule is exercised on a synthetic list —
+    # what this test pins on the real app is that both surfaces route through the shared key.
+    ordered = _by_opponent_strength([
+        {"opponent": "heuristic2"}, {"opponent": "sentinel_1"},
+        {"opponent": "aggressive"}, {"opponent": "sentinel_0"}])
+    assert [r["opponent"] for r in ordered][:2] == ["sentinel_0", "sentinel_1"]
+    assert [r["opponent"] for r in ordered][2:] == ["heuristic2", "aggressive"], (
+        "the bots were re-sorted; they should move as a block in their incoming order")
+
+    assert _opponents({"steps": [{"opponents": [{"name": "staller"}, {"name": "sentinel_2"},
+                                                {"name": "sentinel_0"}]}]}) == [
+        "sentinel_0", "sentinel_2", "staller"]
+
+
+def test_the_json_battles_endpoint_is_NOT_reordered(client, run):
+    """Row order is a presentation choice about which rows a human meets first. `/api/battles`
+    stays byte-identical to `ProbeSession.battles()` — a machine client asked for the run's
+    battles, not for this page's opinion about them."""
+    assert client.get("/api/battles").json() == ProbeSession(run).battles()
+
+
 def test_api_awareness_matches_the_session(client, run):
     sess = ProbeSession(run)
     assert client.get("/api/awareness").json() == sess.awareness_scan()
@@ -1003,6 +1034,34 @@ def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
     # The full distribution + β live in the drop-down, next to our own policy distribution.
     assert "opponent intent — what it expected THEM to do" in html
     assert "if they switch, who comes in" in html
+
+
+def test_the_card_says_what_the_OPPONENT_actually_picked(client, run):
+    """A prediction is only readable next to its outcome. `α` saying "Drill Peck 41%" means one
+    thing when Drill Peck is what came and another when it was not — and until now the difference
+    was reachable only by expanding `details` or by reading it back out of the battle log."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    decisions = [d for t in raw["turns"] for d in t["decisions"]]
+
+    # Decision 1: the opponent did something α named — marked in place, and named on its own line.
+    hit = decisions[0]["opp_intent"]
+    assert hit["actual"] and not hit["actual_unlisted"]
+    assert any(o["was_actual"] for o in hit["alpha"]), "the session did not match the actual option"
+    assert 'class="opt actual"' in html, "the taken option is not marked in the expect line"
+    assert "as expected" in html
+
+    # Decision 2: a move α never listed at all. That is a DIFFERENT failure from ranking it low,
+    # and it is the one worth seeing from across the page.
+    miss = decisions[1]["opp_intent"]
+    assert miss["actual_unlisted"] is True
+    assert not any(o["was_actual"] for o in miss["alpha"])
+    assert "oppdid miss" in html and "not expected" in html
+    # Named the way a human reads it. (The battle log below still prints the recorder's raw id —
+    # that is its existing style and not what this line is about.)
+    assert "Hydro Pump" in html
+    assert 'class="opt">Hydro Pump</span>' in html
 
 
 def test_a_run_without_the_intent_heads_renders_no_expectation(client, run):

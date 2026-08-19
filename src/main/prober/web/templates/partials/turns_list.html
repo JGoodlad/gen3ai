@@ -70,12 +70,35 @@
     <p class="expect" title="α — the opponent-intent head's distribution over the opponent's believed moves plus SWITCH. A BELIEF, not the board: it can only name moves the move-belief holds.">
       <span class="who">expect</span>
       {% for o in d.opp_intent.alpha[:4] %}
-      <span class="opt {{ 'switch' if o.is_switch }}">{{ o.name }} <span class="p">{{ m.pct(o.p, 0) }}</span></span>
+      {# The option the opponent ACTUALLY took is marked, so the prediction can be read against the
+         outcome in place. The match is the session's (`was_actual`) — a display name and a
+         recorded move id need normalizing and a Hidden Power rule, which is not a view's job. #}
+      {# One expression, so a false branch does not leave `class="opt  actual"` with a stray gap —
+         which is invisible on the page and exactly the kind of thing a selector or a test then
+         fails to match. #}
+      <span class="{{ ['opt', 'switch' if o.is_switch else '', 'actual' if o.was_actual else ''] | select | join(' ') }}">{{ o.name }} <span class="p">{{ m.pct(o.p, 0) }}</span></span>
       {% endfor %}
       {% if d.opp_intent.top and d.opp_intent.top.is_switch and d.opp_intent.beta %}
       {# β only earns space up here when α actually expects the switch. #}
       <span class="opt inmon">→ in: {{ "slot " ~ d.opp_intent.beta[0].slot }} · {{ d.opp_intent.beta[0].species or "?" }}
         <span class="p">{{ m.pct(d.opp_intent.beta[0].p, 0) }}</span></span>
+      {% endif %}
+    </p>
+    {% endif %}
+
+    {% if d.opp_intent and d.opp_intent.actual %}
+    {# WHAT THEY PICKED — on the card, never behind a drop-down. A prediction is only readable next
+       to its outcome: "Drill Peck 41%" means one thing when Drill Peck is what came and another
+       when it was not, and the two used to be distinguishable only by expanding `details` or by
+       reading it out of the battle log below. `not expected` is the genuinely interesting case —
+       α never named the move at all, which is different from ranking it low. #}
+    <p class="oppdid {{ 'miss' if d.opp_intent.actual_unlisted }}">
+      <span class="who">they</span>
+      <span class="opt">{{ d.opp_intent.actual }}</span>
+      {% if d.opp_intent.actual_unlisted %}
+      <span class="tag" title="α put no mass on this at all — the model did not merely rank it low, it never listed it.">not expected</span>
+      {% else %}
+      <span class="tag ok" title="The opponent did something α had named. The percentage beside it above is how much the model expected it.">as expected</span>
       {% endif %}
     </p>
     {% endif %}
