@@ -243,3 +243,55 @@ def edge_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
         if w.grad is not None:
             out[f"edge/{fam}_grad_norm"] = float(w.grad.detach().norm())
     return out
+
+
+#: The zero-init POINTER-CELL projections, `(metric name, extractor attribute)`. Each of these
+#: modules holds a `proj` Linear zeroed at construction, so an enabled-but-dead cell contributes
+#: exactly zero to every action logit — indistinguishable, from the outside, from one that is
+#: working. Named here rather than discovered by duck-typing so that adding a cell is a deliberate
+#: one-line edit and a RENAMED cell breaks loudly instead of going quietly unmonitored.
+CELL_FAMILIES = (
+    ("switch_branch", "switch_branch"),
+    ("pair_outcome_move", "pair_outcome_move"),
+    ("pair_outcome_switch", "pair_outcome_switch"),
+    ("conditional_threat", "conditional_threat"),
+)
+
+
+def cell_family_metrics(features_extractor: nn.Module) -> Dict[str, float]:
+    """Per-cell observability for the zero-init pointer cells (``cell/<name>_*``).
+
+    The SAME gap `edge_family_metrics` closes, one layer over: `SwitchBranchMoveCell`,
+    `PairOutcomeMoveCell`, `PairOutcomeSwitchCell` and `ConditionalThreatCell` each enter through a
+    ZERO-INIT ``proj`` Linear, deliberately, so that ON-at-init is byte-identical to OFF and any
+    measured effect is something the run LEARNED. The cost of that design is that a cell which never
+    learns anything looks exactly like one that works — and gen-16 turns four of them on at once, in
+    the run that is supposed to decide whether the switch-branch channel kills the bait-loop
+    pathology. Without this, "the behaviour did not change" and "the cell never came off zero" are
+    the same observation.
+
+    Two numbers per cell, and the PAIR is what makes them readable (identically to the edge
+    families): ``weight_norm`` = has it moved off its zero init; ``grad_norm`` = does the loss
+    currently want it to. Both ~0 = dead. Weight ~0 with grad > 0 = still climbing, expected early.
+    Weight > 0 with grad ~0 = converged and contributing.
+
+    ⚠️ ``weight_norm`` is a PARAMETER magnitude, NOT an effect size — a cell can grow large weights
+    and still contribute nothing if its inputs are ~0. It answers "is this alive", never "is this
+    important"; only an ablation answers the second, and this must not be quoted in its place.
+
+    Byte-neutral to the forward: reads parameters (and ``.grad``, when a backward has run) off the
+    extractor and touches no forward path. Returns ``{}`` when no cell is enabled — which is the
+    normal case, since each is flag-gated and absent from the extractor when off.
+    """
+    out: Dict[str, float] = {}
+    for name, attr in CELL_FAMILIES:
+        cell = getattr(features_extractor, attr, None)
+        if cell is None:
+            continue
+        w = getattr(getattr(cell, "proj", None), "weight", None)
+        if w is None:
+            continue
+        out[f"cell/{name}_weight_norm"] = float(w.detach().norm())
+        if w.grad is not None:
+            out[f"cell/{name}_grad_norm"] = float(w.grad.detach().norm())
+    return out

@@ -1025,9 +1025,13 @@ The same analysis is available headless for one invocation via the
 <states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
-main.prober.query summary|list|scan|awareness|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
+main.prober.query summary|list|scan|awareness|loops|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)
 exposes the same probing infrastructure programmatically — list/filter battles, **`scan` the worst turn in
-every loss across an opponent (model-free, ranked)**, digest one battle, **`turns` READ one battle as a
+every loss across an opponent (model-free, ranked)**, **`loops` the BAIT-LOOP census — the opponent
+voluntarily pivots a mon our attack cannot touch and we fire anyway, repeatedly: whiff / re-click /
+loop rates read off the RAW PROTOCOL (never the rendered timeline, which collapses immune/cant/small-hit
+into one phrase) with the α/β readout on the same pivots, against the gen-15 baseline it carries; the
+instrument for `designs/research_state/bait_loop_hunt.md`**, digest one battle, **`turns` READ one battle as a
 GAME — decisions grouped by game turn, each with the board it was made on, an ordered battle log of what
 then happened (HP loss attributed to the move that dealt it), and V·ΔV·TD δ (model-free, ~20 ms)**, find
 decisions the model disagrees with, deeply analyze one decision, **`lookahead`

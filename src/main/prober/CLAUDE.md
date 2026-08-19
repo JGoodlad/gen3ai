@@ -114,7 +114,7 @@ whole tool:
 
 | tier | works on | why |
 |---|---|---|
-| **model-free** — `scan` · `triage` · `turns` · `awareness` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
+| **model-free** — `scan` · `triage` · `turns` · `awareness` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
 | **model-loading** — `analyze` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
 
 So the durable surface is the model-free one, and it is not a coincidence that the web front end was
@@ -545,6 +545,53 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
 `battle_id` is the trace's `*_summary.json` path **or** a short
 `step_<N>/<Opponent>/<outcome>_<idx>` id.
 
+- `loops(outcome=, opponent=, step=, max_battles=, near_zero_frac=0.01, top=12)` — **model-free
+  BAIT-LOOP scan**: *the opponent voluntarily pivots a mon our attack cannot touch, and we fire
+  anyway — repeatedly.* Detection lives in `main/prober/loops.py` (pure, no torch, no session,
+  unit-tested on hand-written protocol lines); this method is the run-level fold. **It reads the
+  raw Showdown PROTOCOL from each battle's `*_replay.html`, never the rendered timeline** — the
+  timeline's `— no effect` deliberately collapses an immunity, a full-paralysis `cant` and an
+  unpriced small hit into one phrase, so a detector built on it would count all three (verified on
+  the calibration battle: its T54 `we surf — no effect` is a `|cant|…|par` and its T40 `rapidspin
+  — no effect` is a real 1% resisted hit).
+  Definitions, fixed in `loops.py` so every surface means the same thing: a **voluntary pivot** is
+  a `|switch|` with no faint earlier in the turn block and no `|drag|` (turn-0 leads excluded); we
+  **moved into** it if we then used a move, after the arrival, TARGETING that side (a self-targeting
+  Recover/Protect is not a bait and never enters the denominator); a **whiff** is `immune` /
+  `fail` (a `-fail` with no external `[from]` cause) / `near_zero` (≤ `near_zero_frac` of the
+  target's HP) — a **MISS is counted separately and is never a whiff**, because taxing dice would
+  make the metric partly a luck reading; a **loop** is one `(move, arrival)` pair whiffing ≥2× in a
+  battle (symmetric over the battle); a **re-click** is the 2nd..Nth click of such a pair (ordered)
+  — the sharpest signal, since an immunity is deterministic and fully observable once seen.
+  ⚠️ **Sides come from the recorded board, never from `p1`** (`identify_our_side`: the side whose
+  protocol active agrees more often with the trace's `our.species`) — eval seats the trainee on
+  either side, and a mirror match makes species names useless as a tell. An undecidable battle is
+  SKIPPED with a reason and counted in `coverage`, never silently judged.
+  Per-decision joins (model-free, from the summary + npz): chosen-probability on whiff decisions,
+  ΔV and ΔP(win) bucketed `loop_step` / `other_bait` / `other` (the third bucket is the point — a
+  loop-turn ΔV means nothing without the ordinary turn from the SAME battles), and the α/β readout
+  on the same pivots split first-time / repeat / loop-step. **β's slot is graded STRUCTURALLY**
+  (obs slot *k* = the *k*-th REVEALED opp mon, so the true slot is the arrival's index in the
+  reveal order as of that turn) — never against β's printed species, which is an unsupervised
+  posterior decode that names an off-team mon on 73% of pivots; grading by it grades the head
+  against itself.
+  Three headline rates on three DIFFERENT denominators on purpose (`whiff_rate_per_pivot` /
+  `whiff_rate_per_decision` / `loop_battle_rate`), each shipping `{n, d, rate}`, because the two
+  registered CONFOUNDS are conditioned for rather than mentioned: loop rate rises with game LENGTH
+  and concentrates in WINNING positions (gen-15: 23.1% loop-battle rate in wins vs 7.0% in
+  losses), so `by_outcome` is always reported and the comparison is win-arm to win-arm. A `mirror`
+  block runs the same detector with the sides swapped — a CONTROL (it measures the opponent),
+  not a target. `--opponent` is an **fnmatch pattern**, so `sentinel_*` reads the self-play
+  sentinels as ONE population (an exact name still matches exactly); the gen-15 baseline was
+  measured there. Those baselines live in `loops.LOOP_BASELINES` and ride the result as
+  `baseline`, so the CLI and any future view quote ONE reference point.
+  Measured on gen-15 (`ai_v9_18_gen15_v8rewards_0818`, 843 sentinel battles, ~2 s): 16.5% of 4923
+  moved-into pivots whiff · 117 loop battles · 264 re-clicks · median chosen-prob on loop steps
+  **0.963** · loop-step median ΔV −4.31 / ΔP(win) −0.096 · β slot 52.0% first-time → 65.9% repeat
+  → 82.1% on loop steps · α SWITCH 76.3% on loop steps. **Both heads are right at the moment the
+  wrong move is fired at p≈0.96** — the gap is actuation, and the injection probe proved no channel
+  exists. The pre-registered gen-16 bars are in `designs/research_state/bait_loop_hunt.md`; this
+  method is that hunt's instrument. CLI: `query loops <run_dir> --opponent 'sentinel_*'`.
 - `triage(step=, opponent=)` — **rank the failure LEVERS across a whole run**
   (model-free; the natural first call when the question is "what do we fix next").
   Categorizes every loss's single worst-ΔV turning point into a fixed taxonomy

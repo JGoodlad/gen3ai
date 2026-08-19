@@ -36,6 +36,7 @@ from sb3_contrib import MaskablePPO
 
 from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
 from agents.training.grad_balance import (
+    cell_family_metrics,
     edge_family_metrics,
     grad_balance_metrics,
     shared_trunk_parameters,
@@ -898,6 +899,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
         grad_balance: dict[str, float] = {}
         rank_metrics: dict[str, float] = {}  # effective rank of trunk / value_cls / policy reps (once/train)
         edge_metrics: dict[str, float] = {}  # edge/<fam>_{weight,grad}_norm — per-family liveness
+        cell_metrics: dict[str, float] = {}  # cell/<name>_{weight,grad}_norm — per-CELL liveness
         grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
 
         # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
@@ -1545,6 +1547,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # step. Parameters only — no forward touched, so the hot path pays nothing.
                 if not edge_metrics:
                     edge_metrics = edge_family_metrics(self.policy.features_extractor)
+                # +INSTRUMENTATION: the same read for the zero-init POINTER CELLS (switch-branch,
+                # pair-outcome move/switch, conditional-threat). Same window, same reason: a cell
+                # that never comes off its zero init is invisible without it.
+                if not cell_metrics:
+                    cell_metrics = cell_family_metrics(self.policy.features_extractor)
                 # +NOISE-SCALE: after the FIRST micro-batch of group 0 (epoch 0), .grad holds exactly
                 # g_1/accum (this micro's gradient, scaled) → ‖g_1‖² = accum²·‖.grad‖². The single
                 # micro-batch (B=batch_size) sample for the noise-scale estimate.
@@ -1623,6 +1630,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         for _key, _val in rank_metrics.items():   # rank/{trunk,value_cls,policy}_* effective-rank probe
             self.logger.record(_key, _val)
         for _key, _val in edge_metrics.items():   # edge/<fam>_{weight,grad}_norm — is each family ALIVE?
+            self.logger.record(_key, _val)
+        for _key, _val in cell_metrics.items():   # cell/<name>_{weight,grad}_norm — is each cell ALIVE?
             self.logger.record(_key, _val)
         for _key, _val in value_scale_metrics(
             self.rollout_buffer.returns, self.rollout_buffer.values

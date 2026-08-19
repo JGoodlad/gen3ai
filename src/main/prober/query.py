@@ -10,6 +10,7 @@ A typical investigation:
     python -m main.prober.query list     <run_dir> --outcome loss          # pick battles
     python -m main.prober.query scan     <run_dir> --outcome loss --opponent X  # worst turn per battle, ranked
     python -m main.prober.query awareness <run_dir>                        # dist-head 'did it KNOW?' verdicts (model-free)
+    python -m main.prober.query loops    <run_dir> --opponent 'sentinel_*' # BAIT LOOPS: immune pivot-ins we fired into anyway
     python -m main.prober.query overview <summary.json>                    # model-free digest
     python -m main.prober.query turns    <summary.json>                    # model-free TURN-BY-TURN replay
     python -m main.prober.query find     <summary.json> value_drop --limit 5
@@ -57,6 +58,11 @@ examples:
   # 2b. cross-battle: the worst turn in EVERY loss vs an opponent, ranked (model-free)
   python -m main.prober.query scan models/run_X --outcome loss --opponent aggressive_v2 --limit 10
   python -m main.prober.query scan models/run_X --outcome loss --metric td_residual
+
+  # 2c. BAIT LOOPS (model-free): they pivot an immune mon in, we attack it anyway, repeatedly.
+  #     Three rates on three denominators + the α/β readout, against the gen-15 baseline.
+  python -m main.prober.query loops models/run_X --opponent 'sentinel_*'
+  python -m main.prober.query loops models/run_X --step 22000032 --top 20
 
   # 3. model-free per-decision digest of that battle (V(s), ΔV, TD, flags, `notable`)
   python -m main.prober.query overview <id>
@@ -169,6 +175,26 @@ def _build_parser() -> argparse.ArgumentParser:
                      help="last-decision turn ≥ this = a CAP loss (default 240; MAX_TURNS is 250)")
     paw.add_argument("--stall-bar", type=float, default=0.25,
                      help="mean_tail_divergence ≥ this flags the stall signature (default 0.25)")
+
+    plp = sub.add_parser(
+        "loops", help="MODEL-FREE BAIT-LOOP scan: the opponent pivots something immune in and we "
+                      "fire anyway — whiff/re-click/loop rates + the α/β readout on the same "
+                      "pivots, against the gen-15 baseline")
+    plp.add_argument("root", help="run dir / eval_traces dir")
+    plp.add_argument("--outcome", choices=["win", "loss"],
+                     help="filter battles (default: BOTH — the win/loss split is a registered "
+                          "confound and is always reported, so filtering hides it)")
+    plp.add_argument("--opponent",
+                     help="fnmatch PATTERN, so `sentinel_*` reads the self-play sentinels as ONE "
+                          "population (an exact name still matches exactly). The gen-15 baseline "
+                          "was measured on `sentinel_*`")
+    plp.add_argument("--step", type=int)
+    plp.add_argument("--max-battles", type=int, default=None, help="cap battles scanned")
+    plp.add_argument("--near-zero-frac", type=float, default=0.01,
+                     help="damage at or below this fraction of the target's HP counts as a WHIFF "
+                          "(default 0.01). A MISS is never a whiff at any setting")
+    plp.add_argument("--top", type=int, default=12,
+                     help="worst-offender battles listed (default 12)")
 
     pt = sub.add_parser(
         "triage", help="loss attribution: rank failure CATEGORIES by recoverable win-rate (the lever order)")
@@ -376,6 +402,10 @@ def _run(args) -> object:
             outcome=(None if args.outcome == "all" else args.outcome),
             opponent=args.opponent, step=args.step,
             lead_bar=args.lead_bar, cap_turn=args.cap_turn, stall_bar=args.stall_bar)
+    if args.cmd == "loops":
+        return ProbeSession(args.root).loops(
+            outcome=args.outcome, opponent=args.opponent, step=args.step,
+            max_battles=args.max_battles, near_zero_frac=args.near_zero_frac, top=args.top)
     if args.cmd == "triage":
         return ProbeSession(args.root).triage(step=args.step, opponent=args.opponent,
                                               wp_even=args.wp_even, v_even=args.v_even)

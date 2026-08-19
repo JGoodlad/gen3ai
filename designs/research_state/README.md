@@ -22,6 +22,10 @@ by agents — see the protocol below and the `feedback-research-state` memory.
 - **[levers/](levers/)** — one file per OPEN or ACTIVE lever, each with the full
   **Known / Not-known / Pros / Cons / Status / Next-test** structure (`levers/_template.md`). Killed
   levers don't get a file — their one-line cause-of-death lives in the ledger row.
+- **[bait_loop_hunt.md](bait_loop_hunt.md)** — the PRE-REGISTERED gen-16 hunt for the bait/loop
+  pathology (we fire an immune move into a voluntary pivot, repeatedly): the baselines, the four
+  bars, the two registered confounds, the launch-window cell-liveness check, and the pre-committed
+  fork for each of the three end-of-run outcomes. Instrument: `main.prober.query loops`.
 - **[The frontier](#the-frontier--what-else-might-be-there)** (below) — the standing list of candidate
   levers NOT yet (fully) investigated. This is the working surface for "there has to be more."
 

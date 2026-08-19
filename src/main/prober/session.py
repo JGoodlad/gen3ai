@@ -21,6 +21,7 @@ The matching CLI is ``python -m main.prober.query``.
 
 from __future__ import annotations
 
+import collections
 import json
 import os
 from dataclasses import asdict
@@ -37,6 +38,9 @@ from main.prober.discovery import (
     resolve_model_for_step,
 )
 from main.prober.awareness import AWARENESS_BASELINES, awareness_from_npz, coverage_from_npz
+from main.prober.loops import LOOP_BASELINES
+from main.prober.loops import analyze_battle as _analyze_loops
+from main.prober.loops import median as _median
 from main.prober.engine import (
     analyze_invocation, attribute_turning_point, awareness_text, build_board, build_opp_intent,
     build_our_hp_types,
@@ -238,6 +242,86 @@ def _prov(ctx, attr):
 
 
 # --- critic-calibration pure helpers (model-free; the calibration probe) --------
+
+def _ratio(k: int, n: int) -> dict:
+    """A rate that CANNOT be quoted without its numerator and denominator. Every bait-loop rate
+    ships this shape, because "13.9%" over 843 battles and over 7 are different claims and the
+    percentage alone hides which one you are reading."""
+    return {"n": int(k), "d": int(n), "rate": (round(k / n, 4) if n else None)}
+
+
+def _rate_by(rows, key: str) -> dict:
+    """`_ratio` over a boolean attribute, skipping rows where it is None (undecidable ≠ wrong)."""
+    sel = [r for r in rows if getattr(r, key) is not None]
+    return _ratio(sum(1 for r in sel if getattr(r, key)), len(sel))
+
+
+def _loop_aggregate(folds) -> dict:
+    """Aggregate a list of `loops.BattleLoops` folds. Pure over the folds — the session calls it
+    once for the whole population and once per split, so a split can never be computed a different
+    way from the total."""
+    baits = [b for f in folds for b in f.baits]
+    whiffs = [b for b in baits if b.whiff]
+    loop_steps = [b for b in whiffs if b.loop_step]
+    reads = [r for f in folds for r in f.reads]
+    n_dec = sum(f.n_decisions for f in folds)
+    deltas = [d for f in folds for d in f.turn_deltas]
+
+    def _bucket(name):
+        sel = [d for d in deltas if d["bucket"] == name]
+        return {"n": len(sel),
+                "median_delta_v": _median([d["delta_v"] for d in sel if d["delta_v"] is not None]),
+                "median_delta_win_prob": _median(
+                    [d["delta_win_prob"] for d in sel if d["delta_win_prob"] is not None])}
+
+    return {
+        "n_battles": len(folds),
+        "opp_voluntary_pivots": sum(f.opp_voluntary_pivots for f in folds),
+        "moved_into_pivots": len(baits),
+        "misses": sum(1 for b in baits if b.kind == "miss"),
+        "whiff_kinds": dict(collections.Counter(b.kind for b in whiffs)),
+        # THE THREE HEADLINE RATES, each on a different denominator on purpose (see caveats).
+        "whiff_rate_per_pivot": _ratio(len(whiffs), len(baits)),
+        "whiff_rate_per_decision": _ratio(len(whiffs), n_dec),
+        "reclick_rate": _ratio(sum(1 for b in whiffs if b.reclick), len(whiffs)),
+        "loop_battle_rate": _ratio(sum(1 for f in folds if f.loop_battle), len(folds)),
+        "loop_ge3_battle_rate": _ratio(sum(1 for f in folds if f.worst_loop >= 3), len(folds)),
+        "loop_steps_per_decision": _ratio(len(loop_steps), n_dec),
+        "worst_loop_max": max((f.worst_loop for f in folds), default=0),
+        # The confidence half: a loop step taken at p≈0.96 is not exploration.
+        "median_chosen_prob": {
+            "loop_steps": _median([b.chosen_prob for b in loop_steps]),
+            "other_whiffs": _median([b.chosen_prob for b in whiffs if not b.loop_step]),
+            "all_baits": _median([b.chosen_prob for b in baits]),
+        },
+        "critic_delta": {name: _bucket(name)
+                         for name in ("loop_step", "other_bait", "other")},
+        # PERCEPTION — expected FLAT or up. These were never the broken half; a fall here is a lost
+        # belief, not a fixed policy.
+        "readouts": {
+            "beta_slot_accuracy": {
+                "first_time": _rate_by([r for r in reads if r.first_time], "slot_correct"),
+                "repeat": _rate_by([r for r in reads if not r.first_time], "slot_correct"),
+                "loop_step": _rate_by([r for r in reads if r.loop_step], "slot_correct"),
+            },
+            "beta_species_correct": _rate_by(reads, "species_correct"),
+            "alpha_switch_top1": {
+                "all_pivots": _rate_by(reads, "alpha_top_is_switch"),
+                "loop_steps": _rate_by([r for r in reads if r.loop_step], "alpha_top_is_switch"),
+            },
+            "alpha_switch_p_median_on_loop_steps": _median(
+                [r.alpha_switch_p for r in reads if r.loop_step and r.alpha_switch_p is not None]),
+        },
+        # THE CONTROL: the same detector with the sides swapped. It measures the OPPONENT.
+        "mirror": {
+            "our_voluntary_pivots": sum(f.our_voluntary_pivots for f in folds),
+            "whiff_rate_per_pivot": _ratio(sum(f.mirror_whiffs for f in folds),
+                                           sum(f.mirror_moved_into for f in folds)),
+            "loop_battle_rate": _ratio(sum(1 for f in folds if f.mirror_loop_battle), len(folds)),
+        },
+        "median_turns": _median([f.n_turns for f in folds if f.n_turns is not None]),
+    }
+
 
 def _discounted_returns(rewards: "list", gamma: float) -> "list[float]":
     """Realized discounted return from each decision to terminal:
@@ -812,6 +896,107 @@ class ProbeSession:
         rows.sort(key=lambda r: (not r["blind_loss"], -r["mean_tail_divergence"]))
         return {"run_dir": self.run_dir, "support": list(support),
                 "aggregate": agg, "caveats": caveats, "battles": rows}
+
+    def loops(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
+              step: "int | None" = None, max_battles: "int | None" = None,
+              near_zero_frac: float = 0.01, top: int = 12) -> dict:
+        """BAIT-LOOP scan (MODEL-FREE): "they pivoted something immune in, and we fired anyway".
+
+        The gen-16 instrument for the pathology gen-15 measured (`loops.py` holds the definitions
+        and the baselines; `designs/research_state/bait_loop_hunt.md` holds the pre-registered
+        bars). Joins each battle's raw Showdown protocol — the ground truth, NOT the rendered
+        timeline, which collapses immune/cant/small-hit into one phrase — to the recorder's
+        per-decision summary, and reports three rates plus the α/β readout on the same pivots.
+
+        ``opponent`` is an fnmatch PATTERN, so ``sentinel_*`` selects the self-play sentinels as one
+        population (an exact name still matches exactly — a name with no wildcard is its own
+        pattern). The pathology was measured on sentinels, and five separate calls would be five
+        separate denominators.
+
+        Every rate ships with its numerator and denominator, and the two registered CONFOUNDS are
+        conditioned for rather than mentioned: loop rate rises with game LENGTH and concentrates in
+        WINNING positions, so the per-pivot and per-decision rates sit beside the per-battle one and
+        the win/loss split is always reported.
+        """
+        import fnmatch
+
+        rows, folds, skipped = [], [], collections.Counter()
+        for b in self.tree.all_battles():
+            if outcome and b.outcome != outcome:
+                continue
+            if opponent and not fnmatch.fnmatchcase(b.opponent, opponent):
+                continue
+            if step is not None and b.step != step:
+                continue
+            if max_battles is not None and len(rows) + sum(skipped.values()) >= max_battles:
+                break
+            lines = self._protocol_lines(b)
+            if not lines:
+                skipped["no_replay_html"] += 1
+                continue
+            summary = self._summary(b)
+            npz = self._npz(b)
+            fold = _analyze_loops(
+                lines, summary.get("invocations", []), outcome=b.outcome,
+                n_turns=(summary.get("meta") or {}).get("turns"),
+                values=(list(npz["values"]) if "values" in npz else None),
+                win_probs=(list(npz["win_probs"]) if "win_probs" in npz else None),
+                near_zero_frac=near_zero_frac)
+            if fold.skipped:
+                skipped[fold.skipped.split(":")[0]] += 1
+                continue
+            folds.append(fold)
+            rows.append({
+                "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
+                "opponent": b.opponent, "outcome": b.outcome, "turns": fold.n_turns,
+                "our_side": fold.our_side,
+                "moved_into_pivots": fold.moved_into_pivots, "whiffs": fold.whiffs,
+                "reclicks": fold.reclicks, "worst_loop": fold.worst_loop,
+                "loops": [dict(g) for g in fold.loops],
+                "whiff_turns": [b2.turn for b2 in fold.baits if b2.whiff],
+            })
+
+        agg = _loop_aggregate(folds)
+        agg["by_outcome"] = {k: _loop_aggregate([f for f in folds if f.outcome == k])
+                             for k in ("win", "loss") if any(f.outcome == k for f in folds)}
+        by_step: "dict[int, list]" = collections.defaultdict(list)
+        for r, f in zip(rows, folds):
+            by_step[r["step"]].append(f)
+        agg["by_step"] = [dict(step=s, **_loop_aggregate(by_step[s])) for s in sorted(by_step)]
+        agg["coverage"] = {"n_matched": len(folds), "n_skipped": int(sum(skipped.values())),
+                           "skipped_reasons": dict(skipped)}
+        rows.sort(key=lambda r: (-r["worst_loop"], -r["reclicks"]))
+        return {
+            "run_dir": self.run_dir,
+            "params": {"outcome": outcome, "opponent": opponent, "step": step,
+                       "max_battles": max_battles, "near_zero_frac": near_zero_frac},
+            "aggregate": agg,
+            # gen-15's numbers, carried WITH the live ones so a reading is never quoted without its
+            # reference point. A baseline is a reference, NOT a target — the bars are in the hunt doc.
+            "baseline": dict(LOOP_BASELINES),
+            "caveats": [
+                f"Baselines are {LOOP_BASELINES['generation']}, measured "
+                f"{LOOP_BASELINES['measured']} on {LOOP_BASELINES['n_battles']} "
+                f"{LOOP_BASELINES['scope']} battles ({LOOP_BASELINES['source']}) — a reference "
+                "point, NOT a target. Compare at MATCHED scope: a run-wide read includes the bot "
+                "opponents the baseline excluded.",
+                "CONFOUND 1 (length): loop_battle_rate rises with game LENGTH — a 200-turn game has "
+                "more chances to repeat a pair than a 30-turn one. Read whiff_rate_per_pivot and "
+                "whiff_rate_per_decision, which normalize the exposure, before the per-battle rate.",
+                "CONFOUND 2 (winning positions): the loops concentrate in games we were WINNING (a "
+                "won position is where a free turn is affordable), so by_outcome is always "
+                "reported and an overall rate that moves with the win rate has moved for two "
+                "reasons. Compare win-arm to win-arm.",
+                "A MISS is never a whiff: it is dice, and taxing it would make this partly a luck "
+                "reading. Misses are counted separately (aggregate.misses).",
+                "beta_slot_accuracy is decidable only when the arriving mon was ALREADY revealed "
+                "(the obs slot is the k-th REVEALED opponent mon), so its denominator is smaller "
+                "than the pivot count and is skewed toward REPEAT pivots by construction.",
+                "The mirror block (THEY whiff into OUR pivots) is the control, not a target: it "
+                "measures the OPPONENT's policy, which in a sentinel matchup is a frozen self.",
+            ],
+            "battles": rows[:top],
+        }
 
     # -- deep analysis (loads the resolved model) ---------------------------
 

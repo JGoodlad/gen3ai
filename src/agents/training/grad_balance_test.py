@@ -5,7 +5,9 @@ import torch as th
 from torch import nn
 
 from agents.training.grad_balance import (
+    CELL_FAMILIES,
     SHARED_TRUNK_PHASES,
+    cell_family_metrics,
     edge_family_metrics,
     grad_balance_metrics,
     shared_trunk_parameters,
@@ -270,3 +272,93 @@ def test_it_reads_the_REAL_extractors_families():
     m = edge_family_metrics(_Real())
     assert set(m) == {"edge/d1_weight_norm", "edge/d2_weight_norm", "edge/h_weight_norm"}
     assert all(v == pytest.approx(0.0) for v in m.values()), "production families are zero-init"
+
+
+# ------------------------------------------------------------------ per-CELL liveness
+# The same gap one layer over: the four pointer cells enter through a ZERO-INIT `proj`, so an
+# enabled cell that never learns contributes exactly zero to every logit and is indistinguishable
+# from one that works. gen-16 turns them on in the run meant to decide whether the switch-branch
+# channel kills the bait-loop pathology, where "no behaviour change" and "the cell never moved"
+# must not be the same observation.
+
+class _FakeCell(th.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.proj = th.nn.Linear(4, 8)
+        th.nn.init.zeros_(self.proj.weight)
+        th.nn.init.zeros_(self.proj.bias)
+
+
+class _FakeCellExtractor(th.nn.Module):
+    def __init__(self, cells=("switch_branch", "pair_outcome_move")):
+        super().__init__()
+        for c in cells:
+            setattr(self, c, _FakeCell())
+
+
+def test_cell_metrics_are_absent_when_no_cell_is_enabled():
+    """A flag-gated cell is ABSENT from the extractor when off, and an absent cell must produce no
+    metric — a zero would read as 'enabled but dead', which is a different claim."""
+    assert cell_family_metrics(th.nn.Linear(2, 2)) == {}
+    assert cell_family_metrics(_FakeCellExtractor(cells=())) == {}
+
+
+def test_only_the_ENABLED_cells_are_reported():
+    m = cell_family_metrics(_FakeCellExtractor(cells=("switch_branch",)))
+    assert set(m) == {"cell/switch_branch_weight_norm"}
+
+
+def test_a_zero_init_cell_reads_zero_weight_norm():
+    m = cell_family_metrics(_FakeCellExtractor())
+    assert m["cell/switch_branch_weight_norm"] == pytest.approx(0.0)
+    assert m["cell/pair_outcome_move_weight_norm"] == pytest.approx(0.0)
+
+
+def test_a_cell_that_has_learned_reads_nonzero():
+    fe = _FakeCellExtractor()
+    with th.no_grad():
+        fe.switch_branch.proj.weight.add_(0.5)
+    m = cell_family_metrics(fe)
+    assert m["cell/switch_branch_weight_norm"] > 0.0
+    assert m["cell/pair_outcome_move_weight_norm"] == pytest.approx(0.0), "only the touched cell moves"
+
+
+def test_cell_grad_norm_appears_only_after_a_backward():
+    """The PAIR is the point: weight~0 AND grad~0 = dead; weight~0 with grad>0 = still climbing."""
+    fe = _FakeCellExtractor()
+    assert "cell/switch_branch_grad_norm" not in cell_family_metrics(fe)
+    fe.switch_branch.proj(th.ones(2, 4)).sum().backward()
+    m = cell_family_metrics(fe)
+    assert m["cell/switch_branch_grad_norm"] > 0.0
+    assert "cell/pair_outcome_move_grad_norm" not in m, "an untouched cell still has no grad"
+
+
+def test_cell_families_names_match_the_extractor_attributes():
+    """The list is DECLARED, not duck-typed, so a renamed cell must break here rather than go
+    quietly unmonitored. These four attribute names are what `Gen3FeaturesExtractor` assigns."""
+    assert [attr for _n, attr in CELL_FAMILIES] == [
+        "switch_branch", "pair_outcome_move", "pair_outcome_switch", "conditional_threat"]
+    assert all(name == attr for name, attr in CELL_FAMILIES)
+
+
+def test_the_REAL_cells_expose_the_zero_init_proj_this_metric_reads():
+    """Pins the contract against the actual classes, not a stub: each cell must carry a `proj`
+    Linear zeroed at construction. A cell that renamed it, or dropped the zero init, would keep
+    passing every stub test above while emitting nothing (or a meaningless non-zero) in flight."""
+    from torch import nn as _nn
+
+    from agents.model.conditional_threat import ConditionalThreatCell
+    from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
+    from agents.model.switch_branch import SwitchBranchMoveCell
+
+    class _RealCells(_nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.switch_branch = SwitchBranchMoveCell(8)
+            self.pair_outcome_move = PairOutcomeMoveCell(8)
+            self.pair_outcome_switch = PairOutcomeSwitchCell(8)
+            self.conditional_threat = ConditionalThreatCell(8)
+
+    m = cell_family_metrics(_RealCells())
+    assert set(m) == {f"cell/{n}_weight_norm" for n, _a in CELL_FAMILIES}
+    assert all(v == pytest.approx(0.0) for v in m.values()), "every cell ships zero-init"

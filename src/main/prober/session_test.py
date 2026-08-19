@@ -1240,3 +1240,134 @@ def test_a_run_with_no_dist_head_says_so_rather_than_scanning(tmp_path):
     os.remove(os.path.join(run, "model_config.json"))
     got = ProbeSession(run).awareness_scan()
     assert "no distributional value head" in got["error"]
+
+
+# ---------------------------------------------------------------- bait loops (loops.py)
+
+
+_LOOP_REPLAY_HEAD = ("<!DOCTYPE html>\n<title>battle</title>\n"
+                     '<script type="text/plain" class="battle-log-data">\n')
+
+
+def _write_replay(path, lines):
+    """A `*_replay.html` sibling in the real recorder's shape — the protocol inside a
+    `battle-log-data` script block, NOT a bare line dump. The bare form parses too (the engine
+    degrades to the whole body), so writing one would leave the real format untested."""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(_LOOP_REPLAY_HEAD + "\n".join(lines) + "\n</script>\n")
+
+
+def _build_loop_run(tmp_path, *, sides_swapped: bool = False):
+    """A run with ONE battle carrying a two-cycle bait loop, plus one battle with no replay.html.
+
+    The second battle is the coverage case: a trace the detector cannot judge must be COUNTED as
+    skipped, never silently dropped, and a fixture with only judgeable battles cannot show that.
+    `sides_swapped` seats the trainee on p2 — the case an "assume p1" detector gets exactly
+    backwards, reporting our whiffs as the opponent's.
+    """
+    us, them = ("p2", "p1") if sides_swapped else ("p1", "p2")
+    run = tmp_path / "run"
+    bd = run / "eval_traces" / "step_2000000" / "sentinel_0"
+    os.makedirs(bd, exist_ok=True)
+    lines = ["|player|p1|A|", "|player|p2|B|", "|start|",
+             f"|switch|{us}a: Claydol|Claydol|100/100",
+             f"|switch|{them}a: Snorlax|Snorlax|100/100"]
+    for turn in (1, 2):
+        lines += [f"|turn|{turn}",
+                  f"|switch|{them}a: Salamence|Salamence, F|100/100",
+                  f"|move|{us}a: Claydol|Earthquake|{them}a: Salamence",
+                  f"|-immune|{them}a: Salamence", "|upkeep"]
+    _write_replay(bd / "loss_001_replay.html", lines)
+    acts = {"earthquake": {"prob": "97.0%", "valid": True}}
+    intent = {"alpha": [{"name": "SWITCH", "p": 0.7}],
+              "beta": [{"slot": 0, "p": 0.8, "species": "salamence"}]}
+    invs = [{"i": t, "turn": t, "phase": "move_selection", "chosen": "earthquake",
+             "our": {"species": "claydol"}, "opp": {"species": "snorlax"},
+             "actions": acts, "opp_intent": intent,
+             "outcome": {"reward": {"total": -1.0}, "events": []}} for t in (1, 2)]
+    with open(bd / "loss_001_summary.json", "w") as f:
+        json.dump({"meta": {"step": 2000000, "result": "LOSS", "turns": 2,
+                            "invocations": 2}, "invocations": invs}, f)
+    np.savez(bd / "loss_001_states.npz", obs=np.zeros((2, _OBS_LEN), dtype=np.float32),
+             has_state=np.array([1, 1], dtype=np.int8),
+             values=np.array([5.0, 1.0, -3.0], dtype=np.float32),
+             win_probs=np.array([0.8, 0.5, 0.2], dtype=np.float32))
+    # …and a battle with NO replay.html at all → coverage.n_skipped
+    with open(bd / "win_002_summary.json", "w") as f:
+        json.dump({"meta": {"step": 2000000, "result": "WIN", "turns": 1, "invocations": 1},
+                   "invocations": [invs[0]]}, f)
+    with open(bd.parent / "eval_manifest.json", "w") as f:
+        json.dump({"step": 2000000, "git_hash": "abc", "arch_signature": "g", "snapshot": None}, f)
+    with open(run / "metadata.json", "w") as f:
+        json.dump({"gamma": 0.95}, f)
+    return str(run)
+
+
+def test_loops_finds_the_cycle_and_reports_its_own_coverage(tmp_path):
+    got = ProbeSession(_build_loop_run(tmp_path)).loops()
+    agg = got["aggregate"]
+    assert agg["coverage"] == {"n_matched": 1, "n_skipped": 1,
+                               "skipped_reasons": {"no_replay_html": 1}}
+    assert agg["whiff_rate_per_pivot"] == {"n": 2, "d": 2, "rate": 1.0}
+    assert agg["loop_battle_rate"]["n"] == 1
+    assert agg["reclick_rate"] == {"n": 1, "d": 2, "rate": 0.5}
+    assert agg["median_chosen_prob"]["loop_steps"] == pytest.approx(0.97)
+    # the critic join: turn 1 is −4.0, turn 2 is −4.0, both loop steps
+    assert agg["critic_delta"]["loop_step"]["median_delta_v"] == pytest.approx(-4.0)
+    assert got["battles"][0]["worst_loop"] == 2
+    assert got["baseline"]["generation"] == "gen-15"
+
+
+def test_loops_does_not_assume_we_are_p1(tmp_path):
+    """The same battle with the trainee on p2. An 'assume p1' detector reports these two whiffs as
+    the MIRROR (the opponent's) and our rate as zero — the answer exactly inverted."""
+    got = ProbeSession(_build_loop_run(tmp_path, sides_swapped=True)).loops()
+    assert got["battles"][0]["our_side"] == "p2"
+    assert got["aggregate"]["whiff_rate_per_pivot"]["n"] == 2
+    assert got["aggregate"]["mirror"]["whiff_rate_per_pivot"]["n"] == 0
+
+
+def test_loops_reports_the_alpha_beta_readout_on_the_same_pivots(tmp_path):
+    """Perception and action are separate failures. β's slot is graded structurally: Salamence is
+    unrevealed on its first pivot (undecidable) and slot 1 on the second — β said slot 0, so the
+    repeat read is WRONG, and a detector grading against β's own species label would call it right."""
+    reads = ProbeSession(_build_loop_run(tmp_path)).loops()["aggregate"]["readouts"]
+    assert reads["alpha_switch_top1"]["loop_steps"] == {"n": 2, "d": 2, "rate": 1.0}
+    assert reads["beta_slot_accuracy"]["first_time"]["d"] == 0, "unrevealed ⇒ undecidable"
+    assert reads["beta_slot_accuracy"]["repeat"] == {"n": 0, "d": 1, "rate": 0.0}
+
+
+def test_loops_opponent_filter_is_an_fnmatch_pattern(tmp_path):
+    run = _build_loop_run(tmp_path)
+    sess = ProbeSession(run)
+    assert sess.loops(opponent="sentinel_*")["aggregate"]["coverage"]["n_matched"] == 1
+    assert sess.loops(opponent="sentinel_0")["aggregate"]["coverage"]["n_matched"] == 1
+    assert sess.loops(opponent="staller")["aggregate"]["coverage"]["n_matched"] == 0
+
+
+def test_loops_carries_both_confound_caveats(tmp_path):
+    """The two registered confounds must travel WITH the numbers — a rate read without them is a
+    rate that moves when the game length or the win rate moves."""
+    got = ProbeSession(_build_loop_run(tmp_path)).loops()
+    assert any("CONFOUND 1 (length)" in c for c in got["caveats"])
+    assert any("CONFOUND 2 (winning positions)" in c for c in got["caveats"])
+    assert "loss" in got["aggregate"]["by_outcome"]
+
+
+def test_cli_loops_emits_json(tmp_path):
+    import sys
+
+    import main.prober.query as q
+
+    run = _build_loop_run(tmp_path)
+    argv = sys.argv
+    sys.argv = ["query", "loops", run, "--opponent", "sentinel_*"]
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            q.main()
+    finally:
+        sys.argv = argv
+    parsed = json.loads(buf.getvalue())
+    assert parsed["aggregate"]["loop_battle_rate"]["n"] == 1
+    assert parsed["params"]["opponent"] == "sentinel_*"
