@@ -225,21 +225,38 @@ class BattleRecorder:
         our_hp, opp_hp = self._terminal_hp(live)
         terminal_ctx, delta, reward = self._tracker.finalize(battle)
 
+        # WHICH mon fainted, from the live board rather than from the decision-time active — the
+        # last turn of a battle is the one most likely to end on a switch-in dying, and it is the
+        # turn a reader looks at first. Same rule as the per-turn path (`_newly_fainted`).
+        final_our = frozenset(m.species for m in live.ours.mons if m.fainted)
+        final_opp = frozenset(m.species for m in live.opp.mons if m.fainted)
+        our_fainted = self._newly_fainted(
+            prev_ctx.our_fainted_species, final_our, prev_ctx.our_active)
+        opp_fainted = self._newly_fainted(
+            prev_ctx.opp_fainted_species, final_opp, prev_ctx.opp_active)
+        our_fainted_species = our_fainted[0] if our_fainted else prev_ctx.our_active
+        opp_fainted_species = opp_fainted[0] if opp_fainted else prev_ctx.opp_active
+
+        final_our_fainted = len(final_our)
+        final_opp_fainted = len(final_opp)
+        we_newly_fainted = final_our_fainted > prev_ctx.our_fainted_count
+        opp_newly_fainted = final_opp_fainted > prev_ctx.opp_fainted_count
+
         # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
-        our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
-        opp_ref = prev_ctx.opp_active if delta.opp_fainted else (delta.opp_switch_to or prev_ctx.opp_active)
+        our_ref = our_fainted_species if we_newly_fainted else (delta.our_switch_to or prev_ctx.our_active)
+        opp_ref = opp_fainted_species if opp_newly_fainted else (delta.opp_switch_to or prev_ctx.opp_active)
         our_slot = prev_ctx.our_slot_map.get(our_ref, 0)
         opp_slot = prev_ctx.opp_slot_map.get(opp_ref, 0)
         our_delta = (our_hp[our_slot] - prev_ctx.our_hp[our_slot]) * 100
         opp_delta = (opp_hp[opp_slot] - prev_ctx.opp_hp[opp_slot]) * 100
 
         events = []
-        final_our_fainted = sum(1 for m in live.ours.mons if m.fainted)
-        final_opp_fainted = sum(1 for m in live.opp.mons if m.fainted)
-        if final_our_fainted > prev_ctx.our_fainted_count:
-            events.append(f"our:{prev_ctx.our_active}:fainted")
-        if final_opp_fainted > prev_ctx.opp_fainted_count:
-            events.append(f"opp:{prev_ctx.opp_active}:fainted")
+        if we_newly_fainted:
+            for sp in our_fainted:
+                events.append(f"our:{sp}:fainted")
+        if opp_newly_fainted:
+            for sp in opp_fainted:
+                events.append(f"opp:{sp}:fainted")
 
         self._append_status_events(events, prev_ctx, delta, live)
 
@@ -409,6 +426,39 @@ class BattleRecorder:
         slot = ctx.opp_slot_map.get(ctx.opp_active)
         return f"{ctx.opp_hp[slot] * 100:.0f}%" if slot is not None else "?%"
 
+    @staticmethod
+    def _newly_fainted(prev_fainted, now_fainted, fallback: str) -> "list[str]":
+        """EVERY species that actually fainted this turn, as a set difference.
+
+        A faint used to be detected by COUNT and then labelled with `prev_ctx.*_active` — the mon
+        that was active when the decision was made. That is the wrong mon whenever a switch
+        happened on the same turn, which is not a corner case:
+
+          * we switch Cloyster → Jolteon, the opponent's Explosion kills JOLTEON, and the trace
+            records `our:cloyster:fainted` — while its own battle log, two lines above, says the
+            Explosion hit Jolteon;
+          * the opponent switches Claydol → Dugtrio and our Ice Beam kills DUGTRIO, recorded as
+            `opp:claydol:fainted`.
+
+        Measured on ai_v9_17_tdaux_lam3: **25 of 466 turns** named a mon that did not faint.
+
+        The set difference also gets the case an HP-transition check would miss — a mon REVEALED
+        and killed on the same turn (Dugtrio above) has no previous HP to fall from.
+
+        `fallback` keeps the old behaviour when the sets cannot answer (a snapshot without the
+        species sets, or a faint the tracker saw but neither set names): a slightly wrong label is
+        still better than an empty one, and a forensic recorder must never raise into training.
+        """
+        gained = [sp for sp in (now_fainted or ()) if sp not in (prev_fainted or ())]
+        if gained:
+            # ONE SIDE CAN LOSE TWO MONS IN A TURN — measured: an opponent mon is KO'd, its forced
+            # replacement switches in and dies to Spikes, both inside turn 34. The old
+            # `if delta.opp_fainted:` shape could only ever emit one event per side, so the second
+            # faint was silently unreported (1 of 36 faints in a 4-battle fuzz). Return them all
+            # and let the caller emit one event each.
+            return gained
+        return [fallback] if fallback else []
+
     def _append_status_events(self, events: list, prev_ctx: BattleContext,
                               delta: TurnDelta, live: LiveView) -> None:
         """Append events for any status conditions newly applied this turn."""
@@ -469,19 +519,32 @@ class BattleRecorder:
             # comes from the event-log TurnDelta, so an empty window is just "unknown".
             they_action = "unknown"
 
+        # WHICH mon fainted — the set difference, not the decision-time active (see
+        # `_newly_fainted`). This names the label AND picks the HP-delta slot, because both were
+        # wrong in the same way: a switch-in that dies is neither the mon we were piloting when we
+        # chose, nor the one whose HP row the delta was read from.
+        our_fainted = (self._newly_fainted(
+            prev_ctx.our_fainted_species, curr_ctx.our_fainted_species, prev_ctx.our_active)
+            if delta.we_fainted else [])
+        opp_fainted = (self._newly_fainted(
+            prev_ctx.opp_fainted_species, curr_ctx.opp_fainted_species, prev_ctx.opp_active)
+            if delta.opp_fainted else [])
+        our_fainted_species = our_fainted[0] if our_fainted else None
+        opp_fainted_species = opp_fainted[0] if opp_fainted else None
+
         # HP delta: for faint turns use the fainted mon's slot, not the forced switch-in.
-        our_ref = prev_ctx.our_active if delta.we_fainted else (delta.our_switch_to or prev_ctx.our_active)
-        opp_ref = prev_ctx.opp_active if delta.opp_fainted else (delta.opp_switch_to or prev_ctx.opp_active)
+        our_ref = our_fainted_species or (delta.our_switch_to or prev_ctx.our_active)
+        opp_ref = opp_fainted_species or (delta.opp_switch_to or prev_ctx.opp_active)
         our_slot = prev_ctx.our_slot_map.get(our_ref, 0)
         opp_slot = prev_ctx.opp_slot_map.get(opp_ref, 0)
         our_delta = delta.our_hp_delta[our_slot] * 100
         opp_delta = delta.opp_hp_delta[opp_slot] * 100
 
         events = []
-        if delta.we_fainted:
-            events.append(f"our:{prev_ctx.our_active}:fainted")
-        if delta.opp_fainted:
-            events.append(f"opp:{prev_ctx.opp_active}:fainted")
+        for sp in our_fainted:
+            events.append(f"our:{sp}:fainted")
+        for sp in opp_fainted:
+            events.append(f"opp:{sp}:fainted")
 
         self._append_status_events(events, prev_ctx, delta, live)
 
