@@ -35,6 +35,15 @@ Regen 2026-08-08 (`gen3_entity_rehome_v1`, v60): the Stage-3 entity re-home — 
 ARCH_SIGNATURE bumped in the same commit; the obs-roundtrip fuzz (627 decisions, bit-for-bit) and
 the trapping/protect fuzz gates all passed on the new layout before this regen was taken.
 
+**Regen 2026-08-19** (event-window eff side-flip fix; obs dim unchanged at 2501): the tracker
+read IMMUNE/RESISTED/SUPEREFFECTIVE events as defender-tagged while the producer tags the
+MOVER, so the four `EFF_*` cells were DEAD (all-neutral) on every live battle — the fix
+populates them. Proven confined before this regen was taken, by the column-alignment method:
+pre-fix vs post-fix vectors over all 991 decisions — decision count unchanged (no branching),
+128 changed columns ALL inside the event window, and the changed row-columns exactly the four
+`EFF_*` cells. Regression: `event_window_test::
+test_effectiveness_from_a_one_sided_turn_lands_on_the_movers_row` (verified red on revert).
+
 **Regen 2026-08-14 for v65** (`gen3_deadline_clock_v1`, obs 2667 -> 2669). ⚠️ AND IT HAPPENED A
 THIRD TIME: the clock landed in `cbb0413` without regenerating the fixture, so this test was RED
 ON MAIN again — caught only because a full `pytest src/` was run before a ship, exactly as the v48

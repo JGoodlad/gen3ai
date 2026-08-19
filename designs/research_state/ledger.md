@@ -1091,3 +1091,27 @@ whose forward reads `detach_read`/`publish_detach`, demand it was stamped — a 
 its gradient route live under `detached`/`label_only`, silently), and the two hand-mirrored weather
 folds (`Gen3Battle._update_weather` is the LIVE one; `live_view._fold_weather` is the fallback
 every weather test exercised) now have an equality test plus a planted-drift control.
+
+**SIXTH conviction (2026-08-19, found forensically, one day after the sweep): the event-window
+effectiveness cells were DEAD on every live battle.** The producer (`gen3_battle`) tags
+IMMUNE/RESISTED/SUPEREFFECTIVE on the MOVER ("attach to the resolving mover" — same convention
+as CRIT/MISS/FAIL, and pinned by a real-protocol unit test); the consumer
+(`episode_tracker`) assumed DEFENDER and flipped, so on every one-sided turn — the
+immune-on-pivot case above all — the lookup hit the side with no open move and the eff dropped.
+**FOUR sites shared the wrong belief and the producer disagreed with all of them**: the
+tracker, the fuzz oracle (`open_move.get(OPP if side == OURS else OURS)` — rule (b) verbatim,
+73k checks green because both halves made the same mistake), the hand-written unit fixture
+(`SUPEREFFECTIVE, OPP` one line under `CRIT, OURS` — internally inconsistent and nobody
+noticed), and the substitute feature-coverage fixture (defender-tagged eff, caught by the
+routine gate going red on the fix). Found because gen-15's win_s0_001 turns 7/11 showed an Earthquake-into-Salamence (Flying —
+immune) whiff encoded `hit / neutral / 0.00` — and then EVERY move row in the window read
+neutral, including a 4× KO and a resisted Ice Beam. A rider fell out of the same
+protocol read: `-fail` with a real `[from]` cause (`ability: Clear Body` blocking Intimidate)
+was marked as the open move's failure — the v91 `[from]` class at a fourth site; the producer
+now carries the clause and both consumers guard on it. Fixes + named revert-verified
+regressions in `event_window_test`; goldens regenerated with the column-alignment proof (991
+decisions, 128 changed columns, all four `EFF_*` and nothing else). **The corollary to rule
+(b): when an oracle mirrors its subject, the hand-written unit FIXTURE is the last independent
+witness — and here it had been written from the same wrong belief, so the only disagreeing
+party left was production traffic.** The eff columns have been zero-information for every
+generation since v81; gen-16 (fresh weights) is the first that can learn from them.

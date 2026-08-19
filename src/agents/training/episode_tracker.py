@@ -471,7 +471,15 @@ class EventWindowTracker:
                         om["hp_delta"] += float(amt)
             elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side is not None:
                 om = self._open_move.get(side)
-                if om is not None and om["turn"] == et:
+                # A `-fail` carrying a real `[from]` cause is NOT the open move's outcome — it is
+                # some other effect fizzling while this side happened to be the current mover
+                # (`|-fail|p2a: Metagross|unboost|[from] ability: Clear Body` = Intimidate blocked
+                # on a switch-in, observed mis-attributed onto a full-damage Earthquake). The
+                # synthetic "move-suffix" tag (`|move|…|[miss]`) IS the move's own outcome and
+                # still counts. Same `[from]` class as the v91 DAMAGE guard.
+                external_cause = (k is EventKind.FAIL
+                                  and e.from_clause not in (None, "move-suffix"))
+                if om is not None and om["turn"] == et and not external_cause:
                     if k is EventKind.MISS:
                         om["missed"] = True
                     elif k is EventKind.FAIL:
@@ -480,8 +488,14 @@ class EventWindowTracker:
                         om["crit"] = True
             elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) \
                     and side is not None:
-                mover = OPP if side == OURS else OURS       # tagged on the DEFENDER
-                om = self._open_move.get(mover)
+                # The producer tags these on the MOVER ("attach to the resolving mover",
+                # gen3_battle), the same convention as CRIT/MISS/FAIL one branch up. This
+                # consumer flipped it to the defender until 2026-08-19, so on every one-sided
+                # turn (the immune-on-pivot case above all) the lookup hit the side with no
+                # open move and the eff dropped — measured: EVERY move row in a gen-15 trace
+                # read neutral, including an immune whiff and a 4× KO. The fuzz oracle and the
+                # unit fixture shared the flip, which is why 73k checks stayed green.
+                om = self._open_move.get(side)
                 if om is not None and om["turn"] == et:
                     om["eff"] = {EventKind.SUPEREFFECTIVE: 1, EventKind.RESISTED: 2,
                                  EventKind.IMMUNE: 3}[k]

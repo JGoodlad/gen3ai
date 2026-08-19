@@ -212,7 +212,11 @@ class TurnView:
             elif e.kind is EventKind.MISS:
                 st.missed = True
             elif e.kind is EventKind.FAIL:
-                st.failed = True
+                # A `-fail` carrying a real `[from]` cause (`ability: Clear Body` blocking
+                # Intimidate on a switch-in) is another effect fizzling, not this side's move
+                # failing; the synthetic "move-suffix" outcome IS the move's own and counts.
+                if e.from_clause in (None, "move-suffix"):
+                    st.failed = True
             elif e.kind in (
                 EventKind.IMMUNE,
                 EventKind.RESISTED,

@@ -341,6 +341,31 @@ def test_immune_effectiveness_attributed_to_attacker():
     assert imm.value["multiplier"] == 0.0
 
 
+def test_an_ability_blocked_fail_carries_its_from_cause_and_never_marks_the_move():
+    """`|-fail|p2a: Tyra|unboost|[from] ability: Clear Body` — Intimidate blocked on a
+    switch-in — is not the mover's move failing, and the consumer can only know that if the
+    producer carries the `[from]` cause. A bare `-fail` (a genuine move fail) stays
+    clause-free and still marks the move."""
+    g3 = make(Gen3Battle)
+    feed(g3, CANONICAL)
+    # turn 5: Tyranitar Crunches (it lands), then Intimidate fizzles on Clear Body —
+    # pre-guard, that fizzle marked Crunch as `failed` while it had dealt full damage.
+    g3.parse_message(["", "move", "p2a: Tyra", "Crunch", "p1a: Skarm"])
+    g3.parse_message(["", "-damage", "p1a: Skarm", "40/100"])
+    g3.parse_message(["", "-fail", "p2a: Tyra", "unboost",
+                      "[from] ability: Clear Body", "[of] p2a: Tyra"])
+    g3.parse_message(["", "turn", "6"])
+    # turn 6: a genuine bare fail on the mover's own move must still mark it.
+    g3.parse_message(["", "move", "p2a: Tyra", "Crunch", "p1a: Skarm"])
+    g3.parse_message(["", "-fail", "p2a: Tyra"])
+    g3.parse_message(["", "turn", "7"])
+    fails = [e for e in g3.events if e.kind is EventKind.FAIL]
+    assert fails[-2].from_clause == "ability: Clear Body"
+    assert fails[-1].from_clause is None
+    assert TurnView.for_turn(g3, 5).opp.failed is False   # Clear Body's fizzle ≠ Crunch failing
+    assert TurnView.for_turn(g3, 6).opp.failed is True    # a bare fail still counts
+
+
 def test_turn_view_over_real_parse():
     g3 = make(Gen3Battle)
     feed(g3, CANONICAL)

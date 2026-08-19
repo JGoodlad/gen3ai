@@ -5,7 +5,9 @@ player runs the real tracker protocol (EpisodeTracker.record → update_progress
 with event_window threaded — the RLPlayer/Gen3Env path) and validates the whole 32×22 block —
 EVERY column, none declared unmodelled — against an INDEPENDENT from-scratch fold over the
 battle's FULL event log: the H-B type vocabulary, the modifier-attach rules (clause-free
-target-matched damage; miss/fail/crit; the effectiveness trio tagged on the defender),
+target-matched damage; miss/fail/crit; the effectiveness trio tagged on the MOVER — the
+producer's "attach to the resolving mover" convention, which this oracle MIRRORED as
+defender-tagged until 2026-08-19 and therefore never caught the tracker's identical flip),
 we_first, forced windows, the id columns (species/move dex nums), the three derived id columns
 (cant reason, faint CAUSE, item TRANSITION), recency and the front-padding convention.
 
@@ -215,7 +217,9 @@ def _oracle_rows(battle, resync_log):
                 om["mag"] += float(e.amount)
         elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side:
             om = open_move.get(side)
-            if om is not None and om["turn"] == et:
+            external_cause = (k is EventKind.FAIL
+                              and e.from_clause not in (None, "move-suffix"))
+            if om is not None and om["turn"] == et and not external_cause:
                 if k is EventKind.MISS:
                     om["miss"], om["hit"] = 1.0, 0.0
                 elif k is EventKind.FAIL:
@@ -223,7 +227,7 @@ def _oracle_rows(battle, resync_log):
                 else:
                     om["crit"] = 1.0
         elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) and side:
-            om = open_move.get(OPP if side == OURS else OURS)
+            om = open_move.get(side)                      # producer tags the MOVER, like crit/miss/fail
             if om is not None and om["turn"] == et:
                 om["eff"] = {EventKind.SUPEREFFECTIVE: 1, EventKind.RESISTED: 2,
                              EventKind.IMMUNE: 3}[k]

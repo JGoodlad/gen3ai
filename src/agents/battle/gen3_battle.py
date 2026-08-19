@@ -563,10 +563,17 @@ class Gen3Battle(Battle):
         if kind in (EventKind.CRIT, EventKind.MISS, EventKind.FAIL):
             mover = self._current_move_user_side  # "ours"/"opp"/None
             target_ident = sm[2] if len(sm) > 2 and _is_ident(sm[2]) else None
+            # A real `[from] …` cause means the line is NOT the open move's own outcome
+            # (`|-fail|p2a: Metagross|unboost|[from] ability: Clear Body` = Intimidate
+            # blocked on a switch-in). Carry it so the consumer can tell that apart from a
+            # genuine move fail — same key the synthetic "move-suffix" outcome already uses.
+            cause = next((t[6:].strip() for t in sm[3:]
+                          if isinstance(t, str) and t.startswith("[from]")), None)
             return self._new(
                 kind, sm, side=mover,
                 actor=self._active_species(mover),
                 target=self._species_of(target_ident),
+                value=({"from": cause} if cause else None),
             )
 
         # ---- effectiveness: attach to the resolving mover ----

@@ -103,7 +103,11 @@ class TestSubstituteAbsorption:
         `|-supereffective|` immediately before `|-end|...|Substitute`."""
         rows = _move_rows(_fold([
             _ev(0, EventKind.MOVE, OPP, OPP_SP, move_id="rocksmash"),
-            _ev(1, EventKind.SUPEREFFECTIVE, OURS, OUR_SP),
+            # side = the MOVER (the producer's "attach to the resolving mover" convention —
+            # the raw line names the defender ident, but gen3_battle tags the event on the
+            # side whose move resolved). This fixture said OURS until the 2026-08-19
+            # side-flip fix, the fourth fixture written from the same wrong belief.
+            _ev(1, EventKind.SUPEREFFECTIVE, OPP, OPP_SP),
             _ev(2, EventKind.VOLATILE_END, OURS, OUR_SP, effect="Substitute", op="end"),
         ]))
         assert rows[0]["eff"] == 1, f"super-effective must tag the move row, got {rows[0]['eff']}"

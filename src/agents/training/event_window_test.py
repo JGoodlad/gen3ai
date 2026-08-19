@@ -29,7 +29,12 @@ def _basic_events():
         _ev(3, 2, EventKind.MOVE, OURS, "tyranitar", move_id="rockslide"),
         _ev(4, 2, EventKind.DAMAGE, OPP, sp="skarmory", amount=-0.31),
         _ev(5, 2, EventKind.CRIT, OURS, "tyranitar", op="crit"),
-        _ev(6, 2, EventKind.SUPEREFFECTIVE, OPP, "skarmory", multiplier=2.0),
+        # side = the MOVER (tyranitar's rockslide was supereffective) — the producer's "attach
+        # to the resolving mover" convention, the same side CRIT carries one line up. This
+        # fixture said OPP (the defender) until 2026-08-19, agreeing with the tracker's flipped
+        # lookup while the real producer disagreed with both — on live battles every eff
+        # dropped and the window read all-neutral.
+        _ev(6, 2, EventKind.SUPEREFFECTIVE, OURS, "tyranitar", multiplier=2.0),
         _ev(7, 2, EventKind.MOVE, OPP, "skarmory", move_id="spikes"),
         _ev(8, 3, EventKind.STATUS, OPP, "skarmory", status="par"),
         _ev(9, 3, EventKind.BOOST, OURS, "tyranitar", stat="atk", amount=2),
@@ -74,6 +79,48 @@ def test_residual_and_recoil_damage_never_attach():
     t.update(2, evs, "tyranitar", "skarmory")
     mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
     assert mv["hp_delta"] == pytest.approx(-0.20)
+
+
+def test_effectiveness_from_a_one_sided_turn_lands_on_the_movers_row():
+    """The immune-on-pivot regression (2026-08-19, gen-15 win_s0_001 turns 7/11): we click
+    Earthquake, they voluntarily pivot Salamence in, `|-immune|` fires — the ONLY move that
+    turn is OURS. The producer tags the eff event on the MOVER; the tracker used to flip it
+    to the defender, look up the side with no open move, and silently drop it — so the
+    window showed `hit / neutral / 0.00` for a whiff the model was supposed to learn from.
+    Fails on the reverted lookup (`self._open_move.get(OPP if side == OURS else OURS)`)."""
+    t = EventWindowTracker(maxlen=16)
+    evs = [
+        _ev(1, 1, EventKind.SWITCH, OURS, "salamence", prev_active=None),
+        _ev(2, 1, EventKind.SWITCH, OPP, "metagross", prev_active=None),
+        _ev(3, 2, EventKind.SWITCH, OPP, "salamence", prev_active="metagross"),  # the pivot
+        _ev(4, 2, EventKind.MOVE, OURS, "salamence", move_id="earthquake"),
+        _ev(5, 2, EventKind.IMMUNE, OURS, "salamence", multiplier=0.0),          # MOVER-tagged
+    ]
+    t.update(2, evs, "salamence", "salamence")
+    mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
+    assert mv["eff"] == 3, "the immune whiff must land on OUR move row, not vanish"
+
+
+def test_an_externally_caused_fail_does_not_mark_the_open_move_failed():
+    """`|-fail|p2a: Metagross|unboost|[from] ability: Clear Body` — Intimidate blocked on a
+    switch-in — arrives while Metagross is still the current move user, and used to mark its
+    full-damage Earthquake as `failed`. A FAIL with a real `[from]` cause is not the open
+    move's outcome; the synthetic "move-suffix" tag still is."""
+    t = EventWindowTracker(maxlen=16)
+    evs = [
+        _ev(1, 1, EventKind.SWITCH, OURS, "magneton", prev_active=None),
+        _ev(2, 1, EventKind.SWITCH, OPP, "metagross", prev_active=None),
+        _ev(3, 2, EventKind.MOVE, OPP, "metagross", move_id="earthquake"),
+        _ev(4, 2, EventKind.DAMAGE, OURS, sp="magneton", amount=-1.0),
+        BattleEvent(seq=5, turn=2, kind=EventKind.FAIL, side=OPP,
+                    actor_species="metagross", value={"from": "ability: Clear Body"}),
+        BattleEvent(seq=6, turn=2, kind=EventKind.MISS, side=OPP,
+                    actor_species="metagross", value={"from": "move-suffix"}),
+    ]
+    t.update(2, evs, "magneton", "metagross")
+    mv = [r for r in t.window() if r["t"] == EVENT_T_MOVE][0]
+    assert mv["failed"] is False, "Clear Body's fail is not Earthquake's outcome"
+    assert mv["missed"] is True, "the synthetic move-suffix outcome must still attach"
 
 
 def test_forced_window_tags_and_clears():
