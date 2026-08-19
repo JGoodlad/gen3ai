@@ -22,26 +22,67 @@ about a run.
 
 ## How to actually look at it
 
-**It is LOCAL ONLY — there is no g5d.io hostname for it.** TensorBoard (`:6006`) and the model
-viewer (`:6007`) are systemd units behind a Cloudflare tunnel; this is not. It binds `127.0.0.1`
-on **6008** and you start it when you want it.
+**It is DEPLOYED at https://prober.g5d.io** — a `gen3ai-prober-web.service` systemd user unit
+binding `127.0.0.1:6008`, with `cloudflared` forwarding to it, exactly like TensorBoard (`:6006`)
+and the model viewer (`:6007`). The unit is reference-copied at
+`scripts/workstation/gen3ai-prober-web.service`; it is pointed at **`models/`** (not one run) so a
+new generation needs no restart — the header carries the run picker. **No Cloudflare Access**: the
+owner's decision (2026-08-09) is that this is an open-source model whose outcomes and traces are
+meant to be public, same posture as `model.g5d.io`.
+
+*(This section previously said "LOCAL ONLY — there is no g5d.io hostname for it". That was true
+when written and false by 2026-08-18, which is a good illustration of why deployment facts belong
+next to the thing deployed.)*
 
 ```bash
-# on the workstation
-export PYTHONPATH=$PYTHONPATH:src && python -m main.prober.web /home/goodlad/dev/gen3ai/models/run_<timestamp>
+# ad hoc, on the workstation (the deployed instance is the systemd unit above)
+export PYTHONPATH=$PYTHONPATH:src && python -m main.prober.web /home/goodlad/dev/gen3ai/models/
 
-# from anywhere else, over the workstation SSH tunnel
+# from anywhere else without the tunnel, over SSH
 ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io   # then http://localhost:6008
 ```
 
 `models/` exists only in the **main checkout**, never in a worktree — pass an absolute
 `models/...` path when serving from one.
 
-What promoting it to `prober.g5d.io` would take (and the one design question still open — a
-service is pointed at ONE run) is written up in
-`scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*. **No Cloudflare Access**: the
-owner's decision (2026-08-09) is that this is an open-source model whose outcomes and traces are
-meant to be public, same posture as `model.g5d.io`.
+Operational detail is in `scripts/workstation/GCP_INFRASTRUCTURE.md` → *Prober web views*.
+
+### ⚠ ONE REVISION, or a 500 — the staleness contract
+
+**Jinja reloads a changed template from disk. Python cannot reload a changed module.** So a
+long-lived server drifts into serving NEW templates against OLD code, and that is not a stale page
+but a broken one.
+
+**Measured 2026-08-18**, and the shape is worth remembering: the service had been up **5 days**;
+every `/battle` for a current run returned **HTTP 500** —
+`UndefinedError: 'dict object' has no attribute 'win_prob'` — because a template shipped two days
+earlier read a key the running `session.py` predated. `Restart=always` never fired: **nothing had
+crashed.** systemd called the unit healthy, the tunnel agreed, and the only symptom was a user
+saying they could not load a game.
+
+Two mechanisms close it, and both are needed:
+
+1. **Templates are pinned to the process** (`templates.env.auto_reload = False`, set in
+   `create_app`). A stale process now serves a COHERENT old page instead of a hybrid. The cost is
+   real and accepted: editing a template locally needs a restart.
+2. **A watchdog replaces the process when it falls behind** —
+   `scripts/workstation/prober_web_watchdog.sh`, driven by a systemd `.timer` every 2 minutes. It
+   compares `/api/health`'s **`revision`** (the git sha of the source THIS PROCESS imported,
+   captured once, never re-read) against the repo's HEAD, and restarts on a mismatch. It **defers
+   while `jobs_running > 0`** — a restart kills a multi-minute `falsify_scan` — and it **verifies
+   the replacement actually came up on the new revision**, because "restarted successfully" into a
+   crash-loop is the same class of lie it exists to catch.
+
+`revision` is keyed on the SOURCE directory, not the process CWD: those coincide today and would
+silently diverge the moment anyone served a worktree. Known limit, stated rather than papered
+over: an **uncommitted** edit does not move HEAD, so it does not trigger a restart — correct on
+this box, where main only advances by commit, but hand-edit under the service and you restart it
+yourself.
+
+Gates: `staleness_test.py` (both halves — the pin asserted AND behaviourally proven by editing a
+template mid-process, each verified to fail when `auto_reload` is put back; the watchdog driven end
+to end through the real script with a stubbed `systemctl`, covering current / stale / no-revision /
+job-deferred / unit-stopped / unreachable).
 
 ## The one rule
 

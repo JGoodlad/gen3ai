@@ -1,0 +1,28 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-prober-web-watchdog.service
+#
+# Restarts gen3ai-prober-web.service when the revision it is RUNNING no longer matches the repo's
+# HEAD. See the header of prober_web_watchdog.sh for why Restart=always does not cover this: the
+# failure it exists for kills nothing, so systemd sees a healthy unit serving broken pages.
+#
+# Install (with its .timer):
+#   cp scripts/workstation/gen3ai-prober-web-watchdog.{service,timer} ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now gen3ai-prober-web-watchdog.timer
+#
+# Run it by hand:  systemctl --user start gen3ai-prober-web-watchdog.service
+# See its history: journalctl --user -u gen3ai-prober-web-watchdog.service -n 50
+
+[Unit]
+Description=Restart the prober web service when its code is stale
+# Only meaningful alongside the service, but deliberately NOT Requires=: a watchdog tick that
+# finds the unit stopped exits 0 and leaves it stopped (the operator's choice to make).
+After=gen3ai-prober-web.service
+
+[Service]
+Type=oneshot
+Environment=HOME=/home/goodlad
+ExecStart=/home/goodlad/dev/gen3ai/scripts/workstation/prober_web_watchdog.sh
+
+# It reads one HTTP endpoint and possibly restarts a unit. It must never be what slows a trainer.
+Nice=10
+CPUWeight=20

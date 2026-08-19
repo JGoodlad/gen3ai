@@ -502,6 +502,11 @@
             "title": "Impl",
             "type": "string"
           },
+          "jobs_running": {
+            "description": "Jobs currently executing. A restart kills them, so a watchdog defers while this is non-zero.",
+            "title": "Jobs Running",
+            "type": "integer"
+          },
           "jobs_unlocked": {
             "description": "May THIS request start an expensive probe?",
             "title": "Jobs Unlocked",
@@ -528,6 +533,11 @@
             "title": "Ok",
             "type": "boolean"
           },
+          "revision": {
+            "description": "Git revision of the SOURCE THIS PROCESS IS RUNNING (captured at import, never re-read). A watchdog compares it to the repo's HEAD to decide the process is stale; 'unknown' when the source is not in a git checkout.",
+            "title": "Revision",
+            "type": "string"
+          },
           "version": {
             "title": "Version",
             "type": "string"
@@ -539,7 +549,9 @@
           "jobs_unlocked",
           "auth_required",
           "impl",
-          "version"
+          "version",
+          "revision",
+          "jobs_running"
         ],
         "title": "Health",
         "type": "object"

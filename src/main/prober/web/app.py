@@ -17,6 +17,16 @@ WHY THE HTML ROUTES ARE IN THE OPENAPI SCHEMA. `/openapi.json` is snapshot-commi
 mean adding, renaming or deleting a page slipped past the gate — the drift the gate exists to
 catch. They are documented as `text/html` responses, which is what they are.
 
+WHY THE TEMPLATES ARE PINNED TO THE PROCESS. Jinja reloads a changed template from disk;
+Python cannot reload a changed module. A long-lived server therefore drifts into serving NEW
+templates against OLD code, which is not a stale page but a BROKEN one — measured 2026-08-18, a
+5-day-old service returned HTTP 500 on every `/battle` for a fresh run because the template asked
+for a `win_prob` key that the running `session.py` predated. `Restart=always` never fired: nothing
+had crashed. So `auto_reload` is turned OFF here and the whole surface is pinned to one revision —
+a coherently OLD page is a far better failure than a hybrid one — and `revision` on `/api/health`
+is what a watchdog compares against the repo to decide the process needs replacing
+(`scripts/workstation/prober_web_watchdog.sh`). Editing templates locally now needs a restart.
+
 TWO POLICIES LIVE OUTSIDE THIS FILE, on purpose:
   * WHICH RUNS are openable, and the path confinement that decides it — `runs.py`.
   * WHO MAY SPEND CPU — `auth.py`. Reading is anonymous; the shared password gates only the
@@ -54,6 +64,30 @@ DESCRIPTION = (
 VERSION = "1.1.0"
 
 
+def _source_revision() -> str:
+    """The git revision THIS MODULE was loaded from, resolved once at import.
+
+    Deliberately keyed on the source directory rather than the process CWD: the service runs with
+    `WorkingDirectory=/home/goodlad/dev/gen3ai` and serves `models/` from there, but what a
+    staleness check needs to know is which revision the CODE came from — those coincide today and
+    would silently diverge the moment anyone ran the app from a worktree.
+
+    Never re-read. A value that refreshed itself would report the repo's revision rather than the
+    running process's, which is exactly the comparison the watchdog exists to make.
+    """
+    import subprocess
+    try:
+        return subprocess.check_output(
+            ["git", "-C", _HERE, "rev-parse", "HEAD"],
+            text=True, stderr=subprocess.DEVNULL, timeout=10).strip() or "unknown"
+    except Exception:      # noqa: BLE001 — not a git checkout, no git, or a timeout
+        return "unknown"
+
+
+#: Captured at IMPORT, so it names the code actually serving requests.
+SOURCE_REVISION = _source_revision()
+
+
 # --- response models -------------------------------------------------------------------
 # Only the shapes this module actually OWNS are modelled. The session's results are deep,
 # heterogeneous dicts documented by `src/main/prober/CLAUDE.md`; declaring a Pydantic model for
@@ -68,6 +102,13 @@ class Health(BaseModel):
     auth_required: bool = Field(..., description="False when started with --open.")
     impl: str = Field(..., description="Offline replay/search engine the probes spawn: node | rust.")
     version: str
+    revision: str = Field(
+        ..., description="Git revision of the SOURCE THIS PROCESS IS RUNNING (captured at import, "
+                         "never re-read). A watchdog compares it to the repo's HEAD to decide the "
+                         "process is stale; 'unknown' when the source is not in a git checkout.")
+    jobs_running: int = Field(
+        ..., description="Jobs currently executing. A restart kills them, so a watchdog defers "
+                         "while this is non-zero.")
 
 
 class RunRow(BaseModel):
@@ -133,6 +174,14 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     app.state.jobs = JobRegistry(max_workers=max_job_workers)
     app.mount("/static", StaticFiles(directory=_STATIC), name="static")
     templates = Jinja2Templates(directory=_TEMPLATES)
+    # PINNED to this process — see the module docstring. Starlette 1.6 exposes no env kwargs, so
+    # the flag is set on the environment it built (Jinja consults `auto_reload` at load time) and
+    # the cache is cleared so nothing loaded during construction survives with the old policy.
+    templates.env.auto_reload = False
+    templates.env.cache.clear()
+    # Exposed so the staleness gate can assert the pin on a real app rather than on a template
+    # object it constructed itself — which would prove nothing about what the app serves.
+    app.state.templates = templates
 
     # -- plumbing ------------------------------------------------------------------------
 
@@ -274,7 +323,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         n = len(app.state.runs.list_runs()) if app.state.runs else 0
         return Health(ok=True, models_root=app.state.root, n_runs=n,
                       jobs_unlocked=unlocked(request), impl=app.state.impl,
-                      auth_required=app.state.auth.required, version=VERSION)
+                      auth_required=app.state.auth.required, version=VERSION,
+                      revision=SOURCE_REVISION, jobs_running=app.state.jobs.n_running())
 
     @app.get("/api/runs", response_model=list[RunRow], tags=["read-only"],
              summary="Selectable runs, newest first — the picker's contents")

@@ -1,0 +1,23 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-prober-web-watchdog.timer
+#
+# Ticks the staleness check. Two minutes is chosen against what it costs and what it saves: the
+# check is one loopback HTTP request and one `git rev-parse`, and the thing it prevents lasted
+# FIVE DAYS unnoticed. A tighter interval would buy nothing a human would notice; a looser one
+# starts letting a ship sit unserved for a working session.
+#
+# OnBootSec matters as much as the interval: a restart of the box brings the service up from
+# whatever revision was on disk then, and this is what catches it if that is already behind.
+
+[Unit]
+Description=Periodic staleness check for the prober web service
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+# Fire the missed tick after a suspend/resume rather than waiting a full interval — a laptop-lid
+# gap is exactly when a ship lands without the box noticing.
+Persistent=true
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

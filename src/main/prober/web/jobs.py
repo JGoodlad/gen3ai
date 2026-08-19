@@ -101,6 +101,15 @@ class JobRegistry:
             jobs = [j for j in self._jobs.values() if j.kind == kind]
         return max(jobs, key=lambda j: j.submitted) if jobs else None
 
+    def n_running(self) -> int:
+        """How many jobs are executing right now.
+
+        A restart kills them — `falsify_scan` and `calibration` are minutes of Node re-rolls — so
+        the staleness watchdog reads this and defers rather than silently discarding a probe
+        someone is waiting on."""
+        with self._lock:
+            return sum(1 for j in self._jobs.values() if j.status == "running")
+
     def list(self) -> "list[dict]":
         with self._lock:
             jobs = sorted(self._jobs.values(), key=lambda j: j.submitted, reverse=True)

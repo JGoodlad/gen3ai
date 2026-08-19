@@ -376,7 +376,7 @@ service on `:6008` plus a `cloudflared` ingress entry.
 
 ```bash
 systemctl --user status  gen3ai-prober-web
-systemctl --user restart gen3ai-prober-web       # needed after ANY code change — see below
+systemctl --user restart gen3ai-prober-web       # the watchdog does this for you — see below
 journalctl --user -u gen3ai-prober-web -f
 ```
 
@@ -384,9 +384,50 @@ Unit: `~/.config/systemd/user/gen3ai-prober-web.service`
 (reference copy versioned at `scripts/workstation/gen3ai-prober-web.service`)
 
 **It serves `models/` from the MAIN CHECKOUT, so it runs whatever code local main is at.** Pushing
-to origin is not enough — local main must be fast-forwarded and the unit restarted, or the endpoint
-keeps serving the previous commit. Unlike the model viewer (which re-executes its generator on
-mtime change) this is a FastAPI app whose routes are bound at startup; nothing here reloads.
+to origin is not enough — local main must be fast-forwarded, or the endpoint keeps serving the
+previous commit. Unlike the model viewer (which re-executes its generator on mtime change) this is
+a FastAPI app whose routes are bound at startup; nothing here reloads.
+
+### The staleness watchdog (why "restart it yourself" was not enough)
+
+**`Restart=always` does not cover the failure that actually happened**, because in that failure
+nothing dies. Jinja reloads a changed TEMPLATE from disk while Python cannot reload a changed
+MODULE, so a long-lived process ends up serving new templates against old code.
+
+**Measured 2026-08-18:** this unit had been up 5 days and returned **HTTP 500 on every `/battle`**
+for a current run — a template shipped two days earlier read a key the running `session.py`
+predated. systemd reported the unit healthy the whole time, the tunnel reported the origin up, and
+the only signal was a person saying the page would not load. A five-day outage of the main view,
+invisible to every check pointed at it.
+
+Two mechanisms now close it:
+
+1. **The app pins its templates to the process** (`auto_reload=False`), so a stale process serves a
+   coherent OLD page rather than a broken hybrid.
+2. **A timer restarts it when it falls behind local main.**
+
+```bash
+cp scripts/workstation/gen3ai-prober-web-watchdog.{service,timer} ~/.config/systemd/user/
+cp scripts/workstation/prober_web_watchdog.sh /home/goodlad/dev/gen3ai/scripts/workstation/   # in-repo already
+systemctl --user daemon-reload
+systemctl --user enable --now gen3ai-prober-web-watchdog.timer
+
+systemctl --user list-timers gen3ai-prober-web-watchdog     # when it next fires
+journalctl --user -u gen3ai-prober-web-watchdog -n 30       # what it decided, and why
+scripts/workstation/prober_web_watchdog.sh --dry-run        # check without acting
+```
+
+It compares `/api/health`'s **`revision`** — the git sha of the source the PROCESS imported,
+captured once at import — against `git rev-parse HEAD` in the repo, every 2 minutes. On a mismatch
+it restarts the unit and then **verifies the replacement came up on the new revision** (reporting
+success into a crash-loop would be the same invisible-failure shape). It **defers while a job is
+running**, because a restart kills a multi-minute `falsify_scan` or `calibration`; the next tick
+retries. A unit that is deliberately STOPPED is left stopped — that is systemd's business, not the
+watchdog's.
+
+Known limit: an **uncommitted** edit does not move HEAD and so does not trigger a restart. That is
+right for this box (main only advances by commit — all work happens in worktrees), but if you
+hand-edit a file under the service, restart it yourself.
 
 **It is pointed at `models/`, not at one run** — the header carries a run picker — so a new
 generation starting does NOT require touching the unit.
