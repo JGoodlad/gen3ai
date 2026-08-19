@@ -49,7 +49,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                  stable_teams=None, exploiter_team=None, opponent_pool_team=None,
-                 stable_pfsp=False):
+                 stable_pfsp=False, team_wr_tracking=True):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -93,6 +93,9 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # opponent gets picked shifts. Win-rates arrive via `set_stable_win_rates` each eval. OFF
         # (default) → uniform `_rng.choice`, byte-identical to the flat-share behavior.
         self._stable_pfsp = bool(stable_pfsp)
+        # --team-wr-tracking (default ON): pure instrumentation, so the gate is here at the caller
+        # rather than threaded into every Gen3Teambuilder construction site.
+        self._team_wr_tracking = bool(team_wr_tracking)
         self._stable_win_rates: dict = {}   # {label: p} EMA-smoothed, pushed each eval when pfsp on
         # EXPLOITER mode (--exploiter): a single fixed foreign model that is the SOLE training
         # opponent every episode — it short-circuits the whole challenge/floor/pool/stable selection
@@ -189,6 +192,21 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             if _tb is not None and hasattr(_tb, "record_team_pfsp_outcome"):
                 _tb.record_team_pfsp_outcome(won)
 
+    def _maybe_record_team_wr(self, won: float) -> None:
+        """Record the trainee's team outcome for ``--team-wr-tracking`` (pure instrumentation).
+
+        Deliberately UNLIKE ``_maybe_record_team_pfsp`` above in both of its restrictions: every
+        opponent class counts (stratified by ``_opponent_class``, so a bot-heavy curriculum phase
+        never reads as a per-team win rate), and it is on by default. The two share only the
+        builder's "which team did I just yield" index — never a counter table. No-op on a
+        bias/distill yield (the builder's own guard) or a non-Gen3 builder."""
+        if not self._team_wr_tracking:
+            return
+        _tb = self._trainee_teambuilder()
+        if _tb is not None and hasattr(_tb, "record_team_wr_outcome"):
+            _tb.record_team_wr_outcome(won, getattr(self, "_opponent_class", self.OPP_CLASS_BOT),
+                                       self.N_OPP_CLASSES)
+
     def exploiter_winrate_totals(self):
         """(cumulative target-games, cumulative target-wins) this worker has played vs the EXPLOITER
         target — read via ``VecEnv.env_method`` by ``ExploiterTempRatchetCallback``, which diffs to a
@@ -208,6 +226,21 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         """The trainee's teambuilder handle (poke-env stores ``team=`` as ``_team``; agent1 is the
         trainee). Guarded — returns None if the env/agent1/_team chain is absent."""
         return getattr(getattr(self.env, "agent1", None), "_team", None)
+
+    def drain_team_wr_counts(self) -> "tuple | None":
+        """Per-team win-rate pull (read via ``VecEnv.env_method`` by ``TeamWinRateCallback`` each
+        window): drain-and-zero this worker's per-team, per-opponent-class win/game accumulators.
+
+        ``None`` when tracking is off or the trainee builder isn't tracking-capable. **This is an
+        `env_method` PULL, not an info-dict thread** — that is what makes it correct under
+        ``--async-rollout`` as well as the sync barrier (see ``TeamWinRateCallback``)."""
+        if not self._team_wr_tracking:
+            return None
+        _tb = self._trainee_teambuilder()
+        if _tb is None or not hasattr(_tb, "drain_team_wr_counts"):
+            return None
+        drained: "tuple | None" = _tb.drain_team_wr_counts()
+        return drained
 
     def drain_team_pfsp_counts(self):
         """Team-side PFSP pull (read via ``VecEnv.env_method`` by ``TeamPFSPCallback`` each window):
@@ -333,6 +366,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
     OPP_CLASS_POOL = 1         # frozen selves — the distribution that actually matters
     OPP_CLASS_STABLE = 2       # cross-run stable opponents
     OPP_CLASS_EXPLOITER = 3    # the exploiter's target
+    N_OPP_CLASSES = 4          # width of any per-class array keyed on the four above
 
     def _select_episode_opponent(self) -> None:
         """Pick this episode's opponent.
@@ -400,6 +434,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             info["win_outcome"] = won
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
             self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
+            self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)
         return obs, reward, term, trunc, info
 
     def action_masks(self):

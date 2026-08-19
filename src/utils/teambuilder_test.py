@@ -149,8 +149,12 @@ def test_team_pfsp_off_is_uniform_rng_identical():
     drawn = [tb.yield_team() for _ in range(n)]
 
     assert drawn == reference
-    # OFF never tracks a pool index.
-    assert tb._last_pool_idx is None
+    # OFF now RESOLVES the drawn index (by dict lookup, consuming no RNG — that identity is what
+    # the assertion above pins) so the always-on per-team WR tracker can attribute the episode.
+    # PFSP itself still ignores it: record_team_pfsp_outcome is gated on team_pfsp != "off".
+    assert tb.packed_teams[tb._last_pool_idx] == drawn[-1]
+    tb.record_team_pfsp_outcome(1.0)
+    assert tb.drain_team_pfsp_counts()[:2] == ([0.0, 0.0], [0.0, 0.0])
 
 
 def test_team_pfsp_weighted_sampling():

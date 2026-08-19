@@ -60,6 +60,15 @@ class Gen3Teambuilder(Teambuilder):
             self.packed_teams.append(self.join_team(fixed_team))
             self._pool_keys.append(hashlib.sha1(team_str.strip().encode()).hexdigest()[:10])
 
+        # Reverse map packed-team → pool index, so the LEGACY uniform draw
+        # (``random.choice(self.packed_teams)``, which returns the team and not its index) can still
+        # say WHICH team it yielded. A dict lookup consumes no RNG, so the off path stays
+        # byte-identical — that is the whole reason the index isn't recovered by re-drawing it.
+        # First index wins on a duplicate pack (materially the same team ⇒ the same team_sha).
+        self._pool_index_by_packed: "dict[str, int]" = {}
+        for i, packed in enumerate(self.packed_teams):
+            self._pool_index_by_packed.setdefault(packed, i)
+
         self.bias_prob = bias_prob
         self.bias_packed_teams = []
         if bias_teams and bias_prob > 0.0:
@@ -81,8 +90,21 @@ class Gen3Teambuilder(Teambuilder):
         self._tp_games = [0.0] * len(self.packed_teams)
         # Weights pushed from the callback (None → uniform sampling).
         self._tp_weights = None
-        # The pool index yielded for the CURRENT battle (None → not a tracked pool battle).
+        # The pool index yielded for the CURRENT battle (None → not a pool team, i.e. a bias/distill
+        # draw). Set on EVERY branch of ``_draw_team`` — it is the shared "which team did I just
+        # hand out" utility, read by BOTH the team-side PFSP accumulator and the (separate,
+        # always-on) per-team win-rate tracker below. The two keep their own COUNTER TABLES;
+        # only this draw index is shared.
         self._last_pool_idx = None
+        # ── Per-team win-rate TRACKING (--team-wr-tracking; pure instrumentation) ──
+        # Deliberately a SEPARATE table from the ``_tp_*`` PFSP accumulators above: PFSP measures
+        # only self-play POOL battles (bots wash its weighting signal out) and is off by default,
+        # whereas this one counts EVERY episode and is on by default. Per pool team, per opponent
+        # class (``MaskableAgentWrapper.OPP_CLASS_*``), so a raw win rate can always be split back
+        # out by who it was measured against — a bot-heavy curriculum phase otherwise reads ~0.99
+        # for every team. Windowed: drained (and zeroed) by the callback's periodic pull.
+        self._twr_wins: "dict[int, list[float]]" = {}    # pool idx → wins per opp class
+        self._twr_games: "dict[int, list[float]]" = {}   # pool idx → games per opp class
         # ── Team-blocked episodes (--team-block-episodes; 1 = off, byte-identical) ──
         # Hold each drawn team for K consecutive yields before redrawing. Rationale (the FiLM
         # sample-starvation counter): per-episode redraw sprays ~700 teams at ~4 episodes each per
@@ -133,7 +155,11 @@ class Gen3Teambuilder(Teambuilder):
             self._last_pool_idx = None
             return random.choice(self.bias_packed_teams)
         if self._team_pfsp == "off":
-            return random.choice(self.packed_teams)
+            team = random.choice(self.packed_teams)
+            # Recover the index by LOOKUP, never by re-drawing — the legacy uniform draw is the
+            # byte-identity baseline, so this branch must consume exactly one RNG call.
+            self._last_pool_idx = self._pool_index_by_packed.get(team)
+            return team
         n = len(self.packed_teams)
         w = self._tp_weights if self._tp_weights is not None else [1.0] * n
         idx = random.choices(range(n), weights=w, k=1)[0]
@@ -172,4 +198,47 @@ class Gen3Teambuilder(Teambuilder):
         """The per-pool-team fingerprints (index i ↔ packed_teams[i]). The callback pulls these
         ONCE to verify the per-index team identity is identical across all workers (the strong GIGO
         guard) and to key the audit log of which teams are up/down-weighted."""
+        return self.get_pool_team_keys()
+
+    def get_pool_team_keys(self) -> "list[str]":
+        """The per-pool-team ``team_sha`` fingerprints (index i ↔ ``packed_teams[i]``).
+
+        The generic accessor — ``get_team_pfsp_keys`` is the historical PFSP-named alias. Any
+        consumer that pulls per-INDEX data off the workers must pull these too and verify every
+        worker reports the SAME list: same pool SIZE ≠ same pool ORDER, and a diverged order
+        silently mis-attributes every per-team number."""
         return list(self._pool_keys)
+
+    # ── Per-team win-rate tracking (separate table from PFSP — see __init__) ──
+
+    def record_team_wr_outcome(self, won: float, opp_class: int, n_classes: int) -> None:
+        """Record one finished episode's outcome against the LAST yielded pool team.
+
+        Unconditional (no ``team_pfsp`` gate) and counts EVERY opponent class — it is
+        instrumentation, not a sampling weight. A no-op when the last yield was a bias/distill team
+        (``_last_pool_idx`` None), which is a pinned team and not a pool member."""
+        idx = self._last_pool_idx
+        if idx is None:
+            return
+        c = int(opp_class)
+        if not 0 <= c < n_classes:
+            return
+        wins = self._twr_wins.get(idx)
+        if wins is None:
+            wins = self._twr_wins[idx] = [0.0] * n_classes
+            self._twr_games[idx] = [0.0] * n_classes
+        self._twr_games[idx][c] += 1.0
+        wins[c] += float(won)
+
+    def drain_team_wr_counts(self) -> tuple:
+        """Return ``(counts, keys)`` for this window and ZERO the local accumulators.
+
+        ``counts`` maps pool index → ``(wins_per_class, games_per_class)``; only INDICES THAT
+        PLAYED appear (a 719-team pool at ~4 episodes per env per rollout touches a handful, so a
+        sparse dict is the honest shape for the IPC). ``keys`` is the full per-index fingerprint
+        list, returned alongside so the puller can key by ``team_sha`` and cross-check pool
+        ORDER agreement in the same call."""
+        counts = {i: (list(w), list(self._twr_games[i])) for i, w in self._twr_wins.items()}
+        self._twr_wins = {}
+        self._twr_games = {}
+        return (counts, list(self._pool_keys))

@@ -186,6 +186,81 @@ def test_spread_keeps_endpoints_and_pinned_interior(tmp_path):
     assert len(steps) == 3
 
 
+# ── REVIVAL GATE: the whole eval→env push path, end to end, with NUMBERS ─────
+#
+# Every test above exercises ONE link (pool math / callback EMA / wrapper forwarding), each with the
+# other side mocked. PFSP was built ai_v8-era and never production-enabled, so what a revival has to
+# prove is the COMPOSITION: a measured sentinel win-rate travelling callback → env_method → wrapper
+# → SnapshotPool and coming out as a sampling skew of the size the formula predicts. A per-link
+# green suite cannot say that.
+
+def test_measured_winrates_skew_real_sampling_end_to_end(tmp_path):
+    """eval win-rates → callback EMA → env push → wrapper → pool.sample(): the empirical draw
+    distribution must match the analytic PFSP weights, NOT merely be ordered correctly."""
+    pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=2.0)   # recency off ⇒ pure PFSP
+    _fill(pool, [1_000_000, 2_000_000, 3_000_000])
+
+    # A real wrapper shell holding the real pool (the object an env worker owns).
+    wrapper = MaskableAgentWrapper.__new__(MaskableAgentWrapper)
+    wrapper._pool = pool
+
+    # A real callback shell; the eval cycle measured the trainee LOSING to the 1M self (0.1) and
+    # DOMINATING the 3M one (0.9). First sight ⇒ the EMA seeds to the measurement.
+    cb = _fake_cb(2.0)
+    # The TRAINER-side pool is a separate SnapshotPool over the same dir (as in production, where it
+    # exists for honest sentinel telemetry) — real, so the prune reads real live steps.
+    cb._pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=2.0)
+    training_env = MagicMock()
+    training_env.env_method.side_effect = (
+        lambda name, *a: [getattr(wrapper, name)(*a)])
+    cb.training_env = training_env
+    SelfPlayCallback._update_pfsp_ema(
+        cb, [_sentinel(s, w) for s, w in [(1_000_000, 0.1), (2_000_000, 0.5), (3_000_000, 0.9)]], {})
+    SelfPlayCallback._prune_and_push_pfsp(cb)
+
+    # The push reached the pool the env worker actually samples from.
+    assert pool._win_rates == {1_000_000: 0.1, 2_000_000: 0.5, 3_000_000: 0.9}
+
+    # factor = 1 + 2·(1 − p) ⇒ 2.8 / 2.0 / 1.2, normalized ⇒ 0.4667 / 0.3333 / 0.2000.
+    expected = {1_000_000: 2.8 / 6.0, 2_000_000: 2.0 / 6.0, 3_000_000: 1.2 / 6.0}
+    for step, share in expected.items():
+        entry = next(e for e in pool._entries if e.step == step)
+        assert pool.entry_weight(entry) / 6.0 == pytest.approx(share, abs=1e-9)
+
+    random.seed(11)
+    n = 40_000
+    counts = {1_000_000: 0, 2_000_000: 0, 3_000_000: 0}
+    for _ in range(n):
+        counts[pool.sample().step] += 1
+    for step, share in expected.items():
+        assert counts[step] / n == pytest.approx(share, abs=0.01), counts
+    # The self we LOSE to is drawn 2.33x as often as the one we dominate — the point of PFSP.
+    assert counts[1_000_000] / counts[3_000_000] == pytest.approx(2.8 / 1.2, rel=0.05)
+
+
+def test_pfsp_off_makes_no_push_and_no_skew_end_to_end(tmp_path):
+    """The same composition with pfsp_scale=0: no IPC at all, and the SAME measured win-rates leave
+    the draw distribution uniform (recency off) — the OFF byte-identity claim at the seam level."""
+    pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=0.0)
+    _fill(pool, [1_000_000, 2_000_000, 3_000_000])
+    cb = _fake_cb(0.0)
+    cb._pool = _make_pool(tmp_path, recency_weight=0.0, pfsp_scale=0.0)
+    cb.training_env = MagicMock()
+    SelfPlayCallback._update_pfsp_ema(
+        cb, [_sentinel(s, w) for s, w in [(1_000_000, 0.1), (3_000_000, 0.9)]], {})
+    SelfPlayCallback._prune_and_push_pfsp(cb)
+    cb.training_env.env_method.assert_not_called()      # off ⇒ never even makes the IPC call
+
+    pool.set_win_rates({1_000_000: 0.1, 2_000_000: 0.5, 3_000_000: 0.9})   # ignored while off
+    random.seed(11)
+    n = 30_000
+    counts = {1_000_000: 0, 2_000_000: 0, 3_000_000: 0}
+    for _ in range(n):
+        counts[pool.sample().step] += 1
+    for step in counts:
+        assert counts[step] / n == pytest.approx(1 / 3, abs=0.01), counts
+
+
 # ── SelfPlayCallback EMA + push (unbound-method style, no heavy construction) ──
 
 def _sentinel(step, win):

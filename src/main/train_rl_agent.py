@@ -1995,6 +1995,18 @@ def build_parser() -> argparse.ArgumentParser:
                              "Composes with --team-pfsp (weights apply at each redraw; outcomes "
                              "attribute to the blocked team). Trainee side only; training-only, NOT "
                              "version-locked, resume-forwarded.")
+    parser.add_argument("--team-wr-tracking", "--team_wr_tracking", dest="team_wr_tracking",
+                        action=argparse.BooleanOptionalAction, default=True,
+                        help="Track a running per-team win rate for the TRAINEE's piloted teams "
+                             "(keyed by team_sha, stratified by opponent class): sparse TB summaries "
+                             "(teams/wr_top_k, teams/wr_bottom_k, teams/n_teams_seen, teams/wr_mean) "
+                             "plus a periodic full-table <run>/team_win_rates.json, archetype-joined "
+                             "and restart-safe. PURE INSTRUMENTATION — nothing prioritizes on it, and "
+                             "nothing should without normalizing against a team-strength baseline "
+                             "first (a raw per-team win rate conflates pilot competence with team "
+                             "strength). ON by default; --no-team-wr-tracking opts out. Distinct from "
+                             "--team-pfsp, which measures self-play POOL battles only in order to "
+                             "weight SAMPLING. Training-only, NOT version-locked, resume-forwarded.")
     # ── Stable (cross-run) opponents: load a model from ANOTHER run as a fixed opponent ──
     parser.add_argument("--stable-opponents", "--stable_opponents", dest="stable_opponents",
                         type=str, default=None,
@@ -3300,6 +3312,7 @@ async def main():
                     # per-episode alongside the exploiter target. No-op unless exploiter_player is set.
                     exploiter_keep_bots=args.exploiter_keep_bots,
                     exploiter_bot_fraction=args.exploiter_bot_fraction,
+                    team_wr_tracking=getattr(args, "team_wr_tracking", True),
                 )
 
                 # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
@@ -3657,6 +3670,12 @@ async def main():
         from agents.training.team_pfsp_callback import TeamPFSPCallback
         callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor,
                                           mode=args.team_pfsp, persist_dir=model_dir))
+    # PER-TEAM WIN-RATE TRACKING (default ON): instrumentation only — sparse TB summaries + a
+    # restart-safe <run>/team_win_rates.json full table. Independent of --team-pfsp (different key,
+    # different opponent scope, separate counter table); the two only share the builder's draw index.
+    if getattr(args, "team_wr_tracking", True):
+        from agents.training.team_winrate_callback import TeamWinRateCallback
+        callbacks.append(TeamWinRateCallback(run_dir=model_dir))
     # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
     # corrections into model._correction_buffer (the AWR aux loss samples it). Non-blocking subprocess
     # workers; off by default (the buffer fills nothing → coef-0 loss is byte-identical regardless).
