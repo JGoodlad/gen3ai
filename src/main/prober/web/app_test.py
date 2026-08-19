@@ -19,6 +19,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
+from main.prober.engine import BELIEF_NAME_CAVEAT
 from main.prober.session import ProbeSession
 from main.prober.web import fixture_run
 from main.prober.web.app import create_app
@@ -1036,6 +1037,33 @@ def test_the_replay_shows_what_it_expected_the_opponent_to_do(client, run):
     assert "if they switch, who comes in" in html
 
 
+def test_a_beta_name_says_whether_it_was_READ_or_BELIEVED(client, run):
+    """β points at a SLOT, and where the name came from changes what the row MEANS. The species
+    posterior is un-supervised on a slot the board already revealed — measured over a 843-battle
+    sweep (2026-08-19) it named a mon not on the opponent's team at all in 73.3% of 6,876 pivots —
+    so a posterior-decoded name rendered bare reads as "β predicted this mon" when it is nothing of
+    the kind. The fixture holds one of each provenance; both must be distinguishable on the page."""
+    html = client.get("/battle", params={"battle": _REPLAY_BATTLE}).text
+    raw = ProbeSession(run).battle_turns(
+        [b["id"] for b in ProbeSession(run).battles() if b["short_id"] == _REPLAY_BATTLE][0])
+    beta = {c["slot"]: c for t in raw["turns"] for d in t["decisions"]
+            if d["opp_intent"] for c in d["opp_intent"]["beta"]}
+
+    # The session resolves the provenance — the page renders it, and derives nothing.
+    assert beta[3]["revealed"] is True and beta[3]["caveat"] is None
+    assert beta[4]["revealed"] is False and beta[4]["caveat"] == BELIEF_NAME_CAVEAT
+    # slot 2 is the one PROMOTED onto the card (α leads with SWITCH there) and it is posterior-named.
+    assert beta[2]["revealed"] is False and beta[2]["caveat"] == BELIEF_NAME_CAVEAT
+
+    assert BELIEF_NAME_CAVEAT in html, "a posterior-decoded β name renders with no qualifier"
+    assert 'class="tag believed"' in html
+    # The board-read name renders PLAIN — caveating the honest half would teach readers to discount
+    # it too. Slot 3 is the revealed one; slot 4 sits beside it in the same drop-down list and is not.
+    rows = _beta_rows(html)
+    assert "believed" not in rows["slot 3"], "a β name read off the BOARD was caveated as a belief"
+    assert BELIEF_NAME_CAVEAT in rows["slot 4"], "the posterior-named neighbour lost its caveat"
+
+
 def test_the_card_says_what_the_OPPONENT_actually_picked(client, run):
     """A prediction is only readable next to its outcome. `α` saying "Drill Peck 41%" means one
     thing when Drill Peck is what came and another when it was not — and until now the difference
@@ -1402,8 +1430,15 @@ _FULL_ANALYSIS = {
     },
     "opp_intent": {"alpha": [{"name": "earthquake", "p": 0.5, "is_switch": False},
                              {"name": "SWITCH", "p": 0.3, "is_switch": True}],
-                   "beta": [{"slot": 2, "p": 0.6, "species": "blissey"},
-                            {"slot": 4, "p": 0.2, "species": None}],
+                   # ONE OF EACH β naming provenance, because the three render differently: a
+                   # board-read name (plain), a posterior decode (carries the engine's caveat), and
+                   # a slot no species head could name at all (a bare index, already honest).
+                   "beta": [{"slot": 2, "p": 0.6, "species": "blissey", "revealed": True,
+                             "caveat": None},
+                            {"slot": 3, "p": 0.3, "species": "porygon2", "revealed": False,
+                             "caveat": BELIEF_NAME_CAVEAT},
+                            {"slot": 4, "p": 0.2, "species": None, "revealed": False,
+                             "caveat": None}],
                    "top": {"name": "earthquake", "p": 0.5, "is_switch": False},
                    "switch_p": 0.3, "text": "it expected earthquake (50%)"},
     "belief_truth": {"mons": [
@@ -1630,6 +1665,43 @@ def test_analyze_panels_self_hide_when_their_head_was_off(client):
     for shown in ("beliefs", "threats", "saliency", "intervention", "P(win)",
                   "predicted return distribution"):
         assert shown in full, f"{shown!r} missing on a run that trained it"
+
+
+def _beta_rows(html: str) -> dict:
+    """`{"slot N" -> that ROW's html}` for the β candidate list — isolated to the list under the β
+    heading first, because "believed" is a word this page uses elsewhere (the belief panel's
+    "believed unseen" heading), and a whole-page substring test would read that as a β caveat."""
+    start = html.index("if they switch, who comes in")
+    section = html[start:html.index("</ul>", start)]
+    rows = {}
+    for chunk in section.split("<li>")[1:]:
+        row = chunk.split("</li>")[0]
+        for n in ("slot 2", "slot 3", "slot 4"):
+            if n in row:
+                rows[n] = row
+    return rows
+
+
+def test_analyze_marks_a_BELIEVED_beta_name_and_leaves_a_REVEALED_one_plain(client):
+    """/analyze renders β's FULL candidate list, so it is where the provenance mix is visible at
+    once. `_FULL_ANALYSIS` carries one of each: a board-read name (plain), a posterior decode
+    (caveated), and a slot with no species head at all (a bare index, nothing to qualify).
+
+    The caveat STRING is the engine's (`BELIEF_NAME_CAVEAT`) — a sentence one surface learns must
+    not go missing on another, and a second surface authoring its own wording is how two surfaces
+    end up saying different things about the same row."""
+    _stub_analyze(client, _FULL_ANALYSIS)
+    body = _fragment(client)
+    rows = _beta_rows(body)
+
+    # The posterior decode — porygon2 is precisely the name that was read as a β PREDICTION in the
+    # analysis this fix came out of, on a turn whose slot held a revealed Salamence.
+    assert "porygon2" in rows["slot 3"] and BELIEF_NAME_CAVEAT in rows["slot 3"]
+    assert 'class="tag believed"' in rows["slot 3"]
+    # The board-read name is a fact and stays plain.
+    assert "blissey" in rows["slot 2"] and "believed" not in rows["slot 2"]
+    # A slot no species head could name renders as a bare index — a caveat needs a name to qualify.
+    assert "believed" not in rows["slot 4"]
 
 
 def test_the_timeline_prints_the_engines_own_sentence_verbatim(client):

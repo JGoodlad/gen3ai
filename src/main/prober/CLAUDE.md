@@ -744,11 +744,30 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   Also an **`opp_intent`** block (`OppIntentView`, v67 — `None` unless the run trained
   `--opp-intent-coef>0`): what the model expected the OPPONENT to do — `alpha` (ranked NAMED believed
   moves + `SWITCH`, each carrying `is_switch` so no surface compares a magic string itself), `beta`
-  (candidate switch-ins, each named by the model's own species posterior), `top`, `switch_p`. It is
+  (candidate switch-ins — see **β name provenance** below), `top`, `switch_p`. It is
   **model-free and stays that way** — unlike `belief`, which prefers a re-computed read, `α`/`β` are
   supervised against what the opponent then DID, so the honest question is what *this* decision's
   model expected, not what a later checkpoint would. Rendered as the Summary's `EXPECT` line and the
   web replay's per-turn *expect* line. Engine: `engine.build_opp_intent` / `opp_intent_text`.
+
+  🚨 **β name PROVENANCE — `revealed` / `caveat`, and it is not cosmetic.** `β` points at a SLOT, and
+  what names that slot decides what the row MEANS. A candidate carries `revealed=True` when the
+  RECORDER read the mon off the board; otherwise the name is the model's species POSTERIOR, which is
+  **un-supervised on a revealed slot** (`β`'s candidate mask is alive-and-not-active, so it includes
+  mons already seen, while the species aux scores only the *believed* slots). Measured over a
+  843-battle sentinel sweep (2026-08-19), the posterior-decoded name was a mon not on the opponent's
+  team **at all in 73.3% of 6,876 pivots** (88.3% on revealed slots) — and one such label was read as
+  *"β predicts porygon2"* on a turn where `β`'s slot held the revealed Salamence and `β` was
+  **CORRECT**. That is a wrong research conclusion caused entirely by a label.
+
+  **Every trace written before `gen3_beta_revealed_naming_v1` carries no `revealed` key**, so it
+  reads as `False` — correct, because those names all ARE posterior decodes. Read time attaches
+  `engine.BELIEF_NAME_CAVEAT` (`"believed (posterior decode)"`) to any candidate that is not
+  `revealed` and has a name to qualify, and **never re-derives a name**: the board those traces
+  should have shown is not in them, so a substituted name would be the same defect facing the other
+  way. The caveat rides `opp_intent_text` as well as the candidate, because a surface that prints
+  only the sentence would otherwise drop it silently. A `species: None` row (no species head at all)
+  gets no caveat — a bare `slot 4` already claims nothing.
   Carries two incoming-threat decodes — **distinguish them**:
   - `threats` (model-free, from `their_matchups`): raw type-*effectiveness* —
     `present`, `revealed_frac` (how much opp coverage is revealed), `max_incoming`

@@ -298,9 +298,19 @@ Three things about it are deliberate:
   four sit on the card (`SWITCH` in the accent every switch on this page already uses); the full
   distribution and `β` — *if they switch, who comes in* — live in the drop-down beside our own
   policy distribution, which is the honest pairing: two distributions, ours over our actions and
-  `α` over theirs. `β` names a slot by the model's own species posterior, and the panel SAYS so
-  rather than letting a believed mon read as the board. Absent entirely on a run without the heads
-  (every trace before v67) — no line, never an empty one and never a fabricated 0%.
+  `α` over theirs. Absent entirely on a run without the heads (every trace before v67) — no line,
+  never an empty one and never a fabricated 0%.
+
+  🚨 **A `β` name says WHERE IT CAME FROM, per row.** A name the recorder read off the board renders
+  plain; a name the model's species POSTERIOR produced renders with the engine's caveat tag
+  (`engine.BELIEF_NAME_CAVEAT`, injected as a Jinja global so the tag on a row and the legend
+  explaining it are one string). That distinction is not decoration: the posterior is un-supervised
+  on a slot the board already revealed, and over a 843-battle sweep (2026-08-19) it named a mon not
+  on the opponent's team at all in 73.3% of 6,876 pivots — one such bare label was read as *"β
+  predicts porygon2"* on a turn where `β`'s slot held the revealed Salamence and `β` was CORRECT.
+  **Every pre-fix trace is entirely posterior-named**, so on an archived run every `β` name carries
+  the tag; the page never repairs one (see `src/main/prober/CLAUDE.md`). A row with no species at all
+  renders as a bare `slot 4` and is NOT tagged — a caveat needs a name to qualify.
 - **It says whether the model SAW THE LOSS COMING, twice.** Above the replay, the battle-level
   verdict — a `blind loss` / `knew @ turn N` badge and `engine.awareness_text`'s sentence,
   printed, never re-worded here. Then under each decision's critic row, a **`P(win) · dist` strip**
@@ -673,9 +683,12 @@ was applied to a copy of the tree and the matching test confirmed red):
   to fail on it — and `app_test.py` asserts that failure renders. Its `opp_intent` blocks come in
   **two shapes on purpose** (one decision where `α` expects an ATTACK, one where it expects a SWITCH
   so `β`'s named mon is promoted onto the card) and on only ONE of its battles — a fixture carrying
-  a single shape would leave the `β` path and the heads-off path ungated. Because the fixture
-  carries them, the measured layout gate (`overflowby` / `scrollers` / `monstack`) covers the new
-  markup with no new assertion.
+  a single shape would leave the `β` path and the heads-off path ungated. Its `β` candidates
+  likewise hold **one of each name provenance**: one `"revealed": true` (renders plain) and the rest
+  with the key **ABSENT** rather than `false` — absent is the literal shape of every trace written
+  before `gen3_beta_revealed_naming_v1`, which is the case the caveat exists for. Because the
+  fixture carries them, the measured layout gate (`overflowby` / `scrollers` / `monstack`) covers
+  the new markup with no new assertion.
 
   **Its distributions follow the same one-of-each rule**, and the `model_config.json` that declares
   the atom support: one **blind** loss that also carries the **stall signature** (both recorded

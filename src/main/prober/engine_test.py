@@ -995,9 +995,62 @@ def test_opp_intent_text_is_the_shared_sentence():
     # β is appended ONLY when α actually leads with the switch — otherwise it is noise on the line.
     assert "in:" not in text
     sw = {"alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "toxic", "p": 0.39}],
-          "beta": [{"slot": 2, "p": 0.58, "species": "blissey"}]}
+          "beta": [{"slot": 2, "p": 0.58, "species": "blissey", "revealed": True}]}
     assert opp_intent_text(build_opp_intent({"opp_intent": sw})) == \
         "expects SWITCH 61% · toxic 39% → in: blissey 58%"
+
+
+# ---------------------------------------------------------------------------
+# β name PROVENANCE (`gen3_beta_revealed_naming_v1`) — the read-time half
+# ---------------------------------------------------------------------------
+# The recorder used to name EVERY β slot from the species posterior, which is un-supervised on a
+# revealed slot: measured over a 843-battle sweep (2026-08-19) the rendered mon was not on the
+# opponent's team at all in 73.3% of 6,876 pivots, and one such label was read as "β predicts
+# porygon2" on a turn where β's slot held the revealed Salamence and β was CORRECT. Traces already
+# on disk baked that name and do not carry the board, so read time attaches a CAVEAT — it never
+# re-derives a name it cannot ground.
+
+def test_beta_names_from_an_OLD_trace_are_all_caveated():
+    """Every trace written before the recorder fix carries no `revealed` key at all. That must read
+    as 'posterior decode', because that is exactly what those names are."""
+    from main.prober.engine import build_opp_intent, BELIEF_NAME_CAVEAT
+    v = build_opp_intent({"opp_intent": _INTENT})       # no `revealed` key anywhere
+    assert [c.revealed for c in v.beta] == [False, False]
+    assert v.beta[0].species == "blissey" and v.beta[0].caveat == BELIEF_NAME_CAVEAT
+    # …and the name itself is passed through UNCHANGED. Repairing it is impossible (the board is
+    # not in the trace) and guessing a replacement would be the same defect facing the other way.
+    assert v.beta[0].species == "blissey"
+
+
+def test_a_revealed_beta_name_carries_no_caveat():
+    """A slot the recorder read off the board is a FACT — caveating it would teach the reader to
+    discount the honest half too."""
+    from main.prober.engine import build_opp_intent
+    v = build_opp_intent({"opp_intent": {
+        "alpha": [{"name": "SWITCH", "p": 1.0}],
+        "beta": [{"slot": 0, "p": 0.7, "species": "salamence", "revealed": True},
+                 {"slot": 3, "p": 0.3, "species": "snorlax", "revealed": False}]}})
+    assert (v.beta[0].revealed, v.beta[0].caveat) == (True, None)
+    assert v.beta[1].revealed is False and v.beta[1].caveat
+
+
+def test_a_bare_index_is_not_caveated_because_there_is_no_name_to_qualify():
+    """No species head ⇒ the row renders as `slot 4`, which already claims nothing. A caveat there
+    would attach a qualifier to a name that does not exist."""
+    from main.prober.engine import build_opp_intent
+    v = build_opp_intent({"opp_intent": {"alpha": [{"name": "SWITCH", "p": 1.0}],
+                                         "beta": [{"slot": 4, "p": 0.9, "species": None}]}})
+    assert v.beta[0].species is None and v.beta[0].caveat is None
+
+
+def test_the_shared_sentence_carries_the_caveat_for_a_posterior_beta_name():
+    """The sentence is the shared vocabulary — a surface that prints only `text` would otherwise
+    lose the qualifier silently, which is the exact failure the engine/renderer split prevents."""
+    from main.prober.engine import build_opp_intent, opp_intent_text, BELIEF_NAME_CAVEAT
+    old = {"alpha": [{"name": "SWITCH", "p": 0.61}, {"name": "toxic", "p": 0.39}],
+           "beta": [{"slot": 2, "p": 0.58, "species": "blissey"}]}
+    assert opp_intent_text(build_opp_intent({"opp_intent": old})) == \
+        f"expects SWITCH 61% · toxic 39% → in: blissey 58% · {BELIEF_NAME_CAVEAT}"
 
 
 def test_analyze_includes_opp_intent_with_and_without_state():

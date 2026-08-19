@@ -861,12 +861,33 @@ only ever point at options it can name, and rendering is where that becomes chec
 not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it, so the payload was
 computed on every decision and dropped on the floor:
 
-`α`/`β` logits → `RLPlayer._opp_intent` (`render_alpha`, plus `belief_decode.top_species_per_slot`
-to NAME `β`'s slots) → the summary invocation's `opp_intent` block → `engine.build_opp_intent` /
-`opp_intent_text` → the prober's Summary **EXPECT** line, `analyze`'s `opp_intent`, and the web
-replay's per-turn *expect* line (`src/main/prober/CLAUDE.md`). `β` names a slot by the model's OWN
-species posterior — the same content-addressing its training target uses — so the head and the
-sentence refer to one object.
+`α`/`β` logits → `RLPlayer._opp_intent` (`render_alpha`, plus the `β` naming rule below) → the
+summary invocation's `opp_intent` block → `engine.build_opp_intent` / `opp_intent_text` → the
+prober's Summary **EXPECT** line, `analyze`'s `opp_intent`, and the web replay's per-turn *expect*
+line (`src/main/prober/CLAUDE.md`).
+
+#### 🚨 How a `β` slot is NAMED — two branches, and conflating them produced a wrong conclusion
+
+`β` points at a SLOT, so something has to name it, and **where the name comes from decides what the
+row means** (`gen3_beta_revealed_naming_v1`):
+
+| slot | named from | trace flag |
+|---|---|---|
+| already REVEALED on the board | `battle.opponent_team`, read through `ObservationEncoder.get_team_list` so obs slot `k` and `β` candidate `k` cannot drift apart | `"revealed": true` |
+| still HIDDEN | the model's OWN species posterior (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s training target uses | `"revealed": false` |
+
+The posterior used to name **both**, and that was a display defect, not a modelling one. `β`'s
+candidate mask is alive-and-not-active, which **includes revealed bench mons**, while the species
+aux only supervises the *believed* slots — so on a revealed slot the posterior is un-trained.
+Measured over a 843-battle sentinel sweep (2026-08-19): the rendered name was a mon **not on the
+opponent's team at all in 73.3% of 6,876 pivots** (88.3% on revealed slots), and an owner-facing
+analysis read "β predicts porygon2" on a turn where `β`'s slot held the revealed Salamence and `β`
+was **CORRECT**. The slot mapping itself was validated 7560/7560 against the belief block's
+hidden-slot set — the pointer was fine; the label beside it was a different head's output.
+
+**Traces already on disk cannot be repaired** (they baked the posterior name and do not carry the
+board), so the read side attaches `engine.BELIEF_NAME_CAVEAT` to any candidate not flagged
+`revealed` rather than inventing a replacement name. See `src/main/prober/CLAUDE.md`.
 
 ### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 

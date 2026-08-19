@@ -395,18 +395,48 @@ class OppIntentOption:
     was_actual: bool = False
 
 
+#: The caveat every surface must print beside a `β` slot name that came from the model's species
+#: POSTERIOR rather than from the board. It lives here, not in a template, for the same reason
+#: `timeline_entry_text` does: a sentence one surface learns must not go missing on another.
+#:
+#: Why it exists: `β`'s candidate mask is alive-and-not-active, which INCLUDES revealed bench mons,
+#: while the species aux only supervises the *believed* slots — so on a revealed slot the posterior
+#: is un-trained. Measured over a 843-battle sentinel sweep (2026-08-19), the posterior-decoded name
+#: was a mon not on the opponent's team **at all** in 73.3% of 6,876 pivots (88.3% on revealed
+#: slots), and one such label was read as "β predicts porygon2" on a turn where β's slot was the
+#: revealed Salamence and β was CORRECT. Recorders from `gen3_beta_revealed_naming_v1` on name a
+#: revealed slot off the board and flag it (`revealed: true`); EVERY trace written before that
+#: baked the posterior name, and no read-time re-derivation can recover the board — so the honest
+#: repair for an old trace is to say what the name is.
+BELIEF_NAME_CAVEAT = "believed (posterior decode)"
+
+
 @dataclass(frozen=True)
 class OppIntentCandidate:
     """One `β` candidate: a slot the opponent could bring in, and how much mass `β` puts there.
 
-    `species` is the model's OWN species posterior for that slot (`belief_decode.top_species_per_slot`
-    at capture time) — the same content-addressing `β`'s target uses, so the slot reads as a mon. It
-    is `None` on a checkpoint with no species head, and it is a BELIEF even when the slot is
-    revealed: `β`'s candidate mask is alive-and-not-active, which includes mons already seen, and
-    the species aux only supervises the believed slots."""
+    `species` names the slot, and WHERE the name came from is the load-bearing part:
+
+    - `revealed=True` — the slot was already on the board at that decision, and the recorder named
+      it from the opponent's revealed team (the encoder's own opp-slot order). A fact.
+    - `revealed=False` — the model's OWN species posterior
+      (`belief_decode.top_species_per_slot`), which is un-supervised on a revealed slot. A guess,
+      and `caveat` carries the sentence saying so.
+
+    Every trace written before `gen3_beta_revealed_naming_v1` carries no `revealed` key at all, so
+    it reads as `False` — correct, because those names ARE all posterior decodes.
+
+    `caveat` is `None` when there is nothing to qualify: a revealed name, or a slot with no species
+    head to name it (which renders as a bare index and is already honest)."""
     slot: int
     p: float
     species: "str | None"
+    #: Did the RECORDER name this slot off the board? False on every pre-`gen3_beta_revealed_naming_v1`
+    #: trace, which is the honest reading of one.
+    revealed: bool = False
+    #: `BELIEF_NAME_CAVEAT` when the name is a posterior decode, else None. A stored FIELD rather
+    #: than a property, so `asdict` carries it into the CLI JSON and no surface re-derives the test.
+    caveat: "str | None" = None
 
 
 @dataclass(frozen=True)
@@ -1342,6 +1372,20 @@ def _move_display(move_id: str) -> str:
     return move_id
 
 
+def _beta_candidate(e: dict) -> OppIntentCandidate:
+    """One recorded `β` row → a candidate, with the naming PROVENANCE resolved once.
+
+    Names are NOT re-derived here, deliberately: an old trace baked the posterior name and the
+    board it should have been read from is not in the trace at all, so the only honest repair at
+    read time is to attach `BELIEF_NAME_CAVEAT` — never to invent a replacement name."""
+    species = str(e["species"]) if e.get("species") else None
+    revealed = bool(e.get("revealed"))
+    return OppIntentCandidate(
+        slot=int(e.get("slot", -1)), p=float(e.get("p", 0.0)), species=species,
+        revealed=revealed,
+        caveat=(BELIEF_NAME_CAVEAT if (species is not None and not revealed) else None))
+
+
 def build_opp_intent(inv: dict) -> "OppIntentView | None":
     """What the model expected the OPPONENT to do — model-free, from the summary invocation's
     `opp_intent` block (`RLPlayer._opp_intent` → `BattleRecorder.record`).
@@ -1365,11 +1409,7 @@ def build_opp_intent(inv: dict) -> "OppIntentView | None":
                                      is_switch=is_switch, was_actual=hit))
     if not alpha:
         return None
-    beta = tuple(
-        OppIntentCandidate(slot=int(e.get("slot", -1)), p=float(e.get("p", 0.0)),
-                           species=(str(e["species"]) if e.get("species") else None))
-        for e in (raw.get("beta") or [])
-    )
+    beta = tuple(_beta_candidate(e) for e in (raw.get("beta") or []))
     switch = next((o.p for o in alpha if o.is_switch), None)
     # What they actually picked, named the way α names things. When α listed it, reuse ITS spelling
     # so the card reads "Drill Peck" in both places rather than "Drill Peck" and "drillpeck".
@@ -1388,7 +1428,11 @@ def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:
     the TUI, the JSON CLI and the web replay all say the same sentence about the same numbers.
 
     `expects fireblast 41% · SWITCH 22% · icebeam 12%`, and when SWITCH leads, the `β` follow-up:
-    `expects SWITCH 52% · fireblast 20% → in: blissey 61%`. Empty string on `None`."""
+    `expects SWITCH 52% · fireblast 20% → in: blissey 61%`. Empty string on `None`.
+
+    When the `β` name is a POSTERIOR DECODE rather than a mon read off the board, the sentence
+    carries `BELIEF_NAME_CAVEAT` — the sentence is the shared vocabulary, so the qualifier has to
+    ride IN it or the surfaces that print only the sentence lose it silently."""
     if view is None or not view.alpha:
         return ""
     parts = [f"{o.name} {o.p * 100:.0f}%" for o in view.alpha[:top_n]]
@@ -1397,6 +1441,8 @@ def opp_intent_text(view: "OppIntentView | None", top_n: int = 3) -> str:
         best = view.beta[0]
         who = best.species or f"slot {best.slot}"
         text += f" → in: {who} {best.p * 100:.0f}%"
+        if best.caveat:
+            text += f" · {best.caveat}"
     return text
 
 

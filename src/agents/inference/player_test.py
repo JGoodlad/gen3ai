@@ -537,10 +537,21 @@ def _intent_self(*, alpha=None, seat_nums=None, beta=None, species=None):
                          last_beta_logits=beta,
                          last_belief_logits=({"species": species} if species is not None else None))
     fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(features_extractor=ex)))
-    # `_opp_intent` calls the sibling helper on `self`; bind the real one so the mock exercises the
-    # REAL naming path rather than a stub of it.
+    # `_opp_intent` calls the sibling helpers on `self`; bind the REAL ones so the mock exercises
+    # the real naming path rather than a stub of it.
     fake._slot_species = lambda: RLPlayer._slot_species(fake)
+    fake._revealed_opp_species = RLPlayer._revealed_opp_species
     return fake
+
+
+def _intent_battle(*revealed, active=None):
+    """The minimum a β name can be read off: a battle whose `opponent_team` holds the mons the
+    board has REVEALED, in first-seen order. That dict order IS the encoder's opp-slot order
+    (`ObservationEncoder.get_team_list`), which is the mapping the naming rule depends on."""
+    from types import SimpleNamespace
+    team = {f"p2: {s}": SimpleNamespace(species=s) for s in revealed}
+    return SimpleNamespace(opponent_team=team,
+                           opponent_active_pokemon=(active or next(iter(team.values()), None)))
 
 
 def test_opp_intent_none_when_heads_off():
@@ -587,3 +598,73 @@ def test_opp_intent_beta_slot_stays_a_bare_index_without_a_species_head():
         alpha=torch.tensor([[1.0, 0.5]]), seat_nums=torch.tensor([[33]]),
         beta=torch.tensor([[1.0, 0.0]])))
     assert [r["species"] for r in out["beta"]] == [None, None]
+
+
+# ── β naming provenance (`gen3_beta_revealed_naming_v1`) ─────────────────────
+# THE defect this pins: β's candidate mask is alive-and-not-active, which includes REVEALED bench
+# mons, while the species aux only supervises the BELIEVED slots — so the posterior is un-trained
+# exactly where the board already has the answer. Naming a revealed slot from it made the rendered
+# mon one not on the opponent's team at all in 73.3% of 6,876 pivots (843-battle sweep, 2026-08-19),
+# and an owner analysis read "β predicts porygon2" on a turn where β's slot was the revealed
+# Salamence and β was CORRECT.
+
+def test_opp_intent_beta_names_a_REVEALED_slot_from_the_BOARD_not_the_posterior():
+    """A slot the board has revealed is named from `battle.opponent_team`, and flagged `revealed`.
+    The species posterior is deliberately made to disagree — that disagreement is the whole bug."""
+    import torch
+    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
+    beta = torch.tensor([[5.0, 0.0, 0.0]])          # slot 0 leads
+    species = torch.zeros(1, 3, 400)
+    species[0, 0, 233] = 10.0                        # the posterior says porygon2 (dex 233) …
+    battle = _intent_battle("salamence", "tyranitar")   # … the board says salamence
+    out = RLPlayer._opp_intent(
+        _intent_self(alpha=alpha, seat_nums=seats, beta=beta, species=species), battle)
+    top = out["beta"][0]
+    assert top["slot"] == 0
+    assert top["species"] == "salamence", "a revealed slot must be named off the board"
+    assert top["revealed"] is True
+
+
+def test_opp_intent_beta_still_names_a_HIDDEN_slot_from_the_posterior():
+    """The other branch, unchanged: past the revealed mons the board says nothing, so the model's
+    own species posterior is the only thing that can name the slot — flagged as the guess it is."""
+    import torch
+    alpha, seats = torch.tensor([[1.0, 0.5]]), torch.tensor([[33]])
+    beta = torch.tensor([[0.0, 5.0, 0.0]])          # slot 1 leads
+    species = torch.zeros(1, 3, 400)
+    species[0, 1, 143] = 10.0                        # slot 1 → snorlax (dex 143)
+    battle = _intent_battle("salamence")             # only slot 0 is on the board
+    out = RLPlayer._opp_intent(
+        _intent_self(alpha=alpha, seat_nums=seats, beta=beta, species=species), battle)
+    top = out["beta"][0]
+    assert top["slot"] == 1 and top["species"] == "snorlax"
+    assert top["revealed"] is False
+    # …and the revealed neighbour in the SAME payload is still board-named, so the flag is per-row.
+    slot0 = next(r for r in out["beta"] if r["slot"] == 0)
+    assert slot0["species"] == "salamence" and slot0["revealed"] is True
+
+
+def test_opp_intent_beta_without_a_battle_is_all_posterior_and_says_so():
+    """No battle to read ⇒ nothing can be named off the board. The rows fall back to the posterior
+    and are flagged `revealed: false`, which is what makes a downstream surface caveat them rather
+    than present them as the board."""
+    import torch
+    species = torch.zeros(1, 2, 400)
+    species[0, 0, 143] = 10.0
+    out = RLPlayer._opp_intent(_intent_self(
+        alpha=torch.tensor([[1.0, 0.5]]), seat_nums=torch.tensor([[33]]),
+        beta=torch.tensor([[1.0, 0.0]]), species=species))
+    assert [r["revealed"] for r in out["beta"]] == [False, False]
+    assert out["beta"][0]["species"] == "snorlax"
+
+
+def test_revealed_opp_species_uses_the_ENCODERS_OWN_slot_order():
+    """The mapping (obs opp slot k == the k-th revealed opp mon) is not re-derived here — it is read
+    through the encoder's own team iteration, so the two cannot drift apart. Pinned against that
+    function directly rather than against a hand-copied `list(opponent_team.values())`."""
+    from agents.observation.base import ObservationEncoder
+    battle = _intent_battle("salamence", "tyranitar", "blissey")
+    expected = [m.species for m in ObservationEncoder.get_team_list(battle, is_opponent=True)]
+    assert RLPlayer._revealed_opp_species(battle) == expected == \
+        ["salamence", "tyranitar", "blissey"]
+    assert RLPlayer._revealed_opp_species(None) == []

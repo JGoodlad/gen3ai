@@ -81,6 +81,11 @@
       {% if d.opp_intent.top and d.opp_intent.top.is_switch and d.opp_intent.beta %}
       {# β only earns space up here when α actually expects the switch. #}
       <span class="opt inmon">→ in: {{ "slot " ~ d.opp_intent.beta[0].slot }} · {{ d.opp_intent.beta[0].species or "?" }}
+        {# The name is only a FACT when the recorder read it off the board. Otherwise it is the
+           species posterior, which is un-supervised on a slot the board already revealed — and a
+           bare mon name here was read as "β predicted this mon" for a whole analysis. The caveat
+           STRING is the engine's (`BELIEF_NAME_CAVEAT`), never authored here. #}
+        {% if d.opp_intent.beta[0].caveat %}<span class="tag believed" title="β points at a SLOT. This name is the model's own species posterior for that slot, which is un-supervised wherever the slot is already revealed — so it is what the model believes is there, not what β predicted and not what the board holds.">{{ d.opp_intent.beta[0].caveat }}</span>{% endif %}
         <span class="p">{{ m.pct(d.opp_intent.beta[0].p, 0) }}</span></span>
       {% endif %}
     </p>
@@ -239,15 +244,16 @@
             {% for c in d.opp_intent.beta %}
             <li>
               <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
-              <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}</span>
+              <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}{% if c.caveat %} <span class="tag believed">{{ c.caveat }}</span>{% endif %}</span>
               <span class="p">{{ m.pct(c.p, 1) }}</span>
             </li>
             {% endfor %}
           </ul>
           <p class="muted small">
-            β points at a SLOT; the name is the model's own species posterior for that slot — the
-            same content-addressing β is trained against, so it is a belief about who is there, not
-            a reading of the board.
+            β points at a SLOT. A name marked <span class="tag believed">{{ BELIEF_NAME_CAVEAT }}</span>
+            is the model's own species posterior for that slot, which is UN-supervised wherever the
+            slot is already revealed — a belief about who is there, and not what β predicted. An
+            unmarked name was read off the board.
           </p>
           {% endif %}
         </div>

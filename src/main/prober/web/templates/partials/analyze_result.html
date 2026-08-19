@@ -178,14 +178,20 @@
       {% for c in a.opp_intent.beta %}
       <li>
         <span class="bar"><span style="width: {{ (c.p * 100) | round(1) }}%"></span></span>
-        <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}</span>
+        {# A β name is a FACT only where the recorder read it off the board (`revealed`). Otherwise
+           it is the species posterior — un-supervised on a revealed slot — and it carries the
+           engine's `BELIEF_NAME_CAVEAT`. No name is derived or repaired here: an old trace baked
+           the posterior name and the board it should have shown is not in the trace at all. #}
+        <span class="lbl">{{ "slot " ~ c.slot }} · {{ c.species or "?" }}{% if c.caveat %} <span class="tag believed">{{ c.caveat }}</span>{% endif %}</span>
         <span class="p">{{ m.pct(c.p, 1) }}</span>
       </li>
       {% endfor %}
     </ul>
     <p class="muted small">
-      β points at a SLOT; the name is the model's own species posterior for it, so it is a belief
-      about who is there, not a reading of the board.
+      β points at a SLOT. A name marked <span class="tag believed">{{ BELIEF_NAME_CAVEAT }}</span>
+      is the model's own species posterior for that slot, which is UN-supervised wherever the slot
+      is already revealed — a belief about who is there, and not what β predicted. An unmarked name
+      was read off the board.
       {% if a.opp_intent.switch_p is not none %}P(they switch) {{ m.pct(a.opp_intent.switch_p, 0) }}.{% endif %}
     </p>
     {% endif %}

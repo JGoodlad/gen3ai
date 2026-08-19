@@ -46,7 +46,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from main.prober.engine import opponent_rank, sort_opponents
+from main.prober.engine import BELIEF_NAME_CAVEAT, opponent_rank, sort_opponents
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
 from main.prober.web.jobs import JobRegistry
@@ -180,6 +180,11 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # the cache is cleared so nothing loaded during construction survives with the old policy.
     templates.env.auto_reload = False
     templates.env.cache.clear()
+    # The ENGINE's caveat string, reachable from a legend that has no candidate in hand. The rule
+    # ("this package authors no analysis text") is why it is injected rather than typed into the
+    # template: the tag on a β name and the legend explaining the tag must be the same string, and
+    # the engine owns it.
+    templates.env.globals["BELIEF_NAME_CAVEAT"] = BELIEF_NAME_CAVEAT
     # Exposed so the staleness gate can assert the pin on a real app rather than on a template
     # object it constructed itself — which would prove nothing about what the app serves.
     app.state.templates = templates

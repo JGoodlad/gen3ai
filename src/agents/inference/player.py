@@ -300,7 +300,9 @@ class RLPlayer(Gen3Player):
                 # Calibrated P(win) from the win-probability head (None unless --win-prob-mode != none).
                 # The prober shows it + ΔP(win) beside the CRITIC line — "how a move moved the win odds".
                 "win_prob": self._win_prob(),
-                "opp_intent": self._opp_intent(),
+                # `battle` is passed so a β slot that is ALREADY REVEALED can be named from the
+                # board rather than from the species posterior — see `_opp_intent`.
+                "opp_intent": self._opp_intent(battle),
                 # The distributional value head's predicted RETURN DISTRIBUTION (per-atom probs; None
                 # unless --value-dist-mode != none) — the prober renders the histogram + spread/PIT.
                 "value_dist": self._value_dist(),
@@ -352,7 +354,7 @@ class RLPlayer(Gen3Player):
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
 
-    def _opp_intent(self) -> Optional[dict]:
+    def _opp_intent(self, battle=None) -> Optional[dict]:
         """ALPHA/BETA as NAMED, ranked options (forensic trace only) — the interpretability payload.
 
         This is the deliverable the whole opponent-intent design is justified on independently of
@@ -362,10 +364,25 @@ class RLPlayer(Gen3Player):
 
         The owner constraint — the model may only ever point at options it can NAME — is enforced
         here by construction: every entry is rendered through the move dex, and a seat the belief
-        did not fill is dropped rather than shown as an anonymous index. `β` obeys the same rule via
-        `belief_decode.top_species_per_slot`: a slot is named by the model's OWN species posterior,
-        the same content-addressing `β`'s target uses, so "slot 4" reads as a mon rather than an
-        index (`species: None` when there is no species head to name it with).
+        did not fill is dropped rather than shown as an anonymous index.
+
+        **β's naming rule (`gen3_beta_revealed_naming_v1`), and it has exactly two branches:**
+
+        - a slot the board has already REVEALED is named from `battle.opponent_team` (the encoder's
+          own opp-slot order, read through `ObservationEncoder.get_team_list` so the mapping cannot
+          drift from the obs), and carries ``"revealed": true``;
+        - a still-HIDDEN slot is named by the model's OWN species posterior
+          (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s target uses —
+          and carries ``"revealed": false`` (`species: None` when there is no species head at all).
+
+        The posterior used to name BOTH, and that was a display defect that produced a wrong
+        research conclusion. `β`'s candidate mask is alive-and-not-active, which INCLUDES revealed
+        bench mons, and the species aux only supervises the *believed* slots — so on a revealed
+        slot the posterior is un-trained. Measured over a 843-battle sentinel sweep (2026-08-19):
+        the rendered name was a mon not on the opponent's team at all in **73.3% of 6,876 pivots**
+        (88.3% on revealed slots), which read as "β predicts porygon2" on a turn where β's slot was
+        the revealed Salamence and β was CORRECT. Naming a revealed slot from the board is not a
+        nicety; it is the difference between reading the pointer and reading a different head.
 
         The block lands in the trace verbatim (`BattleRecorder.record` → the summary invocation's
         `opp_intent`), which is what the prober's `/battle` replay and `analyze` read.
@@ -393,16 +410,51 @@ class RLPlayer(Gen3Player):
         if blogits is not None:
             bp = torch.softmax(blogits[0], dim=-1)
             named = self._slot_species()
-            rows = [{"slot": i, "p": round(float(bp[i]), 4), "species": named.get(i)}
-                    for i in range(bp.shape[0]) if torch.isfinite(blogits[0, i])]
+            board = self._revealed_opp_species(battle)
+            rows = []
+            for i in range(bp.shape[0]):
+                if not torch.isfinite(blogits[0, i]):
+                    continue
+                seen = board[i] if i < len(board) else None
+                rows.append({"slot": i, "p": round(float(bp[i]), 4),
+                             "species": seen if seen is not None else named.get(i),
+                             # ADDED, never substituted: a reader that predates this key sees the
+                             # old shape unchanged, and its absence is what marks an OLD trace as
+                             # posterior-named (see `engine.build_opp_intent`).
+                             "revealed": seen is not None})
             rows.sort(key=lambda r: -r["p"])
             out["beta"] = rows[:4]
         return out
 
+    @staticmethod
+    def _revealed_opp_species(battle) -> list:
+        """`[species | None]` in OBS-SLOT order for the opponent mons the board has revealed.
+
+        Read through `ObservationEncoder.get_team_list` — the encoder's OWN opp-team iteration —
+        rather than re-deriving `list(battle.opponent_team.values())` here, so obs slot `k` and
+        `β` candidate `k` cannot drift apart by a later change to one of them. Validated
+        7560/7560 against the belief block's hidden-slot set (2026-08-19).
+
+        Empty on any path with no battle to read (the trace then carries only posterior names,
+        flagged as such), and defensive against a partially-built battle: a name that cannot be
+        read is `None`, which falls back to the posterior rather than raising inside a
+        trace-capture helper."""
+        if battle is None:
+            return []
+        try:
+            from agents.observation.base import ObservationEncoder
+            team = ObservationEncoder.get_team_list(battle, is_opponent=True)
+        except Exception:      # noqa: BLE001 — a forensic label is never worth crashing a battle for
+            return []
+        return [(getattr(m, "species", None) or None) for m in team]
+
     def _slot_species(self) -> dict:
-        """`{opp slot -> species name}` from the model's OWN species posterior — what NAMES a `β`
-        slot. Empty when the checkpoint has no species-belief head (then `β` rows carry a bare
-        index, which is honest: nothing in the model can say what that slot holds)."""
+        """`{opp slot -> species name}` from the model's OWN species posterior — what NAMES a
+        still-HIDDEN `β` slot. Empty when the checkpoint has no species-belief head (then `β` rows
+        carry a bare index, which is honest: nothing in the model can say what that slot holds).
+
+        NOT the namer for a REVEALED slot — the posterior is un-supervised there, so it names a mon
+        that is usually not even on the opponent's team. See `_opp_intent`."""
         extractor = getattr(self.model.policy, "features_extractor", None)
         logits = extractor.last_belief_logits if extractor is not None else None
         if logits is None or "species" not in logits:

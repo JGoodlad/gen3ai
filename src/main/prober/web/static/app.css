@@ -277,6 +277,14 @@ p.expect .opt.switch, p.expect .opt.inmon { color: var(--accent); }
 p.expect .opt.actual { color: var(--text); font-weight: 600;
                        box-shadow: inset 0 -2px 0 var(--good); }
 
+/* β's name PROVENANCE. β points at a SLOT; where the recorder could not read that slot off the
+   board it named it from the species posterior, which is un-supervised on a revealed slot — and a
+   plain mon name there was read as "β predicted this mon" for a whole analysis (2026-08-19).
+   Deliberately quiet and non-mono so it reads as an ANNOTATION on the name rather than part of it.
+   Unscoped: the same tag rides the turn card, its drop-down and /analyze. */
+.tag.believed { font-size: 10px; color: var(--dim); font-style: italic;
+                white-space: nowrap; letter-spacing: 0.2px; }
+
 /* WHAT THEY PICKED — its own line under `expect`, because a prediction is only readable beside the
    thing it predicted, and this used to be reachable only by expanding `details`. Same shape as the
    expect line so the two read as a pair. */
