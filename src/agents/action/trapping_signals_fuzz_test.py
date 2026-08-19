@@ -4,7 +4,8 @@ Arena-Trap battle run in-process via the local BattleStream bridge (no server).
 This is the promoted, permanent form of the throwaway `/tmp/trap_mask_bridge_test.py` prototype.
 It forces the one scenario the three signals exist for — a grounded mon that keeps trying to
 switch out against a Dugtrio with Arena Trap — and drives the FULL production pipeline (mask →
-``EpisodeTracker.record`` → obs encode → TurnDelta fold) exactly as ``Gen3Env`` does, asserting:
+``EpisodeTracker.record`` → ``update_progress_clock`` → obs encode with every tracker threaded →
+TurnDelta fold) exactly as ``Gen3Env.embed_battle`` does, asserting:
 
 Both obs homes below were RE-POINTED by later work and this header now states where they
 actually are — it described the deleted reactive block and the deleted TurnDelta lag frames for
@@ -19,10 +20,14 @@ long enough to be worth calling out (`gen3_entity_rehome_v1`, `gen3_frame_deleti
      not our own fold —
        * the `|error|[Unavailable choice]` line is intercepted straight off the wire in
          `_handle_battle_message` and counted (ground truth);
-       * on EVERY decision the H-B EVENT WINDOW (the lag frames are deleted) must carry an
-         `EVENT_T_SWITCH_REJECTED` row exactly when the folded delta says a switch was refused —
-         read at its ABSOLUTE index inside the full obs, assembled exactly as
-         `Gen3Env.embed_battle` builds it, so a wrong offset / never-set / stuck-on row all fail;
+       * on a rejection the H-B EVENT WINDOW (the lag frames are deleted) must carry an
+         `EVENT_T_SWITCH_REJECTED` row AS ITS NEWEST ROW, read at its ABSOLUTE index inside the
+         full obs, assembled exactly as `Gen3Env.embed_battle` builds it — so a wrong offset, a
+         never-set row and a row at the wrong position all fail. The reverse direction is
+         COUNT-MONOTONICITY, not equality: this window is a rolling 32-EVENT deque, so a real
+         rejection row survives long after the delta goes back to False. What may never happen
+         is the count GROWING (fabrication) or a rejection being newest (stuck-on) on a
+         decision the fold says had none;
        * on a rejection `our_switch_to` must be None (the switch never executed) and
          `attempted_switch_to` must name the bench mon we pressed — on the DELTA, since the
          attempted target is deliberately NOT re-homed into the obs (see the note at the check);
@@ -224,6 +229,7 @@ class TrapFuzzPlayer(Player):
         )
         self._trackers: dict[str, EpisodeTracker] = {}
         self._prev_rec: dict[str, dict] = {}  # battle_tag -> last decision's record
+        self._prev_rej_rows: dict[str, int] = {}  # battle_tag -> rejection rows in the window
         self.violations: list[str] = []
         self.decisions = 0
         # coverage flags
@@ -280,12 +286,30 @@ class TrapFuzzPlayer(Player):
                 f"[{tag}] t{battle.turn}: trapped but {switch_bits} switch bits in mask"
             )
 
+        # The env's THREE-step per-decision protocol, in `Gen3Env.embed_battle`'s order:
+        # record → update_progress_clock → encode. The middle step is not optional bookkeeping
+        # here — `update_progress_clock` is the ONLY caller of `EventWindowTracker.update`, so
+        # skipping it leaves the H-B window permanently EMPTY. This harness skipped it (and
+        # passed no `event_window=` to `encode`, which zeroes the block outright) while
+        # claiming in its own header to drive the full production pipeline, so its
+        # EVENT_T_SWITCH_REJECTED check read a structurally-zero block and failed 4/4 on a
+        # signal that production delivers.
+        _delta = None
         if not battle.strict_view().finished and mask.sum() > 0:
             tr.record(battle, mask, legal=legal)
+            _delta = tr.update_progress_clock(battle, legal)
         self.decisions += 1
 
         # --- Signals 1 & 2: the reactive obs bits must mirror the legality flags. ---
-        obs = self._enc.encode(battle, hp_tracker=tr.hidden_power_tracker, legal=legal)
+        # Every optional tracker the env threads, threaded here too — the point of this
+        # harness is that the vector it reads IS the vector training feeds the model.
+        obs = self._enc.encode(
+            battle, hp_tracker=tr.hidden_power_tracker, legal=legal,
+            progress_clock=tr.progress_clock,
+            recency=tr.recency,
+            pair_history=tr.pair_history,
+            event_window=tr.event_window,
+        )
         bits = _our_trapping_bits(obs)
         if bits is None:
             self.violations.append(f"[{tag}] t{battle.turn}: no active slot found in obs")
@@ -319,7 +343,9 @@ class TrapFuzzPlayer(Player):
         # and read the most-recent history
         # slot's bit DIRECTLY out of that vector — not the standalone encoder — so the layout
         # offset + concat order are validated end to end, on EVERY decision. ---
-        delta = tr.build_delta(battle=battle)
+        # The delta the env's own protocol returned (same fold, same window) — falling back to
+        # a standalone fold only on the decisions where nothing was recorded.
+        delta = _delta if _delta is not None else tr.build_delta(battle=battle)
         # gen3_frame_deletion_v1 REPOINTED this from the TurnDelta lag frames (deleted) to the
         # H-B event window, which is where a rejected switch now lands as an EVENT_T_SWITCH_REJECTED
         # row. The end-to-end claim is unchanged: assemble the obs exactly as Gen3Env.embed_battle
@@ -339,10 +365,23 @@ class TrapFuzzPlayer(Player):
             EventCol as C,
         )
         full_obs = obs
+
+        def _cell(row: int, col: int) -> float:
+            return float(full_obs[OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM + col])
+
         _rej_rows = sum(
             1 for _r in range(EVENT_WINDOW_N)
-            if full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + C.VALID] >= 0.5
-            and int(full_obs[OFFSET_EVENT_WINDOW + _r * EVENT_TOKEN_DIM + C.TYPE]) == EVENT_T_SWITCH_REJECTED
+            if _cell(_r, C.VALID) >= 0.5
+            and int(_cell(_r, C.TYPE)) == EVENT_T_SWITCH_REJECTED
+        )
+        # The block is back-padded at the FRONT, so the most-recent event is always the LAST
+        # row. When a rejection happens it IS the newest thing in the log — the `|error|` line
+        # is followed only by the re-prompt `|request|`, which is not an event — so on a
+        # rejection decision the newest row must BE the rejection. That makes this a positional
+        # check, not a presence one: a row written at the wrong index still fails.
+        _newest_is_rej = (
+            _cell(EVENT_WINDOW_N - 1, C.VALID) >= 0.5
+            and int(_cell(EVENT_WINDOW_N - 1, C.TYPE)) == EVENT_T_SWITCH_REJECTED
         )
         if delta.attempted_switch_rejected and _rej_rows == 0:
             self.violations.append(
@@ -350,17 +389,34 @@ class TrapFuzzPlayer(Player):
                 f"event window carries NO EVENT_T_SWITCH_REJECTED row — the signal never "
                 f"reached the model."
             )
+        elif delta.attempted_switch_rejected and not _newest_is_rej:
+            self.violations.append(
+                f"[{tag}] t{battle.turn}: a rejection row is in the window but it is not the "
+                f"NEWEST row — the rejection is the last event on the wire, so this is a "
+                f"stale row and the current rejection is missing."
+            )
         self.full_obs_slot_checks += 1
 
-        # Invariant on EVERY decision, BOTH directions: an EVENT_T_SWITCH_REJECTED row is
-        # present in the obs exactly when the delta says a switch was refused. The reverse
-        # direction is the half that catches a STUCK-ON row, which a presence-only check
-        # would read as a pass forever.
-        if bool(_rej_rows) != bool(delta.attempted_switch_rejected):
-            self.violations.append(
-                f"[{tag}] t{battle.turn}: obs EVENT_T_SWITCH_REJECTED rows={_rej_rows} but "
-                f"delta.attempted_switch_rejected={delta.attempted_switch_rejected}"
-            )
+        # The other direction — a FABRICATED or STUCK-ON row. ⚠️ This is NOT the equality
+        # `bool(rows) == bool(delta.attempted_switch_rejected)` the deleted lag frames
+        # supported: the H-B window is a rolling 32-event deque, so a REAL rejection row
+        # legitimately survives for many later decisions while the delta long since went back
+        # to False. What must hold instead is that the rejection-row COUNT never GROWS on a
+        # decision the fold says had no rejection (fabrication), and that a rejection is the
+        # newest row ONLY on the decision that folded it (stuck-on).
+        _prev_rej = self._prev_rej_rows.get(tag, 0)
+        if not delta.attempted_switch_rejected:
+            if _rej_rows > _prev_rej:
+                self.violations.append(
+                    f"[{tag}] t{battle.turn}: EVENT_T_SWITCH_REJECTED rows grew "
+                    f"{_prev_rej} → {_rej_rows} on a decision the fold says had NO rejection"
+                )
+            if _newest_is_rej:
+                self.violations.append(
+                    f"[{tag}] t{battle.turn}: the newest event row is a rejection but "
+                    f"delta.attempted_switch_rejected=False — a stuck-on row"
+                )
+        self._prev_rej_rows[tag] = _rej_rows
 
         if delta.attempted_switch_rejected:
             self.rejections_in_history += 1
@@ -403,6 +459,7 @@ class TrapFuzzPlayer(Player):
         super()._battle_finished_callback(battle)
         self._trackers.pop(battle.battle_tag, None)
         self._prev_rec.pop(battle.battle_tag, None)
+        self._prev_rej_rows.pop(battle.battle_tag, None)
 
 
 class Mover(Player):

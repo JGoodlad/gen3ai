@@ -2,11 +2,12 @@
 
 Real battles in-process via the local BattleStream bridge (no server). At EVERY decision the
 player runs the real tracker protocol (EpisodeTracker.record → update_progress_clock → encode
-with event_window threaded — the RLPlayer/Gen3Env path) and validates the whole 32×19 block
-against an INDEPENDENT from-scratch fold over the battle's FULL event log: the H-B type
-vocabulary, the modifier-attach rules (clause-free target-matched damage; miss/fail/crit;
-the effectiveness trio tagged on the defender), we_first, forced windows, the id columns
-(species/move dex nums), recency and the front-padding convention.
+with event_window threaded — the RLPlayer/Gen3Env path) and validates the whole 32×22 block —
+EVERY column, none declared unmodelled — against an INDEPENDENT from-scratch fold over the
+battle's FULL event log: the H-B type vocabulary, the modifier-attach rules (clause-free
+target-matched damage; miss/fail/crit; the effectiveness trio tagged on the defender),
+we_first, forced windows, the id columns (species/move dex nums), the three derived id columns
+(cant reason, faint CAUSE, item TRANSITION), recency and the front-padding convention.
 
 Any mismatch raises with (row, column, got, want) + an event trace on the first failure.
 
@@ -33,11 +34,15 @@ from agents.battle.battle_event import OURS, OPP, EventKind
 from agents.battle.gen3_battle import Gen3Battle
 from agents.gen3_data import moves as gen3_movedex
 from agents.observation.constants import (
-    EVENT_T_BOOST, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL, EVENT_T_MOVE,
-    EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED, EVENT_T_SWITCH_IN, EVENT_T_SWITCH_REJECTED,
+    EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL,
+    EVENT_T_MOVE, EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED, EVENT_T_SWITCH_IN,
+    EVENT_T_SWITCH_REJECTED,
     EVENT_STATUS_IDS, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N,
+    ITEM_TR_CONSUMED, ITEM_TR_REMOVED, ITEM_TR_REVEALED, ITEM_TR_SWAPPED,
     OFFSET_EVENT_WINDOW, EVENT_EFF_GROUP, EventCol as C,
 )
+from agents.observation.gen3_effects import cant_reason_id
+from agents.battle.turn_view import FAINT_CAUSE_VOCAB
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
 from utils.team_loader import TeamLoader
@@ -66,6 +71,10 @@ class _Stats:
     decisions: int = 0
     checked: int = 0
     failures: list = field(default_factory=list)
+    # Per-DERIVED-column exercise counts. "0 failures" over a column no row ever sets is a
+    # vacuous pass, and these three are exactly the ones that were unchecked before — so the
+    # run reports how often each was actually put to work rather than leaving it to be assumed.
+    derived: dict = field(default_factory=lambda: {"cant": 0, "faint_cause": 0, "item_tr": 0})
 
 
 def attributable_damage(e) -> bool:
@@ -85,6 +94,64 @@ def attributable_damage(e) -> bool:
     return e.from_clause is None
 
 
+# --------------------------------------------------------------------------------------- #
+# The three DERIVED columns. Where the oracle's independence starts and stops, stated:      #
+#                                                                                            #
+#   INDEPENDENT (the modelling, and where the real bugs live) — WHICH event a row is derived #
+#     from, which mon it is attributed to, and the running state a cause needs: what last    #
+#     damaged each side, whether that side's last move was a self-KO, and the RESETS (a mon  #
+#     that switches out or faints leaves no chip history to the next occupant — a documented #
+#     defect class in the tracker, so the oracle keeps that ledger itself rather than        #
+#     reading `_last_dmg_cause` / `_used_selfko`).                                           #
+#   SHARED (the declared vocabulary, a contract both sides must agree on by construction) —  #
+#     the label→id maps: `FAINT_CAUSE_VOCAB`, the `ITEM_TR_*` ids, `cant_reason_id`'s        #
+#     normalization. Same call the STATUS column already makes on `EVENT_STATUS_IDS`.        #
+# --------------------------------------------------------------------------------------- #
+_ORACLE_SELF_KO_MOVES = frozenset({"explosion", "selfdestruct"})
+
+
+def oracle_faint_cause_id(from_clause, used_selfko: bool) -> int:
+    """WHY a mon fainted → its 1-based `FAINT_CAUSE_VOCAB` id, classified from the `[from]`
+    clause of the last damage it took. Written out here rather than calling the battle layer's
+    classifier: a residual death (weather / status / hazard / Leech Seed) emits no preceding
+    event to infer from, so this column IS the signal for the slow-attrition class and a
+    silently-agreeing copy of the producer's branch would test nothing."""
+    if used_selfko:
+        label = "selfko"
+    elif from_clause is None:
+        label = "attack"
+    else:
+        fc = from_clause.strip().lower()
+        if fc == "spikes":
+            label = "hazard"
+        elif fc in ("sandstorm", "hail"):
+            label = "weather"
+        elif fc in ("psn", "tox", "brn", "burn"):
+            label = "status"
+        elif "recoil" in fc:
+            label = "recoil"
+        elif "leech seed" in fc or "leechseed" in fc:
+            label = "leechseed"
+        else:
+            label = "other"
+    return FAINT_CAUSE_VOCAB.index(label) + 1
+
+
+def oracle_item_transition(kind, from_clause) -> int:
+    """`|-item|` / `|-enditem|` (+ its `[from]`) → an `ITEM_TR_*` id. Gen3 has three ways an
+    item stops being held and they mean different things: a CONSUMED berry was spent, a Knock
+    Off REMOVAL is permanent in ADV, and a Trick/Thief/Covet SWAP tells you the opponent now
+    holds it. Derived here from the event kind + clause alone."""
+    if kind is EventKind.ITEM:
+        return ITEM_TR_REVEALED
+    fc = (from_clause or "").strip().lower()
+    if "knock off" in fc or "knockoff" in fc:
+        return ITEM_TR_REMOVED
+    if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
+        return ITEM_TR_SWAPPED
+    return ITEM_TR_CONSUMED
+
+
 def _oracle_rows(battle, resync_log):
     """From-scratch fold over the FULL log → the expected record dicts (all of them; the
     caller windows to the last EVENT_WINDOW_N). ``resync_log`` = this test's own record of the
@@ -95,6 +162,12 @@ def _oracle_rows(battle, resync_log):
     forced = {"ours": False, "opp": False}
     open_move = {}
     first_mover = {}
+    # The oracle's OWN cause ledger (see the note above `oracle_faint_cause_id`): per side, the
+    # `[from]` clause of the last damage it took and whether its last move self-KO'd. Both are
+    # CLEARED when that side's mon leaves the field — a fresh mon inherits no chip history, and
+    # getting that wrong makes an incoming mon's first faint read the previous occupant's cause.
+    last_dmg_cause = {}
+    used_selfko = {}
     resync = sorted(resync_log, key=lambda r: r[0])     # by seq watermark
 
     def flags():
@@ -132,7 +205,9 @@ def _oracle_rows(battle, resync_log):
                      eff=0, wf=(side == first_mover[et]), status=0, turn=et, fw=flags())
             rows.append(r)
             open_move[side] = r
+            used_selfko[side] = e.move_id in _ORACLE_SELF_KO_MOVES
         elif k is EventKind.DAMAGE and side:
+            last_dmg_cause[side] = e.from_clause        # None ⇒ a direct hit
             mover = OPP if side == OURS else OURS
             om = open_move.get(mover)
             if (om is not None and om["turn"] == et and attributable_damage(e)
@@ -163,11 +238,17 @@ def _oracle_rows(battle, resync_log):
                 our_active = sp
             else:
                 opp_active = sp
+            last_dmg_cause.pop(side, None)
+            used_selfko.pop(side, None)
         elif k is EventKind.FAINT and side and sp:
             if emit(seq):
                 rows.append(dict(t=EVENT_T_FAINT, actor=sp, side=side, target=None, move=None,
                                  mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
-                                 wf=False, status=0, turn=et, fw=flags()))
+                                 wf=False, status=0, turn=et, fw=flags(),
+                                 faint=oracle_faint_cause_id(last_dmg_cause.get(side),
+                                                             bool(used_selfko.get(side)))))
+            last_dmg_cause.pop(side, None)
+            used_selfko.pop(side, None)
             if side == OURS and our_active == sp:
                 our_active, forced["ours"] = None, True
             elif side == OPP and opp_active == sp:
@@ -188,11 +269,21 @@ def _oracle_rows(battle, resync_log):
         elif k in (EventKind.ITEM, EventKind.ENDITEM) and sp and emit(seq):
             rows.append(dict(t=EVENT_T_ITEM_REVEAL, actor=sp, side=side, target=None,
                              move=None, mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0,
-                             eff=0, wf=False, status=0, turn=et, fw=flags()))
+                             eff=0, wf=False, status=0, turn=et, fw=flags(),
+                             item_tr=oracle_item_transition(k, e.from_clause)))
         elif k is EventKind.SIDE and side and emit(seq):
             rows.append(dict(t=EVENT_T_HAZARD, actor=None, side=side, target=None, move=None,
                              mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
                              wf=False, status=0, turn=et, fw=flags()))
+        elif k is EventKind.CANT and sp and emit(seq):
+            # "this mon could not move, and why". ATTRIBUTED TO THE MON THAT LOST ITS TURN, not
+            # to the ability holder the protocol files it against (Damp blocking someone else's
+            # Explosion is filed on the Damp holder) — `blocked_actor`/`blocked_side` are the
+            # event's own typed fields, so this is read from the log, not from the fold.
+            rows.append(dict(t=EVENT_T_CANT, actor=(e.blocked_actor or sp),
+                             side=(e.blocked_side or side), target=None, move=e.cant_move,
+                             mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0, wf=False,
+                             status=0, turn=et, fw=flags(), cant=e.reason))
         elif k is EventKind.CHOICE_REJECTED and emit(seq):
             rows.append(dict(t=EVENT_T_SWITCH_REJECTED, actor=our_active, side=OURS,
                              target=None, move=None, mag=0.0, hit=0.0, miss=0.0, fail=0.0,
@@ -200,13 +291,18 @@ def _oracle_rows(battle, resync_log):
     return rows
 
 
-# gen3_event_col_names_v1: the three columns this oracle does NOT model, STATED rather than
-# silently truncated. `_want_vec` used to return a 19-tuple compared with `zip(got, want)`
-# against a 22-wide row — and `zip` stops at the shorter, so `CANT` / `FAINT_CAUSE` /
-# `ITEM_TRANSITION` were unchecked with nothing saying so. The oracle emits no CANT row and
-# derives no faint cause or item transition, so covering them is a modelling job, not a
-# formatting one; until then the gap is declared and the coverage assert below keeps it honest.
-_ORACLE_UNMODELED_COLS = frozenset({C.CANT, C.FAINT_CAUSE, C.ITEM_TRANSITION})
+# The columns this oracle does NOT model — now EMPTY, and the constant stays because the
+# coverage assert below is what keeps it that way: a new EventCol member must be modelled or
+# declared here, never silently unchecked.
+#
+# gen3_event_col_names_v1 declared `CANT` / `FAINT_CAUSE` / `ITEM_TRANSITION` unmodelled after
+# finding them silently unchecked (`_want_vec` returned a 19-tuple compared with `zip(got,
+# want)` against a 22-wide row, and `zip` stops at the shorter). The missing CANT ROW was worse
+# than the missing columns: the oracle emitted one fewer record per `|cant|` than the tracker,
+# so once the 32-row window SATURATED its last-32 started earlier in the timeline and EVERY row
+# compared against its neighbour — 8209 failures over 5 battles, all one root. All three are
+# modelled now (`oracle_faint_cause_id` / `oracle_item_transition` / the CANT branch).
+_ORACLE_UNMODELED_COLS: frozenset = frozenset()
 
 
 def _want_vec(r, cur_turn):
@@ -230,6 +326,11 @@ def _want_vec(r, cur_turn):
         C.TURNS_AGO: _norm(max(0, cur_turn - int(r["turn"]))),
         C.FORCED_WINDOW: float(r["fw"]),
         C.VALID: 1.0,
+        # The three derived columns — `.get` because each is set by exactly ONE row type and
+        # every other type must read a clean 0 (the encoder writes them under the same rule).
+        C.CANT: float(cant_reason_id(r.get("cant"))),
+        C.FAINT_CAUSE: float(r.get("faint", 0)),
+        C.ITEM_TRANSITION: float(r.get("item_tr", 0)),
     }
     for i, col in enumerate(EVENT_EFF_GROUP):
         want[col] = 1.0 if (is_move and int(r["eff"]) == i) else 0.0
@@ -276,6 +377,10 @@ class _EventWindowFuzzPlayer(Player):
             got = tuple(float(x) for x in block[n_pad + ri])
             want = _want_vec(r, cur_turn)
             s.checked += 1
+            for _key, _col in (("cant", C.CANT), ("faint_cause", C.FAINT_CAUSE),
+                               ("item_tr", C.ITEM_TRANSITION)):
+                if want[_col] > 0.0:
+                    s.derived[_key] += 1
             if any(abs(got[int(c)] - w) > _TOL for c, w in want.items()):
                 rec = dict(tag=tag, turn=cur_turn, row=ri, got=got, want=want, record=r)
                 if not s.failures:
@@ -309,6 +414,14 @@ def main(n_battles: int = 30) -> int:
     asyncio.run(run_local_battles(p1, p2, n_battles))
     print(f"[event-window fuzz] {n_battles} battles, {stats.decisions} decisions, "
           f"{stats.checked} checks, {len(stats.failures)} failures")
+    print(f"  derived-column rows exercised: {stats.derived}")
+    _idle = [k for k, v in stats.derived.items() if v == 0]
+    if _idle:
+        # Not a failure: an item transition needs a battle where an item is actually spent or
+        # knocked off, which a short run can legitimately miss. But a green run over a column
+        # nothing set proves nothing about it, so say which ones.
+        print(f"  ⚠️ COVERAGE: no row ever set {_idle} — those columns were not exercised; "
+              f"re-run with more battles before reading this as a pass on them.")
     if stats.failures:
         for f in stats.failures[:6]:
             print("  FAIL", {k: v for k, v in f.items() if k != "trace"})

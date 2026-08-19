@@ -217,6 +217,166 @@ def test_cant_reason_ids_are_distinct_and_zero_means_none():
 
 
 # ---------------------------------------------------------------------------
+# The DECISION CYCLE — an event must reach the obs of the decision AFTER it.
+#
+# Every test above drives `EventWindowTracker.update` directly with a hand-built event list, so
+# none of them says anything about WHICH events a real decision folds. That window comes from
+# `EpisodeTracker`: `record()` captures `battle.event_cursor`, and the NEXT decision's
+# `update_progress_clock()` folds `events_since(that cursor)`. The tests below drive that real
+# chain (scripted `Gen3Battle` -> record -> update_progress_clock -> encode) for the two rows
+# whose producers do NOT look like the others.
+# ---------------------------------------------------------------------------
+
+_CANON_OPENING = [
+    ["", "player", "p1", "p1user", "", ""],
+    ["", "player", "p2", "p2user", "", ""],
+    ["", "teamsize", "p1", "6"],
+    ["", "teamsize", "p2", "6"],
+    ["", "gametype", "singles"],
+    ["", "gen", "3"],
+    ["", "tier", "[Gen 3] OU"],
+    ["", "start"],
+    ["", "switch", "p1a: Zappy", "Zapdos, L100", "100/100"],
+    ["", "switch", "p2a: Tyra", "Tyranitar, L100, M", "100/100"],
+    ["", "turn", "1"],
+]
+
+
+def _opened_battle():
+    """A scripted `Gen3Battle` with both leads in and turn 1 marked."""
+    import logging
+
+    from agents.battle.gen3_battle import Gen3Battle
+
+    b = Gen3Battle("battle-gen3ou-canon", "p1user", logging.getLogger("event-window-test"), gen=3)
+    for line in _CANON_OPENING:
+        b.parse_message(line)
+    return b
+
+
+def _decide(tracker, battle, action=None):
+    """One decision, in `Gen3Env.embed_battle`'s exact order: record -> update_progress_clock
+    (the ONLY caller of `EventWindowTracker.update`) -> the caller encodes. Returns the folded
+    delta, as the env caches it."""
+    tracker.record(battle, np.ones(11, dtype=np.int8))
+    delta = tracker.update_progress_clock(battle, None)
+    if action is not None:
+        tracker.advance(action)
+    return delta
+
+
+def _event_rows(obs):
+    """The obs event block as (type, row) pairs for its VALID rows, oldest-first."""
+    return [
+        (int(obs[OFFSET_EVENT_WINDOW + r * EVENT_TOKEN_DIM + C.TYPE]), r)
+        for r in range(EVENT_WINDOW_N)
+        if obs[OFFSET_EVENT_WINDOW + r * EVENT_TOKEN_DIM + C.VALID] >= 0.5
+    ]
+
+
+def _encoder():
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    return Gen3ObservationEncoder(load_mappings())
+
+
+def test_an_out_of_band_choice_rejection_reaches_the_NEXT_decisions_obs():
+    """A refused switch must arrive in the obs of the decision the server re-prompts for.
+
+    `CHOICE_REJECTED` is the ONE event kind recorded OUTSIDE the parse pass: poke-env intercepts
+    `|error|[Unavailable choice]` in `_handle_battle_message` before `parse_message` ever sees it,
+    and calls `Gen3Battle.record_choice_rejected` directly. So the fact this pins is that an
+    out-of-band append still lands INSIDE the next decision's `[cursor, now)` window — the cursor
+    is captured at `record()` time against the same log `_record` appends to, and nothing about
+    the parse pass is load-bearing for that.
+
+    It is the trap-reveal signal: after the frame deletion this row is the model's only route to
+    "we tried to pivot and were refused", so a miss here is silent GIGO, not a lost nicety.
+    """
+    from agents.observation.constants import EVENT_T_SWITCH_REJECTED
+    from agents.training.episode_tracker import EpisodeTracker
+
+    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
+
+    _decide(tr, b, action=2)                                  # decision 1: we press a switch
+    obs1 = enc.encode(b, event_window=tr.event_window)
+    assert not any(t == EVENT_T_SWITCH_REJECTED for t, _ in _event_rows(obs1)), \
+        "no rejection has happened yet — a row here would be a fabrication"
+
+    # The server refuses it. This is the whole out-of-band path, called exactly as poke-env does.
+    b.record_choice_rejected(
+        ["", "error", "[Unavailable choice] Can't switch: The active Pokemon is trapped"])
+
+    delta = _decide(tr, b)                                    # decision 2: the re-prompt
+    assert delta.attempted_switch_rejected, "the TurnDelta fold must see the rejection"
+    obs2 = enc.encode(b, event_window=tr.event_window)
+    rows = _event_rows(obs2)
+    assert rows, "decision 2 folded an empty window — the cursor did not cover the rejection"
+    typ, row = rows[-1]
+    assert typ == EVENT_T_SWITCH_REJECTED, (
+        f"the NEWEST row must be the rejection (it is the last event on the wire — the "
+        f"`|error|` is followed only by the re-prompt `|request|`, which is not an event); "
+        f"got type {typ}")
+    off = OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM
+    assert obs2[off + C.ACTOR_SIDE] == 1.0, "a rejection is always OURS"
+    assert obs2[off + C.ACTOR_SPECIES] > 0.0, \
+        "the actor is the trapped mon — an unattributed row cannot say WHO is stuck"
+
+
+def test_a_cant_line_reaches_the_obs_through_the_same_decision_cycle():
+    """The CANT row's end-to-end pin — the sibling of the rejection above.
+
+    CANT is fed by an ORDINARY `|cant|` protocol line (the normal parse pass), so it does NOT
+    share the rejection's out-of-band exposure. That is asserted here rather than assumed: the
+    two rows arrived in this window for the same reason (the lag frames were their only route
+    before `gen3_frame_deletion_v1`), the CANT fold reads the un-obvious `blocked_side` /
+    `blocked_actor` attribution, and nothing else drives a `|cant|` line all the way to an obs
+    index."""
+    from agents.observation.gen3_effects import cant_reason_id
+    from agents.training.episode_tracker import EpisodeTracker
+
+    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
+
+    _decide(tr, b, action=6)
+    b.parse_message(["", "cant", "p1a: Zappy", "par"])
+    _decide(tr, b)
+
+    obs = enc.encode(b, event_window=tr.event_window)
+    rows = _event_rows(obs)
+    assert rows, "decision 2 folded an empty window — the |cant| never reached it"
+    typ, row = rows[-1]
+    assert typ == EVENT_T_CANT, f"the newest row must be the CANT, got type {typ}"
+    off = OFFSET_EVENT_WINDOW + row * EVENT_TOKEN_DIM
+    assert obs[off + C.CANT] == float(cant_reason_id("par")), \
+        "the reason must reach the obs, not just the record — a bare 'could not move' row " \
+        "cannot tell paralysis from sleep"
+    assert obs[off + C.ACTOR_SIDE] == 1.0 and obs[off + C.ACTOR_SPECIES] > 0.0
+
+
+def test_the_window_block_is_ZERO_without_update_progress_clock():
+    """The trap that made the trapping-signals fuzz read FAIL on a working signal.
+
+    `update_progress_clock` is the ONLY caller of `EventWindowTracker.update`, and `encode`'s
+    `event_window=` is optional (None leaves the block zero). Miss either and the whole 32-row
+    block reads structurally zero — which a presence check on any single row type reports as
+    "the signal never reached the model", indistinguishable from a real miss. Pinned so the
+    next harness author is told this by a test name instead of by a day of debugging."""
+    from agents.training.episode_tracker import EpisodeTracker
+
+    b, tr, enc = _opened_battle(), EpisodeTracker(history_cap=1), _encoder()
+    tr.record(b, np.ones(11, dtype=np.int8))                 # record only — no clock update
+    tr.advance(2)
+    b.record_choice_rejected(["", "error", "[Unavailable choice] trapped"])
+    tr.record(b, np.ones(11, dtype=np.int8))
+
+    block = slice(OFFSET_EVENT_WINDOW, OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM)
+    assert not np.any(enc.encode(b, event_window=tr.event_window)[block]), \
+        "without update_progress_clock the tracker's window is never fed"
+    assert not np.any(enc.encode(b)[block]), \
+        "without event_window= the encoder writes nothing, however well fed the tracker is"
+
+
+# ---------------------------------------------------------------------------
 # The residual-attribution defect (shipped v81, found 2026-08-17 by coverage audit)
 # ---------------------------------------------------------------------------
 
@@ -279,6 +439,41 @@ def test_the_fuzz_ORACLE_reads_the_from_clause_too():
     assert attributable_damage(sand) is False, (
         "the oracle counted sandstorm chip as part of the move's hit — it is reading "
         "`value['from']`, which DAMAGE never carries, instead of `from_clause`.")
+
+
+def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodelled():
+    """`CANT` / `FAINT_CAUSE` / `ITEM_TRANSITION` are modelled by the fuzz oracle now, and its
+    two derivations are written independently of the producer's — so they need their own cheap
+    pin, because a mistyped label reaches `FAINT_CAUSE_VOCAB.index()` only mid-battle.
+
+    What this asserts is the SEMANTIC content, not agreement with the tracker (agreement is
+    what the fuzz measures over real battles): every distinct residual cause gets its own id,
+    a self-KO outranks whatever clause the last damage carried, and the three ways a gen3 item
+    stops being held stay distinct from a mere reveal."""
+    from agents.training.poke_env_gaps.event_window_fuzz_test import (
+        oracle_faint_cause_id, oracle_item_transition,
+    )
+    from agents.battle.battle_event import EventKind as K
+    from agents.observation.constants import ITEM_TR_REVEALED
+
+    causes = {c: oracle_faint_cause_id(fc, False) for c, fc in (
+        ("attack", None), ("hazard", "Spikes"), ("weather", "Sandstorm"),
+        ("status", "psn"), ("recoil", "Recoil"), ("leechseed", "Leech Seed"),
+        ("other", "item: Life Orb"))}
+    assert len(set(causes.values())) == len(causes), f"faint causes collide: {causes}"
+    assert 0 not in causes.values(), "0 is reserved for 'not a FAINT row'"
+    selfko = oracle_faint_cause_id(None, True)
+    assert oracle_faint_cause_id("Sandstorm", True) == selfko, \
+        "a self-KO must outrank whatever clause the last chip carried"
+    assert selfko not in causes.values(), "selfko must be its own id, not folded into another"
+
+    trs = {oracle_item_transition(K.ITEM, None),
+           oracle_item_transition(K.ENDITEM, None),                    # berry spent
+           oracle_item_transition(K.ENDITEM, "move: Knock Off"),       # permanent in ADV
+           oracle_item_transition(K.ENDITEM, "move: Trick")}           # the opp holds it now
+    assert len(trs) == 4, f"the item transitions collapsed onto each other: {trs}"
+    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_REVEALED, \
+        "an |-item| line is a DISCLOSURE — it must not read as a transfer whatever it cites"
 
 
 def test_an_unknown_status_name_CRASHES_rather_than_reading_as_none():

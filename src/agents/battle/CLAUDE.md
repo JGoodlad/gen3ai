@@ -144,8 +144,15 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   the log by "since the agent was last asked to act" — the granularity `TurnDelta` needs,
   which is NOT a protocol `|turn|N` boundary (a forced switch splits a turn into two
   decision windows; a faint window spans a turn boundary). `events_for_turn(N)` remains
-  for protocol-turn slicing. Package re-exports are lazy (PEP 562 `__getattr__`) so
-  importing one submodule doesn't force-load the others (avoids an import cycle).
+  for protocol-turn slicing. **An OUT-OF-BAND append is covered by the same slice**:
+  `record_choice_rejected` is the only recorder outside `parse_message` (poke-env intercepts
+  `|error|[Unavailable choice]` in `_handle_battle_message` and calls it directly), and its
+  event still lands inside the NEXT decision's window, because the cursor is captured at
+  decision time against the same log `_record` appends to — nothing about the parse pass is
+  load-bearing for the window. Pinned end to end (protocol line → obs index) by
+  `training/event_window_test.py`'s decision-cycle tests. Package re-exports are lazy
+  (PEP 562 `__getattr__`) so importing one submodule doesn't force-load the others (avoids an
+  import cycle).
 
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
 scripted parse + state-equivalence, TurnView fold, `live_view_test.py` for the current-board

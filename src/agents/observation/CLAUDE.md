@@ -341,6 +341,23 @@ deletion cost, and the three facts that ship WITHOUT a substitute, is
 `encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
 NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).
 
+> ⚠️ **Feeding it takes the FULL three-step decision protocol** — `record` →
+> `update_progress_clock` → `encode(event_window=…)`, in that order. `update_progress_clock` is
+> the ONLY caller of `EventWindowTracker.update`, and `encode`'s `event_window=` is optional
+> (`None` leaves the block zero), so a harness that skips either reads a structurally-ZERO
+> block — which a presence check on any single row type reports as "the signal never reached
+> the model", indistinguishable from a real miss. That is exactly how the trapping fuzz read
+> FAIL 4/4 on a signal production delivers; `event_window_test::
+> test_the_window_block_is_ZERO_without_update_progress_clock` pins the trap by name.
+>
+> An OUT-OF-BAND event is covered by the same window: `CHOICE_REJECTED` is the one kind
+> recorded outside the parse pass (poke-env intercepts `|error|[Unavailable choice]` before
+> `parse_message` and calls `Gen3Battle.record_choice_rejected`), and it still lands inside the
+> NEXT decision's `[cursor, now)` slice, because the cursor is captured at `record()` time
+> against the same log `_record` appends to. Pinned end to end by `event_window_test::
+> test_an_out_of_band_choice_rejection_reaches_the_NEXT_decisions_obs` (and its CANT sibling,
+> which asserts the ordinary parse-pass path has no such exposure).
+
 > **The per-row COLUMN CONTRACT is `constants.EventCol`** (`gen3_event_col_names_v1`) — an
 > `IntEnum`, ONE declaration that BOTH ends import: the producer (`state_encoder.encode`) and
 > the consumer (`team_transformer.EventSeats.forward` + `_event_reference_cells`), plus the
@@ -359,11 +376,21 @@ NO Linear reads the block raw (its only consumer is the opt-in `--history-events
 > ends resolve to the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
 > map's id/scalar classification.
 >
-> ⚠️ **The event-window fuzz oracle models 19 of the 22 columns**, and now SAYS so
-> (`_ORACLE_UNMODELED_COLS` = `CANT` / `FAINT_CAUSE` / `ITEM_TRANSITION`). It previously compared
-> a 19-tuple against a 22-wide row with `zip`, which stops at the shorter — so those three were
-> unchecked with nothing recording it. Closing the gap is a modelling job (the oracle emits no
-> CANT row and derives no faint cause or item transition), not a formatting one.
+> **The event-window fuzz oracle models ALL 22 columns** — `_ORACLE_UNMODELED_COLS` is EMPTY,
+> and the coverage assert keeps it that way (a new `EventCol` member must be modelled or
+> declared, never silently unchecked). Two rounds got it here. First the three id columns were
+> found UNCHECKED with nothing saying so (`_want_vec` returned a 19-tuple compared with `zip`
+> against a 22-wide row, and `zip` stops at the shorter) and were declared unmodelled. Then the
+> modelling landed: the oracle emits its own CANT row and derives the faint CAUSE and item
+> TRANSITION — the semantic input independently (which event, which mon, and its own ledger of
+> what last damaged each side / whether that side self-KO'd, cleared when a mon leaves the
+> field), the label→id step through the declared vocabulary both sides must share.
+>
+> ⚠️ **The missing CANT ROW was the expensive half, and the failure shape is worth knowing.**
+> One fewer record per `|cant|` than the tracker is invisible until the 32-row window
+> SATURATES — after that the oracle's last-32 starts earlier in the timeline than the
+> tracker's, so EVERY row compares against its neighbour: 8209 failures over 5 battles, one
+> root. An independent fold must match the producer's row COUNT, not just its column values.
 
 Unit gate: `training/event_window_test.py`; the event-fold FUZZ (the pair-history pattern) is
 the pre-enable gate. **Appended tail**
