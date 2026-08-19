@@ -27,7 +27,11 @@ scratch) are excluded — neither is ours to lint — and those two excludes are
 live there and the file keeps them apart: a genuine PERMANENT pattern (the model package's
 documented re-export hubs, which import names solely so third parties can import them back out),
 and a TEMPORARY handoff list of ordinary dead code in files that were being edited concurrently
-when this gate landed. The second list is meant to shrink to nothing.
+when this gate landed. That second list was meant to shrink to nothing, and **it did** — it is
+CLOSED (gen3_extractor_stashes_v1, 2026-08-17: every deferred finding was deleted at the source,
+and the one measured re-export among them carries an inline `# noqa: F401` naming its consumer).
+Only the PERMANENT entry remains, so a new finding has nowhere to be parked: fix it, or give it
+an inline `# noqa` WITH the reason. Do not re-open a temporary section for ordinary dead code.
 
 **Cost (measured 2026-08-17): 0.10 s.** Ruff is fast enough that there is no tier question — no
 cost marker, runs in the fast inner loop. Opt out explicitly:

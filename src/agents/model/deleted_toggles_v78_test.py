@@ -101,12 +101,15 @@ def test_the_migration_floor_did_not_move():
     should be deleted." gen3_frame_deletion_v1 bumped the signature, which the floor contract
     requires be matched by a floor raise IN THE SAME COMMIT — so the floor went 76 → 90,
     gen3_event_semantics_v1 took it → 91 the same way, and gen3_critic_route_wave_v1 → 96. Every
-    v77–v95 migration branch is now unreachable.
+    v77–v95 migration branch was thereby unreachable.
 
-    FOLLOW-UP, deliberately NOT done here: those dead branches should be deleted. That is a
-    separable cleanup and mixing a ~13-branch deletion into a behavioural change the owner has to
-    review would make both harder to read. The tests that exercised them now assert the refusal,
-    so nothing claims to cover a branch it cannot reach."""
+    FOLLOW-UP: DISCHARGED. Those dead branches are DELETED. `_migrate_config` now holds only the
+    version-INDEPENDENT sanitizers (which run at EVERY version, because a stale key TypeErrors in
+    `cls(**data)` whatever vintage wrote it — so they are not migration branches and the floor
+    does not reach them) plus the genuinely post-floor `if version < 97`. Each deleted branch's
+    story survives verbatim in that function's PRE-FLOOR MIGRATION HISTORY comment, so the record
+    is not what was traded away. The tests that exercised the branches assert the refusal, so
+    nothing claims to cover a branch it cannot reach."""
     assert MIGRATION_FLOOR == 96
     assert MODEL_CONFIG_VERSION >= 91
 

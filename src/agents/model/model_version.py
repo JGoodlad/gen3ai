@@ -1571,14 +1571,19 @@ class ModelVersion:
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema.
 
-    Configs older than MIGRATION_FLOOR (v67 — the first version stamped with the current
+    Configs older than MIGRATION_FLOOR (the first version stamped with the current
     ARCH_SIGNATURE) are REFUSED outright rather than migrated: every loader that consumes a
     migrated config gates on `arch_signature` immediately afterwards (snapshot.py's load paths,
     the fixed-opponent pool, train resume), so a pre-floor migration could only ever produce a
-    config that check_compatible rejects a moment later. The v2..v66 branches that used to live
-    here were therefore dead code; the history they recorded is preserved in the comment block
-    below (and, in narrative form, in the version-history comments above MODEL_CONFIG_VERSION
-    and in designs/CHANGELOG.md).
+    config that check_compatible rejects a moment later. Every `if version < N` branch with
+    N <= MIGRATION_FLOOR was therefore dead code and has been deleted; the history each one
+    recorded is preserved in the comment block below (and, in narrative form, in the
+    version-history comments above MODEL_CONFIG_VERSION and in designs/CHANGELOG.md).
+
+    What is left is exactly two kinds of live code: the version-INDEPENDENT sanitizers (they
+    run at EVERY version, because a stale key must leave the dict whatever vintage wrote it —
+    `cls(**data)` TypeErrors on one), and the genuinely post-floor `if version < N` branches
+    with N > MIGRATION_FLOOR.
     """
     version = data.get("config_version", 1)
     if version < MIGRATION_FLOOR:
@@ -1593,9 +1598,9 @@ def _migrate_config(data: dict) -> dict:
             "diagnosis, with the hash, for archived runs)."
         )
     # ----------------------------------------------------------------------------------------
-    # PRE-FLOOR MIGRATION HISTORY (v2–v66) — documentation, not code. The executable branches
-    # were deleted when MIGRATION_FLOOR landed. What each one injected (setdefault) or removed
-    # (POP), verbatim from the deleted code:
+    # PRE-FLOOR MIGRATION HISTORY (v2–v95) — documentation, not code. The executable branches
+    # were deleted once MIGRATION_FLOOR rose past them. What each one injected (setdefault) or
+    # removed (POP), verbatim from the deleted code:
     #   v2:  n_history_turns=1 (old models used a single TurnDelta).
     #   v3:  vf_coef=0.5 (the SB3 default every pre-flag run trained with).
     #   v4:  reward-config hparams — bias_additivity=1.0, mat_alive_weight=1.25,
@@ -1740,85 +1745,65 @@ def _migrate_config(data: dict) -> dict:
     #   v75: SimSiam latent belief DELETED — POPped opp_belief_latent/opp_belief_latent_coef,
     #        REFUSING a config that recorded opp_belief_latent=True (it carried PARAMETERS the
     #        live extractor has no home for; the zip-kwargs sanitizer keeps that judgment).
+    #   v76: stamp — gen3_ctx_dedup_v1 (signature carried the break; the floor sat here until
+    #        gen3_frame_deletion_v1 raised it to 90).
+    #   v77: intent_move_cell=False (gen3_intent_move_cell_v1, the G3 alpha-conditioned c2
+    #        move-cell channels).
+    #   v78: gen3_flag_surface_p1_v1 — POPped the zarch family + the seed-pressure pair
+    #        (zarch_film, zarch_dim, zarch_lut, zarch_lut_teams, zarch_recon_coef,
+    #        zarch_vicreg_coef, seed_quantile, value_seed_vicreg_coef), REFUSING a config that
+    #        recorded zarch_film != "off" or seed_quantile=True (both built MODULES — the v75
+    #        rule). The z_arch/FiLM conditioning line closed on the LUT arm's +0.024,
+    #        CI [-0.016, +0.064]; both seed pressures capped at ~1-D of k=4, so the shared
+    #        readout, not the coefficient, was the binding constraint.
+    #   v79: stamp — gen3_pair_history_v1 (the H-A obs widening; total_dim + the widened encoder
+    #        shapes carried the break, and the "h" edge family rides edge_bias_families).
+    #   v80: value_entity_pool=False (gen3_unified_value_readout_v1).
+    #   v81: history_events=False (gen3_event_window_v1; the H-B obs widening itself was
+    #        weight-field-caught on total_dim).
+    #   v82: value_entity_pool_full=False (gen3_unified_value_readout_v2).
+    #   v83: item_belief=False (gen3_item_belief_v1).
+    #   v84: intent_threshold=False (gen3_intent_threshold_v1).
+    #   v85: intent_conditional=False (gen3_intent_conditional_v1).
+    #   v86: op_drop_renders=False, op_believed_lean=False (gen3_op_lean_forward_v1).
+    #   v87: stamp — gen3_value_direct_routes_v1 introduced value_clock/value_intent. Both FIELDS
+    #        died at v96, so the branch had nothing left to default in; the v96 sanitizer below
+    #        POPs them instead.
+    #   v88: gen3_dead_flag_purge_v1 — the stamp only. Its POP/REFUSE half is version-INDEPENDENT
+    #        and survives below.
+    #   v89: gen3_value_pooled_routes_v1 — REFUSED a <v89 config recording intent_value_reduce /
+    #        value_entity_pool / intent_threshold / value_clock / value_intent ON: the routes were
+    #        re-homed from the vf-tail concat into `value_pooled`, so their projection shapes and
+    #        the vf concat width changed. OFF stamped forward (the routes built nothing).
+    #   v90: gen3_frame_deletion_v1 — POPped n_history_turns. The 7x159 TurnDelta lag frames and
+    #        the 11-dim prev-turn action mask left the observation (3529 -> 2437, net -1092 after
+    #        the H-B window's new cant column); a `_WEIGHT_FIELDS` break on total_dim plus an
+    #        ARCH_SIGNATURE bump, so check_compatible refused a pre-v90 checkpoint first.
+    #   v91: stamp — gen3_event_semantics_v1: the H-B event row gained faint_cause_id (col 20) and
+    #        item_transition (col 21), closing the last two coverage gaps the frame-deletion audit
+    #        found (obs 2437 -> 2501). Width change ⇒ total_dim + signature carried the break.
+    #   v92: td_aux_coef=0.0 (gen3_td_consistency_aux_v1; TRAINING-only, no forward/weight shape).
+    #   v93: pair_outcome_cell=False (gen3_pair_outcome_v1).
+    #   v94: pair_outcome_switch=False, switch_branch_cell=False (substrate Phase B).
+    #   v95: conditional_threat_cell=False, pair_value_route=False (substrate Phase C). The same
+    #        bump carried gen3_status_economy_v1, which AMENDED `tempo_cost`'s coordinate semantics
+    #        under the existing pair_outcome_* flags (Natural Cure + the bench-cleric path became
+    #        undo paths; the reduction became a MIN over available paths rather than a MAX) — so
+    #        the branch REFUSED a <v95 config recording either pair_outcome flag ON, since it
+    #        trained against different numbers. Neither flag was ever enabled in a run, so that
+    #        guard was latent, never a migration path.
+    #   v96: gen3_critic_route_wave_v1 — the stamp only. Its POP/REFUSE half for
+    #        intent_value_reduce / value_clock / value_intent is version-INDEPENDENT and survives
+    #        below.
     # ----------------------------------------------------------------------------------------
-    if version < 77:
-        # gen3_intent_move_cell_v1: the G3 alpha-conditioned c2 move-cell channels. Post-floor
-        # (the floor stays 76 — OFF is byte-identical, so the flag alone gates it), legal to
-        # migrate: absent means the run predates the flag, i.e. OFF.
-        data.setdefault("intent_move_cell", False)
-        data["config_version"] = 77
-    if version < 78:
-        # gen3_flag_surface_p1_v1: the zarch family + the seed-pressure pair are DELETED. Two of the
-        # eight keys are JUDGED rather than popped — they built MODULES, so a config that recorded
-        # them ON names a state_dict the live extractor cannot place, and popping would turn that
-        # into an opaque "unexpected key" deep inside SB3's load (the v75 opp_belief_latent
-        # precedent). Every gen-8/9/10 production config recorded both OFF, so this refuses only a
-        # checkpoint from one of the closed research arms.
-        for judged, dead_value in (("zarch_film", "off"), ("seed_quantile", False)):
-            recorded = data.get(judged, dead_value)
-            if recorded != dead_value:
-                raise ModelVersionError(
-                    f"{judged}={recorded!r} is no longer supported (gen3_flag_surface_p1_v1, config "
-                    f"v78): the module behind it is DELETED, so this checkpoint's weights include "
-                    f"parameters the current extractor has no home for.\n"
-                    + ("The z_arch/FiLM conditioning line is closed — the free-per-team-code (LUT) "
-                       "arm moved the N=20 multi-team ceiling by +0.024, CI [-0.016, +0.064], and "
-                       "the orthogonal 2x2 measured team COUNT dominating conditioning.\n"
-                       if judged == "zarch_film" else
-                       "Both seed-differentiation pressures capped at ~1-D of k=4 "
-                       "(out_effective_rank 1.157 with crossing_rate 0.000), so the shared readout, "
-                       "not the coefficient, was the binding constraint.\n")
-                    + "To re-read this checkpoint, use the git_hash in its own metadata.json."
-                )
-        for dead in ("zarch_film", "zarch_dim", "zarch_lut", "zarch_lut_teams",
-                     "zarch_recon_coef", "zarch_vicreg_coef",
-                     "seed_quantile", "value_seed_vicreg_coef"):
-            data.pop(dead, None)      # POP, not setdefault: `cls(**data)` TypeErrors on a stale key
-        data["config_version"] = 78
-    if version < 79:
-        # gen3_pair_history_v1 (stamp only, the v67 pattern): the H-A obs widening carries the
-        # break in total_dim + the widened encoder shapes (weight-field-caught); no new config
-        # field, and the "h" edge family rides the recorded edge_bias_families string.
-        data["config_version"] = 79
-    if version < 80:
-        # gen3_unified_value_readout_v1: post-floor flag-gated module — absent means the run
-        # predates the flag, i.e. OFF (the v77 intent_move_cell pattern).
-        data.setdefault("value_entity_pool", False)
-        data["config_version"] = 80
-    if version < 81:
-        # gen3_event_window_v1: the H-B obs widening is weight-field-caught (total_dim); the
-        # consumer flag is post-floor — absent means the run predates it, i.e. OFF.
-        data.setdefault("history_events", False)
-        data["config_version"] = 81
-    if version < 82:
-        # gen3_unified_value_readout_v2: post-floor flag-gated variant — absent means OFF.
-        data.setdefault("value_entity_pool_full", False)
-        data["config_version"] = 82
-    if version < 83:
-        # gen3_item_belief_v1: post-floor flag-gated head — absent means OFF.
-        data.setdefault("item_belief", False)
-        data["config_version"] = 83
-    if version < 84:
-        # gen3_intent_threshold_v1: post-floor flag-gated operator — absent means OFF.
-        data.setdefault("intent_threshold", False)
-        data["config_version"] = 84
-    if version < 85:
-        # gen3_intent_conditional_v1: post-floor flag-gated cells — absent means OFF.
-        data.setdefault("intent_conditional", False)
-        data["config_version"] = 85
-    if version < 86:
-        # gen3_op_lean_forward_v1: post-floor flag-gated pair — absent means OFF.
-        data.setdefault("op_drop_renders", False)
-        data.setdefault("op_believed_lean", False)
-        data["config_version"] = 86
-    if version < 87:
-        # gen3_value_direct_routes_v1 introduced value_clock/value_intent here. Both FIELDS are
-        # deleted at v96 (gen3_critic_route_wave_v1), so there is nothing left to default in —
-        # the v96 block below POPs them instead, and refuses a recorded-ON value.
-        data["config_version"] = 87
-    # v88 (gen3_dead_flag_purge_v1) — runs for EVERY version (the keys must leave the config
-    # whatever vintage wrote them). A recorded ON value named parameters/widths the surviving
-    # code cannot rebuild ⇒ refuse (the v75 rule); OFF pops silently.
+    # ---- VERSION-INDEPENDENT SANITIZERS -----------------------------------------------------
+    # These are NOT migration branches and are not floored away: they run at EVERY version,
+    # because `from_json_file` does `cls(**data)` and a stale key TypeErrors there. Each POPs a
+    # deleted field, and applies the v75 rule to its value — a recorded ON value named
+    # parameters/widths the surviving code cannot rebuild ⇒ REFUSE with the re-read diagnosis;
+    # OFF pops silently (the module was never built, so the weights are unaffected).
+    #
+    # v88 (gen3_dead_flag_purge_v1):
     for _dead, _ok in (("value_active_readout", False),
                        ("damage_matrices_outgoing_all", False),
                        ("pubval_mode", "none")):
@@ -1830,95 +1815,11 @@ def _migrate_config(data: dict) -> dict:
                     f"{_dead}={_rec!r} is no longer supported (gen3_dead_flag_purge_v1): the "
                     f"only supported value is {_ok!r}. This checkpoint trained under a forward "
                     "that no longer exists; re-read it from the git_hash in its metadata.json.")
-    data.pop("pubval_coef", None)
-    if version < 88:
-        data["config_version"] = 88
-    # v89 (gen3_value_pooled_routes_v1) — the value routes moved from the vf-tail concat into
-    # `value_pooled`, changing their projection shapes and the vf concat width. A <v89 config
-    # with any of them ON recorded a forward that no longer exists ⇒ refuse with the re-read
-    # diagnosis; OFF stamps forward (byte-identical — the routes built nothing).
-    if version < 89:
-        for _rt in ("intent_value_reduce", "value_entity_pool", "intent_threshold",
-                    "value_clock", "value_intent"):
-            if data.get(_rt):
-                raise ModelVersionError(
-                    f"{_rt}=True at config_version {version} is no longer loadable "
-                    "(gen3_value_pooled_routes_v1): the route was re-homed from the vf-tail "
-                    "concat into value_pooled, so its recorded projection shapes no longer "
-                    "exist. This checkpoint trained under a forward the current code cannot "
-                    "rebuild; re-read it from the git_hash in its metadata.json.")
-        data["config_version"] = 89
-    if version < 90:
-        # gen3_frame_deletion_v1: the 7x159 TurnDelta lag frames and the 11-dim prev-turn
-        # action mask are DELETED from the observation (3529 -> 2437, net -1092 after the
-        # H-B window's new cant column). This is a `_WEIGHT_FIELDS` break on `total_dim`
-        # anyway, and it bumps ARCH_SIGNATURE, so `check_compatible` refuses a pre-v90
-        # checkpoint before this ever runs. The block exists so the FIELD drops cleanly for
-        # anything that reads a migrated dict directly, and so the reason is on the record
-        # beside the other version stories rather than only in the changelog.
-        data.pop("n_history_turns", None)
-        data["config_version"] = 90
-    if version < 91:
-        # gen3_event_semantics_v1: the H-B event row gains `faint_cause_id` (col 20) and
-        # `item_transition` (col 21), closing the last two coverage gaps the frame-deletion
-        # audit found — obs 2437 -> 2501. Width change ⇒ `total_dim` breaks `_WEIGHT_FIELDS`
-        # and the signature bumps, so `check_compatible` refuses a pre-v91 checkpoint before
-        # this runs; the branch exists so the story sits beside the others on the record.
-        data["config_version"] = 91
-    # v92 (gen3_td_consistency_aux_v1) — a TRAINING-only loss coefficient, so a pre-v92 checkpoint
-    # trained with the term OFF and the field simply defaults in. No forward, no weight shape, no
-    # gate: provenance + flagless-resume read-back only. This branch is REACHABLE (unlike v90/v91
-    # above, which the floor and the signature refuse first): a v91 checkpoint is at the floor and
-    # its config genuinely lacks the field.
-    if version < 92:
-        data.setdefault("td_aux_coef", 0.0)
-        data["config_version"] = 92
-    # v93 (gen3_pair_outcome_v1) — a post-floor flag-gated module: absent means OFF, which is what
-    # every pre-v93 checkpoint trained under. Reachable for the same reason as v92's branch (a
-    # v91/v92 checkpoint is at or above the floor and genuinely lacks the field).
-    if version < 93:
-        data.setdefault("pair_outcome_cell", False)
-        data["config_version"] = 93
-    # v94 (substrate Phase B) — two post-floor flag-gated modules: absent means OFF, which is what
-    # every pre-v94 checkpoint trained under.
-    if version < 94:
-        data.setdefault("pair_outcome_switch", False)
-        data.setdefault("switch_branch_cell", False)
-        data["config_version"] = 94
-    # v95 (substrate Phase C) — two post-floor flag-gated modules: absent means OFF, which is what
-    # every pre-v95 checkpoint trained under. ⚠️ v95 ALSO amends `pair_outcome_cell` /
-    # `pair_outcome_switch` COORDINATE SEMANTICS (gen3_status_economy_v1: `tempo_cost` gains the
-    # Natural Cure and bench-cleric undo paths and reduces by MIN rather than MAX). That is a
-    # forward-math change under an existing flag, so a checkpoint recording either flag ON below
-    # v95 trained against a DIFFERENT `tempo_cost` and is refused rather than migrated — the v75
-    # rule. No such checkpoint exists (neither flag has ever been enabled in a run), so this is a
-    # latent guard, not a migration path.
-    if version < 95:
-        if data.get("pair_outcome_cell") or data.get("pair_outcome_switch"):
-            raise ModelVersionError(
-                "This checkpoint recorded pair_outcome_cell/pair_outcome_switch ON at "
-                f"config_version {version}, before v95's gen3_status_economy_v1 amended the "
-                "`tempo_cost` coordinate (the Natural Cure ability and the bench-cleric path are "
-                "now undo paths, and the reduction is a MIN over available paths rather than a "
-                "MAX). The weights are unchanged but they were trained against different numbers, "
-                "so re-read this run from its own git_hash instead of migrating it.")
-        data.setdefault("conditional_threat_cell", False)
-        data.setdefault("pair_value_route", False)
-        data["config_version"] = 95
-    # v96 (gen3_critic_route_wave_v1) — the critic-route deletion wave. Three fields LEAVE the
-    # config (`intent_value_reduce`, `value_clock`, `value_intent`), so they must be POPped or a
-    # later `cls(**data)` TypeErrors on the stale key. The v75 rule decides the two cases: a
-    # recorded ON value named PARAMETERS the surviving extractor has no home for, so it is
-    # REFUSED with the re-read diagnosis; OFF pops silently (the route built nothing, so an OFF
-    # checkpoint's weights are unaffected by the deletion).
-    #
-    # ⚠️ Like the v90/v91 branches, this one is UNREACHABLE in practice — the wave bumps
-    # ARCH_SIGNATURE, so MIGRATION_FLOOR rises to 96 and every pre-v96 config is refused by the
-    # pre-generation gate above before it gets here. It is written anyway for two reasons: the
-    # reason belongs on the record beside the other version stories, and the parallel judgment
-    # that IS reachable — `snapshot._DEAD_FEK_JUDGED`, which sanitizes a checkpoint's PICKLED
-    # `features_extractor_kwargs` and has no floor to hide behind — must not be the only place
-    # this decision is written down.
+    data.pop("pubval_coef", None)   # training-only (INERT for a forward) ⇒ any value pops silently
+    # v96 (gen3_critic_route_wave_v1) — the critic-route deletion wave. Three fields LEFT the
+    # config, so they must be POPped or a later `cls(**data)` TypeErrors on the stale key. The
+    # parallel judgment on the PICKLED side is `snapshot._DEAD_FEK_JUDGED`, which has no floor to
+    # hide behind; this must not be the only place the decision is written down.
     for _dead in ("intent_value_reduce", "value_clock", "value_intent"):
         if _dead in data:
             if data.pop(_dead):
@@ -1930,12 +1831,12 @@ def _migrate_config(data: dict) -> dict:
                     "on the end-of-run critic_route_audit; `--value-entity-pool` — which carries "
                     "97% of the critic's route dependence — is the successor.\n"
                     "To re-read this checkpoint, use the git_hash in its own metadata.json.")
-    if version < 96:
-        data["config_version"] = 96
+    # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
     # v97 (gen3_intent_label_bot_weight_v1) — a TRAINING-only loss weight, so a pre-v97 checkpoint
     # trained with it OFF and the field simply defaults in. No forward, no weight shape, no gate:
-    # provenance + flagless-resume read-back only. Same shape as v92's td_aux_coef branch, and
-    # reachable for the same reason (a post-floor checkpoint genuinely lacks the field).
+    # provenance + flagless-resume read-back only. Same shape as v92's since-floored td_aux_coef
+    # branch, and REACHABLE where that one no longer is: a v96 checkpoint is exactly at the floor
+    # and its config genuinely lacks the field.
     if version < 97:
         data.setdefault("intent_label_bot_weight", 1.0)
         data["config_version"] = 97

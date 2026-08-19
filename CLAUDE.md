@@ -314,7 +314,11 @@ silently opts out reads exactly like a linter that found nothing. Opt out explic
 **Known ruff findings are per-file entries in `ruff.toml`, never a blanket exclude**, and that file
 keeps two categories apart: a PERMANENT one (the model package's declared re-export hubs, which
 import names solely so other modules can import them back out) and a TEMPORARY handoff list of
-ordinary dead code. The second is meant to shrink to nothing. `/gen3ai-ship` runs both gates before
+ordinary dead code. The second was meant to shrink to nothing and **has** — it is CLOSED and holds
+zero entries, so a new finding has nowhere to be parked: fix it at the source, or give it an inline
+`# noqa: <code>` naming the reason. `features_extractor.py`'s file-wide `F401` is the only surviving
+entry and it is PERMANENT (measured: 33 findings without it, the bulk of them names other modules
+import back out through the hub). `/gen3ai-ship` runs both gates before
 staging (step 1c), so the ship path does not depend on whether the suite was run.
 
 ### Unit tests only (the fast inner loop)
