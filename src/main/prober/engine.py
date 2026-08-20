@@ -824,6 +824,86 @@ def move_order_from_protocol(lines: "tuple[str, ...] | None",
     return None
 
 
+def protocol_action_fate(lines: "tuple[str, ...] | None",
+                         actor: str, other: str) -> "str | None":
+    """What the log says a side's active actually DID this turn: ``"moved"``, ``"cant:<reason>"``,
+    ``"absent"`` (chose a move, never got to act), or ``None`` when it cannot be established.
+
+    The recorded action says what a side CHOSE. Nothing in a model-free trace says whether the
+    choice ever executed, so the timeline assumed it did and explained the missing damage as an
+    ineffective move — which reads as a claim about the move rather than about the turn. Measured
+    on gen-16 `loss_s0_004`: Forretress CHOSE Explosion on turn 6, was outsped by a +2 Tyranitar
+    and killed before acting, and the timeline said `we explosion — no effect`. The protocol for
+    that turn contains no `|move|` line for our side at all.
+
+    ``"absent"`` is only returned when the OTHER side was positively identified in the same slice —
+    that is the guard against a nickname that does not match its species (this pool contains teams
+    whose nicknames are LOCALIZED species names). Without that evidence the answer is `None`, and
+    the caller keeps today's behaviour rather than inventing a stronger claim from a failed match.
+    """
+    a, o = _norm_species(actor), _norm_species(other)
+    if not a or not o or a == o:
+        return None                       # a mirror: the nickname names both sides equally
+    other_seen = False
+    for ln in lines or ():
+        if not (ln.startswith("|move|") or ln.startswith("|cant|")):
+            continue
+        parts = ln.split("|")
+        if len(parts) < 3:
+            continue
+        who = parts[2]
+        nick = _norm_species(who.split(":", 1)[1] if ":" in who else who)
+        if nick == a:
+            if ln.startswith("|move|"):
+                return "moved"
+            reason = parts[3].strip() if len(parts) > 3 else ""
+            return f"cant:{reason}" if reason else "cant:"
+        if nick == o:
+            other_seen = True
+    return "absent" if other_seen else None
+
+
+def protocol_move_result(lines: "tuple[str, ...] | None",
+                         actor: str, other: str) -> "str | None":
+    """Why a move that executed produced nothing — ``"immune"`` / ``"missed"`` — read off the log,
+    or ``None`` when it does not say.
+
+    The sibling of :func:`protocol_action_fate`: that one answers "did it act at all", this one
+    "what came of it". `_no_effect_reason` can already name both, but it keys on the TurnDelta's
+    decoded effectiveness/outcome, which a MODEL-FREE trace does not have — so a genuine immunity
+    degraded to a bare "no effect". Measured on gen-16 `loss_s0_004` turn 7: Earthquake into a
+    Levitate Gengar, `|-immune|p2a: Gengar` right there in the log, rendered `— no effect`; across
+    100 battles, 67 of 400 bare no-effect lines sat on a turn carrying an `|-immune|`.
+
+    Scoped to the actor's OWN move: the scan starts at that `|move|` line and stops at the next
+    one (or the turn's end), so the other side's immunity on the same turn cannot be borrowed. A
+    `|-miss|` names the ATTACKER first, so it is attributed only when that is this actor.
+    """
+    a, o = _norm_species(actor), _norm_species(other)
+    if not a or not o or a == o:
+        return None
+    def _nick(field: str) -> str:
+        return _norm_species(field.split(":", 1)[1] if ":" in field else field)
+
+    started = False
+    for ln in lines or ():
+        parts = ln.split("|")
+        if ln.startswith("|move|") and len(parts) > 2:
+            if started:
+                break                      # the next move — out of this move's window
+            started = _nick(parts[2]) == a
+            continue
+        if not started:
+            continue
+        if ln.startswith(("|turn|", "|upkeep")):
+            break
+        if ln.startswith("|-immune|"):
+            return "immune"
+        if ln.startswith("|-miss|") and len(parts) > 2 and _nick(parts[2]) == a:
+            return "missed"
+    return None
+
+
 def build_our_hp_types(team_details: "list[dict] | None") -> "dict[str, str]":
     """`{norm_species: 'hiddenpower(bug)'}` from a reconstruction `team_details` list — the typed
     Hidden Power display id for each own mon, so a bare own HP (all the request carries before reveal)
@@ -1039,13 +1119,17 @@ def _loss_pct(hp_delta: "str | None") -> "float | None":
 def build_result_timeline(outcome: dict, our_species: str, opp_species: str, phase: str = "",
                           our_hp_before=None, opp_hp_before=None,
                           our_hp_after=None, opp_hp_after=None,
-                          move_order_hint: "str | None" = None) -> "list[dict]":
+                          move_order_hint: "str | None" = None,
+                          our_fate_hint: "str | None" = None,
+                          opp_fate_hint: "str | None" = None,
+                          our_result_hint: "str | None" = None,
+                          opp_result_hint: "str | None" = None) -> "list[dict]":
     """Ordered, one-line-per-action model of what HAPPENED after a decision (the RESULT panel). Pure.
 
     Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
     target's before→after HP (``before = after + damage``), so each line reads like a battle log:
     ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status, resulting,
-    no_effect, switch_to, sent_in}``. ``resulting`` marks a hit on a switch-IN where only the after-HP
+    no_effect, never_moved, switch_to, sent_in}``. ``resulting`` marks a hit on a switch-IN where only the after-HP
     is known (the recorded delta can't price it across the switch); ``no_effect`` (``immune`` /
     ``missed`` / ``failed``) explains a move that did NOTHING visible. Ordered by execution: a voluntary
     switch resolves before a move; otherwise
@@ -1071,12 +1155,32 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
     our_target = pa_opp.get("switch_to") if pa_opp["kind"] == "switch" else opp_species
     opp_target = pa_our.get("switch_to") if pa_our["kind"] == "switch" else our_species
 
-    def _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff, fate):
+    def _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff,
+                    fate, actor="", fate_hint=None, result_hint=None):
         e = {"side": side, "kind": "move", "move": pa.get("move", ""), "crit": bool(crit),
              "boost": boost or "", "cant": cant, "target": "", "damage": "", "hp_before": "",
              "hp_after": "", "status": "", "resulting": False, "no_effect": "",
-             "switch_to": "", "sent_in": ""}
+             "never_moved": False, "switch_to": "", "sent_in": ""}
+        # WHAT THE LOG SAYS HAPPENED beats what the recorder says was CHOSEN. Without it a move
+        # that never executed is explained as one that executed and achieved nothing — a claim
+        # about the MOVE rather than about the TURN (see `protocol_action_fate`).
+        hint = fate_hint or ""
+        if hint.startswith("cant:") and not cant:
+            # The `|cant|` reason the recorded outcome did not carry. A model-free trace has no
+            # decoded TurnDelta, so `our_cant`/`opp_cant` are empty and a blocked move used to fall
+            # through to "— no effect" — MEASURED on the same battle: a FROZEN Forretress read that
+            # way, and an 843-battle sweep saw a full-para Surf do the same.
+            e["cant"] = hint.split(":", 1)[1] or "unknown"
+            return e
         if cant:
+            return e
+        if hint == "absent":
+            # It chose a move and never got to make it. Claimed ONLY when the mon FAINTED this turn:
+            # otherwise "no move line for this side" has other explanations (a partial slice, a turn
+            # that could not be aligned) and saying nothing is the honest answer.
+            actor_side = "our" if side == "we" else "opp"
+            if (actor_side, _norm_species(actor)) in faints:
+                e["never_moved"] = True
             return e
         recip_side = "opp" if side == "we" else "our"
         key = (recip_side, _norm_species(target))
@@ -1104,7 +1208,21 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
         # A move that produced NOTHING visible: say WHY (missed / no effect / immune) so a blank line
         # never reads as "data missing". Silent for utility moves (hazards/heal/boost — reason None).
         if not (e["damage"] or e["status"] or e["hp_after"]):
-            reason = _no_effect_reason(pa.get("move"), eff, fate)
+            # The RECORDED fate/effectiveness wins — it comes from the TurnDelta the analysis was
+            # built on. The protocol only fills what the recorder did not decode, which on a
+            # model-free trace is everything.
+            # The RECORDED fate/effectiveness wins OUTRIGHT — it comes from the TurnDelta the
+            # analysis was built on, and `_no_effect_reason` ranks immune ABOVE miss, so feeding a
+            # protocol immunity alongside a recorded miss would silently overrule the recorder.
+            # The protocol fills only when the recorder decoded NOTHING, which on a model-free
+            # trace is every decision.
+            if eff or fate:
+                reason = _no_effect_reason(pa.get("move"), eff, fate)
+            else:
+                reason = _no_effect_reason(
+                    pa.get("move"),
+                    "immune" if result_hint == "immune" else None,
+                    "miss" if result_hint == "missed" else None)
             # ...UNLESS the target SWITCHED IN and nothing recorded the move's fate. Then the
             # recorded hp_delta compares the mon that LEFT, so it cannot price the hit either way —
             # and `_no_effect_reason`'s last resort is to infer a miss from the move's accuracy,
@@ -1113,7 +1231,7 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             # log showed -resisted / -damage 84/100 / -boost atk (the switch-in then healed to
             # exactly 90% on Leftovers, so the resulting-HP branch above just missed its threshold).
             # An absent explanation is honest; a wrong one is worse than none.
-            if switched_in and not fate and reason == "missed":
+            if switched_in and not fate and not result_hint and reason == "missed":
                 reason = None
             e["no_effect"] = reason or ""
         return e
@@ -1135,7 +1253,10 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             return {"side": side, "kind": "switch", "actor": actor, "switch_to": pa.get("switch_to", "")}
         if pa["kind"] == "send_in":
             return {"side": side, "kind": "send_in", "sent_in": pa.get("sent_in", "")}
-        e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff, fate)
+        e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in,
+                        eff, fate, actor=actor,
+                        fate_hint=(our_fate_hint if side == "we" else opp_fate_hint),
+                        result_hint=(our_result_hint if side == "we" else opp_result_hint))
         e["actor"] = actor
         return e
 
@@ -1185,9 +1306,10 @@ def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
     """`build_result_timeline` wired to a decision: the actives' HP this turn (before) + the resolved
     HP at the next decision (after, from ``next_board``).
 
-    `protocol` is this turn's raw Showdown slice. When the TurnDelta recorded no `move_order`, the
-    order is read off those `|move|` lines instead of being surrendered as unknown — the log states
-    the execution order outright."""
+    `protocol` is this turn's raw Showdown slice, and it answers two questions the recorded
+    outcome cannot: the execution ORDER when no `move_order` was recorded, and whether each side's
+    chosen move EXECUTED AT ALL (`protocol_action_fate`) — a mon KO'd before acting, or blocked by
+    a `|cant|`, used to render as a move that ran and did nothing."""
     our_sp = inv.get("our", {}).get("species", "")
     opp_sp = inv.get("opp", {}).get("species", "")
     return build_result_timeline(
@@ -1197,6 +1319,12 @@ def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
         our_hp_after=(next_board.ours.active_hp if next_board else None),
         opp_hp_after=(next_board.opp.active_hp if next_board else None),
         move_order_hint=move_order_from_protocol(protocol, our_sp, opp_sp),
+        # Whether each side's chosen move actually EXECUTED. Same slice, same species matching as
+        # the order hint — a recorded action says what was chosen, only the log says what happened.
+        our_fate_hint=protocol_action_fate(protocol, our_sp, opp_sp),
+        opp_fate_hint=protocol_action_fate(protocol, opp_sp, our_sp),
+        our_result_hint=protocol_move_result(protocol, our_sp, opp_sp),
+        opp_result_hint=protocol_move_result(protocol, opp_sp, our_sp),
     )
 
 
@@ -1207,12 +1335,23 @@ def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
 CANT_PHRASE = {"slp": "asleep", "frz": "frozen", "par": "fully paralyzed", "flinch": "flinched",
                "recharge": "recharging", "nopp": "no PP", "truant": "loafing",
                "attract": "immobilized", "taunt": "taunted", "disable": "disabled",
-               "flinched": "flinched"}
+               "flinched": "flinched",
+               # The PROTOCOL's own spellings, which reach this map now that a `|cant|` reason can
+               # come straight off the log (`protocol_action_fate`) rather than only from the
+               # decoded TurnDelta. Measured over a run's replays, the live set is
+               # par/slp/frz/flinch/`Focus Punch`/`move: Taunt`/recharge.
+               "focus punch": "lost its focus"}
 NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect"}
 
 
 def cant_phrase(cant: str) -> str:
-    return CANT_PHRASE.get(str(cant).lower(), str(cant))
+    """Plain language for a couldn't-move reason, from either source: the TurnDelta's decoded code
+    (``slp``) or the protocol's own field (``move: Taunt``). The ``move: `` prefix is stripped so
+    both spellings land on one entry; an unknown reason is returned as-is rather than dropped."""
+    key = str(cant).strip().lower()
+    if key.startswith("move: "):
+        key = key[len("move: "):]
+    return CANT_PHRASE.get(key, str(cant))
 
 
 def surprise_phrase(td: float) -> str:
@@ -1253,6 +1392,12 @@ def timeline_entry_text(e: dict) -> str:
 
     parts = [side, str(e.get("move") or "?")]
     text = " ".join(p for p in parts if p)
+    if e.get("never_moved"):
+        # It chose the move and was KO'd before it could make it. The old rendering said
+        # "— no effect", which describes a move that executed and achieved nothing — a claim about
+        # the MOVE, on a turn where the move never happened at all.
+        text += " — never moved (fainted first)"
+        return text
     if e.get("cant"):
         text += f" — couldn't move ({cant_phrase(e['cant'])})"
     elif e.get("damage"):

@@ -1987,3 +1987,202 @@ def test_non_sentinels_keep_the_order_they_arrived_in():
     # A name that merely looks sentinel-ish is not one.
     assert sort_opponents(["sentinel_x", "sentinel_0"]) == ["sentinel_0", "sentinel_x"]
     assert sort_opponents([]) == []
+
+
+# -- a move that never executed --------------------------------------------------------------
+#
+# The recorded outcome says what a side CHOSE. Nothing in a model-free trace says whether the
+# choice ever ran, so the timeline assumed it did and explained the missing damage as an
+# ineffective move — a claim about the MOVE on a turn where the move never happened. Both fixtures
+# below are the real protocol of gen-16 `loss_s0_004`, which is where it was reported.
+
+_TURN_6_KO_BEFORE_MOVING = (
+    "|turn|6",
+    "|move|p2a: Tyranitar|Rock Slide|p1a: Forretress",
+    "|-damage|p1a: Forretress|0 fnt",
+    "|faint|p1a: Forretress",
+    "|switch|p1a: Swampert|Swampert, F|401/401",
+    "|upkeep",
+)
+
+_TURN_5_FROZEN = (
+    "|turn|5",
+    "|move|p2a: Tyranitar|Dragon Dance|p2a: Tyranitar",
+    "|-boost|p2a: Tyranitar|atk|1",
+    "|cant|p1a: Forretress|frz",
+    "|upkeep",
+)
+
+
+def _outcome_both_moved(our_move, opp_move, events=()):
+    return {"our": {"action": our_move, "hp_delta": "-100%"},
+            "opp": {"action": opp_move, "hp_delta": "0%"},
+            "events": list(events)}
+
+
+def test_a_mon_KOd_before_it_moved_says_so_instead_of_no_effect():
+    """THE REPORTED BUG. Forretress chose Explosion, was outsped by a +2 Tyranitar and killed; the
+    protocol carries no `|move|` line for our side at all, and the timeline read
+    `we explosion — no effect` — which describes a move that ran and whiffed."""
+    from main.prober.engine import (build_result_timeline, protocol_action_fate,
+                                    timeline_entry_text)
+
+    fate = protocol_action_fate(_TURN_6_KO_BEFORE_MOVING, "forretress", "tyranitar")
+    assert fate == "absent", "the log has no move line for our side; that is the whole signal"
+
+    entries = build_result_timeline(
+        _outcome_both_moved("explosion", "rockslide", ["our:forretress:fainted"]),
+        "forretress", "tyranitar", "move_selection", our_fate_hint=fate)
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and ours[0]["never_moved"] is True
+    assert timeline_entry_text(ours[0]) == "we explosion — never moved (fainted first)"
+    assert "no effect" not in timeline_entry_text(ours[0])
+
+
+def test_a_blocked_move_names_the_reason_instead_of_no_effect():
+    """The `|cant|` fall-through. A model-free trace has no decoded TurnDelta, so `our_cant` is
+    empty and a FROZEN Forretress read `— no effect` too (an 843-battle sweep saw a full-para Surf
+    do the same). The reason is right there in the log."""
+    from main.prober.engine import (build_result_timeline, protocol_action_fate,
+                                    timeline_entry_text)
+
+    fate = protocol_action_fate(_TURN_5_FROZEN, "forretress", "tyranitar")
+    assert fate == "cant:frz"
+
+    entries = build_result_timeline(
+        _outcome_both_moved("explosion", "dragondance"),
+        "forretress", "tyranitar", "move_selection", our_fate_hint=fate)
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and ours[0]["cant"] == "frz"
+    assert timeline_entry_text(ours[0]) == "we explosion — couldn't move (frozen)"
+
+    # …and the same for the reason that motivated the sweep.
+    para = ("|turn|9", "|move|p2a: Tyranitar|Rock Slide|p1a: Suicune",
+            "|cant|p1a: Suicune|par")
+    assert protocol_action_fate(para, "suicune", "tyranitar") == "cant:par"
+
+
+def test_a_move_that_DID_execute_is_untouched():
+    """The guard on the two above: the hint must not rewrite an ordinary turn."""
+    from main.prober.engine import build_result_timeline, protocol_action_fate
+
+    moved = ("|turn|4", "|move|p1a: Forretress|Spikes|p2a: Tyranitar",
+             "|move|p2a: Tyranitar|Rock Slide|p1a: Forretress")
+    assert protocol_action_fate(moved, "forretress", "tyranitar") == "moved"
+    entries = build_result_timeline(
+        {"our": {"action": "spikes", "hp_delta": "0%"},
+         "opp": {"action": "rockslide", "hp_delta": "0%"}},
+        "forretress", "tyranitar", "move_selection", our_fate_hint="moved")
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and not ours[0]["never_moved"] and not ours[0]["cant"]
+
+
+def test_never_moved_is_claimed_ONLY_when_the_mon_actually_fainted():
+    """"No move line for this side" has other explanations — a partial slice, a turn that could not
+    be aligned. Without a faint the honest answer is to say nothing, not to invent a reason."""
+    from main.prober.engine import build_result_timeline
+
+    entries = build_result_timeline(
+        _outcome_both_moved("explosion", "rockslide"),        # NO faint event
+        "forretress", "tyranitar", "move_selection", our_fate_hint="absent")
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and ours[0]["never_moved"] is False
+
+
+def test_protocol_action_fate_refuses_rather_than_guessing():
+    """Every `None` is a case the log cannot settle, and a wrong explanation is worse than none."""
+    from main.prober.engine import protocol_action_fate
+
+    # A MIRROR: the nickname names both sides equally.
+    assert protocol_action_fate(_TURN_6_KO_BEFORE_MOVING, "forretress", "forretress") is None
+    # A nickname matching NEITHER active — `absent` needs the other side positively identified,
+    # which is the guard against this pool's localized-species nicknames.
+    nicked = ("|turn|6", "|move|p2a: Sparky|Thunderbolt|p1a: Rocky")
+    assert protocol_action_fate(nicked, "forretress", "tyranitar") is None
+    # No protocol at all, and a missing species.
+    assert protocol_action_fate(None, "forretress", "tyranitar") is None
+    assert protocol_action_fate((), "forretress", "tyranitar") is None
+    assert protocol_action_fate(_TURN_6_KO_BEFORE_MOVING, "", "tyranitar") is None
+
+
+def test_the_protocols_own_cant_spellings_read_as_english():
+    """The reason now arrives straight off the log, so the map has to speak the log's dialect. The
+    live set over a run's replays is par/slp/frz/flinch/`Focus Punch`/`move: Taunt`/recharge."""
+    from main.prober.engine import cant_phrase
+
+    assert cant_phrase("Focus Punch") == "lost its focus"
+    assert cant_phrase("move: Taunt") == "taunted"
+    assert cant_phrase("par") == "fully paralyzed"
+    assert cant_phrase("recharge") == "recharging"
+    assert cant_phrase("something new") == "something new"   # never dropped
+
+
+_TURN_7_IMMUNE = (
+    "|turn|7",
+    "|switch|p2a: Gengar|Gengar, M|100/100",
+    "|move|p1a: Swampert|Earthquake|p2a: Gengar",
+    "|-immune|p2a: Gengar",
+    "|-weather|Sandstorm|[upkeep]",
+    "|upkeep",
+)
+
+
+def test_an_immunity_in_the_log_is_named_instead_of_a_bare_no_effect():
+    """`_no_effect_reason` can already say "immune", but it keys on the TurnDelta's decoded
+    effectiveness — which a MODEL-FREE trace does not have, so a Levitate Gengar eating an
+    Earthquake read `— no effect`. Across 100 battles, 67 of 400 bare no-effect lines sat on a turn
+    whose log carried an `|-immune|`."""
+    from main.prober.engine import (build_result_timeline, protocol_move_result,
+                                    timeline_entry_text)
+
+    assert protocol_move_result(_TURN_7_IMMUNE, "swampert", "gengar") == "immune"
+    entries = build_result_timeline(
+        {"our": {"action": "earthquake", "hp_delta": "0%"},
+         "opp": {"action": "switched_to:gengar", "hp_delta": "0%"}},
+        "swampert", "tyranitar", "move_selection",
+        our_result_hint=protocol_move_result(_TURN_7_IMMUNE, "swampert", "gengar"))
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and ours[0]["no_effect"] == "immune"
+    assert timeline_entry_text(ours[0]).endswith("— no effect (immune)")
+
+
+def test_a_miss_is_attributed_to_the_ATTACKER_that_missed():
+    """`|-miss|` names the attacker FIRST, so the other side's miss on the same turn must not be
+    borrowed — and the window stops at the next `|move|` so neither can an immunity."""
+    from main.prober.engine import protocol_move_result
+
+    both = ("|turn|3",
+            "|move|p1a: Zapdos|Thunder|p2a: Swampert",
+            "|-miss|p1a: Zapdos|p2a: Swampert",
+            "|move|p2a: Swampert|Earthquake|p1a: Zapdos",
+            "|-immune|p1a: Zapdos")
+    assert protocol_move_result(both, "zapdos", "swampert") == "missed"
+    assert protocol_move_result(both, "swampert", "zapdos") == "immune"
+
+
+def test_move_result_refuses_rather_than_guessing():
+    from main.prober.engine import protocol_move_result
+
+    assert protocol_move_result(_TURN_7_IMMUNE, "gengar", "gengar") is None      # mirror
+    assert protocol_move_result(None, "swampert", "gengar") is None
+    assert protocol_move_result(_TURN_7_IMMUNE, "", "gengar") is None
+    # An actor that never appears in the slice: nothing to attribute.
+    assert protocol_move_result(_TURN_7_IMMUNE, "blissey", "gengar") is None
+    # A clean hit says nothing — silence, not "failed".
+    hit = ("|turn|2", "|move|p1a: Zapdos|Thunderbolt|p2a: Swampert",
+           "|-damage|p2a: Swampert|180/401")
+    assert protocol_move_result(hit, "zapdos", "swampert") is None
+
+
+def test_a_RECORDED_outcome_still_beats_the_log():
+    """The TurnDelta is what the analysis was built on; the protocol only fills what it did not
+    decode. A recorded `miss` must not be overwritten by an immunity elsewhere in the window."""
+    from main.prober.engine import build_result_timeline
+
+    entries = build_result_timeline(
+        {"our": {"action": "earthquake", "hp_delta": "0%"},
+         "opp": {"action": "protect", "hp_delta": "0%"},
+         "our_move_outcome": "miss"},
+        "swampert", "gengar", "move_selection", our_result_hint="immune")
+    ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
+    assert ours and ours[0]["no_effect"] == "missed"

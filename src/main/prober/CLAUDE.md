@@ -223,7 +223,40 @@ an applied **status** (`opp thunderwave → milotic PAR`), or a **"couldn't move
 **A move that did NOTHING visible is explained, never left blank** (`engine._no_effect_reason`): an
 attack/status move blocked by a type immunity reads `— no effect (immune)` (Seismic Toss vs Ghost), a
 move that **missed** reads `— missed` (Hypnosis), a connected-but-fizzled move `— no effect`; a hazard /
-heal / boost move (whose effect is legitimately invisible in the outcome) is left bare. **miss/fail is
+heal / boost move (whose effect is legitimately invisible in the outcome) is left bare.
+
+⚠️ **"Nothing happened" had THREE causes and one sentence, so the line described the wrong thing.**
+The recorded outcome says what a side CHOSE; nothing in a model-free trace says whether the choice
+ever ran, so a move that never executed was explained as one that executed and achieved nothing — a
+claim about the MOVE on a turn where the move never happened. Reported on gen-16 `loss_s0_004`:
+Forretress CHOSE Explosion on turn 6, was outsped by a +2 Tyranitar and killed, and the timeline
+read `we explosion — no effect`. Two pure readers over the turn's protocol slice fix it, siblings of
+`move_order_from_protocol` and matching sides the same way:
+
+| the log says | now reads | before |
+|---|---|---|
+| no `\|move\|` for that side, and it fainted | `— never moved (fainted first)` | `— no effect` |
+| `\|cant\|<mon>\|frz` (or par/slp/flinch/…) | `— couldn't move (frozen)` | `— no effect` |
+| `\|-immune\|<target>` | `— no effect (immune)` | `— no effect` |
+
+- **`protocol_action_fate`** → `moved` / `cant:<reason>` / `absent` / `None`. The `|cant|` half is
+  not an edge case: a model-free trace has NO decoded TurnDelta, so `our_cant`/`opp_cant` are always
+  empty and EVERY blocked move fell through.
+- **`protocol_move_result`** → `immune` / `missed` / `None`, scoped to the actor's own move (the scan
+  starts at its `|move|` and stops at the next, so the other side's immunity cannot be borrowed; a
+  `|-miss|` names the ATTACKER first). It also turns a `missed` that used to be INFERRED from the
+  move's accuracy into a recorded fact.
+
+**The RECORDED fate/effectiveness wins outright** — it comes from the TurnDelta the analysis was
+built on, and `_no_effect_reason` ranks immune ABOVE miss, so feeding a protocol immunity alongside
+a recorded miss would silently overrule the recorder (caught by its own test). The protocol fills
+only when the recorder decoded nothing. **`absent` is claimed only when the mon FAINTED that turn**,
+and only when the OTHER side was positively identified in the same slice — the guard against this
+pool's LOCALIZED-species nicknames (`Triopikeur` = Dugtrio); otherwise `None` and today's behaviour.
+**Measured over 120 battles of that run: 470 of 4817 move lines (9.8%) were mis-explained** — 277
+never-moved, 122 blocked (61 par / 25 slp / 22 frz / 14 flinch), 71 immune. `cant_phrase` also learns
+the protocol's own spellings (`move: Taunt` → taunted, `Focus Punch` → lost its focus), since the
+reason now arrives straight off the log. **miss/fail is
 a RECORDED fact** — the `gen3_move_outcome_v1` TurnDelta block encodes each side's `[hit, miss, fail]`,
 decoded by `describe_turn_outcome` as `our_move_outcome`/`opp_move_outcome` (so it distinguishes a true
 miss from a hit-that-did-nothing); only on a model-free / pre-`v1` trace does it fall back to inferring
