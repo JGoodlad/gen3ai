@@ -324,6 +324,38 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   collapse search under the expensive `DamageOperator` critic (≈8 evals/node vs 121), and the
   **team-subset exploiter** as where OPD compounds. Grounds ExIt/AlphaZero, Grill 2020, Gumbel MuZero,
   ReBeL/Student of Games onto our tooling.
+- **`population_game_theory.md`** — the flywheel era's native language: strength as a MATRIX
+  (payoff matrices, transitivity), Nash averaging (why uniform pool win-rates lie and duplicates
+  inflate them), spinning tops (transitive spine + non-transitive width, and reading the exploiter
+  "random walk" as motion along the width), PSRO (tock = oracle, PFSP pool = meta-solver, the tick's
+  distillation as the projection step PSRO lacks), and exploitability lower bounds
+  (exploiter_wr − baseline). Owns the "flat ELO: converged vs circling a cycle?" diagnostic.
+- **`credit_assignment_and_value_errors.md`** — why critic surprise is the named enemy: one bit per
+  game amplified by the critic into per-decision credit; GAE's λ as the bias-variance dial;
+  BOOTSTRAP error propagation (value errors travel backward — TD-aux as consistency that suppresses
+  noise but cannot create signal); PopArt/vf_coef as trunk arbitration; what distributional heads
+  buy (awareness, PIT calibration) vs measurably did not (sub-Gaussian residuals, no tail to
+  reweight); the FOUR critic-failure causes (input coverage / distribution / representation /
+  horizon) with the instrument that separates each.
+- **`imperfect_information_and_equilibria.md`** — what the belief stack approximates: information
+  sets, CFR vocabulary, the PUBLIC BELIEF STATE (our species/move/spread/item posteriors as an
+  empirical PBS), α as a trained equilibrium fixed point (why it must never read our own logits),
+  determinization vs expectation, the exploitability-vs-exploitation corners (generalist ≈ safe
+  center, exploiters = pure best response — safe only because distilled, never deployed), and the
+  named scope cut: nothing models what OUR actions reveal.
+- **`continual_learning_and_forgetting.md`** — the tick's quiet risk: forgetting as an
+  optimization (not capacity) problem; the three fix families and which we already run (teacher
+  data = REHEARSAL, the reason the fold has no 1/N wall; EWC unneeded while old data is free;
+  architectural separation twice-nulled by the zarch/FiLM results + orthogonal-gradient finding);
+  the measured anchors (76% retention, 93% headroom capture, the cosine audit as the conflict
+  detector); the tick-tock as an EXPLICIT stability-plasticity schedule; the three-cause
+  decay diagnostic (interference / capacity / drift), each with a different cure.
+- **`quality_diversity_and_open_endedness.md`** — the archive view of the flywheel: MAP-Elites
+  (slices = cells, teachers = elites, tock = mutation; coverage and QD-score as first-class
+  metrics beside ELO), descriptor choice as THE load-bearing decision (composition axes today, the
+  deferred fingerprint aux as a learned strategy descriptor), POET as the revolution-3+ question
+  (let the system propose slices), and stepping stones (warm-fork as the weak form; exploiter→
+  exploiter transfer as the strong form the task-arithmetic preview could detect).
 - **`activation_functions.md`** — is ReLU the right nonlinearity for our model? The three
   nonlinearity **tiers** we already live by (generic ReLU trunk = swappable · SB3 `[512,512]` tower =
   tanh by an SB3 *default* we never set · bounded pointer-head tanh = deliberate · the semantic
