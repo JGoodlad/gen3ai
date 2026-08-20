@@ -1154,7 +1154,12 @@ gate-pinned — both heads improving while the behaviour they should inform wors
 correlation.** Forward hooks forced the PUBLISHED α/β to 100% certainty (verified at the stash;
 faithfulness max|Δp| 5e-4 = the trace rounding floor). On 8 bait decisions × 3 battles: **0 argmax
 flips in 40 arm-decisions, max KL 6.1e-6; the β arm is bit-exactly zero** (all four consumer cell
-blocks max|Δ| 0.0e+0), and α+β is byte-identical to α alone. Full α-simplex sweep: Δ(switch − EQ)
+blocks max|Δ| 0.0e+0), and α+β is byte-identical to α alone. ⚠️ SCOPE (added 2026-08-20): the
+bit-exact-zero claim is true OF THOSE 40 BAIT ARM-DECISIONS and does not generalise — at a
+3,000-state stratified global scope gen-15's β arm reads 2 flips / kl_mean 4.5e-05 (the boom/
+Pursuit-gated paths firing on non-bait states). The matched-scope gen-16 comparison (global:
+α ×5.5, β ×4.3, α→critic dv 0.158→0.0000 = the intent_value_reduce deletion causally
+confirmed) lives in the gen-16 endofrun package. Full α-simplex sweep: Δ(switch − EQ)
 ≈ 0.0099 nats against an 11-nat gap. **The positive control passes emphatically**: the same α
 sweep on a Claydol-holding-Explosion decision moves P(explosion) by **41.4 points** — the
 machinery is live and strong exactly where a mechanic gate opens. **The smoking gun**: the op's
