@@ -1388,6 +1388,11 @@ fixed bots.
   Bots build once and are reused across pairs (`reset_battles` between) — building warms the data
   singletons (~4.5 s each), so per-pair rebuilds dominated cost; the full 5000-game job is a
   many-hour, run-overnight one-time cost.
+- **The RAW matrix, at higher resolution.** `python -m agents.training.bot_matchup_matrix`
+  accumulates the same round-robin (same bots, same team sampling, same bridge driver — it calls
+  the calibration's own `_build_bot`/`_play_chunk`) as **raw per-pair `wins_a`/`wins_b`/`draws`/`n`**
+  toward 10 000 games/pair in resumable chunks → `data/gen3_bot_matchups.json`. Draws stay
+  separate and it **never writes the anchor** (regenerating that is an owner decision).
 - **Live (each eval cycle).** `record_elo` refits and records `eval/elo` + `eval/elo_ci` (95% CI
   half-width) to TensorBoard + the TUI dict, and stamps `elo`/`elo_ci` into `metadata.json:
   latest_eval` (so the resume-republish path shows ELO immediately after a restart — the saved

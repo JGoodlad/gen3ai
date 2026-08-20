@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "target_per_pair": 10000,
+  "git_hash": "8e7b9f117cb8025898b050910afb1123c0d9a188",
+  "bots": [
+    "aggressive",
+    "aggressive_v2",
+    "heuristic",
+    "heuristic2",
+    "random",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "staller",
+    "staller_v2"
+  ],
+  "protocol": {
+    "inherited_from": "agents.training.bot_elo_calibration (_build_bot + _play_chunk, called directly \u2014 this module does not re-implement the battle protocol)",
+    "roster": "agents.training.eval_callback.eval_opponent_names() \u2014 the 9 fixed eval bots",
+    "bot_construction": "build_eval_opponents(..., start_listening=False) \u2014 no websocket, no server; bots are heuristic decision functions (no NN forward)",
+    "team_sampling": "per-bot Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1); a fresh team is drawn for both sides every battle, so an edge is a MARGINAL over the team distribution, not a fixed-team duel",
+    "battle_format": "gen3ou",
+    "transport": "in-process BattleStream bridge (utils.bridge.local_battle_runner.run_local_battles), one child per battle",
+    "bridge_impl": "node",
+    "seeding": "unseeded \u2014 the bridge mints a fresh PRNG seed per battle",
+    "turn_caps": "no trainer-side cap in this path (the 250-turn stall forfeit lives in the Gen3Env wrapper); only the bridge's 1000-turn runaway cap and the contention-scaled per-battle timeout apply",
+    "forfeit": "none \u2014 bots play to a sim-declared win / loss / tie",
+    "counting": "wins from poke-env n_won_battles per side; draws = n_finished - wins_a - wins_b; n = n_finished. A battle that did not finish (timeout) is EXCLUDED from n, never scored as a draw.",
+    "draws": "stored separately and never folded into a win \u2014 downstream decides half-win vs exclude"
+  },
+  "pairs": {
+    "aggressive_v2|heuristic": {
+      "a": "aggressive_v2",
+      "b": "heuristic",
+      "wins_a": 27,
+      "wins_b": 21,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive_v2|heuristic2": {
+      "a": "aggressive_v2",
+      "b": "heuristic2",
+      "wins_a": 29,
+      "wins_b": 21,
+      "draws": 0,
+      "n": 50
+    },
+    "aggressive_v2|random": {
+      "a": "aggressive_v2",
+      "b": "random",
+      "wins_a": 49,
+      "wins_b": 1,
+      "draws": 0,
+      "n": 50
+    },
+    "aggressive_v2|setup_sweep": {
+      "a": "aggressive_v2",
+      "b": "setup_sweep",
+      "wins_a": 36,
+      "wins_b": 14,
+      "draws": 0,
+      "n": 50
+    },
+    "aggressive_v2|setup_sweep_v2": {
+      "a": "aggressive_v2",
+      "b": "setup_sweep_v2",
+      "wins_a": 27,
+      "wins_b": 20,
+      "draws": 3,
+      "n": 50
+    },
+    "aggressive_v2|staller": {
+      "a": "aggressive_v2",
+      "b": "staller",
+      "wins_a": 29,
+      "wins_b": 19,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive_v2|staller_v2": {
+      "a": "aggressive_v2",
+      "b": "staller_v2",
+      "wins_a": 32,
+      "wins_b": 18,
+      "draws": 0,
+      "n": 50
+    },
+    "aggressive|aggressive_v2": {
+      "a": "aggressive",
+      "b": "aggressive_v2",
+      "wins_a": 16,
+      "wins_b": 32,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive|heuristic": {
+      "a": "aggressive",
+      "b": "heuristic",
+      "wins_a": 20,
+      "wins_b": 28,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive|heuristic2": {
+      "a": "aggressive",
+      "b": "heuristic2",
+      "wins_a": 17,
+      "wins_b": 31,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive|random": {
+      "a": "aggressive",
+      "b": "random",
+      "wins_a": 49,
+      "wins_b": 1,
+      "draws": 0,
+      "n": 50
+    },
+    "aggressive|setup_sweep": {
+      "a": "aggressive",
+      "b": "setup_sweep",
+      "wins_a": 19,
+      "wins_b": 28,
+      "draws": 3,
+      "n": 50
+    },
+    "aggressive|setup_sweep_v2": {
+      "a": "aggressive",
+      "b": "setup_sweep_v2",
+      "wins_a": 13,
+      "wins_b": 34,
+      "draws": 3,
+      "n": 50
+    },
+    "aggressive|staller": {
+      "a": "aggressive",
+      "b": "staller",
+      "wins_a": 15,
+      "wins_b": 33,
+      "draws": 2,
+      "n": 50
+    },
+    "aggressive|staller_v2": {
+      "a": "aggressive",
+      "b": "staller_v2",
+      "wins_a": 26,
+      "wins_b": 23,
+      "draws": 1,
+      "n": 50
+    },
+    "heuristic2|random": {
+      "a": "heuristic2",
+      "b": "random",
+      "wins_a": 50,
+      "wins_b": 0,
+      "draws": 0,
+      "n": 50
+    },
+    "heuristic2|setup_sweep": {
+      "a": "heuristic2",
+      "b": "setup_sweep",
+      "wins_a": 33,
+      "wins_b": 17,
+      "draws": 0,
+      "n": 50
+    },
+    "heuristic2|setup_sweep_v2": {
+      "a": "heuristic2",
+      "b": "setup_sweep_v2",
+      "wins_a": 26,
+      "wins_b": 24,
+      "draws": 0,
+      "n": 50
+    },
+    "heuristic2|staller": {
+      "a": "heuristic2",
+      "b": "staller",
+      "wins_a": 39,
+      "wins_b": 11,
+      "draws": 0,
+      "n": 50
+    },
+    "heuristic2|staller_v2": {
+      "a": "heuristic2",
+      "b": "staller_v2",
+      "wins_a": 27,
+      "wins_b": 21,
+      "draws": 2,
+      "n": 50
+    },
+    "heuristic|heuristic2": {
+      "a": "heuristic",
+      "b": "heuristic2",
+      "wins_a": 22,
+      "wins_b": 26,
+      "draws": 2,
+      "n": 50
+    },
+    "heuristic|random": {
+      "a": "heuristic",
+      "b": "random",
+      "wins_a": 49,
+      "wins_b": 1,
+      "draws": 0,
+      "n": 50
+    },
+    "heuristic|setup_sweep": {
+      "a": "heuristic",
+      "b": "setup_sweep",
+      "wins_a": 25,
+      "wins_b": 21,
+      "draws": 4,
+      "n": 50
+    },
+    "heuristic|setup_sweep_v2": {
+      "a": "heuristic",
+      "b": "setup_sweep_v2",
+      "wins_a": 22,
+      "wins_b": 26,
+      "draws": 2,
+      "n": 50
+    },
+    "heuristic|staller": {
+      "a": "heuristic",
+      "b": "staller",
+      "wins_a": 22,
+      "wins_b": 26,
+      "draws": 2,
+      "n": 50
+    },
+    "heuristic|staller_v2": {
+      "a": "heuristic",
+      "b": "staller_v2",
+      "wins_a": 29,
+      "wins_b": 19,
+      "draws": 2,
+      "n": 50
+    },
+    "random|setup_sweep": {
+      "a": "random",
+      "b": "setup_sweep",
+      "wins_a": 3,
+      "wins_b": 47,
+      "draws": 0,
+      "n": 50
+    },
+    "random|setup_sweep_v2": {
+      "a": "random",
+      "b": "setup_sweep_v2",
+      "wins_a": 1,
+      "wins_b": 49,
+      "draws": 0,
+      "n": 50
+    },
+    "random|staller": {
+      "a": "random",
+      "b": "staller",
+      "wins_a": 0,
+      "wins_b": 50,
+      "draws": 0,
+      "n": 50
+    },
+    "random|staller_v2": {
+      "a": "random",
+      "b": "staller_v2",
+      "wins_a": 2,
+      "wins_b": 23,
+      "draws": 0,
+      "n": 25
+    },
+    "setup_sweep_v2|staller": {
+      "a": "setup_sweep_v2",
+      "b": "staller",
+      "wins_a": 14,
+      "wins_b": 10,
+      "draws": 1,
+      "n": 25
+    },
+    "setup_sweep_v2|staller_v2": {
+      "a": "setup_sweep_v2",
+      "b": "staller_v2",
+      "wins_a": 11,
+      "wins_b": 14,
+      "draws": 0,
+      "n": 25
+    },
+    "setup_sweep|setup_sweep_v2": {
+      "a": "setup_sweep",
+      "b": "setup_sweep_v2",
+      "wins_a": 6,
+      "wins_b": 18,
+      "draws": 1,
+      "n": 25
+    },
+    "setup_sweep|staller": {
+      "a": "setup_sweep",
+      "b": "staller",
+      "wins_a": 17,
+      "wins_b": 8,
+      "draws": 0,
+      "n": 25
+    },
+    "setup_sweep|staller_v2": {
+      "a": "setup_sweep",
+      "b": "staller_v2",
+      "wins_a": 17,
+      "wins_b": 7,
+      "draws": 1,
+      "n": 25
+    },
+    "staller|staller_v2": {
+      "a": "staller",
+      "b": "staller_v2",
+      "wins_a": 16,
+      "wins_b": 8,
+      "draws": 1,
+      "n": 25
+    }
+  },
+  "history": [
+    {
+      "chunk_id": "0376f7f4944b",
+      "started_at": "2026-08-20T04:11:37.460737+00:00",
+      "updated_at": "2026-08-20T04:19:40.181640+00:00",
+      "wall_seconds": 482.7,
+      "games_added": 1625,
+      "games_scheduled": 1625,
+      "concurrency": 4,
+      "games_per_visit": 25,
+      "pairs_touched": 36,
+      "git_hash": "8e7b9f117cb8025898b050910afb1123c0d9a188"
+    }
+  ],
+  "updated_at": "2026-08-20T04:19:40.181856+00:00"
+}
