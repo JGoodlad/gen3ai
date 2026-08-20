@@ -118,3 +118,34 @@ def test_collect_states_recovers_masks_from_logits(tmp_path):
     # gen3_audit_state_sampler_v1: the stratified sampler's coverage rides the return so the
     # report can prove its spread (full behavioural pins live in audit_states_test.py).
     assert coverage["n_states"] == 5 and coverage["sampler"].startswith("stratified")
+
+
+def test_content_only_arm_excludes_the_shared_bias_constant():
+    """gen3_content_only_ablation_v1 (2026-08-19): families writing one seat block share
+    bit-identical, permanently-tied BIAS vectors (input-independent term, shared zero init,
+    same gradient forever), so the legacy full ablation charges every family for one shared
+    constant — 97% of c5's and 70% of c3's historical pooled KL was that artifact. The
+    content-only arm (zero weight, KEEP bias) measures the family's information alone: give
+    a family a nonzero bias but a ZERO weight and full ablation must register while
+    content-only reads exactly 0."""
+    pol, obs, masks = _fixture()
+    eb = pol.features_extractor.edge_bias
+    with torch.no_grad():
+        eb.v_map.bias.normal_(0, 0.5)          # constant offset only — no information
+    b_before = eb.v_map.bias.detach().clone()
+    rep = audit(pol, obs, masks, batch=4)
+    assert rep["v"]["kl_mean"] > 0.0, "full ablation must charge the bias constant"
+    assert rep["v"]["content"]["kl_mean"] == 0.0, (
+        "content-only must NOT charge a family for its input-independent bias")
+    assert rep["v"]["content"]["flip_rate"] == 0.0
+    assert torch.equal(eb.v_map.bias, b_before), "bias must be restored bitwise"
+
+
+def test_content_arm_registers_real_information():
+    pol, obs, masks = _fixture()
+    eb = pol.features_extractor.edge_bias
+    with torch.no_grad():
+        eb.v_map.weight.normal_(0, 0.5)        # real input-dependent content
+    rep = audit(pol, obs, masks, batch=4)
+    assert rep["v"]["content"]["kl_mean"] > 0.0, "content-only must register a live weight"
+    assert rep["all"]["content"]["kl_mean"] > 0.0

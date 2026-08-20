@@ -105,10 +105,22 @@ def audit(policy: Any, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 51
     masks_t = torch.as_tensor(masks_np, device=device)
     report: dict[str, dict[str, float]] = {}
 
-    def _ablate(names: Sequence[str]) -> dict[str, float]:
+    def _ablate(names: Sequence[str], *, keep_bias: bool = False) -> dict[str, float]:
+        # keep_bias=True is the CONTENT-ONLY arm (gen3_content_only_ablation_v1, measured
+        # 2026-08-19): families writing the same seat block share BIT-IDENTICAL bias vectors —
+        # the bias term is input-independent, so from a shared zero init the bias gradients of
+        # every family adding into one block are equal forever (c1/c2/c3/d1/s1 all read
+        # |b|=0.08967 to five decimals on gen-15). Zeroing weight AND bias therefore charges
+        # each family for one shared constant that four other families still contribute copies
+        # of: c5's pooled KL was 97% that artifact, c3's 70%, and on scenario-matched states
+        # zeroing c1/c2/c3/s1 FULLY gave bit-identical outputs. Content-only (zero the weight,
+        # keep the bias) measures the family's INFORMATION; the legacy full arm stays for
+        # continuity with every pre-2026-08-19 table.
         saved = {n: (maps[n].weight.detach().clone(), maps[n].bias.detach().clone()) for n in names}
         for n in names:
-            maps[n].weight.zero_(); maps[n].bias.zero_()
+            maps[n].weight.zero_()
+            if not keep_bias:
+                maps[n].bias.zero_()
         p, v = _forward_all()
         for n in names:
             maps[n].weight.copy_(saved[n][0]); maps[n].bias.copy_(saved[n][1])
@@ -123,7 +135,9 @@ def audit(policy: Any, obs_np: np.ndarray, masks_np: np.ndarray, batch: int = 51
 
     for f in fams:
         report[f] = _ablate([f])
+        report[f]["content"] = _ablate([f], keep_bias=True)  # type: ignore[assignment]
     report["all"] = _ablate(fams)
+    report["all"]["content"] = _ablate(fams, keep_bias=True)  # type: ignore[assignment]
 
     # --- the op arm the family rows can't measure -----------------------------------------
     # `concat_cells` zeroes the pointer head's op CELLS: the op fully absent from the heads (the

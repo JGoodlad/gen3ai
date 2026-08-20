@@ -1172,3 +1172,47 @@ boom/Pursuit/Protect/Counter minority. (3) `IntentThresholdMoveCell` is near-unt
 0.48) vs its value-side twin (15.4) on IDENTICAL inputs — the policy side found nothing usable in
 threshold probs delivered without an arrival axis. Consumer gates behaved exactly as pre-stated
 from source — the §9a admission-answer discipline paid off as predictability under intervention.
+
+### Scenario-conditioned C-family read, gen-15 @24M (2026-08-19, opus agent, 72,997 decisions)
+
+**The owner's dilution hypothesis is PROVEN for c1/c2/c3 — and the pooled instrument itself was
+confounded.** Two findings, each standing alone:
+
+**(1) THE INSTRUMENT ARTIFACT (`gen3_content_only_ablation_v1`, fixed same day).** Families
+writing one seat block share BIT-IDENTICAL, permanently-tied bias vectors — the bias term is
+input-independent, so from a shared zero init every co-writing family's bias gradient is equal
+forever (c1/c2/c3/d1/s1 all read |b|=0.08967 to five decimals). The legacy ablation zeroed weight
+AND bias, charging each family for one shared constant four others still contribute: **97% of
+c5's and 70% of c3's historical pooled KL was that artifact** (on scenario states, fully-zeroing
+c1/c2/c3/s1 gave bit-identical outputs). `edge_ablation_audit` now emits a CONTENT-ONLY arm
+(zero weight, keep bias) per family — the licensing number for every future §4; the full arm
+stays for continuity with pre-2026-08-19 tables. Method class: *an ablation that removes a
+parameter tied-by-construction charges the subject for its neighbours.*
+
+**(2) THE CONDITIONED VERDICTS (content-only, dilution test = does exposure × conditioned KL
+reproduce pooled KL):**
+- **c1 — ALIVE, pure dilution, correct direction.** exposure 18.05% × conditioned 0.02130 =
+  0.00384 vs pooled 0.00380 (exact). Ablating it removes **20.5% of P(boost)** on exposed states
+  (24.6% at stage-0, CI clear). The owner's marquee marginal-second-DD stratum is the WEAK half
+  (1.5×, −12.3%) for a CORRECT physical reason: at ≥+1 the consequence columns genuinely quiet
+  (outspeed flips 12.3%→2.9%). Defects found: the `is_boost` constant delivers 4–6× the largest
+  real column; unrevealed-bench DEFAULT cells out-deliver the real active cell.
+- **c2 — ALIVE (−29.5% P(status), 6.8% flips) but a 0.992-correlated DUPLICATE of s1** (its
+  delivered signal is dominated by `land` = s1's cell; joint ablation sub-additive; its five
+  genuinely-new post-status columns sit 10× lower). Redundancy finding — which twin is
+  load-bearing is NOT identified.
+- **c3 — weakly alive**: 9.8× conditioned lift, correct sign, still ~200× below d1.
+- **c5 — NO READ**: 66 matched decisions (0.090% exposure), `d_outspeed` never once fired and
+  carries ‖W‖=0.000 (a dead column). Defer to the CMPass exploiter gate, as pre-registered.
+- **x — GENUINE IRRELEVANCE on Pursuit, "large and ignored"**: conditioning makes it WORSE
+  (0.77×), ΔP(pursuit) +0.6% (wrong sign), 0 argmax flips in 74; the delivered bias is a healthy
+  0.15–0.24 logits and the model reaches the correct Pursuit play through d1 (−30.6 pts on d1
+  ablation); the projection's largest weight sits on `grounded` (a hazard fact the CRITIC uses —
+  dV 0.10–0.12 everywhere), its smallest on `pursuit_eff`. The pooled x signal is 1,300× larger
+  than its scenario can account for.
+
+**Owner pre-commitment resolved**: "delete if completely useless" → NOT useless. c1/c2
+exonerated by conditioning; x's Pursuit PURPOSE is the one conviction (its `grounded` content
+needs a coverage ruling before any deletion); c5 awaits its gate. Caveats recorded: gen-15 not
+gen-16; the marginal stratum is selection-conditioned on boosting having worked; KL is
+dependence, not per-fact coverage. The gen-16 §4 baseline MUST be read on the content-only arm.

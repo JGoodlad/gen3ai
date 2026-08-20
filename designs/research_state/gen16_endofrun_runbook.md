@@ -89,6 +89,10 @@ a Pursuit carrier. For each of c1/c2/c3/c4/c5/x report BOTH:
 - **KL / flips / dV CONDITIONED on exposure**, alongside the pooled numbers (continuity with the
   gen-4/gen-14 tables).
 **A deletion license requires the CONDITIONED read at noise — a diluted zero licenses nothing.**
+**AND it must be the CONTENT-ONLY arm** (`report[fam]["content"]`, `gen3_content_only_ablation_v1`):
+the legacy full ablation charges every family for a bias constant shared bit-identically across
+co-writing families (97% of c5's and 70% of c3's historical pooled KL was that artifact — ledger
+2026-08-19). The full arm is continuity-only.
 Where the exposed n is too small for a stable read, say so and defer that family's verdict to the
 EXPLOITER GATES, whose teams were chosen carrier-first (boom teams, CMPass, TSS) and are the
 designed bench for exactly these mechanics.
