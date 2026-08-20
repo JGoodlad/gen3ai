@@ -1439,6 +1439,78 @@ QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-sci
 matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
 measure-once contract, fit-recovers-ordering, sidecar read).
 
+### Hodge decomposition — the SPINE and the WIDTH (`hodge.py`)
+
+A scalar rating is a **transitive** model by construction, so a BT fit cannot see a cycle: two
+snapshots with identical ELO can have a lopsided head-to-head. `ladder.json`'s
+`fit_quality.mean_abs_err` NOTICES the residue but reports it as one unitless number with **no
+noise floor**, which cannot answer the only question that matters — *is the non-transitivity real,
+or is it binomial noise on 100-game edges?* HodgeRank answers it by splitting the measured flows
+
+```
+Y_ij = logit(p_ij)   =   (r_i − r_j)   +   R_ij        w_ij = n_ij·p_ij·(1−p_ij)
+                          ───────────       ────
+                          TRANSITIVE        CYCLIC     (Fisher info of a logit = the weight)
+```
+
+where `r` is the weighted-least-squares (graph-Laplacian) solve — BT's quadratic cousin, reported
+BESIDE the BT ratings so the estimators' disagreement is visible. The split is **exactly
+w-orthogonal** (`Σw·Y² = Σw·(rᵢ−rⱼ)² + Σw·R²`, pinned by a test), so spine and width cannot be
+traded against each other by refitting. Units: 1 logit = 400/ln10 ≈ **173.72 ELO**.
+
+**The noise floor is the whole instrument.** Two nulls, both reported: an exact-mean analytic one
+(`E[Σw·R²] = Σ(1 − w_e·Reff_e)` — per-edge effective resistance, i.e. Foster's `E−V+C` spread over
+edges) and a **parametric bootstrap** that simulates games from the fitted transitive model and
+re-runs the whole pipeline. `width_rms_excess = √(raw² − null²)` is the width that survives, with a
+p-value for "width > noise".
+
+**Width SCOPE — a pendant edge's residual is identically zero.** A player with one measured
+opponent has that single edge as its whole normal equation, so counting it only inflates Σw and
+deflates the RMS. Width statistics therefore default to the **triangle-supported subgraph**; the
+spine is always fit over every edge. `n_triangles` + `n_width_edges` ride with every read.
+
+- **Offline — THE instrument.** `python -m main.elo <run>` prints the block and writes it into
+  `elo/elo_ratings.json` under `hodge` (flags: `--no-hodge`, `--hodge-bootstrap N`, `--hodge-seed`,
+  `--hodge-with-bot-rr`). The graph is exactly `fit_ladder`'s: the dense frozen matrix
+  (`snapshot_ladder/games.jsonl`) + every cycle's bot/sentinel edges. The static bot round-robin is
+  **excluded by default** — its 36 edges carry ~2700 games each against a ladder edge's 100, so on
+  the Fisher weighting they would carry ~99% of Σw and the "width" would become a property of the
+  immutable shared anchor rather than of this run. `main.endofrun`'s §1 block carries the same read
+  for the run and its `--ref`.
+- **Live — two scalars beside `eval/elo`**, recorded by `record_elo` on the same cadence:
+  `eval/hodge_width_elo` (excess width, ELO) and `eval/hodge_cyclic_fraction` (null-adjusted).
+  Both also ride in the `eval_results.jsonl` row's `hodge` block for offline replotting, and a
+  cycle whose graph had **no testable triangle** writes `recorded: false` + a reason there and
+  records NOTHING to TB (never 0-as-a-stand-in, never NaN — a missing point and a suppressed one
+  look identical in TensorBoard, and only one is a fact about the graph).
+
+⚠️ **THE STAR-GRAPH SUBTLETY — read this before quoting a live width.** A cycle's own new games are
+a **star** (trainee vs each opponent). A star is a tree; a tree has no cycles; so a width computed
+on the cycle's games alone is *identically zero* — a fake instrument that would read "no
+non-transitivity" forever. The triangles come from joining the trainee's edges to the **static
+bot-vs-bot round-robin** in `data/gen3_bot_elo_anchors.json` (which does ship the raw 9×9
+`win_matrix` + per-pair `pair_games`, so those are MEASURED edges; a future anchor carrying only
+`ratings` falls back to edges reconstructed from them, which are transitive by construction and act
+purely as a pinning prior — flagged in `caveats` when it happens). So the live metric means exactly
+**"the trainee's matchup deviation from its own rating, over trainee×bot×bot triangles"** — nothing
+about the pool's width. Sentinel edges are in the FIT (real spine information) but on no triangle,
+so they are excluded from the width scope. And the live read is **weak by construction**: ~100-game
+edges put the noise floor around 35-60 ELO, so only a gross cyclic profile clears it (measured on
+gen-15's 12 cycles: p between 0.13 and 0.93, i.e. never significant on its own). **The offline
+dense-ladder read is the real instrument; the ELO-reading rules below apply unchanged — never
+narrate a mid-run width.**
+
+**First reading (gen-15, `ai_v9_18_gen15_v8rewards_0818`, 21 players / 174 edges / 814 triangles,
+300 bootstrap reps):** spine 939 ELO, width raw 58 → null 36 → **excess 46 ELO, p = 0.005**; cyclic
+energy 6.3% raw / 3.8% null-adjusted; **3 significant 3-cycles**, all snapshot-vs-snapshot
+(16M > 20M > 18M > 16M, curl +217 ELO z=4.3; 8M > 20M > 18M; 8M > 20M > 14M). gen-14 on the same
+read (same 21/174/814 shape): spine 765, excess **26 ELO, p = 0.0033**, 2.2% null-adjusted, and **0
+individually-significant cycles** — its width is real but diffuse. So both ladders are
+overwhelmingly spine (96-98%) and both carry cycle content that is **not sampling noise** — the
+first evidence here that the BT gate is a lossy projection by a *measured* amount, and that the
+loss is bigger on gen-15. (p ≈ 0.003-0.005 is the bootstrap's floor `1/(B+1)`, not a coincidence:
+no null replicate reached the observed width.) Tests: `hodge_test.py`.
+
 #### 🚨 Reading an ELO: `ladder.json`, at matched SNAPSHOT COUNT, never mid-run
 
 **Read `<run>/snapshot_ladder/ladder.json` — not `eval/elo`, not the per-cycle TB scalar.** On

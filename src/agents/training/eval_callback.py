@@ -798,16 +798,24 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
     Returns ``(elo, ci_halfwidth)`` for the current snapshot, or ``None``. The live number
     is the best estimate from data SO FAR (batch-BT is global, so early points retro-adjust
     as more cycles land); ``python -m main.elo`` re-fits canonically offline. Best-effort —
-    never raises into the eval path. The import is lazy to avoid any import cycle."""
+    never raises into the eval path. The import is lazy to avoid any import cycle.
+
+    Also records the two HODGE scalars beside ``eval/elo`` (``agents.training.hodge``) — the
+    cyclic width of the trainee's matchup profile, measured over trainee×bot×bot triangles.
+    Computed BEFORE the row is appended so the numbers ride in the row (offline replotting)
+    and so an omitted read is counted there rather than lost."""
     if not model_dir:
         return None
     try:
         from agents.model.snapshot import append_eval_result_row
         from agents.training import elo as elo_mod
+        from agents.training import hodge as hodge_mod
 
+        hodge_block = hodge_mod.record_live_hodge(logger, step, bot_win_rates, sentinels,
+                                                  n_games, bot_counts=bot_counts)
         append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
                                bot_td_tails=bot_td_tails, bot_counts=bot_counts,
-                               externals=externals)
+                               externals=externals, hodge=hodge_block)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
         fit = elo_mod.fit_from_run(model_dir, source="log")

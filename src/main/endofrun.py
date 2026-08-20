@@ -192,6 +192,19 @@ def awareness_verdicts(loss_agg: dict, all_agg: dict,
 
 # ------------------------------------------------------------------ the steps
 
+def _hodge(run_dir: str, anchors: str) -> Optional[dict]:
+    """The run's spine/width read. Best-effort and ADDITIVE: the BT tail is the gate, and a
+    width read that fails must not cost the report its verdict. Its job here is to say whether
+    the generation contrast is being read over a graph with material cycle contamination — see
+    the gen-16 runbook §1 amendment."""
+    try:
+        from main import elo as elo_cli
+        h = elo_cli.hodge_read(run_dir, "auto", anchors)
+        return None if h is None else h.to_json()
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "why": f"{type(e).__name__}: {e}"}
+
+
 def step_elo(run_dir: str, ref_run: Optional[str], anchors: str) -> dict:
     try:
         from main import elo as elo_cli
@@ -204,7 +217,9 @@ def step_elo(run_dir: str, ref_run: Optional[str], anchors: str) -> dict:
         return {"status": "ok",
                 "current_tail": cur, "reference_tail": ref,
                 "non_inferiority": non_inferiority(cur, ref),
-                "curve_len": len(fit.snapshot_curve())}
+                "curve_len": len(fit.snapshot_curve()),
+                "hodge": _hodge(run_dir, anchors),
+                "reference_hodge": _hodge(ref_run, anchors) if ref_run else None}
     except Exception as e:  # noqa: BLE001 — a step failure is a recorded fact, not a crash
         return {"status": "error", "why": f"{type(e).__name__}: {e}"}
 
@@ -306,6 +321,25 @@ def step_mechanics(run_dir: str, ref_run: Optional[str]) -> dict:
 
 # ------------------------------------------------------------------ report
 
+def _hodge_lines(h: Optional[dict], which: str) -> List[str]:
+    """One line of spine/width per ladder. A BT gate is a transitive claim; this says how much
+    of the ladder that claim leaves on the floor, WITH its noise floor attached."""
+    if not h or h.get("status") == "error":
+        return []
+    p = h.get("p_value")
+    line = (f"- {which} hodge: spine {h['spine_spread_elo']:.0f} ELO · "
+            f"width {h['width_rms_raw_elo']:.0f} raw / {h['width_rms_null_elo']:.0f} null / "
+            f"**{h['width_rms_excess_elo']:.0f} excess** ELO"
+            + (f" (p={p})" if p is not None else "")
+            + f" · cyclic {100 * h['cyclic_energy_fraction_excess']:.1f}% (null-adj) · "
+              f"{len(h.get('cycles') or [])} significant 3-cycles / {h['n_triangles']} triangles")
+    out = [line]
+    for c in (h.get("cycles") or [])[:3]:
+        out.append(f"  - cycle: {' > '.join(c['labels'])} > {c['labels'][0]} "
+                   f"(curl {c['curl_elo']:+.0f} ELO, z={c['curl_z']})")
+    return out
+
+
 def render_markdown(report: dict) -> str:
     L = [f"# End-of-run battery — `{report['run']}`", ""]
     elo = report["steps"].get("elo", {})
@@ -321,6 +355,8 @@ def render_markdown(report: dict) -> str:
         L.append(f"- **{ni['verdict']}**"
                  + (f" (Δ {ni['delta']}, CI {ni['ci95']}; rule: {ni['rule']})"
                     if "delta" in ni else f" — {ni.get('why', '')}"))
+        L.extend(_hodge_lines(elo.get("hodge"), "current"))
+        L.extend(_hodge_lines(elo.get("reference_hodge"), "reference"))
     else:
         L.append(f"- {elo.get('status')}: {elo.get('why')}")
     aud = report["steps"].get("audits", {})

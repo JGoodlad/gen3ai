@@ -194,6 +194,7 @@ def append_eval_result_row(
     bot_td_tails: "dict | None" = None,
     bot_counts: "dict | None" = None,
     externals: "dict | None" = None,
+    hodge: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -222,6 +223,13 @@ def append_eval_result_row(
     different regimes/eras — e.g. the OOD-eval era vs post-fix — are distinguishable IN-FILE
     instead of by out-of-band dates. Both additive; old readers ignore them.
 
+    ``hodge`` (optional) is the cycle's spine/width read (``agents.training.hodge``) as
+    ``{"recorded": bool, "width_elo", "cyclic_fraction", …, "caveats": [...]}`` — the same two
+    numbers recorded to TensorBoard, kept here so they can be replotted offline, and carrying
+    ``recorded: false`` + a reason when the cycle's graph had no testable triangle. Recording
+    the OMISSION is the point: a missing TB point and a suppressed one look identical in
+    TensorBoard, and only one of them is a fact about the graph.
+
     Best-effort: never raise into the eval path — a failed append must not break eval.
     """
     try:
@@ -248,6 +256,8 @@ def append_eval_result_row(
                     **({"counts": [int(v["counts"][0]), int(v["counts"][1])]}
                        if v.get("counts") else {})}
                 for k, v in externals.items()}
+        if hodge:
+            row["hodge"] = hodge
         m_hash = _read_matchup_hash(model_dir)
         if m_hash:
             row["matchup_hash"] = m_hash

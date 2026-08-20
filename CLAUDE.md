@@ -978,7 +978,11 @@ append-only `<run>/eval_results.jsonl` and records a live `eval/elo` (+CI) to Te
 plays a one-time bot-vs-bot round-robin (bridge, no server) → `data/gen3_bot_elo_anchors.json`,
 making snapshot ELOs **comparable across runs**. Offline: `python -m main.elo <run_dir>` prints a
 ladder and plots an Elo-vs-step curve (and can backfill a running run from TensorBoard with
-`--source tb`). Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
+`--source tb`). A rating is a **transitive** model by construction, so the same CLI also prints the
+**HodgeRank spine/width split** (`agents/training/hodge.py`) — the cyclic content a scalar ELO is
+structurally blind to, tested against the binomial noise floor its own game counts imply, with two
+weak per-cycle companions on TensorBoard (`eval/hodge_width_elo`, `eval/hodge_cyclic_fraction`).
+Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
 
 🚨 **Reporting an ELO has three rules — read them before quoting a number.** The headline is
 `<run>/snapshot_ladder/ladder.json` (dense, ±10) rather than `eval/elo` (±29); a rating is only

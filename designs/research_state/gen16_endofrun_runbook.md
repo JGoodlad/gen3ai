@@ -28,6 +28,37 @@ Dense `snapshot_ladder/ladder.json` tail-4, matched snapshot COUNT, at run END, 
 - Tie-break: more games per pair on the frozen ladder (`--backfill` cannot do this and now says so).
   Size against the **variance decomposition**, not the game count.
 
+### 1a. AMENDMENT (2026-08-19) — the ladder gets a Hodge read, and it can qualify the gate
+
+Added after registration because the instrument did not exist when §1 was written; it **adds a
+check on the gate, it does not move the bar**. `python -m main.elo <run>` and `main.endofrun`'s §1
+block now print the HodgeRank split of the ladder graph (`agents/training/hodge.py`): the transitive
+**spine** the BT gate models, and the cyclic **width** it is structurally blind to, each measured
+against the binomial noise floor its own game counts imply.
+
+**Pre-registered use.** Take the read on the gen-16 ladder and on gen-15's — and on the merged
+graph if a cross-lineage ladder is measured:
+
+- If the **cross-lineage** cyclic content clears its noise floor materially — excess width ≥ the
+  §1 non-inferiority margin (15 ELO) on the gen-16↔gen-15 edges, or a significant 3-cycle spanning
+  both lineages — then Δ is not a clean scalar contrast: **re-fit the generation contrast with the
+  cyclic term acknowledged** (an mElo-class two-component fit: spine + a low-rank cyclic part) and
+  report BOTH numbers. The BT verdict is then reported *with* that qualification, never silently.
+- Otherwise the BT gate is recorded as **VALIDATED against cycle contamination** — an explicit,
+  dated statement that the transitive projection was checked rather than assumed.
+
+**Baselines already on file** (whole-run ladders, 21 players / 174 edges / 814 triangles, 300
+bootstrap reps): gen-15 spine 939 ELO, excess width **46 ELO** (p = 0.005), 3.8% null-adjusted
+cyclic energy, 3 significant snapshot 3-cycles; gen-14 spine 765, excess **26 ELO** (p = 0.0033),
+2.2%, 0 individually-significant cycles. Both are real width — so "there are no cycles here" is
+already falsified and is not an available conclusion.
+
+⚠️ The live `eval/hodge_width_elo` / `eval/hodge_cyclic_fraction` scalars are the WEAK counterpart
+(a cycle's own games are a star, so the triangles come from the static bot round-robin, and at ~100
+games/edge gen-15's 12 cycles read p = 0.13-0.93 — never significant alone). **The dense offline
+read is the instrument here**, and the ELO-reading rules apply to it unchanged: no mid-run width
+narration.
+
 **Non-inferiority is the right bar and this is why:** the substrate is zero-init, and the BASE's job
 is teaching the cells to be TRUE. Teaching the policy to USE them is the exploiter gates' job,
 afterward. A base generation that merely holds serve while the cells come alive has done its job;
