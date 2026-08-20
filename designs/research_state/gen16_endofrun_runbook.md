@@ -91,7 +91,29 @@ a Pursuit carrier. For each of c1/c2/c3/c4/c5/x report BOTH:
 **A deletion license requires the CONDITIONED read at noise — a diluted zero licenses nothing.**
 Where the exposed n is too small for a stable read, say so and defer that family's verdict to the
 EXPLOITER GATES, whose teams were chosen carrier-first (boom teams, CMPass, TSS) and are the
-designed bench for exactly these mechanics. Context: on gen-14's pooled table the entire c-block
+designed bench for exactly these mechanics.
+
+**OWNER REFINEMENT (2026-08-19): exposure is defined at the SCENARIO level, not the carrier
+level** — a Pursuit carrier facing a Swampert has the move offered and the fact worthless. The
+canonical scenario per family (these are the audit's conditioning states; mine the eval traces
+for matches first, and where matched n is too small use CONSTRUCTED bridge scenarios in the
+`damage_op_probe_fuzz_test` pattern):
+- **x** — a Pursuit carrier (Tyranitar) opposite a Pursuit-vulnerable frail Ghost/Psychic
+  (Gengar-class) with α leaning SWITCH. Carrier-only exposure does not count.
+- **c1** — the MARGINAL-boost decision: setup move offered AND current stages ≥ +1 (Tyranitar at
+  +1 deciding on the second Dragon Dance — boost-again vs attack). Stage-0 first-boost decisions
+  are a separate, easier stratum; report both.
+- **c5** — Baton Pass on the team AND stages ≥ +2 AND an alive receiver that inherits usefully
+  (the Celebi two-Calm-Minds question). Expected tiny n in traces ⇒ constructed scenarios likely
+  required.
+- **c3** — a DAMAGED recovery carrier (Milotic-class) where heal-rate vs opponent
+  damage-per-turn is the live margin, conditioned on LOW boom threat (recovery value collapses
+  against Explosion — a Metagross-without-boom opposite is the clean case).
+- **c4** — owner: deprioritized ("don't care"); its pooled number may stand as its verdict, no
+  scenario construction effort.
+- **c2** — the post-STATUS world (Toxic/Thunder Wave/sleep consequence): status move offered
+  against an unstatused, non-Substitute target. (NB the owner's "second Dragon Dance" scenario
+  belongs to c1, not c2 — recorded here so the label mix-up cannot redirect the audit.) Context: on gen-14's pooled table the entire c-block
 spans KL 0.00001–0.00233 against d1's 0.062 — the conditioned read decides whether that is
 irrelevance or dilution, and per the standing dependence-vs-coverage rule, families whose facts
 lack a substrate successor (c1's post-setup hypothetical, c3's heal-vs-KO flip, c5's inheritance)
