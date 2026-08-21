@@ -1,0 +1,226 @@
+{
+ "what": "C5 TD-consistency auxiliary \u2014 RUNG 2 (the live-training fork A/B)",
+ "date": "2026-08-21",
+ "base": "models/ai_v9_19_gen16_mechanics_0819 final_model.zip @ 25,067,520 steps",
+ "arms": {
+  "lam=0.0": "ai_v9_20_tdaux_rung2_lam00_0820",
+  "lam=1.0": "ai_v9_20_tdaux_rung2_lam10_0820",
+  "lam=3.0": "ai_v9_20_tdaux_rung2_lam30_0820"
+ },
+ "design": {
+  "steps_per_arm": "+3M to 28,067,520 total",
+  "seed": 42,
+  "pool": "PRE-SEEDED from the base's full 12-snapshot pool, byte-identical across arms, sha256[0:16]=f32030c514cb6020",
+  "single_variable": "launchdiff vs the base cleared ALL differences across 233 flag tokens: only --td-aux-coef and --seed",
+  "defect_this_re_run_fixes": "the first attempt forked gen-14 into NEW run dirs; SnapshotPool state is derived entirely from the directory (no manifest), so the arms started poolless and --self-play silently fell back to the BOT pool. Verified closed here by the startup line '[SELFPLAY] Pool has 12 snapshots'."
+ },
+ "gate1_mechanism": {
+  "bar": "recorded self-KO dV dispersion ratio vs truth falls from ~4.5x toward <=2x",
+  "method": "each fork's OWN eval traces at step 28000032. self-KO := chosen in {explosion,selfdestruct} AND our side fainted in outcome.events. dV = recorded values[i+1]-values[i]; truth dG = discounted return-to-go delta from per-decision rewards, gamma=0.9999 (the single construction site in train_rl_agent).",
+  "result": {
+   "lam=0.0": {
+    "selfko": {
+     "n": 115,
+     "std_dV": 4.8645,
+     "std_dG_truth": 1.5048,
+     "dispersion_ratio": 3.233,
+     "rmse_dV_vs_dG": 5.5263
+    },
+    "all": {
+     "n": 7406,
+     "std_dV": 4.401,
+     "std_dG_truth": 1.3368,
+     "dispersion_ratio": 3.292,
+     "rmse_dV_vs_dG": 4.8963
+    }
+   },
+   "lam=1.0": {
+    "selfko": {
+     "n": 79,
+     "std_dV": 2.0232,
+     "std_dG_truth": 1.3865,
+     "dispersion_ratio": 1.459,
+     "rmse_dV_vs_dG": 2.9244
+    },
+    "all": {
+     "n": 6509,
+     "std_dV": 2.0417,
+     "std_dG_truth": 1.3978,
+     "dispersion_ratio": 1.461,
+     "rmse_dV_vs_dG": 2.5772
+    }
+   },
+   "lam=3.0": {
+    "selfko": {
+     "n": 77,
+     "std_dV": 0.7398,
+     "std_dG_truth": 1.3851,
+     "dispersion_ratio": 0.534,
+     "rmse_dV_vs_dG": 1.2964
+    },
+    "all": {
+     "n": 7377,
+     "std_dV": 0.9602,
+     "std_dG_truth": 1.3595,
+     "dispersion_ratio": 0.706,
+     "rmse_dV_vs_dG": 1.1398
+    }
+   }
+  },
+  "verdict": {
+   "lam=1.0": "PASS (3.233 -> 1.459)",
+   "lam=3.0": "OVERSHOOT to 0.534 \u2014 the critic's delta now varies LESS than truth; the constant-predictor limit the lever doc named, reached at lambda=3 under live training"
+  },
+  "NEW_FINDING": "the suppression is GLOBAL, not self-KO-specific: all-transition dispersion tracks the self-KO figure to three decimals at lambda=0 (3.292 vs 3.233) and lambda=1 (1.461 vs 1.459). The loss is a global delta-smoother. (This does not contradict rung 1's targeting claim, which compared DELTA std against LEVEL std \u2014 a different contrast \u2014 but 'it fixes self-KO specifically' is not supported.)",
+  "caveat": "self-KO n = 115/79/77 per arm; std(dG truth) differs across arms (1.50/1.39/1.39) because different policies realise different returns, so the denominators are not perfectly matched."
+ },
+ "gate2_behavior": {
+  "bar": "explosion-when-available rate and selfko dV_med move toward the reward's verdict (the standing finding is that the critic OVER-values self-KO)",
+  "pick_rate_of_offers": {
+   "selfdestruct": {
+    "0.0": [
+     18.2,
+     126
+    ],
+    "1.0": [
+     14.6,
+     151
+    ],
+    "3.0": [
+     11.8,
+     170
+    ]
+   },
+   "explosion": {
+    "0.0": [
+     14.9,
+     1401
+    ],
+    "1.0": [
+     12.7,
+     1328
+    ],
+    "3.0": [
+     13.4,
+     1293
+    ]
+   },
+   "counter": {
+    "0.0": [
+     41.3,
+     247
+    ],
+    "1.0": [
+     32.6,
+     89
+    ],
+    "3.0": [
+     22.0,
+     300
+    ]
+   },
+   "protect": {
+    "0.0": [
+     10.8,
+     1867
+    ],
+    "1.0": [
+     13.7,
+     1868
+    ],
+    "3.0": [
+     21.2,
+     1794
+    ]
+   },
+   "pursuit": {
+    "0.0": [
+     4.2,
+     494
+    ],
+    "1.0": [
+     3.6,
+     447
+    ],
+    "3.0": [
+     10.8,
+     464
+    ]
+   }
+  },
+  "verdict": {
+   "lam=1.0": "PASS \u2014 targeted: selfdestruct -20%, explosion -15%, little else moves",
+   "lam=3.0": "NOT a corrected policy \u2014 protect doubles, pursuit 2.6x, counter halves; a broadly altered policy consistent with the EV collapse"
+  }
+ },
+ "gate3_no_harm": {
+  "bar": "value explained-variance and pool rollout-PIT flat-or-better; quick bot eval non-inferior",
+  "train_explained_variance": {
+   "0.0": 0.7476,
+   "1.0": 0.7066,
+   "3.0": 0.1263
+  },
+  "value_pred_std": {
+   "0.0": 11.8879,
+   "1.0": 8.1018,
+   "3.0": 2.9109
+  },
+  "value_dist_pit_mean": {
+   "0.0": 0.5,
+   "1.0": 0.4945,
+   "3.0": 0.4846
+  },
+  "value_dist_mean_abs_err": {
+   "0.0": 0.3083,
+   "1.0": 0.3528,
+   "3.0": 0.4488
+  },
+  "eval_win_rate_vs_bots": {
+   "0.0": 0.9025,
+   "1.0": 0.9112,
+   "3.0": 0.895
+  },
+  "grad_td_aux_policy_cosine": {
+   "1.0": 0.1422,
+   "3.0": -0.1458
+  },
+  "grad_td_aux_share": {
+   "1.0": 0.0967,
+   "3.0": 0.1455
+  },
+  "verdict": {
+   "lam=3.0": "FAIL \u2014 explained variance 0.748 -> 0.126, a 6x collapse, with value_pred_std 11.89 -> 2.91: the critic is predicting near-constant. The auxiliary gradient is ANTI-ALIGNED with the policy gradient (-0.146) while taking a 15% share.",
+   "lam=1.0": "MARGINAL MISS \u2014 EV -0.041, mean_abs_err +0.045; PIT unmoved; bot eval non-inferior (0.9112 vs 0.9025, best of the three). 'Flat-or-better' is not strictly met."
+  },
+  "PRE_REGISTERED_RISK_FIRED": "the lever doc's own con: 'Baird residual-gradient double-sampling bias ... under live stochastic transitions the coefficient is a bias-variance dial \u2014 gate on level calibration (explained variance, pool-PIT) not regressing.' That is exactly the failure mode, at exactly the named metric. Rung 1 tested the loss on a FROZEN representation with return-to-go targets; survival under live GAE/PopArt and a co-adapting trunk was listed as Not-known, and it did not survive at lambda=3."
+ },
+ "bait_leverage_SEPARATE_LINE": {
+  "note": "NOT part of the rung-2 gates \u2014 a different question (bait leverage vs critic health), reported on its own line per owner instruction.",
+  "pre_registered_direction": "lambda>0 shows B3 FALLING",
+  "B3_loop": {
+   "0.0": 0.967,
+   "1.0": 0.986,
+   "3.0": 0.992
+  },
+  "B1_reclick": {
+   "0.0": 0.1429,
+   "1.0": 0.1461,
+   "3.0": 0.1977
+  },
+  "alpha_switch_top1_loop": {
+   "0.0": 0.85,
+   "1.0": 0.95,
+   "3.0": 0.9643
+  },
+  "beta_slot_acc_loop": {
+   "0.0": 0.75,
+   "1.0": 0.9333,
+   "3.0": 0.9545
+  },
+  "verdict": "FALSIFIED, in the OPPOSITE direction. The beliefs improved monotonically with lambda while the policy became MORE committed to the whiff. TD-aux is NOT the bait lever."
+ },
+ "OVERALL": {
+  "lam=3.0": "KILLED \u2014 gate 3 FAIL outright; gate 1 overshoots into under-dispersion; gate 2 shows a broadly altered policy. The lever's own rule ('any gate failing -> re-tune or kill before a generation slot') applies.",
+  "lam=1.0": "Passes gates 1 and 2, marginally misses gate 3. It does what it was built to do (self-KO dV dispersion 3.23 -> 1.46, self-KO selection -20%, bot eval non-inferior) at a small critic cost and with NO bait benefit. By the letter of gate 3 this is a re-tune, not a pass. OWNER JUDGEMENT: the case for is that it is the only arm to hit its mechanism and behaviour targets; the case against is that it would earn a generation slot on a -0.041 EV debt for a payoff the bait hunt has already shown it does not deliver."
+ }
+}

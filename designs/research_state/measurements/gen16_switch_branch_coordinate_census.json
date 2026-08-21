@@ -1,0 +1,137 @@
+{
+ "what": "ADDITION 2 \u2014 switch_branch (OA2) coordinate census on gen-16's bait states",
+ "date": "2026-08-21",
+ "model": "models/ai_v9_19_gen16_mechanics_0819/final_model.zip",
+ "method": "contrib = mean|value| x ||W_col||, captured by a forward hook on switch_branch.proj's INPUT (the [B,4,9] raw stack). Coordinate names from SWITCH_BRANCH_COORDS, never re-spelled.",
+ "populations": {
+  "loop_states": 23,
+  "whiff_states": 79,
+  "note": "the bait-conditioned sets built from the loops census; ranking is identical across both"
+ },
+ "loop_states": {
+  "wasted_ko": {
+   "mean_abs_value": 0.2128,
+   "W_col_norm": 0.9145,
+   "contrib": 0.1947,
+   "share_pct": 54.9
+  },
+  "e_mult_switch": {
+   "mean_abs_value": 0.6416,
+   "W_col_norm": 0.1132,
+   "contrib": 0.0726,
+   "share_pct": 20.5
+  },
+  "a_switch": {
+   "mean_abs_value": 0.7514,
+   "W_col_norm": 0.0549,
+   "contrib": 0.0412,
+   "share_pct": 11.6
+  },
+  "e_high_switch": {
+   "mean_abs_value": 0.2504,
+   "W_col_norm": 0.1515,
+   "contrib": 0.0379,
+   "share_pct": 10.7
+  },
+  "protect_blocked_mass": {
+   "mean_abs_value": 0.0093,
+   "W_col_norm": 0.4408,
+   "contrib": 0.0041,
+   "share_pct": 1.2
+  },
+  "e_pko_switch": {
+   "mean_abs_value": 0.048,
+   "W_col_norm": 0.0576,
+   "contrib": 0.0028,
+   "share_pct": 0.8
+  },
+  "p_spin_blocked": {
+   "mean_abs_value": 0.0066,
+   "W_col_norm": 0.1097,
+   "contrib": 0.0007,
+   "share_pct": 0.2
+  },
+  "protect_attack_mass": {
+   "mean_abs_value": 0.0093,
+   "W_col_norm": 0.064,
+   "contrib": 0.0006,
+   "share_pct": 0.2
+  },
+  "spin_value_lost": {
+   "mean_abs_value": 0.0,
+   "W_col_norm": 0.0706,
+   "contrib": 0.0,
+   "share_pct": 0.0
+  }
+ },
+ "whiff_states": {
+  "wasted_ko": {
+   "mean_abs_value": 0.1355,
+   "W_col_norm": 0.9145,
+   "contrib": 0.1239,
+   "share_pct": 46.8
+  },
+  "e_mult_switch": {
+   "mean_abs_value": 0.5895,
+   "W_col_norm": 0.1132,
+   "contrib": 0.0667,
+   "share_pct": 25.2
+  },
+  "a_switch": {
+   "mean_abs_value": 0.6495,
+   "W_col_norm": 0.0549,
+   "contrib": 0.0356,
+   "share_pct": 13.5
+  },
+  "e_high_switch": {
+   "mean_abs_value": 0.219,
+   "W_col_norm": 0.1515,
+   "contrib": 0.0332,
+   "share_pct": 12.5
+  },
+  "protect_blocked_mass": {
+   "mean_abs_value": 0.0078,
+   "W_col_norm": 0.4408,
+   "contrib": 0.0034,
+   "share_pct": 1.3
+  },
+  "e_pko_switch": {
+   "mean_abs_value": 0.0199,
+   "W_col_norm": 0.0576,
+   "contrib": 0.0011,
+   "share_pct": 0.4
+  },
+  "protect_attack_mass": {
+   "mean_abs_value": 0.0078,
+   "W_col_norm": 0.064,
+   "contrib": 0.0005,
+   "share_pct": 0.2
+  },
+  "p_spin_blocked": {
+   "mean_abs_value": 0.0021,
+   "W_col_norm": 0.1097,
+   "contrib": 0.0002,
+   "share_pct": 0.1
+  },
+  "spin_value_lost": {
+   "mean_abs_value": 0.0,
+   "W_col_norm": 0.0706,
+   "contrib": 0.0,
+   "share_pct": 0.0
+  }
+ },
+ "FINDING": "e_mult_switch \u2014 the coordinate that literally encodes 'your move does ~0x into the arrival' \u2014 carries the SECOND-HIGHEST raw signal (mean|v| 0.6416) on the EIGHTH-largest weight (||W|| 0.1132). Its column norm is 8.1x smaller than wasted_ko's. a_switch is worse: highest signal of all nine (0.7514) on the smallest weight of all nine (0.0549). The DERIVED anti-bait product (wasted_ko = pko_stay . alpha_SWITCH) took 55% of the learned mass while the RAW PHYSICS coordinate that encodes the immunity got 20%.",
+ "why_it_matters": "All 79 gen-16 whiffs were kind=immune (not fail, not near_zero), so e_mult_switch is THE coordinate for this bait class. This is c1's lesson repeating on a new block: a constant/derived indicator out-delivering the real physics.",
+ "SECOND_CONTENT_GAP": "e_pko_switch is annotated 'NULLED at hidden' in the source and reads mean|v| 0.048, near-dead. It is nulled exactly when the arrival is unrevealed \u2014 which is exactly the bait case. The P(KO)-into-arrival coordinate is switched off precisely where the fact would be worth having.",
+ "CONSEQUENCE": "The insufficiency is NOT purely credit-assignment; part of it is CONTENT-MIX, fixable by construction. That matters because the training-pressure lever (TD-aux) was falsified on its own pre-registered direction the same night \u2014 so a content-mix fix is the live option, not the fallback.",
+ "candidate_fixes_increasing_intrusiveness": [
+  "rescale/normalise the raw coordinates before the projection so a high-variance column cannot be learned down",
+  "give immunity its OWN coordinate instead of burying it in an expectation over arrivals",
+  "un-null e_pko_switch at hidden, or supply a belief-weighted substitute"
+ ],
+ "CAVEATS": [
+  "mean|v| x ||W_col|| is a FIRST-ORDER PROXY, not a causal ablation: it ranks columns by linear influence at the projection and does NOT prove that up-weighting e_mult_switch moves the policy. The proving experiment is a per-coordinate zero-and-remeasure, NOT RUN.",
+  "n = 23 loop / 79 whiff states. The RANKING is stable across both populations; the shares to one decimal are not.",
+  "||W_col|| is measured on the TRAINED model, so 'underweighted' means the network learned to down-weight it \u2014 which is itself the finding, not a claim that the init was wrong."
+ ]
+}

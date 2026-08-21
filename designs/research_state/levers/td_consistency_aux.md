@@ -1,6 +1,34 @@
 # TD-consistency auxiliary (delta-denoising the critic)
 
-**Status:** 🔬 open — rung 1 PASSED, rung 2 (fork A/B) licensed and pre-registered below · **Ledger id:** C5
+**Status:** ⚖️ **RUNG 2 RUN (2026-08-21) — λ=3.0 KILLED, λ=1.0 owner-judgement** · **Ledger id:** C5
+
+> **RUNG-2 RESULT** — full data `measurements/gen16_tdaux_rung2_gates.json`. Three arms (0.0/1.0/3.0)
+> forked off gen-16 @25.07M, +3M each, pools pre-seeded byte-identically, single-variable by launchdiff.
+>
+> | | gate 1 mechanism | gate 2 behavior | gate 3 no-harm |
+> |---|---|---|---|
+> | **λ=1.0** | ✅ self-KO dispersion **3.233 → 1.459** (bar ≤2×) | ✅ targeted: selfdestruct −20%, explosion −15% | ⚠️ marginal miss: EV −0.041, bot eval non-inferior |
+> | **λ=3.0** | ⚠️ **overshoots to 0.534** — under-dispersed | ❌ broad policy shift (protect ×2, pursuit ×2.6) | ❌ **FAIL: EV 0.748 → 0.126** |
+>
+> **The pre-registered risk in this doc's own Cons fired exactly**: the Baird residual-gradient bias, at
+> the metric this doc named (explained variance). Rung 1 tested a FROZEN representation with
+> return-to-go targets; the Not-known list flagged live GAE/PopArt + a co-adapting trunk, and λ=3.0
+> did not survive it. At λ=3.0 `grad/td_aux_policy_cosine` is **−0.146** — the auxiliary gradient
+> turns anti-aligned with the policy gradient while taking a 15% share.
+>
+> **NEW: the suppression is GLOBAL, not self-KO-specific.** All-transition dispersion tracks the
+> self-KO figure to three decimals (λ=0: 3.292 vs 3.233; λ=1: 1.461 vs 1.459). This is a global
+> delta-smoother. It does not contradict rung 1's targeting claim (delta-std vs level-std, a
+> different contrast), but "it fixes self-KO specifically" is not supported.
+>
+> **SEPARATE LINE — TD-aux is NOT the bait lever.** The insufficiency branch of the bait hunt named
+> TD-aux as its pre-registered lever. Direction pre-registered: λ>0 shows B3 falling. **B3 ROSE
+> monotonically** (0.967 → 0.986 → 0.992) while α and β both improved monotonically — the beliefs got
+> better and the policy got *more* committed to the whiff. Falsified.
+>
+> **λ=3.0 is killed** by this doc's own rule. **λ=1.0** hit its mechanism and behaviour targets and
+> misses "flat-or-better" on EV by 0.041 — a re-tune by the letter; owner judgement on whether that
+> debt is worth a generation slot given the bait payoff is already falsified.
 
 One-line claim: *the critic's excess ΔV dispersion on trade transitions (C4) is injected noise that
 an explicit Bellman-residual term can suppress — per-state MSE never constrains adjacent-state
