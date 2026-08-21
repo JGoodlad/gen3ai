@@ -114,11 +114,22 @@ git submodule update --init
 
 **Step 2 — symlink the build artifacts** (the submodule checkout has no compiled `dist/` or installed `node_modules/`, but the main repo already has them):
 ```bash
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist \
-      deps/pokemon-showdown/dist
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules \
-      deps/pokemon-showdown/node_modules
+for n in dist node_modules; do
+  # GUARD: only link when the NAME does not already exist. See the warning below.
+  [ -e "deps/pokemon-showdown/$n" ] || \
+    ln -s "/home/goodlad/dev/gen3ai/deps/pokemon-showdown/$n" "deps/pokemon-showdown/$n"
+done
 ```
+
+> 🚨 **Run these ONLY from a fresh worktree, and keep the `[ -e ]` guard.** From the MAIN checkout
+> `deps/pokemon-showdown/dist` already exists as a real directory, so `ln -s TARGET dist` puts the
+> link *inside* it as `dist/dist` → pointing at its own parent. `node build` then dies with
+> `ELOOP: too many symbolic links ... './/dist/dist/dist/...'` and **every websocket-server path
+> stops working**. That is not hypothetical: it happened on 2026-07-23 (both `dist/dist` and
+> `node_modules/node_modules`) and went unnoticed for four weeks, because training runs on the
+> in-process rust bridge and nothing else starts a server. Symptom: `npm run showdown` exits
+> immediately with `Error: Command failed: node build`. Fix: `rm deps/pokemon-showdown/dist/dist`
+> (removing a symlink never touches its target), then `node build`.
 
 Both `dist/` and `node_modules/` are gitignored in pokemon-showdown, so these symlinks don't affect `git status`. Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`.
 
