@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "target_per_pair": 10000,
-  "git_hash": "0bf2811f8495b75de0c63453919ecba030bc2a80",
+  "git_hash": "ca70869ff7ccaf44456f5221e95d8248e6ce25a9",
   "bots": [
     "aggressive",
     "aggressive_v2",
@@ -31,290 +31,290 @@
     "aggressive_v2|heuristic": {
       "a": "aggressive_v2",
       "b": "heuristic",
-      "wins_a": 2544,
-      "wins_b": 1788,
-      "draws": 168,
-      "n": 4500
+      "wins_a": 5596,
+      "wins_b": 4001,
+      "draws": 403,
+      "n": 10000
     },
     "aggressive_v2|heuristic2": {
       "a": "aggressive_v2",
       "b": "heuristic2",
-      "wins_a": 2196,
-      "wins_b": 2219,
-      "draws": 85,
-      "n": 4500
+      "wins_a": 4918,
+      "wins_b": 4923,
+      "draws": 159,
+      "n": 10000
     },
     "aggressive_v2|random": {
       "a": "aggressive_v2",
       "b": "random",
-      "wins_a": 4393,
-      "wins_b": 91,
-      "draws": 16,
-      "n": 4500
+      "wins_a": 9768,
+      "wins_b": 206,
+      "draws": 26,
+      "n": 10000
     },
     "aggressive_v2|setup_sweep": {
       "a": "aggressive_v2",
       "b": "setup_sweep",
-      "wins_a": 2520,
-      "wins_b": 1789,
-      "draws": 191,
-      "n": 4500
+      "wins_a": 5585,
+      "wins_b": 4004,
+      "draws": 411,
+      "n": 10000
     },
     "aggressive_v2|setup_sweep_v2": {
       "a": "aggressive_v2",
       "b": "setup_sweep_v2",
-      "wins_a": 2292,
-      "wins_b": 2103,
-      "draws": 105,
-      "n": 4500
+      "wins_a": 5200,
+      "wins_b": 4591,
+      "draws": 209,
+      "n": 10000
     },
     "aggressive_v2|staller": {
       "a": "aggressive_v2",
       "b": "staller",
-      "wins_a": 2691,
-      "wins_b": 1624,
-      "draws": 185,
-      "n": 4500
+      "wins_a": 5947,
+      "wins_b": 3676,
+      "draws": 377,
+      "n": 10000
     },
     "aggressive_v2|staller_v2": {
       "a": "aggressive_v2",
       "b": "staller_v2",
-      "wins_a": 2778,
-      "wins_b": 1666,
-      "draws": 56,
-      "n": 4500
+      "wins_a": 6230,
+      "wins_b": 3642,
+      "draws": 128,
+      "n": 10000
     },
     "aggressive|aggressive_v2": {
       "a": "aggressive",
       "b": "aggressive_v2",
-      "wins_a": 1542,
-      "wins_b": 2844,
-      "draws": 139,
-      "n": 4525
+      "wins_a": 3384,
+      "wins_b": 6282,
+      "draws": 334,
+      "n": 10000
     },
     "aggressive|heuristic": {
       "a": "aggressive",
       "b": "heuristic",
-      "wins_a": 1825,
-      "wins_b": 2404,
-      "draws": 296,
-      "n": 4525
+      "wins_a": 4009,
+      "wins_b": 5374,
+      "draws": 617,
+      "n": 10000
     },
     "aggressive|heuristic2": {
       "a": "aggressive",
       "b": "heuristic2",
-      "wins_a": 1510,
-      "wins_b": 2897,
-      "draws": 118,
-      "n": 4525
+      "wins_a": 3426,
+      "wins_b": 6272,
+      "draws": 302,
+      "n": 10000
     },
     "aggressive|random": {
       "a": "aggressive",
       "b": "random",
-      "wins_a": 4345,
-      "wins_b": 132,
-      "draws": 48,
-      "n": 4525
+      "wins_a": 9652,
+      "wins_b": 257,
+      "draws": 91,
+      "n": 10000
     },
     "aggressive|setup_sweep": {
       "a": "aggressive",
       "b": "setup_sweep",
-      "wins_a": 1688,
-      "wins_b": 2562,
-      "draws": 275,
-      "n": 4525
+      "wins_a": 3807,
+      "wins_b": 5599,
+      "draws": 594,
+      "n": 10000
     },
     "aggressive|setup_sweep_v2": {
       "a": "aggressive",
       "b": "setup_sweep_v2",
-      "wins_a": 1628,
-      "wins_b": 2721,
-      "draws": 176,
-      "n": 4525
+      "wins_a": 3581,
+      "wins_b": 6049,
+      "draws": 370,
+      "n": 10000
     },
     "aggressive|staller": {
       "a": "aggressive",
       "b": "staller",
-      "wins_a": 1864,
-      "wins_b": 2414,
-      "draws": 247,
-      "n": 4525
+      "wins_a": 4085,
+      "wins_b": 5318,
+      "draws": 597,
+      "n": 10000
     },
     "aggressive|staller_v2": {
       "a": "aggressive",
       "b": "staller_v2",
-      "wins_a": 1952,
-      "wins_b": 2450,
-      "draws": 98,
-      "n": 4500
+      "wins_a": 4373,
+      "wins_b": 5426,
+      "draws": 201,
+      "n": 10000
     },
     "heuristic2|random": {
       "a": "heuristic2",
       "b": "random",
-      "wins_a": 4385,
-      "wins_b": 94,
-      "draws": 21,
-      "n": 4500
+      "wins_a": 9735,
+      "wins_b": 226,
+      "draws": 39,
+      "n": 10000
     },
     "heuristic2|setup_sweep": {
       "a": "heuristic2",
       "b": "setup_sweep",
-      "wins_a": 2448,
-      "wins_b": 1934,
-      "draws": 118,
-      "n": 4500
+      "wins_a": 5434,
+      "wins_b": 4286,
+      "draws": 280,
+      "n": 10000
     },
     "heuristic2|setup_sweep_v2": {
       "a": "heuristic2",
       "b": "setup_sweep_v2",
-      "wins_a": 2359,
-      "wins_b": 2052,
-      "draws": 89,
-      "n": 4500
+      "wins_a": 5182,
+      "wins_b": 4623,
+      "draws": 195,
+      "n": 10000
     },
     "heuristic2|staller": {
       "a": "heuristic2",
       "b": "staller",
-      "wins_a": 2745,
-      "wins_b": 1620,
-      "draws": 135,
-      "n": 4500
+      "wins_a": 5966,
+      "wins_b": 3706,
+      "draws": 328,
+      "n": 10000
     },
     "heuristic2|staller_v2": {
       "a": "heuristic2",
       "b": "staller_v2",
-      "wins_a": 2877,
-      "wins_b": 1569,
-      "draws": 54,
-      "n": 4500
+      "wins_a": 6331,
+      "wins_b": 3537,
+      "draws": 132,
+      "n": 10000
     },
     "heuristic|heuristic2": {
       "a": "heuristic",
       "b": "heuristic2",
-      "wins_a": 1896,
-      "wins_b": 2451,
-      "draws": 153,
-      "n": 4500
+      "wins_a": 4123,
+      "wins_b": 5523,
+      "draws": 354,
+      "n": 10000
     },
     "heuristic|random": {
       "a": "heuristic",
       "b": "random",
-      "wins_a": 4401,
-      "wins_b": 73,
-      "draws": 26,
-      "n": 4500
+      "wins_a": 9778,
+      "wins_b": 159,
+      "draws": 63,
+      "n": 10000
     },
     "heuristic|setup_sweep": {
       "a": "heuristic",
       "b": "setup_sweep",
-      "wins_a": 2042,
-      "wins_b": 2161,
-      "draws": 297,
-      "n": 4500
+      "wins_a": 4541,
+      "wins_b": 4833,
+      "draws": 626,
+      "n": 10000
     },
     "heuristic|setup_sweep_v2": {
       "a": "heuristic",
       "b": "setup_sweep_v2",
-      "wins_a": 1873,
-      "wins_b": 2449,
-      "draws": 178,
-      "n": 4500
+      "wins_a": 4243,
+      "wins_b": 5377,
+      "draws": 380,
+      "n": 10000
     },
     "heuristic|staller": {
       "a": "heuristic",
       "b": "staller",
-      "wins_a": 2267,
-      "wins_b": 1977,
-      "draws": 256,
-      "n": 4500
+      "wins_a": 5120,
+      "wins_b": 4361,
+      "draws": 519,
+      "n": 10000
     },
     "heuristic|staller_v2": {
       "a": "heuristic",
       "b": "staller_v2",
-      "wins_a": 2431,
-      "wins_b": 1979,
-      "draws": 90,
-      "n": 4500
+      "wins_a": 5394,
+      "wins_b": 4381,
+      "draws": 225,
+      "n": 10000
     },
     "random|setup_sweep": {
       "a": "random",
       "b": "setup_sweep",
-      "wins_a": 108,
-      "wins_b": 4372,
-      "draws": 20,
-      "n": 4500
+      "wins_a": 222,
+      "wins_b": 9734,
+      "draws": 44,
+      "n": 10000
     },
     "random|setup_sweep_v2": {
       "a": "random",
       "b": "setup_sweep_v2",
-      "wins_a": 89,
-      "wins_b": 4401,
-      "draws": 10,
-      "n": 4500
+      "wins_a": 206,
+      "wins_b": 9762,
+      "draws": 32,
+      "n": 10000
     },
     "random|staller": {
       "a": "random",
       "b": "staller",
-      "wins_a": 120,
-      "wins_b": 4346,
-      "draws": 34,
-      "n": 4500
+      "wins_a": 265,
+      "wins_b": 9643,
+      "draws": 92,
+      "n": 10000
     },
     "random|staller_v2": {
       "a": "random",
       "b": "staller_v2",
-      "wins_a": 287,
-      "wins_b": 4189,
-      "draws": 24,
-      "n": 4500
+      "wins_a": 673,
+      "wins_b": 9277,
+      "draws": 50,
+      "n": 10000
     },
     "setup_sweep_v2|staller": {
       "a": "setup_sweep_v2",
       "b": "staller",
-      "wins_a": 2540,
-      "wins_b": 1758,
-      "draws": 202,
-      "n": 4500
+      "wins_a": 5632,
+      "wins_b": 3956,
+      "draws": 412,
+      "n": 10000
     },
     "setup_sweep_v2|staller_v2": {
       "a": "setup_sweep_v2",
       "b": "staller_v2",
-      "wins_a": 2705,
-      "wins_b": 1737,
-      "draws": 58,
-      "n": 4500
+      "wins_a": 5969,
+      "wins_b": 3899,
+      "draws": 132,
+      "n": 10000
     },
     "setup_sweep|setup_sweep_v2": {
       "a": "setup_sweep",
       "b": "setup_sweep_v2",
-      "wins_a": 2044,
-      "wins_b": 2265,
-      "draws": 191,
-      "n": 4500
+      "wins_a": 4551,
+      "wins_b": 5021,
+      "draws": 428,
+      "n": 10000
     },
     "setup_sweep|staller": {
       "a": "setup_sweep",
       "b": "staller",
-      "wins_a": 2346,
-      "wins_b": 1878,
-      "draws": 276,
-      "n": 4500
+      "wins_a": 5264,
+      "wins_b": 4160,
+      "draws": 576,
+      "n": 10000
     },
     "setup_sweep|staller_v2": {
       "a": "setup_sweep",
       "b": "staller_v2",
-      "wins_a": 2513,
-      "wins_b": 1884,
-      "draws": 103,
-      "n": 4500
+      "wins_a": 5523,
+      "wins_b": 4255,
+      "draws": 222,
+      "n": 10000
     },
     "staller|staller_v2": {
       "a": "staller",
       "b": "staller_v2",
-      "wins_a": 2134,
-      "wins_b": 2249,
-      "draws": 117,
-      "n": 4500
+      "wins_a": 4762,
+      "wins_b": 4951,
+      "draws": 287,
+      "n": 10000
     }
   },
   "history": [
@@ -429,15 +429,27 @@
     {
       "chunk_id": "63e98fedf9f8",
       "started_at": "2026-08-20T12:04:45.468262+00:00",
-      "updated_at": "2026-08-20T15:49:05.154761+00:00",
-      "wall_seconds": 13459.7,
-      "games_added": 45450,
-      "games_scheduled": 45450,
+      "updated_at": "2026-08-20T17:08:45.270087+00:00",
+      "wall_seconds": 18239.8,
+      "games_added": 61425,
+      "games_scheduled": 61425,
       "concurrency": 4,
       "games_per_visit": 25,
       "pairs_touched": 36,
       "git_hash": "0bf2811f8495b75de0c63453919ecba030bc2a80"
+    },
+    {
+      "chunk_id": "0406d13b9980",
+      "started_at": "2026-08-20T17:15:33.834268+00:00",
+      "updated_at": "2026-08-21T03:17:16.336760+00:00",
+      "wall_seconds": 36102.5,
+      "games_added": 181850,
+      "games_scheduled": 181850,
+      "concurrency": 4,
+      "games_per_visit": 25,
+      "pairs_touched": 36,
+      "git_hash": "ca70869ff7ccaf44456f5221e95d8248e6ce25a9"
     }
   ],
-  "updated_at": "2026-08-20T15:49:05.159153+00:00"
+  "updated_at": "2026-08-21T03:17:16.336883+00:00"
 }
