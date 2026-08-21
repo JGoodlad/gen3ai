@@ -1,0 +1,161 @@
+{
+ "what": "THE BAIT PROGRAMME \u2014 four-instrument convergence and the HABIT verdict",
+ "date": "2026-08-21",
+ "question": "the opponent voluntarily pivots to a mon our attack cannot touch and we fire anyway, repeatedly",
+ "FOUR_INSTRUMENT_CONVERGENCE": [
+  {
+   "instrument": "alpha/beta readouts (correlational)",
+   "says": "the model KNOWS a switch is coming and TO WHAT",
+   "numbers": {
+    "alpha_switch_top1_on_loop_steps": {
+     "gen15": 0.6939,
+     "gen16": 1.0,
+     "gen17": 0.875
+    },
+    "alpha_switch_top1_all_pivots": {
+     "gen15": 0.4762,
+     "gen16": 0.8171,
+     "gen17": 0.8504
+    },
+    "beta_species_correct": {
+     "gen15": 0.0852,
+     "gen16": 0.3552,
+     "gen17": 0.485
+    }
+   }
+  },
+  {
+   "instrument": "alpha/beta INJECTION (causal, bait-conditioned)",
+   "says": "forcing that belief to CERTAINTY moves ~0.049 of probability and flips ZERO decisions",
+   "numbers": {
+    "beta_kl_mean_loop_steps": {
+     "gen15": 4.104e-07,
+     "gen16": 0.0006262
+    },
+    "amplification": 1526,
+    "beta_over_alpha_loop": {
+     "gen15": 0.0074,
+     "gen16": 0.862
+    },
+    "argmax_flips": {
+     "gen15": 0,
+     "gen16": 0
+    },
+    "switch_branch_attribution": {
+     "live": {
+      "flips": 7,
+      "kl_mean": 0.0001916
+     },
+     "zeroed": {
+      "flips": 0,
+      "kl_mean": 0.000192
+     },
+     "reading": "all margin, NO mass \u2014 a THIN channel"
+    }
+   }
+  },
+  {
+   "instrument": "switch_branch COORDINATE CENSUS",
+   "says": "the immunity coordinate is PRESENT and UNDERWEIGHTED",
+   "numbers": {
+    "e_mult_switch": {
+     "mean_abs_v": 0.6416,
+     "W_col_norm": 0.1132,
+     "rank_signal": 2,
+     "rank_weight": 8
+    },
+    "wasted_ko": {
+     "mean_abs_v": 0.2128,
+     "W_col_norm": 0.9145,
+     "share_pct": 54.9
+    },
+    "ratio_W": "8.1x smaller than the derived anti-bait product"
+   }
+  },
+  {
+   "instrument": "EV-COHERENCE (one-ply lookahead at CHOICE TIME)",
+   "says": "the CRITIC ALREADY RANKS AN ALTERNATIVE ABOVE THE WHIFF \u2014 and the policy fires anyway",
+   "numbers": {
+    "n": 23,
+    "alternative_priced_above_whiff": 21,
+    "of": 23,
+    "by_more_than_1V": 13,
+    "median_gap": 1.021,
+    "mean_gap": 2.864,
+    "max_gap": 12.225,
+    "whiff_genuinely_best": 2
+   }
+  }
+ ],
+ "VERDICT": "HABIT, not hedging-blindness. NOTHING in the chain is an information deficit: the belief is right, the physics coordinate is present, the value ranking is correct. The failure is entirely in the POLICY's action selection.",
+ "MECHANISM": "EXPLORATION STARVATION AT SATURATED ACTIONS. The whiff is chosen at p~0.97, so the alternatives sit at p~0.01-0.03 and are essentially never sampled; their advantages are therefore never realized in a gradient, and the 0.97 is SELF-SEALING. This is why a CRITIC intervention (TD-aux) could not move it, and why the levers are policy-side.",
+ "HEADLINE_NUMBER": {
+  "B3_median_chosen_prob_on_loop_steps": {
+   "gen15": 0.985,
+   "gen16": 0.97,
+   "gen17": 0.972
+  },
+  "bar": "<0.85",
+  "status": "IMMOBILE ACROSS THREE GENERATIONS \u2014 the programme's single most stable number"
+ },
+ "LEVERS_policy_side": [
+  {
+   "lever": "deliberate-bait EXPLOITER",
+   "effect": "raises the COST of the habit",
+   "note": "flywheel-native; would make this pathology the flywheel's first demonstration case"
+  },
+  {
+   "lever": "search-as-teacher on bait decisions",
+   "effect": "raises SAMPLING of the starved alternatives"
+  }
+ ],
+ "RULED_OUT_IN_ADVANCE_AND_STILL_OUT": [
+  "repetition_tax (gen-14 shipped one and looped anyway)",
+  "a hand-coded immunity mask (satisfies B1/B2, teaches nothing, generalises nowhere)"
+ ],
+ "TD_AUX_AS_BAIT_LEVER": {
+  "original_registration": "lambda>0 shows B3 FALLING",
+  "flipped_expectation_after_EV_coherence": "NULL \u2014 B3 should NOT move, because the critic is not the deficit",
+  "OBSERVED": {
+   "B3_loop": {
+    "0.0": 0.967,
+    "1.0": 0.986,
+    "3.0": 0.992
+   },
+   "n_loop_steps": {
+    "0.0": 20,
+    "1.0": 20,
+    "3.0": 28
+   },
+   "B3_all_baits": {
+    "0.0": 0.867,
+    "1.0": 0.9225,
+    "3.0": 0.928
+   },
+   "n_whiffs": {
+    "0.0": 77,
+    "1.0": 89,
+    "3.0": 86
+   },
+   "B1_reclick": {
+    "0.0": 0.1429,
+    "1.0": 0.1461,
+    "3.0": 0.1977
+   },
+   "n_reclicks": {
+    "0.0": 11,
+    "1.0": 13,
+    "3.0": 17
+   }
+  },
+  "CLASSIFICATION": "NEITHER the original (falls) NOR the flipped null (no move) \u2014 B3 moved AGAINST, monotonically UP, on both the small loop cell (n=20/20/28) and the more robust all-baits cell (n=77/89/86). The falsification is closed EMPIRICALLY and MORE STRONGLY than a null: a critic intervention made the policy's commitment WORSE while its beliefs improved.",
+  "TD_AUX_NOT_REOPENED": "the surprise condition was 'B3 FALLS under lambda>0'. It did not.",
+  "OPPONENT_CAVEAT": "each arm's sentinels are ITS OWN snapshots. B3 (our chosen-prob on our loop steps) is robust to that; CROSS-ARM B1 comparisons are opponent-conditional and are reported as such."
+ },
+ "CAVEATS": [
+  "EV-coherence lookahead is CRN with the opponent's RECORDED move, so it knows the switch happened. Defensible because alpha predicts SWITCH at top-1 1.000 on exactly these decisions \u2014 but strictly it measures 'ranks correctly GIVEN the switch', not 'given its own uncertainty'.",
+  "n_seeds=0: realized dice only, one draw per action. The SIGN (21/23) is what the verdict rests on; the large gaps (+8 to +12) are single-rollout values.",
+  "n = 23 loop decisions / 20-28 loop steps per arm. Effect sizes are large; point estimates are not."
+ ],
+ "PROCESS_NOTE": "the first EV-coherence run returned 0/23 and would have audited the WRONG decisions: --inv is a 0-BASED LIST POSITION, not the summary's 'i' field. Caught because the tool echoes 'chosen' and it disagreed with the loops census. Every row now carries its verified chosen label."
+}

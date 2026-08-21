@@ -1,3 +1,30 @@
+> ## ⚖️ VERDICT (2026-08-21) — **HABIT, not hedging-blindness.** Full data:
+> `measurements/bait_programme_habit_verdict.json`
+>
+> Four instruments converge and **none of them finds an information deficit**: α/β know the switch
+> (α top-1 **1.000** on loop steps) · injection to certainty is a 1,526×-amplified, **86%-of-α**
+> channel that flips **ZERO** decisions · the immunity coordinate `e_mult_switch` is present but
+> carries the 2nd-largest signal on the **8th**-largest weight · **the critic already ranks an
+> alternative above the whiff in 21/23 loop decisions** (median +1.02 V, max +12.2).
+>
+> **Mechanism: exploration starvation at saturated actions.** The whiff sits at p≈0.97, so the
+> alternatives at p≈0.01–0.03 are never sampled and their advantages are never realized — the 0.97
+> is self-sealing. The levers are POLICY-side: a **deliberate-bait exploiter** (raises the cost) and
+> **search-as-teacher** (raises the sampling). `repetition_tax` and a hand-coded immunity mask
+> remain ruled out.
+>
+> **B3 is immobile across three generations — 0.985 / 0.970 / 0.972 against a <0.85 bar.** That is
+> this programme's most stable number and its headline.
+>
+> **TD-aux is falsified as the bait lever, empirically** (registered λ>0 ⇒ B3 falls; observed B3
+> rose monotonically on both cells). §7's insufficiency branch named it; it is now closed.
+>
+> ⚠️ **B-bars are OPPONENT-CONDITIONAL.** B1's in-window stratum reads 0.253 / 0.051 / 0.139 across
+> gen-15/16/17: the eff fix owns the mechanism (out-of-window is flat in all three), the opponent
+> population modulates the magnitude. Compare via arena games at matched opponents or state the
+> confound. The matched read is NOT TAKEN (the arena emits no eval_traces) and is carried as an
+> open caveat.
+
 # The bait-loop hunt — PRE-REGISTERED for gen-16
 
 **Status:** pre-registered 2026-08-19, before gen-16 launches. Edit only with new evidence, and say

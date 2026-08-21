@@ -1148,6 +1148,66 @@ decisions in 99.9% of battles (closer to a constant offset than a signal — rew
 Loop rate RISES over training (5.0% @4M → 21.1% @20M) while β improves and sentinel win% stays
 gate-pinned — both heads improving while the behaviour they should inform worsens.
 
+### GEN-17 PFSP ATTRIBUTION + the BAIT programme's HABIT verdict (2026-08-21)
+
+**PFSP CONVICTED, narrowly, by two independent gates + a pre-named per-bot prediction.** Gen-17 =
+gen-16's command minus `--pfsp-scale`/`--pool-spread` and nothing else (launchdiff-verified over 233
+flag tokens), fresh init. Direct arena, 400/pair: **vs gen-15 Δ −8.82 [−17.34, −0.30] NON_INFERIOR**;
+**vs gen-16 Δ +26.48 [+17.93, +35.02] — CI clear of 0, PFSP convicted.** Reference: gen-16 vs gen-15
+was **−41.57 [−50.15, −33.00]**. Licensed claim, verbatim: **"pure PFSP over a homogeneous
+fresh-lineage self-pool costs ~26–33 ELO"** — NOT "PFSP is bad". `ai_v8_14_distill3` ran
+`--pfsp-scale 2.5` + `--team-pfsp onesided` + `--stable-opponent-pfsp` for **+69** over a DIVERSE,
+ANCHORED pool (stable opponents + teachers) under a distill KL anchor; gen-16 had no opposing force.
+Return vehicle is the FLYWHEEL, gated. *History correction: gen-16 was the first ai_v9-LINEAGE PFSP
+run, not the first ever — `pfsp_hardest_win_rate`'s absence dates the METRIC, not the feature.*
+
+**PROMOTION-FEEDBACK PATHWAY REFUTED** (the cheap mechanism read): `train/selfplay_promoted_steps`
+= 11 / 11 / 10 for gen-15/16/17 at IDENTICAL step sets, `eval/pool_snapshot_count` 1..11 identical.
+Gen-16's turnover did not crater — it promoted every cycle, and the *healthy* arm promoted FEWER
+times. **Sampling-diversity-collapse stands as the lead pathway.**
+
+**THE ARENA'S CALIBRATION CERTIFICATE** — an instrument result independent of the PFSP finding. Two
+6,400-game arenas, different opponents, neither fit to the other: implied-from-common-reference
++32.75 vs measured-directly **+26.48 — agreement 6.27 ELO** on a ~30 ELO effect. Cite whenever a
+future direct contrast is questioned. The **−8.82 residual is UNATTRIBUTED**: seed variance has never
+been directly measured on this pipeline, so it cannot be assigned to seed, substrate, or anything else.
+
+**BAIT PROGRAMME → HABIT, not hedging-blindness.** Four instruments converge: α/β *know* the switch
+(α top-1 1.000 on loop steps, β species 0.085→0.355→0.485) · injection to certainty is a
+**1,526×-amplified, 86%-of-α channel that flips ZERO decisions** · the immunity coordinate
+`e_mult_switch` is present but carries the 2nd signal on the **8th** weight (8.1× under `wasted_ko`) ·
+**EV-coherence: the critic already ranks an alternative above the whiff in 21/23 loop decisions**
+(median +1.02 V, max +12.2). Nothing is an information deficit. **Mechanism: exploration starvation
+at saturated actions** — the whiff sits at p≈0.97, alternatives at p≈0.01–0.03 are never sampled, so
+their advantages are never realized; the 0.97 is self-sealing. Levers are POLICY-side: a
+deliberate-bait exploiter (raises cost) and search-as-teacher (raises sampling). **B3 is immobile
+across three generations — 0.985 / 0.970 / 0.972 against a <0.85 bar — the programme's most stable
+number.** `repetition_tax` and a hand-coded immunity mask remain ruled out.
+
+**TD-aux FALSIFIED as the bait lever, empirically.** Registered "λ>0 ⇒ B3 falls"; EV-coherence
+flipped the expectation to NULL; **observed B3 rose monotonically** (loop 0.967→0.986→0.992 n=20/20/28;
+all-baits 0.867→0.923→0.928 n=77/89/86). Neither the original nor the null — it moved AGAINST. The
+surprise condition (B3 falls) did not fire, so TD-aux is not reopened. *Rung-2 GATES, separate line:
+λ=3.0 KILLED (explained variance 0.748→0.126, the Baird bias this lever's own Cons pre-registered);
+λ=1.0 passes gates 1+2 (self-KO dispersion 3.233→1.459, selfdestruct −20%) and misses gate 3 by
+−0.041 EV.*
+
+**B1's final form:** the eff fix owns the MECHANISM (in-window concentration; the out-of-window
+stratum is FLAT in all three gens at 0.121/0.152/0.149), the OPPONENT POPULATION modulates the
+MAGNITUDE (in-window 0.253→0.051→0.139; g15-vs-g17 p=0.134, no longer significant). **STANDING RULE:
+cross-generation B-bars are opponent-conditional — compare via arena games at matched opponents or
+state the confound.** The opponent-matched arena read is **NOT TAKEN** (the harness emits no
+eval_traces); carried as an explicit open caveat, not silently skipped.
+
+**Instrument lessons.** Bot-mediated §1 VALIDATED as a fallback (offset 10.81 < 15). BT gate
+VALIDATED against cycle contamination (merged-graph Hodge: excess width 6.19 ELO, p=0.39, 0
+cross-lineage cycles). **K(4,4) LESSON: a cross-only arena graph is complete bipartite and has
+exactly ZERO triangles — HodgeRank curl there is undefined and returns a meaningless confident zero;
+always read the MERGED graph.** **DILUTION, now 2-for-2 (c1 and OA2): a gated feature's pooled read
+= conditioned read × exposure, and only the CONDITIONED read licenses anything** — the global
+injection sample understated the β channel 1,526×→4.3× purely by dilution. Content-only ablation
+(`gen3_content_only_ablation_v1`) replicated independently on a fresh draw (g 99.3%, c5 98.9% artifact).
+
 ### α/β injection probe, gen-15 (2026-08-19, causal intervention at ff1daae, exact-tier snapshots)
 
 **H1 ("the policy ignores α/β") REFUTED; H2 ("no route exists") CONFIRMED — by intervention, not
