@@ -1,0 +1,142 @@
+{
+ "generation": "gen-17 (ai_v9_21_gen17_pfspoff_0820) \u2014 the PFSP-OFF attribution generation",
+ "measured": "2026-08-21",
+ "run": {
+  "steps": 25067520,
+  "wall_h": 13.1,
+  "real_crashes": 0,
+  "final_aggregate_wr": 0.933,
+  "single_variable": "launchdiff vs gen-16 over 233 flag tokens: ONLY --pfsp-scale (2.0->off), --pool-spread (ON->off), --seed (gen-16's own default made explicit). FRESH init."
+ },
+ "s1_gates": {
+  "PRIMARY_vs_gen15": {
+   "delta": -8.82,
+   "se": 4.35,
+   "ci95": [
+    -17.34,
+    -0.3
+   ],
+   "pooled": "3119/6400 = 0.4873",
+   "rule": "NON_INFERIOR iff delta >= -15 AND CI-low > -40",
+   "verdict": "NON_INFERIOR"
+  },
+  "SECONDARY_vs_gen16": {
+   "delta": 26.48,
+   "se": 4.36,
+   "ci95": [
+    17.93,
+    35.02
+   ],
+   "pooled": "3443/6400 = 0.5380",
+   "rule": "PFSP convicted iff gen-17 > gen-16 with CI clear of 0",
+   "verdict": "PFSP CONVICTED"
+  },
+  "gen16_reference": {
+   "delta_vs_gen15": -41.57,
+   "ci95": [
+    -50.15,
+    -33.0
+   ]
+  },
+  "CROSS_CHECK_TRIANGLE": {
+   "implied_from_common_reference": 32.75,
+   "measured_directly": 26.48,
+   "agreement_elo": 6.27,
+   "STATUS": "THE ARENA'S CALIBRATION CERTIFICATE \u2014 an instrument result INDEPENDENT of the PFSP finding. Two independent 6,400-game arenas, different opponents, neither fit to the other, agree to 6.3 ELO on a ~30 ELO effect. Cite this whenever a future direct contrast is questioned."
+  },
+  "UNATTRIBUTED_RESIDUAL": {
+   "value": -8.82,
+   "note": "gen-17 sits SLIGHTLY behind gen-15 with the CI excluding zero. This residual is UNATTRIBUTED: seed variance has NEVER been directly measured on this pipeline (no same-config different-seed pair exists), so it cannot be assigned to seed, to the substrate, or to anything else. Do not attribute it without measuring it."
+  }
+ },
+ "pfsp_conviction": {
+  "NARROW_PHRASING_VERBATIM": "pure PFSP over a homogeneous fresh-lineage self-pool costs ~26-33 ELO",
+  "not_licensed": "'PFSP is bad' is NOT licensed by this experiment.",
+  "third_confirmation_per_bot_heal": {
+   "predicted_before_the_run": "the heuristic / aggressive_v2 sag HEALS with PFSP off",
+   "heuristic": {
+    "gen15": 0.95,
+    "gen16": 0.84,
+    "gen17": 0.94,
+    "recovered_pct": 91
+   },
+   "aggressive_v2": {
+    "gen15": 0.93,
+    "gen16": 0.85,
+    "gen17": 0.91,
+    "recovered_pct": 75
+   },
+   "bots_that_never_sagged": "did not move (random 0.990 flat; aggressive/setup_sweep +0.020 in both)",
+   "aggregate_vs_bots": {
+    "gen15": 0.914,
+    "gen16": 0.882,
+    "gen17": 0.913
+   },
+   "ladder_elo_live": {
+    "gen15": 2079.1,
+    "gen16": 2007.1,
+    "gen17": 2055.6
+   }
+  },
+  "ai_v8_14_ECOLOGY_CONTRAST": "ai_v8_14_distill3 ran --pfsp-scale 2.5 + --team-pfsp onesided + --stable-opponent-pfsp and produced +69 ELO \u2014 over a DIVERSE, ANCHORED pool (stable opponents + teachers in the opponent set) under a distill KL anchor. Every pathology mechanism had an opposing force. Gen-16 ran PFSP over a homogeneous fresh-lineage self-pool with NONE.",
+  "HISTORY_CORRECTION": "gen-16 was the first ai_v9-LINEAGE PFSP run, NOT the first ever. eval/pfsp_hardest_win_rate's absence before gen-16 dates the METRIC, not the feature (instrument-vs-subject).",
+  "MECHANISM_PAPER_TRAIL_item3": {
+   "train/selfplay_promoted_steps": {
+    "gen15": 11,
+    "gen16": 11,
+    "gen17": 10
+   },
+   "promoted_at": {
+    "gen15": "4,6,8,10,12,14,16,18,20,22,24 M",
+    "gen16": "IDENTICAL set",
+    "gen17": "same minus 18M"
+   },
+   "eval/pool_snapshot_count": "1..11, IDENTICAL across all three",
+   "VERDICT": "PROMOTION-FEEDBACK PATHWAY REFUTED. Gen-16's turnover did NOT crater \u2014 it promoted at EVERY eval cycle, exactly like gen-15, and gen-17 (the healthy arm) promoted FEWER times (10 vs 11, failing the gate once at 18M). Pool composition is identical by construction. SAMPLING-DIVERSITY-COLLAPSE stands as the lead pathway; the promotion pathway is off the list."
+  },
+  "return_vehicle": "the FLYWHEEL (teachers-in-pool + a uniform-sampling floor), gated. Not a tuning patch."
+ },
+ "b1_final_form": {
+  "gap_strata_per_whiff": {
+   "gen15": {
+    "in_window_le4": 0.253,
+    "out_gt4": 0.121,
+    "n_reclicks": 34
+   },
+   "gen16": {
+    "in_window_le4": 0.051,
+    "out_gt4": 0.152,
+    "n_reclicks": 16
+   },
+   "gen17": {
+    "in_window_le4": 0.139,
+    "out_gt4": 0.149,
+    "n_reclicks": 29
+   }
+  },
+  "fisher": {
+   "g15_vs_g16": {
+    "OR": 6.27,
+    "p": 0.0067
+   },
+   "g15_vs_g17": {
+    "OR": 2.24,
+    "p": 0.1336
+   },
+   "g16_vs_g17": {
+    "OR": 0.36,
+    "p": 0.2041
+   }
+  },
+  "CORRECTION": "An earlier claim that B1 is PURELY a memory effect owned by the eff fix was TOO STRONG. gen-17 gave back over half of gen-16's in-window gain and is no longer significant vs gen-15.",
+  "FINAL": "the eff fix owns the MECHANISM (in-window concentration; the out-of-window stratum is FLAT in all three generations at 0.121/0.152/0.149), and the OPPONENT POPULATION modulates the MAGNITUDE.",
+  "STANDING_RULE": "cross-generation B-bars are OPPONENT-CONDITIONAL. Compare via arena games at matched opponents, or state the confound explicitly. Never compare raw across generations silently."
+ },
+ "item2_opponent_matched_B1": {
+  "STATUS": "NOT TAKEN \u2014 explicitly, not silently skipped.",
+  "why": "the arena harness kept only per-pair result JSONs. arena_side.py drives RLPlayer over a websocket and emits NO eval_traces (summary.json + states.npz), which is what the loops detector consumes; Showdown's logs/ holds chat and errors, not battle replays (replay saving is off).",
+  "cost_to_take": "~1-1.5 h: wire trace capture into arena_side.py (a fresh, untested path) + ~200 games.",
+  "why_deferred": "building an untested capture path risks another silent-wrong-result of exactly the kind this session already hit three times; the exposure confound is instead carried EXPLICITLY as an open caveat and as the standing rule above.",
+  "what_it_would_prove": "B1 and whiff-per-pivot for gen-17 and gen-16 at MATCHED opponents \u2014 the confound-free version of the three-generation trend."
+ }
+}
