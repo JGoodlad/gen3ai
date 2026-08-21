@@ -1,3 +1,18 @@
+> ## ✅ RESULTS (2026-08-20) — full battery in
+> `measurements/ai_v9_19_gen16_mechanics_0819_endofrun.{json,md}`
+>
+> | § | verdict |
+> |---|---|
+> | **1** | **INFERIOR** — direct arena Δ **−41.57** [−50.15, −33.00], 6,400 cross-generation games. Bot-mediation VALIDATED (offset 10.81 < 15). Hodge clears (6.19 ELO, p=0.39, 0 cross-lineage cycles, read on the MERGED graph). |
+> | **2** | cell liveness **PASS**; B1 **FAIL** (0.374→0.203, sig) · B2 **PASS** · B3 **FAIL** · B4 **MIXED** (belief reallocated, not lost). Whiff rate per pivot ROSE — the substrate bought repetition-suppression, not bait-avoidance. |
+> | injection | **LEARNED BUT INSUFFICIENT** — β 1,526× stronger on loop steps, now 86% of α, and still 0 argmax flips against p≈0.97. `switch_branch` = all margin, no mass. |
+> | order 4 | B1 is a **MEMORY** effect (in-window re-clicks 0.20×, out-of-window 1.26×, p=0.0042). |
+> | ADDITION 1 | TD-aux **FALSIFIED** as the bait lever — B3 rose monotonically with λ. |
+> | order 3 | PFSP frame-bias variant **DEAD**; capability variant prime suspect. |
+>
+> §6 did not cover this outcome (cells live AND §1 inferior). Owner pre-commitment executed →
+> gen-17 `ai_v9_21_gen17_pfspoff_0820`, single-variable PFSP-off, fresh init.
+
 # RUNBOOK — gen-16, THE MECHANICS GENERATION
 
 **Pre-registered 2026-08-19, BEFORE gen-16 launches.** Every rule below is fixed while the number

@@ -1,0 +1,16 @@
+{"a": "g16:20000016", "b": "g15:20000016", "wins_a": 181, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:22000032", "b": "g15:22000032", "wins_a": 167, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:18000000", "b": "g15:18000000", "wins_a": 174, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:24000000", "b": "g15:24000000", "wins_a": 178, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:18000000", "b": "g15:20000016", "wins_a": 182, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:22000032", "b": "g15:24000000", "wins_a": 180, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:20000016", "b": "g15:22000032", "wins_a": 175, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:24000000", "b": "g15:18000000", "wins_a": 161, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:20000016", "b": "g15:24000000", "wins_a": 174, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:18000000", "b": "g15:22000032", "wins_a": 188, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:22000032", "b": "g15:18000000", "wins_a": 180, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:24000000", "b": "g15:20000016", "wins_a": 182, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:18000000", "b": "g15:24000000", "wins_a": 150, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:20000016", "b": "g15:18000000", "wins_a": 175, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:24000000", "b": "g15:22000032", "wins_a": 194, "games": 400, "kind": "cross_lineage", "port": 9101}
+{"a": "g16:22000032", "b": "g15:20000016", "wins_a": 178, "games": 400, "kind": "cross_lineage", "port": 9101}

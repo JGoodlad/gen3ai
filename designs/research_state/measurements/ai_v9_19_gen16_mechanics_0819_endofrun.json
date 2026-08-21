@@ -1,0 +1,498 @@
+{
+ "generation": "gen-16 (ai_v9_19_gen16_mechanics_0819)",
+ "measured": "2026-08-19..20",
+ "provenance": {
+  "run_dir": "models/ai_v9_19_gen16_mechanics_0819",
+  "final_steps": 25067520,
+  "wall_clock_h": 13.9,
+  "real_crashes": 0,
+  "teardown_crash_files": 1,
+  "teardown_note": "exit code 1, no traceback, ends '[train_env] Worker PID died (exitcode=-15)'; fired 00:30 AFTER the 00:27 save and the 91.7% final eval. Benign SIGTERM race.",
+  "reference": "models/ai_v9_18_gen15_v8rewards_0818"
+ },
+ "s1_generation_gate": {
+  "verdict": "INFERIOR",
+  "number_of_record": "direct arena",
+  "direct_arena": {
+   "pooled_wins": 2819,
+   "pooled_games": 6400,
+   "pooled_p": 0.44046875,
+   "delta_direct": -41.57,
+   "se": 4.37,
+   "ci95": [
+    -50.15,
+    -33.0
+   ],
+   "delta_bot_mediated": -52.38,
+   "frame_bias": 10.81,
+   "verdict": "INFERIOR"
+  },
+  "bot_mediated": {
+   "delta": -52.38,
+   "se_joint": 9.82,
+   "se_naive_diag": 6.92,
+   "ci95": [
+    -71.63,
+    -33.13
+   ],
+   "method": "paired BT refit, c'Sigma c",
+   "bootstrap_crosscheck": {
+    "delta": -51.03,
+    "se": 9.79,
+    "ci95": [
+     -69.82,
+     -32.95
+    ],
+    "B": 300
+   },
+   "endofrun_orientation": {
+    "delta": -84.9,
+    "ci95": [
+     -124.0,
+     -45.9
+    ]
+   }
+  },
+  "frame_bias": {
+   "abs_offset": 10.81,
+   "threshold": 15,
+   "conclusion": "BOT-MEDIATION VALIDATED as a fallback. Direct pairs do NOT become mandatory at future arch walls. Honest rider: the offset leans the direction the PFSP account predicts, but is under the pre-registered bar."
+  },
+  "hodge_1a": {
+   "scope": "MERGED graph (both internal ladders + 16 cross edges)",
+   "n_players": 24,
+   "n_edges": 148,
+   "n_triangles": 488,
+   "n_components": 1,
+   "bootstrap": 300,
+   "spine_elo": 330.53,
+   "width_rms_raw_elo": 29.05,
+   "width_rms_null_elo": 28.39,
+   "width_rms_excess_elo": 6.19,
+   "p_value": 0.392,
+   "cross_lineage_significant_cycles": 0,
+   "verdict": "BT gate VALIDATED against cycle contamination",
+   "STRUCTURAL_LESSON": "The cross-only graph is K(4,4) \u2014 COMPLETE BIPARTITE, therefore exactly 0 triangles. HodgeRank's curl is defined on triangles, so a curl read on cross edges ALONE is structurally undefined and returns a confident zero that means nothing. A bipartite graph's cyclic content lives in 4-cycles, which this instrument does not measure. ALWAYS read the merged graph."
+  }
+ },
+ "s2_bait_loop_hunt": {
+  "scope": "92 sentinel_* battles, step 24M, BOTH runs at matched count",
+  "cell_liveness_5M": {
+   "verdict": "PASS",
+   "cells": {
+    "conditional_threat": {
+     "weight_norm": 0.3234,
+     "grad_norm": 0.0003293
+    },
+    "pair_outcome_move": {
+     "weight_norm": 0.4923,
+     "grad_norm": 0.0002043
+    },
+    "pair_outcome_switch": {
+     "weight_norm": 0.7719,
+     "grad_norm": 0.0002106
+    },
+    "switch_branch": {
+     "weight_norm": 0.6731,
+     "grad_norm": 0.0002407
+    }
+   },
+   "note": "all four started at EXACTLY 0.000 (zero-init) and are still taking gradient"
+  },
+  "bars": {
+   "B1_reclick_rate": {
+    "gen15": 0.3736,
+    "gen16": 0.2025,
+    "bar": "<0.16",
+    "verdict": "FAIL",
+    "significance": "16/79 vs 34/91, z=2.44, p=0.015"
+   },
+   "B2_loop_battle_rate": {
+    "gen15": 0.1522,
+    "gen16": 0.0652,
+    "bar": "<0.07",
+    "verdict": "PASS",
+    "n": "6/92",
+    "exposure_normalized_companion": {
+     "loop_steps_per_decision": {
+      "gen15": 0.0143,
+      "gen16": 0.0078
+     }
+    }
+   },
+   "B3_median_chosen_prob_loop": {
+    "gen15": 0.985,
+    "gen16": 0.97,
+    "bar": "<0.85",
+    "verdict": "FAIL"
+   },
+   "B4_guard": {
+    "verdict": "MIXED \u2014 NOT the failure it was written to catch",
+    "alpha_switch_top1_loop": {
+     "gen15": 0.6939,
+     "gen16": 1.0
+    },
+    "alpha_switch_top1_all_pivots": {
+     "gen15": 0.4762,
+     "gen16": 0.8171
+    },
+    "beta_species_correct": {
+     "gen15": 0.0852,
+     "gen16": 0.3552
+    },
+    "beta_slot_acc_loop": {
+     "gen15": 0.9474,
+     "gen16": 0.7
+    },
+    "reading": "the belief REALLOCATED, it was not lost: much better at 'a switch is coming, and to what', worse at 'which move slot'"
+   }
+  },
+  "KEY_FINDING": {
+   "whiff_rate_per_pivot": {
+    "gen15": 0.158,
+    "gen16": 0.1767
+   },
+   "whiff_rate_per_decision": {
+    "gen15": 0.0265,
+    "gen16": 0.0268
+   },
+   "statement": "gen-16 walks into the bait EXACTLY as often as gen-15. What it stopped doing is REPEATING it. The substrate bought repetition-suppression, not bait-avoidance."
+  }
+ },
+ "s4_order4_B1_stratification": {
+  "question": "is B1's movement owned by the eff/event-window fix (memory) or by the substrate?",
+  "method": "model-free: GAP in turns between consecutive same-pair whiffs, from the raw-protocol detector",
+  "gaps": {
+   "gen15": {
+    "n": 34,
+    "median": 4.0,
+    "mean": 6.8,
+    "min": 3,
+    "max": 46
+   },
+   "gen16": {
+    "n": 16,
+    "median": 8.0,
+    "mean": 8.4,
+    "min": 4,
+    "max": 16
+   }
+  },
+  "strata_per_whiff": {
+   "gap_le_4_in_window": {
+    "gen15": 0.253,
+    "gen16": 0.051,
+    "ratio": 0.2
+   },
+   "gap_gt_4_out_of_window": {
+    "gen15": 0.121,
+    "gen16": 0.152,
+    "ratio": 1.26
+   }
+  },
+  "fisher": {
+   "cut_4": {
+    "OR": 6.27,
+    "p": 0.0067
+   },
+   "cut_6": {
+    "OR": 7.15,
+    "p": 0.0042
+   },
+   "cut_8": {
+    "OR": 3.0,
+    "p": 0.1052
+   }
+  },
+  "VERDICT": "IN-WINDOW-CONCENTRATED => the eff fix (MEMORY) owns B1. Short-gap re-clicks fell 5x; long-gap re-clicks did NOT fall (they rose 26%). The substrate's behavioural contribution therefore rests on the injection probe.",
+  "caveat": "the boundary is measured in TURNS, not events. The 32-event window was not converted to turn units. The short/long ASYMMETRY does not depend on that; the claim 'the boundary IS the window edge' does."
+ },
+ "s_order1_ab_injection": {
+  "method": "force the PUBLISHED alpha/beta to one-hot certainty via last_alpha_logits/last_beta_logits (every consumer reads through those properties, incl. gen-16's switch_branch); -inf mask preserved",
+  "global_3000_states": {
+   "gen15": {
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v9_18_gen15_v8rewards_0818/final_model.zip",
+    "n_states": 3000,
+    "coverage": {
+     "sampler": "stratified_round_robin_v1",
+     "seed": 0,
+     "n_states": 3000,
+     "n_files_read": 176,
+     "n_files_matched": 225,
+     "per_step": {
+      "step_24000000": 3000
+     },
+     "per_opponent": {
+      "aggressive": 157,
+      "aggressive_v2": 175,
+      "heuristic": 156,
+      "heuristic2": 260,
+      "random": 123,
+      "sentinel_0": 253,
+      "sentinel_1": 289,
+      "sentinel_2": 273,
+      "sentinel_3": 269,
+      "sentinel_4": 200,
+      "setup_sweep": 163,
+      "setup_sweep_v2": 167,
+      "staller": 172,
+      "staller_v2": 343
+     }
+    },
+    "publication_none_counts": {
+     "alpha": 0,
+     "beta": 0
+    },
+    "arms": {
+     "alpha": {
+      "kl_mean": 0.0019664589781314135,
+      "kl_max": 0.6368250846862793,
+      "flip_rate": 0.008333333767950535,
+      "n_flips": 25,
+      "max_abs_dp": 0.5429249405860901,
+      "dv_mean": 0.1578577309846878,
+      "bit_identical": false,
+      "injections_alpha": 144,
+      "injections_beta": 0
+     },
+     "beta": {
+      "kl_mean": 4.481637370190583e-05,
+      "kl_max": 0.05415365844964981,
+      "flip_rate": 0.0006666666595265269,
+      "n_flips": 2,
+      "max_abs_dp": 0.1346331685781479,
+      "dv_mean": 0.0,
+      "bit_identical": false,
+      "injections_alpha": 0,
+      "injections_beta": 48
+     },
+     "both": {
+      "kl_mean": 0.0021831239573657513,
+      "kl_max": 1.0923138856887817,
+      "flip_rate": 0.008666666224598885,
+      "n_flips": 26,
+      "max_abs_dp": 0.5429249405860901,
+      "dv_mean": 0.1578577309846878,
+      "bit_identical": false,
+      "injections_alpha": 144,
+      "injections_beta": 48
+     }
+    }
+   },
+   "gen16": {
+    "checkpoint": "models/ai_v9_19_gen16_mechanics_0819/final_model.zip",
+    "n_states": 3000,
+    "coverage": {
+     "sampler": "stratified_round_robin_v1",
+     "seed": 0,
+     "n_states": 3000,
+     "n_files_read": 195,
+     "n_files_matched": 238,
+     "per_step": {
+      "step_24000000": 3000
+     },
+     "per_opponent": {
+      "aggressive": 174,
+      "aggressive_v2": 228,
+      "heuristic": 206,
+      "heuristic2": 198,
+      "random": 126,
+      "sentinel_0": 251,
+      "sentinel_1": 222,
+      "sentinel_2": 251,
+      "sentinel_3": 293,
+      "sentinel_4": 223,
+      "setup_sweep": 170,
+      "setup_sweep_v2": 193,
+      "staller": 181,
+      "staller_v2": 284
+     }
+    },
+    "publication_none_counts": {
+     "alpha": 0,
+     "beta": 0
+    },
+    "arms": {
+     "alpha": {
+      "kl_mean": 0.010818860493600368,
+      "kl_max": 2.9296441078186035,
+      "flip_rate": 0.03933333232998848,
+      "n_flips": 118,
+      "max_abs_dp": 0.8449199199676514,
+      "dv_mean": 0.0,
+      "bit_identical": false,
+      "injections_alpha": 264,
+      "injections_beta": 0
+     },
+     "beta": {
+      "kl_mean": 0.0001916170585900545,
+      "kl_max": 0.12315036356449127,
+      "flip_rate": 0.0023333332501351833,
+      "n_flips": 7,
+      "max_abs_dp": 0.24374449253082275,
+      "dv_mean": 0.0,
+      "bit_identical": false,
+      "injections_alpha": 0,
+      "injections_beta": 96
+     },
+     "both": {
+      "kl_mean": 0.011492561548948288,
+      "kl_max": 2.9296441078186035,
+      "flip_rate": 0.04100000113248825,
+      "n_flips": 123,
+      "max_abs_dp": 0.8449199199676514,
+      "dv_mean": 0.0,
+      "bit_identical": false,
+      "injections_alpha": 264,
+      "injections_beta": 96
+     }
+    }
+   }
+  },
+  "bait_conditioned": {
+   "loop_steps": {
+    "gen15": {
+     "n": 49,
+     "beta_kl_mean": 4.104e-07,
+     "beta_max_abs_dp": 0.0002,
+     "flips": 0,
+     "alpha_kl_mean": 5.554e-05
+    },
+    "gen16": {
+     "n": 23,
+     "beta_kl_mean": 0.0006262,
+     "beta_max_abs_dp": 0.0488,
+     "flips": 0,
+     "alpha_kl_mean": 0.0007264
+    }
+   },
+   "whiff_steps": {
+    "gen15": {
+     "n": 93,
+     "beta_kl_mean": 2.26e-07,
+     "flips": 0
+    },
+    "gen16": {
+     "n": 79,
+     "beta_kl_mean": 0.0002166,
+     "flips": 0
+    }
+   },
+   "beta_over_alpha_on_loop_steps": {
+    "gen15": 0.0074,
+    "gen16": 0.862
+   },
+   "amplification_vs_gen15": {
+    "loop": 1526,
+    "whiff": 959
+   }
+  },
+  "switch_branch_attribution": {
+   "beta_injection_switch_branch_LIVE": {
+    "flips": 7,
+    "kl_mean": 0.0001916
+   },
+   "beta_injection_switch_branch_ZEROED": {
+    "flips": 0,
+    "kl_mean": 0.000192
+   },
+   "reading": "switch_branch carries NONE of the distributional mass and ALL of the marginal flips \u2014 a THIN channel"
+  },
+  "critic_route_deletion_receipt": {
+   "dv_mean_under_injection": {
+    "gen15": 0.1579,
+    "gen16": 0.0
+   },
+   "statement": "FIRST CAUSAL confirmation that the --intent-value-reduce hygiene deletion really severed alpha from the value head, rather than merely reading sub-bar on dV."
+  },
+  "VERDICT": "LEARNED BUT INSUFFICIENT (all three pre-committed signatures match). Quantified: the arrival channel now carries 86% of alpha's influence and buys at most 0.049 of probability mass against a policy committed to the whiff at p~0.97. A credit-assignment MAGNITUDE problem."
+ },
+ "s_addition1_tdaux_as_bait_lever": {
+  "pre_registered_direction": "lambda>0 shows B3 FALLING",
+  "scope": "90 sentinel_* battles at step 28M, each of the three rung-2 arms",
+  "result": {
+   "B3_loop": {
+    "0.0": 0.967,
+    "1.0": 0.986,
+    "3.0": 0.992
+   },
+   "B3_all_baits": {
+    "0.0": 0.867,
+    "1.0": 0.9225,
+    "3.0": 0.928
+   },
+   "B1_reclick": {
+    "0.0": 0.1429,
+    "1.0": 0.1461,
+    "3.0": 0.1977
+   },
+   "B2_loop_battle": {
+    "0.0": 0.1,
+    "1.0": 0.0778,
+    "3.0": 0.1111
+   },
+   "alpha_switch_top1_loop": {
+    "0.0": 0.85,
+    "1.0": 0.95,
+    "3.0": 0.9643
+   },
+   "beta_slot_acc_loop": {
+    "0.0": 0.75,
+    "1.0": 0.9333,
+    "3.0": 0.9545
+   }
+  },
+  "VERDICT": "FALSIFIED, and in the OPPOSITE direction. B3 rose monotonically with lambda while alpha/beta both improved monotonically. The beliefs got better and the policy got MORE committed to the whiff. TD-aux is NOT the bait lever.",
+  "scope_limit": "This says NOTHING about the rung-2 GATES (critic dispersion / explained variance / PIT), which are a separate question and get their own line. A lever can be healthy and still not move this.",
+  "n_caveat": "re-clicks are 11/13/17 events; B3 is a median over a handful of loop steps per arm. The MONOTONICITY across three arms and its agreement with the alpha/beta direction is the signal, not any single gap."
+ },
+ "s3_order3_pfsp_frame": {
+  "at_24M": {
+   "win_rate_vs_bots": {
+    "gen15": 0.914,
+    "gen16": 0.882
+   },
+   "win_rate_vs_pool": {
+    "gen15": 0.76,
+    "gen16": 0.714
+   },
+   "eval_elo_sparse": {
+    "gen15": 2123.1,
+    "gen16": 2027.2
+   },
+   "eval_ladder_elo_live": {
+    "gen15": 2079.1,
+    "gen16": 2007.1
+   }
+  },
+  "per_bot_delta_gen16_minus_gen15": {
+   "heuristic": -0.11,
+   "aggressive_v2": -0.08,
+   "heuristic2": -0.06,
+   "staller": -0.04,
+   "staller_v2": -0.02,
+   "random": 0.0,
+   "aggressive": 0.02,
+   "setup_sweep": 0.02,
+   "setup_sweep_v2": 0.02
+  },
+  "pfsp_hardest_win_rate_gen16_only": {
+   "4M": 0.85,
+   "12M": 0.645,
+   "24M": 0.58
+  },
+  "FRAME_BIAS_VARIANT": "DEAD \u2014 the sag is CONCENTRATED (heuristic -11pts, aggressive_v2 -8) with four bots flat-or-better; a frame artifact predicts a UNIFORM depression.",
+  "CAPABILITY_VARIANT": "PRIME SUSPECT \u2014 PFSP shifts experience toward hardest peers; skills vs under-pool-represented styles atrophy, which predicts exactly this concentration.",
+  "vs_pool_caveat": "win_rate_vs_pool CANNOT adjudicate across runs \u2014 each run plays its OWN snapshots, so a lower number is equally consistent with 'I am weaker' and 'my pool is stronger'.",
+  "OWNER_CORRECTION_BANKED": "gen-16 is NOT the first PFSP production run. ai_v8_14_distill3 ran --pfsp-scale 2.5 + --team-pfsp onesided + --stable-opponent-pfsp (the +69 flywheel PoC). 'First PFSP generation' is true of the ai_v9 LINEAGE only; pfsp_hardest_win_rate's absence before gen-16 dates the METRIC, not the feature. The load-bearing contrast: v8_14's PFSP ran over a DIVERSE, ANCHORED pool (stable opponents + teachers) under a distill KL anchor \u2014 every pathology mechanism had an opposing force. Gen-16 ran it over a homogeneous fresh-lineage self-pool with none. Any conviction must be written NARROWLY as 'pure PFSP over a homogeneous self-pool', and PFSP's return vehicle is the FLYWHEEL (teachers in pool + uniform floor), not a tuning patch."
+ },
+ "s6_disposition": {
+  "runbook_6_coverage": "NOT PRE-REGISTERED. \u00a76 names (a) non-inferior + cells live + bars flat -> exploiter gates, and (b) cells never off zero -> fix the arrival channel. Gen-16 is NEITHER: cells demonstrably live, two of four bars moved significantly, and \u00a71 INFERIOR by -41.6.",
+  "owner_decision": "Pre-commitment executed: direct games confirmed delta <= -40, so gen-16 is INFERIOR simpliciter and gen-17 is a single-variable PFSP-off re-run.",
+  "not_reverted": "The eff fix and the substrate revert on NOTHING. Cells-live + B1/B2 movement is not a revert case under any branch of \u00a76."
+ },
+ "reward_composition_note": {
+  "observed_gen17_startup": "1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)",
+  "resolution": "7 is CORRECT for this composition. The per-term trace census (200 battles/side) measured exactly 7 distinct nonzero PBRS terms on gen-15: material, belief, hazard, status, boost, opp_boosts, roar. The 8th in older prose is pbrs_progress, which only exists under --stall-pbrs \u2014 off in gen-15, gen-16 and gen-17 alike."
+ }
+}
