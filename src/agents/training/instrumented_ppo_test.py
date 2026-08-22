@@ -829,3 +829,173 @@ def test_transient_cuda_bearing_state_excluded_from_save():
         InstrumentedMaskablePPO.__new__(InstrumentedMaskablePPO))
     for name in ("_correction_buffer", "_distill_teacher", "_distill_teachers"):
         assert name in excluded, f"{name} would be pickled into every checkpoint"
+
+
+# --------------------------------------------------------------------------------------
+# COUNTERFACTUAL win-prob grounding (gen3_cf_label_plumbing_v1) — the coefficient-zero
+# byte-identity pin plus the two halves of `cf_head_only`.
+#
+# The tiny PPO's `CombinedExtractor` has no win-prob head (and no parameters at all), so the fold
+# is stubbed with a two-module stand-in whose params ARE in the optimizer: a "trunk" the CF term
+# reaches only when `cf_head_only` is False, and a "head" it always reaches. That makes the
+# stop-grad a MEASURABLE property of the parameter update rather than a claim about a detach call.
+# --------------------------------------------------------------------------------------
+import base64 as _b64
+import hashlib as _hashlib
+import json as _json
+
+
+class _CfStash:
+    def __init__(self):
+        self.value_pooled = None
+
+
+def _build_cf_ppo(n_steps=8, n_envs=4):
+    """A tiny PPO wearing a stubbed win-prob head, wired so the CF fold can actually run."""
+    model, _ = _build_tiny_ppo(n_steps=n_steps, n_envs=n_envs)
+    fe = model.policy.features_extractor
+    th.manual_seed(11)                       # the stub is FIXED — the test must not flap
+    trunk, head = th.nn.Linear(1, 8), th.nn.Linear(8, 1)
+    fe.cf_trunk_stub = trunk                 # registered → in state_dict, comparable across runs
+    fe.win_head = head
+    fe.stash = _CfStash()
+    _base = type(fe)
+
+    def _forward(self, obs):
+        # The CF term calls the extractor with ONLY the "observation" key (the only key the real
+        # Gen3 extractor reads); the PPO update calls it with the full obs dict.
+        if "action_mask" in obs:
+            return _base.forward(self, obs)
+        self.stash.value_pooled = th.relu(trunk(obs["observation"]))
+        return self.stash.value_pooled
+
+    # Patched on a per-instance SUBCLASS, not the instance: `_cf_winprob_term` deliberately calls
+    # `type(fe).forward` (the always-eager path — see its docstring), so an instance attribute
+    # would not be seen. Subclassing keeps the stub off the shared CombinedExtractor class.
+    fe.__class__ = type("_CfStubExtractor", (_base,), {"forward": _forward})
+    model.policy.optimizer.add_param_group(
+        {"params": list(trunk.parameters()) + list(head.parameters())})
+    return model
+
+
+def _write_cf_labels(dirpath, n=8, obs_dim=1, label=1.0, policy_step=0):
+    dirpath.mkdir(parents=True, exist_ok=True)
+    with open(dirpath / "labels_test_0.jsonl", "w") as f:
+        for i in range(n):
+            raw = np.full(obs_dim, float(i % 3), dtype=np.float32).tobytes()
+            f.write(_json.dumps({
+                "schema": 1, "kind": "mc_winprob", "battle": f"b{i}", "decision_idx": i,
+                "obs_sha1": _hashlib.sha1(raw).hexdigest(), "obs_npz": None,
+                "obs_inline": _b64.b64encode(raw).decode(), "label": label, "n_rollouts": 8,
+                "wilson_lo": 0.0, "wilson_hi": 1.0, "policy_step": policy_step,
+                "opponent": "pool", "created_unix": 0.0,
+            }) + "\n")
+
+
+def _attach_cf_buffer(model, tmp_path, **kw):
+    from agents.training.cf_label_buffer import CfLabelBuffer
+    _write_cf_labels(tmp_path / "cf_labels", **kw)
+    model._cf_buffer = CfLabelBuffer(tmp_path / "cf_labels", obs_dim=1, lag_bound=0)
+    return model._cf_buffer
+
+
+def test_cf_off_byte_identical_with_populated_buffer(tmp_path):
+    """A POPULATED label buffer with `cf_winprob_coef=0` yields the SAME parameter update as no
+    buffer at all — the fold is gated on the COEFFICIENT, not on the buffer's presence.
+
+    This is the G3 gate: the whole step ships at coefficient zero, so "off is off" is the only
+    thing standing between a plumbing change and a silent perturbation of a live run.
+    """
+    model = _build_cf_ppo()
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    buf = _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 0.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"cf_winprob_coef=0 with a populated buffer perturbed {k}"
+    assert len(buf) == 0, "an OFF run must not even poll the label directory"
+
+
+def test_cf_off_byte_identical_when_only_the_head_is_missing(tmp_path):
+    """coef > 0 + a populated buffer but NO win-prob head (`--win-prob-mode none`) must also be a
+    no-op rather than a crash — the CLI refuses that combination, and the loss agrees."""
+    model = _build_cf_ppo()
+    del model.policy.features_extractor.win_head
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 5.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"a headless run folded a CF term into {k}"
+
+
+def test_cf_head_only_moves_the_head_and_never_the_trunk(tmp_path):
+    """`cf_head_only=True` (the DEFAULT, the design's safe R1 stage): the ground-truth BCE trains
+    the win-prob head's own params and leaves everything upstream of the stop-grad bit-identical."""
+    model = _build_cf_ppo()
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 5.0
+    model.cf_head_only = True
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    head_keys = [k for k in base if "win_head" in k]
+    trunk_keys = [k for k in base if "cf_trunk_stub" in k]
+    assert head_keys and trunk_keys
+    assert any(not th.equal(base[k], on[k]) for k in head_keys), "the CF term never reached the head"
+    for k in trunk_keys:
+        assert th.equal(base[k], on[k]), f"head-only leaked a gradient into the trunk via {k}"
+
+
+def test_cf_without_head_only_reaches_the_trunk(tmp_path):
+    """`--no-cf-head-only`: the same term, now allowed to shape the shared representation."""
+    model = _build_cf_ppo()
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 5.0
+    model.cf_head_only = False
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    trunk_keys = [k for k in base if "cf_trunk_stub" in k]
+    assert any(not th.equal(base[k], on[k]) for k in trunk_keys), \
+        "cf_head_only=False did not reach the trunk"
+
+
+def test_cf_buffer_is_excluded_from_save():
+    excluded = InstrumentedMaskablePPO._excluded_save_params(
+        InstrumentedMaskablePPO.__new__(InstrumentedMaskablePPO))
+    assert "_cf_buffer" in excluded
+
+
+def test_cf_class_defaults_are_off_and_head_only():
+    """The shipped defaults, asserted on the CLASS so a resume that sets nothing is safe."""
+    assert InstrumentedMaskablePPO.cf_winprob_coef == 0.0
+    assert InstrumentedMaskablePPO.cf_head_only is True

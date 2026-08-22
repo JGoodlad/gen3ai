@@ -54,7 +54,7 @@ import signal
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from poke_env.player.player import Player
 
@@ -77,6 +77,7 @@ _BATTLE_SEQ = itertools.count(1)
 def attach_bridge_transport(
     env, *, battle_format: str, seed: Optional[List[int]] = None, persistent: bool = True,
     recycle_every: int = 5000, impl: str = "node",
+    recon_sink: Optional[Callable[[Optional[str], str], None]] = None,
 ) -> "BridgeSession":
     """Swap a freshly-built ``PokeEnv``'s websocket transport for the local bridge.
 
@@ -98,10 +99,16 @@ def attach_bridge_transport(
     normal launcher run** (the 3h restart owns the lifecycle); it only caps marathon / no-launcher
     direct runs. ``0`` disables it. Returns the live ``BridgeSession`` (also stashed on
     ``env._bridge_session`` so it isn't GC'd and ``close()`` can reach it).
+
+    ``recon_sink`` (default None = the historical behaviour, nothing written) is called with
+    ``(battle_tag, base64_payload)`` for every episode's ``__RECON__`` frame, IN ADDITION to the
+    single-slot ``last_recon`` stash. It exists for the counterfactual label factory's record tap
+    (``agents.training.cf_records``); a CALLABLE rather than a directory keeps this transport
+    module free of any dependency on the training package.
     """
     session = BridgeSession(
         env.agent1, env.agent2, battle_format, seed=seed, persistent=persistent,
-        recycle_every=recycle_every, impl=impl,
+        recycle_every=recycle_every, impl=impl, recon_sink=recon_sink,
     ).attach()
     # Keep a reference for the env's lifetime + tear the child down on env.close().
     env._bridge_session = session
@@ -138,6 +145,7 @@ class BridgeSession:
         persistent: bool = True,
         recycle_every: int = 5000,
         impl: str = "node",
+        recon_sink: Optional[Callable[[Optional[str], str], None]] = None,
     ):
         self.a1 = agent1
         self.a2 = agent2
@@ -222,6 +230,9 @@ class BridgeSession:
         # Latest battle's reconstruction record as (battle_tag, base64-json), overwritten every
         # episode. Single-slot + undecoded on purpose — see _dispatch's __RECON__ branch.
         self.last_recon: Optional[tuple] = None
+        # OPT-IN extra consumer of the same frame (None = off, the default: nothing is written and
+        # the dispatch path is unchanged). Owned by the caller — see `attach_bridge_transport`.
+        self._recon_sink = recon_sink
 
     def attach(self) -> "BridgeSession":
         self.c1 = self._make_client(self.a1, "p1")
@@ -517,7 +528,16 @@ class BridgeSession:
             # routing it into the bounded reconstruction registry instead would pin
             # up to 64 full records in every env worker for nothing. Tools that want
             # a training episode's record can read (tag, b64) and decode on demand.
-            self.last_recon = (self._tag, text[len("__RECON__ "):])
+            payload = text[len("__RECON__ "):]
+            self.last_recon = (self._tag, payload)
+            if self._recon_sink is not None:
+                # OPT-IN tap (the counterfactual label factory's record ring). Never allowed to
+                # take the transport down: this runs on the reader task, and an exception here
+                # would retire the reader and wedge the episode.
+                try:
+                    self._recon_sink(self._tag, payload)
+                except Exception as exc:                    # pragma: no cover - defensive
+                    print(f"⚠️  [bridge] recon_sink failed: {exc}", flush=True)
             return
         side, b64 = text.split(" ", 1)
         chunk = base64.b64decode(b64).decode("utf-8")

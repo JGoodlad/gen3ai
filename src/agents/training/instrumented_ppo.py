@@ -344,6 +344,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # distill_value_coef (scalar) — read out by the value_cls effective-rank probe (does the HINT enrich it?).
     distill_value_feat_coef: float = 0.0
 
+    # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
+    # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
+    # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
+    # as JSONL; `_cf_buffer` (an `agents.training.cf_label_buffer.CfLabelBuffer`, attached
+    # externally like `_correction_buffer`) ingests them, and this coefficient folds
+    #     cf_winprob_coef * BCE( win_head(value_pooled(s)), MC_label(s) )
+    # over its OWN sample and its OWN extractor forward — the labelled states are OFF-DISTRIBUTION
+    # w.r.t. this rollout, so they cannot ride the minibatch.
+    #
+    # 0.0 = OFF and the whole block is skipped: no poll, no sample, no forward, loss byte-identical.
+    # TRAINING-only (a loss weight; no forward/weight-shape change) → NOT version-locked, NOT in
+    # check_compatible, resume-mutable — the `opd_coef` class.
+    cf_winprob_coef: float = 0.0
+    # THE SAFE STAGE, and the DEFAULT. True → the head's input `value_pooled` is stop-grad'd for
+    # this term, so it trains the win-prob head's own params ONLY and cannot perturb the trunk (a
+    # pure, risk-free delivery — `grad/cf_winprob_share` reads exactly 0.0 by construction). False
+    # → the ground-truth objective also shapes the shared trunk. Independent of the extractor's own
+    # `win_prob_mode` read_only/shaping split, which governs the ON-POLICY win-prob BCE, not this.
+    cf_head_only: bool = True
+    # Set by train_rl_agent alongside the buffer; the buffer itself owns the bound (this is the
+    # value it was constructed with, kept here only for the record).
+    cf_label_lag_steps: int = 0
+
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
         # but it is TRANSIENT scaffolding like the rollout buffer — and it holds a threading.Lock that
@@ -352,8 +375,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # and the workers/cycle refill it. Mirrors SB3 excluding `rollout_buffer`.
         # `_distill_teacher` is a full frozen model (a foreign exploiter) attached at setup — never pickle
         # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
+        # `_cf_buffer` is the same genre: transient scaffolding refilled from disk by the producer,
+        # and hundreds of MB of obs if pickled. Excluded for the same two reasons.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
-                                                  "_distill_teachers"]
+                                                  "_distill_teachers", "_cf_buffer"]
 
     @staticmethod
     def _searchteacher_loss(logits, action_mask, better_action, advantage,
@@ -750,6 +775,74 @@ class InstrumentedMaskablePPO(MaskablePPO):
         td_loss, metrics = out
         return self.td_aux_coef * td_loss, metrics
 
+    def _cf_winprob_term(self):
+        """The COUNTERFACTUAL win-prob grounding term for ONE minibatch.
+
+        Returns ``(weighted_term, metrics)`` — or ``(None, {})`` when the buffer is empty, so a
+        starving producer costs the train loop nothing but a `len()`.
+
+        WHY ITS OWN SAMPLE AND ITS OWN FORWARD. The labelled states are *recorded past decisions*
+        re-scored offline; they are not in this rollout at all, so there is no way to ride
+        `rollout_data` — the same shape the search-teacher / OPD folds already establish here. It
+        runs PER MINIBATCH for the same reason `_td_aux_term` does: a once-per-``train()`` fold
+        would give the term one gradient contribution against the value loss's
+        ``n_epochs x n_minibatches``, so the coefficient would stop meaning what it means for every
+        other aux.
+
+        WHY IT DOES NOT READ ``last_win_prob_logits``. That stash is produced under the extractor's
+        own ``win_prob_mode`` (``read_only`` stop-grads, ``shaping`` does not), which governs the
+        ON-POLICY win-prob BCE. This term's trunk exposure is governed by ``cf_head_only``, which is
+        a separate decision — so it re-applies the head to ``stash.value_pooled`` itself, detaching
+        iff ``cf_head_only``. The two settings are then independent by construction, and head-only
+        really is head-only whatever the mode says.
+
+        NOTE it CLOBBERS the extractor stashes for this minibatch (its forward replaces them), so
+        it must be folded after every loss that reads them — it sits beside `_td_aux_term`, which
+        carries the identical constraint.
+        """
+        from agents.training.cf_label_buffer import CF_SAMPLE_SIZE, batch_tensors
+
+        buf = getattr(self, "_cf_buffer", None)
+        rows = buf.sample(CF_SAMPLE_SIZE) if buf is not None else []
+        if not rows:
+            return None, {}
+
+        fe = self.policy.features_extractor
+        head = getattr(fe, "win_head", None)
+        if head is None:
+            # Guarded at the call site too; belt and braces, because a silent no-op here would be
+            # a coefficient that reads as "on" and teaches nothing.
+            return None, {}
+
+        obs, labels = batch_tensors(rows, self.device)
+        # The EAGER forward, deliberately. `compile_trainer_extractor` patches the BOUND
+        # `fe.forward`, so `type(fe).forward` is always the uncompiled one — and this call passes an
+        # obs dict with ONLY the "observation" key (the sole key the model reads; a label carries
+        # nothing else), a structure the production forward never sees. Routing it through the
+        # compiled entry point would add a second graph shape, and would ask dynamo to trace the
+        # `self.stash` write on a shape it exists nowhere else. The term is 256 rows once per
+        # minibatch; eager is the cheap, boring answer.
+        type(fe).forward(fe, {"observation": obs})
+        value_pooled = fe.stash.value_pooled
+        if value_pooled is None:                       # pragma: no cover - defensive
+            return None, {}
+        logits = head(value_pooled.detach() if self.cf_head_only else value_pooled).flatten()
+        loss = th.nn.functional.binary_cross_entropy_with_logits(logits, labels)
+        with th.no_grad():
+            probs = th.sigmoid(logits)
+            metrics = {
+                "loss": float(loss),
+                "n": float(len(rows)),
+                "pred_mean": float(probs.mean()),
+                "label_mean": float(labels.mean()),
+                # The G0 meter's live counterpart: SIGNED mean(pred - MC). The G0 bias map's
+                # amendment says the head's defect is RESOLUTION, not this offset — so read it as
+                # a no-harm watch, NOT as the thing the arm is trying to move.
+                "bias": float((probs - labels).mean()),
+                "abs_err": float((probs - labels).abs().mean()),
+            }
+        return self.cf_winprob_coef * loss, metrics
+
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
             return collect_rollouts_async(
@@ -888,6 +981,21 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
         # byte-identical to today). See `_td_aux_term`.
         td_aux_on = float(getattr(self, "td_aux_coef", 0.0)) > 0.0
+        # +CF-WINPROB (gen3_cf_label_plumbing_v1): the counterfactual MC win-prob grounding term.
+        # On when the coef is non-zero, a label buffer is attached, AND the extractor actually has a
+        # win-prob head to supervise (`--win-prob-mode` != none). 0.0 / no buffer / no head → the
+        # block is skipped entirely: no disk poll, no sample, no forward, loss byte-identical.
+        cf_buffer = getattr(self, "_cf_buffer", None)
+        cf_winprob_on = (
+            float(getattr(self, "cf_winprob_coef", 0.0)) != 0.0
+            and cf_buffer is not None
+            and getattr(self.policy.features_extractor, "win_head", None) is not None
+        )
+        if cf_winprob_on:
+            # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
+            # its own pace and re-globbing a directory 240 times an update buys nothing.
+            cf_buffer.poll(int(self.num_timesteps))
+        cf_metrics: dict[str, list[float]] = {}
 
         continue_training = True
 
@@ -1447,6 +1555,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _tdk, _tdv in _tdm.items():
                             td_aux_metrics.setdefault(_tdk, []).append(float(_tdv))
 
+                # +CF-WINPROB: ground-truth Monte-Carlo P(win) supervision of the win-prob head on
+                # OFF-DISTRIBUTION recorded states (its own sample + its own extractor forward, so
+                # it belongs here beside td_aux/search-teacher/OPD — after every loss that reads a
+                # stash from THIS minibatch's evaluate_actions forward, which its forward replaces).
+                # OFF / empty buffer → skipped (loss byte-identical).
+                cf_term = None
+                if cf_winprob_on:
+                    cf_term, _cfm = self._cf_winprob_term()
+                    if cf_term is not None:
+                        loss = loss + cf_term
+                        for _cfk, _cfv in _cfm.items():
+                            cf_metrics.setdefault(_cfk, []).append(float(_cfv))
+
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
@@ -1476,6 +1597,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # against `grad/value_share` is the read for "is the consistency term crowding out
                 # the level regression it is supposed to complement".
                 if td_aux_term is not None:        aux_probe_terms["td_aux"] = td_aux_term
+                # The CF term's trunk pull. Under `cf_head_only` (the default) its input is
+                # stop-grad'd, so `grad/cf_winprob_share` reads exactly 0.0 BY CONSTRUCTION — that
+                # is the correct value and the gate the head-only stage is verified by, not a bug.
+                if cf_term is not None:            aux_probe_terms["cf_winprob"] = cf_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1494,7 +1619,12 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # call; when off, sample on the first minibatch as before.
                 if (shared_trunk and not grad_balance
                         and (not aux_on or belief_present)
-                        and (not win_prob_on or win_prob_term is not None)):  # don't drop grad/win_prob_share
+                        and (not win_prob_on or win_prob_term is not None)   # don't drop grad/win_prob_share
+                        # …nor grad/cf_winprob_share. A STARVING buffer yields a None term on every
+                        # minibatch, so waiting for one would suppress the whole grad probe for the
+                        # rest of the run — the `len(cf_buffer) == 0` escape says "there are no
+                        # labels at all, sample anyway"; `cf/buffer_fill` is where that is read.
+                        and (not cf_winprob_on or cf_term is not None or len(cf_buffer) == 0)):
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
@@ -1737,6 +1867,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if td_aux_metrics:
             for _tdk, _tdvals in td_aux_metrics.items():
                 self.logger.record(f"td_aux/{_tdk}", float(np.mean(_tdvals)))
+
+        # +CF-WINPROB (gen3_cf_label_plumbing_v1). Two blocks, and they answer DIFFERENT questions:
+        #
+        #  * `cf/*` is PRODUCER LIVENESS — published on every train() the moment a buffer exists,
+        #    whether or not a single label ever arrived. An empty buffer that does not announce
+        #    itself is this tree's oldest failure mode (the search-teacher's silent starvation), so
+        #    `cf/buffer_fill` == 0 with a flat `cf/labels_ingested_total` is a first-class reading,
+        #    not an absence of readings.
+        #  * `train/cf_loss` + `train/cf_grad_share` are the TERM — only when it actually folded.
+        #    `cf_grad_share` is lifted from the grad-balance probe's shared denominator so it is
+        #    directly comparable with grad/policy_share et al; it reads 0.0 under `cf_head_only`
+        #    (the default) because the head's input is stop-grad'd, which is the head-only stage's
+        #    verification, not a defect.
+        if cf_buffer is not None:
+            for _ck, _cv in cf_buffer.stats(int(self.num_timesteps)).items():
+                self.logger.record(_ck, _cv)
+        if cf_metrics:
+            for _ck2, _cvals in cf_metrics.items():
+                self.logger.record(f"cf/{_ck2}", float(np.mean(_cvals)))
+            self.logger.record("train/cf_loss", float(np.mean(cf_metrics.get("loss", [0.0]))))
+        if cf_winprob_on:
+            self.logger.record("train/cf_grad_share",
+                               float(grad_balance.get("grad/cf_winprob_share", 0.0)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

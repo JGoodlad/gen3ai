@@ -2856,6 +2856,84 @@ player's whole battle/tracker state at the branch decision, and restores it per 
   them — a **contract, not an inference**, and the reason the gate compares every arm: a broken
   contract shows up as arm 2+ reading history arm 1 mutated.
 - `lookahead` uses it for its whole `(candidate × seed)` sweep.
+## Counterfactual win-prob grounding (`--cf-records` / `--cf-winprob-coef`, `gen3_cf_label_plumbing_v1`)
+
+The **trainer-side plumbing** for `designs/ai_v10/design_counterfactual_value_grounding.md` — its gate
+**G3**, which is explicitly "tap + buffer + flags at coefficient zero, byte-identity gated". Rung **R1**
+only: tight Monte-Carlo P(win) labels, delivered to the **win-prob head**. The label PRODUCER is a
+separate, out-of-process program; **nothing here produces a label**, and the two halves share only a
+file format.
+
+**Why the win-prob head and why head-only first.** The G0 bias map (ledger 2026-08-22; 2,204 tight-MC
+labels) found the head's defect is **RESOLUTION, not an optimism offset** — population-mean gaps are
+|0.05|–|0.07| while the true within-decile spread of P(win) is 0.11–0.36, 80–95% of it real
+state-to-state variance. Only tight-MC labels carry that within-bin separation; a single realized
+outcome (what the on-policy BCE eats today) structurally cannot. The head is MC-native, so R1 needs no
+route change and owes no C4 gate. `--cf-head-only` defaults **TRUE** because the safe stage comes first:
+the term trains the head's own params and provably cannot perturb the trunk.
+
+**The four pieces:**
+
+- **The record TAP (`cf_records.py`, `--cf-records`, default OFF).** The bridge emits a `__RECON__`
+  reconstruction record at the end of every episode; **training discards it** (`BridgeSession` keeps a
+  single overwritten slot), which is precisely why a label producer cannot reach a training decision.
+  `--cf-records` threads a `recon_sink` callable into `attach_bridge_transport`, and each env worker
+  writes the record into `<run_dir>/cf_records/` as a **count-capped ring** (`--cf-records-keep`,
+  default 512). Crash-safe (`.tmp` + `os.replace`), filenames sort chronologically
+  (`<time_ns>_<pid>_<tag>_reconstruction.json`) so the prune needs no `stat`, and the cap is **GLOBAL** —
+  every worker prunes the shared dir and a lost delete race is swallowed, which is what keeps the bound
+  across `n_envs` AND across launcher restarts. The artifact shape is byte-for-byte the one
+  `reconstruction._write_artifact` writes, so `ReconstructionRecord.load()` reads a ring file directly.
+  A write failure warns once and is swallowed — a full disk must not crash a run. `--cf-records`
+  without `--use-bridge` is REFUSED (a websocket run emits no such frame; the flag would be a silent
+  no-op).
+- **The LABEL BUFFER (`cf_label_buffer.py`).** Watches `<run_dir>/cf_labels/labels_*.jsonl`, remembering a
+  per-file byte OFFSET so an appending producer is read incrementally and a partial trailing line waits
+  for the next poll instead of counting as malformed. Schema v1 is in the module docstring; obs resolve
+  `obs_inline` > `obs_npz` > skip. **Everything unexpected is a COUNTED skip, never a crash and never a
+  silent accept**: unknown `schema`, unknown `kind`, malformed JSON, out-of-range label, unresolvable
+  obs, an obs whose width ≠ this run's, and an `obs_sha1` that disagrees with its own bytes (the GIGO
+  guard — it warns loudly once). FIFO at `capacity`, and **staleness expiry** at `--cf-label-lag-steps`
+  (default 150 000 ≈ one production PPO iteration): `age == bound` survives, `age == bound + 1` does not,
+  enforced at ingest AND on every poll. `0` disables expiry.
+- **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term` / search-teacher /
+  OPD shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
+  rollout, so they cannot ride `rollout_data`, and a once-per-`train()` fold would make the coefficient
+  mean something different from every other aux. It samples up to `CF_SAMPLE_SIZE` (256) rows, runs its
+  OWN extractor forward (`{"observation": …}` is the only key the model reads), and applies the win-prob
+  head to `stash.value_pooled` — **detaching iff `cf_head_only`**. It deliberately does NOT read
+  `last_win_prob_logits`: that stash is produced under the extractor's own `win_prob_mode`, which governs
+  the ON-POLICY win-prob BCE; this term's trunk exposure is a separate decision, and re-applying the head
+  makes the two independent by construction. It CLOBBERS the minibatch's extractor stashes, so it is
+  folded beside `_td_aux_term`, after every loss that reads one.
+- **The scalars.** `cf/*` is **producer liveness and is published whenever a buffer exists**, even if not
+  one label ever arrived — `cf/buffer_fill`, `cf/label_age_steps_p50`, `cf/labels_ingested_total`,
+  `cf/labels_expired_total`, `cf/labels_skipped_total`. That is deliberate: an empty buffer that does not
+  announce itself is this tree's oldest failure mode (the search-teacher's silent starvation), and a flat
+  `labels_ingested_total` is unambiguous evidence the producer stopped, which reads completely differently
+  from a rising `labels_expired_total` (a producer that is running but lagging). `train/cf_loss` +
+  `train/cf_grad_share` are the TERM, only when it folded; `cf_grad_share` is lifted from the
+  grad-balance probe's shared denominator (so it is comparable with `grad/policy_share`) and reads
+  **exactly 0.0 under `--cf-head-only`** — that is its verification, not a defect.
+
+**Flag class — plain argparse, deliberately.** All four are **training-only**, exactly the `--opd-coef`
+class: not in `agents/model/flag_registry.py`, not on `ModelVersion`, not in `check_compatible`, no
+version bump. Nothing here is weight-shape relevant. They are therefore **not read back on a flagless
+resume** (there is no `ModelVersion` field to read them from); the launcher forwards every non-launcher
+flag verbatim, so a launcher-managed resume keeps them, and a bare `train_rl_agent.py --model …` does
+not. `--cf-winprob-coef > 0` REQUIRES `--win-prob-mode read_only|shaping` — `none` does not build a
+`WinProbHead`, so a live coefficient would fold nothing for a whole run; the parser refuses it, and the
+loss independently no-ops if the head is somehow absent.
+
+**Gates.** `instrumented_ppo_test.py` pins the byte-identity that G3 is: a POPULATED buffer at
+`cf_winprob_coef=0` yields the same parameter update as no buffer at all (the fold is gated on the
+COEFFICIENT, not the buffer), and so does a live coef with no head. The two `cf_head_only` halves are
+measured on the parameter update rather than asserted about a detach call — head-only moves the head and
+leaves the trunk bit-identical; `--no-cf-head-only` moves the trunk. `cf_label_buffer_test.py` covers
+FIFO, the exact expiry boundary, incremental polling, the partial-line case, every skip counter, and the
+ring's cap/atomicity/race-tolerance. `main/cf_flags_test.py` covers the defaults, both `--no-` spellings
+and `checkargs`. End-to-end: a `--debug --steps 10000` CPU smoke with fixture labels built from REAL
+episode obs.
 
 ## Public-replay value aux — V_pub — DELETED (v88 `gen3_dead_flag_purge_v1`)
 

@@ -465,6 +465,7 @@ def _model_hparams(model) -> dict:
         "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),
         "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
         "opd_coef": float(getattr(model, "opd_coef", 0.0)),
+        "cf_winprob_coef": float(getattr(model, "cf_winprob_coef", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
         "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),
@@ -1293,6 +1294,49 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--opd-beta", "--opd_beta", dest="opd_beta", type=float, default=None,
                         help="OPD softmax temperature β for π' over the per-action backed-up values "
                              "(default 1.0). Higher β → flatter target.")
+    # --- COUNTERFACTUAL VALUE GROUNDING (gen3_cf_label_plumbing_v1; G3 of
+    # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). An OUT-OF-PROCESS producer
+    # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
+    # into <run_dir>/cf_labels/; the trainer rings the reconstruction records the producer needs
+    # (--cf-records) and folds the labels into the win-prob head's BCE (--cf-winprob-coef).
+    # ALL TRAINING-ONLY: no weight shape, no forward change, no version bump — the `--opd-coef`
+    # class. Every default is OFF, and an off run is byte- AND file-identical to today.
+    # NOT inherited on a FLAGLESS resume (they are not ModelVersion fields); the launcher forwards
+    # every non-launcher flag verbatim, so a launcher-managed resume keeps them.
+    parser.add_argument("--cf-records", "--cf_records", dest="cf_records",
+                        action=BoolFlag, default=False,
+                        help="Ring each training episode's __RECON__ reconstruction record into "
+                             "<run_dir>/cf_records/ (newest --cf-records-keep only) so an offline "
+                             "counterfactual LABEL PRODUCER can replay those decisions. Default OFF "
+                             "— training discards the records today. Costs one small file write per "
+                             "episode per env worker; requires --use-bridge (node or rust).")
+    parser.add_argument("--cf-records-keep", "--cf_records_keep", dest="cf_records_keep",
+                        type=int, default=512,
+                        help="GLOBAL cap on <run_dir>/cf_records/ (default 512). Every env worker "
+                             "prunes the shared dir to the newest N, so this is a total, not a "
+                             "per-worker count, and it holds across launcher restarts.")
+    parser.add_argument("--cf-winprob-coef", "--cf_winprob_coef", dest="cf_winprob_coef",
+                        type=float, default=0.0,
+                        help="COUNTERFACTUAL win-prob grounding weight: cf_winprob_coef * "
+                             "BCE(win_head(s), tight-MC P(win) label) over labels the producer left "
+                             "in <run_dir>/cf_labels/. Default 0.0 = OFF (no poll, no forward, loss "
+                             "byte-identical). Requires --win-prob-mode != none (there must be a head "
+                             "to supervise). Watch cf/buffer_fill (0 = the producer is starving you), "
+                             "train/cf_loss and train/cf_grad_share.")
+    parser.add_argument("--cf-head-only", "--cf_head_only", dest="cf_head_only",
+                        action=BoolFlag, default=True,
+                        help="Stop-grad the win-prob head's input for the CF term, so it trains the "
+                             "HEAD ONLY and cannot perturb the trunk (train/cf_grad_share reads 0.0 "
+                             "by construction). Default TRUE — the safe first stage the design's R1 "
+                             "prescribes. --no-cf-head-only (or --cf-head-only false) lets the "
+                             "ground-truth objective shape the shared trunk. Independent of "
+                             "--win-prob-mode, which governs the ON-POLICY win-prob BCE, not this.")
+    parser.add_argument("--cf-label-lag-steps", "--cf_label_lag_steps", dest="cf_label_lag_steps",
+                        type=int, default=150_000,
+                        help="STALENESS BOUND in policy steps: a label whose policy_step is older "
+                             "than this is dropped (counted in cf/labels_expired_total). Default "
+                             "150000 ≈ one PPO iteration at production shapes, so a label is "
+                             "consumed by roughly the policy that produced it. 0 disables expiry.")
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1) — pour a frozen per-team SPECIALIST (an
     # --exploiter checkpoint) into the generalist via an ON-POLICY KL, masked to the states where the
     # trainee pilots the teacher's team; the other (pool) states are the anti-forgetting rehearsal.
@@ -2495,6 +2539,23 @@ async def main():
         # build π'), so it can't run standalone.
         parser.error("--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
                      "correction buffer; its workers build the π' targets)")
+    # gen3_cf_label_plumbing_v1 — training-only, so these parser checks are the ONLY gate.
+    if args.cf_winprob_coef is not None and args.cf_winprob_coef < 0.0:
+        parser.error("--cf-winprob-coef must be >= 0 (0 = off)")
+    if args.cf_winprob_coef and args.cf_winprob_coef > 0 and args.win_prob_mode == "none":
+        # There is no head to supervise: `win_prob_mode none` means WinProbHead is not BUILT. Fail
+        # at the CLI rather than let a live coefficient silently fold nothing for a whole run.
+        parser.error("--cf-winprob-coef > 0 requires --win-prob-mode read_only|shaping — the "
+                     "counterfactual labels supervise the WIN-PROB head, which 'none' does not build")
+    if args.cf_label_lag_steps is not None and args.cf_label_lag_steps < 0:
+        parser.error("--cf-label-lag-steps must be >= 0 (0 = never expire)")
+    if args.cf_records_keep is not None and args.cf_records_keep < 1:
+        parser.error("--cf-records-keep must be >= 1")
+    if args.cf_records and not args.use_showdown_bridge:
+        # The record is a `__RECON__` frame off the bridge child's stdout; the websocket transport
+        # never produces one, so the flag would be a silent no-op.
+        parser.error("--cf-records requires the in-process bridge (--use-bridge node|rust) — the "
+                     "reconstruction record is a bridge frame; a websocket run emits none")
     if args.distill_coef is not None and args.distill_coef < 0.0:
         parser.error("--distill-coef must be >= 0 (0 = off)")
     if args.distill_value_coef is not None and args.distill_value_coef < 0.0:
@@ -3146,7 +3207,7 @@ async def main():
                                    opponent_version=None, snapshot_dir=None,
                                    self_play_fraction=0.0, self_play=False,
                                    heuristic_weights=None, stable_opponents=None,
-                                   exploiter_entry=None):
+                                   exploiter_entry=None, cf_records_dir=None):
         def _init():
             try:
                 # Defensive per-worker pin (the module-level env vars are the primary guard, but they
@@ -3205,11 +3266,20 @@ async def main():
                     opponent_team=opponent_teambuilder,
                 )
                 if args.use_showdown_bridge:
+                    # gen3_cf_label_plumbing_v1: the OPT-IN reconstruction-record tap. The ring is
+                    # built HERE, inside the worker, so the transport module never imports the
+                    # training package and nothing unpicklable crosses the SubprocVecEnv boundary
+                    # (only the directory string does). None (the default) → no sink, no file.
+                    _recon_sink = None
+                    if cf_records_dir:
+                        from agents.training.cf_records import CfRecordRing
+                        _ring = CfRecordRing(cf_records_dir, keep=args.cf_records_keep)
+                        _recon_sink = _ring.write_b64
                     # Swap the two _EnvPlayer agents' websocket transport for a local
                     # BattleStream subprocess. Everything above the transport (obs, reward,
                     # mask, wrappers) is unchanged — see utils/bridge/bridge_session.py.
                     attach_bridge_transport(env, battle_format=BATTLE_FORMAT,
-                                            impl=args.bridge_impl)
+                                            impl=args.bridge_impl, recon_sink=_recon_sink)
 
                 # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
                 # the networking), so build them start_listening=False — no idle connections,
@@ -3366,6 +3436,39 @@ async def main():
         with open(os.path.join(model_dir, "command.txt"), "w") as f:
             f.write(" ".join(sys.argv))
         
+    # gen3_cf_label_plumbing_v1 — the two counterfactual-factory directories under the run root.
+    # `cf_records/` is WRITTEN by the env workers (opt-in); `cf_labels/` is READ from whatever an
+    # out-of-process producer left there. Both are None/unused unless the flags ask for them, so a
+    # default run creates neither and is FILE-identical to today.
+    _cf_records_dir = os.path.join(model_dir, "cf_records") if args.cf_records else None
+    _cf_labels_dir = os.path.join(model_dir, "cf_labels") if args.cf_winprob_coef > 0 else None
+    if _cf_records_dir:
+        os.makedirs(_cf_records_dir, exist_ok=True)
+        emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "
+             f"(newest {args.cf_records_keep})")
+
+    def _attach_cf_labels(model):
+        """Attach the counterfactual label buffer + its coefficients (both build paths).
+
+        The coefficients are set UNCONDITIONALLY (they are class defaults otherwise, and a resume
+        must be able to turn the term OFF as well as on); the BUFFER is only built when the coef is
+        live, so an off run never touches the filesystem. Training-only: nothing here is recorded
+        in `model_config.json` or checked by `check_compatible`."""
+        model.cf_winprob_coef = float(args.cf_winprob_coef or 0.0)
+        model.cf_head_only = bool(args.cf_head_only)
+        model.cf_label_lag_steps = int(args.cf_label_lag_steps)
+        if not _cf_labels_dir:
+            return
+        from agents.training.cf_label_buffer import CfLabelBuffer
+        os.makedirs(_cf_labels_dir, exist_ok=True)
+        _obs_space = model.observation_space["observation"]
+        model._cf_buffer = CfLabelBuffer(
+            _cf_labels_dir, obs_dim=int(_obs_space.shape[0]),
+            lag_bound=int(args.cf_label_lag_steps))
+        emit(f"🎯 [CF] win-prob grounding ON: coef={model.cf_winprob_coef:g} "
+             f"head_only={model.cf_head_only} lag={model.cf_label_lag_steps} "
+             f"← {_cf_labels_dir}")
+
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # factory passes it to every env's reward manager. Default = the single-variable run.
@@ -3475,6 +3578,7 @@ async def main():
                 heuristic_weights=_bot_weight_vec,
                 stable_opponents=_fixed_opponents,
                 exploiter_entry=_exploiter_entry,
+                cf_records_dir=_cf_records_dir,
             )
             for i in range(n_envs)
         ]
@@ -3979,6 +4083,8 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
+        _attach_cf_labels(model)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
@@ -4240,6 +4346,8 @@ async def main():
         # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
         # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
         model.opd_coef = args.opd_coef
+        # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
+        _attach_cf_labels(model)
         model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
         model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
         # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
