@@ -1954,6 +1954,23 @@ def build_parser() -> argparse.ArgumentParser:
                              "websocket) more connection churn; the in-process bridge (--use-bridge, the default) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
+    parser.add_argument("--bait-bot-share", "--bait_bot_share", dest="bait_bot_share",
+                        type=float, default=0.0,
+                        help="Add the scripted BaitBot to the TRAINING opponent roster with this "
+                             "share of the sampling mass (default 0.0 = ABSENT, byte-identical). "
+                             "BaitBot pivots into an immune bench mon with probability "
+                             "--bait-bot-p; it exists to put PUNISHMENT FREQUENCY on the bait habit "
+                             "on a controlled dial (the habit is exploration starvation at a "
+                             "saturated action, so punishment frequency is the one signal it cannot "
+                             "seal off). The weight is sized from the ACTUAL sum of the other "
+                             "roster weights, so the declared share stays exact even when "
+                             "--bot-weights re-weights the heuristics. Keep it a MINORITY share to "
+                             "avoid script-sniping.")
+    parser.add_argument("--bait-bot-p", "--bait_bot_p", dest="bait_bot_p", type=float, default=0.6,
+                        help="BaitBot's pivot probability when a bait is available (default 0.6). "
+                             "The gate's held-out generalization read uses a DIFFERENT value, so an "
+                             "arm cannot pass by memorising this one. Ignored unless "
+                             "--bait-bot-share > 0.")
     parser.add_argument("--eval-freq", "--eval_freq", dest="eval_freq", type=int, default=None,
                         help="Steps between eval cycles (default None = EVAL_FREQ_STEPS, 2,000,000 — "
                              "byte-identical to every pre-existing command). Lower it for SHORT arms: a "
@@ -3112,6 +3129,16 @@ async def main():
         Gen3SetupSweepPlayer,
         Gen3SetupSweepV2Player,
     ]
+    # gen3_baitbot_roster_v1: BaitBot joins the roster only when a share is declared, so the
+    # default pool is byte-identical. It is appended BEFORE --bot-weights is parsed so a single
+    # code path builds the weight vector and the two cannot disagree.
+    _baitbot_cls = None
+    if getattr(args, "bait_bot_share", 0.0) > 0:
+        from agents.baitbot import make_baitbot_class
+        from agents.training.eval_callback import _OPPONENT_NAMES
+        _baitbot_cls = make_baitbot_class(args.bait_bot_p)
+        _OPPONENT_NAMES[_baitbot_cls] = "baitbot"   # TB keys / --bot-weights use the short name
+        OPPONENT_CLASSES.append(_baitbot_cls)
     print(f"[Opponents] training pool = {len(OPPONENT_CLASSES)} bots "
           f"({', '.join(opponent_name(c) for c in OPPONENT_CLASSES)})")
 
@@ -3137,6 +3164,17 @@ async def main():
         _bot_weight_vec = [_overrides.get(opponent_name(c), 1.0) for c in OPPONENT_CLASSES]
         print(f"[Opponents] heuristic weights = "
               f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
+
+    if _baitbot_cls is not None:
+        from agents.baitbot import weight_for_share
+        if _bot_weight_vec is None:
+            _bot_weight_vec = [1.0] * len(OPPONENT_CLASSES)
+        _others = [w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec) if c is not _baitbot_cls]
+        _w = weight_for_share(args.bait_bot_share, _others)
+        _bot_weight_vec[OPPONENT_CLASSES.index(_baitbot_cls)] = _w
+        _realized = _w / (sum(_others) + _w)
+        print(f"[Opponents] BaitBot p_bait={args.bait_bot_p} weight={_w:.4f} "
+              f"-> realized share {_realized:.4f} (declared {args.bait_bot_share})")
 
     # Resolve + VALIDATE --stable-opponents (cross-run fixed opponents) at startup. Each foreign
     # model must share THIS run's arch_signature (= observation layout) — a mismatch is a

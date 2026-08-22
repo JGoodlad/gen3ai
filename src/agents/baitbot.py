@@ -114,3 +114,40 @@ class Gen3BaitBotPlayer(Player):
     def realized_bait_rate(self) -> float:
         """Baits taken / opportunities — must track ``p_bait`` or the dial is not a dial."""
         return self.n_baits_taken / self.n_bait_opportunities if self.n_bait_opportunities else 0.0
+
+
+def make_baitbot_class(p_bait: float) -> type:
+    """A ``Gen3BaitBotPlayer`` subclass with ``p_bait`` baked into its default.
+
+    The training roster instantiates every opponent as ``cls(**common_kwargs)`` with no per-class
+    extras, so a bot that needs a constructor argument cannot be dropped into it directly. Baking
+    the dial into a named subclass keeps the roster's uniform call site intact — and the name
+    carries the dial, so a TensorBoard key or a `--bot-weights` typo cannot silently refer to a
+    different p_bait than the run declared.
+    """
+    if not 0.0 <= p_bait <= 1.0:
+        raise ValueError(f"p_bait must be in [0, 1], got {p_bait}")
+
+    class _BaitBotAt(Gen3BaitBotPlayer):
+        def __init__(self, *a, **kw):
+            kw.setdefault("p_bait", p_bait)
+            super().__init__(*a, **kw)
+
+    _BaitBotAt.__name__ = _BaitBotAt.__qualname__ = f"Gen3BaitBotP{int(round(p_bait * 100)):03d}"
+    _BaitBotAt.p_bait_declared = p_bait
+    return _BaitBotAt
+
+
+def weight_for_share(share: float, other_weights) -> float:
+    """The roster weight that gives BaitBot exactly ``share`` of the sampling mass.
+
+    Derived from the ACTUAL sum of the other weights rather than assuming they are all 1.0, so the
+    declared share stays exact when `--bot-weights` also re-weights the heuristics. A declared
+    share that silently becomes something else is the failure this exists to prevent.
+    """
+    if not 0.0 <= share < 1.0:
+        raise ValueError(f"bait-bot share must be in [0, 1), got {share}")
+    s = float(sum(other_weights))
+    if s <= 0:
+        raise ValueError("cannot size a share against a zero-weight roster")
+    return s * share / (1.0 - share)
