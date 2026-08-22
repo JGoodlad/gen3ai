@@ -1473,3 +1473,43 @@ experiment (parked, needs a training slot)*. Highlights and honest edges:
 - **Landing procedure worked**: parallel isolated worktrees + a pinned shared schema; tool shipped
   first, plumbing rebased over it (one clean structural conflict — both appended sections to the
   training leaf — resolved keep-both), 376 merged-tree gate tests green before push.
+
+### Adversarial review of the factory landings — two REAL bugs, one wedge-class gap, the scary contracts HELD (2026-08-22, opus agent, landed `5b8f485`)
+
+**The review paid for itself on the exact failure the code claimed to survive.** Thirteen named
+attack surfaces over `a85a3bf` + `6c2cb45`; findings fixed+gated in one commit, the rest tasked
+(#28, #29). Verdict: **production-safe for a `--cf-records` run**; two label-quality decisions
+(#28) owed before `--cf-winprob-coef` ever goes live.
+
+- **REAL-BUG (fixed): the tap leaked `.tmp` files forever on write failure** — the prune matched
+  only the record suffix, so a FULL DISK (the scenario the module explicitly promises to survive)
+  orphaned one tmp per episode per worker, silently after the once-per-process warn. Fixed:
+  unlink-on-failure + prune sweeps stale tmps.
+- **REAL-BUG (fixed): buffer offsets keyed on filename alone** — a producer that deletes+recreates
+  a label file had the reader seek past the new file's first bytes (measured: 3-row recreated file
+  ingested 1; same-size rewrite ingested 0 — SILENT label loss, violating the module's own
+  "never a silent accept" rule in mirror form). Fixed: `(name, inode)` keys + map pruning.
+- **LATENT (gated): the battle-ENDING arm's restore path had never been executed by anything** —
+  the parity gate and `lookahead` both filter `ended` arms, so the `_battle_count_queue` drain +
+  tracker re-population after eviction ran under zero tests. Reverting it makes the new `sim` gate
+  **wedge forever** (killed at 150 s) — the defect class was a hang, not a wrong answer. *Method
+  lesson: two consumers independently filtering the same case means the case has NO consumer —
+  and therefore no gate — until someone writes the adversarial one.*
+- **HELD under attack (the important negatives)**: the aliasing contract (23/23 arms bit-identical
+  incl. 15 terminal, mutation tripwire over 258–483 pinned shared objects, zero drift; static
+  sweep found no in-place mutation of `BattleEvent`/`BattleContext` anywhere); the stash-clobber
+  fold order (straight-line source order, CF fold last at 1563, no flag combination reorders);
+  compile coexistence (class-eager call never enters dynamo; stash write unconditional); the ring
+  prune race (bounded transient overshoot only); fork-safety (0 threads at import,
+  `compile_prewarm_test` green).
+- **Open by design, tasked**: #28 — no dedup on `obs_sha1` (N× weight per duplicated decision),
+  future-`policy_step` labels immortal after a crash-restart rollback (tell:
+  `cf/label_age_steps_p50` negative), and the ObservationDebugger being fed CF rows as if current
+  under `--no-compile-trainer`. #29 — `better_line`'s INTERIOR-ply opponent is greedy argmax,
+  bypassing the regime seam `a85a3bf` fixed at the divergence ply: an undeclared regime MIX in the
+  beam (maybe deliberate — worst-case-opponent search — but nowhere stated). The review's flat-BCE
+  note (#9) is superseded by the in-flight Beta-targets build (binomial n-weighting).
+- **Static perf notes banked, unmeasured** (live trainer on the box): head-only CF forward runs
+  with grad it immediately discards (free `no_grad`); per-row npz reopen; per-write full readdir
+  on the bridge reader coroutine; the eager CF forward ≈ +6% row-forwards at production shapes
+  when the coefficient goes live.
