@@ -30,7 +30,7 @@ from agents.opponents import (
 from agents.training.reward_tracker import RewardTrackingMixin
 from agents.training.battle_recorder import BattleRecorder, write_battle_record
 from utils.bridge.reconstruction import register_trace_prefix
-from main.launcher.ipc import send_metrics, send_event
+from main.launcher.ipc import emit, send_metrics, send_event
 from utils.git import get_git_hash
 
 BATTLE_FORMAT = "gen3ou"
@@ -1012,9 +1012,58 @@ class _ForcedEvalMixin:
 
     Mixed into ``PerOpponentEvalCallback`` and ``SelfPlayCallback`` (which otherwise
     share only ``BaseCallback``) so the force path can't drift between them. Each calls
-    ``_maybe_force_eval`` from its ``_on_step``; the mixin reads the duck-typed eval
-    state both classes expose (``_eval_root`` / ``_pending`` / ``_last_eval_step`` /
-    ``num_timesteps``) and drives the subclass's own ``_launch_eval``."""
+    ``_maybe_force_eval`` from its ``_on_step`` and ``_restore_last_eval_step`` from its
+    ``_init_callback``; the mixin reads the duck-typed eval state both classes expose
+    (``_eval_root`` / ``_pending`` / ``_last_eval_step`` / ``_model_dir`` /
+    ``_resume_eval_metadata`` / ``num_timesteps``) and drives the subclass's own
+    ``_launch_eval``."""
+
+    def _restore_last_eval_step(self) -> None:
+        """Restore the eval-cadence anchor from metadata, **CLAMPED to the current step**.
+
+        ``_last_eval_step`` is in-memory and resets to 0 each process, so a resume restores it
+        from metadata — otherwise the resumed step is far past a cadence boundary and a fresh 0
+        would fire an eval on the very first step. That is right for a launcher RESTART, where the
+        recorded eval and the loaded weights are the same point in the run.
+
+        It is WRONG for a **FORK**. ``resume_eval_metadata`` is the SOURCE run's run-level
+        ``metadata.json``, whose ``latest_eval.step`` is where that run last evaluated — not the
+        step of the older checkpoint being forked from. Fork gen-17's 9.08M checkpoint out of a run
+        that went on to 25M and the anchor restores to 24,000,000 against a ``num_timesteps`` of
+        9,084,672; the cadence test ``(now // freq) > (anchor // freq)`` is then false until the
+        fork itself reaches 26M, so a fork that trains a few million steps runs **ZERO eval
+        cycles** — no ``win_rate_vs_*``, no ``eval_results.jsonl`` row, no ELO. An A/B or
+        exploiter gate whose verdict is an eval metric silently produces nothing to read.
+
+        Clamping to ``num_timesteps`` restores the intended meaning ("we are considered evaluated
+        as of here"), so the next boundary after the fork point fires normally. A restart is
+        unaffected (its recorded step is at or behind the current one, so the clamp never bites).
+        Same family as ``SelfPlayCallback._warn_if_fork_pool_empty`` — a fork inherits the base's
+        weights but none of its run-directory state, and the silent failures live in that gap.
+        """
+        recorded = latest_recorded_eval_step(
+            getattr(self, "_model_dir", None), getattr(self, "_resume_eval_metadata", None))
+        # Read the MODEL's counter, not ``BaseCallback.num_timesteps``: the latter is a mirror SB3
+        # only syncs inside ``_on_step``, so at ``_init_callback`` time it is still 0 even on a
+        # resume at 9M — reading it would clamp every restart to 0 and re-eval on step 1. Fall back
+        # to the mirror when no model is attached yet (the attribute is typed ``int``; anything
+        # else is not a live model).
+        raw = getattr(getattr(self, "model", None), "num_timesteps", None)
+        now = int(raw) if isinstance(raw, int) else int(self.num_timesteps)
+        if recorded > now:
+            # State the FACT, not a cause: this is a FORK off an older checkpoint most of the time,
+            # but a crash-restart that rewound past a completed eval reads identically.
+            msg = (f"⚠️  [EVAL] eval-cadence anchor is AHEAD of this model — the resumed metadata "
+                   f"records an eval at step {recorded:,} but the model is at {now:,} (a FORK off "
+                   f"an older checkpoint, or a restart that rewound past a completed eval). "
+                   f"Clamping the anchor to {now:,}; unclamped, this run would launch NO eval "
+                   f"cycle until step {recorded:,}.")
+            try:
+                emit(msg)      # prints when standalone, goes to the launcher event stream otherwise
+            except Exception:  # noqa: BLE001 — a warning must never break a run
+                print(msg, flush=True)
+            recorded = now
+        self._last_eval_step = recorded
 
     def _maybe_force_eval(self) -> None:
         """If a forced-eval request is pending, launch an off-cadence cycle now — or
@@ -1165,8 +1214,9 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # the next cycle (which can be millions of steps away).
         self._replay_last_eval_to_tui()
         # Restore the last eval step so a resume doesn't re-eval the same checkpoint
-        # immediately (it waits for the next cadence boundary instead).
-        self._last_eval_step = latest_recorded_eval_step(self._model_dir, self._resume_eval_metadata)
+        # immediately (it waits for the next cadence boundary instead). CLAMPED to the current
+        # step — see _restore_last_eval_step: an unclamped FORK anchor starves eval entirely.
+        self._restore_last_eval_step()
 
     def _on_step(self) -> bool:
         if self._pending is not None:

@@ -476,6 +476,10 @@ def test_resume_restores_eval_step_no_immediate_re_eval(tmp_path):
     (tmp_path / "metadata.json").write_text(json.dumps(
         {"latest_eval": {"step": 46_963_120, "win_rate_mean": 0.7, "opponents": {}}}))
     cb = _make_callback(tmp_path)
+    # The RESUME's own step, on the MODEL (where _init_callback reads it — the callback's own
+    # num_timesteps mirror is still 0 at that point). It must be present: the anchor is CLAMPED to
+    # it, so a model left at 0 would model a fork-from-step-0 (see eval_fork_cadence_test.py).
+    cb.model.num_timesteps = 46_963_136
     cb._init_callback()
     assert cb._last_eval_step == 46_963_120          # restored, not 0
 

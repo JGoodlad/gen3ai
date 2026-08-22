@@ -589,6 +589,28 @@ in the trainer). Behaviors:
   because the pool only changes at an eval-collect — the same moment the block is persisted —
   so the saved rows match the pool reconstructed from `snapshots/`. A pre-seed eval persists an
   empty `sentinels` list, which isn't re-published (nothing to show yet).
+- **The cadence ANCHOR is restored on resume — CLAMPED to the current step**
+  (`_ForcedEvalMixin._restore_last_eval_step`, shared by BOTH callbacks). `_last_eval_step` is
+  in-memory and resets each process, so it is restored from metadata; otherwise the resumed step
+  sits far past a boundary and a fresh `0` would eval on step 1. That is right for a launcher
+  RESTART and **wrong for a FORK**: `resume_eval_metadata` is the SOURCE run's run-level
+  `metadata.json`, whose `latest_eval.step` is where *that* run last evaluated, not the step of the
+  older checkpoint being forked from. Measured 2026-08-21 on an exploiter fork of gen-17's
+  9,084,672-step checkpoint out of a run that reached 25M: the anchor restored to **24,000,000**,
+  and since the cadence test is `(now // freq) > (anchor // freq)`, the fork would have launched
+  **ZERO eval cycles** until it itself reached 26M — no `win_rate_vs_*`, no `eval_results.jsonl`
+  row, no ELO. A gate arm whose verdict IS an eval metric silently produces nothing to read.
+  Clamping to the model's `num_timesteps` restores the intended meaning and the next boundary after
+  the fork point fires normally; a restart is unaffected (its recorded step is at or behind the
+  loaded one, so the clamp never bites) and the clamp announces itself with an `anchor is AHEAD`
+  event that states the FACT rather than asserting a cause — a crash-restart that rewound past a
+  completed eval reads identically to a fork.
+  ⚠️ It reads **`self.model.num_timesteps`**, not `BaseCallback.num_timesteps` — the latter is a
+  mirror SB3 only syncs inside `_on_step`, so at `_init_callback` time it is still `0` even on a 9M
+  resume, and reading it would clamp every restart to 0 and re-eval on step 1 (observed live before
+  the fix, as `this model is at 0`). Same family as `_warn_if_fork_pool_empty`: a fork inherits the
+  base's weights but none of its run-directory state, and the silent failures live in that gap.
+  Test: `eval_fork_cadence_test.py` (both callbacks, parametrized).
 
 | Flag | Default | Notes |
 |------|---------|-------|

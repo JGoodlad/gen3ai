@@ -57,7 +57,6 @@ from agents.training.eval_callback import (
     record_elo,
     record_external_elos,
     record_per_opponent,
-    latest_recorded_eval_step,
     merge_eval_results,
     persist_eval_snapshot,
     prune_eval_traces,
@@ -305,8 +304,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
         # Restore the last eval step so a resume doesn't re-eval the same checkpoint
-        # immediately (it waits for the next cadence boundary instead).
-        self._last_eval_step = latest_recorded_eval_step(self._model_dir, self._resume_eval_metadata)
+        # immediately (it waits for the next cadence boundary instead). CLAMPED to the current
+        # step — see _restore_last_eval_step: an unclamped FORK anchor starves eval entirely.
+        self._restore_last_eval_step()
 
     def _warn_if_fork_pool_empty(self) -> None:
         """A FORK that starts with an empty pool trains against BOTS, not selves — say so.
