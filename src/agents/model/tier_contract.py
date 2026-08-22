@@ -120,6 +120,12 @@ TIER_OF: Dict[str, int] = {
     "assembler": 3,
     "win_head": 3,
     "value_dist_head": 3,
+    # gen3_cf_evidential_head_v1 (v98): the evidential Beta readout, off the same `value_pooled` the
+    # other two readouts take — T3 DELIVER by the same argument. It is the ONE tiered child the
+    # extractor forward never calls (the training-side cf loss applies it to the STASHED
+    # value_pooled), so the tracer will never see it; the declaration is here so a future config
+    # that builds it does not trip `test_every_child_module_declares_a_tier`.
+    "cf_evid_head": 3,
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool, injected into
     # `value_pooled` through the v89 seam. Since the critic-route deletion wave it is the ONLY
     # member of that seam — and the only DELIVER-stage critic route other than the two `cls_pool`

@@ -269,9 +269,23 @@ def test_stats_age_p50_tracks_staleness(tmp_path):
 def test_batch_tensors_shapes():
     import torch as th
     rows = [_r for _r in _fake_rows(5)]
-    obs, lab = batch_tensors(rows, th.device("cpu"))
-    assert obs.shape == (5, 8) and lab.shape == (5,)
-    assert obs.dtype == th.float32 and lab.dtype == th.float32
+    obs, lab, n = batch_tensors(rows, th.device("cpu"))
+    assert obs.shape == (5, 8) and lab.shape == (5,) and n.shape == (5,)
+    assert obs.dtype == th.float32 and lab.dtype == th.float32 and n.dtype == th.float32
+
+
+def test_batch_tensors_carries_the_rollout_COUNT_not_just_the_ratio():
+    """gen3_cf_binomial_likelihood_v1: `label` alone is not a sufficient statistic — 0.75 from 4
+    rollouts and 0.75 from 16 are the same number carrying four times the evidence. The count must
+    reach the loss, and the win count must be recoverable from the pair."""
+    import torch as th
+    from agents.training.cf_label_buffer import CfLabel
+    rows = [CfLabel(obs=_obs(fill=0.0), label=0.75, policy_step=1, battle="b", decision_idx=0,
+                    opponent="x", n_rollouts=r) for r in (4, 16)]
+    _obs_t, lab, n = batch_tensors(rows, th.device("cpu"))
+    assert lab.tolist() == [0.75, 0.75]
+    assert n.tolist() == [4.0, 16.0]
+    assert th.round(lab * n).tolist() == [3.0, 12.0]
 
 
 def _fake_rows(n):

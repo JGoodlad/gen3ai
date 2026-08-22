@@ -940,6 +940,7 @@ def current_model_version(
     td_aux_coef: float = 0.0,
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
+    cf_evidential: bool = False,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -984,6 +985,9 @@ def current_model_version(
     ext_kwargs["edge_bias_families"] = edge_bias_families
     ext_kwargs["entity_tail_seats"] = entity_tail_seats
     ext_kwargs["win_prob_mode"] = win_prob_mode
+    # gen3_cf_evidential_head_v1 (v98): a state_dict-changing head, so a frozen eval/pool opponent's
+    # gate must see it — otherwise a cf-evidential run FATALs loading its OWN sentinels.
+    ext_kwargs["cf_evidential"] = cf_evidential
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1066,6 +1070,9 @@ def arch_toggles_from_model(model: Any) -> dict:
         "edge_bias_families": str(getattr(fe, "edge_bias_families", "off")),
         "entity_tail_seats": bool(getattr(fe, "entity_tail_seats", False)),
         "win_prob_mode": str(getattr(fe, "win_prob_mode", "none")),
+        # gen3_cf_evidential_head_v1 (v98): state_dict-changing head, invisible to the forward —
+        # the recorded toggle is the only thing a load gate can compare.
+        "cf_evidential": bool(getattr(fe, "cf_evidential", False)),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

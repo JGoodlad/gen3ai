@@ -366,6 +366,29 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # Set by train_rl_agent alongside the buffer; the buffer itself owns the bound (this is the
     # value it was constructed with, kept here only for the record).
     cf_label_lag_steps: int = 0
+    # gen3_cf_binomial_likelihood_v1: WHICH likelihood the scalar cf term uses.
+    #   'binomial' (the DEFAULT) — the exact binomial NLL of the row's win COUNT:
+    #       w = round(label*n), NLL_i = -[w*log q + (n-w)*log(1-q)], folded as sum(NLL)/sum(n).
+    #     Each row is weighted by its evidence, so an R=16 label pulls 4x an R=4 label. That is not
+    #     a heuristic weighting — it is what the likelihood of the data actually is, and the flat
+    #     form was implicitly asserting every label carries one observation.
+    #   'bce' — the flat per-row BCE on the scalar `label`, i.e. the pre-2026-08-22 behaviour, kept
+    #     as the A/B arm. The two are EXACTLY equal when every n == 1 (a 1-rollout label is already
+    #     0 or 1, so the round is the identity and sum(n) == B).
+    # TRAINING-only (a loss FORM, no forward and no weight shape) -> not version-locked, not in
+    # check_compatible, NOT read back on a flagless resume: the `--opd-coef` class.
+    cf_label_likelihood: str = "binomial"
+    # gen3_cf_evidential_head_v1: the EVIDENTIAL Beta term's weight. Folds
+    #     cf_evidential_coef * ( BetaBinomialNLL(alpha,beta; w,n)/sum(n)
+    #                            + cf_evidential_reg * mean KL(Beta(a,b) || Beta(1,1)) )
+    # over the SAME sampled rows and the SAME extractor forward as the scalar cf term. 0.0 = OFF and
+    # the whole block is skipped. TRAINING-only; the STRUCTURAL half is the extractor's
+    # `cf_evidential` kwarg (v98), which decides whether the head's params exist at all.
+    cf_evidential_coef: float = 0.0
+    # The evidential-overconfidence guard's weight, RELATIVE to the NLL (it sits inside the coef).
+    # Evidential heads inflate alpha+beta without bound on locally-consistent data; a small pull
+    # back toward the uninformative Beta(1,1) is the standard remedy.
+    cf_evidential_reg: float = 1e-3
 
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
@@ -775,11 +798,42 @@ class InstrumentedMaskablePPO(MaskablePPO):
         td_loss, metrics = out
         return self.td_aux_coef * td_loss, metrics
 
-    def _cf_winprob_term(self):
-        """The COUNTERFACTUAL win-prob grounding term for ONE minibatch.
+    @staticmethod
+    def _cf_binomial_nll(logits, labels, n_rollouts):
+        """EXACT binomial negative log-likelihood of the labels' win COUNTS, normalized by Σn.
 
-        Returns ``(weighted_term, metrics)`` — or ``(None, {})`` when the buffer is empty, so a
-        starving producer costs the train loop nothing but a `len()`.
+        ``label`` is a RATIO (wins/rollouts) and the flat BCE ate it as if every row carried one
+        observation. It does not: with ``w = round(label·n)`` and ``q = sigmoid(logit)``,
+
+            NLL_i = −[ w_i·log q_i + (n_i − w_i)·log(1 − q_i) ]
+
+        which is ``n_i`` times the per-observation cross-entropy — so an R=16 label pulls exactly 4×
+        an R=4 one. That is not an emphasis choice; it is the likelihood of the data.
+
+        NORMALIZATION: ``Σ NLL_i / Σ n_i`` — mean NLL per ROLLOUT. Chosen (over ``/mean(n)`` or a
+        bare mean) because it makes the coefficient keep its meaning across producers with different
+        R, and because at ``n ≡ 1`` it reduces EXACTLY to the mean BCE the flat path computes (a
+        1-rollout label is already 0 or 1, so the round is the identity and Σn = B). That exact
+        agreement is pinned by a test, so 'binomial' is a strict generalisation rather than a
+        different objective that happens to look similar.
+
+        Computed through ``softplus`` rather than ``log(sigmoid(·))``: −log σ(z) = softplus(−z) and
+        −log(1−σ(z)) = softplus(z), both stable at large |z| where the naive form underflows to
+        ``log(0)``.
+        """
+        n = n_rollouts.clamp(min=1.0)
+        # round-then-clamp: a producer's label is in [0,1] (the buffer enforces it), so w lands in
+        # [0, n] already; the clamp is belt-and-braces against a float-rounding edge, and keeps
+        # `n - w` non-negative, which lgamma-free though this path is, the caller relies on.
+        wins = th.minimum(th.round(labels * n).clamp(min=0.0), n)
+        total = wins * F.softplus(-logits) + (n - wins) * F.softplus(logits)
+        return total.sum() / n.sum().clamp(min=1.0)
+
+    def _cf_sample_and_forward(self):
+        """Sample label rows and run the ONE extractor forward both cf terms share.
+
+        Returns ``(labels, n_rollouts, value_pooled, n_rows)`` or ``None`` when the buffer is empty
+        or absent — so a starving producer costs the train loop nothing but a `len()`.
 
         WHY ITS OWN SAMPLE AND ITS OWN FORWARD. The labelled states are *recorded past decisions*
         re-scored offline; they are not in this rollout at all, so there is no way to ride
@@ -789,15 +843,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
         ``n_epochs x n_minibatches``, so the coefficient would stop meaning what it means for every
         other aux.
 
-        WHY IT DOES NOT READ ``last_win_prob_logits``. That stash is produced under the extractor's
-        own ``win_prob_mode`` (``read_only`` stop-grads, ``shaping`` does not), which governs the
-        ON-POLICY win-prob BCE. This term's trunk exposure is governed by ``cf_head_only``, which is
-        a separate decision — so it re-applies the head to ``stash.value_pooled`` itself, detaching
-        iff ``cf_head_only``. The two settings are then independent by construction, and head-only
-        really is head-only whatever the mode says.
+        WHY IT IS SHARED. The scalar win-prob term and the evidential Beta term supervise two
+        readouts of the SAME `value_pooled` on the SAME rows; giving each its own sample would pay
+        twice for the extractor forward (the whole cost of this block) and would additionally make
+        the two terms disagree about which states they saw, for no reason at all.
 
         NOTE it CLOBBERS the extractor stashes for this minibatch (its forward replaces them), so
-        it must be folded after every loss that reads them — it sits beside `_td_aux_term`, which
+        it must be run after every loss that reads them — it sits beside `_td_aux_term`, which
         carries the identical constraint.
         """
         from agents.training.cf_label_buffer import CF_SAMPLE_SIZE, batch_tensors
@@ -805,16 +857,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
         buf = getattr(self, "_cf_buffer", None)
         rows = buf.sample(CF_SAMPLE_SIZE) if buf is not None else []
         if not rows:
-            return None, {}
+            return None
 
         fe = self.policy.features_extractor
-        head = getattr(fe, "win_head", None)
-        if head is None:
-            # Guarded at the call site too; belt and braces, because a silent no-op here would be
-            # a coefficient that reads as "on" and teaches nothing.
-            return None, {}
-
-        obs, labels = batch_tensors(rows, self.device)
+        obs, labels, n_rollouts = batch_tensors(rows, self.device)
         # The EAGER forward, deliberately. `compile_trainer_extractor` patches the BOUND
         # `fe.forward`, so `type(fe).forward` is always the uncompiled one — and this call passes an
         # obs dict with ONLY the "observation" key (the sole key the model reads; a label carries
@@ -825,14 +871,46 @@ class InstrumentedMaskablePPO(MaskablePPO):
         type(fe).forward(fe, {"observation": obs})
         value_pooled = fe.stash.value_pooled
         if value_pooled is None:                       # pragma: no cover - defensive
+            return None
+        return labels, n_rollouts, value_pooled, len(rows)
+
+    def _cf_winprob_term(self, ctx):
+        """The COUNTERFACTUAL win-prob grounding term for ONE minibatch.
+
+        Returns ``(weighted_term, metrics)`` — or ``(None, {})`` when there is no sample or no head.
+
+        WHY IT DOES NOT READ ``last_win_prob_logits``. That stash is produced under the extractor's
+        own ``win_prob_mode`` (``read_only`` stop-grads, ``shaping`` does not), which governs the
+        ON-POLICY win-prob BCE. This term's trunk exposure is governed by ``cf_head_only``, which is
+        a separate decision — so it re-applies the head to ``stash.value_pooled`` itself, detaching
+        iff ``cf_head_only``. The two settings are then independent by construction, and head-only
+        really is head-only whatever the mode says.
+        """
+        if ctx is None:
             return None, {}
+        labels, n_rollouts, value_pooled, n_rows = ctx
+
+        fe = self.policy.features_extractor
+        head = getattr(fe, "win_head", None)
+        if head is None:
+            # Guarded at the call site too; belt and braces, because a silent no-op here would be
+            # a coefficient that reads as "on" and teaches nothing.
+            return None, {}
+
         logits = head(value_pooled.detach() if self.cf_head_only else value_pooled).flatten()
-        loss = th.nn.functional.binary_cross_entropy_with_logits(logits, labels)
+        if str(getattr(self, "cf_label_likelihood", "binomial")) == "bce":
+            loss = th.nn.functional.binary_cross_entropy_with_logits(logits, labels)
+        else:
+            loss = self._cf_binomial_nll(logits, labels, n_rollouts)
         with th.no_grad():
             probs = th.sigmoid(logits)
             metrics = {
                 "loss": float(loss),
-                "n": float(len(rows)),
+                "n": float(n_rows),
+                # The mean EVIDENCE behind the sampled labels. Read beside `loss`: under the
+                # binomial likelihood the loss is per-rollout, so a producer that quietly changed R
+                # would otherwise move the loss with no visible cause.
+                "n_rollouts_mean": float(n_rollouts.mean()),
                 "pred_mean": float(probs.mean()),
                 "label_mean": float(labels.mean()),
                 # The G0 meter's live counterpart: SIGNED mean(pred - MC). The G0 bias map's
@@ -842,6 +920,68 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 "abs_err": float((probs - labels).abs().mean()),
             }
         return self.cf_winprob_coef * loss, metrics
+
+    def _cf_evidential_term(self, ctx):
+        """The EVIDENTIAL Beta term for ONE minibatch — the head's UNCERTAINTY, supervised.
+
+        Returns ``(weighted_term, metrics)`` — or ``(None, {})`` when there is no sample or the head
+        is not built.
+
+        WHAT IT IS FOR. G0 convicted the scalar win-prob head of BLUR, not bias: within a confidence
+        decile the true P(win) spread is 0.11–0.36, which the point estimate cannot represent at
+        all. This term does not remove the blur — it reads the same `value_pooled` — it makes the
+        head CONFESS it, by fitting a Beta whose width can be wide exactly where the states behind a
+        bin disagree.
+
+        THE LOSS is the Beta-Binomial MARGINAL likelihood of the row's counts (p integrated out, not
+        plugged in), which is the correct evidential objective for count data: it pulls the mean
+        toward w/n AND grows the precision α+β only as far as consistency across states supports.
+        Normalized by Σn like the scalar term, so the two coefficients are in the same units (nats
+        per rollout). The KL pull toward Beta(1,1) rides INSIDE the coefficient at
+        ``cf_evidential_reg``, so coefficient zero kills the whole term including the regularizer.
+
+        ALWAYS DETACHED. Unlike `_cf_winprob_term` there is no `head_only` switch: this head is a
+        pure supervised readout that feeds nothing forward, so letting it shape the trunk would be
+        a training change with no consumer to justify it. `grad/cf_evidential_share` therefore reads
+        exactly 0.0 by construction — the verification, not a defect.
+        """
+        if ctx is None:
+            return None, {}
+        labels, n_rollouts, value_pooled, n_rows = ctx
+
+        fe = self.policy.features_extractor
+        head = getattr(fe, "cf_evid_head", None)
+        if head is None:
+            return None, {}
+
+        alpha, beta = head(value_pooled.detach())
+        n = n_rollouts.clamp(min=1.0)
+        wins = th.minimum(th.round(labels * n).clamp(min=0.0), n)
+        nll = head.beta_binomial_nll(alpha, beta, wins, n).sum() / n.sum().clamp(min=1.0)
+        reg = head.kl_to_uniform(alpha, beta).mean()
+        term = nll + float(self.cf_evidential_reg) * reg
+        with th.no_grad():
+            precision = alpha + beta
+            metrics = {
+                "nll": float(nll),
+                "reg": float(reg),
+                "n": float(n_rows),
+                "alpha_mean": float(alpha.mean()),
+                # α+β is the EVIDENCE the head claims. Watch it against `cf_evidential_reg`: an
+                # unbounded climb is the evidential-overconfidence failure the KL exists to bound.
+                "precision_mean": float(precision.mean()),
+                # THE HEADLINE. The pre-registered read for the future A/B is that this width,
+                # per stratum, tracks `cf_audit`'s measured `sd_true_excess` for that stratum.
+                "epistemic_std_mean": float(head.epistemic_std(alpha, beta).mean()),
+                "pred_mean": float((alpha / precision).mean()),
+            }
+        # A stash for a future per-decision trace capture (the prober reads `win_probs` from the
+        # npz the same way). It lives on the EXTRACTOR, beside `last_win_prob_logits`, for the
+        # reason that convention exists: a plain attribute there rides no state_dict and no
+        # checkpoint, whereas the same attribute on the model would be pickled into every save.
+        # Detached + on CPU so nothing holds a graph or device memory.
+        fe.last_cf_evidential = (alpha.detach().cpu(), beta.detach().cpu())
+        return self.cf_evidential_coef * term, metrics
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
@@ -991,11 +1131,21 @@ class InstrumentedMaskablePPO(MaskablePPO):
             and cf_buffer is not None
             and getattr(self.policy.features_extractor, "win_head", None) is not None
         )
-        if cf_winprob_on:
+        # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1): the Beta uncertainty readout, on the SAME
+        # labels and the SAME forward. Independent of the scalar term — either, both or neither may
+        # be live — but it needs the STRUCTURAL head (`--cf-evidential`), a launch-time decision.
+        cf_evid_on = (
+            float(getattr(self, "cf_evidential_coef", 0.0)) != 0.0
+            and cf_buffer is not None
+            and getattr(self.policy.features_extractor, "cf_evid_head", None) is not None
+        )
+        cf_any_on = cf_winprob_on or cf_evid_on
+        if cf_any_on:
             # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
             # its own pace and re-globbing a directory 240 times an update buys nothing.
             cf_buffer.poll(int(self.num_timesteps))
         cf_metrics: dict[str, list[float]] = {}
+        cf_evid_metrics: dict[str, list[float]] = {}
 
         continue_training = True
 
@@ -1561,12 +1711,25 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # stash from THIS minibatch's evaluate_actions forward, which its forward replaces).
                 # OFF / empty buffer → skipped (loss byte-identical).
                 cf_term = None
-                if cf_winprob_on:
-                    cf_term, _cfm = self._cf_winprob_term()
-                    if cf_term is not None:
-                        loss = loss + cf_term
-                        for _cfk, _cfv in _cfm.items():
-                            cf_metrics.setdefault(_cfk, []).append(float(_cfv))
+                cf_evid_term = None
+                if cf_any_on:
+                    # ONE sample + ONE extractor forward, shared by both readouts (see
+                    # `_cf_sample_and_forward`). With the evidential half off this is exactly the
+                    # call the scalar term used to make on its own, which is what keeps the
+                    # coefficient-zero byte-identity pins meaningful.
+                    _cf_ctx = self._cf_sample_and_forward()
+                    if cf_winprob_on:
+                        cf_term, _cfm = self._cf_winprob_term(_cf_ctx)
+                        if cf_term is not None:
+                            loss = loss + cf_term
+                            for _cfk, _cfv in _cfm.items():
+                                cf_metrics.setdefault(_cfk, []).append(float(_cfv))
+                    if cf_evid_on:
+                        cf_evid_term, _cfem = self._cf_evidential_term(_cf_ctx)
+                        if cf_evid_term is not None:
+                            loss = loss + cf_evid_term
+                            for _cek, _cev in _cfem.items():
+                                cf_evid_metrics.setdefault(_cek, []).append(float(_cev))
 
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
@@ -1601,6 +1764,10 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # stop-grad'd, so `grad/cf_winprob_share` reads exactly 0.0 BY CONSTRUCTION — that
                 # is the correct value and the gate the head-only stage is verified by, not a bug.
                 if cf_term is not None:            aux_probe_terms["cf_winprob"] = cf_term
+                # The evidential term's input is detached UNCONDITIONALLY (no head_only switch), so
+                # `grad/cf_evidential_share` reads exactly 0.0 BY CONSTRUCTION — it is registered
+                # here precisely so that zero is PUBLISHED rather than assumed.
+                if cf_evid_term is not None:       aux_probe_terms["cf_evidential"] = cf_evid_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1624,7 +1791,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         # minibatch, so waiting for one would suppress the whole grad probe for the
                         # rest of the run — the `len(cf_buffer) == 0` escape says "there are no
                         # labels at all, sample anyway"; `cf/buffer_fill` is where that is read.
-                        and (not cf_winprob_on or cf_term is not None or len(cf_buffer) == 0)):
+                        and (not cf_any_on or cf_term is not None or cf_evid_term is not None
+                             or len(cf_buffer) == 0)):
                     grad_balance = grad_balance_metrics(
                         policy_loss + self.ent_coef * entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
@@ -1890,6 +2058,28 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if cf_winprob_on:
             self.logger.record("train/cf_grad_share",
                                float(grad_balance.get("grad/cf_winprob_share", 0.0)))
+        # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1) — `cf/evid_*`, its own sub-prefix so a reader
+        # can tell the Beta readout's numbers from the scalar head's at a glance.
+        #
+        #  * `nll` is the term being minimised (Beta-Binomial marginal, per rollout) and `reg` the
+        #    KL pull toward Beta(1,1).
+        #  * `precision_mean` (α+β) is the EVIDENCE the head claims. An unbounded climb is the
+        #    evidential-overconfidence failure `--cf-evidential-reg` exists to bound; read the two
+        #    together, because a falling `nll` with a runaway precision is the head buying its loss
+        #    with certainty it has not earned.
+        #  * `epistemic_std_mean` is THE HEADLINE and the pre-registered read: the confessed width
+        #    should CORRELATE, per stratum, with `cf_audit`'s measured `sd_true_excess` for that
+        #    stratum. Wide everywhere and wide nowhere are the same null.
+        if cf_evid_metrics:
+            for _ek, _evals in cf_evid_metrics.items():
+                self.logger.record(f"cf/evid_{_ek}", float(np.mean(_evals)))
+            self.logger.record("train/cf_evidential_loss",
+                               float(np.mean(cf_evid_metrics.get("nll", [0.0]))))
+        if cf_evid_on:
+            # Reads 0.0 by construction (the head's input is always detached). Published so the
+            # always-detached contract is a LIVE measurement rather than a claim in a docstring.
+            self.logger.record("train/cf_evidential_grad_share",
+                               float(grad_balance.get("grad/cf_evidential_share", 0.0)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

@@ -64,6 +64,60 @@ def test_underscore_aliases_resolve():
 
 
 # --------------------------------------------------------------------------------------
+# gen3_cf_binomial_likelihood_v1 + gen3_cf_evidential_head_v1
+# --------------------------------------------------------------------------------------
+def test_the_likelihood_defaults_to_binomial():
+    """The DEFAULT is the correct likelihood, not the legacy one.
+
+    `--cf-winprob-coef` has never been live in a production run, so there is no trained behaviour to
+    preserve and no reason to default to the flat BCE that treats an R=16 label as one observation.
+    'bce' stays as the explicit A/B arm.
+    """
+    a = build_parser().parse_args(["--steps", "1"])
+    assert a.cf_label_likelihood == "binomial"
+    assert build_parser().parse_args(["--cf-label-likelihood", "bce"]).cf_label_likelihood == "bce"
+
+
+def test_an_unknown_likelihood_is_rejected_by_the_parser():
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["--cf-label-likelihood", "poisson"])
+
+
+def test_evidential_defaults_are_off():
+    """The structural head is OFF and its coefficient is 0 — a command that names neither is
+    indistinguishable from today, in the state_dict and in the loss."""
+    a = build_parser().parse_args(["--steps", "1"])
+    assert a.cf_evidential is False
+    assert a.cf_evidential_coef == 0.0
+    assert a.cf_evidential_reg == 1e-3
+
+
+def test_evidential_takes_both_negation_forms_and_the_underscore_aliases():
+    p = build_parser()
+    assert p.parse_args(["--cf-evidential"]).cf_evidential is True
+    assert p.parse_args(["--no-cf-evidential"]).cf_evidential is False
+    assert p.parse_args(["--cf-evidential=false"]).cf_evidential is False
+    a = p.parse_args(["--cf_evidential", "--cf_evidential_coef", "0.2",
+                      "--cf_evidential_reg", "0.01"])
+    assert (a.cf_evidential, a.cf_evidential_coef, a.cf_evidential_reg) == (True, 0.2, 0.01)
+
+
+def test_the_structural_flag_is_in_the_registry_but_its_coefficients_are_not():
+    """The scope call, written down where a reader will look for it.
+
+    `--cf-evidential` builds a MODULE from an extractor constructor kwarg — the registry's declared
+    scope, and the win_prob_mode / value_dist_mode precedent — so it is a `cli`/`structural` row and
+    is version-gated. The two coefficients are loss weights set on the MODEL and never reach the
+    extractor: the `--opd-coef` class, deliberately absent.
+    """
+    from agents.model.flag_registry import BY_NAME
+    assert "cf_evidential" in BY_NAME
+    for absent in ("cf_evidential_coef", "cf_evidential_reg", "cf_label_likelihood",
+                   "cf_winprob_coef", "cf_head_only", "cf_records"):
+        assert absent not in BY_NAME, f"{absent} is training-only and must stay out of the registry"
+
+
+# --------------------------------------------------------------------------------------
 # the refusals (subprocess)
 # --------------------------------------------------------------------------------------
 def test_a_live_coef_without_a_win_prob_head_is_refused():
@@ -91,13 +145,33 @@ def test_the_record_tap_without_a_bridge_is_refused():
     assert rc != 0 and "--cf-records requires the in-process bridge" in out
 
 
+def test_an_evidential_coef_without_the_head_is_refused():
+    """`--cf-evidential` BUILDS the head, and it is structural (version-gated), so it cannot be
+    added mid-run to rescue a live coefficient. A silent no-op here would cost a whole run AND
+    FATAL the resume that tried to fix it."""
+    rc, out = _run("--cf-evidential-coef", "0.5")
+    assert rc != 0
+    assert "--cf-evidential-coef > 0 requires --cf-evidential" in out
+
+
+def test_a_negative_evidential_coef_is_refused():
+    rc, out = _run("--cf-evidential-coef", "-1")
+    assert rc != 0 and "--cf-evidential-coef must be >= 0" in out
+
+
+def test_a_negative_evidential_reg_is_refused():
+    rc, out = _run("--cf-evidential-reg", "-0.5")
+    assert rc != 0 and "--cf-evidential-reg must be >= 0" in out
+
+
 def test_checkargs_accepts_the_whole_family():
     """`python -m main.checkargs` must not report the new flags as stale — it is what an operator
     runs before relaunching a recorded command."""
     proc = subprocess.run(
         [sys.executable, "-m", "main.checkargs", "--argv",
          "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
-         "--no-cf-head-only --cf-label-lag-steps 1000"],
+         "--no-cf-head-only --cf-label-lag-steps 1000 --cf-label-likelihood binomial "
+         "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001"],
         capture_output=True, text=True, timeout=300, cwd=str(_REPO),
         env={**os.environ, "PYTHONPATH": str(_REPO / "src")},
     )

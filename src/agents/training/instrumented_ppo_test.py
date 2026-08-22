@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import inspect
+import math
 
 import gymnasium as gym
 import numpy as np
@@ -999,3 +1000,209 @@ def test_cf_class_defaults_are_off_and_head_only():
     """The shipped defaults, asserted on the CLASS so a resume that sets nothing is safe."""
     assert InstrumentedMaskablePPO.cf_winprob_coef == 0.0
     assert InstrumentedMaskablePPO.cf_head_only is True
+    # gen3_cf_binomial_likelihood_v1 / gen3_cf_evidential_head_v1: the likelihood DEFAULTS to the
+    # correct one (the lever has never run in production, so there is no legacy to preserve), and
+    # the evidential term defaults OFF.
+    assert InstrumentedMaskablePPO.cf_label_likelihood == "binomial"
+    assert InstrumentedMaskablePPO.cf_evidential_coef == 0.0
+    assert InstrumentedMaskablePPO.cf_evidential_reg == 1e-3
+
+
+# --------------------------------------------------------------------------------------
+# THE BINOMIAL LIKELIHOOD (gen3_cf_binomial_likelihood_v1) — pure-function properties.
+#
+# These test `_cf_binomial_nll` directly rather than through a PPO step, because the two claims
+# ("it reduces exactly to BCE at n=1" and "it weights by n") are EXACT arithmetic facts, and an
+# end-to-end assertion could only ever check them approximately.
+# --------------------------------------------------------------------------------------
+
+def test_binomial_equals_bce_exactly_when_every_label_has_one_rollout():
+    """The reduction that makes 'binomial' a strict GENERALISATION rather than a different loss.
+
+    At n ≡ 1 a well-formed label is already 0 or 1 (a one-rollout Monte-Carlo estimate has no other
+    values), so `round(label·n)` is the identity and Σn = B — leaving exactly the mean BCE the flat
+    path computes. Bit-for-bit, not approximately: if this ever drifts, the two `--cf-label-
+    likelihood` arms have stopped being comparable at their shared boundary.
+    """
+    logits = th.tensor([-1.3, 0.4, 2.0, -0.2, 5.0, -5.0])
+    labels = th.tensor([0.0, 1.0, 1.0, 0.0, 0.0, 1.0])
+    binom = InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.ones(6))
+    bce = th.nn.functional.binary_cross_entropy_with_logits(logits, labels)
+    assert th.equal(binom, bce)
+
+
+def test_binomial_weights_each_row_by_its_rollout_count():
+    """An R=16 label pulls exactly 4x an R=4 label — the whole point of the change.
+
+    Measured on the GRADIENT w.r.t. the logits, where the weighting lives (d/dz_i of the normalized
+    loss is (n_i/Σn)·(q_i − label_i)), so this is a claim about what the optimizer sees rather than
+    about the loss value.
+    """
+    logits = th.tensor([0.3, 0.3], requires_grad=True)
+    labels = th.tensor([1.0, 1.0])
+    InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.tensor([4.0, 16.0])).backward()
+    assert float(logits.grad[1] / logits.grad[0]) == pytest.approx(4.0, rel=1e-6)
+
+
+def test_binomial_is_normalized_per_rollout_so_the_coefficient_survives_a_producer_change():
+    """Σ NLL / Σ n, not Σ NLL — so doubling the producer's R does not double the term and silently
+    double the effective coefficient. Identical labels at R=4 and at R=16 must give the SAME loss."""
+    logits = th.tensor([-0.7, 1.1, 0.0])
+    labels = th.tensor([0.0, 1.0, 1.0])
+    a = InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.full((3,), 4.0))
+    b = InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.full((3,), 16.0))
+    assert float(a) == pytest.approx(float(b), rel=1e-6)
+
+
+def test_binomial_recovers_the_win_count_from_the_ratio():
+    """`w = round(label·n)`: a 0.625 label at R=8 is FIVE wins, and the loss must be the loss of
+    five wins and three losses — not of a soft target that happens to average to 0.625."""
+    logit = th.tensor([0.0])                       # q = 0.5, so every term is log 2
+    loss = InstrumentedMaskablePPO._cf_binomial_nll(logit, th.tensor([0.625]), th.tensor([8.0]))
+    assert float(loss) == pytest.approx(math.log(2.0), rel=1e-6)   # (5+3)·log2 / 8
+
+
+def test_a_missing_rollout_count_degrades_to_one_observation():
+    """The buffer parses an absent `n_rollouts` as 0. It must become ONE observation, never a
+    divide-by-zero and never a silently dropped row."""
+    logits = th.tensor([0.4, -0.4])
+    labels = th.tensor([1.0, 0.0])
+    zero = InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.zeros(2))
+    one = InstrumentedMaskablePPO._cf_binomial_nll(logits, labels, th.ones(2))
+    assert th.equal(zero, one)
+
+
+# --------------------------------------------------------------------------------------
+# THE EVIDENTIAL BETA HEAD (gen3_cf_evidential_head_v1) — the train-loop half.
+#
+# The head's MATH lives in `agents/model/cf_evidential_head_test.py` (checked against scipy). What
+# is checked HERE is the only thing that can go wrong in the fold: whether the gradient reaches the
+# right parameters and NOTHING else, measured on the actual parameter update rather than asserted
+# about a `.detach()` call — the same standard the `cf_head_only` halves are held to above.
+# --------------------------------------------------------------------------------------
+
+def _attach_cf_evid_head(model, in_dim=8):
+    """Give the stub extractor a real `CfEvidentialHead` sized to the stub's value_pooled.
+
+    The class's loss/metric maths are classmethods over (α, β), so swapping `net` for a small
+    Linear keeps every property under test while sidestepping the production D_MODEL width.
+    """
+    from agents.model.aux_value_heads import CfEvidentialHead
+    th.manual_seed(23)
+    head = CfEvidentialHead()
+    head.net = th.nn.Sequential(th.nn.Linear(in_dim, 2))
+    model.policy.features_extractor.cf_evid_head = head
+    model.policy.optimizer.add_param_group({"params": list(head.parameters())})
+    return head
+
+
+def test_cf_evidential_off_byte_identical_with_a_populated_buffer(tmp_path):
+    """ON-at-coefficient-0: the head exists in the state_dict and in the optimizer, a full label
+    buffer is attached, and the parameter update is nonetheless IDENTICAL to no head at all.
+
+    This is the shipping contract — the flag lands OFF, and a future run that builds the head
+    without turning the coefficient on must be indistinguishable from one that did neither.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 0.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"cf_evidential_coef=0 perturbed {k}"
+
+
+def test_cf_evidential_reaches_only_its_own_head(tmp_path):
+    """A LIVE evidential coefficient moves the evidential head's params — and nothing else.
+
+    Its input is detached UNCONDITIONALLY (there is no `head_only` switch), so the trunk stub must
+    be bit-identical; and it must not touch the WIN-PROB head either, since the two readouts are
+    separate consumers of the same `value_pooled`. Both halves are measured on the update.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 0.0                 # the SCALAR term stays off: attribution is clean
+    model.cf_evidential_coef = 5.0
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    evid_keys = [k for k in base if "cf_evid_head" in k]
+    trunk_keys = [k for k in base if "cf_trunk_stub" in k]
+    head_keys = [k for k in base if "win_head" in k]
+    assert evid_keys and trunk_keys and head_keys
+    assert any(not th.equal(base[k], on[k]) for k in evid_keys), \
+        "the evidential term never reached its own head"
+    for k in trunk_keys:
+        assert th.equal(base[k], on[k]), f"the ALWAYS-DETACHED head leaked into the trunk via {k}"
+    for k in head_keys:
+        assert th.equal(base[k], on[k]), f"the evidential term perturbed the win-prob head via {k}"
+
+
+def test_cf_evidential_without_the_head_is_a_no_op(tmp_path):
+    """A live coefficient on a run whose extractor has no `cf_evid_head` must fold nothing rather
+    than crash. The CLI refuses that combination; the loss agrees, belt and braces."""
+    model = _build_cf_ppo()
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 5.0              # …but no head was ever built
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"a headless run folded an evidential term into {k}"
+
+
+def test_both_cf_terms_share_one_sample_and_one_forward(tmp_path):
+    """The two readouts must see the SAME rows off ONE extractor forward.
+
+    Two samples would pay twice for the forward (the entire cost of the block) and would make the
+    scalar and evidential terms disagree about which states they were scored on — which would
+    quietly invalidate any comparison between them. Counted on the buffer's sampler.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    buf = _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 1.0
+    model.cf_evidential_coef = 1.0
+    calls = []
+    real_sample = buf.sample
+    buf.sample = lambda n: (calls.append(n) or real_sample(n))    # type: ignore[method-assign]
+    fwd = []
+    fe = model.policy.features_extractor
+    real_forward = type(fe).forward
+    type(fe).forward = lambda self, obs: (                        # type: ignore[method-assign]
+        fwd.append("observation" in obs and "action_mask" not in obs) or real_forward(self, obs))
+    try:
+        model.learn(total_timesteps=8 * 4)
+    finally:
+        type(fe).forward = real_forward                           # type: ignore[method-assign]
+    n_minibatches = len(calls)
+    assert n_minibatches > 0, "preconditions: the CF block never ran"
+    # exactly one CF-shaped forward (obs-only dict) per minibatch, for BOTH terms together
+    assert sum(1 for is_cf in fwd if is_cf) == n_minibatches

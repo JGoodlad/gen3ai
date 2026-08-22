@@ -87,7 +87,7 @@ from agents.model.belief_heads import (  # noqa: F401
     _REVEAL_LOGIT, mask_typeless_hp,
 )
 from agents.model.aux_value_heads import (  # noqa: F401
-    ValueDistHead, WinProbHead,
+    CfEvidentialHead, ValueDistHead, WinProbHead,
 )
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,
@@ -413,6 +413,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
                  threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
+                 cf_evidential: bool = False,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1205,6 +1206,19 @@ class Gen3FeaturesExtractor(torch.nn.Module):
             self.beta_head = BetaSwitchHead(D_MODEL, _intent_ctx)
         # (alpha/beta stashes: read ONLY by the aux loss + the prober; never fed forward — see
         # ExtractorStashes.)
+
+        # gen3_cf_evidential_head_v1 (v98): the EVIDENTIAL Beta readout over P(win|state), for the
+        # counterfactual label factory's rung R1 (designs/ai_v10/design_counterfactual_value_
+        # grounding.md). STRUCTURAL — the module's params are in the state_dict or they are not —
+        # but nothing else: it is NOT called from this forward at all. The training-side loss
+        # (`instrumented_ppo._cf_evidential_term`) applies it to the STASHED `value_pooled`,
+        # always detached, so pi/vf are bit-identical whether or not it is built.
+        # Built LAST, after the intent heads and before the identity snapshot, for the same reason
+        # they are: SB3 restores optimizer state POSITIONALLY (the ai_v6_13 "128 vs 5" crash), and
+        # building it here also leaves every earlier module's init RNG draw untouched — which is
+        # what makes ON-at-coefficient-0 bit-identical to OFF and not merely equal in shape.
+        self.cf_evidential = bool(cf_evidential)
+        self.cf_evid_head = CfEvidentialHead() if self.cf_evidential else None
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

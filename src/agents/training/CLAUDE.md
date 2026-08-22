@@ -2909,13 +2909,15 @@ the term trains the head's own params and provably cannot perturb the trunk.
 - **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term` / search-teacher /
   OPD shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
   rollout, so they cannot ride `rollout_data`, and a once-per-`train()` fold would make the coefficient
-  mean something different from every other aux. It samples up to `CF_SAMPLE_SIZE` (256) rows, runs its
-  OWN extractor forward (`{"observation": …}` is the only key the model reads), and applies the win-prob
-  head to `stash.value_pooled` — **detaching iff `cf_head_only`**. It deliberately does NOT read
-  `last_win_prob_logits`: that stash is produced under the extractor's own `win_prob_mode`, which governs
-  the ON-POLICY win-prob BCE; this term's trunk exposure is a separate decision, and re-applying the head
-  makes the two independent by construction. It CLOBBERS the minibatch's extractor stashes, so it is
-  folded beside `_td_aux_term`, after every loss that reads one.
+  mean something different from every other aux. `_cf_sample_and_forward` samples up to `CF_SAMPLE_SIZE`
+  (256) rows and runs ONE extractor forward (`{"observation": …}` is the only key the model reads); the
+  term applies the win-prob head to `stash.value_pooled` — **detaching iff `cf_head_only`**. It
+  deliberately does NOT read `last_win_prob_logits`: that stash is produced under the extractor's own
+  `win_prob_mode`, which governs the ON-POLICY win-prob BCE; this term's trunk exposure is a separate
+  decision, and re-applying the head makes the two independent by construction. It CLOBBERS the
+  minibatch's extractor stashes, so it is folded beside `_td_aux_term`, after every loss that reads one.
+  The **evidential term (below) shares that ONE sample and that ONE forward** — two samples would pay
+  twice for the block's whole cost and would make the two terms disagree about which states they scored.
 - **The scalars.** `cf/*` is **producer liveness and is published whenever a buffer exists**, even if not
   one label ever arrived — `cf/buffer_fill`, `cf/label_age_steps_p50`, `cf/labels_ingested_total`,
   `cf/labels_expired_total`, `cf/labels_skipped_total`. That is deliberate: an empty buffer that does not
@@ -2935,15 +2937,118 @@ not. `--cf-winprob-coef > 0` REQUIRES `--win-prob-mode read_only|shaping` — `n
 `WinProbHead`, so a live coefficient would fold nothing for a whole run; the parser refuses it, and the
 loss independently no-ops if the head is somehow absent.
 
+### The LIKELIHOOD: `--cf-label-likelihood {binomial,bce}` (default **`binomial`**, `gen3_cf_binomial_likelihood_v1`)
+
+The label schema carries `label` **and** `n_rollouts`, so the row's win COUNT is recoverable —
+`w = round(label · n_rollouts)` — and the flat BCE was throwing that away. A 0.75 label from 4
+rollouts and a 0.75 from 16 are the same number carrying **four times the evidence**; scoring them
+identically is a modelling error, not a weighting preference.
+
+```
+w = round(label·n)            NLL_i = −[ w_i·log q_i + (n_i − w_i)·log(1 − q_i) ]
+term = Σ NLL_i / Σ n_i        (mean NLL per ROLLOUT)
+```
+
+- **`binomial` is the DEFAULT**, and that is a deliberate break with the usual "new option defaults
+  to old behaviour" rule: `--cf-winprob-coef` has never been live in a production run, so there is
+  no trained behaviour to preserve and nothing to be compatible with. `bce` stays as the explicit
+  A/B arm.
+- **The normalization is `Σ NLL / Σ n`**, not `Σ NLL` and not `/mean(n)`. Two properties buy it: a
+  producer that changes its R does not silently change the effective coefficient, and **at `n ≡ 1`
+  it reduces EXACTLY to the mean BCE** the flat path computes (a one-rollout label is already 0 or
+  1, so the round is the identity and `Σn = B`). That exact agreement is pinned bit-for-bit, which
+  is what makes `binomial` a strict generalisation rather than a different objective.
+- Computed through `softplus` (`−log σ(z) = softplus(−z)`), stable where `log(sigmoid(·))`
+  underflows. A row whose producer omitted `n_rollouts` parses as 0 and is clamped to **one**
+  observation — never a divide-by-zero, never a silently dropped row.
+- Training-only, the `--opd-coef` class: no forward, no weight shape, no version bump, **not read
+  back on a flagless resume**.
+- `cf/n_rollouts_mean` rides beside `cf/loss` — under the binomial likelihood the loss is per
+  rollout, so a producer that quietly changed R would otherwise move the loss with no visible cause.
+
+### The EVIDENTIAL Beta head: `--cf-evidential` + `--cf-evidential-coef` / `--cf-evidential-reg` (`gen3_cf_evidential_head_v1`, v98)
+
+**What it is for, and what it is NOT for.** G0 convicted the win-prob head of **RESOLUTION**: the
+population-mean gaps are |0.05|–|0.07| while the true within-decile spread of P(win) is 0.11–0.36.
+A point estimate cannot represent that spread at all. This head reads the same `value_pooled` and
+therefore **cannot remove the blur** — it has no information the scalar head lacks. What it can do
+is **CONFESS** it: emit a Beta whose width is large exactly where the states behind a confidence bin
+disagree. A confessed width is actionable (the factory's priority sampler can label the states the
+critic knows it cannot separate; the awareness stack can read it); a point estimate that is silently
+wrong is not.
+
+- **`CfEvidentialHead` (`agents/model/aux_value_heads.py`)** — the `WinProbHead` bottleneck widened
+  from 1 logit to 2, mapped by `softplus(·) + 1` so **α, β ≥ 1**: the Beta stays UNIMODAL (α<1 puts
+  mass at an endpoint, turning "uncertain" into "certain of both extremes") and the uniform
+  `Beta(1,1)` is exactly reachable, so maximum ignorance is a representable state.
+- **The loss is the Beta-Binomial MARGINAL likelihood** of the row's counts — `p` integrated out,
+  not plugged in: `NLL = −[log B(α+w, β+n−w) − log B(α, β)]` (lgamma-based; `log C(n,w)` is dropped
+  as a constant in α,β). That is the correct evidential objective for count data, and it does two
+  things at once: pulls the mean toward `w/n` AND grows the precision `α+β` only as far as
+  consistency across states supports. Normalized by `Σn` like the scalar term, so the two
+  coefficients are in the same units (nats per rollout). Checked against
+  `scipy.stats.betabinom.logpmf`, not against a re-derivation of itself.
+- **`--cf-evidential-reg` (default 1e-3) is the standard evidential-overconfidence guard**:
+  `KL(Beta(α,β) ‖ Beta(1,1))`, closed form via digamma/lgamma, exactly 0 at the reachable floor. It
+  rides INSIDE the coefficient, so coefficient zero kills the regularizer too. Nothing in the
+  likelihood bounds `α+β` on locally-consistent data, and an inflated precision makes the width —
+  the entire product — meaningless.
+- **ALWAYS DETACHED, with no mode to change that.** Unlike `win_prob_mode` / `value_dist_mode` there
+  is no read_only/shaping split: the head feeds nothing forward, so letting it shape the trunk would
+  be a training change with no consumer to justify it. `train/cf_evidential_grad_share` reads
+  **exactly 0.0 by construction** — published so the contract is a live measurement, not a docstring.
+- **It is not called by the extractor forward at all** (the training-side term applies it to the
+  stashed `value_pooled`), and it is built **LAST** in `Gen3FeaturesExtractor.__init__`. So OFF is
+  byte-identical AND **ON-at-coefficient-0 is BIT-identical in pi/vf** — a stronger claim than the
+  two precedents make, and one that depends on the build order: a module inserted mid-constructor
+  shifts the init RNG stream for everything after it.
+- **Metrics `cf/evid_*`**: `nll`, `reg`, `alpha_mean`, `precision_mean` (α+β — the claimed
+  evidence), `epistemic_std_mean` (**the headline**), `pred_mean`, `n`; plus
+  `train/cf_evidential_loss` and `train/cf_evidential_grad_share`. Read `nll` and `precision_mean`
+  together: a falling NLL with a runaway precision is the head buying its loss with certainty it has
+  not earned. A per-decision `(α, β)` stash lands on `fe.last_cf_evidential` for a future trace
+  capture; **the npz capture itself is NOT wired** (deliberately deferred).
+- 🔒 **THE PRE-REGISTERED READ, for the experiment that has not run yet:** the predicted Beta's
+  width should **CORRELATE with the measured `sd_true_excess` per stratum** (the `cf_audit` bias
+  map's meter). Wide everywhere and wide nowhere are the same null. A falling `nll` with a flat
+  width-vs-`sd_true_excess` correlation is the standing learns≠helps kill, not a result.
+
+**Flag class — the split, and why.** `--cf-evidential` is **STRUCTURAL** and IS in
+`agents/model/flag_registry.py` (v98, `cli`/`structural`): it is a `Gen3FeaturesExtractor`
+constructor kwarg that builds a MODULE, which is exactly the registry's declared scope, and the
+`win_prob_mode` / `value_dist_mode` precedent. It gets a `ModelVersion` field, a `check_compatible`
+bool compare, a `MODEL_CONFIG_VERSION` bump to **98** with a migration defaulting pre-v98 configs
+OFF, and a `snapshot.current_model_version` keyword (so a frozen eval/pool opponent's gate sees it).
+**No `ARCH_SIGNATURE` bump** — optional side head, obs family unchanged, the value_dist precedent.
+The gate matters more here than usual: because the head is never called by the forward, a mismatched
+resume produces **no shape error anywhere**, so `check_compatible` is the only thing standing between
+a flipped flag and a run that silently supervises a freshly-random head for good. The two
+**coefficients** are training-only argparse (the `--opd-coef` class) and are deliberately NOT in the
+registry — they are loss weights set on the model, never reaching the extractor.
+
+`--cf-evidential-coef > 0` REQUIRES `--cf-evidential`, refused at the CLI. Unlike the win-prob case
+the head cannot be added later to rescue a live coefficient: it is a state_dict change, so the
+mistake would cost a whole run AND FATAL the resume that tried to fix it. The `cf_labels/` directory
+is created when **either** consumer is live, so an evidential-only run is not silently starved.
+
 **Gates.** `instrumented_ppo_test.py` pins the byte-identity that G3 is: a POPULATED buffer at
 `cf_winprob_coef=0` yields the same parameter update as no buffer at all (the fold is gated on the
 COEFFICIENT, not the buffer), and so does a live coef with no head. The two `cf_head_only` halves are
 measured on the parameter update rather than asserted about a detach call — head-only moves the head and
-leaves the trunk bit-identical; `--no-cf-head-only` moves the trunk. `cf_label_buffer_test.py` covers
-FIFO, the exact expiry boundary, incremental polling, the partial-line case, every skip counter, and the
-ring's cap/atomicity/race-tolerance. `main/cf_flags_test.py` covers the defaults, both `--no-` spellings
-and `checkargs`. End-to-end: a `--debug --steps 10000` CPU smoke with fixture labels built from REAL
-episode obs.
+leaves the trunk bit-identical; `--no-cf-head-only` moves the trunk. The same file pins the binomial
+likelihood's exact properties as pure-function facts (`binomial == bce` bit-for-bit at `n≡1`; the
+gradient ratio is exactly `n₂/n₁`; per-rollout normalization; `w` recovery; the `n=0` degradation) and
+the evidential fold's three (ON-at-coef-0 byte-identical with the head in the optimizer; a live
+coefficient reaching ONLY `cf_evid_head` — trunk AND win_head bit-identical; one shared sample and one
+shared forward for both terms, counted). `agents/model/cf_evidential_head_test.py` holds the head's
+maths (scipy cross-check, the hand-computed uniform-Beta anchor, `KL(Beta(1,1)‖Beta(1,1)) == 0`, the
+regularizer actually moving α,β toward 1, the 1/√12 std anchor), the BIT-identity of ON's pi/vf, that
+the forward never calls it, and the v98 gate + both migration legs.
+`cf_label_buffer_test.py` covers FIFO, the exact expiry boundary, incremental polling, the
+partial-line case, every skip counter, the ring's cap/atomicity/race-tolerance, and that
+`batch_tensors` carries the rollout COUNT rather than just the ratio. `main/cf_flags_test.py` covers
+the defaults, both `--no-` spellings, the three new refusals and `checkargs`. End-to-end: a
+`--debug --steps 10000` CPU smoke with fixture labels built from REAL episode obs.
 
 ## Public-replay value aux — V_pub — DELETED (v88 `gen3_dead_flag_purge_v1`)
 

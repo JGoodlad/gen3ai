@@ -466,6 +466,9 @@ def _model_hparams(model) -> dict:
         "search_teacher_batch_size": int(getattr(model, "search_teacher_batch_size", 256)),
         "opd_coef": float(getattr(model, "opd_coef", 0.0)),
         "cf_winprob_coef": float(getattr(model, "cf_winprob_coef", 0.0)),
+        "cf_label_likelihood": str(getattr(model, "cf_label_likelihood", "binomial")),
+        "cf_evidential_coef": float(getattr(model, "cf_evidential_coef", 0.0)),
+        "cf_evidential_reg": float(getattr(model, "cf_evidential_reg", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
         "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),
@@ -1337,6 +1340,45 @@ def build_parser() -> argparse.ArgumentParser:
                              "than this is dropped (counted in cf/labels_expired_total). Default "
                              "150000 ≈ one PPO iteration at production shapes, so a label is "
                              "consumed by roughly the policy that produced it. 0 disables expiry.")
+    parser.add_argument("--cf-label-likelihood", "--cf_label_likelihood",
+                        dest="cf_label_likelihood", type=str, default="binomial",
+                        choices=["binomial", "bce"],
+                        help="WHICH likelihood the counterfactual win-prob term uses. 'binomial' "
+                             "(default) is the exact binomial NLL of the row's win COUNT "
+                             "(w=round(label*n_rollouts), folded as sum(NLL)/sum(n)), so an R=16 "
+                             "label pulls 4x an R=4 one — correct evidence weighting, not an "
+                             "emphasis choice. 'bce' is the flat per-row BCE on the scalar label "
+                             "(the pre-2026-08-22 form, kept as the A/B arm). The two are EXACTLY "
+                             "equal when every n_rollouts == 1. Training-only.")
+    # --- THE EVIDENTIAL BETA HEAD (gen3_cf_evidential_head_v1). G0 convicted the scalar win-prob
+    # head of RESOLUTION (within-decile true spread 0.11-0.36), not of an optimism offset. This head
+    # cannot fix the blur — same input — but it can CONFESS it, as a Beta posterior whose width the
+    # factory's priority sampler and the awareness stack can read. `--cf-evidential` is STRUCTURAL
+    # (v98, version-gated, in flag_registry); the two coefficients are training-only.
+    parser.add_argument("--cf-evidential", "--cf_evidential", dest="cf_evidential",
+                        action=BoolFlag, default=False,
+                        help="BUILD the evidential Beta head (α, β via softplus+1) off "
+                             "value_pooled. STRUCTURAL and version-gated: its params are in the "
+                             "state_dict, so a resume must match. Its input is detached "
+                             "UNCONDITIONALLY — a pure supervised readout that feeds nothing "
+                             "forward and is not even called by the forward, so OFF is "
+                             "byte-identical and ON at coefficient 0 is bit-identical in pi/vf.")
+    parser.add_argument("--cf-evidential-coef", "--cf_evidential_coef",
+                        dest="cf_evidential_coef", type=float, default=0.0,
+                        help="Weight on the evidential term: the Beta-Binomial MARGINAL "
+                             "log-likelihood of the label's counts (p integrated out, the correct "
+                             "evidential loss for count data), normalized per rollout like the "
+                             "scalar term. Default 0.0 = OFF. Requires --cf-evidential. Watch "
+                             "cf/evid_epistemic_std_mean (the confessed width — the headline) and "
+                             "cf/evid_precision_mean (α+β, the claimed evidence).")
+    parser.add_argument("--cf-evidential-reg", "--cf_evidential_reg",
+                        dest="cf_evidential_reg", type=float, default=1e-3,
+                        help="Weight of the KL(Beta(α,β) ‖ Beta(1,1)) pull, RELATIVE to the NLL "
+                             "(it rides inside --cf-evidential-coef, so coefficient 0 kills it "
+                             "too). The standard evidential-overconfidence guard: nothing in the "
+                             "likelihood bounds α+β on locally-consistent data, and an inflated "
+                             "precision makes the width — the entire product — meaningless. "
+                             "Default 1e-3.")
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1) — pour a frozen per-team SPECIALIST (an
     # --exploiter checkpoint) into the generalist via an ON-POLICY KL, masked to the states where the
     # trainee pilots the teacher's team; the other (pool) states are the anti-forgetting rehearsal.
@@ -2403,6 +2445,10 @@ async def main():
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
+    # v98 structural bool (version-checked, fresh-only). Only the STRUCTURAL half is resolved: the
+    # two coefficients are training-only, deliberately NOT inherited on a flagless resume — the
+    # `--opd-coef` / `--cf-winprob-coef` class, and a head that exists costs nothing at coef 0.
+    _resolve("cf_evidential", False)           # v98 structural, version-checked (gen3_cf_evidential_head_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
@@ -2551,6 +2597,19 @@ async def main():
         parser.error("--cf-label-lag-steps must be >= 0 (0 = never expire)")
     if args.cf_records_keep is not None and args.cf_records_keep < 1:
         parser.error("--cf-records-keep must be >= 1")
+    # gen3_cf_evidential_head_v1 — the coefficients are training-only, so (as above) these parser
+    # checks are the ONLY gate. `--cf-evidential` itself IS version-gated, hence not checked here.
+    if args.cf_evidential_coef is not None and args.cf_evidential_coef < 0.0:
+        parser.error("--cf-evidential-coef must be >= 0 (0 = off)")
+    if args.cf_evidential_reg is not None and args.cf_evidential_reg < 0.0:
+        parser.error("--cf-evidential-reg must be >= 0 (0 = no KL pull toward Beta(1,1))")
+    if args.cf_evidential_coef and args.cf_evidential_coef > 0 and not args.cf_evidential:
+        # There is no head to supervise, and unlike the win-prob case the head cannot be added to a
+        # run later — it is a state_dict change. Refuse at the CLI rather than fold nothing for a
+        # whole run and then FATAL the resume that tries to fix it.
+        parser.error("--cf-evidential-coef > 0 requires --cf-evidential — the evidential term "
+                     "supervises a head that flag BUILDS, and it is a structural (version-gated) "
+                     "toggle that cannot be turned on mid-run")
     if args.cf_records and not args.use_showdown_bridge:
         # The record is a `__RECON__` frame off the bridge child's stdout; the websocket transport
         # never produces one, so the flag would be a silent no-op.
@@ -3441,7 +3500,10 @@ async def main():
     # out-of-process producer left there. Both are None/unused unless the flags ask for them, so a
     # default run creates neither and is FILE-identical to today.
     _cf_records_dir = os.path.join(model_dir, "cf_records") if args.cf_records else None
-    _cf_labels_dir = os.path.join(model_dir, "cf_labels") if args.cf_winprob_coef > 0 else None
+    # EITHER consumer wants the buffer: the evidential term reads the same label rows, so gating the
+    # directory on the scalar coefficient alone would silently starve an evidential-only run.
+    _cf_labels_dir = (os.path.join(model_dir, "cf_labels")
+                      if (args.cf_winprob_coef > 0 or args.cf_evidential_coef > 0) else None)
     if _cf_records_dir:
         os.makedirs(_cf_records_dir, exist_ok=True)
         emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "
@@ -3457,6 +3519,9 @@ async def main():
         model.cf_winprob_coef = float(args.cf_winprob_coef or 0.0)
         model.cf_head_only = bool(args.cf_head_only)
         model.cf_label_lag_steps = int(args.cf_label_lag_steps)
+        model.cf_label_likelihood = str(args.cf_label_likelihood)
+        model.cf_evidential_coef = float(args.cf_evidential_coef or 0.0)
+        model.cf_evidential_reg = float(args.cf_evidential_reg or 0.0)
         if not _cf_labels_dir:
             return
         from agents.training.cf_label_buffer import CfLabelBuffer
@@ -3465,9 +3530,14 @@ async def main():
         model._cf_buffer = CfLabelBuffer(
             _cf_labels_dir, obs_dim=int(_obs_space.shape[0]),
             lag_bound=int(args.cf_label_lag_steps))
-        emit(f"🎯 [CF] win-prob grounding ON: coef={model.cf_winprob_coef:g} "
-             f"head_only={model.cf_head_only} lag={model.cf_label_lag_steps} "
-             f"← {_cf_labels_dir}")
+        if model.cf_winprob_coef > 0:
+            emit(f"🎯 [CF] win-prob grounding ON: coef={model.cf_winprob_coef:g} "
+                 f"likelihood={model.cf_label_likelihood} head_only={model.cf_head_only} "
+                 f"lag={model.cf_label_lag_steps} ← {_cf_labels_dir}")
+        if model.cf_evidential_coef > 0:
+            emit(f"🎲 [CF] EVIDENTIAL Beta head ON: coef={model.cf_evidential_coef:g} "
+                 f"reg={model.cf_evidential_reg:g} (always-detached readout) "
+                 f"← {_cf_labels_dir}")
 
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the

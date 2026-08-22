@@ -54,7 +54,17 @@ from typing import Any, Dict, List
 #   never gated. It scales a loss term computed in the PPO step and touches no forward pass, so a
 #   default (1.0) build is bit-identical and there is nothing for `check_compatible` to compare.
 #   A pre-v97 config defaults it to 1.0 = OFF. No ARCH_SIGNATURE bump.
-MODEL_CONFIG_VERSION = 97
+# v98 (gen3_cf_evidential_head_v1): `cf_evidential` — the EVIDENTIAL Beta readout over P(win|state)
+#   off `value_pooled` (the counterfactual label factory's rung R1). STRUCTURAL, exactly the
+#   win_prob_mode / value_dist_mode precedent: building it adds the head's params to the state_dict,
+#   so a resume that flips it has either no weights for the head or orphan weights, and a bool
+#   compare in check_compatible is the gate. It is never called from the extractor forward (the
+#   training-side loss applies it to the stashed `value_pooled`, always detached), so OFF is
+#   byte-for-byte the baseline and ON-at-coefficient-0 is bit-identical in pi/vf too — hence NO
+#   ARCH_SIGNATURE bump, the optional-side-head rule. A pre-v98 config defaults it to False = OFF.
+#   Its two coefficients (`cf_evidential_coef`, `cf_evidential_reg`) are TRAINING-only argparse in
+#   the `--opd-coef` / `--cf-winprob-coef` class and appear nowhere here.
+MODEL_CONFIG_VERSION = 98
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -587,6 +597,14 @@ class ModelVersion:
     # v43 TRAINING-ONLY loss coefficient for the pubval head (like win_prob_coef). Scales the soft-target
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
+    # v98 STRUCTURAL bool (gen3_cf_evidential_head_v1, the win_prob_mode pattern): the EVIDENTIAL Beta
+    # readout over P(win|state) off value_pooled — the counterfactual factory's uncertainty confession.
+    # False = no module (baseline byte-for-byte; it is never in pi/vf and never even called by the
+    # forward, so the projection dims AND the forward outputs are unchanged). True builds a
+    # CfEvidentialHead, whose params ARE the state_dict delta — so it is gated in check_compatible with
+    # a bool compare. There is no read_only/shaping split by design: the head's input is detached
+    # UNCONDITIONALLY, so no coefficient can make it shape the trunk. NO ARCH_SIGNATURE bump.
+    cf_evidential: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -779,6 +797,9 @@ class ModelVersion:
             ),
             species_prior_fusion=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("species_prior_fusion", False)
+            ),
+            cf_evidential=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_evidential", False)
             ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
@@ -1317,6 +1338,19 @@ class ModelVersion:
                 "trunk (a silent mid-run training change).\n"
                 "Resume with the matching --value-dist-mode setting, or start a fresh training run."
             )
+        # gen3_cf_evidential_head_v1 (v98): the evidential Beta readout's params are the state_dict
+        # delta — a resume that flips this has either no weights for the head or weights with no
+        # home. The head is never called by the forward, so NOTHING else would catch it: a mismatch
+        # would load "successfully" and the term would silently supervise a freshly-random head (or
+        # not exist at all) for the rest of the run.
+        if self.cf_evidential != saved.cf_evidential:
+            raise ModelVersionError(
+                f"cf_evidential mismatch: saved={saved.cf_evidential}, current={self.cf_evidential}.\n"
+                "The counterfactual EVIDENTIAL head is fixed for a run's lifetime: adding or removing "
+                "it changes the state_dict, and because it is never called by the forward there is no "
+                "shape error downstream that would catch the mismatch.\n"
+                "Resume with the matching --cf-evidential setting, or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"
@@ -1840,4 +1874,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 97:
         data.setdefault("intent_label_bot_weight", 1.0)
         data["config_version"] = 97
+    # v98 (gen3_cf_evidential_head_v1) — a STRUCTURAL toggle, so unlike v97 this one is gated. It
+    # still DEFAULTS rather than refusing: a pre-v98 checkpoint could not have built the head (the
+    # module did not exist), so False is not a guess, it is the only possible past. The refusal
+    # direction is handled by check_compatible, which fires the moment a live run's True meets a
+    # migrated False.
+    if version < 98:
+        data.setdefault("cf_evidential", False)
+        data["config_version"] = 98
     return data

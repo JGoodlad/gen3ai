@@ -329,8 +329,21 @@ class CfLabelBuffer:
 
 
 def batch_tensors(rows: Sequence[CfLabel], device) -> "tuple":
-    """``(obs [B, obs_dim] float32, labels [B] float32)`` on ``device``. Torch imported lazily."""
+    """``(obs [B, obs_dim], labels [B], n_rollouts [B])``, all float32 on ``device``.
+
+    ``n_rollouts`` rides along because the label is a SUFFICIENT STATISTIC only in company: a
+    ``label`` of 0.75 from 4 rollouts and one from 16 are the same number carrying four times the
+    evidence, and the row's win COUNT is recoverable as ``round(label · n_rollouts)``. The binomial
+    likelihood (`instrumented_ppo._cf_binomial_nll`) and the Beta-Binomial evidential loss both
+    need the count, not the ratio.
+
+    A row whose producer omitted ``n_rollouts`` parses as 0; the consumers clamp to 1, so an
+    unlabelled-count row degrades to exactly one observation rather than vanishing or dividing by
+    zero. Torch imported lazily.
+    """
     import torch as th
     obs = np.stack([r.obs for r in rows]).astype(np.float32, copy=False)
     lab = np.asarray([r.label for r in rows], dtype=np.float32)
-    return (th.as_tensor(obs, device=device), th.as_tensor(lab, device=device))
+    n = np.asarray([r.n_rollouts for r in rows], dtype=np.float32)
+    return (th.as_tensor(obs, device=device), th.as_tensor(lab, device=device),
+            th.as_tensor(n, device=device))

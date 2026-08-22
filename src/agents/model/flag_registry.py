@@ -388,6 +388,23 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="requires spread_belief + damage_op. Forward-math only (no state_dict "
                    "change): the version gate is the ONLY thing rejecting a mismatched resume.",
               requires=("spread_belief", "damage_op")),
+    ModelFlag("cf_evidential", False, Tier.CLI, Klass.STRUCTURAL, 98,
+              "the EVIDENTIAL Beta readout over P(win|state) off value_pooled — (α, β) via "
+              "softplus+1, trained by the Beta-Binomial marginal likelihood of the counterfactual "
+              "factory's rollout COUNTS",
+              note="IN the registry because it is a `Gen3FeaturesExtractor` constructor kwarg that "
+                   "builds a MODULE — the win_prob_mode / value_dist_mode precedent exactly, and "
+                   "the registry's declared scope is 'the things that pass through "
+                   "build_extractor_arch_kwargs'. Its two coefficients (--cf-evidential-coef / "
+                   "--cf-evidential-reg) are NOT: they are training-only loss weights in the "
+                   "--opd-coef / --cf-winprob-coef class, set on the MODEL rather than the "
+                   "extractor. Stronger than its two precedents in one way: there is no "
+                   "read_only/shaping split, because the head's input is detached "
+                   "UNCONDITIONALLY — it is a pure supervised readout that feeds nothing forward "
+                   "and is not even CALLED by the forward pass. So OFF is byte-identical AND "
+                   "ON-at-coef-0 is bit-identical in pi/vf (it is built LAST, so no earlier "
+                   "module's init RNG draw moves). No `requires`: it reads `value_pooled`, which "
+                   "is unconditional."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

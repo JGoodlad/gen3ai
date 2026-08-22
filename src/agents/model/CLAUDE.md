@@ -146,6 +146,16 @@ a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so proj
 read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains
 its own params only); `shaping` feeds it live (the win objective also shapes the trunk).
 
+`CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and it is
+the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
+over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
+since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
+the forward at all**: the training-side term (`instrumented_ppo._cf_evidential_term`) applies it to the
+STASHED `value_pooled`, always detached, so there is no `read_only`/`shaping` split to make and the
+rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-identical to OFF in pi/vf
+— not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
+read: `src/agents/training/CLAUDE.md` → the evidential Beta head.
+
 ### `--belief-grad-mode` — which arrow gets cut (`gen3_belief_grad_mode_v1` / `gen3_belief_label_only_v1`)
 
 **The two non-default modes cut OPPOSITE arrows, and the flag name does not say so** — read this
@@ -331,7 +341,7 @@ table exists to prevent:
 | `team_transformer.py` | `EdgeBias` (+ the `_EDGE_*_CELL` definitions), `BiasedEncoderLayer`, `TeamTransformer`, `EventSeats` |
 | `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
-| `aux_value_heads.py` | `WinProbHead`, `ValueDistHead` |
+| `aux_value_heads.py` | `WinProbHead`, `ValueDistHead`, `CfEvidentialHead` (v98 — the EVIDENTIAL Beta posterior over P(win\|state); `softplus+1` ⇒ α,β ≥ 1 so the Beta stays unimodal and `Beta(1,1)` is reachable, plus the two closed forms the loss needs: the Beta-Binomial marginal NLL and `KL(·‖Beta(1,1))`. The ONE readout here with no `read_only`/`shaping` split — its input is detached UNCONDITIONALLY and the forward never calls it) |
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
 | `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |
