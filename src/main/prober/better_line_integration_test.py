@@ -111,6 +111,8 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs(impl):
 
         assert out["inv"] == anchor and out["depth"] == 1
         assert out["opp_model_used"] == "recorded@divergence"
+        # The declared interior-ply regime rides on the live payload too (task #29).
+        assert out["interior_opponent_regime"] == "greedy"
         chosen = next(c for c in out["candidates"] if c["is_chosen"])
         if chosen["value"] is not None:        # None only if the chosen move ENDED the battle
             expected = float(np.asarray(npz["obs"][anchor + 1], dtype=np.float64).sum())

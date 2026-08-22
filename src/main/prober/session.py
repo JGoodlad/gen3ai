@@ -2536,6 +2536,16 @@ class ProbeSession:
             "slots": slots,
         }
 
+    def probe_model(self, battle_id: str):
+        """``(ProbeModel, ModelChoice)`` for one battle — the PUBLIC face of the resolution ladder.
+
+        Exists for out-of-package readers that need the loaded network itself rather than one of
+        the analyses built on it (`agents.training.cf_audit` reads the evidential Beta head off the
+        audited checkpoint this way). It is the same cached `_model_for`, so a caller that resolves
+        once and reuses pays for one load; every battle in one `step_N` trace dir resolves to the
+        same checkpoint, so that is the normal shape."""
+        return self._model_for(self._battle(battle_id))
+
     def _resolve(self, battle: BattleTrace) -> ModelChoice:
         return resolve_model_for_step(self.tree, battle.step, self._override, self._tier)
 

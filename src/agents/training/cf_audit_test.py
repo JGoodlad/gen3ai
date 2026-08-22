@@ -12,6 +12,7 @@ import json
 import os
 
 import numpy as np
+import pytest
 
 from agents.training.cf_audit import (CONVICTION_DECILE, Decision, LabelRow, SCHEMA_VERSION,
                                       cluster_bootstrap_ci, obs_digest, sd_true_excess,
@@ -203,3 +204,161 @@ def test_obs_digest_matches_a_hand_computed_sha1():
     import hashlib
     a = np.array([1.0, 2.0], dtype=np.float32)
     assert obs_digest(a) == hashlib.sha1(a.tobytes()).hexdigest()
+
+
+# ---------------------------------------------------------- the EVIDENTIAL read
+#
+# The pre-registered success meter for `--cf-evidential` is not the loss — it is whether the
+# confessed Beta WIDTH tracks the measured `sd_true_excess` per stratum. Nothing computed that
+# correlation until this batch, which meant the experiment had a declared meter with no reader.
+
+def _evid_labels(width_of, *, n_per_decile=16, n_battles=8, rng_seed=0):
+    """Synthetic labels whose per-decile MC spread is controlled, plus a width the caller chooses
+    as a function of that decile — so a test can construct a head that tracks the blur and one
+    that does not, and demand opposite verdicts."""
+    rng = np.random.default_rng(rng_seed)
+    rows = []
+    for dec in range(10):
+        wp = dec / 10 + 0.05
+        # spread GROWS with the decile: the ground truth the width is supposed to discover
+        spread = 0.02 + 0.04 * dec
+        for i in range(n_per_decile):
+            mc = float(np.clip(rng.normal(wp, spread), 0.0, 1.0))
+            rows.append({"battle": f"/t/b{i % n_battles}", "inv": i, "turn": 10 + i,
+                         "opponent": "heuristic", "opp_class": "bot",
+                         "outcome": "win" if i % 2 else "loss", "win_prob": wp, "value": 0.0,
+                         "mc": mc, "wins": int(mc * 8), "n": 8, "opponent_source": "bot",
+                         "evid_width": float(width_of(dec)), "evid_precision": 20.0})
+    return rows
+
+
+def _frame_mass(labels):
+    from collections import Counter
+    c = Counter()
+    for r in labels:
+        c[(min(9, int(r["win_prob"] * 10)), r["outcome"])] += 1
+    return c
+
+
+def test_spearman_is_none_when_a_side_is_FLAT_not_zero():
+    """"Wide everywhere" and "width unrelated to blur" are DIFFERENT findings, and the more damning
+    one is the first. A constant input must not be reported as a correlation of 0."""
+    from agents.training.cf_audit import spearman
+    assert spearman([1.0, 1.0, 1.0, 1.0], [1.0, 2.0, 3.0, 4.0]) is None
+    assert spearman([1.0, 2.0, 3.0], [1.0, 2.0]) is None          # mismatched / too short
+    assert spearman([1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]) == 1.0
+    assert spearman([1.0, 2.0, 3.0, 4.0], [4.0, 3.0, 2.0, 1.0]) == -1.0
+    # RANK, not Pearson: a monotone but wildly nonlinear relation is still a perfect 1.0.
+    assert spearman([1.0, 2.0, 3.0, 4.0], [1.0, 10.0, 1e3, 1e9]) == 1.0
+
+
+def test_a_head_whose_width_TRACKS_the_blur_scores_positive():
+    labels = _evid_labels(lambda dec: 0.05 + 0.03 * dec)
+    from agents.training.cf_audit import evidential_read
+    ev = evidential_read(labels, _frame_mass(labels), 8, draws=200)
+    assert ev["n_strata"] >= 8
+    assert ev["width_vs_blur_spearman"] > 0.7, ev
+    lo, hi = ev["width_vs_blur_ci"]
+    assert lo is not None and lo > 0.0, "the CI does not exclude 'no relation'"
+
+
+def test_a_head_that_is_WIDE_EVERYWHERE_scores_the_null_and_says_so():
+    """The failure mode the meter exists to catch: a confessed width that is a constant carries no
+    information about which states the critic cannot separate."""
+    labels = _evid_labels(lambda dec: 0.11)
+    from agents.training.cf_audit import evidential_read
+    ev = evidential_read(labels, _frame_mass(labels), 8, draws=50)
+    assert ev["width_vs_blur_spearman"] is None
+    assert ev["width_vs_blur_ci"] == [None, None]
+    assert ev["evid_width_mean"] == pytest.approx(0.11)   # …the LEVEL is still reported
+
+
+def test_a_head_whose_width_ANTI_tracks_the_blur_scores_negative():
+    labels = _evid_labels(lambda dec: 0.5 - 0.03 * dec)
+    from agents.training.cf_audit import evidential_read
+    ev = evidential_read(labels, _frame_mass(labels), 8, draws=200)
+    assert ev["width_vs_blur_spearman"] < -0.7, ev
+
+
+def test_the_bias_map_carries_the_evidential_block_ONLY_when_the_head_was_read():
+    """Absent, never zero: 'this checkpoint has no head' and 'this head claims no uncertainty' are
+    opposite findings, and a column of zeros renders them identically."""
+    from agents.training.cf_audit import bias_map
+    labels = _evid_labels(lambda dec: 0.05 + 0.03 * dec)
+    frame = [_dec(win_prob=r["win_prob"], outcome=r["outcome"], battle=r["battle"], turn=r["turn"])
+             for r in labels]
+    design = {"turn_tercile_edges": [12.0, 18.0], "sampler_version": "test", "seed": 0}
+    with_head = bias_map(labels, frame, n_rollouts=8, design=design, accounting={})
+    assert with_head["evidential"] is not None
+    assert any(c.get("evid_width_mean") is not None for c in with_head["resolution"])
+
+    headless = [{k: v for k, v in r.items() if not k.startswith("evid_")} for r in labels]
+    without = bias_map(headless, frame, n_rollouts=8, design=design, accounting={})
+    assert without["evidential"] is None
+    assert all("evid_width_mean" not in c for c in without["resolution"])
+
+
+def test_the_markdown_says_ABSENT_rather_than_rendering_zeros():
+    from agents.training.cf_audit import bias_map, render_markdown
+    labels = _evid_labels(lambda dec: 0.05 + 0.03 * dec)
+    frame = [_dec(win_prob=r["win_prob"], outcome=r["outcome"], battle=r["battle"], turn=r["turn"])
+             for r in labels]
+    design = {"turn_tercile_edges": [12.0, 18.0], "sampler_version": "test", "seed": 0}
+    headless = [{k: v for k, v in r.items() if not k.startswith("evid_")} for r in labels]
+    md = render_markdown(bias_map(headless, frame, n_rollouts=8, design=design, accounting={}),
+                         run_dir="/t", step=1, ckpt=None)
+    assert "carries no `cf_evid_head`" in md
+    assert "0.000" not in md.split("## EVIDENTIAL")[1].split("## Caveats")[0]
+
+    md2 = render_markdown(bias_map(labels, frame, n_rollouts=8, design=design, accounting={}),
+                          run_dir="/t", step=1, ckpt=None)
+    assert "width_vs_blur_spearman" in md2 and "Beta width" in md2
+
+
+def test_attach_evidential_is_a_NO_OP_when_the_checkpoint_has_no_head(capsys):
+    """A model that will not load, or one without the head, must cost the audit its evidential
+    columns and NOTHING ELSE — the labels and the bias map are the product."""
+    from agents.training.cf_audit import attach_evidential
+
+    class _NoHead:
+        def cf_evidential_batch(self, obs, masks=None):
+            return None
+
+    class _Session:
+        def probe_model(self, battle_id):
+            return _NoHead(), None
+
+    labels = [{"battle": "/t/b1", "inv": 0}]
+    cache = {"/t/b1_states.npz": np.zeros((3, 4), dtype=np.float32)}
+    assert attach_evidential(_Session(), labels, cache) == 0
+    assert "evid_width" not in labels[0]
+    assert "no cf_evid_head" in capsys.readouterr().out
+
+    class _Broken:
+        def probe_model(self, battle_id):
+            raise FileNotFoundError("no checkpoint at this architecture")
+
+    assert attach_evidential(_Broken(), labels, cache) == 0
+    assert "no model" in capsys.readouterr().out
+    # a session with no such method at all (an injected test double) is silently fine
+    assert attach_evidential(object(), labels, cache) == 0
+
+
+def test_attach_evidential_writes_the_width_and_precision_it_was_given():
+    from agents.training.cf_audit import attach_evidential
+
+    class _Head:
+        def cf_evidential_batch(self, obs, masks=None):
+            n = len(obs)
+            return np.full(n, 2.0), np.full(n, 6.0)      # Beta(2, 6)
+
+    class _Session:
+        def probe_model(self, battle_id):
+            return _Head(), None
+
+    labels = [{"battle": "/t/b1", "inv": i} for i in range(3)]
+    cache = {"/t/b1_states.npz": np.zeros((3, 4), dtype=np.float32)}
+    assert attach_evidential(_Session(), labels, cache) == 3
+    # std of Beta(2,6) = sqrt(2*6 / (8^2 * 9)) = sqrt(12/576)
+    assert labels[0]["evid_width"] == float(np.sqrt(12 / 576))
+    assert labels[0]["evid_precision"] == 8.0

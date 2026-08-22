@@ -245,20 +245,23 @@ def test_a_truncated_or_replaced_file_is_re_read_from_zero(tmp_path):
 
 
 # --------------------------------------------------------------------------------------
-# the five liveness scalars
+# the liveness scalars
 # --------------------------------------------------------------------------------------
-def test_stats_publishes_the_five_scalars_even_when_starving(tmp_path):
+def test_stats_publishes_every_scalar_even_when_starving(tmp_path):
     """An empty buffer must still REPORT. Silent starvation is this tree's oldest failure mode —
     absence of a scalar reads as absence of a problem."""
     buf = CfLabelBuffer(tmp_path, obs_dim=8)
     s = buf.stats(0)
     assert set(s) == {"cf/buffer_fill", "cf/label_age_steps_p50", "cf/labels_ingested_total",
-                      "cf/labels_expired_total", "cf/labels_skipped_total"}
+                      "cf/labels_expired_total", "cf/labels_future_total",
+                      "cf/labels_replaced_total", "cf/labels_skipped_total"}
     assert s["cf/buffer_fill"] == 0.0 and s["cf/labels_ingested_total"] == 0.0
 
 
 def test_stats_age_p50_tracks_staleness(tmp_path):
-    _write(tmp_path, [_row(policy_step=1000), _row(policy_step=1200), _row(policy_step=1400)])
+    # Distinct obs per row — same state, different steps would DEDUP to one resident row.
+    _write(tmp_path, [_row(_obs(fill=float(i)), policy_step=st)
+                      for i, st in enumerate((1000, 1200, 1400))])
     buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
     buf.poll(1400)
     s = buf.stats(1400)
@@ -312,7 +315,9 @@ def test_ring_writes_a_loadable_record(tmp_path):
 
 
 def test_ring_is_count_capped(tmp_path):
-    ring = CfRecordRing(tmp_path, keep=3)
+    # `prune_every=1` — the CAP is what this test is about, so the throttle is turned off rather
+    # than reasoned around. The throttle's own bound has its own test below.
+    ring = CfRecordRing(tmp_path, keep=3, prune_every=1)
     for i in range(10):
         ring.write_b64(f"battle-{i}", _b64({"i": i}))
     files = sorted(p.name for p in tmp_path.iterdir())
@@ -377,7 +382,7 @@ def test_ring_prune_sweeps_a_tmp_orphaned_by_a_CRASH(tmp_path):
     `time_ns` than every record already on disk, and the sweep only deletes tmps older than the
     OLDEST KEPT record.
     """
-    ring = CfRecordRing(tmp_path, keep=2)
+    ring = CfRecordRing(tmp_path, keep=2, prune_every=1)
     stale = tmp_path / ("0" * 18 + "1_999_crashed_reconstruction.json.tmp")   # ancient ns prefix
     stale.write_text("{partial")
     live = tmp_path / ("9" * 19 + "_999_inflight_reconstruction.json.tmp")    # newer than anything
@@ -398,11 +403,15 @@ def test_a_recreated_label_file_is_read_from_the_START(tmp_path):
     one outcome this buffer's design says is impossible ("never a silent accept" has a mirror:
     never a silent DROP). Measured before the inode half existed: a recreated 3-row file ingested 1.
     """
-    p = _write(tmp_path, [_row(policy_step=100), _row(policy_step=100)], name="labels_a.jsonl")
+    # DISTINCT obs per row: rows are deduped on the obs digest, so identical fixture states would
+    # collapse to one resident row and hide the very loss this test is about.
+    p = _write(tmp_path, [_row(_obs(fill=float(i)), policy_step=100) for i in range(2)],
+               name="labels_a.jsonl")
     buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
     assert buf.poll(100) == 2
     p.unlink()
-    _write(tmp_path, [_row(policy_step=200) for _ in range(3)], name="labels_a.jsonl")
+    _write(tmp_path, [_row(_obs(fill=float(i)), policy_step=200) for i in range(2, 5)],
+           name="labels_a.jsonl")
     assert buf.poll(200) == 3, "rows of a recreated label file were silently skipped"
     assert len(buf) == 5
     assert buf.skipped_total == 0
@@ -428,3 +437,199 @@ def test_the_offset_map_forgets_files_that_are_gone(tmp_path):
     buf.poll(100)                       # the poll that observes the last file is gone
     assert buf.ingested_total == 5
     assert buf._offsets == {}, "the offset map grew one entry per label file ever seen"
+
+
+# --------------------------------------------------------------------------------------
+# LABEL QUALITY — the pre-coefficient trio (task #28, 2026-08-22)
+#
+# All three are corrections to what the buffer TEACHES rather than to whether it survives, which
+# is why they land before `--cf-winprob-coef` is ever nonzero: at coefficient zero a duplicated or
+# immortal row costs nothing, and the moment the coefficient is live it is a silent reweighting of
+# the sampler nobody declared.
+# --------------------------------------------------------------------------------------
+def test_a_repeated_state_REPLACES_its_resident_row_instead_of_stacking(tmp_path):
+    """Dedup on the obs digest, keep-NEWEST — the sampler's declared weights are per STATE.
+
+    A producer re-labelling ground it already covered (an overlapping cycle, a re-run over the same
+    trace tree) would otherwise give that one state N x the weight of every other, changing the
+    distribution the critic is supervised on with no flag, no counter and no log line.
+    """
+    same = _obs(fill=3.0)
+    _write(tmp_path, [_row(same, label=0.2, policy_step=100),
+                      _row(same, label=0.9, policy_step=200),
+                      _row(_obs(fill=4.0), label=0.5, policy_step=200)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    assert buf.poll(200) == 3                       # all three were ACCEPTED …
+    assert len(buf) == 2                            # … and two of them are the same state
+    assert buf.replaced_total == 1
+    got = {round(r.label, 3) for r in buf.sample(10)}
+    assert got == {0.9, 0.5}, "the SUPERSEDED label survived — dedup kept the older measurement"
+
+
+def test_a_rewritten_label_file_converges_to_the_file_s_own_row_count(tmp_path):
+    """The truncate-and-rewrite re-ingest: a 5-row file re-read from zero must leave fill 5, not 6.
+
+    Measured before dedup: the same file rewritten in place re-ingested its rows beside the
+    originals, so a producer that rotates its output inflates the buffer by exactly the overlap.
+    """
+    rows = [_row(_obs(fill=float(i)), policy_step=100) for i in range(5)]
+    p = _write(tmp_path, rows, name="labels_a.jsonl")
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    assert buf.poll(100) == 5 and len(buf) == 5
+    p.unlink()
+    _write(tmp_path, rows + [_row(_obs(fill=99.0), policy_step=100)], name="labels_a.jsonl")
+    buf.poll(100)
+    assert len(buf) == 6, "the one genuinely new row did not land"
+    assert buf.replaced_total == 5, "the five re-read rows were not recognised as re-reads"
+
+
+def test_a_FUTURE_dated_label_expires_exactly_like_a_stale_one(tmp_path):
+    """Symmetric staleness: |age| > bound, in EITHER direction.
+
+    A crash-restart resumes from the last checkpoint, so `num_timesteps` moves BACKWARDS while the
+    label files still carry pre-crash steps. Under a one-sided `current - policy > bound` those
+    rows are IMMORTAL — they never age out and quietly become the whole buffer. The tell was
+    measured live: `cf/label_age_steps_p50` reading -4,999,000.
+    """
+    lag = 100
+    _write(tmp_path, [_row(policy_step=5_000_000)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=lag)
+    assert buf.poll(1_000) == 0, "a future-dated label was ingested"
+    assert buf.expired_total == 1 and buf.future_total == 1
+
+
+def test_the_future_boundary_is_the_same_INCLUSIVE_bound_as_the_past_one(tmp_path):
+    """|age| == bound survives; |age| == bound + 1 does not. Both signs, one rule."""
+    lag = 100
+    _write(tmp_path, [_row(_obs(fill=1.0), policy_step=1000)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=lag)
+    buf.poll(1000)
+    assert buf.expire(1000 - lag) == 0               # age == -bound  → kept
+    assert len(buf) == 1
+    assert buf.expire(1000 - lag - 1) == 1           # age == -bound-1 → dropped
+    assert len(buf) == 0 and buf.future_total == 1
+
+
+def test_the_first_future_label_names_its_cause_out_loud(tmp_path, capsys):
+    """A negative age is a DIAGNOSIS (someone resumed from an older checkpoint), not noise — so it
+    says so once, by name, rather than only moving a counter nobody is watching yet."""
+    _write(tmp_path, [_row(_obs(fill=float(i)), policy_step=900_000) for i in range(3)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=100)
+    buf.poll(1_000)
+    out = capsys.readouterr().out
+    assert "NEWER snapshot" in out and "crash-restart rollback" in out
+    assert out.count("NEWER snapshot") == 1, "the warning repeated per row"
+    assert buf.future_total == 3
+
+
+# --------------------------------------------------------------------------------------
+# obs_npz — the ROW index and the per-file cache
+# --------------------------------------------------------------------------------------
+def test_obs_npz_selects_the_ROW_named_by_decision_idx(tmp_path):
+    """`obs_npz` points at a battle's whole obs MATRIX and `decision_idx` selects the row — the
+    schema's own wording, and what `cf_audit` emits by default (without `--inline-obs`).
+
+    Ignoring the index flattened the matrix into one 1-D vector, which then failed the obs-width
+    GIGO guard: the entire non-inline half of the schema was unconsumable, loudly but for a reason
+    that pointed at architecture drift rather than at the reader.
+    """
+    mat = np.stack([np.full(8, float(i), dtype=np.float32) for i in range(5)])
+    npz = tmp_path / "states.npz"
+    np.savez(npz, obs=mat)
+    _write(tmp_path, [_row(mat[3], inline=False, npz=f"{npz}::obs", decision_idx=3)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == 1, f"npz row not resolved: {buf.skip_reasons}"
+    assert np.allclose(buf.sample(1)[0].obs, 3.0)
+
+
+def test_an_out_of_range_npz_row_is_a_counted_skip(tmp_path):
+    mat = np.stack([np.full(8, 1.0, dtype=np.float32)] * 2)
+    npz = tmp_path / "states.npz"
+    np.savez(npz, obs=mat)
+    _write(tmp_path, [_row(mat[0], inline=False, npz=f"{npz}::obs", decision_idx=9)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == 0
+    assert buf.skip_reasons.get("obs_npz_row") == 1
+
+
+def test_many_rows_of_one_npz_open_the_file_ONCE(tmp_path):
+    """N rows of a battle share one archive; re-opening it per row re-inflated and re-parsed it."""
+    mat = np.stack([np.full(8, float(i), dtype=np.float32) for i in range(20)])
+    npz = tmp_path / "states.npz"
+    np.savez(npz, obs=mat)
+    _write(tmp_path, [_row(mat[i], inline=False, npz=f"{npz}::obs", decision_idx=i)
+                      for i in range(20)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    real_load = np.load
+    with mock.patch("agents.training.cf_label_buffer.np.load",
+                    side_effect=real_load) as loader:
+        assert buf.poll(1000) == 20
+    assert loader.call_count == 1, f"npz reopened {loader.call_count}x for 20 rows"
+
+
+def test_the_npz_cache_is_bounded(tmp_path):
+    """A multi-day run must not accumulate one decoded battle per label file ever seen."""
+    from agents.training.cf_label_buffer import _NPZ_CACHE_FILES
+    rows = []
+    for i in range(_NPZ_CACHE_FILES + 3):
+        arr = np.full(8, float(i), dtype=np.float32)
+        npz = tmp_path / f"states_{i}.npz"
+        np.savez(npz, obs=arr)
+        rows.append(_row(arr, inline=False, npz=f"{npz}::obs"))
+    _write(tmp_path, rows)
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == len(rows)
+    assert len(buf._npz_cache) == _NPZ_CACHE_FILES
+
+
+# --------------------------------------------------------------------------------------
+# the ring: the prune THROTTLE and the cross-PROCESS cap
+# --------------------------------------------------------------------------------------
+def test_the_prune_throttle_bounds_the_overshoot_and_then_reclaims_it(tmp_path):
+    """The prune is a full readdir on the bridge reader's coroutine, so it runs once in
+    `prune_every` writes. The price is a BOUNDED transient overshoot, not an unbounded directory:
+    at most `prune_every` unpruned writes, all collected by the next sweep."""
+    keep, every = 3, 4
+    ring = CfRecordRing(tmp_path, keep=keep, prune_every=every)
+    for i in range(7):
+        ring.write_b64(f"b{i}", _b64({"i": i}))
+    n = len(list(tmp_path.iterdir()))
+    assert keep <= n <= keep + every, f"overshoot {n} outside [keep, keep+prune_every]"
+    ring.write_b64("b7", _b64({"i": 7}))             # the 8th write crosses the threshold
+    assert len(list(tmp_path.iterdir())) == keep
+
+
+def test_the_cap_is_GLOBAL_across_sequential_PROCESSES(tmp_path):
+    """The launcher-restart survival claim, which stood on construction alone until this test.
+
+    A restart brings a FRESH ring object over the SAME directory (a new pid, zeroed counters). The
+    cap must still hold — nothing is keyed on the process — and the new writer must not
+    double-count the old one's files as its own work.
+    """
+    keep = 4
+    total = 0
+    for gen in range(3):                              # three sequential "processes"
+        ring = CfRecordRing(tmp_path, keep=keep, prune_every=1)
+        assert ring.written == 0 and ring.pruned == 0, "a fresh ring inherited counters"
+        for i in range(5):
+            ring.write_b64(f"g{gen}-b{i}", _b64({"gen": gen, "i": i}))
+        total += ring.written
+        files = [p.name for p in tmp_path.iterdir()]
+        assert len(files) == keep, f"generation {gen} left {len(files)} files (cap {keep})"
+    assert total == 15                                # each process counted only its OWN writes
+    # …and the survivors are the newest ones, written by the LAST process.
+    kept = {json.loads((tmp_path / p.name).read_text())["gen"]
+            for p in tmp_path.iterdir()}
+    assert kept == {2}
+
+
+def test_a_restarted_ring_prunes_the_PREVIOUS_process_leftovers(tmp_path):
+    """The overshoot a crash leaves behind is not permanent: the next process's first sweep is over
+    the WHOLE directory, so it collects files it never wrote."""
+    dead = CfRecordRing(tmp_path, keep=2, prune_every=100)
+    for i in range(9):
+        dead.write_b64(f"old{i}", _b64({"i": i}))
+    assert len(list(tmp_path.iterdir())) == 9         # the crashed process never swept
+    fresh = CfRecordRing(tmp_path, keep=2, prune_every=1)
+    fresh.write_b64("new", _b64({"i": 99}))
+    assert len(list(tmp_path.iterdir())) == 2

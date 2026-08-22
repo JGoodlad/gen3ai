@@ -803,6 +803,12 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   `switch`/`uncertain`/`faint` (flags, model-free), `value_drop`/`low_value`/
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
   model; chosen ≠ the model's argmax).
+- `probe_model(battle_id)` — `(ProbeModel, ModelChoice)`, the **public face of the exact→nearest→recent
+  resolution ladder** (the same cached `_model_for` every analysis uses). For out-of-package readers
+  that need the loaded network rather than one of the analyses over it —
+  `agents.training.cf_audit` reads the evidential Beta head off the audited checkpoint this way.
+  Every battle in one `step_N` trace dir resolves to the same checkpoint, so a caller that resolves
+  once and reuses pays for one load.
 - `analyze(battle_id, inv)` — full `InvocationAnalysis` as a dict (**loads the model — so it raises
   `ArchDriftError` on any run not at the current architecture, which today is every archived run;
   see the drift section above**). `model_resolution` carries `dropped_kwargs`: non-empty ⇒ flags the
@@ -935,7 +941,20 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   reloaded opponent reacts greedily on ITS OWN one-sided obs (materialized via the opponent's
   action-history from `obs_materializer.infer_action_indices`) — `interior_opponent`: `"self"` (the
   trainee as a flagged proxy, default), `"ckpt"` (`opponent_ckpt`), or `"none"` (sim default). Depth-1 is
-  faithful regardless; only depth≥2 leans on the interior model. `confirm_rollouts>0` CONFIRMS the
+  faithful regardless; only depth≥2 leans on the interior model.
+  ⚠️ **The beam plays a declared regime MIX, and the payload says so.** The divergence ply reproduces
+  what the opponent actually did — the RECORDED regime, stochastic for a sentinel, which
+  `replay.build_opponent` now honours — while every interior ply plays **GREEDY argmax**, bypassing
+  that seam on purpose. The reason is what a "better line" claims: a line that survives the
+  opponent's BEST answer. Sampling the interior opponent would return lines that beat one draw of a
+  die and call them better — an optimistic search bias in the exact direction this tree already pays
+  for. Greedy is the standard worst-case-opponent search assumption and makes the reported ΔV a
+  lower bound. Two consequences: a line whose refutation is a *low-probability* reply will not be
+  found, and the beam's numbers are **not** ply-for-ply comparable with `replay-counterfactual`'s
+  Monte-Carlo win rate (which plays the recorded stochastic regime to the end). Every payload
+  carries `interior_opponent_regime: "greedy"` so no saved artifact can hide which produced it —
+  the same discipline as `opponent_source`, and pinned by a test that fails if the key disappears
+  (task #29, 2026-08-22). `confirm_rollouts>0` CONFIRMS the
   recommended first action with an actual Monte-Carlo replay-to-end vs the RELOADED REAL opponent
   (`replay_counterfactual`) → win-% ± Wilson CI — the ground-truth check on the critic's claim (the
   three-tier eval: search by V, report by ΔP(win), confirm by rollout). Loads the

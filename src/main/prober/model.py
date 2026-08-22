@@ -622,6 +622,46 @@ class ProbeModel:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
 
+    def cf_evidential_batch(self, obs: np.ndarray, masks: "np.ndarray | None" = None):
+        """The evidential Beta head's ``(alpha, beta)`` for a BATCH of (obs, mask), or ``None``.
+
+        ``None`` when the checkpoint carries no ``cf_evid_head`` (`--cf-evidential` off, or any
+        pre-v98 checkpoint) — the caller must OMIT its evidential columns rather than fill them
+        with zeros, which is the whole distinction between "this run has no head" and "this run's
+        head claims no uncertainty".
+
+        The head is a pure readout that the extractor forward **never calls**, so this cannot ride
+        `extract_features`' stash the way :meth:`win_prob_at` does: it forwards the extractor to
+        populate ``stash.value_pooled`` and then applies the head itself — the same thing
+        `instrumented_ppo._cf_evidential_term` does on the training side, which is what makes an
+        offline read comparable with the live `cf/evid_*` scalars.
+        """
+        import torch
+
+        ex = getattr(self._policy, "features_extractor", None)
+        head = getattr(ex, "cf_evid_head", None) if ex is not None else None
+        if head is None:
+            return None
+        obs = np.asarray(obs, dtype=np.float32)
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs)
+        # The extractor forward reads ONLY "observation" (the mask is the policy head's business,
+        # and `_cf_sample_and_forward` passes an obs-only dict for exactly that reason), so an
+        # all-legal mask is not an approximation here — it is the key going unread. Accepted as an
+        # argument anyway so a caller that HAS the real masks need not think about it.
+        if masks is None:
+            from agents.action.constants import ACTION_SPACE_SIZE
+            mt = torch.ones(ot.shape[0], ACTION_SPACE_SIZE)
+        else:
+            mt = torch.as_tensor(np.asarray(masks))
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            pooled = getattr(getattr(ex, "stash", None), "value_pooled", None)
+            if pooled is None:
+                return None
+            alpha, beta = head(pooled)
+        return alpha.reshape(-1).cpu().numpy(), beta.reshape(-1).cpu().numpy()
+
     def value_dist_support(self) -> "tuple[float, float, int] | None":
         """The distributional value head's atom support ``(vmin, vmax, bins)``, or ``None`` when the run
         trained no value-dist head (``--value-dist-mode none``). The trace stores the per-atom probs; the

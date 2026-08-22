@@ -21,21 +21,37 @@ Obs resolution order is ``obs_inline`` > ``obs_npz`` > skip-with-a-counter. An u
 a ``schema`` != 1 is SKIPPED with a counter, never a crash — a producer that ships a v2 row must
 not take a training run down with it.
 
-**Staleness is bounded, not denied** (design §5.2). An MC label is a sample under the policy that
-produced it; consumed many iterations later it teaches an ancestor's value. Rows older than
-``lag_bound`` policy steps are dropped on ingest and on every sample, and the drop is COUNTED —
-`cf/labels_expired_total` rising while `cf/buffer_fill` sits at zero is the signature of a
-producer that is running but lagging, which reads completely differently from one that is dead.
+**Staleness is bounded SYMMETRICALLY, not denied** (design §5.2). An MC label is a sample under the
+policy that produced it; consumed many iterations later it teaches an ancestor's value. The bound
+is on ``abs(current_step - policy_step)``, and the absolute value is load-bearing: a **crash-restart
+rollback** resumes from the last checkpoint, so `num_timesteps` moves BACKWARDS while the label
+files on disk still carry the pre-crash steps. Those rows are FUTURE-dated relative to the running
+process, and a one-sided ``current - policy > bound`` test makes them immortal — they never expire,
+never refresh, and quietly become the whole buffer. The tell was measured:
+``cf/label_age_steps_p50`` reading **-4,999,000**. A future label is expired like a past one AND
+counted separately (`cf/labels_future_total`), with a one-time loud warning naming the cause,
+because a negative age is a *diagnosis* (someone restarted from an older checkpoint), not noise.
+
+**Rows are DEDUPED on the obs digest, keep-NEWEST.** A producer that re-labels a decision it has
+already shipped (a re-run over the same trace tree, a truncate-and-rewrite, an overlapping cycle)
+would otherwise give that one state N× the weight of every other — a silent, unannounced change to
+the sampler's declared distribution, which design decision-of-record 3 forbids. The resident row
+for a repeated ``obs_sha1`` is REPLACED by the arrival, never appended beside it. Keep-NEWEST
+rather than keep-first because a fresher label is a strictly better estimate of the same state: it
+was measured under a policy closer to the one now consuming it, and if the producer changed R it
+carries more evidence. Counted as `cf/labels_replaced_total`.
 
 **Producer liveness is a first-class scalar, deliberately.** The oldest failure mode in this tree
 is an empty buffer that does not announce itself (the search-teacher's silent starvation), so the
-buffer publishes five counters every log cycle:
+buffer publishes seven counters every log cycle:
 
 ===============================  ================================================================
 ``cf/buffer_fill``               rows currently resident (0 = starving RIGHT NOW)
 ``cf/label_age_steps_p50``       median staleness of the resident rows, in policy steps
 ``cf/labels_ingested_total``     rows accepted since process start (flat = producer is DEAD)
-``cf/labels_expired_total``      rows dropped for exceeding ``lag_bound``
+``cf/labels_expired_total``      rows dropped for |age| > ``lag_bound`` (past AND future)
+``cf/labels_future_total``       of those, the ones dated AHEAD of this process (restart rollback)
+``cf/labels_replaced_total``     rows superseded by a newer label of the SAME state
 ``cf/labels_skipped_total``      rows rejected — bad schema, unknown kind, unresolvable or
                                  malformed obs, sha1 mismatch, out-of-range label
 ===============================  ================================================================
@@ -50,7 +66,7 @@ import base64
 import hashlib
 import json
 import os
-from collections import deque
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
@@ -73,6 +89,18 @@ CF_SAMPLE_SIZE = 256
 
 _LABEL_GLOB = "labels_*.jsonl"
 
+# How many `obs_npz` FILES to keep decoded in memory. A label row points at one row of a battle's
+# `states.npz`, and a producer emits many rows per battle — so a per-row `np.load` re-opened,
+# re-inflated and re-parsed the same archive dozens of times per poll. The cache is tiny and
+# deliberately so: an entry is one battle's obs matrix (~50 x 2501 x 4B ≈ 0.5 MB), and label files
+# are written battle-by-battle, so a 4-deep LRU already collapses the reopens to ~one per file.
+_NPZ_CACHE_FILES = 4
+
+
+def _digest(arr: np.ndarray) -> str:
+    """sha1 over the float32 bytes — the row identity, and the dedup key."""
+    return hashlib.sha1(np.ascontiguousarray(arr, dtype=np.float32).tobytes()).hexdigest()
+
 
 @dataclass(frozen=True)
 class CfLabel:
@@ -84,6 +112,11 @@ class CfLabel:
     decision_idx: int
     opponent: str
     n_rollouts: int
+    # sha1 of `obs`'s float32 bytes — the DEDUP key. Computed here from the bytes actually loaded,
+    # never copied from the row's declared `obs_sha1`: a producer whose digest disagrees with its
+    # own bytes is rejected upstream, and a key taken from an unverified field would let two
+    # different states collide (or one state fail to dedup with itself).
+    obs_sha1: str = ""
 
 
 class CfLabelBuffer:
@@ -107,7 +140,11 @@ class CfLabelBuffer:
         self.obs_dim = int(obs_dim) if obs_dim else None
         self.capacity = max(1, int(capacity))
         self.lag_bound = max(0, int(lag_bound))
-        self._rows: "deque[CfLabel]" = deque()
+        # obs_sha1 -> row, INSERTION-ORDERED, which is what makes one mapping serve both jobs: the
+        # order is the FIFO the capacity cap evicts from, and the key is the dedup identity. A
+        # repeat re-inserts at the end (keep-newest), so a re-labelled state also becomes the
+        # youngest resident — which is the right FIFO position for the fresher measurement.
+        self._rows: "OrderedDict[str, CfLabel]" = OrderedDict()
         # name -> (inode, byte offset already consumed). The INODE is half the key on purpose: a
         # producer that DELETES and RECREATES `labels_x.jsonl` (a restart that rotates in place)
         # gets a new inode, and keying on the name alone would seek past the new file's first
@@ -118,6 +155,13 @@ class CfLabelBuffer:
         # `labels_ingested_total` going FLAT is unambiguous evidence the producer stopped.
         self.ingested_total = 0
         self.expired_total = 0
+        # A SUBSET of `expired_total`: rows dated AHEAD of this process. Broken out because it has
+        # exactly one cause worth naming (a resume from an older checkpoint) and a completely
+        # different remedy from ordinary lag.
+        self.future_total = 0
+        # Rows superseded by a newer label of the same state. Rising = the producer is re-labelling
+        # ground it already covered, which is not an error but IS a fact about the sampler.
+        self.replaced_total = 0
         self.skipped_total = 0
         # Skip BREAKDOWN (not on TensorBoard; read from `stats()` in a test or a debugger). The
         # single `skipped_total` scalar answers "is the producer feeding me garbage"; this answers
@@ -125,6 +169,8 @@ class CfLabelBuffer:
         self.skip_reasons: Dict[str, int] = {}
         self._warned: set = set()
         self._rng = np.random.default_rng(0)
+        # path -> {key: array}. See `_NPZ_CACHE_FILES`.
+        self._npz_cache: "OrderedDict[str, Dict[str, np.ndarray]]" = OrderedDict()
 
     # -- ingest ----------------------------------------------------------------------
     def poll(self, current_step: int) -> int:
@@ -209,8 +255,7 @@ class CfLabelBuffer:
             return self._skip("label_range")
         # Staleness at INGEST as well as at sample: a producer that fell far behind should not be
         # able to flood the buffer with rows that would be dropped on the very next expire().
-        if self.lag_bound and (current_step - policy_step) > self.lag_bound:
-            self.expired_total += 1
+        if self.lag_bound and self._too_stale(current_step, policy_step):
             return None
         obs = self._resolve_obs(obj)
         if obs is None:
@@ -220,7 +265,26 @@ class CfLabelBuffer:
             obs=obs, label=label, policy_step=policy_step,
             battle=str(obj.get("battle", "")), decision_idx=int(obj.get("decision_idx", -1)),
             opponent=str(obj.get("opponent", "")), n_rollouts=int(obj.get("n_rollouts", 0)),
+            obs_sha1=_digest(obs),
         )
+
+    def _too_stale(self, current_step: int, policy_step: int) -> bool:
+        """The SYMMETRIC staleness test, and the accounting that goes with it.
+
+        Counts into `expired_total` (and `future_total` for the ahead-of-us half) as a side effect,
+        so ingest-time and expire-time rejection are the same decision made in one place."""
+        age = current_step - policy_step
+        if abs(age) <= self.lag_bound:
+            return False
+        self.expired_total += 1
+        if age < 0:
+            self.future_total += 1
+            self._warn(
+                f"label from a NEWER snapshot than this process (policy_step {policy_step} > "
+                f"num_timesteps {current_step}) — crash-restart rollback? Those rows are EXPIRED "
+                f"like stale ones; without this they would never age out and would silently become "
+                f"the whole buffer. Clear <run>/cf_labels/ or restart the producer at this step.")
+        return True
 
     def _resolve_obs(self, obj: dict) -> Optional[np.ndarray]:
         """obs_inline > obs_npz > skip-with-counter (the schema's declared resolution order)."""
@@ -232,7 +296,12 @@ class CfLabelBuffer:
             except Exception:
                 return self._skip("obs_inline_undecodable")
         elif obj.get("obs_npz"):
-            arr = self._load_npz(str(obj["obs_npz"]))
+            # `decision_idx` selects the ROW of a 2-D array — that is the schema's own wording, and
+            # the producer's default output (`cf_audit` without `--inline-obs`) points every row of
+            # a battle at the SAME `<states.npz>::obs` matrix. Ignoring the index flattened the whole
+            # matrix into one 1-D vector, which then failed the obs-width GIGO guard: the entire
+            # non-inline half of the schema was unconsumable, loudly but for the wrong reason.
+            arr = self._load_npz(str(obj["obs_npz"]), int(obj.get("decision_idx", -1)))
             if arr is None:
                 return None
         else:
@@ -247,29 +316,51 @@ class CfLabelBuffer:
             return self._skip("obs_dim")
         want = obj.get("obs_sha1")
         if want:
-            got = hashlib.sha1(np.ascontiguousarray(arr, dtype=np.float32).tobytes()).hexdigest()
+            got = _digest(arr)
             if got != want:
                 self._warn("obs_sha1 MISMATCH — the producer's obs bytes disagree with its own "
                            "digest; rows rejected (GIGO guard)")
                 return self._skip("obs_sha1")
         return np.ascontiguousarray(arr, dtype=np.float32)
 
-    def _load_npz(self, spec: str) -> Optional[np.ndarray]:
+    def _load_npz(self, spec: str, decision_idx: int) -> Optional[np.ndarray]:
+        """One row of ``<path>::<key>``, through a small per-FILE LRU (see `_NPZ_CACHE_FILES`)."""
         if "::" not in spec:
             return self._skip("obs_npz_spec")
         path, _, key = spec.partition("::")
-        try:
-            with np.load(path) as z:
-                if key not in z:
-                    return self._skip("obs_npz_key")
-                return np.asarray(z[key], dtype=np.float32).reshape(-1)
-        except Exception:
-            return self._skip("obs_npz_unreadable")
+        cached = self._npz_cache.get(path)
+        if cached is None:
+            try:
+                with np.load(path) as z:
+                    cached = {k: np.asarray(z[k], dtype=np.float32) for k in z.files}
+            except Exception:
+                return self._skip("obs_npz_unreadable")
+            self._npz_cache[path] = cached
+            while len(self._npz_cache) > _NPZ_CACHE_FILES:
+                self._npz_cache.popitem(last=False)
+        else:
+            self._npz_cache.move_to_end(path)
+        arr = cached.get(key)
+        if arr is None:
+            return self._skip("obs_npz_key")
+        if arr.ndim >= 2:
+            if not (0 <= decision_idx < arr.shape[0]):
+                return self._skip("obs_npz_row")
+            arr = arr[decision_idx]
+        # `.reshape(-1)` (not `.ravel()`) so a >2-D array is a malformed-shape skip downstream
+        # rather than a silently flattened one; a 1-D array is passed through untouched, which is
+        # the "one vector per file" layout a hand-written producer would use.
+        return np.asarray(arr, dtype=np.float32).reshape(-1)
 
     def _push(self, row: CfLabel) -> None:
-        self._rows.append(row)
+        # DEDUP, keep-newest. `pop` + re-insert rather than assignment: assigning to an existing key
+        # keeps the OLD position, which would leave a re-labelled state sitting at the FIFO head
+        # about to be evicted despite being the freshest thing in the buffer.
+        if self._rows.pop(row.obs_sha1, None) is not None:
+            self.replaced_total += 1
+        self._rows[row.obs_sha1] = row
         while len(self._rows) > self.capacity:
-            self._rows.popleft()               # FIFO: the OLDEST label is the one to lose
+            self._rows.popitem(last=False)     # FIFO: the OLDEST label is the one to lose
 
     def _skip(self, reason: str) -> None:
         self.skipped_total += 1
@@ -283,30 +374,25 @@ class CfLabelBuffer:
 
     # -- expiry / sampling -----------------------------------------------------------
     def expire(self, current_step: int) -> int:
-        """Drop rows staler than ``lag_bound`` policy steps. Returns how many were dropped.
+        """Drop rows whose |age| exceeds ``lag_bound`` policy steps. Returns how many were dropped.
 
-        The boundary is INCLUSIVE of the bound: age == lag_bound survives, age == lag_bound + 1
-        does not. ``lag_bound == 0`` disables expiry entirely (nothing is ever too old).
+        The boundary is INCLUSIVE of the bound and SYMMETRIC: |age| == lag_bound survives,
+        |age| == lag_bound + 1 does not, in EITHER direction. ``lag_bound == 0`` disables expiry
+        entirely (nothing is ever too old — nor too new).
         """
         if not self.lag_bound:
             return 0
-        dropped = 0
-        keep = deque()
-        for row in self._rows:
-            if (current_step - row.policy_step) > self.lag_bound:
-                dropped += 1
-            else:
-                keep.append(row)
-        if dropped:
-            self._rows = keep
-            self.expired_total += dropped
-        return dropped
+        doomed = [k for k, row in self._rows.items()
+                  if self._too_stale(current_step, row.policy_step)]
+        for k in doomed:
+            del self._rows[k]
+        return len(doomed)
 
     def sample(self, n: int) -> List[CfLabel]:
         """Up to ``n`` rows drawn uniformly WITHOUT replacement. Empty when starving."""
         if not self._rows or n <= 0:
             return []
-        rows = list(self._rows)
+        rows = list(self._rows.values())
         if len(rows) <= n:
             return rows
         idx = self._rng.choice(len(rows), size=n, replace=False)
@@ -317,13 +403,15 @@ class CfLabelBuffer:
 
     # -- metrics ---------------------------------------------------------------------
     def stats(self, current_step: int) -> Dict[str, float]:
-        """The five `cf/` TensorBoard scalars (see the module docstring)."""
-        ages = [current_step - r.policy_step for r in self._rows]
+        """The seven `cf/` TensorBoard scalars (see the module docstring)."""
+        ages = [current_step - r.policy_step for r in self._rows.values()]
         return {
             "cf/buffer_fill": float(len(self._rows)),
             "cf/label_age_steps_p50": float(np.median(ages)) if ages else 0.0,
             "cf/labels_ingested_total": float(self.ingested_total),
             "cf/labels_expired_total": float(self.expired_total),
+            "cf/labels_future_total": float(self.future_total),
+            "cf/labels_replaced_total": float(self.replaced_total),
             "cf/labels_skipped_total": float(self.skipped_total),
         }
 

@@ -21,6 +21,7 @@ If upstream changes (e.g. after a `pip install -U sb3_contrib`):
 3. Recompute the hash and update `_EXPECTED_UPSTREAM_TRAIN_HASH`.
 """
 
+import contextlib
 import hashlib
 import inspect
 
@@ -851,6 +852,23 @@ class InstrumentedMaskablePPO(MaskablePPO):
         NOTE it CLOBBERS the extractor stashes for this minibatch (its forward replaces them), so
         it must be run after every loss that reads them — it sits beside `_td_aux_term`, which
         carries the identical constraint.
+
+        TWO GUARDS ride on the forward itself:
+
+        * **`no_grad` when nothing downstream needs the graph.** Under `cf_head_only` the win-prob
+          term detaches its input and the evidential term detaches unconditionally, so the whole
+          extractor graph is built and thrown away. The condition is computed exactly rather than
+          assumed (`cf_head_only` OR a dead win-prob coefficient), because the ONE configuration
+          that does need it — `--no-cf-head-only` with a live `cf_winprob_coef` — is precisely the
+          trunk-open arm, where silently dropping the graph would turn the lever into a no-op.
+          The heads still train either way: `head(value_pooled)` is applied OUTSIDE this context,
+          so their own parameters keep their gradients whatever the input tensor carries.
+        * **The ObservationDebugger is SUPPRESSED for it.** These are recorded FOREIGN states —
+          other episodes, other policy steps, read off disk — and the debugger's whole premise is
+          that it is looking at the board this process is about to act on. Feeding it 256 replayed
+          rows per minibatch would have it report their integrity against the live env's
+          expectations. Suppressed and restored, never permanently dropped (that is the compile
+          path's trade, and it costs the run its only live obs-integrity check).
         """
         from agents.training.cf_label_buffer import CF_SAMPLE_SIZE, batch_tensors
 
@@ -861,14 +879,20 @@ class InstrumentedMaskablePPO(MaskablePPO):
 
         fe = self.policy.features_extractor
         obs, labels, n_rollouts = batch_tensors(rows, self.device)
-        # The EAGER forward, deliberately. `compile_trainer_extractor` patches the BOUND
-        # `fe.forward`, so `type(fe).forward` is always the uncompiled one — and this call passes an
-        # obs dict with ONLY the "observation" key (the sole key the model reads; a label carries
-        # nothing else), a structure the production forward never sees. Routing it through the
-        # compiled entry point would add a second graph shape, and would ask dynamo to trace the
-        # `self.stash` write on a shape it exists nowhere else. The term is 256 rows once per
-        # minibatch; eager is the cheap, boring answer.
-        type(fe).forward(fe, {"observation": obs})
+        needs_graph = (not self.cf_head_only) and float(getattr(self, "cf_winprob_coef", 0.0)) != 0.0
+        grad_ctx = contextlib.nullcontext() if needs_graph else th.no_grad()
+        # `getattr` + nullcontext: a test double / a non-Gen3 extractor has no debugger to suppress,
+        # and the cf fold must not require one to exist.
+        dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
+        with dbg_ctx, grad_ctx:
+            # The EAGER forward, deliberately. `compile_trainer_extractor` patches the BOUND
+            # `fe.forward`, so `type(fe).forward` is always the uncompiled one — and this call passes
+            # an obs dict with ONLY the "observation" key (the sole key the model reads; a label
+            # carries nothing else), a structure the production forward never sees. Routing it
+            # through the compiled entry point would add a second graph shape, and would ask dynamo
+            # to trace the `self.stash` write on a shape it exists nowhere else. The term is 256 rows
+            # once per minibatch; eager is the cheap, boring answer.
+            type(fe).forward(fe, {"observation": obs})
         value_pooled = fe.stash.value_pooled
         if value_pooled is None:                       # pragma: no cover - defensive
             return None
@@ -1146,6 +1170,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
             cf_buffer.poll(int(self.num_timesteps))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
+        cf_rows_sampled = 0
 
         continue_training = True
 
@@ -1718,6 +1743,13 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # call the scalar term used to make on its own, which is what keeps the
                     # coefficient-zero byte-identity pins meaningful.
                     _cf_ctx = self._cf_sample_and_forward()
+                    # Rows the fold actually CONSUMED this train(), summed over minibatches. Not a
+                    # duplicate of `cf/buffer_fill` (residency) nor of `cf/n` (the per-fold mean):
+                    # this is the only number that answers "how much label did this update eat",
+                    # which is what a starving producer starves — a buffer of 40 rows sampled by 40
+                    # minibatches still reports fill 40 while delivering 40x the same handful.
+                    if _cf_ctx is not None:
+                        cf_rows_sampled += int(_cf_ctx[3])
                     if cf_winprob_on:
                         cf_term, _cfm = self._cf_winprob_term(_cf_ctx)
                         if cf_term is not None:
@@ -2051,6 +2083,11 @@ class InstrumentedMaskablePPO(MaskablePPO):
         if cf_buffer is not None:
             for _ck, _cv in cf_buffer.stats(int(self.num_timesteps)).items():
                 self.logger.record(_ck, _cv)
+        if cf_any_on:
+            # Rows CONSUMED per train() — the throughput half of liveness, which residency alone
+            # cannot report. Recorded whenever the fold is enabled (0 is the reading that matters:
+            # the term is on and the buffer gave it nothing).
+            self.logger.record("cf/rows_sampled", float(cf_rows_sampled))
         if cf_metrics:
             for _ck2, _cvals in cf_metrics.items():
                 self.logger.record(f"cf/{_ck2}", float(np.mean(_cvals)))

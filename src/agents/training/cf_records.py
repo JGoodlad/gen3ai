@@ -29,6 +29,15 @@ Design notes worth keeping:
 * **Filenames sort by time**: ``<ns>_<pid>_<tag>_reconstruction.json``. ``time.time_ns()`` is
   19 digits for the next ~280 years, so a lexical sort IS a chronological sort — no ``stat`` per
   file during the prune.
+* **The prune is THROTTLED to one write in ``prune_every``.** It is a full ``readdir`` of a
+  ``keep``-sized directory, and it runs on the bridge reader's coroutine — the path an env worker's
+  every step waits behind. Pruning on every write paid that scan ~512 times to delete ~512 files.
+  The cost of throttling is only a bounded transient OVERSHOOT (at most ``prune_every`` unpruned
+  writes per live writer), and it **degrades gracefully by construction**: the cap is GLOBAL and
+  every writer prunes the WHOLE directory, so any one worker's next sweep collects every other
+  worker's backlog too — the bound is ``keep + prune_every·n_writers`` in the worst case and
+  ``keep`` again the moment any writer sweeps. ``prune()`` itself is unthrottled; only the
+  automatic call inside ``write_record`` is.
 * **The artifact shape is the one the offline stack already reads** — ``{**raw, "battle_tag":
   tag}``, identical to ``utils.bridge.reconstruction._write_artifact``, so
   ``ReconstructionRecord.load()`` works on a ring file with no special-casing.
@@ -57,6 +66,11 @@ DEFAULT_KEEP = 512
 _NS_DIGITS = 19
 _TMP_SUFFIX = RECON_SUFFIX + ".tmp"
 
+# One automatic prune per this many writes (see the module docstring's throttle note). 16 keeps the
+# readdir off ~94% of writes while bounding the per-writer overshoot at 15 files — small beside a
+# 512-file cap, and reclaimed by whichever writer sweeps next.
+DEFAULT_PRUNE_EVERY = 16
+
 
 class CfRecordRing:
     """A bounded directory of recent training-episode reconstruction records.
@@ -65,9 +79,11 @@ class CfRecordRing:
     docstring for why every writer prunes the whole dir.
     """
 
-    def __init__(self, records_dir: str | os.PathLike, keep: int = DEFAULT_KEEP) -> None:
+    def __init__(self, records_dir: str | os.PathLike, keep: int = DEFAULT_KEEP,
+                 prune_every: int = DEFAULT_PRUNE_EVERY) -> None:
         self.dir = Path(records_dir)
         self.keep = max(1, int(keep))
+        self.prune_every = max(1, int(prune_every))
         self._warned = False
         self.written = 0
         self.pruned = 0
@@ -111,7 +127,12 @@ class CfRecordRing:
                     pass
                 raise
             self.written += 1
-            self.prune()
+            # THROTTLED (module docstring). `written % prune_every == 0` and not `== 1` so a
+            # short-lived writer that only ever writes a handful of records does NOT pay a readdir
+            # for each of them; the global cap is maintained by whichever writer crosses the
+            # threshold, and every writer prunes the whole directory.
+            if self.written % self.prune_every == 0:
+                self.prune()
             return path
         except Exception as exc:                                   # pragma: no cover - defensive
             self.errors += 1

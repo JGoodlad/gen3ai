@@ -14,10 +14,27 @@ THE FAITHFUL-CONDITIONAL OPPONENT (the user-chosen model):
 - **divergence ply (the turn under review)** — the opponent plays its RECORDED move (it committed not
   knowing our change). The CHOSEN action is reproduced EXACTLY (``recorded_exact`` → the realized next
   state), giving the built-in ``value_crn == recorded_next_value`` faithfulness anchor.
-- **interior plies (past the divergence)** — the RELOADED opponent (``opp_model``) reacts greedily on
-  ITS OWN one-sided materialized obs (the search privilege: we hold the referee record, so we drive
-  the real hidden team). With no ``opp_model`` the interior opponent falls back to the sim's default
-  legal move (flagged in ``opp_model_used``) — depth-1 is faithful regardless; only depth≥2 leans on it.
+- **interior plies (past the divergence)** — the RELOADED opponent (``opp_model``) reacts **GREEDILY**
+  (argmax) on ITS OWN one-sided materialized obs (the search privilege: we hold the referee record, so
+  we drive the real hidden team). With no ``opp_model`` the interior opponent falls back to the sim's
+  default legal move (flagged in ``opp_model_used``) — depth-1 is faithful regardless; only depth≥2
+  leans on it.
+
+⚠️ **The interior regime is GREEDY BY DECISION, and it is a MIX with the divergence ply's recorded
+one.** That is deliberate and it is declared here because the mix is otherwise invisible: the
+divergence ply reproduces what the opponent actually did (stochastic, if the sentinel played
+stochastic — the regime `prober.replay.build_opponent` now honours), while every ply past it plays
+the opponent's single most likely reply. The reason is what the beam is FOR: a "better line" is a
+claim about a line that survives the opponent's BEST answer, so sampling the opponent would report a
+line that beats one draw of a die and call it better — an optimistic search bias, in the one direction
+this tree already pays for (the optimizer's curse). Greedy is the standard worst-case-opponent search
+assumption, and it makes the returned ΔV a lower bound rather than a lucky draw.
+
+The two consequences a reader must hold: (1) the line is scored against a **deterministic** opponent,
+so a line whose refutation is a low-probability reply will not be found; (2) the beam's numbers are
+**not** comparable ply-for-ply with `replay-counterfactual`'s Monte-Carlo win rate, which plays the
+recorded stochastic regime to the end. Every payload carries
+``interior_opponent_regime: "greedy"`` so no artifact can hide which of the two produced it.
 
 DICE: CRN throughout (``seed="original"`` — the realized dice at the divergence turn, the natural
 continuation deeper), so ΔV isolates the ACTION effect, not dice variance. THE WALL: every obs the
@@ -267,6 +284,14 @@ def better_line_decision(
                     op = opp_model.action_probs_batch(
                         np.stack([p[4] for (_, p) in live]), np.stack([p[5] for (_, p) in live]))
                     for k, (i, p) in enumerate(live):
+                        # GREEDY, deliberately — the declared interior regime (module docstring).
+                        # NOT an oversight of `prober.replay.build_opponent`'s regime seam, which
+                        # governs the DIVERGENCE ply (where the opponent's real, possibly
+                        # stochastic, committed move is what happened). A beam that sampled here
+                        # would return lines that beat one draw of a die: the search's job is the
+                        # opponent's BEST reply, so argmax makes the reported ΔV a lower bound
+                        # instead of a lucky one. Stamped into the payload as
+                        # `interior_opponent_regime` so no artifact can hide it.
                         idx = int(np.argmax(op[k]))
                         choice = (p[6] or {}).get(idx)
                         if choice is not None:    # argmax landed on a legal/mapped action
@@ -337,6 +362,12 @@ def better_line_decision(
     return {
         "inv": inv_index, "turn": turn, "side": side, "depth": depth, "beam": beam, "top_k": top_k,
         "opp_model_used": opp_model_used,
+        # The DECLARED interior-ply opponent regime (module docstring). A constant today, and a
+        # field rather than a docstring line precisely because it is one: the divergence ply plays
+        # the RECORDED regime while every ply past it plays argmax, and a payload that did not say
+        # so left the mix for a reader to rediscover. If this is ever made configurable, the value
+        # follows the configuration; nothing downstream may assume "greedy" from its absence.
+        "interior_opponent_regime": "greedy",
         "chosen": {"action": chosen_idx, "label": _label_of(inv, chosen_idx),
                    "choice": choice_map[chosen_idx]},
         "recorded_value": round(recorded_v, 4) if recorded_v is not None else None,

@@ -1206,3 +1206,177 @@ def test_both_cf_terms_share_one_sample_and_one_forward(tmp_path):
     assert n_minibatches > 0, "preconditions: the CF block never ran"
     # exactly one CF-shaped forward (obs-only dict) per minibatch, for BOTH terms together
     assert sum(1 for is_cf in fwd if is_cf) == n_minibatches
+
+
+# --------------------------------------------------------------------------------------
+# THE CF FORWARD'S TWO GUARDS (task #28 / the review's perf notes, 2026-08-22)
+#
+# Both are properties of the ONE forward `_cf_sample_and_forward` runs, and both are the kind of
+# thing that is invisible until it is wrong: a graph nobody consumes costs memory and time with no
+# symptom, and a debugger fed foreign rows reports against the wrong premise with no symptom either.
+# --------------------------------------------------------------------------------------
+
+def test_the_cf_forward_builds_no_graph_when_nothing_downstream_wants_one(tmp_path):
+    """`cf_head_only` (the default) detaches, and the evidential head detaches unconditionally — so
+    the extractor graph was built and immediately discarded on every minibatch of every epoch.
+
+    Measured on the stashed tensor rather than on a timing: `value_pooled.requires_grad` is exactly
+    the presence of the graph.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 1.0
+    model.cf_evidential_coef = 1.0
+    model.cf_head_only = True
+    seen = []
+    real = InstrumentedMaskablePPO._cf_sample_and_forward
+
+    def spy(self):
+        ctx = real(self)
+        if ctx is not None:
+            seen.append(bool(ctx[2].requires_grad))
+        return ctx
+
+    model.__class__ = type("_Spy", (type(model),), {"_cf_sample_and_forward": spy})
+    model.learn(total_timesteps=8 * 4)
+    assert seen, "preconditions: the CF block never ran"
+    assert not any(seen), "head-only built an extractor graph nothing consumes"
+
+
+def test_the_cf_forward_KEEPS_the_graph_for_the_trunk_open_arm(tmp_path):
+    """The one configuration that needs it: `--no-cf-head-only` with a LIVE win-prob coefficient.
+
+    The no_grad optimisation is conditioned exactly, not assumed, because dropping the graph here
+    would silently turn the trunk-open arm into head-only — an A/B whose two arms are the same run.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 1.0
+    model.cf_head_only = False
+    seen = []
+    real = InstrumentedMaskablePPO._cf_sample_and_forward
+
+    def spy(self):
+        ctx = real(self)
+        if ctx is not None:
+            seen.append(bool(ctx[2].requires_grad))
+        return ctx
+
+    model.__class__ = type("_Spy", (type(model),), {"_cf_sample_and_forward": spy})
+    model.learn(total_timesteps=8 * 4)
+    assert seen and all(seen), "the trunk-open arm lost the graph it trains through"
+
+
+def test_head_only_plus_evidential_still_trains_BOTH_heads_own_params(tmp_path):
+    """The no_grad guard's real risk: it must not starve a head of its OWN gradient.
+
+    `head(value_pooled)` is applied OUTSIDE the no_grad context, so a detached input still yields a
+    full gradient for the head's parameters — but "still" is a claim about where a `with` block
+    ends, so it is measured on the parameter update for both consumers at once.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    model.cf_evidential_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    _attach_cf_buffer(model, tmp_path)
+    model.cf_winprob_coef = 5.0
+    model.cf_evidential_coef = 5.0
+    model.cf_head_only = True
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    win_keys = [k for k in base if "win_head" in k]
+    evid_keys = [k for k in base if "cf_evid_head" in k]
+    trunk_keys = [k for k in base if "cf_trunk_stub" in k]
+    assert win_keys and evid_keys and trunk_keys
+    assert any(not th.equal(base[k], on[k]) for k in win_keys), \
+        "no_grad starved the WIN-PROB head of its own gradient"
+    assert any(not th.equal(base[k], on[k]) for k in evid_keys), \
+        "no_grad starved the EVIDENTIAL head of its own gradient"
+    for k in trunk_keys:
+        assert th.equal(base[k], on[k]), f"head-only reached the trunk via {k}"
+
+
+def test_the_observation_debugger_is_suppressed_for_the_cf_forward_and_restored(tmp_path):
+    """The CF rows are RECORDED FOREIGN states — other episodes, other policy steps, read off disk.
+
+    The debugger's premise is "this is the board we are about to act on", so those rows are not its
+    business: it would report their integrity failures as though the live env had produced them.
+    Suppressed for that one forward and RESTORED after, including when the forward raises.
+    """
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+
+    model = _build_cf_ppo()
+    fe = model.policy.features_extractor
+    sentinel = object()
+    fe._debugger = sentinel
+    # Borrow the real context manager — the stub extractor is not a Gen3FeaturesExtractor, but the
+    # seam under test is exactly that method, so binding it is the honest way to exercise it.
+    fe.suppress_observation_debugger = (
+        Gen3FeaturesExtractor.suppress_observation_debugger.__get__(fe, type(fe)))
+
+    inside = []
+    _base_forward = type(fe).forward
+    type(fe).forward = lambda self, obs: (                       # type: ignore[method-assign]
+        inside.append(self._debugger) if "action_mask" not in obs else None
+    ) or _base_forward(self, obs)
+    try:
+        _attach_cf_buffer(model, tmp_path)
+        model.cf_winprob_coef = 1.0
+        model.learn(total_timesteps=8 * 4)
+    finally:
+        type(fe).forward = _base_forward                         # type: ignore[method-assign]
+
+    assert inside, "preconditions: the CF forward never ran"
+    assert all(d is None for d in inside), "the debugger was fed recorded foreign CF rows"
+    assert fe._debugger is sentinel, "the debugger was not restored after the CF forward"
+
+
+def test_the_debugger_suppression_restores_even_when_the_forward_raises():
+    """Exception-safe, because the alternative is losing the live obs-integrity check for the rest
+    of a multi-day run over one transient failure in an aux term."""
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+
+    class _Fake:
+        pass
+
+    fe = _Fake()
+    fe._debugger = "the-real-debugger"
+    cm = Gen3FeaturesExtractor.suppress_observation_debugger.__get__(fe, _Fake)
+    with pytest.raises(RuntimeError):
+        with cm() as had:
+            assert had is True and fe._debugger is None
+            raise RuntimeError("the forward blew up")
+    assert fe._debugger == "the-real-debugger"
+
+
+def test_cf_rows_sampled_reports_the_rows_the_fold_actually_ate(tmp_path):
+    """Residency (`cf/buffer_fill`) and throughput are different questions, and only the second one
+    goes to zero when a producer dies mid-run while its last labels are still resident."""
+    model = _build_cf_ppo()
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    class _Rec:
+        def __init__(self): self.vals = {}
+        def record(self, k, v, *a, **kw): self.vals[k] = v
+        def __getattr__(self, _n): return lambda *a, **kw: None
+
+    _attach_cf_buffer(model, tmp_path, n=6)
+    model.cf_winprob_coef = 1.0
+    model._logger = _Rec()
+    _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    vals = model.logger.vals
+    assert "cf/rows_sampled" in vals
+    # 3 distinct states in the fixture (obs fill cycles i % 3, and rows dedup on the obs digest),
+    # eaten once per minibatch — so the total is a positive multiple of the resident count.
+    assert vals["cf/rows_sampled"] > 0
+    assert vals["cf/rows_sampled"] % float(len(model._cf_buffer)) == 0

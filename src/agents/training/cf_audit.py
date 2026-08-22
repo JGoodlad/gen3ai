@@ -340,6 +340,44 @@ def wilson_ci(wins: int, n: int, z: float = 1.96) -> "tuple[float, float]":
     return max(0.0, center - half), min(1.0, center + half)
 
 
+def _ranks(a: np.ndarray) -> np.ndarray:
+    """Average ranks (ties shared) — the transform that turns Pearson into Spearman."""
+    order = np.argsort(a, kind="mergesort")
+    r = np.empty(len(a), dtype=float)
+    r[order] = np.arange(len(a), dtype=float)
+    # average tied ranks, so a head that emits one constant width scores 0 rather than an artifact
+    for v in np.unique(a):
+        m = a == v
+        if m.sum() > 1:
+            r[m] = r[m].mean()
+    return r
+
+
+def _is_flat(a: np.ndarray, rtol: float = 1e-9) -> bool:
+    return bool(np.ptp(a) <= rtol * (float(np.abs(a).max()) + 1e-30))
+
+
+def spearman(x: Sequence[float], y: Sequence[float]) -> Optional[float]:
+    """Spearman rank correlation, or ``None`` when it is undefined (n < 3, or either side flat).
+
+    Hand-rolled rather than `scipy.stats.spearmanr` so the audit's headline does not acquire a
+    dependency the training package does not otherwise have. A CONSTANT input returns None, not 0:
+    "the head claims the same width everywhere" is a different finding from "the widths it claims
+    are unrelated to the blur", and collapsing them would hide the more damning one.
+    """
+    a, b = np.asarray(list(x), dtype=float), np.asarray(list(y), dtype=float)
+    if len(a) < 3 or len(a) != len(b):
+        return None
+    # FLAT to a relative tolerance, not `std() == 0`. A constant that arrives through a weighted
+    # average is constant to ~1 ulp, not exactly — and an exact test there lets a genuinely flat
+    # width fall through to `corrcoef`, which divides by ~1e-17 and reports a confident correlation
+    # of pure float noise.
+    if _is_flat(a) or _is_flat(b):
+        return None
+    ra, rb = _ranks(a), _ranks(b)
+    return float(np.corrcoef(ra, rb)[0, 1])
+
+
 def cluster_bootstrap_ci(values: Sequence[float], clusters: Sequence[str], *,
                          draws: int = 2000, seed: int = 7,
                          ) -> "tuple[Optional[float], Optional[float]]":
@@ -496,7 +534,7 @@ def bias_map(labels: Sequence[dict], frame: Sequence[Decision], *, n_rollouts: i
         "accounting": accounting,
         "by_outcome": [], "by_decile_outcome": [], "by_turn_tercile": [],
         "by_opponent": [], "conviction_class": None,
-        "resolution": [], "headline": {},
+        "resolution": [], "headline": {}, "evidential": None,
     }
     for oc in ("win", "loss"):
         c = _cell([r for r in labels if r["outcome"] == oc], oc)
@@ -548,23 +586,13 @@ def bias_map(labels: Sequence[dict], frame: Sequence[Decision], *, n_rollouts: i
 
     # RESOLUTION — the primary meter, per decile, population-recombined over the outcome
     # sub-cells so this probe's deliberate loss over-sampling cannot inflate the spread.
-    for dec in range(10):
-        rows, w = [], []
-        for oc in ("win", "loss"):
-            sub = [r for r in labels
-                   if min(9, int(r["win_prob"] * 10)) == dec and r["outcome"] == oc]
-            mass = frame_mass.get((dec, oc), 0)
-            if len(sub) < 3 or mass <= 0:
-                continue
-            rows += sub
-            w += [mass / len(sub)] * len(sub)
-        if len(rows) < 12:
-            continue
-        st = sd_true_excess([r["mc"] for r in rows], n_rollouts, weights=w)
-        st["decile"] = dec
-        st["mean_predicted"] = float(np.average([r["win_prob"] for r in rows],
-                                                weights=np.asarray(w)))
-        out["resolution"].append(st)
+    out["resolution"] = resolution_cells(labels, frame_mass, n_rollouts)
+
+    # THE EVIDENTIAL READ (the pre-registered A/B meter for `--cf-evidential`). Present only when
+    # the audited checkpoint actually carries the head; absent — never zero — otherwise, because a
+    # zero width is a claim the head made and a missing column is a fact about the checkpoint.
+    if any(r.get("evid_width") is not None for r in labels):
+        out["evidential"] = evidential_read(labels, frame_mass, n_rollouts)
 
     if out["resolution"]:
         mass = [frame_mass.get((r["decile"], "win"), 0) + frame_mass.get((r["decile"], "loss"), 0)
@@ -579,6 +607,107 @@ def bias_map(labels: Sequence[dict], frame: Sequence[Decision], *, n_rollouts: i
             "n_battles": len({r["battle"] for r in labels}),
         }
     return out
+
+
+#: A decile cell needs this many labels (and this many per outcome sub-cell) before its spread is
+#: reported. Below it `sd_true_excess` is mostly the estimator's own noise.
+MIN_CELL_N, MIN_SUBCELL_N = 12, 3
+
+
+def resolution_cells(labels: Sequence[dict], frame_mass: Counter, n_rollouts: int) -> List[dict]:
+    """Per-decile `sd_true_excess` (+ the evidential columns when the rows carry them).
+
+    Factored out of `bias_map` because the bootstrap re-runs it per draw — a CI whose point
+    estimate came from different arithmetic than its resamples is not a CI of anything.
+    """
+    cells: List[dict] = []
+    for dec in range(10):
+        rows, w = [], []
+        for oc in ("win", "loss"):
+            sub = [r for r in labels
+                   if min(9, int(r["win_prob"] * 10)) == dec and r["outcome"] == oc]
+            mass = frame_mass.get((dec, oc), 0)
+            if len(sub) < MIN_SUBCELL_N or mass <= 0:
+                continue
+            rows += sub
+            w += [mass / len(sub)] * len(sub)
+        if len(rows) < MIN_CELL_N:
+            continue
+        st = sd_true_excess([r["mc"] for r in rows], n_rollouts, weights=w)
+        st["decile"] = dec
+        wa = np.asarray(w)
+        st["mean_predicted"] = float(np.average([r["win_prob"] for r in rows], weights=wa))
+        widths = [r.get("evid_width") for r in rows]
+        if all(x is not None for x in widths):
+            # Population-weighted like everything else in this cell, so the confessed width and the
+            # measured spread it is supposed to track are read off the SAME population.
+            st["evid_width_mean"] = float(np.average(np.asarray(widths, dtype=float), weights=wa))
+            st["evid_precision_mean"] = float(np.average(
+                np.asarray([r["evid_precision"] for r in rows], dtype=float), weights=wa))
+        cells.append(st)
+    return cells
+
+
+def evidential_read(labels: Sequence[dict], frame_mass: Counter, n_rollouts: int, *,
+                    draws: int = 1000, seed: int = 11) -> dict:
+    """THE PRE-REGISTERED METER for `--cf-evidential`: does the confessed width track the blur?
+
+    G0 convicted the win-prob head of RESOLUTION — within a confidence decile the true P(win)
+    spread is 0.11–0.36, which a point estimate cannot represent. The evidential head reads the
+    same `value_pooled`, so it cannot REMOVE that blur; the only success it can have is
+    **confessing** it, i.e. emitting a wide Beta exactly in the deciles where `sd_true_excess` is
+    large. So the headline is the rank correlation ACROSS STRATA between the head's mean epistemic
+    width and the measured spread — `width_vs_blur_spearman`.
+
+    Rank, not Pearson: the claim is ordering ("wider where blurrier"), and the two quantities are
+    not on a common scale (a Beta's std and a within-cell sd of an R-rollout mean). Rank
+    correlation is also robust to the one decile with a long tail dragging a Pearson r.
+
+    The CI is a bootstrap over BATTLES, not over strata: decisions inside one battle share a board,
+    a matchup and a dice stream, and the per-decile cells are built FROM those decisions, so
+    resampling strata would understate the width by however much that correlation is worth. Each
+    draw rebuilds the cells from scratch through `resolution_cells`, which means a draw can lose a
+    thin decile to the minimum-n floor — honest, and reported as `draws_usable`.
+
+    ⚠️ **Wide everywhere and wide nowhere are the same null.** A flat width scores `None` here (see
+    `spearman`), not 0, and a falling `cf/evid_nll` beside a null correlation is the standing
+    learns≠helps kill rather than a result.
+    """
+    cells = resolution_cells(labels, frame_mass, n_rollouts)
+    usable = [c for c in cells
+              if c.get("evid_width_mean") is not None and c.get("sd_true_excess") is not None]
+    point = spearman([c["evid_width_mean"] for c in usable],
+                     [c["sd_true_excess"] for c in usable])
+
+    by_battle: "Dict[str, List[dict]]" = defaultdict(list)
+    for r in labels:
+        by_battle[r["battle"]].append(r)
+    keys = list(by_battle)
+    rho: List[float] = []
+    if point is not None and len(keys) >= 2:
+        rng = np.random.default_rng(seed)
+        for _ in range(draws):
+            idx = rng.integers(0, len(keys), size=len(keys))
+            resampled = [r for j in idx for r in by_battle[keys[int(j)]]]
+            cs = resolution_cells(resampled, frame_mass, n_rollouts)
+            us = [c for c in cs if c.get("evid_width_mean") is not None]
+            v = spearman([c["evid_width_mean"] for c in us],
+                         [c["sd_true_excess"] for c in us])
+            if v is not None:
+                rho.append(v)
+    ci = ([float(np.percentile(rho, 2.5)), float(np.percentile(rho, 97.5))]
+          if len(rho) >= 100 else [None, None])
+    all_w = [r["evid_width"] for r in labels if r.get("evid_width") is not None]
+    all_p = [r["evid_precision"] for r in labels if r.get("evid_precision") is not None]
+    return {
+        "width_vs_blur_spearman": point,
+        "width_vs_blur_ci": ci,
+        "n_strata": len(usable),
+        "draws_usable": len(rho),
+        "evid_width_mean": float(np.mean(all_w)) if all_w else None,
+        "evid_precision_mean": float(np.mean(all_p)) if all_p else None,
+        "n_labels_scored": len(all_w),
+    }
 
 
 def render_markdown(bm: dict, *, run_dir: str, step: Optional[int], ckpt: Optional[str]) -> str:
@@ -656,16 +785,58 @@ def render_markdown(bm: dict, *, run_dir: str, step: Optional[int], ckpt: Option
            "is the whole case for a tight-MC label as an instrument.\n")
 
     res = bm.get("resolution")
+    has_evid = bool(res) and any(r.get("evid_width_mean") is not None for r in res)
     if res:
         ap("## RESOLUTION — within-decile true spread vs the binomial floor\n")
-        ap("| decile | n | predicted | MC | sd(MC) | binomial floor | **sd_true_excess** | % variance real |")
-        ap("|---|---|---|---|---|---|---|---|")
+        cols = ("| decile | n | predicted | MC | sd(MC) | binomial floor | "
+                "**sd_true_excess** | % variance real |")
+        rule = "|---|---|---|---|---|---|---|---|"
+        if has_evid:
+            cols += " Beta width | Beta precision |"
+            rule += "---|---|"
+        ap(cols)
+        ap(rule)
         for r in res:
             fv = f"{r['frac_variance_real'] * 100:.1f}%" if r.get("frac_variance_real") else "—"
-            ap(f"| {r['decile']} | {r['n']} | {r['mean_predicted']:.3f} | {r['mean']:.3f} | "
-               f"{r['sd_observed']:.3f} | {r['sd_binomial_floor']:.3f} | "
-               f"**{r['sd_true_excess']:.3f}** | {fv} |")
+            line = (f"| {r['decile']} | {r['n']} | {r['mean_predicted']:.3f} | {r['mean']:.3f} | "
+                    f"{r['sd_observed']:.3f} | {r['sd_binomial_floor']:.3f} | "
+                    f"**{r['sd_true_excess']:.3f}** | {fv} |")
+            if has_evid:
+                w, p = r.get("evid_width_mean"), r.get("evid_precision_mean")
+                line += (f" {w:.3f} |" if w is not None else " — |")
+                line += (f" {p:.2f} |" if p is not None else " — |")
+            ap(line)
         ap("")
+
+    ev = bm.get("evidential")
+    ap("## EVIDENTIAL — does the confessed width track the blur?\n")
+    if not ev:
+        # A one-line NOTE, never a row of zeros: "this checkpoint has no head" and "this head
+        # claims no uncertainty" are opposite findings and must not render the same.
+        ap("_The audited checkpoint carries no `cf_evid_head` (`--cf-evidential` off, or pre-v98) —"
+           " the evidential columns are ABSENT, not zero._\n")
+    else:
+        rho, ci = ev.get("width_vs_blur_spearman"), ev.get("width_vs_blur_ci") or [None, None]
+        ap("```")
+        ap(f"labels scored                   {ev.get('n_labels_scored')}   over "
+           f"{ev.get('n_strata')} strata")
+        ap(f"mean Beta width (epistemic sd)  "
+           f"{ev['evid_width_mean']:.4f}" if ev.get("evid_width_mean") is not None else
+           "mean Beta width  n/a")
+        ap(f"mean Beta precision (alpha+beta)    "
+           f"{ev['evid_precision_mean']:.3f}" if ev.get("evid_precision_mean") is not None else
+           "mean Beta precision  n/a")
+        ap(f"width_vs_blur_spearman          "
+           f"{rho:+.3f}" if rho is not None else
+           "width_vs_blur_spearman          n/a (flat width, or <3 strata)")
+        if ci[0] is not None:
+            ap(f"  95% CI (battle-clustered)     [{ci[0]:+.3f}, {ci[1]:+.3f}]  "
+               f"over {ev.get('draws_usable')} usable draws")
+        ap("```")
+        ap("\nThe head reads the same `value_pooled` as the scalar one, so it cannot REMOVE the "
+           "blur — only confess it. Success is this correlation, not a falling `nll`: **wide "
+           "everywhere and wide nowhere are the same null**, and a flat width reports `n/a` rather "
+           "than 0 so the two cannot be confused.\n")
     ap("## Caveats\n")
     ap("- Turn-1 decisions are excluded by construction (the offline replay driver cannot open "
        "them) and forced-switch rounds are structurally uncovered by the re-roll anchor.")
@@ -726,6 +897,60 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--deadline-min", type=float, default=0.0,
                    help="stop taking new tasks after this many minutes (0 = no bound)")
     return p
+
+
+def attach_evidential(session, labels: List[dict], npz_cache: "Dict[str, np.ndarray]") -> int:
+    """Score every labelled state through the checkpoint's evidential Beta head, in place.
+
+    Adds ``evid_width`` (the Beta's epistemic std) and ``evid_precision`` (α+β) to each label dict;
+    returns how many rows were scored. **Zero is a first-class outcome** — a checkpoint without
+    ``cf_evid_head`` (pre-v98, or `--cf-evidential` off) leaves the fields absent, and every reader
+    downstream omits its evidential columns rather than filling them with zeros.
+
+    BEST-EFFORT, deliberately. The audit's products are the labels and the bias map; the evidential
+    read is a rider on them. A model that will not load (architecture drift — 79 of 79 archived runs
+    cannot be re-loaded at any given HEAD) must cost the run its evidential columns and nothing else,
+    so every failure here is a printed line and a return of 0.
+    """
+    if not labels or not hasattr(session, "probe_model"):
+        return 0
+    try:
+        model, _choice = session.probe_model(labels[0]["battle"] + "_summary.json")
+    except Exception as exc:                                            # noqa: BLE001
+        print(f"  evidential: no model ({type(exc).__name__}: {str(exc)[:120]}) — "
+              f"columns omitted", flush=True)
+        return 0
+    if not hasattr(model, "cf_evidential_batch"):
+        return 0
+    obs_rows, targets = [], []
+    for r in labels:
+        arr = npz_cache.get(r["battle"] + "_states.npz")
+        if arr is None or not (0 <= r["inv"] < len(arr)):
+            continue
+        obs_rows.append(arr[r["inv"]])
+        targets.append(r)
+    if not obs_rows:
+        return 0
+    try:
+        out = model.cf_evidential_batch(np.stack(obs_rows))
+    except Exception as exc:                                            # noqa: BLE001
+        print(f"  evidential: forward failed ({type(exc).__name__}: {str(exc)[:120]}) — "
+              f"columns omitted", flush=True)
+        return 0
+    if out is None:
+        print("  evidential: this checkpoint carries no cf_evid_head — columns omitted", flush=True)
+        return 0
+    alpha, beta = out
+    prec = alpha + beta
+    # The Beta's std, the head's own `epistemic_std` in closed form. Computed here rather than
+    # called through the module so the audit stays importable without torch on the hot path.
+    width = np.sqrt(alpha * beta / (prec * prec * (prec + 1.0)))
+    for r, a, b, w in zip(targets, alpha, beta, width):
+        r["evid_alpha"], r["evid_precision"] = float(a), float(a + b)
+        r["evid_width"] = float(w)
+    print(f"  evidential: scored {len(targets)} states (mean width {float(width.mean()):.4f}, "
+          f"mean precision {float(prec.mean()):.2f})", flush=True)
+    return len(targets)
 
 
 def _default_session(traces: str, *, impl: str, ckpt_override: Optional[str]):
@@ -840,8 +1065,15 @@ def main(argv: "Optional[Sequence[str]]" = None, *, session_factory=None) -> int
             print(f"  {j + 1}/{len(sample)} ok={len(labels)} err={n_err} "
                   f"{(time.perf_counter() - t0) / 60:.1f}m load={os.getloadavg()[0]:.1f}", flush=True)
 
+    # ── the EVIDENTIAL read: one batched forward of the audited checkpoint over the labelled
+    #    states, attaching (width, precision) to each label row. Best-effort by design — the
+    #    labels and the bias map are the audit's product, and a checkpoint that cannot be loaded
+    #    (or carries no head) must cost the run its evidential columns, never its labels.
+    n_evid = attach_evidential(session, labels, npz_cache)
+
     accounting = {
         "frame_decisions": len(frame), "frame_battles": len({d.battle for d in frame}),
+        "evidential_scored": n_evid,
         "tasks_issued": len(sample), "labelled": len(labels), "errors": n_err,
         "anchors_issued": n_anchor, "anchors_reproduced": anchor_ok,
         "anchor_errors": anchor_err, "anchor_rate": round(rate, 4),
@@ -878,6 +1110,12 @@ def main(argv: "Optional[Sequence[str]]" = None, *, session_factory=None) -> int
     if h:
         print(f"  gap {h['population_weighted_gap']:+.4f}   "
               f"sd_true_excess {h['population_weighted_sd_true_excess']:.4f}")
+    ev = bm.get("evidential")
+    if ev and ev.get("width_vs_blur_spearman") is not None:
+        ci = ev.get("width_vs_blur_ci") or [None, None]
+        ci_s = f"  CI [{ci[0]:+.3f}, {ci[1]:+.3f}]" if ci[0] is not None else ""
+        print(f"  width_vs_blur_spearman {ev['width_vs_blur_spearman']:+.3f}{ci_s}   "
+              f"over {ev['n_strata']} strata")
     return 0
 
 

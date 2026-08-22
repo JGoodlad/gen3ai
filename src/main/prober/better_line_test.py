@@ -2,6 +2,10 @@
 beam pruning, principal variation) — no Node, no torch. The full re-roll → materialize → V pipeline
 is exercised against a real battle in ``better_line_integration_test.py``; this pins the tree logic."""
 
+import ast
+import inspect
+
+from main.prober import better_line as _bl
 from main.prober.better_line import (
     _WIN, _LOSS, _Node, _backup, _keep_beam, _pv_nodes, _terminal_label)
 
@@ -60,3 +64,24 @@ def test_pv_follows_argmax_backup():
     _backup(root)
     pv = _pv_nodes(root)
     assert [n.action for n in pv] == [1, 3, 7]   # root → best child (b) → its best grandchild
+
+
+def test_the_payload_declares_its_INTERIOR_OPPONENT_REGIME():
+    """The beam's interior plies play the opponent GREEDY while the divergence ply plays the
+    RECORDED regime — a deliberate mix (worst-case-opponent search; see the module docstring), and
+    one that was nowhere stated until task #29. It is stamped into every payload so no saved
+    artifact can hide which regime produced its numbers.
+
+    Asserted on the SOURCE of `better_line_decision`'s return literal rather than on a live run: the
+    real path needs a bridge battle and a loadable checkpoint (that is
+    `better_line_integration_test`), while what must never silently disappear is the key itself.
+    """
+    ret = [n for n in ast.walk(ast.parse(inspect.getsource(_bl.better_line_decision)))
+           if isinstance(n, ast.Return) and isinstance(n.value, ast.Dict)]
+    assert ret, "better_line_decision no longer returns a dict literal — re-point this gate"
+    keys = {k.value: v for k, v in zip(ret[-1].value.keys, ret[-1].value.values)
+            if isinstance(k, ast.Constant)}
+    assert "interior_opponent_regime" in keys, \
+        "the beam stopped declaring its interior-ply opponent regime"
+    assert isinstance(keys["interior_opponent_regime"], ast.Constant) and \
+        keys["interior_opponent_regime"].value == "greedy"

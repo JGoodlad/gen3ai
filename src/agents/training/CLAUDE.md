@@ -2795,6 +2795,36 @@ Subtracting the floor is what makes it a claim about the world rather than about
 merely re-centres the head moves the mean gap and leaves this untouched** — and would be scored a
 success by the wrong meter, which is exactly why the meter is stated here.
 
+**The EVIDENTIAL read — the pre-registered meter for `--cf-evidential`, and the reader it was
+missing.** The Beta head reads the same `value_pooled` as the scalar one, so it **cannot remove** the
+blur G0 measured; the only success available to it is *confessing* it — wide exactly where the states
+behind a confidence bin disagree. So the meter is not the loss but
+**`width_vs_blur_spearman`**: the rank correlation, ACROSS STRATA, between the head's mean epistemic
+width and the measured `sd_true_excess`. When the audited checkpoint carries a `cf_evid_head`,
+`cf_audit` forwards it over the labelled states and the resolution table gains `evid_width_mean` /
+`evid_precision_mean` columns beside each decile's `sd_true_excess`.
+
+- **Rank, not Pearson** — the claim is an ordering ("wider where blurrier") and the two quantities
+  are not on a common scale (a Beta's std vs the within-cell sd of an R-rollout mean).
+- **The CI is a bootstrap over BATTLES**, and each draw rebuilds the strata from scratch through the
+  same `resolution_cells` the point estimate uses. A draw that loses a thin decile to the minimum-n
+  floor is dropped and reported as `draws_usable` — a CI whose resamples ran different arithmetic
+  from its point estimate is a CI of nothing.
+- **A FLAT width scores `None`, never 0.** "Wide everywhere" and "width unrelated to blur" are the
+  same null in outcome but different findings in diagnosis, and the flat-to-1-ulp case (a weighted
+  average of a constant) otherwise falls through to a `corrcoef` that divides by ~1e-17 and reports
+  a confident correlation of float noise.
+- **A checkpoint without the head OMITS the columns** and prints a one-line note. Zeros would render
+  "this run has no head" identically to "this head claims no uncertainty". The read is
+  **best-effort** throughout: the audit's products are the labels and the bias map, so a model that
+  will not load (architecture drift — 79 of 79 archived runs) costs the run its evidential columns
+  and nothing else. `accounting.evidential_scored` says how many states were scored.
+- Reads the head through `ProbeSession.probe_model()` → `ProbeModel.cf_evidential_batch()`. That
+  method exists because the extractor forward **never calls the head**, so unlike `win_prob_at` there
+  is no stash to read: it forwards the extractor and applies the head to `stash.value_pooled`
+  itself — the same thing `_cf_evidential_term` does, which is what makes the offline number
+  comparable with the live `cf/evid_*` scalars.
+
 **Label trust before map trust.** The ANCHOR arm runs FIRST: recorded action + recorded dice must
 reproduce the recorded battle outcome. Below `--anchor-tolerance` (default 0.9) the tool exits **3**
 and writes NO labels — the bias map is still written, marked `label_trust_passed: false`, for
@@ -2888,6 +2918,14 @@ the term trains the head's own params and provably cannot perturb the trunk.
   the oldest kept record (a crash between `open` and `os.replace` cannot unlink its own; a tmp being
   filled right now is newer than every record on disk, so the sweep can never race a writer). Without
   that, the full disk this module promises to survive leaked one file per episode per worker, forever.
+  **The automatic prune is THROTTLED to one write in `prune_every` (16).** It is a full `readdir`
+  running on the bridge reader's coroutine — the path every env step waits behind — and pruning per
+  write paid that scan ~512 times to delete ~512 files. The price is a bounded transient overshoot
+  (≤ `prune_every` unpruned writes per live writer) and it degrades gracefully **because the cap is
+  global**: every writer sweeps the WHOLE directory, so one worker's next sweep collects every other
+  worker's backlog, and a process that dies mid-backlog has its leftovers collected by the next
+  one's first sweep. Bound: `keep + prune_every·n_writers` transiently, `keep` again the moment any
+  writer sweeps. `prune()` itself is unthrottled (a caller that wants the cap now can have it).
   The artifact shape is byte-for-byte the one
   `reconstruction._write_artifact` writes, so `ReconstructionRecord.load()` reads a ring file directly.
   A write failure warns once and is swallowed — a full disk must not crash a run. `--cf-records`
@@ -2903,15 +2941,48 @@ the term trains the head's own params and provably cannot perturb the trunk.
   `obs_inline` > `obs_npz` > skip. **Everything unexpected is a COUNTED skip, never a crash and never a
   silent accept**: unknown `schema`, unknown `kind`, malformed JSON, out-of-range label, unresolvable
   obs, an obs whose width ≠ this run's, and an `obs_sha1` that disagrees with its own bytes (the GIGO
-  guard — it warns loudly once). FIFO at `capacity`, and **staleness expiry** at `--cf-label-lag-steps`
+  guard — it warns loudly once). `obs_npz` resolves `<path>::<key>` and **`decision_idx` selects the
+  ROW** of a 2-D array (which is what `cf_audit` emits by default, one battle's whole obs matrix per
+  row) through a small per-file LRU, so N rows of a battle open the archive once instead of N times.
+  FIFO at `capacity`, and **staleness expiry** at `--cf-label-lag-steps`
   (default 150 000 ≈ one production PPO iteration): `age == bound` survives, `age == bound + 1` does not,
   enforced at ingest AND on every poll. `0` disables expiry.
+- **The label-QUALITY trio (task #28), landed before the coefficient ever goes live.** At coefficient
+  zero none of these costs anything; the moment the term is on, each is a silent change to what the
+  critic is taught.
+  - **DEDUP on the obs digest, keep-NEWEST.** A producer that re-labels a decision it already shipped
+    (an overlapping cycle, a re-run over the same trace tree, a truncate-and-rewrite) would give that
+    one state N× the weight of every other — a change to the sampler's declared distribution with no
+    flag and no counter, which design decision-of-record 3 forbids. The resident row is REPLACED, not
+    appended beside. Keep-newest because a fresher label is a strictly better estimate of the same
+    state (measured under a policy closer to the consumer, and carrying more evidence if R grew), and
+    the replacement re-enters at the FIFO tail rather than inheriting the old row's position.
+    `cf/labels_replaced_total`. Measured before: a 5-row file rewritten in place left fill **6**.
+  - **SYMMETRIC staleness** — the bound is on `abs(current_step − policy_step)`. A crash-restart
+    resumes from the last checkpoint, so `num_timesteps` moves BACKWARDS while the label files still
+    carry pre-crash steps; under a one-sided test those rows are **immortal** and quietly become the
+    whole buffer. Live tell, measured: `cf/label_age_steps_p50` reading **−4,999,000**. Future rows
+    expire like stale ones, are counted separately (`cf/labels_future_total`) and trip a one-time
+    loud warning naming the cause — a negative age is a diagnosis, not noise.
+  - **The ObservationDebugger is SUPPRESSED around the CF forward** (`--no-compile-trainer` runs, the
+    only ones that still have it). The CF rows are recorded FOREIGN states — other episodes, other
+    policy steps, read off disk — and the debugger's premise is "this is the board we are about to
+    act on"; it was being handed 256 replayed rows per minibatch and reporting their integrity
+    against the live env's expectations. `Gen3FeaturesExtractor.suppress_observation_debugger()` is a
+    context manager that restores on the way out (including on an exception) — deliberately NOT
+    `disable_observation_debugger()`, which is permanent and is the compile path's trade.
 - **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term` / search-teacher /
   OPD shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
   rollout, so they cannot ride `rollout_data`, and a once-per-`train()` fold would make the coefficient
   mean something different from every other aux. `_cf_sample_and_forward` samples up to `CF_SAMPLE_SIZE`
   (256) rows and runs ONE extractor forward (`{"observation": …}` is the only key the model reads); the
   term applies the win-prob head to `stash.value_pooled` — **detaching iff `cf_head_only`**. It
+  The forward runs under **`no_grad` unless something downstream actually wants the graph** — the
+  condition is computed exactly (`cf_head_only` OR a dead `cf_winprob_coef`), not assumed, because the
+  one arm that needs it is `--no-cf-head-only` with a live coefficient, and silently dropping the
+  graph there would turn the trunk-open A/B into two copies of head-only. Both heads still train
+  their own params either way: `head(value_pooled)` is applied OUTSIDE the context, which is pinned
+  on the parameter update rather than argued. It
   deliberately does NOT read `last_win_prob_logits`: that stash is produced under the extractor's own
   `win_prob_mode`, which governs the ON-POLICY win-prob BCE; this term's trunk exposure is a separate
   decision, and re-applying the head makes the two independent by construction. It CLOBBERS the
@@ -2920,7 +2991,10 @@ the term trains the head's own params and provably cannot perturb the trunk.
   twice for the block's whole cost and would make the two terms disagree about which states they scored.
 - **The scalars.** `cf/*` is **producer liveness and is published whenever a buffer exists**, even if not
   one label ever arrived — `cf/buffer_fill`, `cf/label_age_steps_p50`, `cf/labels_ingested_total`,
-  `cf/labels_expired_total`, `cf/labels_skipped_total`. That is deliberate: an empty buffer that does not
+  `cf/labels_expired_total`, `cf/labels_future_total`, `cf/labels_replaced_total`,
+  `cf/labels_skipped_total`, plus `cf/rows_sampled` (rows the fold actually CONSUMED this `train()`,
+  summed over minibatches — residency and throughput are different questions, and only the second
+  goes to zero when a producer dies while its last labels are still resident). That is deliberate: an empty buffer that does not
   announce itself is this tree's oldest failure mode (the search-teacher's silent starvation), and a flat
   `labels_ingested_total` is unambiguous evidence the producer stopped, which reads completely differently
   from a rising `labels_expired_total` (a producer that is running but lagging). `train/cf_loss` +
@@ -3007,11 +3081,17 @@ wrong is not.
   `train/cf_evidential_loss` and `train/cf_evidential_grad_share`. Read `nll` and `precision_mean`
   together: a falling NLL with a runaway precision is the head buying its loss with certainty it has
   not earned. A per-decision `(α, β)` stash lands on `fe.last_cf_evidential` for a future trace
-  capture; **the npz capture itself is NOT wired** (deliberately deferred).
+  capture; **the npz capture itself is NOT wired** (deliberately deferred). ⚠️ Note when picking that
+  up: the stash is written **only by the train loop**, so wiring it through `RLPlayer` would capture
+  nothing — the extractor forward never calls the head, so an honest per-decision capture has to
+  CALL it at record time (as `ProbeModel.cf_evidential_batch` does) and add an npz key.
 - 🔒 **THE PRE-REGISTERED READ, for the experiment that has not run yet:** the predicted Beta's
   width should **CORRELATE with the measured `sd_true_excess` per stratum** (the `cf_audit` bias
   map's meter). Wide everywhere and wide nowhere are the same null. A falling `nll` with a flat
   width-vs-`sd_true_excess` correlation is the standing learns≠helps kill, not a result.
+  **That correlation now has a reader**: `cf_audit`'s `width_vs_blur_spearman` (§ *The EVIDENTIAL
+  read* above) computes it with a battle-clustered bootstrap CI, so the meter is an instrument
+  rather than an intention.
 
 **Flag class — the split, and why.** `--cf-evidential` is **STRUCTURAL** and IS in
 `agents/model/flag_registry.py` (v98, `cli`/`structural`): it is a `Gen3FeaturesExtractor`
@@ -3044,9 +3124,16 @@ shared forward for both terms, counted). `agents/model/cf_evidential_head_test.p
 maths (scipy cross-check, the hand-computed uniform-Beta anchor, `KL(Beta(1,1)‖Beta(1,1)) == 0`, the
 regularizer actually moving α,β toward 1, the 1/√12 std anchor), the BIT-identity of ON's pi/vf, that
 the forward never calls it, and the v98 gate + both migration legs.
-`cf_label_buffer_test.py` covers FIFO, the exact expiry boundary, incremental polling, the
-partial-line case, every skip counter, the ring's cap/atomicity/race-tolerance, and that
-`batch_tensors` carries the rollout COUNT rather than just the ratio. `main/cf_flags_test.py` covers
+`cf_label_buffer_test.py` covers FIFO, the exact expiry boundary (past AND future, both inclusive),
+incremental polling, the partial-line case, every skip counter, dedup keep-newest + the
+rewrite-converges case, the `obs_npz` row index and its per-file cache bound, the ring's
+cap/atomicity/race-tolerance, the prune throttle's declared overshoot bound, **the launcher-restart
+cap across sequential processes** (the one G3 sub-claim that used to stand on construction alone),
+and that `batch_tensors` carries the rollout COUNT rather than just the ratio. The CF forward's two
+guards are pinned in `instrumented_ppo_test.py` on the *stashed tensor* and the *parameter update*
+rather than on a `with` statement: no graph under head-only, a graph in the trunk-open arm, both
+heads still receiving their own gradients under `no_grad`, and the debugger suppressed-then-restored
+(including on an exception). `main/cf_flags_test.py` covers
 the defaults, both `--no-` spellings, the three new refusals and `checkargs`. End-to-end: a
 `--debug --steps 10000` CPU smoke with fixture labels built from REAL episode obs.
 
