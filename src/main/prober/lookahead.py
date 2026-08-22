@@ -30,7 +30,8 @@ from typing import List, Optional, Sequence
 
 import numpy as np
 
-from agents.training.obs_materializer import materialize_from_record, materialize_decisions
+from agents.training.obs_materializer import (Branch, materialize_branches,
+                                              materialize_from_record)
 from main.prober.engine import _npz_value
 from main.prober.falsifier import _label_of, fresh_seeds
 from utils.bridge.reconstruction import ReconstructionRecord, reroll_many
@@ -140,6 +141,31 @@ def lookahead_decision(
     for arm in rr.arms:
         by_arm.setdefault(int(arm.label), {})[arm.seed] = arm
 
+    # EVERY (candidate × seed) arm shares one prefix — the recorded battle up to this turn —
+    # so the whole sweep replays it ONCE (materialize_branches) instead of once per arm. The
+    # per-arm obs is bit-identical to the per-arm replay; that equivalence is the contract
+    # `obs_materializer_branch_integration_test.py` pins.
+    branch_keys: List[tuple] = []
+    branch_list: List[Branch] = []
+    for a in cand:
+        for s in seed_list:
+            r = by_arm.get(int(a), {}).get(s)
+            if r is None or r.outcome.get("stuck") or r.outcome.get("ended"):
+                continue
+            branch_keys.append((int(a), s))
+            branch_list.append(Branch(
+                chunks=list(r.p1_chunks if side == "p1" else r.p2_chunks), actions=[a],
+                label=(int(a), s)))
+    materialized = materialize_branches(
+        list(prefix_chunks), branch_list, username=username, packed_team=packed, side=side,
+        prefix_actions=prefix_actions, battle_format=record.format_id,
+        battle_tag=record.battle_tag, mappings=mappings, stop_after_decision=inv_index + 1,
+    ) if branch_list else []
+    succ_by_key = {}
+    for key, mt in zip(branch_keys, materialized):
+        if len(mt.decisions) > inv_index + 1:       # else: no successor request in the window
+            succ_by_key[key] = mt.decisions[inv_index + 1]
+
     rows = []
     for a in cand:
         by_seed = by_arm.get(int(a), {})
@@ -159,15 +185,9 @@ def lookahead_decision(
                     w = r.outcome.get("winner")
                     terminal_winner = ("win" if w == username else "loss" if w else "tie")
                 continue
-            suffix = r.p1_chunks if side == "p1" else r.p2_chunks
-            mt = materialize_decisions(
-                list(prefix_chunks) + list(suffix), username=username, packed_team=packed, side=side,
-                actions=prefix_actions + [a], battle_format=record.format_id,
-                battle_tag=record.battle_tag, mappings=mappings, stop_after_decision=inv_index + 1,
-            )
-            if len(mt.decisions) <= inv_index + 1:
-                continue                            # no successor request in the re-rolled window
-            succ = mt.decisions[inv_index + 1]
+            succ = succ_by_key.get((int(a), s))
+            if succ is None:
+                continue
             v = model.value(succ.obs, succ.mask)
             vals.append(v)
             if s == "original":

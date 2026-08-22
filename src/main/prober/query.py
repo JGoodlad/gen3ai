@@ -88,6 +88,8 @@ examples:
   python -m main.prober.query replay-counterfactual <id> 7 9                 # one realized-dice line
   python -m main.prober.query replay-counterfactual <id> 7 9 --rollouts 20   # Monte-Carlo win-prob ± CI
   python -m main.prober.query replay-counterfactual <id> 7 9 --opponent-ckpt models/run/snapshots/snap_30M.zip
+  #     a ckpt opponent plays the RECORDED regime (stochastic, what eval_worker played); override:
+  python -m main.prober.query replay-counterfactual <id> 7 9 --opponent-ckpt <snap> --opponent-regime greedy
 
   # 6. dice attribution: were the worst decisions of this loss LUCK or a MISTAKE?
   #    (re-rolls the real turns via the reconstruction layer — bridge-eval traces only)
@@ -324,6 +326,12 @@ def _build_parser() -> argparse.ArgumentParser:
                           "else a reproducible bot is rebuilt, or the trainee's own model stands in")
     prc.add_argument("--opponent-source", default="auto", choices=["auto", "bot", "self", "ckpt"],
                      help="force the opponent kind (default auto: ckpt→bot→self-model fallback)")
+    prc.add_argument("--opponent-regime", default="recorded",
+                     choices=["recorded", "stochastic", "greedy"],
+                     help="sampling regime of a MODEL-backed opponent (default recorded = what the "
+                          "eval worker actually played: stochastic temp-1.0 for a pool sentinel). "
+                          "greedy makes it STRONGER than the recorded opponent and biases the "
+                          "win-rate LOW — measured +0.037 over 477 sentinel states")
     prc.add_argument("--narrate", action="store_true",
                      help="capture the move-by-move play-by-play of a recovered WIN (and a LOSS) — the "
                           "'winning_trajectory'/'losing_trajectory' in the output")
@@ -441,7 +449,10 @@ def _run(args) -> object:
             args.battle, ckpt_override=args.ckpt, tier=args.tier,
             compile_extractor=args.compile_extractor, impl=args.impl).replay_counterfactual(
             args.battle, args.inv, args.action, n_rollouts=args.rollouts,
-            opponent_ckpt=args.opponent_ckpt, opponent_source=args.opponent_source, narrate=args.narrate)
+            opponent_ckpt=args.opponent_ckpt, opponent_source=args.opponent_source,
+            opponent_stochastic={"recorded": None, "stochastic": True,
+                                 "greedy": False}[args.opponent_regime],
+            narrate=args.narrate)
     if args.cmd == "falsify-scan":
         return ProbeSession(args.root, compile_extractor=args.compile_extractor,
                             impl=args.impl).falsify_scan(

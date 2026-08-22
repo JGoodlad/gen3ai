@@ -77,19 +77,28 @@ def _install_fakes(monkeypatch):
                 p1_chunks=["S"], p2_chunks=["S"]))
         return SimpleNamespace(prefix_p1_chunks=["P"], prefix_p2_chunks=["P"], arms=out_arms)
 
-    def fake_mat_decisions(chunks, *, username, packed_team, side, actions, battle_format,
-                           battle_tag, mappings=None, stop_after_decision=None):
-        cand = int(actions[-1])                       # the candidate played this re-roll
-        decisions = [MaterializedDecision(obs=np.zeros(_DIM, np.float32), mask=np.ones(11, np.int8),
-                                          turn=_TURN) for _ in range(len(actions))]
-        # The successor row (one past the last action) carries the candidate signal → distinct V.
-        decisions.append(MaterializedDecision(obs=np.full(_DIM, float(cand), np.float32),
-                                              mask=np.ones(11, np.int8), turn=_TURN + 1))
-        return MaterializedTrace(decisions=decisions, actions_complete=False, action_choices=None)
+    def fake_mat_branches(prefix_chunks, branches, *, username, packed_team, side, prefix_actions,
+                          battle_format, battle_tag, mappings=None, stop_after_decision=None,
+                          **kw):
+        # One shared prefix, one trace per branch — the shape the real prefix-sharing
+        # materializer returns (arms differ only past the branch decision).
+        out = []
+        for br in branches:
+            actions = list(prefix_actions) + list(br.actions)
+            cand = int(actions[-1])                   # the candidate played this re-roll
+            decisions = [MaterializedDecision(obs=np.zeros(_DIM, np.float32),
+                                              mask=np.ones(11, np.int8), turn=_TURN)
+                         for _ in range(len(actions))]
+            # The successor row (one past the last action) carries the candidate signal → distinct V.
+            decisions.append(MaterializedDecision(obs=np.full(_DIM, float(cand), np.float32),
+                                                  mask=np.ones(11, np.int8), turn=_TURN + 1))
+            out.append(MaterializedTrace(decisions=decisions, actions_complete=False,
+                                         action_choices=None))
+        return out
 
     monkeypatch.setattr(LA, "materialize_from_record", fake_mat_from_record)
     monkeypatch.setattr(LA, "reroll_many", fake_reroll_many)
-    monkeypatch.setattr(LA, "materialize_decisions", fake_mat_decisions)
+    monkeypatch.setattr(LA, "materialize_branches", fake_mat_branches)
 
 
 def test_stats_helper():

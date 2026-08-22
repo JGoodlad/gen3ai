@@ -522,6 +522,20 @@ guarantee — materialized obs == the live `states.npz` rows **bit-for-bit** —
 `agents/training/obs_roundtrip_fuzz_test.py`; replay/re-roll invariants by
 `reconstruction_fuzz_test.py`; the registry by `reconstruction_test.py`.
 
+**Many arms of one decision share one prefix.** `obs_materializer.materialize_branches` replays a
+decision's shared prefix ONCE and restores a snapshot of the player's battle/tracker state per arm,
+instead of replaying from turn 1 for every arm (`arm_ms = 4.78 + 0.853·turn`, of which the prefix is
+`2.53 + 0.855·turn`). It is defined to be exactly equivalent to a per-arm `materialize_decisions`,
+**bit-for-bit** — measured 59/59 decisions / 452 arms byte-identical at **2.91×** (15.4 → 5.3 ms per
+arm), gated by `agents/training/obs_materializer_branch_integration_test.py`. `lookahead` uses it
+for its whole `(candidate × seed)` sweep.
+
+⚠️ **A driver failure reports its reason as JSON on STDOUT, not on stderr**, and then exits
+non-zero — so `_run_driver` reads stdout FIRST and says "EMPTY stdout AND stderr" when there is
+genuinely nothing. Before that, the rust `search_driver` refusing turn 1 surfaced as literally
+`failed (rc=1): ` with no reason at all, which reads like a crash and is not one. (That refusal is
+still OPEN — see `src/rust_sim/src/search.rs::at_turn_start`.)
+
 ### Counterfactual replay-to-end (`counterfactual.py`)
 
 Where `reroll_turn` re-rolls a SINGLE turn, **`replay_counterfactual`** picks up a recorded battle at

@@ -44,6 +44,22 @@ Rows are appended only while their history is faithful — one row past the last
 provided action is still valid (an obs depends on *prior* actions only), which
 is exactly the V(s′) row a re-roll consumer needs; after that the replay stops.
 
+Prefix sharing (many branches of ONE decision)
+----------------------------------------------
+K counterfactual arms of the same decision share an identical prefix, and
+replaying it K times is the measured bottleneck of the counterfactual label path
+(``arm_ms = 4.78 + 0.853·turn``, of which prefix replay is ``2.53 + 0.855·turn``;
+the branched turn itself is ~0.5 ms and the obs encode ~1.8 ms — cost model
+2026-08-21). :func:`materialize_branches` replays the prefix **once**, snapshots
+the player's whole battle/tracker state at the branch decision, and restores that
+snapshot per arm. It is defined to be *exactly* equivalent to calling
+:func:`materialize_decisions` once per arm on ``prefix + suffix`` — bit-for-bit
+on every obs — and that equivalence is what
+``obs_materializer_branch_integration_test.py`` pins. Measured on 6 gen-17
+eval battles / 59 decisions / 452 arms: **59/59 byte-identical, 15.4 → 5.3 ms per
+arm (2.91×)**, rising with the branch turn (3.7–3.9× at turn 26–28) because the
+prefix cost it removes is the part that is linear in the turn.
+
 Known limit: a battle containing a true ``[Invalid choice]`` error round cannot
 be mirrored exactly (poke-env answers those with a coin-flip default); the
 server-authoritative mask makes them no-ops in practice. The
@@ -55,8 +71,13 @@ rejection event, and re-request the live player saw.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from typing import List, Optional, Sequence
+import copy
+import logging
+import types
+from collections import deque
+from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import Any, List, Optional, Sequence
 
 import numpy as np
 
@@ -210,10 +231,35 @@ def materialize_decisions(
     needs none). ``None`` (default) encodes every decision. The encoded decisions' obs are bit-for-bit
     identical to a full encode (the skipped encode is read-only on the tracker).
     """
+    tag = _next_tag(battle_tag, battle_format)
+    player, client = _build_replay_player(
+        username=username, packed_team=packed_team, side=side, actions=actions,
+        battle_format=battle_format, mappings=mappings, stall_config=stall_config,
+        map_actions_at=map_actions_at, stop_after_decision=stop_after_decision,
+        encode_only_at=encode_only_at,
+    )
+    _refuse_poke_loop("materialize_decisions")
+    asyncio.run_coroutine_threadsafe(_feed(client, player, chunks, tag, first=True),
+                                     POKE_LOOP).result()
+    return MaterializedTrace(
+        decisions=list(player._materialized),
+        actions_complete=not player._actions_exhausted,
+        action_choices=player.action_choices,
+    )
+
+
+def _next_tag(battle_tag: Optional[str], battle_format: str) -> str:
     global _TAG_SEQ
     _TAG_SEQ += 1
-    tag = battle_tag or f"battle-{battle_format}-recon{_TAG_SEQ}"
+    return battle_tag or f"battle-{battle_format}-recon{_TAG_SEQ}"
 
+
+def _build_replay_player(*, username: str, packed_team: str, side: str,
+                         actions: Sequence[int], battle_format: str, mappings,
+                         stall_config, map_actions_at, stop_after_decision, encode_only_at):
+    """The player + transport-less client every replay path uses. Split out so the
+    single-shot and prefix-sharing entry points build IDENTICAL objects (any drift here
+    would silently break the bit-identity contract between them)."""
     player = _ReplayObsPlayer(
         replay_actions=actions,
         map_actions_at=map_actions_at,
@@ -239,36 +285,287 @@ def materialize_decisions(
     # What _create_battle reads for the declared-team tracking (live: set by
     # get_next_team() just before the battle starts).
     player._current_packed_team = packed_team
+    return player, client
 
-    async def _feed_all() -> None:
-        inited = False
-        for chunk in chunks:
-            header = f">{tag}\n"
-            if not inited:
-                inited = True
-                header += "|init|battle\n"
-            # Awaited fully per chunk — the exact sequential-deterministic
-            # delivery the eval bridge path (`run_local_battles._demux`) uses.
-            await client.feed(header + chunk)
-            if player.done:
-                break
 
-    # The player's asyncio primitives live on POKE_LOOP (poke-env's background
-    # loop thread), so the feed must run there. run_coroutine_threadsafe works
-    # from sync context AND from inside any OTHER running loop; only a caller
-    # already on POKE_LOOP itself would deadlock on .result() — refuse loudly.
+async def _feed(client, player, chunks: Sequence[str], tag: str, *, first: bool) -> int:
+    """Feed ``chunks`` and return how many were CONSUMED (the loop stops early once the
+    player is done). The count is what lets :func:`materialize_branches` hand the
+    still-unfed tail of a prefix to each branch instead of silently dropping it."""
+    inited = not first
+    consumed = 0
+    for chunk in chunks:
+        header = f">{tag}\n"
+        if not inited:
+            inited = True
+            header += "|init|battle\n"
+        # Awaited fully per chunk — the exact sequential-deterministic
+        # delivery the eval bridge path (`run_local_battles._demux`) uses.
+        await client.feed(header + chunk)
+        consumed += 1
+        if player.done:
+            break
+    return consumed
+
+
+def _refuse_poke_loop(who: str) -> None:
+    """The player's asyncio primitives live on POKE_LOOP (poke-env's background loop
+    thread), so the feed must run there. ``run_coroutine_threadsafe`` works from sync
+    context AND from inside any OTHER running loop; only a caller already on POKE_LOOP
+    itself would deadlock on ``.result()`` — refuse loudly."""
     try:
         if asyncio.get_running_loop() is POKE_LOOP:
-            raise RuntimeError("materialize_decisions must not be called from POKE_LOOP")
+            raise RuntimeError(f"{who} must not be called from POKE_LOOP")
     except RuntimeError as e:
         if "POKE_LOOP" in str(e):
             raise
-    asyncio.run_coroutine_threadsafe(_feed_all(), POKE_LOOP).result()
-    return MaterializedTrace(
-        decisions=list(player._materialized),
-        actions_complete=not player._actions_exhausted,
-        action_choices=player.action_choices,
+
+
+# ---------------------------------------------------------------------------
+# Prefix sharing — replay the prefix ONCE, branch per arm
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Branch:
+    """One arm of a shared-prefix decision.
+
+    ``chunks`` are that arm's SUFFIX chunks (everything after the prefix — e.g. an
+    ``ArmReroll``'s per-side chunks). ``actions`` are the action indices from the branch
+    decision onward: ``actions[0]`` is the action played AT the branch decision (the
+    counterfactual), and the whole list is appended to the shared ``prefix_actions``.
+    ``label`` is opaque and echoed back by the caller's own bookkeeping."""
+
+    chunks: Sequence[str]
+    actions: Sequence[int] = field(default_factory=tuple)
+    label: Any = None
+
+
+#: Objects that must be SHARED by a clone rather than copied. Two reasons, both real:
+#:  * ``logging.Logger`` — deep-copying one drags in ``Logger.manager.loggerDict``, i.e.
+#:    EVERY logger in the process (torch's included), whose handlers hold
+#:    ``_thread.RLock``; that is unpicklable, and a logger is shared infrastructure, not
+#:    per-battle state.
+#:  * ``MappingProxyType`` — unpicklable too, and copying one would be WRONG anyway: it
+#:    is a read-only view (``LegalActions.last_request``), so a copy is at best a
+#:    type-changing no-op.
+_SHARED_TYPES: tuple = (logging.Logger, logging.Manager, logging.Handler, MappingProxyType)
+
+def _immutable_record_types() -> tuple:
+    """Additionally shared: APPEND-ONLY IMMUTABLE RECORDS.
+
+    A branch APPENDS to the event log and the tracker history; it never rewrites an existing
+    entry. ``BattleEvent`` is a ``frozen=True`` dataclass documented as "one immutable,
+    ordered record"; ``BattleContext`` is a per-turn snapshot built once in
+    ``EpisodeTracker.record()``. Sharing them instead of copying them is therefore exactly
+    equivalent, AND it is the difference between a clone that costs O(turns) of deep
+    structure and one that costs O(live objects): measured at turn 12, pinning the 16
+    history contexts took the tracker clone from 2.96 ms to 1.06 ms.
+
+    ⚠️ This is a CONTRACT, not an inference. If either type ever gains in-place mutation,
+    counterfactual arms after the first would read history the previous arm corrupted —
+    which is precisely what ``obs_materializer_branch_integration_test.py`` exists to catch,
+    and why that test compares EVERY arm rather than sampling one.
+
+    Imported lazily so this module keeps its narrow import graph.
+    """
+    from agents.battle.battle_event import BattleEvent
+    from agents.training.battle_snapshot import BattleContext
+    return (BattleEvent, BattleContext)
+
+
+def _pin_shared(obj, pins: dict, seen: "Optional[set]" = None) -> dict:
+    """Walk ``obj``'s object graph and record ``{id: obj}`` for every member of
+    :data:`_SHARED_TYPES`, so a later ``deepcopy(..., memo=pins)`` returns them
+    unchanged. Run ONCE per snapshot; the resulting pin set stays valid for every restore
+    (a restore copies from the snapshot, whose pinned objects are the same objects)."""
+    if seen is None:
+        seen = set()
+    shared = _SHARED_TYPES + _immutable_record_types()
+    stack = [obj]
+    while stack:
+        o = stack.pop()
+        i = id(o)
+        if i in seen:
+            continue
+        seen.add(i)
+        if isinstance(o, shared):
+            pins[i] = o
+            continue
+        if isinstance(o, (str, bytes, bytearray, int, float, complex, bool,
+                          type(None), np.ndarray, np.generic)):
+            continue
+        if isinstance(o, type) or isinstance(o, types.ModuleType):
+            continue
+        if isinstance(o, dict):
+            stack.extend(o.keys())
+            stack.extend(o.values())
+            continue
+        if isinstance(o, (list, tuple, set, frozenset, deque)):
+            stack.extend(o)
+            continue
+        d = getattr(o, "__dict__", None)
+        if isinstance(d, dict):
+            stack.extend(d.values())
+        for cls in type(o).__mro__:
+            for slot in getattr(cls, "__slots__", ()) or ():
+                try:
+                    stack.append(getattr(o, slot))
+                except AttributeError:
+                    pass
+    return pins
+
+
+class _PlayerSnapshot:
+    """A restorable copy of everything one replay feed mutates.
+
+    poke-env's ``Battle`` is ``__slots__``-based plain data (no locks, no asyncio
+    primitives, no back-reference to the dex — ``Pokemon``/``Move`` carry an int ``_gen``
+    and look entries up on demand), so a ``deepcopy`` of the battle graph is a complete
+    and cheap clone. The exceptions are :data:`_SHARED_TYPES`, pinned into the memo by
+    :func:`_pin_shared`."""
+
+    __slots__ = ("battles", "trackers", "stall_loggers", "materialized",
+                 "actions_exhausted", "stopped", "action_choices", "queue_depth",
+                 "trying_again", "_pins")
+
+    def __init__(self, player):
+        self._pins = {}
+        seen: set = set()
+        for src in (player._battles, player._trackers, player._stall_loggers):
+            _pin_shared(src, self._pins, seen)
+        self.battles = self._clone(player._battles)
+        self.trackers = self._clone(player._trackers)
+        self.stall_loggers = self._clone(player._stall_loggers)
+        # MaterializedDecision is frozen and never mutated in place, so the list itself
+        # is the only thing that changes (append-only) — a shallow copy is exact.
+        self.materialized = list(player._materialized)
+        self.actions_exhausted = player._actions_exhausted
+        self.stopped = player._stopped
+        self.action_choices = player.action_choices
+        self.queue_depth = player._battle_count_queue.qsize()
+        self.trying_again = player._trying_again.is_set()
+
+    def _clone(self, obj):
+        return copy.deepcopy(obj, dict(self._pins))
+
+    def restore(self, player) -> None:
+        """Reset ``player`` to the snapshotted state. Every mutable structure is a FRESH
+        deep copy, so the caller may mutate it freely and restore again."""
+        player._battles = self._clone(self.battles)
+        player._trackers = self._clone(self.trackers)
+        player._stall_loggers = self._clone(self.stall_loggers)
+        player._materialized = list(self.materialized)
+        player._actions_exhausted = self.actions_exhausted
+        player._stopped = self.stopped
+        player.action_choices = self.action_choices
+        # A branch whose suffix ENDS the battle drains one item from the battle-count
+        # queue (poke-env's `|win|` handler awaits `.get()`); without this the NEXT
+        # branch's `|win|` would block forever on an empty queue.
+        q = player._battle_count_queue
+        while q.qsize() > self.queue_depth:
+            q.get_nowait()
+        while q.qsize() < self.queue_depth:
+            q.put_nowait(None)
+        if self.trying_again:
+            player._trying_again.set()
+        else:
+            player._trying_again.clear()
+
+
+def materialize_branches(
+    prefix_chunks: Sequence[str],
+    branches: Sequence[Branch],
+    *,
+    username: str,
+    packed_team: str,
+    side: str,
+    prefix_actions: Sequence[int] = (),
+    battle_format: str = "gen3ou",
+    battle_tag: Optional[str] = None,
+    mappings=None,
+    stall_config: Optional[StallConfig] = None,
+    map_actions_at: Optional[int] = None,
+    stop_after_decision: Optional[int] = None,
+    encode_only_at: "Optional[set]" = None,
+) -> "List[MaterializedTrace]":
+    """Materialize K arms of ONE decision, replaying their shared prefix exactly once.
+
+    Defined to be **exactly equivalent** to, for each ``branch``::
+
+        materialize_decisions(list(prefix_chunks) + list(branch.chunks),
+                              actions=list(prefix_actions) + list(branch.actions), ...)
+
+    including bit-for-bit obs. The saving is that the prefix — the measured 53% + of a
+    counterfactual arm's cost, growing linearly in the branch turn — is replayed once for
+    the whole set instead of once per arm.
+
+    ``prefix_actions`` are the recorded actions BEFORE the branch decision, so the branch
+    decision's index is ``len(prefix_actions)``: the prefix replay stops there naturally
+    (its action list is exhausted), which is exactly the point where the arms diverge.
+
+    Raises ``RuntimeError`` if the prefix does not reach the branch decision (a caller
+    whose ``prefix_actions`` and ``prefix_chunks`` disagree — that would silently branch
+    from the wrong state).
+    """
+    branches = list(branches)
+    if not branches:
+        return []
+    prefix_actions = [int(a) for a in prefix_actions]
+    n_prefix = len(prefix_actions)
+    tag = _next_tag(battle_tag, battle_format)
+
+    player, client = _build_replay_player(
+        username=username, packed_team=packed_team, side=side, actions=prefix_actions,
+        battle_format=battle_format, mappings=mappings, stall_config=stall_config,
+        map_actions_at=map_actions_at, stop_after_decision=stop_after_decision,
+        encode_only_at=encode_only_at,
     )
+    _refuse_poke_loop("materialize_branches")
+    # The prefix player's action list has exactly `n_prefix` entries, so decision
+    # `n_prefix` — the branch decision — is materialized and then sets _actions_exhausted
+    # WITHOUT advancing the tracker. That is precisely the fork point: the tracker advance
+    # is the first thing that differs between arms, and it has not happened yet.
+    consumed = asyncio.run_coroutine_threadsafe(
+        _feed(client, player, prefix_chunks, tag, first=True), POKE_LOOP).result()
+    if len(player._materialized) != n_prefix + 1:
+        raise RuntimeError(
+            f"prefix replay produced {len(player._materialized)} decisions for a branch at "
+            f"index {n_prefix} — prefix_chunks and prefix_actions disagree, so the arms "
+            f"would branch from the wrong state")
+    # The prefix feed stopped on whichever chunk carried the branch decision's request.
+    # Anything after it is prefix the single-shot path WOULD have fed (after the tracker
+    # advance), so each branch replays that tail ahead of its own suffix — dropping it is
+    # exactly the divergence this tail exists to prevent.
+    prefix_tail = list(prefix_chunks)[consumed:]
+    snapshot = _PlayerSnapshot(player)
+
+    out: List[MaterializedTrace] = []
+    for branch in branches:
+        snapshot.restore(player)
+        full_actions = prefix_actions + [int(a) for a in branch.actions]
+        player._replay_actions = full_actions
+        # Replay the exact bookkeeping materialize_decisions would have done at decision
+        # `n_prefix` had the branch's action been in its list from the start.
+        if n_prefix < len(full_actions):
+            # The prefix player exhausted its (shorter) action list at this very decision;
+            # the branch supplies the action it was missing, so the replay is live again.
+            player._actions_exhausted = False
+            battle = player._battles[tag]
+            player._get_tracker(battle).advance(full_actions[n_prefix])
+        else:
+            player._actions_exhausted = True
+        if stop_after_decision is not None and n_prefix >= stop_after_decision:
+            player._stopped = True
+        if not player.done:
+            asyncio.run_coroutine_threadsafe(
+                _feed(client, player, prefix_tail + list(branch.chunks), tag, first=False),
+                POKE_LOOP).result()
+        out.append(MaterializedTrace(
+            decisions=list(player._materialized),
+            actions_complete=not player._actions_exhausted,
+            action_choices=player.action_choices,
+        ))
+    return out
 
 
 class _InvertingReplayPlayer(_ReplayObsPlayer):

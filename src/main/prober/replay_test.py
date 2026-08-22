@@ -145,8 +145,39 @@ def test_build_opponent_prefers_explicit_ckpt(_patch_players):
     player, label = build_opponent("heuristic", _record(), play_model=object(), mappings=None,
                                    server_config=None, opponent_ckpt="/c.zip", opp_model=opp_model,
                                    opponent_source="auto", tag="t")
-    assert label == "ckpt:/c.zip"
-    assert isinstance(player, _FakeRL) and player.model is opp_model and player.stochastic is False
+    assert label == "ckpt_stochastic:/c.zip"
+    assert isinstance(player, _FakeRL) and player.model is opp_model
+
+
+def test_a_checkpoint_opponent_plays_the_RECORDED_stochastic_regime_by_default(_patch_players):
+    """REGRESSION (G0, 2026-08-22). A reloaded checkpoint opponent stands in for a pool
+    SENTINEL, and `eval_worker` played sentinels STOCHASTIC at temp 1.0
+    (`stochastic = not eval_sentinel_greedy`, default False). Building it GREEDY — which is
+    what this seam used to do unconditionally — makes it strictly stronger than the opponent
+    that was actually there, so every Monte-Carlo label taken against it is biased LOW and
+    every predicted-minus-MC gap biased HIGH, in the direction of the hypothesis under test.
+    Measured worth: +0.037 [+0.007, +0.066] of win-prob over 477 sentinel states.
+
+    This test FAILS on a revert to the hard-wired greedy build."""
+    player, label = build_opponent("sentinel_2", _record(), play_model=object(), mappings=None,
+                                   server_config=None, opponent_ckpt="/snap_22M.zip",
+                                   opp_model=object(), opponent_source="auto", tag="t")
+    assert player.stochastic is True, (
+        "a reloaded checkpoint opponent must default to the RECORDED sampling regime "
+        "(stochastic temp 1.0), not greedy")
+    # The regime is in the SOURCE LABEL, so it lands in every result artifact — a label that
+    # says only "ckpt:<path>" cannot tell a reader which opponent was actually played.
+    assert label == "ckpt_stochastic:/snap_22M.zip"
+
+
+def test_the_opponent_regime_can_be_overridden_explicitly_and_says_so(_patch_players):
+    for stochastic, regime in ((False, "greedy"), (True, "stochastic")):
+        player, label = build_opponent("sentinel_2", _record(), play_model=object(), mappings=None,
+                                       server_config=None, opponent_ckpt="/c.zip",
+                                       opp_model=object(), opponent_source="ckpt",
+                                       opponent_stochastic=stochastic, tag="t")
+        assert player.stochastic is stochastic
+        assert label == f"ckpt_{regime}:/c.zip"
 
 
 def test_build_opponent_rebuilds_known_bot(_patch_players):

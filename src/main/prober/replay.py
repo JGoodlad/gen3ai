@@ -67,13 +67,32 @@ def build_trainee(play_model, record: ReconstructionRecord, mappings, server_con
         max_concurrent_battles=1, stochastic=False, start_listening=False)
 
 
+#: A reloaded checkpoint opponent stands in for a POOL SENTINEL, and the eval worker plays
+#: sentinels STOCHASTIC at temp 1.0 unless the run set ``--eval-sentinel-greedy`` (which
+#: defaults False, and is False in every run on file). So "recorded" means stochastic here.
+_RECORDED_CKPT_STOCHASTIC = True
+
+
 def build_opponent(opp_name: str, record: ReconstructionRecord, play_model, mappings, server_config,
-                   *, opponent_ckpt=None, opp_model=None, opponent_source: str = "auto", tag: str):
+                   *, opponent_ckpt=None, opp_model=None, opponent_source: str = "auto",
+                   opponent_stochastic: "Optional[bool]" = None, tag: str):
     """Resolve + build the opponent player for the continuation, RELOADING the real opponent where
     possible. Returns ``(player, source_label)``. Priority: an explicit checkpoint (``opp_model``) →
     a reproducible bot (the recorded opponent name is in the eval roster) → the trainee's own model
     (a self-play APPROXIMATION, flagged ``self_model_approx`` — the honest fallback when the real
-    opponent isn't reloadable, e.g. an aged-out self-play sentinel)."""
+    opponent isn't reloadable, e.g. an aged-out self-play sentinel).
+
+    ``opponent_stochastic`` sets the SAMPLING REGIME of a model-backed opponent. ``None`` (the
+    default) means **the regime the record says was played** — stochastic for a checkpoint
+    opponent, because that is what ``eval_worker`` recorded for a pool sentinel
+    (``stochastic = not eval_sentinel_greedy``, and ``eval_sentinel_greedy`` defaults False).
+    Pass ``True``/``False`` to override deliberately.
+
+    ⚠️ This used to be hard-wired GREEDY, and that was not a stylistic choice — a greedy copy of a
+    net is strictly stronger than a temp-1.0 sample of it, so every Monte-Carlo label taken against
+    a reloaded sentinel was biased LOW and every predicted-minus-MC gap biased HIGH, *in the
+    direction of the hypothesis being tested*. Measured on 477 sentinel states (G0, 2026-08-22):
+    re-labelling in the recorded regime moved MC by **+0.037 [+0.007, +0.066]**."""
     from poke_env.ps_client import AccountConfiguration
     from agents.inference.player import RLPlayer
 
@@ -95,7 +114,10 @@ def build_opponent(opp_name: str, record: ReconstructionRecord, play_model, mapp
         raise ValueError("--opponent-source ckpt requires --opponent-ckpt")
 
     if opp_model is not None and opponent_source in ("auto", "ckpt"):
-        return _rl(opp_model, False, f"ckpt:{opponent_ckpt}")        # greedy yardstick
+        stochastic = (_RECORDED_CKPT_STOCHASTIC if opponent_stochastic is None
+                      else bool(opponent_stochastic))
+        regime = "stochastic" if stochastic else "greedy"
+        return _rl(opp_model, stochastic, f"ckpt_{regime}:{opponent_ckpt}")
 
     bots = _bot_classes()
     if opponent_source in ("auto", "bot") and opp_name in bots:
@@ -128,6 +150,7 @@ def replay_counterfactual_battle(
     opponent_ckpt=None,
     opp_model=None,
     opponent_source: str = "auto",
+    opponent_stochastic: Optional[bool] = None,
     n_rollouts: int = 1,
     narrate: bool = False,
     impl: str = "node",
@@ -186,7 +209,8 @@ def replay_counterfactual_battle(
         trainee = build_trainee(play_model, record, mappings, server_config, tag=f"{inv_index}x{k}")
         opponent, source_label = build_opponent(
             opp_name, record, play_model, mappings, server_config, opponent_ckpt=opponent_ckpt,
-            opp_model=opp_model, opponent_source=opponent_source, tag=f"{inv_index}x{k}")
+            opp_model=opp_model, opponent_source=opponent_source,
+            opponent_stochastic=opponent_stochastic, tag=f"{inv_index}x{k}")
         # Capture the move-by-move trajectory only until we have one win + one loss example (cheap).
         cap = narrate and (win_traj is None or loss_traj is None)
         res = _run_one(record, trainee=trainee, opponent=opponent, divergence_turn=turn,
@@ -210,6 +234,11 @@ def replay_counterfactual_battle(
         "Most informative for THROWN-LATE losses; a matchup-lost-from-turn-1 game is rarely "
         "recoverable by one move (see the positional-grind decomposition).",
     ]
+    if (source_label or "").startswith("ckpt_greedy"):
+        caveats.insert(0, "Opponent = a reloaded checkpoint played GREEDY — STRONGER than the "
+                          "temp-1.0 sample the eval worker recorded for a pool sentinel, so this "
+                          "win-rate is biased LOW (measured +0.037 [+0.007, +0.066] over 477 "
+                          "sentinel states). Drop --opponent-regime to play the recorded regime.")
     if source_label == "self_model_approx":
         caveats.insert(0, "Opponent = the trainee's OWN model (self-play APPROXIMATION) — the recorded "
                           "opponent was not a known bot and no --opponent-ckpt was given.")

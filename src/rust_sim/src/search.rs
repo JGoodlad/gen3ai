@@ -417,6 +417,15 @@ fn side_index(tag: &str) -> Option<usize> {
 /// The battle is paused at the start-of-turn MOVE round of turn `t` — Node's
 /// `atTurnStart`. Both sides must be on a `move` request, which is what makes turn `t`
 /// a branchable joint decision rather than a mid-turn forced-switch round.
+///
+/// ⚠️ KNOWN GAP (open, reproduced 2026-08-22 on both verb families): this returns FALSE for
+/// `t == 1` on a freshly constructed session, so `build_to_turn` walks the ENTIRE command log
+/// and reports `battle never reached the start of turn 1 (ended=true at turn N)`. Node opens
+/// turn 1 fine, so ~3.35% of move decisions — exactly the first decision of every battle —
+/// are rust-uncoverable. The predicate is where the divergence lands; whether the cause is
+/// `sess.turn()` or `request_kind` after `Battle::start_with_turn0_construction` is NOT yet
+/// established. (The Python seam now prints this message instead of an empty `rc=1`, which is
+/// how the diagnosis was finally readable at all.)
 pub fn at_turn_start(sess: &BridgeSession, t: u32) -> bool {
     !sess.is_ended()
         && sess.turn() == t

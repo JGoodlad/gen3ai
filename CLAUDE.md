@@ -1209,6 +1209,7 @@ src/
     training/        # Callbacks, reward manager, eval pipeline — has CLAUDE.md
                      #   elo.py (Bradley-Terry skill rating), bot_elo_calibration.py (anchor round-robin)
                      #   eval_sharding/ (battle-level work-stealing pkg), rating.py (Glicko-ready seam)
+                     #   cf_audit.py (offline counterfactual audit: tight-MC value labels + the bias map)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/

@@ -969,7 +969,16 @@ loading uses the same exact→nearest→recent ladder (cached per process). A
   recovered by inverting the recorded choice string — so the post-divergence turn-history stays faithful,
   proven bit-for-bit by `counterfactual_fuzz_test.py`). The opponent is RELOADED: a reproducible bot is
   rebuilt exactly; `opponent_ckpt` loads any checkpoint (e.g. a self-play sentinel) as the opponent;
-  else the trainee's own model stands in (a flagged `self_model_approx`). `n_rollouts`>1 resamples the
+  else the trainee's own model stands in (a flagged `self_model_approx`).
+  ⚠️ **A checkpoint opponent plays the RECORDED sampling regime — STOCHASTIC at temp 1.0**, which is
+  what `eval_worker` recorded for a pool sentinel (`stochastic = not eval_sentinel_greedy`, default
+  False). It used to be hard-wired greedy, and that is not cosmetic: a greedy copy of a net is
+  strictly stronger than a temp-1.0 sample of it, so every Monte-Carlo win-rate against a reloaded
+  sentinel was biased LOW and every predicted-minus-MC gap biased HIGH — *in the direction of the
+  hypothesis under test*. Measured over 477 sentinel states (G0, 2026-08-22): **+0.037 [+0.007,
+  +0.066]**. Override with `--opponent-regime {recorded,stochastic,greedy}`; the regime is written
+  into `opponent_source` (`ckpt_stochastic:<path>`), so no result can hide which opponent played.
+  `n_rollouts`>1 resamples the
   post-divergence dice (`local_sim_bridge.js`'s `resumeReseed` PRNG swap at the divergence turn) for a
   Monte-Carlo win-rate ± **Wilson CI**; `n_rollouts`==1 is the single realized-dice line (NOT a
   probability — a `caveat` says so). Loads the model; **requires the `*_reconstruction.json` sibling**.
@@ -1095,7 +1104,7 @@ python -m main.prober.query find     <battle_id> value_drop --limit 5
 python -m main.prober.query analyze  <battle_id> <inv> [--ckpt PATH] [--tier auto|nearest|recent]
 python -m main.prober.query lookahead <battle_id> [--inv N] [--worst K] [--seeds N] [--followup random|default]
 python -m main.prober.query better-line <battle_id> <inv> [--depth 2] [--beam 3] [--top-k 4] [--interior-opponent self|ckpt|none] [--opponent-ckpt PATH] [--confirm-rollouts N]
-python -m main.prober.query replay-counterfactual <battle_id> <inv> <action> [--rollouts N] [--opponent-ckpt PATH] [--opponent-source auto|bot|self|ckpt] [--narrate]
+python -m main.prober.query replay-counterfactual <battle_id> <inv> <action> [--rollouts N] [--opponent-ckpt PATH] [--opponent-source auto|bot|self|ckpt] [--opponent-regime recorded|stochastic|greedy] [--narrate]
 python -m main.prober.query falsify  <battle_id> [--inv N]... [--worst K] [--seeds N] [--alts K] [--followup random|default]
 python -m main.prober.query falsify-scan <run_dir> [--outcome loss|win] [--opponent X] [--step N] [--limit K] [--worst K] [--seeds N] [--alts K] [--concurrency N]
 python -m main.prober.query calibration  <run_dir> [--step N] [--opponent X] [--limit K] [--worst K] [--seeds N] [--concurrency N] [--bins N] [--overvalue-tau F]

@@ -1295,6 +1295,7 @@ class ProbeSession:
 
     def replay_counterfactual(self, battle_id: str, inv: int, action: int, *, n_rollouts: int = 1,
                               opponent_ckpt: "str | None" = None, opponent_source: str = "auto",
+                              opponent_stochastic: "bool | None" = None,
                               narrate: bool = False) -> dict:
         """COUNTERFACTUAL replay-to-end (Feature 2) — "could the model have won if it hadn't choked this
         turn?". Pick up the recorded battle at ``inv``'s turn, substitute ``action`` (a legal action
@@ -1303,7 +1304,10 @@ class ProbeSession:
         for a win-PROBABILITY ± Wilson CI; ``n_rollouts`` == 1 is the single realized-dice line. The
         opponent is RELOADED: a reproducible bot is rebuilt exactly, ``opponent_ckpt`` loads any
         checkpoint (e.g. a self-play sentinel) as the opponent, else the trainee's own model stands in
-        (a flagged self-play approximation). **Requires the trace's ``*_reconstruction.json`` sibling.**"""
+        (a flagged self-play approximation). A checkpoint opponent plays in the regime the record
+        says it played — **stochastic** at temp 1.0, matching ``eval_worker``'s sentinels — unless
+        ``opponent_stochastic`` overrides it. **Requires the trace's ``*_reconstruction.json``
+        sibling.**"""
         from sb3_contrib import MaskablePPO
         from poke_env.ps_client import LocalhostServerConfiguration
         from agents.observation.state_encoder import load_mappings
@@ -1361,7 +1365,8 @@ class ProbeSession:
             record, self._summary(b), self._npz(b), int(inv), int(action),
             play_model=play_model, opp_name=b.opponent, mappings=self._cf_mappings,
             server_config=LocalhostServerConfiguration, opponent_ckpt=opponent_ckpt,
-            opp_model=opp_model, opponent_source=opponent_source, n_rollouts=n_rollouts,
+            opp_model=opp_model, opponent_source=opponent_source,
+            opponent_stochastic=opponent_stochastic, n_rollouts=n_rollouts,
             narrate=narrate, impl=self._impl)
 
     def falsify_scan(self, *, outcome: "str | None" = "loss",

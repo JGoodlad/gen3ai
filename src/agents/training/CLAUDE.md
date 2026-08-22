@@ -2759,6 +2759,104 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
   shaping-flows gradient gating, the v22 version gate). End-to-end `--debug --use-bridge=node
   --win-prob-mode read_only` smoke confirms the roundtrip + `train/win_prob_*` metrics + `win_prob_share`=0.
 
+## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python -m agents.training.cf_audit models/<run> \
+    [--rollouts 8] [--states 200] [--step N] [--checkpoint PATH] [--impl rust] [--out DIR]
+```
+
+**Offline and standalone — it trains nothing.** Given a run's bridge-eval traces (the ones with a
+`*_reconstruction.json` sibling) and a loadable checkpoint, it manufactures the value labels the
+on-policy stream structurally cannot produce: for a sampled decision it plays the **recorded**
+action and rolls the rest of the battle out live **R** times with fresh post-divergence dice
+against the RELOADED real opponent, and takes the win rate. Training sees one Monte-Carlo sample of
+each state's value; this sees R of the same state.
+
+It emits two things, independently useful:
+
+| output | what |
+|---|---|
+| `<out>/bias_map.json` + `bias_map.md` | predicted win-prob vs tight-MC per stratum, with `sd_true_excess`, battle-clustered CIs, the sampler design and full accounting |
+| `<out>/cf_labels/labels_<producer>_<step>.jsonl` | label rows in the **shared v1 schema** — the contract a training-side consumer reads |
+
+**The meter is `sd_true_excess`, NOT the mean gap.** G0 (2026-08-22) measured the population-mean
+predicted−MC gap at |0.05|–|0.07| *with a sign that flips with the population you weight to*, while
+the true within-decile spread of P(win) is 0.11–0.36 — the per-state error is 2–6× the aggregate
+offset, so the head's defect is **resolution**, not an optimism offset. The estimator subtracts the
+R-rollout binomial floor from the observed within-cell variance:
+
+```
+Var(MC | cell) = Var(true p) + E[sampling var];   E[p̂(1−p̂)]/(R−1)  is EXACTLY unbiased for p(1−p)/R
+sd_true_excess = sqrt(max(0, Var(MC) − E[p̂(1−p̂)]/(R−1)))
+```
+
+Subtracting the floor is what makes it a claim about the world rather than about R. **A lever that
+merely re-centres the head moves the mean gap and leaves this untouched** — and would be scored a
+success by the wrong meter, which is exactly why the meter is stated here.
+
+**Label trust before map trust.** The ANCHOR arm runs FIRST: recorded action + recorded dice must
+reproduce the recorded battle outcome. Below `--anchor-tolerance` (default 0.9) the tool exits **3**
+and writes NO labels — the bias map is still written, marked `label_trust_passed: false`, for
+diagnosis only. A factory whose replay is not exact is GIGO, and a map computed from it measures the
+bug. Pinned by `cf_audit_integration_test.py`.
+
+**Selection-awareness.** Eval traces over-capture losses (an explicit win/loss quota), so a pooled
+gap convicts the critic of the sampler's sins. Every aggregate is computed *within* an outcome
+stratum and recombined at the frame's own population shares; every CI is a bootstrap over
+**battles**, never states.
+
+**Sampling** is `(confidence decile × battle outcome × turn tercile)` with a declared
+`CONVICTION_BOOST` on the high-confidence-from-lost-battles region (the "0.827 class", the
+population R1 supervises). The weights, the seed and `SAMPLER_VERSION` are written into every bias
+map — a silent priority change is a distribution-shift confound for every downstream readout.
+
+**The shared label schema (v1)** — one JSON object per line; treat it as a contract, version it
+rather than editing it in place:
+
+```json
+{"schema": 1, "kind": "mc_winprob", "battle": "<record path>", "decision_idx": 12,
+ "obs_sha1": "<sha1 of the obs float32 bytes>", "obs_npz": "<states.npz>::obs",
+ "obs_inline": null, "label": 0.625, "n_rollouts": 8, "wilson_lo": 0.30, "wilson_hi": 0.86,
+ "policy_step": 24000000, "opponent": "heuristic", "created_unix": 1.77e9}
+```
+
+`obs_npz` names the array and `decision_idx` selects its ROW; `--inline-obs` swaps that for a
+base64 float32 payload when the traces won't travel with the labels. `obs_sha1` is always present
+so a consumer can verify the row it loaded is the row that was labelled.
+
+**Known coverage gaps, printed in the accounting and never silent:** turn-1 decisions (the offline
+replay driver cannot open them — one per battle, 3.35% of move decisions) and forced-switch rounds
+(the re-roll layer anchors at start-of-turn move rounds).
+
+**Cost** is the rollouts, not the materializer: an R=8 label is ~0.9 s at load ~7 and ~2.8 s at load
+~25 — *more* load-sensitive than `loadavg/cpus` predicts, so any throughput figure taken beside a
+trainer is a lower bound. Prefix sharing (below) does not apply to a rollout-to-end label, which has
+one arm; it is the lever for the one-ply counterfactual (`lookahead`) path.
+
+**Tests.** `cf_audit_test.py` (pure: the stratifier, `sd_true_excess` validated at ZERO true effect
+AND at a known nonzero one, the clustered bootstrap, Wilson, the schema writer) and
+`cf_audit_integration_test.py` (`sim`: a real bridge battle it plays itself, run end to end at R=2
+— including the anchor refusal).
+
+## Prefix-sharing materialization (`obs_materializer.materialize_branches`)
+
+K counterfactual arms of one decision share an identical prefix, and the materializer used to
+replay it from turn 1 for **every** arm — the measured bottleneck of the counterfactual label path
+(`arm_ms = 4.78 + 0.853·turn`, of which prefix replay is `2.53 + 0.855·turn`; the branched turn is
+~0.5 ms and the obs encode ~1.8 ms). `materialize_branches` replays the prefix once, snapshots the
+player's whole battle/tracker state at the branch decision, and restores it per arm.
+
+- **Contract: exactly equivalent to per-arm `materialize_decisions`, bit-for-bit.** Measured on 6
+  gen-17 eval battles / 59 decisions / 452 arms: **59/59 byte-identical**, **15.4 → 5.3 ms per arm
+  (2.91×)**, rising with the branch turn (3.7–3.9× at turn 26–28) because the part it removes is the
+  part that is linear in the turn. Gate: `obs_materializer_branch_integration_test.py`, which
+  compares EVERY arm rather than a sample.
+- The clone SHARES append-only immutable records (`BattleEvent`, `BattleContext`) instead of copying
+  them — a **contract, not an inference**, and the reason the gate compares every arm: a broken
+  contract shows up as arm 2+ reading history arm 1 mutated.
+- `lookahead` uses it for its whole `(candidate × seed)` sweep.
+
 ## Public-replay value aux — V_pub — DELETED (v88 `gen3_dead_flag_purge_v1`)
 
 The v43 pubval subsystem (`--pubval-mode`/`--pubval-coef`, `agents.training.pubval`,

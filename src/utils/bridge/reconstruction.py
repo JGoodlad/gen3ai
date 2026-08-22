@@ -382,12 +382,25 @@ def _run_driver(request: dict, timeout: float, impl: str = "node") -> dict:
         timeout=timeout,
     )
     who = f"replay driver [{impl}: {argv[-1]}]"
+    stdout = proc.stdout.decode("utf-8", "replace")
+    stderr = proc.stderr.decode("utf-8", "replace")
     if proc.returncode != 0:
+        # ⚠️ A driver reports its diagnosis as a JSON ``{"error": …}`` on STDOUT and then exits
+        # non-zero with an EMPTY stderr — so a stderr-only message reads as a silent crash and
+        # sends the reader hunting for something that never happened. Measured: the rust
+        # `search_driver` refusing turn 1 produced literally `failed (rc=1): ` and nothing else.
+        # Surface the stdout reason FIRST, and say so explicitly when both streams are empty.
+        try:
+            reason = str(json.loads(stdout).get("error") or "")
+        except (ValueError, AttributeError):
+            reason = stdout.strip()[-2000:]
         raise RuntimeError(
-            f"{who} failed (rc={proc.returncode}): "
-            f"{proc.stderr.decode('utf-8', 'replace')[-2000:]}"
+            f"{who} failed (rc={proc.returncode})"
+            + (f": {reason}" if reason else "")
+            + (f" [stderr] {stderr[-2000:]}" if stderr.strip()
+               else ("" if reason else " — EMPTY stdout AND stderr"))
         )
-    out = json.loads(proc.stdout.decode())
+    out = json.loads(stdout)
     if "error" in out:
         raise RuntimeError(f"{who}: {out['error']}")
     return out
