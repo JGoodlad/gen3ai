@@ -1391,3 +1391,43 @@ the LABEL, not just the protocol.
 - **Method rider**: per-arm costs amortize a ~900 ms per-decision fixed cost — the prior 39.5
   ms/arm figure was a K≈76 artifact, not the factory's price (the model reproduces it at that K
   and reprices K=8 at 162 ms/label). *Never quote a per-unit cost without its batch size.*
+
+### G0 BIAS MAP — PROCEED, and the defect is RESOLUTION not offset (2026-08-22, opus agent, 2,204 tight-MC labels / 16,832 rollouts / 216 battles, gen-17 @24M, R=8, battle-clustered CIs)
+
+**Gate G0 of `design_counterfactual_value_grounding.md` — the kill does NOT fire; the meter gets
+amended.** Report `tmp/g0_bias_map_report.md`. Label trust established first: anchor 99/100,
+near-terminal 98.8%, 14/14 opponents covered, 0 self-model approximations; 12/1,639 tasks
+unlabelable (one 250-turn-cap battle, both engines — NOT the rust turn-1 gap).
+
+- **The 0.827 class reproduces as +0.23, and it SPLITS — the conviction was half wrong in the
+  most useful way.** On bot-loss states with predicted win-prob ≥0.75: predicted 0.868 vs
+  tight-MC 0.637 (+0.231 [+0.154,+0.313]); matched-confidence WON control −0.076; the loss−win
+  difference is **+0.307 [+0.227,+0.392]** in one CI. But **53.1% [42.0,64.5] of those states
+  were GENUINELY winning (MC ≥0.75 — the dice lost the game)** and only 29.6% [19.5,40.5] read
+  MC <0.5. A single realized outcome cannot make that distinction — this measurement is the
+  instrument's own existence proof.
+- **THE REFRAME: the head's defect is RESOLUTION, not an optimism offset.** Population-mean gaps
+  are |0.05|–|0.07| while the TRUE within-decile spread of P(win) is **0.11–0.36, of which
+  80–95% is real state-to-state variance, not R=8 noise** — a 2–6× per-state error the mean
+  cannot see. The head lumps states of very different true value into one confidence bin
+  (Murphy-decomposition reading: tolerable reliability, poor resolution). ⚠️ **A G4 arm that
+  merely re-centers the head would score as success on the wrong meter — the primary G4 meter is
+  AMENDED from mean predicted−MC to `sd_true_excess` (within-decile true spread the head fails
+  to resolve)**, recorded here as the G0-licensed amendment; the design doc edit awaits an
+  explicit pass. This STRENGTHENS the R1 case: only tight-MC labels (not single outcomes, not
+  re-centering) carry the within-bin separation signal.
+- **The ecology-calibration theory is now MEASURED, with a sign flip.** The head under-predicts
+  vs bots (frame-weighted +0.054 but TRUE-play-distribution **−0.065**) and over-predicts vs the
+  pool (+0.106/+0.058) — because BCE-trained on a ~90% self-play mixture where P(win)≈0.5, it is
+  calibrated to its ecology, not the game (the imperfect-info note §6 claim, empirical). Rule:
+  **never quote "the critic is optimistic by X" without naming the population** — the sign
+  depends on it.
+- **Honest hole carried forward**: this maps the WIN-PROB HEAD, not the main critic V (the
+  secondary V comparison has the PBRS caveat). The R1 head-first delivery is unchanged; a V map
+  is a later, separate read.
+- **Code-fix candidate found (task)**: the prober builds `--opponent-ckpt` opponents GREEDY
+  while recorded sentinels played STOCHASTIC — re-labelling all 477 sentinel states in the
+  correct regime moved MC +0.037 [+0.007,+0.066]. One-line seam on `prober/replay.build_opponent`.
+- **Factory economics rider**: 878 ms/label at load 7 → 2,787 at load 25 (3.2× for 3.6× load —
+  worse than the loadavg/cpus scaling predicts); 72 core-minutes bought the whole gate. Rollout
+  throughput beside a trainer is a LOWER bound.
