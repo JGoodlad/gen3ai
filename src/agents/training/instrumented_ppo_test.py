@@ -294,6 +294,30 @@ def test_distill_multi_teacher_averaging():
     assert float(kl1) == pytest.approx(float(kl_row[:3].mean()), rel=1e-5)
 
 
+def test_distill_loss_is_the_full_teacher_DISTRIBUTION_not_its_argmax():
+    """The distillation target is the teacher's WHOLE softmax, not a hard action.
+
+    The owner rule for the flywheel's delivery tick is 'always distil the full policy distribution' —
+    so a teacher that is merely CONFIDENT and a teacher that is CERTAIN must produce different losses
+    even though their argmax is the same. Two teachers sharing an argmax but differing off-mode give
+    different KLs; a hard-CE (argmax) objective would score them identically. Pins the D-F contract
+    against a future 'simplification' to top-1 distillation."""
+    B, A = 4, 5
+    student = th.randn(B, A)
+    amask = th.ones(B, A)
+    on = th.ones(B, 1)
+    soft = th.zeros(B, A); soft[:, 2] = 1.0          # confident on action 2, mass elsewhere
+    sharp = th.zeros(B, A); sharp[:, 2] = 8.0        # near-certain on action 2 — SAME argmax
+    kl_soft, m_soft = InstrumentedMaskablePPO._distill_loss(student, soft, amask, on)
+    kl_sharp, m_sharp = InstrumentedMaskablePPO._distill_loss(student, sharp, amask, on)
+    assert m_soft["agree_rate"] == m_sharp["agree_rate"]        # identical argmax ⇒ a hard target ties
+    assert float(kl_soft) != pytest.approx(float(kl_sharp), rel=1e-3)   # the full distribution does not
+    # And it is the FORWARD KL Σ p_teacher·(log p_teacher − log p_student) over the legal set.
+    p = F.softmax(soft, -1)
+    expect = (p * (th.log(p) - F.log_softmax(student, -1))).sum(-1).mean()
+    assert float(kl_soft) == pytest.approx(float(expect), rel=1e-5)
+
+
 class _CounterDictEnv(gym.Env):
     """Tiny Dict-obs maskable env (mirrors Gen3Env's {observation, action_mask} space). The
     observation counts up each step so the policy sees varied inputs → non-trivial gradients.
@@ -348,6 +372,110 @@ def _train_from_init(model, init_sd, init_opt, *, batch_size, accum, seed=123):
     th.manual_seed(seed)
     model.train()
     return {k: v.detach().clone() for k, v in model.policy.state_dict().items()}
+
+
+class _DistillDictEnv(_CounterDictEnv):
+    """`_CounterDictEnv` plus the training-only `distill_mask` key the exploiter-distillation KL reads
+    (the INTEGER teacher-id: 0 = not a teacher's team, k = teacher k). Every state is teacher 1's here,
+    so the fold has full coverage and cannot be skipped by the 'no teacher-team rows' None guard."""
+
+    def __init__(self, ep_len=1000):
+        super().__init__(ep_len=ep_len)
+        self.observation_space = spaces.Dict({
+            "observation": spaces.Box(low=0.0, high=1e4, shape=(1,), dtype=np.float32),
+            "action_mask": spaces.Box(0, 1, shape=(2,), dtype=np.int8),
+            "distill_mask": spaces.Box(0.0, 1.0, shape=(1,), dtype=np.float32),
+        })
+
+    def _obs(self):
+        o = super()._obs()
+        o["distill_mask"] = np.array([1.0], dtype=np.float32)
+        return o
+
+
+def _build_distill_ppo(n_steps=8, n_envs=4):
+    """A tiny PPO whose env emits `distill_mask`, plus a frozen TEACHER model built on the PLAIN env
+    (no `distill_mask` key) — mirroring production, where the teacher is a foreign checkpoint whose
+    observation space is a subset and the fold filters the obs keys down to what the teacher knows."""
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    venv = DummyVecEnv([(lambda: _DistillDictEnv()) for _ in range(n_envs)])
+    model = InstrumentedMaskablePPO(
+        "MultiInputPolicy", venv, n_steps=n_steps, batch_size=4, n_epochs=1,
+        normalize_advantage=False, ent_coef=0.0, vf_coef=0.5, device="cpu", seed=0,
+    )
+    teacher, _ = _build_tiny_ppo(n_steps=n_steps, n_envs=n_envs)
+    # Both are seeded identically, so an untouched teacher is a near-COPY of the student (KL ~1e-6) and
+    # "did the KL fall?" would have nothing to measure. Perturb the teacher's action head so it holds a
+    # genuinely different policy — the situation a foreign exploiter checkpoint is in.
+    th.manual_seed(7)                      # the perturbation is FIXED — the test must not flap
+    with th.no_grad():
+        for p in teacher.policy.action_net.parameters():
+            p.add_(th.randn_like(p) * 2.0)
+    teacher.policy.set_training_mode(False)
+    return model, teacher
+
+
+def test_distill_off_byte_identical_with_teachers_attached():
+    """Teachers ATTACHED but `distill_coef=0` ⇒ the same parameter update as no teachers at all.
+
+    The revival pin for the flywheel's delivery tick: the OPD half has had this guarantee pinned since
+    it shipped (`test_opd_off_byte_identical_with_populated_buffer`), the EXPLOITER-distillation half
+    never did — so nothing caught a regression that made the fold depend on the teacher LIST rather
+    than the coefficient. `distill_on` must be gated on the coef."""
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)          # one rollout to fill the buffer
+
+    model._distill_teachers = []                # baseline: no teachers at all
+    model.distill_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    model._distill_teachers = [teacher]         # teachers present, coef 0 → the fold is skipped
+    model.distill_coef = 0.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"distill_coef=0 with a teacher attached perturbed {k}"
+
+
+def test_distill_on_folds_into_the_update_and_pulls_toward_the_teacher():
+    """coef > 0 with a teacher attached DOES change the update (the term is live end-to-end through
+    train(), not just in the pure loss helper), and repeated updates raise the student↔teacher argmax
+    agreement — the ON half of the byte-identity pin above."""
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._distill_teachers = []
+    model.distill_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    model._distill_teachers = [teacher]
+    model.distill_coef = 10.0
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert any(not th.equal(base[k], on[k]) for k in base), "distill_coef>0 did not enter the update"
+
+    s_obs = {"observation": th.tensor([[float(i % 17)] for i in range(17)]),
+             "action_mask": th.ones((17, 2)),
+             "distill_mask": th.ones((17, 1))}
+    t_obs = {k: v for k, v in s_obs.items() if k != "distill_mask"}
+    with th.no_grad():
+        t_logp = F.log_softmax(teacher.policy.get_distribution(t_obs).distribution.logits, -1)
+
+    def kl():
+        # The quantity the fold minimises: forward KL(teacher ‖ student). argmax agreement is the wrong
+        # readout on a 2-action toy — two random nets already agree ~everywhere, so it starts saturated.
+        with th.no_grad():
+            s_logp = F.log_softmax(model.policy.get_distribution(s_obs).distribution.logits, -1)
+        return float((t_logp.exp() * (t_logp - s_logp)).sum(-1).mean())
+
+    model.policy.load_state_dict(init_sd)
+    model.policy.optimizer.load_state_dict(init_opt)
+    before = kl()
+    for _ in range(15):
+        model.learn(total_timesteps=8 * 4, reset_num_timesteps=False)
+    assert kl() < before, "the distillation KL did not fall over repeated updates"
 
 
 @pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (5, 3, 15)])

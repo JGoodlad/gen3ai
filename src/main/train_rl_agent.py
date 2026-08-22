@@ -1307,7 +1307,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--distill-coef", "--distill_coef", dest="distill_coef", type=float, default=None,
                         help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
                              "Requires --distill-teacher ('TEACHER:TEAM' pairs). Training-only (inherited on "
-                             "a flagless resume). Watch distill/kl ↓ + distill/agree_rate ↑ + grad/distill_share.")
+                             "a flagless resume). Watch distill/kl (the mean over active teachers) FALL "
+                             "and the per-teacher distill/t<k>_agree_rate RISE, with distill/t<k>_coverage "
+                             "confirming the trainee actually pilots that teacher's team. NOTE there is no "
+                             "grad/distill_share — the distillation KL is not in the grad-balance probe "
+                             "(only the search-teacher's grad/searchteacher_share and grad/opd_share are).")
     parser.add_argument("--distill-value-coef", "--distill_value_coef", dest="distill_value_coef",
                         type=float, default=None,
                         help="VALUE-distillation weight (gen3_exploiter_value_distill_v1): also pour the "
@@ -2936,9 +2940,13 @@ async def main():
         _tt = matchup.trainee_teams
         emit(f"🎯 [MULTI-SPECIALIST] trainee pinned to {len(_tt.pin_strs)} teams (sampled uniformly): "
              f"{', '.join(os.path.basename(f) for f in _tt.pin_files)} (opponents keep the full pool)")
-    elif _specialist_team_str:
+    elif matchup.trainee_teams.pin_str:
+        # Read the TRAINING pin, not `_specialist_team_str` — that one is EVAL-derived and may be a
+        # LIST (a distillation run trains on the full pool but evals on the TAUGHT teams, so
+        # `eval_trainee_teams.kind == "pin_multi"` while `trainee_teams.kind` is not). Calling
+        # `.splitlines()` on it crashed every --distill-coef launch at startup.
         _spec_mons = [ln.split("@")[0].split("(")[0].strip()
-                      for ln in _specialist_team_str.splitlines()
+                      for ln in matchup.trainee_teams.pin_str.splitlines()
                       if ln.strip() and "@" in ln]
         emit(f"🎯 [SPECIALIST] trainee pinned to ONE team from {args.trainee_team}: "
              f"{', '.join(_spec_mons)} (opponents keep the full pool)")
