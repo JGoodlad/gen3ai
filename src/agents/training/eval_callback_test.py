@@ -801,20 +801,25 @@ def test_eval_manifest_records_the_regime(tmp_path):
 
 
 def test_eval_games_override_flows_through_schedule():
-    """--eval-games overrides the per-opponent game count via the _schedule() seam (None → the
-    module default EVAL_GAMES). Both callbacks read _schedule() for the pending cycle AND record
-    the actual cycle size into eval_results.jsonl, so the override is a single-seam change."""
+    """--eval-games and --eval-freq override the cycle size/cadence via the _schedule() seam
+    (None → the module defaults EVAL_GAMES / EVAL_FREQ_STEPS). Both callbacks read _schedule()
+    for the pending cycle AND record the actual cycle size into eval_results.jsonl, so each
+    override is a single-seam change. (gen3_eval_freq_flag_v1 made the cadence an instance
+    attribute too — this test builds via __new__, so it must set both knobs, like __init__ does.)"""
     from agents.training.eval_callback import PerOpponentEvalCallback, EVAL_FREQ_STEPS, EVAL_GAMES
     from agents.training.selfplay_callback import SelfPlayCallback
 
     for cls in (PerOpponentEvalCallback, SelfPlayCallback):
         cb = cls.__new__(cls)
         cb._eval_games = 200
+        cb._eval_freq = EVAL_FREQ_STEPS
         if cls is SelfPlayCallback:
             cb._debug = False
         assert cb._schedule() == (EVAL_FREQ_STEPS, 200), cls.__name__
         cb._eval_games = EVAL_GAMES
         assert cb._schedule() == (EVAL_FREQ_STEPS, EVAL_GAMES), cls.__name__
+        cb._eval_freq = 123_456
+        assert cb._schedule() == (123_456, EVAL_GAMES), cls.__name__
 
 
 def test_eval_manifest_handles_a_multi_team_pin(tmp_path):
