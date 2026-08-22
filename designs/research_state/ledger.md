@@ -1316,3 +1316,42 @@ as a training-time variance reducer) fails BOTH pre-registered gates:
 Method class banked: *gate a variance-reduction lever on measured BINDINGNESS (`train/noise_scale`)
 before pricing the reduction itself* — the estimator-side twin of "gate a lever on whether the
 quantity predicts performance, not whether it is low".
+
+### Three-axis value-target variance decomposition — THE ORDERING (2026-08-21, opus offline probe, 140 decisions × 4×4×4 factorial, gen-17 @24M)
+
+**The ordered impact of the three reroll axes on V(s′), measured once, banked durably**
+(memory: `project_three_axis_value_variance.md`; report `tmp/three_axis_value_variance_report.md`).
+Crossed our-action × opp-action × dice grids per decision, CRN-shared dice across action cells,
+V(s′) via the anchor-proven reroll→materialize→critic path (140/140 reproduce recorded next-V,
+max 4.3e-05). Two weightings, two DIFFERENT questions, two different orderings:
+
+- **Uniform-over-legal (DECISION RELEVANCE): OPP 36.5% ≈ OUR 33.3% > OUR×OPP 16.4% > DICE 13.9%**
+  of within-decision target variance (action axes statistically tied, both ~2.5× dice; CIs
+  battle-clustered).
+- **Behavior-weighted (ESTIMATOR VARIANCE): OPP 59.7% ≫ DICE 26.5% > OUR 10.0% > OUR×OPP 3.7%.**
+- **The single asymmetry causing the divergence is itself the finding**: π is concentrated
+  (median top-action 0.748, entropy 0.70 nats) while **α's opponent belief is nearly FLAT**
+  (behavior/uniform variance ratio 0.970 vs 0.299 for ours) — *the model is confident about
+  itself and agnostic about the opponent*. Surprise rider: DICE RISES under π-weighting
+  (13.9→26.5%) because chosen actions are systematically higher-dice-exposure than the average
+  legal action (~half of which are dice-free switches).
+- **The OUR×OPP interaction is real, not residual** (16.4% uniform, never zero, > dice on 68% of
+  decisions) — the stage-game structure is measurable inside the turn — but collapses to 3.7%
+  under π-weighting, so the joint-matrix case is priced by the DECISION-RELEVANCE column
+  (outcome-latent joint version, counterfactual credit), not by training noise.
+- **Verdict for levers**: marginalize the OPPONENT first, OUR axis only for decision-relevance
+  uses (search teacher / counterfactual label factory / COMA-shaped baselines), the DICE never —
+  AND the bindingness gate is unchanged (noise_scale_ratio 0.05–0.10, ~10–20× over-batched), so
+  no axis is a training-VARIANCE lever today. The ordering's live use is on the BIAS side:
+  on-policy data has ZERO coverage of unsampled actions, and reroll-manufactured counterfactual
+  labels are gated by bias meters (V-vs-MC divergence, calibration, exploiter bounds), not by
+  noise_scale.
+- 🚨 **INSTRUMENT CAVEAT that generalizes — CRN here shares the dice STREAM, not the
+  roll-to-event MAPPING**: `replay_driver.js` swaps `b.prng`, and a different action consumes the
+  stream differently, so a SINGLE-SEED action sweep — exactly what the prober's `lookahead` does —
+  carries ~one dice-variance of contamination and over-read U/O by ~2× here. Any variance claim
+  off that path needs replicated dice + the independent-half cross-product estimator (unbiased
+  under any weighting; validated at zero true effect).
+- **Limits**: move/move rounds only (forced-switch rounds structurally uncovered); 4-of-~7.5
+  legal levels ⇒ main effects are lower bounds; one checkpoint, eval distribution; λ=0.80 scales
+  all four axes' reach equally so the ordering holds.
