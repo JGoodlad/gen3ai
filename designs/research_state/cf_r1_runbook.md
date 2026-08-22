@@ -1,8 +1,9 @@
 # RUNBOOK — R1, the counterfactual value-grounding experiment
 
-> **DRAFT — owner sign-off required before launch.** Written 2026-08-22, after the
-> experiment-readiness batch, so that the arm's rules exist before any of its numbers do. Nothing
-> here is scheduled and nothing here has run.
+> **SIGNED OFF — owner, 2026-08-22.** Written after the experiment-readiness batch so the arm's
+> rules exist before any of its numbers do; signed off the same day. The pre-registration below is
+> now BINDING: edits after this line require new evidence, stated beside the edit. Launch still
+> waits on the producer driver (below) and a training slot.
 >
 > **One thing is still owed and it is not code readiness: the label PRODUCER DRIVER does not
 > exist.** `cf_audit` manufactures labels in the shared v1 schema and the trainer consumes them,
