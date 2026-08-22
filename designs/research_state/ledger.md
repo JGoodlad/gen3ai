@@ -1281,3 +1281,38 @@ exonerated by conditioning; x's Pursuit PURPOSE is the one conviction (its `grou
 needs a coverage ruling before any deletion); c5 awaits its gate. Caveats recorded: gen-15 not
 gen-16; the marginal stratum is selection-conditioned on boosting having worked; KL is
 dependence, not per-fact coverage. The gen-16 §4 baseline MUST be read on the content-only arm.
+
+### Expected-SARSA / chance-marginalized TD targets — KILLED at the gate (2026-08-21, opus offline probe, 247 decisions × k=16 rerolls, gen-17-era checkpoint)
+
+**A DOUBLE NEGATIVE, measured before anything was built.** The candidate lever (average the
+bootstrap target `r + γV(s′)` over k dice rerolls — the fix-both-actions reroll stack repurposed
+as a training-time variance reducer) fails BOTH pre-registered gates:
+
+- **(1) Dice are only 5.4% of one-step TD-target variance** (within-decision var 6.076 vs
+  across-decision 106.447; 4.9% after folding in the material-PBRS reward half; robustness arms
+  0.058/0.068). Below the 10% kill line. Heavy-tailed and that does NOT rescue it: 15.8% of
+  decisions carry ZERO dice variance, and the worst decile holds 77% of what exists — uniform
+  k-marginalization would average nothing on most turns. k-scaling is textbook 1/√k (disjoint-block
+  estimator; ⚠️ method trap: k-of-16 subsampling WITHOUT replacement carries a finite-population
+  correction that fakes a super-1/√k slope — first cut read 0.2497 at k=8 from exactly this).
+- **(2) Gradient noise is NOT binding — `train/noise_scale` exists and says OVER-batched.**
+  All three newest runs launch `--grad-accum-steps 8` (effective batch 16384);
+  noise_scale_ratio 0.05–0.10, i.e. ~10–20× above the advisor band; gen-17's B_simple ends at
+  994 vs the 16384 effective batch. Variance reduction cannot pay when variance is not the
+  constraint (the Mirage-paper lesson, applied BEFORE building).
+- **Reach rider**: production `gae_lambda=0.80` gives the one-step bootstrap only (1−λ)=0.20
+  weight in the λ-return, so 5.4% overstates the reachable fraction further.
+- **Cost, for the record**: 623 ms/decision at k=16 offline (reroll 436 / materialize 167 /
+  critic 21); ~294 ms/target at k=8.
+- **The one live residue — the OPPONENT axis, not the dice**: on a 40-decision stretch arm,
+  opponent-branch V(s′) spread (median std 2.606, variance fraction 0.182) is **1.81× dice**
+  (0.625, 0.084), opp > dice on 25/40. If any marginalization is ever revisited it is the
+  COMA-shaped opponent-marginalized target/baseline — and it must re-clear gate (2), which
+  currently kills it too.
+- **Self-falsification passed**: the `"original"` arm reproduced `recorded_next_V` to max
+  4.8e-05 on all 247 decisions — the reroll→materialize→critic path is exact. 0 errors,
+  0 timeouts. Report + scripts: `tmp/expected_sarsa_probe_report.md` (gitignored scratch).
+
+Method class banked: *gate a variance-reduction lever on measured BINDINGNESS (`train/noise_scale`)
+before pricing the reduction itself* — the estimator-side twin of "gate a lever on whether the
+quantity predicts performance, not whether it is low".
