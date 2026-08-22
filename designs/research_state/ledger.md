@@ -1597,3 +1597,45 @@ meter all landed together; a DRAFT R1 runbook (`cf_r1_runbook.md`) pre-registers
   `cf_labels/`), and the per-decision (α,β) npz capture — the latter is NOT the "wire the stash
   through" job it looked like: `fe.last_cf_evidential` is written only by the train loop, and the
   extractor forward never calls the head, so an honest capture must CALL it at record time.
+
+### The PRODUCER DRIVER lands — R1 is fully executable (2026-08-22, opus agent, `897ab62`)
+
+**`python -m agents.training.cf_producer <run_dir>`** — the last unbuilt piece of the
+counterfactual line: a hand-launched sidecar that watches the tap's ring, replays each record once
+(`obs_materializer.scan_record`, NEW — obs + mask + action INDEX recovered in one replay by
+inverting choices through the real mapper; the two replay players now share `_encode_or_track` so
+they cannot drift on the one step where drift silently changes an obs), scores by a versioned
+priority (critic surprise + policy entropy), rolls the top-N out tight-MC, and writes schema-v1
+labels. Highlights:
+
+- **The composition test carries the strongest assertion of the week**: the obs the producer
+  materializes from a record is **bit-identical (`np.array_equal`) to the obs the LIVE player
+  encoded** into states.npz — the only claim that proves the inverted action history did not
+  desync the encoder's trackers. Passed first run. Real ring → real producer cycle → real
+  `CfLabelBuffer`: ingested == written, 0 skips, digests re-verified, second cycle a no-op.
+- **The mini-run showed the sampler selecting its own target**: a produced row carried
+  `critic_surprise 0.714 == win_prob 0.714 on a lost battle` — the conviction region, self-chosen.
+- **The ECOLOGY DECISION is documented in three places** (module, leaf, runbook caveat): a
+  training record names NO opponent, so v1 rolls out the CURRENT snapshot on BOTH sides at temp
+  1.0; every label says `opponent: "self_current"`, and the known-direction error is stated (a
+  bot-episode label is biased LOW — a weak opponent replaced by a self-like one). Closing it means
+  threading opponent identity through the tap — a named future change, not a silent assumption.
+- **The anchor is the FULL-REPLAY oracle** (recorded dice + scripted commands to termination), a
+  deliberately STRONGER form than cf_audit's — no policy acts, so a failure is unambiguously a
+  defect; a crash counts as failure; failure → exit 3 and no further labels. Crash safety is
+  claim-before-work (state fsync-replaced before rollouts — never double-labels; pinned on the
+  ORDER). Stale-trainer PAUSE (`--stale-checkpoint-minutes` 90) replaces the prompt's lag-guard —
+  the producer IS the snapshot holder, so honesty is stamping, not guarding.
+- **A SECOND wall-clock-seed flake found and fixed** (`cf_audit_integration_test`'s fixture drew a
+  TIE and never reached the anchor arm it tests — stash-verified pre-existing; fixed by redraw,
+  since a fixed seed only relocates the coin flip). Same class as `better_line`'s — this is now a
+  named test-fixture antipattern: *a fixture seeded from the wall clock plays a different battle
+  every run and eventually plays the one that skips the assertion*.
+- Gates: routine suite 5,988 passed exit 0 post-rebase; 47 unit + 2 sim composition tests; all cf
+  pins; static + artifact checks green.
+
+**STATUS: every R1 prerequisite is discharged** — runbook SIGNED OFF (`36a7ab3`), producer built,
+consumer plumbed, meters instrumented, labels evidence-weighted, the evidential head dormant.
+Outstanding beside the training slot: the hidden-information FLOOR probe (in flight) which may
+amend the primary meter's expectation with evidence, the V-transfer baseline column (cheap, named),
+and the ecology-drift decision at launch if the arm's opponent mix is no longer ~90% self-play.
