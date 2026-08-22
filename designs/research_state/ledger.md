@@ -1355,3 +1355,39 @@ max 4.3e-05). Two weightings, two DIFFERENT questions, two different orderings:
 - **Limits**: move/move rounds only (forced-switch rounds structurally uncovered); 4-of-~7.5
   legal levels ⇒ main effects are lower bounds; one checkpoint, eval distribution; λ=0.80 scales
   all four axes' reach equally so the ordering holds.
+
+### Counterfactual label factory — COST MODEL (2026-08-21, opus offline probe, paired A/Bs on gen-17 @24M, self-validating to 0.987)
+
+**A one-ply counterfactual label (K=8 opponent branches, population-mean turn 24.7) costs 162 ms
+TODAY and 28.4 ms OPTIMIZED using only code already in the tree — 5.7×, nothing new written**
+(memory: `project_counterfactual_label_costs.md`; report `tmp/counterfactual_cost_model.md`).
+Anchor: node and rust agree on the label V to exactly 0.0 on 50/50 decisions — bit-identity at
+the LABEL, not just the protocol.
+
+- **The unoptimization was the TRANSPORT, not the critic.** A warm rust `SearchSession` beats the
+  node `reroll_many` path by a PAIRED **289×** (fixed+marginal: node 426 ms + 20.1/arm vs
+  rust-warm 1.93 + 0.168). The owner's compiled-critic hunch was directionally right (the critic
+  IS eager; compiling is free, 5.90× at B=1, max|Δ| 3e-5) and numerically wrong: the critic is
+  2.5% of the bill, so compiling buys 1.25%. ⚠️ Under production BLAS pinning the compiled critic
+  is **0.91× at B=64** — the unpinned 3.13× reading is a scheduler artifact (its own eager series
+  is non-monotonic in B, marking the whole unpinned table invalid).
+- **The post-transport bottleneck is the MATERIALIZER at 91%**: `materialize_decisions` replays
+  the whole prefix from turn 1 for EVERY arm — arm_ms = 4.78 + 0.853·turn (R²=0.996), prefix
+  replay 2.53 + 0.855·turn of it; the branched turn itself is ~0.5 ms and the obs encode ~1.8 ms.
+  Prefix-sharing across a decision's arms is the ONE real build item (batch-aware estimate:
+  ~7.7 ms/label). Profiling trap recorded: cProfile is BLIND through POKE_LOOP (98% in
+  lock.acquire); arming inside a coroutine on the loop shows `LiveView.from_pokemon` at 1084
+  calls/arm = 50% of cumulative.
+- **Coverage math**: 4 nice-10 background cores ≈ **12M labels/day = 1.74% of production
+  decisions at K=4** (0.88% @K=8); 100% would need ~230 cores ⇒ the factory is a prioritized
+  SAMPLER by construction (which the three-axis ordering already prescribes: opponent branches
+  everywhere, our-action branches where π is undecided). Rollout-to-end: 221 ms/line, 792 ms for
+  a win-prob at R=8 — 28× a one-ply label; that is the price of the value-bias rungs 1-2 (MC
+  re-labels on visited + counterfactual-successor states).
+- **Coverage gap found**: the rust `search_driver` cannot open TURN 1 (10/10 decisions, 6/6
+  records; node can) = 3.35% of move decisions — exactly the first decision of every battle —
+  and the error is a JSON `error` on STDOUT with EMPTY stderr, so a stderr-reading caller sees
+  silence. Fix candidate, small.
+- **Method rider**: per-arm costs amortize a ~900 ms per-decision fixed cost — the prior 39.5
+  ms/arm figure was a K≈76 artifact, not the factory's price (the model reproduces it at that K
+  and reprices K=8 at 162 ms/label). *Never quote a per-unit cost without its batch size.*
