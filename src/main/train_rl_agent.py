@@ -1868,6 +1868,14 @@ def build_parser() -> argparse.ArgumentParser:
                              "websocket) more connection churn; the in-process bridge (--use-bridge, the default) is "
                              "preferred for fine shards. >= the per-opponent game count disables sharding (one shard "
                              "per opponent = the original opponent-level behaviour).")
+    parser.add_argument("--eval-freq", "--eval_freq", dest="eval_freq", type=int, default=None,
+                        help="Steps between eval cycles (default None = EVAL_FREQ_STEPS, 2,000,000 — "
+                             "byte-identical to every pre-existing command). Lower it for SHORT arms: a "
+                             "3M exploiter-gate fork at the 2M default gets 1-2 cycles, which cannot meet a "
+                             ">=4-cycle reading discipline; --eval-freq 750000 gives 4. Applies to BOTH the "
+                             "per-opponent bot eval and the self-play eval, so their cadences cannot drift. "
+                             "Eval is non-blocking and skips a cycle while the previous one is still running, "
+                             "so a too-small value self-throttles rather than stalling training.")
     parser.add_argument("--eval-games", "--eval_games", dest="eval_games", type=int, default=None,
                         help="Games per OPPONENT per eval cycle (default: the module EVAL_GAMES, 100). "
                              "Per-cell 95%% CI: n=100 -> +/-0.098, n=200 -> +/-0.069 — raise for tighter "
@@ -3743,6 +3751,7 @@ async def main():
         eval_callback = SelfPlayCallback(
             pool=_pool,
             eval_games=args.eval_games,
+            eval_freq=args.eval_freq,
             snapshot_ladder_games=args.snapshot_ladder_games,
             model_dir=model_dir,
             server_config=server_config,
@@ -3801,6 +3810,7 @@ async def main():
         eval_callback = PerOpponentEvalCallback(
             model_dir=model_dir,
             eval_games=args.eval_games,
+            eval_freq=args.eval_freq,
             server_config=server_config,
             best_model_save_path=os.path.join(model_dir, "best_model"),
             n_workers=args.eval_workers,

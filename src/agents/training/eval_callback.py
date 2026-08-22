@@ -1129,6 +1129,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
         eval_games: int | None = None,
+        eval_freq: int | None = None,
         showdown_port: int | None = None,
         use_showdown_bridge: bool = False,
         compile_extractor: bool = False,
@@ -1147,6 +1148,10 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # n=100 → ±0.098 (95% CI) per cell; n=200 → ±0.069 — the owner opted into 200 (2026-07-21)
         # for tighter sentinel cells at ~2× eval cost (work-stolen, off the training path).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
+        # gen3_eval_freq_flag_v1: the cadence is a KNOB, not a constant. A short gate arm at the
+        # 2M default gets only 1-2 cycles inside a 3M budget, which cannot satisfy a >=4-cycle
+        # discipline. None => EVAL_FREQ_STEPS, so every pre-existing command is byte-identical.
+        self._eval_freq = int(eval_freq) if eval_freq else EVAL_FREQ_STEPS
         self._model_dir = model_dir
         self._server_config = server_config
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the
@@ -1202,7 +1207,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         self.abort_fn = None
 
     def _schedule(self) -> tuple[int, int]:
-        return EVAL_FREQ_STEPS, self._eval_games
+        return self._eval_freq, self._eval_games
 
     def _init_callback(self) -> None:
         if self.best_model_save_path is not None:

@@ -156,6 +156,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         eval_concurrency: int = _EVAL_SUBPROCESS_CONCURRENCY,
         eval_shard_games: int = EVAL_SHARD_GAMES,
         eval_games: int | None = None,
+        eval_freq: int | None = None,
         keep_eval_snapshots: int = 10,
         keep_eval_trace_steps: int = 20,
         keep_stalls: int = KEEP_STALLS_DEFAULT,
@@ -178,6 +179,10 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
         # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
+        # gen3_eval_freq_flag_v1: the cadence is a KNOB, not a constant. A short gate arm at the
+        # 2M default gets only 1-2 cycles inside a 3M budget, which cannot satisfy a >=4-cycle
+        # discipline. None => EVAL_FREQ_STEPS, so every pre-existing command is byte-identical.
+        self._eval_freq = int(eval_freq) if eval_freq else EVAL_FREQ_STEPS
         # Frozen-snapshot ELO ladder: games per pair for the per-promotion round-robin tax
         # (0 = disable). Detached, off the training path — see _spawn_snapshot_ladder_update.
         self._ladder_games = int(snapshot_ladder_games)
@@ -347,7 +352,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
             return 4000, 3  # fast cadence for --debug --self-play smoke tests
-        return EVAL_FREQ_STEPS, self._eval_games
+        return self._eval_freq, self._eval_games
 
     def _on_step(self) -> bool:
         if self._pending is not None:
