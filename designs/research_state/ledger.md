@@ -1513,3 +1513,41 @@ attack surfaces over `a85a3bf` + `6c2cb45`; findings fixed+gated in one commit, 
   with grad it immediately discards (free `no_grad`); per-row npz reopen; per-write full readdir
   on the bridge reader coroutine; the eager CF forward ≈ +6% row-forwards at production shapes
   when the coefficient goes live.
+
+### Beta-distributional cf targets BUILT — evidence weighting + the head that confesses its blur (2026-08-22, opus agent, landed `0baf7d7`, MODEL_CONFIG_VERSION 98)
+
+**Both tiers of the richness-ladder upgrade shipped, dormant by construction** (the cf coefficient
+is still zero everywhere; nothing changes for any run until the experiment).
+
+- **Tier A — `--cf-label-likelihood binomial` (the new default of the never-launched lever):** the
+  scalar cf term's flat BCE becomes the exact binomial NLL — `w = round(label·n_rollouts)`,
+  `NLL = w·softplus(−z) + (n−w)·softplus(z)`, folded as **Σ NLL / Σ n** so a producer changing R
+  never silently rescales the coefficient, and **at n≡1 it is `th.equal`-identical to flat BCE**
+  (pinned). An R=16 label now pulls 4× an R=4 label — correct likelihood weighting, which also
+  discharges the review's #9 (flat-BCE-undocumented) by construction.
+- **Tier B — `CfEvidentialHead`:** Beta(α,β) via softplus+1 off a **detached-always**
+  `value_pooled` read — a pure supervised READOUT, never called by the extractor forward, feeding
+  nothing; built LAST in `__init__` so ON-at-coef-0 is bit-identical, not merely shape-identical.
+  Loss = **Beta-Binomial marginal NLL** against the rollout counts (verified vs
+  `scipy.stats.betabinom.logpmf` to 1.7e-06) + `--cf-evidential-reg`·KL(Beta(α,β)‖Beta(1,1))
+  riding inside the coefficient. Smoke behaves as theory demands: on RANDOM fixture labels the KL
+  pulls precision DOWN toward uniform (3.41→2.71) — the head correctly refuses to claim evidence
+  noise doesn't contain — and `train/cf_evidential_grad_share` reads **exactly 0.0** live (the
+  always-detached contract, measured not asserted).
+- **Versioning:** `cf_evidential` IS in the flag registry (it passes through
+  `build_extractor_arch_kwargs` — the `win_prob_mode` precedent); v97→98 with a
+  setdefault-False migration (a default, not a refusal — the module could not exist before);
+  no `ARCH_SIGNATURE` bump; the three coefficients are the `--opd-coef` class. The agent's own
+  note is worth keeping: with no forward call there is NO shape error anywhere, so
+  `check_compatible` is the ONLY gate that can catch a flipped flag — the version field is
+  load-bearing here in a way it usually is not.
+- **PRE-REGISTERED READ (in the training leaf):** the head cannot fix the blur G0 measured, only
+  confess it — success is the predicted Beta's WIDTH correlating with the measured
+  `sd_true_excess` per stratum. Both cf terms share ONE buffer sample + ONE extractor forward
+  (counted by a test). Declared skip: the per-decision (α,β) npz trace capture — the stash
+  exists (`fe.last_cf_evidential`), nothing writes it yet.
+- **Landing:** rebased clean over the review fixes (`5b8f485` — orthogonal layers); combined-tree
+  verification 4,890 passed exit 0 + static/artifact/registry checks green. One pre-existing
+  flake documented en route: `better_line_integration_test` seeds with a WALL-CLOCK timestamp, so
+  it plays a different battle every run and an unlucky one outruns its recorded command list —
+  flake-class, not load-class; worth a deterministic-seed fix someday.
