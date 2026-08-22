@@ -359,6 +359,14 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   deferred fingerprint aux as a learned strategy descriptor), POET as the revolution-3+ question
   (let the system propose slices), and stepping stones (warm-fork as the weak form; exploiter→
   exploiter transfer as the strong form the task-arithmetic preview could detect).
+- **`win_prob_decomposition.md`** — the five-axis taxonomy of "the critic was wrong", built
+  empirically 2026-08-21/22: luck (single outcome vs tight-MC — 53% of the conviction class),
+  calibration vs RESOLUTION (Murphy split — the blur is the disease), the population/ecology
+  sign-flip, learnable vs the IRREDUCIBLE hidden-information floor (39% of the meter,
+  concentrated — the Salamence coin; determinization as the instrument), and the epistemic layer
+  (the evidential head confessing width). The assembled tree with numbers, the floor-subtraction
+  rules, and the generalizing ladder (sample the outcome / stratify the population / bin the
+  predictions / determinize the hidden state).
 - **`activation_functions.md`** — is ReLU the right nonlinearity for our model? The three
   nonlinearity **tiers** we already live by (generic ReLU trunk = swappable · SB3 `[512,512]` tower =
   tanh by an SB3 *default* we never set · bounded pointer-head tanh = deliberate · the semantic
