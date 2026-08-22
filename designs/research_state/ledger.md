@@ -1551,3 +1551,49 @@ is still zero everywhere; nothing changes for any run until the experiment).
   flake documented en route: `better_line_integration_test` seeds with a WALL-CLOCK timestamp, so
   it plays a different battle every run and an unlucky one outruns its recorded command list —
   flake-class, not load-class; worth a deterministic-seed fix someday.
+
+### Experiment-readiness batch — tasks #28/#29 CLOSED, and the producer's DEFAULT output was unconsumable (2026-08-22, opus agent)
+
+**R1 is now owed nothing but its label-producer driver.** The review's two tasked label-quality
+items, its free perf notes, and the missing reader for the evidential head's own pre-registered
+meter all landed together; a DRAFT R1 runbook (`cf_r1_runbook.md`) pre-registers the arm.
+
+- **REAL BUG found en route, and it was on the DEFAULT path**: the buffer ignored `decision_idx`
+  for `obs_npz` rows and `reshape(-1)`'d a battle's whole obs MATRIX into one vector, which then
+  failed the obs-width GIGO guard. So `cf_audit`'s default output (npz-pointing; `--inline-obs` is
+  the opt-in) was **100% unconsumable, loudly but for the wrong reason** — the warning accused the
+  producer of architecture drift. Verified end-to-end after the fix on real gen-17 traces: 6/6
+  accepted, 0 skips, digests verifying; before it, 6/6 `obs_dim` skips. *Method note: both halves
+  of a two-process contract were tested, and neither test ever ran the other half's real output —
+  the buffer's npz test stored a 1-D vector, which is the one layout the producer never writes.*
+- **#28 (label quality, all three):** dedup on the obs digest keep-NEWEST (`cf/labels_replaced_total`;
+  the measured 5-row-file → fill-6 rewrite case now converges to 5) · **symmetric** staleness on
+  `|age|` with a named one-time warning and `cf/labels_future_total` (a crash-restart rollback made
+  future-dated labels IMMORTAL; the live tell was `cf/label_age_steps_p50` = −4,999,000) · the
+  ObservationDebugger SUPPRESSED (not disabled) around the CF forward, which was being handed 256
+  recorded foreign rows per minibatch as if they were live decisions.
+- **#29 (better_line's interior opponent): DECLARED, not changed.** Greedy argmax at interior plies
+  is kept as the deliberate worst-case-opponent search assumption — sampling there would return
+  lines that beat one draw of a die, an optimistic bias in the direction this tree already pays for
+  — and it is now stated at the site, in the prober leaf, and stamped into every payload as
+  `interior_opponent_regime`, with a gate that fails if the key disappears.
+- **The evidential head's meter has a reader**: `cf_audit` gains `width_vs_blur_spearman` (rank
+  correlation across strata between the confessed Beta width and the measured `sd_true_excess`, with
+  a battle-clustered bootstrap that rebuilds the strata per draw) plus per-decile width/precision
+  columns. A checkpoint with no head OMITS the columns and says so — zeros would render "no head"
+  identically to "no uncertainty" — and a FLAT width scores `None`, not 0, because "wide everywhere"
+  and "width unrelated to blur" are the same null but different diagnoses. Exercised on gen-17 (which
+  predates v98): the no-head leg reports ABSENT, correctly.
+- **Perf, free:** the CF forward runs under `no_grad` unless something wants the graph (the condition
+  computed EXACTLY — `cf_head_only` OR a dead coefficient — because the one arm that needs it is the
+  trunk-open A/B, and silently dropping it there would make both arms head-only); per-file npz LRU;
+  the ring's per-write full readdir throttled 1-in-16 with a declared, gracefully-degrading overshoot
+  bound (the cap is global, so any writer's next sweep collects every other's backlog).
+- **The G3 sub-claim that stood on construction now has a test**: sequential fresh ring objects over
+  one directory maintain the global cap and never double-count — the launcher-restart survival of the
+  tap. Plus `cf/rows_sampled` (rows CONSUMED per `train()`), because residency and throughput are
+  different questions and only the second goes to zero when a producer dies with labels still resident.
+- **Still owed, honestly:** the label-producer DRIVER (nothing yet runs the loop from `cf_records/` to
+  `cf_labels/`), and the per-decision (α,β) npz capture — the latter is NOT the "wire the stash
+  through" job it looked like: `fe.last_cf_evidential` is written only by the train loop, and the
+  extractor forward never calls the head, so an honest capture must CALL it at record time.
