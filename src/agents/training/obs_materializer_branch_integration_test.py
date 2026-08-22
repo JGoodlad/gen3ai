@@ -36,6 +36,7 @@ from poke_env import AccountConfiguration
 from poke_env.player import RandomPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
+import agents.training.obs_materializer as OM
 from agents.training.obs_materializer import (Branch, materialize_branches,
                                               materialize_decisions, materialize_from_record)
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
@@ -177,3 +178,130 @@ def main(n_battles: int) -> None:
 
 if __name__ == "__main__":
     main(int(sys.argv[1]) if len(sys.argv) > 1 else 3)
+
+
+# --------------------------------------------------------------------------------------
+# The two cases the parity gate above EXCLUDES (adversarial review, 2026-08-22)
+# --------------------------------------------------------------------------------------
+# `check_battle` drops every arm whose re-roll `outcome.ended` is true and bounds the replay to
+# ONE decision past the branch — and `lookahead`, the only production caller, filters `ended` the
+# same way. So the restore path written specifically FOR a battle-ending arm (draining
+# `_battle_count_queue`, which poke-env's `|win|` handler `.get()`s, and re-populating the
+# `_trackers` / `_stall_loggers` entries `_battle_finished_callback` EVICTS) had no gate at all: a
+# regression there would wedge the next arm on an empty queue FOREVER, or silently hand it a
+# freshly-constructed tracker. This runs exactly that shape.
+
+def _last_decision(summary, npz):
+    """The LAST mid-battle move decision — where a single re-rolled turn actually ends battles."""
+    best = None
+    for i, inv in enumerate(summary["invocations"]):
+        if (inv.get("phase") == "move_selection" and int(inv["turn"]) >= MIN_TURN
+                and _has_state(npz, i)):
+            best = i
+    return best
+
+
+class _TripwireSnapshot(OM._PlayerSnapshot):
+    """Records a fingerprint of every object `_pin_shared` decided to SHARE rather than copy."""
+
+    def __init__(self, player):
+        super().__init__(player)
+        self.fingerprints = {i: repr(o) for i, o in self._pins.items()}
+        _TRIPWIRES.append(self)
+
+    def drift(self):
+        return [(type(o).__name__, self.fingerprints[i], repr(o))
+                for i, o in self._pins.items() if repr(o) != self.fingerprints[i]]
+
+
+_TRIPWIRES: list = []
+
+
+def check_ending_arms(record, summary, npz) -> int:
+    """Every arm INCLUDING the ones that end the battle, an ending arm FIRST, full suffix."""
+    anchor = _last_decision(summary, npz)
+    if anchor is None:
+        return 0
+    invs = summary["invocations"]
+    turn = int(invs[anchor]["turn"])
+    side = record.side_of(record.trainee_username)
+    other = "p2" if side == "p1" else "p1"
+    actions = np.asarray(npz["actions"], dtype=int)
+    chosen = int(actions[anchor])
+
+    trace = materialize_from_record(
+        record, actions=actions, map_actions_at=anchor, stop_after_decision=anchor)
+    choice_map = trace.action_choices or {}
+    if chosen not in choice_map:
+        return 0
+    rr = reroll_many(record, turn, [
+        {f"{side}_action": ("recorded" if a == chosen else choice_map[a]),
+         f"{other}_action": "recorded", "seed": "original", "label": int(a)} for a in choice_map])
+    keep = [a for a in rr.arms if not a.outcome.get("stuck")]
+    ended = [a for a in keep if a.outcome.get("ended")]
+    if not ended or len(keep) < 2:
+        # The shape under test is "an ending arm, then ANOTHER arm". One arm proves nothing.
+        return 0
+    keep = ended[:1] + [a for a in keep if a is not ended[0]]     # an ENDING arm goes FIRST
+
+    prefix_chunks = list(rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks)
+    prefix_actions = [int(x) for x in actions[:anchor]]
+    kw = dict(username=record.username(side), packed_team=record.packed_team(side), side=side,
+              battle_format=record.format_id, battle_tag=record.battle_tag)   # NO stop_after
+
+    per_arm = [materialize_decisions(
+        prefix_chunks + list(a.p1_chunks if side == "p1" else a.p2_chunks),
+        actions=prefix_actions + [int(a.label)], **kw) for a in keep]
+    branches = [Branch(chunks=list(a.p1_chunks if side == "p1" else a.p2_chunks),
+                       actions=[int(a.label)], label=int(a.label)) for a in keep]
+
+    _TRIPWIRES.clear()
+    original = OM._PlayerSnapshot
+    OM._PlayerSnapshot = _TripwireSnapshot
+    try:
+        shared = materialize_branches(prefix_chunks, branches,
+                                      prefix_actions=prefix_actions, **kw)
+    finally:
+        OM._PlayerSnapshot = original
+
+    assert _TRIPWIRES, "materialize_branches took no snapshot"
+    drift = _TRIPWIRES[-1].drift()
+    assert not drift, (
+        f"{record.battle_tag}: an arm MUTATED a shared 'append-only immutable' record in place — "
+        f"the aliasing contract in `_immutable_record_types` is broken: {drift[:3]}")
+    assert len(_TRIPWIRES[-1]._pins) > 0, "nothing was pinned — the tripwire proves nothing"
+
+    assert len(per_arm) == len(shared)
+    for arm, one, many in zip(keep, per_arm, shared):
+        why = (f"{record.battle_tag} arm {arm.label} "
+               f"(ended={bool(arm.outcome.get('ended'))})")
+        assert len(one.decisions) == len(many.decisions), f"{why}: decision COUNT differs"
+        assert one.actions_complete == many.actions_complete, f"{why}: actions_complete differs"
+        for k, (da, db) in enumerate(zip(one.decisions, many.decisions)):
+            assert da.turn == db.turn, f"{why} decision {k}: turn"
+            assert np.array_equal(da.mask, db.mask), f"{why} decision {k}: action MASK"
+            assert (da.obs is None) == (db.obs is None)
+            if da.obs is not None:
+                assert da.obs.tobytes() == db.obs.tobytes(), (
+                    f"{why} decision {k} (turn {da.turn}): prefix-shared obs is NOT bit-identical "
+                    f"({int(np.count_nonzero(da.obs != db.obs))} dims differ)")
+    return len(keep)
+
+
+def test_a_battle_ENDING_arm_does_not_corrupt_the_arms_after_it():
+    """An arm that ends the battle runs FIRST; every later arm must still be bit-identical.
+
+    Also asserts the SHARING CONTRACT directly: nothing `_pin_shared` decided to share instead of
+    copy may be mutated in place by any arm. That is a stronger statement than obs equality — a
+    corrupted shared record only shows up as an obs difference if some arm happens to read the
+    field that was corrupted.
+    """
+    checked = 0
+    for _ in range(3):        # the anchor must yield at least one ENDING arm; retry a flat battle
+        with tempfile.TemporaryDirectory(prefix="branch_end_") as out_dir:
+            record, summary, npz = record_one_battle(out_dir)
+            checked = check_ending_arms(record, summary, npz)
+        if checked:
+            break
+    assert checked >= 2, ("no battle produced a terminal decision with an ending arm AND a "
+                          "follower — re-run (the opponent is a RandomPlayer)")

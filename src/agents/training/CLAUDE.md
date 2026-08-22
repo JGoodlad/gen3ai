@@ -2882,14 +2882,24 @@ the term trains the head's own params and provably cannot perturb the trunk.
   default 512). Crash-safe (`.tmp` + `os.replace`), filenames sort chronologically
   (`<time_ns>_<pid>_<tag>_reconstruction.json`) so the prune needs no `stat`, and the cap is **GLOBAL** —
   every worker prunes the shared dir and a lost delete race is swallowed, which is what keeps the bound
-  across `n_envs` AND across launcher restarts. The artifact shape is byte-for-byte the one
+  across `n_envs` AND across launcher restarts. **The cap only bounds the directory because the `.tmp`
+  is bounded too**: `prune` matches on `RECON_SUFFIX`, so a `<...>_reconstruction.json.tmp` is invisible
+  to it — a failed write therefore unlinks its own tmp, and `prune` additionally sweeps tmps OLDER than
+  the oldest kept record (a crash between `open` and `os.replace` cannot unlink its own; a tmp being
+  filled right now is newer than every record on disk, so the sweep can never race a writer). Without
+  that, the full disk this module promises to survive leaked one file per episode per worker, forever.
+  The artifact shape is byte-for-byte the one
   `reconstruction._write_artifact` writes, so `ReconstructionRecord.load()` reads a ring file directly.
   A write failure warns once and is swallowed — a full disk must not crash a run. `--cf-records`
   without `--use-bridge` is REFUSED (a websocket run emits no such frame; the flag would be a silent
   no-op).
 - **The LABEL BUFFER (`cf_label_buffer.py`).** Watches `<run_dir>/cf_labels/labels_*.jsonl`, remembering a
   per-file byte OFFSET so an appending producer is read incrementally and a partial trailing line waits
-  for the next poll instead of counting as malformed. Schema v1 is in the module docstring; obs resolve
+  for the next poll instead of counting as malformed. **The offset is keyed on `(name, inode)`, and the
+  map is pruned to the files still on disk** — a producer that DELETES and RECREATES `labels_x.jsonl`
+  (an in-place rotation) gets a new inode, and keying on the name alone made the buffer seek past the
+  new file's first `offset` bytes and drop those rows with no counter and no warning. "Never a silent
+  accept" has a mirror: never a silent DROP. Schema v1 is in the module docstring; obs resolve
   `obs_inline` > `obs_npz` > skip. **Everything unexpected is a COUNTED skip, never a crash and never a
   silent accept**: unknown `schema`, unknown `kind`, malformed JSON, out-of-range label, unresolvable
   obs, an obs whose width ≠ this run's, and an `obs_sha1` that disagrees with its own bytes (the GIGO

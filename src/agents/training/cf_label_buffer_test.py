@@ -11,6 +11,8 @@ import base64
 import hashlib
 import json
 
+from unittest import mock
+
 import numpy as np
 import pytest
 
@@ -330,3 +332,85 @@ def test_ring_tags_are_filename_safe(tmp_path):
     path = ring.write_b64("../../evil/tag", _b64({}))
     assert path is not None and path.parent == tmp_path
     assert ".." not in path.name and "/" not in path.name
+
+
+# --------------------------------------------------------------------------------------
+# the two UNBOUNDED / SILENT paths (adversarial review, 2026-08-22)
+# --------------------------------------------------------------------------------------
+def test_a_failed_ring_write_leaves_no_orphaned_tmp(tmp_path):
+    """The `.tmp` is invisible to the count cap, so a failed write must clean up after itself.
+
+    `prune` only ever considers names ending in RECON_SUFFIX; `<...>_reconstruction.json.tmp` is
+    not one of those. Before this was guarded, a persistently failing write — the FULL DISK the
+    module's docstring explicitly promises to survive — leaked one file per episode per env worker
+    onto the filesystem that was already full, unbounded, and announced it exactly once (measured:
+    5 failed writes left 5 orphans that 6 later successful writes never collected).
+    """
+    ring = CfRecordRing(tmp_path, keep=3)
+    with mock.patch("agents.training.cf_records.os.replace",
+                    side_effect=OSError(28, "No space left on device")):
+        for i in range(5):
+            assert ring.write_record(f"b{i}", {"i": i}) is None
+    assert ring.errors == 5
+    assert list(tmp_path.iterdir()) == [], "a failed write orphaned its .tmp"
+    assert ring.write_record("b9", {"i": 9}) is not None      # still works once the disk is back
+
+
+def test_ring_prune_sweeps_a_tmp_orphaned_by_a_CRASH(tmp_path):
+    """A SIGKILL between `open` and `os.replace` cannot unlink its own tmp — prune must.
+
+    Safe against a live writer by construction: a tmp being filled right now carries a NEWER
+    `time_ns` than every record already on disk, and the sweep only deletes tmps older than the
+    OLDEST KEPT record.
+    """
+    ring = CfRecordRing(tmp_path, keep=2)
+    stale = tmp_path / ("0" * 18 + "1_999_crashed_reconstruction.json.tmp")   # ancient ns prefix
+    stale.write_text("{partial")
+    live = tmp_path / ("9" * 19 + "_999_inflight_reconstruction.json.tmp")    # newer than anything
+    live.write_text("{partial")
+    for i in range(3):
+        ring.write_record(f"b{i}", {"i": i})
+    assert not stale.exists(), "a crash-orphaned .tmp was never collected"
+    assert live.exists(), "the sweep deleted a tmp a concurrent writer may still be filling"
+    kept = [p.name for p in tmp_path.iterdir() if p.name.endswith("_reconstruction.json")]
+    assert len(kept) == 2
+
+
+def test_a_recreated_label_file_is_read_from_the_START(tmp_path):
+    """A producer that DELETES and RECREATES `labels_x.jsonl` must not lose its first rows.
+
+    The byte offset is keyed on (name, INODE). Keyed on the name alone the buffer seeks past the
+    NEW file's first `offset` bytes: those rows vanish with no skip counter and no warning — the
+    one outcome this buffer's design says is impossible ("never a silent accept" has a mirror:
+    never a silent DROP). Measured before the inode half existed: a recreated 3-row file ingested 1.
+    """
+    p = _write(tmp_path, [_row(policy_step=100), _row(policy_step=100)], name="labels_a.jsonl")
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    assert buf.poll(100) == 2
+    p.unlink()
+    _write(tmp_path, [_row(policy_step=200) for _ in range(3)], name="labels_a.jsonl")
+    assert buf.poll(200) == 3, "rows of a recreated label file were silently skipped"
+    assert len(buf) == 5
+    assert buf.skipped_total == 0
+
+
+def test_a_same_size_rewrite_of_a_label_file_is_not_silently_ignored(tmp_path):
+    """The nastier shape of the same defect: rewritten IN PLACE at the identical byte length."""
+    p = _write(tmp_path, [_row(label=0.1, policy_step=100)], name="labels_a.jsonl")
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    assert buf.poll(100) == 1
+    p.unlink()
+    _write(tmp_path, [_row(label=0.9, policy_step=100)], name="labels_a.jsonl")   # same length
+    assert buf.poll(100) == 1, "a recreated same-size file was skipped as 'nothing new'"
+
+
+def test_the_offset_map_forgets_files_that_are_gone(tmp_path):
+    """One entry per label file FOREVER is a slow leak on a multi-day run; track the DIRECTORY."""
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    for i in range(5):
+        p = _write(tmp_path, [_row(policy_step=100)], name=f"labels_{i}.jsonl")
+        buf.poll(100)
+        p.unlink()
+    buf.poll(100)                       # the poll that observes the last file is gone
+    assert buf.ingested_total == 5
+    assert buf._offsets == {}, "the offset map grew one entry per label file ever seen"

@@ -108,7 +108,12 @@ class CfLabelBuffer:
         self.capacity = max(1, int(capacity))
         self.lag_bound = max(0, int(lag_bound))
         self._rows: "deque[CfLabel]" = deque()
-        self._offsets: Dict[str, int] = {}
+        # name -> (inode, byte offset already consumed). The INODE is half the key on purpose: a
+        # producer that DELETES and RECREATES `labels_x.jsonl` (a restart that rotates in place)
+        # gets a new inode, and keying on the name alone would seek past the new file's first
+        # `offset` bytes and drop those rows SILENTLY — no skip counter, no warning, just missing
+        # labels. Measured before this was a tuple: a recreated 3-row file ingested 1 row.
+        self._offsets: Dict[str, tuple] = {}
         # Counters — monotonic for the whole process lifetime, so a TB curve of
         # `labels_ingested_total` going FLAT is unambiguous evidence the producer stopped.
         self.ingested_total = 0
@@ -127,18 +132,29 @@ class CfLabelBuffer:
         if not self.dir.is_dir():
             return 0
         accepted = 0
+        seen = set()
         for path in sorted(self.dir.glob(_LABEL_GLOB)):
+            seen.add(path.name)
             accepted += self._ingest_file(path, current_step)
+        # Forget files that are no longer on disk, so the offset map tracks the DIRECTORY rather
+        # than growing one entry per label file ever seen for the life of a multi-day run.
+        for gone in [k for k in self._offsets if k not in seen]:
+            del self._offsets[gone]
         self.expire(current_step)
         return accepted
 
     def _ingest_file(self, path: Path, current_step: int) -> int:
         key = path.name
-        start = self._offsets.get(key, 0)
         try:
-            size = path.stat().st_size
+            st = path.stat()
         except OSError:                                            # pragma: no cover - defensive
             return 0
+        size = st.st_size
+        prev_ino, start = self._offsets.get(key, (st.st_ino, 0))
+        if prev_ino != st.st_ino:
+            # A DIFFERENT FILE now wears this name (the producer rotated/recreated it). Its bytes
+            # have nothing to do with the offset we remembered — read it from the beginning.
+            start = 0
         if size < start:
             # The file was TRUNCATED or replaced under us (a producer restart). Re-read it whole
             # rather than seeking past its new end and silently ingesting nothing forever.
@@ -159,7 +175,7 @@ class CfLabelBuffer:
         # Everything up to the last newline is complete; the remainder (if any) is a line the
         # producer has not finished writing, and is deliberately NOT advanced past.
         consumed = data[: cut + 1]
-        self._offsets[key] = start + len(consumed)
+        self._offsets[key] = (st.st_ino, start + len(consumed))
         accepted = 0
         for line in consumed.splitlines():
             if not line.strip():

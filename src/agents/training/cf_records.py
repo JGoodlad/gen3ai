@@ -52,6 +52,11 @@ from utils.bridge.reconstruction import RECON_SUFFIX
 # tens of KB each, so the whole ring is order tens of MB.
 DEFAULT_KEEP = 512
 
+# Filename shape: `<time_ns:019d>_<pid>_<tag><RECON_SUFFIX>`, with an in-flight write at the same
+# name + `.tmp`. Both constants are read by `prune`'s orphan sweep.
+_NS_DIGITS = 19
+_TMP_SUFFIX = RECON_SUFFIX + ".tmp"
+
 
 class CfRecordRing:
     """A bounded directory of recent training-episode reconstruction records.
@@ -89,9 +94,22 @@ class CfRecordRing:
             stem = f"{time.time_ns():019d}_{os.getpid()}_{tag}"
             path = self.dir / f"{stem}{RECON_SUFFIX}"
             tmp = path.with_suffix(path.suffix + ".tmp")
-            with open(tmp, "w") as f:
-                json.dump({**raw, "battle_tag": battle_tag or tag}, f)
-            os.replace(tmp, path)
+            try:
+                with open(tmp, "w") as f:
+                    json.dump({**raw, "battle_tag": battle_tag or tag}, f)
+                os.replace(tmp, path)
+            except Exception:
+                # THE TMP MUST NOT SURVIVE A FAILED WRITE. `prune` only ever sees names ending in
+                # RECON_SUFFIX, so a `<...>.json.tmp` is invisible to the count cap — a persistently
+                # failing write (the full disk this module explicitly promises to survive) would
+                # otherwise leak one file per episode per worker, unbounded, onto the filesystem
+                # that is already full. Measured before this line existed: 5 failed writes left 5
+                # orphans that 6 later successful writes never collected.
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+                raise
             self.written += 1
             self.prune()
             return path
@@ -104,9 +122,23 @@ class CfRecordRing:
     def prune(self) -> int:
         """Delete oldest files until at most ``keep`` remain. Returns how many were deleted."""
         try:
-            names = sorted(p.name for p in self.dir.iterdir() if p.name.endswith(RECON_SUFFIX))
+            entries = sorted(p.name for p in self.dir.iterdir())
         except FileNotFoundError:                                  # pragma: no cover - defensive
             return 0
+        names = [n for n in entries if n.endswith(RECON_SUFFIX)]
+        # ORPHANED `.tmp` SWEEP. An in-process write failure now unlinks its own tmp, but a
+        # SIGKILL / power loss between `open` and `os.replace` cannot — and the count cap never
+        # sees a `.tmp`, so those would accumulate forever. A live tmp is always NEWER than every
+        # record on disk (its name carries the ns at which it was opened), so deleting only tmps
+        # older than the OLDEST KEPT record can never race a writer.
+        if names:
+            watermark = names[0][:_NS_DIGITS]
+            for name in entries:
+                if name.endswith(_TMP_SUFFIX) and name[:_NS_DIGITS] < watermark:
+                    try:
+                        (self.dir / name).unlink()
+                    except OSError:
+                        pass
         excess = len(names) - self.keep
         if excess <= 0:
             return 0
