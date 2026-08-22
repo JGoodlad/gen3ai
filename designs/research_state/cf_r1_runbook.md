@@ -2,15 +2,37 @@
 
 > **SIGNED OFF — owner, 2026-08-22.** Written after the experiment-readiness batch so the arm's
 > rules exist before any of its numbers do; signed off the same day. The pre-registration below is
-> now BINDING: edits after this line require new evidence, stated beside the edit. Launch still
-> waits on the producer driver (below) and a training slot.
+> now BINDING: edits after this line require new evidence, stated beside the edit. Launch now waits
+> only on a training slot.
 >
-> **One thing is still owed and it is not code readiness: the label PRODUCER DRIVER does not
-> exist.** `cf_audit` manufactures labels in the shared v1 schema and the trainer consumes them,
-> but nothing yet runs the loop — a background process that watches `<run>/cf_records/`, picks
-> decisions by a declared priority, rolls them out, and drops label files into `<run>/cf_labels/`.
-> That is the last build item before this runbook is executable, and it is roughly "`cf_audit`'s
-> main loop pointed at the ring instead of at eval traces, on a timer".
+> **PREREQUISITE DISCHARGED — the label PRODUCER DRIVER exists** (`agents/training/cf_producer.py`,
+> 2026-08-22). *This edit changes no rule: it records that the one build item the sign-off named as
+> outstanding has landed. The pre-registration below is untouched.* Run it as a detached sidecar
+> beside the arm:
+>
+> ```bash
+> export PYTHONPATH=$PYTHONPATH:src && nohup nice -n 10 python -m agents.training.cf_producer \
+>     models/<arm> --rollouts 8 --top-n 3 --max-labels-per-hour 2000 --impl rust \
+>     > models/<arm>/cf_producer.log 2>&1 &
+> ```
+>
+> It watches `<run>/cf_records/`, reloads the freshest `checkpoints/` snapshot each cycle (stamping
+> its step on every label), ranks decisions by the declared, versioned
+> `cf_producer_priority_v1` sampler (`1.00·critic_surprise + 0.35·policy_entropy`), rolls the top
+> `--top-n` out `--rollouts` times, and writes `<run>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`.
+> `tail -f` the log for its per-cycle heartbeat; `<run>/cf_producer_state.json` is the readable
+> state. A failed anchor exits **3** and produces nothing further.
+>
+> ⚠️ **THE ECOLOGY NOTE, and it is a caveat on this arm's labels, not a detail.** A training record
+> carries **no opponent identity** — the tap's `__RECON__` holds the seed, both teams and the
+> committed choices, and nothing that names the policy on the other side. So v1 rolls out with the
+> **CURRENT snapshot playing BOTH sides, stochastic at temp 1.0**: a documented approximation
+> matching the ~90% self-play share of the training mixture, wrong in a known direction for the
+> rest (a bot-opponent episode gets a stronger, self-like opponent, so that label is biased LOW).
+> Every row says `opponent: "self_current"` — never a bot name it cannot verify. **R1's labels are
+> therefore measured against the self-play ecology**, which is the population §2's primary meter
+> must be read against too. Closing the approximation means threading the opponent's identity
+> through the training-side tap.
 
 Gate **G4** of [`designs/ai_v10/design_counterfactual_value_grounding.md`](../ai_v10/design_counterfactual_value_grounding.md).
 R1 only, alone: tight Monte-Carlo P(win) labels on **visited** states, delivered to the **win-prob
@@ -29,7 +51,8 @@ A fork of the current base at a snapshot boundary, with the label loop live:
 --cf-label-lag-steps 150000        # default; one production PPO iteration
 ```
 
-plus the background producer (not yet built) writing `<run>/cf_labels/labels_*.jsonl`.
+plus the background producer (`python -m agents.training.cf_producer models/<arm>`, launch line in
+the header) writing `<run>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`.
 
 Control arm: the same fork, same seed policy, **without** `--cf-winprob-coef` (the tap may stay on
 in both — it is byte-identical to the update and the records are useful either way).
@@ -76,7 +99,10 @@ python -m agents.training.cf_audit models/<arm> --rollouts 8 --states 400
   within-decile spread is 0.11–0.36. **A re-centred head would score a success on the wrong meter.**
 - **HELD OUT is load-bearing.** The producer's own labelled states are training data for this term;
   measuring the meter on them measures memorisation. The audit must draw from a trace step (or a
-  battle set) the producer did not consume, and the runbook records which.
+  battle set) the producer did not consume, and the runbook records which. *(As shipped the two are
+  structurally disjoint — `cf_producer` reads `<run>/cf_records/` and `cf_audit` reads
+  `<run>/eval_traces/` — so the held-out property holds by construction rather than by discipline.
+  Record the audited `step_N` anyway; "by construction" is a claim about today's code.)*
 - Comparison is arm vs control at matched step and matched sampler version, with the audit's
   battle-clustered CIs. Never quote a mid-run number as a result.
 

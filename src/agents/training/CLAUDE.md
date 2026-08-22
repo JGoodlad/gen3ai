@@ -2891,8 +2891,8 @@ player's whole battle/tracker state at the branch decision, and restores it per 
 The **trainer-side plumbing** for `designs/ai_v10/design_counterfactual_value_grounding.md` — its gate
 **G3**, which is explicitly "tap + buffer + flags at coefficient zero, byte-identity gated". Rung **R1**
 only: tight Monte-Carlo P(win) labels, delivered to the **win-prob head**. The label PRODUCER is a
-separate, out-of-process program; **nothing here produces a label**, and the two halves share only a
-file format.
+separate, out-of-process program (`cf_producer.py`, § *The label PRODUCER DRIVER* below);
+**nothing in this section produces a label**, and the two halves share only a file format.
 
 **Why the win-prob head and why head-only first.** The G0 bias map (ledger 2026-08-22; 2,204 tight-MC
 labels) found the head's defect is **RESOLUTION, not an optimism offset** — population-mean gaps are
@@ -3136,6 +3136,127 @@ heads still receiving their own gradients under `no_grad`, and the debugger supp
 (including on an exception). `main/cf_flags_test.py` covers
 the defaults, both `--no-` spellings, the three new refusals and `checkargs`. End-to-end: a
 `--debug --steps 10000` CPU smoke with fixture labels built from REAL episode obs.
+
+### The label PRODUCER DRIVER (`cf_producer.py`) — the piece that runs the loop
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && nohup nice -n 10 python -m agents.training.cf_producer \
+    models/<run> [--rollouts 8] [--top-n 3] [--records-per-cycle 4] \
+    [--max-labels-per-hour 2000] [--anchor-every 50] [--impl rust] \
+    > models/<run>/cf_producer.log 2>&1 &
+```
+
+The tap rings records; the buffer consumes label rows; **this walks one to the other.** It is a
+long-lived **standalone sidecar run beside a live trainer** — the `snapshot_ladder` /
+`bot_matchup_matrix` pattern — and deliberately NOT auto-spawned by the trainer: producer and
+consumer share only a file format (that is `cf_label_buffer`'s whole premise), and a producer the
+trainer owned would make a label-path failure a *training* failure.
+
+Each cycle: poll `<run>/cf_records/` for unprocessed records → refresh the freshest `checkpoints/`
+snapshot (via `latest.txt`, else the highest-stepped zip; its step is stamped on every label) →
+replay each record ONCE (which yields the realized outcome, every decision's obs, its mask, its
+action index and its committed choice string, via `obs_materializer.scan_record`) → forward the
+snapshot over the candidates → label the top `--top-n` by the declared priority → roll each out
+`--rollouts` times → write one NEW file per batch to
+`<run>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`.
+
+⚠️ **THE ECOLOGY DECISION — read this before quoting any label this producer wrote.**
+A training record carries **no opponent identity**. The tap's `__RECON__` frame holds the resolved
+seed, both packed teams and the committed choices, and nothing that says *which policy* sat on the
+other side — a self-play pool snapshot, one of the nine heuristic bots, or the trainee's own
+weights. The label therefore cannot name the opponent it was measured against, and a value claim
+that cannot name its population is not a value claim (the G0 rule: *never quote "the critic is
+optimistic by X" without naming the population — the sign depends on it*). So v1 makes the
+approximation **explicit rather than guessed**: every rollout is played by the **CURRENT snapshot
+on BOTH sides, sampling stochastically at temperature 1.0** — the regime the training actor itself
+plays in. That matches the ~90% self-play share of the training mixture, and it is wrong in a
+KNOWN direction for the rest: on an episode whose opponent was a bot, a weaker opponent is replaced
+by a stronger self-like one, so that label is biased LOW. Every row carries
+`opponent: "self_current"` — never a bot name it cannot verify — so a reader can always tell a
+producer label from a `cf_audit` label, whose opponent IS identified. Closing the approximation
+means threading the opponent's identity through the training-side tap; it is not a change to
+`cf_producer.py`. **Stochastic is the load-bearing half of the regime**, not a style: a greedy copy
+of a net is strictly stronger than a temp-1.0 sample of it, and greedy rollouts biased the prober's
+sentinel labels LOW by a measured +0.037 [+0.007, +0.066].
+
+**Which side is the trainee.** A training record names none, so `_trainee_side` answers from the
+transport's own invariant: `BridgeSession` seats `env.agent1` — the trainee — on **p1**, always. A
+record that DOES name a trainee (an eval sibling handed to this tool) is honoured instead.
+
+**The sampler is DECLARED and VERSIONED** (`cf_producer_priority_v1`), written into the state file
+AND every label row, because a silent priority change is a distribution-shift confound for every
+downstream readout (design decision-of-record 3):
+
+| term | what | weight |
+|---|---|---|
+| `critic_surprise` | `\|P(win\|s) − realized outcome\|` — the **conviction region** G0 measured at +0.23, and the population R1 exists to supervise. A single realized outcome cannot say whether the head was wrong or the dice were (53% of that class was genuinely winning); tight-MC labels are the only instrument that separates them, so they are spent here first | **1.00** |
+| `policy_entropy` | the masked action distribution's entropy ÷ `log(n_legal)` — the decisions the policy has not made up its mind about. **Normalized by the support size** so a 2-way coin flip outranks a 9-way near-certainty, which raw entropy inverts | **0.35** |
+
+A tie (the turn cap) scores outcome **0.5**, not a loss — it is uninformative about conviction, not
+evidence the head was wrong. A checkpoint with **no win-prob head** has no surprise term at all;
+the producer says so once and ranks on entropy alone rather than reading a missing head as a
+confident 0.0. Candidates are start-of-turn **move rounds** at turn ≥ 2 only (a forced-switch round
+has no valid recorded answer to script, and the offline driver cannot open turn 1 — the same
+declared gap `cf_audit` carries).
+
+**Crash safety, and what it costs.** A record is claimed in `<run>/cf_producer_state.json` and the
+state file is **fsync-replaced BEFORE its rollouts run**. So a crash mid-record loses that record's
+labels and can NEVER double-label. That direction is deliberate: the buffer dedups on the obs
+digest, so a duplicate is survivable — but it is also a silent re-weighting of the declared
+sampler, and a record aged out of the ring unprocessed is simply a record that was not labelled.
+Missing a label is free; mis-weighting the sampler is not. Pinned on the ORDER (the state file must
+already be durable when `process_record` raises), not argued.
+
+**The anchor rule, inherited from `cf_audit`.** At startup and every `--anchor-every` records, one
+record is replayed FULLY SCRIPTED through the live bridge (`divergence_turn=None` — the correctness
+oracle) and must reproduce the winner the offline replay driver reports. On failure the producer
+**exits 3 and writes nothing further**: a factory whose replay is not exact is GIGO, and every
+label after it would be a measurement of the bug. This anchor is *stronger* than `cf_audit`'s —
+nothing is played by a policy, so a failure is unambiguously a defect rather than a die roll. An
+anchor that CRASHED counts as a FAILURE, never a pass.
+
+**Observability.** A separate process has no TensorBoard, so it prints one **heartbeat line per
+cycle** and keeps `<run>/cf_producer_state.json` human-readable (indented; sampler + weights +
+totals + the last heartbeat + skip reasons):
+
+```
+[cf_producer] cycle 2 | snapshot step 29,867,520 | records 1 pending / 3 done | labels 2
+              (+6 total, 6/h) | anchor 1/1 | PRODUCING | load 23.6 | 9.2s
+```
+
+The trainer-side half of the contract is the `cf/*` scalars — `cf/labels_ingested_total` going flat
+is what a dead producer looks like from over there (see the R1 runbook's launch-window table).
+
+**Two guards on running beside a live trainer.** `--max-labels-per-hour` (default 2000, a sliding
+one-hour window) keeps it a sidecar. `--stale-checkpoint-minutes` (default 90) **pauses production**
+when no NEW checkpoint has appeared for that long — the trainer is probably gone, and a producer
+grinding against a frozen snapshot either burns the box filling a buffer whose rows will expire, or
+teaches the current policy an ancestor's values. It keeps WATCHING (a restarted trainer resumes it)
+and announces itself exactly once in each direction. `--lag-warn-steps` (default 150 000, matching
+the buffer's `DEFAULT_LAG_BOUND`) warns once when the snapshot in hand falls that far behind the
+newest checkpoint.
+
+**`obs_materializer.scan_record`** is the new read primitive under it. An eval trace ships its obs
+and action indices in `states.npz`; a training record ships **neither** — only the seed, the teams
+and the committed choice strings — so the only route to a training decision's observation is to
+replay the one-sided protocol AND recover the action history by inverting those choices through the
+real mapper. `scan_record` does both in ONE replay and returns `RecordDecision(index, turn, action,
+choice, mask, obs)` rows. It shares `_InvertingReplayPlayer` with `infer_action_indices` (which
+stays track-only), and both go through one `_encode_or_track` step so the two replay players cannot
+drift on the one operation where drift would silently change an obs rather than fail.
+
+**Tests.** `cf_producer_test.py` (pure: the priority arithmetic incl. the entropy normalization and
+the tie rule, the state file's claim-before-work order and its bounded processed set, the throttle
+and its sliding window, the stale-trainer pause + resume, the anchor's refusal / cadence /
+crash-is-a-failure, the ecology field on every row, checkpoint resolution, and that every help
+string renders). **The deliverable is `cf_producer_integration_test.py` (`sim`)**: a REAL bridge
+battle → the REAL `CfRecordRing` in the TRAINING tap's shape (**`trainee_username` stripped**) →
+ONE REAL producer cycle → the REAL `CfLabelBuffer`, asserting every row INGESTED with **zero skips**,
+digests verifying, correct `policy_step`, and — the strongest assertion in the file — that the obs
+the producer *materialized* is **bit-identical** to the obs the LIVE player encoded, which is the
+only thing that proves the inverted action history did not desync the encoder's trackers. Both
+halves of a two-process contract had unit tests when the last two contract bugs shipped; neither
+test ever ran the other half's real output, which is why this file runs the composition.
 
 ## Public-replay value aux — V_pub — DELETED (v88 `gen3_dead_flag_purge_v1`)
 

@@ -45,6 +45,8 @@ pytestmark = pytest.mark.sim
 
 STEP = 1000
 OPPONENT = "random"
+#: How many times `_build_run_dir` will redraw a battle that ended in a DRAW (see its docstring).
+_MAX_DRAWS = 4
 
 
 class _RandomPolicySession:
@@ -101,23 +103,40 @@ class _RandomPolicySession:
 
 
 def _build_run_dir(root: str) -> str:
-    """Play one real battle and lay it out the way a run's eval_traces tree is."""
+    """Play one real DECIDED battle and lay it out the way a run's eval_traces tree is.
+
+    ⚠️ It REDRAWS on a tie, up to `_MAX_DRAWS` times. `build_frame` skips a battle whose result is
+    neither win nor loss (a 250-turn-cap draw), so a drawn game leaves the frame EMPTY and
+    `cf_audit.main` returns 2 at "no labelable decisions" — never reaching the anchor arm the
+    refusal test is about. The seed is the wall clock, so that was a real intermittent RED on main
+    (observed 2026-08-22, one run in a few dozen) and the same flake class as
+    `better_line_integration_test`'s wall-clock seed. Redrawing is the fix that keeps the battle
+    real; a fixed seed would only move the coin flip to a different constant."""
     trace_dir = os.path.join(root, "eval_traces", f"step_{STEP}", OPPONENT)
     os.makedirs(trace_dir, exist_ok=True)
-    ts = int(time.time() * 1000) % 100000
     pool = TeamLoader().get_all_teams()
-    trainee = RecordingFuzzPlayer(
-        out_dir=trace_dir, rng_seed=ts, battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"CAt{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1)
-    opp = RandomPlayer(
-        battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"CAo{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1))
-    prefix = trainee.trace_prefixes[0]
+    prefix = None
+    for draw in range(_MAX_DRAWS):
+        ts = (int(time.time() * 1000) + draw) % 100000
+        trainee = RecordingFuzzPlayer(
+            out_dir=trace_dir, rng_seed=ts, battle_format="gen3ou", team=Gen3Teambuilder(pool),
+            account_configuration=AccountConfiguration(f"CAt{ts}", "pw"),
+            server_configuration=LocalhostServerConfiguration,
+            start_listening=False, max_concurrent_battles=1)
+        opp = RandomPlayer(
+            battle_format="gen3ou", team=Gen3Teambuilder(pool),
+            account_configuration=AccountConfiguration(f"CAo{ts}", "pw"),
+            server_configuration=LocalhostServerConfiguration,
+            start_listening=False, max_concurrent_battles=1)
+        asyncio.run(run_local_battles(trainee, opp, 1))
+        cand = trainee.trace_prefixes[0]
+        with open(cand + "_summary.json") as f:
+            result = ((json.load(f).get("meta") or {}).get("result") or "").lower()
+        if result in ("win", "loss"):
+            prefix = cand
+            break
+        os.remove(cand + "_summary.json")     # a drawn game would leave an unusable trace behind
+    assert prefix is not None, f"{_MAX_DRAWS} battles in a row ended in a draw"
 
     # The fuzz recorder has no model, so it records no win-prob head output. Synthesise a
     # SPREAD of confidences (seeded) so the stratifier has deciles to stratify over.

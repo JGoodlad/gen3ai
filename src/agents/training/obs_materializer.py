@@ -60,6 +60,16 @@ eval battles / 59 decisions / 452 arms: **59/59 byte-identical, 15.4 → 5.3 ms 
 arm (2.91×)**, rising with the branch turn (3.7–3.9× at turn 26–28) because the
 prefix cost it removes is the part that is linear in the turn.
 
+Reading a record that has NO trace beside it (:func:`scan_record`)
+-----------------------------------------------------------------
+An eval trace ships its obs and its action indices in ``states.npz``. A **training**
+reconstruction record — what the ``--cf-records`` tap (``agents.training.cf_records``) rings —
+ships neither: only the seed, both packed teams and the committed choice strings. So the only
+route to a training decision's observation is to replay the one-sided protocol AND recover the
+action history by inverting those choices through the real mapper. :func:`scan_record` does both
+in one replay and returns :class:`RecordDecision` rows (obs, mask, action index, choice string).
+It is what ``agents.training.cf_producer`` reads a ring record with.
+
 Known limit: a battle containing a true ``[Invalid choice]`` error round cannot
 be mirrored exactly (poke-env answers those with a coin-flip default); the
 server-authoritative mask makes them no-ops in practice. The
@@ -148,6 +158,28 @@ class _ReplayObsPlayer(Gen3Player):
     def done(self) -> bool:
         return self._actions_exhausted or self._stopped
 
+    def _encode_or_track(self, battle, i: int):
+        """``(obs, mask)`` for decision ``i``, or ``None`` when this call is NOT a decision.
+
+        Encode the obs only where the caller needs it (``encode_only_at``); elsewhere just TRACK
+        (the tracker advances identically, the ~80%-cost encode is skipped → ``obs`` is None). The
+        index ``i`` is this decision's position BEFORE the append (a no-decision ``mask.sum()==0``
+        call doesn't append), so it lines up with the caller's ``encode_only_at`` indices.
+
+        Shared with :class:`_InvertingReplayPlayer` so the two replay players cannot drift on the
+        one step where drift would silently change an obs.
+        """
+        if self._encode_only_at is None or i in self._encode_only_at:
+            obs_dict = self.embed_battle(battle)
+            mask = obs_dict["action_mask"]
+            if int(mask.sum()) == 0:
+                return None
+            return np.asarray(obs_dict["observation"], dtype=np.float32), mask
+        _legal, mask, _tracker = self.track_decision(battle)
+        if int(mask.sum()) == 0:
+            return None
+        return None, mask
+
     def choose_move(self, battle):
         # Mirror EvalRLPlayer.choose_move → RLPlayer._predict_best_action (see
         # module header). Order of operations is load-bearing.
@@ -157,21 +189,10 @@ class _ReplayObsPlayer(Gen3Player):
         if self.done:
             return self.choose_default_move()
         i = len(self._materialized)
-        # Encode the obs only where the caller needs it (encode_only_at); elsewhere just TRACK (the
-        # tracker advances identically, the ~80%-cost encode is skipped → obs=None). The index `i` is
-        # this decision's position BEFORE the append (a no-decision mask.sum()==0 call doesn't append),
-        # so it lines up with the caller's encode_only_at indices.
-        if self._encode_only_at is None or i in self._encode_only_at:
-            obs_dict = self.embed_battle(battle)
-            mask = obs_dict["action_mask"]
-            if int(mask.sum()) == 0:
-                return self.choose_default_move()
-            obs = np.asarray(obs_dict["observation"], dtype=np.float32)
-        else:
-            _legal, mask, _tracker = self.track_decision(battle)
-            if int(mask.sum()) == 0:
-                return self.choose_default_move()
-            obs = None
+        step = self._encode_or_track(battle, i)
+        if step is None:
+            return self.choose_default_move()
+        obs, mask = step
         self._materialized.append(
             MaterializedDecision(obs=obs, mask=np.asarray(mask), turn=battle.strict_view().turn))
         if i == self._map_actions_at:
@@ -571,13 +592,19 @@ def materialize_branches(
 class _InvertingReplayPlayer(_ReplayObsPlayer):
     """Like :class:`_ReplayObsPlayer`, but instead of consuming a provided action-index list it
     RECOVERS each decision's action index by inverting the side's recorded sim-choice string through
-    the real mapper. Used to reconstruct the OPPONENT's action-index history (the trace records only
-    the trainee's actions) so its one-sided obs can be materialized faithfully."""
+    the real mapper. Two callers: the OPPONENT's action-index history for an interior search ply
+    (the trace records only the trainee's actions), and :func:`scan_record`'s read of a TRAINING
+    record, which has no recorded actions for either side."""
 
     def __init__(self, *, recorded_choices: Sequence[str], **kwargs):
         super().__init__(replay_actions=(), **kwargs)
         self._queue = list(recorded_choices)
         self.inverted_actions: List[int] = []
+        # The recorded sim-choice STRING that was accepted at each decision — the same list
+        # `inverted_actions` holds the index form of. A counterfactual that wants to replay "the
+        # action that was actually taken" needs the string (that is what the sim eats), and
+        # re-deriving it from the index would be a second mapping implementation.
+        self.accepted_choices: List[str] = []
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "REPLAY_STALL")
@@ -585,21 +612,25 @@ class _InvertingReplayPlayer(_ReplayObsPlayer):
             return forfeit
         if self._stopped:
             return self.choose_default_move()
-        # Inversion needs only the MASK (to map choices via the real mapper), never the obs — so this
-        # replay is TRACK-ONLY throughout (skip the ~80%-cost encode at every decision).
-        _legal, mask, _tracker = self.track_decision(battle)
-        if int(mask.sum()) == 0:
-            return self.choose_default_move()
+        # Inversion needs only the MASK (to map choices via the real mapper); the obs is encoded only
+        # where the caller asked for it (`encode_only_at`; `infer_action_indices` asks nowhere, so it
+        # stays TRACK-ONLY throughout and skips the ~80%-cost encode at every decision).
         i = len(self._materialized)
+        step = self._encode_or_track(battle, i)
+        if step is None:
+            return self.choose_default_move()
+        obs, mask = step
         self._materialized.append(MaterializedDecision(
-            obs=None, mask=np.asarray(mask), turn=battle.strict_view().turn))
+            obs=obs, mask=np.asarray(mask), turn=battle.strict_view().turn))
         # Pop recorded choices until one INVERTS to a legal index (a refused maybe-trapped probe
         # inverts to None — consume it and try the correction, mirroring the sim's queue semantics).
-        idx = None
+        idx, accepted = None, None
         while self._queue and idx is None:
-            idx = self._invert(battle, self._queue.pop(0), mask)
+            accepted = self._queue.pop(0)
+            idx = self._invert(battle, accepted, mask)
         if idx is not None:
             self.inverted_actions.append(int(idx))
+            self.accepted_choices.append(str(accepted))
             self._get_tracker(battle).advance(int(idx))
         else:
             self._actions_exhausted = True
@@ -618,25 +649,25 @@ class _InvertingReplayPlayer(_ReplayObsPlayer):
         return None
 
 
-def infer_action_indices(
+def _run_inverting_replay(
     record: ReconstructionRecord,
     side: str,
     *,
+    who: str,
     mappings=None,
+    stall_config: Optional[StallConfig] = None,
     stop_after_decision: Optional[int] = None,
     chunks: "Optional[Sequence[str]]" = None,
     impl: str = "node",
-) -> "list[int]":
-    """Recover ``side``'s ACTION-INDEX history by replaying its recorded battle and inverting each
-    recorded sim-choice string through the real mapper. The counterpart of ``states.npz['actions']``
-    for the OPPONENT (the forensic trace records only the trainee's actions), so the opponent's
-    one-sided obs can be materialized faithfully for an interior search ply. Refused maybe-trapped
-    probes invert to ``None`` and are skipped (queue semantics).
+    encode: bool = False,
+) -> "_InvertingReplayPlayer":
+    """Replay ``side``'s recorded battle through an :class:`_InvertingReplayPlayer` and return it.
 
-    ``chunks`` (that side's chunks from an ALREADY-run :func:`replay_battle`) skips the internal
-    replay — a caller that already replayed the battle (e.g. for the other side's obs) passes them so
-    the whole game is replayed through the driver ONCE, not once per side. ``impl`` selects that
-    driver (``"node"`` default | ``"rust"``) and is ignored when ``chunks`` is supplied."""
+    Shared by :func:`infer_action_indices` (``encode=False`` — indices only) and
+    :func:`scan_record` (``encode=True`` — indices, choice strings AND the one-sided obs). One
+    function so the two cannot drift on the replay setup, which is the part that would silently
+    change an obs rather than fail.
+    """
     global _TAG_SEQ
     _TAG_SEQ += 1
     name = record.username(side)
@@ -646,6 +677,9 @@ def infer_action_indices(
     recorded = [c for (s, c) in record.commands if s == side]
     player = _InvertingReplayPlayer(
         recorded_choices=recorded, stop_after_decision=stop_after_decision, mappings=mappings,
+        # `None` encodes EVERY decision, the empty set encodes NONE — the two callers' two modes.
+        encode_only_at=None if encode else set(),
+        stall_config=stall_config,
         battle_format=record.format_id,
         account_configuration=AccountConfiguration(name, None),
         server_configuration=LocalhostServerConfiguration,
@@ -670,24 +704,100 @@ def infer_action_indices(
             if player.done:
                 break
 
-    try:
-        if asyncio.get_running_loop() is POKE_LOOP:
-            raise RuntimeError("infer_action_indices must not be called from POKE_LOOP")
-    except RuntimeError as e:
-        if "POKE_LOOP" in str(e):
-            raise
+    _refuse_poke_loop(who)
     asyncio.run_coroutine_threadsafe(_feed_all(), POKE_LOOP).result()
     # Every materialized decision must have inverted to exactly one action index. A shortfall means a
     # recorded choice failed to invert (an [Invalid choice] round, or a mapper edge) — which would
-    # silently DESYNC the opponent's obs (its action history would be a ply short). Fail LOUD instead:
-    # a faithful interior-opponent search can't run on this battle.
+    # silently DESYNC the obs (its action history would be a ply short). Fail LOUD instead.
     if len(player.inverted_actions) != len(player._materialized):
         raise RuntimeError(
-            f"infer_action_indices({side}): recovered {len(player.inverted_actions)} action indices for "
+            f"{who}({side}): recovered {len(player.inverted_actions)} action indices for "
             f"{len(player._materialized)} decisions — a recorded choice failed to invert, so the "
-            f"opponent's action history would desync its obs. This battle can't drive a faithful "
-            f"interior-opponent search (depth ≥ 2).")
+            f"action history would desync the obs. This battle can't drive a faithful "
+            f"replay of this side.")
+    return player
+
+
+def infer_action_indices(
+    record: ReconstructionRecord,
+    side: str,
+    *,
+    mappings=None,
+    stop_after_decision: Optional[int] = None,
+    chunks: "Optional[Sequence[str]]" = None,
+    impl: str = "node",
+) -> "list[int]":
+    """Recover ``side``'s ACTION-INDEX history by replaying its recorded battle and inverting each
+    recorded sim-choice string through the real mapper. The counterpart of ``states.npz['actions']``
+    for the OPPONENT (the forensic trace records only the trainee's actions), so the opponent's
+    one-sided obs can be materialized faithfully for an interior search ply. Refused maybe-trapped
+    probes invert to ``None`` and are skipped (queue semantics).
+
+    ``chunks`` (that side's chunks from an ALREADY-run :func:`replay_battle`) skips the internal
+    replay — a caller that already replayed the battle (e.g. for the other side's obs) passes them so
+    the whole game is replayed through the driver ONCE, not once per side. ``impl`` selects that
+    driver (``"node"`` default | ``"rust"``) and is ignored when ``chunks`` is supplied."""
+    player = _run_inverting_replay(
+        record, side, who="infer_action_indices", mappings=mappings,
+        stop_after_decision=stop_after_decision, chunks=chunks, impl=impl, encode=False)
     return list(player.inverted_actions)
+
+
+@dataclass(frozen=True)
+class RecordDecision:
+    """One decision of a battle read back from its reconstruction record ALONE.
+
+    The forensic path (``states.npz``) has the obs and the action indices already; a TRAINING
+    record has neither — the tap (``agents.training.cf_records``) writes only the seed, the teams
+    and the committed choice strings. So everything here is recovered by replay: ``obs`` from the
+    one-sided protocol, ``action`` by inverting ``choice`` through the real action mapper.
+
+    ``choice`` is the sim-choice STRING the side actually committed at this decision — what a
+    counterfactual feeds back to the sim to replay "the action that was really taken".
+    """
+
+    index: int                       # position in the side's decision sequence
+    turn: int
+    action: int                      # the action INDEX (inverted through the real mapper)
+    choice: str                      # the recorded sim-choice string, e.g. "move icebeam"
+    mask: np.ndarray
+    obs: Optional[np.ndarray] = None
+
+
+def scan_record(
+    record: ReconstructionRecord,
+    side: Optional[str] = None,
+    *,
+    mappings=None,
+    stall_config: Optional[StallConfig] = None,
+    chunks: "Optional[Sequence[str]]" = None,
+    impl: str = "node",
+    encode: bool = True,
+) -> "list[RecordDecision]":
+    """Every decision ``side`` made in ``record``, with its obs, mask, action index and choice string.
+
+    The entry point a consumer of the TRAINING record tap needs: a ring record carries no
+    ``states.npz`` and no recorded actions, so the only way to reach a training decision's
+    observation is to replay the one-sided protocol and invert the committed choices. One replay
+    yields all four facts.
+
+    ``side`` defaults to the record's ``trainee_username``'s side when the record names one, and to
+    ``"p1"`` otherwise — which is what a training record is, since ``BridgeSession`` always seats
+    ``env.agent1`` (the trainee) on p1. ``chunks`` skips the internal :func:`replay_battle` when the
+    caller has already run one. ``encode=False`` returns masks/actions/choices with ``obs=None``
+    (cheap: it skips the ~80%-of-cost obs encode at every decision).
+    """
+    if side is None:
+        side = (record.side_of(record.trainee_username) if record.trainee_username else "p1")
+    player = _run_inverting_replay(
+        record, side, who="scan_record", mappings=mappings, stall_config=stall_config,
+        chunks=chunks, impl=impl, encode=encode)
+    return [
+        RecordDecision(index=i, turn=int(d.turn), action=int(a), choice=str(c),
+                       mask=np.asarray(d.mask), obs=d.obs)
+        for i, (d, a, c) in enumerate(
+            zip(player._materialized, player.inverted_actions, player.accepted_choices))
+    ]
 
 
 def materialize_from_record(
