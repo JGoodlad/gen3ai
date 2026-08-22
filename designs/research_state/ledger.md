@@ -1431,3 +1431,45 @@ unlabelable (one 250-turn-cap battle, both engines — NOT the rust turn-1 gap).
 - **Factory economics rider**: 878 ms/label at load 7 → 2,787 at load 25 (3.2× for 3.6× load —
   worse than the loadavg/cpus scaling predicts); 72 core-minutes bought the whole gate. Rollout
   throughput beside a trainer is a LOWER bound.
+
+### The factory is BUILT and PLUMBED — steps 3+4 of the counterfactual program landed (2026-08-22, two opus agents in parallel isolated worktrees, orchestrated landing)
+
+**`a85a3bf` (the tool) + `6c2cb45` (the plumbing) + `2ea687a` (a pre-existing red on main, fixed).**
+The human-named ladder now reads: *disease proven ✅ → tool built ✅ → plumbed in ✅ → run the
+experiment (parked, needs a training slot)*. Highlights and honest edges:
+
+- **Prefix-sharing materializer** (`obs_materializer.materialize_branches`): 59/59 decisions /
+  452 arms **byte-identical** to the per-arm path (every arm compared, not sampled — the clone
+  SHARES append-only records, so the gate is the contract's enforcement); **2.91×** (15.4→5.3
+  ms/arm), BELOW the ~5× estimate because the state clone replaces the replay (~5 ms at turn 12,
+  the new bottleneck). The bit-identity gate caught two real bugs pre-landing (dropped unfed
+  prefix tail; exhausted-actions flag not reset on restore). `lookahead` now rides it.
+- **`cf_audit`** is a permanent command (`python -m agents.training.cf_audit <run>`): bias map
+  with `sd_true_excess` + schema-v1 labels, anchor-refusal before any label (exit 3, no labels on
+  a failed anchor). Its first real run independently CONFIRMED G0's shape on a 30× smaller sample
+  (conviction gap +0.280 vs +0.231; 42% luck vs 53%; sd_true_excess deciles 0.25/0.25/0.17 vs
+  0.30/0.26/0.21) — the instrument replicates.
+- **Task #27 CLOSED** (prober opponent regime honors the RECORDED stochasticity; regression test
+  fails on revert; regime stamped into `opponent_source` so no artifact can hide it). **Task #26
+  half-closed**: the stdout-error-reporting defect is fixed and the diagnosis narrowed to
+  `search.rs::at_turn_start` returning false at t==1 on a fresh session; the rust fix itself
+  deferred (needs a cargo build beside a live trainer) — a precise KNOWN-GAP note marks it.
+- **The plumbing** (`gen3_cf_label_plumbing_v1`): `--cf-records` tap (count-capped global ring,
+  crash-safe, sink-exceptions swallowed so the bridge reader can never wedge), `cf_label_buffer`
+  (incremental JSONL poll, staleness expiry at `--cf-label-lag-steps`, every anomaly a COUNTED
+  skip with liveness scalars — `cf/labels_ingested_total` flat = producer dead, distinct from
+  expiry), `--cf-winprob-coef` default 0 + `--cf-head-only` default TRUE. **Byte-identity proven
+  three ways** (seeded train() state_dict SHA equal HEAD vs base; arch surface SHA equal; file-set
+  equal) plus the in-suite pin (populated buffer at coef 0 ⇒ th.equal update). Head-only measured:
+  `cf_grad_share` 0.0 at every step; trunk-open 0.045–0.085. Flag class = the `--opd-coef` genre
+  (plain argparse, launcher-forwarded, NOT flagless-resume-inherited — documented in the help).
+  One G3 sub-claim stands on construction not measurement: launcher-restart survival of the tap.
+- **The pre-existing red both agents independently verified** (stash-and-rerun on base) is fixed
+  on main: `eval_callback_test::test_eval_games_override_flows_through_schedule` built the
+  callback via `__new__` and predated `gen3_eval_freq_flag_v1`'s instance-attr cadence — the test
+  now sets both knobs and asserts the new one flows. *Method note: a test that bypasses `__init__`
+  silently couples to the constructor's attribute set; it broke when the E-gate work made the
+  cadence a knob, and rode main red until two unrelated agents both hit it.*
+- **Landing procedure worked**: parallel isolated worktrees + a pinned shared schema; tool shipped
+  first, plumbing rebased over it (one clean structural conflict — both appended sections to the
+  training leaf — resolved keep-both), 376 merged-tree gate tests green before push.
