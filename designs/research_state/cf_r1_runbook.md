@@ -106,6 +106,28 @@ python -m agents.training.cf_audit models/<arm> --rollouts 8 --states 400
 - Comparison is arm vs control at matched step and matched sampler version, with the audit's
   battle-clustered CIs. Never quote a mid-run number as a result.
 
+> **§2 AMENDMENT (2026-08-22, evidence: the hidden-information floor probe,
+> `tmp/hidden_info_floor_report.md`, ledger same date) — `sd_true_excess` has a MEASURED FLOOR and
+> must be read against it.** The meter is computed from OMNISCIENT rollouts, so it sums LEARNABLE
+> blur and the irreducible variance of the opponent's hidden half. Measured on gen-17 @24M over
+> 123 decisions / 70 bot battles / 10,040 rollouts by alternative pool-consistent determinizations
+> of the opponent's never-revealed slots: the floor is **sd 0.151 [0.119, 0.186] in predicted
+> deciles 7–9**, i.e. **39% [24%, 87%] of the meter's variance**, and **~⅓** in the wp≥0.75
+> conviction region. Three consequences are binding. (a) The meter has a **non-zero asymptote**:
+> `sd_true_excess` cannot fall below ~0.15 in deciles 7–9 however good the head gets, so no target
+> may be expressed as a fraction of its current value. (b) Effect sizes are quoted on the **excess
+> over the floor** — a 20% reduction of the learnable variance reads as ~12% on the raw meter, and
+> a raw-meter comparison silently understates the arm. (c) A flat meter is **ambiguous near the
+> floor**, so the §5 "flat at 2× sample closes the rung" kill is evaluated against floor-subtracted
+> values. The floor is a property of the POPULATION, not of the arm, so it cancels in an
+> arm-vs-control *variance* difference at matched step and matched sampler version — **that
+> difference is the primary comparison**. The floor is measured under uniform pool-consistent
+> opponents (verified the exact posterior for this run's battles, 228/228 recorded opponent teams
+> are pool members) and is an **upper bound** on what an optimal behaviour-conditioned head would
+> face. Structure worth exploiting: the floor is CONCENTRATED (49% of states carry ~none; the top
+> 10% carry half), flat in hidden-slot count and in game turn — a state-level property ("does the
+> unknown decide this position"), not a fog.
+
 ## 3. SECONDARY meters
 
 | meter | source | reads |

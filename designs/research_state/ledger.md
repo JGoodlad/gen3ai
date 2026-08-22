@@ -1639,3 +1639,49 @@ consumer plumbed, meters instrumented, labels evidence-weighted, the evidential 
 Outstanding beside the training slot: the hidden-information FLOOR probe (in flight) which may
 amend the primary meter's expectation with evidence, the V-transfer baseline column (cheap, named),
 and the ecology-drift decision at launch if the arm's opponent mix is no longer ~90% self-play.
+
+### The HIDDEN-INFORMATION FLOOR — ~40% of R1's primary meter is irreducible, and it is CONCENTRATED (2026-08-22, opus probe, 123 decisions / 70 battles / 10,040 rollouts, gen-17 @24M)
+
+**AMEND-THE-METER verdict, applied to the runbook same-pass** (the sign-off's binding clause:
+edits require new evidence — this probe IS the evidence; report
+`tmp/hidden_info_floor_report.md`). `sd_true_excess` is computed from OMNISCIENT rollouts while
+the head sees only our information set, so it sums LEARNABLE blur + the irreducible variance of
+the opponent's hidden half. Measured by pool-consistent DETERMINIZATION of the never-revealed
+slots (prefix byte-identity verified **1,150/1,150** — the swap provably does not perturb the
+replay; a deliberately-mismatched control proves the gender-PRNG guard load-bearing):
+
+- **The floor: sd 0.151 [0.119, 0.186] in deciles 7–9 = 39% [24%, 87%] of the meter's variance;
+  ~⅓ in the wp≥0.75 conviction region** (0.338 [0.199, 0.696] frame-weighted; 0.373 on the 0.827
+  class). The probe replicates G0's blur on its own 84-state axis (0.301/0.303/0.178 vs G0's
+  0.303/0.258/0.209), which is what makes the fraction readable.
+- **CONCENTRATED, not a fog — the constructive half**: 49% of states carry essentially ZERO
+  hidden-information variance (16 states fully slot-determined), the top 10% carry HALF the total
+  floor, top 20% carry 75%. R1's learnable signal on the majority is intact. And the floor is
+  FLAT in hidden-slot count (1 ≈ 5) and in game turn — the quantity is *"does the unknown decide
+  this position"*, a state-level property, not "how much is unknown".
+- **The one-state illustration**: predicted 0.879, ONE hidden slot — Salamence ⇒ MC 0.125;
+  Gyarados/Skarmory/Gengar/Charizard ⇒ 1.000; Vaporeon ⇒ 0.000. G0 scores that as the head 0.75
+  too optimistic; it is a COIN the head is not allowed to see.
+- **The slot channel IS the floor**: varying every unused move of every revealed mon on top of the
+  slot swap moves it −0.0011 [−0.0102, +0.0086] — a tight null, so the number is not a lower
+  bound waiting to grow. Robustness: the strict tier-1-donor posterior reads HIGHER (hybrid-team
+  incoherence is not inflating it); the true-vs-alternative level gap is proven SELECTION
+  (+0.091 on wins / −0.160 on losses, opposite signs) and the estimator excludes the true arm.
+- **Amendment now binding in §2**: non-zero asymptote (~0.15 in deciles 7–9); effect sizes quoted
+  on the EXCESS over the floor (a 20% learnable reduction reads ~12% raw — raw comparisons
+  understate the arm); the flat-kill evaluated floor-subtracted; the arm-vs-control variance
+  DIFFERENCE at matched step is the primary comparison (the floor is a population property and
+  cancels). Population named: uniform pool-consistent opponents (verified the exact posterior —
+  228/228 recorded opponent teams are pool members); an UPPER bound on what a
+  behaviour-conditioned head would face.
+- **Method riders**: two artifacts caught by the verification gates before they shipped wrong
+  numbers (Hidden Power's protocol id never matches the packed typed id — broke 440/615 arms;
+  duplicate donor draws made an axis read smaller than the axis it strictly contains). Exclusions
+  1.6%, one named cause (a recorded opponent command switching to a still-hidden mon — an
+  incompatibility of "hold the action fixed" with "vary the hidden half", not a leak). Cost: 29
+  core-minutes at load ~30.
+- **Conceptual bank**: this is the imperfect-information note's PBS-irreducibility made a NUMBER —
+  the first direct measurement here of how much of "the critic is wrong" is actually "the game is
+  hiding a coin". It also sizes the ceiling of any future belief-conditioned value work: the
+  concentrated top-decile states are where a better OPPONENT-TEAM BELIEF (not a better value head)
+  is the only lever that can move the meter.
