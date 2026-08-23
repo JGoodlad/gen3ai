@@ -2423,3 +2423,61 @@ and surfaced two pre-existing facts now honestly recorded: both parity harnesses
 UN-RUNNABLE since a path move (a gate nobody can start is indistinguishable from one that
 passes — the week's eighth vacuity), and fresh goldens carry 1 + 29 pre-existing cross-impl
 divergences (confirmed parity-neutral to the fix; tasked).
+
+### Stage A LANDED — the redundant view construction was FIVE×, not four, and one caller was bypassing the accessor entirely (2026-08-23, `gen3_live_view_memo_v1`)
+
+The census's Stage A shipped: a one-slot `(epoch → LiveView)` memo on `Gen3Battle`. **Measured
+over 589 real bridge decisions on the full `Gen3Env` path: 5.000 → 1.000 `LiveView` builds per
+decision, 57.0 → 11.6 `LivePokemon.from_pokemon` calls per decision.** End-to-end
+`trainer_turn_benchmark --decisions 300` (same session, back to back, quiet box): our
+controllable CPU **0.923 → 0.666 ms/decision, −28%** — `tracker.record` 0.133 → 0.036 ms
+(it was a whole view build), `state_encoder.encode` 0.296 → 0.219, `process_turn_reward`
+0.213 → 0.128.
+
+- **The census said "≥4×"; the instrument said 5.** The fifth was
+  `Gen3ActionMasker.get_mask`, and it was invisible to a source read of the decision path
+  because it did not call the accessor at all — it called `LiveView.from_battle(battle)`
+  directly, so the memo produced **2.0 builds/decision** on the first measurement and the
+  count is what found it. *A memo can only collapse the calls that go through the accessor;
+  count first, then read the traceback of what is left.*
+- **The key is a single monotone `_state_epoch`, NOT the design's
+  `(len(_events), turn, request)`** — one integer bumped by every writer, which makes
+  completeness an enumeration of DOORS rather than of derived quantities: `parse_message`
+  (every line, whatever its policy — `|turn|`/`|teamsize|` mutate state while being CONTROL,
+  and the empty-today STATE_ONLY bucket stays covered for free), `parse_request`
+  (`_update_team_from_request` writes HP/status/item/PP and can flip the active mon, and a
+  request is never an event — **the GIGO a `len(events)` key would have shipped**),
+  `won_by`/`tied` (`|win|`/`|tie|` are intercepted by poke-env before `parse_message`, so
+  `finished`/`won`/`lost` move behind the parse pass's back — a door the census did not name),
+  and `_record` (the out-of-band `CHOICE_REJECTED` append).
+- **Two properties are the real content, and both are named tests verified failing on
+  revert.** (1) The epoch is read BEFORE the build and stored WITH it, so a view built across
+  a concurrent write lands under an already-dead key and can never be served — the memo adds
+  no staleness window of its own, without depending on the POKE_LOOP/main-thread handshake.
+  (2) The memo rides the object it describes, so the materializer's per-arm `deepcopy` restore
+  carries a self-consistent pair; a cache keyed by `battle_tag` (the arms are *indistinguishable*
+  by tag) would serve arm-1's forward state to a rewound arm-2, and that shape is
+  unrepresentable here.
+- **The benchmark caveat was real and was NOT hypothetical.** Left alone, `obs_build_benchmark`
+  reported `live_view() alone: 0.000 ms (0%)` and a −25% calls/encode — a fantasy, because its
+  `--reps 400` loop re-encodes ONE decision so reps 2..400 are 100% warm. It now drops the memo
+  per rep (the COLD series, comparable to the archived ~5.43k baseline) and prints the warm
+  encode beside it, labelled. **Cold after: 5401/5401/5369/5562 calls/encode over four runs — the
+  spread is which decision got profiled** (`--seed` seeds action selection only; the bridge mints
+  its own sim seed), so a single-run ±3% diff on this instrument is noise, not signal. The
+  decision-matched CALL COUNT is the honest primary here, and it is the one that is unambiguous.
+- **Gates:** the new `live_view_memo_fuzz_test.py` (gen3ou 12 battles / 973 decisions: memo'd
+  view == fresh rebuild AND the 2501-dim obs warm == obs with the memo cleared, bit for bit;
+  gen3randombattle 40 battles / 3666 decisions with TRANSFORM + FORMECHANGE in the corpus —
+  check 1 only, because the obs encoder is gen3ou-scoped and fail-loud outside it, and the
+  fuzz PRINTS that it skipped rather than swallowing the crash); `gen3_data_obs_parity` green
+  with **no fixture regen**; `obs_roundtrip_fuzz` 953 decisions bit-identical;
+  `redecide_rollback_fuzz` 473 re-decides / 0 phantom; `obs_materializer_branch_integration`
+  and `search_clone_parity_fuzz` green; routine suite 6310 passed.
+- **The addendum above predicted the reward path would benefit; it did, and by the most of
+  anything.** `process_turn_reward` 0.213 → 0.128 ms is **−40%** — the largest proportional
+  drop of any stage — because one of the five views was the reward manager's. Stage A is
+  therefore a partial down-payment on the newly-named second target, not only an obs lever.
+- **Stage B (per-mon `LivePokemon` reuse) is unchanged in scope** — this bought the 5→1
+  collapse of WHOLE views; the remaining ~11.6 `from_pokemon` calls are the one honest build
+  per decision, and Stage B is what makes that build partial.

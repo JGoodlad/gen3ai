@@ -73,6 +73,55 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   of the raw `Pokemon` (shared by the obs `encode_block(live)` and the reward PBRS shaping);
   `moves` is a tuple of `LiveMove(id, current_pp, max_pp)` with a `move_ids` accessor for id-only
   call-sites. `LiveView` carries the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
+
+  **`live_view()` is MEMOIZED — one build per state-epoch** (`gen3_live_view_memo_v1`). A
+  production decision asked for this view **five** times over state that cannot change between
+  them (the mask/legality snapshot, `tracker.record`, `update_progress_clock`,
+  `state_encoder.encode`, `reward_manager.process_turn_reward`), each a 12-mon rebuild at ~25
+  poke-env property reads plus two dict copies per mon. The view is frozen and holds only
+  primitives, so *sharing* it is semantically free; the only question is staleness.
+
+  The key is a single monotone `Gen3Battle._state_epoch`, bumped by **every** writer of the
+  state `LiveView.from_battle` reads. That completeness argument is why the key is not
+  `len(events)`:
+
+  | Door | Covers | Why it is not redundant |
+  |---|---|---|
+  | `parse_message` | every protocol line, whatever its `Policy` | `\|turn\|` and `\|teamsize\|` mutate state while being `CONTROL`; `STATE_ONLY` is empty *today* but deliberately open |
+  | `parse_request` | `_update_team_from_request` | a request is **never** an event, yet it writes HP / status / item / PP / stats and can flip the active mon — the stale view a `len(events)` key would serve |
+  | `won_by` / `tied` | `finished` / `won` / `lost` | `\|win\|` / `\|tie\|` are intercepted by `Player._handle_battle_message` and never reach `parse_message` |
+  | `_record` | every event append | keeps "an event was appended ⇒ the epoch moved" true for the out-of-band `CHOICE_REJECTED` too |
+
+  The one write outside the doors is construction-time (`bc/log_reader` sets `_player_role` /
+  `_format` before feeding a line); the memo is empty until the first read, so a
+  pre-first-view write is invisible by construction.
+
+  Two properties are load-bearing, and each has a named regression test in
+  `live_view_memo_test.py` — all verified failing on revert of their own bump:
+
+  * **The epoch is read BEFORE the build and the view stored under THAT epoch**, so a view
+    built across a concurrent write lands under a key that is already dead and can never be
+    served to a later reader. (Views are built on the env's main thread inside
+    `embed_battle` / `calc_reward` while the protocol is parsed on `POKE_LOOP`; the
+    battle-queue handshake means the two do not overlap in practice, but the memo does not
+    depend on that.)
+  * **The memo rides the object it describes.** Both the epoch and the view live on the
+    battle, so the offline materializer's per-arm `deepcopy` restore (`_PlayerSnapshot`)
+    carries a self-consistent pair. A cross-object cache keyed by `battle_tag` — the arms are
+    *indistinguishable* by tag — would serve arm-1's forward state to a rewound arm-2; that
+    shape is unrepresentable here. The re-decide rollback (`EpisodeTracker.restore`) rolls
+    back tracker state and never touches the battle, so the memo stays correct across it by
+    not participating.
+
+  Measured over 589 real bridge decisions (`gen3ou`, the full `Gen3Env` path): **5.000 →
+  1.000 `LiveView` builds per decision, 57.0 → 11.6 `LivePokemon.from_pokemon` calls per
+  decision**; `trainer_turn_benchmark --decisions 300` (same session, back to back, quiet box)
+  **0.923 → 0.666 ms of our controllable CPU per decision, −28%**. `mask_generator.get_mask`
+  was the one caller reaching past the accessor to `LiveView.from_battle`; it now prefers
+  `battle.live_view()` and falls back for a plain poke-env `Battle`, which has no such method.
+  Byte-identity is gated by `live_view_memo_fuzz_test.py` (real bridge battles; memo'd view ==
+  fresh rebuild, and the full 2501-dim obs encoded warm == encoded with the memo cleared, at
+  every decision).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
@@ -156,10 +205,17 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
 
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
 scripted parse + state-equivalence, TurnView fold, `live_view_test.py` for the current-board
-surface + widened fields, `strict_view_test.py` for the strict boundary + `LegalActions`
-extraction + the forbidden-access guard). The spine is `event_log_fuzz_test.py` — real
+surface + widened fields, `live_view_memo_test.py` for the memo's four invalidation doors +
+its store discipline + the clone-aliasing case, `strict_view_test.py` for the strict boundary
++ `LegalActions` extraction + the forbidden-access guard). The spine is
+`event_log_fuzz_test.py` — real
 `gen3ou` battles where both players run `Gen3Battle`; it independently re-derives each turn
 from the intercepted raw protocol and asserts the event log matches, plus conservation +
 event-kind coverage, the widened LiveView fields (spread/PP/consumed/counter/meta) per mon,
 and the `LegalActions` legality surface against the live server request at every decision.
-Run it as a script (no live server — bridge-backed): see the root `CLAUDE.md` Running Tests.
+`live_view_memo_fuzz_test.py` is the memo's byte-identity spine: real bridge battles where
+every decision asserts memo'd view == fresh rebuild AND obs-warm == obs-with-memo-cleared,
+bit for bit. Its `--format gen3randombattle` arm is where Transform / Forecast forme change
+live; check 2 is **skipped, loudly** there because the obs encoder is gen3ou-scoped and
+fail-loud outside it (a randbats Conversion raises `UnknownVolatileError: typechange`).
+Run both as scripts (no live server — bridge-backed): see the root `CLAUDE.md` Running Tests.

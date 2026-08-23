@@ -66,6 +66,22 @@ def _mean_ms(fn, reps: int) -> float:
     return (time.perf_counter() - t) / reps * 1e3
 
 
+def _invalidate_view_memo(battle) -> None:
+    """Drop ``Gen3Battle``'s one-slot ``live_view()`` memo (``gen3_live_view_memo_v1``).
+
+    ⚠️ **This benchmark's reps loop re-encodes the SAME decision**, so without this every rep
+    after the first would be a memo HIT and the benchmark would report a decision that never
+    happens in production — a fantasy speedup, and a `calls/encode` primary metric that is
+    bimodal by construction. Production sees exactly ONE cold view build per decision (the
+    memo's whole job is that the OTHER four builds vanish), so the COLD series is the one
+    that stays comparable to the archived baselines. The warm series is reported beside it,
+    labelled, because it is the honest cost of the encode's own view read now that the mask /
+    tracker path has already built it.
+    """
+    if hasattr(battle, "_live_view_memo"):
+        battle._live_view_memo = None
+
+
 def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     """Time the per-decision obs build on a single (battle, tracker) decision and print a
     report. Returns the component timings (ms) as a dict so callers can assert/track them."""
@@ -79,9 +95,16 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     # its deque cache are deleted with the lag frames, so `full` and `enc_only` coincide. Both
     # are kept and reported so the percentages stay comparable to the archived baselines in
     # `src/agents/observation/CLAUDE.md`, and so a future appended block shows up as a gap.
-    full = lambda: obs_enc.encode(battle, **_kw)
-    enc_only = lambda: obs_enc.encode(battle, **_kw)
-    live_view = lambda: battle.live_view()
+    def full():
+        _invalidate_view_memo(battle)      # COLD — one fresh view build, as production has
+        return obs_enc.encode(battle, **_kw)
+
+    enc_only = full
+    warm = lambda: obs_enc.encode(battle, **_kw)          # memo HIT (rep 2+ of this loop)
+
+    def live_view():
+        _invalidate_view_memo(battle)
+        return battle.live_view()
 
     for _ in range(10):  # warm caches / JIT-y bits
         full()
@@ -89,6 +112,8 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     t_full = _mean_ms(full, reps)
     t_enc = _mean_ms(enc_only, reps)
     t_lv = _mean_ms(live_view, reps)
+    battle.live_view()                                    # prime the memo for the warm series
+    t_warm = _mean_ms(warm, reps)
 
     pr = cProfile.Profile()
     pr.enable()
@@ -103,11 +128,17 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     print(f"PER-DECISION OBS BUILD BENCHMARK  (obs dim {obs_enc.dimension}, turn {battle.turn}, "
           f"opp mons w/ revealed moves {n_opp_rev}/6)")
     print("=" * 78)
-    print(f"  full per-decision obs build  : {t_full:7.3f} ms")
+    print(f"  full per-decision obs build  : {t_full:7.3f} ms   [COLD: view memo dropped "
+          f"each rep — the production mix, and the comparable series]")
     print(f"    state_encoder.encode       : {t_enc:7.3f} ms  {pct(t_enc)}")
     print(f"    [live_view() alone         : {t_lv:7.3f} ms  {pct(t_lv)}]")
+    print(f"  encode with the view memo WARM: {t_warm:7.3f} ms  {pct(t_warm)}  "
+          f"[what encode costs when record/mask already built the view]")
     print("\n  NOTE: absolute ms scale with machine load; the component ratios and the")
     print("        cProfile ranking below are the load-stable signal.")
+    print("  NOTE: the reps loop re-encodes ONE decision, so a memo would be 100% warm from")
+    print("        rep 2 — every series above except the last drops it first. Judge")
+    print("        calls/encode from the COLD cProfile block below.")
     print(f"\n  Top {top} functions by tottime (cumtime shows the caller chain):")
     print(buf.getvalue())
 
@@ -117,6 +148,7 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
         "full_ms": t_full,
         "encode_ms": t_enc,
         "live_view_ms": t_lv,
+        "encode_warm_memo_ms": t_warm,
     }
 
 

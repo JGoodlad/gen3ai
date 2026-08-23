@@ -112,6 +112,22 @@ Judge by these load-independent metrics, in priority order:
 A value-neutral refactor that adds <10% calls/encode and doesn't reshuffle the tottime top is
 fine. Anything larger needs justification (or a revert).
 
+🚨 **The reps loop re-encodes ONE decision, so ANY cache in the build is 100% warm from rep 2
+— read the COLD series.** `battle.live_view()` is memoized per state-epoch
+(`gen3_live_view_memo_v1`, `src/agents/battle/CLAUDE.md`), and production sees exactly one
+COLD view build per decision — the memo's job is that the *other four* builds vanish, not that
+the encode's own build gets cheaper across reps. Left alone, the benchmark would have reported
+`live_view() alone : 0.000 ms (0%)` and a `calls/encode` that is bimodal by construction: a
+fantasy speedup, and the primary regression metric silently rebased. It therefore **drops the
+memo before every rep** (`_invalidate_view_memo`) for `full` / `enc_only` / `live_view`, and
+prints one extra WARM line beside them for the honest cost of the encode's view read once the
+mask/tracker path has already built it. **Judge calls/encode from the cold cProfile block.**
+Measured 2026-08-23, quiet box, `--turn 25 --reps 400`: cold 5401 / 5401 / 5369 / 5562
+calls/encode across four runs — the spread is which decision got profiled (`--seed` seeds
+action selection only; the bridge mints its own sim seed), so a single-run before/after diff
+of ±3% here is noise, not signal. Warm encode runs ~0.29–0.32 ms against cold ~0.39–0.42 ms.
+**A cache added inside the encode must extend this pattern, not lean on it.**
+
 ---
 
 ## Canonical baseline (paste — the reference point for regressions)

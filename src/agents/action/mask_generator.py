@@ -63,8 +63,10 @@ class Gen3ActionMasker:
         mask and the mapper share one immutable source; standalone callers omit it and a
         fresh snapshot is taken here. ``live`` is likewise optional: a caller that already
         built a :class:`LiveView` this decision can pass it to avoid a second build,
-        otherwise one is built from ``battle`` (``LiveView.from_battle`` works on any
-        poke-env battle, ``Gen3Battle`` or plain ``Battle``).
+        otherwise one is taken from ``battle.live_view()`` — the ``Gen3Battle`` accessor,
+        which memoizes per state-epoch, so the mask shares the decision's single build
+        instead of forcing a second one. A plain poke-env ``Battle`` has no such accessor
+        and falls back to ``LiveView.from_battle``, which works on either.
         """
         if legal is None:
             legal = LegalActions.from_battle(battle)
@@ -75,7 +77,8 @@ class Gen3ActionMasker:
             raise RuntimeError("STRICT MODE FAILURE: No last_request found in battle. Cannot mask.")
 
         if live is None:
-            live = LiveView.from_battle(battle)
+            lv = getattr(battle, "live_view", None)
+            live = lv() if callable(lv) else LiveView.from_battle(battle)
 
         # Integrity Check: No duplicate species allowed (Gen 3 OU standard). The own-team
         # roster is read through the LiveView boundary; ``live.ours.mons`` preserves the

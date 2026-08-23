@@ -26,7 +26,7 @@ recorder) for free — nothing else needs to know it changed.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 from poke_env.battle.battle import Battle
 from poke_env.data.normalize import to_id_str
@@ -76,6 +76,11 @@ class Gen3Battle(Battle):
         self._weather_id: Optional[str] = None
         self._weather_permanent: bool = False
         self._weather_start_turn: int = 0
+        # gen3_live_view_memo_v1 — see live_view() for the full invalidation proof.
+        # `_state_epoch` is bumped by EVERY writer of the state LiveView reads; the memo is
+        # the one-slot (epoch, view) pair it keys on.
+        self._state_epoch: int = 0
+        self._live_view_memo: Optional[Tuple[int, "LiveView"]] = None
 
     # ------------------------------------------------------------------ #
     # Public read API (consumed by TurnView / TurnDelta / reward / replay) #
@@ -87,10 +92,71 @@ class Gen3Battle(Battle):
         boosts, revealed moves/item/ability, volatiles, hazards. For "what happened,
         in order" use :meth:`events_for_turn` / :class:`TurnView` instead. The two
         surfaces are deliberately disjoint so neither can drift from the other.
+
+        **One-slot memo (`gen3_live_view_memo_v1`).** A production decision builds this view
+        FIVE times over state that cannot change between them — ``tracker.record`` (the
+        HP-candidate observe), the mask/legality snapshot, ``update_progress_clock``,
+        ``state_encoder.encode`` (via :meth:`strict_view`) and ``reward_manager`` — each a
+        12-mon rebuild at ~25 poke-env property reads plus two dict copies per mon. The view
+        is a frozen dataclass over primitives, so *sharing* it is semantically free; the only
+        question is when it goes stale.
+
+        **The key is a single monotone `_state_epoch`, and it is COMPLETE by construction.**
+        ``LiveView.from_battle`` is a pure function of this battle's state: ``turn``,
+        ``team`` / ``opponent_team`` (and their ``Pokemon``), ``side_conditions`` ×2,
+        ``active_pokemon`` / ``opponent_active_pokemon``, the folded weather, ``battle_tag``,
+        ``finished`` / ``won`` / ``lost``, ``_player_role`` and ``_team_size``. Every writer
+        of any of those is reached through exactly one of four doors, and each bumps the
+        epoch:
+
+        1. :meth:`parse_message` — every protocol line, whatever its
+           :class:`~agents.battle.battle_event.Policy`. Bumping unconditionally (rather than
+           only for ``EVENT`` lines) is what makes the proof independent of the classifier:
+           ``|turn|`` mutates ``turn`` and ``|teamsize|`` mutates ``_team_size`` while both
+           are ``CONTROL``, and ``STATE_ONLY`` — the bucket for a line that mutates state
+           without being battle content — is empty *today* but is deliberately kept open.
+        2. :meth:`parse_request` — a request is **never** an event, yet
+           ``_update_team_from_request`` writes HP / status / item / PP / stats onto our
+           mons and can flip which mon is active. This is the mutation channel a
+           ``len(events)``-only key would miss, and the stale view it would serve is exactly
+           the request-misalignment class ``gen3_op_move_align_v1`` exists to prevent.
+        3. :meth:`won_by` / :meth:`tied` — ``finished`` / ``won`` / ``lost`` are set from
+           ``Player._handle_battle_message``, which intercepts ``|win|`` / ``|tie|``
+           *before* ``parse_message``, so door 1 does not cover them.
+        4. :meth:`_record` — every append to ``_events``, including the out-of-band
+           ``CHOICE_REJECTED`` one. Redundant with door 1 for parsed lines; it keeps the
+           invariant "an event was appended ⇒ the epoch moved" true structurally.
+
+        The one write outside the doors is CONSTRUCTION-time: ``bc/log_reader`` sets
+        ``_player_role`` / ``_format`` on a freshly built battle before feeding it a single
+        line. The memo is empty until the first :meth:`live_view` call, so a pre-first-view
+        write is invisible by construction — the property that has to hold is "no writer
+        after a view has been served", and that is what the four doors cover.
+
+        **Concurrency: the epoch is read BEFORE the build and stored with it**, so a view
+        built from state that mutated mid-build is written under a key that is already dead
+        and can never be served. (Views are built on the env's main thread inside
+        ``embed_battle``/``calc_reward`` while the protocol is parsed on ``POKE_LOOP``; the
+        queue handshake means they do not overlap in practice, but the memo does not rely on
+        that. A torn view returned to its own caller is today's behaviour, unchanged.)
+
+        **Clone / rollback: the memo rides the object it describes.** Both the epoch and the
+        cached view live on this battle, so the materializer's per-arm ``deepcopy``
+        (``_PlayerSnapshot``) carries a self-consistent pair, and restoring an arm restores
+        the epoch its view was built at. A cross-object cache keyed by ``battle_tag`` would
+        serve arm-1's forward state to a rewound arm-2 — that shape is unrepresentable here.
+        The re-decide rollback (``EpisodeTracker.restore``) rolls back *tracker* state and
+        never touches the battle, so the memo stays correct across it by not participating.
         """
         from agents.battle.live_view import LiveView
 
-        return LiveView.from_battle(self)
+        epoch = self._state_epoch
+        memo = self._live_view_memo
+        if memo is not None and memo[0] == epoch:
+            return memo[1]
+        view = LiveView.from_battle(self)
+        self._live_view_memo = (epoch, view)
+        return view
 
     def strict_view(self) -> "StrictBattleView":
         """The strict boundary object our non-``battle/`` code should read through.
@@ -177,6 +243,9 @@ class Gen3Battle(Battle):
     # Parse-pass override: classify -> mutate (super) -> record event     #
     # ------------------------------------------------------------------ #
     def parse_message(self, split_message: List[str]) -> None:
+        # Door 1 of the live_view() memo's invalidation proof: EVERY protocol line, whatever
+        # its policy. Unconditional so the proof does not depend on the classifier.
+        self._state_epoch += 1
         keyword = split_message[1] if len(split_message) > 1 else ""
         policy, _reason = classify(keyword)  # raises on UNSUPPORTED / UNKNOWN
         self._lines_seen += 1
@@ -198,6 +267,32 @@ class Gen3Battle(Battle):
         if keyword == "move":
             for extra in self._move_suffix_events(split_message):
                 self._record(extra)
+
+    def parse_request(
+        self, request: Dict[str, Any], strict_battle_tracking: bool = False
+    ) -> None:
+        """Door 2 of the ``live_view()`` memo's invalidation proof.
+
+        A ``|request|`` is never a :class:`~agents.battle.battle_event.BattleEvent` — it is
+        not battle content — yet ``_update_team_from_request`` writes HP / status / item /
+        move-PP / stats onto our mons, can create a team slot, and (the illusion resync) can
+        change which mon is active. Behaviour is otherwise untouched: this only bumps the
+        epoch and delegates.
+        """
+        self._state_epoch += 1
+        super().parse_request(request, strict_battle_tracking)
+
+    def won_by(self, player_name: str) -> None:
+        """Door 3a: ``|win|`` is intercepted by ``Player._handle_battle_message`` before
+        ``parse_message``, so this writer of ``finished`` / ``won`` / ``lost`` — all three
+        carried on :class:`~agents.battle.live_view.LiveView` — is invisible to door 1."""
+        self._state_epoch += 1
+        super().won_by(player_name)
+
+    def tied(self) -> None:
+        """Door 3b — the ``|tie|`` mirror of :meth:`won_by`."""
+        self._state_epoch += 1
+        super().tied()
 
     def record_choice_rejected(self, split_message: Sequence[str]) -> None:
         """Append a :class:`~agents.battle.battle_event.EventKind.CHOICE_REJECTED` event.
@@ -231,6 +326,10 @@ class Gen3Battle(Battle):
         self._record(ev)
 
     def _record(self, ev: BattleEvent) -> None:
+        # Door 4: every append to the log, including the out-of-band CHOICE_REJECTED one
+        # that never reaches parse_message. Redundant for parsed lines, but it keeps
+        # "an event was appended ⇒ the epoch moved" true structurally.
+        self._state_epoch += 1
         self._events.append(ev)
         self._seq += 1
         self._turn_start.setdefault(ev.turn, len(self._events) - 1)
