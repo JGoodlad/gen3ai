@@ -3487,3 +3487,103 @@ stage differently — **it found the stage was not the thing at all.**
   denominator was two corrections stale, and this pass's target turned out to be 88% another
   stage's cost. **Five for five. The rule the campaign actually proves is not "memoize things" —
   it is that the map is wrong every single time, and the cheapest step is always the profile.**
+
+### THE DEBT REGISTER IS EMPTY — the weekend's found-not-fixed backlog cleared item by item, and the flag census refused three of its own candidates (2026-08-23, `90e9067`+`a562594`+`446b26c`+this)
+
+The accumulated found-not-fixed items from ~25 agents' weekend, landed as one batch. Ten of eleven
+executable items closed; one skipped by owner instruction. **Two of them were LIVE defects, not
+tidiness** — a prober analysis that had been returning NaN on every invocation, and a stale binary
+in the main checkout that the turn-1 fix had already been written for.
+
+| # | item | disposition |
+|---|---|---|
+| 1 | `train/cf_twin_loss` unpublished | **FIXED** — combined, absent-never-zero, 2 tests revert-verified |
+| 2 | main checkout's rust binaries predate `f2bec7d` | **REBUILT + VERIFIED** — see below |
+| 3 | prober's dead shadowed `_norm_move` + its lying docstring | **FIXED** — behaviour proved identical |
+| 4 | `_saliency_from_grad` NaN on a zero-length block | **FIXED** — omitted, not zeroed; live on every `analyze` |
+| 5 | `bridge_test.rs` parity-count floor | **MEASURED, then floored** — and the measurement refused the obvious floor |
+| 6 | `model_build.py`'s ~120 duplicated lines | **DEDUPED** — one table, attribute set proved equal |
+| 7 | registry demotion sweep #2 | **ONE demotion**; three candidates refused on evidence |
+| 8 | `sim_bridge_bin.py:66` -> `src_path` | **FIXED** — worktree property verified preserved |
+| 9 | three ancient dirty worktrees | **TRIAGED, none deleted** — all three superseded (below) |
+| 10 | prober vacuity leftovers | **FIXED** — 4 guarded assertions + 1 code-shape skip |
+| 11 | training-leaf doc corrections | **FIXED** — 4 findings, incl. one number that could not be re-derived |
+| 12 | `designs/CLAUDE.md` run row | **SKIPPED** — owner's call; still deferred, still stale (below) |
+
+**Item 2 was real staleness, and the timestamps prove it.** `search_driver` in the main checkout
+was built **Aug 22 21:51**; `f2bec7d` — "the first decision of every battle was unopenable" —
+landed **Aug 23 08:58**. The rebuild changed the binary (1,461,632 -> 1,469,576 bytes), so the
+pre-rebuild binary provably did not contain the turn-1 fix. `sim_bridge` was already current.
+Verified post-build against the main binaries via `$POKESIM_SEARCH_DRIVER_BIN`:
+`search_driver_turn1_integration_test` 5/5 pass. Box was at load 30/16 cores with a live training
+run; `nice -n 10`, and the build was incremental.
+
+**Item 5 is the one where measuring changed the answer.** The item asked for a floor on
+`n_full`/`n_prefix`. Measured over the corpus: **30 battles, 0 out-of-scope, 30 replayed, 0 FULL
+byte-equal, 30 prefix-equal.** So `n_full >= 1` would be a **false assertion** — every battle in
+the capture golden carries an engine-scope divergence (undrawn gender, the `return102` alias),
+which is the whole reason the gate is prefix-based and gender-tolerant. The floor went where the
+regression signal actually is (`n_panic == 0`, `audited == 30`), `n_full` got the accounting
+identity, and the *absence* of a floor there is now documented as a result rather than an omission.
+**The old form was `assert!(audited >= 1)` over thirty battles**: 29 could have gone out-of-scope
+with the gate green and its own eprintln printing the collapse.
+
+**Item 7 — the census refused three of its own four candidates, and that is the finding.** Over
+**107 archived run configs**: 23 flags carry exactly one observed value, but 19 of them sit at a
+value that DIFFERS from their registry default, and `config_only` means "frozen at `default`" — so
+demoting those would silently flip production behaviour to OFF. Of the four unanimous-AT-default:
+`opp_intent_grad_mode` appears in **zero of 107 recorded launcher commands** and was demoted;
+`consequence_topk` / `damage_candidate_k` / `hp_belief_mode` appear in **24 commands including the
+live run's**, so demoting them would make a running run's `launcher_command` unlaunchable on
+restart — the cleanup journey's own live-run exclusion, applied. `python -m main.checkargs` on the
+live run after the change: **0 unrecognized, still launches.** The generated
+`designs/flag_registry.md` gate caught its own staleness and was regenerated; all four
+derived-artifact `--check` gates green after.
+
+**Item 11 — one of the four could not be fixed by finding a fresher number, and saying so IS the
+fix.** The `~89% train share` (3 sites) turns out to be an **EXTRAPOLATION**, not a measurement:
+projected to 10 epochs from a *measured* 61% at `n_envs=8, n_steps=128, 2 epochs`. The 2026-08-23
+idle-box re-baseline re-measured `obs_build`, `trainer_turn` and both bridge benchmarks and did
+**not** measure train share, so there was nothing to substitute. It is now marked `**UNVERIFIED:**`
+at production shape with its derivation shown, rather than re-quoted or quietly replaced with a
+guess. The other three: `--compile-trainer`'s "NOT wired up" cell corrected (it ships, and defaults
+ON for cuda); the undated `79 of 79` dated 2026-08-13 with today's 100 checkpoint-bearing runs
+beside it; and the duplicate ms-pairs reconciled as **two sessions, one ratio** — `155.1 -> 88.5`
+is the provenanced benchmark, `150.85 -> 86.21` is `extractor_compiles_test`'s own in-situ check,
+and they corroborate rather than conflict.
+
+**Item 9 — WORKTREE TRIAGE. All three are SCRATCH; none deleted; the owner decides.** All three
+are **0 commits ahead of main** — no unpushed work exists in any of them, only working-tree dirt.
+And in every case the dirt's open question has since been ANSWERED on main by a different (better)
+implementation:
+
+| worktree | dirt | verdict |
+|---|---|---|
+| `agent-a745d31723e3c41c2` (Jun 13, 582 behind) | 3 untracked files: `gen3_damage_calc{,_torch,_torch_test}.py` in `src/main/` — a numpy CPU oracle + a differentiable torch port + its test | **SUPERSEDED.** These are the prototype for what shipped as `src/agents/model/damage_op*.py`. Nothing at that path exists on main. Scratch. |
+| `agent-abbf04b5907002870` (Aug 3, 362 behind) | 1 untracked `NODE_REJECT_BOUND_TODO.md`, self-labelled "scratch, do NOT commit" — specifies a reject-streak bound for the node bridge | **DONE.** `local_sim_bridge.js` now carries `REJECT_STREAK_CAP = 8` + per-side `rejectStreak`, and `node_reject_bound_integration_test.py` is the named regression test the note asked for. The TODO is discharged. |
+| `agent-ae9c2b375ddaba2e8` (Aug 3, 370 behind) | modified `turn/driver.rs` + `probe_illegal_choice_park.js`, untracked `LEGALITY_HANDOFF.md` (also "scratch, do NOT commit") — a partial `choice_reject_reason` refactor and an unresolved legality-divergence probe | **SUPERSEDED.** The refactor landed on main as `classify_reject` in `bridge.rs` (a different, better home), and the class it was chasing is closed by `gen3_locked_choice_never_rejected_v1` with `bridge_choice_reject_test::a_move_locked_mon_is_never_rejected_for_its_only_offered_move` as its gate. |
+
+Recommendation: **all three are safe to remove**, but they are left in place — the brief reserved
+that call for the owner. The only content worth reading before deletion is
+`LEGALITY_HANDOFF.md`'s "open puzzle" section, and its puzzle is answered.
+
+**Item 12 remains DEFERRED, and it is still stale**: `designs/CLAUDE.md`'s Active-training-run row
+names `ai_v9_21_gen17_pfspoff_0820` as production, while the box is actually running
+`ai_v9_26_baitent_probe_0823`. Untouched by instruction (in-flight sibling state). It stays on the
+register as the ONE open item, owned by the owner.
+
+**Gates:** routine suite `not slow and not e2e` **exit 0 — 6767 passed / 10 skipped / 16 xfailed /
+88 subtests** (up from 6676 at the last count an hour earlier; the corpus is still growing daily,
+which is why this number ships with the command that recounts it). `cargo test --release`: **77
+suites, 727 passed, 0 failed.** ruff + mypy + file-size gates green. `flag_registry --check` /
+`delivery_graph --check` / `arch_tables --check` / `build_arch_viewer --check` all green after
+regeneration. Every behavioural fix revert-verified individually, and the two new *guards* were
+themselves proved non-vacuous by forcing them to fire.
+
+**The register is empty by construction as of this commit** — not "we think we got them all", but
+every line of the weekend's found-not-fixed list carries a disposition above, including the two
+that resolved to "do not do this" and the one that resolved to "this number cannot be re-derived,
+so mark it unverified." **The generalisable part is that three of this batch's items changed shape
+under measurement**: the parity floor the item asked for was false, three of four demotion
+candidates were refused by their own census, and a doc "correction" turned out to need an honesty
+marker rather than a fresher figure. A backlog item is a hypothesis, not an instruction.

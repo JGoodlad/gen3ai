@@ -2040,7 +2040,7 @@ bugs, so a green CPU-forward test is not evidence about any other cell:
 | | forward | forward + backward |
 |---|---|---|
 | **CPU** | ✅ the frozen self-play OPPONENT (this section) | ❌ **does not lower** — but only in ONE of Inductor's three C++ store kernels: `CppKernel`/`CppVecKernel` both emit `atomic_add`, while `CppTile2DKernel` (the transposed variant, chosen by index LAYOUT) carries `assert mode is None`. CONFIG-CONDITIONAL too: the scatter is a gather's backward, so `--belief-grad-mode label_only` (stop-grad belief publication) deletes it and the backward then compiles (bisected 2026-08-15) |
-| **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step — measured 150.85 → 86.21 ms fwd+bwd at batch 4096 (**1.75x**), i.e. ~+60% end-to-end FPS at the ~89% train share. NOT wired up; the test keeps the lever available |
+| **CUDA** | ✅ eval / inference on the card | ✅ the TRAINER's step — **155.1 → 88.5 ms** fwd+bwd at batch 4096 (**1.75x**); provenance in the measurement table below. **SHIPPED as `--compile-trainer`, and it DEFAULTS ON when the resolved device is cuda** |
 
 The ❌ cell is a **limitation PIN** (`test_cpu_backward_still_does_not_compile`) and it FAILS IF THE
 LIMITATION LIFTS — three things assume it holds, starting with `maybe_compile_extractor` routing
@@ -2172,7 +2172,23 @@ and announces it; an explicit flag refuses.** Pinned by `src/main/compile_defaul
 | extractor only (**what ships**) | 155.1 ms | 88.5 ms | **1.753x** |
 | whole `evaluate_actions` | 155.5 ms | 88.5 ms | 1.757x |
 
-**~+62% end-to-end FPS** at the ~89% train share. **We compile the EXTRACTOR, and the second row is
+> **These are THE numbers to quote for this result.** `extractor_compiles_test.py`'s docstring
+> carries a *second*, independently-measured pair for the same lever — **150.85 → 86.21 ms, also
+> 1.75x** — taken in a different session as that test's own in-situ check. Two sessions, two pairs,
+> one ratio; they corroborate rather than conflict, but only this row set carries the full
+> provenance above, so a doc quoting `150.85` is quoting the test, not this benchmark.
+
+**End-to-end FPS: ~+62%** — but read the derivation before quoting it. It is `1.75x` applied to a
+**~89% train share**, and that share is an **EXTRAPOLATION, not a measurement**: the 89% is
+projected to production's 10 epochs from a *measured* **61%** at `n_envs=8, n_steps=128, 2 epochs`
+(the gen7/gen8 regression investigation). The 2026-08-23 idle-box re-baseline
+(`designs/research_state/measurements/post_paydown_baselines_2026-08-23.json`) re-measured
+`obs_build`, `trainer_turn` and both bridge benchmarks — it did **not** measure the train share, so
+there is no fresher figure to substitute and this one has not been re-derived since. **UNVERIFIED:**
+the ~89% at production `n_envs=48 / n_steps=2048 / 10 epochs`. The 1.75x itself is measured; the
+end-to-end number inherits the extrapolation's uncertainty.
+
+**We compile the EXTRACTOR, and the second row is
 why**: the two scopes measure the same to within 0.004x — the mlp_extractor, the pointer head and
 the value head contribute nothing — so the whole-policy scope buys nothing for strictly more graph
 (and more surface for SB3's distribution objects and the mask path to break on). Same win, smaller
@@ -2777,7 +2793,8 @@ here because the reasoning generalises to every aux head on this trunk:
 - **It cost ~13% of the train step.** Measured per-flag on an idle box with interleaved arms:
   marginal **+341 ms** of train time at the production batch, against a `cls_k=6` costing +349 ms
   that *does* feed forward, and a `spread_belief` costing +72 ms. The train step is ~89% of
-  production wall at 10 epochs, so this was real throughput.
+  production wall at 10 epochs (an EXTRAPOLATION from a measured 61% at 2 epochs — see the
+  `--compile-trainer` section for the provenance and its caveat), so this was real throughput.
 - **Its own probe had already concluded decodable ≠ helps** (the belief latent/BYOL role-geometry
   probe: species geometry decodes strongly, and nothing downstream was shown to use it).
 
@@ -3072,8 +3089,10 @@ width and the measured `sd_true_excess`. When the audited checkpoint carries a `
 - **A checkpoint without the head OMITS the columns** and prints a one-line note. Zeros would render
   "this run has no head" identically to "this head claims no uncertainty". The read is
   **best-effort** throughout: the audit's products are the labels and the bias map, so a model that
-  will not load (architecture drift — 79 of 79 archived runs) costs the run its evidential columns
-  and nothing else. `accounting.evidential_scored` says how many states were scored.
+  will not load (architecture drift — measured **2026-08-13: 79 of 79 archived runs**; the tree
+  carries 100 checkpoint-bearing runs as of 2026-08-23 and the 0-of-N has not been re-measured)
+  costs the run its evidential columns and nothing else. `accounting.evidential_scored` says how
+  many states were scored.
 - Reads the head through `ProbeSession.probe_model()` → `ProbeModel.cf_evidential_batch()`. That
   method exists because the extractor forward **never calls the head**, so unlike `win_prob_at` there
   is no stash to read: it forwards the extractor and applies the head to `stash.value_pooled`
