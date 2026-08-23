@@ -119,6 +119,45 @@ class TestCheckpointResolution:
         (tmp_path / "latest.txt").write_text("checkpoints/gone.zip")
         assert P.resolve_latest_checkpoint(str(tmp_path))[1] == 7
 
+    def test_a_forced_checkpoints_step_parses(self):
+        """SIGUSR1 writes `checkpoint_forced_<step:010d>_<HHMMSS>.zip` — a resumable checkpoint
+        under a second name. Reading only the periodic form makes its step unparseable, and an
+        unparseable step ranks BELOW every periodic zip in `_key`."""
+        assert P.step_from_checkpoint_name("checkpoint_forced_0000060000_120000.zip") == 60000
+        assert P.step_from_checkpoint_name("checkpoint_50000_steps.zip") == 50000
+        assert P.step_from_checkpoint_name("final_model.zip") is None
+
+    def test_a_NEWER_forced_checkpoint_beats_an_older_periodic_one(self, tmp_path):
+        """The regression: an operator hits the launcher's `c` (force checkpoint) after the last
+        periodic save. Before the fix the producer resolved the OLDER periodic zip and went on
+        stamping its step — silently labelling against a snapshot it had already moved past."""
+        ck = tmp_path / "checkpoints"
+        ck.mkdir()
+        (ck / "checkpoint_50000_steps.zip").write_text("a")
+        (ck / "checkpoint_forced_0000060000_120000.zip").write_text("b")
+        (tmp_path / "latest.txt").write_text(
+            "checkpoints/checkpoint_forced_0000060000_120000.zip")
+        path, step = P.resolve_latest_checkpoint(str(tmp_path))
+        assert step == 60000, "a newer FORCED checkpoint must outrank an older periodic one"
+        assert path.endswith("checkpoint_forced_0000060000_120000.zip")
+
+    def test_a_forced_checkpoint_is_found_without_latest_txt(self, tmp_path):
+        """It must be reachable by the GLOB too, not only through the pointer file — `latest.txt`
+        is written after the zip, so there is a window in which it names the previous save."""
+        ck = tmp_path / "checkpoints"
+        ck.mkdir()
+        (ck / "checkpoint_forced_0000012288_091921.zip").write_text("a")
+        assert P.resolve_latest_checkpoint(str(tmp_path))[1] == 12288
+
+    def test_an_older_forced_checkpoint_still_loses_to_a_newer_periodic_one(self, tmp_path):
+        """The other direction, so the fix is a step comparison and not a name preference."""
+        ck = tmp_path / "checkpoints"
+        ck.mkdir()
+        (ck / "checkpoint_forced_0000040448_092309.zip").write_text("a")
+        (ck / "checkpoint_50000_steps.zip").write_text("b")
+        path, step = P.resolve_latest_checkpoint(str(tmp_path))
+        assert step == 50000 and path.endswith("checkpoint_50000_steps.zip")
+
 
 # ---------------------------------------------------------------------------
 # The state file

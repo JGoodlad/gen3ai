@@ -2481,3 +2481,69 @@ controllable CPU **0.923 → 0.666 ms/decision, −28%** — `tracker.record` 0.
 - **Stage B (per-mon `LivePokemon` reuse) is unchanged in scope** — this bought the 5→1
   collapse of WHOLE views; the remaining ~11.6 `from_pokemon` calls are the one honest build
   per decision, and Stage B is what makes that build partial.
+
+### R1 MULTI-CYCLE COMPOSITION SMOKE — the twin-heads landing's one not-gated item, run; the composition holds and it found one live defect (2026-08-23)
+
+The twin-heads + producer landing declared exactly one thing not gated: *"a full multi-cycle
+producer→trainer run end to end with the twin arm live."* Every leg had a test; the COMPOSITION
+over live cycles did not. Run at debug scale on CPU beside no other load: a real
+`train_rl_agent --debug` trainer (80k steps, `--win-prob-mode read_only --cf-records
+--cf-twin-heads --cf-twin-coef 0.1 --cf-shadow-critic --cf-shadow-coef 0.1 --cf-evidential
+--cf-evidential-coef 0.05`, `--use-bridge rust`) with the REAL `cf_producer` sidecar
+(`--rollouts 2 --top-n 2`) against the same run dir, across 64 producer cycles, four checkpoints,
+a deliberate 90-second producer STALL, a poisoned label file and a producer RESTART.
+**128 labels ingested, 0 skips other than the injected one, every assertion green.**
+
+- **THE DEFECT, and it is the reason a composition test is not a formality.**
+  `cf_producer.resolve_latest_checkpoint` parsed only the PERIODIC checkpoint name
+  (`checkpoint_<step>_steps.zip`). The FORCED name `checkpoint_forced_<step>_<HHMMSS>.zip` —
+  what SIGUSR1 and the launcher TUI's `c` key write into the same directory — did not parse, so it
+  was reachable only through `latest.txt` and then, scoring `(0, 0, mtime)` in the resolver's key,
+  ranked **below every periodic zip**. An operator forcing a checkpoint after the last periodic
+  save would silently walk the producer BACKWARDS onto an older snapshot, which it would then keep
+  stamping on every label — with `cf/labels_ingested_total` rising, `cf/labels_expired_total` flat
+  and every other counter on both sides reading healthy. Fixed; three named tests VERIFIED failing
+  on revert. *The smoke found it only because it forced checkpoints — the existing `sim`
+  composition test holds the snapshot fixed for its single cycle, which is the whole class.*
+- **The isolation contract is a live measurement, not a docstring.** `train/cf_twin_grad_share`,
+  `train/cf_shadow_grad_share` and `train/cf_evidential_grad_share` all read **exactly 0.0 over
+  156 train() dumps** — max|·| = 0, not "small".
+- **The ROUTING reads off live scalars, which is stronger than the presence check the twin build
+  shipped with.** Over the run's own labels, mean `outcome_label` = 0.039 and mean tight-MC `label`
+  = 0.219 — two separated target means — and `cf/twin_b_bias` = +0.113 matches
+  `b_pred − outcome_mean` (+0.113), not `b_pred − label_mean` (−0.067), while `cf/twin_c_bias` =
+  −0.064 matches `c_pred − label_mean` (−0.064), not `c_pred − outcome_mean` (+0.116). **A swapped
+  routing flips both signs.** `cf/twin_b_coverage` and `cf/outcome_label_coverage` held 1.0 on
+  every non-empty buffer, `cf/twin_b_vs_c_abs` rose off 0 (0.0024 → 0.228), and the twins'
+  on-policy MIRROR tracked head A's own BCE (0.373 / 0.356 vs `win_prob/loss` 0.377).
+- **Label VALUES were re-derived, not read.** For sampled rows: `outcome_label` == a fresh offline
+  replay's realized outcome (exact); `obs_inline` == `scan_record`'s obs for that decision
+  **byte-for-byte** (2501 floats); `turn`/`recorded_action` == the record's own decision; and every
+  `priority` field — `win_prob` 0.187347, `critic_surprise`, `policy_entropy` 0.956035, `score`
+  0.521959 — reproduced to 1e-6 by re-forwarding the STAMPED checkpoint, which is what actually
+  ties a label to the snapshot step it claims. The tight-MC label itself is not bit-reproducible
+  (the rollouts sample at temp 1.0 and nothing seeds torch), so it was checked against an
+  independent R=16 re-roll's Wilson CI. **The composition test that preceded this asserted an
+  `mc_return` was PRESENT; a presence test is a presence test.**
+- **The shadow's units are the run's own.** `cf/shadow_shadow_vs_live_v` computed finite every
+  dump (+19.3 → +17.8), median `mc_return` −12.87 against a run `train/return_mean` range of
+  [−37.2, −2.4], `cf/shadow_coverage` and `cf/mc_return_coverage` 1.0,
+  `cf/labels_mc_return_rejected_total` 0.
+- **The stall and the restart behaved.** The 90 s SIGSTOP moved the trainer 20,480 → 31,744 steps
+  and `cf/label_age_steps_p50` rose to a peak of 45,056 — **visible ageing, zero expiries**, and
+  never negative (the symmetric guard). The mid-run restart resumed off `cf_producer_state.json`
+  (26 → 64 records processed, seq 26 → 64, anchors 4/4 reproduced) and **double-labelled nothing**:
+  `cf/labels_replaced_total` 0 throughout, and 128 rows on disk carry 128 distinct obs digests.
+- **The fault injection cost exactly itself.** One row with a bad `obs_sha1` beside good ones:
+  `cf/labels_skipped_total` 0 → 1 at step 32,256 and never again, the buffer kept its resident
+  rows, training continued to a clean exit 0.
+- **One observation, not a defect:** `train/cf_twin_loss` is not published, while
+  `train/cf_evidential_loss` and `train/cf_shadow_loss` are. The twin term's magnitude is derivable
+  from `cf/twin_{b,c}_loss`, so this is an asymmetry in the `train/*` surface rather than a missing
+  measurement — worth knowing before quoting the §5 "the loss fell and the meter didn't" kill for
+  the twin arm.
+- **The gate that landed** is the multi-cycle half only, honestly scoped: the full smoke is ~14
+  minutes and is a report, not a gate. `cf_producer_integration_test::
+  test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both` (`sim`, **22.5 s**)
+  runs two real cycles across a FORCED checkpoint boundary and asserts the re-stamp, the two
+  vintages' ages in the real buffer, and the poisoned-row partition.

@@ -3435,7 +3435,12 @@ negation forms, the four refusals and `checkargs`. **The composition** is
 `cf_producer_integration_test.py` (`sim`): a real bridge battle → the ring → one producer cycle →
 the REAL `CfLabelBuffer`, now additionally asserting every row carries a valid `outcome_label`,
 that at least one carries an `mc_return` with its digest, that the buffer keeps them, and that a
-buffer configured with a FOREIGN digest refuses the `mc_return` while keeping the row.
+buffer configured with a FOREIGN digest refuses the `mc_return` while keeping the row. A second
+test in that file covers the **MULTI-CYCLE** seam the first one holds fixed: a checkpoint lands
+between cycles, the producer reloads it and RE-STAMPS the rows, and the real buffer holds the two
+vintages at their two different ages — plus a poisoned row (`obs_sha1` disagreeing with its own
+bytes) costing exactly itself beside the good ones. That is the leg the 2026-08-23 R1 composition
+smoke found a live defect in.
 
 ### The label PRODUCER DRIVER (`cf_producer.py`) — the piece that runs the loop
 
@@ -3460,6 +3465,18 @@ action index and its committed choice string, via `obs_materializer.scan_record`
 snapshot over the candidates → label the top `--top-n` by the declared priority → roll each out
 `--rollouts` times → write one NEW file per batch to
 `<run>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`.
+
+**"The freshest checkpoint" means BOTH names a resumable checkpoint is written under** — the
+periodic `checkpoint_<step>_steps.zip` *and* the FORCED `checkpoint_forced_<step>_<HHMMSS>.zip` that
+SIGUSR1 writes (the launcher TUI's `c` key). Reading only the first was not cosmetic: a forced save
+was reachable solely through `latest.txt` and then, because its step did not parse,
+`resolve_latest_checkpoint`'s key ranked it **below every periodic zip** — so forcing a checkpoint
+mid-run walked the producer BACKWARDS onto an older snapshot and it went on stamping that older
+step, with every counter on both sides reading healthy. Found by the R1 multi-cycle composition
+smoke (2026-08-23), which is the only thing that had ever run a producer across a checkpoint
+boundary; pinned by `cf_producer_test::TestCheckpointResolution` (the resolver) and
+`cf_producer_integration_test::test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both`
+(the label path as a whole moving forward).
 
 ⚠️ **THE ECOLOGY DECISION — read this before quoting any label this producer wrote.**
 A training record carries **no opponent identity**. The tap's `__RECON__` frame holds the resolved

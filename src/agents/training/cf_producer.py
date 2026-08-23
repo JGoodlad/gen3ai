@@ -150,7 +150,17 @@ MIN_LABELABLE_TURN = 2
 #: files age out of it, so 4096 is ~8 ring turnovers of headroom at a few hundred KB of JSON.
 DEFAULT_KEEP_PROCESSED = 4096
 
-_CKPT_STEP_RE = re.compile(r"checkpoint_(\d+)_steps\.zip$")
+#: The TWO names a resumable checkpoint is written under. `_TrackingCheckpointCallback` writes the
+#: PERIODIC `checkpoint_<step>_steps.zip`; `train.lifecycle._forced_checkpoint` (SIGUSR1 — the
+#: launcher TUI's `c` key) writes `checkpoint_forced_<step:010d>_<HHMMSS>.zip` into the same
+#: directory. Reading only the first is not a cosmetic gap: an unparseable name scores `(0, 0, …)`
+#: in `resolve_latest_checkpoint`'s key, so ANY periodic checkpoint outranks EVERY forced one —
+#: a forced save taken AFTER the last periodic one would be silently passed over in favour of an
+#: older snapshot, against this module's own "the highest step wins" contract.
+_CKPT_STEP_RES = (
+    re.compile(r"checkpoint_(\d+)_steps\.zip$"),
+    re.compile(r"checkpoint_forced_(\d+)_\d+\.zip$"),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -206,8 +216,13 @@ def is_move_round(mask) -> bool:
 # ---------------------------------------------------------------------------
 
 def step_from_checkpoint_name(path: str) -> Optional[int]:
-    m = _CKPT_STEP_RE.search(os.path.basename(path))
-    return int(m.group(1)) if m else None
+    """The step a checkpoint FILENAME declares — periodic or forced — else None."""
+    base = os.path.basename(path)
+    for rx in _CKPT_STEP_RES:
+        m = rx.search(base)
+        if m:
+            return int(m.group(1))
+    return None
 
 
 def resolve_latest_checkpoint(run_dir: str) -> "Optional[tuple[str, Optional[int]]]":
@@ -217,6 +232,12 @@ def resolve_latest_checkpoint(run_dir: str) -> "Optional[tuple[str, Optional[int
     the highest STEP among them — not simply whatever ``latest.txt`` names. The two disagree
     exactly when a checkpoint landed between the zip write and the pointer update, and in that
     window the higher step is the one whose weights are on disk.
+
+    BOTH resumable checkpoint names count (see ``_CKPT_STEP_RES``): the periodic
+    ``checkpoint_<step>_steps.zip`` and the FORCED ``checkpoint_forced_<step>_<HHMMSS>.zip`` that
+    SIGUSR1 writes. Globbing only the first made a forced save reachable solely through
+    ``latest.txt`` and then, because its step did not parse, rank BELOW every periodic zip — so an
+    operator forcing a checkpoint mid-run moved the producer BACKWARDS to an older snapshot.
     """
     cands: "list[str]" = []
     latest = os.path.join(run_dir, "latest.txt")
@@ -228,8 +249,9 @@ def resolve_latest_checkpoint(run_dir: str) -> "Optional[tuple[str, Optional[int
         p = rel if os.path.isabs(rel) else os.path.join(run_dir, rel)
         if os.path.exists(p):
             cands.append(p)
-    cands += glob.glob(os.path.join(run_dir, "checkpoints", "checkpoint_*_steps.zip"))
-    cands += glob.glob(os.path.join(run_dir, "checkpoint_*_steps.zip"))
+    for root in (os.path.join(run_dir, "checkpoints"), run_dir):
+        cands += glob.glob(os.path.join(root, "checkpoint_*_steps.zip"))
+        cands += glob.glob(os.path.join(root, "checkpoint_forced_*.zip"))
     if not cands:
         return None
     # Highest declared step wins; an unparseable name falls back to mtime so a hand-placed

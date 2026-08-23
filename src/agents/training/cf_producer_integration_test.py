@@ -349,6 +349,81 @@ def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
     assert again == files, "a restarted producer re-labelled a record it had already done"
 
 
+def test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both(tmp_path):
+    """THE MULTI-CYCLE seam: a checkpoint lands between cycles, and the labels move with it.
+
+    The single-cycle test above holds the snapshot fixed, so the whole refresh leg — resolve the
+    freshest checkpoint, reload it, stamp ITS step on the rows, and have the consumer hold rows of
+    two different ages at once — was uncovered by anything that runs a real producer. A live R1 arm
+    does that on every checkpoint for the length of the run.
+
+    The second checkpoint is deliberately a **FORCED** one (`checkpoint_forced_<step>_<HHMMSS>.zip`,
+    what SIGUSR1 / the launcher's `c` key writes). That name used not to parse as a step, which made
+    every periodic checkpoint outrank it and walked the producer BACKWARDS onto an older snapshot —
+    found by the R1 composition smoke, 2026-08-23. `cf_producer_test` pins the resolver directly;
+    this pins that the label path as a whole moves forward.
+    """
+    run = _mk_run(tmp_path)
+    ring_a, _ = _play_and_ring(run)
+    ring_b, _ = _play_and_ring(run)
+    assert ring_a != ring_b
+    step2 = STEP + 40_000
+    loaded: "list[str]" = []
+
+    def _loader(path, step):
+        loaded.append(os.path.basename(path))
+        return _RandomPolicySnapshot(path, step or STEP)
+
+    argv = [run, "--rollouts", "2", "--top-n", "1", "--records-per-cycle", "1",
+            "--cycles", "1", "--cycle-seconds", "0", "--impl", IMPL]
+    assert P.main(list(argv), snapshot_loader=_loader) == 0
+
+    # The checkpoint the trainer would write on a forced save, plus the pointer it updates.
+    ck2 = os.path.join(run, "checkpoints", f"checkpoint_forced_{step2:010d}_120000.zip")
+    open(ck2, "w").write("x")
+    with open(os.path.join(run, "latest.txt"), "w") as f:
+        f.write(os.path.relpath(ck2, run))
+    assert P.resolve_latest_checkpoint(run)[1] == step2, (
+        "the resolver passed over a NEWER forced checkpoint — the producer would keep labelling "
+        "against a snapshot it has already moved past")
+
+    assert P.main(list(argv), snapshot_loader=_loader) == 0
+    assert len(loaded) == 2 and loaded[1] == os.path.basename(ck2), (
+        f"the second cycle did not reload the new checkpoint: {loaded}")
+
+    labels_dir = os.path.join(run, P.LABELS_DIRNAME)
+    files = sorted(f for f in os.listdir(labels_dir) if f.endswith(".jsonl"))
+    rows = [json.loads(ln) for f in files for ln in open(os.path.join(labels_dir, f)) if ln.strip()]
+    stamps = sorted({r["policy_step"] for r in rows})
+    assert stamps == [STEP, step2], f"labels were not re-stamped across the refresh: {stamps}"
+    assert {r["battle"] for r in rows} == {ring_a, ring_b}, "the two cycles took the same record"
+    assert any(f.startswith(f"labels_cf_producer_{step2}_") for f in files)
+
+    # -- the CONSUMER holds both vintages, and their ages differ by the refresh ------
+    buf = CfLabelBuffer(labels_dir, obs_dim=_obs_dim(), lag_bound=150_000)
+    assert buf.poll(step2) == len(rows)
+    assert buf.skipped_total == 0, f"the consumer refused the producer's rows: {buf.skip_reasons}"
+    assert buf.expired_total == 0 and buf.future_total == 0 and buf.replaced_total == 0
+    ages = sorted({step2 - row.policy_step for row in buf.sample(len(rows))})
+    assert ages == [0, step2 - STEP], (
+        f"the buffer collapsed two vintages into one age: {ages} — the older rows are what the "
+        f"staleness bound exists to expire")
+
+    # -- the GIGO refusal, beside GOOD rows, through the same real buffer ------------
+    # `labels_skipped_total` must PARTITION the input with `labels_ingested_total`: one poisoned
+    # row costs exactly itself, never the file and never the run.
+    poisoned = dict(rows[0])
+    poisoned["obs_sha1"] = "0" * 40                     # disagrees with its own bytes
+    poisoned["decision_idx"] = int(poisoned["decision_idx"]) + 10_000   # a fresh dedup identity
+    with open(os.path.join(labels_dir, "labels_zz_poisoned_0_0.jsonl"), "w") as f:
+        f.write(json.dumps(poisoned) + "\n")
+    before = len(buf)
+    assert buf.poll(step2) == 0, "a row whose digest disagrees with its bytes was ACCEPTED"
+    assert buf.skipped_total == 1, f"the poisoned row was not counted: {buf.skip_reasons}"
+    assert len(buf) == before, "a poisoned row evicted a good one"
+    assert buf.stats(step2)["cf/labels_skipped_total"] == 1.0
+
+
 def test_a_record_the_replay_cannot_reproduce_refuses_to_produce(tmp_path):
     """LABEL TRUST BEFORE LABELS, the `cf_audit` rule inherited. If the scripted full replay does
     not reproduce the recorded outcome, the replay is not exact and every label after it measures
