@@ -987,7 +987,6 @@ The model package is **type-checked, and the gate is ZERO errors**. New code in
 `src/agents/model/` must pass it before it lands:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy src/agents/model   # must be clean
 ```
 

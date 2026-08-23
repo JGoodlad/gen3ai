@@ -2762,8 +2762,9 @@ Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`). Three piec
 ## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python -m agents.training.cf_audit models/<run> \
+python -m agents.training.cf_audit models/<run> \
     [--rollouts 8] [--states 200] [--step N] [--checkpoint PATH] [--impl rust] [--out DIR]
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 ```
 
 **Offline and standalone — it trains nothing.** Given a run's bridge-eval traces (the ones with a
@@ -3336,10 +3337,11 @@ buffer configured with a FOREIGN digest refuses the `mc_return` while keeping th
 ### The label PRODUCER DRIVER (`cf_producer.py`) — the piece that runs the loop
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && nohup nice -n 10 python -m agents.training.cf_producer \
+nohup nice -n 10 python -m agents.training.cf_producer \
     models/<run> [--rollouts 8] [--top-n 3] [--records-per-cycle 4] \
     [--max-labels-per-hour 2000] [--anchor-every 50] [--impl rust] \
     > models/<run>/cf_producer.log 2>&1 &
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 ```
 
 The tap rings records; the buffer consumes label rows; **this walks one to the other.** It is a

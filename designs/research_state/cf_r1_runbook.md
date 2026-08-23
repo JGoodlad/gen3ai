@@ -11,9 +11,10 @@
 > beside the arm:
 >
 > ```bash
-> export PYTHONPATH=$PYTHONPATH:src && nohup nice -n 10 python -m agents.training.cf_producer \
+> nohup nice -n 10 python -m agents.training.cf_producer \
 >     models/<arm> --rollouts 8 --top-n 3 --max-labels-per-hour 2000 --impl rust \
 >     > models/<arm>/cf_producer.log 2>&1 &
+> # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 > ```
 >
 > It watches `<run>/cf_records/`, reloads the freshest `checkpoints/` snapshot each cycle (stamping

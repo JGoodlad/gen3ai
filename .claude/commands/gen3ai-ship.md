@@ -169,7 +169,7 @@ Whenever the rebase replayed your work on top of new commits, before pushing:
 4. **Re-run the unit suite on the rebased tree** — passing in isolation before the rebase
    is not proof the *combined* state is sound:
    ```bash
-   export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q
+   export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
    ```
 
 ### 5. Push to remote main
