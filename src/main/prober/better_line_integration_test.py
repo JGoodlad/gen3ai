@@ -196,6 +196,13 @@ def test_better_line_node_and_rust_drivers_agree(record_impl):
             f"candidate ACTION SETS differ: node-only {sorted(set(nmap) - set(rmap))}, "
             f"rust-only {sorted(set(rmap) - set(nmap))}")
 
+        # COUNTED (gen3_vacuity_hunt_v1). The numeric compare below is the STRONGEST claim in
+        # this file — with V = obs.sum() an exact match is cross-impl obs bit-identity — and it
+        # sits behind a `None` guard with a `continue`. If every action came back unscored on
+        # both drivers, the two would agree that they scored NOTHING and this test would report
+        # a green cross-impl parity result having compared zero observations. So the scored
+        # comparisons are counted and floored.
+        n_compared = 0
         for action in sorted(nmap):
             cn, cr = nmap[action], rmap[action]
             assert cn["choice"] == cr["choice"], (
@@ -208,9 +215,13 @@ def test_better_line_node_and_rust_drivers_agree(record_impl):
                 continue
             # V = obs.sum() over a 2667-dim float32 vector, so equality here is an obs-level
             # bit-identity claim, not a tolerance. The 1e-6 only absorbs float64 summation order.
+            n_compared += 1
             assert abs(cn["value"] - cr["value"]) < 1e-6, (
                 f"action {action}: V differs — node {cn['value']!r} vs rust {cr['value']!r} "
                 "(the drivers materialized DIFFERENT successor observations)")
+        assert n_compared >= 1, (
+            f"NO scored candidate was compared across impls ({len(nmap)} actions, all unscored "
+            f"on at least one driver) — the obs bit-identity claim was never evaluated")
 
 
 if __name__ == "__main__":

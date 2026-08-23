@@ -105,8 +105,21 @@ def test_peek_never_raises_on_garbage(tmp_path):
 
 
 def test_accepted_kwargs_excludes_self():
+    """ASSERTED, not tolerated (gen3_vacuity_hunt_v1).
+
+    This was `accepted is None or (...)`. `None` means "the extractor's constructor takes
+    `**kwargs`, so nothing can be judged undroppable" — a fact about OUR OWN code in THIS tree,
+    not an environment we might not have. That is the arranged-vs-encountered line: under the
+    old disjunction, adding `**kwargs` to `Gen3FeaturesExtractor.__init__` would have turned
+    this test and the one below into unconditional passes, silently, with the load sanitizer
+    they cover no longer doing anything.
+    """
     accepted = _accepted_extractor_kwargs()
-    assert accepted is None or ("self" not in accepted and "observation_space" in accepted)
+    assert accepted is not None, (
+        "Gen3FeaturesExtractor.__init__ now takes **kwargs — nothing is droppable, so the load "
+        "sanitizer cannot flag a deleted flag and every checkpoint predating a flag deletion "
+        "will TypeError in the offline readers. This is a real regression, not an exemption.")
+    assert "self" not in accepted and "observation_space" in accepted
 
 
 def test_dropped_extractor_kwargs_flags_deleted_flags_and_keeps_live_ones():
@@ -117,9 +130,13 @@ def test_dropped_extractor_kwargs_flags_deleted_flags_and_keeps_live_ones():
     damage_matrices_outgoing_all, v88 pubval_mode) instead of TypeError-ing on it."""
     from main.prober.model import _dropped_extractor_kwargs
 
+    # ASSERTED, not skipped (gen3_vacuity_hunt_v1) — see `test_accepted_kwargs_excludes_self`.
+    # A `**kwargs` constructor is a regression in the thing this test covers, not a reason the
+    # test does not apply; the old `pytest.skip` would have retired this coverage in silence.
     accepted = _accepted_extractor_kwargs()
-    if accepted is None:
-        pytest.skip("constructor takes **kwargs; nothing is droppable")
+    assert accepted is not None, (
+        "Gen3FeaturesExtractor.__init__ takes **kwargs — the load sanitizer can no longer drop "
+        "a deleted flag, which is exactly the failure this test exists to catch")
     # a definitely-live kwarg + `layout` + a definitely-dead one
     saved = {"damage_op": True, "layout": {}, "__deleted_flag__": 7}
     dropped = _dropped_extractor_kwargs(saved)

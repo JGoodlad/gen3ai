@@ -106,11 +106,20 @@ def test_lookahead_chosen_crn_reproduces_recorded_next_obs():
             "re-rolled CRN successor obs != recorded next obs BIT-FOR-BIT — materialize desync")
 
         # Every candidate maps to a sim choice and gets a numeric V(s′) or a terminal outcome.
+        # COUNTED (gen3_vacuity_hunt_v1): the `delta_v` check hangs off `value_crn is not None`,
+        # so a decision whose candidates all came back TERMINAL would satisfy the line above
+        # while never once evaluating it — the SCORED path, which is the entire point of
+        # `lookahead`, would go untested and the test would still pass green.
+        n_scored = 0
         for c in out["candidates"]:
             assert c["choice"]
             assert (c["value_crn"] is not None) or (c["terminal"] is not None)
             if c["value_crn"] is not None:
+                n_scored += 1
                 assert c["delta_v"] is not None
+        assert n_scored >= 1, (
+            f"no candidate carried a numeric V(s′) — {len(out['candidates'])} candidates, all "
+            f"terminal, so the ΔV assertion above never ran")
 
         # The headline ΔV is relative to the chosen line (chosen ΔV == 0 when it has a successor).
         assert abs(chosen["delta_v"]) < 1e-6

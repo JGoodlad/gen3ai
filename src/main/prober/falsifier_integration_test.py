@@ -134,8 +134,11 @@ def test_falsify_scan_end_to_end(tmp_path):
     assert out["coverage"]["n_decisions"] >= 1
     assert set(out["verdict_counts"]) == {"LUCK", "MISTAKE", "MIXED", "NEUTRAL"}
     assert 0.0 <= out["gate"]["critic_headroom_upper_bound"] <= 1.0
-    if out["coverage"]["n_decisions"] > 0:           # count_shares always sum to 1 with decisions
-        assert abs(sum(out["count_shares"].values()) - 1.0) < 1e-3
+    # UNGUARDED (gen3_vacuity_hunt_v1): `n_decisions >= 1` is asserted three lines up, so the old
+    # `if n_decisions > 0:` around this could never be false. A guard that cannot fire is not a
+    # guard — all it did was tell the next reader that the shares are permitted not to sum to 1,
+    # which they are not.
+    assert abs(sum(out["count_shares"].values()) - 1.0) < 1e-3
     # Concurrency must not change the aggregate (each battle is independent).
     par = ProbeSession(root).falsify_scan(outcome="loss", worst=2, n_seeds=6,
                                           n_alts=1, concurrency=2)

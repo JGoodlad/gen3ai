@@ -5,6 +5,8 @@ exercised deterministically. A separate regression test pins the resolved obs
 offsets against the live encoder layout, so a silent obs-layout shift fails loud.
 """
 
+import warnings
+
 import numpy as np
 
 from agents.action.constants import MOVE_START
@@ -415,6 +417,32 @@ def test_saliency_block_spans():
     active_block = a.saliency.blocks[2]
     assert active_block.mean_abs == 2.0 and active_block.total_abs == 10.0
     assert a.saliency.overall_mean_abs == np.arange(_OBS_LEN).mean()
+
+
+def test_an_empty_obs_block_is_OMITTED_from_saliency_not_reported_as_zero():
+    """The layout that actually ships: `turn_history_dim == 0` after `gen3_frame_deletion_v1`.
+
+    `np.mean` of an empty slice is `nan` with a `RuntimeWarning`, so this block came back NaN on
+    every single `analyze` of every post-deletion run until 2026-08-23 — the fixture above pins
+    `turn_history_dim=10`, which is exactly why no test ever saw it.
+
+    Omitted rather than zeroed, and that is the substantive half: "the actor's gradient does not
+    reach this block" is a real saliency finding, so it must not be spelled the same way as
+    "this block is not in the observation". A `0.0` here would be a confident wrong reading.
+    """
+    off = ObsOffsets(mm_off=10, om_off=20, tm_off=164, active_block_dim=5,
+                     turn_history_offset=200, turn_history_dim=0)   # ← the shipped layout
+    model = FakeProbeModel(off)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)   # the NaN's own warning fails the test
+        a = analyze_invocation(model, _summary(), _npz(), 0)
+    names = [b.name for b in a.saliency.blocks]
+    assert "turn-history block" not in names, "an empty block was reported instead of omitted"
+    assert names == ["our_matchups(144)", "their_matchups(144)",
+                     "our active pokemon block(99)"]
+    # And nothing that DID survive is NaN — the real symptom, stated as the invariant.
+    assert all(np.isfinite(b.mean_abs) and np.isfinite(b.total_abs) for b in a.saliency.blocks)
+    assert np.isfinite(a.saliency.overall_mean_abs)
 
 
 def test_no_captured_state_skips_model():

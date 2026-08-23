@@ -102,9 +102,22 @@ def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
 def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
     """Aggregate a per-dim gradient into the named obs blocks. Shared by the policy-logit
     saliency and the critic value saliency so both report the SAME regions (incl. the new
-    `incoming_damage` block) — the only difference is which head's gradient is fed in."""
-    def block(name: str, lo: int, hi: int) -> SaliencyBlock:
+    `incoming_damage` block) — the only difference is which head's gradient is fed in.
+
+    A block whose span is EMPTY in this run's layout is OMITTED, never reported as 0.0. Two
+    reasons, and the second is the one that bit: `np.mean` of an empty slice is `nan` with a
+    `RuntimeWarning`, so `turn-history block` came back NaN on every `analyze` of any
+    post-`gen3_frame_deletion_v1` run (`turn_history_dim = n_history_turns * turn_delta_dim`,
+    both now 0) — and a 0.0 would have been no better, because "the actor's gradient does not
+    reach this block" is a REAL and interesting saliency finding that must not be
+    indistinguishable from "this block is not in the observation at all". This is the same
+    guard `history_slot_saliency` below already had on the identical field, and the same
+    absent-not-zero rule the two conditional blocks here already follow.
+    """
+    def block(name: str, lo: int, hi: int) -> "SaliencyBlock | None":
         seg = g[lo:hi]
+        if seg.size == 0:
+            return None
         return SaliencyBlock(name=name, mean_abs=float(seg.mean()), total_abs=float(seg.sum()))
 
     blocks = [
@@ -121,7 +134,8 @@ def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
         block("turn-history block", off.turn_history_offset,
               off.turn_history_offset + off.turn_history_dim),
     ]
-    return Saliency(overall_mean_abs=float(g.mean()), blocks=tuple(blocks))
+    return Saliency(overall_mean_abs=float(g.mean()),
+                    blocks=tuple(b for b in blocks if b is not None))
 
 
 def history_slot_saliency(g: np.ndarray, off) -> "list[float]":

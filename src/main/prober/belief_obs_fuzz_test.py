@@ -59,6 +59,7 @@ class _BeliefObsFuzzPlayer(Gen3Player):
         self._fx.eval()
         self.n_decisions = 0
         self.n_spread_truth_matched = 0
+        self.n_spread_truth_rows = 0     # rows that actually carried a truth value (see _run)
 
     def choose_move(self, battle):
         forfeit = self._handle_stall(battle, "BELIEF_OBS_FUZZ_STALL")
@@ -113,6 +114,12 @@ class _BeliefObsFuzzPlayer(Gen3Player):
         for r in slot.rows:
             assert np.isfinite(r.believed), f"non-finite believed {r.stat} turn {battle.turn}"
             if r.true is not None:
+                # COUNTED (gen3_vacuity_hunt_v1): this is the only check on the TRUTH half of the
+                # spread join, and it is guarded on the truth being present. `n_spread_truth_matched`
+                # below counts MATCHED SLOTS, which is a different condition — so a run where no row
+                # ever carried a `true` would still satisfy it while never validating a single truth
+                # value. Floored in `_run` on its own counter rather than inferred from that one.
+                self.n_spread_truth_rows += 1
                 assert r.true > 0 and np.isfinite(r.true), f"bad true {r.stat} turn {battle.turn}"
         if slot.matched:
             self.n_spread_truth_matched += 1
@@ -135,10 +142,14 @@ async def _run(n_battles: int, seed: int) -> int:
     print(f"belief-obs observability fuzz — {n_battles} real bridge battles (full belief stack)", flush=True)
     await run_local_battles(trainee, opp, n_battles, concurrency=1)
     print(f"  decisions checked: {trainee.n_decisions}; spread-truth matched: "
-          f"{trainee.n_spread_truth_matched}", flush=True)
+          f"{trainee.n_spread_truth_matched}; truth ROWS validated: "
+          f"{trainee.n_spread_truth_rows}", flush=True)
     assert trainee.n_decisions > 0, "no decisions exercised"
     assert trainee.n_spread_truth_matched > 0, \
         "the spread truth-join never matched a revealed active — feature not exercised"
+    assert trainee.n_spread_truth_rows > 0, \
+        ("no spread row ever carried a truth value, so the per-row truth assertion never ran — "
+         "matched SLOTS is a different condition and cannot stand in for it")
     return trainee.n_decisions
 
 

@@ -79,10 +79,32 @@ def _move_maps():
     return _MOVE_NUM_TO_ID
 
 
+def _norm_move(move: str) -> str:
+    """The ONE move-name normalisation in this module: lowercase, **alnum-only**, with every
+    Hidden-Power variant collapsed to the bare ``hiddenpower``.
+
+    Alnum-only is the substantive half and it is easy to misread: ``"Rock Slide"`` normalises to
+    ``rockslide``, NOT ``rock slide`` — spaces, hyphens and brackets all go. That is what lets a
+    revealed DISPLAY form (`describe_vector`'s ``hiddenpower(bug)``) meet a truth/dex ID
+    (``hiddenpowerbug``) on one key. The HP collapse is deliberate on top of it: the opponent's
+    Hidden Power TYPE stays unrevealed until it fires, so believed-vs-revealed can only ever be
+    compared on the base move.
+
+    Serves both consumers here — `_move_id_to_num`'s key space and `move_belief_view` /
+    `build_opp_full_team`'s revealed-vs-believed compares — so the two cannot drift apart.
+    (Until 2026-08-23 there were literally TWO definitions of this name in this module, the
+    second shadowing the first; the first promised a `split("(")` normalisation that nothing had
+    ever run, and ruff's F811 stayed silent because the name is used BETWEEN the definitions.)
+    """
+    s = re.sub(r"[^a-z0-9]", "", str(move).lower())
+    return "hiddenpower" if s.startswith("hiddenpower") else s
+
+
 def _move_id_to_num():
     """Cached ``{normalised_move_id -> move_num}`` — the forward map, so a REVEALED move name (from
     `describe_vector`, e.g. ``hiddenpower(fire)``) can be looked up on the move-belief axis to read its
-    pinned belief. Every Hidden-Power variant + the bare ``hiddenpower`` resolve to the shared HP num."""
+    pinned belief. Keys are `_norm_move`'s, so every Hidden-Power variant already collapses onto the
+    single ``hiddenpower`` key and the explicit loop below just pins which num that key carries."""
     global _MOVE_ID_TO_NUM
     if _MOVE_ID_TO_NUM is None:
         raw = gen3_data.moves.raw()
@@ -92,12 +114,6 @@ def _move_id_to_num():
                 d["hiddenpower"] = int(v["num"])
         _MOVE_ID_TO_NUM = d
     return _MOVE_ID_TO_NUM
-
-
-def _norm_move(m: str) -> str:
-    """Normalise a move name for revealed-vs-believed comparison: lowercase, drop a trailing
-    ``(type)`` (so a revealed ``hiddenpower(fire)`` matches the believed bare ``hiddenpower``)."""
-    return (m or "").split("(")[0].strip().lower()
 
 
 _MAX_MOVES = 4   # a gen3 mon carries at most 4 moves → only (4 − revealed) slots can still be unseen
@@ -251,14 +267,6 @@ def build_exclusive_belief(species_logits, believed_mask, revealed_species,
                       and len(raw_top1) == len(set(raw_top1))
                       and float(info.revealed_leak_before.max()) <= 1e-4),
     )
-
-
-def _norm_move(move: str) -> str:
-    """Move id normalised for the revealed-vs-truth compare: lowercase, alnum-only, so the revealed
-    display form (`hiddenpower(bug)`) matches the truth id (`hiddenpowerbug`) — both collapse to the
-    bare `hiddenpower` (the opp's HP type stays unrevealed until it fires, so we compare the base)."""
-    s = re.sub(r"[^a-z0-9]", "", str(move).lower())
-    return "hiddenpower" if s.startswith("hiddenpower") else s
 
 
 def build_opp_full_team(opp_team_details: "list | None",
