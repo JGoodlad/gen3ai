@@ -3,7 +3,7 @@
 Proves the LIVE per-decision critic surprise the eval cycle folds into ``eval/td_resid_tail_*``
 equals what the prober would recompute OFFLINE from the same saved trace, using the prober's
 single-source-of-truth formula δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t)
-(``main/prober/session.py::_td``).
+(``main/prober/session/core.py::ProbeSession._td``).
 
 It guards the three things a unit test with hand-fed numbers can't: that on a *real* battle (a)
 the scalar reward ``BattleRecorder`` closes each transition with is the SAME number stored in the

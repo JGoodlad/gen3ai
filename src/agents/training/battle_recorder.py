@@ -52,7 +52,7 @@ class BattleRecorder:
         # index alignment is implicit. Writing it as an array makes the npz self-contained.
         self._action_masks: list[np.ndarray] = []
         # Per-decision TD residual δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the SAME formula the
-        # prober uses (main/prober/session.py::_td), the single source of truth. Computed live at
+        # prober uses (main/prober/session/core.py::ProbeSession._td), the single source of truth. Computed live at
         # the NEXT record() (when complete_pending finalizes reward(t) and the current state
         # carries V(s_{t+1})), so the last decision yields no δ (no next state — matches the
         # prober leaving td_residual(last)=None). The left tail of these is the "critic got
