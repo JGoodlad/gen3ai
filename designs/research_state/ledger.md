@@ -2008,3 +2008,35 @@ live in the main checkout after the real install.
   scripts. They are executable instructions people copy, so they get Phase 3's one reviewed
   mechanical pass rather than incidental edits. `docs/RUNNING.md`, `README.md` and the root
   `CLAUDE.md` were corrected because they *asserted the export was required*, which is now false.
+
+### Twin heads + shadow critic LANDED — v99, and the build's own review caught two label-poisoning bugs (2026-08-23, opus agent, `3d3c07f`+`aa1c630`+`6a16a2b`)
+
+**The authorized R1 amendment is code**: three win-prob heads (A control / B same-states
+single-outcome / C same-states tight-MC — the factorial isolating prioritization from variance
+reduction), the passive SHADOW CRITIC on `mc_return` labels (real-unit shaped returns via the
+offline reward-parity path), `MODEL_CONFIG_VERSION` 99, all head-only always, every
+`cf_*_grad_share` measured **exactly 0.0** live. Schema decision of note: the new labels ride
+v1 rows as ADDITIVE SIBLING FIELDS, not a second `kind` — the buffer dedups on obs digest, so a
+second row per state would silently evict one; one-row-per-state makes "B and C saw identical
+states" STRUCTURAL. And `schema` stays 1 because it is a REFUSAL gate — bumping it would break
+the very consumers backward-compatibility exists for.
+
+- **The build ran its own adversarial review pre-landing and convicted its own `mc_return`
+  path twice**: (1) the reward-recording seam was `action_to_order`, which the counterfactual
+  inverter calls in a loop over EVERY legal index — the stateful reward function advanced 6–9×
+  per turn on moves never played; (2) the recording hook armed-but-did-not-note at the
+  divergence, dropping r_T so every label was G(s_{T+1}) against s_T's obs row — **biased by
+  the divergence turn, i.e. correlated with state and shaped exactly like real signal**. Neither
+  was visible to any existing test; both now pinned, the second with a negative control.
+  **The durable lesson, now in the leaf: a composition test that checks PRESENCE rather than
+  VALUE is a presence test** — the fourth member of the vacuity family this week.
+- Five smaller review fixes rode along, two worth remembering: `--cf-winprob-coef` is REFUSED
+  beside `--cf-twin-heads` (it would feed head A the labels B/C add — the factorial would
+  report a null by construction), and the audit now tests `all` rows rather than filtering
+  (one unscored row of a thousand used to delete the primary meter).
+- **One honest coupling pinned, not hidden**: head-only does not escape the GLOBAL gradient
+  clip's rescale (a factor over all params) — the byte-identity proof runs with the clip raised
+  out of the way, which is what proves the detach holds rather than the clip hiding a leak.
+- The size ratchet did its job on its second day: the cf terms were extracted to `cf_terms.py`
+  because `instrumented_ppo` would have blown its recorded ceiling. NOT gated (declared): a
+  multi-cycle producer→trainer composition with the twin arm live.
