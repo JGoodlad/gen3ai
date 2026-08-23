@@ -2040,3 +2040,52 @@ the very consumers backward-compatibility exists for.
 - The size ratchet did its job on its second day: the cf terms were extracted to `cf_terms.py`
   because `instrumented_ppo` would have blown its recorded ceiling. NOT gated (declared): a
   multi-cycle producer→trainer composition with the twin arm live.
+
+### The training entry point is a PACKAGE — 4,667 lines → a 350-line orchestrator, and the size ratchet's first entry is GONE (2026-08-22, `main/train/`)
+
+`src/main/train_rl_agent.py` was the tree's largest source file and the top entry on
+`file_size_gate_test.py`'s grandfathered list. It is now **~350 lines** and that entry is
+**DELETED**, which is the rule the gate states twice: an allowlist may only shrink, and a file
+back under the bound must LEAVE it rather than have its number lowered.
+
+The split follows `features_extractor.py`'s 2026-08-16 precedent exactly — one module per concern
+under `main/train/`, the original file kept as a re-export HUB — so the file path, `build_parser()`,
+`main()`, and every helper any test or module ever imported from it all still resolve from it.
+Nothing about the launcher's spawn contract or a recorded `launcher_command` changed.
+
+    parser.py 1600 · model_build.py 617 · config.py 761 · matchup_setup.py 365 · callbacks.py 284 ·
+    env_factory.py 235 · lifecycle.py 213 · run_io.py 192 · checkpoint_state.py 174 ·
+    final_eval.py 123 · compile_flags.py 82 · constants.py 29 · __init__.py 41
+
+- **The proof that "behaviour-preserving" is a MEASUREMENT here is the parser-surface diff.** A
+  one-time script loaded `build_parser()` from `git show HEAD:` and from the new tree and compared
+  the full `_actions` surface — option strings, dest, nargs, const, default, type, choices,
+  required, help, metavar — **plus the flagless `parse_args([])` namespace**. 197 actions and 196
+  dests, byte-identical on both dumps. The namespace half is the one that matters: it is what a
+  launcher restart actually sees, and a default that changed shape would pass an action-only
+  compare. `python -m main.checkargs` clean on the 5 most-recent archived runs; `flag_registry
+  --check` OK.
+- **The real work was not moving code, it was the SOURCE-SCANNING GATES.** Ten test files assert
+  about this entry point by READING it — the flag-registry five-surface check, the config_only
+  demotion check, the `--edge-bias-families` validator, the `policy_kwargs` AST pin, the
+  `learn()`-budget pin, the BLAS-thread pin, the smoke-eval banner. Every one of them names a
+  single path, so the decomposition would have left them **quietly vacuous** rather than red: the
+  `policy_kwargs` gate would have found 0 dicts, the `learn()` gate 0 calls. They now read
+  `main.train.entry_source()` / `entry_source_files()` — one canonical text for the whole entry
+  point — so a future phase move cannot empty them. **This is the same family as the ruff and
+  size-gate allowlist rules: a gate that silently stops looking is worse than no gate.**
+- **The thread-pinning guard had already half-emptied itself and it took the move to notice.** It
+  asserted the BLAS pin runs before `import torch`, by looking for a literal `torch` import. The
+  hub no longer has one (torch now arrives via `stable_baselines3` and the phase modules), so the
+  check would have gone inert with a green tick. It now matches by EFFECT — every root that pulls
+  torch in transitively — which is the property the measurement (6 fps vs 231) actually depends on.
+- **Two latent defects surfaced, both fixed in the move, neither previously reachable by a test.**
+  (1) The `--warmstart-consensus` block called `_current_model_version`, a name that existed only
+  because the `--exploiter` branch had imported it locally ~900 lines earlier — one guard away from
+  a NameError, invisible while the two happened to co-occur. (2) The checkpoint callback's LR/epoch
+  lambdas closed over a `model` that did not exist yet at that point in `main()`; they now read the
+  callback's own `self.model`, which SB3 binds in `init_callback()` before any `_on_step`.
+- **Gates**: `--debug --steps 10000` CPU smoke to `Training complete` with `[ModelVersion]
+  Round-trip smoke test PASSED` and 15 finished episodes; a second `--debug --debug-eval
+  --self-play` smoke for the callback-assembly path; ruff + mypy + the size gate green with the
+  allowlist entry removed.

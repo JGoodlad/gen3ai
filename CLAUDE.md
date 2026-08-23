@@ -1349,7 +1349,14 @@ src/
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — launcher UI — has CLAUDE.md
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
-    train_rl_agent.py  # Training entry point (also callable directly)
+    train/             # The training entry point's PHASES (train_rl_agent.py is the re-export hub)
+                     #   parser.py (build_parser) · config.py (desugar/_resolve/validate) ·
+                     #   matchup_setup.py (teams + opponents) · env_factory.py (per-worker _init) ·
+                     #   callbacks.py (everything during learn) · model_build.py (resume + fresh
+                     #   paths + learn) · final_eval.py · run_io.py · lifecycle.py ·
+                     #   checkpoint_state.py · compile_flags.py · constants.py
+                     #   `entry_source()` = the whole entry point as text, for source-scanning gates
+    train_rl_agent.py  # Training entry point (also callable directly) — thin orchestrator + hub
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)

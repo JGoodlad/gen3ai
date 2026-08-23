@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import ast
 import inspect
-from pathlib import Path
 
 import torch as th
 
@@ -32,7 +31,7 @@ from agents.model.arch_constants import NET_ARCH
 from agents.model.policy import POLICY_ACTIVATION_FN
 
 
-_TRAIN_RL_AGENT = Path(__file__).with_name("train_rl_agent.py")
+from main.train import entry_source_files
 
 
 def test_the_pinned_activation_is_tanh() -> None:
@@ -50,21 +49,25 @@ def test_the_pinned_activation_is_tanh() -> None:
     )
 
 
-def _policy_kwargs_dicts() -> list[ast.Dict]:
-    """Every `policy_kwargs` dict literal in train_rl_agent.py, found by AST not by grep.
+def _policy_kwargs_dicts() -> list[tuple[str, ast.Dict]]:
+    """Every `policy_kwargs` dict literal in the ENTRY POINT, found by AST not by grep.
 
     Identified by the `features_extractor_class` key — the one entry that is unique to a
     policy_kwargs dict. There are two: the resume path's `_load_policy_kwargs` and the fresh-run
-    path's `policy_kwargs`.
+    path's `policy_kwargs`. Both moved into `main/train/model_build.py` with the 2026-08-22
+    decomposition, so this walks the whole entry point (hub + phase modules) rather than one file
+    — reading a single path would have left the gate finding zero dicts and passing on a
+    `len(...) == 2` it could no longer satisfy.
     """
-    tree = ast.parse(_TRAIN_RL_AGENT.read_text())
     out = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Dict):
-            continue
-        keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
-        if "features_extractor_class" in keys:
-            out.append(node)
+    for path in entry_source_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Dict):
+                continue
+            keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
+            if "features_extractor_class" in keys:
+                out.append((f"{path.name}:{node.lineno}", node))
     return out
 
 
@@ -75,14 +78,14 @@ def test_both_policy_kwargs_sites_pass_activation_fn() -> None:
     """
     dicts = _policy_kwargs_dicts()
     assert len(dicts) == 2, (
-        f"expected exactly 2 policy_kwargs dicts in train_rl_agent.py (resume + fresh), found "
-        f"{len(dicts)} at lines {[d.lineno for d in dicts]}. A new construction site must also "
-        "pass activation_fn — update this test deliberately."
+        f"expected exactly 2 policy_kwargs dicts in the training entry point (resume + fresh), "
+        f"found {len(dicts)} at {[where for where, _ in dicts]}. A new construction site must "
+        "also pass activation_fn — update this test deliberately."
     )
-    for node in dicts:
+    for where, node in dicts:
         keys = {k.value for k in node.keys if isinstance(k, ast.Constant)}
         assert "activation_fn" in keys, (
-            f"the policy_kwargs dict at train_rl_agent.py:{node.lineno} does not pass "
+            f"the policy_kwargs dict at {where} does not pass "
             "'activation_fn' — the tower would silently fall back to sb3-contrib's signature "
             "default (gen3_policy_activation_pin_v1)."
         )

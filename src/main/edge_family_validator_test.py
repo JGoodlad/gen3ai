@@ -9,9 +9,10 @@ exist, and nothing in the suite noticed.
 The general rule this pins is the v78 flag-registry one: a toggle's legal VALUES live in exactly
 one place, and every other surface derives them.
 
-**On the shape of these tests.** `train_rl_agent.py` builds its parser inline inside `main()`, so
-there is no parser to import and no way to reach the validator without running the entry point.
-Driving it as a subprocess was tried and REJECTED: an ACCEPTED family set has no early exit, so
+**On the shape of these tests.** The validator lives mid-way through `main/train/config.py`'s
+`resolve_config`, which resolves a whole run, so there is no way to reach it without running the
+entry point. Driving it as a subprocess was tried and REJECTED: an ACCEPTED family set has no
+early exit, so
 the positive case ran on into real training and had to be killed by a 300 s timeout — a test that
 launches a trainer is worse than no test. So the accept direction is pinned STRUCTURALLY (the CLI
 must derive its set from the model's table, which makes the two incapable of disagreeing) and only
@@ -24,9 +25,12 @@ import sys
 from pathlib import Path
 
 from agents.model.features_extractor import _EDGE_FAMILIES
+from main.train import entry_source
 
-_ENTRY = Path(__file__).with_name("train_rl_agent.py")
-_SRC = _ENTRY.read_text()
+_ENTRY = Path(__file__).with_name("train_rl_agent.py")   # still the process to RUN
+# The validator itself moved into `main/train/config.py` with the 2026-08-22 decomposition;
+# read the whole entry point rather than one file, so a future move cannot empty this gate.
+_SRC = entry_source()
 _MARKER = "--edge-bias-families: unknown families"
 
 

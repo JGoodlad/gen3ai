@@ -7,13 +7,15 @@ would version-check an arch it did not build. These tests exist to keep that fro
 import inspect
 import json
 import re
-from pathlib import Path
 
 
 from agents.model import extractor_arch as EA
 from agents.model.features_extractor import Gen3FeaturesExtractor
 
-_TRAIN_PY = Path(__file__).resolve().parents[2] / "main" / "train_rl_agent.py"
+# The entry point is a PACKAGE since 2026-08-22 (`main/train/` + the `train_rl_agent.py`
+# hub). `entry_source()` is its one canonical text, so a gate that READS the entry point
+# keeps reading all of it instead of silently emptying when a phase moves.
+from main.train import entry_source
 
 
 def _extractor_params():
@@ -31,7 +33,7 @@ def test_every_mapped_kwarg_is_a_real_extractor_parameter():
 def test_no_inline_extractor_kwargs_assignments_remain():
     """THE anti-duplication guard. Both call sites must go through `build_extractor_arch_kwargs`; a
     stray `extractor_kwargs["new_toggle"] = args.new_toggle` re-opens the drift this replaced."""
-    src = _TRAIN_PY.read_text()
+    src = entry_source()
     stray = re.findall(r'\b\w*extractor_kwargs\["([a-z_0-9]+)"\]\s*=\s*args\.', src)
     assert not stray, (
         f"train_rl_agent.py assigns arch kwargs inline again: {sorted(set(stray))}. "
@@ -41,7 +43,7 @@ def test_no_inline_extractor_kwargs_assignments_remain():
 
 
 def test_both_paths_use_the_shared_builder():
-    src = _TRAIN_PY.read_text()
+    src = entry_source()
     assert src.count("build_extractor_arch_kwargs(") >= 3, (
         "expected the fresh path, the resume path and the compile pre-load to share the builder"
     )

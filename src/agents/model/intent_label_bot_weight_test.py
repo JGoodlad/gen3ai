@@ -281,13 +281,13 @@ def test_the_cli_flag_defaults_to_none_so_a_flagless_resume_can_inherit():
 
 def test_a_negative_weight_is_refused():
     """Negative would train alpha/beta to be MAXIMALLY wrong about bots — the opposite of the
-    flag's meaning. Training-only, so the `main()` parser check is the ONLY gate there is; pinned
-    at the source, since that check lives inside the async entry point and cannot be called."""
+    flag's meaning. Training-only, so the CLI validation is the ONLY gate there is; pinned at the
+    source, since the check sits mid-way through a function that resolves a whole run."""
     import inspect
 
-    from main import train_rl_agent
+    from main.train.config import resolve_config
 
-    src = inspect.getsource(train_rl_agent.main)
+    src = inspect.getsource(resolve_config)
     assert "args.intent_label_bot_weight is not None and args.intent_label_bot_weight < 0.0" in src
     assert "--intent-label-bot-weight must be >= 0" in src
 

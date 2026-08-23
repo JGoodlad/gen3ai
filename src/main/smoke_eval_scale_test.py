@@ -53,10 +53,8 @@ def test_the_smoke_count_is_small_enough_to_be_fast_and_honest():
 def test_the_flag_default_is_None_so_explicit_and_absent_are_distinguishable():
     """If the default were 100 there would be no way to tell "you asked for 100" from "you said
     nothing", and the auto-scale could not exist without overriding a real choice."""
-    import inspect
-
-    import main.train_rl_agent as t
-    src = inspect.getsource(t)
+    from main.train import entry_source
+    src = entry_source()
     assert '"--eval-battles", type=int, default=None' in src, (
         "--eval-battles must default to None; a concrete default makes 'explicit' unknowable")
 
@@ -70,7 +68,5 @@ def test_the_flag_default_is_None_so_explicit_and_absent_are_distinguishable():
 def test_the_banner_says_the_things_that_prevent_the_misread(phrase):
     """A reader seeing 'Training complete' then silence concluded 'hang' six times. These three
     statements are what make that misread impossible; losing any one of them re-opens it."""
-    import inspect
-
-    import main.train_rl_agent as t
-    assert phrase in inspect.getsource(t), f"the banner no longer says: {phrase!r}"
+    from main.train import entry_source
+    assert phrase in entry_source(), f"the banner no longer says: {phrase!r}"

@@ -16,15 +16,16 @@ The failure modes this is here to catch, all of which have happened:
   * a `config_only` toggle that still has an argparse entry — the demotion did not actually happen,
     so the "frozen" value is still settable and the frozen default is a lie
 
-The argparse surface is read from a REAL parser (`train_rl_agent` builds it inline in `main`, so it
-is recovered by executing the `add_argument` calls against a recording stub) rather than by grepping
-for a string — a flag that exists only inside a comment must not count as present.
+The argparse surface is read from the `add_argument` CALLS rather than by grepping for a string —
+a flag that exists only inside a comment must not count as present. It reads `main.train`'s
+`entry_source()` (the hub + every phase module) rather than one file: the parser moved to
+`main/train/parser.py` and `_resolve` to `main/train/config.py` on 2026-08-22, and a probe naming a
+single path would have gone silently VACUOUS instead of red.
 """
 from __future__ import annotations
 
 import dataclasses
 import inspect
-import os
 import re
 
 import pytest
@@ -36,14 +37,15 @@ from agents.model.flag_registry import (
 from agents.model.model_version import ModelVersion
 from agents.model.snapshot import current_model_version
 
-_TRAIN_PY = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "main", "train_rl_agent.py")
+# The entry point is a PACKAGE since 2026-08-22 (`main/train/` + the `train_rl_agent.py`
+# hub). `entry_source()` is its one canonical text, so a gate that READS the entry point
+# keeps reading all of it instead of silently emptying when a phase moves.
+from main.train import entry_source
 
 
 # --------------------------------------------------------------------------------- surface probes
 def _train_source() -> str:
-    with open(_TRAIN_PY) as fh:
-        return fh.read()
+    return entry_source()
 
 
 def _argparse_option_strings() -> set:

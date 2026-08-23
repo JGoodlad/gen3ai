@@ -19,20 +19,25 @@ These tests read the SOURCE rather than running a 25M-step job — the arithmeti
 the contract is "which variable is passed", which is statically checkable.
 """
 import ast
-import pathlib
 
-_TRAIN = pathlib.Path(__file__).with_name("train_rl_agent.py")
+from main.train import entry_source, entry_source_files
 
 
 def _learn_calls():
-    """Every `*.learn(...)` call in train_rl_agent, as (keyword -> arg-source) dicts."""
-    tree = ast.parse(_TRAIN.read_text())
+    """Every `*.learn(...)` call in the entry point, as (`file:line`, keyword -> arg-source).
+
+    Scans the WHOLE entry point (the `train_rl_agent.py` hub + the `main/train/` phase modules),
+    not one file: the two `learn()` sites moved into `main/train/model_build.py` with the
+    2026-08-22 decomposition, and a gate that reads a single path would have gone quietly vacuous.
+    """
     out = []
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "learn"):
-            kw = {k.arg: ast.unparse(k.value) for k in node.keywords if k.arg}
-            out.append((node.lineno, kw))
+    for path in entry_source_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "learn"):
+                kw = {k.arg: ast.unparse(k.value) for k in node.keywords if k.arg}
+                out.append((f"{path.name}:{node.lineno}", kw))
     return out
 
 
@@ -52,7 +57,7 @@ def test_the_resume_call_passes_the_REMAINING_budget_not_the_absolute_target():
 
     Identified by position: the resume site is the one guarded by a `remaining_steps` computation.
     """
-    src = _TRAIN.read_text()
+    src = entry_source()
     assert "remaining_steps = args.steps - model.num_timesteps" in src, (
         "the resume path no longer computes remaining_steps — re-check this test's assumption")
     calls = _learn_calls()
@@ -75,7 +80,7 @@ def test_at_most_one_learn_call_uses_the_absolute_target():
 def test_the_printed_remaining_matches_what_is_trained():
     """The message said '915,520 remaining' while the run trained 25M more. A number a human is
     shown must be the number the code acts on, or it actively misleads during an incident."""
-    src = _TRAIN.read_text()
+    src = entry_source()
     printed = "Steps: {remaining_steps:,} remaining" in src
     used = any(kw.get("total_timesteps") == "remaining_steps" for _, kw in _learn_calls())
     assert printed == used or not printed, (

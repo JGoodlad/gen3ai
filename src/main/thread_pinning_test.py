@@ -20,9 +20,24 @@ import ast
 import os
 import pathlib
 
-_TRAIN = pathlib.Path(__file__).with_name("train_rl_agent.py")
+from main.train import entry_source
+
+_TRAIN = pathlib.Path(__file__).with_name("train_rl_agent.py")   # the HUB (where the pin lives)
 _LAUNCHER_CHILD = pathlib.Path(__file__).with_name("launcher") / "child.py"
 _VARS = ("OMP_NUM_THREADS", "MKL_NUM_THREADS")
+
+# What the pin has to run BEFORE. A bare `import torch` is the obvious one, but it is no longer the
+# only one and since the 2026-08-22 decomposition it is not even present in the hub: `import
+# stable_baselines3…` and the `main.train.*` phase modules all pull torch in TRANSITIVELY, and BLAS
+# reads its thread count the moment it initialises regardless of which import got it there. Naming
+# only `torch` would have left this guard inert the day the hub stopped importing it directly —
+# which is exactly what happened, and is why the list is by EFFECT rather than by spelling.
+_TORCH_BEARING_ROOTS = ("torch", "stable_baselines3", "sb3_contrib", "agents", "main.train",
+                        "utils.bridge")
+
+
+def _pulls_in_torch(module_name: str) -> bool:
+    return any(module_name == r or module_name.startswith(r + ".") for r in _TORCH_BEARING_ROOTS)
 
 
 def test_launcher_child_still_pins_threads():
@@ -42,7 +57,7 @@ def test_train_rl_agent_pins_threads_at_import_time():
             pin_line = node.lineno
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             names = [a.name for a in getattr(node, "names", [])] + [getattr(node, "module", "") or ""]
-            if any(n == "torch" or n.startswith("torch.") for n in names):
+            if any(_pulls_in_torch(n) for n in names):
                 torch_line = node.lineno if torch_line is None else min(torch_line, node.lineno)
     assert pin_line is not None, (
         "train_rl_agent.py no longer sets OMP/MKL_NUM_THREADS at import — a direct run will thrash "
@@ -65,8 +80,12 @@ def test_pinning_uses_setdefault_not_hard_assignment():
 
 def test_env_worker_pins_torch_threads_independently():
     """Because the env vars are setdefault-only, a learner-side override would otherwise un-pin every
-    worker. The worker `_init` must call torch.set_num_threads(1) itself."""
-    src = _TRAIN.read_text()
+    worker. The worker `_init` must call torch.set_num_threads(1) itself.
+
+    Reads the whole entry point rather than the hub: `_init` moved into
+    `main/train/env_factory.py` with the 2026-08-22 decomposition.
+    """
+    src = entry_source()
     init_idx = src.index("def _init():")
     body = src[init_idx:init_idx + 2000]
     assert "set_num_threads(1)" in body, (

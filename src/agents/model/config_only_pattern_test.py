@@ -28,7 +28,6 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import json
-import os
 import re
 
 import pytest
@@ -39,8 +38,10 @@ from agents.model.flag_registry import Tier, config_only_flags
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.snapshot import save_model_snapshot
 
-_TRAIN_PY = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "main", "train_rl_agent.py")
+# The entry point is a PACKAGE since 2026-08-22 (`main/train/` + the `train_rl_agent.py`
+# hub). `entry_source()` is its one canonical text, so a gate that READS the entry point
+# keeps reading all of it instead of silently emptying when a phase moves.
+from main.train import entry_source
 
 
 def _a_config_only_flag():
@@ -125,8 +126,7 @@ def test_a_matching_resume_is_accepted(flag):
 # ------------------------------------------------------------------------ 3. UNSETTABLE from a CLI
 @pytest.mark.parametrize("flag", config_only_flags(), ids=lambda f: f.name)
 def test_no_argparse_entry_and_no_resolve_line(flag):
-    with open(_TRAIN_PY) as fh:
-        src = fh.read()
+    src = entry_source()
     opts = set()
     for call in re.finditer(r"parser\.add_argument\(\s*((?:\"[^\"]*\"\s*,?\s*)+)", src):
         opts.update(m.group(1) for m in re.finditer(r"\"(--[a-zA-Z0-9_-]+)\"", call.group(1)))
