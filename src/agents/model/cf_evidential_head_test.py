@@ -227,13 +227,15 @@ def test_migration_defaults_a_v97_config_off():
     not a guess, it is the only possible past."""
     out = _migrate_config({"config_version": 97})
     assert out["cf_evidential"] is False
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 98
+    # The migration must carry the config all the way to the CURRENT version, not merely to the one
+    # this feature landed at — a chain that stops at 98 leaves every later branch unapplied.
+    assert out["config_version"] == MODEL_CONFIG_VERSION
 
 
 def test_a_recorded_on_config_round_trips():
     """The other migration leg: a config that already RECORDS the flag must survive untouched."""
     out = _migrate_config({"config_version": 98, "cf_evidential": True})
-    assert out["cf_evidential"] is True and out["config_version"] == 98
+    assert out["cf_evidential"] is True and out["config_version"] == MODEL_CONFIG_VERSION
 
 
 def test_the_flag_is_in_the_registry_as_a_structural_cli_toggle():

@@ -419,6 +419,39 @@ class TestLabelRows:
         assert r["wilson_lo"] <= r["label"] <= r["wilson_hi"]
         assert r["obs_npz"] is None and r["obs_inline"]
 
+    def test_the_row_carries_head_Bs_SINGLE_OUTCOME_stream(self):
+        """gen3_cf_twin_heads_v1. `outcome_label` is the RECORDED battle's realized outcome — the
+        SAME quantity the on-policy BCE eats, on the states the sampler selected. That identity is
+        what makes B−A a read of COVERAGE alone; a row that shipped anything else there would make
+        the contrast measure two things at once."""
+        assert self._row(outcome_label=0.0)["outcome_label"] == 0.0
+        assert self._row(outcome_label=1.0)["outcome_label"] == 1.0
+        assert self._row(outcome_label=0.5)["outcome_label"] == 0.5      # the turn cap / a tie
+        # ABSENT is a first-class value: an older consumer ignores it, a newer one supervises
+        # nothing extra rather than being handed a fabricated 0.
+        assert self._row()["outcome_label"] is None
+
+    def test_the_mc_return_stream_is_written_ONLY_when_it_was_measured(self):
+        """A `null` and an absent key mean the same thing to the buffer — but writing the reward
+        provenance unconditionally would imply a measurement that was not taken, and the digest is
+        the one field a reader uses to decide whether the number is theirs."""
+        bare = self._row()
+        assert "mc_return" not in bare and "reward_sha1" not in bare
+        got = self._row(mc_return=-2.5, mc_return_n=8, reward_sha1="deadbeef",
+                        reward_composition="1 TERMINAL + 7 PBRS + 1 BIAS (x)")
+        assert got["mc_return"] == pytest.approx(-2.5) and got["mc_return_n"] == 8
+        assert got["reward_sha1"] == "deadbeef"
+        # The human line rides beside the digest for the reason the launch banner exists: a hex
+        # digest says two rewards DIFFER and nothing about how.
+        assert "PBRS" in got["reward_composition"]
+
+    def test_the_new_streams_do_not_disturb_the_v1_schema_version(self):
+        """`schema` is a REFUSAL gate: a consumer skips every row whose version it does not know.
+        Bumping it for additive-optional fields would make a new producer's output unreadable by an
+        existing trainer — the opposite of backward compatible."""
+        assert self._row(outcome_label=1.0, mc_return=1.0, mc_return_n=4,
+                         reward_sha1="x")["schema"] == 1
+
     def test_the_obs_digest_is_of_the_bytes_actually_shipped(self):
         import base64
         r = self._row()

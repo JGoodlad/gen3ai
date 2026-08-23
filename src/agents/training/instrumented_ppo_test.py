@@ -1235,7 +1235,7 @@ def test_the_cf_forward_builds_no_graph_when_nothing_downstream_wants_one(tmp_pa
     def spy(self):
         ctx = real(self)
         if ctx is not None:
-            seen.append(bool(ctx[2].requires_grad))
+            seen.append(bool(ctx.value_pooled.requires_grad))
         return ctx
 
     model.__class__ = type("_Spy", (type(model),), {"_cf_sample_and_forward": spy})
@@ -1260,7 +1260,7 @@ def test_the_cf_forward_KEEPS_the_graph_for_the_trunk_open_arm(tmp_path):
     def spy(self):
         ctx = real(self)
         if ctx is not None:
-            seen.append(bool(ctx[2].requires_grad))
+            seen.append(bool(ctx.value_pooled.requires_grad))
         return ctx
 
     model.__class__ = type("_Spy", (type(model),), {"_cf_sample_and_forward": spy})
@@ -1380,3 +1380,382 @@ def test_cf_rows_sampled_reports_the_rows_the_fold_actually_ate(tmp_path):
     # eaten once per minibatch — so the total is a positive multiple of the resident count.
     assert vals["cf/rows_sampled"] > 0
     assert vals["cf/rows_sampled"] % float(len(model._cf_buffer)) == 0
+
+
+# --------------------------------------------------------------------------------------
+# TWIN HEADS + SHADOW CRITIC (gen3_cf_twin_heads_v1) — the owner-authorized amendment to the
+# signed R1 pre-registration (ledger 2026-08-22 evening, "Three owner sign-offs" item 3).
+#
+# The arm's whole claim is that the three heads differ ONLY in their label stream, so the gates
+# here are about ROUTING and ISOLATION rather than about loss values: which head sees which label,
+# and which parameters a live coefficient is allowed to touch. A swap between B and C would leave
+# every published scalar looking healthy while the factorial measured its own mirror image.
+# --------------------------------------------------------------------------------------
+
+
+def _attach_cf_twin_heads(model, in_dim=8):
+    """Two `WinProbHead`s sized to the stub's value_pooled, plus the `last_value_pooled` property
+    the on-policy mirror reads. Fixed seed — a paired test must not flap on init."""
+    from agents.model.aux_value_heads import WinProbHead
+    th.manual_seed(29)
+    heads = []
+    for name in ("cf_twin_head_b", "cf_twin_head_c"):
+        h = WinProbHead()
+        h.net = th.nn.Sequential(th.nn.Linear(in_dim, 1))
+        setattr(model.policy.features_extractor, name, h)
+        model.policy.optimizer.add_param_group({"params": list(h.parameters())})
+        heads.append(h)
+    return heads
+
+
+def _attach_cf_shadow_head(model, in_dim=8):
+    from agents.model.aux_value_heads import ShadowValueHead
+    th.manual_seed(31)
+    head = ShadowValueHead()
+    head.net = th.nn.Sequential(th.nn.Linear(in_dim, 1))
+    model.policy.features_extractor.cf_shadow_head = head
+    model.policy.optimizer.add_param_group({"params": list(head.parameters())})
+    return head
+
+
+def _write_cf_twin_labels(dirpath, n=8, obs_dim=1, label=1.0, outcome=0.0,
+                          mc_return=None, reward_sha1="", policy_step=0):
+    """The v1 row with the twin streams attached. `label` (tight-MC) and `outcome` are given
+    DIFFERENT values on purpose: that is what makes a B/C routing swap detectable at all."""
+    dirpath.mkdir(parents=True, exist_ok=True)
+    with open(dirpath / "labels_twin_0.jsonl", "w") as f:
+        for i in range(n):
+            raw = np.full(obs_dim, float(i % 3), dtype=np.float32).tobytes()
+            row = {
+                "schema": 1, "kind": "mc_winprob", "battle": f"b{i}", "decision_idx": i,
+                "obs_sha1": _hashlib.sha1(raw).hexdigest(), "obs_npz": None,
+                "obs_inline": _b64.b64encode(raw).decode(), "label": label, "n_rollouts": 8,
+                "wilson_lo": 0.0, "wilson_hi": 1.0, "policy_step": policy_step,
+                "opponent": "pool", "created_unix": 0.0, "outcome_label": outcome,
+            }
+            if mc_return is not None:
+                row.update(mc_return=mc_return, mc_return_n=8, reward_sha1=reward_sha1)
+            f.write(_json.dumps(row) + "\n")
+
+
+def _attach_cf_twin_buffer(model, tmp_path, **kw):
+    from agents.training.cf_label_buffer import CfLabelBuffer
+    _write_cf_twin_labels(tmp_path / "cf_labels", **kw)
+    model._cf_buffer = CfLabelBuffer(tmp_path / "cf_labels", obs_dim=1, lag_bound=0,
+                                     reward_sha1=kw.get("reward_sha1") or None)
+    return model._cf_buffer
+
+
+def _cf_twin_baseline(model, tmp_path, unclipped=False):
+    """`(init_sd, init_opt, base_params)` with every cf coefficient at zero.
+
+    ``unclipped`` raises `max_grad_norm` out of the way. See
+    `test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_CLIP` for why an
+    isolation test that leaves it alone measures the clip rather than the detach.
+    """
+    if unclipped:
+        model.max_grad_norm = 1e9
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+    model._cf_buffer = None
+    model.cf_winprob_coef = 0.0
+    model.cf_twin_coef = 0.0
+    model.cf_shadow_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    return init_sd, init_opt, base
+
+
+def test_twin_heads_at_coefficient_zero_are_byte_identical_to_not_having_them(tmp_path):
+    """ON-at-coefficient-0 must leave EVERY parameter update bit-identical — including the twins'
+    own, which is the stronger half.
+
+    The whole twin block is gated on `cf_twin_coef`, INCLUDING the on-policy mirror. That is a
+    deliberate choice: a mirror that ran at coefficient zero would train B and C on head A's loss
+    alone, which is a perfectly reasonable control condition but is NOT "off", and "off is off" is
+    the only thing standing between building the heads and perturbing a live run.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_twin_heads(model)
+    init_sd, init_opt, base = _cf_twin_baseline(model, tmp_path)
+
+    _attach_cf_twin_buffer(model, tmp_path)
+    model.cf_twin_coef = 0.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"cf_twin_coef=0 with a populated buffer perturbed {k}"
+
+
+def test_a_live_twin_coefficient_reaches_ONLY_the_twin_heads(tmp_path):
+    """Head-only is not a mode for the twins, it is their definition in v1 — so a live coefficient
+    must move `cf_twin_head_{b,c}` and leave the trunk, head A and everything else bit-identical.
+
+    Measured on the parameter update rather than asserted about a `.detach()` call, because the
+    claim the amendment stands on is "the three heads share ONE trunk", and a leaked gradient would
+    make the trunk a function of the arm.
+
+    Run with the global grad-norm clip raised out of the way, deliberately: the clip is a real but
+    DIFFERENT coupling (it rescales every gradient by a factor that depends on the total norm, so
+    any additional term perturbs every parameter in the last bits), and it is pinned separately by
+    `test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_CLIP`. Leaving it in
+    here would make this test a measurement of the clip rather than of the detach.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_twin_heads(model)
+    init_sd, init_opt, base = _cf_twin_baseline(model, tmp_path, unclipped=True)
+
+    _attach_cf_twin_buffer(model, tmp_path)
+    model.cf_twin_coef = 5.0
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    twin_keys = [k for k in base if "cf_twin_head" in k]
+    other_keys = [k for k in base if "cf_twin_head" not in k]
+    assert twin_keys and other_keys
+    assert any(not th.equal(base[k], on[k]) for k in twin_keys), "the twin term never reached B/C"
+    for k in other_keys:
+        assert th.equal(base[k], on[k]), f"the twin term leaked a gradient into {k}"
+
+
+def test_head_B_eats_the_OUTCOME_and_head_C_eats_the_TIGHT_MC_label(tmp_path):
+    """THE ROUTING PIN — the GIGO of this whole arm.
+
+    B's stream is the recorded SINGLE OUTCOME at n=1; C's is the TIGHT-MC ratio at n=R. A swap
+    leaves every scalar looking healthy and silently measures the factorial's mirror image, so the
+    routing is pinned on the loss VALUES rather than on which variable name appears where: with the
+    two labels set to opposite extremes, each head's loss must equal the binomial NLL of ITS OWN
+    label and must NOT equal the other's.
+    """
+    model = _build_cf_ppo()
+    heads = _attach_cf_twin_heads(model)
+    model.learn(total_timesteps=8 * 4)
+    # Opposite extremes: tight-MC says "certain win", the recorded outcome says "lost".
+    _attach_cf_twin_buffer(model, tmp_path, label=1.0, outcome=0.0)
+    model._cf_buffer.poll(0)
+    model.cf_twin_coef = 1.0
+    ctx = model._cf_sample_and_forward()
+    assert ctx is not None
+    _term, m = model._cf_twin_terms(ctx)
+
+    pooled = ctx.value_pooled.detach()
+    b_logits = heads[0](pooled).flatten()
+    c_logits = heads[1](pooled).flatten()
+    ones = th.ones_like(ctx.batch.label)
+    want_b = float(InstrumentedMaskablePPO._cf_binomial_nll(b_logits, ctx.batch.outcome, ones))
+    want_c = float(InstrumentedMaskablePPO._cf_binomial_nll(
+        c_logits, ctx.batch.label, ctx.batch.n_rollouts))
+    # B against ITS label...
+    assert m["b_loss"] == pytest.approx(want_b, rel=1e-6)
+    assert m["c_loss"] == pytest.approx(want_c, rel=1e-6)
+    # ...and NOT against the other's. With the labels at opposite extremes these are far apart, so
+    # this half of the pin cannot pass by coincidence.
+    crossed_b = float(InstrumentedMaskablePPO._cf_binomial_nll(
+        b_logits, ctx.batch.label, ctx.batch.n_rollouts))
+    assert abs(m["b_loss"] - crossed_b) > 1e-3, "head B was fed the tight-MC label"
+    assert m["b_coverage"] == pytest.approx(1.0)
+
+
+def test_head_B_is_weighted_as_ONE_observation_per_row(tmp_path):
+    """B's rows must enter at n=1 whatever the row's `n_rollouts` says.
+
+    Under `Σ NLL / Σ n` a row's gradient magnitude is `(q − target)/B` regardless of n, so B and C
+    pull EQUALLY HARD and only the target differs — which is what makes C−B a read of label
+    PRECISION rather than of effective learning rate. Feeding B the row's n=8 instead would leave
+    the loss on the same per-rollout scale and the pin would have to be on the value, so it is: B's
+    loss is computed against `ones`, and against `n_rollouts` it would differ.
+    """
+    model = _build_cf_ppo()
+    heads = _attach_cf_twin_heads(model)
+    model.learn(total_timesteps=8 * 4)
+    # outcome 0.5 → round(0.5*1)=0 wins at n=1, but round(0.5*8)=4 wins at n=8. Different loss.
+    _attach_cf_twin_buffer(model, tmp_path, label=1.0, outcome=0.5)
+    model._cf_buffer.poll(0)
+    model.cf_twin_coef = 1.0
+    ctx = model._cf_sample_and_forward()
+    _term, m = model._cf_twin_terms(ctx)
+    logits = heads[0](ctx.value_pooled.detach()).flatten()
+    at_one = float(InstrumentedMaskablePPO._cf_binomial_nll(
+        logits, ctx.batch.outcome, th.ones_like(ctx.batch.outcome)))
+    at_n = float(InstrumentedMaskablePPO._cf_binomial_nll(
+        logits, ctx.batch.outcome, ctx.batch.n_rollouts))
+    assert m["b_loss"] == pytest.approx(at_one, rel=1e-6)
+    assert abs(at_one - at_n) > 1e-6, "preconditions: the two weightings must be distinguishable"
+
+
+def test_head_B_is_skipped_and_COUNTED_when_no_row_carries_an_outcome(tmp_path):
+    """The starvation case, and the one way this arm produces a confident wrong answer.
+
+    A producer that ships no `outcome_label` trains B on nothing; B then equals A, and the C−B
+    contrast silently becomes C−A while every other scalar reads healthy. So B's fold is skipped
+    (never trained on a zero-filled absent label) and `b_coverage` publishes the fact.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_twin_heads(model)
+    model.learn(total_timesteps=8 * 4)
+    _attach_cf_buffer(model, tmp_path)          # the OLD fixture — no outcome_label at all
+    model._cf_buffer.poll(0)
+    model.cf_twin_coef = 1.0
+    ctx = model._cf_sample_and_forward()
+    _term, m = model._cf_twin_terms(ctx)
+    assert m["b_coverage"] == 0.0
+    assert "b_loss" not in m, "head B was folded on rows that carry no outcome label"
+    assert "c_loss" in m, "head C must still train — its stream is present"
+
+
+def test_the_onpolicy_mirror_uses_head_As_coefficient_and_detaches(tmp_path):
+    """B and C must carry a BIT-IDENTICAL copy of head A's own loss, at `win_prob_coef`.
+
+    If the mirror rode `cf_twin_coef` instead, B−A would confound "extra states" with "a different
+    base objective" and the factorial would decompose nothing. Checked as a unit on the term, since
+    the tiny PPO's obs dict carries no win-prob labels.
+    """
+    model = _build_cf_ppo()
+    heads = _attach_cf_twin_heads(model)
+    fe = model.policy.features_extractor
+    pooled = th.randn(6, 8, requires_grad=True)
+    fe.last_value_pooled = pooled
+
+    class _RD:
+        observations = {"win_target": th.tensor([[1.0], [0.0], [1.0], [1.0], [0.0], [1.0]]),
+                        "win_mask": th.ones(6, 1)}
+    model.win_prob_coef = 0.25
+    term, m = model._cf_twin_onpolicy_terms(_RD())
+    assert term is not None and "b_onpolicy_loss" in m and "c_onpolicy_loss" in m
+    want = 0.25 * sum(
+        float(InstrumentedMaskablePPO._win_prob_loss(
+            h(pooled.detach()), _RD.observations["win_target"],
+            _RD.observations["win_mask"])[0])
+        for h in heads)
+    assert float(term) == pytest.approx(want, rel=1e-6)
+    # The trunk must be untouchable from here: head-only ALWAYS.
+    term.backward()
+    assert pooled.grad is None, "the on-policy mirror leaked a gradient into the trunk"
+
+
+def test_shadow_critic_at_coefficient_zero_is_byte_identical(tmp_path):
+    model = _build_cf_ppo()
+    _attach_cf_shadow_head(model)
+    init_sd, init_opt, base = _cf_twin_baseline(model, tmp_path)
+    _attach_cf_twin_buffer(model, tmp_path, mc_return=1.5)
+    model.cf_shadow_coef = 0.0
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], off[k]), f"cf_shadow_coef=0 with a populated buffer perturbed {k}"
+
+
+def test_a_live_shadow_coefficient_reaches_ONLY_the_shadow_head(tmp_path):
+    """The shadow is a PROMOTION PATH, not surgery: it must be provably incapable of moving the
+    critic it is being compared against."""
+    model = _build_cf_ppo()
+    _attach_cf_shadow_head(model)
+    init_sd, init_opt, base = _cf_twin_baseline(model, tmp_path, unclipped=True)
+    _attach_cf_twin_buffer(model, tmp_path, mc_return=1.5)
+    model.cf_shadow_coef = 5.0
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    shadow_keys = [k for k in base if "cf_shadow_head" in k]
+    assert shadow_keys
+    assert any(not th.equal(base[k], on[k]) for k in shadow_keys), "the shadow never trained"
+    for k in base:
+        if "cf_shadow_head" not in k:
+            assert th.equal(base[k], on[k]), f"the shadow critic leaked a gradient into {k}"
+
+
+def test_shadow_term_is_masked_and_reads_the_popart_frame(tmp_path):
+    """Two facts in one: rows with no `mc_return` are EXCLUDED (not supervised toward zero, which
+    is the middle of this reward's range and the most plausible-looking wrong target available),
+    and the loss is computed in the PopArt-NORMALIZED frame the value loss trains in."""
+    model = _build_cf_ppo()
+    head = _attach_cf_shadow_head(model)
+    model.learn(total_timesteps=8 * 4)
+    _attach_cf_twin_buffer(model, tmp_path, mc_return=2.0)
+    model._cf_buffer.poll(0)
+    model.cf_shadow_coef = 1.0
+    ctx = model._cf_sample_and_forward()
+
+    class _PopArt:
+        sigma, mu = 2.0, 1.0
+        def normalize(self, x): return (x - self.mu) / self.sigma
+        def denormalize(self, x): return x * self.sigma + self.mu
+
+    _term, m = model._cf_shadow_term(ctx, _PopArt())
+    pred = head(ctx.value_pooled.detach()).flatten()
+    want = float(((pred - _PopArt().normalize(ctx.batch.mc_return)) ** 2).mean())
+    assert m["loss"] == pytest.approx(want, rel=1e-6)
+    assert m["coverage"] == pytest.approx(1.0)
+    # `pred_mean` is the DE-normalized read — the only frame a human can interpret.
+    assert m["pred_mean"] == pytest.approx(float((pred * 2.0 + 1.0).mean()), rel=1e-6)
+    assert m["label_mean"] == pytest.approx(2.0, rel=1e-6)
+
+    # And with no mc_return anywhere: no term, and a coverage of 0 that SAYS so. A FRESH directory
+    # — the twin fixture above is still on disk and its rows do carry one.
+    _attach_cf_buffer(model, tmp_path / "bare")
+    model._cf_buffer.poll(0)
+    ctx2 = model._cf_sample_and_forward()
+    term2, m2 = model._cf_shadow_term(ctx2, _PopArt())
+    assert term2 is None and m2["coverage"] == 0.0
+
+
+def test_all_four_cf_terms_share_ONE_sample_and_ONE_forward(tmp_path):
+    """Two samples would pay twice for the block's whole cost AND — far worse — make the arms
+    disagree about which states they scored, so a 'paired' difference would not be paired."""
+    model = _build_cf_ppo()
+    _attach_cf_evid_head(model)
+    _attach_cf_twin_heads(model)
+    _attach_cf_shadow_head(model)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+    _attach_cf_twin_buffer(model, tmp_path, mc_return=1.0)
+    model.cf_winprob_coef = 1.0
+    model.cf_evidential_coef = 1.0
+    model.cf_twin_coef = 1.0
+    model.cf_shadow_coef = 1.0
+
+    calls = []
+    real = InstrumentedMaskablePPO._cf_sample_and_forward
+
+    def spy(self):
+        calls.append(1)
+        return real(self)
+
+    model.__class__ = type("_Spy4", (type(model),), {"_cf_sample_and_forward": spy})
+    _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert calls, "preconditions: the CF block never ran"
+    # Every minibatch samples exactly once no matter how many consumers are live.
+    n_minibatches = len(calls)
+    model.cf_evidential_coef = model.cf_twin_coef = model.cf_shadow_coef = 0.0
+    calls.clear()
+    _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert len(calls) == n_minibatches, "the number of cf forwards depends on the consumer count"
+
+
+def test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_CLIP(tmp_path):
+    """A HEAD-ONLY term still perturbs every other parameter — through `max_grad_norm`, not through
+    the trunk. Pinned because the twin-heads arm's central claim is "identical trunk".
+
+    `clip_grad_norm_` scales EVERY gradient by `max_norm / total_norm`, and `total_norm` is taken
+    over all parameters — so adding any term with a non-zero gradient anywhere changes the factor
+    applied to the policy and value gradients too. It is tiny (a last-bits effect at a sane
+    coefficient) and it is shared by every aux this tree runs, but it is NOT zero, and an arm that
+    claims a bit-identical trunk has to know which of the two mechanisms it is claiming.
+
+    The demonstration is the pair: with the clip ACTIVE the updates differ; with the clip raised out
+    of the way and NOTHING else changed, they are bit-identical. That difference is the proof the
+    detach holds — a genuine gradient leak would survive both.
+    """
+    def _run(max_norm):
+        model = _build_cf_ppo()
+        _attach_cf_twin_heads(model)
+        model.max_grad_norm = max_norm
+        init_sd = copy.deepcopy(model.policy.state_dict())
+        init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+        model.learn(total_timesteps=8 * 4)
+        model._cf_buffer, model.cf_winprob_coef, model.cf_twin_coef = None, 0.0, 0.0
+        base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+        _attach_cf_twin_buffer(model, tmp_path / f"n{max_norm}")
+        model.cf_twin_coef = 5.0
+        on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+        return [k for k in base
+                if "cf_twin_head" not in k and not th.equal(base[k], on[k])]
+
+    assert _run(0.5), "preconditions: a binding clip must couple the term to the other params"
+    assert _run(1e9) == [], "a head-only term moved a non-twin parameter with the clip inactive"

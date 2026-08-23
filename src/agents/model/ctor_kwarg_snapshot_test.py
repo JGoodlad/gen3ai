@@ -43,7 +43,8 @@ _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_le
 # refused when a checkpoint recorded it ON, popped when OFF).
 # Sorted, so a diff reads as one line added or one line removed.
 CTOR_KWARGS_V96 = frozenset({
-    "attend_unrevealed_opponents", "belief_grad_mode", "cf_evidential", "consequence_topk",
+    "attend_unrevealed_opponents", "belief_grad_mode", "cf_evidential", "cf_shadow_critic",
+    "cf_twin_heads", "consequence_topk",
     "damage_candidate_k",
     "damage_matrices_incoming", "damage_matrices_outgoing", "damage_op", "damage_outgoing",
     "damage_topk_k", "edge_bias_families", "entity_tail_seats", "entity_topk_seats",

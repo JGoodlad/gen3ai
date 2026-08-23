@@ -254,7 +254,12 @@ def test_stats_publishes_every_scalar_even_when_starving(tmp_path):
     s = buf.stats(0)
     assert set(s) == {"cf/buffer_fill", "cf/label_age_steps_p50", "cf/labels_ingested_total",
                       "cf/labels_expired_total", "cf/labels_future_total",
-                      "cf/labels_replaced_total", "cf/labels_skipped_total"}
+                      "cf/labels_replaced_total", "cf/labels_skipped_total",
+                      # gen3_cf_twin_heads_v1 — the twin arm's own liveness. A twin-heads run whose
+                      # producer ships no outcome_label trains head B on nothing, B becomes A, and
+                      # C-B silently becomes C-A while every other counter reads healthy.
+                      "cf/outcome_label_coverage", "cf/mc_return_coverage",
+                      "cf/labels_mc_return_rejected_total", "cf/labels_field_skipped_total"}
     assert s["cf/buffer_fill"] == 0.0 and s["cf/labels_ingested_total"] == 0.0
 
 
@@ -272,9 +277,15 @@ def test_stats_age_p50_tracks_staleness(tmp_path):
 def test_batch_tensors_shapes():
     import torch as th
     rows = [_r for _r in _fake_rows(5)]
-    obs, lab, n = batch_tensors(rows, th.device("cpu"))
+    b = batch_tensors(rows, th.device("cpu"))
+    obs, lab, n = b.obs, b.label, b.n_rollouts
     assert obs.shape == (5, 8) and lab.shape == (5,) and n.shape == (5,)
     assert obs.dtype == th.float32 and lab.dtype == th.float32 and n.dtype == th.float32
+    # gen3_cf_twin_heads_v1: every optional stream is present as a tensor + a MASK, and the mask is
+    # what a consumer supervises through. A zero-filled absent label with no mask would be
+    # indistinguishable from a confident "you lose".
+    assert b.outcome.shape == (5,) and b.outcome_mask.tolist() == [0.0] * 5
+    assert b.mc_return.shape == (5,) and b.mc_return_mask.tolist() == [0.0] * 5
 
 
 def test_batch_tensors_carries_the_rollout_COUNT_not_just_the_ratio():
@@ -285,7 +296,8 @@ def test_batch_tensors_carries_the_rollout_COUNT_not_just_the_ratio():
     from agents.training.cf_label_buffer import CfLabel
     rows = [CfLabel(obs=_obs(fill=0.0), label=0.75, policy_step=1, battle="b", decision_idx=0,
                     opponent="x", n_rollouts=r) for r in (4, 16)]
-    _obs_t, lab, n = batch_tensors(rows, th.device("cpu"))
+    _b = batch_tensors(rows, th.device("cpu"))
+    lab, n = _b.label, _b.n_rollouts
     assert lab.tolist() == [0.75, 0.75]
     assert n.tolist() == [4.0, 16.0]
     assert th.round(lab * n).tolist() == [3.0, 12.0]
@@ -633,3 +645,124 @@ def test_a_restarted_ring_prunes_the_PREVIOUS_process_leftovers(tmp_path):
     fresh = CfRecordRing(tmp_path, keep=2, prune_every=1)
     fresh.write_b64("new", _b64({"i": 99}))
     assert len(list(tmp_path.iterdir())) == 2
+
+
+# --------------------------------------------------------------------------------------
+# THE TWIN STREAMS (gen3_cf_twin_heads_v1) — `outcome_label`, `mc_return`, `reward_sha1`.
+#
+# Additive-optional at schema v1, deliberately: `schema` is a REFUSAL gate, so bumping it to 2
+# would make a new producer's output unreadable by an existing trainer — the opposite of backward
+# compatible. The tests below pin BOTH directions of that claim.
+# --------------------------------------------------------------------------------------
+
+def test_an_OLD_producers_row_still_ingests_and_carries_no_extra_streams(tmp_path):
+    """Backward compatibility, direction one: a row written before the amendment must be accepted
+    unchanged and simply supervise nothing extra. If it were skipped, enabling the twin heads would
+    silently starve the ENTIRE cf pipeline, not just the new arms."""
+    _write(tmp_path, [_row(_obs(fill=1.0))])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == 1
+    row = buf.sample(1)[0]
+    assert row.outcome_label is None and row.mc_return is None and row.mc_return_n == 0
+    assert buf.skipped_total == 0
+
+
+def test_a_NEW_row_ingests_both_streams(tmp_path):
+    _write(tmp_path, [_row(_obs(fill=1.0), outcome_label=0.0, mc_return=-3.25,
+                           mc_return_n=8, reward_sha1="abc")])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == 1
+    row = buf.sample(1)[0]
+    assert row.outcome_label == 0.0 and row.mc_return == -3.25
+    assert row.mc_return_n == 8 and row.reward_sha1 == "abc"
+
+
+@pytest.mark.parametrize("bad", [1.5, -0.1, float("nan"), "win"])
+def test_an_out_of_range_outcome_label_is_a_COUNTED_field_skip_not_a_lost_row(tmp_path, bad):
+    """`outcome_label` is a win/loss/tie scalar, exactly like `label`. A value outside [0,1] is a
+    producer bug and head B trained on it would be trained on garbage with no tell — but the ROW's
+    tight-MC label is still perfectly good, so the row survives and the FIELD is dropped."""
+    _write(tmp_path, [_row(_obs(fill=1.0), outcome_label=bad)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    assert buf.poll(1000) == 1, "the row itself must survive a bad optional field"
+    assert buf.sample(1)[0].outcome_label is None
+    # Its own counter, NOT the row-level GIGO meter: `ingested_total` and `skipped_total` must keep
+    # partitioning the input, or "is the producer feeding me garbage rows" climbs at the ingestion
+    # rate on a buffer that is refusing nothing.
+    assert buf.field_skipped_total == 1 and buf.skipped_total == 0
+    assert set(buf.skip_reasons) <= {"outcome_label_range", "outcome_label_malformed"}
+    assert buf.stats(1000)["cf/labels_field_skipped_total"] == 1.0
+
+
+def test_an_mc_return_with_the_WRONG_reward_digest_is_refused_and_counted(tmp_path):
+    """THE GIGO GUARD for the shadow critic.
+
+    A shaped return is a fact about a board UNDER A REWARD COMPOSITION. A return measured under a
+    different `RewardConfig` is not a noisier sample of this run's value function — it is a
+    measurement of a DIFFERENT one, and averaging it into the target is silent corruption with no
+    shape error and no range violation to catch it. The FIELD is refused (the row's win-prob labels
+    are untouched), the refusal has its own counter, and it warns once by name.
+    """
+    _write(tmp_path, [_row(_obs(fill=1.0), mc_return=2.0, mc_return_n=8,
+                           reward_sha1="theirs")])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, reward_sha1="ours")
+    assert buf.poll(1000) == 1
+    row = buf.sample(1)[0]
+    assert row.mc_return is None and row.mc_return_n == 0
+    assert buf.mc_return_rejected_total == 1
+    # NOT counted as a skip: the row was accepted. Conflating "this row is garbage" with "this
+    # row's shadow label is for a different reward" would hide a whole-arm misconfiguration
+    # inside the GIGO meter.
+    assert buf.skipped_total == 0
+    assert buf.stats(1000)["cf/labels_mc_return_rejected_total"] == 1.0
+
+
+def test_a_matching_reward_digest_is_accepted(tmp_path):
+    _write(tmp_path, [_row(_obs(fill=1.0), mc_return=2.0, mc_return_n=8, reward_sha1="ours")])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, reward_sha1="ours")
+    buf.poll(1000)
+    assert buf.sample(1)[0].mc_return == 2.0 and buf.mc_return_rejected_total == 0
+
+
+def test_no_configured_digest_disables_the_check(tmp_path):
+    """A run WITHOUT the shadow critic reads no `mc_return`, so it must not reject rows over a
+    field it does not use — an unrelated arm's labels would otherwise show a rising rejection
+    counter that means nothing."""
+    _write(tmp_path, [_row(_obs(fill=1.0), mc_return=2.0, mc_return_n=8, reward_sha1="theirs")])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    buf.poll(1000)
+    assert buf.sample(1)[0].mc_return == 2.0 and buf.mc_return_rejected_total == 0
+
+
+def test_coverage_scalars_report_the_arms_own_liveness(tmp_path):
+    """The launch-window reading the arm can produce a confident WRONG answer without.
+
+    A twin-heads run whose producer ships no `outcome_label` trains head B on nothing; B then
+    equals A, and the pre-registered C−B contrast silently becomes C−A while every other counter
+    reads healthy.
+    """
+    _write(tmp_path, [_row(_obs(fill=float(i)), outcome_label=(0.0 if i < 2 else None))
+                      for i in range(4)])
+    buf = CfLabelBuffer(tmp_path, obs_dim=8)
+    buf.poll(1000)
+    s = buf.stats(1000)
+    assert s["cf/buffer_fill"] == 4.0
+    assert s["cf/outcome_label_coverage"] == pytest.approx(0.5)
+    assert s["cf/mc_return_coverage"] == 0.0
+
+
+def test_batch_tensors_masks_the_absent_streams_rather_than_zero_filling_them(tmp_path):
+    """A zero-filled absent label is indistinguishable from a confident "you lose" — the single
+    most dangerous silent target this schema could produce. The mask is what a consumer supervises
+    through, and it must be 0 exactly where the row carried nothing."""
+    import torch as th
+    from agents.training.cf_label_buffer import CfLabel
+    rows = [
+        CfLabel(obs=_obs(fill=0.0), label=0.5, policy_step=1, battle="b", decision_idx=0,
+                opponent="x", n_rollouts=8, outcome_label=1.0, mc_return=4.0, mc_return_n=8),
+        CfLabel(obs=_obs(fill=1.0), label=0.5, policy_step=1, battle="b", decision_idx=1,
+                opponent="x", n_rollouts=8),
+    ]
+    b = batch_tensors(rows, th.device("cpu"))
+    assert b.outcome.tolist() == [1.0, 0.0] and b.outcome_mask.tolist() == [1.0, 0.0]
+    assert b.mc_return.tolist() == [4.0, 0.0] and b.mc_return_mask.tolist() == [1.0, 0.0]

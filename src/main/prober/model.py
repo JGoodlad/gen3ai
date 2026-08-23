@@ -622,6 +622,39 @@ class ProbeModel:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
 
+    def _value_pooled_batch(self, obs: np.ndarray, masks: "np.ndarray | None" = None):
+        """``(value_pooled, vf_features)`` for a BATCH — the shared preamble of every cf readout.
+
+        The cf heads (`CfEvidentialHead`, the twin `WinProbHead`s, `ShadowValueHead`) are pure
+        readouts the extractor forward **NEVER calls**, so none of them can ride ``extract_features``'
+        stash the way :meth:`win_prob_at` does: each has to forward the extractor and then apply
+        itself, which is exactly what the training-side terms do. That correspondence is the whole
+        reason these methods exist, and it is why the preamble is factored here rather than copied:
+        two copies that drift on the obs-dim check, the stash key or the mask fallback would make one
+        head family's offline numbers stop being comparable with its live `cf/*` scalars, silently.
+
+        ``masks`` is optional because the extractor forward reads ONLY ``"observation"`` — an
+        all-legal mask is not an approximation, it is the key going unread. Accepted anyway so a
+        caller that HAS the real masks need not think about it.
+        """
+        import torch
+
+        ex = getattr(self._policy, "features_extractor", None)
+        if ex is None:
+            return None, None
+        obs = np.asarray(obs, dtype=np.float32)
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs)
+        if masks is None:
+            from agents.action.constants import ACTION_SPACE_SIZE
+            mt = torch.ones(ot.shape[0], ACTION_SPACE_SIZE)
+        else:
+            mt = torch.as_tensor(np.asarray(masks))
+        with torch.no_grad():
+            feats = self._policy.extract_features({"observation": ot, "action_mask": mt})
+        vf = feats[1] if isinstance(feats, tuple) and len(feats) == 2 else None
+        return getattr(getattr(ex, "stash", None), "value_pooled", None), vf
+
     def cf_evidential_batch(self, obs: np.ndarray, masks: "np.ndarray | None" = None):
         """The evidential Beta head's ``(alpha, beta)`` for a BATCH of (obs, mask), or ``None``.
 
@@ -631,8 +664,8 @@ class ProbeModel:
         head claims no uncertainty".
 
         The head is a pure readout that the extractor forward **never calls**, so this cannot ride
-        `extract_features`' stash the way :meth:`win_prob_at` does: it forwards the extractor to
-        populate ``stash.value_pooled`` and then applies the head itself — the same thing
+        `extract_features`' stash the way :meth:`win_prob_at` does: :meth:`_value_pooled_batch`
+        forwards the extractor and this method applies the head itself — the same thing
         `instrumented_ppo._cf_evidential_term` does on the training side, which is what makes an
         offline read comparable with the live `cf/evid_*` scalars.
         """
@@ -642,25 +675,61 @@ class ProbeModel:
         head = getattr(ex, "cf_evid_head", None) if ex is not None else None
         if head is None:
             return None
-        obs = np.asarray(obs, dtype=np.float32)
-        self._check_obs_dim(obs)
-        ot = torch.as_tensor(obs)
-        # The extractor forward reads ONLY "observation" (the mask is the policy head's business,
-        # and `_cf_sample_and_forward` passes an obs-only dict for exactly that reason), so an
-        # all-legal mask is not an approximation here — it is the key going unread. Accepted as an
-        # argument anyway so a caller that HAS the real masks need not think about it.
-        if masks is None:
-            from agents.action.constants import ACTION_SPACE_SIZE
-            mt = torch.ones(ot.shape[0], ACTION_SPACE_SIZE)
-        else:
-            mt = torch.as_tensor(np.asarray(masks))
+        pooled, _vf = self._value_pooled_batch(obs, masks)
+        if pooled is None:
+            return None
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
-            pooled = getattr(getattr(ex, "stash", None), "value_pooled", None)
-            if pooled is None:
-                return None
             alpha, beta = head(pooled)
         return alpha.reshape(-1).cpu().numpy(), beta.reshape(-1).cpu().numpy()
+
+    def cf_twin_batch(self, obs: np.ndarray, masks: "np.ndarray | None" = None) -> dict:
+        """The TWIN heads' P(win) and the SHADOW critic's value for a BATCH of obs.
+
+        Returns a dict of ``{field: np.ndarray}`` carrying only the heads this checkpoint actually
+        has — ``twin_b_pred`` / ``twin_c_pred`` (probabilities) and ``shadow_value`` / ``live_v``
+        (real shaped-return units). An EMPTY dict means the checkpoint carries neither, and the
+        caller must OMIT those columns rather than fill them: "this run has no twin heads" and
+        "this run's twin heads agree exactly" are completely different facts and a zero would
+        conflate them.
+
+        Like :meth:`cf_evidential_batch`, these heads are pure readouts the extractor forward
+        **never calls**, so this rides :meth:`_value_pooled_batch` and applies each head itself,
+        which is exactly what the training-side terms do. That correspondence is what makes an
+        offline audit number comparable with the live `cf/twin_*` scalars.
+
+        ``live_v`` rides along because the shadow critic's whole meter is a COMPARISON against it,
+        and taking both off the SAME forward is what makes the pair a paired measurement rather
+        than two measurements of possibly-different states.
+        """
+        import torch
+
+        ex = getattr(self._policy, "features_extractor", None)
+        if ex is None:
+            return {}
+        head_b = getattr(ex, "cf_twin_head_b", None)
+        head_c = getattr(ex, "cf_twin_head_c", None)
+        shadow = getattr(ex, "cf_shadow_head", None)
+        if head_b is None and shadow is None:
+            return {}
+        pooled, vf = self._value_pooled_batch(obs, masks)
+        if pooled is None:
+            return {}
+        out: dict = {}
+        with torch.no_grad():
+            if head_b is not None and head_c is not None:
+                out["twin_b_pred"] = torch.sigmoid(head_b(pooled).reshape(-1)).cpu().numpy()
+                out["twin_c_pred"] = torch.sigmoid(head_c(pooled).reshape(-1)).cpu().numpy()
+            if shadow is not None:
+                raw = shadow(pooled).reshape(-1)
+                popart = getattr(self._policy, "popart", None)
+                # The head predicts in the PopArt-NORMALIZED frame (its training frame), so a
+                # real-unit read must de-normalize — the same map `_cf_shadow_term`'s metrics use.
+                out["shadow_value"] = (
+                    popart.denormalize(raw) if popart is not None else raw).cpu().numpy()
+                if vf is not None and hasattr(self._policy, "_critic_value"):
+                    latent_vf = self._policy.mlp_extractor.forward_critic(vf)
+                    out["live_v"] = self._policy._critic_value(latent_vf).reshape(-1).cpu().numpy()
+        return out
 
     def value_dist_support(self) -> "tuple[float, float, int] | None":
         """The distributional value head's atom support ``(vmin, vmax, bins)``, or ``None`` when the run

@@ -15,11 +15,38 @@ The schema (v1), one JSON object per line::
      "obs_sha1": "<sha1 hex of the obs float32 bytes>",
      "obs_npz": "<path>::<key>" | null, "obs_inline": "<base64 float32 raw>" | null,
      "label": <float in [0,1]>, "n_rollouts": int, "wilson_lo": float, "wilson_hi": float,
-     "policy_step": int, "opponent": str, "created_unix": float}
+     "policy_step": int, "opponent": str, "created_unix": float,
+     # -- v1 ADDITIVE-OPTIONAL (gen3_cf_twin_heads_v1); absent on any older producer's rows --
+     "outcome_label": <float in [0,1]> | null,      # the RECORDED battle's realized outcome
+     "mc_return": float | null, "mc_return_n": int,  # mean realized SHAPED return over R rollouts
+     "reward_sha1": "<sha1 hex of the producing RewardConfig>" | null}
 
 Obs resolution order is ``obs_inline`` > ``obs_npz`` > skip-with-a-counter. An unknown ``kind`` or
 a ``schema`` != 1 is SKIPPED with a counter, never a crash — a producer that ships a v2 row must
 not take a training run down with it.
+
+**THE THREE LABEL STREAMS RIDE ONE ROW, and that is a decision, not a convenience**
+(`gen3_cf_twin_heads_v1`). The twin-heads amendment needs a SINGLE-OUTCOME label and a TIGHT-MC
+label for the *same state*, plus an ``mc_return`` for the shadow critic. The obvious alternative —
+a second row per state carrying ``kind: "outcome_winprob"`` — is **structurally unavailable here**:
+this buffer DEDUPS on the obs digest (keep-newest), so two rows describing one state would collide
+on ``obs_sha1`` and one would silently replace the other. Widening the dedup key to
+``(kind, obs_sha1)`` would fix the collision and break something better: the twin design's whole
+premise is that heads B and C see *identical* states, which one-row-per-state makes structural
+rather than hoped-for. So the extra streams are SIBLING FIELDS.
+
+**The schema version does NOT move for them.** ``schema`` is a REFUSAL gate — a consumer skips
+every row whose version it does not know — so bumping it to 2 would make a new producer's output
+unreadable by an existing trainer, which is the opposite of backward compatible. Additive-optional
+fields at v1 are compatible in both directions: an old consumer reads a fixed key set and ignores
+them; a new consumer reads them when present and simply supervises nothing extra when they are not.
+
+**``mc_return`` carries a REWARD DIGEST and is REFUSED on a mismatch.** A shaped return is a fact
+about a board *under a reward composition*, so a label produced under a different `RewardConfig`
+is not a noisier measurement of this run's value function — it is a measurement of a different one.
+The buffer therefore drops the ``mc_return`` FIELD (never the row: the win-prob labels on it are
+still perfectly good) when the digest disagrees with the run's, counts it as
+``cf/labels_mc_return_rejected_total`` and warns once by name.
 
 **Staleness is bounded SYMMETRICALLY, not denied** (design §5.2). An MC label is a sample under the
 policy that produced it; consumed many iterations later it teaches an ancestor's value. The bound
@@ -69,7 +96,7 @@ import os
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, NamedTuple, Optional, Sequence
 
 import numpy as np
 
@@ -117,6 +144,18 @@ class CfLabel:
     # own bytes is rejected upstream, and a key taken from an unverified field would let two
     # different states collide (or one state fail to dedup with itself).
     obs_sha1: str = ""
+    # gen3_cf_twin_heads_v1: the two ADDITIVE-OPTIONAL streams (see the module docstring).
+    # `outcome_label` is the RECORDED battle's realized outcome for this state (1.0 win / 0.0 loss /
+    # 0.5 tie) — one Monte-Carlo sample, which is exactly what makes it head B's arm: same states as
+    # C, single-outcome precision. None when the producer did not ship one.
+    outcome_label: Optional[float] = None
+    # The mean realized SHAPED return over the producer's rollouts, in the run's own reward units,
+    # and the rollout count behind it. None when absent or when the reward digest was refused.
+    mc_return: Optional[float] = None
+    mc_return_n: int = 0
+    # The producing `RewardConfig`'s digest — carried for the record even when it matched, so a
+    # label file is auditable a year later without the run beside it.
+    reward_sha1: str = ""
 
 
 class CfLabelBuffer:
@@ -135,9 +174,14 @@ class CfLabelBuffer:
         obs_dim: Optional[int] = None,
         capacity: int = DEFAULT_CAPACITY,
         lag_bound: int = DEFAULT_LAG_BOUND,
+        reward_sha1: Optional[str] = None,
     ) -> None:
         self.dir = Path(labels_dir)
         self.obs_dim = int(obs_dim) if obs_dim else None
+        # gen3_cf_twin_heads_v1: THIS run's reward digest. When set, an `mc_return` whose row
+        # declares a different digest is refused (the field only — the row's win-prob labels are
+        # untouched). None disables the check, which is what a run with no shadow critic wants.
+        self.reward_sha1 = str(reward_sha1) if reward_sha1 else None
         self.capacity = max(1, int(capacity))
         self.lag_bound = max(0, int(lag_bound))
         # obs_sha1 -> row, INSERTION-ORDERED, which is what makes one mapping serve both jobs: the
@@ -163,6 +207,18 @@ class CfLabelBuffer:
         # ground it already covered, which is not an error but IS a fact about the sampler.
         self.replaced_total = 0
         self.skipped_total = 0
+        # gen3_cf_twin_heads_v1: `mc_return` fields dropped for a reward-digest disagreement. NOT a
+        # subset of `skipped_total`, because the ROW was accepted — only one of its label streams
+        # was refused, and conflating "this row is garbage" with "this row's shadow label is for a
+        # different reward" would hide a whole-arm misconfiguration inside the GIGO meter.
+        self.mc_return_rejected_total = 0
+        # gen3_cf_twin_heads_v1: OPTIONAL-FIELD rejections (a malformed / out-of-range
+        # `outcome_label` or `mc_return`). Deliberately NOT `skipped_total`: that counter's whole
+        # job is "is the producer feeding me garbage ROWS", and `ingested + skipped` must partition
+        # the input. A field rejection ACCEPTS the row, so counting it there would make the GIGO
+        # meter climb at the ingestion rate on a buffer that is refusing nothing — the same
+        # conflation `mc_return_rejected_total` exists to avoid, one level down.
+        self.field_skipped_total = 0
         # Skip BREAKDOWN (not on TensorBoard; read from `stats()` in a test or a debugger). The
         # single `skipped_total` scalar answers "is the producer feeding me garbage"; this answers
         # "which garbage", which is a debugging question, not a monitoring one.
@@ -260,13 +316,73 @@ class CfLabelBuffer:
         obs = self._resolve_obs(obj)
         if obs is None:
             return None
+        # gen3_cf_twin_heads_v1: the two ADDITIVE-OPTIONAL streams. Both are parsed permissively in
+        # the ABSENT direction (an older producer's row simply carries neither and supervises
+        # nothing extra) and strictly in the PRESENT-BUT-WRONG direction — a field that is there and
+        # unusable is a counted skip of that FIELD, never a silent zero and never a dropped row.
+        outcome = self._parse_outcome(obj)
+        mc_return, mc_return_n = self._parse_mc_return(obj)
         self.ingested_total += 1
         return CfLabel(
             obs=obs, label=label, policy_step=policy_step,
             battle=str(obj.get("battle", "")), decision_idx=int(obj.get("decision_idx", -1)),
             opponent=str(obj.get("opponent", "")), n_rollouts=int(obj.get("n_rollouts", 0)),
             obs_sha1=_digest(obs),
+            outcome_label=outcome, mc_return=mc_return, mc_return_n=mc_return_n,
+            reward_sha1=str(obj.get("reward_sha1") or ""),
         )
+
+    def _parse_outcome(self, obj: dict) -> Optional[float]:
+        """``outcome_label`` — head B's SINGLE-OUTCOME stream, or None when the row has none."""
+        raw = obj.get("outcome_label")
+        if raw is None:
+            return None
+        try:
+            val = float(raw)
+        except (TypeError, ValueError):
+            self._skip_field("outcome_label_malformed")
+            return None
+        if not np.isfinite(val) or not (0.0 <= val <= 1.0):
+            # The same range contract as `label`: a win/loss/tie scalar. Anything else is a producer
+            # bug, and head B trained on it would be trained on garbage with no tell.
+            self._skip_field("outcome_label_range")
+            return None
+        return val
+
+    def _parse_mc_return(self, obj: dict) -> "tuple[Optional[float], int]":
+        """``mc_return`` — the SHADOW critic's stream, gated on the reward digest.
+
+        Returns ``(value, n)`` or ``(None, 0)``. The reward check is the load-bearing half: a shaped
+        return measured under a different `RewardConfig` is a measurement of a DIFFERENT value
+        function, not a noisier measurement of this one.
+        """
+        raw = obj.get("mc_return")
+        if raw is None:
+            return None, 0
+        try:
+            val = float(raw)
+            n = int(obj.get("mc_return_n", 0) or 0)
+        except (TypeError, ValueError):
+            self._skip_field("mc_return_malformed")
+            return None, 0
+        if not np.isfinite(val):
+            self._skip_field("mc_return_malformed")
+            return None, 0
+        if self.reward_sha1 is not None:
+            got = str(obj.get("reward_sha1") or "")
+            if got != self.reward_sha1:
+                self.mc_return_rejected_total += 1
+                # The message deliberately carries NO per-row digest: `_warn` dedups on the whole
+                # string, so embedding `got` would print (and retain) one line per distinct foreign
+                # digest instead of warning once. The breakdown lives in the counter.
+                self._warn(
+                    f"mc_return REWARD DIGEST mismatch (this run's is {self.reward_sha1[:12]}) — a "
+                    f"shaped return measured under a different reward composition is a different "
+                    f"value function, not a noisier sample of this one. The mc_return field is "
+                    f"dropped; the row's win-prob labels are kept. Count: "
+                    f"cf/labels_mc_return_rejected_total.")
+                return None, 0
+        return val, max(0, n)
 
     def _too_stale(self, current_step: int, policy_step: int) -> bool:
         """The SYMMETRIC staleness test, and the accounting that goes with it.
@@ -363,7 +479,14 @@ class CfLabelBuffer:
             self._rows.popitem(last=False)     # FIFO: the OLDEST label is the one to lose
 
     def _skip(self, reason: str) -> None:
+        """Reject the whole ROW. Counted into the GIGO meter."""
         self.skipped_total += 1
+        self.skip_reasons[reason] = self.skip_reasons.get(reason, 0) + 1
+        return None
+
+    def _skip_field(self, reason: str) -> None:
+        """Reject one OPTIONAL FIELD and keep the row (see `field_skipped_total`)."""
+        self.field_skipped_total += 1
         self.skip_reasons[reason] = self.skip_reasons.get(reason, 0) + 1
         return None
 
@@ -403,8 +526,18 @@ class CfLabelBuffer:
 
     # -- metrics ---------------------------------------------------------------------
     def stats(self, current_step: int) -> Dict[str, float]:
-        """The seven `cf/` TensorBoard scalars (see the module docstring)."""
+        """The `cf/` TensorBoard scalars (see the module docstring).
+
+        The last three are `gen3_cf_twin_heads_v1`'s and they answer the launch-window question the
+        others cannot: **is the arm's own label stream actually arriving?** A twin-heads run whose
+        producer ships no ``outcome_label`` trains head B on nothing while every other counter reads
+        healthy — B would then equal A, the C−B contrast would silently become C−A, and the run
+        would look like a result. A COVERAGE fraction near 1.0 is the reading that says the
+        factorial is live.
+        """
         ages = [current_step - r.policy_step for r in self._rows.values()]
+        rows = list(self._rows.values())
+        n = float(len(rows)) or 1.0
         return {
             "cf/buffer_fill": float(len(self._rows)),
             "cf/label_age_steps_p50": float(np.median(ages)) if ages else 0.0,
@@ -413,11 +546,46 @@ class CfLabelBuffer:
             "cf/labels_future_total": float(self.future_total),
             "cf/labels_replaced_total": float(self.replaced_total),
             "cf/labels_skipped_total": float(self.skipped_total),
+            "cf/outcome_label_coverage": float(
+                sum(1 for r in rows if r.outcome_label is not None)) / n,
+            "cf/mc_return_coverage": float(
+                sum(1 for r in rows if r.mc_return is not None)) / n,
+            "cf/labels_mc_return_rejected_total": float(self.mc_return_rejected_total),
+            "cf/labels_field_skipped_total": float(self.field_skipped_total),
         }
 
 
-def batch_tensors(rows: Sequence[CfLabel], device) -> "tuple":
-    """``(obs [B, obs_dim], labels [B], n_rollouts [B])``, all float32 on ``device``.
+class CfBatch(NamedTuple):
+    """The tensors ONE cf fold works from — every label stream the sampled rows carry.
+
+    A NamedTuple rather than a bare tuple because the streams grew from one to three
+    (`gen3_cf_twin_heads_v1`) and a positional 7-tuple is exactly the shape of the order-mismatch
+    bug class this tree treats as drop-everything. Field names are the contract.
+
+    ``obs``          [B, obs_dim] float32
+    ``label``        [B] the TIGHT-MC win ratio — head C's and head A's cf stream
+    ``n_rollouts``   [B] the evidence behind ``label`` (see below)
+    ``outcome``      [B] the RECORDED single outcome — head B's stream (0 where absent)
+    ``outcome_mask`` [B] 1.0 where ``outcome`` is a real label, 0.0 where the row carried none
+    ``mc_return``    [B] the mean realized SHAPED return — the shadow critic's stream (0 where absent)
+    ``mc_return_mask`` [B] 1.0 where ``mc_return`` is real
+
+    The MASKS are not decoration. A minibatch mixing rows from two producers (one that ships the new
+    streams, one that does not) must supervise each head on exactly the rows that have its label,
+    and a zero-filled absent label is indistinguishable from a confident "you lose" — the single
+    most dangerous silent target this schema could produce.
+    """
+    obs: "th.Tensor"            # type: ignore[name-defined]  # noqa: F821
+    label: "th.Tensor"          # type: ignore[name-defined]  # noqa: F821
+    n_rollouts: "th.Tensor"     # type: ignore[name-defined]  # noqa: F821
+    outcome: "th.Tensor"        # type: ignore[name-defined]  # noqa: F821
+    outcome_mask: "th.Tensor"   # type: ignore[name-defined]  # noqa: F821
+    mc_return: "th.Tensor"      # type: ignore[name-defined]  # noqa: F821
+    mc_return_mask: "th.Tensor"  # type: ignore[name-defined]  # noqa: F821
+
+
+def batch_tensors(rows: Sequence[CfLabel], device) -> CfBatch:
+    """The sampled rows as a :class:`CfBatch`, every field float32 on ``device``.
 
     ``n_rollouts`` rides along because the label is a SUFFICIENT STATISTIC only in company: a
     ``label`` of 0.75 from 4 rollouts and one from 16 are the same number carrying four times the
@@ -427,11 +595,23 @@ def batch_tensors(rows: Sequence[CfLabel], device) -> "tuple":
 
     A row whose producer omitted ``n_rollouts`` parses as 0; the consumers clamp to 1, so an
     unlabelled-count row degrades to exactly one observation rather than vanishing or dividing by
-    zero. Torch imported lazily.
+    zero. Head B's ``outcome`` is deliberately fed at **n ≡ 1** by its caller — a single realized
+    outcome IS one observation, and under the binomial term's ``Σ NLL / Σ n`` normalization that
+    gives B and C the SAME per-row gradient magnitude with only the TARGET differing. That equality
+    is what makes C−B a clean read of label precision rather than of effective learning rate.
+
+    Torch imported lazily.
     """
     import torch as th
     obs = np.stack([r.obs for r in rows]).astype(np.float32, copy=False)
     lab = np.asarray([r.label for r in rows], dtype=np.float32)
     n = np.asarray([r.n_rollouts for r in rows], dtype=np.float32)
-    return (th.as_tensor(obs, device=device), th.as_tensor(lab, device=device),
-            th.as_tensor(n, device=device))
+    out = np.asarray([0.0 if r.outcome_label is None else r.outcome_label for r in rows],
+                     dtype=np.float32)
+    out_m = np.asarray([0.0 if r.outcome_label is None else 1.0 for r in rows], dtype=np.float32)
+    ret = np.asarray([0.0 if r.mc_return is None else r.mc_return for r in rows], dtype=np.float32)
+    ret_m = np.asarray([0.0 if r.mc_return is None else 1.0 for r in rows], dtype=np.float32)
+    t = lambda a: th.as_tensor(a, device=device)                             # noqa: E731
+    return CfBatch(obs=t(obs), label=t(lab), n_rollouts=t(n),
+                   outcome=t(out), outcome_mask=t(out_m),
+                   mc_return=t(ret), mc_return_mask=t(ret_m))

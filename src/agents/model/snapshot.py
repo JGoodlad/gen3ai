@@ -941,6 +941,8 @@ def current_model_version(
     hp_belief_mode: str = "composed",
     belief_grad_mode: str = "shaping",
     cf_evidential: bool = False,
+    cf_twin_heads: bool = False,
+    cf_shadow_critic: bool = False,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -988,6 +990,11 @@ def current_model_version(
     # gen3_cf_evidential_head_v1 (v98): a state_dict-changing head, so a frozen eval/pool opponent's
     # gate must see it — otherwise a cf-evidential run FATALs loading its OWN sentinels.
     ext_kwargs["cf_evidential"] = cf_evidential
+    # gen3_cf_twin_heads_v1 (v99): the same reason, twice — the twin win-prob heads and the shadow
+    # critic are state_dict-changing modules the forward never calls, so a frozen eval/pool
+    # opponent's gate must see them or a twin-heads run FATALs loading its OWN sentinels.
+    ext_kwargs["cf_twin_heads"] = cf_twin_heads
+    ext_kwargs["cf_shadow_critic"] = cf_shadow_critic
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1073,6 +1080,10 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_cf_evidential_head_v1 (v98): state_dict-changing head, invisible to the forward —
         # the recorded toggle is the only thing a load gate can compare.
         "cf_evidential": bool(getattr(fe, "cf_evidential", False)),
+        # gen3_cf_twin_heads_v1 (v99): same category — params in the state_dict, invisible to the
+        # forward, so the recorded toggle is the only thing a load gate can compare.
+        "cf_twin_heads": bool(getattr(fe, "cf_twin_heads", False)),
+        "cf_shadow_critic": bool(getattr(fe, "cf_shadow_critic", False)),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

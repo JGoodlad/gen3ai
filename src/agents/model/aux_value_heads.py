@@ -1,5 +1,5 @@
-"""Aux value readouts off value_pooled: WinProbHead, the distributional ValueDistHead, and the
-EVIDENTIAL CfEvidentialHead.
+"""Aux value readouts off value_pooled: WinProbHead, the distributional ValueDistHead, the
+EVIDENTIAL CfEvidentialHead, and the passive ShadowValueHead.
 
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
@@ -203,3 +203,61 @@ class CfEvidentialHead(torch.nn.Module):
         """
         s = alpha + beta
         return torch.sqrt(alpha * beta / (s * s * (s + 1.0)))
+
+
+class ShadowValueHead(torch.nn.Module):
+    """The SHADOW CRITIC — a PASSIVE value twin trained on tight-MC ``mc_return`` labels.
+
+    WHY IT EXISTS. The live critic V is trained on **bootstrapped GAE targets** built from single
+    realized trajectories: one Monte-Carlo sample of the return per state, propagated through a
+    self-referential bootstrap. The counterfactual label factory can measure something the on-policy
+    stream structurally cannot — the *average* realized shaped return over R independent rollouts
+    from the SAME board — which is a tight, ground-truth estimate of exactly the quantity V is
+    supposed to be. This head is that estimate's own readout: same trunk summary, different target
+    stream.
+
+    WHAT IT IS NOT, and this is the whole safety argument. It **never computes an advantage**, it is
+    **never consulted by GAE**, it feeds **nothing** forward (no pi, no vf, no other head), and its
+    input is ``value_pooled.detach()`` **unconditionally** — there is no ``read_only``/``shaping``
+    mode to change that, exactly as for :class:`CfEvidentialHead`. Swapping the live critic for an
+    MC-grounded one is critic SURGERY, which owes the C4 offline gate; this head is the **staged
+    promotion path** that earns (or refuses) that gate without risking a run: it accumulates the
+    evidence — how far the live critic's V drifts from a tight-MC return on the same states — as a
+    published number rather than an argument.
+
+    THE FRAME (read this before quoting the head's output). Under PopArt the live critic trains in
+    NORMALIZED space, so this head does too: its raw output is the **normalized** value, its loss is
+    MSE against ``popart.normalize(mc_return)``, and a real-unit read is
+    ``popart.denormalize(out)``. With PopArt off both maps are the identity and the head's output is
+    already real-unit shaped return. That mirrors ``_value_distill_mse``'s frame handling for the
+    same reason: the coefficient must be scale-comparable with the value loss, and a raw-unit MSE
+    against a normalizer that moves is a moving target.
+
+    THE UNITS OF THE LABEL are the run's own **shaped** return — Σ γᵏ r, with r produced by the
+    run's `RewardConfig`. A shaped return is a fact about a board *under a reward composition*, so
+    the producer stamps a reward digest on every ``mc_return`` row and the buffer REFUSES a row
+    whose digest disagrees with this run's. Without that, a label produced under a different reward
+    composition would be silently averaged into the target.
+
+    Built LAST in ``Gen3FeaturesExtractor.__init__`` and never called by the forward, so OFF is
+    byte-identical and ON-at-coefficient-0 is BIT-identical in pi/vf (the append-never-insert rule:
+    a module inserted mid-constructor shifts the init RNG stream for everything after it).
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        # The WinProbHead bottleneck, emitting one SCALAR VALUE rather than one logit. Same capacity
+        # as the win-prob twins on purpose: every head in this family reads the same `value_pooled`
+        # through the same shape, so a difference between two of them is a difference of TARGETS.
+        self.net = torch.nn.Sequential(
+            torch.nn.LayerNorm(D_MODEL),
+            torch.nn.Linear(D_MODEL, D_MODEL),
+            torch.nn.ReLU(),
+            torch.nn.Linear(D_MODEL, 1),
+        )
+
+    def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
+        """value_pooled [B, D_MODEL] → the predicted value [B, 1], in the PopArt-NORMALIZED frame
+        when the run uses PopArt (see the class docstring) and in real shaped-return units when it
+        does not."""
+        return self.net(value_pooled)  # type: ignore[no-any-return]

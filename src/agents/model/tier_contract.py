@@ -126,6 +126,14 @@ TIER_OF: Dict[str, int] = {
     # value_pooled), so the tracer will never see it; the declaration is here so a future config
     # that builds it does not trip `test_every_child_module_declares_a_tier`.
     "cf_evid_head": 3,
+    # gen3_cf_twin_heads_v1 (v99): the twin win-prob heads and the shadow critic — the same three
+    # facts as `cf_evid_head`. They read `value_pooled`, so T3 DELIVER; the forward never calls
+    # them (the training-side terms apply them to the STASHED value_pooled), so the tracer will
+    # never see them either; and the declaration exists so a config that builds them does not trip
+    # `test_every_child_module_declares_a_tier`.
+    "cf_twin_head_b": 3,
+    "cf_twin_head_c": 3,
+    "cf_shadow_head": 3,
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool, injected into
     # `value_pooled` through the v89 seam. Since the critic-route deletion wave it is the ONLY
     # member of that seam — and the only DELIVER-stage critic route other than the two `cls_pool`

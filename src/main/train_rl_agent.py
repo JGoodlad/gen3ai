@@ -469,6 +469,8 @@ def _model_hparams(model) -> dict:
         "cf_label_likelihood": str(getattr(model, "cf_label_likelihood", "binomial")),
         "cf_evidential_coef": float(getattr(model, "cf_evidential_coef", 0.0)),
         "cf_evidential_reg": float(getattr(model, "cf_evidential_reg", 0.0)),
+        "cf_twin_coef": float(getattr(model, "cf_twin_coef", 0.0)),
+        "cf_shadow_coef": float(getattr(model, "cf_shadow_coef", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
         "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),
@@ -1379,6 +1381,50 @@ def build_parser() -> argparse.ArgumentParser:
                              "likelihood bounds α+β on locally-consistent data, and an inflated "
                              "precision makes the width — the entire product — meaningless. "
                              "Default 1e-3.")
+    # --- THE TWIN HEADS + THE SHADOW CRITIC (gen3_cf_twin_heads_v1, v99). The owner-authorized
+    # amendment to the signed R1 pre-registration (ledger 2026-08-22 evening, "Three owner
+    # sign-offs" item 3): the arm's primary comparison becomes a WITHIN-RUN paired head difference
+    # instead of a run-vs-run one. Three win-prob heads on ONE trunk — A (control, on-policy BCE
+    # only), B (+ the cf states with SINGLE-OUTCOME labels), C (+ the same states with TIGHT-MC
+    # labels) — so B−A isolates coverage and C−B isolates pure variance reduction with every random
+    # draw held identical. The two structural flags are version-gated; the coefficients are not.
+    parser.add_argument("--cf-twin-heads", "--cf_twin_heads", dest="cf_twin_heads",
+                        action=BoolFlag, default=False,
+                        help="BUILD the TWIN win-prob heads B and C off value_pooled (the "
+                             "within-run paired R1 comparison). STRUCTURAL and version-gated: "
+                             "their params are in the state_dict, so a resume must match, and "
+                             "because the forward never calls them nothing else would catch a "
+                             "flip. Head-only ALWAYS in v1 (both read a DETACHED value_pooled), so "
+                             "OFF is byte-identical and ON at coefficient 0 is bit-identical in "
+                             "pi/vf. Requires --win-prob-mode read_only|shaping (head A must exist "
+                             "for the twins to mirror its loss).")
+    parser.add_argument("--cf-twin-coef", "--cf_twin_coef", dest="cf_twin_coef",
+                        type=float, default=0.0,
+                        help="Weight on BOTH twins' cf folds — ONE knob on purpose: B and C must "
+                             "differ in their LABEL STREAM and in nothing else. B eats the row's "
+                             "outcome_label at n=1, C eats its tight-MC label at n=R, through the "
+                             "SAME per-rollout-normalized binomial NLL, so the two pull equally "
+                             "hard and C−B reads label PRECISION rather than learning rate. Their "
+                             "share of head A's own on-policy BCE rides --win-prob-coef, not this. "
+                             "Default 0.0 = OFF (whole block skipped, byte-identical). Requires "
+                             "--cf-twin-heads. Read cf/twin_b_coverage FIRST.")
+    parser.add_argument("--cf-shadow-critic", "--cf_shadow_critic", dest="cf_shadow_critic",
+                        action=BoolFlag, default=False,
+                        help="BUILD the passive SHADOW CRITIC off value_pooled — a value twin "
+                             "trained on tight-MC mc_return labels (the run's own shaped return). "
+                             "It NEVER computes an advantage and NEVER enters GAE: it is the "
+                             "staged promotion path for critic surgery (a critic route change owes "
+                             "the C4 gate), so it accumulates evidence rather than changing the "
+                             "critic. STRUCTURAL and version-gated; detached always; OFF "
+                             "byte-identical, ON at coefficient 0 bit-identical in pi/vf.")
+    parser.add_argument("--cf-shadow-coef", "--cf_shadow_coef", dest="cf_shadow_coef",
+                        type=float, default=0.0,
+                        help="Weight on the shadow critic's masked MSE against mc_return, computed "
+                             "in the PopArt-normalized frame (the value loss's frame, so the "
+                             "coefficient is scale-comparable with it). Default 0.0 = OFF. "
+                             "Requires --cf-shadow-critic. THE METER is cf/shadow_shadow_vs_live_v "
+                             "— the signed real-unit gap between the MC-grounded twin and the live "
+                             "critic on the same states.")
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1) — pour a frozen per-team SPECIALIST (an
     # --exploiter checkpoint) into the generalist via an ON-POLICY KL, masked to the states where the
     # trainee pilots the teacher's team; the other (pool) states are the anti-forgetting rehearsal.
@@ -2466,6 +2512,8 @@ async def main():
     # two coefficients are training-only, deliberately NOT inherited on a flagless resume — the
     # `--opd-coef` / `--cf-winprob-coef` class, and a head that exists costs nothing at coef 0.
     _resolve("cf_evidential", False)           # v98 structural, version-checked (gen3_cf_evidential_head_v1)
+    _resolve("cf_twin_heads", False)           # v99 structural, version-checked (gen3_cf_twin_heads_v1)
+    _resolve("cf_shadow_critic", False)        # v99 structural, version-checked (gen3_cf_twin_heads_v1)
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
@@ -2627,6 +2675,31 @@ async def main():
         parser.error("--cf-evidential-coef > 0 requires --cf-evidential — the evidential term "
                      "supervises a head that flag BUILDS, and it is a structural (version-gated) "
                      "toggle that cannot be turned on mid-run")
+    # gen3_cf_twin_heads_v1 — the coefficients are training-only (parser checks are the ONLY gate);
+    # the two structural flags are version-gated, so only their CROSS-flag requirements land here.
+    if args.cf_twin_coef is not None and args.cf_twin_coef < 0.0:
+        parser.error("--cf-twin-coef must be >= 0 (0 = off)")
+    if args.cf_shadow_coef is not None and args.cf_shadow_coef < 0.0:
+        parser.error("--cf-shadow-coef must be >= 0 (0 = off)")
+    if args.cf_twin_coef and args.cf_twin_coef > 0 and not args.cf_twin_heads:
+        # Same reasoning as --cf-evidential-coef: the heads are a state_dict change, so they cannot
+        # be added mid-run to rescue a live coefficient — the mistake would cost the whole run AND
+        # FATAL the resume that tried to fix it.
+        parser.error("--cf-twin-coef > 0 requires --cf-twin-heads — the twin heads are a "
+                     "state_dict change (v99, version-gated) and cannot be added to a run that "
+                     "did not start with them.")
+    if args.cf_twin_heads and args.win_prob_mode == "none":
+        # Heads B and C mirror head A's on-policy BCE, and head A is `win_head`. With
+        # --win-prob-mode none there is no head A, so the factorial has no control arm: B and C
+        # would carry only their cf folds and B−A would be undefined. Refuse at the CLI rather than
+        # produce an arm whose primary comparison silently does not exist.
+        parser.error("--cf-twin-heads requires --win-prob-mode read_only|shaping — the twins "
+                     "mirror head A's on-policy BCE, and --win-prob-mode none builds no head A, so "
+                     "the arm's control arm would not exist.")
+    if args.cf_shadow_coef and args.cf_shadow_coef > 0 and not args.cf_shadow_critic:
+        parser.error("--cf-shadow-coef > 0 requires --cf-shadow-critic — the shadow head is a "
+                     "state_dict change (v99, version-gated) and cannot be added to a run that "
+                     "did not start with it.")
     if args.cf_records and not args.use_showdown_bridge:
         # The record is a `__RECON__` frame off the bridge child's stdout; the websocket transport
         # never produces one, so the flag would be a silent no-op.
@@ -3541,7 +3614,8 @@ async def main():
     # EITHER consumer wants the buffer: the evidential term reads the same label rows, so gating the
     # directory on the scalar coefficient alone would silently starve an evidential-only run.
     _cf_labels_dir = (os.path.join(model_dir, "cf_labels")
-                      if (args.cf_winprob_coef > 0 or args.cf_evidential_coef > 0) else None)
+                      if (args.cf_winprob_coef > 0 or args.cf_evidential_coef > 0
+                          or args.cf_twin_coef > 0 or args.cf_shadow_coef > 0) else None)
     if _cf_records_dir:
         os.makedirs(_cf_records_dir, exist_ok=True)
         emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "
@@ -3560,14 +3634,23 @@ async def main():
         model.cf_label_likelihood = str(args.cf_label_likelihood)
         model.cf_evidential_coef = float(args.cf_evidential_coef or 0.0)
         model.cf_evidential_reg = float(args.cf_evidential_reg or 0.0)
+        model.cf_twin_coef = float(args.cf_twin_coef or 0.0)
+        model.cf_shadow_coef = float(args.cf_shadow_coef or 0.0)
         if not _cf_labels_dir:
             return
         from agents.training.cf_label_buffer import CfLabelBuffer
         os.makedirs(_cf_labels_dir, exist_ok=True)
         _obs_space = model.observation_space["observation"]
+        # gen3_cf_twin_heads_v1: the SHADOW critic's `mc_return` labels are SHAPED returns, so they
+        # are only this run's labels if the producer used this run's reward. The digest is handed to
+        # the buffer, which drops a mismatching `mc_return` (never the row) and counts it. Passed
+        # ONLY when the shadow head is live — a run without one has nothing to protect and should
+        # not reject rows over a field it does not read.
+        _cf_reward_sha1 = (reward_config_digest(reward_config)
+                           if float(args.cf_shadow_coef or 0.0) > 0 else None)
         model._cf_buffer = CfLabelBuffer(
             _cf_labels_dir, obs_dim=int(_obs_space.shape[0]),
-            lag_bound=int(args.cf_label_lag_steps))
+            lag_bound=int(args.cf_label_lag_steps), reward_sha1=_cf_reward_sha1)
         if model.cf_winprob_coef > 0:
             emit(f"🎯 [CF] win-prob grounding ON: coef={model.cf_winprob_coef:g} "
                  f"likelihood={model.cf_label_likelihood} head_only={model.cf_head_only} "
@@ -3576,12 +3659,22 @@ async def main():
             emit(f"🎲 [CF] EVIDENTIAL Beta head ON: coef={model.cf_evidential_coef:g} "
                  f"reg={model.cf_evidential_reg:g} (always-detached readout) "
                  f"← {_cf_labels_dir}")
+        if model.cf_twin_coef > 0:
+            emit(f"👯 [CF] TWIN win-prob heads ON: coef={model.cf_twin_coef:g} "
+                 f"(A=control / B=single-outcome / C=tight-MC, head-only always) "
+                 f"← {_cf_labels_dir}. Read cf/twin_b_coverage FIRST — a producer shipping no "
+                 f"outcome_label makes B==A and turns C−B into C−A with no other tell.")
+        if model.cf_shadow_coef > 0:
+            emit(f"🩻 [CF] SHADOW critic ON: coef={model.cf_shadow_coef:g} "
+                 f"(passive mc_return readout — no advantage, no GAE) "
+                 f"reward_sha1={(_cf_reward_sha1 or '')[:12]} ← {_cf_labels_dir}")
 
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # factory passes it to every env's reward manager. Default = the single-variable run.
     from agents.training.reward_manager import (
-        RewardConfig, format_reward_composition, reward_class_composition)
+        RewardConfig, format_reward_composition, reward_class_composition,
+        reward_config_digest)
     # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
     # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
     reward_config = RewardConfig.from_args(args)

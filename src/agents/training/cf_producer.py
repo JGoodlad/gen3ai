@@ -432,12 +432,28 @@ def write_label_batch(labels_dir: str, rows: "Sequence[dict]", *, step: int, seq
 
 def label_row(*, record_path: str, decision: RecordDecision, wins: int, n: int,
               step: int, surprise: float, entropy: float, score: float,
-              win_prob: Optional[float]) -> dict:
+              win_prob: Optional[float],
+              outcome_label: Optional[float] = None,
+              mc_return: Optional[float] = None, mc_return_n: int = 0,
+              reward_sha1: str = "", reward_composition: str = "") -> dict:
     """The shared v1 schema, plus additive provenance the buffer ignores by design.
 
     The extra keys (`sampler_version`, `priority`, `label_regime`) are NOT schema changes — the
     buffer reads a fixed key set and ignores the rest — but they are the difference between a
-    label file you can audit a year later and a bag of numbers."""
+    label file you can audit a year later and a bag of numbers.
+
+    ``outcome_label`` / ``mc_return`` ARE read by the buffer (`gen3_cf_twin_heads_v1`) and are
+    additive-optional at schema v1: an older consumer ignores them, a newer one supervises nothing
+    extra when they are absent. See `cf_label_buffer`'s module docstring for why they ride the SAME
+    row as the tight-MC label rather than arriving as their own ``kind`` — in one line, the buffer
+    dedups on the obs digest, so a second row for one state would collide with the first and one of
+    them would vanish, and one-row-per-state additionally makes "heads B and C saw identical states"
+    structural rather than hoped-for.
+
+    ``reward_composition`` is the human line beside the digest, for the same reason `format_reward_
+    composition` is printed at launch: a hex digest tells a reader that two rewards DIFFER, and
+    nothing about how.
+    """
     lo, hi = wilson_ci(int(wins), int(n))
     row = LabelRow(
         battle=record_path, decision_idx=int(decision.index),
@@ -455,7 +471,17 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: int, n: int,
                   "critic_surprise": round(float(surprise), 6),
                   "policy_entropy": round(float(entropy), 6),
                   "win_prob": (None if win_prob is None else round(float(win_prob), 6))},
+        # HEAD B's stream: the RECORDED battle's realized outcome for this state — the single
+        # Monte-Carlo sample the on-policy BCE already eats, on the states the factory selected.
+        # That is the whole coverage arm: same states as C, single-outcome precision.
+        outcome_label=(None if outcome_label is None else round(float(outcome_label), 6)),
     )
+    if mc_return is not None:
+        # THE SHADOW CRITIC's stream. Written only when it was actually measured; a `null` here and
+        # an absent key mean the same thing to the buffer, but writing the reward provenance
+        # unconditionally would imply a measurement that was not taken.
+        row.update(mc_return=round(float(mc_return), 6), mc_return_n=int(mc_return_n),
+                   reward_sha1=reward_sha1, reward_composition=reward_composition)
     return row
 
 
@@ -489,8 +515,61 @@ class CfProducer:
         self._said_stale = False
         self._said_no_win_head = False
         self._warned_lag = False
+        self._warned_no_return = False
+        self._said_no_return_path = False
         self.anchor_failed = False
         self.heartbeat = ""
+        # gen3_cf_twin_heads_v1: the SHADOW critic's `mc_return` stream. A shaped return is a fact
+        # about a board UNDER A REWARD COMPOSITION, so the config comes from the run's own recorded
+        # `cli_args` where possible and the digest is stamped on every row — the consuming buffer
+        # refuses a mismatch rather than averaging a foreign value function into the target.
+        self._mc_return_on = bool(getattr(args, "mc_return", True))
+        (self._reward_factory, self._reward_sha1, self._reward_composition,
+         self._gamma) = self._resolve_reward_config()
+
+    # -- the reward, for `mc_return` -------------------------------------------------
+    def _resolve_reward_config(self):
+        """``(reward_fn_factory, digest, composition_line, gamma)`` for THIS run.
+
+        The GAMMA comes from the resolved `RewardConfig`, not from a CLI flag of its own, and that
+        is a correctness property rather than tidiness: `reward_config_digest` hashes EVERY field
+        of the config INCLUDING `gamma`, so folding the return at the config's discount puts the
+        discount under the same guard as the rest of the reward. A separate `--gamma` would be
+        state the digest cannot see — a mistyped one would ship returns folded at the wrong
+        discount while `cf/labels_mc_return_rejected_total` stayed 0 and every liveness counter read
+        healthy. `--gamma` survives only as an explicit OVERRIDE for a reader who knows better.
+
+        Read from ``<run>/metadata.json``'s recorded ``cli_args`` through the SAME
+        ``RewardConfig.from_args`` the trainer uses — never a hand-rebuilt config, because a reward
+        assembled two different ways is exactly the drift the digest exists to detect, and a
+        producer that reconstructs it independently would eventually detect its own reconstruction.
+
+        When the metadata cannot be read the DEFAULT config is used and the fact is printed LOUDLY.
+        That is not a silent fall-back: the digest of the default config will simply not match a
+        run whose reward differs, and the trainer-side buffer will reject every ``mc_return`` and
+        say so. A wrong label that announces itself twice is the intended failure mode.
+        """
+        import functools
+        from agents.training.reward_manager import (
+            Gen3RewardManager, RewardConfig, format_reward_composition, reward_config_digest)
+
+        cfg = None
+        meta = os.path.join(self.run_dir, "metadata.json")
+        try:
+            cli_args = json.loads(Path(meta).read_text()).get("cli_args") or {}
+            if cli_args:
+                cfg = RewardConfig.from_args(argparse.Namespace(**cli_args))
+        except Exception as exc:                                        # noqa: BLE001
+            self._log(f"⚠️  could not read this run's reward config from {meta} "
+                      f"({type(exc).__name__}) — falling back to the DEFAULT RewardConfig. Any "
+                      f"mc_return label will be REJECTED by a trainer whose reward differs "
+                      f"(cf/labels_mc_return_rejected_total), which is the intended failure.")
+        if cfg is None:
+            cfg = RewardConfig()
+        _g = getattr(self.args, "gamma", None)
+        gamma = float(_g) if _g is not None else float(cfg.gamma)
+        return (functools.partial(Gen3RewardManager, config=cfg),
+                reward_config_digest(cfg), format_reward_composition(cfg), gamma)
 
     # -- helpers ---------------------------------------------------------------------
     def _log(self, msg: str) -> None:
@@ -654,41 +733,111 @@ class CfProducer:
                           f"(--max-labels-per-hour {self.args.max_labels_per_hour}) — "
                           f"stopping this record early")
                 break
-            wins, n = self._rollout(record, side, d, tag=os.path.basename(path))
+            wins, n, returns = self._rollout(record, side, d, tag=os.path.basename(path))
             if n == 0:
                 self.state.note_skip("rollouts_all_failed")
                 continue
             self.label_times.append(time.time())
             self.state.rollouts_total += n
-            rows.append(label_row(record_path=path, decision=d, wins=wins, n=n,
-                                  step=self.snapshot.step, surprise=s, entropy=e,
-                                  score=score, win_prob=wp))
+            rows.append(label_row(
+                record_path=path, decision=d, wins=wins, n=n,
+                step=self.snapshot.step, surprise=s, entropy=e,
+                score=score, win_prob=wp,
+                # HEAD B's label is the RECORDED battle's realized outcome — already computed above
+                # for the critic-surprise term, so it costs nothing. It is the SAME quantity the
+                # on-policy BCE eats, on the states the sampler selected: that identity is what
+                # makes B-A a read of COVERAGE alone.
+                outcome_label=outcome,
+                mc_return=(float(np.mean(returns)) if returns else None),
+                mc_return_n=len(returns),
+                reward_sha1=self._reward_sha1, reward_composition=self._reward_composition))
         return rows
 
     def _rollout(self, record: ReconstructionRecord, side: str, d: RecordDecision,
-                 *, tag: str) -> "tuple[int, int]":
-        """R continuations from ``d``: the RECORDED action, then both sides live on fresh dice."""
+                 *, tag: str) -> "tuple[int, int, List[float]]":
+        """R continuations from ``d``: the RECORDED action, then both sides live on fresh dice.
+
+        Returns ``(wins, n, returns)``. ``returns`` is the per-rollout DISCOUNTED SHAPED RETURN from
+        the labelled decision (`gen3_cf_twin_heads_v1`, the shadow critic's stream) and is EMPTY
+        when `--no-mc-return` is set or when a rollout produced no measurable return — never
+        zero-padded, because a zero return is the middle of this reward's range and would read as a
+        genuinely neutral game rather than as a missing measurement.
+
+        The tracking is armed at the DIVERGENCE decision through the scripted-prefix hook, not at
+        the first live one: our turn-T move is scripted (it IS the substitute), so a live-only hook
+        would miss ``r_T`` and shift the whole return by one turn against the state it labels.
+        """
         from main.prober.falsifier import fresh_seeds
+        from agents.training.cf_mc_return import attach_return_recording
 
         rec = dataclasses.replace(record, trainee_username=record.username(side))
         seed = record.start_options().get("seed")
         seeds = fresh_seeds(self.args.rollouts, salt=f"{tag}:{d.index}:cfp{self.args.seed}")
         wins = n = 0
+        returns: "List[float]" = []
         for ps in seeds:
+            trainee = self.snapshot.make_player(rec, side, role="T")
+            recorder = None
+            hook = None
+            if self._mc_return_on:
+                recorder = attach_return_recording(
+                    trainee, reward_fn_factory=self._reward_factory)
+            if recorder is None and self._mc_return_on and not self._said_no_return_path:
+                self._said_no_return_path = True
+                self._log("⚠️  this snapshot's player exposes no obs/order seam, so no shaped "
+                          "RETURN can be measured — rows will carry NO mc_return and the SHADOW "
+                          "critic will train on nothing. (Expected only under a test double; a "
+                          "real RLPlayer supports it.) Said once.")
+            if recorder is not None:
+                fired = {"done": False}
+
+                def hook(battle, obs, _choice, _rec=recorder, _t=int(d.turn),
+                         _a=int(d.action), _f=fired):
+                    # Fires on every OUR-side scripted decision; only the DIVERGENCE turn matters.
+                    # The recorder decides nothing — this closure does, which is what keeps reward
+                    # tracking out of `utils.bridge.counterfactual` entirely.
+                    #
+                    # ⚠️ ARM **THEN** NOTE, in that order, and this line is the whole point of the
+                    # hook. Turn T's move is SCRIPTED (it IS the substitute), so it never reaches
+                    # the live `choose_move` the recorder is otherwise driven by. Arming alone —
+                    # leaving the note to the first LIVE decision at T+1 — would make T+1 the armed
+                    # decision and drop r_T, which is exactly the off-by-one the hook exists to
+                    # close: the label would be G(s_{T+1}) against an obs row for s_T, biased by
+                    # whatever happened on the divergence turn (a KO there is the largest single
+                    # shaping term), i.e. correlated with the state and shaped like a real signal.
+                    if _f["done"] or int(getattr(battle, "turn", 0) or 0) != _t:
+                        return
+                    mask = (obs or {}).get("action_mask")
+                    if mask is None:                       # a non-Gen3 player; nothing to record
+                        return
+                    _f["done"] = True
+                    _rec.arm_at_next()
+                    _rec.note(battle, _a, mask)
             try:
                 res = _run_one(
                     rec,
-                    trainee=self.snapshot.make_player(rec, side, role="T"),
+                    trainee=trainee,
                     opponent=self.snapshot.make_player(rec, _other(side), role="O"),
                     divergence_turn=int(d.turn), substitute_choice=d.choice,
-                    seed=seed, post_t_seed=ps, impl=self.args.impl)
+                    seed=seed, post_t_seed=ps, impl=self.args.impl,
+                    trainee_decision_hook=hook)
             except Exception as exc:                                    # noqa: BLE001
                 self._log(f"rollout failed ({tag} inv {d.index}): "
                           f"{type(exc).__name__}: {str(exc)[:200]}")
                 continue
             n += 1
             wins += int(res["outcome"] == "win")
-        return wins, n
+            if recorder is not None:
+                g = recorder.value(self._gamma)
+                if g is not None:
+                    returns.append(g)
+                elif not self._warned_no_return:
+                    self._warned_no_return = True
+                    self._log("⚠️  a rollout produced NO measurable shaped return (the divergence "
+                              "decision was never reached, or the battle ended in the prefix) — "
+                              "that rollout contributes no mc_return. Said once; watch "
+                              "cf/mc_return_coverage on the trainer side.")
+        return wins, n, returns
 
     # -- one cycle -------------------------------------------------------------------
     def cycle(self) -> int:
@@ -827,6 +976,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="torch.compile the snapshot's extractor (amortizes over a long session)")
     p.add_argument("--seed", type=int, default=20260822,
                    help="salts the post-divergence dice, so a re-run reproduces")
+    p.add_argument("--mc-return", "--mc_return", dest="mc_return",
+                   action=argparse.BooleanOptionalAction, default=True,
+                   help="also measure the DISCOUNTED SHAPED RETURN of each rollout and ship it as "
+                        "the row's `mc_return` (the SHADOW CRITIC's label stream, "
+                        "gen3_cf_twin_heads_v1). Default ON — the rollouts already run, so the "
+                        "only cost is the server-free reward path. --no-mc-return omits the field "
+                        "entirely, which is what a consumer without --cf-shadow-critic wants.")
+    p.add_argument("--gamma", type=float, default=None,
+                   help="OVERRIDE the discount used to fold a rollout's rewards into a return. "
+                        "Default: the run's OWN RewardConfig.gamma, read from its metadata — which "
+                        "is the right default because `reward_config_digest` hashes gamma along "
+                        "with every other reward field, so the discount rides the same GIGO guard "
+                        "as the reward itself. Passing this puts the discount OUTSIDE that guard: "
+                        "a wrong value ships returns folded against a different value function "
+                        "with every liveness counter reading healthy.")
     p.add_argument("--cycles", type=int, default=0,
                    help="stop after N cycles (default 0 = run forever). --cycles 1 is the smoke")
     return p

@@ -405,6 +405,42 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "ON-at-coef-0 is bit-identical in pi/vf (it is built LAST, so no earlier "
                    "module's init RNG draw moves). No `requires`: it reads `value_pooled`, which "
                    "is unconditional."),
+    ModelFlag("cf_twin_heads", False, Tier.CLI, Klass.STRUCTURAL, 99,
+              "the TWIN win-prob heads B and C off value_pooled — B trained on the cf-labelled "
+              "states with SINGLE-OUTCOME labels, C on the same states with TIGHT-MC labels, both "
+              "additionally carrying head A's on-policy BCE",
+              note="The owner-authorized amendment to the signed R1 pre-registration (ledger "
+                   "2026-08-22 evening, 'Three owner sign-offs' item 3): the arm's primary "
+                   "comparison becomes a WITHIN-RUN paired head difference instead of a run-vs-run "
+                   "one, so B-A isolates coverage and C-B isolates pure variance reduction on an "
+                   "identical trunk over identical states. IN the registry for the "
+                   "`cf_evidential`/`win_prob_mode` reason: a Gen3FeaturesExtractor constructor "
+                   "kwarg that builds MODULES. Its coefficient (--cf-twin-coef) is NOT — a "
+                   "training-only loss weight in the --opd-coef class. Head-only ALWAYS in v1 "
+                   "(both twins read a DETACHED value_pooled in every term), so this measures the "
+                   "LABEL effect on a trunk frozen with respect to them; trunk exposure stays a "
+                   "cross-run question. Never called by the forward, built LAST: OFF byte-identical, "
+                   "ON-at-coef-0 bit-identical in pi/vf. No `requires` on cf_evidential (orthogonal "
+                   "readouts of the same unconditional value_pooled). It DOES require "
+                   "`win_prob_mode`, and that is declared rather than left to the CLI: head A is "
+                   "`win_head`, so `--win-prob-mode none` leaves the factorial with no control arm "
+                   "— and `checkargs` walks this column, so without it an operator validating a "
+                   "recorded launcher_command gets exit 0 on a command the child then refuses, "
+                   "which is the launch-crash-fix loop checkargs exists to end.",
+              requires=("win_prob_mode",)),
+    ModelFlag("cf_shadow_critic", False, Tier.CLI, Klass.STRUCTURAL, 99,
+              "the passive SHADOW CRITIC off value_pooled — a value twin trained on tight-MC "
+              "`mc_return` labels (the run's own shaped return, PopArt frame), which never "
+              "computes an advantage and never enters GAE",
+              note="The staged PROMOTION PATH for critic surgery, not the surgery: swapping the "
+                   "live critic for an MC-grounded one is a critic ROUTE change and owes the C4 "
+                   "offline gate, so this head accumulates the evidence (shadow-vs-live-V "
+                   "divergence on the same minibatch states) as a published number instead of an "
+                   "argument. The `pubval` structural precedent. Detached ALWAYS — there is no "
+                   "read_only/shaping split — and never called by the forward, so OFF is "
+                   "byte-identical and ON-at-coef-0 is bit-identical in pi/vf. Its coefficient "
+                   "(--cf-shadow-coef) is training-only, the --opd-coef class. No `requires`: it "
+                   "reads value_pooled, which is unconditional."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

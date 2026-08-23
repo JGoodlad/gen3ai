@@ -89,7 +89,7 @@ from agents.model.belief_heads import (  # noqa: F401
     _REVEAL_LOGIT, mask_typeless_hp,
 )
 from agents.model.aux_value_heads import (  # noqa: F401
-    CfEvidentialHead, ValueDistHead, WinProbHead,
+    CfEvidentialHead, ShadowValueHead, ValueDistHead, WinProbHead,
 )
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,
@@ -416,6 +416,7 @@ class Gen3FeaturesExtractor(torch.nn.Module):
                  threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  cf_evidential: bool = False,
+                 cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1221,6 +1222,48 @@ class Gen3FeaturesExtractor(torch.nn.Module):
         # what makes ON-at-coefficient-0 bit-identical to OFF and not merely equal in shape.
         self.cf_evidential = bool(cf_evidential)
         self.cf_evid_head = CfEvidentialHead() if self.cf_evidential else None
+
+        # gen3_cf_twin_heads_v1 (v99): the TWIN WIN-PROB HEADS and the SHADOW CRITIC — the
+        # owner-authorized amendment to the R1 pre-registration (ledger 2026-08-22 evening, "Three
+        # owner sign-offs", item 3). Both are STRUCTURAL in exactly the `cf_evidential` sense: their
+        # params are the state_dict delta and nothing else, because neither is called from this
+        # forward. The training-side terms apply them to the STASHED `value_pooled`.
+        #
+        # WHY TWINS. R1's primary comparison was two RUNS (arm vs control). Two runs differ in every
+        # random draw they ever make, and the meter's own measured floor is ~40% of its variance —
+        # so a run-to-run difference has to clear noise the design cannot control. Three heads on
+        # ONE trunk delete that variance by construction: identical trunk, identical states, and
+        # the ONLY difference is which label stream trains each head.
+        #   head A = `win_head` above (the CONTROL — the existing on-policy single-outcome BCE, and
+        #            it is not touched by any of this: A is not new)
+        #   head B = A's loss PLUS the cf-labelled states with SINGLE-OUTCOME labels  → COVERAGE
+        #   head C = A's loss PLUS the same states with TIGHT-MC labels               → +PRECISION
+        # B−A isolates prioritization/coverage; C−B isolates pure variance reduction. Both twins are
+        # `WinProbHead` — the SAME module class and the same capacity as A — because a difference of
+        # architectures would be a second explanation for a difference of scores.
+        #
+        # HEAD-ONLY ALWAYS in v1: both twins read a detached `value_pooled` in every term they take,
+        # so this measures the LABEL effect on a trunk that is frozen with respect to them. Trunk
+        # exposure and policy transfer stay CROSS-RUN questions (runbook §0a, unamended).
+        self.cf_twin_heads = bool(cf_twin_heads)
+        if self.cf_twin_heads and self.win_head is None:
+            # DECLARED in flag_registry (`requires=("win_prob_mode",)`) and enforced here, which is
+            # the registry's contract: a dependency that only the CLI knows is invisible to
+            # `checkargs`, so an operator validating a recorded launcher_command would get exit 0 on
+            # a command the child then refuses. Head A IS `win_head`; without it the twins have no
+            # control objective to mirror and the factorial has no control arm at all — the arm
+            # would run and its primary comparison would silently not exist.
+            raise ValueError(
+                "cf_twin_heads requires win_prob_mode != 'none': heads B and C mirror head A's "
+                "on-policy win-prob BCE, and head A is `win_head`, which win_prob_mode='none' does "
+                "not build. Set --win-prob-mode read_only|shaping, or drop --cf-twin-heads.")
+        self.cf_twin_head_b = WinProbHead() if self.cf_twin_heads else None
+        self.cf_twin_head_c = WinProbHead() if self.cf_twin_heads else None
+        # The SHADOW CRITIC: a passive value twin on tight-MC `mc_return` labels. Never computes an
+        # advantage, never enters GAE, never feeds the forward — the staged promotion path for
+        # critic surgery (which owes C4), not the surgery. See `ShadowValueHead`.
+        self.cf_shadow_critic = bool(cf_shadow_critic)
+        self.cf_shadow_head = ShadowValueHead() if self.cf_shadow_critic else None
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

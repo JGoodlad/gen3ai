@@ -3137,6 +3137,202 @@ heads still receiving their own gradients under `no_grad`, and the debugger supp
 the defaults, both `--no-` spellings, the three new refusals and `checkargs`. End-to-end: a
 `--debug --steps 10000` CPU smoke with fixture labels built from REAL episode obs.
 
+### The TWIN HEADS + the SHADOW CRITIC (`--cf-twin-heads` / `--cf-shadow-critic`, `gen3_cf_twin_heads_v1`, v99)
+
+**The owner-authorized amendment to the SIGNED R1 pre-registration** (ledger 2026-08-22 evening,
+"Three owner sign-offs" item 3). It changes what the arm's primary comparison *is*, so read this
+before reading the runbook's §2.
+
+**The problem it solves.** R1 as signed compared two RUNS — an arm with `--cf-winprob-coef` and a
+control without. Two runs differ in every random draw they ever make, and the primary meter carries
+a MEASURED floor of ~39% of its own variance (`tmp/hidden_info_floor_report.md`). So a cross-run
+difference has to clear noise the design cannot control, and a null would be uninterpretable.
+
+**The design: three win-prob heads on ONE trunk, differing ONLY in their label stream.**
+
+| head | module | trained by | isolates |
+|---|---|---|---|
+| **A** (control) | `win_head` — the EXISTING head, untouched | the on-policy single-outcome BCE, at `win_prob_coef` | — |
+| **B** (coverage) | `cf_twin_head_b` | A's loss **+** the cf-labelled states with **SINGLE-OUTCOME** labels (n≡1) | **B−A = coverage/prioritization** |
+| **C** (treatment) | `cf_twin_head_c` | A's loss **+** the same states with **TIGHT-MC** labels (n=R) | **C−B = pure variance reduction** |
+
+That factorial is the mechanism split. `C−A` remains the original R1 claim; the amendment's value is
+that it now decomposes. Because all three read the same `value_pooled` on the same rows in the same
+minibatch, the trunk, the states, the seeds and the hidden-information floor are **identical by
+construction**, not matched by design.
+
+- **B and C are `WinProbHead` — the same class and capacity as A.** A difference of architectures
+  would be a second explanation for every difference of scores, and nothing downstream would say so.
+- **Head-only ALWAYS in v1.** Both twins read a DETACHED `value_pooled` in *every* term they take,
+  including the on-policy mirror. So this measures the **LABEL effect on a trunk that is frozen with
+  respect to them**; trunk exposure and policy transfer stay CROSS-RUN questions (runbook §0a,
+  unamended). `train/cf_twin_grad_share` reads exactly 0.0 — published so the contract is a live
+  measurement.
+- **The mirror rides `win_prob_coef`, not `cf_twin_coef`.** All three heads must carry a
+  bit-identical copy of the control objective, or B−A would confound "extra states" with "a
+  different base objective".
+- **B and C pull EQUALLY HARD.** `_cf_binomial_nll` normalizes by `Σn`, so a row's gradient is
+  `(q − target)/B` whatever its n. B's n≡1 rows and C's n=R rows therefore differ only in the
+  TARGET — which is what makes C−B a read of label PRECISION rather than of effective learning rate.
+- ⚠️ **`cf/twin_b_coverage` is the FIRST thing to read.** A producer shipping no `outcome_label`
+  trains B on nothing; B then equals A, the pre-registered C−B contrast silently becomes C−A, and
+  every other counter reads healthy. That is the one way this arm produces a confident wrong answer.
+  B's fold is skipped rather than trained on a zero-filled absent label, and the scalar says so.
+
+**The SHADOW CRITIC** is the other half and a different job: a passive `ShadowValueHead` trained on
+**`mc_return`** labels — the mean realized **shaped return** over the producer's rollouts, in the
+units the live critic V actually predicts. It **never computes an advantage, never enters GAE,
+feeds nothing forward, and reads `value_pooled.detach()` unconditionally** (the `pubval` structural
+precedent). Swapping the live critic for an MC-grounded one is critic SURGERY and owes the C4
+offline gate; this head is the **staged promotion path** that earns or refuses that gate without
+risking a run.
+
+- **The frame.** Under PopArt the head's raw output IS the normalized value and the target is
+  `popart.normalize(mc_return)` — `_value_distill_mse`'s handling, for its reason (the coefficient
+  stays scale-comparable with the value loss). Every reported metric is DE-normalized to real
+  shaped-return units, which is the only frame a reader can interpret.
+- 🔒 **THE METER is `cf/shadow_shadow_vs_live_v`** — the SIGNED real-unit mean of (shadow − live V)
+  on the same states, with the live V taken off the *same* forward through `policy._critic_value`
+  (never a hand-rolled `value_net` call, which under `--value-from-dist` reads a head the run does
+  not use). A shadow sitting systematically BELOW the live critic is a live critic that is
+  optimistic about the states the factory samples, **measured against ground truth rather than
+  argued from a calibration curve**. `cf/shadow_live_v_vs_label` is its direct half; read them
+  together, because the shadow is itself a fitted head and can be wrong too.
+
+**The LABEL SCHEMA decision, and why it is not a version bump.** The three streams ride ONE row
+(`outcome_label`, `mc_return` + `mc_return_n`, `reward_sha1` as additive-optional v1 fields) rather
+than arriving as separate `kind`s. Two reasons, the first decisive: **`CfLabelBuffer` dedups on the
+obs digest**, so a second row for the same state would collide and one would silently replace the
+other. And one-row-per-state makes "heads B and C saw identical states" *structural* rather than
+hoped-for. `schema` stays **1** because it is a REFUSAL gate — a consumer skips every row whose
+version it does not know — so bumping it would make a new producer's output unreadable by an
+existing trainer, which is the opposite of backward compatible. Old consumers ignore the new keys;
+new consumers supervise nothing extra when they are absent.
+
+**`mc_return` carries a REWARD DIGEST and is REFUSED on a mismatch.** A shaped return is a fact
+about a board *under a reward composition*, so a return measured under a different `RewardConfig`
+is a measurement of a **different value function**, not a noisier sample of ours — and there is no
+shape error or range violation that would catch it. `reward_config_digest(config)` (a stable sha1
+over every `RewardConfig` field) is stamped by the producer and handed to the buffer by the
+trainer; a mismatch drops the **field** (never the row — its win-prob labels are still good), counts
+`cf/labels_mc_return_rejected_total`, and warns once by name. The digest is only passed when
+`--cf-shadow-coef > 0`: a run with no shadow head must not reject rows over a field it does not read.
+
+**The producer side** (`cf_producer.py`): `outcome_label` is free (it already computes the recorded
+outcome for the critic-surprise term). `mc_return` needs the server-free reward path —
+`agents/training/cf_mc_return.py` wraps `RewardTracker`, keeps the per-turn rewards *in order*, and
+folds them with `--gamma`. Two non-obvious facts live there: **`RewardTracker` accumulates an
+UNDISCOUNTED total** (a return is `Σγᵏr` from a particular state, so the rewards must be captured
+per turn), and **the divergence turn's own move is SCRIPTED**, so a tracker hooked only into the
+live `choose_move` would begin at T+1 and its return would be missing `r_T` and carry an extra
+factor of γ — against the very state the label is FOR. That is why `install_scripted_prefix` grew an
+`on_scripted_decision` hook (default None, byte-identical): it REPORTS, and the producer's closure
+decides. The reward config is read from the run's own `metadata.json` `cli_args` through the SAME
+`RewardConfig.from_args` the trainer uses; when it cannot be read the default is used and the fact
+is printed LOUDLY, because the digest will then simply not match and the trainer will say so.
+
+**⚠️ TWO SEAM BUGS shipped in the first version of the `mc_return` path and were caught by
+adversarial review, not by the tests.** Both produced plausible-looking labels; keep them in mind
+before moving either seam.
+
+1. **`action_to_order` is NOT a valid recording seam.** It looks ideal (the commit point; it raises
+   `StaleDecisionError` on a superseded attempt) — but `counterfactual._invert_choice` calls it in a
+   **LOOP over every legal index** to recover a recorded choice's action number, on every scripted
+   decision of the prefix. Recording there fired 6-9 times per scripted turn with actions that were
+   never played, each advancing the STATEFUL reward function. The seams are `_predict_best_action`
+   (caches the committed `(idx, mask)`) + the player's own `choose_move` (the once-per-decision
+   boundary; it must be wrapped BEFORE `install_scripted_prefix`, which captures it as its live
+   delegate) + `_battle_finished_callback` (the terminal reward).
+2. **The hook must `arm_at_next()` AND `note()`, in that order.** Arming alone left the first LIVE
+   decision at T+1 as the armed one, so `r_T` was dropped and every label was `G(s_{T+1})` against an
+   obs row for `s_T` — biased by whatever happened on the divergence turn (a KO there is the largest
+   single shaping term), i.e. **correlated with the state and shaped exactly like a real signal**.
+
+Both are pinned in `cf_mc_return_test.py`, the second with an explicit negative control showing the
+buggy shape, because neither is visible in any scalar. Note what did NOT catch them: the
+bridge-backed composition test asserted only that an `mc_return` was PRESENT. **A composition test
+that checks presence rather than value is a presence test.**
+
+**Two counters, not one, and the distinction is the same one twice.** `cf/labels_skipped_total` is
+the ROW-level GIGO meter and must keep partitioning the input with `labels_ingested_total`; an
+optional FIELD that is malformed or out of range ACCEPTS the row and counts into
+`cf/labels_field_skipped_total`, and a reward-digest refusal counts into
+`cf/labels_mc_return_rejected_total`. Folding any of these into the first would make "is the
+producer feeding me garbage" climb at the ingestion rate on a buffer refusing nothing.
+
+**The discount comes from the RewardConfig, not from a flag.** `reward_config_digest` hashes every
+field including `gamma`, so folding the return at `cfg.gamma` puts the discount under the same GIGO
+guard as the reward. `--gamma` survives only as an explicit override, and its help says what that
+costs: a mistyped value ships returns folded against a different value function with the digest
+still matching and every liveness counter reading healthy.
+
+**⚠️ The ONE coupling head-only does NOT remove: the global gradient CLIP.**
+`clip_grad_norm_` scales every gradient by `max_norm / total_norm` over ALL parameters, so any term
+with a non-zero gradient anywhere perturbs the policy and value updates in the last bits. It is
+tiny at a sane coefficient and it is shared by every aux this tree runs — but it is not zero, and an
+arm claiming a bit-identical trunk must know which of the two mechanisms it is claiming.
+`instrumented_ppo_test.py::test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_CLIP`
+pins the pair: with the clip active the updates differ, with it raised out of the way they are
+bit-identical. A genuine gradient leak would survive both.
+
+**Flag class.** `--cf-twin-heads` and `--cf-shadow-critic` are **STRUCTURAL**, in
+`agents/model/flag_registry.py` (v99, `cli`/`structural`), with `ModelVersion` fields, bool compares
+in `check_compatible`, a `MODEL_CONFIG_VERSION` bump to **99** with a setdefault-False migration,
+`snapshot.current_model_version` keywords, and **no `ARCH_SIGNATURE` bump** (optional side heads,
+obs family unchanged) — the `cf_evidential` precedent exactly, and the gate matters for its reason:
+the forward never calls these heads, so `check_compatible` is the ONLY thing that can catch a
+flipped flag. `--cf-twin-coef` / `--cf-shadow-coef` are training-only argparse (the `--opd-coef`
+class), deliberately not in the registry and **not read back on a flagless resume**.
+
+Refusals, all at the CLI: `--cf-twin-coef > 0` requires `--cf-twin-heads`; `--cf-shadow-coef > 0`
+requires `--cf-shadow-critic` (both are state_dict changes and cannot be added mid-run to rescue a
+live coefficient); and **`--cf-twin-heads` requires `--win-prob-mode read_only|shaping`**, because
+the twins mirror head A's loss and `none` builds no head A — the arm's control arm would silently
+not exist.
+
+**The AUDIT read** — `cf_audit` gained `attach_twin_heads` (one more batched forward, same
+best-effort contract as `attach_evidential`) and two blocks:
+
+- 🔒 **`twin_paired` is the amended PRIMARY.** Per row, `brier = (pred − mc)²` and
+  `abs_err = |pred − mc|` for each head, **differenced across heads on the same row**, with a
+  battle-clustered bootstrap CI on the difference. Two properties buy it over `sd_true_excess` here:
+  the hidden-information floor **cancels exactly** (it is a property of the STATE, identical in
+  every arm — the amended §2 argued it cancels at matched *step*; twins strengthen that to matched
+  *state*), and no stratification means no selection correction is owed. **SIGN: these are ERROR
+  scores, so a NEGATIVE difference means the first-named head is better.**
+  ⚠️ A near-zero contrast with a near-zero `mean_abs_pred_diff` is a **coverage/dosage** reading,
+  not the pre-registered null — the label streams did not separate the heads and there is nothing
+  to decompose yet.
+- **`twin_resolution`** is the G0 continuity link: each head's own `sd_true_excess` binned by its
+  own prediction. Its cells are **UNWEIGHTED** and the block says so in its own `weighting` field —
+  the population re-weighting is unavailable for B and C, because the eval frame carries only head
+  A's predictions, so their decile membership over the whole frame is unknown. Absolute levels here
+  are NOT comparable with the bias map's `population_weighted_sd_true_excess`.
+- **`shadow`** carries `shadow_vs_live_v` (signed, battle-clustered) and `shadow_vs_live_v_abs`.
+
+**Gates.** `agents/model/cf_twin_heads_test.py` holds the heads' contracts (the shadow's UNBOUNDED
+range — a sigmoid creeping in would clamp every label while the MSE fell; the twins' identical
+architecture; their INDEPENDENT init, so `cf/twin_b_vs_c_abs` at step 0 is not reading its own
+initialization; the BIT-identity of ON's pi/vf for each flag and both together; that the forward
+never calls any of them; the v99 gate on both flags and both migration legs; the registry rows; the
+`current_model_version` threading). `instrumented_ppo_test.py` pins the routing and the isolation:
+coefficient-zero byte-identity for each half, a live coefficient reaching ONLY its own heads (with
+the clip raised — see above), **the ROUTING pin** (B's loss equals the binomial NLL of the OUTCOME
+and demonstrably NOT of the tight-MC label, with the two set to opposite extremes), B's n≡1
+weighting, B's skip-and-count when no row carries an outcome, the mirror's coefficient and its
+detach, the shadow's PopArt frame and masking, and that all FOUR cf terms share ONE sample and ONE
+forward. `cf_label_buffer_test.py` covers both schema directions (an old row still ingests; a new
+row carries both streams), the out-of-range field skip that keeps the row, the reward-digest
+refusal and its counter, the coverage scalars, and the masks in `batch_tensors`.
+`cf_mc_return_test.py` pins the oldest-first discount and the deliberate one-decision arming delay.
+`cf_audit_test.py` pins the sign convention, the honest null, the refusal to compare heads it does
+not have, and the shadow block's signedness. `main/cf_flags_test.py` covers the defaults, both
+negation forms, the four refusals and `checkargs`. **The composition** is
+`cf_producer_integration_test.py` (`sim`): a real bridge battle → the ring → one producer cycle →
+the REAL `CfLabelBuffer`, now additionally asserting every row carries a valid `outcome_label`,
+that at least one carries an `mc_return` with its digest, that the buffer keeps them, and that a
+buffer configured with a FOREIGN digest refuses the `mc_return` while keeping the row.
+
 ### The label PRODUCER DRIVER (`cf_producer.py`) — the piece that runs the loop
 
 ```bash

@@ -146,7 +146,13 @@ a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so proj
 read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains
 its own params only); `shaping` feeds it live (the win objective also shapes the trunk).
 
-`CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and it is
+`CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and
+v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
+(`--cf-twin-heads` — heads B and C, the within-run paired R1 comparison) and the passive
+`ShadowValueHead` (`--cf-shadow-critic`, an MC-grounded value twin that never computes an
+advantage). All four share the evidential head's three properties — built LAST, never called by
+the forward, input detached unconditionally — so the count off `value_pooled` is now SIX heads
+and only `win_head` / `value_dist_head` are in the forward at all. It is
 the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
 over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
 since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
@@ -341,7 +347,7 @@ table exists to prevent:
 | `team_transformer.py` | `EdgeBias` (+ the `_EDGE_*_CELL` definitions), `BiasedEncoderLayer`, `TeamTransformer`, `EventSeats` |
 | `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
-| `aux_value_heads.py` | `WinProbHead`, `ValueDistHead`, `CfEvidentialHead` (v98 — the EVIDENTIAL Beta posterior over P(win\|state); `softplus+1` ⇒ α,β ≥ 1 so the Beta stays unimodal and `Beta(1,1)` is reachable, plus the two closed forms the loss needs: the Beta-Binomial marginal NLL and `KL(·‖Beta(1,1))`. The ONE readout here with no `read_only`/`shaping` split — its input is detached UNCONDITIONALLY and the forward never calls it) |
+| `aux_value_heads.py` | `WinProbHead`, `ValueDistHead`, `CfEvidentialHead` (v98), `ShadowValueHead` (v99 — the passive MC-grounded value twin behind `--cf-shadow-critic`; the twin WIN-PROB heads B/C reuse `WinProbHead` unchanged, which is the point: an architecture difference would be a second explanation for a score difference) (v98 — the EVIDENTIAL Beta posterior over P(win\|state); `softplus+1` ⇒ α,β ≥ 1 so the Beta stays unimodal and `Beta(1,1)` is reachable, plus the two closed forms the loss needs: the Beta-Binomial marginal NLL and `KL(·‖Beta(1,1))`. The ONE readout here with no `read_only`/`shaping` split — its input is detached UNCONDITIONALLY and the forward never calls it) |
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
 | `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |

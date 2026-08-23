@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -91,12 +91,24 @@ def install_scripted_prefix(
     substitute_choice: Optional[str],
     is_our_side: bool,
     obs_sink: Optional[list] = None,
+    on_scripted_decision: Optional[Callable[[Any, Optional[dict], str], None]] = None,
 ) -> None:
     """Override ``player.choose_move`` (instance-level) so it replays ``side``'s recorded commands until
     the divergence, then defers to the live policy. See the module header for the divergence semantics.
 
     ``obs_sink`` (a list) collects this player's per-decision obs vectors during the SCRIPTED prefix —
     used by the faithfulness oracle to assert the scripted obs == the recorded ``states.npz`` obs.
+
+    ``on_scripted_decision(battle, obs_dict, choice_str)`` is called for every decision this side
+    takes on the SCRIPTED path, immediately before the choice is returned. It exists for exactly one
+    consumer (`gen3_cf_twin_heads_v1`, the shadow critic's `mc_return` labels) and one fact: the
+    DIVERGENCE-turn move is scripted, so a per-decision reward tracker hooked only into the live
+    `choose_move` would begin at turn T+1 and its return would be missing ``r_T`` — off by one
+    reward and one factor of γ against the very state the label is FOR. The hook REPORTS; it does
+    not decide. Which decisions matter (the caller checks ``battle.turn``) and what to do with them
+    belong to the caller, so nothing about reward tracking leaks into this module. Default None =
+    byte-identical to the pre-hook behaviour, and any exception it raises is deliberately NOT
+    swallowed here: a hook that silently fails would produce labels that look fine and are not.
     """
     script = deque(c for (s, c) in record.commands if s == side)
     is_gen3 = hasattr(player, "embed_battle")
@@ -151,6 +163,8 @@ def install_scripted_prefix(
                 and substitute_choice is not None):
             state["substituted"] = True
             _advance_tracker(battle, substitute_choice)
+            if on_scripted_decision is not None:
+                on_scripted_decision(battle, obs_dict, substitute_choice)
             return _passthrough(substitute_choice)
 
         # Replay this side's next recorded choice.
@@ -159,6 +173,8 @@ def install_scripted_prefix(
             return original_choose(battle)
         choice_str = script.popleft()
         _advance_tracker(battle, choice_str)
+        if on_scripted_decision is not None:
+            on_scripted_decision(battle, obs_dict, choice_str)
         return _passthrough(choice_str)
 
     player.choose_move = scripted_choose_move
@@ -277,6 +293,7 @@ def replay_counterfactual(
     capture_obs: bool = False,
     capture_trajectory: bool = False,
     impl: str = "node",
+    trainee_decision_hook: Optional[Callable[[Any, Optional[dict], str], None]] = None,
 ) -> dict:
     """Play ONE counterfactual line: replay ``record`` to ``divergence_turn``, substitute
     ``substitute_choice`` for OUR side, then continue live (``trainee`` policy vs ``opponent``) to a
@@ -290,6 +307,11 @@ def replay_counterfactual(
     — so the prefix keeps the recorded dice but the post-divergence resolution is resampled: vary it
     across rollouts for a Monte-Carlo "could it have won" win-probability.
     ``divergence_turn=None`` is the full-replay oracle (no substitute, no handoff).
+
+    ``trainee_decision_hook(battle, obs_dict, choice_str)`` (default None, byte-identical) is
+    forwarded to :func:`install_scripted_prefix` for OUR side only — see its docstring; it is how
+    the shadow critic's `mc_return` labels pick up the DIVERGENCE turn's own reward, which is
+    scripted and therefore invisible to a tracker hooked into the live ``choose_move``.
 
     ``impl`` (``"node"`` default | ``"rust"``) picks the in-process sim-bridge child the live
     post-divergence battle runs on — this leg plays a REAL game, so it rides the same
@@ -306,7 +328,8 @@ def replay_counterfactual(
     obs_sink: Optional[list] = [] if capture_obs else None
     install_scripted_prefix(
         trainee, side=our_side, record=record, divergence_turn=divergence_turn,
-        substitute_choice=substitute_choice, is_our_side=True, obs_sink=obs_sink)
+        substitute_choice=substitute_choice, is_our_side=True, obs_sink=obs_sink,
+        on_scripted_decision=trainee_decision_hook)
     install_scripted_prefix(
         opponent, side=opp_side, record=record, divergence_turn=divergence_turn,
         substitute_choice=None, is_our_side=False)

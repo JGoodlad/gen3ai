@@ -24,6 +24,7 @@ If upstream changes (e.g. after a `pip install -U sb3_contrib`):
 import contextlib
 import hashlib
 import inspect
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch as th
@@ -110,6 +111,28 @@ def _verify_upstream_unchanged() -> None:
 
 
 _verify_upstream_unchanged()
+
+
+class CfForward(NamedTuple):
+    """The ONE sample + ONE extractor forward that every counterfactual term shares.
+
+    Named rather than positional because the block now feeds FOUR consumers (the scalar win-prob
+    term, the evidential Beta term, the twin heads B/C and the shadow critic) off streams that are
+    optional per row — and an anonymous tuple whose arity grows is precisely the order-mismatch
+    shape this tree treats as drop-everything.
+
+    ``batch``        the :class:`~agents.training.cf_label_buffer.CfBatch` — every label stream
+    ``value_pooled`` [B, D_MODEL] the trunk summary every cf head reads (carries grad only in the
+                     trunk-open arm; every head detaches it for itself as its contract requires)
+    ``n_rows``       how many rows were sampled (the `cf/rows_sampled` numerator)
+    ``vf_features``  the forward's critic features, kept ONLY so the shadow critic's divergence
+                     meter can read the LIVE V on these states without a second forward. None when
+                     a test double's forward does not return the pair.
+    """
+    batch: Any
+    value_pooled: Any
+    n_rows: int
+    vf_features: Any
 
 
 class InstrumentedMaskablePPO(MaskablePPO):
@@ -390,6 +413,30 @@ class InstrumentedMaskablePPO(MaskablePPO):
     # Evidential heads inflate alpha+beta without bound on locally-consistent data; a small pull
     # back toward the uninformative Beta(1,1) is the standard remedy.
     cf_evidential_reg: float = 1e-3
+    # gen3_cf_twin_heads_v1: the TWIN win-prob heads' cf weight — the owner-authorized amendment to
+    # the signed R1 pre-registration (ledger 2026-08-22 evening, "Three owner sign-offs" item 3).
+    # ONE coefficient for BOTH twins on purpose: B and C must differ in their LABEL STREAM and in
+    # nothing else, and two knobs would eventually be set to two numbers.
+    #
+    #   head A (`win_head`)       : the on-policy single-outcome BCE ONLY — the CONTROL, untouched
+    #   head B (`cf_twin_head_b`) : A's loss + cf_twin_coef * NLL(B; SINGLE-OUTCOME labels, n=1)
+    #   head C (`cf_twin_head_c`) : A's loss + cf_twin_coef * NLL(C; TIGHT-MC labels, n=R)
+    #
+    # B−A isolates COVERAGE (the same loss form on extra states); C−B isolates pure VARIANCE
+    # REDUCTION (the same states, the same form, a tighter target). The twins' half of "A's loss" is
+    # folded at `win_prob_coef`, not at this coefficient, so all three heads carry a bit-identical
+    # A-term. 0.0 = OFF and the WHOLE twin block is skipped (including the on-policy mirror), so a
+    # built-but-unused pair of heads leaves every parameter update byte-identical.
+    # TRAINING-only (a loss weight) → the `--opd-coef` class; the STRUCTURAL half is the extractor's
+    # `cf_twin_heads` kwarg (v99), which decides whether the heads' params exist at all.
+    cf_twin_coef: float = 0.0
+    # gen3_cf_twin_heads_v1: the SHADOW CRITIC's weight. Folds
+    #     cf_shadow_coef * masked-MSE( shadow(value_pooled.detach()), normalize(mc_return) )
+    # over the same sampled rows and the same extractor forward. The head never computes an
+    # advantage and never enters GAE — it is the staged PROMOTION PATH for critic surgery (a critic
+    # ROUTE change owes C4), so what it produces is evidence, not a training change to the critic.
+    # 0.0 = OFF, whole block skipped. TRAINING-only; the STRUCTURAL half is `cf_shadow_critic` (v99).
+    cf_shadow_coef: float = 0.0
 
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
@@ -878,7 +925,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
             return None
 
         fe = self.policy.features_extractor
-        obs, labels, n_rollouts = batch_tensors(rows, self.device)
+        batch = batch_tensors(rows, self.device)
+        obs = batch.obs
         needs_graph = (not self.cf_head_only) and float(getattr(self, "cf_winprob_coef", 0.0)) != 0.0
         grad_ctx = contextlib.nullcontext() if needs_graph else th.no_grad()
         # `getattr` + nullcontext: a test double / a non-Gen3 extractor has no debugger to suppress,
@@ -892,11 +940,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
             # through the compiled entry point would add a second graph shape, and would ask dynamo
             # to trace the `self.stash` write on a shape it exists nowhere else. The term is 256 rows
             # once per minibatch; eager is the cheap, boring answer.
-            type(fe).forward(fe, {"observation": obs})
+            feats = type(fe).forward(fe, {"observation": obs})
         value_pooled = fe.stash.value_pooled
         if value_pooled is None:                       # pragma: no cover - defensive
             return None
-        return labels, n_rollouts, value_pooled, len(rows)
+        # gen3_cf_twin_heads_v1: keep the forward's `vf_features` so the SHADOW critic's divergence
+        # meter can read the LIVE critic on these exact states WITHOUT paying for a second extractor
+        # forward (the whole cost of this block). It is routed through the policy's own
+        # `_critic_value`, never a hand-rolled value path — that method is what handles PopArt
+        # de-normalization and the --value-from-dist route, and reading `value_net` directly would
+        # compare the shadow against a critic the run does not use.
+        vf_features = feats[1] if isinstance(feats, tuple) and len(feats) == 2 else None
+        return CfForward(batch=batch, value_pooled=value_pooled, n_rows=len(rows),
+                         vf_features=vf_features)
 
     def _cf_winprob_term(self, ctx):
         """The COUNTERFACTUAL win-prob grounding term for ONE minibatch.
@@ -912,7 +968,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         """
         if ctx is None:
             return None, {}
-        labels, n_rollouts, value_pooled, n_rows = ctx
+        labels, n_rollouts = ctx.batch.label, ctx.batch.n_rollouts
+        value_pooled, n_rows = ctx.value_pooled, ctx.n_rows
 
         fe = self.policy.features_extractor
         head = getattr(fe, "win_head", None)
@@ -971,7 +1028,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         """
         if ctx is None:
             return None, {}
-        labels, n_rollouts, value_pooled, n_rows = ctx
+        labels, n_rollouts = ctx.batch.label, ctx.batch.n_rollouts
+        value_pooled, n_rows = ctx.value_pooled, ctx.n_rows
 
         fe = self.policy.features_extractor
         head = getattr(fe, "cf_evid_head", None)
@@ -1006,6 +1064,211 @@ class InstrumentedMaskablePPO(MaskablePPO):
         # Detached + on CPU so nothing holds a graph or device memory.
         fe.last_cf_evidential = (alpha.detach().cpu(), beta.detach().cpu())
         return self.cf_evidential_coef * term, metrics
+
+    # -- gen3_cf_twin_heads_v1: the TWIN heads and the SHADOW critic ---------------------------
+    #
+    # THE AMENDMENT, in one paragraph. R1's signed pre-registration compared two RUNS. Two runs
+    # differ in every random draw they ever make, and the primary meter's own measured floor is
+    # ~40% of its variance — so a cross-run difference has to clear noise the design cannot
+    # control. Three win-prob heads on ONE trunk delete that noise by construction: identical
+    # trunk, identical states, and the ONLY thing that differs is which label stream trains each
+    # head. Authorized by the owner 2026-08-22 (ledger, "Three owner sign-offs" item 3).
+
+    def _cf_twin_onpolicy_terms(self, rollout_data):
+        """Head A's OWN loss, mirrored onto twins B and C on the SAME rollout minibatch.
+
+        Returns ``(term_or_None, metrics)``. This is the "A's loss PLUS" half of the factorial: B
+        and C must carry a bit-identical copy of the control's objective, or B−A would confound
+        "extra states" with "a different base objective" and the factorial would decompose nothing.
+
+        It re-applies each twin to the extractor's STASHED `value_pooled` rather than reading a
+        per-head stash, for `_cf_winprob_term`'s reason: the stash `last_win_prob_logits` is
+        produced under the extractor's own `win_prob_mode`, and the twins' trunk exposure is not
+        that decision. **Both twins detach unconditionally** (head-only ALWAYS in v1), which is what
+        makes this a measurement of the LABEL effect on a trunk frozen with respect to them.
+
+        The weight is `win_prob_coef` — head A's own — deliberately NOT `cf_twin_coef`. The block
+        as a whole is gated on `cf_twin_coef != 0` by the caller, so at coefficient zero the twins
+        take no gradient at all and every parameter update is byte-identical to not building them.
+        """
+        fe = self.policy.features_extractor
+        heads = [(n, getattr(fe, n, None)) for n in ("cf_twin_head_b", "cf_twin_head_c")]
+        pooled = getattr(fe, "last_value_pooled", None)
+        if pooled is None or any(h is None for _n, h in heads):
+            return None, {}
+        target = rollout_data.observations.get("win_target")
+        mask = rollout_data.observations.get("win_mask")
+        margin = rollout_data.observations.get("win_margin")
+        if target is None or mask is None:
+            return None, {}
+        term = None
+        metrics: "dict[str, float]" = {}
+        for name, head in heads:
+            out = self._win_prob_loss(head(pooled.detach()), target, mask, margin)
+            if out is None:
+                continue
+            loss, m = out
+            weighted = self.win_prob_coef * loss
+            term = weighted if term is None else term + weighted
+            tag = name[-1]                                   # 'b' | 'c'
+            for k in ("loss", "brier", "acc"):
+                if k in m:
+                    metrics[f"{tag}_onpolicy_{k}"] = float(m[k])
+        return term, metrics
+
+    def _cf_twin_terms(self, ctx):
+        """The CF folds that make B and C different: the SAME states, two LABEL STREAMS.
+
+        Returns ``(weighted_term, metrics)`` — ``(None, {})`` when there is no sample or the heads
+        are not built.
+
+        * **head B** eats the row's ``outcome_label`` — the RECORDED battle's realized win/loss,
+          one Monte-Carlo sample — at **n ≡ 1**.
+        * **head C** eats the row's ``label`` / ``n_rollouts`` — the tight-MC ratio and its
+          evidence, the same pair head A's cf term would eat.
+
+        THE ROUTING IS THE GIGO HERE and it is pinned by a test: B must never see a tight-MC label
+        and C must never see a single-outcome one. A swap would leave every scalar looking healthy
+        while the factorial silently measured its own mirror image.
+
+        WHY THE SAME LOSS FUNCTION FOR BOTH. `_cf_binomial_nll` normalizes by ``Σ n``, so a row's
+        gradient magnitude is ``(q − target)/B`` regardless of its n. B's n≡1 rows and C's n=R rows
+        therefore pull EQUALLY HARD; only the target differs (a 0/1 draw vs its own tight mean).
+        That equality is what makes C−B a read of label PRECISION rather than of effective learning
+        rate — with two different loss forms it would be neither.
+
+        MASKED, per row. A row that carries no ``outcome_label`` (an older producer, or `cf_audit`'s
+        output) supervises B on nothing rather than on a zero — a zero-filled absent label is
+        indistinguishable from a confident "you lose", which is the most dangerous silent target
+        this schema could produce. B's term is skipped entirely when no row in the sample carries
+        one, and `cf/twin_b_coverage` says so.
+        """
+        if ctx is None:
+            return None, {}
+        fe = self.policy.features_extractor
+        head_b = getattr(fe, "cf_twin_head_b", None)
+        head_c = getattr(fe, "cf_twin_head_c", None)
+        if head_b is None or head_c is None:
+            return None, {}
+        b = ctx.batch
+        # ALWAYS detached: head-only is not a mode for the twins, it is their definition in v1.
+        pooled = ctx.value_pooled.detach()
+        metrics: "dict[str, float]" = {"n": float(ctx.n_rows)}
+        term = None
+
+        # ---- head C: TIGHT-MC labels (the treatment) ----
+        logits_c = head_c(pooled).flatten()
+        loss_c = self._cf_binomial_nll(logits_c, b.label, b.n_rollouts)
+        term = self.cf_twin_coef * loss_c
+        with th.no_grad():
+            q_c = th.sigmoid(logits_c)
+            metrics["c_loss"] = float(loss_c)
+            metrics["c_pred_mean"] = float(q_c.mean())
+            metrics["c_abs_err"] = float((q_c - b.label).abs().mean())
+            metrics["c_bias"] = float((q_c - b.label).mean())
+
+        # ---- head B: SINGLE-OUTCOME labels (the coverage arm) ----
+        n_outcome = float(b.outcome_mask.sum())
+        metrics["b_coverage"] = n_outcome / max(1.0, float(ctx.n_rows))
+        if n_outcome >= 1.0:
+            sel = b.outcome_mask > 0.5
+            logits_b = head_b(pooled).flatten()[sel]
+            outcome = b.outcome[sel]
+            # n ≡ 1: a realized outcome IS one observation. Passing `ones_like` rather than reusing
+            # `n_rollouts` is the whole point of the arm — B is A's evidence on C's states.
+            ones = th.ones_like(outcome)
+            loss_b = self._cf_binomial_nll(logits_b, outcome, ones)
+            term = term + self.cf_twin_coef * loss_b
+            with th.no_grad():
+                q_b = th.sigmoid(logits_b)
+                metrics["b_loss"] = float(loss_b)
+                metrics["b_pred_mean"] = float(q_b.mean())
+                metrics["b_abs_err"] = float((q_b - outcome).abs().mean())
+                metrics["b_bias"] = float((q_b - outcome).mean())
+                # THE PAIRED READ, live and per minibatch: |B−C| on the SAME states, which is the
+                # within-run difference the whole amendment exists to measure. The AUDIT's
+                # held-out, battle-clustered version is the result; this is the launch-window tell
+                # that the two heads have actually diverged rather than converged to one function.
+                metrics["b_vs_c_abs"] = float((q_b - q_c[sel]).abs().mean())
+                metrics["b_minus_c"] = float((q_b - q_c[sel]).mean())
+        return term, metrics
+
+    def _cf_shadow_term(self, ctx, popart):
+        """The SHADOW CRITIC's masked MSE against tight-MC ``mc_return`` labels.
+
+        Returns ``(weighted_term, metrics)`` — ``(None, {})`` when there is no sample, no head, or
+        no row in the sample carries an ``mc_return``.
+
+        THE FRAME. Under PopArt the live critic trains in normalized space, so the shadow does too:
+        the head's raw output IS the normalized value and the target is
+        ``popart.normalize(mc_return)``. That mirrors `_value_distill_mse` exactly, and for the
+        same reason — the coefficient stays scale-comparable with the value loss, and a raw-unit
+        MSE against a normalizer that moves is a moving target. With PopArt off both maps are the
+        identity.
+
+        THE METER, which is the point of the head. `shadow_vs_live_v` is the SIGNED mean of
+        (shadow − live V) in REAL units on the same minibatch states, read through the policy's own
+        `_critic_value` (the method that handles PopArt de-normalization and the --value-from-dist
+        route). That divergence, accumulated over a run, is the staged-promotion evidence: a shadow
+        that sits systematically BELOW the live critic is a live critic that is optimistic about
+        the states the factory sampled, measured against ground truth rather than argued from a
+        calibration curve. It is a MEASUREMENT and nothing else — the head never computes an
+        advantage, never enters GAE, and feeds nothing forward.
+        """
+        if ctx is None:
+            return None, {}
+        fe = self.policy.features_extractor
+        head = getattr(fe, "cf_shadow_head", None)
+        if head is None:
+            return None, {}
+        b = ctx.batch
+        m = b.mc_return_mask
+        n_on = m.sum()
+        if float(n_on) < 1.0:
+            # Published as a zero-coverage metric rather than silence: a shadow critic with a
+            # producer that ships no mc_return is the starvation case, and it must not look like a
+            # healthy head with nothing to say.
+            return None, {"coverage": 0.0, "n": float(ctx.n_rows)}
+        pred = head(ctx.value_pooled.detach()).flatten()          # NORMALIZED frame (see docstring)
+        target = popart.normalize(b.mc_return) if popart is not None else b.mc_return
+        se = (pred - target) ** 2
+        loss = (se * m).sum() / n_on.clamp(min=1e-6)
+        metrics = {"loss": float(loss), "n": float(ctx.n_rows),
+                   "coverage": float(n_on) / max(1.0, float(ctx.n_rows))}
+        with th.no_grad():
+            real = popart.denormalize(pred) if popart is not None else pred
+            real_target = b.mc_return
+            metrics["pred_mean"] = float((real * m).sum() / n_on)
+            metrics["label_mean"] = float((real_target * m).sum() / n_on)
+            metrics["abs_err"] = float(((real - real_target).abs() * m).sum() / n_on)
+            live = self._cf_live_values(ctx)
+            if live is not None:
+                # SIGNED, and the sign is the whole reading: negative = the shadow says these states
+                # are worth LESS than the live critic thinks.
+                metrics["shadow_vs_live_v"] = float(((real - live) * m).sum() / n_on)
+                metrics["shadow_vs_live_v_abs"] = float(((real - live).abs() * m).sum() / n_on)
+                metrics["live_v_vs_label"] = float(((live - real_target) * m).sum() / n_on)
+        return self.cf_shadow_coef * loss, metrics
+
+    def _cf_live_values(self, ctx):
+        """The LIVE critic's real-unit V on the cf rows, or None when it cannot be read.
+
+        Routed through `policy._critic_value` on the cf forward's own `vf_features` — never a
+        hand-rolled `value_net` call, which under `--value-from-dist` would read a frozen head the
+        run does not use, and never a second `predict_values` forward, which would double the cf
+        block's cost for a diagnostic.
+        """
+        vf = ctx.vf_features
+        if vf is None or not hasattr(self.policy, "_critic_value"):
+            return None
+        try:
+            with th.no_grad():
+                latent_vf = self.policy.mlp_extractor.forward_critic(vf)
+                return self.policy._critic_value(latent_vf).flatten()
+        except Exception:                                  # pragma: no cover - diagnostic only
+            # A meter must never be able to fail a training step. A test double whose policy has no
+            # mlp_extractor loses the column; the run keeps going.
+            return None
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
@@ -1163,13 +1426,30 @@ class InstrumentedMaskablePPO(MaskablePPO):
             and cf_buffer is not None
             and getattr(self.policy.features_extractor, "cf_evid_head", None) is not None
         )
-        cf_any_on = cf_winprob_on or cf_evid_on
+        # +CF-TWIN (gen3_cf_twin_heads_v1): the twin win-prob heads B/C — the within-run paired
+        # comparison. Needs the STRUCTURAL heads (`--cf-twin-heads`) AND a live coefficient; at
+        # coefficient 0 the whole block is skipped INCLUDING the on-policy mirror, so a built-but-
+        # unused pair leaves every parameter update byte-identical to not building them.
+        cf_twin_on = (
+            float(getattr(self, "cf_twin_coef", 0.0)) != 0.0
+            and cf_buffer is not None
+            and getattr(self.policy.features_extractor, "cf_twin_head_b", None) is not None
+        )
+        # +CF-SHADOW (gen3_cf_twin_heads_v1): the passive value twin on `mc_return` labels.
+        cf_shadow_on = (
+            float(getattr(self, "cf_shadow_coef", 0.0)) != 0.0
+            and cf_buffer is not None
+            and getattr(self.policy.features_extractor, "cf_shadow_head", None) is not None
+        )
+        cf_any_on = cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
         if cf_any_on:
             # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
             # its own pace and re-globbing a directory 240 times an update buys nothing.
             cf_buffer.poll(int(self.num_timesteps))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
+        cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
+        cf_shadow_metrics: dict[str, list[float]] = {}   # +CF-SHADOW (gen3_cf_twin_heads_v1)
         cf_rows_sampled = 0
 
         continue_training = True
@@ -1547,6 +1827,21 @@ class InstrumentedMaskablePPO(MaskablePPO):
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
+                # +CF-TWIN, half one of two (gen3_cf_twin_heads_v1): head A's OWN loss, mirrored
+                # onto twins B and C on THIS minibatch. It must run HERE, beside A's fold and
+                # BEFORE the cf block below clobbers the extractor stashes with its own forward —
+                # the twins read the same `value_pooled` A read, which is the entire premise of
+                # "identical trunk, identical states". Weighted at `win_prob_coef` (A's own), so
+                # all three heads carry a bit-identical control objective; gated on `cf_twin_coef`
+                # so coefficient zero is byte-identical.
+                cf_twin_op_term = None
+                if cf_twin_on:
+                    cf_twin_op_term, _ctm = self._cf_twin_onpolicy_terms(rollout_data)
+                    if cf_twin_op_term is not None:
+                        loss = loss + cf_twin_op_term
+                        for _ck, _cv in _ctm.items():
+                            cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
+
                 # +VALUE-DIST: distributional value head HL-Gauss CE. evaluate_actions ran the extractor
                 # forward above, stashing last_value_dist_logits for THIS minibatch; the target is the
                 # rollout return, PopArt-normalized when the scalar critic is (so it lands in the head's
@@ -1737,6 +2032,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # OFF / empty buffer → skipped (loss byte-identical).
                 cf_term = None
                 cf_evid_term = None
+                cf_twin_term = None
+                cf_shadow_term = None
                 if cf_any_on:
                     # ONE sample + ONE extractor forward, shared by both readouts (see
                     # `_cf_sample_and_forward`). With the evidential half off this is exactly the
@@ -1749,7 +2046,7 @@ class InstrumentedMaskablePPO(MaskablePPO):
                     # which is what a starving producer starves — a buffer of 40 rows sampled by 40
                     # minibatches still reports fill 40 while delivering 40x the same handful.
                     if _cf_ctx is not None:
-                        cf_rows_sampled += int(_cf_ctx[3])
+                        cf_rows_sampled += int(_cf_ctx.n_rows)
                     if cf_winprob_on:
                         cf_term, _cfm = self._cf_winprob_term(_cf_ctx)
                         if cf_term is not None:
@@ -1762,6 +2059,25 @@ class InstrumentedMaskablePPO(MaskablePPO):
                             loss = loss + cf_evid_term
                             for _cek, _cev in _cfem.items():
                                 cf_evid_metrics.setdefault(_cek, []).append(float(_cev))
+                    # +CF-TWIN, half two of two (gen3_cf_twin_heads_v1): the folds that make B and
+                    # C DIFFER — the same states through the same shared forward, B on the recorded
+                    # SINGLE OUTCOME and C on the TIGHT-MC label. Riding the shared sample is not an
+                    # optimization here, it is the design: two samples would make the two arms
+                    # disagree about which states they scored, and the paired difference would stop
+                    # being paired.
+                    if cf_twin_on:
+                        cf_twin_term, _cftm = self._cf_twin_terms(_cf_ctx)
+                        if cf_twin_term is not None:
+                            loss = loss + cf_twin_term
+                        for _ck, _cv in _cftm.items():
+                            cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
+                    # +CF-SHADOW: the passive value twin on `mc_return`. Same sample, same forward.
+                    if cf_shadow_on:
+                        cf_shadow_term, _cfsm = self._cf_shadow_term(_cf_ctx, popart)
+                        if cf_shadow_term is not None:
+                            loss = loss + cf_shadow_term
+                        for _sk, _sv in _cfsm.items():
+                            cf_shadow_metrics.setdefault(_sk, []).append(float(_sv))
 
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
@@ -1800,6 +2116,19 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # `grad/cf_evidential_share` reads exactly 0.0 BY CONSTRUCTION — it is registered
                 # here precisely so that zero is PUBLISHED rather than assumed.
                 if cf_evid_term is not None:       aux_probe_terms["cf_evidential"] = cf_evid_term
+                # gen3_cf_twin_heads_v1: the twins and the shadow all read a DETACHED value_pooled
+                # unconditionally, so `grad/cf_twin_share` and `grad/cf_shadow_share` read exactly
+                # 0.0 BY CONSTRUCTION. Registered here for the evidential head's reason: the
+                # head-only contract is the arm's single most load-bearing claim, and a published
+                # zero is a live measurement of it where a docstring is not. (Both twin halves ride
+                # ONE probe entry — the on-policy mirror and the cf fold pull the same two heads.)
+                # `sum` rather than a length branch: the probe must not encode the arity, or a
+                # third twin term would silently drop out of a scalar published precisely to make
+                # the head-only contract a measurement instead of a docstring claim.
+                _twin_terms = [t for t in (cf_twin_op_term, cf_twin_term) if t is not None]
+                if _twin_terms:
+                    aux_probe_terms["cf_twin"] = sum(_twin_terms[1:], _twin_terms[0])
+                if cf_shadow_term is not None:     aux_probe_terms["cf_shadow"] = cf_shadow_term
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -2117,6 +2446,55 @@ class InstrumentedMaskablePPO(MaskablePPO):
             # always-detached contract is a LIVE measurement rather than a claim in a docstring.
             self.logger.record("train/cf_evidential_grad_share",
                                float(grad_balance.get("grad/cf_evidential_share", 0.0)))
+        # +CF-TWIN (gen3_cf_twin_heads_v1) — `cf/twin_*`. The PAIRED read, live.
+        #
+        #  * `c_loss` / `b_loss` are the two arms' cf folds; `b_coverage` is the fraction of the
+        #    sampled rows that carried a single-outcome label AT ALL. **Read `b_coverage` first.**
+        #    A twin-heads run whose producer ships no `outcome_label` trains B on nothing, B then
+        #    equals A, and the C−B contrast silently becomes C−A while every other scalar reads
+        #    healthy. That is the one way this arm can produce a confident wrong answer.
+        #  * `b_vs_c_abs` / `b_minus_c` are the two heads' predictions differing on the SAME states.
+        #    A `b_vs_c_abs` pinned near 0 means the label streams have not separated the heads and
+        #    there is nothing to decompose yet — a coverage/dosage reading, not a result.
+        #  * `*_onpolicy_*` are the mirrored control objective. They should track head A's
+        #    `win_prob/*` closely; a persistent gap means the twins are NOT carrying a bit-identical
+        #    copy of A's loss and the factorial's base is not shared.
+        #  THE RESULT IS NONE OF THESE. It is `cf_audit`'s held-out, battle-clustered paired
+        #  differences (runbook §2 as amended); these are the launch-window instrument.
+        if cf_twin_metrics:
+            for _tk, _tvals in cf_twin_metrics.items():
+                self.logger.record(f"cf/twin_{_tk}", float(np.mean(_tvals)))
+        if cf_twin_on:
+            self.logger.record("train/cf_twin_grad_share",
+                               float(grad_balance.get("grad/cf_twin_share", 0.0)))
+        # +CF-SHADOW (gen3_cf_twin_heads_v1) — `cf/shadow_*`.
+        #
+        #  * `loss` is the MSE against `mc_return` in the PopArt-normalized frame; `abs_err`,
+        #    `pred_mean` and `label_mean` are the same quantities de-normalized to real shaped-return
+        #    units, which is the only frame a reader can interpret.
+        #  * **`shadow_vs_live_v` is THE METER** — the SIGNED mean of (shadow − live V) in real
+        #    units on the same states. It is the staged-promotion evidence: a shadow sitting
+        #    systematically BELOW the live critic is a live critic that is optimistic about the
+        #    states the factory sampled, measured against ground truth rather than argued from a
+        #    calibration curve. `live_v_vs_label` is its direct half (live V minus the MC label);
+        #    read them together, since the shadow is itself a fitted head and can be wrong too.
+        #  * `coverage` is `mc_return`'s label coverage — the same first-read rule as `b_coverage`.
+        if cf_shadow_metrics:
+            for _sk, _svals in cf_shadow_metrics.items():
+                self.logger.record(f"cf/shadow_{_sk}", float(np.mean(_svals)))
+            # ABSENT, never zero. A starved shadow (no `mc_return` arrived, or every row's reward
+            # digest was refused) folds NO term, so there is no `loss` key — and defaulting it to
+            # 0.0 would publish a PERFECT SCORE for a head that trained on nothing, which is
+            # indistinguishable on a TB chart from a perfectly-fit one. `cf/shadow_coverage` still
+            # publishes, so the starvation is visible rather than silent.
+            if "loss" in cf_shadow_metrics:
+                self.logger.record("train/cf_shadow_loss",
+                                   float(np.mean(cf_shadow_metrics["loss"])))
+        if cf_shadow_on:
+            # 0.0 by construction (always-detached), published for the same reason as the
+            # evidential head's — this head is a promotion PATH, so its passivity is the contract.
+            self.logger.record("train/cf_shadow_grad_share",
+                               float(grad_balance.get("grad/cf_shadow_share", 0.0)))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

@@ -49,6 +49,8 @@ from poke_env import AccountConfiguration
 from poke_env.player import RandomPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
+from agents.battle.gen3_battle import Gen3Battle
+from agents.inference.player import Gen3Player
 from agents.training import cf_producer as P
 from agents.training.cf_label_buffer import CfLabelBuffer
 from agents.training.cf_records import CfRecordRing
@@ -70,8 +72,46 @@ _MAX_DRAWS = 4
 # The one substitution: a Snapshot whose policy is a RandomPlayer
 # ---------------------------------------------------------------------------
 
+class _Gen3RandomPlayer(Gen3Player):
+    """A seeded-random policy behind the REAL Gen3 decision path.
+
+    Deliberately a `Gen3Player` rather than poke-env's `RandomPlayer` (`gen3_cf_twin_heads_v1`).
+    The producer's `mc_return` stream is measured through the player's own obs/order seams
+    (`agents/training/cf_mc_return.attach_return_recording`), which a poke-env baseline does not
+    have — so with a `RandomPlayer` the shadow critic's half of the label path would be structurally
+    unreachable from this test and the composition would go uncovered. This double keeps the ONE
+    substitution the file's header declares (which policy picks the move) while restoring
+    everything the label path actually reads.
+    """
+
+    def __init__(self, *, rng_seed: int, **kwargs):
+        super().__init__(battle_class=Gen3Battle, **kwargs)
+        self._rng = np.random.RandomState(rng_seed)
+
+    def _predict_best_action(self, battle, **_kw):
+        """`RLPlayer`'s seam, with dice where the net would be — returns ``(idx, probs, mask)``.
+
+        Present because `cf_mc_return.attach_return_recording` records through it and
+        `choose_move`, NOT through `action_to_order` (which `counterfactual._invert_choice` calls
+        once per legal action on every scripted decision). A double that lacked it would make the
+        shadow critic's whole label path unreachable from this test."""
+        mask = np.asarray(self.embed_battle(battle)["action_mask"])
+        if int(mask.sum()) == 0:
+            return None, None, mask
+        return int(self._rng.choice(np.flatnonzero(mask))), None, mask
+
+    def choose_move(self, battle):
+        forfeit = self._handle_stall(battle, "CFP_STALL")
+        if forfeit:
+            return forfeit
+        idx, _probs, _mask = self._predict_best_action(battle)
+        if idx is None:
+            return self.choose_default_move()
+        return self.action_to_order(idx, battle)
+
+
 class _RandomPolicySnapshot:
-    """A `cf_producer.Snapshot` stand-in — same two jobs, a RandomPlayer where the net would be.
+    """A `cf_producer.Snapshot` stand-in — same two jobs, a random policy where the net would be.
 
     `score` returns a deterministic SPREAD of win-probabilities so the priority sampler has
     something to rank (a constant would make the top-N an arbitrary tie-break and prove nothing
@@ -92,7 +132,9 @@ class _RandomPolicySnapshot:
 
     def make_player(self, record, side, *, role):
         self.players_built += 1
-        return RandomPlayer(
+        return _Gen3RandomPlayer(
+            rng_seed=1000 + self.players_built,
+            observation_encoder=None, mappings=None,
             battle_format=record.format_id, team=record.packed_team(side),
             server_configuration=LocalhostServerConfiguration,
             account_configuration=AccountConfiguration(
@@ -261,6 +303,38 @@ def test_the_whole_label_path_composes_ring_to_buffer(tmp_path):
         assert by_digest[r["obs_sha1"]].label == pytest.approx(r["label"])
         assert by_digest[r["obs_sha1"]].policy_step == STEP
         assert by_digest[r["obs_sha1"]].obs.shape == (_obs_dim(),)
+
+    # -- (4b) THE TWIN STREAMS, through the SAME real buffer (gen3_cf_twin_heads_v1) ----
+    # The both-halves composition rule: a producer-side unit test alone is exactly how the last
+    # two contract bugs shipped, and these two fields are consumed by heads that produce no shape
+    # error when starved. `outcome_label` must be present and in range on EVERY row (it is free —
+    # the producer already computed it for the critic-surprise term), and `mc_return` must be
+    # present with its reward digest, since the driver defaults `--mc-return` ON.
+    for r in rows:
+        assert r["outcome_label"] in (0.0, 0.5, 1.0), (
+            f"decision {r['decision_idx']}: outcome_label {r.get('outcome_label')!r} is not a "
+            f"win/loss/tie scalar — head B would be trained on it")
+        assert r.get("reward_sha1"), "an mc_return row must name the reward it was measured under"
+    assert any(r.get("mc_return") is not None for r in rows), (
+        "the producer shipped no mc_return at all — the shadow critic would train on nothing while "
+        "every other counter read healthy")
+    for row in buf.sample(len(rows)):
+        assert row.outcome_label is not None, (
+            "the buffer dropped the outcome_label the producer wrote — head B would silently "
+            "become a copy of head A and C-B would silently become C-A")
+    cov = buf.stats(STEP)
+    assert cov["cf/outcome_label_coverage"] == pytest.approx(1.0)
+    assert cov["cf/mc_return_coverage"] > 0.0
+    assert cov["cf/labels_mc_return_rejected_total"] == 0.0
+
+    # And the GIGO guard from the other side: a buffer configured with a DIFFERENT reward digest
+    # must refuse the same rows' mc_return while keeping their win-prob labels.
+    foreign = CfLabelBuffer(labels_dir, obs_dim=_obs_dim(), lag_bound=150_000,
+                            reward_sha1="a-different-reward")
+    assert foreign.poll(STEP) == len(rows)
+    assert foreign.mc_return_rejected_total > 0
+    assert all(row.mc_return is None for row in foreign.sample(len(rows)))
+    assert foreign.skipped_total == 0, "a reward mismatch must not cost the row its win-prob label"
 
     # -- (5) a SECOND poll must be a no-op (the incremental reader's offsets) -------
     assert buf.poll(STEP) == 0

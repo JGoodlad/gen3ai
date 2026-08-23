@@ -164,6 +164,64 @@ def test_a_negative_evidential_reg_is_refused():
     assert rc != 0 and "--cf-evidential-reg must be >= 0" in out
 
 
+# --------------------------------------------------------------------------------------
+# TWIN HEADS + SHADOW CRITIC (gen3_cf_twin_heads_v1, v99)
+# --------------------------------------------------------------------------------------
+def test_twin_and_shadow_defaults_are_off():
+    a = build_parser().parse_args(["--steps", "1"])
+    assert a.cf_twin_heads is False and a.cf_twin_coef == 0.0
+    assert a.cf_shadow_critic is False and a.cf_shadow_coef == 0.0
+
+
+def test_twin_and_shadow_take_both_negation_forms_and_the_underscore_aliases():
+    P = build_parser()
+    assert P.parse_args(["--cf-twin-heads"]).cf_twin_heads is True
+    assert P.parse_args(["--no-cf-twin-heads"]).cf_twin_heads is False
+    assert P.parse_args(["--cf_twin_heads"]).cf_twin_heads is True
+    assert P.parse_args(["--cf-shadow-critic"]).cf_shadow_critic is True
+    assert P.parse_args(["--no-cf-shadow-critic"]).cf_shadow_critic is False
+    assert P.parse_args(["--cf_shadow_coef", "0.25"]).cf_shadow_coef == 0.25
+
+
+def test_the_two_structural_flags_are_in_the_registry_but_their_coefficients_are_not():
+    """Same scope call as `--cf-evidential`: the flags build MODULES from extractor constructor
+    kwargs, the coefficients are loss weights set on the MODEL."""
+    from agents.model.flag_registry import BY_NAME
+    assert "cf_twin_heads" in BY_NAME and "cf_shadow_critic" in BY_NAME
+    for absent in ("cf_twin_coef", "cf_shadow_coef"):
+        assert absent not in BY_NAME, f"{absent} is training-only and must stay out of the registry"
+
+
+def test_a_twin_coef_without_the_twin_heads_is_refused():
+    """The heads are a state_dict change (v99, version-gated), so they cannot be added mid-run to
+    rescue a live coefficient — the mistake would cost a whole run AND FATAL the resume that tried
+    to fix it."""
+    rc, out = _run("--cf-twin-coef", "0.1", "--win-prob-mode", "read_only")
+    assert rc != 0
+    assert "--cf-twin-coef > 0 requires --cf-twin-heads" in out
+
+
+def test_twin_heads_without_a_win_prob_head_is_refused():
+    """Heads B and C MIRROR head A's on-policy BCE, and head A is `win_head`. With
+    `--win-prob-mode none` there is no head A, so the arm's control arm — the whole point of the
+    amendment — would silently not exist."""
+    rc, out = _run("--cf-twin-heads", "--win-prob-mode", "none")
+    assert rc != 0
+    assert "--cf-twin-heads requires --win-prob-mode" in out
+
+
+def test_a_shadow_coef_without_the_shadow_head_is_refused():
+    rc, out = _run("--cf-shadow-coef", "0.1")
+    assert rc != 0
+    assert "--cf-shadow-coef > 0 requires --cf-shadow-critic" in out
+
+
+@pytest.mark.parametrize("flag", ["--cf-twin-coef", "--cf-shadow-coef"])
+def test_negative_twin_shadow_coefficients_are_refused(flag):
+    rc, out = _run(flag, "-1")
+    assert rc != 0 and f"{flag} must be >= 0" in out
+
+
 def test_checkargs_accepts_the_whole_family():
     """`python -m main.checkargs` must not report the new flags as stale — it is what an operator
     runs before relaunching a recorded command."""
@@ -171,7 +229,9 @@ def test_checkargs_accepts_the_whole_family():
         [sys.executable, "-m", "main.checkargs", "--argv",
          "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
          "--no-cf-head-only --cf-label-lag-steps 1000 --cf-label-likelihood binomial "
-         "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001"],
+         "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001 "
+         "--win-prob-mode read_only --cf-twin-heads --cf-twin-coef 0.1 "
+         "--cf-shadow-critic --cf-shadow-coef 0.5"],
         capture_output=True, text=True, timeout=300, cwd=str(_REPO),
         env={**os.environ, "PYTHONPATH": str(_REPO / "src")},
     )

@@ -41,6 +41,10 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 _ON_OVERRIDE: Dict[str, object] = {
     "move_belief_mode": "revealed",     # the value damage_op's stronger check also accepts
     "value_dist_mode": "read_only",
+    # gen3_cf_twin_heads_v1: `win_prob_mode` is a tri-state, so the generic `True` is not a legal
+    # value for it. `read_only` is the weakest ENABLED setting — it builds head A (which is all
+    # `cf_twin_heads` needs) without letting the win objective shape the trunk.
+    "win_prob_mode": "read_only",
     "value_dist_bins": 4,
     "opp_belief_cls_k": 2,
     "entity_topk_seats": 2,

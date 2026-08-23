@@ -64,7 +64,19 @@ from typing import Any, Dict, List
 #   ARCH_SIGNATURE bump, the optional-side-head rule. A pre-v98 config defaults it to False = OFF.
 #   Its two coefficients (`cf_evidential_coef`, `cf_evidential_reg`) are TRAINING-only argparse in
 #   the `--opd-coef` / `--cf-winprob-coef` class and appear nowhere here.
-MODEL_CONFIG_VERSION = 98
+# v99 (gen3_cf_twin_heads_v1): `cf_twin_heads` + `cf_shadow_critic` — the TWIN WIN-PROB HEADS and
+#   the passive SHADOW CRITIC (the owner-authorized amendment to the signed R1 pre-registration;
+#   ledger 2026-08-22 evening, "Three owner sign-offs" item 3). Two STRUCTURAL bools in exactly the
+#   v98 mould: each builds modules whose params ARE the state_dict delta, neither is ever called
+#   from the extractor forward (the training-side terms apply them to the stashed `value_pooled`,
+#   always detached), so OFF is byte-for-byte the baseline and ON-at-coefficient-0 is bit-identical
+#   in pi/vf. NO ARCH_SIGNATURE bump — optional side heads, obs family unchanged. Both are gated by
+#   a bool compare in check_compatible, and the gate is the ONLY thing that can catch a flipped
+#   flag, because a head the forward never calls produces no shape error anywhere. A pre-v99 config
+#   defaults BOTH to False = OFF (not a guess: the modules did not exist). Their coefficients
+#   (`cf_twin_coef`, `cf_shadow_coef`) are TRAINING-only argparse in the `--opd-coef` class and
+#   appear nowhere here. TWO fields in ONE bump because they ship as one amendment.
+MODEL_CONFIG_VERSION = 99
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -605,6 +617,15 @@ class ModelVersion:
     # a bool compare. There is no read_only/shaping split by design: the head's input is detached
     # UNCONDITIONALLY, so no coefficient can make it shape the trunk. NO ARCH_SIGNATURE bump.
     cf_evidential: bool = False
+    # v99 STRUCTURAL bools (gen3_cf_twin_heads_v1, the v98 pattern twice over). `cf_twin_heads`
+    # builds the two extra `WinProbHead`s (B = coverage arm, C = tight-MC arm) that make the R1
+    # comparison a WITHIN-RUN paired head difference instead of a run-vs-run one;
+    # `cf_shadow_critic` builds the passive `ShadowValueHead` trained on tight-MC `mc_return`
+    # labels — the staged promotion path for critic surgery, which never computes an advantage and
+    # never enters GAE. Neither is called by the forward, so False is byte-for-byte the baseline and
+    # True is bit-identical in pi/vf; the params are the entire delta. NO ARCH_SIGNATURE bump.
+    cf_twin_heads: bool = False
+    cf_shadow_critic: bool = False
 
     @classmethod
     def from_layout_and_policy_kwargs(
@@ -800,6 +821,12 @@ class ModelVersion:
             ),
             cf_evidential=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("cf_evidential", False)
+            ),
+            cf_twin_heads=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_twin_heads", False)
+            ),
+            cf_shadow_critic=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("cf_shadow_critic", False)
             ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
@@ -1351,6 +1378,28 @@ class ModelVersion:
                 "shape error downstream that would catch the mismatch.\n"
                 "Resume with the matching --cf-evidential setting, or start a fresh training run."
             )
+        # gen3_cf_twin_heads_v1 (v99): the same argument as v98, twice. A head the forward never
+        # calls produces NO shape error anywhere, so this bool compare is the only thing between a
+        # flipped flag and a run that silently supervises freshly-random twins — or that loses the
+        # within-run paired comparison the whole amendment exists for — for the rest of its life.
+        if self.cf_twin_heads != saved.cf_twin_heads:
+            raise ModelVersionError(
+                f"cf_twin_heads mismatch: saved={saved.cf_twin_heads}, current={self.cf_twin_heads}.\n"
+                "The counterfactual TWIN win-prob heads are fixed for a run's lifetime: building them "
+                "changes the state_dict, and because they are never called by the forward there is no "
+                "shape error downstream that would catch the mismatch. The arm's primary comparison is "
+                "a WITHIN-RUN paired head difference, which a mid-run flip destroys.\n"
+                "Resume with the matching --cf-twin-heads setting, or start a fresh training run."
+            )
+        if self.cf_shadow_critic != saved.cf_shadow_critic:
+            raise ModelVersionError(
+                f"cf_shadow_critic mismatch: saved={saved.cf_shadow_critic}, "
+                f"current={self.cf_shadow_critic}.\n"
+                "The SHADOW critic head is fixed for a run's lifetime: building it changes the "
+                "state_dict, and because it is never called by the forward there is no shape error "
+                "downstream that would catch the mismatch.\n"
+                "Resume with the matching --cf-shadow-critic setting, or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"
@@ -1882,4 +1931,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 98:
         data.setdefault("cf_evidential", False)
         data["config_version"] = 98
+    # v99 (gen3_cf_twin_heads_v1) — two STRUCTURAL toggles, both gated like v98's. Same reasoning
+    # for defaulting rather than refusing: a pre-v99 checkpoint could not have built either module,
+    # so False is the only possible past, and the refusal direction is check_compatible's the moment
+    # a live run's True meets a migrated False.
+    if version < 99:
+        data.setdefault("cf_twin_heads", False)
+        data.setdefault("cf_shadow_critic", False)
+        data["config_version"] = 99
     return data

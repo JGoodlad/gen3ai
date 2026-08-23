@@ -1,3 +1,4 @@
+import hashlib
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import ClassVar, Optional
@@ -414,6 +415,30 @@ def reward_class_composition(config) -> dict:
     terminal = [n for n, c in reg.items() if c is RewardClass.TERMINAL]
     return {"terminal": len(terminal), "pbrs": len(pbrs), "bias": len(bias),
             "bias_terms": bias, "pbrs_terms": pbrs}
+
+
+def reward_config_digest(config) -> str:
+    """A stable sha1 over EVERY field of a `RewardConfig` — the identity of a reward function.
+
+    `gen3_cf_twin_heads_v1`. A shaped RETURN is a fact about a board *under a reward composition*,
+    so a Monte-Carlo return label manufactured by an offline producer is only a label for THIS run
+    if the producer used THIS run's reward. There is no other way to tell: the number is a float,
+    and a return computed under a different composition is not a noisier sample of ours — it is a
+    measurement of a different value function, and averaging it in is silent GIGO.
+
+    Stable across processes and Python versions: the fields are sorted by name and rendered with
+    `repr`, so it depends on the VALUES and not on dataclass declaration order or dict iteration.
+    Floats go through `repr` deliberately — two configs that differ in the 15th decimal of a weight
+    ARE different rewards, and rounding here would hide exactly the drift the digest exists to
+    catch. Duck-typed (`fields()` when available, else `vars()`) like everything else that consumes
+    a reward config.
+    """
+    try:
+        items = {f.name: getattr(config, f.name) for f in fields(config)}
+    except TypeError:                                    # not a dataclass — best effort
+        items = dict(vars(config))
+    body = ";".join(f"{k}={items[k]!r}" for k in sorted(items))
+    return hashlib.sha1(body.encode("utf-8")).hexdigest()
 
 
 def format_reward_composition(config) -> str:
