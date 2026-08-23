@@ -17,7 +17,7 @@
 #     because the difference between "hung" and "downloading 2 GB of CUDA wheels" is the single
 #     most common reason someone kills a bootstrap halfway.
 #   * WORKTREE-AWARE. In a linked git worktree the submodule checkout has no build artifacts;
-#     this symlinks them from the main checkout instead of rebuilding (see step 4).
+#     this symlinks them from the main checkout instead of rebuilding (see step 5).
 #   * `--dry-run` EXISTS SO THIS IS TESTABLE. The conda/npm/cargo steps cannot run in CI or
 #     beside a live training run, so every mutating command routes through `run()` and a dry
 #     run exercises the whole control flow — detection, skip logic, ordering — for free.
@@ -38,7 +38,7 @@ FORCE=0
 WITH_RUST="ask"
 RUN_CHECK=1
 CURRENT_STEP="startup"
-TOTAL_STEPS=6
+TOTAL_STEPS=7
 
 # ------------------------------------------------------------------------------- output helpers
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -83,11 +83,11 @@ gen3ai bootstrap — fresh clone to a green test run.
 
 Usage: ./scripts/bootstrap.sh [options]
 
-  --with-rust     build the Rust simulator binaries (long; see step 5)
+  --with-rust     build the Rust simulator binaries (long; see step 6)
   --no-rust       skip them (a first test run then pays for the build itself)
   --dry-run       print every step and what it WOULD run; change nothing
   --force         redo the conda env step even if it looks current
-  --no-check      skip the final verification (step 6)
+  --no-check      skip the final verification (step 7)
   -h, --help      this
 
 With neither --with-rust nor --no-rust, the script asks if stdin is a terminal and
@@ -121,6 +121,19 @@ info "repo:   $REPO_ROOT"
 STATE_DIR="$(git rev-parse --git-dir 2>/dev/null || echo .git)/gen3ai-bootstrap"
 
 hash_of() { sha256sum "$1" | cut -d' ' -f1; }
+
+# Is this a LINKED git worktree rather than the main checkout? Two steps need the answer — the
+# editable install (step 3, which must NOT be made from a worktree) and the Showdown build
+# artifacts (step 5, which symlinks instead of rebuilding) — so it is resolved once, here,
+# rather than twice with two chances to disagree.
+IS_WORKTREE=0
+MAIN_CHECKOUT="$REPO_ROOT"
+GIT_DIR="$(git rev-parse --git-dir)"
+GIT_COMMON_DIR="$(git rev-parse --git-common-dir)"
+if [ "$(cd "$GIT_DIR" && pwd)" != "$(cd "$GIT_COMMON_DIR" && pwd)" ]; then
+    IS_WORKTREE=1
+    MAIN_CHECKOUT="$(dirname "$(cd "$GIT_COMMON_DIR" && pwd)")"
+fi
 
 # ══════════════════════════════════════════════════════════════ 1. prerequisites
 step "Checking prerequisites" 1
@@ -165,8 +178,47 @@ else
 fi
 PY="$ENV_PREFIX/bin/python3"
 
-# ══════════════════════════════════════════════════════════════ 3. submodule
-step "Showdown submodule (deps/pokemon-showdown)" 3
+# ══════════════════════════════════════════════════════════════ 3. import path
+#
+# `pip install -e .` writes ONE `.pth` file naming this checkout's `src/`, and that is the
+# entire point: `import agents` then works from any directory with nothing exported. It is the
+# replacement for `export PYTHONPATH=$PYTHONPATH:src`, and both keep working (PYTHONPATH simply
+# outranks the `.pth` — which is deliberate, see src/packaging_gate_test.py).
+#
+# pyproject.toml declares NO dependencies, so this cannot resolve, upgrade or replace anything
+# in the env; it writes a `.pth` and a `dist-info` and stops. `--no-deps` says so a second time,
+# and `--no-build-isolation` keeps pip from fetching a build backend it does not need (setuptools
+# is already in the env), so this step works offline.
+step "Python import path (editable install)" 3
+cost "~2 s"
+if [ "$IS_WORKTREE" -eq 1 ]; then
+    # An editable install records ONE ABSOLUTE PATH. Made from a worktree, it points at a
+    # directory that gets deleted — and Python skips a missing .pth entry SILENTLY, so imports
+    # later fail for a reason the install never reports. The main checkout's install already
+    # covers this worktree's needs for anything PYTHONPATH-free; anything worktree-specific
+    # wants PYTHONPATH anyway (that is how the launcher pins a run to its commit).
+    warn "SKIPPED — this is a linked worktree, and an editable install must be made from the"
+    warn "MAIN checkout only ($MAIN_CHECKOUT). Run this script there once; a worktree needs"
+    info "  export PYTHONPATH=\$PYTHONPATH:src"
+    info "for anything that must import THIS worktree's code rather than the main checkout's."
+# The honest test of "is it installed" is whether a src-rooted import RESOLVES without
+# PYTHONPATH — not whether pip lists the distribution, which stays listed after the checkout
+# it points at has moved or been deleted.
+elif env -u PYTHONPATH "$PY" -c "
+import importlib.util, pathlib, sys
+s = importlib.util.find_spec('agents')
+sys.exit(0 if s and str(pathlib.Path(s.origin).resolve()).startswith('$REPO_ROOT/src') else 1)
+" 2>/dev/null; then
+    skip "\`import agents\` already resolves to $REPO_ROOT/src with no PYTHONPATH"
+else
+    info "installing this checkout as an editable package (no dependencies are declared,"
+    info "so nothing else in the env is touched)"
+    run "$PY" -m pip install -e . --no-deps --no-build-isolation
+    did "pip install -e . — \`import agents\` now works from anywhere"
+fi
+
+# ══════════════════════════════════════════════════════════════ 4. submodule
+step "Showdown submodule (deps/pokemon-showdown)" 4
 cost "~30 s first time; instant after"
 if [ -f "$SHOWDOWN_DIR/package.json" ]; then
     skip "submodule already checked out"
@@ -176,20 +228,17 @@ else
     did "checked out"
 fi
 
-# ══════════════════════════════════════════════════════════════ 4. showdown build artifacts
+# ══════════════════════════════════════════════════════════════ 5. showdown build artifacts
 #
 # TWO PATHS, and picking the right one matters. A linked git worktree gets its own (empty)
 # submodule checkout, but the main checkout beside it already has `node_modules/` and `dist/`
 # built — so a worktree symlinks rather than spending five minutes rebuilding them. Both are
 # gitignored inside the submodule, so neither shows up in `git status`.
-step "Showdown build artifacts (node_modules + dist)" 4
-IS_WORKTREE=0
-GIT_DIR="$(git rev-parse --git-dir)"
-GIT_COMMON_DIR="$(git rev-parse --git-common-dir)"
-if [ "$(cd "$GIT_DIR" && pwd)" != "$(cd "$GIT_COMMON_DIR" && pwd)" ]; then
-    IS_WORKTREE=1
-    MAIN_CHECKOUT="$(dirname "$(cd "$GIT_COMMON_DIR" && pwd)")"
-fi
+#
+# IS_WORKTREE / MAIN_CHECKOUT are resolved once near the top of the script (step 3 needs the
+# same answer). Note this branch may CLEAR IS_WORKTREE below to fall through to a local build —
+# that is a decision about artifacts only, and it happens after step 3 has already used it.
+step "Showdown build artifacts (node_modules + dist)" 5
 
 if [ "$IS_WORKTREE" -eq 1 ]; then
     cost "instant (symlinks)"
@@ -246,8 +295,8 @@ if [ "$IS_WORKTREE" -eq 0 ]; then
     fi
 fi
 
-# ══════════════════════════════════════════════════════════════ 5. rust simulator (optional)
-step "Rust simulator binaries (optional)" 5
+# ══════════════════════════════════════════════════════════════ 6. rust simulator (optional)
+step "Rust simulator binaries (optional)" 6
 cost "~3-10 min of a FULLY SATURATED box on a cold build; near-instant when warm"
 if [ "$WITH_RUST" = "ask" ]; then
     if [ -t 0 ] && [ "$DRY_RUN" -eq 0 ]; then
@@ -276,23 +325,37 @@ else
     did "sim_bridge + search_driver built"
 fi
 
-# ══════════════════════════════════════════════════════════════ 6. verify
-step "Verifying" 6
+# ══════════════════════════════════════════════════════════════ 7. verify
+step "Verifying" 7
 if [ "$RUN_CHECK" -eq 0 ]; then
     warn "skipped (--no-check)"
 elif [ "$DRY_RUN" -eq 1 ]; then
     printf '      %s[dry-run] ruff gate, mypy gate, and a ~30 s unit-test smoke%s\n' "$DIM" "$RST"
 else
     cost "~30-60 s (the mypy gate is 20 s cold, 0.3 s warm)"
+
+    # FIRST, and deliberately BEFORE the PYTHONPATH export below: does step 3 actually work?
+    # Verifying the import path after exporting PYTHONPATH would pass whether or not the
+    # editable install landed — the export is exactly the thing it is supposed to replace.
+    if [ "$IS_WORKTREE" -eq 0 ]; then
+        info "the editable install (no PYTHONPATH — this is the point of step 3) ..."
+        env -u PYTHONPATH "$PY" -c "
+import agents, main, utils, poke_env, pathlib
+for m in (agents, main, utils, poke_env):
+    assert str(pathlib.Path(m.__file__).resolve()).startswith('$REPO_ROOT/src'), m
+"
+        did "import agents / main / utils / poke_env all resolve to $REPO_ROOT/src"
+    fi
+
     export PYTHONPATH="${PYTHONPATH:-}:$REPO_ROOT/src"
 
     info "the two static gates (ruff + mypy) ..."
     "$PY" -m pytest src/ruff_gate_test.py src/agents/model/mypy_gate_test.py -q
     did "static gates pass"
 
-    info "the poke_env fork-shadowing gate ..."
-    "$PY" -m pytest src/poke_env_fork_gate_test.py -q
-    did "import poke_env resolves to the vendored fork"
+    info "the import-precedence gates (fork shadowing + PYTHONPATH vs .pth) ..."
+    "$PY" -m pytest src/poke_env_fork_gate_test.py src/packaging_gate_test.py -q
+    did "the vendored fork wins, and PYTHONPATH still outranks the editable install"
 
     # A SLICE, not the whole tier: ~600 tests over the obs encoder, the action layer, the
     # event-sourced battle layer and the shared utils — the four packages that actually break
@@ -312,12 +375,15 @@ $B╔═════════════════════════
 $B║ Bootstrap complete.$RST
 $B╚══════════════════════════════════════════════════════════════════════╝$RST
 
-Activate the environment, and export PYTHONPATH — every direct command needs it
-(an editable install that removes this requirement is coming; until then it is
-required, not optional):
+Activate the environment. Nothing else — step 3 installed this checkout as an
+editable package, so \`import agents\` works from any directory with no exports:
 
     conda activate $ENV_NAME
-    export PYTHONPATH=\$PYTHONPATH:src
+
+(In a linked WORKTREE step 3 is skipped on purpose — an editable install records
+one absolute path, and a worktree's path goes away. There, and on any machine
+without the install, the old incantation is the equivalent fallback:
+\`export PYTHONPATH=\$PYTHONPATH:src\`.)
 
 Then, in rough order of usefulness:
 

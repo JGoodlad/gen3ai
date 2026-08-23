@@ -13,8 +13,13 @@ every flag, benchmark, and failure mode — lives in the `CLAUDE.md` files besid
 ```bash
 ./scripts/bootstrap.sh          # --dry-run to see the plan; --with-rust to skip the prompt
 conda activate gen3ai_stable
-export PYTHONPATH=$PYTHONPATH:src          # every command below assumes this
+export PYTHONPATH=$PYTHONPATH:src          # OPTIONAL where bootstrap ran; required elsewhere
 ```
+
+The bootstrap's step 3 is `pip install -e .`, which puts `src/` on the import path for good — so
+every command below works without the export. The export is kept in the examples because it is
+harmless where the install exists and load-bearing where it does not (a git worktree, a container,
+a machine that skipped the bootstrap). Both are correct; neither is being retired.
 
 Setup mechanics for contributors — flags, the CPU-only variant, the worktree case — are in
 [`CONTRIBUTING.md`](../CONTRIBUTING.md). What the script actually does, should you need to run a

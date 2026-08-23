@@ -61,13 +61,15 @@ git clone git@github.com:JGoodlad/gen3ai.git && cd gen3ai
 ./scripts/bootstrap.sh              # conda env, submodule, sim build — then verifies itself
 
 conda activate gen3ai_stable
-export PYTHONPATH=$PYTHONPATH:src
 # a 1-minute training smoke, no server and no GPU needed:
 python src/main/train_rl_agent.py --debug --steps 10000
 ```
 
 `bootstrap.sh` is idempotent and fail-loud — re-run it any time and it skips what is already
-done; `--dry-run` prints the plan without touching anything.
+done; `--dry-run` prints the plan without touching anything. One of its steps is
+`pip install -e .`, so `import agents` works from any directory with nothing exported. Skipped the
+bootstrap, or working in a git worktree? `export PYTHONPATH=$PYTHONPATH:src` is the equivalent
+fallback and is what you will still see at the top of many scripts.
 
 How to work in this repo — tests, ports, the worktree flow: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 Full training, evaluation, and test commands: **[docs/RUNNING.md](docs/RUNNING.md)**.

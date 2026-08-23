@@ -8,6 +8,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Packaging leftovers from `pip install -e .` / a wheel build. The editable install itself
+# lands OUTSIDE the tree (a .pth in site-packages), which is why it left nothing to ignore
+# until someone builds without --no-build-isolation and gets a stray egg-info.
+*.egg-info/
+build/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,95 @@
+# gen3ai — packaging metadata.
+#
+# ══════════════════════════════════════════════════════════════════════════════════════════
+# WHAT THIS FILE IS FOR, AND WHAT IT IS DELIBERATELY NOT FOR
+# ══════════════════════════════════════════════════════════════════════════════════════════
+#
+# THIS FILE EXISTS TO PUT `src/` ON THE IMPORT PATH. That is the whole job.
+#
+#     pip install -e .        # once, from the MAIN CHECKOUT — then `import agents` just works
+#
+# It replaces `export PYTHONPATH=$PYTHONPATH:src` as the thing a contributor has to remember,
+# and nothing else. In particular:
+#
+#   * IT DECLARES NO RUNTIME DEPENDENCIES, ON PURPOSE. `environment.yml` owns dependencies —
+#     73 pins including a CUDA-local-version torch that is not on PyPI at all. If this file
+#     also declared them, the two would be free to disagree, and the way that disagreement
+#     surfaces is `pip install -e .` silently RESOLVING and REPLACING a pinned wheel in a
+#     working conda env. An empty `dependencies` cannot do that: `pip install -e .` here
+#     installs a `.pth` file and a `dist-info` directory, and touches nothing else.
+#     One owner per question. `environment.yml` owns "what is installed"; this owns "where
+#     does `import agents` look".
+#
+#   * IT IS ADDITIVE. `PYTHONPATH` keeps working exactly as before, everywhere, and the
+#     launcher child STILL sets it (see the 🚨 block in `src/main/launcher/child.py` — that
+#     export is worktree-isolation machinery, not cruft). The two mechanisms coexist, and the
+#     ORDER in which they coexist is load-bearing; `src/packaging_gate_test.py` pins it.
+#
+#   * WE DO NOT PUBLISH WHEELS. There is no PyPI release and no plan for one, so the package
+#     lists below are a correctness statement rather than a distribution artifact. Two
+#     consequences worth stating rather than discovering: `src/rust_sim` is excluded (it is a
+#     Rust crate whose Python is harness scratch, and it has no `__init__.py`), and the
+#     `*_test.py` modules ARE included, because in this tree a test lives beside its subject
+#     and setuptools cannot exclude individual modules from a package it ships. If a wheel
+#     ever matters, that is the thing to fix; today it costs nothing.
+#
+# ══════════════════════════════════════════════════════════════════════════════════════════
+# 🚨 THE HAZARD THIS FILE CREATED, AND WHY THE GATE EXISTS
+# ══════════════════════════════════════════════════════════════════════════════════════════
+#
+# An editable install writes a `.pth`, and `.pth` paths are appended to `sys.path` AFTER
+# site-packages. This repo VENDORS a fork of poke-env at `src/poke_env/`, and `poke-env` is
+# also an ordinary PyPI package. So on a machine with both, an editable install makes
+# UPSTREAM WIN SILENTLY — no error, no warning, subtly wrong battle behaviour forever.
+# Proved by experiment in a throwaway replica, 2026-08-22, both directions.
+#
+# The structural fix was to remove `poke-env` from `environment.yml` and uninstall it, so
+# there is no second copy and no ordering question to lose. `src/poke_env_fork_gate_test.py`
+# is what makes that permanent. Do not re-add the pin.
+#
+# ══════════════════════════════════════════════════════════════════════════════════════════
+
+[build-system]
+# setuptools>=64 is the floor for PEP 660 editable installs (the `__editable__*.pth` this
+# whole file is really about). No `wheel` in `requires`: modern setuptools vendors what it
+# needs, and listing it makes an isolated build fetch a package it will not use.
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gen3ai"
+version = "0.1.0"
+description = "Reinforcement-learning agent for Pokémon Gen 3 OU singles"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+
+# DELIBERATELY EMPTY — see the header. `environment.yml` is the single owner of dependencies;
+# declaring them twice invites the two to drift, and the drift is repaired by pip mutating a
+# working environment. Listed explicitly rather than omitted so that "no dependencies" reads
+# as a decision instead of an oversight.
+dependencies = []
+
+# ─────────────────────────────────────────────────────────────────────────── package layout
+#
+# src-layout: the importable top level is `src/`, so `import agents` must resolve to
+# `src/agents`. `package-dir` states that.
+#
+# WHY `packages.find` WITH AN EXPLICIT `include` RATHER THAN AUTO-DISCOVERY: with no
+# `[tool.setuptools]` section at all, setuptools auto-detects the layout — and it trips over
+# `src/__init__.py` (an empty file that exists so the root `conftest.py`'s rootdir-on-path
+# behaviour yields `src.agents`). The `include` patterns below are what make the result
+# deterministic: exactly four top-level packages and their subpackages, no layout guessing.
+# `rust_sim` is absent from the list AND has no `__init__.py`, so it is excluded twice over.
+#
+# `poke_env` IS OURS AND SHIPS WITH THE PROJECT. It is a vendored FORK — 57 modules where
+# upstream 0.15.0 has 45 — and the battle layer depends on what the fork adds. It is listed
+# here for the same reason `agents` is: it is part of this project's import surface. Do not
+# "clean this up" by depending on the PyPI package instead; see the hazard block above.
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["agents*", "main*", "utils*", "poke_env*"]
+namespaces = false

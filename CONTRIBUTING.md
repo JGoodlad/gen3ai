@@ -26,10 +26,11 @@ skipped), fail-loud, and it announces what each step costs before spending it:
 |---|---|---|
 | 1 | prerequisite check — `git`, `conda`, `node`, `npm` | instant |
 | 2 | create/update the `gen3ai_stable` conda env from `environment.yml` | ~5-15 min fresh (≈2 GB of wheels) |
-| 3 | `git submodule update --init` — the Pokémon Showdown reference engine | ~30 s |
-| 4 | the Showdown build artifacts (`npm ci` + `node build`) — **or** worktree symlinks | ~3-6 min fresh |
-| 5 | *(optional)* `cargo build --release` for the Rust simulator | ~3-10 min cold |
-| 6 | verify — ruff gate, mypy gate, fork-shadowing gate, a ~10 s unit smoke | ~30 s |
+| 3 | `pip install -e .` — puts `src/` on the import path for good | ~2 s |
+| 4 | `git submodule update --init` — the Pokémon Showdown reference engine | ~30 s |
+| 5 | the Showdown build artifacts (`npm ci` + `node build`) — **or** worktree symlinks | ~3-6 min fresh |
+| 6 | *(optional)* `cargo build --release` for the Rust simulator | ~3-10 min cold |
+| 7 | verify — ruff gate, mypy gate, fork-shadowing gate, a ~10 s unit smoke | ~30 s |
 
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,
 `--force` (redo the conda step), `--no-check`, `--help`.
@@ -38,17 +39,35 @@ Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--n
 and the first Rust-backed test builds those binaries *anyway* — mid-test, saturating every core,
 which is a documented cause of spurious timeout failures on a fresh checkout.
 
-### After bootstrap: activate, and export PYTHONPATH
+### After bootstrap: activate, and that is it
 
 ```bash
 conda activate gen3ai_stable
-export PYTHONPATH=$PYTHONPATH:src
+python -c "import agents, poke_env; print('ok')"
 ```
 
-**The `PYTHONPATH` export is currently required, not optional** — every direct command in this
-repo assumes it, and without it `pytest` collects with import errors. An editable install
-(`pip install -e .`) that removes the requirement is coming in a follow-up change; until it
-lands, export it in every shell (or put it in your shell profile, or a `direnv` `.envrc`).
+**No `export PYTHONPATH` needed.** Step 3 of the bootstrap runs `pip install -e .`, which puts
+this checkout's `src/` on the import path permanently — so `import agents` works from any
+directory, in any shell, in your IDE and in your debugger. If you skipped the bootstrap, or you
+are on a machine without the install, the old incantation is still exactly equivalent:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src      # the fallback; harmless when the install exists
+```
+
+You will still see that line at the top of many run-directly scripts and in `CLAUDE.md` command
+examples. It is correct either way and is being retired in one reviewed pass rather than piecemeal.
+
+> **Install from the MAIN CHECKOUT, never from a git worktree.** An editable install records one
+> absolute path in a `.pth` file. Install from a worktree, delete the worktree, and that path is
+> gone — Python skips a missing `.pth` entry *in silence*, so imports start failing for a reason
+> the install never reports. `src/packaging_gate_test.py` catches a stale one and prints the fix.
+> Working in a worktree is fine; just do the install once, in the main checkout.
+
+**`pyproject.toml` declares no dependencies, on purpose.** `environment.yml` is the single owner of
+what is installed — including a CUDA-local-version torch that is not on PyPI at all. Because the
+dependency list is empty, `pip install -e .` writes a `.pth` and a `dist-info` and touches nothing
+else; it cannot resolve, upgrade or replace anything in your environment. One owner per question.
 
 ### CPU-only machines
 
