@@ -1,23 +1,41 @@
-"""Per-field BIT-IDENTITY gate for the suppressed-term fast path (`gen3_reward_skip_suppressed_v1`).
+"""Per-field BIT-IDENTITY gate for the reward manager's two fast paths.
 
-`process_turn_reward` no longer computes the ~20 BIAS helpers whose results this run's
-composition forces to zero. That is a change to THE OBJECTIVE — a wrong reward trains a wrong
-policy with no error anywhere, which is strictly worse than a slow one — so it is gated on the
-strongest evidence available: real gen3ou battles through the local BattleStream bridge (no
-server), and at EVERY decision, EVERY field of the `RewardBreakdown` compared against a
-full-computation twin.
+Both are changes to THE OBJECTIVE — a wrong reward trains a wrong policy with no error anywhere,
+which is strictly worse than a slow one — so both are gated on the strongest evidence available:
+real gen3ou battles through the local BattleStream bridge (no server), and at EVERY decision,
+EVERY field of the `RewardBreakdown` compared against a full-computation twin.
 
-Three things are checked per decision, per composition:
+  * **The suppressed-term skip** (`gen3_reward_skip_suppressed_v1`). `process_turn_reward` no
+    longer computes the ~20 BIAS helpers whose results this run's composition forces to zero.
+  * **The belief-block memo** (`gen3_belief_block_memo_v1`). Φ_belief's `encode_block` — 60.0% of
+    `process_turn_reward`, the largest single item in the per-decision CPU budget — now answers
+    from a CONTENT-keyed cache (`incoming_damage_encoder.IncomingBeliefMemo`).
 
-  1. **Bit-identity.** The production manager (skip ON) and a `_shadow=True` twin (skip OFF),
-     driven in lockstep through the identical `record_action` / `process_turn_reward` sequence,
-     must agree on every declared field and on `total` — compared with `!=`, not `isclose`. A
-     skip that moves a reward by 1e-16 is still a skip that changed the objective.
+ONE twin gates both, because `_shadow=True` means "compute everything the slow way": the twin runs
+with the skip disabled AND with no memo at all. So a divergence in either mechanism shows up in
+the same per-field comparison, and neither can hide behind the other by making the same mistake
+twice.
+
+Five things are checked per decision, per composition:
+
+  1. **Bit-identity.** The production manager (fast paths ON) and a `_shadow=True` twin (skip OFF,
+     memo OFF), driven in lockstep through the identical `record_action` / `process_turn_reward`
+     sequence, must agree on every declared field and on `total` — compared with `!=`, not
+     `isclose`. A fast path that moves a reward by 1e-16 is still one that changed the objective.
   2. **The skip is exactly the suppression's COMPLEMENT.** Every BIAS field the composition
      reports inactive must be 0.0 on the FULL path too. If it isn't, the skip is dropping a
      term the run still charges — the one way this change can be wrong.
   3. **Finiteness**, so a NaN can't make (1) vacuously true (NaN != NaN would fail, but an inf
      on both sides would pass — this catches it).
+  4. **The memo's KEY is complete, differentially and on real boards.** Every decision's
+     `attacker_state_key(live)` is recorded against the `AttackerThreat` freshly derived from that
+     board; a key seen twice must carry the identical threat. This is the memo's central claim
+     ("equal key ⇒ equal inputs") tested against thousands of real boards rather than a synthetic
+     matrix — an under-key shows up here as a same-key/different-threat pair, with the offending
+     field named. The structural counterpart (an AST walk over `_attacker_threat`) is
+     `agents/observation/incoming_damage_memo_test.py`.
+  5. **The memo actually SERVED.** Hit counts are reported and floored: a clean run in which the
+     cache never returned anything would be evidence about the uncached path only.
 
 Three compositions are swept **on the same decision stream** (one player, one set of battles,
 three manager pairs), because the skip must be a no-op exactly where nothing is suppressed:
@@ -43,6 +61,7 @@ import sys
 import time
 import traceback
 from collections import Counter
+from dataclasses import fields as dc_fields
 from typing import Optional
 
 import numpy as np
@@ -56,6 +75,10 @@ from agents.action.mapper import Gen3ActionMapper
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
+from agents.observation.incoming_damage_encoder import (
+    _attacker_threat as _fresh_attacker_threat,
+    attacker_state_key,
+)
 from agents.training.battle_snapshot import BattleContext
 from agents.training.progress_clock import ProgressClock
 from agents.training.reward_manager import (
@@ -126,6 +149,15 @@ class RewardSkipParityPlayer(Player):
         # per-arm, per-field count of non-zero FINAL values
         self.activations: dict[str, Counter] = {n: Counter() for n in COMPOSITIONS}
         self._per_battle: dict[str, _BattleState] = {}
+        # (4) the differential key-coverage corpus: attacker key → the threat it must always mean.
+        # Global across battles ON PURPOSE — the key is CONTENT, so two different battles reaching
+        # the same board content must reach the same belief, and a cross-battle collision is the
+        # sharpest form of the under-key bug (it is also exactly what a shared cache would serve).
+        self._key_corpus: dict = {}
+        self.keys_seen = 0
+        self.key_repeats = 0
+        self.memo_hits = 0
+        self.memo_misses = 0
 
     def _get_state(self, battle) -> _BattleState:
         tag = battle.battle_tag
@@ -138,6 +170,35 @@ class RewardSkipParityPlayer(Player):
         print(f"\n[REWARD SKIP PARITY] {msg}", flush=True)
         traceback.print_stack()
         os._exit(1)
+
+    def _check_attacker_key(self, battle, where: str) -> None:
+        """(4) The memo's central claim, tested differentially on a real board.
+
+        `attacker_state_key(live)` is asserted to DETERMINE `_attacker_threat(live, None)`. An
+        under-key — an input the belief reads that the key does not carry — surfaces here as two
+        boards with the same key and different beliefs, and the failure names the field, which is
+        the diagnosis. Nothing is cached for the manager here; this recomputes both sides fresh.
+        """
+        try:
+            live = battle.strict_view().live
+        except Exception:                            # pragma: no cover - diagnostic only
+            return
+        key = attacker_state_key(live)
+        if key is None:
+            return
+        self.keys_seen += 1
+        fresh = _fresh_attacker_threat(live, None)
+        seen = self._key_corpus.get(key)
+        if seen is None:
+            self._key_corpus[key] = fresh
+            return
+        self.key_repeats += 1
+        if seen != fresh:
+            differing = [f.name for f in dc_fields(seen)
+                         if getattr(seen, f.name) != getattr(fresh, f.name)]
+            self._fail(f"BELIEF KEY IS INCOMPLETE — two boards share attacker key {key!r} but "
+                       f"differ on {differing}; the memo would serve the first board's belief for "
+                       f"the second, silently changing Φ_belief {where}")
 
     def _check_turn(self, battle, state: _BattleState, curr_ctx: BattleContext,
                     legal=None) -> None:
@@ -153,6 +214,7 @@ class RewardSkipParityPlayer(Player):
                 print(f"  [NOTICE] clock update skipped: {e}", flush=True)
         self.turns_compared += 1
         where = f"[{battle.battle_tag}] turn {battle.turn}"
+        self._check_attacker_key(battle, where)
 
         for name, arm in state.arms.items():
             fast_r = arm.fast.process_turn_reward(battle, delta)
@@ -166,9 +228,10 @@ class RewardSkipParityPlayer(Player):
                     self._fail(f"{name}: non-finite {field} fast={a!r} full={b!r} {where}")
                 # (1) bit-identity — `!=`, deliberately not isclose
                 if a != b:
-                    self._fail(f"{name}: SKIP CHANGED THE REWARD — {field} fast={a!r} "
-                               f"full={b!r} {where}; active BIAS = "
-                               f"{sorted(arm.fast._active_bias)}")
+                    self._fail(f"{name}: A FAST PATH CHANGED THE REWARD (the skip, the belief "
+                               f"memo, or both) — {field} fast={a!r} full={b!r} {where}; "
+                               f"active BIAS = {sorted(arm.fast._active_bias)}; memo = "
+                               f"{arm.fast._belief_memo.stats()}")
                 if b != 0.0:
                     self.activations[name][field] += 1
                 # (2) the skip is exactly the suppression's complement
@@ -193,6 +256,12 @@ class RewardSkipParityPlayer(Player):
         except Exception as e:                     # pragma: no cover - diagnostic only
             print(f"  [NOTICE] {tag}: final-turn check skipped: {e}", flush=True)
         finally:
+            # (5) roll this battle's memo counters up before the state is dropped — a memo that
+            # never SERVED would make the identity claim above evidence about the cold path only.
+            for arm in state.arms.values():
+                st = arm.fast._belief_memo.stats()
+                self.memo_hits += st["attacker_hits"] + st["row_hits"]
+                self.memo_misses += st["attacker_misses"] + st["row_misses"]
             self._per_battle.pop(tag, None)
 
     def choose_move(self, battle):
@@ -261,9 +330,22 @@ def _report(player: RewardSkipParityPlayer, battles: int) -> int:
     print(f"\n  KEPT-TERM COVERAGE — 'default' arm charged no_progress_tax on {kept} turns")
     print("  (the single BIAS term production does NOT skip; 0 means the run never checked it).")
 
+    total_lookups = player.memo_hits + player.memo_misses
+    rate = (100.0 * player.memo_hits / total_lookups) if total_lookups else 0.0
+    print(f"\n  BELIEF-MEMO COVERAGE — {player.memo_hits} SERVED / {total_lookups} lookups "
+          f"({rate:.1f}% hit) across every arm.")
+    print(f"  Attacker-key corpus: {player.keys_seen} boards, {player.key_repeats} repeat keys, "
+          f"{len(player._key_corpus)} distinct.")
+    print("  A repeat key is one differential test of key completeness (same key ⇒ same belief);")
+    print("  a served hit is one decision whose Φ_belief came from the cache, not the formula.")
+
     missing = [f for f in _REQUIRED_COVERAGE if not cov[f]]
     if not kept:
         missing.append("no_progress_tax@default")
+    if not player.memo_hits:
+        missing.append("belief-memo hits (nothing was ever SERVED from the cache)")
+    if not player.key_repeats:
+        missing.append("attacker-key repeats (key completeness was never differentially tested)")
     if missing:
         print(f"\n❌ INCONCLUSIVE — {len(missing)} required signal(s) never fired: "
               f"{', '.join(missing)}. Raise the battle count; a clean run over a corpus that")
@@ -272,8 +354,8 @@ def _report(player: RewardSkipParityPlayer, battles: int) -> int:
     if player.violations:
         print(f"\n❌ {len(player.violations)} violation(s)")
         return 1
-    print(f"\n✅ PASS — every field of every breakdown bit-identical with the skip ON vs OFF, "
-          f"across all {len(COMPOSITIONS)} compositions.")
+    print(f"\n✅ PASS — every field of every breakdown bit-identical with the fast paths (skip + "
+          f"belief memo) ON vs OFF, across all {len(COMPOSITIONS)} compositions.")
     return 0
 
 

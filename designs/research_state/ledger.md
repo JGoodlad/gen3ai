@@ -3158,3 +3158,89 @@ applied a fourth and fifth time.
   is the deliberate one above; `--debug --steps 10000` smoke, a fresh→resume pair, and a
   `--self-play --debug-eval` cycle; `python -m main.checkargs` clean on the 5 newest runs;
   `src/rust_sim` untouched.
+
+### The belief-block memo LANDED — the deferred item's trigger fired at 60%, and the two defects it left behind are both fixed (2026-08-23, `gen3_belief_block_memo_v1` + `gen3_prev_phi_reset_v1`)
+
+The reward-manager stage's DEFERRED item, built. `encode_block` measured **60.0% of
+`process_turn_reward`** — the condition the census set ("build only if ≥ ~35%") — and it is now
+answered by a per-manager CONTENT-keyed memo. Re-verified before building: `reward_manager.py` is
+the tree's **only** per-decision caller of the incoming-damage belief pipeline (the obs write was
+deleted at `gen3_entity_rehome_v1`; the other importers are the prober and a fuzz test).
+
+- **The design is the census's, with one DEVIATION, and the deviation is load-bearing.** The brief
+  proposed scoping the cache per-decision/per-turn on Stage A's `_state_epoch`. Measured first:
+  **the reward path calls `encode_block` EXACTLY ONCE per decision**, so a turn-scoped cache has a
+  structural hit rate of **zero** — it would have shipped a no-op. The win is entirely CROSS-turn
+  (the opponent active keeps its species/boosts/status/revealed set for runs of turns; a benched
+  mon's `Defender` is unchanged until something touches its HP), so the key is pure content and the
+  cache spans turns. The epoch is also strictly WEAKER as a key: same epoch ⇒ same content ⇒ the
+  content key hits anyway, so it adds no hit it does not already have. *A cache's scope has to be
+  derived from the measured call pattern, not from the scope that sounds safest.*
+- **Two caches + one algebraic identity.** `attacker_state_key(live)` → `AttackerThreat`;
+  `(attacker_key, Defender)` → the mon's `PER_MON` row (`inc.compute_mon_row`, factored out of
+  `compute_team_block`). And the crit branch's `gen3_damage_max(..., screen=False, …)` has
+  argument-for-argument the same inputs as the modal call **when no screen is up**, so
+  `dmax_crit == 2·dmax` exactly — one formula evaluation saved per candidate on the common board.
+- **KEY-COVERAGE PROOF, enumerated over the WRITERS.** `_attacker_threat` has one value-producing
+  exit, so the claim is about the 17 CONSTRUCTOR ARGUMENTS of the `AttackerThreat` it builds: each
+  is a function of `{species, opp.types, opp.move_ids, opp.status, atk/spa/spe stages, our reflect,
+  our light screen, weather}` plus process-constant dex/Smogon data, and their union IS the key.
+  `hp_tracker` is the 18th input and has no place in the key, so a non-None tracker BYPASSES the
+  memo (no production caller passes one). ORDER matters in `move_ids` — `_channel_threat`'s
+  provenance scalar breaks ties on the FIRST maximal candidate — so a set would be an under-key; it
+  is a tuple. The defender side needs no proof: `Defender` is a frozen dataclass rebuilt from the
+  board every call, so it IS its own key.
+- **The proof is MECHANICAL, not a reading.** `incoming_damage_memo_test.py` AST-walks
+  `_attacker_threat` for every attribute reached from `live` (through attribute chains, rebound
+  locals, `or`-defaults and `getattr`) and fails if one appears the key does not carry — and fails
+  the other way too, so the declared set cannot rot into a superset that proves nothing. The walker
+  has its own self-test (a probe function reading one extra thing through each channel), because a
+  gate that cannot fail is worth nothing. `AttackerThreat`'s field list is pinned beside it, since
+  a new field is the change most likely to widen the input set without touching a read.
+- **And DIFFERENTIALLY, on real boards.** `reward_skip_parity_fuzz_test` now records every
+  decision's key against the freshly-derived belief and demands that a key seen twice carries the
+  identical belief — **3,956 repeat-key tests over 1,003 distinct keys** across 4,959 decisions /
+  60 battles, global across battles on purpose. **Verified failing**: a deliberately under-keyed build (boost stages
+  dropped from the key) reports `two boards share attacker key … but differ on
+  ['spa_tail','spa_mean']` — the diagnosis, not just the failure.
+- **`GEN3AI_REWARD_VERIFY=1` covers the memo BY CONSTRUCTION**, and that took one decision made the
+  right way: the `_shadow=True` twin runs with `_belief_memo = None`, not with a memo of its own. A
+  twin with its own memo would warm identically under an under-key and both would agree on the same
+  wrong number — the shadow would have been blind to exactly the bug class it exists for.
+- **Measured** (order-alternated same-process A/B, the `90d936e` method; box at load 31-36, so
+  absolutes are contaminated and the RATIO is the claim): **~1.25× on `process_turn_reward`** over
+  five runs of 2000-5500 paired decisions (1.321 / 1.254 / 1.186 / 1.214 / 1.294), plus a load-free
+  **−24.0% Python calls per call** (484.2 → 368.1, `sys.setprofile` — a different instrument from
+  the cProfile figure in the previous entry, NOT comparable to it). Hit rate 48-58% under random
+  play. Against the ~23-27% reward share that is ~5-6% of worker CPU. Zero reward mismatches in
+  every A/B run (the probe compares totals as it times).
+- 🐛 **Defect (a) FIXED — `reset()` omitted `_prev_phi_roar`** (`gen3_prev_phi_reset_v1`). The
+  field set is now DERIVED from the instance (`_prev_phi_fields`) and the test derives it the same
+  way, so a ninth potential cannot repeat it (verified failing on revert). **The benign-by-
+  coincidence reading was checked against the fold and is HALF right.** `_pbrs_step`'s
+  `Φ(terminal)=0` is what makes the leaked value `0.0` rather than arbitrary — that half holds. But
+  the other half is about Φ_roar at the FIRST FOLDED state, which is the board **after turn 1
+  resolves**, not `s_0`: the manager's first fold happens after a turn has been played, so an
+  opponent that opens Dragon Dance / Calm Mind makes `γ·Φ_roar(s₁) − 0.0 ≠ 0.0`. **Measured
+  non-zero in 3/185 random-play battles (1.6%)**, worth ≈ −0.25 per positive stage, once. And a
+  channel the coincidence never covered at all: a `reset()` landing MID-battle (the training seam
+  forfeits there) leaves the last **non-terminal** Φ_roar — an arbitrary value, not 0.0. Verdict:
+  mostly benign, provably not benign in general. *A fragile coincidence is not a contract.*
+- 🐛 **Defect (b) FIXED — `self_ko_penalty_fuzz_test` asserted a term its own composition zeroed.**
+  Both arms now build under `all_shaping_pbrs=False` (the composition in which a BIAS term is live
+  at all), and `_assert_arm_is_live()` refuses to run otherwise — reading `reward_class_composition`,
+  the census, never the flag names. **Now-live evidence**: 5,857 decisions / 40 battles, **60
+  self-KO turns of which 41 at ≥0.8 HP**, the `−W·hp` assertion firing on real Explosion turns, 0
+  violations. The old arm's census, for the record: `bias_terms == ['no_progress_tax']` — exactly
+  one live BIAS term, and not the one under test. **Second form of the vacuity family**: not a test
+  that asserts nothing, but a test whose CONFIGURATION makes its own claim unreachable.
+- **The size ratchet fired again and decomposition was again the answer.** `reward_manager.py`
+  crossed 2,000 lines, so the 156-line block of tunable MAGNITUDES moved to `reward_weights.py`
+  (verbatim, re-exported explicitly so `from ...reward_manager import SE_SWITCH_BONUS` still
+  resolves) rather than the new comments being shaved to fit. 1,871 lines — real headroom, not
+  three lines of it.
+- **Gates.** Routine suite **6698 passed** / 10 skipped / 16 xfailed; ruff + mypy + file-size green;
+  `reward_skip_parity_fuzz_test` PASS — **4,959 decisions x 3 compositions, 0 violations**, 48.3%
+  memo hit rate; `self_ko_penalty_fuzz`
+  PASS; `incoming_damage_fuzz` PASS (1064 opp-active decisions, 27 species, 0 raises);
+  `GEN3AI_REWARD_VERIFY=1` clean over the `reward_value_regression` fuzz.

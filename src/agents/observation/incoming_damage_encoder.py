@@ -20,7 +20,7 @@ Design: `designs/ai_v5/design_incoming_damage_obs.md`.
 from __future__ import annotations
 
 import functools
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Hashable, List, Optional, Sequence, Tuple, cast
 
 import numpy as np
 
@@ -282,7 +282,176 @@ def _defender(lm: Any) -> Optional[inc.Defender]:
     )
 
 
-def encode_block(live: Any, hp_tracker: Any = None) -> np.ndarray:
+# --------------------------------------------------------------------------------------------
+# The content key + memo (`gen3_belief_block_memo_v1`)
+# --------------------------------------------------------------------------------------------
+
+# THE KEY-COVERAGE PROOF, enumerated over the WRITERS of the output rather than the reads someone
+# happened to notice. ``_attacker_threat`` has exactly one exit that builds a value, and that value
+# is an ``AttackerThreat`` whose every field is written by one constructor argument. So the key is
+# complete iff every one of those 17 arguments is a function of the key (plus process-constant dex /
+# Smogon data, which `gen3_data` loads once and never mutates):
+#
+#   types                          ← opp.types
+#   atk_tail / atk_mean            ← species (`_offensive_stat`, lru_cached) × boosts['atk']
+#   spa_tail / spa_mean            ← species                                × boosts['spa']
+#   spe_dist                       ← species
+#   boost_spe                      ← boosts['spe']
+#   para / burn                    ← opp.status
+#   phys / spec                    ← `_candidates(opp.move_ids, species, hp_tracker)`
+#   our_reflect / our_light_screen ← live.ours.side_conditions ∩ {reflect, light_screen}
+#   weather                        ← live.weather.weather
+#   recovery_rate / cures_status / recovery_known ← species (usage prior) + opp.move_ids
+#
+# Union of the right-hand column = the tuple `attacker_state_key` returns, plus ``hp_tracker``,
+# which is why a non-None tracker BYPASSES the memo (its per-episode narrowing is not in the key,
+# and no production caller passes one — the reward path is the only per-decision caller and it
+# passes None). `incoming_damage_memo_test.py` re-derives this mechanically: it AST-walks
+# `_attacker_threat` for every attribute reached from `live`/`opp` and fails if a read appears that
+# the key does not cover, so a future field cannot quietly widen the input set.
+#
+# ⚠️ ORDER, not just membership, in `move_ids`: `_candidates` appends revealed moves in the order
+# given and `_channel_threat`'s provenance scalar breaks ties on the FIRST maximal candidate. A set
+# would be an under-key. It is a tuple.
+_ATTACKER_KEY_LIVE_READS = frozenset({
+    # `live.` / `live.opp.` / `live.ours.` attributes `_attacker_threat` reaches (the AST gate's
+    # expected set — see `incoming_damage_memo_test.py`).
+    "opp", "ours", "weather", "active", "species", "boosts", "move_ids", "types", "status",
+    "side_conditions",
+})
+
+
+def attacker_state_key(live: Any) -> Optional[Tuple]:
+    """The COMPLETE content key of ``_attacker_threat(live, hp_tracker=None)``.
+
+    Returns ``None`` in exactly the two cases ``_attacker_threat`` returns ``None`` (no opp active
+    / no species yet) — the guards are duplicated deliberately so "key is None" and "there is no
+    attacker" cannot drift apart. Everything in the tuple is a primitive or a tuple of primitives,
+    so the key is hashable and compares by value.
+
+    Over-keying is harmless (a missed hit); UNDER-keying is a wrong reward. See the proof above."""
+    opp = live.opp.active
+    if opp is None:
+        return None
+    species = opp.species
+    if not species:
+        return None
+    boosts = opp.boosts or {}
+    oursc = live.ours.side_conditions or {}
+    lw = getattr(live, "weather", None)
+    return (
+        species,
+        opp.types,
+        opp.move_ids,
+        opp.status,
+        boosts.get("atk", 0), boosts.get("spa", 0), boosts.get("spe", 0),
+        "reflect" in oursc, "light_screen" in oursc,
+        getattr(lw, "weather", None) if lw is not None else None,
+    )
+
+
+class IncomingBeliefMemo:
+    """Content-keyed memo for :func:`encode_block` (`gen3_belief_block_memo_v1`).
+
+    **What it is for.** A 2026-08-23 cProfile put ``encode_block`` at **60.0%** of
+    ``process_turn_reward`` — the largest single item in the whole per-decision CPU budget — split
+    ``compute_team_block`` 42.5 / ``_attacker_threat`` 10.8. Both are pure functions of board
+    content that mostly does not change from turn to turn: the opponent active keeps its species,
+    boosts, status and revealed set for runs of turns, and a BENCHED mon's ``Defender`` is unchanged
+    until something touches its HP.
+
+    **Exactness is the contract, and it is structural.** Everything cached here is the return value
+    of a pure function under a key that provably determines its inputs, so a hit and a miss return
+    the same value by construction. In particular this is **not** telescoping: nothing accumulates,
+    nothing is carried, and clearing the memo at any moment changes only speed. That is the
+    difference between this and the incremental-Φ idea `_pbrs_step`'s docstring refuses — a carried
+    Φ is a function of HISTORY, whereas a memo is a function of CONTENT.
+
+    **Why it is not scoped to a turn / to `_state_epoch`.** An epoch key would be strictly weaker:
+    same epoch ⇒ same content ⇒ this key hits anyway, so the epoch adds no hit it does not already
+    have, while a per-turn scope would DELETE the cross-turn reuse that is the entire win.
+    Measured: the reward path calls ``encode_block`` exactly ONCE per decision (it is the tree's
+    only per-decision caller), so a turn-scoped cache would have a structural hit rate of zero.
+
+    **Clone / deepcopy.** The memo holds only immutable values (tuples of floats, frozen
+    dataclasses) under content keys, so a ``deepcopy`` carries a self-consistent copy and — unlike a
+    cache keyed on an object identity or a battle tag — a cross-arm hit is *correct* rather than a
+    hazard: equal content is equal content, whichever rollout arm produced it.
+
+    **Bounded.** A long battle keeps minting new HP/boost states, so both maps are capped and
+    cleared wholesale on overflow. Clearing is always safe (see exactness), so the eviction policy
+    needs no cleverness; it only trades hit rate for memory.
+    """
+
+    #: Cap on each map. ~6 rows per decision and a few hundred turns per battle, so these hold a
+    #: whole episode in practice; the cap only bounds a pathological one.
+    MAX_ATTACKERS = 512
+    MAX_ROWS = 8192
+
+    def __init__(self) -> None:
+        self.clear()
+
+    def clear(self) -> None:
+        """Drop everything. Correctness-neutral by construction — only the hit rate moves."""
+        # Never stores None: `attacker_state_key` returns None in EXACTLY the two cases
+        # `_attacker_threat` does, so a non-None key implies a non-None threat and `.get() is
+        # None` unambiguously means "not cached".
+        self._attackers: Dict[Tuple, inc.AttackerThreat] = {}
+        self._rows: Dict[Hashable, Tuple[float, ...]] = {}
+        self.attacker_hits = 0
+        self.attacker_misses = 0
+        self.row_hits = 0
+        self.row_misses = 0
+        self.clears = 0
+
+    def stats(self) -> Dict[str, int]:
+        """Counters for the perf harness (hits/misses/clears + live map sizes). Diagnostics only —
+        nothing reads these to decide anything."""
+        return {"attacker_hits": self.attacker_hits, "attacker_misses": self.attacker_misses,
+                "row_hits": self.row_hits, "row_misses": self.row_misses,
+                "clears": self.clears, "attackers": len(self._attackers),
+                "rows": len(self._rows)}
+
+    def encode(self, live: Any) -> np.ndarray:
+        """:func:`encode_block` for ``hp_tracker=None``, served from content-keyed caches."""
+        key = attacker_state_key(live)
+        if key is None:
+            # No attacker → the all-zero block, exactly as the uncached path produces it.
+            return inc.compute_team_block((), None, TEAM_SIZE)
+        threat = self._attackers.get(key)
+        if threat is None:
+            self.attacker_misses += 1
+            # `cast`, not a re-test: the not-None guard is the `key is None` early-return above
+            # (same two conditions), and `cast` returns its argument unchanged — see
+            # `_prior_candidates` for the same erasure-free narrowing.
+            threat = cast(inc.AttackerThreat, _attacker_threat(live, None))
+            if len(self._attackers) >= self.MAX_ATTACKERS:
+                self._attackers.clear()
+                self.clears += 1
+            self._attackers[key] = threat
+        else:
+            self.attacker_hits += 1
+        if len(self._rows) >= self.MAX_ROWS:
+            self._rows.clear()
+            self.clears += 1
+        mons = live.ours.mons
+        defenders = [_defender(mons[i]) if i < len(mons) else None for i in range(TEAM_SIZE)]
+        # Row hits are counted from the MAP's growth rather than by instrumenting the loop: the
+        # eviction check above guarantees no clear happens inside the call, so every entry minted
+        # during it is exactly one miss. Keeps `_rows` a plain dict (deepcopy-trivial) and keeps
+        # the hot loop free of a counting callback.
+        requested = sum(1 for d in defenders if d is not None)
+        before = len(self._rows)
+        block = inc.compute_team_block(defenders, threat, TEAM_SIZE,
+                                       row_cache=self._rows, attacker_key=key)
+        minted = len(self._rows) - before
+        self.row_misses += minted
+        self.row_hits += requested - minted
+        return block
+
+
+def encode_block(live: Any, hp_tracker: Any = None, memo: Optional[IncomingBeliefMemo] = None
+                 ) -> np.ndarray:
     """The incoming-damage / OHKO belief block (incoming_damage_v2) for one decision, from the
     :class:`~agents.battle.live_view.LiveView` read-model.
 
@@ -291,9 +460,15 @@ def encode_block(live: Any, hp_tracker: Any = None) -> np.ndarray:
     3 opp-active recovery scalars. Defensive: ``live`` is None / no opp active / our mon without
     stats degrades to zeros for that piece. ``hp_tracker`` (optional) types a revealed Hidden Power
     from its observation-narrowed prior (obs path threads it; the reward PBRS passes None → the
-    Smogon HP-type prior)."""
+    Smogon HP-type prior).
+
+    ``memo`` (optional) is an :class:`IncomingBeliefMemo` — a content-keyed cache that returns the
+    identical block faster. It is BYPASSED when ``hp_tracker`` is not None, because the tracker's
+    per-episode narrowing is not in the key."""
     if live is None:
         return np.zeros(TEAM_SIZE * inc.PER_MON + inc.RECOVERY, dtype=np.float32)
+    if memo is not None and hp_tracker is None:
+        return memo.encode(live)
     threat = _attacker_threat(live, hp_tracker)
     mons = live.ours.mons
     defenders = [_defender(mons[i]) if i < len(mons) else None for i in range(TEAM_SIZE)]

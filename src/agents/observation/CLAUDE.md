@@ -638,6 +638,18 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 **`agents/observation/incoming_damage.py` STAYS** — the reward PBRS (`reward_manager.py`) and the
 prober import its math core, and its fuzz test now targets `encode_block` directly. Only the obs
 write was removed.
+
+> ⚠️ **`reward_manager.py` is now the ONLY per-decision caller of `encode_block`**, and it measured
+> **60.0% of `process_turn_reward`** — so the pipeline carries a **content-keyed memo**
+> (`IncomingBeliefMemo` + `attacker_state_key` in `incoming_damage_encoder.py`;
+> `inc.compute_mon_row` + the optional `row_cache`/`attacker_key` in `incoming_damage.py`). It is
+> exact by construction — identical inputs ⇒ identical outputs, cached or not — and the key's
+> completeness is gated STRUCTURALLY (an AST walk over `_attacker_threat`'s board reads,
+> `incoming_damage_memo_test.py`) as well as differentially on real battles
+> (`agents/training/reward_skip_parity_fuzz_test.py`). **If you add a board read to
+> `_attacker_threat`, add it to `attacker_state_key` in the same edit** — the AST gate will tell
+> you, but an under-key is a silently wrong reward, not a crash. Rationale + measurements:
+> `src/agents/training/CLAUDE.md` → *The belief-block memo*.
 > **Downstream reader:** the prober engine (`src/main/prober/engine/`) resolves its obs
 > offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks
 > (`mm_off`, and since gen3_entity_rehome_v1 also `om_off`/`tm_off` — ThreatView/saliency

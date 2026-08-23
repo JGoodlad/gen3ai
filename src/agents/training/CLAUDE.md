@@ -54,6 +54,13 @@ the function reads — a test that still passes, for the wrong reason.
 
 ## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
 
+> **Where the reward lives.** `reward_manager.py` (the terms, the folds, `RewardConfig`,
+> `RewardBreakdown` and the composition census) · `reward_weights.py` (every tunable MAGNITUDE —
+> weights, bonuses, thresholds, clamps; re-exported by `reward_manager`, so the old import path
+> still resolves) · `reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) ·
+> `progress_clock.py` (the no-progress clock the reward READS). Changing a value in
+> `reward_weights.py` is a RETRAIN-class change, not a knob.
+
 The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged terms**
 (design `designs/ai_v5/design_markovian_reward_and_features.md`). Every `RewardBreakdown` field is one
 entry in `RewardBreakdown._REGISTRY` mapping name → `RewardClass`. The **BIAS class is folded
@@ -376,9 +383,84 @@ the tracker path doesn't thread, so eval traces / falsify / `cf_mc_return` inher
 
 ⚠️ **Do NOT "optimize" the Φ potentials by carrying/telescoping Φ** — recompute-from-the-memoized-
 view IS the exactness guarantee, and the reasoning lives in `_pbrs_step`'s docstring where someone
-would try it. The one expensive Φ input is `pbrs_belief`'s `encode_block` at **60% of the stage**
-(measured), whose safe answer is content-keyed memoization; it is the named DEFERRED follow-up in
-the ledger, and its trigger condition has fired.
+would try it. The one expensive Φ input, `pbrs_belief`'s `encode_block` at **60% of the stage**,
+got the safe answer instead — a content-keyed memo, next.
+
+#### The belief-block memo — `IncomingBeliefMemo` (`gen3_belief_block_memo_v1`)
+
+Φ_belief's `encode_block` measured **60.0% of `process_turn_reward`** (`compute_team_block` 42.5 /
+`_attacker_threat` 10.8) — the largest single item anywhere in the per-decision CPU budget, and
+`reward_manager.py` is the tree's **only** per-decision caller of that pipeline. It now answers
+from a per-manager, **content-keyed** cache
+(`agents/observation/incoming_damage_encoder.IncomingBeliefMemo`), threaded as
+`encode_block(live, memo=…)` and cleared at `reset()` (episode scope).
+
+**Two caches, both on content:**
+- `attacker_state_key(live)` → the `AttackerThreat`. The key is `(species, types, move_ids, status,
+  atk/spa/spe stages, our reflect, our light screen, weather)` — the opponent active keeps all of
+  those for runs of turns.
+- `(attacker_key, Defender)` → that mon's `PER_MON` row (`inc.compute_mon_row`, factored out of
+  `compute_team_block` for exactly this). `Defender` is a frozen dataclass over primitives rebuilt
+  fresh from the board every call, so it **is** its own key — no coverage question on that side.
+
+Plus one algebraic identity in the inner loop: the crit branch computes
+`gen3_damage_max(..., screen=False, …)`, which with **no screen up** has argument-for-argument the
+same inputs as the modal call, so `dmax_crit == 2·dmax` exactly and the second formula evaluation
+is skipped on the overwhelmingly common screenless board.
+
+**Why content-keyed and not `_state_epoch`-scoped.** An epoch key is strictly WEAKER here: same
+epoch ⇒ same content ⇒ the content key hits anyway, so the epoch adds no hit it does not already
+have — while a per-turn scope would DELETE the cross-turn reuse that is the entire win. The reward
+path calls `encode_block` exactly ONCE per decision, so a turn-scoped cache has a structural hit
+rate of zero. Content-keying also makes the clone/deepcopy question vanish: unlike a cache keyed on
+an object identity or a `battle_tag`, a cross-arm hit here is *correct* rather than a hazard.
+
+**And it is NOT the telescoping Φ that `_pbrs_step` refuses.** Nothing accumulates and nothing is
+carried; dropping the memo at any moment changes only speed (pinned:
+`test_clearing_at_any_point_changes_nothing`). Content, not history.
+
+**Measured** (2026-08-23, the same order-alternated same-process A/B; box at load 31-36, so
+absolutes are contaminated and the RATIO is the claim): **~1.25× on `process_turn_reward`** over
+five runs of 2000-5500 paired decisions (1.321 / 1.254 / 1.186 / 1.214 / 1.294), plus a load-free
+**−24.0% Python calls per call** (484.2 → 368.1, a `sys.setprofile` count — a different instrument
+from the cProfile figure above, not comparable to it). Cache hit rate 48-58% of lookups under
+random play. Against the ~23-27% reward share that is ~5-6% of worker CPU.
+
+**Gates.** The key's completeness is proven twice, and neither proof is a reading of the code by
+eye: `incoming_damage_memo_test.py` **AST-walks `_attacker_threat`** for every attribute reached
+from `live` (including through `getattr`) and fails if one appears that the key does not carry —
+the "enumerate the doors, not the reads you noticed" discipline of the `live_view` epoch memo,
+applied to a pure function — and the same file pins `AttackerThreat`'s field list, since the proof
+is a claim about that constructor's arguments. `reward_skip_parity_fuzz_test.py` adds the
+**differential** half on real boards: every decision's key is recorded against the freshly-derived
+belief, and a key seen twice must carry the identical belief — 3,956 repeat-key tests over 1,003
+distinct keys in a 4,959-decision run (verified failing: a deliberately under-keyed build reports
+`two boards share attacker key … but differ on ['spa_tail','spa_mean']`).
+That same fuzz covers the memo end-to-end **by construction**, because `_shadow=True` means
+"compute everything the slow way": the twin runs with the skip disabled AND `_belief_memo = None`,
+so `GEN3AI_REWARD_VERIFY=1` is a live per-field test of key completeness in any run. Memo hit
+counts are printed and FLOORED — a clean run in which the cache never served anything would be
+evidence about the uncached path only.
+
+#### `reset()` clears every `_prev_phi_*`, DERIVED (`gen3_prev_phi_reset_v1`)
+
+`Gen3RewardManager.reset()` cleared its PBRS carry-overs from a hand-written list, and that list
+omitted `_prev_phi_roar` for the whole of its life: eight potentials declared in `__init__`, seven
+cleared, nothing anywhere to notice. The set is now derived from the instance (`_prev_phi_fields`),
+and the pin (`reward_manager_test.py::test_reset_clears_every_prev_phi_potential`) derives it the
+same way — a hand list in the test would have passed the whole time too.
+
+**The leak was benign by COINCIDENCE, not by contract**, which is why it is fixed rather than
+documented. `_pbrs_step` zeroes Φ at a terminal fold, so a normal episode end leaves
+`_prev_phi_roar == 0.0`; the next episode's first window then charges `γ·Φ_roar(s₁) − 0.0` where
+the correct fresh start (`prev is None`) charges `0.0`. Equal only when `Φ_roar(s₁) == 0` — and s₁
+is the board **after turn 1 resolves**, not the opening board, so an opponent that opens with
+Dragon Dance / Calm Mind breaks it. Measured over random-play bridge battles: non-zero at the first
+window in **3/185 battles (1.6%)**, a one-off ≈ −0.25 per positive boost stage — rare under random
+play, and a trained boost-opener raises it. The second channel the
+coincidence never covered at all: a `reset()` that lands MID-battle leaves the last **non-terminal**
+Φ_roar, an arbitrary value. (Before `--all-shaping-pbrs` became the default in 2026-08 the fold
+never ran at all, so `_prev_phi_roar` stayed `None` and there was nothing to leak.)
 
 ## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
 

@@ -7,6 +7,9 @@ folds the production TurnDelta from the event log and drives TWO reward managers
   * ON  — ``self_ko_hp_penalty = W`` (= 2.5)
   * OFF — ``self_ko_hp_penalty = 0.0`` (the default)
 
+both under ``all_shaping_pbrs=False``, which is the composition in which a BIAS term is LIVE at all
+(see ``_config``) and is checked at startup by ``_assert_arm_is_live`` rather than assumed.
+
 and asserts the invariants the unit tests can only check on a hand-built delta — that the REAL
 protocol path produces ``our_move_id ∈ {explosion, selfdestruct}`` + ``we_fainted`` on a self-KO,
 and that:
@@ -46,7 +49,11 @@ from agents.action.mask_generator import Gen3ActionMasker
 from agents.battle.gen3_battle import Gen3Battle
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import SELF_KO_MOVES, TurnDelta
-from agents.training.reward_manager import Gen3RewardManager, RewardConfig
+from agents.training.reward_manager import (
+    Gen3RewardManager,
+    RewardConfig,
+    reward_class_composition,
+)
 from agents.training.slot_registry import SlotRegistry
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.teambuilder import Gen3Teambuilder
@@ -113,10 +120,27 @@ Adamant Nature
 """
 
 
+def _config(weight: float) -> RewardConfig:
+    """The composition under test — and `all_shaping_pbrs=False` is LOAD-BEARING, not tidiness.
+
+    `self_ko_penalty` is a BIAS term, and `--all-shaping-pbrs` (the DEFAULT since 2026-08-18)
+    ZEROES every BIAS term but `no_progress_tax` — before the weight is ever consulted. Built with
+    the default this fuzz asserted `−W·hp` on a term its own composition forces to 0.0, so it
+    FAILED on the first real self-KO it ever saw. It is the vacuity family in its second form: not
+    a test that asserts nothing, but a test whose configuration makes its own claim unreachable.
+
+    So the arms are pinned to the composition in which the flag under test is LIVE. Read the
+    activeness from `_bias_term_active`, never from the flag names — that is the single source
+    `reward_class_composition` prints at launch, and `_assert_arm_is_live` below checks it at
+    startup rather than trusting this comment.
+    """
+    return RewardConfig(self_ko_hp_penalty=weight, all_shaping_pbrs=False)
+
+
 class _BattleState:
     def __init__(self):
-        self.mgr_on = Gen3RewardManager(config=RewardConfig(self_ko_hp_penalty=W))
-        self.mgr_off = Gen3RewardManager(config=RewardConfig(self_ko_hp_penalty=0.0))
+        self.mgr_on = Gen3RewardManager(config=_config(W))
+        self.mgr_off = Gen3RewardManager(config=_config(0.0))
         self.prev_ctx: Optional[BattleContext] = None
         self.last_action: Optional[int] = None
         self.prev_cursor: int = 0
@@ -242,9 +266,33 @@ class SelfKoPenaltyPlayer(Player):
             os._exit(1)
 
 
+def _assert_arm_is_live() -> None:
+    """Refuse to run in a composition that zeroes the term under test.
+
+    The bug this test shipped with was silent: the ON arm's `self_ko_penalty` was suppressed, so
+    the fuzz asserted a value its own config forced to 0.0. A startup check on the CENSUS (not on
+    the flag names) makes that unrepresentable — and it prints the composition, so a reader can see
+    which arm is live rather than infer it."""
+    on = reward_class_composition(_config(W))
+    off = reward_class_composition(_config(0.0))
+    print(f"Composition ON  : {on['bias']} BIAS terms active, self_ko_penalty="
+          f"{'LIVE' if 'self_ko_penalty' in on['bias_terms'] else 'SUPPRESSED'}", flush=True)
+    print(f"Composition OFF : {off['bias']} BIAS terms active, self_ko_penalty="
+          f"{'LIVE' if 'self_ko_penalty' in off['bias_terms'] else 'SUPPRESSED'}", flush=True)
+    if "self_ko_penalty" not in on["bias_terms"]:
+        print("\n❌ VACUOUS — the ON arm's composition SUPPRESSES self_ko_penalty, so every "
+              "assertion below would be about a structurally-zero field.", flush=True)
+        sys.exit(1)
+    if "self_ko_penalty" in off["bias_terms"]:
+        print("\n❌ the OFF arm must NOT charge self_ko_penalty — it is the no-op control.",
+              flush=True)
+        sys.exit(1)
+
+
 async def main(n_battles: int = 40) -> None:
     ts = int(time.time()) % 100000
     print(f"Self-KO Penalty Fuzz — gen3ou — {n_battles} battles (W={W})", flush=True)
+    _assert_arm_is_live()
     tb = Gen3Teambuilder(MIXED_TEAM)
     fuzz = SelfKoPenaltyPlayer(
         battle_format=BATTLE_FORMAT, team=tb, battle_class=Gen3Battle,

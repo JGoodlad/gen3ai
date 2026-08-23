@@ -1710,6 +1710,46 @@ class TestSeSwitchOpponentTracking(unittest.TestCase):
         bd = self._do_voluntary_switch(our, opp, turn=1)
         self.assertAlmostEqual(bd.se_switch, SE_SWITCH_BONUS, places=5)
 
+    def test_reset_clears_every_prev_phi_potential(self):
+        """`gen3_prev_phi_reset_v1` — EVERY PBRS carry-over is cleared, derived from the instance.
+
+        `_prev_phi_roar` was omitted from a hand-written list for the whole of its life: eight
+        potentials declared in `__init__`, seven cleared here, and nothing anywhere to notice. The
+        field set is therefore DERIVED (`_prev_phi_fields`), and this test derives it the same way
+        rather than naming the eight — a hand list here would have passed the whole time too.
+
+        The leak was benign only by COINCIDENCE, not by contract (see the commit): the terminal
+        `Φ(terminal)=0` convention leaves `_prev_phi_roar == 0.0` at a normal episode end, and the
+        first window of the next episode then charges `γ·Φ_roar(s₁) − 0.0` instead of the correct
+        `0.0` — which happens to be 0 only while the opponent has no positive boosts at that first
+        window. A coincidence is not a contract; the omission is fixed and pinned here.
+        """
+        mgr = Gen3RewardManager()
+        names = mgr._prev_phi_fields()
+        # The derivation must actually FIND the potentials — an empty set would make this vacuous.
+        self.assertGreaterEqual(len(names), 8, names)
+        self.assertEqual(set(names),
+                         {n for n in vars(mgr) if n.startswith("_prev_phi_")})
+        for n in names:
+            setattr(mgr, n, -1.234)
+        mgr.reset()
+        leaked = {n: getattr(mgr, n) for n in names if getattr(mgr, n) is not None}
+        self.assertEqual(leaked, {},
+                         f"reset() left {sorted(leaked)} carrying a value across the episode "
+                         f"boundary — the first PBRS window of the next episode would shape off "
+                         f"the previous episode's Φ")
+
+    def test_reset_clears_the_belief_memo(self):
+        """The belief memo is episode-scoped. Correctness does not depend on it (content-keyed —
+        a stale entry can only be a hit on identical content), but the bound should not be spent
+        on a finished battle's team."""
+        mgr = Gen3RewardManager()
+        mgr._belief_memo._attackers[("x",)] = None
+        mgr._belief_memo._rows[("x", "y")] = (0.0,)
+        mgr.reset()
+        self.assertEqual(mgr._belief_memo.stats()["attackers"], 0)
+        self.assertEqual(mgr._belief_memo.stats()["rows"], 0)
+
     def test_independent_tracking_per_mon(self):
         """Each mon has its own tracker entry — one mon being blocked doesn't affect another."""
         tyranitar = _make_mon("ROCK", "DARK")

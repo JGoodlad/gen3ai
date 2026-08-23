@@ -15,7 +15,7 @@ no torch) so they unit-test without a battle.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Sequence, Tuple
+from typing import Hashable, MutableMapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -305,9 +305,16 @@ def _channel_threat(cands: Sequence[Candidate], d: Defender, atk_tail: float, at
                 # Burn still applies; we keep the (boosted) Def — a defender at +Def being OHKO'd is
                 # rare, so this stays a calibrated tail term, not a worst-case calc. Blending the
                 # crit branch lifts a move that only KOs on a crit out of the P(KO)~0 floor.
-                dmax_crit = 2 * gen3_damage_max(c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
-                                                screen=False, weather=w, burned=burned)
-                pko_cr = (1.0 - _CRIT_P) * pko_nc + _CRIT_P * p_ko(dmax_crit, d.hp_remaining)
+                #
+                # ⚠️ When NO screen is up, the screen-free call below has ARGUMENT-FOR-ARGUMENT the
+                # same inputs as the `dmax` call above, and `gen3_damage_max` is pure — so
+                # `dmax_crit == 2 * dmax` EXACTLY. This is an algebraic identity (same function,
+                # same arguments), not an approximation, so reusing `dmax` is bit-identical and
+                # halves the formula evaluations on the overwhelmingly common screenless board.
+                base_crit = dmax if not screen else gen3_damage_max(
+                    c.power, int(atk_tail), cdef, stab=stab, type_eff=eff,
+                    screen=False, weather=w, burned=burned)
+                pko_cr = (1.0 - _CRIT_P) * pko_nc + _CRIT_P * p_ko(2 * base_crit, d.hp_remaining)
             # expected dmg ≈ the max-roll damage scaled by the mean/tail stat ratio × mean roll
             # (damage is ~linear in Atk; avoids a second full calc on the obs hot path).
             ratio = (atk_mean / atk_tail) if atk_tail > 0 else 1.0
@@ -320,9 +327,51 @@ def _channel_threat(cands: Sequence[Candidate], d: Defender, atk_tail: float, at
     return best_nc, best_cr, best_exp, best_revealed
 
 
+def compute_mon_row(d: Defender, a: AttackerThreat) -> Tuple[float, ...]:
+    """The ``PER_MON`` floats for ONE defender against one attacker belief.
+
+    A **pure function of ``(d, a)``** and this module's constants — no board reads, no clock, no
+    hidden state — which is what makes it safely memoizable on its content by a caller that can
+    name ``a``'s identity (see ``incoming_damage_encoder.IncomingBeliefMemo``). Factored out of
+    :func:`compute_team_block` for exactly that reason; the arithmetic is unchanged.
+
+    Fields are written by NAME into the returned tuple, so the producer and every consumer share
+    one layout contract — inserting a field is a one-line add here and a stale consumer offset
+    cannot silently read the wrong channel."""
+    if d.has_sub:
+        # A defender behind a Substitute can't be KO'd this turn (the hit eats the Sub).
+        phys_nc = phys_cr = spec_nc = spec_cr = phys_exp = spec_exp = revealed = 0.0
+    else:
+        phys_nc, phys_cr, phys_exp, phys_rev = _channel_threat(
+            a.phys, d, a.atk_tail, a.atk_mean, a=a,
+            screen=a.our_reflect, is_phys=True)
+        spec_nc, spec_cr, spec_exp, spec_rev = _channel_threat(
+            a.spec, d, a.spa_tail, a.spa_mean, a=a,
+            screen=a.our_light_screen, is_phys=False)
+        revealed = phys_rev if phys_cr >= spec_cr else spec_rev   # provenance of the dominant channel
+    outspeed = p_outspeed(d.spe, a.spe_dist, our_boost=d.boost_spe,
+                          opp_boost=a.boost_spe,
+                          our_para=(d.status == Status.PAR), opp_para=a.para)
+    # Expose the crit RISK as the delta (crit-inclusive − no-crit ∈ [0, _CRIT_P]) — a decorrelated
+    # "crit tax" feature, not the near-redundant absolute crit-inclusive line.
+    row = [0.0] * PER_MON
+    row[IDX_PHYS_EXP] = phys_exp
+    row[IDX_SPEC_EXP] = spec_exp
+    row[IDX_PHYS_PKO] = phys_nc
+    row[IDX_SPEC_PKO] = spec_nc
+    row[IDX_PHYS_CRIT_DELTA] = max(0.0, phys_cr - phys_nc)
+    row[IDX_SPEC_CRIT_DELTA] = max(0.0, spec_cr - spec_nc)
+    row[IDX_OUTSPEED] = outspeed
+    row[IDX_THREAT_REVEALED] = revealed
+    return tuple(row)
+
+
 def compute_team_block(defenders: Sequence[Optional[Defender]],
                        attacker: Optional[AttackerThreat],
-                       n_slots: int) -> np.ndarray:
+                       n_slots: int,
+                       *,
+                       row_cache: Optional[MutableMapping[Hashable, Tuple[float, ...]]] = None,
+                       attacker_key: Optional[Hashable] = None) -> np.ndarray:
     """The incoming-KO belief block: per our mon (slot-aligned to the team), the phys/spec
     expected-damage-fraction + the modal no-crit P(KO) + the crit-risk DELTA per channel + P(outspeed)
     + the dominant threat's revealed-provenance; then the 3 recovery scalars.
@@ -333,42 +382,35 @@ def compute_team_block(defenders: Sequence[Optional[Defender]],
 
     ``defenders`` slots may be ``None`` (empty / fainted / stats not yet known) — the loop skips
     them, leaving that mon's row zeroed. That has always been the behaviour; the parameter type
-    used to say ``List[Defender]`` and simply did not describe it."""
+    used to say ``List[Defender]`` and simply did not describe it.
+
+    **Optional row memo.** ``row_cache`` + ``attacker_key`` turn the per-defender loop into a
+    content-keyed lookup on ``(attacker_key, d)``. It is used only when BOTH are supplied, and
+    ``attacker_key`` must be a value that uniquely determines ``attacker`` — the caller owns that
+    proof (``incoming_damage_encoder.attacker_state_key``), because this module cannot see the
+    board ``attacker`` was derived from. ``Defender`` is a frozen dataclass over primitives, so it
+    is its own key. Identical inputs ⇒ identical outputs whether cached or not: the memo is an
+    optimisation of a pure function, never a state carry."""
     out = np.zeros(n_slots * PER_MON + RECOVERY, dtype=np.float32)
     if attacker is None:
         return out
+    cache = row_cache if attacker_key is not None else None
     for i, d in enumerate(defenders[:n_slots]):
         if d is None:
             continue
-        if d.has_sub:
-            phys_nc = phys_cr = spec_nc = spec_cr = phys_exp = spec_exp = revealed = 0.0
+        if cache is None:
+            row = compute_mon_row(d, attacker)
         else:
-            phys_nc, phys_cr, phys_exp, phys_rev = _channel_threat(
-                attacker.phys, d, attacker.atk_tail, attacker.atk_mean, a=attacker,
-                screen=attacker.our_reflect, is_phys=True)
-            spec_nc, spec_cr, spec_exp, spec_rev = _channel_threat(
-                attacker.spec, d, attacker.spa_tail, attacker.spa_mean, a=attacker,
-                screen=attacker.our_light_screen, is_phys=False)
-            revealed = phys_rev if phys_cr >= spec_cr else spec_rev   # provenance of the dominant channel
-        outspeed = p_outspeed(d.spe, attacker.spe_dist, our_boost=d.boost_spe,
-                              opp_boost=attacker.boost_spe,
-                              our_para=(d.status == Status.PAR), opp_para=attacker.para)
-        # Expose the crit RISK as the delta (crit-inclusive − no-crit ∈ [0, _CRIT_P]) — a decorrelated
-        # "crit tax" feature, not the near-redundant absolute crit-inclusive line.
-        phys_crit_delta = max(0.0, phys_cr - phys_nc)
-        spec_crit_delta = max(0.0, spec_cr - spec_nc)
-        # Write each field by NAME (not a positional tuple) so the producer and every consumer
-        # share one layout contract — inserting a field is a one-line add here, and a stale
-        # consumer offset can't silently read the wrong channel.
+            ck = (attacker_key, d)
+            cached = cache.get(ck)
+            if cached is None:
+                cached = compute_mon_row(d, attacker)
+                cache[ck] = cached
+            row = cached
         base = i * PER_MON
-        out[base + IDX_PHYS_EXP] = phys_exp
-        out[base + IDX_SPEC_EXP] = spec_exp
-        out[base + IDX_PHYS_PKO] = phys_nc
-        out[base + IDX_SPEC_PKO] = spec_nc
-        out[base + IDX_PHYS_CRIT_DELTA] = phys_crit_delta
-        out[base + IDX_SPEC_CRIT_DELTA] = spec_crit_delta
-        out[base + IDX_OUTSPEED] = outspeed
-        out[base + IDX_THREAT_REVEALED] = revealed
+        # One float64→float32 store per field, exactly as the field-by-field writes did; the
+        # NAMES that order them live in `compute_mon_row`.
+        out[base:base + PER_MON] = row
     rec = n_slots * PER_MON
     out[rec + IDX_RECOVERY_RATE] = attacker.recovery_rate
     out[rec + IDX_RECOVERY_CURES] = attacker.cures_status
