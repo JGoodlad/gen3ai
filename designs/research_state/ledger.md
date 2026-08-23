@@ -3312,3 +3312,17 @@ not touch it, and it is a LABEL-QUALITY question, not a halt.
 **Gates**: routine gate (`-m "not slow and not e2e"`) green; ruff + mypy; the three new
 `TestAnchorRefusal` cases revert-verified; `cf_producer_integration_test` +
 `cf_audit_integration_test` green. Probe harness (gitignored): `tmp/anchor_probe/`.
+
+### OWNER CONSTRAINT (2026-08-23): the LADDER PATH is permanent — any poke-env streamline/rebuild must preserve online play
+
+Registered against the in-flight poke-env census and every future infra design: **the system must
+remain able to play on the real Showdown ladder** (websocket, live server, real accounts/timing).
+Implications per option: (A) slimming spares the entire client/transport stack — dead-weight
+deletion targets other gens/unused players/replaced data, never `ps_client`; (B) a native battle
+layer is ladder-compatible BY CONSTRUCTION if done at the PARSING seam — the protocol stream is
+identical from websocket and bridge, so one state tracker serves both transports (and improves
+ladder confidence: today's double bookkeeping is two trackers that must agree); (C) bridge-native
+can simplify the TRAINING path only — the asyncio client and its race guards stay for the ladder,
+so C's payoff is scoped to training-path deletion and it takes on a DUAL-PLAYER maintenance cost
+that would need its own behavior-parity harness (the node/rust precedent). The census verdict and
+any A/B/C decision doc must carry this constraint in its first section.
