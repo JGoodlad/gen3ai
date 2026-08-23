@@ -23,10 +23,10 @@ Three jobs:
 
 Regenerate after an intentional architecture change:
 
-    export PYTHONPATH=$PYTHONPATH:src
     python -m agents.model.delivery_graph \\
         --dot designs/architecture_graph.dot \\
         --json src/agents/model/delivery_graph_snapshot.json
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 import json
 import os

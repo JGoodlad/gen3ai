@@ -12,7 +12,8 @@ populated, finite views:
       formula path on a real species).
 
 Run directly (bridge-backed, no Showdown server):
-    PYTHONPATH=src python3 src/main/prober/belief_obs_fuzz_test.py [n_battles]
+    python3 src/main/prober/belief_obs_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 import asyncio
 import sys

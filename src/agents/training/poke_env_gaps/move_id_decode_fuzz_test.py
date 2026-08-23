@@ -21,8 +21,8 @@ Coverage (move slots, our-HP slots, opp-HP slots) is tracked and asserted > 0 â€
 a Hidden Power is INCONCLUSIVE. Any violation raises immediately with the offending mon/decision.
 
 Run directly (no server â€” in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/move_id_decode_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

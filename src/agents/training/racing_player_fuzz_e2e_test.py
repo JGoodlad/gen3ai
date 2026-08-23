@@ -2,8 +2,8 @@
 
 Needs a LIVE Showdown server on a private 9XXX port (NEVER 8000/8001):
     npm run showdown -- 9123          # separate shell
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/racing_player_fuzz_e2e_test.py [--episodes 40] [--widen 0.003] [--port 9123]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 WHY: static analysis was inconclusive — the per-battle lock (ps_client.py:202) is held across
 `_choose_move`'s await, which *should* stop `battle2` mutating mid-decision, yet training crashed

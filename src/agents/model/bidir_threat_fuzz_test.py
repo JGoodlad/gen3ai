@@ -14,7 +14,8 @@ weather — and asserts, every decision:
       i.e. the unrevealed columns actually get priced (the feature is live on real states).
 
 Run directly (bridge-backed, no Showdown server):
-    PYTHONPATH=src python3 src/agents/model/bidir_threat_fuzz_test.py [n_battles]
+    python3 src/agents/model/bidir_threat_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 import asyncio
 import sys

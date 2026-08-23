@@ -39,8 +39,8 @@ Classification of opp_last_move_id=None cases (not bugs):
                          (should be 0; indicates a poke-env parsing gap)
 
 Run directly (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

@@ -25,8 +25,8 @@ Runs three targeted scenarios:
       matches known priority, and that we_moved_first=None on switch turns.
 
 Run directly (requires: npm run showdown):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

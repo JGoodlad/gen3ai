@@ -23,7 +23,8 @@ per-tag caches stay BOUNDED across battles. On the pre-fix code ``_trackers`` gr
 battle and this trips within a handful of episodes.
 
 Run:
-    PYTHONPATH=$PYTHONPATH:src python3 src/agents/training/selfplay_opponent_leak_fuzz_test.py [n_battles]
+    python3 src/agents/training/selfplay_opponent_leak_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 import sys
 import numpy as np

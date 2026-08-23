@@ -18,8 +18,8 @@ The deltas are folded from the event log (``TurnDelta.build_from_events`` over t
 signals). On ANY violation: print the offending field + both values, then ``os._exit(1)``.
 
 Run directly (no server needed — runs via the local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/reward_value_regression_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

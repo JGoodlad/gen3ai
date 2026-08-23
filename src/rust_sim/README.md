@@ -991,7 +991,7 @@ node src/rust_sim/harness/dump_gen3_mechanics.js            # rewrites the inven
 node src/rust_sim/harness/dump_gen3_mechanics.js --check    # DRIFT GATE: committed
                                                             # gen3_items/abilities.json
                                                             # vs the resolved dist
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
     tools/pokemon_data_extractor/sync.py --datasets items abilities
 ```
@@ -1046,7 +1046,7 @@ The dex golden is dumped from the `agents.gen3_data` facade (the Python runtime'
 source of truth). Regenerate after any data or category-derivation change:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
     src/rust_sim/harness/gen_dex_golden.py
 ```

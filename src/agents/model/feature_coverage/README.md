@@ -82,6 +82,6 @@ a dead obs dim is the most valuable thing this suite can find.
 ## Run
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python -m pytest src/agents/model/feature_coverage/ -q
 ```

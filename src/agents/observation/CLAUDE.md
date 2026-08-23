@@ -44,7 +44,7 @@ Benchmarks section).
 ### The workflow — do this for every change
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 
 # 1. BEFORE you edit: capture a baseline on the CURRENT code (stash/commit your change away,
 #    or run on a clean checkout), saving the full output.
@@ -244,7 +244,7 @@ This package is **type-checked at ZERO errors**, on the same config and the same
 pass before it lands:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy   # scope from mypy.ini; must be clean
 ```
 

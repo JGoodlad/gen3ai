@@ -21,10 +21,10 @@ doing. Run on an otherwise-idle box for a clean baseline.
 
 Not a pytest target; run as a script. In-process bridge, no server.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/bridge_impl_throughput_benchmark.py --workers 8 --seconds 60
     python src/utils/bridge/bridge_impl_throughput_benchmark.py --workers 48 --seconds 120
     python src/utils/bridge/bridge_impl_throughput_benchmark.py --impl rust --workers 1 --seconds 30
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

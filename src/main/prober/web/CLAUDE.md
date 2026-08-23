@@ -6,7 +6,7 @@ FastAPI app whose handlers are a thin adapter over **`ProbeSession`**, the same 
 uses.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python -m main.prober.web models/                         # a models ROOT -> pick any run in it
 python -m main.prober.web models/run_<timestamp>          # one run -> the picker offers only it
 python -m main.prober.web models/ --port 6108 --job-workers 1 --open
@@ -36,7 +36,8 @@ next to the thing deployed.)*
 
 ```bash
 # ad hoc, on the workstation (the deployed instance is the systemd unit above)
-export PYTHONPATH=$PYTHONPATH:src && python -m main.prober.web /home/goodlad/dev/gen3ai/models/
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python -m main.prober.web /home/goodlad/dev/gen3ai/models/
 
 # from anywhere else without the tunnel, over SSH
 ssh -p 2222 -L 6008:localhost:6008 goodlad@workstation.g5d.io   # then http://localhost:6008
@@ -656,7 +657,7 @@ forcing it with `--disable-web-security --user-data-dir` hung chrome outright).
 ## Tests
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python3 -m pytest src/main/prober/web -q                       # unit + the snapshot gate
 python3 -m pytest src/main/prober/web -q -m integration        # + headless chrome (needs a browser)
 ```

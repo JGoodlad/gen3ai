@@ -30,8 +30,8 @@ Coverage (over a whole run, reported + asserted so the hard case can't silently 
      Choice-Band mons in the gen3ou team pool reliably produce it once they're locked into a move.
 
 Run directly (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/move_alignment_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

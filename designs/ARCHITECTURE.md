@@ -33,7 +33,8 @@ fails unless each one is reachable in the graph or allowlisted with a reason
 artifacts in the same commit:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python -m agents.model.delivery_graph \
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python -m agents.model.delivery_graph \
     --dot designs/architecture_graph.dot \
     --json src/agents/model/delivery_graph_snapshot.json
 ```

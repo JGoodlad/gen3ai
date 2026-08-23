@@ -22,8 +22,8 @@ Runs three targeted scenarios:
       verifies held encoding never spuriously sets consumed=1.
 
 Run directly (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/item_consumption_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

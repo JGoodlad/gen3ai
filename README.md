@@ -69,7 +69,8 @@ python src/main/train_rl_agent.py --debug --steps 10000
 done; `--dry-run` prints the plan without touching anything. One of its steps is
 `pip install -e .`, so `import agents` works from any directory with nothing exported. Skipped the
 bootstrap, or working in a git worktree? `export PYTHONPATH=$PYTHONPATH:src` is the equivalent
-fallback and is what you will still see at the top of many scripts.
+fallback — and in a **worktree** it is not a fallback but a requirement, since the install names
+the main checkout's `src/`. Run-directly scripts say so in their own `Run:` header.
 
 How to work in this repo — tests, ports, the worktree flow: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 Full training, evaluation, and test commands: **[docs/RUNNING.md](docs/RUNNING.md)**.

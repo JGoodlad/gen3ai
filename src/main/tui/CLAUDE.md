@@ -59,5 +59,6 @@ the launcher's fresh `BINDINGS` don't shadow `super+c`, and that `v` pauses the 
 refresh `Timer` (and is handled app-locally, not routed to the supervisor).
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/tui -q
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python3 -m pytest src/main/tui -q
 ```

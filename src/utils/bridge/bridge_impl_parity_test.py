@@ -47,8 +47,8 @@ Two checks (both restricted to the battles that completed under BOTH impls):
 Run directly as a script (builds the rust binary via the helper if the
 `$POKESIM_SIM_BRIDGE_BIN` override isn't set):
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/bridge_impl_parity_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Under pytest it also exposes `test_rust_node_bridge_parity`, SKIPPED unless a pre-built rust
 binary is available (`$POKESIM_SIM_BRIDGE_BIN` set, or `src/rust_sim/target/release/sim_bridge`

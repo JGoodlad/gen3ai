@@ -32,8 +32,8 @@ Filtered out (not physics-validatable from the HP delta alone): multi-hit moves,
 confounded by same-line residuals, fixed-damage (validated separately), and unresolved species/moves.
 
 Run directly (no `test_*` funcs → pytest collects nothing):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/damage_op_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

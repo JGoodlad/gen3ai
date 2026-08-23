@@ -15,8 +15,8 @@ Setup:
     (HiddenPowerSpammer) biases toward choosing HP whenever available.
 
 Run (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/hidden_power_tracker_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 import asyncio
 import os

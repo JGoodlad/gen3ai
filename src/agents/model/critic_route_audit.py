@@ -35,9 +35,9 @@ that trained it — and after the critic-route deletion wave a PRE-v96 checkpoin
 needs its own copy of this file, because the arms it deletes cannot be reconstructed from HEAD.
 
 Usage:
-  export PYTHONPATH=$PYTHONPATH:src
   python -m agents.model.critic_route_audit <checkpoint.zip> \\
       --states 'models/<run>/eval_traces/**/*_states.npz' [--max-states 6000] [--out report.json]
+  (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

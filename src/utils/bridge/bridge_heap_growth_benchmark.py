@@ -13,10 +13,10 @@ length), then recommends a recycle interval.
 
 Not a pytest target; run as a script. In-process bridge, no server.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/bridge_heap_growth_benchmark.py 25m                # 25 min, sample/50
     python src/utils/bridge/bridge_heap_growth_benchmark.py 3000 --sample-every 100
     python src/utils/bridge/bridge_heap_growth_benchmark.py 20m --prod-fps 1200 --prod-envs 64
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

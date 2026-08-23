@@ -11,7 +11,6 @@ signal had to be drawn twice for a single reader. ``python -m main.prober <run>`
 the web app rather than a terminal UI — the muscle memory keeps working, the surface changed.
 
 Run:
-    export PYTHONPATH=$PYTHONPATH:src
     python -m main.prober <run_dir | models_dir>      # -> http://127.0.0.1:6008
     python -m main.prober.query <cmd> ...             # the JSON CLI, for agents and scripts
 """

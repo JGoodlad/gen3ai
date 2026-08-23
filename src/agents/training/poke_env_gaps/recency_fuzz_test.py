@@ -9,8 +9,8 @@ counter = current turn − last-event turn, same 10-cap log-saturation. Any mism
 the offending (side, species, channel).
 
 Run directly:
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/recency_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

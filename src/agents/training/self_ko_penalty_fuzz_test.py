@@ -21,8 +21,8 @@ Coverage (a healthy self-KO actually occurred) is REPORTED — random play is st
 with zero self-KOs is a NOTICE, not a pass. On ANY invariant violation: print + ``os._exit(1)``.
 
 Run directly (no server needed — runs via the local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/self_ko_penalty_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

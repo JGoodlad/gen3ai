@@ -7,9 +7,9 @@ mechanizes that: the runbooks (`designs/research_state/gen*_endofrun_runbook.md`
 pre-registration — the rules are encoded here as PURE FUNCTIONS citing them — and one invocation
 produces one verdict artifact:
 
-    export PYTHONPATH=$PYTHONPATH:src
     python -m main.endofrun models/<run> [--ref models/<prev-run>] [--max-states 6000]
         [--skip elo,audits,awareness] [--out designs/research_state/measurements]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Outputs `<out>/<run>_endofrun.json` (every measured number + every verdict with the rule that
 produced it) and a Markdown report beside it. Steps are independent and fail SOFT — a step that

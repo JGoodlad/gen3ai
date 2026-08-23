@@ -438,8 +438,7 @@ If the tunnel is down, or you want a throwaway instance on a different port (not
 by the service — use `--port 6108` for a second one):
 
 ```bash
-# on the workstation — point it at models/ and pick any run from the header
-export PYTHONPATH=$PYTHONPATH:src
+# on the workstation (the main checkout — the editable install covers the import path)
 python -m main.prober.web /home/goodlad/dev/gen3ai/models --port 6108
 # -> http://127.0.0.1:6108
 

@@ -28,8 +28,8 @@ gen4→gen5, NOT the base data/conditions.ts. The counter starts at 2 and DOUBLE
 successful stall move (gen5), capped at 8 (gen4 ``counterMax`` → "does not fall below 1/8").
 
 Run directly (no server needed; in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/protect_success_prob_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

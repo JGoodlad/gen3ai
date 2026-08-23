@@ -32,8 +32,8 @@ Coverage counters track the corner paths (boosts / CLEARBOOST / switch / Pain-Sp
 double-KO / multi-hit / cant) so a path that never fired is reported as a coverage hole.
 
 Run directly (no server needed — local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/turn_delta_fold_equivalence_fuzz_test.py [--minutes 15]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

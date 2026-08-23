@@ -27,7 +27,6 @@ nothing is revealed, and to exactly the marginal again for a teammate that carri
 cannot also occupy a hidden slot, so it is floored out.
 
 CLI (writes the artifact + prints a HELD-OUT accuracy evaluation):
-    export PYTHONPATH=$PYTHONPATH:src
     python -m agents.training.species_priors [--out data/teams/gen3_species_priors.json]
                                              [--no-eval] [--folds 5] [--seed 0]
 """

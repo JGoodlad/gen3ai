@@ -18,8 +18,8 @@ against an INDEPENDENT from-scratch recount over the battle's FULL event log:
 Any mismatch raises with the offending (pair/side, channel, got, want).
 
 Run directly:
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/pair_history_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

@@ -4,8 +4,8 @@ Scratch tool (tmp/, not shipped). The golden is `tmp/search_golden_node.json`, c
 from `src/utils/bridge/search_driver.js` by `tmp/search_golden.py`; this drives the Rust
 binary over the IDENTICAL request sequence and compares every field of every response.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/rust_sim/harness/search_impl_parity.py [--golden PATH] [--bin PATH] [-v]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Deliberately talks raw stdin/stdout JSON — NOT through `SearchSession` — so it stays
 valid while the Python seam is being reworked by another agent.

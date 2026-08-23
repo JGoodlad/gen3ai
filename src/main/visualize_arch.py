@@ -7,7 +7,6 @@ rather than as thousands of primitive ops; pass --flat for the raw op graph. No
 Showdown server or checkpoint required — graph topology is weight-independent.
 
 Usage:
-    export PYTHONPATH=$PYTHONPATH:src
     python3 src/main/visualize_arch.py                 # -> models/_arch/gen3_arch.onnx
     python3 src/main/visualize_arch.py --out /tmp/x.onnx
 

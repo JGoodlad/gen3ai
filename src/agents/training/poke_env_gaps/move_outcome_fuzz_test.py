@@ -24,8 +24,8 @@ fail, or at least two distinct cant reasons — a green run with zero coverage
 would validate nothing.
 
 Run directly (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/move_outcome_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

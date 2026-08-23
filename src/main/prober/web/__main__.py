@@ -1,6 +1,5 @@
 """Serve the prober web views.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python -m main.prober.web models/run_<timestamp>
 
 Binds loopback on 6008 by default (beside tensorboard's 6006 and the arch viewer's 6007). Put a

@@ -21,7 +21,6 @@ Teams are keyed by ``sha1(team_str)[:10]`` — the SAME fingerprint convention a
 ``pin_sha`` / fold-back provenance, so archetype labels join every other record.
 
 CLI (writes the artifact + prints the distribution / cross-tab / trap shortlist):
-    export PYTHONPATH=$PYTHONPATH:src
     python -m agents.training.team_archetypes [--out data/teams/gen3_team_archetypes.json]
 """
 from __future__ import annotations

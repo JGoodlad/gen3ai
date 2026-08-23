@@ -45,8 +45,8 @@ Arena Trap and only clicks moves (keeps Dugtrio in). Both run Gen3Battle so the 
 CHOICE_REJECTED event is recorded by the poke-env _handle_battle_message hook.
 
 Run directly (no server needed — local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/action/trapping_signals_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

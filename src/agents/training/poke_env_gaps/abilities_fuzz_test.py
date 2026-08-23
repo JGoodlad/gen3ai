@@ -21,8 +21,8 @@ from gen3_abilities.json) and that the dex-prior IDs always resolve through
 the ability_to_id mapping.
 
 Run directly (no server needed; runs in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/abilities_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

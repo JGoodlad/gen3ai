@@ -14,8 +14,8 @@ we_first, forced windows, the id columns (species/move dex nums), the three deri
 Any mismatch raises with (row, column, got, want) + an event trace on the first failure.
 
 Run directly:
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/event_window_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

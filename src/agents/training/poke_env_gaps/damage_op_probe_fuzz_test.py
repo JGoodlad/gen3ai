@@ -13,8 +13,8 @@ The op band is the SAME `_op_band` the random fuzz uses (one source of truth), f
 stats/boosts/types/weather/screens/item — and we assert the sim's exact damage lands inside it.
 
 Run directly (no server — in-process sim via the Node bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/damage_op_probe_fuzz_test.py
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

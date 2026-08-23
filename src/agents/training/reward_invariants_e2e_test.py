@@ -31,8 +31,8 @@ Coverage — one invariant per non-zero-able field on `RewardBreakdown`:
   meta       : NaN/inf rejection across every field
 
 Run directly (requires: npm run showdown):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/reward_invariants_e2e_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 import asyncio

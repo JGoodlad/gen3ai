@@ -19,8 +19,8 @@ sleep WAKE belief two ways — the second is the one that proves we got the gen3
    predicts it.
 
 Run directly (no server needed; in-process via the local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/sleep_wake_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

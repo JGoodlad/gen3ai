@@ -39,9 +39,9 @@ matches are what made this common in training; against fixed heuristic bots it a
 HOW TO RUN (use a private 9XXX port — NEVER 8000/8001)
 -----------------------------------------------------
     npm run showdown -- 9124          # separate shell
-    export PYTHONPATH=$PYTHONPATH:src
     GEN3_RACE_GET_TIMEOUT_S=8 GEN3_RACE_TRACE=1 \
       python src/agents/training/forceswitch_deadlock_fuzz_e2e_test.py [--port 9124] [--battles 500] [--widen 0.015]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
   - ``GEN3_RACE_GET_TIMEOUT_S=8`` makes the watchdog fail fast (default 120s) instead of hanging.
   - ``GEN3_RACE_TRACE=1`` dumps the wedged battle's cross-thread interleaving on a trip.

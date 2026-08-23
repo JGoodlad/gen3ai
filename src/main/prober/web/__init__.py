@@ -7,7 +7,6 @@ on every page comes back from a `ProbeSession` method verbatim.
 
 Nothing here imports the TUI, and `ProbeSession` is unmodified.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python -m main.prober.web <run_dir>            # http://127.0.0.1:6008
 
 Read-only views (the ones a terminal renders worst, where the JSON already exists):

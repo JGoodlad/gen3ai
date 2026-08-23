@@ -13,8 +13,8 @@ well-formed and exact:
 
 Run directly (no pytest collection — no ``test_*`` functions), like the other fuzz suites::
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/eval_sharding_fuzz_test.py [n_games] [shard_games] [--compile] [--neural-opponent]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Skips with a clear message if no checkpoint is available (it needs real weights to play).
 """

@@ -25,8 +25,8 @@ Scenario coverage (printed; soft — a run that never hits the path warns but do
   5. Residual-progress windows are actually observed (the guarded path was exercised).
 
 Run directly (no server needed; in-process via the local BattleStream bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/progress_clock_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

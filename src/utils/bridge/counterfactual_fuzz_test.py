@@ -1,6 +1,7 @@
 """Counterfactual replay-to-end faithfulness — REAL bridge battles, no server. Run directly:
 
-    export PYTHONPATH=$PYTHONPATH:src && python3 src/utils/bridge/counterfactual_fuzz_test.py [n]
+    python3 src/utils/bridge/counterfactual_fuzz_test.py [n]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Two decisive oracles + a divergence check, per recorded battle:
 

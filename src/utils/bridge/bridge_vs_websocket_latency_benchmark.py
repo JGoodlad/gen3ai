@@ -10,10 +10,10 @@ Not a pass/fail test (no `test_*`; pytest collects nothing) — a profiler, like
 the **ratio** between transports is the load-stabler signal. The websocket arm needs a live server
 (default :9001 — pass --port); the bridge arm needs none.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/bridge_vs_websocket_latency_benchmark.py [--steps 600] [--port 9001]
                                                                      [--mode both|bridge|websocket]
                                                                      [--no-persistent]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

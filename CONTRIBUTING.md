@@ -46,17 +46,21 @@ conda activate gen3ai_stable
 python -c "import agents, poke_env; print('ok')"
 ```
 
-**No `export PYTHONPATH` needed.** Step 3 of the bootstrap runs `pip install -e .`, which puts
-this checkout's `src/` on the import path permanently — so `import agents` works from any
-directory, in any shell, in your IDE and in your debugger. If you skipped the bootstrap, or you
-are on a machine without the install, the old incantation is still exactly equivalent:
+**No `export PYTHONPATH` needed — in the main checkout.** Step 3 of the bootstrap runs
+`pip install -e .`, which puts this checkout's `src/` on the import path permanently — so
+`import agents` works from any directory, in any shell, in your IDE and in your debugger. If you
+skipped the bootstrap, or you are on a machine without the install, the old incantation is still
+exactly equivalent:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src      # the fallback; harmless when the install exists
 ```
 
-You will still see that line at the top of many run-directly scripts and in `CLAUDE.md` command
-examples. It is correct either way and is being retired in one reviewed pass rather than piecemeal.
+**In a git worktree it is not a fallback but a requirement** — the install names ONE absolute
+path, the main checkout's `src/`, so a worktree with no `PYTHONPATH` runs its own tests against
+*main's* code. See [Git workflow](#git-workflow--never-commit-on-main). Run-directly scripts no
+longer carry the export in their `Run:` header; they carry a one-line reminder of this case
+instead.
 
 > **Install from the MAIN CHECKOUT, never from a git worktree.** An editable install records one
 > absolute path in a `.pth` file. Install from a worktree, delete the worktree, and that path is
@@ -172,9 +176,18 @@ commits happen in a branch or a git worktree, and land on `main` by push:
 git worktree add ../gen3ai-myfeature -b myfeature
 cd ../gen3ai-myfeature
 ./scripts/bootstrap.sh          # detects the worktree; symlinks instead of rebuilding
+export PYTHONPATH=$PYTHONPATH:src   # MANDATORY here — see below
 # ... work, test ...
 git push origin myfeature:main
 ```
+
+🚨 **The export is mandatory in a worktree, and it is the one thing that fails silently.** The
+editable install points at the main checkout's `src/`, and a `.pth` entry cannot know which
+worktree you are standing in — so `pytest` run here with no `PYTHONPATH` collects *this* tree's
+test files while importing *main's* code, and every result is about a tree you did not edit.
+`bootstrap.sh` therefore **skips** the install step in a worktree rather than pointing the `.pth`
+somewhere that will later be deleted. `src/packaging_gate_test.py` fails loudly with exactly this
+diagnosis, so it is caught rather than believed — but export first and don't rely on that.
 
 A fresh worktree gets an empty submodule directory and no build artifacts. `bootstrap.sh`
 handles it — it detects a linked worktree and symlinks `dist/` and `node_modules/` from the main

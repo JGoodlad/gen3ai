@@ -27,9 +27,9 @@ Reading the numbers: absolute µs/ms scale with machine load; the **per-stage sh
 **calls/decision** are the load-stable signal. Run on an idle box for a clean baseline.
 
 Run directly (no server needed — local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/trainer_turn_benchmark.py                 # defaults
     python src/agents/training/trainer_turn_benchmark.py --decisions 200 --warmup 3 --seed 0
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

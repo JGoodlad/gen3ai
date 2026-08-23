@@ -35,9 +35,9 @@ on a saturated box and had to be superseded **with the conclusion reversed**. Tw
 Absolute ms scale with whatever else the box is doing. **The ratio and the spread are the
 load-stable signal.** Not a pytest target; run as a script. No server.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/search_impl_throughput_benchmark.py
     python src/utils/bridge/search_impl_throughput_benchmark.py --battles 3 --reps 8 --turns 5,15,30
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

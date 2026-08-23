@@ -22,10 +22,10 @@ directory on ``sys.path[0]``, and ``observation/types.py`` would then shadow the
 across runs. For a clean baseline, run it on an otherwise-idle machine.
 
 Run directly (no server needed — local bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/obs_build_benchmark.py                       # defaults
     python src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22
     python src/agents/training/obs_build_benchmark.py --battles 400 --seed 0
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

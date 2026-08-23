@@ -19,8 +19,8 @@ Coverage for 1 & 2 is tracked and asserted > 0 (a clean pass that never exercise
 vacuous); the player nudges toward HP to populate the history. Any violation raises immediately with
 the offending decision. Run directly (no server — in-process via the local BattleStream bridge):
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/hidden_power_typed_obs_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

@@ -8,11 +8,11 @@ reproduces every value — so the Rust dex and the Python runtime agree by
 construction, and the one piece of *logic* (Gen-3 move-category derivation) is
 pinned, not just the raw JSON.
 
-Run (needs the project conda env + PYTHONPATH=src):
+Run (needs the project conda env):
 
-    export PYTHONPATH=$PYTHONPATH:src
     /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \\
         src/rust_sim/harness/gen_dex_golden.py
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 Output: ../tests/vectors/dex_golden.txt
 """

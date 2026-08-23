@@ -20,8 +20,8 @@ BattleStream bridge (same mechanism as the other ``*_fuzz_test.py`` files) and v
      illegal action was ever selected; the opponent must also vary its choices (stochastic).
 
 Run directly (needs deps/pokemon-showdown bridge + data/ mappings; no server):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/stable_opponent_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

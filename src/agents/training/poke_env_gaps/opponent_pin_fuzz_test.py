@@ -15,8 +15,8 @@ stream, and asserts per episode:
   3. On BOT episodes the opponent does NOT field the opponent pin (a pool draw), and rosters vary.
 
 Run directly (no server; in-process bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/opponent_pin_fuzz_test.py [n_episodes]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

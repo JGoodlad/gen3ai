@@ -24,8 +24,8 @@ default) on the stale order and asserts it yields a valid action â€” no raise â€
 N real battles.
 
 Run directly (needs deps/pokemon-showdown bridge + data/ mappings; no server):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/order_to_action_race_fuzz_test.py [n_battles]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations

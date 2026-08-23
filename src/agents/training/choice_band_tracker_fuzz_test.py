@@ -23,8 +23,8 @@ a coverage FAILURE). Curated scripted matchups drive the hard edges deterministi
 full-pool sweep adds breadth across the whole species/item space.
 
 Run (no server needed; in-process via the local bridge). Argument is a TIME BUDGET in MINUTES:
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/choice_band_tracker_fuzz_test.py [minutes]   # default 1
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 Tiers: 1 (dev) / 5 (pre-merge) / 20 (pre-ship; MUST hit zero violations + full coverage).
 """
 from __future__ import annotations

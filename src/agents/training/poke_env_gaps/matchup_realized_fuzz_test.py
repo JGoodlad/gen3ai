@@ -12,8 +12,8 @@ parses the trainee's own protocol stream, and asserts per episode:
      opponents' rosters VARY (a pool draw, not any single fixed team).
 
 Run directly (no server; in-process bridge):
-    export PYTHONPATH=$PYTHONPATH:src
     python src/agents/training/poke_env_gaps/matchup_realized_fuzz_test.py [n_episodes]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

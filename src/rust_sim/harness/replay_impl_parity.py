@@ -4,8 +4,8 @@
 Scratch tool (tmp/, not shipped). Sibling of `tmp/search_impl_parity.py`, which gates the
 SEARCH family (`open_root` / `expand_many`) against a CAPTURED golden.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/rust_sim/harness/replay_impl_parity.py [--records tmp/search_golden_node.json] [--bin PATH] [-v]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 WHY A SEPARATE FILE (rather than extending search_impl_parity.py)
 -----------------------------------------------------------------

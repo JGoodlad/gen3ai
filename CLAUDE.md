@@ -115,9 +115,10 @@ export PYTHONPATH=$PYTHONPATH:src
 
 `pyproject.toml` + `pip install -e .` (run once, from the **main checkout**) puts `src/` on the
 import path permanently, so `import agents` / `import poke_env` resolve from any directory in any
-shell with nothing exported. The incantation stays in the commands throughout this file because it
-is **harmless where the install exists and load-bearing where it does not** — a fresh clone before
-`pip install -e .`, a CI job, a container, a bare venv. Both paths work; neither is being retired.
+shell with nothing exported. The incantation stays in the commands **throughout this file** for one
+specific reason: **this file's reader is usually an agent, and an agent is usually in a worktree**,
+where the export is not optional (below). It is also load-bearing in a fresh clone before
+`pip install -e .`, in CI, in a container, in a bare venv. Both paths work; neither is retired.
 
 🚨 **IN A GIT WORKTREE THE EXPORT IS STILL MANDATORY, and this is the one that will bite an
 agent.** The install names ONE absolute path — the main checkout's `src/` — so a worktree that
@@ -127,9 +128,12 @@ this (it compares the resolved `agents` against its own `__file__`), so it is ca
 believed — but the fix is to export, every time, in a worktree. Optional means optional **in the
 main checkout**.
 
-> **Phase 3 of the contributor paydown will sweep the 63 `export PYTHONPATH` docstring headers in
-> run-directly scripts.** They are executable instructions people copy, so they get one reviewed
-> mechanical pass rather than incidental edits. Until then, leave them alone.
+**The `Run:` headers in run-directly scripts no longer carry the export** (swept 2026-08-22, one
+reviewed pass over ~65 files). A fuzz test's / benchmark's / harness's header is now the bare
+command plus one standard closing line — `(in a linked worktree, first: export
+PYTHONPATH=$PYTHONPATH:src)` — so the block above it is copy-pasteable as-is in the main checkout
+and the worktree case is stated where the reader already is. The parenthetical is prose, never a
+command; do not "tidy" it into the block.
 
 **The two mechanisms coexist, and the ORDER between them is load-bearing.** `PYTHONPATH` entries
 land in `sys.path` *before* site-packages; an editable install's `.pth` lands *after*. That
@@ -296,14 +300,19 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | capability | *can this run here?* | *(unmarked)* · `integration` · `sim` · `browser` · `e2e` |
 | **cost** | *should this run routinely?* | **`slow`** |
 
-| Tier | Needs | Measured 2026-08-14 |
+**Counts re-measured 2026-08-22** (`pytest -m <tier> --collect-only -q`); **durations are still the
+2026-08-14 readings** and have not been re-taken — the box has carried a live run since, and a
+duration measured under starvation is not a measurement (see above). The tree grew ~32% in tests
+over that window, so read the two columns as answering different questions.
+
+| Tier | Needs | Count (2026-08-22) · duration (2026-08-14) |
 |---|---|---|
-| *(unmarked)* | nothing — pure in-process | 4536 tests, **127 s** serial (~56 s at `-n 4`) |
+| *(unmarked)* | nothing — pure in-process | 5978 tests, **127 s** serial (~56 s at `-n 4`) |
 | `integration` | an out-of-process dep, no battles, no browser | ~16 s total |
-| `sim` | real battles in-process via the bridge, no server | 45 tests, ~100 s total |
+| `sim` | real battles in-process via the bridge, no server | 52 tests, ~100 s total |
 | `browser` | headless chrome | 53 tests, **1426 s** — ALL of it also `slow` |
 | `e2e` | a live Showdown server | run directly as scripts |
-| `slow` | *(orthogonal)* minutes, not seconds | 71 tests |
+| `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
 
 **MEASURE BEFORE YOU TIER — the intuitive answer was wrong.** The assumption going in was that the
 rust/node bridge parity was the expensive thing. It is not: the **browser** tests are **88% of the
@@ -359,10 +368,10 @@ that the guard may only ever ADD a failure, never clear one.
 
 ### Which command to run
 
-| When | Command | Measured |
+| When | Command | Count (2026-08-22) · duration (2026-08-14) |
 |---|---|---|
-| **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 4536 tests, **127 s** (~56 s at `-n 4`) |
-| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 4634 tests, **4 m 36 s** |
+| **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 5978 tests, **127 s** (~56 s at `-n 4`) |
+| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 6067 tests, **4 m 36 s** |
 | **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | **31 m** |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | ~24 m |

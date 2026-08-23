@@ -194,7 +194,7 @@ ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist         deps/pokemon-s
 ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules deps/pokemon-showdown/node_modules
 
 # Run (30 battles per scenario ≈ 2 min)
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python src/agents/training/poke_env_gaps/transition_fuzz_test.py 30
 
 # More thorough (50 battles ≈ 5 min)

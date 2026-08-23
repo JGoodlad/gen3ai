@@ -19,7 +19,6 @@ Two extras over a plain fuzz:
 Not a pytest target (no ``test_*`` → collected-but-empty); run as a script. Real battles via the
 in-process bridge, **no server** — never touches the :8001 training server.
 
-    export PYTHONPATH=$PYTHONPATH:src
     python src/utils/bridge/bridge_session_fuzz_test.py 2000               # 2000 episodes, 1 env
     python src/utils/bridge/bridge_session_fuzz_test.py 90m                # 90 min, 1 env
     python src/utils/bridge/bridge_session_fuzz_test.py 30m --workers 64   # 64 concurrent children
@@ -27,6 +26,7 @@ in-process bridge, **no server** — never touches the :8001 training server.
     python src/utils/bridge/bridge_session_fuzz_test.py 30m --slow-ms 3000 # report episodes > 3s
     python src/utils/bridge/bridge_session_fuzz_test.py 2000 --impl rust   # the Rust sim_bridge
     python src/utils/bridge/bridge_session_fuzz_test.py 30m --impl rust --workers 48
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
 ``--impl`` picks the bridge child binary (``node`` default, ``rust`` for the pokesim
 ``sim_bridge``). Both must pass: this is the ONLY gate on the persistent-child reuse and

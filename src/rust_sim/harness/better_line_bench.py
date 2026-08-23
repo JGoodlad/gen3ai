@@ -11,7 +11,8 @@ materializer measurement. With a REAL extractor the model share is constant acro
 end-to-end speedup is strictly LOWER than what this prints. Treat it as the upper bound on what
 switching the driver buys `better_line`, and the per-op table as the mechanism.
 
-    export PYTHONPATH=$PYTHONPATH:src && python src/rust_sim/harness/better_line_bench.py [reps]
+    python src/rust_sim/harness/better_line_bench.py [reps]
+    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 from __future__ import annotations
 

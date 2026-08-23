@@ -4,7 +4,7 @@ The **prober**: browse the `eval_traces` a training run writes and inspect *why 
 what it did* at any saved decision point.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python3 -m main.prober <models_dir | run_dir>        # the browser front end -> :6008
 python3 -m main.prober.query <cmd> ...               # the JSON CLI, for agents and scripts
 ```
@@ -1396,7 +1396,8 @@ and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `ap
 `@integration`, headless chrome with the network blocked — see `web/CLAUDE.md`):
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/main/prober -q
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python3 -m pytest src/main/prober -q
 ```
 
 `textual`, `fastapi`, `uvicorn`, `jinja2` and `httpx` are pinned in `environment.yml`
@@ -1411,7 +1412,8 @@ emitted from Python, all JS **vendored** (no CDN, no build step, no `node_module
 adapts `ProbeSession` and nothing else — it is now the ONLY human-facing surface.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python3 -m main.prober.web models/   # :6008, pick any run
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
+python3 -m main.prober.web models/   # :6008, pick any run
 python3 -m main.prober.web --check-openapi                                # contract drift gate
 ```
 
