@@ -1752,3 +1752,33 @@ assertion is indistinguishable from a passing test, and only an adversarial read
   fixture keys is the finishing move if their flake class ever recurs.
 - Rule added to root `CLAUDE.md`'s fuzz-convention section. Routine suite 5,988 passed exit 0;
   fixed files 3× stable.
+
+### The mask-recovery fix lands — and EVERY historical flip/KL audit carried ~38% phantom legality (2026-08-22, opus agent, `a4d0942`)
+
+**The third vacuity's blast radius, measured**: `logits > -1e8` returned ALL-LEGAL on **0-of-800+
+sampled `states.npz` back to ai_v5_2** — the trace's logits were always pre-mask, so every
+ablation audit ever run scored flips/KL over an action space that was on average **38.4% wrongly
+counted legal** (min 18%, max 68%; 100% of rows carry ≥1 illegal action). The real mask was on
+disk all along, in the summary sibling's `invocations[i]["actions"]` `valid` bits.
+
+- **Fix**: `audit_states.recover_legal_mask` — npz `action_mask` → post-mask logits (exact
+  detection: any logit < −1e8 ⇔ post-mask) → summary sibling (row/width validated) →
+  LOUD `TraceMaskUnavailable`; `battle_recorder` now writes `action_mask [T,A]` so new traces
+  are self-contained; the audit's guard gained its missing half (all-legal now FAILS too).
+  7 new tests revert-verified; suite 5,997 exit 0.
+- **🚨 Historical numbers MOVE, non-uniformly, and RANKINGS change**: gen-17 `all` kl_mean −39%,
+  `h` −54%, but `t` **+25%** and `concat_cells` flips **+8%** — `t` and `h` SWAP rank. **The 24
+  committed pre-fix artifacts under `measurements/` are ORDINAL-ONLY WITHIN ONE FILE and never
+  comparable to a post-fix number** (warning now in the measurements README with the table).
+- **What SURVIVES untouched: every |dV| reading** — the critic delta never touches the mask —
+  so the v96 critic-route deletion wave, the gen-13.5 §4 frame-deletion license, and every
+  dV-keyed verdict stand as issued. The damage is confined to the policy-side flip/KL axis.
+- **Consequence for TODAY'S reads**: the E-battery's pooled numbers and the conditioned read's
+  absolute flip% were computed pre-fix (both instruments shared the defect, so their AGREEMENT
+  stands and paired deltas largely cancel it, but absolutes will shift). **The E4 conditioned
+  read must adopt `recover_legal_mask` and re-baseline E1 with it** — never compare a post-fix
+  E4 number to a pre-fix E1 number. Relay addendum issued.
+- *The family rule, now with its costliest instance: a guard that cannot fire is not a guard,
+  and the audit that owned this one printed "0 zero-legal rows" for a year while measuring
+  phantom actions. The only reason the big decisions survive is that the deletion-class calls
+  were deliberately keyed on dV, not flips — redundant meters just paid for themselves.*
