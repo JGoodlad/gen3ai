@@ -92,6 +92,17 @@ Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 ## Python Environment
 
+**`./scripts/bootstrap.sh` does all of the setup below** — conda env, submodule, the Showdown
+build, the worktree symlinks, the optional cargo build — idempotently, skipping whatever is
+already done, and verifies with the two static gates plus a ~10 s unit smoke. It is the one
+command a fresh clone (or a fresh worktree) needs. `--dry-run` prints the plan without touching
+anything; `--with-rust` / `--no-rust` skip the prompt; `--force` redoes the conda step.
+`CONTRIBUTING.md` is the human-facing version of the same thing.
+
+**The manual detail stays in this file on purpose** — a script that exists is documentation that
+runs, but an agent debugging a broken checkout needs to know what the steps *are*, not just that
+something automates them.
+
 The project uses a dedicated conda environment, **not** `deps/venv`. Always prefix commands with the correct interpreter and `PYTHONPATH`:
 
 ```bash
@@ -101,9 +112,29 @@ export PYTHONPATH=$PYTHONPATH:src
 
 The conda env is `gen3ai_stable`. `deps/venv` exists but is outdated — ignore it.
 
+**Two things `environment.yml` says that are load-bearing, and neither is a preference:**
+
+- The pip block opens with `--extra-index-url https://download.pytorch.org/whl/cu121`. The torch
+  pins are LOCAL-VERSION builds (`2.5.1+cu121`) and local versions are **not published on PyPI**,
+  so without that line `conda env create` fails outright on any fresh machine at the very first
+  step. Verified 2026-08-22 (PyPI offers `2.5.1`, never `2.5.1+cu121`).
+- `poke-env` is **deliberately absent**. This repo vendors the fork at `src/poke_env/` (57 modules
+  to upstream 0.15.0's 45) and the battle layer depends on the additions. A second installed copy
+  makes `import poke_env` depend on `sys.path` ORDER — and the failure is **silent**: upstream
+  imports cleanly and behaves subtly differently. It works today only because PYTHONPATH outranks
+  site-packages; an editable install's `.pth` lands *after* site-packages, which would invert it.
+  `src/poke_env_fork_gate_test.py` is the permanent guard (unmarked, 0.03 s, in every tier), and
+  it also fails if the pin is re-added to `environment.yml`. `asyncio==4.0.0` was removed for the
+  same class of reason — it is a deprecated backport of a stdlib module.
+
 ---
 
 ## Git Worktree Setup
+
+**`./scripts/bootstrap.sh` does this automatically.** It detects a linked worktree (the gitdir
+differs from the git *common* dir), resolves the main checkout from that, and creates exactly the
+two symlinks below — with the `[ -e ]` guard — instead of spending six minutes rebuilding. The
+manual recipe stays below because it is what you need when the script is not what went wrong.
 
 When opening a new git worktree (e.g. via Claude Code), the `deps/pokemon-showdown` submodule directory is created but left empty. Two steps are required before training or running tests:
 

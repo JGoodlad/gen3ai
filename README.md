@@ -57,21 +57,28 @@ carry their measurements, and retractions are recorded as retractions.
 ## Getting started
 
 ```bash
-git clone --recursive git@github.com:JGoodlad/gen3ai.git
-conda env create -f environment.yml
-# a 1-minute training smoke, no server needed:
+git clone git@github.com:JGoodlad/gen3ai.git && cd gen3ai
+./scripts/bootstrap.sh              # conda env, submodule, sim build — then verifies itself
+
+conda activate gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src
+# a 1-minute training smoke, no server and no GPU needed:
 python src/main/train_rl_agent.py --debug --steps 10000
 ```
 
-Full setup, training, evaluation, and test commands: **[docs/RUNNING.md](docs/RUNNING.md)**.
+`bootstrap.sh` is idempotent and fail-loud — re-run it any time and it skips what is already
+done; `--dry-run` prints the plan without touching anything.
+
+How to work in this repo — tests, ports, the worktree flow: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+Full training, evaluation, and test commands: **[docs/RUNNING.md](docs/RUNNING.md)**.
 The architecture as it stands today: **[designs/ARCHITECTURE.md](designs/ARCHITECTURE.md)**.
 How it got here, version by version: **[designs/CHANGELOG.md](designs/CHANGELOG.md)**.
 
 ## Contributing — or just say hi
 
 You don't need to train a model to contribute here, and you don't need to contribute to be
-welcome. All of these are valued:
+welcome. **[CONTRIBUTING.md](CONTRIBUTING.md)** has the mechanics — setup, which test command to
+run before you push, the port rules, and the worktree workflow. All of these are valued:
 
 - **Ideas and questions.** Open an issue to argue about ADV theory, RL design, or why the agent
   under-switches. Half the good levers in this project started as a conversation.

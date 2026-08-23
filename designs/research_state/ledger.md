@@ -1856,3 +1856,37 @@ nothing on this lineage. Report `tmp/plasticity_audit_report.md`.
   tmp/) on revolution-one's checkpoints before assuming the null transfers. Also: activation-side
   metrics structurally cannot see a TRAINABILITY loss — a late checkpoint fitting a fresh target
   slower than fresh init would reopen this regardless of rank.
+
+### Phase 0 LANDED — both landmines closed, and both closures VERIFIED against a live index (2026-08-22)
+
+`scripts/bootstrap.sh` (idempotent, fail-loud, `--dry-run`) + `CONTRIBUTING.md` + the two
+`environment.yml` fixes. **Phase 2's safety precondition is now satisfied** — the `poke-env` pin
+is gone and the fork-wins gate is permanent, so an editable install can no longer let upstream
+win silently.
+
+- **Landmine 2 CLOSED with a measurement, not an assertion.** Negative control against PyPI only
+  reproduced the exact fresh-machine failure (`No matching distribution found for
+  torch==2.5.1+cu121`; PyPI offers 25 versions of torch, none with a `+cu121` local version).
+  With `--extra-index-url https://download.pytorch.org/whl/cu121` as the first pip-block line, a
+  real `pip download --no-deps -r` resolved and fetched torchaudio/torchvision/triton, and pip's
+  finder reports `2.5.1+cu121` for torch. Parsed back with **conda's own** `conda.env.env.from_file`
+  (not a hand-rolled YAML load): 72 pip entries, one flag line, torch family intact.
+- **Landmine 1 CLOSED.** `poke-env==0.15.0` and the deprecated `asyncio==4.0.0` backport removed,
+  each with an in-file DELIBERATELY ABSENT block stating the hazard. `src/poke_env_fork_gate_test.py`
+  is the permanent guard (unmarked, 0.03 s, 4 tests): the live import must land under this
+  checkout's `src/`; a decoy package built in a tempdir and made to win in a subprocess proves the
+  gate is not inert (revert-verification); and a text scan fails if the pin is re-added.
+  ⚠️ The live `gen3ai_stable` env **still has PyPI poke-env installed** and the fork still wins
+  there — because PYTHONPATH outranks site-packages, which is exactly the ordering Phase 2 inverts.
+  The env was deliberately not mutated (a training run shares the box); the removal is from the
+  FILE, so it takes effect on the next `conda env update --prune` or fresh create.
+- Bootstrap correctness was gated by construction rather than by running it: every mutating
+  command routes through one `run()` wrapper, so `--dry-run` exercises the whole control flow.
+  Verified branch-by-branch — conda skip/update/force/hash-invalidate, worktree symlink
+  create+skip, the **sticky** fallback when the main checkout has no artifacts (tested on a real
+  `git worktree`), the main-checkout `npm ci`/build path at three states of completeness, and the
+  ERR trap. The trap needed `set -E`: without errtrace it is not inherited by functions, so a
+  failure inside `run()` exited **silently** — found by injecting one, not by reading the code.
+- `package.json`'s `test` script used the retired `-m 'not integration and not e2e'` marker set
+  that the root CLAUDE.md forbids (it is how the obs-golden linchpin rode main red three times);
+  now `-m 'not slow and not e2e' -q -n 2`, and `setup` delegates to the bootstrap script.

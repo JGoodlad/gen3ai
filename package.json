@@ -5,9 +5,9 @@
   "scripts": {
     "showdown": "node deps/pokemon-showdown/pokemon-showdown start --no-security",
     "stop": "sh -c 'lsof -t -i :${1:-8000} | xargs kill -9 || echo \"Server not running\"' _",
-    "test": "conda run -n gen3ai_stable env PYTHONPATH=src python3 -m pytest src/ -m 'not integration and not e2e' -q",
+    "test": "conda run -n gen3ai_stable env PYTHONPATH=src python3 -m pytest src/ -m 'not slow and not e2e' -q -n 2",
     "test-all": "conda run -n gen3ai_stable env PYTHONPATH=src python3 -m pytest src/ -q",
     "sync-teams": "conda run -n gen3ai_stable env PYTHONPATH=src python3 tools/sample_team_downloader/sync.py",
-    "setup": "conda env create -f environment.yml || conda env update -f environment.yml && git submodule update --init && npm install --prefix deps/pokemon-showdown && npm run build --prefix deps/pokemon-showdown"
+    "setup": "./scripts/bootstrap.sh"
   }
 }

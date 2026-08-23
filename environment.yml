@@ -5,8 +5,32 @@ dependencies:
   - python=3.11.15
   - pip=26.0.1
   - pip:
+      # ------------------------------------------------------------------------------------
+      # THE PYTORCH WHEEL INDEX. `torch==2.5.1+cu121` (and torchaudio/torchvision/triton) are
+      # LOCAL-VERSION builds — the `+cu121` suffix — and local versions are NOT PUBLISHED ON
+      # PyPI. Without this line `conda env create -f environment.yml` fails outright on ANY
+      # fresh machine at the very first step, with
+      #
+      #     ERROR: Could not find a version that satisfies the requirement torch==2.5.1+cu121
+      #
+      # (verified 2026-08-22: PyPI offers 2.5.1, never 2.5.1+cu121). conda hands this pip
+      # block to `pip install -r`, and a requirements file honours pip flags as lines — so the
+      # flag belongs here, not in a README someone has to read first.
+      #
+      # `--extra-index-url` (not `--index-url`): PyPI stays primary and only the four torch
+      # wheels resolve here. Do not "tidy" it away; it is the fix for a reproducibility bug,
+      # not a preference.
+      #
+      # CPU-ONLY MACHINES: nothing here is CUDA-gated at import time, but this file installs
+      # ~2 GB of `nvidia-*-cu12` wheels a CPU box will never use. To build a CPU environment,
+      # copy this file and (a) point this line at https://download.pytorch.org/whl/cpu,
+      # (b) drop the `+cu121` local-version suffixes and the `triton` pin, (c) delete the
+      # twelve `nvidia-*-cu12` lines. Everything else — training on `--device cpu`, the whole
+      # test suite, the prober — works unchanged. We ship no such file because nobody here
+      # runs one; it is documented rather than engineered.
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      # ------------------------------------------------------------------------------------
       - absl-py==2.4.0
-      - asyncio==4.0.0
       - beautifulsoup4==4.14.3
       - certifi==2026.4.22
       - charset-normalizer==3.4.7
@@ -55,7 +79,26 @@ dependencies:
       - pettingzoo==1.26.1
       - pillow==12.1.1
       - pluggy==1.6.0
-      - poke-env==0.15.0
+      # ------------------------------------------------------------------------------------
+      # DELIBERATELY ABSENT — do not re-add either of these.
+      #
+      # `poke-env` (was pinned at 0.15.0 from PyPI). This repo VENDORS A FORK at `src/poke_env/`
+      # and that fork is authoritative — it is 57 modules to upstream 0.15.0's 45, and the
+      # battle layer depends on the additions. Installing the PyPI package alongside it creates
+      # a SILENT SHADOWING HAZARD: two importable `poke_env` packages, and which one wins is
+      # decided by sys.path order. It works today only because PYTHONPATH outranks
+      # site-packages. Under a `pip install -e .` (the packaging phase that follows this one)
+      # the editable `.pth` lands AFTER site-packages, so UPSTREAM WOULD SILENTLY WIN and the
+      # battle layer would quietly run on unforked code — no error, no warning, wrong results.
+      # Proved by experiment in both directions, 2026-08-22. Nothing in the environment
+      # declares poke-env as a dependency (every distribution's `requires` was scanned), so
+      # removing it costs nothing. `src/poke_env_fork_gate_test.py` is the permanent guard.
+      #
+      # `asyncio` (was pinned at 4.0.0). PyPI's own description: "Deprecated backport of the
+      # asyncio module; use the stdlib package instead." Python 3.11 ships asyncio in the
+      # standard library. The backport is at best inert and at worst a shadowing hazard of the
+      # same shape as the one above.
+      # ------------------------------------------------------------------------------------
       - protobuf==7.34.1
       - pygments==2.20.0
       - pyparsing==3.3.2

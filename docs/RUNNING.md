@@ -8,20 +8,24 @@ every flag, benchmark, and failure mode — lives in the `CLAUDE.md` files besid
 
 ## Environment
 
-Python via a conda environment:
+**One command does all of it**, idempotently, and verifies itself at the end:
 
 ```bash
-conda env create -f environment.yml        # creates gen3ai_stable
-conda env update -f environment.yml        # after environment.yml changes
+./scripts/bootstrap.sh          # --dry-run to see the plan; --with-rust to skip the prompt
 conda activate gen3ai_stable
 export PYTHONPATH=$PYTHONPATH:src          # every command below assumes this
 ```
 
-The battle simulator is a git submodule plus build artifacts:
+Setup mechanics for contributors — flags, the CPU-only variant, the worktree case — are in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md). What the script actually does, should you need to run a
+step by hand:
 
 ```bash
+conda env create -f environment.yml        # creates gen3ai_stable
+conda env update -f environment.yml        # after environment.yml changes
+
 git submodule update --init                             # deps/pokemon-showdown source
-cd deps/pokemon-showdown && npm install && npm run build  # node_modules + dist/
+cd deps/pokemon-showdown && npm ci && npm run build     # node_modules + dist/
 cargo build --release --bin sim_bridge --bin search_driver \
     --manifest-path src/rust_sim/Cargo.toml             # the Rust simulator (recommended)
 ```
@@ -29,6 +33,13 @@ cargo build --release --bin sim_bridge --bin search_driver \
 Build the Rust binaries before your first test run — a fresh checkout otherwise pays for
 `cargo build` inside the first Rust-backed test, which can saturate the box and cascade into
 spurious timeouts.
+
+Two `environment.yml` details that are load-bearing: the pip block opens with
+`--extra-index-url https://download.pytorch.org/whl/cu121` (the `torch==2.5.1+cu121` pins are
+local-version builds that PyPI does not carry, so without it `conda env create` fails on a fresh
+machine), and `poke-env` is **deliberately not installed** — this repo vendors the fork at
+`src/poke_env/`, and a second installed copy would silently shadow it depending on `sys.path`
+order. `src/poke_env_fork_gate_test.py` guards both.
 
 ## Training — no server required
 
@@ -127,11 +138,16 @@ attribution (`falsify`), counterfactual replays, and a beam search for better li
 
 ## Working in git worktrees
 
-A fresh worktree gets an empty submodule dir. Two steps (do **not** symlink the whole
-`deps/pokemon-showdown` directory — it breaks `git status`):
+A fresh worktree gets an empty submodule dir. `./scripts/bootstrap.sh` detects the worktree and
+does this for you; by hand it is two steps (do **not** symlink the whole `deps/pokemon-showdown`
+directory — it breaks `git status`):
 
 ```bash
 git submodule update --init
 ln -s <main-checkout>/deps/pokemon-showdown/dist deps/pokemon-showdown/dist
 ln -s <main-checkout>/deps/pokemon-showdown/node_modules deps/pokemon-showdown/node_modules
 ```
+
+⚠️ Guard those with `[ -e ]` and run them **only** in a worktree. In the main checkout `dist`
+already exists as a real directory, so `ln -s TARGET dist` creates `dist/dist` pointing at its
+own parent, `node build` dies with `ELOOP`, and every websocket-server path stops working.
