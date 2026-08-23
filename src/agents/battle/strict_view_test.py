@@ -87,6 +87,32 @@ def test_strict_view_hides_raw_battle(attr):
     assert ".live" in msg and ".legal" in msg  # the error guides to the accessors
 
 
+def test_a_property_that_raises_AttributeError_is_not_reported_as_a_boundary_violation():
+    """`__getattr__` fires for BOTH "no such attribute" and "the property raised
+    AttributeError while computing", and the boundary message is a confident lie in the second
+    case — it denies the existence of something the reader is looking straight at.
+
+    Observed for real (`gen3_live_view_build_micros_v1`): a `LivePokemon.from_pokemon` field
+    read that a duck-typed test stub did not satisfy surfaced as *"'StrictBattleView' has no
+    attribute 'live'"*, with the true cause four frames down and erased from the message. This
+    pins that the two cases are told apart.
+    """
+    class _Exploding:
+        def live_view(self):
+            raise AttributeError("'_FakeMon' object has no attribute 'protect_counter'")
+
+    sv = StrictBattleView(_Exploding())
+    with pytest.raises(AttributeError) as ei:
+        sv.live
+    msg = str(ei.value)
+    assert "EXISTS but raised AttributeError" in msg
+    assert "NOT a boundary violation" in msg
+    # …and the genuine violation still gets the boundary message, unchanged.
+    with pytest.raises(AttributeError) as ei2:
+        sv.definitely_not_a_surface
+    assert "has no attribute" in str(ei2.value) and ".live" in str(ei2.value)
+
+
 def test_strict_view_never_returns_raw_battle():
     b = _battle()
     sv = b.strict_view()

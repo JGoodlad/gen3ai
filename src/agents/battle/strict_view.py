@@ -124,6 +124,20 @@ class StrictBattleView:
     def __getattr__(self, name: str):
         """Called only when normal lookup fails. The raw battle is deliberately hidden,
         so guide the caller to the right vetted accessor rather than silently proxying."""
+        # ⚠️ `__getattr__` also fires when an attribute EXISTS but its property raised
+        # AttributeError internally — and the message below would then confidently deny the
+        # existence of something you are looking straight at. Observed for real: a
+        # `LivePokemon.from_pokemon` read that a test stub did not satisfy surfaced as
+        # "'StrictBattleView' has no attribute 'live'", with the actual cause four frames down
+        # and erased. Say which case this is before saying anything else.
+        if isinstance(getattr(type(self), name, None), property):
+            raise AttributeError(
+                f"{type(self).__name__}.{name} EXISTS but raised AttributeError while computing "
+                f"— this is NOT a boundary violation. The real failure is inside that property "
+                f"(most often a duck-typed stand-in for a poke-env object that is missing a "
+                f"field a read-model needs). Re-raise it from there, or run the property "
+                f"directly, to see the cause."
+            )
         raise AttributeError(
             f"{type(self).__name__!r} has no attribute {name!r}. The raw battle is "
             f"deliberately hidden behind this boundary — read current state via .live "

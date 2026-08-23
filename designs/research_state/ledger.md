@@ -3352,3 +3352,138 @@ files are live gates, not weight.
   edges (bookkeeping vs threading) and COMPOSE; the full exit is B+C under the ladder
   constraint. Sequencing left to the owner with the flywheel's slot economics — the census is
   the evidence base, not the verdict.
+
+### THE PERF CAMPAIGN'S REGISTER CLOSES — the last un-attacked stage was 88% a MISLABEL, and the thing actually costing 17% was never the mask (2026-08-23, `gen3_live_view_build_micros_v1`)
+
+The campaign's final named target was **`obs: legal + mask` — 0.145 ms, 22% of per-decision worker
+CPU**, carried forward from the Stage-B entry. Step 0 was the profile, and it did not size the
+stage differently — **it found the stage was not the thing at all.**
+
+| piece of the `obs: legal + mask` line | measured | verdict |
+|---|---|---|
+| the shared `LiveView` build inside `get_mask` | **0.203 / 0.223 ms — 88%** | not legality work; **re-attributed** |
+| `LegalActions.from_battle` (parse the request) | 0.017 ms — 7% | **IRREDUCIBLE** request work |
+| `get_mask`'s own work (11 bits + 2 integrity checks) | 0.0105 ms — 5% | **IRREDUCIBLE**, O(1) |
+
+- 🚨 **A memoized value is billed to whichever stage asks for it FIRST, and from then on the
+  profile names the wrong stage.** `battle.live_view()` memoizes per state-epoch
+  (`gen3_live_view_memo_v1`) and five stages read it; `get_mask` runs first, so it paid the whole
+  12-mon board build. **Measured by pre-building the view before the region: the stage falls
+  0.222/0.243 ms → 0.030/0.031 ms.** The brief's premise, this ledger's own line, and the sibling
+  reward entry's "weigh it against `obs: legal + mask` (22%)" were all reading the board build
+  under the mask's name. *Stage A did not just move a cost off four callers — it moved it onto
+  the name of the first one.* ⚠️ **Two live doc lines are SUPERSEDED by this entry and are left
+  in place under the explicit-only rule for `designs/*.md`**:
+  `design_incremental_obs_encoder.md`'s "`obs: legal + mask` (0.145 ms, 22% of worker CPU) is now
+  the largest un-attacked obs stage", and the Stage-B entry above that it quotes. The stage is
+  2.8%; the largest un-attacked item is the board build's *count*, named at the bottom of this
+  entry.
+- **The instrument is fixed, not annotated.** `trainer_turn_benchmark` now times
+  `obs: live_view (shared build)` on its own line (and lists it in `_GROUPS`, per that file's own
+  warning that a timed-but-unlisted stage vanishes from the total). Post-fix obs shares:
+  **live_view 17% · encode 26% · progress-clock 10% · tracker.record 6% · legal+mask 2.8%.**
+- **The legality half is closed as IRREDUCIBLE, and that is a real verdict.** There is **zero
+  redundancy left within a decision** — one `LiveView`, one `LegalActions`, one `get_mask`, one
+  each per decision; Stage A already took the redundancy. What remains is a request parse whose
+  input is per-decision by nature (the census's never-cache dims), an 11-bit array write, and two
+  integrity checks that are the tree's defence against the GIGO class. 2.8% of worker CPU, and
+  the right answer is to leave it alone.
+- **What WAS harvested: the build's cost, not its count.** Three derivations inside
+  `LivePokemon.from_pokemon` were pure functions of IMMUTABLE inputs, re-evaluated every build —
+  `Move.max_pp` (**18% of the build**, ~36 evaluations/decision of a dex constant), `Move.entry`
+  (inside it, two `GenData.from_gen` calls + two dict probes per read), and `_enum_name`/`_id`
+  (**6.6%**, the `.name` of a process-wide enum singleton reached through a
+  `DynamicClassAttribute` descriptor). `max_pp` is memoized per INSTANCE (`_id` / `_gen` /
+  `_from_transform` are write-once in `__init__`, grep-verified, so the answer cannot change over
+  an instance's life); the enums per MEMBER. **`entry` is memoized at MODULE scope keyed
+  `(gen, id)`, and that placement is a contract rather than a preference** —
+  `obs_materializer._PlayerSnapshot` justifies deep-copying the whole battle graph per
+  counterfactual arm with one sentence, *"`Pokemon`/`Move` carry an int `_gen` and look entries up
+  on demand"*, so an instance-held dex row would ride into every arm's clone and be duplicated.
+  The first draft cached it on the instance and would have shipped that; a module key is also the
+  better cache (shared across every instance of the same move). Pinned by a test that deep-copies
+  a warm `Move` and asserts `clone.entry is` the dex row. Plus two hot genexprs → list
+  comps, one doubled `mon.item` read, and five `getattr(mon, …, default)` calls → direct property
+  reads (every one of those properties exists on every `Pokemon`, so the default was unreachable
+  and could only ever have swallowed an AttributeError raised *inside* a property).
+- 🐛 **That last one was the pass's own mistake, and the suite caught it.** "The default is
+  unreachable" is true for a real `Pokemon` and FALSE for the one duck-typed stand-in in the tree:
+  `battle_recorder_test._FakeMon` omitted four of the five, so 16 tests went red. The stub was
+  COMPLETED rather than the optimization reverted — its own comment already claimed it carried
+  "fields `LivePokemon.from_pokemon` reads", and the `getattr` defaults were what let that claim
+  be false without anything saying so. *A defensive default does not only hide a bug at runtime;
+  it hides an incomplete test double from the test that uses it.*
+- 🐛 **AND it exposed a live DIAGNOSTIC defect, fixed here** (`strict_view.py`). The failure
+  surfaced as **`'StrictBattleView' has no attribute 'live'`** — a confident denial of something
+  that plainly exists — because `__getattr__` fires both for a missing attribute AND for a
+  PROPERTY that raised AttributeError while computing, and the boundary message assumed the
+  first. The real cause was four frames down and erased. `__getattr__` now checks whether the
+  name IS a property on the class and says so; `strict_view_test.py` pins both branches, verified
+  failing on revert. Any read-model field that can raise inside `.live`/`.legal` was reachable
+  through this, so it was never specific to this pass.
+- **Measured, order-alternated same-process A/B on a FROZEN real board** (the `90d936e` method,
+  against a verbatim copy of the pre-change code, arms asserted field-identical on all 12 mons
+  before timing): **1.244× on the build** — six rounds, 1.235/1.240/1.241/1.246/1.249/1.255 —
+  plus the load-free primary, **Python calls per build 1073 → 702, −34.6%** (`sys.setprofile`).
+  End to end, seven order-alternated `trainer_turn_benchmark` pairs on a box at load 13–30: the
+  `live_view` stage **1.22× median, 7/7 pairs positive (1.10–1.32)**; our controllable CPU
+  **~1.06× median, 6 of 7 positive** — the one negative pair had load rising across it and every
+  other stage moved with it, which is exactly why the component ratio is the claim.
+  ⚠️ **The frozen-board harness had to be built before any of this was measurable**: the first
+  version re-captured a fresh bridge battle per run, so consecutive "measurements" compared turn
+  40 against turn 65 and read 0.0845 vs 0.1318 ms as a *regression* on a strictly faster tree.
+- **Gates.** New `live_view_build_micros_test.py`, 23 cases: the whole **gen3 move universe**
+  against the formula spelled out (never read back through the property), every branch in seven
+  gens including the `from_transform` cap and the gen<3 clamp, per-instance isolation across
+  moves and gens, the synthetic `recharge` row's new identity-stability, and the constructor's
+  read of `max_pp` before the `__slots__` cache slot exists. **Three deliberate mutations verified
+  failing** (memo skipping the branches; a module-level id-keyed cache; the two enum memos sharing
+  a dict) — and one mutation that did NOT fail was itself informative: setting the cache early
+  *and* late is a no-op, so the first attempt proved nothing and was replaced. **The enum memo's
+  key safety is asserted on the ENUM CLASSES, not on our code**: every pair of members across the
+  six enums that compares equal must be the same object, so turning any of them into an `IntEnum`
+  fails here rather than silently making `Status.BRN` answer with `Weather.SUNNYDAY`'s name.
+  `live_view_memo_fuzz` PASS (12 battles / 1315 decisions, 2642 view-identity + 1315 obs
+  byte-identity checks); `obs_roundtrip_fuzz` PASS (1248 decisions bit-identical);
+  `obs_assembler_fuzz` PASS (40 battles, every trigger but the two the corpus never contains);
+  `gen3_data_obs_parity` green off the COMMITTED fixtures — an absolute byte gate on the whole
+  obs pipeline, **no regen** — plus mypy / ruff / file-size and the routine suite.
+  **The obs leaf's mandatory before/after also ran** (`obs_build_benchmark --turn 25 --reps 300`,
+  arms alternated): **COLD full rebuild 4,710 → 3,955 calls/encode, −16.0% on the leaf's PRIMARY
+  regression metric** — a fall, not the >10% rise that would flag one — with `encode` at
+  view-memo-warm 0.290/0.298 → 0.235/0.262 ms, because the obs encoder reads `move.entry` too.
+  **The A/B harness is committed, not scratch**: `agents/training/live_view_build_benchmark.py`
+  carries the reference arm, the agreement check and the call counter, so the ratio is
+  reproducible (the frozen board is seeded: turn 65, 12 mons, 38 revealed moves, 702 vs 1073
+  calls exactly, run to run).
+- 🔴 **THE NAMED NEXT ITEM, now sized precisely — make the build PARTIAL.** ~9.5 of the ~11.5
+  `from_pokemon` calls per decision rebuild a BENCHED mon that did not change: **~13–16% of worker
+  CPU, the largest remaining lever in the whole per-decision budget.** Deliberately not built
+  here, and the reason is specific rather than caution: it needs a per-mon dirty signal EXACT for
+  every `LivePokemon` field, and **the obs assembler's per-mon dirty set does not qualify even
+  though it looks like it does** — that set is gated on the obs BYTES, so fields the per-mon obs
+  slot never reads (`protect_counter`, `stats`, integer HP, the reward path's spread block) ride
+  along unproven by its 15,607-decision fuzz. `|-cureteam|` (one enum member unioning two protocol
+  keywords, one of them side-wide) is the shape of what goes wrong, and it already bit the
+  assembler once. A stale board here is silently wrong in the obs, the reward AND the mask at
+  once. It is also outside this brief's stated design space, which permitted within-decision
+  redundancy removal and pure-function memos and explicitly excluded caching across requests.
+- **THE CAMPAIGN'S CUMULATIVE TALLY, and the register is CLOSED.** Five landings, each an
+  independently-measured same-session ratio (no two share a load, so this is a PRODUCT of ratios,
+  not a single before/after):
+
+  | landing | signature | measured |
+  |---|---|---|
+  | Stage A — `live_view()` epoch memo | `gen3_live_view_memo_v1` | 5.000 → 1.000 builds/decision; our-CPU **1.39×** |
+  | Stage B — incremental obs assembler | `gen3_obs_assembler_v1` | encode 1.79×; our-CPU **1.19×** |
+  | reward — skip suppressed BIAS terms | `gen3_reward_skip_suppressed_v1` | `process_turn_reward` 1.08× ⇒ our-CPU **~1.016×** |
+  | reward — content-keyed belief memo | `gen3_belief_block_memo_v1` | `process_turn_reward` 1.25× ⇒ our-CPU **~1.055×** |
+  | **this** — the board build's pure-function memos | `gen3_live_view_build_micros_v1` | build 1.24× ⇒ our-CPU **~1.04–1.06×** |
+  | | **product** | **≈ 1.84× per-decision worker CPU (−46%)** |
+
+  Every one landed on byte- or field-identity with no flag, and every one was preceded by a
+  profile that contradicted the static estimate it replaced: the census over-read the BIAS family
+  3×, the belief memo's proposed epoch scope had a structurally ZERO hit rate, Stage B's Amdahl
+  denominator was two corrections stale, and this pass's target turned out to be 88% another
+  stage's cost. **Five for five. The rule the campaign actually proves is not "memoize things" —
+  it is that the map is wrong every single time, and the cheapest step is always the profile.**

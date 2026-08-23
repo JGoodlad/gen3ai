@@ -30,6 +30,11 @@ _PROTECT_MOVES = {
 _SIDE_PROTECT_MOVES = {"wideguard", "quickguard", "matblock"}
 _PROTECT_COUNTER_MOVES = _PROTECT_MOVES | {"wideguard", "quickguard", "endure"}
 
+# gen3ai `gen3_move_entry_memo_v1`: (gen, move_id) -> the move's dex row. See `Move.entry` for
+# why this lives at module scope rather than on the instance (the materializer's per-arm deepcopy
+# contract). Bounded by the move universe per gen (~900 at gen 9), populated lazily.
+_ENTRY_MEMO: Dict[Tuple[int, str], Dict[str, Any]] = {}
+
 
 class Move:
     _MISC_FLAGS = [
@@ -84,6 +89,7 @@ class Move:
         "_from_transform",
         "_gen",
         "_is_last_used",
+        "_max_pp_cache",    # gen3ai: lazy per-instance memo of `max_pp` (see the property)
         "_request_target",
     )
 
@@ -306,17 +312,35 @@ class Move:
         :return: The data entry corresponding to the move
         :rtype: Dict
         """
-        if self._id in GenData.from_gen(self.gen).moves:
-            return GenData.from_gen(self.gen).moves[self._id]
-        elif (
-            self._id.startswith("z")
-            and self._id[1:] in GenData.from_gen(self.gen).moves
-        ):
-            return GenData.from_gen(self.gen).moves[self._id[1:]]
+        # PROCESS-LEVEL MEMO (gen3ai `gen3_move_entry_memo_v1`). The dex lookup below is a pure
+        # function of ``self._id`` and ``self._gen``, and BOTH are written once in ``__init__``
+        # and never reassigned (grep-verified: nothing outside this class writes either). It sits
+        # on the hot path of a dozen properties and re-ran two ``GenData.from_gen`` calls plus two
+        # dict probes EVERY read — ~107 reads per obs encode alone.
+        #
+        # ⚠️ It is keyed on ``(gen, id)`` in a MODULE dict rather than cached on the instance, and
+        # that is a CONTRACT, not a preference: `obs_materializer._PlayerSnapshot` deep-copies the
+        # whole battle graph per counterfactual arm precisely because *"`Pokemon`/`Move` carry an
+        # int `_gen` and look entries up on demand"* — no instance-held reference to the dex. An
+        # instance cache would put a dex row inside every Move and make each arm's deepcopy
+        # duplicate it. Keyed here, the memo is invisible to the clone and shared across every
+        # instance of the same move instead of being rebuilt per instance.
+        # A miss raises exactly as before (nothing is cached on the error path).
+        key = (self._gen, self._id)
+        entry = _ENTRY_MEMO.get(key)
+        if entry is not None:
+            return entry
+        gen_moves = GenData.from_gen(self.gen).moves
+        if self._id in gen_moves:
+            entry = gen_moves[self._id]
+        elif self._id.startswith("z") and self._id[1:] in gen_moves:
+            entry = gen_moves[self._id[1:]]
         elif self._id in {"recharge", "fight"}:
-            return {"pp": 1, "type": "normal", "category": "Special", "accuracy": 1}
+            entry = {"pp": 1, "type": "normal", "category": "Special", "accuracy": 1}
         else:
             raise ValueError("Unknown move: %s" % self._id)
+        _ENTRY_MEMO[key] = entry
+        return entry
 
     @property
     def expected_hits(self) -> float:
@@ -473,11 +497,22 @@ class Move:
         :return: The move's max pp.
         :rtype: int
         """
+        # PER-INSTANCE MEMO (gen3ai `gen3_move_entry_memo_v1`), same argument as `entry`: this is
+        # a pure function of ``self._id``, ``self._gen`` and ``self._from_transform``, all three
+        # written once in ``__init__`` and never reassigned. Measured at 18% of
+        # `LiveView.from_battle` — 114k evaluations per 3k board builds, every one re-deriving
+        # a dex constant. ``__init__`` itself reads `max_pp` before the slot exists, which the
+        # AttributeError path handles (an unset slot raises, exactly like a missing attribute).
+        try:
+            return self._max_pp_cache
+        except AttributeError:
+            pass
         max_pp = self.entry["pp"] * 8 // 5
         if self.gen >= 5 and self._from_transform:
-            return min(5, max_pp)
+            max_pp = min(5, max_pp)
         elif self.gen < 3:
             max_pp = min(max_pp, 61)
+        self._max_pp_cache = max_pp
         return max_pp
 
     @property

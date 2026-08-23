@@ -123,6 +123,52 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   fresh rebuild, and the full 2501-dim obs encoded warm == encoded with the memo cleared, at
   every decision).
 
+  **That ONE remaining build is now the largest single item in per-decision worker CPU — 17% —
+  and it spent months wearing another stage's name** (`gen3_live_view_build_micros_v1`,
+  2026-08-23). Because the memo serves whichever consumer asks FIRST, the whole 12-mon build was
+  billed to `obs: legal + mask` in `trainer_turn_benchmark`, which therefore read 22% of worker
+  CPU while the legality snapshot + 11-bit mask + two integrity checks measure **0.028 ms
+  (2.8%)**. Measured by pre-building the view before the stage: the stage falls 0.222/0.243 ms →
+  0.030/0.031 ms, i.e. **88% of that line was this build**. The benchmark now times
+  `obs: live_view (shared build)` on its own line so the other five stages are honest. *A memo
+  moves a cost onto whoever arrives first; from then on the profile names the wrong stage.*
+
+  **What the build's cost decomposes into, and what was harvested.** There is NO redundancy left
+  *within* a decision — the epoch memo already took it — so the remaining work is one honest
+  12-mon rebuild whose cost is `LivePokemon.from_pokemon` × ~11.5. Three derivations in it were
+  pure functions of IMMUTABLE inputs, re-evaluated every build: `Move.max_pp` (18% of the build,
+  ~36 evaluations/decision of a dex constant), `Move.entry` (inside it), and `_enum_name`/`_id`
+  (6.6%, the `.name` of a process-wide enum singleton, reached through a `DynamicClassAttribute`
+  descriptor). All three are now memoized: `max_pp` per INSTANCE (`_id`, `_gen`,
+  `_from_transform` are write-once in `Move.__init__`), the enum names per MEMBER, and **`entry`
+  at MODULE scope keyed `(gen, id)` — deliberately NOT on the instance**, because
+  `obs_materializer._PlayerSnapshot` deep-copies the whole battle graph per counterfactual arm on
+  the stated ground that *"`Pokemon`/`Move` carry an int `_gen` and look entries up on demand"*;
+  an instance-held dex row would be duplicated into every arm. Pinned by a deepcopy test. Plus
+  two hot generator expressions turned into list comps and five defensive `getattr(mon, …,
+  default)` calls turned into direct property reads (every one of those properties exists on
+  every `Pokemon`, so the default was unreachable and could only have swallowed an
+  AttributeError raised *inside* a property). Measured on a frozen real board, order-alternated
+  same-process A/B against a verbatim copy of the old code, arms verified field-identical:
+  **1.244× on the build** (six rounds, 1.235–1.255) and **−34.6% Python calls per build (1073 →
+  702, `sys.setprofile`, load-free)**. End to end, seven alternated `trainer_turn_benchmark`
+  pairs: the `live_view` stage **1.22× median (7/7 positive, 1.10–1.32)**, our controllable CPU
+  ~1.06× median. Gates: `live_view_build_micros_test.py` (23 cases — the whole gen3 move
+  universe against the spelled-out formula, every branch in seven gens, per-instance isolation,
+  the synthetic `recharge` row, and the enum-key-safety property asserted on the enum classes
+  themselves; three deliberate mutations verified failing).
+
+  🔴 **The named next item, now sized: make the build PARTIAL.** ~9.5 of the ~11.5
+  `from_pokemon` calls per decision rebuild a BENCHED mon that did not change — worth roughly
+  13–16% of worker CPU, the largest remaining lever anywhere in the per-decision budget. It is
+  not built here because it needs a per-mon dirty signal that is EXACT for every `LivePokemon`
+  field, and the obs assembler's per-mon dirty set does not qualify: it is gated on the obs
+  BYTES, so fields the obs slot never reads (`protect_counter`, `stats`, integer HP, the reward
+  path's spread block) ride along unproven. `|-cureteam|` — one enum member unioning two
+  protocol keywords, one of them side-wide — is the shape of what would go wrong, and it has
+  already bitten the assembler once. A stale board here is silently wrong in the obs, the reward
+  AND the mask at once.
+
   **The epoch is deliberately COARSE, and one consumer needed a finer signal.** A single monotone
   counter is what makes the completeness argument an enumeration of doors, but it also means "the
   battle changed" is all it can say. The incremental obs cache
@@ -225,8 +271,22 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
 **Verification:** unit tests in `src/agents/battle/*_test.py` (schema, registry audit,
 scripted parse + state-equivalence, TurnView fold, `live_view_test.py` for the current-board
 surface + widened fields, `live_view_memo_test.py` for the memo's four invalidation doors +
-its store discipline + the clone-aliasing case, `strict_view_test.py` for the strict boundary
-+ `LegalActions` extraction + the forbidden-access guard). The spine is
+its store discipline + the clone-aliasing case, `live_view_build_micros_test.py` for the
+build's three pure-function memos — the whole gen3 move universe against the spelled-out `max_pp`
+formula, every branch in seven gens, per-instance isolation, and the enum-key-safety property
+asserted on the ENUM CLASSES so an `IntEnum` conversion fails there rather than silently making
+`Status.BRN` answer with another enum's name — `strict_view_test.py` for the strict boundary
++ `LegalActions` extraction + the forbidden-access guard **+ the two `__getattr__` branches**:
+that hook fires both for a missing attribute AND for a property that raised AttributeError while
+computing, and the boundary message used to assume the first, so a read-model field blowing up
+inside `.live` surfaced as *"'StrictBattleView' has no attribute 'live'"* — a confident denial of
+something that plainly exists, with the true cause four frames down and erased. It now tells the
+two apart). The measurement instrument for the build is
+`agents/training/live_view_build_benchmark.py` (order-alternated same-process A/B on ONE frozen
+seeded board against a verbatim copy of the old code, with a field-identity check before timing
+and a load-free `sys.setprofile` call count — the trainer-turn benchmark cannot do this job
+because it walks a fresh random battle per invocation, so two runs profile two different boards).
+The spine is
 `event_log_fuzz_test.py` — real
 `gen3ou` battles where both players run `Gen3Battle`; it independently re-derives each turn
 from the intercepted raw protocol and asserts the event log matches, plus conservation +

@@ -590,8 +590,31 @@ optimizing this path off the old line would have skipped it. (The frame deletion
 explanation: reward was already 23% before it. At reward's measured 0.23 ms absolute, a 4% share
 would need our-CPU near 5.75 ms — six times anything observed.) Record:
 `designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`.
+
+⚠️ **A memoized value is billed to whichever stage asks for it FIRST — and that made one line of
+this breakdown mean the opposite of what it said.** `battle.live_view()` memoizes per state-epoch
+and FIVE stages read it, so the whole 12-mon board build was charged to `obs: legal + mask`, which
+consequently reported **22% of worker CPU** and was named as the next optimization target on that
+basis. Its own work (parse the request, set 11 bits, run two integrity checks) measures **0.028 ms
+— 2.8%**; the other 88% was the shared build. `trainer_turn_benchmark` now times
+`obs: live_view (shared build)` on its own line, and post-fix the obs shares read **live_view 17% ·
+`state_encoder.encode` 26% · progress-clock 10% · `tracker.record` 6% · legal+mask 2.8%**. *When a
+stage looks expensive, check whether it is merely first.* Detail — and the sized, deliberately
+un-built next item (per-mon reuse, ~13–16% of worker CPU) — is in `src/agents/battle/CLAUDE.md`.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0]
+```
+
+**Neither benchmark above can measure a CHANGE to `LiveView.from_battle`** — the single largest
+item in that breakdown at 17% — because both walk a *fresh random battle* per invocation, so two
+consecutive runs profile two different boards (a 12-mon turn-40 board reads faster than a 12-mon
+turn-65 one on a strictly faster tree; that mistake was made and briefly believed). Use
+`live_view_build_benchmark.py`: it captures ONE seeded board, freezes it, and A/Bs the live
+implementation against a verbatim copy of the previous one with the arm order alternated, after
+asserting the two build field-identical mons. It reports both the wall ratio and a **load-free**
+`sys.setprofile` call count per build.
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
 ```
 
 ### What "fuzz test" means in this project

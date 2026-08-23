@@ -44,9 +44,25 @@ from poke_env.data.normalize import to_id_str
 _UNKNOWN_ITEMS = {None, GenData.UNKNOWN_ITEM}
 
 
+# Per-ENUM-MEMBER memos for the two name derivations below. An enum member is a process-wide
+# SINGLETON whose ``.name`` is fixed at class-creation time, so these are pure functions of an
+# immutable input and the cache is bounded by the enum's own membership (Status ~7, PokemonType
+# ~19, Effect ~200). Worth it because ``.name`` is a ``DynamicClassAttribute`` — a descriptor
+# call, not a slot read — and the pair measured 6.6% of `LiveView.from_battle` at 105k calls per
+# 3k board builds. The `value is None` case is NOT cached (a dict probe on None is no cheaper
+# than the branch).
+_ENUM_NAME_CACHE: Dict[Any, str] = {}
+_ENUM_ID_CACHE: Dict[Any, str] = {}
+
+
 def _enum_name(value) -> Optional[str]:
     """Lowercased ``.name`` of a poke-env enum (Status / Weather / …), or None."""
-    return value.name.lower() if value is not None else None
+    if value is None:
+        return None
+    name = _ENUM_NAME_CACHE.get(value)
+    if name is None:
+        name = _ENUM_NAME_CACHE[value] = value.name.lower()
+    return name
 
 
 def _id(value) -> Optional[str]:
@@ -55,7 +71,10 @@ def _id(value) -> Optional[str]:
     convention the rest of the codebase uses."""
     if value is None:
         return None
-    return value.name.lower().replace("_", "")
+    out = _ENUM_ID_CACHE.get(value)
+    if out is None:
+        out = _ENUM_ID_CACHE[value] = value.name.lower().replace("_", "")
+    return out
 
 
 @dataclass(frozen=True)
@@ -164,14 +183,20 @@ class LivePokemon:
         (``backfill_teambuilder_spread`` covers no-preview formats like gen3ou, where the
         protocol never echoes the spread).
         """
-        item = mon.item if mon.item not in _UNKNOWN_ITEMS else None
+        raw_item = mon.item          # ONE property call; the guard below used to make two
+        item = raw_item if raw_item not in _UNKNOWN_ITEMS else None
         # Moves keyed + sorted by the moves-dict key (the original LiveView.moves shape),
         # so the slot order is stable across workers and `move_ids` is unchanged. PP comes
         # off the Move value at that key.
-        moves = tuple(
+        # The comprehensions here and for `types` below are LIST comps inside `tuple(...)`
+        # rather than generator expressions: identical results, but CPython builds a list comp
+        # in one frame instead of resuming a generator per item, and these are the two hottest
+        # loops in the tree's hottest function (this build measured 20% of per-decision worker
+        # CPU before `gen3_live_view_build_micros_v1`, 17% after).
+        moves = tuple([
             LiveMove(id=mid, current_pp=int(mv.current_pp), max_pp=int(mv.max_pp))
             for mid, mv in sorted(mon.moves.items())
-        )
+        ])
         # Spread: base_stats is public (both sides); ivs/evs/nature are own-side only.
         ivs = tuple(mon.ivs) if (is_own and mon.ivs is not None) else None
         evs = tuple(mon.evs) if (is_own and mon.evs is not None) else None
@@ -188,7 +213,7 @@ class LivePokemon:
             revealed=bool(mon.revealed),
             hp_fraction=float(mon.current_hp_fraction),
             status=_enum_name(mon.status),
-            types=tuple(_enum_name(t) for t in mon.types if t is not None),
+            types=tuple([_enum_name(t) for t in mon.types if t is not None]),
             moves=moves,
             item=item,
             ability=mon.ability,
@@ -200,11 +225,18 @@ class LivePokemon:
             nature=nature,
             spread_known=bool(is_own),
             consumed_item=consumed_item,
-            status_counter=int(getattr(mon, "status_counter", 0) or 0),
-            protect_counter=int(getattr(mon, "protect_counter", 0) or 0),
-            stats=dict(mon.stats) if getattr(mon, "stats", None) else {},
-            current_hp=(int(mon.current_hp) if getattr(mon, "current_hp", None) is not None else None),
-            max_hp=(int(mon.max_hp) if getattr(mon, "max_hp", None) is not None else None),
+            # These five read poke-env PROPERTIES that every ``Pokemon`` defines
+            # (`status_counter` / `protect_counter` / `stats` / `current_hp` / `max_hp`), so the
+            # `getattr(..., default)` they used to go through could never take its default —
+            # it cost 5 extra builtin calls per mon (3.7% of this build) and would have
+            # SWALLOWED an AttributeError raised *inside* a property as a silent default.
+            # `from_pokemon` has exactly one caller (`LiveView.from_battle`), always with a real
+            # `Pokemon`; a duck-typed stub now fails loudly instead of silently defaulting.
+            status_counter=int(mon.status_counter or 0),
+            protect_counter=int(mon.protect_counter or 0),
+            stats=dict(mon.stats) if mon.stats else {},
+            current_hp=(int(mon.current_hp) if mon.current_hp is not None else None),
+            max_hp=(int(mon.max_hp) if mon.max_hp is not None else None),
         )
 
 

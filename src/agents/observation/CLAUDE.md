@@ -245,6 +245,18 @@ does, something bypassed the chart). The matchup block (`reactive.encode`) and t
 `pokemon.encode` / `moves.encode` chain are the next-largest cumtime; `live_view.from_pokemon`
 (rebuilt ×12/encode) is shared with reward/replay, so it carries a wider blast radius.
 
+⚠️ **The `move.py:entry` and `move.py:max_pp` rows above are SUPERSEDED** by
+`gen3_live_view_build_micros_v1` (2026-08-23): both are now memoized — `max_pp` per `Move`
+instance, `entry` in a module dict keyed `(gen, id)` (NOT on the instance: the materializer's
+per-arm deepcopy is justified by `Move` holding no dex reference). Both were pure functions of
+inputs written once in `Move.__init__`. Same-session A/B on this benchmark, `--turn 25
+--reps 300`, arms alternated: **COLD full rebuild 4,710 → 3,955 calls/encode (−16.0%)** — a fall
+on the primary metric, not a rise — `live_view() alone` 0.079/0.085 → 0.069/0.073 ms,
+`from_pokemon` cumtime 0.096/0.101 → 0.076/0.078, and `encode` with the view memo warm
+0.290/0.298 → 0.235/0.262 ms (the encoder reads `move.entry` too, so it benefits directly). The
+WARM-incremental series is unchanged (~1,280 calls/encode) because the production shape does not
+rebuild the view at all. Detail + the gate tests: `src/agents/battle/CLAUDE.md`.
+
 ---
 
 ## Pitfalls that have caused regressions here

@@ -46,6 +46,15 @@ class _FakeMon:
         self.nature = None
         self.consumed_item = None
         self.status_counter = 0
+        # `from_pokemon` used to reach these four through `getattr(mon, …, default)`, so this
+        # stub could omit them and silently take the defaults. It reads them directly now (the
+        # default was unreachable for a real `Pokemon` and could only ever swallow an
+        # AttributeError raised INSIDE one of the properties), which makes the omission a loud
+        # failure — correctly, since this stub's whole job is to stand in for a `Pokemon`.
+        self.protect_counter = 0
+        self.stats = {}
+        self.current_hp = None
+        self.max_hp = None
 
 
 class _Ns:

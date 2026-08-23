@@ -10,7 +10,10 @@ embed_battle / calc_reward / action_to_order / step):
 
   * **parse + event-log fold** — the real `Gen3Battle.parse_message` (protocol → state +
     BattleEvent log), timed by subclassing the battle class the bridge feeds.
-  * **obs build** — `get_mask` + `tracker.record` + `state_encoder.encode` +
+  * **obs build** — the shared `live_view()` board build + `get_mask` + `tracker.record` +
+    `update_progress_clock` + `state_encoder.encode`. The `live_view()` line is timed on its
+    own because it is memoized per state-epoch and five stages read it: without it, whichever
+    stage runs first silently carries the whole build (see `_choose_move_timed`).
   * **reward** — `tracker.build_delta` (TurnDelta fold) + `reward_manager.process_turn_reward`.
   * **action map** — `Gen3ActionMapper.action_to_order`.
   * **tracker** — `advance` + `reward_manager.record_action`.
@@ -157,8 +160,18 @@ class _TrainerTurnPlayer(Player):
             dec_cpu[0] += dt
             return r
 
-        # --- obs build (Gen3Env.embed_battle): build the LegalActions snapshot ONCE and
-        # share it between the mask and the mapper, exactly as the env does (post-021f2d3). ---
+        # --- obs build (Gen3Env.embed_battle) ---
+        # ⚠️ ATTRIBUTION, and it is the whole reason this line exists (gen3_live_view_stage_v1):
+        # FIVE stages below consume `battle.live_view()`, which memoizes per state-epoch — so
+        # whichever stage happens to run FIRST pays the entire 12-mon build and the other four
+        # read a warm slot. Until 2026-08-23 that stage was `obs: legal + mask`, which therefore
+        # reported 22% of worker CPU while its OWN work (parse the request, set 11 bits, run two
+        # integrity checks) measures 0.028 ms — 88% of the line was the shared board build
+        # wearing the mask's name, and a whole optimization pass was aimed at it on that basis.
+        # Building it here, explicitly and on its own line, is what makes the other five honest.
+        timed("obs: live_view (shared build)", battle.live_view)
+        # Build the LegalActions snapshot ONCE and share it between the mask and the mapper,
+        # exactly as the env does (post-021f2d3).
         def _legal_and_mask():
             legal = LegalActions.from_battle(battle)
             return legal, Gen3ActionMasker.get_mask(battle, legal=legal)
@@ -222,7 +235,7 @@ _GROUPS = [
     # the group is summed from this list, not from the accumulator. `obs: update_progress_clock`
     # was added with gen3_obs_assembler_v1 and must be listed, or the obs share understates by
     # the whole tracker fold (progress clock + recency + H-A pair + H-B window).
-    ("obs build", ["obs: legal + mask", "obs: tracker.record",
+    ("obs build", ["obs: live_view (shared build)", "obs: legal + mask", "obs: tracker.record",
                    "obs: update_progress_clock", "obs: state_encoder.encode"]),
     ("reward (TurnDelta fold)", ["reward: build_delta", "reward: process_turn_reward"]),
     ("action map", ["action map"]),
