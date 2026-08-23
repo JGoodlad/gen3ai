@@ -363,6 +363,34 @@ entry and it is PERMANENT (measured: 33 findings without it, the bulk of them na
 import back out through the hub). `/gen3ai-ship` runs both gates before
 staging (step 1c), so the ship path does not depend on whether the suite was run.
 
+### The FILE-SIZE ratchet (`src/file_size_gate_test.py`) — the third static gate
+
+**Under 1,000 lines is the TARGET for a core source file; under 2,000 is the STRONG bound.** The
+gate encodes that asymmetry rather than flattening it: over 2,000 **hard-fails**, while the
+1,000-2,000 band fails nobody and is instead **reported** (run with `-s` for the census — 13 files
+today, and the pool the next decomposition should come from). A target that fails the build is a
+bound; a target nothing ever prints is a wish. Same scope as ruff (`src/agents src/main src/utils`,
+`poke_env`/`rust_sim` excluded), unmarked, **0.04 s**, opt out with `GEN3AI_SKIP_SIZE_GATE=1`.
+
+**Test files are EXEMPT when they exercise a single subject** — a fuzz test, or an `X_test.py` with
+a source sibling named `X` (also `X/` as a package, and `X_Y_test.py` ↔ `X/Y.py`). A long test that
+pins one module is that module's specification and splitting it scatters the spec; a test that
+sprawls across six subsystems is the same liability as an oversized source file and takes the same
+2,000 bound. The criterion is the **NAME**, deliberately, because an import graph classifies almost
+every test as cross-cutting (the same measurement that killed inferred tier markers). When it
+misfires, rename the test to match its subject or split it — do not park it in the allowlist.
+
+**The ratchet only turns one way.** The two grandfather lists were measured at the gate's landing
+(source: `train_rl_agent` 4574 · `prober/engine` 3058 · `prober/session` 2573 ·
+`features_extractor` 2237 · `instrumented_ppo` 2134; tests: **empty**, since all three >2k test
+files have siblings). A listed file may shrink freely but **fails if it grows ≥10%** past its
+recorded count, and **fails when it drops back under 2,000 without being removed** — the list may
+only shrink, because a stale entry misleads every reader after it (the ruff handoff list and the
+c-family lesson both). So a new oversized file has **nowhere to be parked**: decompose it, the way
+`features_extractor.py` was split into per-phase modules behind a re-export hub (2026-08-16).
+**Taking an entry off the list is always-welcome piecemeal work** — no design doc, no coordination;
+the queued entry-point decomposition takes the top one first.
+
 ### Unit tests only (the fast inner loop)
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
