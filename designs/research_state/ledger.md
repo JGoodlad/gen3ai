@@ -2302,3 +2302,40 @@ get better at all.
   certainty injection, even with the arrival channel present. The surviving levers are the ones
   that do not require the policy to SAMPLE its way out: the search-teacher/OPD (built, dormant)
   and R2's counterfactual labels (designed, priced) — both deliver the correction off-policy.
+
+### The incremental-encoder census — 95% of the obs is cacheable, rust is DEAD by arithmetic, and a 4× redundant view construction was hiding in plain sight (2026-08-23, read-only census, design promoted to `designs/ai_v9/design_incremental_obs_encoder.md`)
+
+**The obs-cost question answered structurally**: per-offset classification of all 2,501 dims —
+STATIC-per-episode 26.1% + REVEAL-monotone 18.7% + PER-TURN-sparse 50.1% = **95.0%
+static-or-sparse**; of the 125 "dense" dims, 119 are deterministic per-turn ticks (LUT-able) and
+the genuinely request-dependent residue is **6 dims (0.24%)**.
+
+- **The architecture already contains the invalidation machinery**: `MESSAGE_POLICY`'s
+  STATE_ONLY bucket is EMPTY in gen3ou — every state-mutating protocol line is an EVENT — so the
+  event log is a PROVABLY COMPLETE dirty stream and the obs cache becomes the event window's
+  FIFTH consumer. The event-sourced layer, built for forensics, turns out to be exactly the
+  substrate an incremental encoder needs. Trap list recorded (switch resets with no per-field
+  event; FORMECHANGE/TRANSFORM = whole-slot nuke; Baton Pass keeps volatiles; two hidden
+  per-encode log folds; the append-shifting window layout; species-keyed not position-keyed).
+- **The near-bug: production constructs a fresh `LiveView` ≥4× PER DECISION** (record / progress
+  clock / encode / reward — 12× `from_pokemon` each, ~25 property reads + 2 dict copies per mon)
+  while the obs benchmark counts ONE — the gate's number was structurally blind to ¾ of the real
+  view cost. Stage A (a one-slot memo on `Gen3Battle` keyed `(len(_events), turn, request)`)
+  ships first, independent of the assembler; the strict-API lock constrains ACCESS, not
+  construction.
+- **Amdahl, flagged static**: warm encode ~0.07–0.09 ms vs 0.363 today ⇒ ~4–5× encode, 2.3–2.6×
+  trainer-turn-CPU ceiling, honest **+40–90% rollout FPS** (calibrated against the
+  compile-opponents precedent's per-forward-vs-end-to-end ratio).
+- **The RUST/FFI verdict: NO, by arithmetic** — post-incremental the residual is Python-object
+  READS, which a PyO3 kernel pays too (≤~0.03 ms theoretical before boundary costs); rust only
+  wins if the STATE is rust-side, which is a second full obs implementation against the
+  one-sided wall (the two-renderers cost). Reopen condition: a >20%-of-warm-encode pure-array
+  hotspot numpy cannot express (none visible).
+- **Design safety carries the week's lessons forward**: the swap is INTERNAL and gated on
+  byte-identity, NOT a flag (the untested-default-branch lesson); `GEN3AI_OBS_VERIFY=1` shadow
+  mode; the assembler lives inside `EpisodeTracker` so it rides `snapshot()/restore()`
+  (mark-all-dirty on restore — the clone-aliasing hazard named); and the obs benchmark's
+  `--reps` loop re-encodes ONE decision, so under caching it must report COLD/WARM separately or
+  the gate's own number becomes a lie (an instrument-shape catch made at design time). Two stale
+  doc constants found by the census fixed in this commit (EVENT_WINDOW_DIM comment 608→704; the
+  observation leaf's 2437→2501 headline).

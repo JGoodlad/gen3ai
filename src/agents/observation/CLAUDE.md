@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2437-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2501-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the

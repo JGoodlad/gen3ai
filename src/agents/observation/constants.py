@@ -245,7 +245,7 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 # ever reads this block directly, so the manifest zeroing rule is satisfied by construction).
 EVENT_WINDOW_N = 32
 EVENT_TOKEN_DIM = 22
-EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 608
+EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 704 (32*22)
 
 
 class EventCol(IntEnum):
