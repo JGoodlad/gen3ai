@@ -112,6 +112,15 @@ export PYTHONPATH=$PYTHONPATH:src
 
 The conda env is `gen3ai_stable`. `deps/venv` exists but is outdated — ignore it.
 
+**That absolute path is THIS box's env, not a requirement of the code.** Nothing in the tree
+hardcodes an interpreter any more: every process the project spawns — the launcher's training
+child, the eval workers, the snapshot-ladder, the search-teacher workers — runs under
+**`sys.executable`**, i.e. whatever interpreter started the parent. So on another machine, or in
+another env name, `conda activate gen3ai_stable && python <script>` is enough; the path above is
+just how this box's commands are written so they work from any shell. The launcher additionally
+takes **`$GEN3AI_PYTHON`** to pin its child's interpreter explicitly — see
+`src/main/launcher/CLAUDE.md` → Which interpreter the child runs.
+
 **Two things `environment.yml` says that are load-bearing, and neither is a preference:**
 
 - The pip block opens with `--extra-index-url https://download.pytorch.org/whl/cu121`. The torch

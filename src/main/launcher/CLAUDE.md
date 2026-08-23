@@ -236,11 +236,52 @@ parser rather than a hand-copied twin. Same failure class as `default_port_test.
 one catches a launcher-injected default drifting from the trainer's, this one catches the launcher
 silently swallowing a child flag.
 
+## Which interpreter the child runs
+
+`child.resolve_child_python()`, in precedence order:
+
+| # | Source | Notes |
+|---|---|---|
+| 1 | **`$GEN3AI_PYTHON`** | Explicit override. Set it only to run the child under a *different* interpreter than the launcher — a blank/whitespace value falls through rather than becoming `argv[0]` |
+| 2 | **`sys.executable`** | The default: the launcher's OWN interpreter |
+
+**`sys.executable` is the correct default, not a guess.** The launcher is already running under the
+environment the run wants, so the child inherits it on any machine under any env name — there is no
+conda prefix, env name or absolute path to keep in sync, and a fresh clone needs no source edit.
+The resolved value is announced in the events panel at startup (`🐍 Interpreter: …`, marked
+`(pinned by $GEN3AI_PYTHON)` when the override is live), because if the launcher was started from
+the wrong environment then *every* child inherits that, and this line is where it shows.
+
+It is resolved at **spawn** time, not import time: a launcher process outlives a dozen children
+across periodic and crash restarts, so an import-time constant would pin the first value.
+
+> **History.** This was a hardcoded `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3` with
+> no flag and no override until 2026-08-22 — a fresh clone died with `FileNotFoundError` on its
+> first launcher run and the only fix was editing the source. On this box the change is
+> behaviour-identical (the launcher *is* started with that interpreter, so `sys.executable` resolves
+> to it). Gate: `interpreter_test.py`, whose durable half fails if **any** launcher module
+> re-introduces a machine-specific path — not just the old line.
+
+**Recorded commands are unaffected.** `run.py` records `LAUNCHER_COMMAND = " ".join(sys.argv)`, and
+`sys.argv[0]` is the launcher's `__main__.py`, never the interpreter — verified over all 104
+archived `models/*/metadata.json` (0 embed a python or conda path). The launcher constructs the
+child argv itself, so an old run's recorded command relaunches unchanged.
+
 ## Resume contract
 
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
 `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
 run uses the same code as the original — unless `--sync-to-main` is passed.
+
+**The child's `PYTHONPATH` is what makes that pin real, and it must never be "cleaned up."** The
+spawn passes no `cwd=`, so `PYTHONPATH=<worktree>/src` is the only thing making a resumed run
+*import* the code its checkpoint was saved on. Measured (2026-08-22 scope survey, Finding B): with
+an editable install present and no `PYTHONPATH`, a pinned old-commit child imports `agents` from the
+**main checkout** — an old checkpoint silently resuming on current HEAD, the arch-drift disaster
+class. `PYTHONPATH` entries land in `sys.path` *before* a `.pth`'s, so the pin and an editable
+install coexist correctly exactly as long as that line stays. Note the deliberate split it creates:
+the child **imports from the worktree** while writing `models/` **relative to the launcher's cwd**
+(the main checkout).
 
 ## Showdown port default
 

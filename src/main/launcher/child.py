@@ -3,15 +3,35 @@
 import json
 import os
 import subprocess
+import sys
 import threading
 import time
 
 from main.launcher.state import LauncherState
 
-_PYTHON = "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3"
 _MAIN_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TRAIN_SCRIPT = os.path.join(_MAIN_DIR, "train_rl_agent.py")
 _SRC_DIR = os.path.dirname(_MAIN_DIR)
+
+#: Env var that pins the training child's interpreter explicitly.
+PYTHON_ENV_VAR = "GEN3AI_PYTHON"
+
+
+def resolve_child_python() -> str:
+    """The interpreter the training child is spawned with.
+
+    Precedence: ``$GEN3AI_PYTHON`` (explicit override) → ``sys.executable`` (the
+    launcher's OWN interpreter). The default is right on every machine, because the
+    child then runs in whatever environment the launcher was started from — there is no
+    env name, conda prefix or absolute path to keep in sync, and a fresh clone needs no
+    edit. Set ``$GEN3AI_PYTHON`` only to run the child under a *different* interpreter
+    than the parent deliberately.
+
+    Resolved at spawn time rather than import time, so a periodic/crash restart picks up
+    a changed override.
+    """
+    override = os.environ.get(PYTHON_ENV_VAR, "").strip()
+    return override or sys.executable
 
 
 def _build_child_env() -> dict:
@@ -196,13 +216,21 @@ def _launch_child(
     metrics_r, metrics_w = os.pipe()
     existing = child_env.get("PYTHONPATH", "")
     pythonpath = (src_dir + ":" + existing) if existing else src_dir
+    # 🚨 THIS PYTHONPATH IS WORKTREE-ISOLATION MACHINERY — do not "clean it up".
+    # src_dir is the PINNED worktree's src/, and the Popen below passes no cwd=, so this
+    # export is the ONLY thing making a resumed run import the code its checkpoint was
+    # saved on. Measured (2026-08-22 scope survey, Finding B): with an editable install
+    # present and no PYTHONPATH, a pinned old-commit child imports `agents` from the MAIN
+    # checkout — i.e. an old checkpoint silently resumes on current HEAD, the arch-drift
+    # disaster class. PYTHONPATH entries land in sys.path BEFORE a .pth's, so the pin and
+    # an editable install coexist correctly exactly as long as this line stays.
     # The child stays in the launcher's session (no start_new_session): a closed
     # tmux/SSH terminal SIGHUPs the whole group, and train_rl_agent now handles SIGHUP
     # itself (checkpoints, like SIGTERM), so it saves before exiting. The launcher also
     # installs its own SIGHUP/SIGTERM handler (app.py) so it tears down cleanly rather
     # than dying abruptly — the two are complementary backstops.
     proc = subprocess.Popen(
-        [_PYTHON, train_script] + child_args,
+        [resolve_child_python(), train_script] + child_args,
         env={**child_env, "LAUNCHER_METRICS_FD": str(metrics_w), "PYTHONPATH": pythonpath},
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

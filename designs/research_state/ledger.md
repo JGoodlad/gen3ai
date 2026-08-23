@@ -1890,3 +1890,38 @@ win silently.
 - `package.json`'s `test` script used the retired `-m 'not integration and not e2e'` marker set
   that the root CLAUDE.md forbids (it is how the obs-golden linchpin rode main red three times);
   now `-m 'not slow and not e2e' -q -n 2`, and `setup` delegates to the bootstrap script.
+
+### Phase 1 LANDED — the launcher's hardcoded interpreter is gone; the whole spawn surface audited (2026-08-22)
+
+`child.py:11`'s `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3` — the scope survey's
+**one hard blocker**, no flag and no override, a `FileNotFoundError` on a fresh clone's first
+launcher run — is replaced by `resolve_child_python()`: **`$GEN3AI_PYTHON` → `sys.executable`**.
+`sys.executable` is the correct default rather than a guess, since the launcher is already running
+under the environment the run wants, so the child inherits it on any machine under any env name.
+
+- **The census's other spawn families needed no change, and that was VERIFIED not assumed.** All
+  four production Python spawns already use `sys.executable` (`eval_callback.py:409` eval_worker ·
+  `selfplay_callback.py:818` snapshot_ladder · `teacher/callback.py:191,351` search-teacher), and a
+  tree-wide sweep found **zero** bare `"python3"`/`"python"` argv[0] strings. `cf_producer` and
+  `bot_matchup_matrix` spawn nothing. `child.py:11` really was the only one.
+- **The resume contract was verified against the archive, not argued.** All **104**
+  `models/*/metadata.json` were scanned: **0** embed a python or conda path in `launcher_command`
+  or `original_command` — `sys.argv[0]` is the launcher's `__main__.py` and the launcher constructs
+  the child argv itself. Re-confirmed on the freshly written smoke run. No migration; old commands
+  relaunch unchanged.
+- **Two REAL launcher smokes, headless (`nohup … < /dev/null`), serverless rust bridge**, both
+  reaching `Training complete` with a saved `final_model.zip` at 2,048 steps: the default path
+  resolved to this box's conda interpreter (behaviour-identical here — the launcher *is* started
+  with it), and the override path ran the child through a wrapper script whose marker appears in
+  `launcher_child.log`, proving `$GEN3AI_PYTHON` is really `argv[0]` and not decoration.
+- **The durable half of `interpreter_test.py` is the literal scan, not the unit tests**: it fails
+  if **any** launcher module re-introduces a machine-specific path, so the class is closed rather
+  than the line. Revert-verified — restoring the constant fails 4 of 8.
+- **Finding B is now written where a refactorer will hit it.** The child's `PYTHONPATH` carries a
+  🚨 in-code comment naming it worktree-isolation machinery (with the measured failure: an old
+  checkpoint silently resuming on current HEAD), plus a new `launcher/CLAUDE.md` section. It is the
+  one line Phase 2's editable install must not touch.
+- **Listed, not fixed** (Phase 4's scope, deliberately not crept into here): the three tests that
+  skip silently on any other machine via absolute `models/` paths — `arch_tables_test.py:22`,
+  `intent_move_cell_test.py:46`, `audit_states_test.py:177` — plus `eval_sharding_fuzz_test.py:44`.
+  None are launcher-related; all four want `get_main_repo_root()`.

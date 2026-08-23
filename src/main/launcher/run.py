@@ -37,9 +37,11 @@ from main.launcher.checkpoint import (
     _strip_launcher_args,
 )
 from main.launcher.child import (
+    PYTHON_ENV_VAR,
     _build_child_env,
     _launch_child,
     child_log_path,
+    resolve_child_python,
     _TRAIN_SCRIPT,
     _SRC_DIR,
 )
@@ -268,6 +270,13 @@ def _prepare_session(
         state.add_event(f"🚀 Starting — restart every {interval_hours:.1f}h")
     else:
         state.add_event("🚀 Starting — single run (no restart)")
+
+    # Which interpreter the child will run under. Announced because the default follows the
+    # launcher's own process (sys.executable): if the launcher was started from the wrong
+    # environment, every child inherits that, and this line is where it shows.
+    _py = resolve_child_python()
+    _pinned = f" (pinned by ${PYTHON_ENV_VAR})" if os.environ.get(PYTHON_ENV_VAR, "").strip() else ""
+    state.add_event(f"🐍 Interpreter: {_py}{_pinned}")
 
     if child_uses_bridge(child_args):
         # In-process BattleStream transport for training AND eval — no server, the port is unused.
