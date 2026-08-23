@@ -2145,3 +2145,33 @@ gradient-flow tests and the `eval_sharding` fuzz — and is never told.
 - Gates: routine suite exact-exit green, ruff/mypy/size green, and the four fixed tests RUN on this
   box (verified before and after — the before-state is what makes the "they run here" claim mean
   anything).
+
+### Post-fix re-baseline — every conditioned claim CONFIRMS, one AMENDS, one of OUR OWN ledger lines was wrong, and E4's primary is armed at 7.6σ (2026-08-23, opus probe, ~23:00)
+
+**All four load-bearing claims re-verified on the fixed-instrument era** (reports
+`tmp/e_battery_postfix_read.md`, `tmp/e4_baseline_pack.md`):
+- *Thin* CONFIRMS (pooled ALL-4: 3.79/3.99/4.39/6.13); the *1/exposure bound* CONFIRMS including
+  its stated max (largest lift anywhere 2.36×, under the ledger's 2.4×); *E3-deepened* CONFIRMS
+  **bit-identical** (+1.97 pp [+0.68,+3.30], and +2.88 [+0.16,+5.70] on the corrected stay tail);
+  *E2-state-effect* CONFIRMS and was UNDERSTATED — E2's model effect is **−0.74 pp pooled and
+  −2.21 [−3.41,−0.97] on the switch tercile: it points the other way.**
+- **AMEND: "exactly 0.00%" → "suppressed ~an order of magnitude."** At 8× sample (6,400 bait
+  decisions) `conditional_threat`/`pair_outcome_move` read 0.04–0.15%, not identical zero — which
+  is what the unrenormalized-α mechanism actually predicts (scaled toward zero, not clamped).
+  Conclusion unchanged, statement now honest at the achievable n.
+- **CORRECTION TO OUR OWN 2026-08-22 mask-blast-radius entry**: its line "the conditioned read's
+  absolutes will shift" is **WRONG for that instrument** — measured 0 disagreements over 130,726
+  rows / 210 of 210 metric arrays bit-identical: the conditioned-read collector never used the
+  broken `> -1e8` recovery (it is the instrument that REPORTED the defect). The real
+  reconciliation with the training session's table is **pairing-convention + sample rules, worth
+  0.1–0.6 pt with ARM-DEPENDENT sign** — ⚠️ *the two instruments' tables are not interchangeable
+  below ~1 pt, and a transfer control may only decompose a gap measured on its own instrument*
+  (the "+2.92 raw gap" was cross-instrument arithmetic; on one instrument it is +2.33 = +1.97
+  model + 0.36 state).
+- **THE E4 PRIMARY, armed**: bait-conditioned `switch_branch` content-only on E1 =
+  **1.52% [1.02, 2.08]** (n=2,038 bait decisions / 481 battles, state list pinned by (npz,row)).
+  The registered 3× lands at **7.6σ**; MDE ≈1.66×. 🚨 Pre-declared reading rule from the
+  rehearsal: the known-positive E3-vs-E1 reads **n.s. on the primary** (+0.41 [−0.40,+1.20])
+  while pooled `switch_branch` reads DEEPER (+0.81 [+0.50,+1.11]) — so an n.s. primary means
+  "the 3× did not happen," never "nothing happened"; pooled `switch_branch` is the DECLARED
+  secondary (model+state confounded; requires the fork-base control).
