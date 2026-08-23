@@ -3824,3 +3824,20 @@ code-matched arms — the credit conviction inherits into the revolution-1 spec 
 no caveat.** (Flagged-not-claimed: the two new traces read 0.107 → 0.038 with step — ~1.6 SE
 apart, consistent with noise; NOT evidence of a fast reversion rate; a purpose-built series would
 be needed for that question.) Scratch run `ai_v9_28` is deletable once the rev-1 spec is relayed.
+
+### 📈 LIVE CAPACITY TELEMETRY LANDED (`1c7fe59`) — saturation as a CURVE, not a probe (2026-08-23)
+
+`--capacity-telemetry` (training_coef class, config v101, OFF default, forward bit-identical,
+measured overhead **+2.4–2.5%** on two clean interleaved-arm runs): the plasticity CANARY (head
+owned by the PPO object, detached `value_pooled`, K=4 seeded CPU-drawn targets
+`tanh(obs·P_k/√D)` — the SAME family the offline tripwire uses, so the two instruments
+cross-validate; round-robin re-seed per `--canary-reset-steps`, head weights deliberately NOT
+re-initialised — the reset IS the supply-side probe), half-batch trunk-gradient cosine (every 50
+minibatches, on the same `shared_trunk_parameters` the `grad/*` family names), and feature
+velocity (frozen 256-row probe batch). Scalars under `capacity/*`; triage table in the 08-23
+capacity ruling entry. Known limits (recorded in-code + doc): canary state not checkpointed
+(re-inits per restart; read WITHIN a restart window, ~16 resets), it measures representation
+richness not policy headroom, no calibrated alarm level on the cosine (trend only), untested at
+CUDA scale. Benchmark lesson minted: a contended box read +4.28% with 13% within-arm spread and
+`warn_if_contended` did NOT fire (1-min loadavg lags a just-started job) — **read the per-arm
+spread before believing a delta**. Rev-1 launches with this ON.
