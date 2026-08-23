@@ -3748,3 +3748,27 @@ Runs `ai_v9_27_extremedial_probe_0823` (P1) / `ai_v9_26_baitent_probe_0823` (P2)
   `SnapshotPool` derives state from the run dir and nothing copies it across a fork; P1's
   first launch ran bots-only at 0% self-play until killed at 295k and re-seeded. Both are
   footguns every future forked probe hits.
+
+### 🎡 FLYWHEEL NEAR-TERM ROADMAP — ratified by owner (2026-08-23)
+
+Six items, mostly promotions of built things to STANDING PRACTICE with gates:
+1. **Exploitability = the standing strength meter.** Once rev-1 trains under the promotion gate,
+   `win_rate_vs_pool` is pinned ~50% BY CONSTRUCTION — we are structurally blind without this.
+   Per-generation fixed-budget exploiter probe (warm-fork recipe, FIXED steps, matched fork
+   policy); the extraction number is the meter. Spec rides the rev-1 launch spec; the training
+   session runs it each generation.
+2. **Coverage board: diversity-first ordering** — next exploiter target chosen by behavioral
+   distance from covered targets, not queue order (best responses collapse onto the same hole).
+3. **Pool retention is a CORRECTNESS rule, not disk policy**: every closed hole keeps its closer
+   in the pool OR its distilled descendant provably retains the skill (the ~76% retention result
+   is the licence to retire teachers). Anchor bots = the permanent floor. Enforce at groom time.
+4. **Hodge-width predictions pre-registered** (spinning-top): baselines being measured now;
+   entry to follow with numbers.
+5. **PFSP enablement A/B** — built, off; gate it once in the rev-1 era rather than carry as debt.
+6. **Distillation = the convergence operator** (fictitious play converges in the AVERAGE): close
+   calls between "train base longer" and "run the fold" tilt toward the fold.
+Explicitly OFF the roadmap on our own evidence: NeuPL/LoRA/MoE conditioning (two independent
+nulls), per-state entropy shaping (P2), play-time Nash/search (constraint).
+**Capacity-eval battery ORDERED** (owner, same date): regularly-evaluatable saturation metrics
+on the shared trunk — build in flight; every metric ships with a validity note (the retracted
+PR(K_ū)=17 lesson: gate on "does this quantity PREDICT performance", never on "is it low").
