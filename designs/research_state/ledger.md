@@ -1685,3 +1685,44 @@ replay; a deliberately-mismatched control proves the gender-PRNG guard load-bear
   hiding a coin". It also sizes the ceiling of any future belief-conditioned value work: the
   concentrated top-decile states are where a better OPPONENT-TEAM BELIEF (not a better value head)
   is the only lever that can move the meter.
+
+### E-battery ADJUDICATED — the "thin" verdict SURVIVES conditioning, the bait turf is WORSE than pooled, and E3 deepened after all (2026-08-22, opus conditioned read on gen-17/E1/E2/E3, content-only, battle-clustered)
+
+**The dilution trap was CHECKED and did not fire — first time in three suspicions** (report
+`tmp/e_battery_conditioned_read.md`). The correction is bounded 1.3–1.6× (max 2.4×) because the
+relevant strata have HIGH exposure (25–49%), and the cap is structural: **the maximum dilution
+correction is 1/exposure** — pooled reads can only hide large effects behind SMALL strata (c1's
+turf was 18%, OA2's bait turf 6%; `mech_offered` at 25–49% cannot hide a 20× effect by
+arithmetic). The battery's pooled numbers reproduce (one 0.01-pp CI graze, traced to per-step
+sample composition), and the INSTRUMENT is clean: content-only ≡ full-zero on all 20 arm×cell
+pairs; the tied-bias artifact class is structurally unrepresentable here (the four cells CONCAT
+disjoint slices, 14/15/9/4 wide, own gradients — nothing shared to tie).
+
+- **The sharpest new fact: on BAIT-conditioned states the cells read BELOW pooled** (0.18–0.53×),
+  and `pair_outcome_move` + `conditional_threat` read **exactly 0.00% flips on bait in all four
+  arms** (n=253–298) — **partially BY CONSTRUCTION**: `reduce_pair_in` takes the UNRENORMALIZED
+  α slice, which sums to (1−α_SWITCH), so the pair rows are scaled toward zero precisely when a
+  switch is predicted. The pre-registered "switch-predicted" stratum was therefore BACKWARDS for
+  3 of the 4 cells — their physical home is the they-STAY tail — and **the substrate's coverage
+  of the switch-contingent world rides entirely on `switch_branch` (OA2)**. A design fact for any
+  future substrate work: renormalization is a decision, not a detail.
+- **One correction to the battery report: E3 DID deepen.** A paired TRANSFER CONTROL (run the
+  fork BASE on each fork's own states) separates model effects from state effects: E3 carries a
+  **+1.97 pp pooled MODEL effect, CI [+0.68, +3.30]**, concentrated in `switch_branch`; E2's
+  apparent rise is **100% a state effect** (the base reads 5.13% on E2's states vs E2's own
+  4.39%). "Forks did not deepen it" → "two of three did not; E3 did, via OA2." *Method worth
+  naming: the fork-base-on-fork-states control is how a fork's dependence delta gets decomposed —
+  without it, a pilot-team change masquerades as learning.*
+- **The proposed E4 decision rule is UNDECIDABLE on pooled numbers, by arithmetic**: a 3×
+  bait-conditioned deepening moves pooled +0.09 to +0.40 pp (0.2–0.9σ at n=6,000); even bait
+  flips at 100% move it ≤6.3 pp; and a pilot-team swap alone moved the SAME model +1.34 pp.
+  **The rule keys on the bait-conditioned `switch_branch` read vs E1 at MATCHED states** (n≈280,
+  CI half-width ≈1.3 pp — a 3× IS resolvable), paired with the B1/B3 behavioral bars; pooled is
+  context only.
+- **Instrument findings, tasked/noted**: `edge_ablation_audit`'s mask recovery is BROKEN on this
+  trace format (logits stored pre-mask ⇒ `> -1e8` yields all-legal ⇒ its guard passes VACUOUSLY)
+  — fix before any family audit on these runs. `load_model_snapshot` refuses E-arm checkpoints
+  (PopArt resume strictness — correct behavior); `load_foreign_opponent` is the working path for
+  cross-run analysis, worth remembering. And mean |dV| is **exactly 0.0** for all four cells in
+  all arms — they are policy-only by construction (the pointer route); the critic never sees
+  them, which bounds what any critic-side readout of E4 can attribute to the substrate.
