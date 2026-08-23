@@ -1823,3 +1823,36 @@ lone hard blocker; 3 tests **skip silently on any other machine** (invisible cov
   fail outright on a fresh machine — the bootstrap story is broken at step 1 today.
 - 5 phases ≈10 agent-hours, Sat→Mon, Phase 5 (launcher child → editable) DEFERRED as the honest
   call. A subagent's "0 hardcoded paths" claim was caught wrong by the survey's own recount (7).
+
+### Plasticity audit — measured NULL, opposite sign, lever CLOSED for this lineage (2026-08-22, opus probe, gen-17's 9 checkpoints + 3 E-arm forks, fixed 4000-obs probe set, replicated on a battle-disjoint set)
+
+**The critic pathway is not going stiff — it RE-EXPANDS.** The pre-registered stiffness signature
+(critic rank decaying while policy holds) is absent on every axis: `value_pooled` participation
+ratio 2.35→2.87 over 21.6M steps, `vf_features` 2.76→3.31, nothing turning down late; the policy
+side triples (`pi_features` 9.3→20.0); the shared trunk gets **4× richer** (4.4→17.7); dormancy
+never accumulates (vf ReDo-fraction flat at ~0.20, BELOW the random-init reference 0.30 —
+training REVIVES units here); and the E-arm forks inherit the base's numbers then drift UP.
+The one real contraction is pre-2.4M (fresh init ~6-7 → ~2.4-2.8) and then monotonically
+recovers — re-expansion is the anti-signature of capacity loss. Lever closed; ReDo/resets buy
+nothing on this lineage. Report `tmp/plasticity_audit_report.md`.
+
+- **Two STATIC facts worth more than the null**: (1) the critic pathway runs at **~7× lower
+  effective rank than the policy pathway at EVERY checkpoint** (≈2.9 vs ≈20 at equal 512 width) —
+  consistent with the whole value_cls low-rank history (the distill crystallization scar, H1/C4):
+  the critic's narrowness is a STEADY-STATE property of the scalar objective, not decay. A
+  measurable prediction for the shadow-critic program: richer targets (mc_return, distributional)
+  should RAISE this number, and the probe scripts are reusable as that experiment's meter.
+  (2) ~105 of `vf_features`' 512 units are dormant from 2.4M on, **largely the same units**
+  (62% persistence, 74% shared across a fork) — unused width in a 128→512 expansion whose
+  attainable rank is capped at 128 by the input anyway. Structural, not pathological.
+- **Methodological catch**: the SB3 towers are Tanh (`gen3_policy_activation_pin_v1`), where the
+  ReDo |h|-near-zero criterion is VACUOUS (Tanh units live near zero) — the probe substituted a
+  variance-normalized analogue rather than reporting a meaningless 0.000 as health. *A dead-unit
+  criterion is activation-function-relative; check the nonlinearity before trusting any dormancy
+  number.*
+- **Reopen conditions written, and one honest transfer caveat**: gen-17 is PFSP-off — the CALM
+  end of this project's target-drift spectrum. The flywheel era (teachers in pool, BaitBot,
+  exploiter-enriched opponents) is heavier non-stationarity; re-run the probe (cheap, scripts in
+  tmp/) on revolution-one's checkpoints before assuming the null transfers. Also: activation-side
+  metrics structurally cannot see a TRAINABILITY loss — a late checkpoint fitting a fresh target
+  slower than fresh init would reopen this regardless of rank.
