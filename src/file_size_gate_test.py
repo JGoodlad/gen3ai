@@ -61,26 +61,30 @@ TARGET = 1000           # over this is REPORTED, never a failure
 RATCHET_SLACK = 0.10    # a grandfathered file may drift up by <10% of its recorded count
 
 # ---------------------------------------------------------------------------------------------
-# Grandfathered SOURCE files. Measured 2026-08-22 at ce77c86. The list may only SHRINK.
+# Grandfathered SOURCE files.
 #
-# It already has, FOUR times: `src/main/train_rl_agent.py` (4574 lines) became the `main/train/`
-# package on 2026-08-22; `src/main/prober/engine.py` (3058) + `src/main/prober/session.py` (2573)
-# became the `main/prober/engine/` and `main/prober/session/` packages on 2026-08-23; and
+# **EMPTY, as of 2026-08-23 — every source file in the tree is under the 2,000-line bound.** That
+# is a MEASUREMENT, not an aspiration: `test_meta_the_live_allowlists_are_exactly_the_files_over_
+# the_bound` walks the real tree and fails if this list and the set of oversized files ever
+# disagree in either direction. So an empty list here means the tree has no oversized file, and
+# the gate now protects a clean state rather than a debt schedule.
+#
+# The debt was paid down in five passes, each one deleting its entry rather than lowering it:
+# `src/main/train_rl_agent.py` (4574 lines) became the `main/train/` package on 2026-08-22;
+# `src/main/prober/engine.py` (3058) + `src/main/prober/session.py` (2573) became the
+# `main/prober/engine/` and `main/prober/session/` packages on 2026-08-23;
 # `src/agents/training/instrumented_ppo.py` (2152) became `agents/training/instrumented_ppo/` the
-# same day. All four entries are GONE rather than lowered — which is the rule this file states
-# twice and the reason there is no "add it to the list" escape. Taking an entry off is welcome
-# piecemeal work: it needs no permission, no design doc and no coordination, and every removal is
-# a permanent reduction in how much a reader has to hold at once.
+# same day; and `src/agents/model/features_extractor.py` (2280 — the FORWARD PATH, and the file
+# that set the precedent the other four followed) became a base-class chain across
+# `extractor_build` / `extractor_api` / `extractor_forward` / `extractor_stashes` / `projection`,
+# leaving a 277-line hub. There is no "add it to the list" escape and there never was; the list
+# may only shrink, and it has now shrunk to nothing.
 #
-# ONE entry left. `features_extractor.py` is the last file in the tree over the bound, and it is
-# the one that set the precedent every removal since has followed — it was decomposed into
-# per-phase modules on 2026-08-16 and kept as their re-export hub, which is why it is still 2,280
-# lines of hub. Note that it has GROWN since the 2026-08-22 measurement (2237 -> 2280), so its
-# ratchet ceiling is 2460 and there is not much room left in it.
+# ⚠️ **A new entry here is not a legal move.** If a file crosses 2,000 the answer is to split it,
+# not to record it — the list is kept as a (now empty) dict solely so `check_sizes` keeps its one
+# code path and so this history survives where the next person to grow a file will read it.
 # ---------------------------------------------------------------------------------------------
-GRANDFATHERED_SOURCE: Dict[str, int] = {
-    "src/agents/model/features_extractor.py": 2237,
-}
+GRANDFATHERED_SOURCE: Dict[str, int] = {}
 
 # ---------------------------------------------------------------------------------------------
 # Grandfathered non-exempt TEST files.

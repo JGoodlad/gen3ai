@@ -29,12 +29,17 @@ extend-exclude = ["src/poke_env", "src/rust_sim"]
 # `features_extractor.py` IS the model package's documented import surface. It imports ~42 names
 # it never uses itself, purely so `from agents.model.features_extractor import D_MODEL /
 # N_HISTORY_TURNS / DamageOperator / …` keeps resolving. This is stated three times in the tree:
-# at the file's own lines 45-46 and 127-140 ("Re-exported here UNCHANGED — this module remains
-# the documented import surface"), by the two `# noqa: F401 (re-export)` markers already on its
-# import blocks, and by the root CLAUDE.md ("re-exports the whole block, so historical import
-# paths still resolve"). MEASURED: `N_HISTORY_TURNS` alone is imported through it by 13 modules
-# across `agents/` and `main/`. `__all__` cannot stand in for this — the re-exported set is far
-# larger than the public-star set.
+# by the file's own module docstring ("THE documented import surface for the whole model
+# package"), by the `# noqa: F401 (re-export)` markers already on its individual import blocks,
+# and by the root CLAUDE.md ("re-exports the whole block, so historical import paths still
+# resolve"). MEASURED: `N_HISTORY_TURNS` alone is imported through it by 13 modules across
+# `agents/` and `main/`. `__all__` cannot stand in for this — the re-exported set is far larger
+# than the public-star set.
+#
+# ⚠️ KEYED TO THE HUB AND ONLY THE HUB. The 2026-08-23 class split moved the extractor's own code
+# into `extractor_build` / `extractor_api` / `extractor_forward` / `extractor_stashes` /
+# `projection`; none of them inherits this exemption and none needs one — they import what they
+# use. A new sibling that wants a file-wide ignore is a sibling that has become a second hub.
 "src/agents/model/features_extractor.py" = ["F401"]
 
 # (The TEMPORARY handoff section is CLOSED — gen3_extractor_stashes_v1, 2026-08-17: every

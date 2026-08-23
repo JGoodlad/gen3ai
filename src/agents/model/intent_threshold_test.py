@@ -270,7 +270,17 @@ def test_the_p_ko_policy_context_survives_the_vf_route_deletion():
     from agents.model.intent_threshold import threshold_probs as _tp
 
     def _logits(scale):
-        import agents.model.features_extractor as _fx
+        # ⚠️ Patch the module that HOLDS `forward_internal`, not the `features_extractor` hub.
+        # Python resolves a global at CALL time against the defining module's namespace, so a
+        # patch on the hub reaches the forward only while the forward lives there — it stopped
+        # doing so when the extractor was decomposed into a base-class chain on 2026-08-23. This
+        # one failed loudly (the pin is `assert not equal`, so a patch that lands nowhere reads as
+        # "the cell is dead"); the same drift on an `assert equal` pin would have passed for the
+        # wrong reason forever, which is why the module is named through `forward_internal` itself.
+        import importlib
+        import inspect
+        _fx = importlib.import_module(
+            inspect.getmodule(type(fe).forward_internal).__name__)
         real = _fx.threshold_probs
 
         def patched(*a, **k):

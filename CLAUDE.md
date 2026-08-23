@@ -418,8 +418,10 @@ import names solely so other modules can import them back out) and a TEMPORARY h
 ordinary dead code. The second was meant to shrink to nothing and **has** — it is CLOSED and holds
 zero entries, so a new finding has nowhere to be parked: fix it at the source, or give it an inline
 `# noqa: <code>` naming the reason. `features_extractor.py`'s file-wide `F401` is the only surviving
-entry and it is PERMANENT (measured: 33 findings without it, the bulk of them names other modules
-import back out through the hub). `/gen3ai-ship` runs both gates before
+entry and it is PERMANENT (measured 2026-08-23: **73** findings without it — up from 33, because the
+2026-08-23 class split turned the hub into pure re-export, so nearly every import there is now a name
+another module reaches back out through). It is keyed to the HUB alone; the five siblings the class
+split into inherit nothing and need nothing. `/gen3ai-ship` runs both gates before
 staging (step 1c), so the ship path does not depend on whether the suite was run.
 
 ### The FILE-SIZE ratchet (`src/file_size_gate_test.py`) — the third static gate
@@ -439,25 +441,38 @@ sprawls across six subsystems is the same liability as an oversized source file 
 every test as cross-cutting (the same measurement that killed inferred tier markers). When it
 misfires, rename the test to match its subject or split it — do not park it in the allowlist.
 
-**The ratchet only turns one way, and it HAS turned.** The source list landed with five entries and
-is **down to two** — `features_extractor` 2237 · `instrumented_ppo` 2134 — because
-`train_rl_agent` (4574) became the `main/train/` package on 2026-08-22 and `prober/engine` (3058) +
-`prober/session` (2573) became the `main/prober/engine/` and `main/prober/session/` packages on
-2026-08-23. The test list is **empty** and always was, since every >2k test file has a source
-sibling. A listed file may shrink freely but **fails if it grows ≥10%** past its
-recorded count, and **fails when it drops back under 2,000 without being removed** — the list may
-only shrink, because a stale entry misleads every reader after it (the ruff handoff list and the
-c-family lesson both). So a new oversized file has **nowhere to be parked**: decompose it, the way
-`features_extractor.py` was split into per-phase modules behind a re-export hub (2026-08-16).
-**Taking an entry off the list is always-welcome piecemeal work** — no design doc, no coordination.
+**🎉 THE ALLOWLIST IS EMPTY — every source file in the tree is under the 2,000-line bound**
+(2026-08-23). Both lists are now empty, and that is a MEASUREMENT rather than a claim: one meta-test
+walks the real tree and fails if either list and the set of oversized files disagree in *either*
+direction, so an empty list means there is nothing to list. The gate has stopped being a debt
+schedule and is now a guard on a clean state.
 
-**Four of the five are GONE and the list is down to ONE.** `train_rl_agent.py` → `main/train/`
-(2026-08-22); `prober/engine.py` + `prober/session.py` → packages of the same name (2026-08-23);
-`instrumented_ppo.py` → `agents/training/instrumented_ppo/` (2026-08-23, same day as
-`model_version.py` → `agents/model/model_version/`, which was at exactly 2,000 and so was never
-listed). Each entry was DELETED rather than lowered. **`features_extractor.py` is the last one**,
-and it is the file that set the precedent: 2,280 lines of re-export hub over the per-phase modules
-it was split into, up from its recorded 2,237, so ~180 lines of ratchet headroom remain.
+The source list landed with five entries and was paid off in five passes, each one **deleting** its
+entry rather than lowering it:
+
+| file | lines | became | date |
+|---|---|---|---|
+| `main/train_rl_agent.py` | 4574 | `main/train/` package | 08-22 |
+| `main/prober/engine.py` | 3058 | `main/prober/engine/` package | 08-23 |
+| `main/prober/session.py` | 2573 | `main/prober/session/` package | 08-23 |
+| `agents/training/instrumented_ppo.py` | 2152 | `agents/training/instrumented_ppo/` package | 08-23 |
+| `agents/model/features_extractor.py` | 2280 | a base-class CHAIN behind the same hub → **277** | 08-23 |
+
+(`model_version.py` sat at exactly 2,000 — one line from tripping a gate it had never been listed on
+— and became `agents/model/model_version/` on 08-23 too.)
+
+**A new entry is not a legal move**, and there is nowhere to park an oversized file: decompose it.
+The last one shows the second shape a decomposition can take — `features_extractor.py` was already a
+re-export hub over the per-phase modules split out on 2026-08-16, so the FORWARD PATH itself came out
+into `extractor_build` / `extractor_api` / `extractor_forward` (+ `extractor_stashes`, `projection`)
+as base classes the hub's `Gen3FeaturesExtractor` inherits — not a package, because the sibling
+convention was already established there and inheritance is what keeps every `state_dict` key and
+every `inspect.signature(...__init__)` reader byte-identical. A listed file may shrink freely but
+**fails if it grows ≥10%** past its recorded count, and **fails when it drops back under 2,000
+without being removed** — the list may only shrink, because a stale entry misleads every reader after
+it (the ruff handoff list and the c-family lesson both). **Keeping it empty is always-welcome
+piecemeal work** — no design doc, no coordination; the 1,000-2,000 census is where the next one comes
+from.
 
 ### Unit tests only (the fast inner loop)
 ```bash
@@ -1357,6 +1372,10 @@ src/
                      #   belief_heads/aux_value_heads/pointer_head/value_readouts) + damage_op.py
                      #   (the physics) + damage_op_layout.py (the _DMG_* shape contract) — all
                      #   re-exported by features_extractor, so old imports still work
+                     #   the extractor CLASS is a base-class chain: extractor_build (__init__) ->
+                     #   extractor_api (the last_* stash reads) -> extractor_forward
+                     #   (forward_internal) -> features_extractor (the class + forward), plus
+                     #   extractor_stashes.py and projection.py
                      #   model_version/ — the version gate as a package (constants/migrations/
                      #   fields/construct/compat/resume_checks/spec) behind a re-export hub
     gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
@@ -1519,6 +1538,13 @@ Orientation only:
   (`extractor_ctx` / `encoders` / `team_transformer` / `pools` / `belief_heads` / `aux_value_heads`
   / `pointer_head` / `value_readouts`, all re-exported by `features_extractor`). Most phases are
   flag-gated; which ones exist depends on the run config.
+- **The ORCHESTRATOR itself is a base-class chain** (2026-08-23): `ExtractorBuild` (`__init__` —
+  flag validation + module construction) → `ExtractorApi` (the `last_*` stash reads, the pointer
+  cell widths, the debugger/ortho-init/belief-grad-mode setters) → `ExtractorForward`
+  (`forward_internal`, the T0/T1 belief+physics stack) → `Gen3FeaturesExtractor` (the class, and
+  `forward`). It is ONE `nn.Module` subclass with every attribute path — and therefore every
+  `state_dict` key — unmoved. `forward` stays on the concrete class because both compile flags
+  patch the bound `fe.forward` and `cf_terms`/`instrumented_ppo_test` reach for `type(fe).forward`.
 - It returns a **`(pi_features, vf_features)` tuple** and therefore MUST be paired with
   `Gen3DualHeadMaskablePolicy` (`policy.py`). A stock SB3 policy will not work.
 - The action head is the **pointer head** — there is no flat `action_net`, and no flag to restore

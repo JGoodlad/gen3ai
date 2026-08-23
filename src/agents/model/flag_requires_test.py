@@ -169,13 +169,28 @@ def _flag_names_in(expr: ast.AST) -> Set[str]:
     return out
 
 
+def _ctor_source():
+    """`(file, the __init__ FunctionDef)`, resolved from the FUNCTION rather than the class.
+
+    ⚠️ Never `inspect.getsourcefile(Gen3FeaturesExtractor)`. The extractor was decomposed into a
+    base-class chain on 2026-08-23 and the constructor now lives in `extractor_build.py`, while
+    the class itself is still declared in the `features_extractor.py` hub — so the class's file
+    holds no `__init__` at all. Resolving from `Gen3FeaturesExtractor.__init__` follows the
+    constructor wherever it lives, and `__qualname__` names the class that actually defines it.
+    """
+    ctor_fn = Gen3FeaturesExtractor.__init__
+    path = inspect.getsourcefile(ctor_fn)
+    assert path is not None, "cannot locate the constructor's source file"
+    owner = ctor_fn.__qualname__.rsplit(".", 1)[0]
+    tree = ast.parse(open(path).read())
+    ctor = next(b for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == owner
+                for b in n.body if isinstance(b, ast.FunctionDef) and b.name == "__init__")
+    return path, ctor
+
+
 def _guarded_raises() -> List[Tuple[int, Set[str], str]]:
     """`(lineno, registry flags in the enclosing conditions, the conditions' source)` per raise."""
-    path = inspect.getsourcefile(Gen3FeaturesExtractor)
-    tree = ast.parse(open(path).read())
-    ctor = next(b for n in ast.walk(tree) if isinstance(n, ast.ClassDef)
-                and n.name == "Gen3FeaturesExtractor"
-                for b in n.body if isinstance(b, ast.FunctionDef) and b.name == "__init__")
+    _path, ctor = _ctor_source()
 
     found: List[Tuple[int, Set[str], str]] = []
 
@@ -213,7 +228,7 @@ def test_the_constructor_declares_no_coupling_the_registry_lacks():
         # Declared iff ONE of the flags names all the others as its dependencies.
         if any(set(names) - {n} <= set(BY_NAME[n].requires) for n in names):
             continue
-        undeclared.append(f"  {os.path.basename(inspect.getsourcefile(Gen3FeaturesExtractor))}"
+        undeclared.append(f"  {os.path.basename(_ctor_source()[0])}"
                           f":{lineno} couples {sorted(names)}\n      guard: {guard}")
     assert not undeclared, (
         "constructor raises that couple registry flags with no matching declaration:\n"

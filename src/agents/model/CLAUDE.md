@@ -328,9 +328,11 @@ Rules to preserve:
 
 ## File layout (one responsibility per file; phases split 2026-08-16)
 
-Two split rounds, both **pure relocations** — same classes, same constants, same forward math
+Three split rounds, all **pure relocations** — same classes, same constants, same forward math
 (`gen3_damage_op_split_v1` 2026-08-01 carved out the op; the 2026-08-16 round carved the phase
-modules out of the extractor and the layout out of the op). The critic-route deletion wave then
+modules out of the extractor and the layout out of the op; `gen3_extractor_class_split_v1`
+2026-08-23 carved the orchestrator CLASS itself into the base-class chain below). The critic-route
+deletion wave then
 REMOVED two files rather than reshuffling any — `value_routes.py` (`ValueClockRoute` /
 `ValueIntentRoute`) and `intent_value_reduce.py` — plus `seed_diagnostics.py`. **The five
 surviving critic-side files stay as they are**: three distinct delivery MECHANISMS (the v89 seam
@@ -359,8 +361,61 @@ table exists to prevent:
 | `conditional_threat.py` | `gen3_conditional_threat_v1` — **OA1**, the conditional THREAT cell (the defensive pivot): the four α-contracted coordinates the reduced outcome row structurally cannot carry (`e_pko_acc`, `e_type_mult`, `margin_high`, `margin_crit`), on the pointer SWITCH cell. `CONDITIONAL_THREAT_COORDS` is the contract; the module docstring holds the **substitution table** for the three §1.2 clauses that are superseded (no `λ`, no re-emitted row coordinates, `--damage-matrices-outgoing-all` void) plus each coordinate's §9a admission answer |
 | `pair_value_route.py` | `gen3_pair_value_route_v1` — **PV**, the pair-VALUE CRITIC route: Phase A's unified row as TOKEN CONTENT on our mon j's token, injected inside `CLSPool` on the value pool's copy. The docstring carries the **C4 re-entry condition**, why the v89 seam was rejected (a post-pool route must collapse the J axis), and why α is R1 by ORDERING |
 | `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`, plus Phase B's `reduce_pair_in_all` (Contract W at EVERY defender), `pair_alpha_full` (the three-way α split a SWITCH-branch consumer needs) and `PairOutcomeSwitchCell` (the FIRST module to widen the pointer SWITCH cell). Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
-| `features_extractor.py` | `ProjectionAssembler` + the `Gen3FeaturesExtractor` orchestrator; **re-exports every moved name** |
+| `extractor_stashes.py` | `ExtractorStashes` — the per-forward side-value container (`gen3_extractor_stashes_v1`) |
+| `projection.py` | `compute_projection_widths` (the STATIC width arithmetic) + `ProjectionAssembler` (the concat it describes) |
+| `extractor_build.py` | `ExtractorBuild` — `Gen3FeaturesExtractor.__init__`: every flag validation, every module, in construction ORDER |
+| `extractor_api.py` | `ExtractorApi` — the `last_*` stash reads, the pointer-cell widths, the debugger/ortho-init/belief-grad-mode setters |
+| `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
+| `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
+
+### The extractor CLASS is a base-class CHAIN (`gen3_extractor_class_split_v1`, 2026-08-23)
+
+A third split round, and the one that took the last entry off the size ratchet's grandfathered list
+(the tree now has **no** source file over 2,000 lines). `features_extractor.py` went 2,280 → **277**:
+
+    ExtractorBuild(torch.nn.Module)   extractor_build.py    __init__
+      └─ ExtractorApi                 extractor_api.py      the last_* surface + the setters
+           └─ ExtractorForward        extractor_forward.py  forward_internal + the T0/T1 stack
+                └─ Gen3FeaturesExtractor  features_extractor.py  the class, and `forward`
+
+**Inheritance rather than helper functions, for four reasons that are each a constraint, not a
+preference:**
+
+1. **`state_dict` keys.** Moving CODE is free; moving where a sub-MODULE is ATTACHED is not. A base
+   class changes no attribute PATH on the instance, so the 236 keys are byte-identical.
+2. **The constructor SIGNATURE is a public surface.** SB3 builds the extractor as
+   `features_extractor_class(observation_space, **features_extractor_kwargs)`, and ~10 sites read
+   `inspect.signature(Gen3FeaturesExtractor.__init__).parameters` as the flag set (`compile_prewarm`,
+   `compile_preload`, `ctor_kwarg_snapshot_test`, `config_only_pattern_test`, `delivery_graph`, …).
+   An inherited `__init__` IS that function, so every one of them is unchanged.
+3. **Every body keeps its `self.` spelling**, so the split is checkable as a pure relocation — all
+   44 members are source-hash identical to the pre-split class.
+4. **mypy needs no declarations.** Each mixin's `self.<attr>` resolves against the `__init__` that
+   assigns it, because that `__init__` is an ANCESTOR rather than a sibling.
+
+**⚠️ `forward` stays on `Gen3FeaturesExtractor`, and must.** Both compile flags patch the BOUND
+`fe.forward`; `cf_terms` calls `type(fe).forward` for a deliberately-EAGER pass; and
+`instrumented_ppo_test` ASSIGNS `type(fe).forward` and restores it. An attribute defined on a base
+would be SHADOWED by that assignment and the restore would leave the shadow in place forever.
+
+**⚠️ `__init__` is deliberately NOT split further** — same reasoning as `instrumented_ppo.train()`.
+Its checkable property is MODULE CONSTRUCTION ORDER: SB3 restores optimizer state POSITIONALLY (the
+ai_v6_13 "128 vs 5" crash), so a module must be APPENDED, never inserted, and several comments in the
+body say exactly where in that order they sit. That is only readable while it is one straight line.
+
+**⚠️ A test that patches a module GLOBAL must name the module that HOLDS the caller.** Python
+resolves a global at call time against the *defining* module's namespace, so
+`agents.model.features_extractor.threshold_probs = fake` stopped reaching `forward_internal` the
+moment the forward moved. `intent_threshold_test` caught it because its pin is `assert not equal`, so
+a patch landing nowhere reads as "the cell is dead" — the same drift under an `assert equal` pin
+would have passed for the wrong reason forever. It now resolves the module through
+`inspect.getmodule(type(fe).forward_internal)`, which follows the code.
+
+**⚠️ `flag_requires_test._guarded_raises` resolves the ctor from the FUNCTION**
+(`Gen3FeaturesExtractor.__init__` + its `__qualname__`), never from
+`inspect.getsourcefile(Gen3FeaturesExtractor)` — the class's file no longer holds an `__init__` at
+all.
 
 No import cycle: `DamageOperator` touches the extractor only through `ctx: 'ExtractorContext'`, which
 is a **string** forward-reference and so costs no runtime import. The re-exports mean every historical
@@ -372,6 +427,16 @@ stays DEFINED in `features_extractor.py`: SB3 checkpoints pickle the class by it
 **The gate for a refactor claiming to change nothing is proof, not review:** byte-identity on pi/vf +
 the raw op block (`tmp/damage_op_equiv_probe.py`), unchanged `state_dict` keys, the constructed-scenario
 physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All four held.
+
+The 2026-08-23 class split was held to the same standard, escalated once more (the proofs are in the
+commit message): a **line-coverage splitter** reading the pre-split text from the COMMIT assigned all
+2,280 original lines to exactly one target (2,270 assigned + 10 verified-blank) before writing
+anything; **44/44 class members are source-hash identical** with `forward` / `forward_internal` /
+`__init__` additionally executable-AST identical; the `state_dict` KEY sha and the whole-`state_dict`
+TENSOR sha are unchanged on a seeded production-config build (236 keys); and pi/vf plus every
+`ExtractorStashes` field and every `last_*` property are bit-identical through both `fe(obs)` and
+`type(fe).forward(fe, obs)`. Exactly ONE deliberate edit: the class's base, `torch.nn.Module` →
+`ExtractorForward`.
 
 ## The op's flat layout has ONE slicer (`gen3_op_tensors_views_v1`)
 
