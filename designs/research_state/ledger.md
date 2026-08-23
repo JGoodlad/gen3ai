@@ -3716,3 +3716,35 @@ FROM the event log (the log is already the source of truth for TurnDelta) so the
 a thin protocol→event translator and the battle state becomes a typed fold — the same shape the
 rust port already has, which is why it never had this bug class. Not scheduled; no design doc
 yet; come back to it deliberately.
+
+### 🪤 PROBE PAIR ADJUDICATED — punishment CLOSED, credit CONVICTED; the bait load moves off-policy (2026-08-23)
+
+Runs `ai_v9_27_extremedial_probe_0823` (P1) / `ai_v9_26_baitent_probe_0823` (P2), main @
+`e6ec7e1`, training session's report accepted under the pre-registered readings.
+- **P1 (extreme dial, share 0.75 / p_bait 0.8, +2M): NULL.** Zero, 2.5% and 7.5% BaitBot
+  exposure all beat it at the same rate (pooled 0.885/0.875/0.880; every pairwise CI within
+  ±5pp; measured harness noise floor ±0.045 — the discipline of measuring it is noted and
+  adopted as standard). Census fell nothing; B1 re-click IDENTICAL to 4dp on independent
+  counts. **The punishment-frequency lever is closed permanently.**
+- **P2 (bait-entropy boost 3.0, two-leg step): the manipulation reached its target**
+  (boost_eff 3.0 constant; flagged 5.9%; flagged entropy +0.0495, saturation gap halved) and
+  **B1 fell hard then REVERTED**: 0.056 boosted → 0.229 post-boost → baseline family
+  (leg-vs-leg z=−2.55). First-whiff rate never moved — the boost broke the REPEAT, not the
+  initial mistake. Falls-then-reverts ⇒ **CREDIT convicted**: sampling gates the behaviour in
+  the moment; the advantage signal at those states still points back into the loop, so nothing
+  durable is learned. The off-policy levers (search-teacher/OPD, R2 labels) inherit with a
+  MEASURED premise: the policy can be moved off the whiff; it does not retain it — exactly the
+  shape a distillation target fixes and an exploration bonus does not.
+- **Caveats carried**: conviction n is small (3/54 vs 11/48, p~0.011 nominal / ~0.033
+  adjusted) — ONE cheap confirmation ordered (a second leg-B eval trace, eval-only, PINNED
+  code: `--sync-to-main` would pull `393532c` and break like-for-like). Baton-Pass symmetry:
+  both probes trained/evaluated BP-blind like every arm before them — arm-vs-arm stands.
+  The session's own interim-reading correction (+0.003 → +0.0495, a first-of-two-tb-writes
+  artifact) is accepted and is the honest kind.
+- **Two latent defects minted as fixes owed**: (1) **anneal-frac is INERT on any resumed
+  run** — `_current_progress_remaining` anchors at absolute step 0, so a fork at 94% "done"
+  gets boost_eff≈1.0 at step one; shared with `--defensive-entropy-anneal-frac`; any
+  schedule a fork should feel must be resume-relative. (2) **a fork starts POOLLESS** —
+  `SnapshotPool` derives state from the run dir and nothing copies it across a fork; P1's
+  first launch ran bots-only at 0% self-play until killed at 295k and re-seeded. Both are
+  footguns every future forked probe hits.
