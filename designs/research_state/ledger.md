@@ -3076,3 +3076,85 @@ landing reward work into it). Four findings to fold in there:
    `measurements/post_paydown_baselines_2026-08-23.json` rather than carrying it forward.
 4. Two different ms pairs are quoted for the same 1.75× compile-trainer result (`150.85 → 86.21`
    in the table, `155.1 → 88.5` in the root doc). One session or two — say which.
+### The size ratchet's last two giants are PACKAGES — and the allowlist is down to ONE entry (2026-08-23, `agents/training/instrumented_ppo/` + `agents/model/model_version/`)
+
+`src/agents/training/instrumented_ppo.py` (2,152 lines) was the last entry on
+`file_size_gate_test.py`'s grandfathered list apart from `features_extractor.py`.
+`src/agents/model/model_version.py` sat at **exactly 2,000** — the gate fails at `> 2000`, so it
+was one line from tripping a gate it had never been listed on. Both are now PACKAGES of the same
+name whose `__init__.py` is a pure re-export hub, and the `instrumented_ppo` allowlist entry is
+**DELETED rather than lowered**. The `main/train/` → `main/prober/{engine,session}/` precedent,
+applied a fourth and fifth time.
+
+    instrumented_ppo/   ppo 1367 · hparams 297 · value_terms 153 · distill_terms 147 ·
+                        aux_terms 125 · __init__ 118 · noise_scale 88 · constants 30
+    model_version/      compat 600 · fields 483 · migrations 330 · construct 274 ·
+                        resume_checks 232 · constants 167 · __init__ 55 · spec 38
+
+- **⚠️ THE LIST IS NOT EMPTY, and the brief that said it would be was wrong.**
+  `features_extractor.py` remains — **2,280 lines against a recorded 2,237**, i.e. it has GROWN
+  since the gate landed and has ~180 lines of ratchet headroom left. It is the file that set the
+  precedent (split into per-phase modules 2026-08-16, kept as their hub) and it is now the only
+  entry. Recorded here rather than silently left, because "the list went empty" is exactly the
+  kind of claim a later reader would act on.
+- **`train()` is DELIBERATELY NOT SPLIT, and that is the whole design of the PPO half.** It is
+  ~1,250 lines in ONE module because the order its ~20 terms are folded into `loss` is
+  straight-line SOURCE order, and that property — *no flag combination reorders these* — is only
+  checkable by reading while it stays one straight line. The ordering is now a NUMBERED CONTRACT
+  in the method's own docstring and in `training/CLAUDE.md`, with the reason the last two steps
+  are last: **TD-aux and the counterfactual block each run their OWN extractor forward, which
+  CLOBBERS the minibatch's stashes** that the belief / win-prob / value-dist folds read. Moving a
+  stash-reading fold below them does not crash — it silently scores the wrong states.
+  `instrumented_ppo_hub_contract_test.py` pins the TD-aux-before-CF half by reading the source.
+- **"Pure move" is a MECHANISM, not a promise.** A one-shot splitter per file assigned every
+  original line to exactly one target and asserted total coverage (2,152 → 2,106 assigned + 22
+  dropped-and-verified-blank + 24 import-header lines re-derived per module; 2,000 → 1,985 + 9 +
+  6). It reads the pre-split text from the COMMIT, not the worktree, so the proof re-runs after
+  the original is gone. Decorator lines are pulled into a method's range automatically rather than
+  by hand — a hand-adjusted range is exactly where a silent drop would hide.
+- **The behaviour proof is a SURFACE DIFF, captured from both trees side by side.**
+  `InstrumentedMaskablePPO`: **all 102 class members identical by source hash**, MRO tail
+  identical (the five mixins are transparent), and `train()`'s **executable AST byte-identical**
+  with docstrings stripped (`ast.dump` sha256 equal, 144,833 bytes) — which is what lets the
+  fold-order docstring be ADDED without weakening the claim. `ModelVersion`: all 103 fields in the
+  same ORDER with the same defaults, the same method set, the same `check_compatible` and
+  `_migrate_config` source hashes, the same constants. The only diffs in either capture were the
+  three deliberate edits below and the pure import BINDINGS (`np`, `th`, `spaces`, `F`,
+  `_belief_bank`, …), which nothing in the tree reads off these modules — verified by grep, and
+  deliberately not pinned, the same rule `prober/hub_contract_test.py` states.
+- **THREE deliberate single-line edits, all recorded in the splitters:** `ModelVersion` →
+  `ModelVersionFields` for the field-block base class, and two `-> ModelVersion` return
+  annotations → `-> Self` (a classmethod on a mixin cannot promise the subclass; `Self` is both
+  correct and stronger). Annotations are strings under `from __future__ import annotations`, so
+  all three are behaviour-inert — and `fields.py` keeps that future-import precisely so
+  `dataclasses.fields(...)[i].type` stays a STRING as before.
+- **THE SCANNER THAT WOULD HAVE GONE WRONG WAS FOUND FIRST, and it was not vacuous — it was
+  actively misleading.** `_verify_upstream_unchanged`'s drift message named `{__file__}` as "the
+  file to re-port into". That is right only while the module is one file; the moment `train()`
+  moved, `__file__` would have sent a reader to the hub with total confidence. It now names a
+  DERIVED `_TRAIN_OVERRIDE_FILE`, pinned by a new test against
+  `inspect.getfile(InstrumentedMaskablePPO.train)` — so the message cannot name a file the
+  override is not in. The hash constant and the checker itself STAY IN THE HUB on purpose:
+  `instrumented_ppo_test` patches that global on the module object it imports, and moving it to a
+  submodule would have left the patch reaching a different global than the function reads — a test
+  that still passes, for the wrong reason. The other two scanners were already safe:
+  `inspect.getsource(InstrumentedMaskablePPO.train)` and
+  `inspect.getsource(ModelVersion.check_compatible)` both follow the function to whichever module
+  defines it.
+- **Both classes had to be split as CLASSES, not just as modules** (`ModelVersion` was 1,510
+  lines; `InstrumentedMaskablePPO` was 2,034), so both are now assembled from mixins. That trades
+  a file-size problem for a BASE-LIST problem — a family can drop out of the bases without any
+  import failing, and the class would still construct, still save, and simply stop gating / stop
+  folding a whole family of loss terms. Two new gates pin it:
+  `model_version_hub_contract_test.py` (11 pre-split name pins + the base list + every `check_*`
+  by name + the field-order head + the cycle guard + the standalone-import check + **that the
+  PRE-FLOOR MIGRATION HISTORY archive survived the move**) and
+  `instrumented_ppo_hub_contract_test.py` (13 name pins + the base list + 25 methods + the
+  fold-order read + **`MaskablePPO` must stay LAST in the MRO**, exercised through
+  `_excluded_save_params`, because a mixin placed after it would silently start pickling a
+  `threading.Lock` into every checkpoint).
+- **Gates**: routine suite (`-m "not slow and not e2e"`) green; ruff + mypy; the size gate green
+  with the entry removed and every new module under the 1,000-line target except `ppo.py`, which
+  is the deliberate one above; `--debug --steps 10000` smoke, a fresh→resume pair, and a
+  `--self-play --debug-eval` cycle; `python -m main.checkargs` clean on the 5 newest runs;
+  `src/rust_sim` untouched.

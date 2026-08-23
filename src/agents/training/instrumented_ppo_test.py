@@ -89,8 +89,22 @@ def test_verify_upstream_unchanged_raises_on_mismatch(monkeypatch):
     msg = str(exc.value)
     assert "DRIFT DETECTED" in msg
     assert "0" * 64 in msg  # the expected (wrong) hash is shown
-    assert "instrumented_ppo.py" in msg  # the file to fix is named
+    assert str(instrumented_ppo._TRAIN_OVERRIDE_FILE) in msg  # the file to fix is named
     assert "ACTION REQUIRED" in msg
+
+
+def test_the_drift_message_names_a_file_that_actually_holds_the_override():
+    """The "port it into THIS file" pointer must name the file `train()` is really in.
+
+    It used to be `__file__`, which was right only while the module was one file. On 2026-08-23
+    `instrumented_ppo.py` became a package and the override moved to `ppo.py`, so `__file__`
+    would have sent a reader to the hub — a message that is confidently wrong is worse than a
+    vague one. `_TRAIN_OVERRIDE_FILE` is derived, and this pins it against the real definition
+    site rather than against a string.
+    """
+    assert instrumented_ppo._TRAIN_OVERRIDE_FILE.is_file()
+    assert (inspect.getfile(InstrumentedMaskablePPO.train)
+            == str(instrumented_ppo._TRAIN_OVERRIDE_FILE))
 
 
 def test_instrumentation_marker_present_in_override():

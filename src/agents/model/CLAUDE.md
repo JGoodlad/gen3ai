@@ -320,7 +320,7 @@ Rules to preserve:
 - **Each phase owns its layers** (`move_network` lives under `pokemon_encoder`, `our_cls` under `cls_pool`, etc.). State_dict keys are therefore phase-prefixed.
 - **`Embeddings` is the sole owner of the 5 embedding tables + `hp_type_idx_map`.** It is passed as a **forward argument** to `PokemonEncoder` and `TeamTransformer` — never stored as a child attribute on them — so the tables register exactly once. (The root exposes read-only `@property` forwarders like `model.type_embedding` for convenience; those add no state_dict keys.)
 - **`ExtractorContext`** (frozen-by-convention dataclass) is the inter-phase contract: `ObsUnpack` produces it, downstream phases read from it. Add a field here rather than widening a phase's positional signature. Cross-phase values (active-slot indices, fainted masks, `hp_probs`) are computed once in `ObsUnpack` and carried on the context.
-- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version.py`. **Read the live value there, not from prose.** Three cases people get wrong:
+- **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version/constants.py`. **Read the live value there, not from prose.** Three cases people get wrong:
   - A **pure decomposition** still changes state_dict keys, so old checkpoints must fail loudly — bump it.
   - A forward-math change with **unchanged `out_dim` / projection widths** is not shape-caught by anything, so the signature bump is the ONLY thing that rejects a stale checkpoint. This is the case that has bitten most often.
   - **Re-sourcing or re-meaning an obs block** is retrain-class even when no individual dim moves (a constant fallback becoming a real value; a scalar's definition changing; a block moving from `available_moves` order to request-slot order). The long list of historical examples lives in `designs/CHANGELOG.md`.
@@ -611,7 +611,27 @@ flag while explicitly disabling one of its dependencies is reported offline inst
 child ~40 s into a launch. It only fires on an EXPLICIT negation — an omitted dependency is inherited
 from the checkpoint's config on resume, so absence carries no information.
 
-## Model versioning (`model_version.py`, `snapshot.py`)
+## Model versioning (`model_version/`, `snapshot.py`)
+
+**`model_version` is a PACKAGE** (2026-08-23; it was a single 2,000-line file, exactly at the size
+gate's hard bound). `agents/model/model_version/__init__.py` is a pure re-export hub, so every
+`from agents.model.model_version import <name>` across the ~48 import sites resolves unchanged:
+
+| module | holds |
+|---|---|
+| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
+| `migrations.py` | `MIGRATION_FLOOR` · `SIGNATURE_FIRST_VERSION` · `_migrate_config`, **including the PRE-FLOOR HISTORY archive** (a deliberate record of what every deleted branch did — do not trim it) |
+| `fields.py` | `ModelVersionFields` — the dataclass field block alone. Declaration ORDER is the constructor's positional order and `asdict()`'s key order |
+| `construct.py` | `from_layout_and_policy_kwargs` |
+| `compat.py` | `check_compatible` — the gate that runs on **every** load |
+| `resume_checks.py` | `check_opponent_compatible` + the six resume-immutable hparam gates |
+| `spec.py` | `ModelVersion` = the fields plus one mixin per family, and the JSON IO |
+
+`ModelVersion` is assembled from MIXINS, which trades a file-size problem for a **base-list**
+problem: a family can drop out of the bases without any import failing, and the class would still
+construct, still round-trip through JSON, and simply stop gating. `model_version_hub_contract_test.py`
+pins the base list, every gate method by name, the hub's pre-split export list (recovered by AST),
+the no-submodule-imports-its-own-hub cycle guard, and that the migration archive survived.
 
 Every model save writes the **run-level** `model_config.json` + `metadata.json` at the run root via `save_model_snapshot()`, plus a **per-checkpoint** `.json` sidecar beside each checkpoint `.zip` (`write_checkpoint_metadata`, derived from the zip path). Periodic + forced checkpoints `.zip` live in `<run>/checkpoints/` (so their sidecar lands there too); the run-level config/metadata stay one level up at the run root. Loading goes through `load_model_snapshot()`, which resolves the zip then searches **its dir AND its parent** for `model_config.json` (so the run-root config is found even when the zip is in `checkpoints/`; `load_foreign_opponent` does the same) and runs `check_compatible()` before `MaskablePPO.load()` — a mismatch fails fast with a clear error rather than silently loading bad weights. (`snapshot_history` keys + the `worktree.py` resume lookup stay BARE basenames, e.g. `checkpoint_123_steps.zip`, regardless of the subdir.)
 
@@ -620,12 +640,12 @@ Every model save writes the **run-level** `model_config.json` + `metadata.json` 
 - Old models can't be loaded, which is correct (rapid iteration project)
 
 **When you add an optional new feature** (new field with a sensible default):
-1. Add the field to `ModelVersion` in `model_version.py`
+1. Add the field to `ModelVersionFields` in `model_version/fields.py`
 2. Bump `MODEL_CONFIG_VERSION`
 3. Add one `if version < N:` block in `_migrate_config()` with `data.setdefault(...)`
 
 **When you make a structural change** (different forward pass, new layer type):
-1. Change `ARCH_SIGNATURE` in `model_version.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
+1. Change `ARCH_SIGNATURE` in `model_version/constants.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load
 
 **When you DELETE an extractor kwarg** — the case with no automatic gate, and the one this project
@@ -739,7 +759,7 @@ eval/pool/distill opponents are untouched, because reward fields stay out of `ch
 The composition each config resolves to — and the announcer that states it at launch — is in
 `src/agents/training/CLAUDE.md` → *The reward COMPOSITION*.
 
-The live `MODEL_CONFIG_VERSION` is in `model_version.py`; per-version entries are in `designs/CHANGELOG.md`.
+The live `MODEL_CONFIG_VERSION` is in `model_version/constants.py`; per-version entries are in `designs/CHANGELOG.md`.
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**
 (verbatim). They described what each of v6–v57 added, in parallel with the root `CLAUDE.md`'s own
@@ -750,7 +770,7 @@ other and with the code.
   what each head consumes, the `DamageOperator` block, the edge families, the flag table with
   `INERT` markings: **`designs/ARCHITECTURE.md`**.
 - **What each version changed**: `designs/CHANGELOG.md` (history — do not quote as current).
-- **The live values**: `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` in `model_version.py`. Read them
+- **The live values**: `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` in `model_version/constants.py`. Read them
   there. This file deliberately no longer states them: a version number written into prose is stale
   the moment the next one lands, and quoting a stale one is how a v30 description got applied to a
   v59 model.

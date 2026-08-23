@@ -63,17 +63,23 @@ RATCHET_SLACK = 0.10    # a grandfathered file may drift up by <10% of its recor
 # ---------------------------------------------------------------------------------------------
 # Grandfathered SOURCE files. Measured 2026-08-22 at ce77c86. The list may only SHRINK.
 #
-# It already has, three times: `src/main/train_rl_agent.py` (4574 lines) became the `main/train/`
-# package on 2026-08-22, and `src/main/prober/engine.py` (3058) + `src/main/prober/session.py`
-# (2573) became the `main/prober/engine/` and `main/prober/session/` packages on 2026-08-23. All
-# three entries are GONE rather than lowered — which is the rule this file states twice and the
-# reason there is no "add it to the list" escape. Taking an entry off is welcome piecemeal work:
-# it needs no permission, no design doc and no coordination, and every removal is a permanent
-# reduction in how much a reader has to hold at once.
+# It already has, FOUR times: `src/main/train_rl_agent.py` (4574 lines) became the `main/train/`
+# package on 2026-08-22; `src/main/prober/engine.py` (3058) + `src/main/prober/session.py` (2573)
+# became the `main/prober/engine/` and `main/prober/session/` packages on 2026-08-23; and
+# `src/agents/training/instrumented_ppo.py` (2152) became `agents/training/instrumented_ppo/` the
+# same day. All four entries are GONE rather than lowered — which is the rule this file states
+# twice and the reason there is no "add it to the list" escape. Taking an entry off is welcome
+# piecemeal work: it needs no permission, no design doc and no coordination, and every removal is
+# a permanent reduction in how much a reader has to hold at once.
+#
+# ONE entry left. `features_extractor.py` is the last file in the tree over the bound, and it is
+# the one that set the precedent every removal since has followed — it was decomposed into
+# per-phase modules on 2026-08-16 and kept as their re-export hub, which is why it is still 2,280
+# lines of hub. Note that it has GROWN since the 2026-08-22 measurement (2237 -> 2280), so its
+# ratchet ceiling is 2460 and there is not much room left in it.
 # ---------------------------------------------------------------------------------------------
 GRANDFATHERED_SOURCE: Dict[str, int] = {
     "src/agents/model/features_extractor.py": 2237,
-    "src/agents/training/instrumented_ppo.py": 2134,
 }
 
 # ---------------------------------------------------------------------------------------------

@@ -7,6 +7,51 @@ LiveView/TurnView/LegalActions read-models it consumes are documented in
 `src/agents/battle/CLAUDE.md`. The obs-build performance gate is in
 `src/agents/observation/CLAUDE.md`.
 
+## The PPO step (`instrumented_ppo/`) — and the FOLD ORDER contract
+
+**`instrumented_ppo` is a PACKAGE** (2026-08-23; it was a single 2,152-line file, the last entry
+on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub, so every
+`from agents.training.instrumented_ppo import <name>` resolves unchanged:
+
+| module | holds |
+|---|---|
+| `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence** |
+| `hparams.py` | every after-construction knob `train_rl_agent` sets (`value_tail_weight`, the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
+| `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor |
+| `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL, value MSE, the FitNets hint) |
+| `value_terms.py` | the win-prob BCE · the value-dist HL-Gauss CE · `_value_loss_from_se` |
+| `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
+| `constants.py` | `_VALUE_TAIL_FRAC` · `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
+
+**`train()` is deliberately NOT split**, and the reason is the contract below. It is ~1,250 lines
+in one module because the ORDER the terms are folded in is straight-line source order, and that is
+only checkable by reading while it stays one straight line. Per minibatch:
+
+1. the upstream PPO loss (`policy_loss + ent_coef·entropy + vf_term`)
+2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
+   nature-EV / HP-type / item belief, move-latent
+3. the win-prob BCE, then the CF-twin on-policy mirror
+4. the value-dist HL-Gauss CE
+5. the distill family — policy KL, value MSE, the value-feature hint
+6. search-teacher AWR, then OPD
+7. **TD-AUX**
+8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow
+
+**No flag combination reorders these.** Each term is guarded by its own `if <x>_on:`; a term that
+is off contributes nothing and moves no one. **Steps 7 and 8 are last because they each run their
+OWN extractor forward, which CLOBBERS the minibatch's stashes** (`last_win_prob_logits`,
+`last_spread_belief`, …) that steps 2-4 read. Moving a stash-reading fold below step 7 does not
+crash — it silently scores the wrong states. `instrumented_ppo_hub_contract_test.py` pins the
+7-before-8 half by reading the source, along with the mixin base list (a dropped mixin removes a
+whole family of loss terms without breaking an import) and `MaskablePPO` staying LAST in the MRO
+(or `_excluded_save_params`'s `super()` stops reaching upstream and checkpoints start pickling a
+`threading.Lock`).
+
+The upstream-drift hash check (`_verify_upstream_unchanged` + `_EXPECTED_UPSTREAM_TRAIN_HASH`)
+stays in the HUB on purpose: `instrumented_ppo_test` patches that global on the module object it
+imports, so moving it into a submodule would have left the patch reaching a different global than
+the function reads — a test that still passes, for the wrong reason.
+
 ## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
 
 The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged terms**

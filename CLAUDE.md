@@ -449,8 +449,15 @@ recorded count, and **fails when it drops back under 2,000 without being removed
 only shrink, because a stale entry misleads every reader after it (the ruff handoff list and the
 c-family lesson both). So a new oversized file has **nowhere to be parked**: decompose it, the way
 `features_extractor.py` was split into per-phase modules behind a re-export hub (2026-08-16).
-**Taking an entry off the list is always-welcome piecemeal work** — no design doc, no coordination;
-the queued entry-point decomposition takes the top one first.
+**Taking an entry off the list is always-welcome piecemeal work** — no design doc, no coordination.
+
+**Four of the five are GONE and the list is down to ONE.** `train_rl_agent.py` → `main/train/`
+(2026-08-22); `prober/engine.py` + `prober/session.py` → packages of the same name (2026-08-23);
+`instrumented_ppo.py` → `agents/training/instrumented_ppo/` (2026-08-23, same day as
+`model_version.py` → `agents/model/model_version/`, which was at exactly 2,000 and so was never
+listed). Each entry was DELETED rather than lowered. **`features_extractor.py` is the last one**,
+and it is the file that set the precedent: 2,280 lines of re-export hub over the per-phase modules
+it was split into, up from its recorded 2,237, so ~180 lines of ratchet headroom remain.
 
 ### Unit tests only (the fast inner loop)
 ```bash
@@ -1350,6 +1357,8 @@ src/
                      #   belief_heads/aux_value_heads/pointer_head/value_readouts) + damage_op.py
                      #   (the physics) + damage_op_layout.py (the _DMG_* shape contract) — all
                      #   re-exported by features_extractor, so old imports still work
+                     #   model_version/ — the version gate as a package (constants/migrations/
+                     #   fields/construct/compat/resume_checks/spec) behind a re-export hub
     gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
                      #   type_chart/priors) over data/ — single interface, poke-env-free — has CLAUDE.md
     observation/     # Observation encoders (state_encoder, pokemon, moves, etc.) — has CLAUDE.md
@@ -1359,6 +1368,8 @@ src/
                      #   elo.py (Bradley-Terry skill rating), bot_elo_calibration.py (anchor round-robin)
                      #   eval_sharding/ (battle-level work-stealing pkg), rating.py (Glicko-ready seam)
                      #   cf_audit.py (offline counterfactual audit: tight-MC value labels + the bias map)
+                     #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
+                     #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
