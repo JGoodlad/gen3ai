@@ -195,12 +195,26 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("intent_conditional", False)      # v85 structural, version-checked (gen3_intent_conditional_v1)
     _resolve("op_drop_renders", False)         # v86 structural, version-checked (gen3_op_lean_forward_v1)
     _resolve("op_believed_lean", False)        # v86 structural, version-checked (gen3_op_lean_forward_v1)
-    # v98 structural bool (version-checked, fresh-only). Only the STRUCTURAL half is resolved: the
-    # two coefficients are training-only, deliberately NOT inherited on a flagless resume — the
-    # `--opd-coef` / `--cf-winprob-coef` class, and a head that exists costs nothing at coef 0.
+    # THE COUNTERFACTUAL FAMILY — structural heads AND their coefficients, all inherited.
+    # The three STRUCTURAL bools are version-checked; the ten coefficients below are the
+    # td_aux_coef class (config v100, gen3_cf_coef_provenance_v1): recorded for provenance,
+    # never gated, and read back here so a flagless resume keeps the arm it was launched as.
+    # ⚠️ Every one of these argparse entries MUST default to None or the `_resolve` line is a
+    # no-op — that is exactly how these three sat here reading False for two versions.
+    # `flag_registry_test.test_cli_flags_argparse_default_is_none` is now that gate.
     _resolve("cf_evidential", False)           # v98 structural, version-checked (gen3_cf_evidential_head_v1)
     _resolve("cf_twin_heads", False)           # v99 structural, version-checked (gen3_cf_twin_heads_v1)
     _resolve("cf_shadow_critic", False)        # v99 structural, version-checked (gen3_cf_twin_heads_v1)
+    _resolve("cf_records", False)              # v100 training-only (inherited like td_aux_coef)
+    _resolve("cf_records_keep", 512)           # v100 training-only
+    _resolve("cf_winprob_coef", 0.0)           # v100 training-only
+    _resolve("cf_head_only", True)             # v100 training-only
+    _resolve("cf_label_lag_steps", 150_000)    # v100 training-only
+    _resolve("cf_label_likelihood", "binomial")  # v100 training-only
+    _resolve("cf_evidential_coef", 0.0)        # v100 training-only
+    _resolve("cf_evidential_reg", 1e-3)        # v100 training-only
+    _resolve("cf_twin_coef", 0.0)              # v100 training-only
+    _resolve("cf_shadow_coef", 0.0)            # v100 training-only
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)

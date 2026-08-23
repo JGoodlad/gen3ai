@@ -41,8 +41,15 @@ def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
 
     The coefficients are set UNCONDITIONALLY (they are class defaults otherwise, and a resume
     must be able to turn the term OFF as well as on); the BUFFER is only built when the coef is
-    live, so an off run never touches the filesystem. Training-only: nothing here is recorded
-    in `model_config.json` or checked by `check_compatible`."""
+    live, so an off run never touches the filesystem. Training-only: RECORDED in
+    `model_config.json` for provenance + flagless-resume read-back since config v100
+    (`gen3_cf_coef_provenance_v1`), never checked by `check_compatible`.
+
+    `cf_records` / `cf_records_keep` are set here too even though the RING is built in the env
+    workers, not off `model` — `lifecycle._run_roundtrip_test` stamps its ModelVersion off the
+    model object, so a field only argparse knows about would record as its default there."""
+    model.cf_records = bool(args.cf_records)
+    model.cf_records_keep = int(args.cf_records_keep)
     model.cf_winprob_coef = float(args.cf_winprob_coef or 0.0)
     model.cf_head_only = bool(args.cf_head_only)
     model.cf_label_lag_steps = int(args.cf_label_lag_steps)
@@ -177,6 +184,16 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
+            cf_records=args.cf_records,
+            cf_records_keep=args.cf_records_keep,
+            cf_winprob_coef=args.cf_winprob_coef,
+            cf_head_only=args.cf_head_only,
+            cf_label_lag_steps=args.cf_label_lag_steps,
+            cf_label_likelihood=args.cf_label_likelihood,
+            cf_evidential_coef=args.cf_evidential_coef,
+            cf_evidential_reg=args.cf_evidential_reg,
+            cf_twin_coef=args.cf_twin_coef,
+            cf_shadow_coef=args.cf_shadow_coef,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -553,6 +570,16 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
+            cf_records=args.cf_records,
+            cf_records_keep=args.cf_records_keep,
+            cf_winprob_coef=args.cf_winprob_coef,
+            cf_head_only=args.cf_head_only,
+            cf_label_lag_steps=args.cf_label_lag_steps,
+            cf_label_likelihood=args.cf_label_likelihood,
+            cf_evidential_coef=args.cf_evidential_coef,
+            cf_evidential_reg=args.cf_evidential_reg,
+            cf_twin_coef=args.cf_twin_coef,
+            cf_shadow_coef=args.cf_shadow_coef,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

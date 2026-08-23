@@ -90,6 +90,16 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
         td_aux_coef=float(getattr(model, "td_aux_coef", 0.0)),
         intent_label_bot_weight=float(getattr(model, "intent_label_bot_weight", 1.0)),
+        cf_records=bool(getattr(model, "cf_records", False)),
+        cf_records_keep=int(getattr(model, "cf_records_keep", 512)),
+        cf_winprob_coef=float(getattr(model, "cf_winprob_coef", 0.0)),
+        cf_head_only=bool(getattr(model, "cf_head_only", True)),
+        cf_label_lag_steps=int(getattr(model, "cf_label_lag_steps", 150_000)),
+        cf_label_likelihood=str(getattr(model, "cf_label_likelihood", "binomial")),
+        cf_evidential_coef=float(getattr(model, "cf_evidential_coef", 0.0)),
+        cf_evidential_reg=float(getattr(model, "cf_evidential_reg", 1e-3)),
+        cf_twin_coef=float(getattr(model, "cf_twin_coef", 0.0)),
+        cf_shadow_coef=float(getattr(model, "cf_shadow_coef", 0.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")

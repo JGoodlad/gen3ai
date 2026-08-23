@@ -72,6 +72,20 @@ def _resolved_names() -> set:
     return set(re.findall(r"_resolve\(\s*\"([a-z0-9_]+)\"", _train_source()))
 
 
+def _argparse_action_for(dest: str):
+    """The LIVE argparse action writing `dest` — built, not source-scanned.
+
+    The option-string probe above reads source because it only needs literals; a DEFAULT has to
+    come from the constructed parser, since it can be an expression. `build_parser()` exists
+    precisely so the parser can be inspected without running a training job.
+    """
+    from main.train.parser import build_parser
+    for action in build_parser()._actions:
+        if action.dest == dest:
+            return action
+    return None
+
+
 def _current_model_version_params() -> set:
     return set(inspect.signature(current_model_version).parameters)
 
@@ -100,6 +114,41 @@ def test_cli_flags_have_a_resolve_line(flag):
         f"Without it a FLAGLESS resume (`--model X --steps N`) does not inherit the saved value: "
         f"it falls back to the argparse default and the run either FATALs at check_compatible or "
         f"silently trains a different architecture.")
+
+
+# The argparse default that MUST be None for the `_resolve` above to be reachable. Two entries
+# are exempt because their CLI surface is a DIFFERENT flag that desugars into them, and the
+# desugaring itself sets them to None when that flag is absent (see `resolve_config`).
+_DESUGARED_ARGS = {"damage_matrices_outgoing", "damage_matrices_incoming"}
+
+
+@pytest.mark.parametrize("flag", [f for f in cli_flags() if f.arg not in _DESUGARED_ARGS],
+                         ids=lambda f: f.name)
+def test_cli_flags_argparse_default_is_none(flag):
+    """The `_resolve` line above is only REACHABLE when the argparse default is None.
+
+    `_resolve(name, default)` fires on `getattr(args, name) is None`. An argparse entry that
+    defaults to anything else therefore makes its own `_resolve` line DEAD CODE — the flagless
+    resume reads the argparse default, never the checkpoint — while
+    `test_cli_flags_have_a_resolve_line` still passes, because the line is PRESENT.
+
+    That is not hypothetical. When this gate was written it failed on FIVE live flags:
+    `value_threat_inject` (`store_true, default=False` — ON in the gen-17 production config, so a
+    flagless resume of production would have FATALed at check_compatible), `opp_intent_coef`
+    (`default=0.0`, and `opp_intent` is DERIVED from it, so the same), and the three v98/v99
+    counterfactual heads `cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`. Every one of them
+    had the `_resolve` line the presence test asks for, and in every one of them it did nothing.
+    """
+    action = _argparse_action_for(flag.arg)
+    assert action is not None, (
+        f"no argparse action writes dest={flag.arg!r} — {flag.name!r} is tier=cli, so one must")
+    assert action.default is None, (
+        f"DEAD _resolve — argparse: {flag.cli_flag} defaults to {action.default!r}, not None, so "
+        f"`_resolve({flag.arg!r}, ...)` in `main.train.config` can never fire and a FLAGLESS "
+        f"resume silently reverts {flag.name!r} to that default.\n"
+        f"Fix the DEFAULT, not the _resolve line: use `default=None` (with `action=BoolFlag` for a "
+        f"bool, so `--no-{flag.cli_flag.lstrip('-')}` can still turn it off explicitly) and let "
+        f"`_resolve` supply the OFF value for a fresh run.")
 
 
 @pytest.mark.parametrize("flag", config_only_flags(), ids=lambda f: f.name)

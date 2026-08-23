@@ -1,9 +1,16 @@
 """CLI gates for the counterfactual label-plumbing flags (gen3_cf_label_plumbing_v1).
 
-These flags are TRAINING-ONLY — not in `agents.model.flag_registry`, not on `ModelVersion`, not in
-`check_compatible` — exactly like `--opd-coef`. Nothing about them is weight-shape relevant, so
-there is no version gate to catch a bad combination: **these parser checks ARE the only gate**,
-which is why they get a test of their own.
+These flags are TRAINING-ONLY — not in `agents.model.flag_registry`, not in `check_compatible`.
+Nothing about them is weight-shape relevant, so there is no version gate to catch a bad
+combination: **these parser checks ARE the only gate**, which is why they get a test of their own.
+
+Since `gen3_cf_coef_provenance_v1` (config v100) they ARE recorded on `ModelVersion` and inherited
+on a flagless resume, so every argparse default here is **`None`** and the OFF value is supplied by
+`resolve_config`'s `_resolve`. That is why the default tests below assert TWO things: `None` at
+parse time (without which `_resolve` can never fire) and the OFF value after resolution (the
+behaviour a fresh run actually gets). Asserting only the second would pass with the defaults back
+in argparse and the inheritance silently dead again; the recording half is
+`agents/model/cf_coef_provenance_test.py`.
 
 The refusals run `train_rl_agent.py` as a subprocess (~2 s each) because the checks live inside
 `main()`, which installs a global `sys.excepthook` and `os._exit` handlers — not something to
@@ -36,10 +43,26 @@ def _run(*flags):
 # --------------------------------------------------------------------------------------
 # defaults + parsing (in-process, free)
 # --------------------------------------------------------------------------------------
+def _fresh(*flags):
+    """Args as a FRESH run (no `--model`) actually sees them — parsed AND resolved.
+
+    `_resolve` is where the OFF value now comes from, so a test that stops at `parse_args` is
+    testing the sentinel rather than the behaviour."""
+    from main.train.config import resolve_config
+
+    p = build_parser()
+    a = p.parse_args(["--steps", "1", *flags])
+    resolve_config(a, p)
+    return a
+
+
 def test_defaults_are_all_off():
     """A command that names none of the flags must be indistinguishable from today: no record tap,
     no label buffer, no loss term."""
-    a = build_parser().parse_args(["--steps", "1"])
+    raw = build_parser().parse_args(["--steps", "1"])
+    assert (raw.cf_records, raw.cf_winprob_coef, raw.cf_label_lag_steps, raw.cf_records_keep) \
+        == (None, None, None, None), "argparse must leave the sentinel for `_resolve` to fill"
+    a = _fresh()
     assert a.cf_records is False
     assert a.cf_winprob_coef == 0.0
     assert a.cf_label_lag_steps == 150_000
@@ -50,7 +73,8 @@ def test_head_only_defaults_true_and_takes_both_negation_forms():
     """`--cf-head-only` defaults TRUE — the design's safe R1 stage — and the OPT-OUT is what has to
     be typed, in either of the two spellings this parser supports."""
     p = build_parser()
-    assert p.parse_args(["--steps", "1"]).cf_head_only is True
+    assert p.parse_args(["--steps", "1"]).cf_head_only is None   # the `_resolve` sentinel
+    assert _fresh().cf_head_only is True
     assert p.parse_args(["--no-cf-head-only"]).cf_head_only is False
     assert p.parse_args(["--cf-head-only", "false"]).cf_head_only is False
     assert p.parse_args(["--cf-head-only=false"]).cf_head_only is False
@@ -73,8 +97,8 @@ def test_the_likelihood_defaults_to_binomial():
     preserve and no reason to default to the flat BCE that treats an R=16 label as one observation.
     'bce' stays as the explicit A/B arm.
     """
-    a = build_parser().parse_args(["--steps", "1"])
-    assert a.cf_label_likelihood == "binomial"
+    assert build_parser().parse_args(["--steps", "1"]).cf_label_likelihood is None
+    assert _fresh().cf_label_likelihood == "binomial"
     assert build_parser().parse_args(["--cf-label-likelihood", "bce"]).cf_label_likelihood == "bce"
 
 
@@ -86,7 +110,7 @@ def test_an_unknown_likelihood_is_rejected_by_the_parser():
 def test_evidential_defaults_are_off():
     """The structural head is OFF and its coefficient is 0 — a command that names neither is
     indistinguishable from today, in the state_dict and in the loss."""
-    a = build_parser().parse_args(["--steps", "1"])
+    a = _fresh()
     assert a.cf_evidential is False
     assert a.cf_evidential_coef == 0.0
     assert a.cf_evidential_reg == 1e-3
@@ -168,7 +192,7 @@ def test_a_negative_evidential_reg_is_refused():
 # TWIN HEADS + SHADOW CRITIC (gen3_cf_twin_heads_v1, v99)
 # --------------------------------------------------------------------------------------
 def test_twin_and_shadow_defaults_are_off():
-    a = build_parser().parse_args(["--steps", "1"])
+    a = _fresh()
     assert a.cf_twin_heads is False and a.cf_twin_coef == 0.0
     assert a.cf_shadow_critic is False and a.cf_shadow_coef == 0.0
 

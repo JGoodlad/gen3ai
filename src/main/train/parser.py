@@ -597,24 +597,26 @@ def build_parser() -> argparse.ArgumentParser:
     # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
     # into <run_dir>/cf_labels/; the trainer rings the reconstruction records the producer needs
     # (--cf-records) and folds the labels into the win-prob head's BCE (--cf-winprob-coef).
-    # ALL TRAINING-ONLY: no weight shape, no forward change, no version bump — the `--opd-coef`
-    # class. Every default is OFF, and an off run is byte- AND file-identical to today.
-    # NOT inherited on a FLAGLESS resume (they are not ModelVersion fields); the launcher forwards
-    # every non-launcher flag verbatim, so a launcher-managed resume keeps them.
+    # ALL TRAINING-ONLY: no weight shape, no forward change — the `td_aux_coef` class. Every
+    # default is OFF, and an off run is byte- AND file-identical to today.
+    # INHERITED on a FLAGLESS resume since config v100 (gen3_cf_coef_provenance_v1): every one of
+    # them is a recorded `ModelVersion` field with a `_resolve` line, so a resume that re-types
+    # nothing keeps the coefficients it was launched with. They are recorded for PROVENANCE only
+    # and never gated — a resume may still change any of them freely.
     parser.add_argument("--cf-records", "--cf_records", dest="cf_records",
-                        action=BoolFlag, default=False,
+                        action=BoolFlag, default=None,
                         help="Ring each training episode's __RECON__ reconstruction record into "
                              "<run_dir>/cf_records/ (newest --cf-records-keep only) so an offline "
                              "counterfactual LABEL PRODUCER can replay those decisions. Default OFF "
                              "— training discards the records today. Costs one small file write per "
                              "episode per env worker; requires --use-bridge (node or rust).")
     parser.add_argument("--cf-records-keep", "--cf_records_keep", dest="cf_records_keep",
-                        type=int, default=512,
+                        type=int, default=None,
                         help="GLOBAL cap on <run_dir>/cf_records/ (default 512). Every env worker "
                              "prunes the shared dir to the newest N, so this is a total, not a "
                              "per-worker count, and it holds across launcher restarts.")
     parser.add_argument("--cf-winprob-coef", "--cf_winprob_coef", dest="cf_winprob_coef",
-                        type=float, default=0.0,
+                        type=float, default=None,
                         help="COUNTERFACTUAL win-prob grounding weight: cf_winprob_coef * "
                              "BCE(win_head(s), tight-MC P(win) label) over labels the producer left "
                              "in <run_dir>/cf_labels/. Default 0.0 = OFF (no poll, no forward, loss "
@@ -622,7 +624,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "to supervise). Watch cf/buffer_fill (0 = the producer is starving you), "
                              "train/cf_loss and train/cf_grad_share.")
     parser.add_argument("--cf-head-only", "--cf_head_only", dest="cf_head_only",
-                        action=BoolFlag, default=True,
+                        action=BoolFlag, default=None,
                         help="Stop-grad the win-prob head's input for the CF term, so it trains the "
                              "HEAD ONLY and cannot perturb the trunk (train/cf_grad_share reads 0.0 "
                              "by construction). Default TRUE — the safe first stage the design's R1 "
@@ -630,13 +632,13 @@ def build_parser() -> argparse.ArgumentParser:
                              "ground-truth objective shape the shared trunk. Independent of "
                              "--win-prob-mode, which governs the ON-POLICY win-prob BCE, not this.")
     parser.add_argument("--cf-label-lag-steps", "--cf_label_lag_steps", dest="cf_label_lag_steps",
-                        type=int, default=150_000,
+                        type=int, default=None,
                         help="STALENESS BOUND in policy steps: a label whose policy_step is older "
                              "than this is dropped (counted in cf/labels_expired_total). Default "
                              "150000 ≈ one PPO iteration at production shapes, so a label is "
                              "consumed by roughly the policy that produced it. 0 disables expiry.")
     parser.add_argument("--cf-label-likelihood", "--cf_label_likelihood",
-                        dest="cf_label_likelihood", type=str, default="binomial",
+                        dest="cf_label_likelihood", type=str, default=None,
                         choices=["binomial", "bce"],
                         help="WHICH likelihood the counterfactual win-prob term uses. 'binomial' "
                              "(default) is the exact binomial NLL of the row's win COUNT "
@@ -651,7 +653,7 @@ def build_parser() -> argparse.ArgumentParser:
     # factory's priority sampler and the awareness stack can read. `--cf-evidential` is STRUCTURAL
     # (v98, version-gated, in flag_registry); the two coefficients are training-only.
     parser.add_argument("--cf-evidential", "--cf_evidential", dest="cf_evidential",
-                        action=BoolFlag, default=False,
+                        action=BoolFlag, default=None,
                         help="BUILD the evidential Beta head (α, β via softplus+1) off "
                              "value_pooled. STRUCTURAL and version-gated: its params are in the "
                              "state_dict, so a resume must match. Its input is detached "
@@ -659,7 +661,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "forward and is not even called by the forward, so OFF is "
                              "byte-identical and ON at coefficient 0 is bit-identical in pi/vf.")
     parser.add_argument("--cf-evidential-coef", "--cf_evidential_coef",
-                        dest="cf_evidential_coef", type=float, default=0.0,
+                        dest="cf_evidential_coef", type=float, default=None,
                         help="Weight on the evidential term: the Beta-Binomial MARGINAL "
                              "log-likelihood of the label's counts (p integrated out, the correct "
                              "evidential loss for count data), normalized per rollout like the "
@@ -667,7 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "cf/evid_epistemic_std_mean (the confessed width — the headline) and "
                              "cf/evid_precision_mean (α+β, the claimed evidence).")
     parser.add_argument("--cf-evidential-reg", "--cf_evidential_reg",
-                        dest="cf_evidential_reg", type=float, default=1e-3,
+                        dest="cf_evidential_reg", type=float, default=None,
                         help="Weight of the KL(Beta(α,β) ‖ Beta(1,1)) pull, RELATIVE to the NLL "
                              "(it rides inside --cf-evidential-coef, so coefficient 0 kills it "
                              "too). The standard evidential-overconfidence guard: nothing in the "
@@ -682,7 +684,7 @@ def build_parser() -> argparse.ArgumentParser:
     # labels) — so B−A isolates coverage and C−B isolates pure variance reduction with every random
     # draw held identical. The two structural flags are version-gated; the coefficients are not.
     parser.add_argument("--cf-twin-heads", "--cf_twin_heads", dest="cf_twin_heads",
-                        action=BoolFlag, default=False,
+                        action=BoolFlag, default=None,
                         help="BUILD the TWIN win-prob heads B and C off value_pooled (the "
                              "within-run paired R1 comparison). STRUCTURAL and version-gated: "
                              "their params are in the state_dict, so a resume must match, and "
@@ -692,7 +694,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "pi/vf. Requires --win-prob-mode read_only|shaping (head A must exist "
                              "for the twins to mirror its loss).")
     parser.add_argument("--cf-twin-coef", "--cf_twin_coef", dest="cf_twin_coef",
-                        type=float, default=0.0,
+                        type=float, default=None,
                         help="Weight on BOTH twins' cf folds — ONE knob on purpose: B and C must "
                              "differ in their LABEL STREAM and in nothing else. B eats the row's "
                              "outcome_label at n=1, C eats its tight-MC label at n=R, through the "
@@ -702,7 +704,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "Default 0.0 = OFF (whole block skipped, byte-identical). Requires "
                              "--cf-twin-heads. Read cf/twin_b_coverage FIRST.")
     parser.add_argument("--cf-shadow-critic", "--cf_shadow_critic", dest="cf_shadow_critic",
-                        action=BoolFlag, default=False,
+                        action=BoolFlag, default=None,
                         help="BUILD the passive SHADOW CRITIC off value_pooled — a value twin "
                              "trained on tight-MC mc_return labels (the run's own shaped return). "
                              "It NEVER computes an advantage and NEVER enters GAE: it is the "
@@ -711,7 +713,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "critic. STRUCTURAL and version-gated; detached always; OFF "
                              "byte-identical, ON at coefficient 0 bit-identical in pi/vf.")
     parser.add_argument("--cf-shadow-coef", "--cf_shadow_coef", dest="cf_shadow_coef",
-                        type=float, default=0.0,
+                        type=float, default=None,
                         help="Weight on the shadow critic's masked MSE against mc_return, computed "
                              "in the PopArt-normalized frame (the value loss's frame, so the "
                              "coefficient is scale-comparable with it). Default 0.0 = OFF. "
@@ -1015,7 +1017,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "(the metric that must not fall). 1.0 = OFF (loss bit-identical). "
                              "TRAINING-only (not version-locked; inherited on a flagless resume).")
     parser.add_argument("--opp-intent-coef", "--opp_intent_coef", dest="opp_intent_coef",
-                        type=float, default=0.0,
+                        type=float, default=None,
                         help="OPPONENT-INTENT aux (gen3_opp_intent_v1, v67): supervise ALPHA — a "
                              "distribution over the opponent's K believed threat-move seats PLUS "
                              "SWITCH — and BETA — which of their mons comes in — against what they "
@@ -1027,7 +1029,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "Requires --entity-topk-seats>0. 0.0 = OFF (no heads, byte-identical). "
                              "STRUCTURAL + version-checked; the coef itself is training-only.")
     parser.add_argument("--value-threat-inject", "--value_threat_inject",
-                        dest="value_threat_inject", action="store_true", default=False,
+                        dest="value_threat_inject", action=BoolFlag, default=None,
                         help="CRITIC THREAT INJECTION (gen3_value_threat_inject_v1, v64): add the "
                              "DamageOperator's alpha-weighted incoming-threat row for each of OUR "
                              "mons to that mon's token on the VALUE POOL's copy only, so value_cls "

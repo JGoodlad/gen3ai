@@ -76,7 +76,18 @@ from typing import Any, Dict, List
 #   defaults BOTH to False = OFF (not a guess: the modules did not exist). Their coefficients
 #   (`cf_twin_coef`, `cf_shadow_coef`) are TRAINING-only argparse in the `--opd-coef` class and
 #   appear nowhere here. TWO fields in ONE bump because they ship as one amendment.
-MODEL_CONFIG_VERSION = 99
+# v100 (gen3_cf_coef_provenance_v1): the TEN counterfactual COEFFICIENTS (cf_records,
+#   cf_records_keep, cf_winprob_coef, cf_head_only, cf_label_lag_steps, cf_label_likelihood,
+#   cf_evidential_coef, cf_evidential_reg, cf_twin_coef, cf_shadow_coef) leave the `--opd-coef`
+#   genre for the td_aux_coef one: all TRAINING-only (a loss in the PPO step; no forward read, no
+#   weight shape) ⇒ RECORDED for provenance + flagless-resume read-back, NEVER gated.
+#   ⚠️ THE DEFECT IS SILENT: an R1 arm resumed without re-typing `--cf-winprob-coef 1.0` kept
+#   training and simply stopped applying the term it was launched to measure. Their three
+#   STRUCTURAL companions (cf_evidential v98, cf_twin_heads/cf_shadow_critic v99) were already
+#   recorded and GATED, so a resume could keep the head and lose the coefficient driving it.
+#   A pre-v100 config defaults each to its ARGPARSE default — not a guess: the fields did not
+#   exist, so that is what every such run ran with. No ARCH_SIGNATURE bump, no floor change.
+MODEL_CONFIG_VERSION = 100
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -577,6 +588,22 @@ class ModelVersion:
     # so it is recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads this
     # field) and is never compared by check_compatible or any check_*.
     intent_label_bot_weight: float = 1.0
+    # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
+    # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
+    # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:
+    # recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these fields), NEVER
+    # compared by check_compatible. Not registry rows — that registry declares EXTRACTOR toggles
+    # and none of these builds a module. The v100 header comment carries the full why.
+    cf_records: bool = False
+    cf_records_keep: int = 512
+    cf_winprob_coef: float = 0.0
+    cf_head_only: bool = True
+    cf_label_lag_steps: int = 150_000
+    cf_label_likelihood: str = "binomial"
+    cf_evidential_coef: float = 0.0
+    cf_evidential_reg: float = 1e-3
+    cf_twin_coef: float = 0.0
+    cf_shadow_coef: float = 0.0
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:
@@ -645,6 +672,16 @@ class ModelVersion:
         item_belief_coef: float = 0.0,
         td_aux_coef: float = 0.0,
         intent_label_bot_weight: float = 1.0,
+        cf_records: bool = False,
+        cf_records_keep: int = 512,
+        cf_winprob_coef: float = 0.0,
+        cf_head_only: bool = True,
+        cf_label_lag_steps: int = 150_000,
+        cf_label_likelihood: str = "binomial",
+        cf_evidential_coef: float = 0.0,
+        cf_evidential_reg: float = 1e-3,
+        cf_twin_coef: float = 0.0,
+        cf_shadow_coef: float = 0.0,
     ) -> ModelVersion:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -857,6 +894,16 @@ class ModelVersion:
             item_belief_coef=float(item_belief_coef),
             td_aux_coef=float(td_aux_coef),
             intent_label_bot_weight=float(intent_label_bot_weight),
+            cf_records=bool(cf_records),
+            cf_records_keep=int(cf_records_keep),
+            cf_winprob_coef=float(cf_winprob_coef),
+            cf_head_only=bool(cf_head_only),
+            cf_label_lag_steps=int(cf_label_lag_steps),
+            cf_label_likelihood=str(cf_label_likelihood),
+            cf_evidential_coef=float(cf_evidential_coef),
+            cf_evidential_reg=float(cf_evidential_reg),
+            cf_twin_coef=float(cf_twin_coef),
+            cf_shadow_coef=float(cf_shadow_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
@@ -1939,4 +1986,15 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("cf_twin_heads", False)
         data.setdefault("cf_shadow_critic", False)
         data["config_version"] = 99
+    # v100 (gen3_cf_coef_provenance_v1) — ten TRAINING-only coefficients ⇒ v97's shape, not
+    # v98/v99's: no gate, no refusal, just a default (the ARGPARSE one, which is what every
+    # pre-v100 run necessarily ran with). Any recorded value migrates untouched.
+    if version < 100:
+        for _k, _v in (("cf_records", False), ("cf_records_keep", 512),
+                       ("cf_winprob_coef", 0.0), ("cf_head_only", True),
+                       ("cf_label_lag_steps", 150_000), ("cf_label_likelihood", "binomial"),
+                       ("cf_evidential_coef", 0.0), ("cf_evidential_reg", 1e-3),
+                       ("cf_twin_coef", 0.0), ("cf_shadow_coef", 0.0)):
+            data.setdefault(_k, _v)
+        data["config_version"] = 100
     return data
