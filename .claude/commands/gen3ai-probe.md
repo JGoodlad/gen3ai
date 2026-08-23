@@ -6,10 +6,10 @@ description: Investigate a trained Gen3 RL model's behaviour/outcomes using the 
 
 Investigate why the model behaved as it did, using the **prober** — the forensic
 layer over saved `eval_traces`. There are two front-ends over **one engine**
-(`src/main/prober/engine.py`):
+(`src/main/prober/engine/`):
 
 - **CLI / API** (your lens, agents): `python -m main.prober.query …` and
-  `ProbeSession` (`src/main/prober/session.py`) — emit JSON.
+  `ProbeSession` (`src/main/prober/session/`) — emit JSON.
 - **TUI** (the human's lens): `python -m main.prober <run_dir>` — the same
   analysis, navigable.
 

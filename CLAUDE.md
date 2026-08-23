@@ -1177,7 +1177,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 The same analysis is available headless for one invocation via the
 `probe_replay.py` CLI (`python -m main.probe_replay <ckpt> <summary.json>
-<states.npz> <inv>`); both share the pure engine in `src/main/prober/engine.py`.
+<states.npz> <inv>`); both share the pure engine in `src/main/prober/engine/`.
 
 **For agents/scripts**, a JSON API + CLI (`ProbeSession` / `python -m
 main.prober.query summary|list|scan|awareness|loops|overview|turns|find|analyze|lookahead|better-line|replay-counterfactual|falsify|falsify-scan|calibration`)

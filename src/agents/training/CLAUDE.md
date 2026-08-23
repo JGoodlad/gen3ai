@@ -697,7 +697,8 @@ in the trainer). Behaviors:
 
 **TD-residual tail metric (`eval/td_resid_tail_*`).** Each cycle also folds a **left-tail
 statistic of the per-decision critic surprise** δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the same
-formula the prober uses (`main/prober/session.py::_td`, the single source of truth). `BattleRecorder`
+formula the prober uses (`main/prober/session/core.py::ProbeSession._td`, the single source of
+truth). `BattleRecorder`
 accumulates δ live (one-step delayed backfill, closing each transition at the next `record()` when
 the reward is finalized and V(s′) is known; the last decision has no δ). It costs **zero extra GPU**:
 δ is computed only over the battles eval already captures forensically (where `need_aux=True` already

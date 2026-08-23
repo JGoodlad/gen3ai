@@ -2813,3 +2813,70 @@ worse than no gate.* And the meta-lesson: **redundant, differently-plumbed meter
 decisions survived** — when the mask defect detonated and rankings SWAPPED on the flips/KL axis,
 every `|dV|`-keyed verdict stood, because `|dV|` never touches the mask. Two instruments that agree
 are weak evidence when they can share a defect; two that agree and *cannot* are strong.
+
+### The prober's two biggest files are PACKAGES — 5,631 lines → 28 modules, and the size ratchet's last two prober entries are GONE (2026-08-23, `main/prober/engine/` + `main/prober/session/`)
+
+`src/main/prober/engine.py` (3,058 lines) and `src/main/prober/session.py` (2,573) were the top two
+entries on `file_size_gate_test.py`'s grandfathered list — the whole list, apart from
+`features_extractor.py` and `instrumented_ppo.py`. Both are now PACKAGES of the same name whose
+`__init__.py` is a pure re-export hub, and **both allowlist entries are DELETED rather than
+lowered**, which is the rule that gate states twice. The `main/train/` precedent from the day
+before, applied twice.
+
+    engine/   views 576 · beliefs 427 · timeline 396 · analyze 318 · decode 250 · intent 173 ·
+              protocol 167 · probes 157 · taxonomy 152 · board 134 · spread 123 · switch_in 119 ·
+              util 109 · __init__ 108 · flags 77 · opponents 36
+    session/  scans 554 · aggregate 429 · probes 285 · core 285 · reading 260 · probe_targets 232 ·
+              counterfactual 224 · stats 171 · trace_io 92 · analysis 90 · serialize 78 ·
+              __init__ 60
+
+- **"Pure move" is a MECHANISM here, not a promise.** A one-shot splitter assigned every line of
+  each original to exactly one target module and asserted total coverage (and that every dropped
+  line was blank), so no function body was retyped and none could be silently lost. The
+  cross-module import lists were then computed from the AST rather than written by hand.
+- **The behaviour proof is an OUTPUT DIFF on a real run** (`ai_v9_21_gen17_pfspoff_0820`,
+  read-only), captured before and after: 15 `query` commands across every family — `summary`,
+  `list`, `scan`, `turns`, `overview`, `find`, `triage`, `awareness`, `loops`, `decision-table`,
+  `switch-vs-info`, `calibration` (model-free) and `falsify`, `lookahead`, `analyze` (model-
+  loading; that run is at the current arch, so `analyze` really re-ran the policy). **Byte-
+  identical on all 15.** The only difference anywhere in the capture was the FILE PATH inside a
+  numpy RuntimeWarning on stderr — `engine.py:2379` became `engine/decode.py:110`. All three
+  model-loading commands were first shown deterministic across repeat runs, so a diff would have
+  meant something.
+- **`ProbeSession` had to be split as a CLASS, not just as a module.** The class alone was 2,068
+  lines — over the hard bound with every module-level helper already removed — so it is now
+  assembled from one mixin per command family. That trades a file-size problem for a base-list
+  problem (a family can drop out of the bases without any import failing), which
+  `hub_contract_test.py` pins directly.
+- **The gate that could have gone VACUOUS was checked first, and this time it was already safe.**
+  The lesson from the entry-point split is that a test asserting about a file by READING it goes
+  quiet rather than red when the file moves. `prober/model_test.py`'s "every checkpoint load goes
+  through the sanitizer" gate scans `rglob("*.py")` under the package, so it got STRONGER (28
+  files instead of 2), not emptier. `better_line_test.py`'s `inspect.getsource` targets
+  `better_line.py`, untouched. No prober gate names `engine.py` or `session.py` by path.
+- **New gate**: `src/main/prober/hub_contract_test.py` — 199 parametrized name pins (167 engine +
+  32 session, recovered by AST from the pre-split commit), the no-submodule-imports-its-own-hub
+  cycle guard, an every-submodule-imports-standalone check, a hub-covers-every-module check, and
+  the `ProbeSession` mixin-family list. Verified failing on a deliberately dropped re-export.
+  Pure import BINDINGS are deliberately NOT pinned (`engine.np`, `session.os`, and the ~25 engine
+  names `session.py` re-imported for its own use): nothing reads them that way, and pinning them
+  would freeze one module's private imports as another's public surface.
+- **Three findings, NOTED not fixed** (a decomposition that also fixes things cannot be diffed):
+  1. **`_norm_move` was defined TWICE in `engine.py`, with different semantics** (lines 1689 and
+     1848), and the second SHADOWS the first. So `move_belief_view` and `_move_id_to_num` — whose
+     first-definition docstring promises a `split("(")` normalisation — have always run the
+     alnum-only, hiddenpower-collapsing version instead (`"Rock Slide"` → `rockslide`, not
+     `rock slide`). Verified identical before and after the split by loading both modules side by
+     side. The split preserves it exactly (both definitions live in `beliefs.py`, same order);
+     the first definition is dead code with a misleading docstring. Ruff's F811 does not fire
+     because the name is used between the two definitions.
+  2. **`_saliency_from_grad` emits `RuntimeWarning: Mean of empty slice`** on a zero-length obs
+     block, producing a `nan` `mean_abs`. It fired on every `analyze` of the gen-17 run in both
+     arms — pre-existing, and it means one saliency block's per-dim figure is NaN rather than 0.
+  3. A section banner in `session.py` — `# -- cross-battle turning-point scan (model-free) --` —
+     sat above `falsify`, ~620 lines from the `scan` it names. Dropped in the move (comments only,
+     no behaviour); the module docstrings replace it.
+- **Gates**: the prober suite 637 passed, byte-for-byte the same count before and after; the
+  routine gate (`-m "not slow and not e2e"`) green; ruff + mypy; the size gate green with both
+  entries removed and no new file over the 1,000-line target; `python -m main.prober.web
+  --check-openapi` OK (the web contract did not move, and `web/app.py`'s imports are untouched).

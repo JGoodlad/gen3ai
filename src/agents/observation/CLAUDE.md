@@ -638,7 +638,7 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 **`agents/observation/incoming_damage.py` STAYS** — the reward PBRS (`reward_manager.py`) and the
 prober import its math core, and its fuzz test now targets `encode_block` directly. Only the obs
 write was removed.
-> **Downstream reader:** the prober engine (`src/main/prober/engine.py`) resolves its obs
+> **Downstream reader:** the prober engine (`src/main/prober/engine/`) resolves its obs
 > offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks
 > (`mm_off`, and since gen3_entity_rehome_v1 also `om_off`/`tm_off` — ThreatView/saliency
 > no-op). Its pinned regression test (`prober/engine_test.py::

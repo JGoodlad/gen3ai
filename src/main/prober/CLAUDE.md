@@ -9,9 +9,15 @@ python3 -m main.prober <models_dir | run_dir>        # the browser front end -> 
 python3 -m main.prober.query <cmd> ...               # the JSON CLI, for agents and scripts
 ```
 
-**TWO surfaces over one engine, and that is the whole design.** `engine.py` + `session.py` are the
+**TWO surfaces over one engine, and that is the whole design.** `engine/` + `session/` are the
 analysis; `web/` renders it for a human and `query.py` prints it for an agent. Neither is a layer
 on the other.
+
+**Both are PACKAGES whose `__init__.py` is a re-export hub** (2026-08-23 — they were single
+3,058- and 2,573-line modules). `from main.prober.engine import <anything>` and
+`from main.prober.session import <anything>` resolve exactly as they always did; the module maps
+are in *Engine / app split* and *Agent API & JSON CLI* below, and `hub_contract_test.py` pins the
+full pre-split export set, the no-cycle rule, and `ProbeSession`'s mixin base list.
 
 **⚠ THE TEXTUAL TUI IS GONE** (`app.py`, `prober.tcss`, `review.py` — deleted, ~4,400 lines). It was
 a *third* renderer over the same engine, which meant every new signal had to be drawn twice for a
@@ -38,18 +44,36 @@ a reason one surface learns cannot go missing on another.
 
 ## Engine / app split (the important seam)
 
-The analysis is a **pure, framework-agnostic engine** (`engine.py` + `model.py`); the web front end
+The analysis is a **pure, framework-agnostic engine** (`engine/` + `model.py`); the web front end
 (`web/`), the JSON CLI (`query.py`) and the one-shot `probe_replay.py` are all thin callers. This is
 the single source of truth — change the analysis once, every surface follows. It is also why
 retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not reasoning.
 
-- **`engine.py`** — `analyze_invocation(model, summary, npz, inv_index) →
+- **`engine/`** — `analyze_invocation(model, summary, npz, inv_index) →
   InvocationAnalysis` (a tree of frozen dataclasses: `ActionRow`, `MatchupView`,
   `InterventionSweep`, `Saliency`, …). No printing, no Textual, no file IO beyond
-  the passed-in arrays. Split into `_faithfulness` / `_matchups` /
-  `_intervention_sweep` / `_saliency`. **Every torch call goes through the
+  the passed-in arrays. **Every torch call goes through the
   injected `model`**, so the whole engine is unit-tested with a `FakeProbeModel`
-  (no torch) — see `engine_test.py`.
+  (no torch) — see `engine_test.py`. One module per concern, a strict DAG (leaves first),
+  with `__init__.py` the re-export hub:
+
+  | module | holds |
+  |---|---|
+  | `views.py` | every frozen dataclass an analysis returns — the DATA MODEL. No numpy, no IO |
+  | `util.py` | the shared leaves: percent parsing, npz access, species keys, move predicates |
+  | `opponents.py` | opponent-NAME ordering (sentinels first, strongest first) |
+  | `flags.py` | `summary_flags` + the cure-option ("heal ≠ cure") helpers |
+  | `protocol.py` | reading the RAW Showdown protocol out of a trace's `*_replay.html` |
+  | `board.py` | the BOARD read-model (`build_board`) |
+  | `timeline.py` | the RESULT timeline — HP loss re-attributed, one line per action |
+  | `beliefs.py` | species / move / exclusive-species beliefs + the refinement trajectory |
+  | `intent.py` | the α/β opponent-intent read + `awareness_text` |
+  | `spread.py` | believed vs TRUE derived spreads (the DamageOperator's stat input) |
+  | `switch_in.py` | forced-switch OUTGOING damage per bench candidate |
+  | `decode.py` | `_faithfulness` / `_matchups` / `_intervention_sweep` / `_saliency` / `_threats` / `decode_incoming_belief` |
+  | `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` / `build_value_dist` |
+  | `taxonomy.py` | loss attribution: the turning-point category table |
+  | `probes.py` | representation probing (`fit_probe`) |
 - **`model.py`** — `ProbeModel`: the torch boundary. `ProbeModel.load(ckpt)` does
   raw `MaskablePPO.load` (no env, no `ModelVersion` check — matching the legacy
   CLI) and resolves `ObsOffsets` once from `enc.get_layout()`. `action_dist` /
@@ -570,13 +594,32 @@ annotated decisions, none flagged, nothing since mid-June**. Every note was expo
 The EXPECTED → DID → HAPPENED story it framed was never review-specific — it is what `/analyze`'s
 decision + outcome + critic panels show for any decision, now with α/β as the "expected" half.
 
-## Agent API & JSON CLI (`session.py`, `query.py`)
+## Agent API & JSON CLI (`session/`, `query.py`)
 
 `ProbeSession` is a framework-agnostic facade so **agents/scripts** can probe a
 model without a UI — all methods return JSON-serializable dicts and model
 loading uses the same exact→nearest→recent ladder (cached per process). A
 `battle_id` is the trace's `*_summary.json` path **or** a short
 `step_<N>/<Opponent>/<outcome>_<idx>` id.
+
+**`session/` is a package; `ProbeSession` is assembled from one MIXIN per command family.** The
+class alone was 2,068 lines, so splitting the module without splitting the class would not have
+got under the size bound — hence a base list rather than one `class` block, and
+`hub_contract_test.py` pins that no family silently drops out of it.
+
+| module | holds |
+|---|---|
+| `core.py` | `ProbeSession` itself — construction, the shared internals, the resolution ladder |
+| `reading.py` | MODEL-FREE orientation: `run_summary` · `battles` · `decision_table` · `battle_overview` · `battle_turns` |
+| `scans.py` | RUN-LEVEL model-free folds: `scan` · `awareness_scan` · `loops` · `triage` |
+| `trace_io.py` | the trace's sibling files (protocol log, privileged teams, our HP types) — file IO kept OUT of the pure engine |
+| `analysis.py` | the per-decision deep read: `analyze` (loads the model) · `find` |
+| `counterfactual.py` | `falsify` · `lookahead` · `better_line` · `replay_counterfactual` |
+| `aggregate.py` | `falsify_scan` · `calibration` — the two run-level counterfactual folds |
+| `probes.py` | `probe` · `switch_vs_info` · `history_saliency` |
+| `serialize.py` | the JSON-shaping leaves |
+| `stats.py` | the pure statistics (loop aggregation, discounted returns, reliability bins) |
+| `probe_targets.py` | the representation-probe target table |
 
 - `loops(outcome=, opponent=, step=, max_battles=, near_zero_frac=0.01, top=12)` — **model-free
   BAIT-LOOP scan**: *the opponent voluntarily pivots a mon our attack cannot touch, and we fire

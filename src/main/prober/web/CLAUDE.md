@@ -1,6 +1,6 @@
 # CLAUDE.md — `src/main/prober/web/` (browser front end for the prober)
 
-A **third sibling** over the analysis engine. `engine.py` is the analysis; the Textual TUI
+A **third sibling** over the analysis engine. `engine/` is the analysis; the Textual TUI
 (`app.py`) and the JSON CLI (`query.py`) are two independent callers of it. This is a third — a
 FastAPI app whose handlers are a thin adapter over **`ProbeSession`**, the same facade `query.py`
 uses.
