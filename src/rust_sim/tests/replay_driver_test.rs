@@ -31,9 +31,10 @@ use std::process::{Command, Stdio};
 use pokesim::battle::BattleOptions;
 use pokesim::bridge::{bridge_opts, parse_choice, BridgeSession, Cmd, RequestState};
 use pokesim::dex::Dex;
+use pokesim::json::Json;
 use pokesim::search::{
-    aux_rng_from_seed, recorded_queues, resolve_turn_sourced, Record, TurnSource,
-    RECORDED_QUEUE_CAP,
+    at_turn_start, aux_rng_from_seed, build_to_turn, recorded_queues, resolve_turn_sourced,
+    session_from_record, Record, TurnSource, RECORDED_QUEUE_CAP,
 };
 
 const BIN: &str = env!("CARGO_BIN_EXE_search_driver");
@@ -187,6 +188,158 @@ fn an_invalid_turn_is_rejected_before_any_battle_is_built() {
         assert_eq!(code, 1, "turn {turn} must fail");
         assert!(out.contains(shown), "turn {turn}: unexpected body: {out}");
     }
+}
+
+// ===========================================================================
+// 1b. TURN 1 OPENS (`gen3_search_turn1_open_v1`)
+//
+// The first decision of every battle used to be rust-uncoverable on BOTH verb families:
+// `at_turn_start` compared `sess.turn()` — which is still 0 at the pre-commit first
+// boundary — so `build_to_turn` walked the whole command log and reported "battle never
+// reached the start of turn 1". These three pin the predicate, the one-shot verb and the
+// persistent verb; each FAILS if `open_boundary_turn`'s 0 => 1 mapping is reverted.
+// ===========================================================================
+
+#[test]
+fn turn_1_opens_on_a_freshly_constructed_session() {
+    let dex = Dex::for_gen(3);
+    let sess = BridgeSession::new_construct_turn0(&opts(), &dex).expect("session");
+
+    // NON-VACUITY: this really is the pre-commit first boundary — the state the predicate
+    // used to reject — and it really is a both-sides `move` round.
+    assert_eq!(sess.turn(), 0, "the first boundary must still read turn 0 (the whole point)");
+    assert_eq!(sess.request_kind(0), Some(RequestState::Move), "p1 must be on a move request");
+    assert_eq!(sess.request_kind(1), Some(RequestState::Move), "p2 must be on a move request");
+
+    assert!(at_turn_start(&sess, 1), "turn 1 must open on a freshly constructed session");
+    // ...and ONLY turn 1: the mapping must not make the predicate promiscuous.
+    for t in [2u32, 3, 17] {
+        assert!(!at_turn_start(&sess, t), "turn {t} must NOT open at the first boundary");
+    }
+
+    // The `t >= 2` half is the IDENTITY it always was: one committed turn eagerly opens turn 2.
+    let mut sess2 = BridgeSession::new_construct_turn0(&opts(), &dex).expect("session");
+    sess2.feed_cmd(cmd(0, "move 1"), &dex);
+    sess2.feed_cmd(cmd(1, "move 1"), &dex);
+    assert_eq!(sess2.turn(), 2, "one committed turn must eagerly open turn 2");
+    assert!(at_turn_start(&sess2, 2), "turn 2 must still open");
+    assert!(!at_turn_start(&sess2, 1), "turn 1 must not re-open once it has committed");
+}
+
+#[test]
+fn build_to_turn_1_applies_no_commands() {
+    let dex = Dex::for_gen(3);
+    let rec = Record::parse(&Json::parse(&record_json(None)).expect("record json")).expect("record");
+    let mut sess = session_from_record(&rec, &dex).expect("session");
+    let rest_idx = build_to_turn(&mut sess, &rec, 1, &dex).expect("turn 1 must build");
+    assert_eq!(rest_idx, 0, "turn 1's own choices must be the first UNAPPLIED commands");
+    assert!(!rec.commands.is_empty(), "non-vacuity: the fixture record must carry commands");
+}
+
+/// A p2 lead so frail that ANY hit KOs it, over a live bench — so turn 1 must pause for a
+/// forced replacement. That mid-turn follow-up is the half of the turn a raw `sess.turn()`
+/// loop guard silently drops.
+const GLASS_P2_TEAM: &str =
+    "Magikarp|||NoAbility|tackle|Serious|,,,,,|N||||]Zapdos|||NoAbility|tackle,headbutt|Serious|252,,252,,,|N||||";
+/// A max-SpA Rayquaza clicking a 2x-effective Thunderbolt into Magikarp's base-20 SpD — an
+/// unconditional OHKO, so the KO does not depend on dice, level parsing or a damage roll.
+const NUKE_P1_TEAM: &str =
+    "Rayquaza|||NoAbility|thunderbolt|Serious|,,,252,,252|N||||]Regice|||NoAbility|tackle|Serious|252,,252,,,|N||||";
+
+#[test]
+fn a_turn_1_faint_still_gets_its_forced_replacement() {
+    // The DANGEROUS half of `gen3_search_turn1_open_v1`. `resolve_turn_sourced` bounded its loop
+    // with `sess.turn() == start_turn` against the RAW committed count, which at turn 1 is 0 and
+    // becomes 1 on the very first commit — so the loop exited before feeding the replacement and
+    // returned a turn that had only half happened. That is a WRONG ARM, not an error: opening
+    // turn 1 without this would have swapped a loud refusal for a silent lie.
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts("gen3customgame", SEED.to_string(), NUKE_P1_TEAM, GLASS_P2_TEAM);
+    let mut sess = BridgeSession::new_construct_turn0(&opts, &dex).expect("session");
+    assert_eq!(sess.turn(), 0, "must start at the pre-commit first boundary");
+
+    // Both sources are EXPLICIT, so no recorded queue is consulted; the replacement comes from
+    // the `"random"` follow-up policy, which is precisely the path the guard used to skip.
+    let mut sources = [
+        TurnSource::from_replay_spec("move 1", &[]),
+        TurnSource::from_replay_spec("move 1", &[]),
+    ];
+    let mut rng = aux_rng_from_seed("1,2,3,4");
+    let out = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, &dex);
+
+    // NON-VACUITY: the fixture must really have produced a faint at turn 1, or this test proves
+    // nothing about follow-ups.
+    // NOTE the port swaps `side.pokemon` slots on a switch (as Showdown does), so the KO'd mon
+    // is no longer at index 0 — ask whether ANY p2 mon fainted, not which slot holds it.
+    let st = sess.battle_state().expect("state");
+    assert!(st.sides[1].pokemon.iter().any(|m| m.fainted),
+        "fixture did not KO the glass p2 lead at turn 1 — the follow-up path is untested");
+    assert!(!out.stuck, "the turn must settle, not wedge");
+
+    // THE ASSERTION: p2 supplied TWO choices this turn — its move and its replacement — and the
+    // turn ran to completion rather than stopping at the pause.
+    assert_eq!(out.used[1].len(), 2,
+        "p2 must have used a move AND a forced replacement, got {:?}", out.used[1]);
+    assert_eq!(sess.turn(), 2, "turn 1 must have completed and eagerly opened turn 2");
+    assert_eq!(sess.request_kind(0), Some(RequestState::Move), "p1 back on a move request");
+    assert_eq!(sess.request_kind(1), Some(RequestState::Move), "p2 back on a move request");
+}
+
+#[test]
+fn a_one_shot_reroll_at_turn_1_reports_the_boundary_turn_in_pre_state() {
+    // `pre_state.turn` rendered the RAW committed count, so a turn-1 boundary reported 0 where
+    // Node reports 1 — caught by `search_impl_parity` only once the golden sampled turn 1.
+    let req = format!(
+        "{{\"mode\":\"reroll\",\"record\":{},\"turn\":1,\"seeds\":[\"5,6,7,8\"]}}",
+        record_json(None)
+    );
+    let (code, out) = one_shot(&req);
+    assert_eq!(code, 0, "turn-1 reroll must succeed: {}", &out[..out.len().min(300)]);
+    let ps = out.find("\"pre_state\":").expect("pre_state in the head");
+    let tail = &out[ps..];
+    assert!(tail.starts_with("\"pre_state\":{\"turn\":1,"),
+        "pre_state must report the BOUNDARY turn 1, got: {}", &tail[..tail.len().min(80)]);
+}
+
+#[test]
+fn a_one_shot_reroll_at_turn_1_opens_the_first_decision() {
+    let req = format!(
+        "{{\"mode\":\"reroll\",\"record\":{},\"turn\":1,\"seeds\":[\"5,6,7,8\"]}}",
+        record_json(None)
+    );
+    let (code, out) = one_shot(&req);
+    assert_eq!(code, 0, "a turn-1 reroll must succeed; stdout: {}", &out[..out.len().min(400)]);
+    assert!(out.contains("\"turn\":1"), "the head must report turn 1: {}", &out[..out.len().min(200)]);
+    // NON-VACUITY: the head names the ORIGINAL turn-1 picks, which only exists if the
+    // build stopped at index 0 rather than running off the end of the log.
+    assert!(out.contains("\"recorded_choices\""), "no recorded_choices in: {out}");
+    assert!(out.contains("move 1"), "the fixture's original turn-1 picks must be named: {out}");
+    assert!(out.contains("\"rerolls\""), "the arm array must be present: {out}");
+}
+
+#[test]
+fn open_root_opens_turn_1_on_the_persistent_protocol() {
+    let mut child = Command::new(BIN)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    let mut stdin = child.stdin.take().expect("stdin");
+    let mut stdout = BufReader::new(child.stdout.take().expect("stdout"));
+    let mut line = String::new();
+
+    let rec = record_json(None);
+    writeln!(stdin, "{{\"id\":1,\"cmd\":\"open_root\",\"record\":{rec},\"turn\":1}}").unwrap();
+    stdout.read_line(&mut line).expect("a reply");
+    assert!(line.contains("\"ok\":true"), "open_root at turn 1 must succeed: {line}");
+    assert!(line.contains("\"node_id\":\"n0\""), "expected a root node: {line}");
+    assert!(line.contains("\"requests\""), "the root must carry both choice surfaces: {line}");
+
+    line.clear();
+    writeln!(stdin, "{{\"id\":2,\"cmd\":\"close\"}}").unwrap();
+    stdout.read_line(&mut line).expect("a bye");
+    assert!(child.wait().expect("wait").success(), "close must exit 0");
 }
 
 // ===========================================================================

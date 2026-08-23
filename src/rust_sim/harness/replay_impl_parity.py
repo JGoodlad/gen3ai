@@ -41,7 +41,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+# parents[3] is the REPO ROOT (this file is <root>/src/rust_sim/harness/). It was
+# parents[1] while the harness lived in <root>/tmp/; the move (`ede4c79`) left the index
+# behind, so every default path below resolved under src/rust_sim/ and did not exist.
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_BIN = ROOT / "src/rust_sim/target/release/search_driver"
 NODE_REPLAY = ROOT / "src/utils/bridge/replay_driver.js"
 NODE_SEARCH = ROOT / "src/utils/bridge/search_driver.js"

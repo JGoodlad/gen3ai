@@ -175,7 +175,12 @@ def build_frame(traces_dir: str) -> "tuple[List[Decision], Counter]":
                 continue
             turn = int(iv.get("turn", -1))
             if turn <= 1:
-                # The offline replay driver cannot open turn 1. Counted, never silent.
+                # Counted, never silent. The KEY is now a misnomer, kept so the reported
+                # accounting stays comparable across runs: turn 1 became openable on BOTH impls
+                # on 2026-08-23 (`gen3_search_turn1_open_v1`), so this is a sampler bound
+                # matching `cf_producer.MIN_LABELABLE_TURN` — not the driver limitation it was
+                # named for. Lowering the two together changes the audited population, so it is
+                # its own change rather than a rider on the driver fix.
                 skipped["turn_1_unopenable"] += 1
                 continue
             rows.append(Decision(

@@ -539,7 +539,20 @@ for its whole `(candidate × seed)` sweep.
 non-zero — so `_run_driver` reads stdout FIRST and says "EMPTY stdout AND stderr" when there is
 genuinely nothing. Before that, the rust `search_driver` refusing turn 1 surfaced as literally
 `failed (rc=1): ` with no reason at all, which reads like a crash and is not one. (That refusal is
-still OPEN — see `src/rust_sim/src/search.rs::at_turn_start`.)
+**FIXED** — `gen3_search_turn1_open_v1`; the stdout-first read is what made it diagnosable.)
+
+**Turn 1 opens on both impls** (`gen3_search_turn1_open_v1`). It did not until 2026-08-23: rust's
+`at_turn_start` compared `BattleState::turn`, which the driver increments at `commitChoices` for
+the first turn and then EAGERLY at every turn end — so from turn 2 on the field already names the
+open boundary's turn, but at the FIRST boundary it still read `0` while the wire had already said
+`|turn|1`. `build_to_turn` therefore walked the whole command log and reported "battle never
+reached the start of turn 1", on BOTH verb families (`open_root` and the one-shot `reroll`
+family). The predicate now maps a pre-commit `0` to `1` — exact rather than a fudge, because an
+unbuilt battle (the other source of `turn() == 0`) has no boundary and is already excluded by the
+`request_kind` conjunct, and the mapping is the identity for every `t >= 2`. Gates:
+`src/rust_sim/tests/replay_driver_test.rs` (the predicate, `build_to_turn`, and both verbs through
+the real binary) and `search_driver_turn1_integration_test.py` (`sim`: turn 1 opens on node AND
+rust, with turn 2 as the identity control).
 
 ### Counterfactual replay-to-end (`counterfactual.py`)
 

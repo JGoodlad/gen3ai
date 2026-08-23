@@ -1387,7 +1387,32 @@ the LABEL, not just the protocol.
 - **Coverage gap found**: the rust `search_driver` cannot open TURN 1 (10/10 decisions, 6/6
   records; node can) = 3.35% of move decisions — exactly the first decision of every battle —
   and the error is a JSON `error` on STDOUT with EMPTY stderr, so a stderr-reading caller sees
-  silence. Fix candidate, small.
+  silence. Fix candidate, small. ✅ **FIXED 2026-08-23 (`gen3_search_turn1_open_v1`) — but "small"
+  was WRONG: one cause, THREE sites, and only a gate that samples turn 1 finds the other two.**
+  Cause: the port's turn counter is incremented at `commitChoices` for the first turn and EAGERLY
+  at every later turn end, so from turn 2 on it already names the open boundary, but at the FIRST
+  boundary it reads `0` while the wire has said `|turn|1`. Every consumer that compared it raw was
+  wrong at turn 1: (a) `at_turn_start` — `build_to_turn` walked the whole log and reported "battle
+  never reached the start of turn 1"; (b) `pre_state.turn` — reported 0 where node reports 1;
+  (c) **the two turn-resolution loop guards** (`resolve_turn_exact`, `resolve_turn_sourced`), whose
+  `sess.turn() == start_turn` condition went false on the FIRST commit at turn 1, silently
+  truncating the turn before any faint-replacement follow-up — a WRONG ARM, not an error. One
+  helper (`open_boundary_turn`, `0 => 1`) now serves all three; identity for `t >= 2`.
+  **Method lesson: (b) and (c) were invisible until the golden sampled turn 1** — the generator only
+  ever used turns {2,5,9}, so the cross-impl gate could not speak to the case. Fixing the predicate
+  alone would have replaced a LOUD refusal with a silently wrong arm. Evidence: on a turn-1 golden,
+  pre-fix **157** divergences → predicate-only **129** → +`pre_state` **123** → +guards **1** (and
+  that last is the documented `volatiles` approximation at turn 5, not turn 1). Turns {2,5,9}
+  unchanged at 1 divergence before and after; `replay_impl_parity` 29 before and after.
+  ⚠️ **The DOWNSTREAM sampler bound was deliberately NOT lowered**:
+  `cf_producer.MIN_LABELABLE_TURN = 2` and `cf_audit`'s `turn_1_unopenable` counter
+  remain, now documented as sampler choices rather than capability limits — widening the declared
+  candidate distribution by 3.35% is its own change with its own before/after.
+  ⚠️ **Also found: both parity harnesses were UN-RUNNABLE** (stale `parents[1]` ROOT after the
+  `tmp/` → `src/rust_sim/harness/` move, `ede4c79`), and on a freshly generated golden both report
+  PRE-EXISTING divergences the docs record as PASS — confirmed on the pre-fix binary over the
+  identical golden, so unrelated to this fix. Open: the typed-Hidden-Power display name inside an
+  `|error|` frame, and the `pre_state.volatiles` reconstruction gap.
 - **Method rider**: per-arm costs amortize a ~900 ms per-decision fixed cost — the prior 39.5
   ms/arm figure was a K≈76 artifact, not the factory's price (the model reproduces it at that K
   and reprices K=8 at 162 ms/label). *Never quote a per-unit cost without its batch size.*

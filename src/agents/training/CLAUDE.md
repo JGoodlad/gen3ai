@@ -2927,9 +2927,18 @@ rather than editing it in place:
 base64 float32 payload when the traces won't travel with the labels. `obs_sha1` is always present
 so a consumer can verify the row it loaded is the row that was labelled.
 
-**Known coverage gaps, printed in the accounting and never silent:** turn-1 decisions (the offline
-replay driver cannot open them — one per battle, 3.35% of move decisions) and forced-switch rounds
-(the re-roll layer anchors at start-of-turn move rounds).
+**Known coverage bounds, printed in the accounting and never silent:** turn-1 decisions (one per
+battle, 3.35% of move decisions) and forced-switch rounds (the re-roll layer anchors at
+start-of-turn move rounds).
+
+⚠️ **The two have DIFFERENT standing, and the turn-1 one changed on 2026-08-23.** Forced-switch
+rounds are a structural limit of the re-roll anchor. Turn 1 is not: it was a rust `search_driver`
+defect (`at_turn_start` compared `BattleState::turn`, which still reads 0 at the pre-commit first
+boundary), **fixed by `gen3_search_turn1_open_v1`** — both impls now open turn 1, and node always
+could. So turn-1 decisions ARE labelable, and the `turn_1_unopenable` skip key is a retained
+misnomer for a **sampler** bound (`cf_producer.MIN_LABELABLE_TURN = 2`), not a capability limit.
+Lowering it widens the declared candidate distribution by ~3.35% and is deliberately left as its
+own change: missing a label is free, silently re-weighting the sampler is not.
 
 **Cost** is the rollouts, not the materializer: an R=8 label is ~0.9 s at load ~7 and ~2.8 s at load
 ~25 — *more* load-sensitive than `loadavg/cpus` predicts, so any throughput figure taken beside a
@@ -3488,8 +3497,9 @@ A tie (the turn cap) scores outcome **0.5**, not a loss — it is uninformative 
 evidence the head was wrong. A checkpoint with **no win-prob head** has no surprise term at all;
 the producer says so once and ranks on entropy alone rather than reading a missing head as a
 confident 0.0. Candidates are start-of-turn **move rounds** at turn ≥ 2 only (a forced-switch round
-has no valid recorded answer to script, and the offline driver cannot open turn 1 — the same
-declared gap `cf_audit` carries).
+has no valid recorded answer to script; the turn-1 bound is the same one `cf_audit` declares — a
+retained SAMPLER choice since `gen3_search_turn1_open_v1` made both impls able to open turn 1, no
+longer the driver limitation it was introduced for).
 
 **Crash safety, and what it costs.** A record is claimed in `<run>/cf_producer_state.json` and the
 state file is **fsync-replaced BEFORE its rollouts run**. So a crash mid-record loses that record's

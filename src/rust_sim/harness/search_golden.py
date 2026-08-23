@@ -32,7 +32,10 @@ from utils.bridge.reconstruction import ReconstructionRecord
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
-DRIVER = Path(__file__).resolve().parents[1] / "src/utils/bridge/search_driver.js"
+# parents[3] is the REPO ROOT: this file is <root>/src/rust_sim/harness/. It was
+# parents[1] while the harness lived in <root>/tmp/, and the move (`ede4c79`) left the
+# index behind — resolving to a path that does not exist.
+DRIVER = Path(__file__).resolve().parents[3] / "src/utils/bridge/search_driver.js"
 BATTLE_FORMAT = "gen3ou"
 
 
@@ -119,7 +122,12 @@ def main():
                       "commands": [list(c) for c in rec.commands]}
             # A few turns spread across the battle, so switches/faints/forced
             # switches all appear somewhere in the golden.
-            turns = sorted({2, 5, 9})
+            #
+            # TURN 1 is in the set deliberately (`gen3_search_turn1_open_v1`): the rust driver
+            # could not open the first decision of any battle, and this golden — which only ever
+            # sampled turns 2/5/9 — is why the cross-impl gate never saw it. A capability the
+            # golden does not sample is a capability the gate cannot speak to.
+            turns = sorted({1, 2, 5, 9})
             drv = NodeDriver()
             try:
                 for T in turns:

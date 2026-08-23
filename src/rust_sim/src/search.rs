@@ -418,17 +418,51 @@ fn side_index(tag: &str) -> Option<usize> {
 /// `atTurnStart`. Both sides must be on a `move` request, which is what makes turn `t`
 /// a branchable joint decision rather than a mid-turn forced-switch round.
 ///
-/// ⚠️ KNOWN GAP (open, reproduced 2026-08-22 on both verb families): this returns FALSE for
-/// `t == 1` on a freshly constructed session, so `build_to_turn` walks the ENTIRE command log
-/// and reports `battle never reached the start of turn 1 (ended=true at turn N)`. Node opens
-/// turn 1 fine, so ~3.35% of move decisions — exactly the first decision of every battle —
-/// are rust-uncoverable. The predicate is where the divergence lands; whether the cause is
-/// `sess.turn()` or `request_kind` after `Battle::start_with_turn0_construction` is NOT yet
-/// established. (The Python seam now prints this message instead of an empty `rc=1`, which is
-/// how the diagnosis was finally readable at all.)
+/// The turn an OPEN boundary is about to resolve, which is NOT always `sess.turn()`.
+///
+/// `BattleState::turn` counts turns that have been *committed*, and the driver increments it
+/// in two places: at `commitChoices` for the very first turn, and then EAGERLY at the end of
+/// every turn (`turn_already_opened`, mirroring the sim flushing `|turn|N+1` in the completing
+/// write). So from turn 2 onwards the field already names the turn whose request is open — but
+/// at the FIRST boundary, where nothing has committed yet, it still reads `0` while the wire
+/// has already said `|turn|1`.
+///
+/// Mapping that `0` to `1` is exact rather than a fudge: `turn()` also returns `0` for a
+/// battle that was never built, and `at_turn_start`'s `request_kind` conjunct excludes that
+/// case (an unbuilt battle has no boundary, so `request_kind` is `None`). For every `t >= 2`
+/// this is the identity, which is why the predicate's behaviour is unchanged there.
+///
+/// **THREE consumers, and each was independently wrong at turn 1** — one cause, three symptoms,
+/// which is why fixing only the first would have been worse than fixing none:
+/// 1. [`at_turn_start`] — turn 1 could not be OPENED at all (a loud, honest failure).
+/// 2. [`pre_state`] — reported turn `0` where Node reports `1`.
+/// 3. The loop guards in [`resolve_turn_exact`] and [`resolve_turn_sourced`] — the first commit
+///    moved the raw count off `start_turn`, so the loop exited before any mid-turn follow-up
+///    (a faint replacement) was fed, returning a HALF-RESOLVED turn as if it were complete.
+///
+/// (3) is the dangerous one: it is a silently wrong arm, not an error. Opening turn 1 without
+/// it would have traded a loud refusal for a quiet lie. Pinned by
+/// `tests/replay_driver_test.rs::a_turn_1_faint_still_gets_its_forced_replacement`.
+fn open_boundary_turn(sess: &BridgeSession) -> u32 {
+    match sess.turn() {
+        0 => 1,
+        n => n,
+    }
+}
+
+/// The battle is paused at the start-of-turn MOVE round of turn `t` — Node's
+/// `atTurnStart`. Both sides must be on a `move` request, which is what makes turn `t`
+/// a branchable joint decision rather than a mid-turn forced-switch round.
+///
+/// `gen3_search_turn1_open_v1`: this used to compare `sess.turn()` directly, which made it
+/// FALSE for `t == 1` on a freshly constructed session — `build_to_turn` then walked the
+/// ENTIRE command log and reported `battle never reached the start of turn 1 (ended=true at
+/// turn N)`. Node opens turn 1 fine, so the first decision of every battle (~3.35% of move
+/// decisions) was rust-uncoverable on BOTH verb families. The cause was `sess.turn()`, not
+/// `request_kind`: see [`open_boundary_turn`].
 pub fn at_turn_start(sess: &BridgeSession, t: u32) -> bool {
     !sess.is_ended()
-        && sess.turn() == t
+        && open_boundary_turn(sess) == t
         && sess.request_kind(0) == Some(RequestState::Move)
         && sess.request_kind(1) == Some(RequestState::Move)
 }
@@ -553,10 +587,14 @@ pub fn resolve_turn_exact(
     from: usize,
     dex: &Dex,
 ) -> Result<Resolved, String> {
-    let start_turn = sess.turn();
+    // BOUNDARY-turn units, not the raw committed count (`open_boundary_turn`). At turn 1 the
+    // raw count is 0 and the first commit moves it to 1, so a raw guard exits the loop before
+    // any follow-up (a faint replacement) is fed — the turn silently resolves half-done.
+    // Identity for every turn >= 2, where the count is already the open boundary's.
+    let start_turn = open_boundary_turn(sess);
     let mut out = Resolved::default();
     let mut i = from;
-    while i < rec.commands.len() && !sess.is_ended() && sess.turn() == start_turn {
+    while i < rec.commands.len() && !sess.is_ended() && open_boundary_turn(sess) == start_turn {
         let cmd = &rec.commands[i];
         write_cmd(sess, cmd, dex)?;
         if cmd.0 != "forcelose" {
@@ -566,7 +604,7 @@ pub fn resolve_turn_exact(
         }
         i += 1;
     }
-    out.stuck = !sess.is_ended() && sess.turn() == start_turn;
+    out.stuck = !sess.is_ended() && open_boundary_turn(sess) == start_turn;
     Ok(out)
 }
 
@@ -695,11 +733,13 @@ pub fn resolve_turn_sourced(
     rng: &mut AuxRng,
     dex: &Dex,
 ) -> Resolved {
-    let start_turn = sess.turn();
+    // BOUNDARY-turn units — see `resolve_turn_exact` for why a raw `sess.turn()` guard
+    // truncates turn 1 after its first commit.
+    let start_turn = open_boundary_turn(sess);
     let mut out = Resolved::default();
     let mut single_shot = [false, false];
     let mut guard: u32 = 0;
-    while !sess.is_ended() && sess.turn() == start_turn {
+    while !sess.is_ended() && open_boundary_turn(sess) == start_turn {
         let g = guard;
         guard += 1;
         if g > RESOLVE_GUARD {
@@ -1092,7 +1132,12 @@ pub fn pre_state(sess: &BridgeSession) -> String {
     };
     format!(
         "{{\"turn\":{},\"weather\":{},\"pseudoWeather\":{},\"p1\":{},\"p2\":{}}}",
-        st.turn,
+        // The BOUNDARY's turn, not the raw committed count — `pre_state` is only ever taken at
+        // a start-of-turn move boundary (see this function's doc), and at the FIRST one the
+        // committed count is still 0 while Showdown's `battle.turn` is already 1. Identity
+        // everywhere else; see `open_boundary_turn`. Caught by `search_impl_parity` only after
+        // `gen3_search_turn1_open_v1` let turn 1 be sampled at all.
+        open_boundary_turn(sess),
         json_quote(weather_id(st)),
         pseudo,
         side_snap(st, 0, !sess.is_ended()),

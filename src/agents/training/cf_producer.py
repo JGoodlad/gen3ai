@@ -132,8 +132,18 @@ STATE_FILENAME = "cf_producer_state.json"
 LABELS_DIRNAME = "cf_labels"
 RECORDS_DIRNAME = "cf_records"
 
-#: The offline replay driver cannot open turn 1, and a turn-1 divergence has no prefix to be
-#: faithful about. Skipped and COUNTED, never silently dropped (`cf_audit` declares the same gap).
+#: Skipped and COUNTED, never silently dropped (`cf_audit` declares the same bound).
+#:
+#: ⚠️ Its ORIGINAL reason is GONE: "the offline replay driver cannot open turn 1" was a rust
+#: `search_driver` defect, fixed 2026-08-23 (`gen3_search_turn1_open_v1`), and both impls now
+#: open turn 1. The second reason it carried — "a turn-1 divergence has no prefix to be faithful
+#: about" — does not survive inspection either: an EMPTY prefix is trivially faithful, which
+#: makes turn 1 the easiest case rather than an excluded one.
+#:
+#: It is left at 2 deliberately, as a SAMPLER choice rather than a capability limit. Lowering it
+#: widens the declared candidate distribution by ~3.35% of move decisions, and this module's own
+#: rule is that missing a label is free while silently re-weighting the sampler is not — so that
+#: is its own change, with its own before/after on the label mix, not a rider on the driver fix.
 MIN_LABELABLE_TURN = 2
 
 #: How many processed-record names the state file remembers. The ring's default cap is 512 and
