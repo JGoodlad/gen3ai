@@ -1320,6 +1320,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if cf_twin_metrics:
             for _tk, _tvals in cf_twin_metrics.items():
                 self.logger.record(f"cf/twin_{_tk}", float(np.mean(_tvals)))
+            # ABSENT, never zero — the shadow head's rule, for the shadow head's reason. The
+            # COMBINED (C + B) unweighted fold, summed per minibatch inside `cf_twin_terms` and
+            # only meaned here: the two arms' lists differ in length when B starves, so
+            # mean(c)+mean(b) would be the mean of no minibatch that ever folded. One scalar,
+            # because this block contributes ONE term to the loss; the per-arm split is already
+            # live at `cf/twin_c_loss` / `cf/twin_b_loss`, which is where you read the arms.
+            # The key is missing (not 0.0) when the CF fold never ran — `cf_twin_metrics` can be
+            # non-empty from the ON-POLICY mirror alone, and a defaulted 0.0 would then publish
+            # a perfect score for an arm that saw no counterfactual label at all.
+            if "loss" in cf_twin_metrics:
+                self.logger.record("train/cf_twin_loss",
+                                   float(np.mean(cf_twin_metrics["loss"])))
         if cf_twin_on:
             self.logger.record("train/cf_twin_grad_share",
                                float(grad_balance.get("grad/cf_twin_share", 0.0)))

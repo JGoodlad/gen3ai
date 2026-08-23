@@ -345,6 +345,16 @@ def cf_twin_terms(model, ctx):
     indistinguishable from a confident "you lose", which is the most dangerous silent target
     this schema could produce. B's term is skipped entirely when no row in the sample carries
     one, and `cf/twin_b_coverage` says so.
+
+    ``metrics["loss"]`` is the COMBINED unweighted fold — C's, plus B's when B's arm actually
+    ran. It is the key `train/cf_twin_loss` publishes, and it exists so the twin block reports
+    the same one-scalar-per-term shape as `train/cf_loss` / `train/cf_evidential_loss` /
+    `train/cf_shadow_loss`: this whole function contributes ONE `loss = loss + term` to the
+    optimizer, so it gets ONE headline. The per-arm split is not lost — `cf/twin_c_loss` and
+    `cf/twin_b_loss` already publish it, and they are the arm-level instrument. Summing here
+    rather than in the logger is deliberate: the two arms' per-minibatch lists have DIFFERENT
+    lengths (B skips a starved minibatch entirely), so `mean(c) + mean(b)` computed downstream
+    would not be the mean of the term on any minibatch that actually folded.
     """
     if ctx is None:
         return None, {}
@@ -363,6 +373,7 @@ def cf_twin_terms(model, ctx):
     logits_c = head_c(pooled).flatten()
     loss_c = cf_binomial_nll(logits_c, b.label, b.n_rollouts)
     term = model.cf_twin_coef * loss_c
+    combined = float(loss_c)                          # the headline; += B's below when B runs
     with th.no_grad():
         q_c = th.sigmoid(logits_c)
         metrics["c_loss"] = float(loss_c)
@@ -382,6 +393,7 @@ def cf_twin_terms(model, ctx):
         ones = th.ones_like(outcome)
         loss_b = cf_binomial_nll(logits_b, outcome, ones)
         term = term + model.cf_twin_coef * loss_b
+        combined += float(loss_b)
         with th.no_grad():
             q_b = th.sigmoid(logits_b)
             metrics["b_loss"] = float(loss_b)
@@ -394,6 +406,7 @@ def cf_twin_terms(model, ctx):
             # that the two heads have actually diverged rather than converged to one function.
             metrics["b_vs_c_abs"] = float((q_b - q_c[sel]).abs().mean())
             metrics["b_minus_c"] = float((q_b - q_c[sel]).mean())
+    metrics["loss"] = combined
     return term, metrics
 
 def cf_shadow_term(model, ctx, popart):

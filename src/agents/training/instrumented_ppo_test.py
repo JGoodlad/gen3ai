@@ -1613,6 +1613,36 @@ def test_head_B_is_skipped_and_COUNTED_when_no_row_carries_an_outcome(tmp_path):
     assert m["b_coverage"] == 0.0
     assert "b_loss" not in m, "head B was folded on rows that carry no outcome label"
     assert "c_loss" in m, "head C must still train — its stream is present"
+    # The headline still publishes when B starves, and it is C's fold ALONE — not C plus a zero.
+    assert m["loss"] == pytest.approx(m["c_loss"], rel=1e-6)
+
+
+def test_the_twin_block_publishes_a_COMBINED_headline_loss(tmp_path):
+    """`train/cf_twin_loss` exists, and it is the sum of the arms that ACTUALLY folded.
+
+    The twin block contributes ONE `loss = loss + term` to the optimizer, so it owes one
+    `train/*` headline like every sibling cf term (`cf_loss`, `cf_evidential_loss`,
+    `cf_shadow_loss`) — it published only a `grad_share` and no loss at all until this test.
+
+    Summed inside the term rather than in the logger, and that is the substance of the pin: B
+    skips a starved minibatch entirely, so the two arms' per-minibatch lists have DIFFERENT
+    lengths and a downstream `mean(c) + mean(b)` would be the mean of no minibatch that ever
+    folded. Here both arms run, so the combined value must equal `c_loss + b_loss` exactly.
+    """
+    model = _build_cf_ppo()
+    _attach_cf_twin_heads(model)
+    model.learn(total_timesteps=8 * 4)
+    _attach_cf_twin_buffer(model, tmp_path, label=1.0, outcome=0.0)
+    model._cf_buffer.poll(0)
+    model.cf_twin_coef = 1.0
+    ctx = model._cf_sample_and_forward()
+    _term, m = model._cf_twin_terms(ctx)
+    assert "loss" in m, "the twin block published no headline loss"
+    assert m["b_coverage"] == pytest.approx(1.0), "preconditions: both arms must have folded"
+    assert m["loss"] == pytest.approx(m["c_loss"] + m["b_loss"], rel=1e-6)
+    # UNWEIGHTED, like every sibling `loss` key — the coefficient is a separate reading, and
+    # baking it in would make the scalar move when only the dosage changed.
+    assert m["loss"] != pytest.approx(model.cf_twin_coef * 0.0), "degenerate: loss is zero"
 
 
 def test_the_onpolicy_mirror_uses_head_As_coefficient_and_detaches(tmp_path):
