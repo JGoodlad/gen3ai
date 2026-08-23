@@ -5603,3 +5603,71 @@ signal. `label_bot_frac` sizes the manipulation before the arm is spent.
 End-to-end on a `--debug` CPU smoke (100% bots, so `label_bot_frac` reads exactly 1.0):
 `opp_intent/alpha_loss` **1.99 → 1.84** at W=1.0 against **0.49 → 0.48** at W=0.25 — the designed
 factor of four, in a real training loop rather than a unit test.
+
+---
+
+> ⚠️ **v98 and v99 have no entry here.** `gen3_cf_evidential_head_v1` (v98, the evidential Beta
+> readout) and `gen3_cf_twin_heads_v1` (v99, the twin win-prob heads + the passive shadow critic)
+> landed without appending to this file. Their design record is
+> `designs/ai_v10/design_counterfactual_value_grounding.md` and
+> `designs/research_state/cf_r1_runbook.md`; their version narrative is in `model_version.py`'s
+> header comment, which is authoritative and complete. Noted rather than back-filled — this file is
+> append-only history and writing an entry for a change one did not make would forge the record.
+
+## v100 — `gen3_cf_coef_provenance_v1` (2026-08-22): the counterfactual coefficients stop evaporating on resume
+
+**What moved.** Ten training-only knobs on the counterfactual value-grounding stack — `cf_records`,
+`cf_records_keep`, `cf_winprob_coef`, `cf_head_only`, `cf_label_lag_steps`, `cf_label_likelihood`,
+`cf_evidential_coef`, `cf_evidential_reg`, `cf_twin_coef`, `cf_shadow_coef` — leave the `--opd-coef`
+genre (argparse-only) for the `td_aux_coef` one: RECORDED on `ModelVersion` for provenance and
+`_resolve`-inherited on a flagless resume, **never gated**. No `ARCH_SIGNATURE` bump (each scales,
+sources, filters or shapes a loss computed in the PPO step; none is read by the extractor forward,
+none changes a weight shape), no `MIGRATION_FLOOR` change, and no `flag_registry.py` rows — that
+registry declares EXTRACTOR toggles, and none of these builds a module. The v100 migration is v97's
+shape, not v98/v99's: a `setdefault` to each flag's argparse default, which is not a guess but the
+only possible past, since before this bump the fields did not exist and a flagless resume therefore
+got exactly those values.
+
+**The failure it closes is invisible by construction.** An R1 arm launched with
+`--cf-winprob-coef 1.0` and resumed as `train_rl_agent.py --model <ckpt> --steps N` kept training,
+kept logging, and simply stopped applying the term it existed to measure — no error, no FATAL, just
+a metric that goes quiet and a result that reads as a null. It was strictly worse than a symmetric
+loss would have been: the three STRUCTURAL cf flags (`cf_evidential` v98, `cf_twin_heads` /
+`cf_shadow_critic` v99) were already recorded AND version-gated, so a flagless resume kept the HEAD
+and dropped the COEFFICIENT that drives it — a head that exists, costs parameters, and does nothing.
+The old mitigation ("the launcher forwards every non-launcher flag verbatim") only ever covered a
+launcher-managed resume.
+
+**The enabling defect, and the vacuity it exposed.** `_resolve(name, default)` fires on
+`getattr(args, name) is None`. An argparse entry that defaults to anything else therefore makes its
+own `_resolve` line **dead code** — while `flag_registry_test.test_cli_flags_have_a_resolve_line`
+keeps passing, because the line is PRESENT. Five live `cli`-tier flags were in exactly that state:
+
+| flag | default it carried | what a flagless resume did |
+|---|---|---|
+| `value_threat_inject` | `store_true, default=False` | **ON in the gen-17 production config** ⇒ FATAL at `check_compatible` |
+| `opp_intent_coef` | `0.0` | `opp_intent` is DERIVED from it ⇒ same, on production |
+| `cf_evidential` | `False` | silently reverted the v98 head |
+| `cf_twin_heads` | `False` | silently reverted the v99 heads |
+| `cf_shadow_critic` | `False` | silently reverted the v99 shadow critic |
+
+All five now take `default=None` with `action=BoolFlag` where a bool (so `--no-<flag>` can still
+turn one off explicitly on a resume), and `_resolve` supplies the OFF value for a fresh run.
+**`test_cli_flags_argparse_default_is_none` is the new gate** and it closes the REACHABILITY half of
+a contract whose PRESENCE half was already gated — the same vacuity class the twin-heads build hit
+three times. It asserts against the **built parser** (`build_parser()._actions`), not the source
+text: a default can be an expression, so only the constructed object knows it.
+
+**Fresh-run behaviour is unchanged and pinned as such.** `cf_flags_test`'s default tests now assert
+BOTH halves — `None` at `parse_args` (without which `_resolve` can never fire) and the OFF value
+after `resolve_config` (what a fresh run actually gets) — because asserting only the second would
+pass with the defaults back in argparse and the inheritance silently dead again. End-to-end: a
+`--debug --steps 10000 --cf-winprob-coef 0.5 --cf-records` smoke records
+`cf_winprob_coef: 0.5, cf_records: true` at `config_version: 100`, and a flagless
+`--model <that checkpoint>` resolves both back.
+
+**Rode along, same pass.** `arch_tables._COEF_MODULE` now DECLARES the loss-coefficient set instead
+of only annotating it: selection was by the name suffix `*_coef` alone, which silently dropped every
+loss weight not spelled that way — `intent_label_bot_weight` had been recorded since v97 and
+appeared in **no** generated table (it renders `0.25 | ACTIVE` under the gen-17 config), and
+`cf_evidential_reg` would have joined it.

@@ -2175,3 +2175,85 @@ gradient-flow tests and the `eval_sharding` fuzz — and is never told.
   while pooled `switch_branch` reads DEEPER (+0.81 [+0.50,+1.11]) — so an n.s. primary means
   "the 3× did not happen," never "nothing happened"; pooled `switch_branch` is the DECLARED
   secondary (model+state confounded; requires the fork-base control).
+---
+
+## 2026-08-22 — FLAG-SURFACE REFRESH: the mirror was two generations behind, and five `_resolve` lines were dead code
+
+The last item of the contributor-readiness paydown. Three sub-items; two produced findings that
+were not the ones being looked for.
+
+**1. `designs/production_config.json` mirrored gen-12 code, not gen-17.** It sat at
+`config_version` 96 — the LIVE-CODE tracking that the `gen3_critic_route_wave_v1` signature-bump
+window licensed — while `ai_v9_21_gen17_pfspoff_0820` (v97) had been production since 2026-08-20.
+That window CLOSED the moment gen-17 recorded the current signature, and nothing noticed, because
+**the drift gate could not see this class of staleness**: `arch_tables_test` compares only fields
+BOTH sides carry, and gen-17's seven new fields were all "only in the run" ⇒ the schema delta ⇒
+fine. It was green while describing a fiction.
+
+- **The fiction was not cosmetic.** Four substrate cells ship **ON** in the gen-17 base
+  (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`;
+  `pair_value_route` correctly still OFF, it owes C4). The mirror defaulted all four to OFF, so
+  every artifact derived from it — `ARCHITECTURE.md`'s generated tables, the delivery graph, the
+  arch viewer, and the `extractor_compiles_test` "production arch" — had been describing and
+  COMPILING a config production does not run. Refreshing it (`delivery_graph --sync-config`) added
+  **four delivery edges** that had simply not been drawn: `alpha_head → pointer.switch_logit`, and
+  four op cells at widths 9/14/15/4.
+- **Two tests were RED against the real production config and green against the fiction**, which is
+  the cleanest possible demonstration of the cost. `delivery_graph_test` asserted the switch-cell
+  width set `== {15}`; it is `{4, 7, 15}` under the gen-17 base. `extractor_compiles_test`'s
+  opp_intent-off fallback probe carried a hand-written list of the flags that must come off with
+  `opp_intent`, above a comment claiming it was "queried from the registry, not guessed" — and
+  `switch_branch_cell` (which requires `opp_intent` with NO fallback) had joined that set. Both are
+  now derived: the width from the live config + `arch_constants`, the flag set from
+  `REGISTRY[*].requires`. **A literal under a comment that says it is not a literal is the failure
+  mode, not the literal.**
+- The E1–E4 arms are byte-identical to gen-17 on every shared field, so mirroring the production
+  base satisfies the drift gate against all of them — worth recording, because
+  `_newest_run_config()` picks by MTIME and would otherwise pull the mirror onto whichever
+  experiment ran last.
+
+**2. Ten cf coefficients promoted — and the promotion exposed a fourth vacuity.** The counterfactual
+family (`cf_records`, `cf_records_keep`, `cf_winprob_coef`, `cf_head_only`, `cf_label_lag_steps`,
+`cf_label_likelihood`, `cf_evidential_coef`, `cf_evidential_reg`, `cf_twin_coef`, `cf_shadow_coef`)
+moves from the `--opd-coef` genre to the `td_aux_coef` one at **config v100**
+(`gen3_cf_coef_provenance_v1`): recorded for provenance, `_resolve`-inherited on a flagless resume,
+never gated. The defect it closes is silent — an R1 arm resumed without re-typing its coefficient
+keeps training and stops applying the term, so the paired difference the arm exists to measure
+reads as a null — and it was ASYMMETRIC: the three structural cf flags were already recorded and
+version-gated, so a resume could keep the head and drop the coefficient driving it.
+
+- **The real finding is underneath.** `_resolve(name, default)` fires only on `getattr(args, name)
+  is None`. **Five live `cli`-tier flags had a `_resolve` line beside a non-None argparse default**,
+  so the line was dead code while `test_cli_flags_have_a_resolve_line` passed — it checks that the
+  line is PRESENT. Two of them are production flags: `value_threat_inject` (ON in the gen-17 config)
+  and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from), either of which would
+  have made a **flagless resume of PRODUCTION** FATAL at `check_compatible`. The other three were
+  `cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`.
+- `flag_registry_test.test_cli_flags_argparse_default_is_none` is the gate for the REACHABILITY
+  half of a contract whose PRESENCE half was already gated — verified failing on revert. It asserts
+  against the **built parser**, not the source text, because a default can be an expression and
+  only the constructed object knows its value. Same family as the twin-heads build's three
+  self-convictions and the entry-point decomposition's ten source-scanning gates: **a gate that
+  keeps passing while its subject stops existing is worse than no gate.**
+- `cf_flags_test`'s default tests now assert BOTH halves — `None` at `parse_args` and the OFF value
+  after `resolve_config`. Asserting only the second would pass with the defaults back in argparse
+  and the inheritance silently dead again.
+- Rode along: `arch_tables._COEF_MODULE` now DECLARES the loss-coefficient set rather than
+  annotating it. Selection was by the suffix `*_coef` alone, so `intent_label_bot_weight` — recorded
+  since v97, and **0.25 in production** — had never appeared in a single generated table.
+
+**3. Cleanup-journey Phases 2/3 — assessed, not executed.** Phase 3 is **~85% discharged by events**
+and its remaining item is a config decision, not code: items 1–3 all landed (v96 critic-route wave;
+the hidden-opp VF half, `non_matchup_rest` VF concat and the prev-turn action mask all deleted at
+v90/v96; OpTensors step 3 at v86, op out_dim 660 → 138), item 4 is half-adopted
+(`all_shaping_pbrs` ON, `--stall-pbrs` still off), item 5 (demotion sweep #2) is open and cheap.
+Phase 2 (launch-by-manifest) is **DEFER**: 196 argparse actions against a 133-flag production
+command is real, but `checkargs`, the registry + its generated table, `original_command`, and now
+v100's fuller `model_config.json` have each taken a bite out of its motivation, and a second launch
+surface has to be kept in sync with the first. The `exploiter-temp-*` sextet and the ten `eval_*`
+flags remain the honest profile candidates.
+
+**Gates:** routine suite; `delivery_graph --check` / `build_arch_viewer --check` / `arch_tables
+--check` / `flag_registry --check` all green AFTER the refresh; `checkargs` clean on the 5 newest
+runs; `--debug --steps 10000 --cf-winprob-coef 0.5 --cf-records` smoke to `Training complete`,
+recording `config_version 100` with both values, and a flagless `--model` resume resolving them back.

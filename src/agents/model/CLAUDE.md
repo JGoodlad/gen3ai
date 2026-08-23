@@ -506,7 +506,7 @@ architecture toggle and of the five hand-synced places each one has to appear:
 
 | # | surface | what it buys | how it is kept honest |
 |---|---|---|---|
-| 1 | the `argparse` entry in `main.train_rl_agent` | a human can SET it | **validated** |
+| 1 | the `argparse` entry in `main.train_rl_agent`, **defaulting to `None`** | a human can SET it, and leaves the sentinel `_resolve` needs | **validated** (both halves) |
 | 2 | the `_resolve("name", default)` line beside it | a **flagless** resume INHERITS it | **validated** |
 | 3 | `extractor_arch.ARCH_ARG_KEYS` / `_DERIVED` / `FROZEN_ARCH_KWARGS` | it reaches the extractor | **generated** |
 | 4 | `snapshot.current_model_version()`'s keyword (via `_run_arch_toggles` → `arch_toggles_from_args`) | an eval/self-play WORKER rebuilds the SAME gate | **generated** + validated |
@@ -519,6 +519,18 @@ argparse entry but no `_resolve` line means a flagless resume reverts it to OFF.
 keep on the first run — it found three rows whose flag name is not `--<field>`: `--damage-topk`
 writes `damage_topk_k`, and the `--damage-matrices` MODE flag desugars into both
 `damage_matrices_*` bools. Those name their flag with `cli_name=` rather than being exempted.
+
+🚨 **Surface 1 is TWO claims, and for a long time only one was gated.** `_resolve(name, default)`
+fires on `getattr(args, name) is None`, so an argparse entry defaulting to anything else makes its
+own `_resolve` line **dead code** — while `test_cli_flags_have_a_resolve_line` keeps passing, because
+the line is *present*. `test_cli_flags_argparse_default_is_none` closes the REACHABILITY half, and it
+found **five live flags** in exactly that state (2026-08-22): `value_threat_inject` (ON in the gen-17
+production config) and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from) — either
+of which would have made a flagless resume of PRODUCTION FATAL at `check_compatible` — plus
+`cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`. Use `default=None` with `action=BoolFlag` for
+a bool, so `--no-<flag>` can still turn one off explicitly on a resume, and let `_resolve` supply the
+OFF value for a fresh run. **That gate asserts against the BUILT parser, not the source text** — a
+default can be an expression, so only the constructed object knows what it is.
 
 **Read `designs/flag_registry.md`** for the current table (generated; `--check` is the gate).
 ### The three TIERS — a flag can lose its CLI entry without losing explicitness
@@ -551,7 +563,7 @@ migration refuses a checkpoint that recorded either ON.
 |---|---|---|
 | `structural` | weights and/or the trained forward differ | `check_compatible` — runs on **every** load |
 | `resume_immutable` | the forward is bit-identical; only TRAINING differs | a dedicated `check_*`, **resume path only** |
-| `training_coef` | a loss weight moved | none; recorded for provenance |
+| `training_coef` | a loss weight moved | none; recorded for provenance **and `_resolve`-inherited** |
 | `runtime` | a perf knob moved | none; never recorded, never inherited on resume |
 
 Getting this wrong hurts in **both** directions, so both are asserted: a `structural` toggle with no

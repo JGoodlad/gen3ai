@@ -72,6 +72,18 @@ question, because the control arm lives inside it:
 --cf-shadow-critic --cf-shadow-coef <declared>   # the passive value twin; optional, orthogonal
 ```
 
+> **Mechanism note (2026-08-22, `gen3_cf_coef_provenance_v1`, config v100) — a factual correction,
+> not an amendment to the arm.** Every flag in that block is now RECORDED in the run's
+> `model_config.json` and INHERITED on a flagless resume. It was not when this runbook was signed:
+> the coefficients were argparse-only, so `train_rl_agent.py --model <ckpt> --steps N` typed without
+> them silently reverted `--cf-twin-coef` to 0 — the run keeps training, keeps logging, and the
+> paired difference this arm exists to measure quietly becomes B−A ≈ C−B ≈ 0, indistinguishable from
+> a null result. Worse, `--cf-twin-heads` was version-GATED and `--cf-twin-coef` was not, so a
+> resume could keep the heads and drop the coefficient. **Nothing about the arm's DESIGN changes**;
+> the block above is still exactly what to type at launch. What changed is that re-typing it on a
+> restart is no longer load-bearing, and the recorded config is now evidence of what the arm
+> actually ran with.
+
 plus the background producer (`python -m agents.training.cf_producer models/<arm>`, launch line in
 the header) writing `<run>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`. The producer now
 additionally ships `outcome_label` (free — it already computes the recorded outcome) and, with

@@ -3003,12 +3003,31 @@ the term trains the head's own params and provably cannot perturb the trunk.
   grad-balance probe's shared denominator (so it is comparable with `grad/policy_share`) and reads
   **exactly 0.0 under `--cf-head-only`** — that is its verification, not a defect.
 
-**Flag class — plain argparse, deliberately.** All four are **training-only**, exactly the `--opd-coef`
-class: not in `agents/model/flag_registry.py`, not on `ModelVersion`, not in `check_compatible`, no
-version bump. Nothing here is weight-shape relevant. They are therefore **not read back on a flagless
-resume** (there is no `ModelVersion` field to read them from); the launcher forwards every non-launcher
-flag verbatim, so a launcher-managed resume keeps them, and a bare `train_rl_agent.py --model …` does
-not. `--cf-winprob-coef > 0` REQUIRES `--win-prob-mode read_only|shaping` — `none` does not build a
+**Flag class — the `td_aux_coef` class** (`gen3_cf_coef_provenance_v1`, config **v100**). All four are
+**training-only** — no forward, no weight shape, not in `agents/model/flag_registry.py` (which declares
+EXTRACTOR toggles, and none of these builds a module), and **never in `check_compatible`**: a frozen
+eval/pool/distill opponent runs no loss at all, so gating a loss coefficient there would be a false
+rejection that breaks league play. But they ARE `ModelVersion` fields, recorded for provenance and
+**read back on a flagless resume** via `_resolve`.
+
+> ⚠️ **They were the `--opd-coef` class until 2026-08-22, and the failure that bought the promotion is
+> invisible by construction.** An R1 arm resumed without re-typing `--cf-winprob-coef 1.0` kept
+> training, kept logging, and simply stopped applying the term it was launched to measure — no error,
+> no FATAL, just a metric that goes quiet. It was strictly worse than a symmetric loss, because the
+> three STRUCTURAL cf flags (`--cf-evidential` v98, `--cf-twin-heads` / `--cf-shadow-critic` v99) were
+> already recorded and GATED, so a flagless resume kept the HEAD and dropped the COEFFICIENT that
+> drives it. "The launcher forwards every non-launcher flag verbatim" was the old mitigation, and it
+> only ever covered a launcher-managed resume — never a bare `train_rl_agent.py --model …`.
+>
+> The same pass found the enabling defect underneath: `--cf-evidential` / `--cf-twin-heads` /
+> `--cf-shadow-critic` each HAD a `_resolve` line and each had an argparse `default=False`, and
+> `_resolve` only fires on `None` — so the line was dead and the presence test that checks for it
+> passed anyway. `flag_registry_test.test_cli_flags_argparse_default_is_none` is now the gate for the
+> reachability half; it found three more live flags in the same state (`value_threat_inject`, ON in
+> the gen-17 production config, and `opp_intent_coef`, which `opp_intent` is DERIVED from — both would
+> have made a flagless resume of PRODUCTION FATAL at `check_compatible`).
+
+`--cf-winprob-coef > 0` REQUIRES `--win-prob-mode read_only|shaping` — `none` does not build a
 `WinProbHead`, so a live coefficient would fold nothing for a whole run; the parser refuses it, and the
 loss independently no-ops if the head is somehow absent.
 
@@ -3036,8 +3055,8 @@ term = Σ NLL_i / Σ n_i        (mean NLL per ROLLOUT)
 - Computed through `softplus` (`−log σ(z) = softplus(−z)`), stable where `log(sigmoid(·))`
   underflows. A row whose producer omitted `n_rollouts` parses as 0 and is clamped to **one**
   observation — never a divide-by-zero, never a silently dropped row.
-- Training-only, the `--opd-coef` class: no forward, no weight shape, no version bump, **not read
-  back on a flagless resume**.
+- Training-only, the `td_aux_coef` class: no forward, no weight shape, never gated — but recorded
+  (config v100) and **read back on a flagless resume**.
 - `cf/n_rollouts_mean` rides beside `cf/loss` — under the binomial likelihood the loss is per
   rollout, so a producer that quietly changed R would otherwise move the loss with no visible cause.
 
@@ -3104,8 +3123,10 @@ OFF, and a `snapshot.current_model_version` keyword (so a frozen eval/pool oppon
 The gate matters more here than usual: because the head is never called by the forward, a mismatched
 resume produces **no shape error anywhere**, so `check_compatible` is the only thing standing between
 a flipped flag and a run that silently supervises a freshly-random head for good. The two
-**coefficients** are training-only argparse (the `--opd-coef` class) and are deliberately NOT in the
-registry — they are loss weights set on the model, never reaching the extractor.
+**coefficients** are training-only (the `td_aux_coef` class): deliberately NOT in the registry — they
+are loss weights set on the model, never reaching the extractor — but RECORDED on `ModelVersion` and
+`_resolve`-inherited since config **v100**, so a flagless resume cannot keep this head and drop the
+coefficient that supervises it.
 
 `--cf-evidential-coef > 0` REQUIRES `--cf-evidential`, refused at the CLI. Unlike the win-prob case
 the head cannot be added later to rescue a live coefficient: it is a state_dict change, so the
@@ -3282,8 +3303,10 @@ in `check_compatible`, a `MODEL_CONFIG_VERSION` bump to **99** with a setdefault
 `snapshot.current_model_version` keywords, and **no `ARCH_SIGNATURE` bump** (optional side heads,
 obs family unchanged) — the `cf_evidential` precedent exactly, and the gate matters for its reason:
 the forward never calls these heads, so `check_compatible` is the ONLY thing that can catch a
-flipped flag. `--cf-twin-coef` / `--cf-shadow-coef` are training-only argparse (the `--opd-coef`
-class), deliberately not in the registry and **not read back on a flagless resume**.
+flipped flag. `--cf-twin-coef` / `--cf-shadow-coef` are training-only (the `td_aux_coef`
+class), deliberately not in the registry but recorded and **read back on a flagless resume** since
+config **v100** — a within-run paired comparison whose coefficient silently zeroed on restart would
+report B−A ≈ C−B ≈ 0 and look like a null result.
 
 Refusals, all at the CLI: `--cf-twin-coef > 0` requires `--cf-twin-heads`; `--cf-shadow-coef > 0`
 requires `--cf-shadow-critic` (both are state_dict changes and cannot be added mid-run to rescue a
