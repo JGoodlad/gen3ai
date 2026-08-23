@@ -243,6 +243,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
+        model.bait_entropy_boost = args.bait_entropy_boost                      # gen3_bait_entropy_v1 (training-only)
+        model.bait_entropy_anneal_frac = args.bait_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
         model.item_belief_coef = args.item_belief_coef  # item CE weight (training-only)
         model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
@@ -507,6 +509,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
         model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
         model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
+        model.bait_entropy_boost = args.bait_entropy_boost                      # gen3_bait_entropy_v1 (training-only)
+        model.bait_entropy_anneal_frac = args.bait_entropy_anneal_frac
         model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
         model.item_belief_coef = args.item_belief_coef  # item CE loss (0.0 = no direct CE)
         model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)

@@ -313,6 +313,77 @@ too, so the distribution self-enriches toward the patient meta self-play current
   self-play lacks — it's complementary to, not a substitute for, a teacher/league. Watch the stall-rate canary.
   Tests: `defensive_entropy_test.py`.
 
+## State-conditioned BAIT-exploration entropy (`--bait-entropy-boost`)
+
+`gen3_bait_entropy_v1` — the same mechanism as the defensive boost above, on a different flag, and it
+exists to answer ONE question. The bait verdict (`designs/research_state/ledger.md` → *E4 VERDICT*,
+2026-08-23) closed the hunt with a stated mechanism: **exploration starvation at a saturated action** —
+the whiff sits at p≈0.97, so the alternatives at p≈0.01-0.03 are never sampled and their advantage is
+never realized. Everything upstream of the action was cleared: α/β know the switch, the critic already
+ranks an alternative above the whiff in 21/23 loop decisions, and the E4 substrate arm moved the cells
+and changed **11 decisions in 780**. What was never tested is the mechanism's own claim — that the
+policy would fix this if it merely SAMPLED the alternatives. This flag is that test, and it is the
+cheapest instrument that can separate the two remaining stories.
+
+- **The flag (`gen3_env._bait_opportunity`).** Per decision, the env emits a training-only
+  `bait_opportunity` Dict-obs key = 1.0 when the attack we would most likely click (`last_move` if it is
+  still legal and damaging — the RE-CLICK — else the highest-base-power legal attack) deals **ZERO**
+  damage to an **alive, revealed opponent BENCH** mon. Bench, not active, because in gen 3 the switch
+  resolves first: the decision that whiffs is taken while the immune mon is still benched, which is also
+  what makes the flag line up with the offline detector's whiff states. The zero-damage predicate is
+  `baitbot.blocks` → `gen3_mechanics.effective_multiplier` → `data/` — ONE predicate shared with the
+  scripted BaitBot opponent, so the flag fires on exactly the boards BaitBot exploits and no immunity
+  table is hand-copied. Never raises (hot path); read ONLY by the entropy term, never in the pi/vf forward.
+- **Three scope decisions, all deliberate.** (1) **REVEALED bench only** — using agent2's true team was
+  available (the key is privileged) and refused: boosting entropy on a distinction the policy cannot make
+  adds sampling noise with no learnable signal, and gen-15 settled that perception is not the gap.
+  (2) **Ability immunities count once revealed** (Levitate/Water Absorb/Volt Absorb/Flash Fire), the same
+  information the policy holds; type immunity always counts. (3) **The α half of the proposed predicate is
+  NOT shipped** — α is published by the extractor inside the LEARNER's forward, and the flag is built in
+  the env worker *before* any forward exists (the eval-time capture reads it off an in-process `RLPlayer`,
+  a seam training does not have). There is nothing to emit as a second key; an α-gated variant would have
+  to live at loss time and gate on the live policy's own moving α, which is a worse instrument for a probe.
+- **The boost (`instrumented_ppo`).** Identical arithmetic to the defensive boost, on the same annealing
+  schedule (`_annealed_entropy_boost`, shared so the two cannot drift): `entropy_loss = -mean(w·entropy)`
+  with `w = (1 + (B_def−1)·flag_def)·(1 + (B_bait−1)·flag_bait)`. **Overlap semantics: multiplicative.**
+  Each factor is exactly 1 off its own flag, so either boost alone is byte-identical to running it alone,
+  and a decision flagged by both gets the product (they are near-disjoint in practice — "a heal is legal"
+  vs "our attack is dead into their bench"). `B=1.0` = OFF, byte-identical *including on a fully populated
+  flag column*. `train/entropy_loss` stays UNWEIGHTED; `baitent/{flagged_frac, boost_eff, entropy_flagged,
+  entropy_unflagged}` say whether the boost fired and where.
+- **Threading.** `--bait-entropy-boost` (default 1.0) + `--bait-entropy-anneal-frac` (default 0.0); the env
+  emit is gated on `boost > 1.0`; the coefs are set on the model like `ent_coef` — **training-only, NOT
+  version-locked, settable on resume** (no `model_config`/`ARCH` change, nothing in `flag_registry` — it
+  reaches no extractor).
+
+**The pre-registered readings** (write them down before the run, per the hunt doc's own rule):
+
+| observation | reading |
+|---|---|
+| whiff / re-click rate falls under the boost and **STAYS** down past the anneal | **SAMPLING was the block.** The mechanism the verdict named is right, the correction is realizable on-policy, and the cheap lever generalizes to other saturated actions. |
+| falls under the boost and **REVERTS** as `boost_eff → 1` | **CREDIT is convicted.** The alternatives were sampled, their advantage was estimated, and the policy still went back — so the correction has to arrive off-policy: R1/R2's counterfactual labels and the search-teacher/OPD inherit, exactly as the E4 entry's closing paragraph predicted. |
+| never falls, at a healthy `baitent/flagged_frac` | neither — the boost did not move behaviour at all; read `entropy_flagged` vs `entropy_unflagged` first to confirm the boost actually reached the policy. |
+| never falls, at a near-zero `baitent/flagged_frac` | a **DOSE** finding, not a mechanism finding: the states were not in the rollout. Raise exposure (a BaitBot-shaped opponent in the pool) before concluding anything. |
+
+⚠️ `flagged_frac` is the exposure reading and must be quoted with any verdict — the E4 entry's own
+ecology finding (BaitBot-shaped opponents propagate baiting through self-play, pivots 574→773) is why a
+dose number is not optional here. **MEASURED at build time** (`--debug --steps 10000
+--bait-entropy-boost 3.0`, 2026-08-23, default bot roster, early policy): `flagged_frac` **0.005-0.016**
+— i.e. ~1% of decisions are bait boards at the default opponent mix, with `entropy_flagged` 1.74-1.88 vs
+`entropy_unflagged` 1.65-1.69. That is the dose a probe arm inherits unless it deliberately raises
+exposure, and it is small enough that a BaitBot-weighted pool is worth considering in the same launch.
+
+Tests: `bait_entropy_test.py` (predicate units incl. the four ability immunities with negative controls,
+the anneal, and the loss on the REAL `train()` path — OFF byte-identical with every row flagged, the boost
+inert on unflagged rows, and the exact identity `(ent_coef=c, boost=B) ≡ (ent_coef=B·c, boost=1)`) +
+`bait_opportunity_integration_test.py` (`sim`: the emission path through a real bridge battle, and the flag
+CROSS-CHECKED against `main.prober.loops` — every detector `immune` whiff whose arrival was already
+revealed must have been a flagged decision; **23 immune whiffs / 21 cross-checked / 0 disagreements** on a
+PINNED matchup. The teams are pinned deliberately: drawn from the pool, only 2 of 14 sample-team pairs
+produced any immune whiff at all and the cross-checked count ranged 0-48 run to run — a test whose sample
+size is a random variable cannot carry a floor. The reverse direction is deliberately not asserted — an
+opportunity predicate fires before the mistake, so it fires on states that never become whiffs).
+
 ## MatchupSpec — the declared matchup (`matchup_spec.py`)
 
 **The ONE explicit declaration of what a run's battles look like** (design:

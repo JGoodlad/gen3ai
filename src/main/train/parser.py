@@ -214,6 +214,22 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Anneal --defensive-entropy-boost linearly back to 1.0 over this FRACTION of total "
                              "--steps (e.g. 0.5 = boost fades to off by the halfway point). 0.0 = constant boost "
                              "(default). Lets exploration fade as the policy learns defensive value.")
+    parser.add_argument("--bait-entropy-boost", "--bait_entropy_boost", dest="bait_entropy_boost",
+                        type=float, default=1.0,
+                        help="STATE-CONDITIONED entropy boost (gen3_bait_entropy_v1): multiply the "
+                             "per-decision entropy bonus by this factor ON bait-opportunity decisions — the "
+                             "attack we would click deals ZERO damage to an alive, revealed opponent BENCH mon "
+                             "(the board the bait loop is fired from). This is the SAMPLING-side probe of the "
+                             "bait verdict: the whiff sits at p~0.97, so the alternatives at p~0.01-0.03 are "
+                             "never sampled and their advantage is never realized. Does NOT touch the reward "
+                             "and does not tell the policy which action to take. 1.0 = OFF (byte-identical). "
+                             "Try 3.0. TRAINING-only (not version-locked, settable on resume).")
+    parser.add_argument("--bait-entropy-anneal-frac", "--bait_entropy_anneal_frac",
+                        dest="bait_entropy_anneal_frac", type=float, default=0.0,
+                        help="Anneal --bait-entropy-boost linearly back to 1.0 over this FRACTION of total "
+                             "--steps. 0.0 = constant boost (default). This is what makes the probe TWO-SIDED: "
+                             "a whiff rate that falls and STAYS down past the anneal means sampling was the "
+                             "block; one that reverts convicts CREDIT (and the off-policy levers inherit).")
     parser.add_argument("--vf-coef", "--vf_coef", dest="vf_coef", type=float, default=0.5,
                         help="PPO value-loss coefficient (default 0.5, the SB3 default). Fixed for a "
                              "run's lifetime: it is recorded in model_config.json and resuming with a "

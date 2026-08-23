@@ -76,6 +76,9 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
                 # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
                 emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
+                # BAIT-exploration flag (gen3_bait_entropy_v1): same gate, same reason — emit only when the
+                # boost is on, so the flag costs nothing on every run that is not taking the probe.
+                emit_bait_opportunity=(args.bait_entropy_boost > 1.0),
                 # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
                 # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
                 # trainee pilots this team — the only states the distillation KL folds. None → no key.

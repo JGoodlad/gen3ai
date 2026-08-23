@@ -244,6 +244,20 @@ class InstrumentedMaskablePPO(MaskablePPO):
     defensive_entropy_boost: float = 1.0
     defensive_entropy_anneal_frac: float = 0.0
 
+    # Set by train_rl_agent (gen3_bait_entropy_v1). The SECOND state-conditioned entropy boost — same
+    # mechanism, different flag: on decisions the env flags `bait_opportunity`=1 (the attack we would click
+    # is zero-damage against a revealed opponent BENCH mon), the per-decision entropy bonus is multiplied by
+    # `bait_entropy_boost`. This is the PROBE of the bait verdict's stated mechanism — "exploration
+    # starvation at a saturated action" (the whiff sits at p≈0.97, so the alternatives at p≈0.01-0.03 are
+    # never sampled and their advantage is never realized). 1.0 = OFF (byte-identical entropy term).
+    # Annealed B→1 over `bait_entropy_anneal_frac` (0 = constant); the anneal is what makes the probe
+    # two-sided — behaviour that survives the anneal means sampling was the block, behaviour that reverts
+    # convicts CREDIT. COMPOSES with the defensive boost MULTIPLICATIVELY (each factor is 1 off its own
+    # flag, so either boost alone is byte-identical to running it alone). Training-only: NOT version-locked,
+    # settable on resume.
+    bait_entropy_boost: float = 1.0
+    bait_entropy_anneal_frac: float = 0.0
+
     # Set by train_rl_agent (like opp_belief_aux_coef). The WIN-PROBABILITY head's BCE loss weight:
     # win_prob_coef * BCE(win_logit, MC outcome) over the transitions whose episode finished in-buffer.
     # Training-only (scales the loss, never a forward pass) → NOT version-locked. The MODE (none /
@@ -862,16 +876,27 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
         return super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
 
-    def _defensive_entropy_boost_eff(self) -> float:
-        """gen3_defensive_entropy_v1: the entropy-boost multiplier at the CURRENT step. Constant
-        `defensive_entropy_boost` if `defensive_entropy_anneal_frac` == 0; else linearly annealed toward 1.0,
-        reaching 1.0 once `anneal_frac` of training has elapsed (uses SB3's `_current_progress_remaining`,
-        which runs 1.0 at the start → 0.0 at the end). Pure → unit-testable."""
-        B, af = float(self.defensive_entropy_boost), float(self.defensive_entropy_anneal_frac)
+    def _annealed_entropy_boost(self, B: float, af: float) -> float:
+        """The state-conditioned entropy-boost multiplier at the CURRENT step. Constant `B` if the anneal
+        fraction is 0; else linearly annealed toward 1.0, reaching 1.0 once `af` of training has elapsed
+        (uses SB3's `_current_progress_remaining`, which runs 1.0 at the start → 0.0 at the end). Shared by
+        the defensive (`gen3_defensive_entropy_v1`) and bait (`gen3_bait_entropy_v1`) boosts — ONE schedule,
+        so the two flags can never drift apart. Pure → unit-testable."""
+        B, af = float(B), float(af)
         if af <= 0.0 or B == 1.0:
             return B
         done = 1.0 - float(getattr(self, "_current_progress_remaining", 1.0))   # 0 → 1 over training
         return 1.0 + (B - 1.0) * max(0.0, 1.0 - done / af)
+
+    def _defensive_entropy_boost_eff(self) -> float:
+        """gen3_defensive_entropy_v1: this run's defensive boost at the current step."""
+        return InstrumentedMaskablePPO._annealed_entropy_boost(
+            self, self.defensive_entropy_boost, self.defensive_entropy_anneal_frac)
+
+    def _bait_entropy_boost_eff(self) -> float:
+        """gen3_bait_entropy_v1: this run's bait boost at the current step (same schedule)."""
+        return InstrumentedMaskablePPO._annealed_entropy_boost(
+            self, self.bait_entropy_boost, self.bait_entropy_anneal_frac)
 
     def train(self) -> None:
         """
@@ -926,6 +951,8 @@ class InstrumentedMaskablePPO(MaskablePPO):
         pg_losses, value_losses = [], []
         # gen3_defensive_entropy_v1: per-minibatch diagnostics for the state-conditioned entropy boost.
         defent_flag_fracs, defent_boost_eff, defent_ent_flagged, defent_ent_unflagged = [], [], [], []
+        # gen3_bait_entropy_v1: the same four, for the bait-opportunity boost.
+        baitent_flag_fracs, baitent_boost_eff, baitent_ent_flagged, baitent_ent_unflagged = [], [], [], []
         clip_fractions = []
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
@@ -1137,22 +1164,38 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 # multiply the per-decision entropy bonus by the (annealed) boost on decisions the env flagged
                 # `defensive_opportunity` — keeping the policy exploratory on recovery/cure choices instead of
                 # collapsing to attacking, WITHOUT touching the reward. OFF (boost == 1) byte-identical.
+                # gen3_bait_entropy_v1 adds the SECOND such flag (`bait_opportunity`) on the same mechanism.
+                # The two weights MULTIPLY: each is 1 off its own flag, so one boost alone is byte-identical
+                # to running it alone, and a decision flagged by both gets the product (they are near-disjoint
+                # in practice — "a heal is legal" vs "our attack is dead into their bench").
                 ent_per = -log_prob if entropy is None else entropy          # [B] per-decision entropy (nats)
                 entropy_loss = -th.mean(ent_per)                             # standard (unweighted) metric
                 entropy_losses.append(entropy_loss.item())
+                ent_weight = None                                            # None ⇒ nothing on ⇒ unweighted
                 do_flag = rollout_data.observations.get("defensive_opportunity")
                 if self.defensive_entropy_boost != 1.0 and do_flag is not None:
                     b_eff = self._defensive_entropy_boost_eff()
                     flag = do_flag.to(ent_per.device).reshape(-1).float()    # [B] 1.0 on defensive decisions
-                    ent_loss_used = -th.mean((1.0 + (b_eff - 1.0) * flag) * ent_per)
+                    ent_weight = 1.0 + (b_eff - 1.0) * flag
                     with th.no_grad():
                         fm = flag > 0.5
                         defent_flag_fracs.append(float(fm.float().mean().item()))
                         defent_boost_eff.append(b_eff)
                         if bool(fm.any()):    defent_ent_flagged.append(float(ent_per[fm].mean().item()))
                         if bool((~fm).any()): defent_ent_unflagged.append(float(ent_per[~fm].mean().item()))
-                else:
-                    ent_loss_used = entropy_loss
+                bait_flag = rollout_data.observations.get("bait_opportunity")
+                if self.bait_entropy_boost != 1.0 and bait_flag is not None:
+                    bb_eff = self._bait_entropy_boost_eff()
+                    bflag = bait_flag.to(ent_per.device).reshape(-1).float()  # [B] 1.0 on bait-opportunity rows
+                    bw = 1.0 + (bb_eff - 1.0) * bflag
+                    ent_weight = bw if ent_weight is None else ent_weight * bw
+                    with th.no_grad():
+                        bm = bflag > 0.5
+                        baitent_flag_fracs.append(float(bm.float().mean().item()))
+                        baitent_boost_eff.append(bb_eff)
+                        if bool(bm.any()):    baitent_ent_flagged.append(float(ent_per[bm].mean().item()))
+                        if bool((~bm).any()): baitent_ent_unflagged.append(float(ent_per[~bm].mean().item()))
+                ent_loss_used = entropy_loss if ent_weight is None else -th.mean(ent_weight * ent_per)
 
                 # Phase B (value_from_dist): the scalar MSE value term is DROPPED (value_net frozen —
                 # the CE below at vf_coef is the critic). value_loss is still logged as the
@@ -1853,6 +1896,17 @@ class InstrumentedMaskablePPO(MaskablePPO):
                 self.logger.record("defent/entropy_flagged", float(np.mean(defent_ent_flagged)))
             if defent_ent_unflagged:
                 self.logger.record("defent/entropy_unflagged", float(np.mean(defent_ent_unflagged)))
+        # gen3_bait_entropy_v1: same four for the bait boost. `flagged_frac` is also the probe's EXPOSURE
+        # reading — how much of the rollout is actually a bait board (a boost cannot work on states the
+        # policy never reaches), so a flat behavioural result at a near-zero flagged_frac is a DOSE
+        # finding, not a mechanism finding.
+        if baitent_flag_fracs:
+            self.logger.record("baitent/flagged_frac", float(np.mean(baitent_flag_fracs)))
+            self.logger.record("baitent/boost_eff", float(np.mean(baitent_boost_eff)))
+            if baitent_ent_flagged:
+                self.logger.record("baitent/entropy_flagged", float(np.mean(baitent_ent_flagged)))
+            if baitent_ent_unflagged:
+                self.logger.record("baitent/entropy_unflagged", float(np.mean(baitent_ent_unflagged)))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))

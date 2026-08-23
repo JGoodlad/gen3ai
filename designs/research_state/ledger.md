@@ -2339,3 +2339,43 @@ the genuinely request-dependent residue is **6 dims (0.24%)**.
   the gate's own number becomes a lie (an instrument-shape catch made at design time). Two stale
   doc constants found by the census fixed in this commit (EVENT_WINDOW_DIM comment 608→704; the
   observation leaf's 2437→2501 headline).
+
+### BUILT (not run): `--bait-entropy-boost` — the sampling-side probe the E4 verdict left owed (2026-08-23)
+
+The E4 entry above closes the bait hunt on a **stated mechanism** — *exploration starvation at a
+saturated action* — and every instrument that fed that verdict measured something upstream of the
+action: α/β know the switch, the critic ranks an alternative above the whiff in 21/23 loop decisions,
+certainty injection flips 11 decisions in 780. **Nothing has yet tested the mechanism's own claim**,
+which is that the policy would correct this if it merely SAMPLED the alternatives. `gen3_bait_entropy_v1`
+is that test and nothing more: a state-conditioned entropy boost on bait-opportunity decisions, cloned
+from `gen3_defensive_entropy_v1` (same weighting, same anneal function, same training-only flag class).
+
+- **The flag** — a training-only `bait_opportunity` obs key: the attack we would click (`last_move` if
+  still legal and damaging, else max base power) does ZERO damage to an alive, **revealed** opponent
+  **BENCH** mon. Bench because gen 3 resolves the switch first, so the whiffing decision is taken while
+  the immune mon is still benched — the same board `prober.loops` calls a bait. The zero-damage
+  predicate is BaitBot's, unchanged (`baitbot.blocks` → `gen3_mechanics` → `data/`), so the flag and the
+  scripted opponent cannot disagree about what an immunity is.
+- **Three scope calls, recorded so they are not re-litigated as bugs.** Revealed bench only (the true
+  team was available — this key is privileged — and refused: boosting entropy on a distinction the
+  policy cannot make is noise, and gen-15 already cleared perception). Ability immunities count once
+  revealed. **The α half of the proposed predicate is NOT shipped**: α is published inside the LEARNER's
+  forward and the flag is built in the env worker before any forward exists, so there is no seam to read
+  it from and no second key to emit — v1 is the immunity half alone, stated rather than approximated.
+- **Composition** with the defensive boost is multiplicative, each factor exactly 1 off its own flag, so
+  either alone is byte-identical to running it alone. OFF (`1.0`, the default) is byte-identical even on
+  a fully populated flag column — pinned on the real `train()` path, not just on the expression, with the
+  exact identity `(ent_coef=c, boost=B) ≡ (ent_coef=B·c, boost=1)` as the formula's pin.
+- **PRE-REGISTERED readings** (the table lives in `src/agents/training/CLAUDE.md`; registered here so the
+  date is honest): whiff/re-click falls and **STAYS** down past the anneal ⇒ **sampling was the block**;
+  falls and **REVERTS** as `boost_eff → 1` ⇒ **credit is convicted**, and the off-policy levers the E4
+  entry names (search-teacher/OPD, R2's counterfactual labels) inherit; never falls at a healthy
+  `baitent/flagged_frac` ⇒ neither; never falls at a near-zero `flagged_frac` ⇒ a **DOSE** finding, not a
+  mechanism finding — quote the exposure with the verdict, always.
+- **Status: BUILT, OFF, not run.** Gates: `bait_entropy_test.py` (19, revert-verified on the weight
+  formula, the bench/alive scope, and the coefficient guard) + `bait_opportunity_integration_test.py`
+  (`sim`: real bridge battles — the emission path, and the flag cross-checked against the offline
+  detector on a PINNED matchup; 21 of 23 detector `immune` whiffs cross-checkable, **0 disagreements**,
+  the other 2 arrivals still unrevealed at the decision). The matchup is pinned because the pooled
+  version was a coin flip — only 2 of 14 random sample-team pairs produced any immune whiff, and the
+  cross-checked count ranged 0-48 run to run.
