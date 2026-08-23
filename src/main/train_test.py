@@ -107,3 +107,29 @@ def test_entry_source_is_the_whole_entry_point():
         assert marker in src, (
             f"entry_source() no longer contains {marker!r} — a phase module has dropped out of "
             f"the seam, and the gate that reads it is now vacuous rather than red.")
+
+
+def test_every_training_hparam_row_names_a_real_parser_dest():
+    """`_TRAINING_HPARAMS` rows must correspond to actual `--flag` dests.
+
+    The table replaced ~120 lines that existed VERBATIM on both build paths (resume and fresh).
+    That structural change makes the old failure — a coefficient added to one branch and not the
+    other — unrepresentable, because there is now one list instead of two. But it introduces one
+    NEW failure the old form could not have: a misspelled row.
+
+    A typo'd `_PLAIN` row fails loudly on its own (`getattr(args, name)` raises), so the real
+    exposure is the two `_F0_OPT` rows, which are `getattr(..., 0.0)` by design and would silently
+    pin the coefficient at zero forever — a run that trains with the term OFF while the command
+    line says it is on, reporting nothing. This checks every row against the parser, so the
+    tolerant rows get the same spelling guarantee as the strict ones.
+    """
+    from main.train.model_build import _TRAINING_HPARAMS
+    from main.train_rl_agent import build_parser
+
+    dests = {a.dest for a in build_parser()._actions}
+    unknown = [n for n, _how in _TRAINING_HPARAMS if n not in dests]
+    assert not unknown, (
+        f"_TRAINING_HPARAMS rows name no parser dest: {unknown}. A `_F0_OPT` row spelled wrong "
+        f"pins its coefficient at 0.0 silently — the term reads OFF while the command says on.")
+    names = [n for n, _how in _TRAINING_HPARAMS]
+    assert len(names) == len(set(names)), "a duplicated row in _TRAINING_HPARAMS"

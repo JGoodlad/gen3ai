@@ -286,9 +286,43 @@ fn bridge_capture_streams_prefix_byte_equal() {
     eprintln!(
         "[bridge capture audit] 30 battles: {n_panic} out-of-scope (unmodeled-move panic), {audited} replayed ({n_full} FULL byte-equal, {n_prefix} prefix-equal-to-engine-scope-divergence). The bridge layer (framing + fold + request) is byte-correct for every replayed prefix."
     );
-    // Sanity: SOME battles replay past their first request (proving the bridge layer
-    // handles a real gen3ou request).
-    assert!(audited >= 1, "no capture battle replayed past construction — engine can't even start these");
+    // ── The COUNT floor (gen3_vacuity_hunt_v1 item 4). ──
+    //
+    // This was `assert!(audited >= 1)` over a THIRTY-battle corpus: 29 of 30 could regress to
+    // out-of-scope panics and the gate stayed green while its own eprintln printed the collapse.
+    // The floors below are MEASURED, not guessed (2026-08-23, this corpus, --release):
+    //
+    //     30 battles: 0 out-of-scope, 30 replayed (0 FULL byte-equal, 30 prefix-equal)
+    //
+    // `n_panic == 0` is the load-bearing one and the tightest TRUE statement available: every
+    // battle in the capture golden is inside the engine's modeled scope today, so a move or
+    // ability regressing to `panic!`-on-unmodeled turns this red instead of silently shrinking
+    // the audited set. Exact rather than a ceiling, matching the `battles.len() == 30` pin at
+    // the top — this corpus is committed and fixed, so any movement here is deliberate.
+    assert_eq!(
+        n_panic, 0,
+        "{n_panic} capture battles went OUT OF SCOPE (unmodeled-move panic); measured 0 on \
+         2026-08-23. A mechanic regressed to unmodeled — the old `audited >= 1` form hid \
+         exactly this by auditing whatever happened to survive."
+    );
+    assert_eq!(
+        audited,
+        battles.len(),
+        "only {audited}/{} capture battles replayed past construction (measured 30/30 on \
+         2026-08-23)",
+        battles.len()
+    );
+    // NO floor on `n_full`, and that is a RESULT rather than an omission: it measured **0**.
+    // Every battle in this corpus carries at least one engine-scope divergence (the undrawn
+    // gender, the `return102` move-codec alias) — which is the entire reason this gate is
+    // prefix-based and gender-tolerant in the first place. `n_full >= 1` would be a FALSE
+    // assertion. The counters get the accounting identity instead, which is what stops them
+    // from falling silently out of maintenance and turning the eprintln above into fiction.
+    assert_eq!(
+        n_full + n_prefix,
+        audited,
+        "the audit counters stopped accounting for every replayed battle"
+    );
 }
 
 /// Guard: the golden parser round-trips the grammar (a smoke over both goldens).

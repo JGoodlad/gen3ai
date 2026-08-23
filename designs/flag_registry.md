@@ -71,7 +71,7 @@ offline.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-49 toggles — 48 `cli`, 1 `config_only`, 0 `constructor_only`.
+49 toggles — 47 `cli`, 2 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | requires | meaning |
 |---|---|---|---|---|---|---|---|
@@ -106,7 +106,7 @@ offline.
 | `opp_intent` | `--opp-intent-coef` *(coef)* | `cli` | `structural` | `False` | v68 | `entity_topk_seats` | the alpha (their move) / beta (their switch-in) supervised pointer heads |
 | `species_prior_fusion` | `--species-prior-fusion` | `cli` | `structural` | `False` | v69 | `opp_belief_slots` | read BeliefHead's species head as a DELTA on the team-composition prior |
 | `t0_species_prior` | `--t0-species-prior` | `cli` | `structural` | `False` | v72 | — | feed the T1 physics the model's own species belief, not the static usage table |
-| `opp_intent_grad_mode` | `--opp-intent-grad-mode` | `cli` | `structural` | `'detached'` | v73 | — | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
+| `opp_intent_grad_mode` | — | `config_only` | `structural` | `'detached'` | v73 | — | whether alpha/beta's gradient reaches the shared trunk (detached|shaping) |
 | `intent_move_cell` | `--intent-move-cell` | `cli` | `structural` | `False` | v77 | `opp_intent`, `damage_op` | G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through the pointer MOVE cell |
 | `value_entity_pool_full` | `--value-entity-pool-full` | `cli` | `structural` | `False` | v82 | `value_entity_pool` | the entity pool's COMPLETE row set: + the refined global token and the hidden-opp belief queries |
 | `history_events` | `--history-events` | `cli` | `structural` | `False` | v81 | — | Tier H-B: the obs event-window records join the trunk as event SEATS (shared species/move embeddings, recency as content, TOKEN_TYPE_HISTORY) |
@@ -140,6 +140,7 @@ Two constructor checks are STRONGER than the column can say, and stay hand-writt
 - `damage_matrices_incoming` — the other half of the `--damage-matrices` mode desugar; it also REUSES `damage_topk_k` as its K.
 - `belief_grad_mode` — detach() is value-preserving => the forward is bit-identical in every mode, so check_belief_grad_mode on the resume path only.
 - `opp_intent` — coef>0 is the enable signal, like opp_belief_slots.
+- `opp_intent_grad_mode` — DEMOTED (config_only) 2026-08-23, sweep #2, frozen at its own default. MEASURED over 107 archived run configs: the 24 runs recording it are 'detached' UNANIMOUSLY, and the flag appears in ZERO of the 107 recorded launcher commands — nobody has ever typed it. The 'shaping' arm stays CONSTRUCTIBLE (the extractor kwarg is untouched), so re-opening the trunk-exposure question costs one constructor argument, not a revert. The three other unanimous-at-default flags found by the same census (consequence_topk=6, damage_candidate_k=0, hp_belief_mode=composed) were NOT demoted: all three ARE typed in the live run's command, so removing their argparse entries would make its launcher_command unlaunchable on restart — the cleanup journey's own live-run exclusion.
 - `value_entity_pool_full` — requires value_entity_pool; a separate flag/shape so v80-table checkpoints keep loading. It is the SUCCESSOR the critic-route deletion wave actually landed on — the nmr vf concat, the hidden-opp vf half and the seed readout are all deleted, and this pool carries 97% of the critic's route dependence (gen-14, dV 5.490 of all_off 5.635).
 - `history_events` — the obs BLOCK is unconditional (v81 widening); this flag builds only the consumer. Gen-13 candidate arm, gated on H-A's gen-12 verdict.
 - `value_entity_pool` — the designed SUCCESSOR contract of the bolt-on vf routes, and the one the critic_route_audit picked: gen-14 dV 5.490 vs threat 1.069 and every other route below 0.32. The seed readout it succeeded is deleted; threat-inject KEEPS (its deadline discharged at 1.0686).

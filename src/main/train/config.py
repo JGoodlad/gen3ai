@@ -180,7 +180,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like win_prob_coef)
-    _resolve("opp_intent_grad_mode", "detached")  # v73 structural, version-checked
+    # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
+    #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
     _resolve("value_entity_pool", False)       # v80 structural, version-checked (Stage-3 T3)
     _resolve("history_events", False)          # v81 structural, version-checked (Tier H-B)

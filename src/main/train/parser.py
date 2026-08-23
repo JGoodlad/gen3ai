@@ -1000,14 +1000,10 @@ def build_parser() -> argparse.ArgumentParser:
                              "critic_route_audit adjudicates. Works with or without --damage-op "
                              "(the row set shrinks to the team tokens). STRUCTURAL, "
                              "version-checked.")
-    parser.add_argument("--opp-intent-grad-mode", "--opp_intent_grad_mode",
-                        dest="opp_intent_grad_mode", choices=["detached", "shaping"], default=None,
-                        help="Whether alpha/beta's gradient reaches the shared trunk "
-                             "(gen3_intent_grad_mode_v1). 'detached' (default) = pure supervision, "
-                             "so a null indicts the HEAD rather than the policy. 'shaping' lets the "
-                             "intent objective shape the representation — watch "
-                             "grad/opp_intent_policy_cosine: persistently negative means it is "
-                             "FIGHTING the RL objective for the trunk. STRUCTURAL, version-checked.")
+    # `--opp-intent-grad-mode` was DEMOTED to config_only on 2026-08-23 (registry sweep #2). It is
+    # frozen at "detached", still recorded in model_config.json and still version-checked; the
+    # "shaping" arm remains constructible via the extractor kwarg. Census: unanimous across the 24
+    # runs that record it, and typed in ZERO of 107 recorded launcher commands.
     parser.add_argument("--beta-setvalued-coef", "--beta_setvalued_coef",
                         dest="beta_setvalued_coef", type=float, default=None,
                         help="SET-VALUED partial credit for beta on switch-ins we did not believe "

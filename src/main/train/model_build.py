@@ -92,6 +92,114 @@ def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
              f"reward_sha1={(_cf_reward_sha1 or '')[:12]} ← {_cf_labels_dir}")
 
 
+# ── The training-hparam passthroughs: ONE declared table, applied on BOTH build paths ──
+#
+# These sixty-odd `model.<x> = args.<x>` lines existed VERBATIM TWICE — once on the resume path
+# and once on the fresh path — differing only in their trailing comments. Two copies of a list
+# whose whole job is to be COMPLETE is the failure mode worth designing against here: a new
+# coefficient added to one branch and not the other produces a run that silently trains with the
+# class default on resume (or on fresh) and nothing anywhere reports it, because every one of
+# these is a plain attribute with a plausible default. One table, applied by one function, makes
+# that class unrepresentable rather than merely unlikely.
+#
+# Everything here is TRAINING-ONLY and resume-MUTABLE: not version-locked, never consulted by
+# `check_compatible`. The resume-IMMUTABLE ones (`vf_coef`, `value_tail_weight`'s saved-value
+# check) are enforced separately, before this runs.
+
+_PLAIN = None          # model.<x> = args.<x>
+_F0 = "f0"             # model.<x> = float(args.<x> or 0.0)  — None/"" coerce to 0.0
+_F0_OPT = "f0?"        # ...and tolerate a namespace that has no such dest at all
+
+_TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
+    ("value_tail_weight",             _PLAIN),   # tail-weighted value loss (0.0 = plain MSE)
+    ("grad_accum_steps",              _PLAIN),   # 1 = off; effective batch = batch_size·K
+    ("opp_belief_aux_coef",           _PLAIN),   # hidden-opp belief aux loss (0.0 = off)
+    ("opp_belief_moves_weight",       _PLAIN),   # species_CE + w·moves_BCE
+    ("move_belief_coef",              _PLAIN),   # move-belief reinjection loss (0.0 = off)
+    ("move_belief_latent_coef",       _PLAIN),   # move-latent grading loss (0.0 = off)
+    ("spread_belief_coef",            _PLAIN),   # spread-belief speed supervision (0.0 = off)
+    ("defensive_entropy_boost",       _PLAIN),   # gen3_defensive_entropy_v1
+    ("defensive_entropy_anneal_frac", _PLAIN),
+    ("bait_entropy_boost",            _PLAIN),   # gen3_bait_entropy_v1
+    ("bait_entropy_anneal_frac",      _PLAIN),
+    ("hp_type_belief_coef",           _PLAIN),   # HP-type CE (0.0 = no direct CE)
+    ("item_belief_coef",              _PLAIN),   # item CE (0.0 = no direct CE)
+    ("win_prob_coef",                 _PLAIN),   # win-prob head BCE (mode none = off)
+    ("value_dist_coef",               _PLAIN),   # value-dist HL-Gauss (mode none = off)
+    ("td_aux_coef",                   _PLAIN),   # TD-consistency aux (0.0 = byte-identical)
+    ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
+    # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
+    # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
+    ("search_teacher_coef",           _PLAIN),
+    ("search_teacher_value_coef",     _PLAIN),
+    ("search_teacher_beta",           _PLAIN),
+    ("search_teacher_batch_size",     _PLAIN),
+    # OPD (on-policy self-distillation). Requires --search-teacher: it fills the SAME
+    # _correction_buffer, its workers building π'.
+    ("opd_coef",                      _PLAIN),
+    ("opd_beta",                      _PLAIN),
+    # gen3_exploiter_distill_v1 — the KL/value weights; the TEACHERS are loaded below.
+    ("distill_coef",                  _F0),
+    ("distill_value_coef",            _F0),
+    ("distill_value_feat_coef",       _F0),      # gen3_exploiter_value_feat_distill_v1
+    ("opp_intent_coef",               _F0_OPT),
+    ("beta_setvalued_coef",           _F0_OPT),
+)
+
+
+def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
+    """Apply every training-only hparam to `model`. Called from BOTH build paths, identically.
+
+    The table above covers the passthroughs. The three things that follow it are NOT
+    passthroughs and so are deliberately not table rows: two DERIVED booleans (a different arg
+    name, and a predicate over a coefficient), and the distill-teacher load, which does I/O and
+    can FATAL. Keeping the derived ones in code rather than inventing a table dialect to hold
+    them is the point — the table stays a list of names, which is the thing that has to be
+    reviewable at a glance for completeness.
+    """
+    for name, how in _TRAINING_HPARAMS:
+        if how is _F0_OPT:
+            setattr(model, name, float(getattr(args, name, 0.0) or 0.0))
+        elif how is _F0:
+            setattr(model, name, float(getattr(args, name) or 0.0))
+        else:
+            setattr(model, name, getattr(args, name))
+
+    # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
+    model._search_teacher_on = bool(args.search_teacher)
+    model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
+
+    # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
+    attach_cf_labels(model)
+
+    # gen3_exploiter_distill_v1: attach the frozen per-team teachers (foreign exploiters) on the
+    # training device. OFF (coef 0 / no teacher) → the list stays empty so the loss block is
+    # skipped (byte-identical). A bad path FATALs config, never a crash-restart loop.
+    model._distill_teachers = []          # teacher-id = index + 1
+    if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
+        from agents.model.snapshot import (
+            current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
+        from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
+        _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+        for _tp, _tf in args._distill_pairs:
+            try:
+                _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
+                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
+                                  device=str(model.device), config_path=_cfg_d)
+                _tm_d.policy.set_training_mode(False)
+                model._distill_teachers.append(_tm_d)
+            except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
+                print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
+                sys.stdout.flush()
+                os._exit(int(TrainExitCode.FATAL_CONFIG))
+        emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
+             f"(order = teacher-id 1..{len(model._distill_teachers)})")
+
+    if args.search_teacher:
+        from agents.training.teacher.buffer import CorrectionBuffer
+        model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
+
+
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
                           reward_config, reward_composition, annealing_mode, _async_rollout,
                           _shutdown_event, _run_eval, _effective_max_lr,
@@ -234,68 +342,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # gen3_nature_ev_belief_v1 SpreadBelief crash) — is corrected instead of scrambled. Before any
         # LR read. model_path is the resolved checkpoint zip used for the load just above.
         _validate_or_reset_optimizer_state(model, model_path)
-        model.ent_coef = args.ent_coef
-        model.value_tail_weight = args.value_tail_weight  # == saved (enforced above); set for the loop
-        model.opp_belief_aux_coef = args.opp_belief_aux_coef  # training hparam (not version-locked; resume-mutable)
-        model.opp_belief_moves_weight = args.opp_belief_moves_weight
-        model.move_belief_coef = args.move_belief_coef  # move-belief loss weight (training-only; resume-mutable)
-        model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading weight (training-only)
-        model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision weight (training-only)
-        model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
-        model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
-        model.bait_entropy_boost = args.bait_entropy_boost                      # gen3_bait_entropy_v1 (training-only)
-        model.bait_entropy_anneal_frac = args.bait_entropy_anneal_frac
-        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE weight (training-only)
-        model.item_belief_coef = args.item_belief_coef  # item CE weight (training-only)
-        model.win_prob_coef = args.win_prob_coef  # win-prob loss weight (training-only; resume-mutable)
-        model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss weight (training-only; resume-mutable)
-        model.td_aux_coef = args.td_aux_coef  # TD-consistency aux weight (training-only; resume-mutable)
-        # gen3_intent_label_bot_weight_v1: alpha/beta label weight on BOT-opponent rows (1.0 = off).
-        model.intent_label_bot_weight = args.intent_label_bot_weight
-        # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). Buffer is filled by the
-        # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
-        model.search_teacher_coef = args.search_teacher_coef
-        model.search_teacher_value_coef = args.search_teacher_value_coef
-        model.search_teacher_beta = args.search_teacher_beta
-        model.search_teacher_batch_size = args.search_teacher_batch_size
-        model._search_teacher_on = bool(args.search_teacher)
-        # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
-        # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
-        model.opd_coef = args.opd_coef
-        # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
-        _attach_cf_labels(model)
-        model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
-        model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
-        # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
-        # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
-        # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
-        model.distill_coef = float(args.distill_coef or 0.0)
-        model.distill_value_coef = float(args.distill_value_coef or 0.0)
-        model.distill_value_feat_coef = float(args.distill_value_feat_coef or 0.0)  # gen3_exploiter_value_feat_distill_v1
-        model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
-        if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
-            from agents.model.snapshot import (
-                current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
-            from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
-            _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
-            for _tp, _tf in args._distill_pairs:
-                try:
-                    _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
-                    _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
-                                      device=str(model.device), config_path=_cfg_d)
-                    _tm_d.policy.set_training_mode(False)
-                    model._distill_teachers.append(_tm_d)
-                except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
-                    print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
-                    sys.stdout.flush()
-                    os._exit(int(TrainExitCode.FATAL_CONFIG))
-            emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
-                 f"(order = teacher-id 1..{len(model._distill_teachers)})")
-        model.opd_beta = args.opd_beta
-        model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
-        if args.search_teacher:
-            from agents.training.teacher.buffer import CorrectionBuffer
-            model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
+        model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor
+        # Every training-only hparam, from the one table shared with the fresh path below.
+        # `value_tail_weight` here == the saved value (enforced above); re-set for the loop.
+        apply_training_hparams(model, args, mappings=mappings,
+                               attach_cf_labels=_attach_cf_labels)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         model.gae_lambda = 0.80
         # Resume-path LR setup. Phase determines whether we read from the
@@ -364,8 +415,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             adaptive_ppo_callback._current_lr = resume_lr
             lr_detail = f"saved={saved_lr:.2e} (arg --lr={args.lr:.2e} ignored on resume)"
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
-        model.n_epochs = args.n_epochs
-        model.grad_accum_steps = args.grad_accum_steps   # grad accumulation (1 = off); a train-loop knob, re-applied each resume
+        model.n_epochs = args.n_epochs   # resume-only: the fresh path passes it to the ctor
+        # (`grad_accum_steps` was set here too, and again on the fresh path — it is now one row
+        #  in `_TRAINING_HPARAMS`, applied on both. Nothing between there and here reads it.)
         model.clip_range = lambda _: args.clip_range
         # None must stay a bare None (disabled), not `lambda _: None` — SB3 / the
         # instrumented update branch on `clip_range_vf is None`, and a callable is not None.
@@ -500,67 +552,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             policy_kwargs=policy_kwargs
         )
 
-        model.value_tail_weight = args.value_tail_weight   # tail-weighted value loss (0.0 = plain MSE)
-        model.grad_accum_steps = args.grad_accum_steps     # grad accumulation (1 = off; effective batch = batch_size·K)
-        model.opp_belief_aux_coef = args.opp_belief_aux_coef  # hidden-opp belief aux loss (0.0 = off)
-        model.opp_belief_moves_weight = args.opp_belief_moves_weight  # species_CE + w·moves_BCE
-        model.move_belief_coef = args.move_belief_coef  # move-belief reinjection loss (0.0 = off)
-        model.move_belief_latent_coef = args.move_belief_latent_coef  # move-latent grading loss (0.0 = off)
-        model.spread_belief_coef = args.spread_belief_coef  # spread-belief speed-supervision loss (0.0 = off)
-        model.defensive_entropy_boost = args.defensive_entropy_boost            # gen3_defensive_entropy_v1 (training-only)
-        model.defensive_entropy_anneal_frac = args.defensive_entropy_anneal_frac
-        model.bait_entropy_boost = args.bait_entropy_boost                      # gen3_bait_entropy_v1 (training-only)
-        model.bait_entropy_anneal_frac = args.bait_entropy_anneal_frac
-        model.hp_type_belief_coef = args.hp_type_belief_coef  # HP-type CE loss (0.0 = no direct CE)
-        model.item_belief_coef = args.item_belief_coef  # item CE loss (0.0 = no direct CE)
-        model.win_prob_coef = args.win_prob_coef  # win-prob head BCE loss (mode none = off)
-        model.value_dist_coef = args.value_dist_coef  # value-dist HL-Gauss loss (mode none = off)
-        model.td_aux_coef = args.td_aux_coef  # TD-consistency aux (0.0 = off, loss byte-identical)
-        # gen3_intent_label_bot_weight_v1: alpha/beta label weight on BOT-opponent rows (1.0 = off).
-        model.intent_label_bot_weight = args.intent_label_bot_weight
-        # SEARCH-TEACHER (training-only; coef 0 / flag absent = byte-identical). See the resume site.
-        model.search_teacher_coef = args.search_teacher_coef
-        model.search_teacher_value_coef = args.search_teacher_value_coef
-        model.search_teacher_beta = args.search_teacher_beta
-        model.search_teacher_batch_size = args.search_teacher_batch_size
-        model._search_teacher_on = bool(args.search_teacher)
-        # OPD (on-policy self-distillation): training-only (coef 0 = byte-identical, NOT version-locked).
-        # Requires --search-teacher (it fills the SAME _correction_buffer, its workers building π').
-        model.opd_coef = args.opd_coef
-        # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
-        _attach_cf_labels(model)
-        model.opp_intent_coef = float(getattr(args, 'opp_intent_coef', 0.0) or 0.0)
-        model.beta_setvalued_coef = float(getattr(args, 'beta_setvalued_coef', 0.0) or 0.0)
-        # gen3_exploiter_distill_v1: attach the frozen per-team teacher (foreign exploiter) on the training
-        # device + set the KL weight (training-only). OFF (coef 0 / no teacher) → _distill_teacher stays
-        # None so the loss block is skipped (byte-identical). A bad path FATALs config (no crash-restart loop).
-        model.distill_coef = float(args.distill_coef or 0.0)
-        model.distill_value_coef = float(args.distill_value_coef or 0.0)
-        model.distill_value_feat_coef = float(args.distill_value_feat_coef or 0.0)  # gen3_exploiter_value_feat_distill_v1
-        model._distill_teachers = []   # gen3_exploiter_distill_v1: N frozen per-team teachers (teacher-id = index+1)
-        if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
-            from agents.model.snapshot import (
-                current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
-            from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
-            _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
-            for _tp, _tf in args._distill_pairs:
-                try:
-                    _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
-                    _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
-                                      device=str(model.device), config_path=_cfg_d)
-                    _tm_d.policy.set_training_mode(False)
-                    model._distill_teachers.append(_tm_d)
-                except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
-                    print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
-                    sys.stdout.flush()
-                    os._exit(int(TrainExitCode.FATAL_CONFIG))
-            emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
-                 f"(order = teacher-id 1..{len(model._distill_teachers)})")
-        model.opd_beta = args.opd_beta
-        model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
-        if args.search_teacher:
-            from agents.training.teacher.buffer import CorrectionBuffer
-            model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
+        # Every training-only hparam, from the one table shared with the resume path above.
+        apply_training_hparams(model, args, mappings=mappings,
+                               attach_cf_labels=_attach_cf_labels)
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,

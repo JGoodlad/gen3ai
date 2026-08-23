@@ -242,8 +242,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               requires=("opp_belief_slots",)),
     ModelFlag("t0_species_prior", False, Tier.CLI, Klass.STRUCTURAL, 72,
               "feed the T1 physics the model's own species belief, not the static usage table"),
-    ModelFlag("opp_intent_grad_mode", "detached", Tier.CLI, Klass.STRUCTURAL, 73,
-              "whether alpha/beta's gradient reaches the shared trunk (detached|shaping)"),
+    ModelFlag("opp_intent_grad_mode", "detached", Tier.CONFIG_ONLY, Klass.STRUCTURAL, 73,
+              "whether alpha/beta's gradient reaches the shared trunk (detached|shaping)",
+              note="DEMOTED (config_only) 2026-08-23, sweep #2, frozen at its own default. "
+                   "MEASURED over 107 archived run configs: the 24 runs recording it are "
+                   "'detached' UNANIMOUSLY, and the flag appears in ZERO of the 107 recorded "
+                   "launcher commands — nobody has ever typed it. The 'shaping' arm stays "
+                   "CONSTRUCTIBLE (the extractor kwarg is untouched), so re-opening the "
+                   "trunk-exposure question costs one constructor argument, not a revert. "
+                   "The three other unanimous-at-default flags found by the same census "
+                   "(consequence_topk=6, damage_candidate_k=0, hp_belief_mode=composed) were "
+                   "NOT demoted: all three ARE typed in the live run's command, so removing "
+                   "their argparse entries would make its launcher_command unlaunchable on "
+                   "restart — the cleanup journey's own live-run exclusion."),
     ModelFlag("intent_move_cell", False, Tier.CLI, Klass.STRUCTURAL, 77,
               "G3 — the c2 status-consequence family re-delivered, alpha-conditioned, through "
               "the pointer MOVE cell",

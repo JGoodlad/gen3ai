@@ -57,13 +57,21 @@ import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from utils.paths import src_path
+
+# These two ship BESIDE this file, so they stay `__file__`-relative: that is a local fact, and
+# routing it through the repo root would make it depend on a global one (`utils.paths`' own
+# docstring calls out this exact pair as the case its helpers are the wrong tool for).
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _SEARCH_DRIVER_JS = str(Path(__file__).parent / "search_driver.js")
 
-# The Rust crate root — resolved relative to THIS file, so it is correct inside a git
-# worktree (where the crate lives at <worktree>/src/rust_sim, not the main checkout).
-# __file__ = <root>/src/utils/bridge/sim_bridge_bin.py → parents[2] = <root>/src.
-_RUST_CRATE_DIR = Path(__file__).resolve().parents[2] / "rust_sim"
+# The Rust crate root. This one is NOT a sibling — it reaches across `src/` into another
+# subtree, which is repo-structure discovery and therefore `utils.paths`' job. `src_path` is
+# itself `__file__`-derived (`src/utils/paths.py` → `parents[1]`), so it keeps the property the
+# hand-rolled `parents[2]` was written to defend: inside a git worktree this resolves to
+# <worktree>/src/rust_sim, NOT the main checkout's. It also needs no git and no subprocess, so
+# it is safe at import time.
+_RUST_CRATE_DIR = src_path("rust_sim")
 _ENV_OVERRIDE = "POKESIM_SIM_BRIDGE_BIN"
 _SEARCH_ENV_OVERRIDE = "POKESIM_SEARCH_DRIVER_BIN"
 
