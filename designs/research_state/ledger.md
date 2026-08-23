@@ -3697,3 +3697,22 @@ assembler is implicated (vintage-checked).
   changes — the vendored fork's parser, since day one. Found because one human looked at one
   board and asked why the numbers didn't match the story. Fourteen instruments and 6,800 tests
   said green; the trace view said otherwise, and the trace view was right.
+
+### 📌 PARKED (owner, 2026-08-23) — battle STATE representation: the goal is EXPRESSIVENESS, not parser surgery
+
+The poke-env decision (slim / replace / leave, census `74.3%` live, ladder constraint permanent)
+is reframed by the owner: *"the goal I care about is finding a better stateful representation of
+the battle. We don't need to replace the parser or slim it, but I want a better more expressive
+interface. It feels hacked together."* So the target is NOT the fork's line count — it is the
+STATE MODEL the parser feeds: poke-env's mutable `Battle`/`Pokemon` object graph, which our
+event-sourced layer (`Gen3Battle` + `LiveView`/`TurnView`/`StrictBattleView`) currently WRAPS
+rather than replaces. The wrap was ai_v4's deliberate scope cut; the owner is now naming the
+other half. Evidence the current substrate under-expresses: the Baton Pass GIGO lived exactly in
+that mutable-overwrite layer for five months (state that should have been an explicit TRANSFER
+event was an implicit wipe); the `_state_epoch` memo work had to ENUMERATE writer doors by hand
+because mutation is unstructured; `StrictBattleView` exists to fence what the objects would
+otherwise leak. Direction when resumed (post-revolution-1): derive the stateful representation
+FROM the event log (the log is already the source of truth for TurnDelta) so the parser becomes
+a thin protocol→event translator and the battle state becomes a typed fold — the same shape the
+rust port already has, which is why it never had this bug class. Not scheduled; no design doc
+yet; come back to it deliberately.
