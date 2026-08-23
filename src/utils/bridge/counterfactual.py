@@ -92,12 +92,21 @@ def install_scripted_prefix(
     is_our_side: bool,
     obs_sink: Optional[list] = None,
     on_scripted_decision: Optional[Callable[[Any, Optional[dict], str], None]] = None,
-) -> None:
+) -> dict:
     """Override ``player.choose_move`` (instance-level) so it replays ``side``'s recorded commands until
     the divergence, then defers to the live policy. See the module header for the divergence semantics.
 
     ``obs_sink`` (a list) collects this player's per-decision obs vectors during the SCRIPTED prefix —
     used by the faithfulness oracle to assert the scripted obs == the recorded ``states.npz`` obs.
+
+    Returns its live STATE dict; callers may ignore it. ``state["exhausted"]`` is the one field
+    worth reading: it means this side ran out of recorded commands and handed the rest of the
+    battle to the live policy. For a `divergence_turn=None` FULL replay that is impossible unless
+    the replay diverged from the recording — which is why `replay_counterfactual` surfaces it and
+    `cf_producer`'s anchor refuses on it. Reading it is strictly more sensitive than comparing
+    outcomes: the fallback policy is random, so a desync only flips the WINNER about half the time
+    (the 2026-08-23 anchor-refusal hunt measured it empty on 274 healthy replays; the class it
+    actually found — a forfeit race — consumes no script and does not set it).
 
     ``on_scripted_decision(battle, obs_dict, choice_str)`` is called for every decision this side
     takes on the SCRIPTED path, immediately before the choice is returned. It exists for exactly one
@@ -113,7 +122,7 @@ def install_scripted_prefix(
     script = deque(c for (s, c) in record.commands if s == side)
     is_gen3 = hasattr(player, "embed_battle")
     original_choose = player.choose_move          # bound method = the live policy / bot
-    state = {"live": False, "substituted": False}
+    state = {"live": False, "substituted": False, "exhausted": False}
 
     def _advance_tracker(battle, choice_str: str) -> None:
         if not is_gen3:
@@ -153,6 +162,17 @@ def install_scripted_prefix(
         if is_gen3:
             obs_dict = player.embed_battle(battle)        # rebuild tracker history (record + clock)
             if int(np.asarray(obs_dict["action_mask"]).sum()) == 0:
+                # KNOWN GAP (found by inspection 2026-08-23 hunting an intermittent anchor
+                # refusal; NOT reproduced, and deliberately not "fixed" blind). This mirrors the
+                # live player's empty-mask branch — but the live player's `/choose default` was
+                # SENT, so the bridge logged it into `record.commands`, and this returns WITHOUT
+                # popping it. The script would then sit one entry ahead for the rest of the
+                # battle: the next real decision would replay the stale `default` and the line
+                # would diverge from the recording it is supposed to reproduce. Unreachable in
+                # gen3ou singles as measured — 0 `default` commands across 356 fresh random
+                # records — so the branch never fires and there is nothing to write a failing
+                # test against. If a mismatch anchor failure ever names a record whose commands
+                # contain `default`, this is the first place to look.
                 return player.choose_default_move()       # no decision this call (mirror live)
             if obs_sink is not None:
                 obs_sink.append(np.asarray(obs_dict["observation"], dtype=np.float32))
@@ -170,6 +190,7 @@ def install_scripted_prefix(
         # Replay this side's next recorded choice.
         if not script:                            # exhausted before the divergence → defer to live
             state["live"] = True
+            state["exhausted"] = True
             return original_choose(battle)
         choice_str = script.popleft()
         _advance_tracker(battle, choice_str)
@@ -178,6 +199,7 @@ def install_scripted_prefix(
         return _passthrough(choice_str)
 
     player.choose_move = scripted_choose_move
+    return state
 
 
 def summarize_trajectory(side: str, sink: list, *, max_turns: int = 80) -> list:
@@ -326,11 +348,11 @@ def replay_counterfactual(
     opponent._team = ConstantTeambuilder(record.packed_team(opp_side))
 
     obs_sink: Optional[list] = [] if capture_obs else None
-    install_scripted_prefix(
+    our_state = install_scripted_prefix(
         trainee, side=our_side, record=record, divergence_turn=divergence_turn,
         substitute_choice=substitute_choice, is_our_side=True, obs_sink=obs_sink,
         on_scripted_decision=trainee_decision_hook)
-    install_scripted_prefix(
+    opp_state = install_scripted_prefix(
         opponent, side=opp_side, record=record, divergence_turn=divergence_turn,
         substitute_choice=None, is_our_side=False)
 
@@ -349,6 +371,11 @@ def replay_counterfactual(
 
     result = _battle_outcome(trainee, record.username(our_side))
     result.update(divergence_turn=divergence_turn, substitute=substitute_choice)
+    # Which sides ran OUT of recorded commands and finished on the live policy. Expected past a
+    # real ``divergence_turn``; a DEFECT when ``divergence_turn is None``, where nothing is
+    # supposed to be played by a policy at all — see `install_scripted_prefix`'s ``exhausted``.
+    result["script_exhausted"] = sorted(
+        s for s, st in ((our_side, our_state), (opp_side, opp_state)) if st["exhausted"])
     if capture_obs:
         result["trainee_obs"] = obs_sink
     if capture_trajectory:

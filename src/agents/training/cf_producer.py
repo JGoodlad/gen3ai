@@ -85,6 +85,24 @@ factory whose replay is not exact is GIGO, and every label after it would be a m
 bug. Note this anchor is STRONGER than `cf_audit`'s: nothing is played by a policy, so it isolates
 the record → replay → bridge → outcome chain with no sampling in it.
 
+⚠️ **ONE declared coverage bound: a record that ends in a FORFEIT.** The 250-turn cap ends a battle
+with a ``['forcelose', <side>]`` command that the per-side script drops, so both scripted players
+re-derive a forfeit from `_handle_stall` and the winner becomes a race — a faithfulness limit of
+live scripted replay, root-caused 2026-08-23 and the whole of the intermittent `ANCHOR REFUSED` the
+R1 composition test hit (**4 refusals in 1037 battles, all four of them forfeit records; 0 of 1021
+non-forfeit records**). :func:`record_is_full_replay_anchorable` excludes the class; the skip is
+counted (``anchors_skipped_unanchorable``) and announced once, never retried.
+
+⚠️ **TWO refusals reach exit 3, and they mean opposite things.** A MISMATCH (the scripted replay
+disagreed) is the defect above. An ERROR (the anchor RAISED — a wedged bridge child, a transport
+error, a contention ``ProgressTimeout``) never returned a verdict at all, so it is not evidence
+about exactness; it still refuses, because an anchor that did not complete has certified nothing.
+They are counted apart (``anchors_errored`` vs ``anchors_run - anchors_reproduced``, as `cf_audit`
+has always done) and rendered apart by :func:`anchor_refusal_message`, which additionally appends
+``describe_contention()`` on a timeout. The single shared message cost a whole investigation on
+2026-08-23: one flaky composition-test failure read as a replay-exactness gap because the text
+asserted that cause for both.
+
 Observability
 -------------
 The producer is a separate process, so it has no TensorBoard. Instead it prints one **heartbeat**
@@ -116,6 +134,7 @@ from agents.training.cf_audit import LabelRow, obs_b64, obs_digest, wilson_ci
 from agents.training.obs_materializer import RecordDecision, scan_record
 from utils.bridge.counterfactual import replay_counterfactual as _run_one
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord, replay_battle
+from utils.contention import describe_contention
 
 #: Written into the state file and every label row. Bump it when the weights or the candidate
 #: filter below change — a downstream reader comparing two runs' labels needs to know they were
@@ -388,6 +407,14 @@ class ProducerState:
     records_since_anchor: int = 0
     anchors_run: int = 0
     anchors_reproduced: int = 0
+    #: Anchors that RAISED rather than returning a verdict (a wedged bridge, a contention
+    #: timeout, a transport error). Counted apart from a MISMATCH — they refuse alike, but only
+    #: one of them is evidence that the replay is inexact. `cf_audit` has always separated these.
+    anchors_errored: int = 0
+    #: Records the anchor DECLINED to adjudicate because they end in a forfeit — the class a live
+    #: scripted replay cannot reproduce (`record_is_full_replay_anchorable`). A declared coverage
+    #: bound, counted so it can never become invisible.
+    anchors_skipped_unanchorable: int = 0
     cycles: int = 0
     started_unix: float = dataclasses.field(default_factory=time.time)
     updated_unix: float = 0.0
@@ -528,6 +555,90 @@ def _outcome_scalar(record: ReconstructionRecord, side: str, outcome: dict) -> f
     return 1.0 if winner == record.username(side) else 0.0
 
 
+#: The substring that means "the box, not the replay" — it covers `TimeoutError`,
+#: `asyncio.TimeoutError` and `utils.contention.ProgressTimeout` alike. A timeout is never a
+#: semantic outcome (root `CLAUDE.md` → *Running beside a live training run*), so when the anchor
+#: dies of one the message self-diagnoses instead of accusing the replay of being inexact.
+_TIMEOUT_MARK = "Timeout"
+
+
+def record_is_full_replay_anchorable(record: ReconstructionRecord) -> bool:
+    """False for a record whose battle ended in a FORFEIT — the one class the anchor cannot judge.
+
+    THE CLASS (root-caused 2026-08-23; this is the intermittent `ANCHOR REFUSED` the R1 composition
+    test hit once). A battle that reaches ``StallConfig.threshold`` (= ``MAX_TURNS``, 250) is ended
+    by ONE side forfeiting, and the bridge logs that as a ``['forcelose', <side>]`` entry in
+    ``record.commands``. `install_scripted_prefix` builds each side's script as
+    ``[c for (s, c) in commands if s == side]``, so ``'forcelose'`` matches NEITHER side and is
+    silently dropped: the scripted replay has no way to reproduce the recorded forfeit. What it
+    does instead is let BOTH players re-derive one from their own `_handle_stall` at turn >= 250,
+    and whichever ``FORCELOSE`` the bridge processes first loses. In the recording only one side
+    could forfeit at all (the training trainee, or — in the composition test — the `RecordingFuzzPlayer`
+    against a plain poke-env `RandomPlayer` that has no stall handling), so the replay can hand the
+    win to the side that actually LOST.
+
+    MEASURED, on the saved fixture (`tmp/anchor_probe/fixture_stall_flip.json`, kept out of the
+    tree — `tmp/` is gitignored): re-anchoring the SAME record refused **7/12 and 8/12** across two
+    batches — a race, not a property of the record, and the only place the live scripted arm is
+    non-deterministic (every non-forfeit record re-anchored 40/40 identical). Rebuilding the anchor
+    with the OPPONENT's stall threshold set unreachable — mirroring the recording, where only one
+    side could forfeit — made it **12/12 correct**, which is the mechanism proof.
+
+    So this is a FAITHFULNESS LIMIT of the live-scripted-replay mechanism, not a bug the anchor can
+    report: the offline replay driver gets it right every time because it replays the ORDERED
+    command log including the ``forcelose``, while two poke-env players driven concurrently cannot
+    reproduce that ordering. Excluding the class is a declared coverage bound — the anchor still
+    adjudicates every non-forfeit record, and it is never retried until it passes.
+
+    ⚠️ **The ROLLOUT path inherits the same asymmetry and it is NOT addressed here.** A label's
+    rollouts play both sides with `RLPlayer`s that both stall-forfeit, whereas the recorded training
+    battle had only the trainee forfeiting — so a rollout that runs to the 250-turn cap can be
+    scored a WIN purely because the opponent's forfeit landed first. That biases the labels of long
+    games upward. Task-ready, not fixed: see the training leaf.
+    """
+    return not any(side == "forcelose" for side, _ in record.commands)
+
+
+def anchor_refusal_message(*, error: Optional[str], mismatch: "Optional[tuple]",
+                           state_path: str) -> str:
+    """What to print when the anchor refuses — and it must SAY WHICH refusal it was.
+
+    Two failures reach this point and they have OPPOSITE diagnoses:
+
+    * a **MISMATCH** — the scripted full replay reproduced a different outcome from the one the
+      offline replay driver reports. Nothing sampled, so this IS a defect: the replay is inexact.
+    * an **ERROR** — the anchor raised (a wedged bridge child, a transport error, a contention
+      `ProgressTimeout`). It never returned a verdict, so it is not evidence about exactness at
+      all; refusing is still correct (an anchor that did not complete has certified nothing), but
+      the reader must not be sent hunting for a replay bug.
+
+    The producer used to print the MISMATCH text for both. On 2026-08-23 that turned one flaky
+    `cf_producer_integration_test` failure into an investigation of a replay-exactness gap that
+    did not exist — the message asserted a cause the code had not established. `cf_audit` has
+    always reported `anchor_errors` separately; this brings the stricter anchor into line.
+    """
+    tail = f"REFUSING to produce further (state: {state_path})."
+    if error is not None:
+        msg = (f"cf_producer: ANCHOR COULD NOT RUN — {error}\n"
+               f"  The anchor RAISED instead of returning a verdict, so it says NOTHING about "
+               f"whether the replay is exact. Refusing anyway (an anchor that did not complete "
+               f"has certified nothing). {tail}")
+        if _TIMEOUT_MARK in error:
+            msg += f"\n  {describe_contention()}"
+        return msg
+    got_outcome, rec_winner, got, want, exhausted = (
+        tuple(mismatch) if mismatch else (None, None, None, None, ()))
+    why = (f"scripted replay → {got_outcome!r} [{got}], the record's own replay says winner "
+           f"{rec_winner!r} [{want}]")
+    if exhausted:
+        why += (f"; and side(s) {list(exhausted)} RAN OUT of recorded commands and finished on "
+                f"the live policy, which a full replay can only do after diverging")
+    return (f"cf_producer: ANCHOR MISMATCH — the scripted full replay did not reproduce the "
+            f"recorded outcome ({why}).\n"
+            f"  Nothing was sampled, so this is a DEFECT, not a die roll: the replay is not "
+            f"exact, and every label after this point would be a measurement of that bug. {tail}")
+
+
 class CfProducer:
     """The cycle loop. Split from :func:`main` so a test can drive one cycle directly."""
 
@@ -546,10 +657,18 @@ class CfProducer:
         self._producing = True
         self._said_stale = False
         self._said_no_win_head = False
+        self._said_unanchorable = False
         self._warned_lag = False
         self._warned_no_return = False
         self._said_no_return_path = False
         self.anchor_failed = False
+        #: Set by :meth:`run_anchor` when the anchor RAISED instead of returning a verdict — the
+        #: exception text, so :func:`main` can say which of the two failures happened instead of
+        #: asserting the one it cannot know (see `anchor_refusal_message`).
+        self.anchor_error: Optional[str] = None
+        #: The mismatch itself — ``(scripted outcome, recorded winner, got, want, exhausted)`` —
+        #: so the refusal names WHAT disagreed instead of only that something did.
+        self.anchor_mismatch: "Optional[tuple]" = None
         self.heartbeat = ""
         # gen3_cf_twin_heads_v1: the SHADOW critic's `mc_return` stream. A shaped return is a fact
         # about a board UNDER A REWARD COMPOSITION, so the config comes from the run's own recorded
@@ -625,11 +744,34 @@ class CfProducer:
                 if not self.state.is_processed(n)]
 
     def _newest_record(self) -> Optional[str]:
+        """The newest record that the full-replay anchor can actually adjudicate.
+
+        Newest-first, SKIPPING any record that ends in a forfeit — see
+        :func:`record_is_full_replay_anchorable` for why that class is not adjudicable by a live
+        scripted replay at all. The skip is counted (`anchors_skipped_unanchorable`) and announced
+        once; it is a declared COVERAGE BOUND of the oracle, in the same family as `cf_audit`'s
+        turn-1 and forced-switch bounds — not a retry, and never a second attempt at the same
+        record."""
         try:
             names = sorted(n for n in os.listdir(self.records_dir) if n.endswith(RECON_SUFFIX))
         except OSError:
             return None
-        return os.path.join(self.records_dir, names[-1]) if names else None
+        for name in reversed(names):
+            path = os.path.join(self.records_dir, name)
+            try:
+                anchorable = record_is_full_replay_anchorable(ReconstructionRecord.load(path))
+            except Exception:                                           # noqa: BLE001
+                return path        # unreadable → let run_anchor report it as an ANCHOR ERROR
+            if anchorable:
+                return path
+            self.state.anchors_skipped_unanchorable += 1
+            if not self._said_unanchorable:
+                self._said_unanchorable = True
+                self._log(f"⚠️  {name} ends in a FORFEIT, which a live scripted replay cannot "
+                          f"adjudicate (both sides re-derive the stall forfeit and the winner "
+                          f"becomes a race) — skipping it for the anchor and taking an older "
+                          f"record. This is a declared coverage bound, not a retry. Said once.")
+        return None
 
     # -- snapshot --------------------------------------------------------------------
     def refresh_snapshot(self) -> bool:
@@ -684,8 +826,18 @@ class CfProducer:
         """The full-replay correctness oracle. None = no record to anchor on.
 
         Fully SCRIPTED (``divergence_turn=None``): no policy acts, so this isolates
-        record → offline replay → live bridge → outcome with no sampling in it, and a failure is
-        unambiguously a defect rather than a die roll."""
+        record → offline replay → live bridge → outcome with no sampling in it, and a MISMATCH is
+        unambiguously a defect rather than a die roll.
+
+        ⚠️ **A raised exception is NOT a mismatch, and the two must not report as one.** Both
+        return ``False`` (an anchor that did not complete has certified nothing, so refusing is
+        still right — `cf_audit` counts a crashed anchor as a failure too), but they have opposite
+        diagnoses: a mismatch says the replay is inexact, while a `ProgressTimeout` / transport
+        error on a saturated box says nothing whatever about exactness. Conflating them cost a
+        whole investigation on 2026-08-23 — the test's ONE failure was read as a replay-exactness
+        gap because the top-level message asserted that cause for both. The distinction is
+        recorded here and rendered by :func:`anchor_refusal_message`; the state file separates
+        ``anchors_errored`` from ``anchors_run - anchors_reproduced``, as `cf_audit` always has."""
         path = self._newest_record()
         if path is None or self.snapshot is None:
             return None
@@ -703,17 +855,28 @@ class CfProducer:
                 seed=record.start_options().get("seed"), impl=self.args.impl)
             got = {"win": 1.0, "loss": 0.0}.get(res["outcome"], 0.5)
         except Exception as exc:                                        # noqa: BLE001
-            self._log(f"ANCHOR ERROR on {os.path.basename(path)}: "
-                      f"{type(exc).__name__}: {str(exc)[:300]}")
+            self.anchor_error = f"{type(exc).__name__}: {str(exc)[:300]}"
+            self._log(f"ANCHOR ERROR on {os.path.basename(path)}: {self.anchor_error}")
             self.state.anchors_run += 1
+            self.state.anchors_errored += 1
             return False
         self.state.anchors_run += 1
-        ok = (got == want)
+        # THE STRICTER HALF, and the sensitive one. A `divergence_turn=None` replay scripts every
+        # decision of both sides, so a side that runs OUT of recorded commands and finishes on the
+        # live policy has already diverged from the recording — whatever the winner turned out to
+        # be. Comparing outcomes alone catches that only when the random fallback happens to flip
+        # the result, i.e. about half the time; this catches the divergence itself. Measured
+        # 2026-08-23: `script_exhausted` was empty on all 274 instrumented healthy replays.
+        exhausted = list(res.get("script_exhausted") or ())
+        ok = (got == want) and not exhausted
         self.state.anchors_reproduced += int(ok)
         self.state.records_since_anchor = 0
+        if not ok:
+            self.anchor_mismatch = (res["outcome"], expected.get("winner"), got, want, exhausted)
         self._log(f"ANCHOR {'OK' if ok else 'FAILED'} on {os.path.basename(path)} "
                   f"(scripted full replay → {res['outcome']}, record says "
-                  f"{expected.get('winner')})")
+                  f"{expected.get('winner')}"
+                  f"{f', script EXHAUSTED on {exhausted}' if exhausted else ''})")
         return ok
 
     # -- one record ------------------------------------------------------------------
@@ -936,6 +1099,10 @@ class CfProducer:
                       f"(> --lag-warn-steps {self.args.lag_warn_steps:,}) — labels stamped at this "
                       f"step may EXPIRE at the consumer's --cf-label-lag-steps bound.")
         anchors = f"{self.state.anchors_reproduced}/{self.state.anchors_run}"
+        if self.state.anchors_errored:
+            # NEVER folded into the reproduced/run ratio: an anchor that could not run is not an
+            # anchor that disagreed, and only the second says the replay is inexact.
+            anchors += f" ({self.state.anchors_errored} errored)"
         hb = (f"cycle {self.state.cycles} | "
               f"snapshot {'step ' + format(snap.step, ',') if snap else 'NONE'}"
               f"{f' (lag {lag:,})' if lag else ''} | "
@@ -1064,10 +1231,9 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
         while True:
             rc = prod.cycle()
             if rc:
-                print(f"\ncf_producer: ANCHOR REFUSED — the scripted full replay did not "
-                      f"reproduce the recorded outcome. The replay is not exact, so every label "
-                      f"after this point would be a measurement of that bug. REFUSING to produce "
-                      f"further (state: {prod.state.path}).", file=sys.stderr)
+                print("\n" + anchor_refusal_message(
+                    error=prod.anchor_error, mismatch=prod.anchor_mismatch,
+                    state_path=prod.state.path), file=sys.stderr)
                 return rc
             n += 1
             if args.cycles and n >= args.cycles:

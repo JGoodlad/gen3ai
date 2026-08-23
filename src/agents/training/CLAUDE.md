@@ -3714,8 +3714,81 @@ record is replayed FULLY SCRIPTED through the live bridge (`divergence_turn=None
 oracle) and must reproduce the winner the offline replay driver reports. On failure the producer
 **exits 3 and writes nothing further**: a factory whose replay is not exact is GIGO, and every
 label after it would be a measurement of the bug. This anchor is *stronger* than `cf_audit`'s —
-nothing is played by a policy, so a failure is unambiguously a defect rather than a die roll. An
+nothing is played by a policy, so a MISMATCH is unambiguously a defect rather than a die roll. An
 anchor that CRASHED counts as a FAILURE, never a pass.
+
+⚠️ **But a CRASH and a MISMATCH must not print the same sentence, and until 2026-08-23 they did.**
+The two refusals reach the same exit 3 and have opposite diagnoses: a mismatch says the replay is
+inexact; an exception (a wedged bridge child, a transport error, a contention `ProgressTimeout`)
+never returned a verdict, so it says nothing about exactness — it refuses because an anchor that
+did not complete has certified nothing. `main` printed the MISMATCH text for both, and that turned
+ONE flaky `cf_producer_integration_test` failure into an investigation of a replay-exactness gap
+that did not exist. They are now counted apart (`anchors_errored` in the state file and the
+heartbeat, beside `anchors_run`/`anchors_reproduced` — the split `cf_audit` has always had) and
+rendered apart by the pure `anchor_refusal_message`, which appends `describe_contention()` when the
+exception was a timeout. Same rule as everywhere else in this tree: **a timeout is never a semantic
+outcome**, and a message must never assert a cause the code has not established. Pins:
+`cf_producer_test::TestAnchorRefusal::test_an_anchor_{ERROR_is_counted_and_reported_apart_from_a_MISMATCH,TIMEOUT_self_diagnoses_instead_of_accusing_the_replay}`.
+
+#### ⚠️ The FORFEIT class — the one thing a live scripted replay cannot adjudicate
+
+**Root-caused 2026-08-23**, from the single intermittent `ANCHOR REFUSED` the R1 composition test
+hit. `record_is_full_replay_anchorable` now EXCLUDES it, visibly and by count
+(`anchors_skipped_unanchorable`); it is a declared coverage bound of the oracle, in the same family
+as `cf_audit`'s turn-1 and forced-switch bounds — **not** a retry, and never a second attempt at the
+same record.
+
+- **The mechanism.** A battle that reaches `StallConfig.threshold` (= `MAX_TURNS`, 250) is ended by
+  ONE side forfeiting, which the bridge logs as `['forcelose', <side>]` in `record.commands`.
+  `install_scripted_prefix` builds each side's script as `[c for (s, c) in commands if s == side]`,
+  so `'forcelose'` matches NEITHER side and is dropped — the scripted replay has no way to reproduce
+  the recorded forfeit. Instead **both** players re-derive one from their own `_handle_stall` at
+  turn ≥ 250, and whichever `FORCELOSE` the bridge processes first loses. In the recording only ONE
+  side could forfeit at all (in training, the trainee; in the composition test, the
+  `RecordingFuzzPlayer` against a plain poke-env `RandomPlayer` that has no stall handling), so the
+  replay can hand the win to the side that actually LOST — the exact `scripted full replay → win,
+  record says <opponent>` signature the ledger recorded.
+- **MEASURED. 1037 fresh battles played and rung exactly as `_play_and_ring` does, `--impl node`:
+  4 refusals, 0 errors (0.39%). ALL FOUR were forfeit-terminated records — 4 of the 16 that reached
+  250 turns (25%) — and 0 of the 1021 non-forfeit records refused** (95% upper bound 0.29% for any
+  other class). The per-forfeit flip rate is itself a race, so treat 25% as order-of-magnitude and
+  possibly load-dependent: the four splits were 0/8 in one batch and 2/2 in another. Re-anchoring one refusing record refused **7/12 and 8/12** across two batches, so it
+  is a RACE, not a property of the record; every non-forfeit record re-anchored **40/40 identical**.
+  Rebuilding the anchor with the OPPONENT's stall threshold unreachable — mirroring the recording —
+  made that same record **12/12 correct**. That is the mechanism proof.
+- **It is a faithfulness LIMIT, not a defect the anchor can report.** The offline replay driver gets
+  it right every time because it replays the ORDERED command log including the `forcelose`; two
+  poke-env players driven concurrently cannot reproduce that ordering.
+- ⚠️ **Lowering the stall threshold to force the class did NOT reproduce it** — 384 battles at
+  threshold 25, 381 of them forfeit-terminated, **0 refusals** — and reading that as a clearance is
+  what nearly closed this investigation early. A turn-25 board is not a turn-250 Struggle endgame;
+  making a rare event common changed the thing that decides it. Force the *condition*, then confirm
+  on the real one.
+- 🔴 **TASK, not fixed: the ROLLOUT path inherits the same asymmetry.** A label's rollouts play both
+  sides with `RLPlayer`s that both stall-forfeit, whereas the recorded training battle had only the
+  trainee forfeiting — so a rollout reaching the 250-turn cap can be scored a WIN purely because the
+  opponent's forfeit landed first, biasing the labels of long games upward. The anchor exclusion does
+  not touch it.
+
+**And the whole path is NODE-ONLY** — the composition test passes with `POKESIM_SIM_BRIDGE_BIN` and
+`POKESIM_SEARCH_DRIVER_BIN` pointed at nonexistent files, so no `src/rust_sim` binary, stale or
+otherwise, participates in it. The stale-main-binary trap is not in play here.
+
+**A second, stricter check ships with it, and it is honest about never having fired.**
+`replay_counterfactual` now returns `script_exhausted` — the sides that ran OUT of recorded commands
+and finished on the live policy, which a `divergence_turn=None` full replay can only do after
+diverging — and the anchor refuses on it even when the winner happens to match. It exists because
+the fallback policy is random, so a script desync only flips the WINNER about half the time. It did
+NOT catch the forfeit class above (that race consumes no script at all), and it was **empty on every
+one of 274 instrumented healthy replays**, so it costs a correct run nothing. Pin:
+`cf_producer_test::TestAnchorRefusal::test_a_full_replay_that_RAN_OUT_of_script_fails_the_anchor_even_on_a_matching_winner`.
+
+⚠️ **ONE latent desync found by inspection and NOT reproducible** (`install_scripted_prefix`,
+`utils/bridge/counterfactual.py`): when the mask is empty the scripted player returns
+`choose_default_move()` **without popping the script**, but the live player it is replaying DID
+emit that `/choose default` and the bridge DID record it as a command — so the script would sit one
+entry ahead for the rest of the battle. Unreachable in this fuzz (0 `default` commands in 356
+gen3ou records, so the branch never fires) and left alone deliberately rather than "fixed" blind.
 
 **Observability.** A separate process has no TensorBoard, so it prints one **heartbeat line per
 cycle** and keeps `<run>/cf_producer_state.json` human-readable (indented; sampler + weights +

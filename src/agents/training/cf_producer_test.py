@@ -404,6 +404,128 @@ class TestAnchorRefusal:
         assert prod.run_anchor() is False
         assert prod.state.anchors_run == 1 and prod.state.anchors_reproduced == 0
 
+    def test_an_anchor_ERROR_is_counted_and_reported_apart_from_a_MISMATCH(self, tmp_path):
+        """The two refusals have OPPOSITE diagnoses, so they must not print the same sentence.
+
+        A mismatch says the replay is inexact. An exception (a wedged bridge child, a transport
+        error, a contention `ProgressTimeout`) says nothing whatever about exactness — it never
+        returned a verdict. The producer printed the MISMATCH text for both until 2026-08-23, and
+        that turned ONE flaky `cf_producer_integration_test` failure into an investigation of a
+        replay-exactness gap that did not exist. `cf_audit` has always kept `anchor_errors` apart.
+        """
+        run = _mk_run(tmp_path)
+        rec = _mk_record(run)
+        rec.write_text("{ not a record")
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        assert prod.run_anchor() is False
+        assert prod.state.anchors_errored == 1, "an ERRORED anchor was not counted as one"
+        assert prod.anchor_error and "JSONDecode" in prod.anchor_error
+        assert prod.anchor_mismatch is None, "an exception is not a mismatch"
+        # the state file (the whole operator surface — there is no TensorBoard here) carries it
+        prod.state.save()
+        assert json.loads(rec.parent.parent.joinpath(P.STATE_FILENAME).read_text())[
+            "anchors_errored"] == 1
+
+        msg = P.anchor_refusal_message(error=prod.anchor_error, mismatch=None, state_path="/s")
+        assert "COULD NOT RUN" in msg
+        assert "did not reproduce the recorded outcome" not in msg, (
+            "an anchor that never ran must not be reported as a replay-exactness failure")
+
+    def test_an_anchor_TIMEOUT_self_diagnoses_instead_of_accusing_the_replay(self):
+        """A timeout is never a semantic outcome (root CLAUDE.md). If the anchor died of one on a
+        starved box, the message must say so and print the load average — the same rule the
+        per-battle bridge bound and `bridge_impl_parity_test` already follow."""
+        msg = P.anchor_refusal_message(
+            error="ProgressTimeout: no progress for 30.0s", mismatch=None, state_path="/s")
+        assert "COULD NOT RUN" in msg and "contention: load average" in msg
+        assert "the replay is not exact" not in msg
+        # a NON-timeout error is still an error, but must not claim contention it did not measure
+        other = P.anchor_refusal_message(
+            error="RuntimeError: boom", mismatch=None, state_path="/s")
+        assert "COULD NOT RUN" in other and "contention: load average" not in other
+
+    def test_a_MISMATCH_still_names_the_defect_and_shows_both_outcomes(self):
+        msg = P.anchor_refusal_message(
+            error=None, mismatch=("win", "Bob", 1.0, 0.0, []), state_path="/s")
+        assert "ANCHOR MISMATCH" in msg and "the replay is not exact" in msg
+        assert "'win'" in msg and "'Bob'" in msg, (
+            "a refusal that does not print WHAT disagreed cannot be diagnosed from the log alone")
+        assert "RAN OUT" not in msg, "no side was exhausted; the message must not say one was"
+        withx = P.anchor_refusal_message(
+            error=None, mismatch=("win", "Bob", 1.0, 0.0, ["p2"]), state_path="/s")
+        assert "RAN OUT" in withx and "'p2'" in withx
+
+    def test_a_full_replay_that_RAN_OUT_of_script_fails_the_anchor_even_on_a_matching_winner(
+            self, tmp_path, monkeypatch):
+        """The SENSITIVE half of the oracle.
+
+        A `divergence_turn=None` replay scripts EVERY decision of both sides, so a side that runs
+        out of recorded commands and finishes on the live policy has already diverged from the
+        recording — whatever the winner turned out to be. Comparing outcomes alone catches that
+        only when the random fallback happens to flip the result, i.e. about half the time. The
+        2026-08-23 hunt for an intermittent anchor refusal needed a detector that fires on the
+        divergence rather than on its coin flip. Honest scope: it did NOT catch the class that hunt
+        found (a forfeit race, which consumes no script), and it was empty on all 274 instrumented
+        healthy replays — so the stricter check costs a correct run nothing and has never fired.
+        """
+        run = _mk_run(tmp_path)
+        p = run / P.RECORDS_DIRNAME / "0000000000000000002_1_tag_reconstruction.json"
+        p.write_text(json.dumps({
+            "v": 1, "format_id": "gen3ou", "prng_seed": "1,2,3,4", "commands": [],
+            "input_log": ['>start {"formatid":"gen3ou","seed":[1,2,3,4]}',
+                          '>player p1 {"name":"Ann","team":""}',
+                          '>player p2 {"name":"Bob","team":""}']}))
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p_, s: _StubSnapshot(p_, s))
+        prod.refresh_snapshot()
+        res = {}
+        monkeypatch.setattr(
+            P, "replay_battle", lambda record, impl="node": SimpleNamespace(
+                outcome={"winner": "Ann"}))            # the record says the TRAINEE (p1) won
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: dict(res))
+
+        # 1) the winner MATCHES and no side was exhausted → the anchor passes
+        res.update(outcome="win", script_exhausted=[])
+        assert prod.run_anchor() is True
+
+        # 2) the SAME matching winner, but a side ran out of script → it must NOT pass
+        res.update(outcome="win", script_exhausted=["p2"])
+        assert prod.run_anchor() is False, (
+            "a full replay that fell through to a live policy was accepted as exact")
+        assert prod.anchor_mismatch is not None and prod.anchor_mismatch[4] == ["p2"]
+        assert prod.state.anchors_errored == 0, "an exhausted script is not an ERROR"
+
+    def test_a_FORFEIT_record_is_not_adjudicable_and_the_anchor_skips_it(self, tmp_path, capsys):
+        """The class behind the 2026-08-23 intermittent `ANCHOR REFUSED`.
+
+        A battle that hits the 250-turn cap ends with `['forcelose', <side>]` in
+        `record.commands`, which `install_scripted_prefix` drops (it keys the script on
+        `s == side`). Both scripted players then re-derive a forfeit from their own
+        `_handle_stall` and the winner becomes a race — measured 7/12 and 8/12 refusals
+        re-anchoring ONE such record, against 12/12 correct once the opponent's stall threshold was
+        made unreachable (the mechanism proof). It is a faithfulness limit of live scripted replay,
+        not a defect the anchor can report, so the class is EXCLUDED — visibly and by count, never
+        by retrying the same record until it passes.
+        """
+        run = _mk_run(tmp_path)
+        older = _mk_record(run, "0000000000000000001_1_a_reconstruction.json")
+        newer = run / P.RECORDS_DIRNAME / "0000000000000000009_1_b_reconstruction.json"
+        newer.write_text(json.dumps({
+            "v": 1, "format_id": "gen3ou", "prng_seed": "1,2,3,4", "input_log": [],
+            "commands": [["p1", "move 1"], ["p2", "move 1"], ["forcelose", "p1"]]}))
+
+        from utils.bridge.reconstruction import ReconstructionRecord
+        rec = ReconstructionRecord.load(str(newer))
+        assert P.record_is_full_replay_anchorable(rec) is False
+        assert P.record_is_full_replay_anchorable(ReconstructionRecord.load(str(older))) is True
+
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p_, s: _StubSnapshot(p_, s))
+        assert prod._newest_record() == str(older), (
+            "the anchor took the forfeit-terminated record it cannot adjudicate")
+        assert prod.state.anchors_skipped_unanchorable == 1
+        assert "FORFEIT" in capsys.readouterr().out, (
+            "the skip must ANNOUNCE itself — a silent coverage bound is an invisible one")
+
     def test_an_empty_ring_cannot_anchor_and_says_none(self, tmp_path):
         run = _mk_run(tmp_path)
         prod = P.CfProducer(_args(run), snapshot_loader=lambda p, s: _StubSnapshot(p, s))
