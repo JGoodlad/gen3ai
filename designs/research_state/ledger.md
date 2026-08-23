@@ -1782,3 +1782,24 @@ disk all along, in the summary sibling's `invocations[i]["actions"]` `valid` bit
   and the audit that owned this one printed "0 zero-legal rows" for a year while measuring
   phantom actions. The only reason the big decisions survive is that the deletion-class calls
   were deliberately keyed on dV, not flips — redundant meters just paid for themselves.*
+
+### Three owner sign-offs (2026-08-22, evening)
+
+1. **The exploiter coverage board is APPROVED, including the K=4 merges** — the two short arms
+   (Q6, Q9) fold into their nearest-neighbour arms as K=4 pin_multi sets (inside the proven N≤10
+   band) rather than spending tocks on solos; apply mechanically at next board regeneration /
+   arm-spec time. The board replaces the slice worksheet permanently.
+2. **The α-supervision decision batch is DEFERRED from revolution one** (task #17 stays parked) —
+   the revolution's headroom-capture readout stays single-purpose; the batch re-queues at the
+   next launch boundary.
+3. **The TWIN-HEADS amendment to the R1 runbook is AUTHORIZED** (owner design change to the
+   signed pre-registration): the primary comparison becomes WITHIN-RUN paired head differences —
+   three win-prob heads (control BCE-only / same-states single-outcome / same-states tight-MC,
+   isolating prioritization from variance reduction) — plus the passive SHADOW CRITIC (a value
+   twin on mc_return labels, never computing an advantage) as the staged promotion path for
+   critic surgery. Cross-run forks retained only for the later trunk/policy-transfer stage.
+   Build dispatched.
+
+Also opened: **contributor-readiness tech-debt paydown, due Tuesday morning** (owner) — the
+PYTHONPATH hack, absolute paths, launcher assumptions. Scoping survey dispatched; build follows
+its plan.
