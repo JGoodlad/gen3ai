@@ -3772,3 +3772,21 @@ nulls), per-state entropy shaping (P2), play-time Nash/search (constraint).
 **Capacity-eval battery ORDERED** (owner, same date): regularly-evaluatable saturation metrics
 on the shared trunk — build in flight; every metric ships with a validity note (the retracted
 PR(K_ū)=17 lesson: gate on "does this quantity PREDICT performance", never on "is it low").
+
+### 📐 HODGE BASELINES MEASURED + SPINNING-TOP PREDICTIONS REGISTERED (34af8ce, 2026-08-23)
+
+Five completed 24M generations (gen-13..17), dense 66-pair ladders, identical graph shape. Every
+generation's non-transitivity is REAL (no bootstrap null replicate reached the observed width;
+p at the 1/(B+1) floor) and every one is 96–98% SPINE — the game is transitive-dominated at our
+strength, exactly the spinning-top regime.
+- **⚠️ Width is games-per-pair-sensitive and the raw table is NOT a series**: `width_rms` weights
+  edges by `n·p(1−p)`, so 400-g/pair gens (13/14) and 100-g/pair gens (15/16/17) are
+  incomparable raw. Thinned to matched 100 g/pair, the honest series is width-excess
+  **52 / 49 / 46 / 35 / 33** over a ~35 floor — a MONOTONE DECLINE AT FLAT ELO (2015–2068, CIs
+  overlapping), registered as a baseline observation NOT a P1 confirmation (PFSP-off is a live
+  alternative for gen-17's share). σ(excess) ≈ 2–3 Elo ⇒ registered thresholds ≥10 Elo ≈ 2σ.
+- Predictions P1 (width declines as ELO rises, floor-adjusted), P2 (widening at flat ELO =
+  mid-band/new-dimension entry, NOT regression — interpretation locked pre-hoc), P3 (exploiter
+  additions transiently raise cyclic fraction; the distillation fold flattens it) — each with
+  confirm/refute readings + the games-per-pair confound rule: ALWAYS restate the floor beside
+  the width. Full doc: `designs/research_state/hodge_predictions.md`.
