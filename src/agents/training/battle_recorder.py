@@ -43,6 +43,14 @@ class BattleRecorder:
         # turn-history tracker with the exact actions the live player took —
         # required for bit-faithful obs materialization (obs_materializer.py).
         self._actions_taken: list[int] = []
+        # The LEGAL-ACTION MASK per invocation (agent-side, always available — it is what the
+        # player masked its own logits with). Exported in states_arrays() as `action_mask`.
+        # `gen3_audit_mask_recovery_v1`: the stored `logits` are PRE-mask (inference/player.py
+        # keeps the -1e9 offset in a local), so every offline consumer that "recovered" the mask
+        # as `logits > -1e8` silently got ALL-LEGAL. The mask was only ever on disk as the
+        # summary's per-label `valid` flags — recoverable, but by a label-keyed dict whose
+        # index alignment is implicit. Writing it as an array makes the npz self-contained.
+        self._action_masks: list[np.ndarray] = []
         # Per-decision TD residual δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the SAME formula the
         # prober uses (main/prober/session.py::_td), the single source of truth. Computed live at
         # the NEXT record() (when complete_pending finalizes reward(t) and the current state
@@ -75,6 +83,7 @@ class BattleRecorder:
         curr_ctx = self._build_ctx(battle, mask, legal)
         self._states.append(state or {})
         self._actions_taken.append(int(action_idx))
+        self._action_masks.append(np.asarray(mask).astype(bool).reshape(-1))
 
         if self._pending_entry is not None:
             prev_ctx = self._tracker.pending_ctx
@@ -204,8 +213,13 @@ class BattleRecorder:
                     spread_belief[i] = np.asarray(sb, dtype=np.float32)
             has_state[i] = 1
         actions = np.asarray(self._actions_taken, dtype=np.int16)
+        # `action_mask` [T, n_act] bool — the legality the player actually masked with, so an
+        # offline audit never has to infer it. See __init__ (gen3_audit_mask_recovery_v1).
+        action_mask = np.zeros((T, n_act), dtype=bool)
+        for i, m in enumerate(self._action_masks):
+            action_mask[i, :min(n_act, len(m))] = m[:n_act]
         out = {"obs": obs, "logits": logits, "values": values, "win_probs": win_probs,
-               "has_state": has_state, "actions": actions}
+               "has_state": has_state, "actions": actions, "action_mask": action_mask}
         if value_dist is not None:
             out["value_dist"] = value_dist
         if move_logits is not None:
@@ -578,8 +592,10 @@ def write_battle_record(out_prefix: str, recorder: "BattleRecorder", battle, ste
     Writes three co-located artifacts for the same battle:
 
     * ``<out_prefix>_summary.json`` — the human-readable per-invocation summary.
-    * ``<out_prefix>_states.npz`` — obs/logits/values aligned with the summary's
-      invocations (only when raw model I/O was captured), for ``probe_replay.py``.
+    * ``<out_prefix>_states.npz`` — obs/logits/values/action_mask aligned with the summary's
+      invocations (only when raw model I/O was captured), for ``probe_replay.py``. The stored
+      ``logits`` are PRE-mask; ``action_mask`` is the legality the player used (see
+      ``states_arrays``) — an offline consumer must read it, never infer legality from logits.
     * ``<out_prefix>_replay.html`` — a self-contained, **browser-watchable** Showdown
       replay of the battle. The two files above are prober-only forensic dumps; this
       one lets a human (no checkout, no prober) just open the game in a browser.

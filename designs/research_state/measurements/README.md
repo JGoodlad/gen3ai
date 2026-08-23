@@ -23,6 +23,35 @@ lineage behind an `ARCH_SIGNATURE` wall; gen-1 (6 edge families) and gen-3 (15) 
 model, and a mid-training read is not an end-of-run read. Cross-generation comparisons are only
 sound when the metric is a within-run ratio.
 
+## 🚨 Every `kl_mean` / `flip_rate` here predates the mask fix (2026-08-22)
+
+`gen3_audit_mask_recovery_v1`: until 2026-08-22 the ablation probes recovered the legal-action
+mask as `logits > -1e8`, but the eval recorder stores **PRE-mask** logits — `inference/player.py`
+keeps the `-1e9` offset in a local that never reaches disk. **Measured: 0 of 800+ archived
+`states.npz` across every run back to ai_v5 carries a single logit below -1e8**, so the recovery
+returned ALL-LEGAL on every row of every audit ever run, and `edge_ablation_audit`'s "zero legal
+actions" guard passed vacuously by construction. On a 400-file sample **38.4% of the action space
+was wrongly counted legal** (min 18%, max 68%).
+
+**24 files here carry a `kl_mean`, and all of them are pre-fix.** The mask is both the KL's
+summation domain and the policy's renormalization domain, so the affected axes move materially.
+Re-measured on gen-17 (`ai_v9_21_gen17_pfspoff_0820` final, n=512, identical states both arms):
+
+| axis | before | after | |
+|---|---|---|---|
+| `all` `kl_mean` | 0.58549 | 0.35647 | −39% |
+| `all` `flip_rate` | 34.57% | 21.29% | −38% |
+| `d2` `kl_mean` | 0.32574 | 0.19764 | −39% |
+| `h` `kl_mean` | 0.00606 | 0.00279 | −54% (largest) |
+| `t` `kl_mean` | 0.00500 | 0.00623 | **+25%** |
+| `concat_cells` `flip_rate` | 28.71% | 31.05% | **+8%** |
+| every `dv_mean` | — | — | **UNCHANGED** |
+
+**It is not a uniform rescale, so RANKINGS change** — `t` and `h` swap places on gen-17. Treat
+pre-fix `kl_*` and `flip_rate` as ORDINAL-ONLY within a single file and never compare one to a
+post-fix number. **`dv_mean` is unaffected** (the critic delta never touches the mask), so every
+|ΔV| reading here — including the gen-13.5 §4 frame-deletion dV comparison — stands as measured.
+
 ## Index
 
 | File | Gen | Step | n | Date | What |

@@ -336,6 +336,26 @@ def test_states_arrays_captures_win_prob():
     assert arr[0] == pytest.approx(0.6) and arr[2] == pytest.approx(0.4) and np.isnan(arr[1])
 
 
+def test_states_arrays_carries_the_action_mask():
+    """gen3_audit_mask_recovery_v1: the npz must be SELF-CONTAINED about legality.
+
+    The stored `logits` are PRE-mask (inference/player.py keeps the -1e9 offset in a local), so
+    an offline consumer that infers legality from them gets ALL-LEGAL — which is what every
+    ablation audit silently did until 2026-08-22. `action_mask` is the mask the player actually
+    used, one row per invocation, aligned with `logits`/`obs`/`actions`."""
+    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
+    masks = [_mask(1, 6, 7), _mask(6), _mask(0, 2, 6, 8, 9)]
+    for t, m in enumerate(masks):
+        rec.record(_move_battle(t + 1), 6, _probs(), m,
+                   state={"value": 1.0, "obs": np.zeros(4, np.float32),
+                          "logits": np.zeros(11, np.float32)})
+    out = rec.states_arrays()
+    am = out["action_mask"]
+    assert am.shape == (3, 11) and am.dtype == bool
+    assert np.array_equal(am, np.asarray(masks, dtype=bool))
+    assert not am.all(), "a real mask always forbids something — all-legal is the bug's signature"
+
+
 def test_states_arrays_captures_value_dist():
     """states_arrays() carries the value-dist head's per-atom distribution [T, bins] parallel to
     `values`; a row with no distribution stays all-NaN, and the key is OMITTED entirely when no

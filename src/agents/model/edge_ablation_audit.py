@@ -15,8 +15,8 @@ ignores it); a large one is load-bearing. The ``all`` row ablates every family a
 
 One additional OP arm answers the question the family rows can't: ``concat_cells`` zeroes the
 pointer head's op CELLS, i.e. the op fully absent from the heads — the modern P1 ceiling. On
-gen-14 it reads KL 0.5682 / flips 0.3105, the single largest policy dependence in this report,
-which is why it is a live tripwire rather than scaffolding.
+gen-14 it read KL 0.5682 / flips 0.3105 (a PRE-mask-fix number — see below), the single largest
+policy dependence in this report, which is why it is a live tripwire rather than scaffolding.
 
 **Its twin ``concat`` is DELETED, and the reason is worth keeping.** That arm was built for the
 v61 op head-concat deletion counterfactual, and it worked by zeroing the assembler's LAST
@@ -31,6 +31,15 @@ numbers.** Same lesson as the allowlist entry that outlived its own fix.
 States come from eval-trace ``states.npz`` files (the arrays the run's eval recorder writes and
 the prober reads — pass one or more paths/globs). There is deliberately NO random-obs mode for
 real audits: random vectors are not on-distribution states and would understate every number.
+
+**The legal mask is READ, not inferred** (`gen3_audit_mask_recovery_v1`, 2026-08-22). Until
+that fix it was recovered as ``logits > -1e8``, but the recorder stores PRE-mask logits, so the
+recovery returned all-legal on every row of every trace ever written and the "zero legal
+actions" guard below could not fire. It now goes through
+``audit_states.recover_legal_mask`` (npz ``action_mask`` → genuinely post-mask logits →
+sibling summary's ``valid`` flags → REFUSE). ⚠️ **Every family/cell number published before
+that date was computed against an all-legal mask** — the KL sums and the probability
+renormalization both span it, so pre-fix tables are not comparable with post-fix ones.
 
 Usage:
   python -m agents.model.edge_ablation_audit <checkpoint.zip> --states 'models/run_x/eval_traces/**/states.npz' [--max-states 4096] [--out report.json]
@@ -58,8 +67,17 @@ def _collect_states(patterns: Sequence[str], max_states: int, seed: int = 0,
 
     obs, masks, coverage = collect_states(patterns, max_states, seed=seed)
     if not masks.any(axis=1).all():
-        raise ValueError("a state decoded to ZERO legal actions — the logits→mask recovery is wrong "
-                         "for this trace format; inspect the npz")
+        raise ValueError("a state decoded to ZERO legal actions — the mask recovery is wrong for "
+                         "this trace format; inspect the npz")
+    if masks.all():
+        # The other half of the same guard, and the one that was missing: an ALL-legal sample is
+        # the signature of a failed recovery, not of a permissive board. Real gen-3 decisions
+        # always mask something (measured: 100% of rows across every archived run carry at least
+        # one illegal action, ~38% of the action space on average) — a mask that says otherwise
+        # never came from the recorder. gen3_audit_mask_recovery_v1.
+        raise ValueError("every sampled state decoded to ALL actions legal — the mask recovery "
+                         "produced no legality at all; this is what the pre-2026-08-22 "
+                         "`logits > -1e8` recovery did on every trace ever written")
     return obs, masks, coverage
 
 

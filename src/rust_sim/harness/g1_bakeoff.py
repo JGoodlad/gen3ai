@@ -123,8 +123,10 @@ def stage_probe(a):
 
     # Model: the same loader the split audit uses (arch-signature gate only — v61 ckpt loads
     # under v62 code since the signature is unchanged). Obs/mask: straight from each trace's
-    # states.npz sibling (the trace-triple naming contract; mask = finite post-mask logits,
-    # mirroring agents.model.audit_states).
+    # states.npz sibling (the trace-triple naming contract; the mask goes through
+    # agents.model.audit_states.recover_legal_mask — the stored logits are PRE-mask, so the
+    # `> -1e8` shortcut this used to inline returned ALL-LEGAL, gen3_audit_mask_recovery_v1).
+    from agents.model.audit_states import recover_legal_mask
     from agents.model.snapshot import current_model_version, load_foreign_opponent
     from agents.observation.state_encoder import load_mappings
 
@@ -142,7 +144,7 @@ def stage_probe(a):
             continue
         with np.load(npz_path) as z:
             obs = z["obs"][r["inv"]]
-            mask = z["logits"][r["inv"]] > -1e8        # the sampler's finite-threshold contract
+            mask = recover_legal_mask(npz_path, z)[r["inv"]]
         cap.grabbed = None
         ob = {"observation": torch.as_tensor(obs[None]).float(),
               "action_mask": torch.as_tensor(mask[None]).float()}
