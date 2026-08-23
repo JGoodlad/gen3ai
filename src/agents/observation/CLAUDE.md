@@ -78,11 +78,23 @@ Judge by these load-independent metrics, in priority order:
 
 1. **Total function calls per encode** = `<N function calls>` line ÷ `--reps`. This is the
    single best regression detector — it does not move with machine load. Baseline ≈
-   **~3.46k calls/encode** — the post-`gen3_entity_rehome_v1` (v60) reference: deleting the two
+   **~5.43k calls/encode** — measured 2026-08-23 on an idle box at `--turn 25 --reps 400`, obs
+   2501, median of 3 runs (`designs/research_state/measurements/post_paydown_baselines_2026-08-23.json`).
+
+   🚨 **This number is in FULL-PROTOCOL units. The older ~3.46k figure below is NAKED-ENCODE and
+   is NOT comparable to what this benchmark prints today** — comparing today's output against it
+   reads as a +57% regression that does not exist. The benchmark has threaded the whole env
+   protocol since 2026-08-16 (`update_progress_clock`, recency, the H-A pair loop, the H-B
+   event-window fold); `episode_tracker._pair_sat_norm` alone is ~164 calls/encode, and the
+   tracker family is most of the difference. A threshold restated in the wrong units is worse
+   than no threshold, because it fires.
+
+   *History, in NAKED-ENCODE units — for the shape of past changes only, never as today's bar:*
+   ~3.46k was the post-`gen3_entity_rehome_v1` (v60) reference: deleting the two
    144-dim matchup matrices removed the whole `_expected_multiplier`/`_joint_expectation` loop
    family (measured same-session before/after at `--turn 25 --reps 400`, seed-0 battle:
    6,332 → 3,462 calls/encode, −45%; wall 0.373 → 0.246 ms, −34% — the Stage-3 refund,
-   confirmed in reverse). History: ~6.44k was the post-`gen3_cpu_damage_deleted_v1` (v48)
+   confirmed in reverse). ~6.44k was the post-`gen3_cpu_damage_deleted_v1` (v48)
    reference, measured
    same-session before/after at `--turn 25 --reps 300` on the seed-0 battle (7,396 → 6,444, −12.9%,
    from deleting the incoming-damage / move-effect / active-move-scalar producers). History for
@@ -125,6 +137,16 @@ headline on purpose (load-dependent); the **call counts and ordering are the con
 > (the block is unconditional; the fold is ≤32 dict-row writes + 2 species and 1 move dex
 > lookups per row). If the H-B tier survives its audit, vectorizing the row writes (numpy
 > assembly in the tracker) is the obvious first optimization.
+>
+> **RE-BASELINED 2026-08-23** (idle box, no training run, `--turn 25 --reps 400`, median of 3):
+> **0.373 ms/decision, ~5.43k calls/encode, obs 2501.** Note the obs figure — the `2437` above is
+> stale; `gen3_frame_deletion_v1` took it there, later work brought it to 2501, and
+> `Gen3ObservationEncoder.get_layout()` is the only figure worth trusting. The 2026-08-16
+> headline's "upper bound" caveat is now DISCHARGED by a same-session A/B rather than assumed:
+> against `bcdd868` (the frame deletion) the current tree is **+2.4% calls/encode and +3.6%
+> wall**, tracking the +2.6% obs-dim growth — i.e. the frame-deletion era, v96–v100, the cf
+> plumbing and the entry-point decomposition moved no hot path. Full record:
+> `designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`.
 
 ```
 PER-DECISION OBS BUILD BENCHMARK  (obs dim <live>, turn 25, opp mons w/ revealed moves 5/6)

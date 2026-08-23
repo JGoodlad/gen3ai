@@ -549,8 +549,18 @@ load-stable regression criteria live in `src/agents/observation/CLAUDE.md`.
 For the **top-down** view — where a whole trainer turn's CPU goes (parse + obs + reward +
 mask + map + tracker), GPU-excluded and server-free — use `trainer_turn_benchmark.py`. It
 walks a real bridge battle, times every per-decision CPU stage `Gen3Env` runs (a random legal
-action stands in for the policy forward), and prints a stacked breakdown. Baseline: obs build
-≈ 88% of our CPU (`state_encoder.encode` ≈ 80%), parse ≈ 7%, reward ≈ 4%, everything else <1%.
+action stands in for the policy forward), and prints a stacked breakdown. Baseline (re-measured
+2026-08-23, idle box, no training run): **our controllable CPU ≈ 0.90 ms/decision — obs build 63%
+(`state_encoder.encode` 33%), reward 27%, parse 9%**, everything else ≈1%.
+
+⚠️ **The reward stage is NOT negligible, and this doc said it was for generations.** The old
+baseline here read "obs ≈ 88%, parse ≈ 7%, reward ≈ 4%" and matched no arm measured in 2026-08:
+reward has been **23–27%** of our CPU since at least the pre-frame-deletion tree, and
+`process_turn_reward` alone is **0.21 ms — the second-largest per-decision consumer**. Anyone
+optimizing this path off the old line would have skipped it. (The frame deletion is *not* the
+explanation: reward was already 23% before it. At reward's measured 0.23 ms absolute, a 4% share
+would need our-CPU near 5.75 ms — six times anything observed.) Record:
+`designs/research_state/measurements/post_paydown_baselines_2026-08-23.{json,md}`.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0]
 ```

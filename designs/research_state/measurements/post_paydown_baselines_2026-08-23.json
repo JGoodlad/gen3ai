@@ -1,0 +1,139 @@
+{
+  "id": "post_paydown_baselines_2026-08-23",
+  "date": "2026-08-23",
+  "what": "First idle-box re-baseline of all four performance benchmarks since the frame-deletion era, v96-v100, the cf plumbing and the entry-point decomposition. The claim under test: none of that moved a hot path.",
+  "verdict": "CLAIM HELD on every benchmark. Two DOC findings, no code regressions.",
+  "box": {
+    "cores": 16,
+    "training_run_live": false,
+    "note": "No production run on the box. Every figure carries the 1-minute load average at its own measurement; the bridge-throughput arms saturate the box by design, so their start-load is reported rather than treated as contention."
+  },
+  "tree": {
+    "head": "ba5d63f",
+    "worktree": "worktree-agent-a195816d171fd12d9",
+    "sim_bridge_bin": "/home/goodlad/dev/gen3ai/src/rust_sim/target/release/sim_bridge (main checkout, prebuilt)"
+  },
+
+  "obs_build": {
+    "invocation": "python src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22",
+    "loadavg_1m_at_measurement": 0.46,
+    "busy_banner": false,
+    "obs_dim_measured": 2501,
+    "runs_ms": [0.379, 0.373, 0.368],
+    "median_ms_per_decision": 0.373,
+    "calls_per_encode_runs": [5445.0, 5431.0, 5399.0],
+    "median_calls_per_encode": 5431.0,
+    "component_split": {
+      "state_encoder.encode_pct_of_build": 100,
+      "live_view_alone_pct": 19
+    },
+    "ab_control": {
+      "why": "The leaf's documented primary metric (~3.46k calls/encode) is a NAKED-ENCODE-era figure and is NOT comparable to the current full-protocol benchmark, so the documented threshold could not be applied. Settled instead with a same-session A/B on an idle box.",
+      "before_commit": "bcdd868 (the frame deletion; everything after it is the change under test)",
+      "before_obs_dim": 2437,
+      "before_runs_ms": [0.360, 0.356, 0.366],
+      "before_median_ms": 0.360,
+      "before_calls_per_encode": [5303.0, 5298.0, 5349.0],
+      "before_median_calls_per_encode": 5303.0,
+      "delta_calls_per_encode_pct": 2.4,
+      "delta_wall_pct": 3.6,
+      "obs_dim_growth_pct": 2.6
+    },
+    "verdict": "NO REGRESSION. +2.4% calls/encode against a 10% threshold, and it tracks the +2.6% obs-dim growth almost exactly — more dims written by the same algorithms, no new hot loop. cProfile top-of-list unchanged in structure."
+  },
+
+  "trainer_turn": {
+    "invocation": "python src/agents/training/trainer_turn_benchmark.py --decisions 150 --warmup 3 --seed 0",
+    "loadavg_1m_at_measurement": 0.16,
+    "busy_banner": false,
+    "measured_decisions": 206,
+    "our_cpu_ms_mean": 0.899,
+    "our_cpu_ms_median": 0.831,
+    "our_cpu_ms_p90": 1.191,
+    "stage_shares_pct": {
+      "obs_build": 63,
+      "reward_turndelta_fold": 27,
+      "parse_event_log_fold": 9,
+      "action_map": 1,
+      "tracker_advance": 1
+    },
+    "stage_ms_mean": {
+      "obs_build": 0.562,
+      "obs_state_encoder_encode": 0.296,
+      "obs_legal_mask": 0.134,
+      "obs_tracker_record": 0.132,
+      "reward_total": 0.240,
+      "reward_process_turn_reward": 0.210,
+      "reward_build_delta": 0.030,
+      "parse": 0.084
+    },
+    "ab_control": {
+      "bcdd868_our_cpu_ms_mean": 0.921,
+      "bcdd868_shares_pct": {"obs_build": 62, "reward": 25, "parse": 11},
+      "e80db47_pre_frame_deletion_our_cpu_ms_mean": 1.001,
+      "e80db47_shares_pct": {"obs_build": 65, "reward": 23, "parse": 11},
+      "e80db47_turn_history_ms": 0.060
+    },
+    "verdict": "NO REGRESSION from the change under test (0.921 -> 0.899 ms our-CPU, shares flat). The frame deletion itself bought -8% our-CPU (1.001 -> 0.921) and removed the 0.060 ms turn-history line.",
+    "doc_finding": "The baseline documented in the root CLAUDE.md (obs build ~88% of our CPU, state_encoder.encode ~80%, parse ~7%, reward ~4%) is STALE BY GENERATIONS and does not match ANY of the three arms. Reward has been 23-27% of our controllable CPU for at least three generations, not 4%; process_turn_reward alone is 0.21 ms, the second-largest per-decision consumer. The stale line would misdirect anyone optimizing this path."
+  },
+
+  "bridge_impl_throughput": {
+    "invocation": "python src/utils/bridge/bridge_impl_throughput_benchmark.py --impl both --workers {8,48} --seconds 60",
+    "busy_banner": false,
+    "workers_8": {
+      "loadavg_1m_at_start": 0.11,
+      "node_steps_s": 2172.0,
+      "rust_steps_s": 2594.5,
+      "ratio_rust_over_node": 1.195,
+      "node_child_rss_mb": 227,
+      "rust_child_rss_mb": 9,
+      "failed_workers": 0,
+      "documented": {"node": 1852, "rust": 2182, "ratio": 1.18, "node_rss": 225, "rust_rss": 9}
+    },
+    "workers_48": {
+      "loadavg_1m_at_start": 4.78,
+      "loadavg_note": "residual from the preceding 8-worker arm, decaying; both arms saturate 16 cores by design and the node arm runs first, so if anything this ordering favours node's residual-free window less, not more",
+      "node_steps_s": 2159.9,
+      "rust_steps_s": 3132.4,
+      "ratio_rust_over_node": 1.450,
+      "node_child_rss_mb": 223,
+      "rust_child_rss_mb": 9,
+      "failed_workers": 0,
+      "documented": {"node": 1942, "rust": 2729, "ratio": 1.41, "node_rss": 223, "rust_rss": 9}
+    },
+    "verdict": "NO REGRESSION — reproduces and slightly exceeds the documented ratios (1.195 vs 1.18 at 8; 1.450 vs 1.41 at 48). Both impls faster in absolute than the documented figures; child RSS matches exactly (223/9 MB at 48)."
+  },
+
+  "bridge_heap_growth": {
+    "invocation": "python src/utils/bridge/bridge_heap_growth_benchmark.py 10m --sample-every 100",
+    "loadavg_1m_at_start": 2.50,
+    "busy_banner": false,
+    "banner_note": "A first attempt DID carry the busy banner (load 33, residual from the 48-worker throughput arm). It was discarded and re-run clean per the docs' own rule rather than recorded with a caveat.",
+    "impl": "node (attach_bridge_transport default — matches the documented node baseline)",
+    "battles_played": 2521,
+    "wall_s": 600,
+    "mean_episode_steps": 95,
+    "rss_start_mb": 189.8,
+    "rss_end_mb": 229.3,
+    "one_time_warmup_mb": 39,
+    "steady_state_mb_per_1000_battles": 0.16,
+    "full_run_fit_mb_per_1000": 4.3,
+    "projected_3h_growth_mb_per_child": 0,
+    "documented": {"fresh_mb": 189, "after_warmup_mb": 229, "growth": "~0 over thousands of battles"},
+    "verdict": "NO REGRESSION — textbook match to the documented profile (189.8 -> 229.3 MB, +0.16 MB/1k battles steady state). The 2521 battles played exceed the ~2137 a child sees in a 3h launcher window, so the 'no recycle needed under the launcher' conclusion is re-confirmed on the actual production horizon."
+  },
+
+  "doc_findings": [
+    {
+      "where": "src/agents/observation/CLAUDE.md",
+      "finding": "The stated PRIMARY regression metric, '~3.46k calls/encode, >10% above is a regression', is a naked-encode-era figure. The benchmark has threaded the full env protocol since 2026-08-16 and now measures ~5.43k. Applying the documented rule mechanically would declare a false +57% regression. The leaf also carries a stale 'obs 2437' parenthetical; the encoder measures 2501.",
+      "severity": "would mislead the next reader running the mandatory gate"
+    },
+    {
+      "where": "root CLAUDE.md, trainer_turn_benchmark description",
+      "finding": "'obs build ~88% of our CPU (state_encoder.encode ~80%), parse ~7%, reward ~4%' matches no arm measured today. Actual: obs 63%, reward 27%, parse 9%. Reward has been ~23-27% for at least three generations.",
+      "severity": "would misdirect optimization effort away from the second-largest consumer"
+    }
+  ]
+}
