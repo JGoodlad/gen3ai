@@ -3790,3 +3790,22 @@ strength, exactly the spinning-top regime.
   additions transiently raise cyclic fraction; the distillation fold flattens it) — each with
   confirm/refute readings + the games-per-pair confound rule: ALWAYS restate the floor beside
   the width. Full doc: `designs/research_state/hodge_predictions.md`.
+
+### ⚖️ CAPACITY INSTRUMENTATION — owner constraint: LIVE or ≤1-min ONLY; heavy offline battery DEFERRED (2026-08-23)
+
+Owner ruling: no expensive offline probe infrastructure at this stage — offline probes block the
+next iteration while you wait to read them, and are excessive this early. Standing shape:
+- **LIVE (building, `--capacity-telemetry`)**: the plasticity CANARY (detached head, own
+  optimizer, seeded synthetic targets tanh(P_k·obs), round-robin re-seeds — a supply-side probe
+  smuggled into the run as a controlled counterfactual demand; `capacity/canary_recovery` is the
+  early-warning scalar), half-batch trunk-gradient cosine (interference meter), feature velocity
+  on a fixed probe batch (collapse meter: weights move, functions don't). Triage table: canary
+  degrades + cosine falls = INTERFERENCE (widen/pace); canary degrades + cosine flat + velocity
+  low = COLLAPSE (fix targets, not width); all flat = idle capacity (do nothing).
+- **≤60s tripwire**: `main.capacity` (in flight) gets its runtime capped at landing — rank +
+  decodability drift + weight-norms on a small fixed state set; anything slower goes behind an
+  opt-in flag and is NOT part of any standing battery.
+- **DEFERRED**: the full trainability-vs-fresh-init battery + any per-generation offline
+  capacity gate. Re-open when a live scalar alarms or a saturation hypothesis is actually held.
+The two instruments share ONE target family by construction so the offline probe (when it ever
+runs) validates the live canary — same instrument at two speeds.
