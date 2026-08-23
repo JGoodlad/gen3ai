@@ -40,6 +40,8 @@ import sys
 import time
 from typing import Optional
 
+import numpy as np
+
 
 from poke_env import AccountConfiguration
 from poke_env.player import RandomPlayer
@@ -91,6 +93,7 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     _kw = dict(hp_tracker=hpt, progress_clock=tracker.progress_clock,
                recency=tracker.recency, pair_history=tracker.pair_history,
                event_window=tracker.event_window)
+    asm = tracker.obs_assembler(obs_enc.dimension)
     # gen3_frame_deletion_v1: the obs build IS `encode` now — the turn-history component and
     # its deque cache are deleted with the lag frames, so `full` and `enc_only` coincide. Both
     # are kept and reported so the percentages stay comparable to the archived baselines in
@@ -102,6 +105,27 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     enc_only = full
     warm = lambda: obs_enc.encode(battle, **_kw)          # memo HIT (rep 2+ of this loop)
 
+    # gen3_obs_assembler_v1 — the incremental encode, in BOTH regimes, because the reps loop
+    # re-encodes ONE decision and would otherwise report a fantasy. `asm_cold` invalidates the
+    # cache every rep (what a rebuild costs — after a re-decide rollback, or the first decision
+    # of an episode); `asm_warm` is the steady state, but with the SAME decision's dirty set
+    # every rep, so it is an optimistic bound rather than the production mix. The honest
+    # end-to-end number is `trainer_turn_benchmark`, which walks real consecutive decisions.
+    def asm_cold():
+        _invalidate_view_memo(battle)
+        asm.mark_all_dirty()
+        return obs_enc.encode(battle, assembler=asm, **_kw)
+
+    def asm_warm():
+        _invalidate_view_memo(battle)
+        return obs_enc.encode(battle, assembler=asm, **_kw)
+
+    # The PRODUCTION shape: `record()` has already built the view (memo HIT) and the cache is
+    # warm. This is the marginal cost of `encode` on a real mid-game decision, and it is the
+    # series to compare against `encode with the view memo WARM` above.
+    def asm_warm_memo():
+        return obs_enc.encode(battle, assembler=asm, **_kw)
+
     def live_view():
         _invalidate_view_memo(battle)
         return battle.live_view()
@@ -112,6 +136,19 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     t_full = _mean_ms(full, reps)
     t_enc = _mean_ms(enc_only, reps)
     t_lv = _mean_ms(live_view, reps)
+    for _ in range(10):
+        asm_cold()
+    t_asm_cold = _mean_ms(asm_cold, reps)
+    asm_warm()
+    t_asm_warm = _mean_ms(asm_warm, reps)
+    battle.live_view()
+    t_asm_warm_memo = _mean_ms(asm_warm_memo, reps)
+    # Byte-identity is the contract, so the benchmark ASSERTS it rather than assuming it: a
+    # speedup measured against a different vector is not a speedup.
+    asm.mark_all_dirty()
+    if not np.array_equal(obs_enc.encode(battle, assembler=asm, **_kw),
+                          obs_enc.encode(battle, **_kw)):
+        raise AssertionError("incremental obs != full rebuild — the timing below is meaningless")
     battle.live_view()                                    # prime the memo for the warm series
     t_warm = _mean_ms(warm, reps)
 
@@ -122,6 +159,19 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     pr.disable()
     buf = io.StringIO()
     pstats.Stats(pr, stream=buf).sort_stats("tottime").print_stats(top)
+
+    # A second profile over the WARM incremental path — the one production actually runs since
+    # gen3_obs_assembler_v1. The cold profile stays the comparable-to-history series; this one
+    # is where a future optimisation has to look, and without it the primary regression metric
+    # (calls/encode) would only ever describe a path production takes once per episode.
+    battle.live_view()
+    pr_w = cProfile.Profile()
+    pr_w.enable()
+    for _ in range(reps):
+        asm_warm_memo()
+    pr_w.disable()
+    buf_w = io.StringIO()
+    pstats.Stats(pr_w, stream=buf_w).sort_stats("tottime").print_stats(top)
 
     pct = lambda x: f"({x / t_full * 100:4.0f}%)" if t_full else "( n/a)"
     print("\n" + "=" * 78)
@@ -134,13 +184,26 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
     print(f"    [live_view() alone         : {t_lv:7.3f} ms  {pct(t_lv)}]")
     print(f"  encode with the view memo WARM: {t_warm:7.3f} ms  {pct(t_warm)}  "
           f"[what encode costs when record/mask already built the view]")
+    print("  INCREMENTAL encode (assembler), view memo COLD:")
+    print(f"    cache invalidated each rep : {t_asm_cold:7.3f} ms  {pct(t_asm_cold)}  "
+          f"[a full rebuild THROUGH the assembler — the episode's first decision]")
+    print(f"    cache WARM                 : {t_asm_warm:7.3f} ms  {pct(t_asm_warm)}  "
+          f"[speedup vs COLD full: {(t_full / t_asm_warm) if t_asm_warm else 0:.2f}x]")
+    print(f"    cache WARM + view memo WARM: {t_asm_warm_memo:7.3f} ms  {pct(t_asm_warm_memo)}  "
+          f"[THE PRODUCTION SHAPE — record() already built the view; vs {t_warm:.3f} ms "
+          f"before: {(t_warm / t_asm_warm_memo) if t_asm_warm_memo else 0:.2f}x]")
+    print("    ⚠️ the warm series re-encodes ONE decision, so its dirty set is the same every")
+    print("       rep — an OPTIMISTIC bound. trainer_turn_benchmark walks real consecutive")
+    print("       decisions and is the honest end-to-end number.")
     print("\n  NOTE: absolute ms scale with machine load; the component ratios and the")
     print("        cProfile ranking below are the load-stable signal.")
     print("  NOTE: the reps loop re-encodes ONE decision, so a memo would be 100% warm from")
     print("        rep 2 — every series above except the last drops it first. Judge")
     print("        calls/encode from the COLD cProfile block below.")
-    print(f"\n  Top {top} functions by tottime (cumtime shows the caller chain):")
+    print(f"\n  [COLD full rebuild] Top {top} by tottime — the series comparable to history:")
     print(buf.getvalue())
+    print(f"  [WARM incremental] Top {top} by tottime — WHAT PRODUCTION RUNS:")
+    print(buf_w.getvalue())
 
     return {
         "obs_dim": obs_enc.dimension,
@@ -149,6 +212,9 @@ def profile_obs_build(battle, tracker, obs_enc, *, reps: int, top: int) -> dict:
         "encode_ms": t_enc,
         "live_view_ms": t_lv,
         "encode_warm_memo_ms": t_warm,
+        "assembler_cold_ms": t_asm_cold,
+        "assembler_warm_ms": t_asm_warm,
+        "assembler_warm_memo_ms": t_asm_warm_memo,
     }
 
 

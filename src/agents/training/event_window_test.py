@@ -690,12 +690,20 @@ def test_producer_and_consumer_import_the_SAME_declaration():
     Two modules each holding their own copy of the map would pass every value assertion above
     right up until one of them was edited. The point of the declaration is that there is one.
     (Both read it through the `EVENT_COL` plain-int mirror, itself generated from `EventCol` —
-    see `test_the_plain_int_mirror_agrees_with_the_enum_member_for_member`.)"""
+    see `test_the_plain_int_mirror_agrees_with_the_enum_member_for_member`.)
+
+    The PRODUCER is `assembler.write_event_row` since gen3_obs_assembler_v1 — one row writer
+    shared by the full rebuild in `state_encoder.encode` and the incremental ring, which is what
+    keeps the two obs schedulers from drifting in content. `state_encoder` no longer imports the
+    map at all, and this test follows the writer rather than the file it used to live in."""
     from agents.observation.constants import EVENT_COL
-    from agents.observation import state_encoder as _producer
+    from agents.observation import assembler as _producer
     from agents.model import team_transformer as _consumer
     assert _producer.EVENT_COL is EVENT_COL
     assert _consumer.EVENT_COL is EVENT_COL
+    # …and the full path really does route through that writer (not a second copy of the loop).
+    import agents.observation.state_encoder as _se
+    assert _se.write_event_row is _producer.write_event_row
 
 
 def test_event_seats_scalar_count_matches_the_column_map():

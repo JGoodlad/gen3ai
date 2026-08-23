@@ -1,11 +1,54 @@
-# Incremental Observation Encoder — census + forward design (DRAFT)
+# Incremental Observation Encoder — census + forward design
 
-**Status: read-only census + design sketch, 2026-08-23.** No code changed, no benchmarks run
-(the box carries timed benchmarks; every figure quoted below is a prior measurement with its
-provenance, or a static estimate clearly marked as such). Evidence base: the live code at
-`worktree-simplify-p0` (obs = 2501 dims, `gen3_event_semantics_v1` era), the observation leaf
-(`src/agents/observation/CLAUDE.md`), `designs/ARCHITECTURE.md` §1, and the research ledger's
-materializer profile.
+**Status: BUILT.** Stage A shipped 2026-08-23 (`gen3_live_view_memo_v1`, `e6ec7e1`) and Stage B —
+the `ObsAssembler` — shipped the same day (`gen3_obs_assembler_v1`). The document below is the
+census and the design as written *before* the build; **§5.4's Amdahl arithmetic is the one part
+superseded by measurement** — see the "As built" box. Everything else held, including the trap
+list, which is now one named regression test per entry.
+
+> ## As built — what changed against this document
+>
+> * **§5.4's headline is WRONG and the correction matters more than the win.** It sized the
+>   end-to-end gain off "obs build ≈ 88% of trainer-turn CPU (encode ≈ 80%)". Measured on the
+>   real path with the full protocol threaded: **obs build is 69% and `encode` alone is 38%.**
+>   The encode speedup is **1.79×** (0.302 → 0.169 ms, disjoint ranges over 3 same-load pairs) and
+>   the worker-CPU gain is therefore **1.19× (−16%)** — which is *exactly* what Amdahl predicts
+>   from a 38% share (1/(0.62 + 0.38/1.79) = 1.20). The "~2.3–2.6× per-worker ceiling" and
+>   "+40–90% rollout-side FPS" in §5.4 are RETRACTED. The lever is real and it is smaller than
+>   the census's arithmetic said, because the census's denominator was stale.
+> * **The invalidation surface needed a signal §2.2 does not list, and the fuzz found it.**
+>   `EventKind.CURESTATUS` covers TWO protocol keywords and the second is team-wide:
+>   `|-cureteam|` (Heal Bell / Aromatherapy) cures every mon on the side while naming only the
+>   ACTIVE one. 11 byte mismatches in 9,272 decisions, all a stale `slp`/`brn` bit on a benched
+>   opponent. A CURESTATUS event now dirties the whole side.
+> * **A third dirty signal was added that §2.1 does not name**: the request, at PER-MON
+>   granularity (`Gen3Battle.request_change_seq`). §2.1 correctly identifies the request as a
+>   non-event mutation channel but treats it as a "recompute ≤17 dims" concern;
+>   `update_from_request` in fact writes condition / item / ability / moves / stats onto our mons.
+>   Because it is a pure function of its per-mon record, an *unchanged* record proves no
+>   mutation — which is what lets a bench mon stay cached across a decision that carries a
+>   request. A fourth (`HiddenPowerTracker.revision`) closes the one writer that is our own code
+>   rather than a protocol line.
+> * **§8 Q1 answered: per-mon, plus always-dirty actives.** As recommended. §8 Q3 answered the
+>   other way: the encoded rows do NOT live on `EventWindowTracker` — the assembler holds them
+>   and re-writes exactly `EventWindowTracker.open_records()` each decision, because every
+>   in-place mutation goes through `_open_move`, which makes "a row changed after its append"
+>   unrepresentable instead of merely versioned.
+> * **§3's Stage B second bullet (per-mon `LivePokemon` reuse) is DEFERRED, not done.** See
+>   "Deferred" at the end of this box.
+> * **Gates, all green:** a new `obs_assembler_fuzz_test` (200 bridge battles / 15,607 decisions,
+>   15,407 of them warm, **0 byte mismatches**, with a printed trigger census); `assembler_test`
+>   (42 cases — one named regression per §2.3 trap, four of them scripted because the random
+>   corpus reports them NOT SEEN); `gen3_data_obs_parity` with **no fixture regen**;
+>   `obs_roundtrip_fuzz` 985 decisions bit-identical; `redecide_rollback_fuzz` 168 re-decides /
+>   0 phantom; `obs_materializer_branch_integration`; `search_clone_parity_fuzz`; the whole `sim`
+>   tier; mypy / ruff / file-size.
+> * **Deferred, and named so it is not mistaken for done:** per-mon `LivePokemon` reuse (§3
+>   Stage B). `live_view()` is now the largest single item the encode still pays cold, but making
+>   it partial needs per-mon dirt *inside* `Gen3Battle`, and `parse_request` writes to all six of
+>   our mons on a channel whose granularity lives in poke-env — so the honest version of that
+>   change is a bigger, wider-blast-radius piece of work than this one. `obs: legal + mask`
+>   (0.145 ms, 22% of worker CPU and untouched here) is now the largest un-attacked obs stage.
 
 **The problem being answered.** `trainer_turn_benchmark` baseline: the obs build is ~88% of
 per-decision rollout-worker CPU (`state_encoder.encode` ≈ 80%). Every decision rebuilds all

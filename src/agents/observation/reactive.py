@@ -98,7 +98,7 @@ class ReactiveEncoder(ObservationEncoder):
     # Why the `type: ignore[override]` below — LiveView-subject encoder; see ActiveContextEncoder.encode.
     def encode(self, battle: AbstractBattle, hp_tracker: Any = None,  # type: ignore[override]
                live: Any = None, legal: Any = None,
-               progress_clock: Any = None) -> np.ndarray:
+               progress_clock: Any = None, wish_pending: Any = None) -> np.ndarray:
         """Encode the reactive block.
 
         live: optional :class:`~agents.battle.live_view.LiveView` snapshot for this
@@ -229,7 +229,14 @@ class ReactiveEncoder(ObservationEncoder):
         # survives faint/phaze/switch). The value is the flat WISH_HEAL_FRACTION (≈recipient maxhp/2 — no
         # max-HP read, GIGO-proof) when pending, else 0.0. Folded from `battle` (a Gen3Battle); on the
         # mock / non-Gen3Battle path `battle.events` is absent → both stay 0.0.
-        wish_pending = build_wish_pending(battle)
+        #
+        # gen3_obs_assembler_v1: `build_wish_pending` is a linear scan of the WHOLE battle log,
+        # run on every encode — O(turns²) over a game. The assembler folds the same MOVE-wish
+        # family incrementally and threads the result here; `None` (every other caller, and the
+        # byte-identity fuzz's oracle) still pays the full fold, which is what makes the two
+        # comparable rather than one reading the other back.
+        if wish_pending is None:
+            wish_pending = build_wish_pending(battle)
         vec[3] = wish_floating_value(wish_pending[OURS])
         vec[4] = wish_floating_value(wish_pending[OPP])
 

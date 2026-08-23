@@ -372,6 +372,11 @@ class Gen3Env(SinglesEnv):
                 recency=self._tracker.recency,
                 pair_history=self._tracker.pair_history,
                 event_window=self._tracker.event_window,
+                # gen3_obs_assembler_v1: the incremental obs cache, owned by the tracker (so it
+                # is reset with the episode and deep-copied with a counterfactual arm). Only the
+                # TRAINEE's battle threads it — battle2's encode below is a plain full rebuild,
+                # which is also why the two can never share cache state.
+                assembler=self._tracker.obs_assembler(self.observation_encoder.dimension),
             )
             if self._emit_opp_intent_labels:
                 # beta's coordinate frame, snapshotted from the SAME obs vector the model reads

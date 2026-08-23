@@ -106,8 +106,9 @@ class _TrainerTurnPlayer(Player):
     decision and accumulates per-stage timings. A random legal action stands in for the
     policy, so no model is loaded."""
 
-    def __init__(self, *args, warmup: int, **kwargs):
+    def __init__(self, *args, warmup: int, use_assembler: bool = True, **kwargs):
         super().__init__(*args, **kwargs)
+        self._use_assembler = use_assembler
         maps = load_mappings()
         self.obs_enc = get_observation_encoder(maps)
         self._trackers: Dict[str, EpisodeTracker] = {}
@@ -164,12 +165,24 @@ class _TrainerTurnPlayer(Player):
         legal, mask = timed("obs: legal + mask", _legal_and_mask)
         if int(np.asarray(mask).sum()) == 0:
             return self.choose_random_move(battle)  # forced wait — not a measured decision
-        timed("obs: tracker.record", lambda: tr.record(battle, mask))
-        timed("obs: state_encoder.encode",
-              lambda: self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker))
+        timed("obs: tracker.record", lambda: tr.record(battle, mask=mask, legal=legal))
+        # ⚠️ MEASUREMENT HONESTY, the same correction `obs_build_benchmark` took on 2026-08-16
+        # and this one did not: until gen3_obs_assembler_v1 this benchmark called `encode` with
+        # only the HP tracker, so the progress clock, the recency triplets, the H-A pair loop
+        # and the H-B event-window write were all timed as SKIPPED — production pays every one
+        # of them. The obs share below was therefore an UNDERSTATEMENT, and no earlier absolute
+        # figure from this script is comparable to one printed after this date.
+        timed("obs: update_progress_clock",
+              lambda: tr.update_progress_clock(battle, legal))
+        _kw = dict(hp_tracker=tr.hidden_power_tracker, legal=legal,
+                   progress_clock=tr.progress_clock, recency=tr.recency,
+                   pair_history=tr.pair_history, event_window=tr.event_window)
+        if self._use_assembler:
+            _kw["assembler"] = tr.obs_assembler(self.obs_enc.dimension)
+        timed("obs: state_encoder.encode", lambda: self.obs_enc.encode(battle, **_kw))
 
         # --- reward (Gen3Env.calc_reward) ---
-        delta = timed("reward: build_delta", lambda: tr.build_delta(battle=battle))
+        delta = timed("reward: build_delta", lambda: tr.build_delta(battle=battle))  # noqa: E501
         timed("reward: process_turn_reward", lambda: rm.process_turn_reward(battle, delta))
 
         # --- action map (Gen3Env.action_to_order) + bookkeeping (Gen3Env.step) ---
@@ -205,8 +218,12 @@ class _TrainerTurnPlayer(Player):
 # Group leaf stages into the buckets a reader thinks in.
 _GROUPS = [
     ("parse + event-log fold", ["parse"]),
+    # ⚠️ A stage that is TIMED but not listed here is silently dropped from the group total —
+    # the group is summed from this list, not from the accumulator. `obs: update_progress_clock`
+    # was added with gen3_obs_assembler_v1 and must be listed, or the obs share understates by
+    # the whole tracker fold (progress clock + recency + H-A pair + H-B window).
     ("obs build", ["obs: legal + mask", "obs: tracker.record",
-                   "obs: state_encoder.encode"]),
+                   "obs: update_progress_clock", "obs: state_encoder.encode"]),
     ("reward (TurnDelta fold)", ["reward: build_delta", "reward: process_turn_reward"]),
     ("action map", ["action map"]),
     ("tracker advance/record", ["tracker advance/record"]),
@@ -276,12 +293,13 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
     print("  NOTE: absolute ms scale with machine load; trust the % shares + calls/dec.")
 
 
-async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int) -> int:
+async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
+               use_assembler: bool = True) -> int:
     random.seed(seed)
     ts = int(time.time()) % 100000
     pool = _team_pool()
     player = _TrainerTurnPlayer(
-        warmup=warmup,
+        warmup=warmup, use_assembler=use_assembler,
         battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
         account_configuration=AccountConfiguration(f"TTz{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False,
@@ -292,7 +310,8 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int) -
         server_configuration=LocalhostServerConfiguration, start_listening=False)
 
     print(f"Trainer-turn CPU profiler — {BATTLE_FORMAT} — target {target_decisions} measured "
-          f"decisions (warmup {warmup}, seed {seed}, no GPU/server)", flush=True)
+          f"decisions (warmup {warmup}, seed {seed}, no GPU/server, "
+          f"obs-assembler {'ON' if use_assembler else 'OFF'})", flush=True)
     battles = 0
     while player.measured < target_decisions and battles < battle_cap:
         # The bridge assigns each battle a process-unique tag (local_battle_runner._BATTLE_SEQ),
@@ -317,6 +336,10 @@ def _parse_args(argv):
     p.add_argument("--warmup", type=int, default=3,
                    help="decisions to skip before timing (cache/encoder warmup) (default 3)")
     p.add_argument("--seed", type=int, default=0, help="action-selection seed (default 0)")
+    p.add_argument("--no-assembler", dest="use_assembler", action="store_false",
+                   help="encode WITHOUT the incremental obs cache (gen3_obs_assembler_v1) — the "
+                        "A/B arm. Run both back to back in one session: absolute ms on this box "
+                        "are load-dependent, so only a same-load pair is a measurement.")
     return p.parse_args(argv)
 
 
@@ -326,4 +349,5 @@ if __name__ == "__main__":
     warn_if_contended("trainer-turn benchmark")
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
-        main(args.target_decisions, args.battle_cap, args.warmup, args.seed)))
+        main(args.target_decisions, args.battle_cap, args.warmup, args.seed,
+             args.use_assembler)))

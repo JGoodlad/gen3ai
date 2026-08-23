@@ -14,6 +14,9 @@ from agents.training.turn_delta import TurnDelta
 from agents.training.hidden_power_tracker import HiddenPowerTracker
 from agents.training.progress_clock import ProgressClock
 from agents.training.slot_registry import SlotRegistry
+from agents.observation.assembler import ObsAssembler, SAT_LUT as _SAT_LUT
+
+_SAT_CAP = len(_SAT_LUT) - 1
 
 if TYPE_CHECKING:
     from agents.enums import Status
@@ -117,20 +120,33 @@ class RecencyTracker:
                 self._seen[key] = max(self._seen.get(key, 0), self._turn)  # on field NOW → 0
 
     def values(self, side: str, species: Optional[str]):
-        """→ (seen, acted, was_hit), each log-saturated to [0, 1]."""
-        import math
+        """→ (seen, acted, was_hit), each log-saturated to [0, 1].
+
+        The saturation has an 11-value codomain, so it reads out of `assembler.SAT_LUT`
+        (precomputed from the identical float64 expression — bit-for-bit the same numbers, and
+        it is on the hot path 12× per encode)."""
+        turn = self._turn
+        sat = self._SAT
+        lut = _SAT_LUT
         out = []
         for d in (self._seen, self._acted, self._hit):
             last = None if species is None else d.get((side, species))
-            n = self._SAT if last is None else max(0, self._turn - last)
-            out.append(math.log1p(min(n, self._SAT)) / math.log(11.0))
+            n = sat if last is None else max(0, turn - last)
+            out.append(lut[n if n < sat else sat])
         return tuple(out)
 
 
 def _pair_sat_norm(n: int, sat: int = 10) -> float:
     """The H-A log-saturation convention (design_history_entity.md §3):
     ``log(1 + min(n, 10)) / log(11)`` — same curve the recency triplet and
-    ``turns_since_progress`` use."""
+    ``turns_since_progress`` use.
+
+    The default ``sat`` reads out of `assembler.SAT_LUT` (same float64 expression, evaluated
+    once): this is called 5× per pair cell × 36 cells per encode, the single largest call-count
+    family the obs benchmark reports."""
+    if sat == _SAT_CAP:
+        i = int(n)
+        return _SAT_LUT[i if 0 < i < _SAT_CAP else (0 if i <= 0 else _SAT_CAP)]
     import math
     return math.log1p(min(max(int(n), 0), sat)) / math.log(sat + 1.0)
 
@@ -297,15 +313,24 @@ class PairHistoryTracker:
         if not opp_species or not our_species:
             return (0.0, 0.0, 0.0, 0.0, 1.0)
         key = (opp_species, our_species)
+        # The saturation is INLINED (not `_pair_sat_norm`) on purpose: this runs 36× per encode
+        # and every cell ticks every turn, so it is the largest remaining call family on the
+        # warm obs path. Identical numbers — `_SAT_LUT` is the same float64 table, and
+        # `assembler_test` pins the two against the arithmetic they replaced.
+        lut = _SAT_LUT
+        cap = _SAT_CAP
         last = self._shared_last_turn.get(key)
-        rec = 1.0 if last is None else _pair_sat_norm(max(0, self._turn - last))
-        return (
-            _pair_sat_norm(self._switch_ins.get(key, 0)),
-            _pair_sat_norm(self._attacks.get(key, 0)),
-            _pair_sat_norm(self._status_clicks.get(key, 0)),
-            _pair_sat_norm(self._shared_count.get(key, 0)),
-            rec,
-        )
+        if last is None:
+            rec = 1.0
+        else:
+            _d = self._turn - last
+            rec = lut[_d if 0 < _d < cap else (0 if _d <= 0 else cap)]
+        out = []
+        for d in (self._switch_ins, self._attacks, self._status_clicks, self._shared_count):
+            n = d.get(key, 0)
+            out.append(lut[n if n < cap else cap])
+        out.append(rec)
+        return tuple(out)
 
 
 # Tier H-B event-type vocabulary — SINGLE-SOURCED in `agents.observation.constants` (it is
@@ -608,6 +633,19 @@ class EventWindowTracker:
         """The folded records, oldest-first (≤ ``maxlen``)."""
         return list(self._events)
 
+    def open_records(self) -> tuple:
+        """The ≤2 records that may still be MUTATED IN PLACE (one open MOVE per side).
+
+        Every in-place write in :meth:`update` — accumulated ``hp_delta``, the
+        ``missed``/``failed``/``crit`` outcome trio, the ``eff`` code — goes through
+        ``self._open_move``, so this tuple IS the mutation surface. The incremental obs
+        assembler re-writes exactly these rows each decision instead of tracking a per-record
+        version, which makes "a row changed after it was appended" unrepresentable rather than
+        merely handled. A new mutation site that did not route through ``_open_move`` would
+        break that; today there is no other way to reach an already-appended record.
+        """
+        return tuple(self._open_move.values())
+
 
 class EpisodeTracker:
     """
@@ -648,6 +686,11 @@ class EpisodeTracker:
         # Tier H-A (gen3_pair_history_v1): last-action + pair-history counters, same window.
         self._pair_history = PairHistoryTracker()
         self._event_window = EventWindowTracker()
+        # gen3_obs_assembler_v1: the incremental obs cache. It lives HERE — inside the object
+        # the materializer deep-copies per counterfactual arm — so a restored arm carries a
+        # cache consistent with its own rolled-back state (design §5.3). Built lazily because
+        # its width is the encoder's, which this module does not import.
+        self._obs_assembler: Optional[ObsAssembler] = None
         # MONOTONIC count of completed turn transitions this episode. NOT len(_history)-1,
         # which caps once the (bounded) history deque starts dropping — using the capped
         # length would make the cache miss new turns and serve stale ones.
@@ -672,6 +715,15 @@ class EpisodeTracker:
     @property
     def pair_history(self) -> PairHistoryTracker:
         return self._pair_history
+
+    def obs_assembler(self, dimension: int) -> ObsAssembler:
+        """The episode's :class:`~agents.observation.assembler.ObsAssembler`, sized to the
+        encoder's ``dimension`` on first use. A width change (only possible across encoders)
+        rebuilds it rather than reusing a mis-sized buffer."""
+        asm = self._obs_assembler
+        if asm is None or asm.buf.shape[0] != dimension:
+            asm = self._obs_assembler = ObsAssembler(dimension)
+        return asm
 
     @property
     def last_ctx(self) -> Optional[BattleContext]:
@@ -751,6 +803,13 @@ class EpisodeTracker:
         self._n_transitions = n_transitions
         self._last_cursor = last_cursor
         self._last_action = last_action
+        # gen3_obs_assembler_v1: the obs cache is NOT idempotent under rollback the way the HP
+        # tracker and the slot registries are — a superseded decision's ring appends and dirty
+        # bits would survive it. Marking everything dirty costs one full rebuild on the next
+        # encode (re-decides are rare) and removes the need to reason about which half of the
+        # cache the rollback invalidated.
+        if self._obs_assembler is not None:
+            self._obs_assembler.mark_all_dirty()
 
     def _scan_opp_movesets_for_no_hp(self, live: "LiveView") -> None:
         """Mark any opponent species whose four moves are fully revealed and
@@ -908,3 +967,5 @@ class EpisodeTracker:
         self._recency = RecencyTracker()
         self._pair_history = PairHistoryTracker()
         self._event_window = EventWindowTracker()
+        if self._obs_assembler is not None:
+            self._obs_assembler.reset()

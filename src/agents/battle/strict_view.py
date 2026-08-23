@@ -87,6 +87,16 @@ class StrictBattleView:
         """Events revealed since ``cursor`` (the per-decision ``TurnDelta`` window)."""
         return self._battle.events_since(cursor)
 
+    def request_change_seq(self, species: str) -> int:
+        """The monotone seq at which a ``|request|`` last CHANGED this own-side mon's record.
+
+        The one mutation channel that emits **no** ``BattleEvent`` (see
+        ``Gen3Battle.request_change_seq``). Exposed here so an incremental consumer can close
+        that hole without reaching past this boundary; every other state change is visible as
+        an event through :meth:`events_since`.
+        """
+        return self._battle.request_change_seq(species)
+
     # ---- scalar meta passthroughs --------------------------------------- #
     @property
     def turn(self) -> int:

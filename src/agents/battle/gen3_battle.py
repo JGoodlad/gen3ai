@@ -81,6 +81,11 @@ class Gen3Battle(Battle):
         # the one-slot (epoch, view) pair it keys on.
         self._state_epoch: int = 0
         self._live_view_memo: Optional[Tuple[int, "LiveView"]] = None
+        # gen3_obs_assembler_v1 — the REQUEST door, at per-mon granularity. See
+        # `request_change_seq` for why the coarse `_state_epoch` is not enough here.
+        self._req_seq: int = 0
+        self._req_prev: Dict[str, Dict[str, Any]] = {}   # ident -> its last request record
+        self._req_mon_seq: Dict[str, int] = {}           # species -> _req_seq at its last CHANGE
 
     # ------------------------------------------------------------------ #
     # Public read API (consumed by TurnView / TurnDelta / reward / replay) #
@@ -276,11 +281,59 @@ class Gen3Battle(Battle):
         A ``|request|`` is never a :class:`~agents.battle.battle_event.BattleEvent` — it is
         not battle content — yet ``_update_team_from_request`` writes HP / status / item /
         move-PP / stats onto our mons, can create a team slot, and (the illusion resync) can
-        change which mon is active. Behaviour is otherwise untouched: this only bumps the
-        epoch and delegates.
+        change which mon is active. Behaviour is otherwise untouched: this bumps the epoch,
+        records which of OUR mons the request actually changed (see
+        :meth:`request_change_seq`), and delegates.
         """
         self._state_epoch += 1
+        changed = self._diff_request_side(request)
         super().parse_request(request, strict_battle_tracking)
+        if changed:
+            self._req_seq += 1
+            for ident in changed:
+                mon = self._team.get(ident)
+                if mon is not None and mon.species:
+                    self._req_mon_seq[mon.species] = self._req_seq
+
+    def _diff_request_side(self, request: Optional[Dict[str, Any]]) -> List[str]:
+        """Which of OUR mons does this request record differently from the last one?
+
+        ``Pokemon.update_from_request`` is a pure function of its per-mon record: it writes
+        ``active`` / ability / condition / item / details / moves / stats and nothing else, all
+        read out of that dict. So an *equal* record re-writes the *same* values — a mon whose
+        record is unchanged cannot have been mutated by this request. That equivalence is what
+        licenses the obs cache to keep a bench mon's 122 dims across a decision boundary; a
+        coarse "a request arrived" signal would dirty all six of our slots every single turn
+        and give the cache back.
+
+        The comparison is a plain ``!=`` on the parsed JSON record (primitives, a moves list
+        and a stats dict), so it is a deep value compare. A mon we have never seen a record for
+        counts as changed. Records are stored shallow-copied: poke-env keeps a reference to the
+        live dict (``Pokemon._last_request``) but never mutates it, and the nested containers
+        are freshly parsed per message.
+        """
+        side = (request or {}).get("side") or {}
+        changed: List[str] = []
+        for rec in side.get("pokemon") or ():
+            ident = rec.get("ident")
+            if not ident:
+                continue
+            if self._req_prev.get(ident) != rec:
+                self._req_prev[ident] = dict(rec)
+                changed.append(ident)
+        return changed
+
+    def request_change_seq(self, species: str) -> int:
+        """The monotone seq at which a ``|request|`` last CHANGED this own-side mon's record.
+
+        The obs assembler (`gen3_obs_assembler_v1`) keys a per-mon dirty bit on this. It exists
+        because the request is a mutation channel with **no BattleEvent** — the one hole in
+        "every state-mutating line is also battle content" — and the coarse ``_state_epoch``
+        cannot be used for it: a request arrives every decision, so an epoch-granular signal
+        would mark our whole side dirty every decision. 0 for a species no request ever
+        changed (which includes every opponent mon: requests only ever describe our side).
+        """
+        return self._req_mon_seq.get(species, 0)
 
     def won_by(self, player_name: str) -> None:
         """Door 3a: ``|win|`` is intercepted by ``Player._handle_battle_message`` before

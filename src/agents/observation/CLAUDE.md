@@ -112,6 +112,43 @@ Judge by these load-independent metrics, in priority order:
 A value-neutral refactor that adds <10% calls/encode and doesn't reshuffle the tottime top is
 fine. Anything larger needs justification (or a revert).
 
+### 🚨 The build is INCREMENTAL now — there are FOUR series, and they answer different questions
+
+`gen3_obs_assembler_v1` (`assembler.py`) makes `encode` a **scheduler** over a persistent
+2501-dim buffer: it re-derives only the blocks an event, the request, or the HP tracker says have
+moved, and the per-block writers are unchanged. So one number can no longer describe "the obs
+build", and the benchmark prints all four:
+
+| series | what it is | when production pays it |
+|---|---|---|
+| `full … [COLD]` | full rebuild, view memo dropped each rep | the comparable-to-history series |
+| `encode with the view memo WARM` | full rebuild, view already built | what encode cost BEFORE this change |
+| `cache invalidated each rep` | full rebuild THROUGH the assembler | the episode's first decision; after a re-decide rollback |
+| **`cache WARM + view memo WARM`** | **the incremental encode** | **every other decision — THE PRODUCTION SHAPE** |
+
+**Measured 2026-08-23, busy box (load 12–20 — absolute ms inflated, RATIOS are the claim),
+`--turn 25 --reps 400`:** production-shape encode is **2.6–2.7× cheaper** than the same decision's
+full rebuild, and warm `calls/encode` is **~1.33k against a cold ~4.6k (−72%)**. The
+decision-matched end-to-end is `trainer_turn_benchmark` (below), which walks *consecutive*
+decisions and therefore carries real dirty sets rather than one decision's: there the encode is
+**1.79×** (0.302 → 0.169 ms, three same-load pairs, disjoint ranges) and worker CPU is
+**1.19× (−16%)**.
+
+⚠️ **The warm reps loop is an OPTIMISTIC bound by construction** — it re-encodes ONE decision, so
+every rep has the same dirty set. It is a bound on the win, not the win. Quote
+`trainer_turn_benchmark` for anything end-to-end; that script grew a **`--no-assembler`** arm for
+exactly this, and a same-session pair is the only honest way to read absolute ms on this box.
+
+⚠️ **The COLD `calls/encode` moved: ~5.43k → ~4.6k**, and that is a real reduction, not a rebase.
+It is the saturation LUT (`assembler.SAT_LUT`, an 11-value codomain read as a table by
+`RecencyTracker.values` / `PairHistoryTracker.pair_values`) plus the pair-history block becoming
+ONE 180-float slice assignment instead of 36 five-float ones. Both are pinned bit-for-bit against
+the arithmetic they replaced (`assembler_test::test_the_saturation_lut_is_bit_for_bit_…`).
+
+**Byte-identity is asserted BY the benchmark**, not assumed: it encodes the profiled decision both
+ways and raises before printing if they differ. A speedup measured against a different vector is
+not a speedup.
+
 🚨 **The reps loop re-encodes ONE decision, so ANY cache in the build is 100% warm from rep 2
 — read the COLD series.** `battle.live_view()` is memoized per state-epoch
 (`gen3_live_view_memo_v1`, `src/agents/battle/CLAUDE.md`), and production sees exactly one
@@ -265,6 +302,53 @@ producer CRASHES on an unrecognised status rather than coding it 0 = "none"
 (`_event_status_id`, the `normalize_cant_reason` contract), and `EventSeats` asserts its table
 covers the vocabulary and clamps from the table's own width — so growing the dict fails loud
 instead of clamping a new id onto `tox`.
+
+## The incremental cache (`assembler.py`) — what may and may not be cached
+
+`ObsAssembler` is owned by the `EpisodeTracker` (so it resets with the episode and deep-copies
+with a counterfactual arm) and is threaded into `encode(..., assembler=…)` by `Gen3Env` and the
+inference player. **Every other caller passes nothing and gets the full rebuild** — which is also
+the oracle. There is deliberately **no flag**: a launch flag would fork the obs path into two
+long-lived variants and this tree has measured what happens to the branch nothing runs (the
+seedless-seed lesson). The diagnostic escape hatch is `GEN3AI_OBS_VERIFY=1`, which shadow-encodes
+both ways per decision and raises naming the offending block.
+
+**Cached:** the twelve 122-dim per-mon slots, keyed by SPECIES (never by list position — the opp
+team list grows as mons are revealed), and the encoded event-window rows.
+
+**Never cached, and each for a stated reason:**
+
+| block | why it is recomputed every decision |
+|---|---|
+| the two 58-dim active contexts | a switch clears boosts/volatiles with **no per-field event**, and a Baton Pass *keeps* them — "write zeros on SWITCH" is wrong in both directions |
+| global / board (reactive) | cheap, and the board's Wish fold is now incremental anyway |
+| the 180-dim pair history | every cell's `recency_of_last_pairing` ticks on every turn |
+| per-mon recency triplets | same — turn-anchored, so they move under a mon that did nothing |
+| `trapped` / `maybe_trapped` / `active` | request-sourced; a cached request bit that survives one decision too long is the `gen3_op_move_align_v1` misalignment class |
+| BOTH actives' whole slots | unconditionally dirty — it costs ~2 slot encodes and shrinks the event→dirty map to the families that touch a BENCHED mon |
+
+**Four dirty signals, and it takes all four** (the first three are the design's; the fourth is the
+one the fuzz found):
+
+1. the **event log** — `STATE_ONLY` is empty in gen3ou, so no protocol mutation bypasses it;
+2. the **request**, per-mon (`StrictBattleView.request_change_seq`) — a `|request|` emits no event
+   yet writes condition/item/ability/moves/stats. Per-mon because a request arrives every
+   decision; an unchanged per-mon record *proves* no mutation, since `update_from_request` is a
+   pure function of it;
+3. **`HiddenPowerTracker.revision`** — 17 dims written by our own code, not by a line;
+4. 🚨 **`|-cureteam|`** — `EventKind.CURESTATUS` covers two keywords and one is TEAM-WIDE (Heal
+   Bell / Aromatherapy cures all six while naming only the active). This is the door the design's
+   §2.2 map missed; the fuzz caught it as 11 stale status bits on benched opponents in 9,272
+   decisions. Any CURESTATUS now dirties the whole side.
+
+Two whole-log folds that used to run per encode — `build_wish_pending` and `build_sleep_sources`
+— are incremental on the assembler. The full-fold functions **stay** and are what the non-cached
+path (and the fuzz oracle) uses, so the two are compared rather than one reading the other back.
+
+Gates: `assembler_test.py` (one named regression per design §2.3 trap; four of them scripted
+because a random gen3ou corpus reports forme-change / Transform / partial-trap / Pain-Split as
+NOT SEEN) and `training/poke_env_gaps/obs_assembler_fuzz_test.py` (real battles, byte-identity at
+every decision, with a printed trigger census — a clean run that exercised no trap says so).
 
 ## Value-correctness (separate from perf, but also gated)
 

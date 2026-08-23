@@ -178,6 +178,9 @@ class Gen3Player(Player):
             recency=tracker.recency,
             pair_history=tracker.pair_history,
             event_window=tracker.event_window,
+            # gen3_obs_assembler_v1 — the per-battle tracker owns the cache, so concurrent
+            # battles on one player never share one.
+            assembler=tracker.obs_assembler(self.observation_encoder.dimension),
         )
 
 

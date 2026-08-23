@@ -122,6 +122,24 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   Byte-identity is gated by `live_view_memo_fuzz_test.py` (real bridge battles; memo'd view ==
   fresh rebuild, and the full 2501-dim obs encoded warm == encoded with the memo cleared, at
   every decision).
+
+  **The epoch is deliberately COARSE, and one consumer needed a finer signal.** A single monotone
+  counter is what makes the completeness argument an enumeration of doors, but it also means "the
+  battle changed" is all it can say. The incremental obs cache
+  (`agents/observation/assembler.py`, `gen3_obs_assembler_v1`) needs *which mon* changed, and the
+  event log answers that for every protocol line — except the `parse_request` door, which is not
+  a line. So `Gen3Battle` additionally tracks the request at **per-mon granularity**:
+
+  * `parse_request` diffs each `side.pokemon[i]` record against the last one it saw and stamps
+    the mons whose record CHANGED with a monotone seq (`request_change_seq(species)`, re-exposed
+    on `StrictBattleView` so the obs layer reads it through the boundary).
+  * The proof that this is exact: `Pokemon.update_from_request` is a **pure function of that
+    record** — it writes `active`, ability, condition, item, details, moves and stats, all read
+    out of the dict and nothing else. An equal record therefore re-writes the same values, so an
+    unchanged record proves the request did not mutate that mon.
+  * Why per-mon and not "a request arrived": a request arrives on **every** decision, so a
+    global signal would mark all six of our mons dirty every decision and delete the cache it
+    exists to protect.
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
@@ -152,7 +170,8 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
 - **`StrictBattleView`** (`strict_view.py`) — the **strict boundary** our non-`battle/` code
   reads through, built via `battle.strict_view()`. Exposes **only** `.live`
   (`LiveView`), `.turn_view(n)`/`.history` (`TurnView`), `.legal` (`LegalActions`),
-  `.events_since(cursor)`/`.event_cursor`, and scalar meta
+  `.events_since(cursor)`/`.event_cursor`, `.request_change_seq(species)` (the per-mon request
+  door — the ONE mutation channel `events_since` cannot see, see above), and scalar meta
   (`turn`/`battle_tag`/`finished`/`won`/`lost`). `turn` is the current-turn **int** — same
   name/meaning as `battle.turn` and `LiveView.turn` so a consumer migrating off `battle.turn`
   is a drop-in; the per-turn `TurnView` accessor is `turn_view(n)` (mirrors `.live`→`LiveView`,

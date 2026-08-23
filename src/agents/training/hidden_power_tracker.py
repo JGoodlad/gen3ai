@@ -82,6 +82,13 @@ class HiddenPowerTracker:
         # Per-species observation log — kept so a ValueError dump can show
         # exactly which earlier observations narrowed the candidate set to nothing.
         self._obs_log: dict[str, list] = {}
+        # gen3_obs_assembler_v1: a monotone counter bumped by EVERY writer of the state
+        # `get_probs` / `is_known` read. The obs assembler caches an opponent's 122-dim slot
+        # (17 of which are this tracker's HP-candidate block) and needs to know when the block
+        # moved. Narrowing is triggered by protocol events, so an event-only dirty rule would
+        # *usually* be right — and "usually" is exactly the shape of a silent-staleness bug, so
+        # the tracker states it outright instead. See `revision`.
+        self._revision: int = 0
 
     def observe(self, species: str, effectiveness: float, target_mon) -> None:
         """Filter the candidate distribution for species after HP hits target_mon.
@@ -116,6 +123,8 @@ class HiddenPowerTracker:
                 )
                 if calc != effectiveness:
                     self._state[species][i] = 0.0
+
+        self._revision += 1
 
         # Record this observation for the diagnostic dump below (and for callers
         # introspecting the narrowing history).
@@ -176,6 +185,17 @@ class HiddenPowerTracker:
         self._infeasible_observations += 1
 
     @property
+    def revision(self) -> int:
+        """Monotone counter of state changes visible through :meth:`get_probs` /
+        :meth:`is_known` (`gen3_obs_assembler_v1`).
+
+        Bumped by :meth:`observe` and :meth:`mark_no_hp` — the only two writers — and reset to 0
+        by :meth:`reset`. A cache holding an encoded opponent slot compares this instead of
+        inferring "the HP block cannot have moved" from the event stream.
+        """
+        return self._revision
+
+    @property
     def infeasible_observations(self) -> int:
         """How many observations the feasibility guard discarded this episode (expected ~0)."""
         return self._infeasible_observations
@@ -200,7 +220,9 @@ class HiddenPowerTracker:
         returns all-zero, signalling the model that HP is impossible (vs. the
         all-zero default meaning "haven't observed yet").
         """
-        self._ruled_out.add(species)
+        if species not in self._ruled_out:
+            self._ruled_out.add(species)
+            self._revision += 1
 
     def is_known(self, species: str) -> bool:
         """True if we have made a determination about this species' HP — either
@@ -216,3 +238,4 @@ class HiddenPowerTracker:
         self._ruled_out.clear()
         self._obs_log.clear()
         self._infeasible_observations = 0
+        self._revision = 0

@@ -2623,3 +2623,93 @@ verdict is a property of a golden DISTRIBUTION, not a golden* — two seeds is n
 floor. The week's ninth vacuity also fell here: a rust test whose setup opened with
 `Err(_) => return` had SKIPPED ON EVERY TREE IT EVER RAN ON (its packed team never unpacked);
 it asserts its build now.
+### Stage B LANDED — encode 1.79x, worker CPU 1.19x, and the census's own Amdahl was the thing that was wrong (2026-08-23, `gen3_obs_assembler_v1`)
+
+The `ObsAssembler` shipped: `state_encoder.encode` is now a **scheduler** over a persistent
+2501-dim buffer that re-derives only the blocks an event, the request, or the HP tracker says
+have moved. Same per-block writers on both paths; **byte-identity is the contract, so there is no
+flag** — the escape hatch is `GEN3AI_OBS_VERIFY=1` (shadow-encode both ways, raise naming the
+block).
+
+**Measured, same-load A/B, `trainer_turn_benchmark --decisions 500` with and without
+`--no-assembler`, three pairs interleaved on a box at load 12–20** (absolute ms inflated ~1.2–1.6x
+by contention; the ratio is the claim and the ranges are disjoint):
+
+| | OFF | ON | |
+|---|---|---|---|
+| `state_encoder.encode` | 0.308 / 0.295 ms | 0.170 / 0.170 / 0.168 ms | **1.79x** |
+| obs build (whole stage) | 0.558 / 0.541 | 0.412 / 0.414 / 0.422 | 1.33x |
+| OUR controllable CPU | 0.803 / 0.798 | 0.673 / 0.668 / 0.680 | **1.19x (−16%)** |
+| obs share of worker CPU | 69% | 61% | |
+
+Micro-benchmark (`obs_build_benchmark`, production shape = cache warm + view memo warm): **2.6–2.7x**
+on the encode, warm **~1.33k calls/encode vs cold ~4.6k (−72%)**. The gap between 2.7x and 1.79x is
+the honest one: the reps loop re-encodes ONE decision so its dirty set never changes, while the
+trainer walk carries real ones.
+
+- 🚨 **The design's §5.4 Amdahl is RETRACTED, and this is the durable finding.** It projected
+  "~2.3–2.6x per-worker throughput ceiling" and "+40–90% rollout-side FPS" from *"obs build ≈ 88%
+  of trainer-turn CPU (encode ≈ 80%)"*. Measured with the full protocol threaded, **obs build is
+  69% and `encode` alone is 38%**. From a 38% share, a 1.79x component gives
+  1/(0.62 + 0.38/1.79) = **1.20x** — which is what the instrument printed, to two decimals. *The
+  component win was predicted correctly and the end-to-end was not, because the denominator was
+  two corrections stale* (the baseline addendum had already moved obs 88% → 63%; nobody carried it
+  into §5.4). **A speedup projection is a claim about the DENOMINATOR at least as much as about
+  the thing being sped up.**
+- 🚨 **`|-cureteam|` — the door the design's §2.2 event→dirty map missed, found by the gate, not
+  by review.** `EventKind.CURESTATUS` covers TWO protocol keywords and the second is team-wide:
+  Heal Bell / Aromatherapy make poke-env loop `for mon in team.values(): mon.cure_status()` while
+  the line names only the ACTIVE mon. The first 120-battle fuzz reported **11 byte mismatches in
+  9,272 decisions**, every one a stale `slp`/`brn` bit on a BENCHED opponent, ~4 decisions long.
+  Fixed by dirtying the whole side on any CURESTATUS (the narrow `raw[1]` discrimination was
+  declined: a cure is a handful of events per battle and being wrong there is silent). *An enum
+  member that unions two protocol keywords hides a scope difference between them.*
+- **Four dirty signals were needed; the design named two and a half.** The event log
+  (`STATE_ONLY` is empty, so no protocol mutation bypasses it) + the **request at PER-MON
+  granularity** + `HiddenPowerTracker.revision` + the cureteam side rule. The request one is the
+  interesting addition: §2.1 treats it as a "recompute ≤17 dims" concern, but
+  `update_from_request` writes condition/item/ability/moves/stats onto our mons. It is EXACT
+  because that method is a pure function of its per-mon record — an unchanged record proves no
+  mutation — and it has to be per-mon because a request arrives every decision, so a global
+  signal would dirty our whole side every decision and delete the cache.
+- **The always-dirty-actives rule earned its keep.** ~2 slot encodes per decision buys the
+  request-order trapping bits, the H-A1 last-action tuple and every per-turn counter on the mons
+  that actually move — and shrinks the event→dirty map to the families that touch a BENCHED mon.
+  §8 Q1's recommendation, confirmed.
+- **The event-window ring needs no version bookkeeping**, because every in-place mutation
+  (accumulated `hp_delta`, the outcome trio, the eff code) goes through
+  `EventWindowTracker._open_move`. Re-writing exactly `open_records()` each decision makes "a row
+  changed after its append" unrepresentable rather than merely handled — §8 Q3 answered the
+  opposite way from the doc's one-producer suggestion, for that reason.
+- **Two whole-log folds became incremental**: `build_wish_pending` and `build_sleep_sources` were
+  linear scans of the battle log **per encode** (O(turns²) over a game). The full-fold functions
+  STAY and are what the uncached path and the fuzz oracle use, so the two are compared rather
+  than one reading the other back.
+- **The fuzz PRINTS its trigger coverage, and four traps came back NOT SEEN over 200 battles** —
+  forme-change, Transform, partial-trap and Pain Split simply do not occur in a random gen3ou
+  corpus (Castform and Ditto are not OU). Those four are scripted deterministically in
+  `assembler_test.py` instead. *A clean fuzz PASS is not a pass for a trap the corpus never
+  contained, and the only way to know is to make the instrument say so.*
+- **Two value-neutral micro-wins rode along**, both pinned bit-for-bit against the arithmetic
+  they replaced: the 11-value saturation curve (`log1p(min(n,10))/log(11)`) became a table read by
+  `RecencyTracker.values` / `PairHistoryTracker.pair_values`, and the 180-dim pair-history block
+  became ONE slice assignment instead of 36. COLD `calls/encode` **5.43k → ~4.6k**.
+- **A measurement-honesty fix shipped with it**: `trainer_turn_benchmark` never called
+  `update_progress_clock` and threaded no trackers into `encode`, so the progress clock, the
+  recency triplets, the H-A pair loop and the H-B window write were all timed as SKIPPED — the
+  same correction `obs_build_benchmark` took on 2026-08-16 and this script did not. **No absolute
+  figure this script printed before today is comparable to one it prints now**, and its obs share
+  was an understatement. It also had a second, quieter version of the same bug: a stage that is
+  timed but absent from `_STAGE_GROUPS` is silently dropped from the group total.
+- **Gates:** `obs_assembler_fuzz_test` 200 battles / 15,607 decisions (15,407 warm) **0 byte
+  mismatches**; `assembler_test` 42 cases, the trap edges verified failing on revert;
+  `gen3_data_obs_parity` green with **no fixture regen**; `obs_roundtrip_fuzz` 985 decisions
+  bit-identical; `redecide_rollback_fuzz` 168 re-decides / 0 phantom;
+  `obs_materializer_branch_integration`; `search_clone_parity_fuzz`; the whole `sim` tier;
+  mypy / ruff / file-size.
+- **DEFERRED, named so it is not read as done:** per-mon `LivePokemon` reuse (design §3's Stage B
+  second bullet). `live_view()` is the biggest single item the encode still pays when cold, but
+  making it partial needs per-mon dirt INSIDE `Gen3Battle`, and `parse_request` writes to all six
+  of our mons through a channel whose granularity lives in poke-env. **The next-largest
+  un-attacked obs stage is `obs: legal + mask` at 0.145 ms — 22% of worker CPU**, now bigger than
+  the encode's remaining pair-history work.
