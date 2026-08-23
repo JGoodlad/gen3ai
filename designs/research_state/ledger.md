@@ -1413,9 +1413,62 @@ the LABEL, not just the protocol.
   PRE-EXISTING divergences the docs record as PASS — confirmed on the pre-fix binary over the
   identical golden, so unrelated to this fix. Open: the typed-Hidden-Power display name inside an
   `|error|` frame, and the `pre_state.volatiles` reconstruction gap.
+  ✅ **CLOSED 2026-08-23 — see the triage entry immediately below.**
+
 - **Method rider**: per-arm costs amortize a ~900 ms per-decision fixed cost — the prior 39.5
   ms/arm figure was a K≈76 artifact, not the factory's price (the model reproduces it at that K
   and reprices K=8 at 162 ms/label). *Never quote a per-unit cost without its batch size.*
+
+### CROSS-IMPL PARITY TRIAGE — the un-broken harnesses were hiding FOUR rust bugs (2026-08-23, `gen3_fresh_golden_parity_triage_v1`)
+
+The divergences `gen3_search_turn1_open_v1` left open are resolved. **Seven freshly generated
+goldens (21 real gen3ou battles) plus two more generated against the final binary — both gates
+PASS on every one**, with the live allowlist at 0 hits on `search_impl_parity` and only the
+error-TEXT arm firing on `replay_impl_parity`.
+
+**Every class was a RUST bug against the node oracle. None was an approximation, and none needed
+an allowlist entry.** The old note's two guesses were half right at best: it offered the
+`pre_state.volatiles` gap (right, but the specific missing volatile was unknown) and the
+typed-Hidden-Power `|error|` name (a real bug — but it appeared in NONE of the seven goldens).
+
+| # | class | instances | reach | disposition |
+|---|---|---|---|---|
+| 1 | Return/Frustration numeric-BP alias absent from `\|request\|` (roster `return102`, active display `Return 102`, active id BARE `return` — Showdown renders it three inconsistent ways, `pokemon.ts:994`/`:1171`) | 8 fields, golden E | **the training BRIDGE too** — node and the live server emit it, so `--use-bridge=rust` was the odd transport out | FIXED `gen3_happiness_bp_request_alias_v1` |
+| 2 | `pre_state.*.volatiles[len]` — `substitutebroken` unmodeled (gen3 inherits gen4's `addVolatile` on the break; no duration, no gen3 reader) | 6, golden D | offline drivers only | FIXED `gen3_substitute_broken_volatile_v1` |
+| 3 | `outcome.pN.active_status` — a fire move that KO'd a FROZEN target thawed it, where `cureStatus()` early-returns on 0 HP | 1, golden A | a state divergence in the bridge too, though `0 fnt` hides it on the wire | FIXED `gen3_fire_thaw_ko_keeps_status_v1` |
+| 4 | a SINGLE-ENTRY request (forced Struggle / move lock) silently ACCEPTED `move 2`, where the sim's index check runs FIRST and rejects it | 6, golden G | training path (an `\|error\|` frame and a different committed choice) | FIXED `gen3_single_entry_request_slot_reject_v1` |
+| 5 | the disabled-choice `\|error\|` names the request's DISPLAY name, where `Side.chooseMove` names `dex.moves.get(moveid).name` (the BARE id) | **0 of 7 goldens** | training path (poke-env sees `\|error\|` frames) | FIXED anyway `gen3_reject_message_bare_move_name_v1` |
+
+**Method — the finding that generalises. A golden is THREE RANDOM BATTLES, so one green run is
+weak evidence, and one red run's COUNT is not a quantity.** Per-golden divergences ran
+**1 / 0 / 0 / 6 / 8 / 0 / 6** across seven seeds: three of the seven would have reported the gate
+"green" while four rust bugs were live, and class 4 turned up only on the SEVENTH. The recorded
+"29" and "1" in the docs were single draws read as measurements. Each class needs its own rare
+board (a Return carrier; a Substitute broken near a sampled turn; a battle ENDING on a fire KO of a
+frozen mon; a mon at 0 PP on a sampled turn), which is exactly why a fixed golden cannot be trusted
+to speak for the gate. **Two seeds is the floor, not the target.**
+
+**A second method note: three separate SKIPS were hiding coverage here.** The harnesses had been
+un-runnable for weeks (a stale `ROOT`); the golden generator sampled only turns {2,5,9}; and
+`bridge_choice_reject_test::a_forced_struggle_substitutes_rather_than_rejecting` opened with
+`match … { Err(_) => return }`, blaming a possibly-unmodeled Bide — its packed team was a
+single-mon set with no trailing `]`, which never unpacks, so **that test skipped on every tree it
+ever ran on**. All three read exactly like a green gate. The test now asserts its build.
+
+**Allowlist discipline, applied in the direction that costs something.** #1's byte-fuzz
+counterpart (`return102-numeric-alias`, `bridge_replay.rs`) is now DORMANT — its fixture
+`11_allowlist_return102.txt` was RETAGGED from `# ALLOWLIST` to untagged byte-CLEAN
+(`11_return102_numeric_alias_cg.txt`), which is the stronger assertion; the corpus floors did NOT
+move (measured 14 clean + 3 tagged after, so `allow >= 2` still holds — a fixed deferral changes
+class, it does not leave the corpus). Deleting an allowlist entry when its subject dies is
+the whole point of the c-family lesson; the entry itself is kept as a REVERT classifier + the
+pairwise BP-VALUE guard, marked dormant exactly like its Curse sibling.
+
+**Also learned:** `pre_state.volatiles` now has exactly ONE positively-verified name
+(`substitutebroken`). Every other name is still UNVERIFIED — the recorded golden's twelve
+`pre_state`s are all empty, and 3 of the 7 fresh sets were too. The harness prints a
+`pre_state:nonempty-volatiles` count on every run so an all-empty record set cannot pass for
+coverage.
 
 ### G0 BIAS MAP — PROCEED, and the defect is RESOLUTION not offset (2026-08-22, opus agent, 2,204 tight-MC labels / 16,832 rollouts / 216 battles, gen-17 @24M, R=8, battle-clustered CIs)
 

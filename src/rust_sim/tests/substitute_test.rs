@@ -599,3 +599,112 @@ fn run_with_injects(
     }
     BattleOutcome { winner, ended, decisions: all_decisions }
 }
+
+// ---------------------------------------------------------------------------
+// `gen3_substitute_broken_volatile_v1` — the `substitutebroken` marker.
+//
+// gen3 inherits gen4's Substitute condition, whose `onTryPrimaryHit` pairs the removal with an
+// ADD: `target.removeVolatile('substitute'); target.addVolatile('substitutebroken')`
+// (`data/mods/gen4/moves.ts:1303-1305`). That condition is `{noCopy: true}` with NO duration
+// (`data/mods/gen4/conditions.ts:99`), and gen4's foe-switch-in removal is gated on
+// `gen === 4` (`scripts.ts:47`) — so in gen 3 it simply SITS on the mon from the break until
+// `clearVolatile` takes it (switch-out or faint).
+//
+// It is MECHANICALLY INERT in gen 3 (its only readers are gen-4 abilities' U-turn interaction),
+// which is exactly why it went unmodeled: no battle outcome depends on it. The one surface it
+// reaches is `search::volatile_names`, feeding the offline drivers' `pre_state.volatiles` — and
+// on a freshly generated golden it was the ONLY volatile a real board actually carried, so its
+// absence was the whole `pre_state.*.active[].volatiles[len]` divergence class that
+// `harness/replay_impl_parity.py` reported (node 1, rust 0, six times).
+// ---------------------------------------------------------------------------
+
+/// A Shuckle behind a 1-HP sub (injected, so ANY landed hit breaks it — the arithmetic of a
+/// real sub's `floor(maxhp/4)` is `substitute_golden_matches_showdown`'s job, not this pin's)
+/// with a bench mon to switch to. Snorlax opposite, swinging a neutral Body Slam.
+const SB_P1: &str = "Shuckle|||sturdy|substitute,rest|Serious||||||]\
+                     Snorlax|||immunity|bodyslam,rest|Serious||||||";
+const SB_P2: &str = "Snorlax|||immunity|bodyslam,rest|Serious||||||";
+
+fn sb_opts() -> pokesim::battle::BattleOptions {
+    pokesim::battle::BattleOptions {
+        format_id: "gen3customgame".to_string(),
+        seed: Some("[1,2,3,4]".to_string()),
+        p1: pokesim::battle::PlayerOptions {
+            name: "A".to_string(),
+            team: pokesim::battle::PackedTeam(SB_P1.to_string()),
+        },
+        p2: pokesim::battle::PlayerOptions {
+            name: "B".to_string(),
+            team: pokesim::battle::PackedTeam(SB_P2.to_string()),
+        },
+    }
+}
+
+#[test]
+fn breaking_a_substitute_leaves_the_substitutebroken_volatile_until_switch_out() {
+    use pokesim::turn::{Choice, ScriptDecision};
+    let d = Dex::for_gen(3);
+    let mut battle =
+        pokesim::battle::Battle::start_with_switchins(&sb_opts(), &d).expect("start");
+
+    {
+        let st = battle.state_mut().expect("state");
+        let slot = st.sides[0].active;
+        st.sides[0].pokemon[slot].substitute = Some(1);
+        assert!(
+            !st.sides[0].pokemon[slot].substitute_broken,
+            "fixture: the marker must start clear, or the assertion below proves nothing"
+        );
+    }
+
+    // T1 — p1 Rests behind the sub, p2 swings. The hit breaks the 1-HP sub.
+    // T2 — p1 switches to its bench Snorlax, which is `clearVolatile`.
+    let script = [
+        ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ScriptDecision::both(Choice::Switch(1), Choice::Move(0)),
+    ];
+    let st = battle.state_mut().expect("state");
+
+    // Run T1 alone so the post-break state can be read before the switch clears it.
+    st.run_full_battle(&script[..1], &d);
+    let slot = 0; // Shuckle is still team slot 0 and still active
+    let mon = &st.sides[0].pokemon[slot];
+    assert!(mon.substitute.is_none(), "fixture: the sub must actually have BROKEN, not held");
+    assert!(!mon.fainted, "fixture: Shuckle must survive the break for the marker to be readable");
+    assert!(
+        mon.substitute_broken,
+        "the break must ADD `substitutebroken` (gen4 moves.ts:1304, inherited by gen3)"
+    );
+    assert!(
+        pokesim::search::volatile_names(mon).contains(&"substitutebroken"),
+        "…and `volatile_names` must REPORT it — that readout is the only surface it reaches, \
+         and the reason it is modeled at all: got {:?}",
+        pokesim::search::volatile_names(mon)
+    );
+    // It is NOT a `substitute`: the sub itself is gone, so exactly one of the two names shows.
+    assert!(
+        !pokesim::search::volatile_names(mon).contains(&"substitute"),
+        "a broken sub must not still report `substitute`: {:?}",
+        pokesim::search::volatile_names(mon)
+    );
+
+    // T2 — switch out. `clearVolatile` takes the whole map, so the marker goes with it; a mon
+    // that came back in still carrying it would report a volatile node never reports.
+    st.run_full_battle(&script[1..], &d);
+    // The port SWAPS array positions on a switch (mirroring `side.pokemon`'s reorder), so the
+    // outgoing Shuckle is found by SPECIES, never by the index it started at.
+    let shuckle = st.sides[0]
+        .pokemon
+        .iter()
+        .find(|m| m.species_id == "shuckle")
+        .expect("Shuckle must still be on the team");
+    assert_ne!(
+        st.sides[0].pokemon[st.sides[0].active].species_id, "shuckle",
+        "fixture: the switch must have happened — Shuckle must no longer be active"
+    );
+    assert!(
+        !shuckle.substitute_broken,
+        "`clearVolatile` on switch-out drops `substitutebroken` — it has no duration, so \
+         nothing else ever would"
+    );
+}

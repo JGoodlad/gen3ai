@@ -1007,6 +1007,14 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.substitute.is_some() {
         v.push("substitute");
     }
+    if mon.substitute_broken {
+        // `gen3_substitute_broken_volatile_v1` — gen3 inherits gen4's `substitutebroken`,
+        // which carries NO duration and has no gen3 reader, so it simply sits on the mon from
+        // the break until `clearVolatile`. It is the one volatile a freshly generated replay
+        // golden actually put on the board, and its absence was the entire
+        // `pre_state.*.volatiles[len]` divergence class.
+        v.push("substitutebroken");
+    }
     if mon.taunt.is_some() {
         v.push("taunt");
     }

@@ -556,17 +556,42 @@ fn side_move_id(mon: &MonState, mv: &str) -> String {
     crate::state::typed_hp_move_id(mon, mv)
 }
 
+/// The ROSTER moveid (`side.pokemon[].moves[]`) — [`side_move_id`] plus the numeric-BP
+/// suffix Showdown bakes into Return / Frustration (`gen3_happiness_bp_request_alias_v1`).
+///
+/// `getSwitchRequestData` (pokemon.ts:1167-1176) maps each moveid through the SAME two
+/// special cases: a bare `hiddenpower` becomes `hiddenpower<type>` (that half is
+/// [`side_move_id`]) and `return`/`frustration` become `return<BP>` / `frustration<BP>` from
+/// the move's own `basePowerCallback`. At the pool's default happiness 255 that is
+/// `return102` and `frustration1` — the port emitted the bare ids and so diverged from BOTH
+/// the node bridge and the live server on every Return/Frustration carrier. poke-env collapses
+/// the alias in `Move.retrieve_id`, which is why it never broke training, but it is a wire
+/// divergence and the byte-fuzz gate had to allowlist it (`return102-numeric-alias`).
+fn roster_move_id(mon: &MonState, mv: &str) -> String {
+    let id = side_move_id(mon, mv);
+    match crate::turn::helpers::happiness_bp(&id, mon.set.happiness) {
+        Some(bp) => format!("{id}{bp}"),
+        None => id,
+    }
+}
+
 /// Split a crate move (a DISPLAY name from `set.moves`) into (bare id, display name)
 /// for the `active[].moves[]` request entry. gen<6 Hidden Power shows `id:"hiddenpower"`
-/// (BARE) + `move:"Hidden Power <Type> <BP>"`; every other move is `id`/`name`
-/// verbatim.
+/// (BARE) + `move:"Hidden Power <Type> <BP>"`; Return/Frustration show their bare id +
+/// `"<Name> <BP>"`; every other move is `id`/`name` verbatim.
 ///
-/// `hp_bp` is the ACTIVE mon's IV-derived Hidden Power BP (`MonState.hidden_power_bp`,
+/// The Hidden Power BP is the ACTIVE mon's IV-derived one (`MonState.hidden_power_bp`,
 /// `gen3_iv_derived_hidden_power_bp_v1`). The real sim renders `Hidden Power <Type>
 /// <this.hpPower>` (pokemon.ts, `getMoveRequestData`), and `hpPower` is IV-derived — so
 /// the request move NAME must use the mon's BP, NOT the flat data 70 (else a BP-68 HP mon
 /// shows "Hidden Power Ice 70" and diverges from the sim / confuses poke-env).
-fn active_move_display(mv: &str, dex: &Dex, hp_bp: u8) -> (String, String) {
+///
+/// The Return/Frustration arm is the SAME `basePowerCallback` the roster bakes into the
+/// moveid, but rendered with a SPACE and against the display name — `pokemon.ts:994`'s
+/// `moveName += ' ' + basePowerCallback(this)`. The sim's own inconsistency (roster
+/// `return102`, active id bare `return`, active display `Return 102`) is reproduced
+/// verbatim; it is not ours to tidy.
+fn active_move_display(mv: &str, dex: &Dex, mon: &MonState) -> (String, String) {
     let id = crate::dex::to_id(mv);
     let data = dex.moves(&id);
     // raw_name: the REQUEST's `move` field legitimately shows the TYPED name + BP, and the
@@ -575,9 +600,30 @@ fn active_move_display(mv: &str, dex: &Dex, hp_bp: u8) -> (String, String) {
     let name = data.map(|d| d.raw_name().to_string()).unwrap_or_else(|| mv.to_string());
     if id.starts_with("hiddenpower") && id != "hiddenpower" {
         // Typed HP: bare id + "<Name> <BP>" (name already reads "Hidden Power <Type>").
-        return ("hiddenpower".to_string(), format!("{name} {hp_bp}"));
+        return ("hiddenpower".to_string(), format!("{} {}", name, mon.hidden_power_bp));
+    }
+    if let Some(bp) = crate::turn::helpers::happiness_bp(&id, mon.set.happiness) {
+        return (id, format!("{name} {bp}"));
     }
     (id, name)
+}
+
+/// The move NAME a CHOICE-REJECT message carries — `Side.chooseMove`'s
+/// `this.battle.dex.moves.get(moveid).name` (side.ts:710/728), where `moveid` is the
+/// request's own BARE `id` field (`gen3_reject_message_bare_move_name_v1`).
+///
+/// That is NOT the request's DISPLAY name, and the two differ for exactly the moves whose
+/// display carries a computed suffix: a disabled typed Hidden Power rejects as
+/// `"Hidden Power is disabled"` (never `"Hidden Power Bug 70"`), and a disabled Return as
+/// `"Return is disabled"` (never `"Return 102"`). The port used the display name and so
+/// emitted a message no Showdown server ever sends.
+/// (`display_name` rather than `raw_name` is not a hedge: `bare_id` is already the COLLAPSED
+/// id, so the two agree here — and using the collapsing accessor keeps the typed-HP leak
+/// impossible by construction, which is what `raw_name_callers_are_an_enumerated_allowlist`
+/// exists to enforce.)
+fn reject_move_name(mon: &MonState, k: usize, dex: &Dex) -> String {
+    let (bare_id, _) = active_move_display(&side_move_id(mon, &mon.set.moves[k]), dex, mon);
+    dex.moves(&bare_id).map(|d| d.display_name().to_string()).unwrap_or(bare_id)
 }
 
 /// Whether a move slot is DISABLED for the request (`getMoves`): out of PP, or
@@ -714,7 +760,7 @@ fn serialize_mon(side: usize, mon: &MonState, active: bool, dex: &Dex) -> String
         .set
         .moves
         .iter()
-        .map(|m| format!("\"{}\"", json_escape(&side_move_id(mon, m))))
+        .map(|m| format!("\"{}\"", json_escape(&roster_move_id(mon, m))))
         .collect::<Vec<_>>()
         .join(",");
     // baseAbility = the mon's ORIGINAL ability id (the set's ability, not a
@@ -793,7 +839,10 @@ fn serialize_active_with_disabled_source(
                 .and_then(|t| mon.set.moves.get(t.move_index))
                 .cloned()
                 .unwrap_or_else(|| "solarbeam".to_string());
-            let (id, name) = active_move_display(&mid, dex, mon.hidden_power_bp);
+            // (No move in the two-turn/recharge family is a Hidden Power or a
+            // Return/Frustration, so this renders the plain dex name either way — matching
+            // `getMoveRequestData`'s hard-locked branch, which applies neither suffix.)
+            let (id, name) = active_move_display(&mid, dex, mon);
             format!("{{\"move\":\"{}\",\"id\":\"{}\"}}", json_escape(&name), json_escape(&id))
         };
         // BR1 (`gen3_locked_last_mon_trapped_v1`): a move-LOCKED mon is `hardLocked` in
@@ -826,7 +875,7 @@ fn serialize_active_with_disabled_source(
                 // only fires for the bare-stored-plus-marker form (e.g. Charizard's packed
                 // `HiddenPower` + `,Dark,,,,`). Owner-only + request-only, so the opponent HP
                 // hiding + the omniscient `|move|` bare-collapse (BF1) are untouched.
-                let (id, name) = active_move_display(&side_move_id(mon, mv), dex, mon.hidden_power_bp);
+                let (id, name) = active_move_display(&side_move_id(mon, mv), dex, mon);
                 let pp = mon.move_pp.get(k).copied().unwrap_or(0);
                 let maxpp = mon.move_maxpp.get(k).copied().unwrap_or(0);
                 let base_target = dex
@@ -1506,6 +1555,43 @@ fn classify_reject(
     }
     match resolved {
         Choice::Move(k) => {
+            // A NUMERIC slot is bounded by what the REQUEST OFFERED, not by the moveset
+            // (`gen3_single_entry_request_slot_reject_v1`). `Side.chooseMove`'s index check runs
+            // FIRST — ahead of both substitution branches below — against
+            // `getMoveRequestData().moves`, and the two shapes that collapse that array to ONE
+            // entry therefore reject `move 2`..`move 4` like any other out-of-range slot.
+            //
+            // Both halves are node-MEASURED, by two different oracles:
+            //   * STRUGGLE — `replay_impl_parity` on a fresh golden, which is a real
+            //     `node replay_driver.js` on a real board: an arm feeding `move 2` to a 0-PP
+            //     Blissey got a SILENT Struggle substitution from the port, and from node
+            //     `|error|[Invalid choice] Can't move: Your Blissey doesn't have a move 2`
+            //     followed by a correction (1 vs 2 `choices_used`, a wholly different arm).
+            //   * LOCK — `harness/probe_single_entry_request_slot.js`, three arms at a
+            //     Solar-Beam CHARGING boundary: `move 1` accepted with NO error, `move 2` and
+            //     `move 4` each `|error|[Invalid choice] Can't move: Your Venusaur doesn't
+            //     have a move N`.
+            //
+            // ⚠️ This must never refuse the ONE action the request DID offer — that shape
+            // (`gen3_locked_choice_never_rejected_v1`) killed two production launches. It
+            // structurally cannot: `offered` is 1 on both branches, so `Move(0)` always passes,
+            // and it is the wire's own numeric token that is bounded, never a resolved name.
+            if let WireChoice::Move(n) = wire {
+                let offered = if mon.move_locked() || mon.must_struggle(dex) {
+                    1
+                } else {
+                    mon.set.moves.len()
+                };
+                if *n >= offered {
+                    return Some(RejectClass::Invalid {
+                        message: format!(
+                            "Can't move: Your {} doesn't have a move {}",
+                            display_name(mon, dex),
+                            n + 1
+                        ),
+                    });
+                }
+            }
             // FORCED STRUGGLE is a SUBSTITUTION, not a refusal. When every usable slot is gone
             // (Taunt / Disable / the Choice lock / 0 PP) the sim's request offers only Struggle
             // and `side.choose` swaps the pick for it — no `|error|`, no re-request. Classifying
@@ -1554,8 +1640,7 @@ fn classify_reject(
                 });
             }
             if move_disabled(mon, *k, dex) {
-                let mv = side_move_id(mon, &mon.set.moves[*k]);
-                let (_, name) = active_move_display(&mv, dex, mon.hidden_power_bp);
+                let name = reject_move_name(mon, *k, dex);
                 return Some(RejectClass::Unavailable {
                     message: format!(
                         "Can't move: {}'s {} is disabled",

@@ -412,7 +412,15 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
 ///     crash), but the byte-CLEAN corpus fixtures `10`/`15` are the real guard — they replay `ok`
 ///     and FAIL loudly (untagged → `ok`-required) if the serializer regresses.
 ///   - **return102-numeric-alias** — a `side.pokemon[].moves[]` entry `"return102"`↔`"return"`
-///     (or `"frustration102"`↔`"frustration"`), the numeric-BP moveid alias.
+///     (or `"frustration1"`↔`"frustration"`), the numeric-BP moveid alias. **DORMANT/LEGACY as
+///     of `gen3_happiness_bp_request_alias_v1`, exactly like its Curse sibling above:** the
+///     port's request serializer now emits all three of the sim's inconsistent alias forms
+///     (roster `return102`, active id BARE `return`, active display `Return 102`), so this
+///     reconciliation no longer fires on a correct port. Retained defensively — a REVERT is
+///     classified rather than crashing, and the PAIRWISE bail below still refuses a genuine
+///     BP-VALUE divergence (`return102` vs `return84`) — but the REAL guard is now the
+///     byte-CLEAN, UNTAGGED corpus fixture `11_return102_numeric_alias_cg.txt`, which demands
+///     `ok` and so fails loudly if the serializer regresses.
 ///   - **gender-level-details-construction-draw** — a `details` field differing SOLELY by a
 ///     `, L<n>` level suffix or a construction-drawn gender (`, M`/`, F`) — the unspecified-gender
 ///     / non-L100 construction-window display gap (inactive on the pinned-gender L100 pool run).

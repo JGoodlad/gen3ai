@@ -847,3 +847,93 @@ fn resume_reseed_keeps_the_prefix_and_rerolls_the_suffix() {
          so the re-rolled run was byte-identical end-to-end)"
     );
 }
+
+// ---------------------------------------------------------------------------
+// `gen3_happiness_bp_request_alias_v1` — the Return / Frustration numeric-BP alias.
+//
+// `getSwitchRequestData` (pokemon.ts:1171) bakes the move's own `basePowerCallback` into the
+// ROSTER moveid, and `getMoveRequestData` (pokemon.ts:994) appends it — with a SPACE, to the
+// DISPLAY name — in the active block, while leaving the active `id` BARE. Three forms, one
+// number, and the sim is inconsistent between them on purpose; the port emitted none of them.
+//
+// The gap was invisible to every existing gate because poke-env's `Move.retrieve_id` collapses
+// `return102` back to `return`, so nothing downstream ever noticed — but the node bridge and the
+// live Showdown server both emit the alias, which made `--use-bridge=rust` the odd transport out.
+// `search_impl_parity` on a freshly generated golden is what surfaced it.
+// ---------------------------------------------------------------------------
+
+/// A Snorlax whose slot 0 is Return, at the packed default happiness 255 ⇒ BP 102.
+const RETURN_SUBJECT: &str =
+    "Snorlax||leftovers|immunity|return,bodyslam,curse,rest|Hardy|85,85,85,85,85,85|M||||";
+/// The mirror at happiness 0: Return clamps to BP 1 and Frustration reaches its max 102, so the
+/// pair proves the number is COMPUTED rather than the constant `102` a hardcode would print.
+const FRUSTRATION_SUBJECT: &str =
+    "Snorlax||leftovers|immunity|frustration,return,curse,rest|Hardy|85,85,85,85,85,85|M||||0,,,,,";
+
+fn first_active_request(streams: &pokesim::bridge::BridgeStreams) -> String {
+    streams
+        .p1
+        .iter()
+        .find(|l| l.starts_with("|request|") && l.contains("\"active\""))
+        .unwrap_or_else(|| panic!("no p1 move |request|; p1 lines:\n{}", streams.p1.join("\n")))
+        .clone()
+}
+
+#[test]
+fn return_renders_the_numeric_bp_alias_in_all_three_request_forms() {
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts(
+        "gen3customgame",
+        "7,11,13,17".to_string(),
+        RETURN_SUBJECT,
+        CHOICELOCK_FOE,
+    );
+    let streams = run_full_battle_bridge(&opts, &[], &dex).expect("bridge replay");
+    let req = first_active_request(&streams);
+
+    // 1. the ROSTER moveid carries the number...
+    assert!(
+        req.contains("\"moves\":[\"return102\",\"bodyslam\",\"curse\",\"rest\"]"),
+        "the roster moveid must be `return102` (getSwitchRequestData bakes basePowerCallback \
+         into the id):\n{req}"
+    );
+    // 2. ...the ACTIVE DISPLAY carries it with a SPACE...
+    assert!(
+        req.contains("\"move\":\"Return 102\""),
+        "the active display must be `Return 102` (getMoveRequestData appends ` ${{bp}}` to the \
+         NAME):\n{req}"
+    );
+    // 3. ...and the ACTIVE id stays BARE. This third assertion is the one a naive
+    //    `replace("return", "return102")` fails, and it is why the byte-fuzz gate's old
+    //    reconciliation had to normalize both sides instead of rewriting one.
+    assert!(
+        req.contains("\"move\":\"Return 102\",\"id\":\"return\","),
+        "the active `id` must stay the BARE `return` beside the suffixed display:\n{req}"
+    );
+}
+
+#[test]
+fn the_alias_number_is_the_computed_bp_not_a_hardcoded_102() {
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts(
+        "gen3customgame",
+        "7,11,13,17".to_string(),
+        FRUSTRATION_SUBJECT,
+        CHOICELOCK_FOE,
+    );
+    let streams = run_full_battle_bridge(&opts, &[], &dex).expect("bridge replay");
+    let req = first_active_request(&streams);
+
+    // GUARD: happiness 0 must have parsed, or both numbers below are the h255 ones and the
+    // test proves nothing about the callback.
+    assert!(
+        req.contains("\"moves\":[\"frustration102\",\"return1\",\"curse\",\"rest\"]"),
+        "at happiness 0 Frustration is at its MAX 102 and Return CLAMPS to 1 (`|| 1`) — the \
+         mirror of the h255 case. If this shows `frustration1`/`return102`, the packed \
+         happiness field did not reach the callback:\n{req}"
+    );
+    assert!(
+        req.contains("\"move\":\"Frustration 102\"") && req.contains("\"move\":\"Return 1\""),
+        "the active displays must carry the same computed numbers:\n{req}"
+    );
+}

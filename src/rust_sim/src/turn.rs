@@ -96,7 +96,9 @@ use crate::state::{Status, Weather, BOOST_LEN};
 
 mod driver;
 mod forecast;
-mod helpers;
+// `pub(crate)` for ONE item — `helpers::happiness_bp`, which `bridge.rs`'s request emitter
+// needs so the Return/Frustration moveid alias cannot drift from the damage calc's own BP.
+pub(crate) mod helpers;
 mod items;
 mod moves;
 mod residuals;

@@ -25,10 +25,15 @@ Two fixture classes:
     `data/mods/gen4/moves.ts:868` — omits the `target` the base `data/moves.ts` mimic sets,
     so `getMoveRequestData` reads `undefined` and `JSON.stringify` drops the key). The
     mon's other three slots keep theirs, so a blanket omission fails this fixture too.
-- **`# ALLOWLIST <reason>` tagged** (`10_*`, `11_*`, `15_*`, `16_*`) — a battle that MUST
+  - `11_return102_numeric_alias_cg.txt` (bab_0_0) → `gen3_happiness_bp_request_alias_v1`: a
+    Return carrier whose request now matches in ALL THREE of the sim's inconsistent alias
+    forms — roster moveid `return102`, active id BARE `return`, active display `Return 102`.
+    **It was `# ALLOWLIST return102-numeric-alias` until the port learned to emit them**;
+    untagging is strictly STRONGER than the tag was, since the tag only required the
+    divergence to stay the known one and this requires there to be none.
+- **`# ALLOWLIST <reason>` tagged** (`10_*`, `15_*`, `16_*`) — a battle that MUST
   diverge with EXACTLY the tagged `allowlisted` reason:
   - `10_allowlist_curse_target.txt` → `curse-nonghost-target-self-vs-normal`
-  - `11_allowlist_return102.txt`    → `return102-numeric-alias`
   - `15_own_typed_hp_roster_curse_cg.txt` (bab_3_19) → `curse-nonghost-target-self-vs-normal`
     — GUARDS the B3 own-typed-HP fix: after the roster serializer resolves the owner's bare
     Hidden Power to the TYPED id (`hiddenpowerdark`), the ONLY residual is the documented

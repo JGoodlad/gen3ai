@@ -203,12 +203,22 @@ Tests — the ENGINE EQUIVALENCE (the claim that actually matters: rust answers 
 
 | gate | what it pins |
 |---|---|
-| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized |
-| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm |
+| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized. **Re-measured on 7 FRESHLY generated goldens 2026-08-23: PASS on every one**, ~37.6k leaf fields each, allowlist 0 hits |
+| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm. **Re-measured on the same 7 fresh sets: PASS on every one**, ~45-47k leaf fields each |
 | `search_clone_parity_fuzz_test.py --impl rust [--record-impl rust]` | the rust clone ≡ the rust `reroll_many` **at the OBS**, bit-for-bit, + the `value_crn` anchor + depth-2 |
 | `counterfactual_fuzz_test.py --impl rust [--record-impl rust]` | the CONFIRM leg — scripted-prefix obs oracle, divergence-to-terminal, Monte-Carlo reseed determinism |
 | `main/prober/better_line_integration_test.py` | parametrized over both impls, **plus a cross-impl test** asserting node and rust yield identical candidate V. The fake model is `V = obs.sum()`, so an exact match is an obs-level bit-identity claim at every ply of the beam |
 | `src/rust_sim/tests/{bridge_clone_branch,search_driver,replay_driver}_test.rs` | node-free: clone independence, the aux-RNG draw table, the `guard > 40` off-by-one, `recorded_queues` refusal-pull, one-shot dispatch |
+
+⚠️ **A GOLDEN IS THREE RANDOM BATTLES, so ONE green run is weak evidence.** Both harnesses were
+un-runnable from `ede4c79` until `f2bec7d`, and the first fresh goldens after that reported
+divergences whose count swung **1 / 0 / 0 / 6 / 8 / 0 / 6 across seven seeds** — four distinct rust
+bugs, no one of which every golden contains (the Return alias needs a Return carrier; the
+`substitutebroken` gap needs a Substitute to break near a sampled turn; the fire-thaw one needs a
+battle to END on a fire KO of a frozen mon; the single-entry-request one needs a mon at 0 PP on a
+sampled turn — that last showed up only on the SEVENTH golden). All four are FIXED
+(`gen3_fresh_golden_parity_triage_v1`), and the durable rule is: **generate a NEW golden and run
+each gate on at least two different seeds** before reporting either one green.
 
 **Performance — `search_impl_throughput_benchmark.py` (MEASURED, node vs rust).** Interleaved
 per-rep A/B (order flips each rep) so a drifting box load hits both arms equally; medians, ms,

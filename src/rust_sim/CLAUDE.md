@@ -197,6 +197,9 @@ across 2 real gen3ou battles, 54 arms (12 exercising multi-round forced-switch f
 depth-2 expansions — through the built binary over raw stdin/stdout JSON, and diffs every field.
 **RESULT: PASS, 18873 leaf fields matched.** It normalizes ONLY `|t:|<epoch>` (the port's one
 documented emission exception) and prints its allowlist + coverage notes on every run.
+(**Re-measured 2026-08-23 on SEVEN freshly generated goldens: PASS on every one**, 12 cases /
+120 arms / ~37.6k leaf fields each — roughly 2× the recorded golden, because the generator now
+samples turn 1 as well. The live allowlist takes **0 hits** on all seven.)
 FAULT-INJECTION PROVEN: a one-line off-by-one in `pick_uniform` produces 2716 divergences (and the
 illegal-move allowlist below correctly REFUSES to reconcile, hits 0 → 1 → 0).
 
@@ -209,17 +212,30 @@ illegal-move allowlist below correctly REFUSES to reconcile, hits 0 → 1 → 0)
 2. **The golden now samples TURN 1** (`search_golden.py`, `turns = {1, 2, 5, 9}`). It sampled only
    2/5/9, which is exactly why the cross-impl gate never saw `gen3_search_turn1_open_v1`. On a
    turn-1 golden the pre-fix binary reports **157** divergences and the fixed one **1**.
-3. **On a FRESHLY generated golden both gates currently report pre-existing divergences** — not
-   the PASS above, which was taken against a golden that no longer exists in-tree. Measured
-   2026-08-23, and each was **confirmed present on the pre-fix binary over the identical golden**,
-   so none is attributable to the turn-1 work: `search_impl_parity` = **1** (either the
-   `pre_state.volatiles[len]` reconstruction gap this file already documents as an approximation,
-   or a typed-Hidden-Power DISPLAY-NAME difference inside an `|error|` frame — node
-   `"Hidden Power is disabled"` vs rust `"Hidden Power Bug 70 is disabled"`, the same alias-render
-   inconsistency recorded for `return102` elsewhere in this file); `replay_impl_parity` = **29**,
-   identical breakdown before and after. Freshly generated goldens are ~3× larger than the
-   recorded ones and sample cases they never did, which is why they surface here. **Open, tracked,
-   NOT fixed by `gen3_search_turn1_open_v1`.**
+3. ~~On a FRESHLY generated golden both gates currently report pre-existing divergences.~~
+   **CLOSED 2026-08-23 (`gen3_fresh_golden_parity_triage_v1`) — BOTH gates are green on freshly
+   generated goldens, and the count that reaches this table is now 0.** Do not re-derive a plan
+   from the old wording, which guessed at TWO candidates and named neither correctly. The
+   divergences were real, pre-existing, and reproduced on the pre-fix binary; SEVEN fresh goldens
+   (21 real gen3ou battles, `search_golden.py 3` each) resolved them into **four classes, all of
+   them rust BUGS against the node oracle, all now fixed**:
+
+   | class | instances | who was wrong | reach | fix |
+   |---|---|---|---|---|
+   | Return / Frustration numeric-BP alias missing from the `\|request\|` | 8 fields / golden E | RUST | **the BRIDGE too** — node and the live server both emit it, so `--use-bridge=rust` was the odd transport out (poke-env's `Move.retrieve_id` collapses it, which is why nothing downstream ever noticed) | `gen3_happiness_bp_request_alias_v1` |
+   | `pre_state.*.volatiles[len]` — the `substitutebroken` volatile unmodeled | 6 / golden D | RUST | offline drivers only (`pre_state` has no consumer) | `gen3_substitute_broken_volatile_v1` |
+   | a SINGLE-ENTRY request (forced Struggle / move lock) silently ACCEPTED `move 2` | 6 / golden G | RUST | **the BRIDGE too** — an `\|error\|` frame and a different committed choice | `gen3_single_entry_request_slot_reject_v1` |
+   | `outcome.pN.active_status` — a fire KO thawed the corpse | 1 / golden A | RUST | a STATE divergence in the bridge too, though `0 fnt` hides it on the wire | `gen3_fire_thaw_ko_keeps_status_v1` |
+
+   The **typed-Hidden-Power `|error|` display name** the old text guessed at is a REAL fifth bug
+   (`Side.chooseMove` names `dex.moves.get(moveid).name`, i.e. the BARE id — never the request's
+   suffixed display), but it did **not** appear in any of the seven goldens: it needs a *disabled*
+   typed HP fed as an explicit arm. It is fixed and unit-gated anyway
+   (`gen3_reject_message_bare_move_name_v1`), on the training-path argument — poke-env sees
+   `|error|` frames. **The "29" and the "1" were never stable counts**; a golden is three random
+   battles, and the per-golden divergence count ran **1 / 0 / 0 / 6 / 8 / 0 / 6** across A-G — three
+   of the seven would have read as a green gate, and the Struggle class turned up only on the
+   SEVENTH. **Run each gate on at least two fresh seeds before calling it green.**
 
 **THE CHOICE-REJECT DIVERGENCE IS CLOSED — the only live allowlist entry is `.error` TEXT**
 (Node returns a JS `e.stack`, the port a plain message; the ok/`ok:false` VERDICT is still compared
@@ -258,9 +274,17 @@ find: the port's **`duration: 1` single-turn fields** (`focuspunch`, `pursuit`, 
 `flinch`, `beatup`, the Counter/Mirror-Coat record, `endure`, `snatch`) are cleared at the NEXT
 turn's TOP (`turn::helpers::clear_flinch`) where Showdown removes them at the residual, so they
 are STALE-SET at a move-request boundary — reporting `focuspunch` diverged 2 of the golden's 12
-`pre_state`s, and the group is excluded. **Every OTHER volatile NAME is UNVERIFIED** (all twelve
-golden `pre_state`s end up empty); do not read a green parity run as evidence that e.g.
-`choicelock` is spelled or timed right.
+`pre_state`s, and the group is excluded.
+
+**Exactly ONE volatile NAME is positively verified: `substitutebroken`** — `gen3_substitute_broken_volatile_v1`,
+and it took a FRESHLY generated `replay_impl_parity` golden to find it, because the recorded
+golden's twelve `pre_state`s are all EMPTY. gen3 inherits gen4's Substitute, which pairs the
+removal with `addVolatile('substitutebroken')`; the condition has no duration and no gen3 reader,
+so it sits on the mon until `clearVolatile`. It is mechanically INERT in gen 3 and is modeled
+purely so this readout can name it. **Every other name (`choicelock`, `perishsong`, `twoturnmove`,
+…) is still UNVERIFIED** — do not read a green parity run as evidence that one is spelled or timed
+right; `replay_impl_parity` prints a `pre_state:nonempty-volatiles` count on every run precisely so
+an all-empty record set cannot be mistaken for coverage.
 
 **STILL NEEDED before this can replace node in `better_line`** (all Python-side, owned elsewhere):
 `utils/bridge/search_session.py` must gain an impl switch that spawns this binary, and the
@@ -340,6 +364,11 @@ diffs every field. Live rather than golden-captured on purpose — the requests 
 stored golden would only add staleness. **RESULT: PASS — 76 cases (54 success + 22 error-path),
 136 arms, 30689 leaf fields.** It normalizes ONLY `|t:|<epoch>` and prints its allowlist, its hit
 counts and a COVERAGE table on every run.
+(**Re-measured 2026-08-23 on SEVEN freshly generated record sets: PASS on every one**, 111 cases /
+~204 arms / ~45-47k leaf fields each. The only allowlist arm — error message TEXT — takes 30 hits
+per run and the verdict, exit code and error CLASS stay strict. Coverage varies by record set and
+is REPORTED, never assumed: `pre_state:nonempty-volatiles` was 0 on three of the seven and 26 on
+another, and `arm:stuck` / the Intimidate `|-hint|` still miss on most.)
 
 **COVERAGE the search golden was missing, now exercised** (reported by the harness itself):
 2 arms that END the battle, 1 `stuck` arm, 133 arms whose `turn_log` carries `|split|` triples,
@@ -4180,6 +4209,12 @@ The per-side/request fuzzer now runs continuously on **real gen3ou POOL teams** 
   with EXACTLY that `allowlisted` reason (one per deferral: Curse-target `10_*`, return102 `11_*`). A floor
   (≥6 files, ≥3 clean, ≥2 tagged) keeps it from silently shrinking. Fault-injection: a perturbed request
   `disabled` flag → 8/8 `kind=request` at the exact field; restored byte-identical.
+  ⚠️ **UPDATE 2026-08-23 — `11_*` CHANGED CLASS; both floors are unchanged.**
+  `gen3_happiness_bp_request_alias_v1` taught the port the sim's numeric-BP moveid forms, so the
+  return102 fixture replays byte-CLEAN; it was renamed `11_return102_numeric_alias_cg.txt` and
+  UNTAGGED, which asserts strictly more than the tag did. Measured after the move: **14 clean +
+  3 tagged**, so `allow >= 2` still holds and the fix cost the gate nothing. A fixed deferral
+  moves classes, it does not leave the corpus.
 - **TWO TRIVIAL FIXES landed (probe-verified + revert-pinned):** (1) **Spikes-under-Pressure PP**
   (`gen3_pressure_foeside_v1`) — `turn.rs::pressure_targets_foe` wrongly EXCLUDED `foeSide` from the Pressure
   −2 (grouping it with `allyTeam`); SIM-PROBE-CONFIRMED Skarmory Spikes vs a Pressure Suicune = pp 30/32

@@ -1,4 +1,8 @@
-# ALLOWLIST return102-numeric-alias
+# CLEAN (was `# ALLOWLIST return102-numeric-alias` until `gen3_happiness_bp_request_alias_v1`). This battle carries a Return, and the port now
+# emits the sim's own numeric-BP alias in all three of its inconsistent forms — roster
+# moveid `return102`, active id bare `return`, active display `Return 102` — so it
+# replays byte-clean. Untagged is STRICTLY STRONGER than the old tag: the tag only
+# required the divergence to stay the KNOWN one, this requires there to be none.
 # bridge_ab_fuzz chunk — REQUEST / PER-SIDE A/B fuzzer (real Node getPlayerStreams vs the Rust port).
 # mode=pool format=gen3customgame master_seed=55501 run_id=rmromav0b chunk=0
 # Format identical to tests/vectors/bridge_trapping_golden.txt (SCEN/TEAM/INIT/CMD/CHUNK/END).

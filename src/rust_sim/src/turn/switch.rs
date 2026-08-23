@@ -218,6 +218,9 @@ impl crate::state::BattleState {
                 // self-hit, residual chip, or a hit AFTER the sub broke — so this keeps the
                 // state clean for a re-encode.)
                 mon.substitute = None;
+                // ...and the `substitutebroken` marker with it (it is an ordinary volatile
+                // with no duration — `gen3_substitute_broken_volatile_v1`).
+                mon.substitute_broken = false;
                 // clearVolatile also drops the CHOICE LOCK on faint (`gen3_pp_tracking_v1`) —
                 // a fainted Choice-Band mon's replacement enters unlocked; and if THIS mon is
                 // ever re-encoded it must not carry a stale lock.
@@ -867,6 +870,11 @@ impl crate::state::BattleState {
             // The SUBSTITUTE volatile clears on switch-out (clearVolatile) — a sub does not
             // follow its owner off the field; the entrant comes in with no sub.
             m.substitute = None;
+            // ...and so does the `substitutebroken` marker the break left behind — it is an
+            // ordinary no-duration volatile, and `clearVolatile` takes the whole map
+            // (`gen3_substitute_broken_volatile_v1`). It is NOT in the Baton-Pass pass-set
+            // above: the condition is `noCopy: true`.
+            m.substitute_broken = false;
             // The CURSE volatile clears on switch-out (`clearVolatile` sets `this.volatiles = {}`,
             // pokemon.js — curse is an ordinary volatile, dropped like leech/sub). MISSING this
             // left a cursed mon STILL cursed on the bench, so on re-entry the order-10/subOrder-8

@@ -1849,20 +1849,24 @@ impl crate::state::BattleState {
             self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::Ordered, dex);
         }
         if is_fire && !absorbed && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze) {
-            // The mon's HP BEFORE clearing (a fire move that KO'd the frozen mon leaves hp==0).
-            let alive = self.sides[foe].pokemon[foe_slot].hp > 0;
-            self.sides[foe].pokemon[foe_slot].status = None;
-            // [EMIT] `|-curestatus|<target>|frz|[msg]` (FORM 13 — the fire-move thaw's
-            // `cureStatus()` reveal; no sourceEffect → the `[msg]` form), but ONLY when the
-            // target is still ALIVE: the sim's `cureStatus()` early-returns on a 0-HP mon (`if
-            // (!this.hp || !this.status) return false`), so a KO-ing fire move emits NO
-            // `-curestatus` — the corpse's status becomes `fnt` at faint
-            // (`gen3_omniscient_byte_fuzz_v1`: the unconditional emit wrongly preceded the
-            // sim's `|faint|`). The status CLEAR stays unconditional (the validated pre-emit
-            // state — a faint overrides it anyway). Draw-free.
-            if alive && self.logging() {
-                let t = self.mon_ref(foe, foe_slot, dex);
-                self.log.curestatus(&t, "frz", true);
+            // `cureStatus()` early-returns on a 0-HP mon (`if (!this.hp || !this.status)
+            // return false`), so a KO-ing fire move does NEITHER half: no
+            // `|-curestatus|<target>|frz|[msg]` (FORM 13 — the thaw reveal, `[msg]` because
+            // there is no sourceEffect; `gen3_omniscient_byte_fuzz_v1` caught the emit
+            // wrongly preceding the sim's `|faint|`) AND no status clear. The corpse keeps
+            // `frz` until `checkFainted` overwrites it with `fnt` — and when the KO ENDS the
+            // battle `checkFainted` never runs, so `frz` is what the referee readout reports.
+            //
+            // The CLEAR used to be unconditional, on the reasoning that "a faint overrides it
+            // anyway". It does not: `outcome.pN.active_status` on a DECIDING faint read `""`
+            // where node read `"frz"` (`gen3_fire_thaw_ko_keeps_status_v1`, found by
+            // `replay_impl_parity` on a freshly generated golden). Draw-free either way.
+            if self.sides[foe].pokemon[foe_slot].hp > 0 {
+                self.sides[foe].pokemon[foe_slot].status = None;
+                if self.logging() {
+                    let t = self.mon_ref(foe, foe_slot, dex);
+                    self.log.curestatus(&t, "frz", true);
+                }
             }
         }
 
@@ -2424,11 +2428,15 @@ impl crate::state::BattleState {
                 && !absorbed
                 && self.sides[foe].pokemon[foe_slot].status == Some(Status::Freeze)
             {
-                let alive = self.sides[foe].pokemon[foe_slot].hp > 0;
-                self.sides[foe].pokemon[foe_slot].status = None;
-                if alive && self.logging() {
-                    let t = self.mon_ref(foe, foe_slot, dex);
-                    self.log.curestatus(&t, "frz", true);
+                // Same `cureStatus()` 0-HP early-return as the single-hit path above
+                // (`gen3_fire_thaw_ko_keeps_status_v1`): a KO-ing strike neither emits nor
+                // clears.
+                if self.sides[foe].pokemon[foe_slot].hp > 0 {
+                    self.sides[foe].pokemon[foe_slot].status = None;
+                    if self.logging() {
+                        let t = self.mon_ref(foe, foe_slot, dex);
+                        self.log.curestatus(&t, "frz", true);
+                    }
                 }
             }
             if is_contact && !absorbed && dealt > 0 {
@@ -3644,6 +3652,10 @@ impl crate::state::BattleState {
         let remaining = sub_hp - taken;
         if remaining == 0 {
             mon.substitute = None;
+            // `addVolatile('substitutebroken')` rides the same branch as the removal in the
+            // sim (gen4 `moves.ts:1303-1305`, inherited by gen3). Inert in gen 3 — it exists
+            // so the readouts can name it (`gen3_substitute_broken_volatile_v1`).
+            mon.substitute_broken = true;
             SubAbsorb::Broke // the sub is gone → `-end`
         } else {
             mon.substitute = Some(remaining);

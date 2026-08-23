@@ -17,9 +17,15 @@
 //!      omniscient `seedAfter`) holds.
 //!   2. an ALLOWLIST fixture carrying a `# ALLOWLIST <reason>` header MUST replay to a
 //!      `diverge` verdict whose `allowlisted` reason EXACTLY equals `<reason>` — the tagged
-//!      request-DISPLAY deferral (Curse `target:self` vs `normal`; the `return102` numeric
-//!      alias). So (i) a residual fixture that stops matching its reason FAILS, and (ii)
+//!      request-DISPLAY deferral (Curse `target:self` vs `normal`; the turn-0 construction
+//!      order flip). So (i) a residual fixture that stops matching its reason FAILS, and (ii)
 //!      nobody can add a silently-ignored per-side/request divergence.
+//!
+//! **The tagged set only ever SHRINKS.** `11_*` was the `return102-numeric-alias` deferral
+//! until `gen3_happiness_bp_request_alias_v1` taught the port the sim's numeric-BP moveid
+//! form; it is UNTAGGED now, which is the stronger assertion (byte-clean, not
+//! "diverges the way we expect"). Class (2) is where a divergence WAITS for a fix, never
+//! where one retires.
 //!
 //! The gate invokes the built `bridge_replay` binary (`CARGO_BIN_EXE_bridge_replay`,
 //! provided by Cargo — no manual build ordering; this is a SEPARATE binary from the live
@@ -74,8 +80,9 @@ fn allowlist_tag(file: &Path) -> Option<String> {
 fn bridge_corpus_replays_clean() {
     let files = corpus_files();
 
-    // FLOOR: the corpus can't silently shrink below the mandated coverage size (4 clean
-    // per-side/request fixtures + the 2 tagged deferrals).
+    // FLOOR: the corpus can't silently shrink below the mandated coverage size (clean
+    // per-side/request fixtures + the tagged deferrals). The TOTAL floor never moves when a
+    // deferral is FIXED — the fixture stays, it just changes class.
     assert!(
         files.len() >= 6,
         "the bridge per-side/request corpus must hold >= 6 fixtures (found {}); dropping \
@@ -146,6 +153,10 @@ fn bridge_corpus_replays_clean() {
 
     assert_eq!(checked, files.len(), "every discovered fixture must be checked");
     assert!(clean >= 3, "the corpus must hold >= 3 CLEAN per-side/request fixtures (have {clean})");
+    // The tagged floor is UNCHANGED at 2 by `gen3_happiness_bp_request_alias_v1` — measured 3
+    // tagged battles after `11_*` left the class (`10_*`, `15_*`, `16_*`), so the fix cost the
+    // gate nothing. Lower this ONLY alongside a fix that would otherwise break it, never to
+    // quiet a failure.
     assert!(allow >= 2, "the corpus must hold the 2 tagged request-DISPLAY deferrals (have {allow})");
     eprintln!("bridge per-side/request corpus: {clean} clean + {allow} allowlisted fixtures verified");
 }

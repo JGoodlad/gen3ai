@@ -252,6 +252,19 @@ pub struct MonState {
     ///   - CLEARED on switch-out (`clearVolatile`) and on faint (`clearVolatile`); `None` at
     ///     construction.
     pub substitute: Option<u16>,
+    /// The `substitutebroken` volatile (`gen3_substitute_broken_volatile_v1`): set the moment
+    /// a Substitute is broken by damage (gen4 `moves.ts:1304`, inherited by gen3 —
+    /// `removeVolatile('substitute'); addVolatile('substitutebroken')`) and cleared only by
+    /// `clearVolatile` (switch-out / faint), since the condition carries NO duration
+    /// (gen4 `conditions.ts:99` is `{noCopy: true}`) and gen3 does not run gen4's
+    /// foe-switch-in removal (`scripts.ts:47` is gated on `gen === 4`).
+    ///
+    /// MECHANICALLY INERT IN GEN 3 — its only readers are gen-4 abilities' U-turn
+    /// interaction. It exists so `search::volatile_names` can report the name node reports;
+    /// `pre_state.volatiles` was the ONLY parity field that saw it, and its absence was the
+    /// single divergence class the replay harness found on a fresh golden. `noCopy: true`, so
+    /// it is deliberately absent from the Baton-Pass pass-set tuple.
+    pub substitute_broken: bool,
     /// Per-move CURRENT PP (`gen3_pp_tracking_v1`), parallel to `set.moves` (index k
     /// is the PP of move slot k). Initialized to each move's in-battle MAX PP
     /// ([`crate::dex::MoveData::max_pp`] = `pp * 8 / 5` with the ctor's default 3
@@ -1310,6 +1323,7 @@ impl MonState {
             stall_duration: 0,
             leech_seed: None,
             substitute: None,
+            substitute_broken: false,
             taunt: None,
             disable: None,
             last_move: None,

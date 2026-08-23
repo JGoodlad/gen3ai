@@ -1330,6 +1330,21 @@ pub(crate) fn move_has_before_turn_callback(move_id: &str) -> bool {
     matches!(move_id, "focuspunch" | "pursuit" | "counter" | "mirrorcoat")
 }
 
+/// The HAPPINESS half of [`variable_bp`], split out because the REQUEST needs it without a
+/// target or a dex (`gen3_happiness_bp_request_alias_v1`).
+///
+/// Showdown bakes this same `basePowerCallback` into two request fields — the roster moveid
+/// (`pokemon.ts:1171`, `return` + BP ⇒ `return102`) and the active display name
+/// (`pokemon.ts:994`, `Return` + ` ` + BP ⇒ `Return 102`) — so the emitter and the damage
+/// calc must not be able to disagree about the number. ONE formula, two callers.
+pub(crate) fn happiness_bp(move_id: &str, happiness: u8) -> Option<u16> {
+    Some(match move_id {
+        "return" => (((happiness as u32) * 10 / 25).max(1)) as u16,
+        "frustration" => ((((255 - happiness as u32) * 10) / 25).max(1)) as u16,
+        _ => return None,
+    })
+}
+
 /// The gen-3 VARIABLE-BP `basePowerCallback` family with a bp-0 data row
 /// (`gen3_move_coverage_batch5_v1`) — the engine-computed BP, all deterministic STATE
 /// reads consuming ZERO PRNG (the Water Spout precedent). DRAW-NEUTRALITY
@@ -1362,9 +1377,10 @@ pub(crate) fn variable_bp(
     target: &crate::state::MonState,
     dex: &Dex,
 ) -> Option<u16> {
+    if let Some(bp) = happiness_bp(move_id, user.set.happiness) {
+        return Some(bp);
+    }
     Some(match move_id {
-        "return" => (((user.set.happiness as u32) * 10 / 25).max(1)) as u16,
-        "frustration" => ((((255 - user.set.happiness as u32) * 10) / 25).max(1)) as u16,
         "flail" | "reversal" => {
             let ratio = ((48u32 * user.hp as u32) / user.maxhp.max(1) as u32).max(1);
             match ratio {
