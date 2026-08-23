@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from poke_env.battle.effect import Effect
+from poke_env.battle.effect import BATON_PASS_COPIED_EFFECTS, Effect
 from poke_env.battle.field import Field
 from poke_env.battle.move import SPECIAL_MOVES, Move, MoveSet
 from poke_env.battle.pokemon_gender import PokemonGender
@@ -360,6 +360,38 @@ class Pokemon:
 
     def copy_boosts(self, mon: Pokemon):
         self._boosts = dict(mon._boosts.items())
+
+    def baton_pass_snapshot(self) -> Tuple[Dict[str, int], Dict[Effect, int]]:
+        """Everything Baton Pass carries to the entrant, read off the PASSER.
+
+        Must be taken BEFORE :meth:`switch_out` — that call clears exactly the state we
+        need. See :meth:`apply_baton_pass` for why the client has to do this at all.
+        """
+        return (
+            dict(self._boosts),
+            {e: c for e, c in self._effects.items() if e in BATON_PASS_COPIED_EFFECTS},
+        )
+
+    def apply_baton_pass(self, snapshot: Tuple[Dict[str, int], Dict[Effect, int]]) -> None:
+        """Apply a :meth:`baton_pass_snapshot` to this (entering) mon.
+
+        🚨 **Showdown never re-emits the passed state, so a client that does not do this
+        LOSES it.** The sim's ``Pokemon.copyVolatileFrom`` (``sim/pokemon.ts``) assigns
+        ``this.boosts = pokemon.boosts`` and shallow-copies every volatile whose condition
+        is not ``noCopy``; the only protocol trace of any of it is the ``[from] Baton Pass``
+        tag on the ``|switch|`` line. There is no ``|-boost|`` and no ``|-start|`` for the
+        entrant — VERIFIED against the omniscient BattleStream: a Celebi that Calm Minds
+        twice, Substitutes and passes to Charizard leaves the entrant at ``spa +2 / spd +2``
+        with a live Substitute in the SIM (its Substitute then eats a Seismic Toss), while
+        the protocol says nothing about either.
+
+        Called AFTER ``switch_in`` (which does not clear) but conceptually replacing what
+        ``switch_out`` wiped on the passer.
+        """
+        boosts, effects = snapshot
+        self._boosts = dict(boosts)
+        for effect, counter in effects.items():
+            self._effects[effect] = counter
 
     def cure_status(self, status: Optional[str] = None):
         if status and Status[status.upper()] == self._status:

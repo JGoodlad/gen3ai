@@ -156,6 +156,12 @@ for matches first, and where matched n is too small use CONSTRUCTED bridge scena
 - **c5** — Baton Pass on the team AND stages ≥ +2 AND an alive receiver that inherits usefully
   (the Celebi two-Calm-Minds question). Expected tiny n in traces ⇒ constructed scenarios likely
   required.
+  🚨 **c5 CANNOT be read on any snapshot trained before 2026-08-23.** The client dropped every
+  Baton-Passed stat stage (`Battle.switch` cleared them and the `[from] Baton Pass` tag was sliced
+  away before anyone read it — ledger 2026-08-23), so the "inherits usefully" half of this gate was
+  *absent from the observation* and the boost PBRS term *penalised* a successful pass. A pre-fix c5
+  number measures a missing fact, not indifference to one; it licenses nothing in either direction.
+  Re-read c5 only on a snapshot trained at or after the fix.
 - **c3** — a DAMAGED recovery carrier (Milotic-class) where heal-rate vs opponent
   damage-per-turn is the live margin, conditioned on LOW boom threat (recovery value collapses
   against Explosion — a Metagross-without-boom opposite is the clean case).

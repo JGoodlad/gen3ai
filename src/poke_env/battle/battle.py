@@ -143,20 +143,38 @@ class Battle(AbstractBattle):
                 elif not pokemon.active and not pokemon.fainted:
                     self._available_switches.append(pokemon)
 
-    def switch(self, pokemon_str: str, details: str, hp_status: str):
+    def switch(
+        self,
+        pokemon_str: str,
+        details: str,
+        hp_status: str,
+        from_baton_pass: bool = False,
+    ):
         identifier = pokemon_str.split(":")[0][:2]
 
         if identifier == self._player_role:
-            if self.active_pokemon:
-                self.active_pokemon.switch_out(self.fields)
+            outgoing = self.active_pokemon
         else:
-            if self.opponent_active_pokemon:
-                self.opponent_active_pokemon.switch_out(self.fields)
+            outgoing = self.opponent_active_pokemon
+
+        # A Baton Pass hands the entrant the passer's stat stages and its copyable
+        # volatiles, and the protocol says so ONLY through the `[from] Baton Pass` tag on
+        # this line — the sim re-emits neither a `|-boost|` nor a `|-start|`. Snapshot
+        # BEFORE `switch_out`, which is what wipes it. See `Pokemon.apply_baton_pass`.
+        snapshot = (
+            outgoing.baton_pass_snapshot()
+            if (from_baton_pass and outgoing is not None)
+            else None
+        )
+        if outgoing is not None:
+            outgoing.switch_out(self.fields)
 
         pokemon = self.get_pokemon(pokemon_str, details=details)
 
         pokemon.switch_in(details=details)
         pokemon.set_hp_status(hp_status)
+        if snapshot is not None:
+            pokemon.apply_baton_pass(snapshot)
 
     @property
     def active_pokemon(self) -> Optional[Pokemon]:

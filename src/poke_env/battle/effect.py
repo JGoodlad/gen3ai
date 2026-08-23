@@ -1002,3 +1002,48 @@ _FROM_DATA: Dict[str, Effect] = {
     "YAWN": Effect.YAWN,
     "ZERO_TO_HERO": Effect.ZERO_TO_HERO,
 }
+
+
+#: The volatiles Baton Pass carries to the entrant, alongside the stat stages.
+#:
+#: Showdown's ``Pokemon.copyVolatileFrom`` (``sim/pokemon.ts``) copies every volatile whose
+#: condition is not ``noCopy``, and emits NOTHING for any of it — the ``[from] Baton Pass``
+#: tag on the ``|switch|`` line is the entire protocol trace, so a client that does not
+#: reconstruct this state simply loses it.
+#:
+#: This is an explicit ALLOW-list rather than the sim's copy-unless-``noCopy`` default,
+#: because ``Pokemon._effects`` is not a mirror of ``pokemon.volatiles`` — it also absorbs
+#: ability/item announcements from ``|-ability|`` / ``|-activate|``, which have no business
+#: riding a pass. An allow-list can only under-copy (i.e. behave as this client always has);
+#: an exclusion list could invent state that was never on the passer.
+#:
+#: Membership is the gen-3-reachable, ``noCopy``-falsy set, checked against the vendored
+#: Showdown dex by ``baton_pass_copied_effects_match_the_dex`` — not asserted from memory.
+#: Deliberately NOT here: ``TRAPPED`` (the Mean Look / Block link — ``conditions.ts`` marks
+#: both ``trapped`` and ``trapper`` ``noCopy: true``; ``src/rust_sim`` claims from its own
+#: behavioural probe that the gen-3 link re-points to the entrant instead, an unresolved
+#: contradiction that is not worth guessing at here), and the ``stall`` / ``pursuit``
+#: residual-handler volatiles, which poke-env models as scalars rather than effects.
+BATON_PASS_COPIED_EFFECTS = frozenset(
+    {
+        Effect.SUBSTITUTE,
+        Effect.LEECH_SEED,
+        Effect.CONFUSION,
+        Effect.CURSE,
+        Effect.PERISH0,
+        Effect.PERISH1,
+        Effect.PERISH2,
+        Effect.PERISH3,
+        Effect.INGRAIN,
+        Effect.FOCUS_ENERGY,
+        Effect.CHARGE,
+        # `partiallytrapped` has no `noCopy`, so the wrap family transfers — the entrant
+        # inherits the same duration and source and keeps being chipped, off its OWN maxhp.
+        Effect.BIND,
+        Effect.CLAMP,
+        Effect.FIRE_SPIN,
+        Effect.SAND_TOMB,
+        Effect.WHIRLPOOL,
+        Effect.WRAP,
+    }
+)

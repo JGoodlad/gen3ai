@@ -662,7 +662,20 @@ class AbstractBattle(ABC):
             return
         elif event[1] in ["drag", "switch"]:
             pokemon, details, hp_status = event[2:5]
-            self.switch(pokemon, details, hp_status)
+            # `|switch|IDENT|DETAILS|HP|[from] Baton Pass` — the ONLY thing the protocol
+            # ever says about the passed stat stages and volatiles. A `drag` can't carry
+            # it (a phaze is not a self-switch), but the tag is what we key on, not the
+            # keyword. Dropping this suffix (as `event[2:5]` alone does) silently loses
+            # every Baton-Passed boost.
+            self.switch(
+                pokemon,
+                details,
+                hp_status,
+                from_baton_pass=any(
+                    tag.startswith("[from]") and "baton pass" in tag.lower()
+                    for tag in event[5:]
+                ),
+            )
         elif event[1] == "-damage":
             pokemon, hp_status = event[2:4]
             self.get_pokemon(pokemon).damage(hp_status)
@@ -1487,7 +1500,13 @@ class AbstractBattle(ABC):
             self.logger.warning("swap method in Battle is not implemented")
 
     @abstractmethod
-    def switch(self, pokemon_str: str, details: str, hp_status: str):
+    def switch(
+        self,
+        pokemon_str: str,
+        details: str,
+        hp_status: str,
+        from_baton_pass: bool = False,
+    ):
         pass
 
     def tied(self):

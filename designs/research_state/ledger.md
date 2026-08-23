@@ -3587,3 +3587,71 @@ so mark it unverified." **The generalisable part is that three of this batch's i
 under measurement**: the parity floor the item asked for was false, three of four demotion
 candidates were refused by their own census, and a doc "correction" turned out to need an honesty
 marker rather than a fresher figure. A backlog item is a hypothesis, not an instruction.
+
+---
+
+## 2026-08-23 — Baton Pass never carried its boosts into the observation (GIGO, since the fork)
+
+**Reported** from a live probe trace (`ai_v9_26_baitent_probe_0823`, step 36M,
+`sentinel_0/loss_s0_003`, invocation 4): a Celebi that Calm Minded to `spa +2 / spd +2` Baton
+Passed into Charizard, and the entrant showed **no boosts**. Reproduced, then walked down.
+
+| rung | verdict |
+|---|---|
+| prober rendering | **CLEAN.** The recorded obs row itself carries `{}` — decoded straight out of `loss_s0_003_states.npz` at `OFFSET_CONTEXT`: inv 3 and 4 read `spa +2 / spd +2`, inv 5 (Charizard, post-pass) reads `{}`. The renderer was telling the truth. |
+| the SIM | **CLEAN.** Omniscient `damage_probe.js`, same pass constructed: the entrant's `boosts` is `{spa: 2, spd: 2}` and its Flamethrower deals **212 vs the control arm's 107 — exactly 2×**. A passed Substitute likewise survives and eats a Seismic Toss. |
+| poke-env → LiveView → obs | **GUILTY, all three reading the same wrong number.** |
+
+**The defect.** `Battle.switch` unconditionally called `switch_out()` on the outgoing mon —
+`clear_boosts()` + `_clear_effects()` — and `AbstractBattle._parse_message` sliced the switch event
+as `event[2:5]`, discarding the `[from] Baton Pass` tag before anything could read it. Showdown's
+`copyVolatileFrom` assigns `this.boosts = pokemon.boosts` and copies every non-`noCopy` volatile
+while **emitting nothing**: that tag is the entire protocol trace of the transfer, so a client that
+throws it away loses the state with no way to notice.
+
+**Not a regression — LONG-STANDING.** `git log -L 146,160:src/poke_env/battle/battle.py` returns
+exactly one commit: `cbe6148` (2026-05-12), the commit that vendored the fork. The function was
+never edited afterwards, and neither Stage A (`e6ec7e1`) nor the Stage B assembler (`84b4122`) is
+implicated — the active-context block is written unconditionally on every encode, warm or cold, so
+the assembler could only ever have copied poke-env's zeros faithfully. **Every run in `models/` was
+trained on this.**
+
+**Blast radius — obs GIGO, not display.** `LiveView` reads `mon.boosts` / `mon.effects`; the
+observation's active-context block reads `LiveView`; the reward's boost PBRS term reads the same.
+So a *successful* pass was observed as a total loss of setup and **penalised** — the reported
+decision's reward line reads `pbrs_boost=-0.06809` on the Baton Pass itself. It is symmetric: the
+opponent's passes were invisible to us too. **172 of 773 pool team files (22%) carry Baton Pass.**
+
+**It also silently voids the gen-16 c5 cell.** That family is defined as "Baton Pass on the team AND
+stages ≥ +2 AND an alive receiver that **inherits usefully**" — the inheritance was unobservable, so
+c5 could not have been learned, and any pre-fix c5 reading measures the absence of a fact rather
+than indifference to one.
+
+**Why nothing caught it.** Every gate compared members of the corrupted chain against each other —
+`obs_roundtrip` (offline obs vs live obs) and the Stage-B assembler fuzz (incremental vs full
+rebuild) both replay the same poke-env, so both agreed, bit-for-bit, on the wrong number. The
+Stage-B fuzz's `baton_pass EXERCISED / 0 mismatches` line is the canonical vacuous green: it proves
+the two encoders agree, and says nothing about whether the state they encode is real. **A parity
+gate cannot see a fault upstream of the fork it compares.**
+
+**Fixed.** `[from] Baton Pass` is threaded into `Battle.switch` / `DoubleBattle.switch`, which
+snapshot the passer's stages + copyable volatiles *before* `switch_out` wipes them and re-apply
+them to the entrant. The volatile set is an explicit **allow-list**
+(`effect.BATON_PASS_COPIED_EFFECTS`), not the sim's copy-unless-`noCopy` default, because
+`Pokemon._effects` also absorbs ability/item announcements that have no business riding a pass — an
+allow-list can only under-copy (i.e. behave as this client always has), where an exclusion list
+could invent state. Membership is *checked* against the vendored dex rather than asserted from
+memory, and that check carries its own anti-vacuity assertion.
+
+Knowingly deferred, both recorded in `effect.py`: the Mean Look / Block `trapped` link (the dex
+marks `trapped` and `trapper` `noCopy: true`, while `src/rust_sim` claims from its own behavioural
+probe that the gen-3 link re-points to the entrant — an unresolved contradiction not worth guessing
+at), and the `stall` / `pursuit` residual-handler volatiles, which poke-env models as scalars rather
+than effects.
+
+**Gates.** `poke_env/battle/baton_pass_carryover_test.py` (7 cases: boosts, copyable volatiles,
+negative stages, the opponent mirror, and the two negatives — a plain switch and a phaze drag must
+still clear) plus `training/poke_env_gaps/baton_pass_obs_integration_test.py`, a `sim` test that
+plays the real scripted battle and asserts at the **observation bytes**, refusing to trust
+hand-fed protocol lines. Both revert-verified behaviourally, one half of the fix at a time. Routine
+suite `not slow and not e2e`: **6802 passed / 10 skipped / 16 xfailed / 88 subtests**, exit 0.

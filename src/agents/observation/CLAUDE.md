@@ -339,6 +339,17 @@ team list grows as mons are revealed), and the encoded event-window rows.
 | `trapped` / `maybe_trapped` / `active` | request-sourced; a cached request bit that survives one decision too long is the `gen3_op_move_align_v1` misalignment class |
 | BOTH actives' whole slots | unconditionally dirty — it costs ~2 slot encodes and shrinks the event→dirty map to the families that touch a BENCHED mon |
 
+⚠️ **Recomputing the active context correctly is necessary but not sufficient, and this tree learned
+that the expensive way.** Until 2026-08-23 the *source* was wrong: poke-env cleared the passer's
+boosts and volatiles on the `|switch|` and never read the `[from] Baton Pass` tag, so this block was
+faithfully re-encoding a Charizard the client believed had no boosts while the sim had
+`spa +2 / spd +2` (ledger 2026-08-23). Neither `obs_roundtrip` nor the assembler fuzz could see it —
+both compare two encoders over the *same* poke-env, so they agreed bit-for-bit on the wrong number,
+and the assembler fuzz's `baton_pass EXERCISED / 0 mismatches` line was a vacuous green. **A parity
+gate cannot see a fault upstream of the fork it compares**; the gate for that class is
+`training/poke_env_gaps/baton_pass_obs_integration_test.py`, which checks the observation against
+the *protocol*.
+
 **Four dirty signals, and it takes all four** (the first three are the design's; the fourth is the
 one the fuzz found):
 

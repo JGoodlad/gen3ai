@@ -256,7 +256,13 @@ class DoubleBattle(AbstractBattle):
                     elif not pokemon.active and not pokemon.fainted:
                         self._available_switches[i].append(pokemon)
 
-    def switch(self, pokemon_str: str, details: str, hp_status: str):
+    def switch(
+        self,
+        pokemon_str: str,
+        details: str,
+        hp_status: str,
+        from_baton_pass: bool = False,
+    ):
         pokemon_identifier = pokemon_str.split(":")[0][:3]
         player_identifier = pokemon_identifier[:2]
         team = (
@@ -265,6 +271,12 @@ class DoubleBattle(AbstractBattle):
             else self._opponent_active_pokemon
         )
         pokemon_out = team.pop(pokemon_identifier, None)
+        # See `Battle.switch` — the snapshot must be taken before `switch_out` clears it.
+        snapshot = (
+            pokemon_out.baton_pass_snapshot()
+            if (from_baton_pass and pokemon_out is not None)
+            else None
+        )
         if pokemon_out is not None:
             pokemon_out.switch_out(self.fields)
             if pokemon_out.species == "dondozo":
@@ -272,6 +284,8 @@ class DoubleBattle(AbstractBattle):
         pokemon_in = self.get_pokemon(pokemon_str, details=details)
         pokemon_in.switch_in()
         pokemon_in.set_hp_status(hp_status)
+        if snapshot is not None:
+            pokemon_in.apply_baton_pass(snapshot)
         team[pokemon_identifier] = pokemon_in
 
     def _swap(self, pokemon_str: str, slot: str):

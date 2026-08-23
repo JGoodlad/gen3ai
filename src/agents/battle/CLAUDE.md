@@ -63,6 +63,12 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   through it, so current-state and history come from two disjoint, separately-fuzzed sources
   that can't drift. Opponent fields are reveal-gated (unknown item → `None`, only revealed
   moves listed; `ability` is `None` unless disclosed or uniquely inferable from species).
+  ⚠️ **It COPIES from poke-env's `Pokemon` rather than deriving from the event log, so a tracker
+  bug down there IS an observation bug up here, and neither this layer's fuzzes nor the obs parity
+  fuzzes can see it** — they all read the same `Pokemon`. That is exactly how every Baton-Passed
+  stat stage stayed silently cleared for the fork's entire life (ledger 2026-08-23; pinned by
+  `poke_env/battle/baton_pass_carryover_test.py` and the protocol-anchored
+  `training/poke_env_gaps/baton_pass_obs_integration_test.py`).
   `LivePokemon` also carries the **spread block** (`base_stats` — public, both sides;
   `ivs`/`evs`/`nature` — own side only, gated by `spread_known` mirroring the obs encoder),
   `consumed_item` (id-form), `status_counter`, `protect_counter` (the consecutive-successful-stall
