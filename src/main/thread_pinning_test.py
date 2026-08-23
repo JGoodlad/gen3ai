@@ -63,11 +63,20 @@ def test_train_rl_agent_pins_threads_at_import_time():
         "train_rl_agent.py no longer sets OMP/MKL_NUM_THREADS at import — a direct run will thrash "
         "(measured 6 fps vs 231)."
     )
-    if torch_line is not None:
-        assert pin_line < torch_line, (
-            f"thread pinning at line {pin_line} runs AFTER torch is imported at line {torch_line}; "
-            f"BLAS has already read its thread count by then, so the pin is a no-op."
-        )
+    # ASSERT THE ANCHOR, don't walk past it. The ordering check below is the whole point of this
+    # test and it used to sit under `if torch_line is not None:` — so the day the hub's imports
+    # stopped matching `_TORCH_BEARING_ROOTS` (a rename, a new indirection) the guard would go
+    # quietly inert while still reporting green. The hub cannot NOT pull torch in: it builds and
+    # trains the policy.
+    assert torch_line is not None, (
+        f"no torch-bearing import found in {_TRAIN.name} — either the hub stopped building the "
+        f"model (impossible) or _TORCH_BEARING_ROOTS {_TORCH_BEARING_ROOTS} no longer names how "
+        f"torch arrives. Until it does, the ordering assertion below is inert."
+    )
+    assert pin_line < torch_line, (
+        f"thread pinning at line {pin_line} runs AFTER torch is imported at line {torch_line}; "
+        f"BLAS has already read its thread count by then, so the pin is a no-op."
+    )
 
 
 def test_pinning_uses_setdefault_not_hard_assignment():

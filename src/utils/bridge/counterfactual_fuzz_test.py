@@ -105,7 +105,13 @@ def _fresh_players(record, tag, *, opp_seed: int = 7):
     return trainee, opp
 
 
-def _check_battle(i: int, impl: str = "node", record_impl: str = "node") -> None:
+def _check_battle(i: int, impl: str = "node", record_impl: str = "node") -> bool:
+    """Returns True iff the DIVERGENCE legs (checks 3 + 4) actually ran on this battle.
+
+    They hang off `if anchor is not None`, and a battle with no mid-game move decision walks past
+    six assertions in silence — the full-replay legs 1 + 2 still pass and the script still prints
+    PASSED. The caller turns that into a floor rather than a print.
+    """
     with tempfile.TemporaryDirectory(prefix="cf_fuzz_") as out_dir:
         record, summary, npz = _record_one_battle(out_dir, record_impl=record_impl)
     recorded_result = ((summary.get("meta") or {}).get("result") or "").lower()
@@ -183,13 +189,22 @@ def _check_battle(i: int, impl: str = "node", record_impl: str = "node") -> None
 
     print(f"  battle {i}: outcome={out['outcome']} decisions={n_decisions} "
           f"divergence@turn={turn if anchor is not None else 'n/a'}  OK")
+    return anchor is not None
 
 
 def main(n: int = 3, impl: str = "node", record_impl: str = "node") -> None:
     print(f"counterfactual fuzz — {n} battles [driver={impl}, recorded on {record_impl}]")
+    n_diverged = 0
     for i in range(n):
-        _check_battle(i, impl=impl, record_impl=record_impl)
-    print(f"counterfactual_fuzz_test: {n} battles PASSED [driver={impl}, recorded on {record_impl}]")
+        n_diverged += bool(_check_battle(i, impl=impl, record_impl=record_impl))
+    # Checks 3 + 4 (divergence-to-terminal + the Monte-Carlo reseed) are the half of this script
+    # that only runs when a battle has a mid-game move anchor. Without this floor a run in which
+    # NO battle had one prints "PASSED" having exercised only the full-replay legs.
+    assert n_diverged >= 1, (
+        f"no battle exercised the divergence legs (0 of {n} had a mid-game move anchor) — "
+        f"checks 3 + 4 never ran, so this run proves only full-replay parity; re-run / raise n")
+    print(f"counterfactual_fuzz_test: {n} battles PASSED ({n_diverged} exercised the divergence "
+          f"legs) [driver={impl}, recorded on {record_impl}]")
 
 
 if __name__ == "__main__":

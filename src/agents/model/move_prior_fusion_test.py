@@ -83,18 +83,38 @@ def test_prior_logits_floor_for_unseen_and_unknown_species():
 
 
 def test_prior_logits_hidden_power_sums_typed_usage():
-    """All typed HP variants collapse to num 237; P(has HP) = Σ typed usage (a mon runs ≤1 HP type)."""
+    """The typed HP usages fold into the 237 PRESENCE channel; P(has HP) = Σ typed usage
+    (a mon runs ≤1 HP type).
+
+    🚨 This test SKIPPED ON EVERY TREE, FOREVER, until 2026-08-23. It selected the typed variants
+    by ``moves.get(mid).num == 237`` — true only before `gen3_typed_hidden_power_ids_v1` gave the
+    16 typed HPs their own dex nums 355-370. After that the filter matched NOTHING, `typed_sum`
+    was 0.0 for every species, and the test skipped with a message blaming the DATA ("no HP-running
+    species in the sample") rather than itself. The production code was right the whole time — it
+    keys the fold on the move ID, via `_belief_num` — so the fix is to ask the SAME seam the
+    production path asks instead of re-deriving the rule from a literal.
+    """
     P = dt.build_move_prior_logits(_N_SPECIES, _N_MOVES)
+    n_ran = 0
     for sid in ("zapdos", "celebi", "salamence"):
         snum = gen3_data.species.get(sid).num
         prior = gen3_data.priors.moves(sid)
+        # `_belief_num` IS the production fold (id-keyed, not num-keyed). Routing through it means
+        # a future re-keying moves this test with the code rather than silently past it.
         typed_sum = sum(p for mid, p in prior.items()
-                        if (gen3_data.moves.get(mid) and gen3_data.moves.get(mid).num == dt.HIDDEN_POWER_NUM))
-        if typed_sum > dt._PRIOR_FLOOR:
-            got = _sigmoid(P[snum, dt.HIDDEN_POWER_NUM].item())
-            assert abs(got - min(typed_sum, 1.0 - 1e-6)) < 0.02, (sid, got, typed_sum)
-            return
-    pytest.skip("no HP-running species in the sample")
+                        if (md := gen3_data.moves.get(mid)) is not None
+                        and dt._belief_num(mid, md) == dt.HIDDEN_POWER_NUM)
+        if typed_sum <= dt._PRIOR_FLOOR:
+            continue
+        got = _sigmoid(P[snum, dt.HIDDEN_POWER_NUM].item())
+        assert abs(got - min(typed_sum, 1.0 - 1e-6)) < 0.02, (sid, got, typed_sum)
+        n_ran += 1
+    # ASSERT, never skip: all three are famous HP carriers in the committed Smogon priors, so a
+    # zero here means the selection broke again — which is the exact failure this test just had.
+    assert n_ran == 3, (
+        f"only {n_ran}/3 sampled species had typed-HP usage above the prior floor — the typed-HP "
+        f"selection is broken again (it was num-keyed and matched nothing for over a generation), "
+        f"or the committed priors changed. Do not turn this back into a skip.")
 
 
 # --------------------------------------------------------------------------- fusion math

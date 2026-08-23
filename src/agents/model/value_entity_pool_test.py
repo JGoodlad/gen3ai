@@ -138,8 +138,15 @@ def test_the_vf_projection_is_sized_for_BOTH_value_parts():
     (gen3_static_widths_v1 — the broad flag sweep lives in `projection_width_test.py`)."""
     model, enc = _build_both()
     fe = model.policy.features_extractor
-    if fe.value_entity_pool is None or fe.cls_pool.value_threat_proj is None:
-        pytest.skip("this build resolved without both value parts; nothing to intersect")
+    # NOT a skip. `_build_both()` passes value_entity_pool=True, value_entity_pool_full=True AND
+    # value_threat_inject=True, so "this build resolved without both value parts" describes a
+    # resolution BUG — and skipping on it retires the only direct check that the static vf width
+    # matches a real forward.
+    assert fe.value_entity_pool is not None and fe.cls_pool.value_threat_proj is not None, (
+        f"_build_both() asked for both value parts but got "
+        f"value_entity_pool={'present' if fe.value_entity_pool is not None else 'MISSING'}, "
+        f"value_threat_proj={'present' if fe.cls_pool.value_threat_proj is not None else 'MISSING'}"
+        f" — flag resolution dropped one; fix that rather than skipping the width gate")
     with torch.no_grad():
         _pi, vf = fe.forward_internal(_obs(enc, n=3))
     assert vf.shape[1] == fe.value_projection_input_dim, (

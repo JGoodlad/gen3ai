@@ -50,15 +50,25 @@ def test_callback_has_no_in_process_player_creation():
     ``server_configuration=`` player on a callback, it would dodge the subprocess design
     (and the work-stealing/port threading below) — fail loudly so it's reconsidered."""
     for cls in (PerOpponentEvalCallback, SelfPlayCallback):
+        n_read = 0
         for name, fn in inspect.getmembers(cls, predicate=inspect.isfunction):
             try:
                 src = inspect.getsource(fn)
             except (OSError, TypeError):
                 continue
+            n_read += 1
             assert "server_configuration=" not in src, (
                 f"{cls.__name__}.{name} creates a player in-process; eval now runs in the "
                 f"subprocess worker (eval_worker) — route player creation there instead"
             )
+        # A NEGATIVE assertion over a loop that swallows its own setup failure passes just as
+        # cheerfully over zero iterations. Both callbacks define dozens of methods; if `getsource`
+        # starts failing wholesale (a C extension, a decorator that loses __wrapped__, a frozen
+        # install) this test would report green while inspecting nothing at all.
+        assert n_read >= 5, (
+            f"only {n_read} source-readable methods on {cls.__name__} — the 'no in-process player'"
+            f" scan inspected almost nothing, so its green verdict is meaningless"
+        )
 
 
 # The subprocess eval path builds players via these functions: build_eval_* for the trainee + bot

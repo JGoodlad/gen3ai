@@ -122,7 +122,12 @@ def _check_battle(record, summary, npz, impl: str = "node") -> int:
 
     ob_recorded = np.asarray(npz["obs"][anchor + 1], dtype=np.float32)
     alts = [a for a in cmap if a != chosen][:MAX_ALTS]
-    n_checked = 1
+    # Counts OBS comparisons only, and therefore starts at ZERO. It was initialised to 1 (for the
+    # two pre-session asserts above), which made the caller's `total >= 1` floor — whose message
+    # reads "no obs check ran" — impossible to fire: every non-terminal-anchor battle returned at
+    # least 1 whether or not a single obs was ever compared. Every obs check below sits behind an
+    # `ended`/`None` guard, so all four CAN be skipped at once.
+    n_checked = 0
 
     with SearchSession(record, impl=impl) as ss:
         root = ss.open_root(turn)
@@ -214,7 +219,9 @@ def main(n_battles: int, impl: str = "node", record_impl: str = "node") -> None:
             print(f"  {record.battle_tag}: clone ≡ reroll_many + value_crn anchor + depth-2 "
                   f"({c} obs checks bit-for-bit)", flush=True)
     assert n == n_battles
-    assert total >= 1, "no obs check ran — every anchor terminal? re-run / raise n_battles"
+    assert total >= 1, ("no obs check ran — every anchor terminal? re-run / raise n_battles "
+                        "(this floor counts OBS comparisons only; it was uncountable until "
+                        "n_checked stopped being seeded at 1)")
     print(f"\nPASS — {n} battles: serializeBattle clone is byte-identical to reroll_many at the obs, "
           f"reproduces the recorded next state, and composes to depth 2 ({total} checks)", flush=True)
 
