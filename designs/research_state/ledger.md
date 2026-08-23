@@ -2404,3 +2404,22 @@ from `gen3_defensive_entropy_v1` (same weighting, same anneal function, same tra
   the other 2 arrivals still unrevealed at the decision). The matchup is pinned because the pooled
   version was a coin flip — only 2 of 14 random sample-team pairs produced any immune whiff, and the
   cross-checked count ranged 0-48 run to run.
+
+### Baseline-hour addendum — the REWARD share was mis-documented by generations, and the encoder campaign's Amdahl updates (2026-08-23)
+
+The idle-box baselines (`0cd9dbe`) confirmed NO code regression on all four benchmarks, and
+corrected a load-bearing doc figure: per-decision CPU is **obs 63% / reward 27% / parse 9%** —
+not the documented obs 88% / reward 4%. `process_turn_reward` (0.21 ms) is the SECOND-LARGEST
+consumer and has been ≥23% since before the frame deletion. Consequences: (1) the
+incremental-encoder design's +40–90% rollout-FPS estimate was computed against the stale 80–88%
+share — the honest revision is **~+30–50%**, still the largest available lever; (2) the
+**reward manager becomes a named second target** — and Stage A's LiveView memo already helps it
+(the reward path constructs one of the 4× redundant views); (3) the frame deletion measurably
+bought −8% our-CPU. Also: the turn-1 fix (`f2bec7d`) closed the offline machinery's last known
+coverage hole at its root (a committed-turns fencepost reading 0 at the first boundary — THREE
+consumer sites, one of which was a SILENT wrong-arm on better_line paths; the golden generator
+had only ever sampled turns {2,5,9}, the untested-first-case class again — it now samples 1),
+and surfaced two pre-existing facts now honestly recorded: both parity harnesses had been
+UN-RUNNABLE since a path move (a gate nobody can start is indistinguishable from one that
+passes — the week's eighth vacuity), and fresh goldens carry 1 + 29 pre-existing cross-impl
+divergences (confirmed parity-neutral to the fix; tasked).
