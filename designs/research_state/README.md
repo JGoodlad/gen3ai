@@ -31,6 +31,13 @@ by agents — see the protocol below and the `feedback-research-state` memory.
   / 814 triangles) plus the PRE-REGISTERED spinning-top predictions P1/P2/P3, each with a numeric
   threshold stated against that floor. Carries the game-count confound that voids any naive
   cross-generation width comparison. Instrument: `python -m main.elo <run> --hodge-bootstrap 300`.
+- **[capacity_battery.md](capacity_battery.md)** — the regularly-evaluatable SATURATION battery on
+  the shared trunk (effective rank · Lyle trainability vs a fresh net · probe decodability · param
+  census), its per-metric VALIDITY notes, and the gen-17 baseline row. Ordered because the flywheel
+  piles distilled skills into one fixed-capacity network, so saturation has to be visible BEFORE a
+  long fruitless hunt. Instrument: `python -m main.capacity <run>` (~7 s, offline). **Tripwire, not
+  verdict** — the `PR(K_ū)=17` retraction is why every metric there ships what would have to
+  CONFIRM it.
 - **[The frontier](#the-frontier--what-else-might-be-there)** (below) — the standing list of candidate
   levers NOT yet (fully) investigated. This is the working surface for "there has to be more."
 

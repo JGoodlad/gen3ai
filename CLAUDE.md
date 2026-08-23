@@ -1399,6 +1399,8 @@ src/
                      #   extractor_api (the last_* stash reads) -> extractor_forward
                      #   (forward_internal) -> features_extractor (the class + forward), plus
                      #   extractor_stashes.py and projection.py
+                     #   capacity_probes.py — the capacity battery's ENGINE (pure-NumPy rank /
+                     #   trainability / decodability estimators; CLI is main/capacity.py)
                      #   model_version/ — the version gate as a package (constants/migrations/
                      #   fields/construct/compat/resume_checks/spec) behind a re-export hub
     gen3_data/       # The data facade: concept modules (moves/species/items/abilities/natures/
@@ -1434,6 +1436,11 @@ src/
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
+    capacity.py        # CAPACITY-EVAL BATTERY CLI — offline saturation tripwire over one
+                     #   checkpoint (~7 s): effective rank, Lyle trainability vs a fresh net,
+                     #   probe decodability, per-phase param census. Engine:
+                     #   agents/model/capacity_probes.py · notes:
+                     #   designs/research_state/capacity_battery.md
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/
