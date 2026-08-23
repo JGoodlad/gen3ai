@@ -8984,7 +8984,7 @@
       "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
       "src": "alpha_head",
       "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell",
+      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
       "width": 7
     },
     {
@@ -8993,7 +8993,7 @@
       "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
       "src": "alpha_head",
       "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell",
+      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
       "width": 7
     },
     {
@@ -9002,7 +9002,7 @@
       "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
       "src": "alpha_head",
       "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell",
+      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
       "width": 7
     },
     {
@@ -9011,7 +9011,61 @@
       "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
       "src": "alpha_head",
       "type": "cell",
-      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell",
+      "via": "the alpha PUBLICATION weighting IntentMoveCell / IntentThresholdMoveCell / IntentConditionalMoveCell / PairOutcomeMoveCell / SwitchBranchMoveCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
+      "width": 7
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "the first alpha route to the SWITCH logits at all \u2014 stop-grad unconditionally (a policy-side consumer)",
+      "source_constant": "entity_topk_seats + 1 (the SWITCH class)",
+      "src": "alpha_head",
+      "type": "cell",
+      "via": "the alpha PUBLICATION weighting PairOutcomeSwitchCell / ConditionalThreatCell",
       "width": 7
     },
     {
@@ -9020,7 +9074,7 @@
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell",
+      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
       "width": 6
     },
     {
@@ -9029,7 +9083,7 @@
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell",
+      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
       "width": 6
     },
     {
@@ -9038,7 +9092,7 @@
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell",
+      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
       "width": 6
     },
     {
@@ -9047,7 +9101,7 @@
       "source_constant": "TEAM_SIZE",
       "src": "beta_head",
       "type": "cell",
-      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell",
+      "via": "the beta PUBLICATION weighting IntentConditionalMoveCell / SwitchBranchMoveCell",
       "width": 6
     },
     {
@@ -9089,6 +9143,26 @@
       "zero_init": true
     },
     {
+      "dst": "pointer.move_logit[0]",
+      "note": "damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + neutralization + tempo_cost, one vector one currency, contracted by ONE alpha over their believed-move axis (Contract W). Rides every move slot as decorrelated context \u2014 the switch cell is Phase B",
+      "source_constant": "PAIR_OUTCOME_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome vector at our active defender)",
+      "width": 14,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[0]",
+      "note": "OA2 \u2014 E[our move | they SWITCH] contracted over beta, kept DECORRELATED from the stay branch (never the collapsed mixture) \u2014 plus the Rapid Spin spinblock (the Pursuit mirror, opposite valence) and Protect's attack mass",
+      "source_constant": "SWITCH_BRANCH_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "SwitchBranchMoveCell (published alpha AND beta x the op's outgoing grid + the per-opp-slot GHOST marginal)",
+      "width": 9,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.move_logit[1]",
       "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
       "source_constant": "_PTR_MOVE_CELL",
@@ -9127,6 +9201,26 @@
       "zero_init": true
     },
     {
+      "dst": "pointer.move_logit[1]",
+      "note": "damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + neutralization + tempo_cost, one vector one currency, contracted by ONE alpha over their believed-move axis (Contract W). Rides every move slot as decorrelated context \u2014 the switch cell is Phase B",
+      "source_constant": "PAIR_OUTCOME_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome vector at our active defender)",
+      "width": 14,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[1]",
+      "note": "OA2 \u2014 E[our move | they SWITCH] contracted over beta, kept DECORRELATED from the stay branch (never the collapsed mixture) \u2014 plus the Rapid Spin spinblock (the Pursuit mirror, opposite valence) and Protect's attack mass",
+      "source_constant": "SWITCH_BRANCH_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "SwitchBranchMoveCell (published alpha AND beta x the op's outgoing grid + the per-opp-slot GHOST marginal)",
+      "width": 9,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.move_logit[2]",
       "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
       "source_constant": "_PTR_MOVE_CELL",
@@ -9165,6 +9259,26 @@
       "zero_init": true
     },
     {
+      "dst": "pointer.move_logit[2]",
+      "note": "damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + neutralization + tempo_cost, one vector one currency, contracted by ONE alpha over their believed-move axis (Contract W). Rides every move slot as decorrelated context \u2014 the switch cell is Phase B",
+      "source_constant": "PAIR_OUTCOME_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome vector at our active defender)",
+      "width": 14,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[2]",
+      "note": "OA2 \u2014 E[our move | they SWITCH] contracted over beta, kept DECORRELATED from the stay branch (never the collapsed mixture) \u2014 plus the Rapid Spin spinblock (the Pursuit mirror, opposite valence) and Protect's attack mass",
+      "source_constant": "SWITCH_BRANCH_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "SwitchBranchMoveCell (published alpha AND beta x the op's outgoing grid + the per-opp-slot GHOST marginal)",
+      "width": 9,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.move_logit[3]",
       "note": "[low, high, crit, pko, p_land, known, sec x7] for THIS request slot",
       "source_constant": "_PTR_MOVE_CELL",
@@ -9200,6 +9314,26 @@
       "type": "cell",
       "via": "IntentThresholdMoveCell (alpha-contracted p_KO / P(sub survives) / P(the punch executes))",
       "width": 6,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "damage + status BY IDENTITY (par/brn/frz/slp/psn/tox) + neutralization + tempo_cost, one vector one currency, contracted by ONE alpha over their believed-move axis (Contract W). Rides every move slot as decorrelated context \u2014 the switch cell is Phase B",
+      "source_constant": "PAIR_OUTCOME_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeMoveCell (the alpha-reduced UNIFIED outcome vector at our active defender)",
+      "width": 14,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.move_logit[3]",
+      "note": "OA2 \u2014 E[our move | they SWITCH] contracted over beta, kept DECORRELATED from the stay branch (never the collapsed mixture) \u2014 plus the Rapid Spin spinblock (the Pursuit mirror, opposite valence) and Protect's attack mass",
+      "source_constant": "SWITCH_BRANCH_MOVE_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "SwitchBranchMoveCell (published alpha AND beta x the op's outgoing grid + the per-opp-slot GHOST marginal)",
+      "width": 9,
       "zero_init": true
     },
     {
@@ -9211,12 +9345,52 @@
       "width": 15
     },
     {
+      "dst": "pointer.switch_logit[0]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[0]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[1]",
       "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
       "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[1]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
     },
     {
       "dst": "pointer.switch_logit[2]",
@@ -9227,12 +9401,52 @@
       "width": 15
     },
     {
+      "dst": "pointer.switch_logit[2]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[2]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[3]",
       "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
       "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[3]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
     },
     {
       "dst": "pointer.switch_logit[4]",
@@ -9243,12 +9457,52 @@
       "width": 15
     },
     {
+      "dst": "pointer.switch_logit[4]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[4]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
+    },
+    {
       "dst": "pointer.switch_logit[5]",
       "note": "incoming row + CB tail (the OAX offense read was deleted with its flag \u2014 d2 carries the switch-in offense)",
       "source_constant": "_PTR_SWITCH_CELL_IN",
       "src": "damage_op",
       "type": "cell",
       "width": 15
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "design_conditional_opponent_cells SS1: the defensive pivot. The coordinates the reduced outcome row cannot carry \u2014 a product of two decorrelated channels, the one channel not divided by the defender's bulk, and what a saturated P(KO) hides",
+      "source_constant": "CONDITIONAL_THREAT_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "ConditionalThreatCell (OA1 \u2014 alpha-contracted pko*acc, the bulk-independent type multiplier, and the two SS0.2(3) margins against our own HP)",
+      "width": 4,
+      "zero_init": true
+    },
+    {
+      "dst": "pointer.switch_logit[5]",
+      "note": "design_pair_reduction SS2.1's canonical defect at its own sink: the switch cell above carries TEN damage numbers and no status coordinate in any currency. Per-DEFENDER content, one shared alpha (no J axis => D3 is a shape error)",
+      "source_constant": "PAIR_OUTCOME_SWITCH_DIM",
+      "src": "damage_op",
+      "type": "cell",
+      "via": "PairOutcomeSwitchCell (mon j's OWN alpha-reduced UNIFIED outcome row + spin_denied)",
+      "width": 15,
+      "zero_init": true
     },
     {
       "dst": "pi_projection",
@@ -11306,7 +11560,7 @@
     "arch_signature": "gen3_critic_route_wave_v1",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 96,
+    "config_version": 97,
     "edge_bias_families": [
       "c1",
       "c2",

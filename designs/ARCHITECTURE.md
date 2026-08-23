@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | `models/ai_v9_14_gen12_h_entitypool_shaping_0816/` (gen-12, launched 2026-08-16) — `model_config.json` `config_version` **80**, `arch_signature` **`gen3_ctx_dedup_v1`**; the `h` family + `--value-entity-pool` LIVE; trains on its own pinned worktree |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 96 / `gen3_critic_route_wave_v1`) |
-| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema**. It is currently in a **signature-bump window**: `gen3_critic_route_wave_v1` (v96) moved HEAD past every existing run, so the file tracks the LIVE code until the next generation writes its own `model_config.json`. Two requirements pull it in opposite directions here — the compile gate needs it to match live code, the drift gate needs it to mirror the newest run — and they cannot both hold inside the window, so `arch_tables_test` DETECTS the window from the run's recorded signature rather than either side being relaxed. It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Production run | `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, launched 2026-08-20) — `model_config.json` `config_version` **97**, `arch_signature` **`gen3_critic_route_wave_v1`**; the **substrate cells are ON in the base** (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate; trains on its own pinned worktree. The E1–E4 arms launched after it are gate EXPERIMENTS forked off this base, not production — they are byte-identical to it on every shared field, so mirroring gen-17 satisfies the drift gate against all of them |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `model_version.py`**, never from prose (at this writing: 99 / `gen3_critic_route_wave_v1`) |
+| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json` and never hand-edited. The `gen3_critic_route_wave_v1` **signature-bump window is CLOSED**: gen-17 records that signature, so the mirror once again tracks the newest RUN rather than the live code. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -221,10 +221,11 @@ Modules actually built under the production config (`named_children()`) — GENE
 ```
 embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_transformer · cls_pool ·
 hidden_opp_belief · intent_move_cell · intent_threshold_move · intent_conditional ·
-t0_species_prior · belief_slots · belief_head · move_belief · spread_belief ·
-hp_type_belief_head · item_belief_head · damage_op · prefuse_proj · assembler · win_head ·
-value_dist_head · value_entity_pool · history_events · pre_proj_norm · projection ·
-value_pre_norm · value_projection · activation · alpha_head · beta_head
+pair_outcome_move · pair_outcome_switch · switch_branch · conditional_threat · t0_species_prior ·
+belief_slots · belief_head · move_belief · spread_belief · hp_type_belief_head ·
+item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_dist_head ·
+value_entity_pool · history_events · pre_proj_norm · projection · value_pre_norm ·
+value_projection · activation · alpha_head · beta_head
 ```
 <!-- END GENERATED: modules -->
 
@@ -237,9 +238,9 @@ happens to be written.
 
 | tier | question | modules |
 |---|---|---|
-| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in, off) |
+| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in, off); `cls_pool` additionally owns the two token-content critic injections (`value_threat_proj`, and `pair_value_proj` opt-in/off) |
+| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the two token-content critic injections (`value_threat_proj`, and `pair_value_proj` opt-in/off) |
 | **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
@@ -279,7 +280,7 @@ The concrete steps:
    the bare typeless 237 is driven to a finite `-30`. `Σ_t P(HP_t) == presence`, and presence is
    reveal-pinned, so a seen Hidden Power can never be believed away. Every downstream consumer
    (op, edges, seats, BCE, prober) reads this one typed posterior.
-   *(Opt-in, OFF in production: **`ItemBelief`** — `gen3_item_belief_v1`, `--item-belief` — resolves
+   *(Also live: **`ItemBelief`** — `gen3_item_belief_v1`, `--item-belief` — resolves
    each opp slot's hidden item as a posterior over item nums, Smogon usage prior ⊕ zero-init trunk
    delta; cold start == prior. Published leak-mode-aware (`last_item_logits`); the op's p_cb
    unrevealed branch consumes P(Choice Band) from the publication instead of the static
@@ -421,7 +422,7 @@ the move cell (+`INTENT_COND_MOVE_DIM`). Enabling either is a gen-13+ decision g
 gen-12's `intent_move_cell` audit (the G3 verdict); the pre-build G2 usage baseline is
 `measurements/gen12_mechanic_usage_baseline.json` (Endure 0.0% / Sub 0.9% / Counter 5.6%).
 
-**Available but OFF: `pair_outcome_cell`** (v93, `gen3_pair_outcome_v1` — component 1 + 3 of
+**LIVE (ON in the gen-17 base): `pair_outcome_cell`** (v93, `gen3_pair_outcome_v1` — component 1 + 3 of
 `design_opponent_intent.md`, §2.1/§9a of `design_pair_reduction.md`). It closes a **currency**
 failure, not a reduction failure: incoming status reaches the policy only through the `s3` edge
 family, i.e. as a softmax-normalised RATIO, so "35% of my HP" and "80% chance of burn" never meet
@@ -450,7 +451,7 @@ Known limits of the coordinate table, named rather than approximated: status DUR
 also why the Natural Cure ability rides `tempo_cost` and not `neutralization`), physics mutation
 (Marvel Scale), and a held berry's auto-cure.
 
-**Available but OFF: `pair_outcome_switch`** (v94, `gen3_pair_outcome_switch_v1`). The same
+**LIVE (ON in the gen-17 base): `pair_outcome_switch`** (v94, `gen3_pair_outcome_switch_v1`). The same
 reduction, at **every** defender (`Σ_k α_k · pair_in[k, j, :]`), delivered to mon *j*'s own pointer
 **SWITCH** cell through a second zero-init projection. This is the sink `design_pair_reduction.md`
 §2.1 traced the defect to: the switch cell carries ten damage numbers, one speed number, two
@@ -464,7 +465,7 @@ Ghost switch-in is hazard insurance; the stake is what makes it a value rather t
 Requires `damage_op`, **not** `pair_outcome_cell` — the two deliver one tensor to two sinks and
 coupling them would make a measured result unattributable. `PAIR_OUTCOME_SWITCH_DIM` = **15**.
 
-**Available but OFF: `conditional_threat_cell`** (v95, `gen3_conditional_threat_v1` —
+**LIVE (ON in the gen-17 base): `conditional_threat_cell`** (v95, `gen3_conditional_threat_v1` —
 `design_conditional_opponent_cells.md` §1's **OA1**, the defensive pivot). The **second** module to
 widen the pointer SWITCH cell, and it carries exactly the quantities the α-reduced outcome row
 structurally cannot. Four coordinates, all `Σ_k α_k · f(k, j)` against the same one α:
@@ -488,7 +489,7 @@ with extra steps. Requires `damage_op` + `damage_matrices_incoming`, **not** `op
 contraction, so the missing SWITCH mass correctly shrinks it) and **not** `pair_outcome_switch` (two
 quantities, one sink, attributable separately). `CONDITIONAL_THREAT_SWITCH_DIM` = **4**.
 
-**Available but OFF: `switch_branch_cell`** (v94, `gen3_switch_branch_v1` —
+**LIVE (ON in the gen-17 base): `switch_branch_cell`** (v94, `gen3_switch_branch_v1` —
 `design_conditional_opponent_cells.md` §2's OA2, plus two owner-specified mechanics of the same
 shape). Everything in it is `Σ over their options of (usage probability) × (a property of the
 option)`, contracted over the branch in which they **switch**. Gen-3 is simultaneous-move, so
@@ -653,8 +654,10 @@ and — the defect `design_pair_reduction.md` §2.1 names — any **status** coo
 (`pair_outcome_switch` closes the second one; `conditional_threat_cell` adds the conditional-threat
 coordinates that row cannot carry). The OAX attacker row
 (`damage_matrices_outgoing_all`) was deleted with its flag (v88 `gen3_dead_flag_purge_v1` — never
-enabled in a gen-8+ run), so the switch cell is 15 dims and its physics is purely defensive
-(what this mon takes on the switch-in) plus whatever the trunk carried into `our_team_out`. The
+enabled in a gen-8+ run), so the flags-off switch cell is 15 dims and its physics is purely defensive
+(what this mon takes on the switch-in) plus whatever the trunk carried into `our_team_out`. **In the
+gen-17 production config both flags are ON, so the switch cell is 15 + 15 + 4 = 34** and both gaps
+above are closed. The
 `d2` edge family (§5) — whose engine is the same `_outgoing_attacker_matrix` kernel — is the route
 by which a bench mon's offense reaches its own token.
 
@@ -842,7 +845,8 @@ E4 `[24:30]`, E5 `[30:36]`.
 | d3, s3 | `entity_topk_seats > 0` (the bias rows *are* the E4 seats) |
 | r | `history_events` (the bias rows *are* the H-B event seats) |
 
-All are satisfied in the production config (`h` and `r` are opt-in and not in its string).
+All are satisfied in the production config, whose string carries every family including `h` and `r`
+(`r`'s requirement holds because `history_events` is ON).
 
 ### 5.3 What an edge can and cannot carry
 
@@ -912,6 +916,7 @@ does nothing given another setting.
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
+| `conditional_threat_cell` | `true` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
 | `damage_matrices_incoming` | `true` | ACTIVE |
@@ -938,9 +943,13 @@ does nothing given another setting.
 | `opp_belief_slots` | `true` | ACTIVE |
 | `opp_intent` | `true` | ACTIVE |
 | `opp_intent_grad_mode` | `"detached"` | ACTIVE |
+| `pair_outcome_cell` | `true` | ACTIVE |
+| `pair_outcome_switch` | `true` | ACTIVE |
+| `pair_value_route` | `false` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
+| `switch_branch_cell` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `threat_prob_outspeed` | `false` | OFF |
 | `value_dist_bins` | `51` | ACTIVE |
@@ -952,11 +961,13 @@ does nothing given another setting.
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
+| `intent_label_bot_weight` | `0.25` | ACTIVE |
 | `item_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |
 | `spread_belief_coef` | `0.05` | ACTIVE |
+| `td_aux_coef` | `0.0` | OFF |
 | `value_dist_coef` | `1.0` | ACTIVE |
 | `value_tail_weight` | `0.3` | ACTIVE |
 | `vf_coef` | `0.5` | ACTIVE |

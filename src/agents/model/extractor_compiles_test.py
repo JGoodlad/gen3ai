@@ -395,12 +395,18 @@ def test_pair_outcome_fallback_arch_compiles_to_one_graph():
     """
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
+    # Every production flag whose `requires` names opp_intent must come off with it. QUERIED from
+    # the registry rather than listed: the hand-written list said "queried from the registry, not
+    # guessed" while being a literal, and it went stale the moment `switch_branch_cell` — which
+    # requires opp_intent with NO fallback — turned on in the gen-17 base.
+    from agents.model.flag_registry import REGISTRY
+
+    # (If `pair_outcome_cell` ever GAINS an opp_intent requirement this raises a duplicate-kwarg
+    # TypeError rather than quietly turning off the very cell under test — the loud direction.)
+    off = {f.name: False for f in REGISTRY if "opp_intent" in (f.requires or ())}
+    assert off, "no registry row requires opp_intent — this probe has lost its subject"
     fe, layout = _build_production_extractor(
-        pair_outcome_cell=True, opp_intent=False,
-        # every production flag whose `requires` names opp_intent must come off with it
-        # (queried from the registry, not guessed: intent_move_cell / intent_threshold /
-        # intent_conditional).
-        intent_move_cell=False, intent_threshold=False, intent_conditional=False)
+        pair_outcome_cell=True, opp_intent=False, **off)
     assert fe.alpha_head is None, "this cell is meant to exercise the NO-intent fallback"
     explained = torch._dynamo.explain(fe.forward)(
         {"observation": torch.zeros(_BATCH, layout["total_dim"])})

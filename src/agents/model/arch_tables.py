@@ -100,6 +100,20 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # loss). No gating module: it reads the critic through `policy.predict_values`, so there is
     # nothing in the extractor that could make it INERT.
     "td_aux_coef": None,
+    # v97 gen3_intent_label_bot_weight_v1 — a per-sample weight on the alpha/beta LABEL rows whose
+    # opponent was a bot. It reweights an existing loss rather than gating a module, so like
+    # td_aux_coef there is nothing that could render it INERT. (It was recorded from v97 but
+    # missing here, so the generated table simply did not show it.)
+    "intent_label_bot_weight": None,
+    # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
+    # gated by a module, and naming that module is what lets the table mark it INERT: a live
+    # coefficient whose head was never built does nothing, and that is precisely the confusion
+    # the R1 arms have to be able to rule out at a glance.
+    "cf_winprob_coef": "win_head",
+    "cf_evidential_coef": "cf_evid_head",
+    "cf_evidential_reg": "cf_evid_head",
+    "cf_twin_coef": "cf_twin_head_c",
+    "cf_shadow_coef": "cf_shadow_head",
 }
 
 _FALSY_STRINGS = {"none", "off", ""}
@@ -275,7 +289,12 @@ def flag_table_section(fe: Any, cfg: Dict[str, Any]) -> str:
     from agents.model.features_extractor import Gen3FeaturesExtractor
 
     sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
-    coef_keys = sorted(k for k in cfg if k.endswith("_coef") or k == "value_tail_weight")
+    # Selected by NAME SUFFIX **or** by membership in `_COEF_MODULE`. The suffix alone was the
+    # whole rule, and it silently dropped every loss weight that is not spelled `*_coef`:
+    # `intent_label_bot_weight` was recorded from v97 and appeared in NO generated table, and
+    # `cf_evidential_reg` would have joined it. `_COEF_MODULE` now DECLARES the set rather than
+    # only annotating it — which is what its name always implied.
+    coef_keys = sorted(k for k in cfg if k.endswith("_coef") or k in _COEF_MODULE)
     toggle_keys = sorted(k for k in cfg if k in sig and k not in coef_keys)
 
     lines = ["| Flag | Production value | Status |", "|---|---|---|"]

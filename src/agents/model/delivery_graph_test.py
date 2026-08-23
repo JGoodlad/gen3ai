@@ -33,6 +33,7 @@ import os
 
 import pytest
 
+from agents.model import delivery_graph
 from agents.model.delivery_graph import (
     EDGE_TYPES,
     FORWARD_SINKS,
@@ -216,16 +217,35 @@ def test_the_active_ctx_concat_is_dead(graph):
 
 
 def test_absent_op_sub_blocks_do_not_produce_pointer_cells(graph, snapshot):
-    """The switch cell width must follow the op's actual composition. The OAX attacker row was
-    DELETED with its flag (gen3_dead_flag_purge_v1) — d2 carries the switch-in offense — so the
-    switch cell is the incoming row + CB tail only. If a future op sub-block widens it, this
-    width moves and the snapshot diff makes it visible."""
+    """The switch cell's contributions must follow the op's actual composition.
+
+    The base row is 15 — the incoming per-defender row + the CB tail; the OAX attacker row was
+    DELETED with its flag (`gen3_dead_flag_purge_v1`) and d2 carries the switch-in offense instead.
+    On top of it the gen-17 base adds `pair_outcome_switch` (+15) and `conditional_threat_cell`
+    (+4), each as its OWN edge — one cell per module, never a fused width, which is what keeps a
+    measured result attributable to the module that caused it.
+
+    Asserted against the LIVE config rather than a literal set: this test read `== {15}` while
+    those two flags were off in production, so refreshing the mirror to the gen-17 run turned a
+    correct architecture into a red test. The widths are constants; WHICH of them are present is
+    a property of the config, and only that second half belongs to the mirror.
+    """
+    from agents.model.arch_constants import (
+        CONDITIONAL_THREAT_SWITCH_DIM, PAIR_OUTCOME_SWITCH_DIM,
+    )
+
     cells = [e for e in graph["edges"]
              if e["type"] == "cell" and e["dst"].startswith("pointer.switch_logit")]
     assert cells
-    widths = {e["width"] for e in cells}
-    assert widths == {15}, (
-        "the switch cell is the incoming row + CB tail only (the OAX row was deleted)")
+    cfg = json.load(open(delivery_graph._DEFAULT_CONFIG))
+    expected = {15}                                    # the op's own incoming row + CB tail
+    if cfg.get("pair_outcome_switch"):
+        expected.add(PAIR_OUTCOME_SWITCH_DIM)
+    if cfg.get("conditional_threat_cell"):
+        expected.add(CONDITIONAL_THREAT_SWITCH_DIM)
+    if cfg.get("opp_intent"):
+        expected.add(int(cfg.get("entity_topk_seats", 0)) + 1)   # alpha_head's SWITCH-class cell
+    assert {e["width"] for e in cells} == expected
 
 
 def test_phase_nodes_are_derived_from_the_live_module_tree_not_a_hardcoded_list():
