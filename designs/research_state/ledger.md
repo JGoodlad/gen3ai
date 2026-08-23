@@ -3655,3 +3655,45 @@ still clear) plus `training/poke_env_gaps/baton_pass_obs_integration_test.py`, a
 plays the real scripted battle and asserts at the **observation bytes**, refusing to trust
 hand-fed protocol lines. Both revert-verified behaviourally, one half of the fix at a time. Routine
 suite `not slow and not e2e`: **6802 passed / 10 skipped / 16 xfailed / 88 subtests**, exit 0.
+
+### 🚨 BATON PASS CARRYOVER — a FIVE-MONTH obs-GIGO defect, owner-spotted from one trace view, fixed at `393532c` (2026-08-23)
+
+**Passed boosts and volatiles NEVER reached the observation — or the reward.** poke-env's
+`Battle.switch` unconditionally wiped the outgoing mon (`clear_boosts` + `_clear_effects`) and
+`_parse_message` sliced the switch event as `event[2:5]`, discarding the `[from] Baton Pass` tag —
+the ENTIRE protocol trace of the transfer, since Showdown's `copyVolatileFrom` emits nothing.
+Present since the fork was vendored (`cbe6148`, 2026-05-12; `git log -L` shows exactly one commit).
+**The sim was always right** — the omniscient probe measured the entrant's Flamethrower at 212 vs
+the control's 107, exactly 2× — the loss was pure client-side. Neither Stage A nor the Stage-B
+assembler is implicated (vintage-checked).
+
+- **Blast radius: EVERY run in `models/` trained on it.** 172/773 pool teams (22%) carry Baton
+  Pass. `LiveView` → obs → `pbrs_boost` all read the same wiped state, so **a successful pass was
+  PENALIZED by the reward** (`pbrs_boost = −0.068` on the owner's very trace — a completed setup
+  transfer scored as total setup loss). Passed Substitute/Leech Seed/confusion/curse/perish/wrap
+  were equally invisible. Symmetric across sides and arms — so ARM-VS-ARM comparisons (the
+  E-battery, the transfer controls, the probe pair) survive by the same-blindness argument, but
+  every ABSOLUTE behavioral read involving BP teams carries the caveat, and **the gen-16 c5 cell
+  is VOIDED** (its gate is literally "a receiver that inherits usefully" — a pre-fix c5 number
+  measured a MISSING fact, not indifference; noted in the gen-16 runbook by the fixing agent).
+  The probes' CMPass pilot trained blind to its own signature mechanic; revolution one will be
+  the first run in this project's history to SEE a Baton Pass.
+- **Why no gate ever caught it — the canonical vacuous green, now named in its purest form**:
+  `obs_roundtrip` and the assembler fuzz compare two encoders over the SAME poke-env state, so
+  they agreed bit-for-bit on the wrong number; the assembler fuzz's "baton_pass EXERCISED /
+  0 mismatches" was structurally true and semantically empty. **A parity gate cannot see a fault
+  upstream of the fork it compares.** The fix's integration test anchors at the PROTOCOL —
+  the only oracle upstream of the defect.
+- **The fix**: the `[from]` tag threaded into `switch`; passer's stages + copyable volatiles
+  snapshotted before the wipe and re-applied; volatile membership by an explicit ALLOW-LIST
+  (`BATON_PASS_COPIED_EFFECTS`, dex-checked with its own anti-vacuity assertion) — an allow-list
+  can only under-copy, an exclusion list could invent state. Deferred-and-documented: the Mean
+  Look trapped-link (dex and rust probe disagree), stall/pursuit. 7 unit cases incl. two
+  negatives (plain switch and phaze must still clear), a `sim` test asserting at the OBS BYTES
+  against the protocol, both halves revert-verified independently. Suite 6,802 exit 0.
+- Old traces' recorded `states.npz` rows stay frozen-wrong; `obs_materializer` now re-derives
+  correctly — a recorded-vs-rerun divergence on an old BP trace is the FIX, not a bug.
+- **The owner's question answered**: not rust (proven correct), not the sim, not the weekend's
+  changes — the vendored fork's parser, since day one. Found because one human looked at one
+  board and asked why the numbers didn't match the story. Fourteen instruments and 6,800 tests
+  said green; the trace view said otherwise, and the trace view was right.
