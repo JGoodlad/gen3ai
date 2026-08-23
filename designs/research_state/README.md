@@ -26,6 +26,11 @@ by agents — see the protocol below and the `feedback-research-state` memory.
   pathology (we fire an immune move into a voluntary pivot, repeatedly): the baselines, the four
   bars, the two registered confounds, the launch-window cell-liveness check, and the pre-committed
   fork for each of the three end-of-run outcomes. Instrument: `main.prober.query loops`.
+- **[hodge_predictions.md](hodge_predictions.md)** — the measured Hodge **non-transitivity
+  baselines** (gen-13…17: width excess, noise floor, cyclic fraction, all at 21 players / 174 edges
+  / 814 triangles) plus the PRE-REGISTERED spinning-top predictions P1/P2/P3, each with a numeric
+  threshold stated against that floor. Carries the game-count confound that voids any naive
+  cross-generation width comparison. Instrument: `python -m main.elo <run> --hodge-bootstrap 300`.
 - **[The frontier](#the-frontier--what-else-might-be-there)** (below) — the standing list of candidate
   levers NOT yet (fully) investigated. This is the working surface for "there has to be more."
 
