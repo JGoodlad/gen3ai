@@ -3809,3 +3809,18 @@ next iteration while you wait to read them, and are excessive this early. Standi
   capacity gate. Re-open when a live scalar alarms or a saturation hypothesis is actually held.
 The two instruments share ONE target family by construction so the offline probe (when it ever
 runs) validates the live canary — same instrument at two speeds.
+
+### 🪤 LEG-A CODE-MATCHED CONFIRMATION — **HOLDS**; the credit conviction is CLEAN on both axes (2026-08-23)
+
+Run `ai_v9_28_legAmatched_0823`: leg-A weights (35,192,832) re-evaluated under leg B's commit
+(`fceef65`), boost off, n 54 → 153 whiffs. Pre-registered primary REJECTS: new leg-A B1
+**11/153 = 0.0719 [0.041, 0.124]** vs leg-B pooled **30/184 = 0.1630 [0.117, 0.223]**, z = −2.66.
+The old-commit reading replicates under the new commit (0.0556 → 0.0719, z = −0.44 — no commit
+effect on either arm), and the whiff/pivot control is unmoved on both comparisons. **Both open
+issues closed in one run**: the binding-side n AND the code confound. Final code-matched picture:
+boost cuts B1 re-click ~2.3× while on; removal returns it to a baseline three independent runs on
+three commits all put at 0.16–0.17; first-whiff never moves. **Falls-then-reverts stands on
+code-matched arms — the credit conviction inherits into the revolution-1 spec as measured fact,
+no caveat.** (Flagged-not-claimed: the two new traces read 0.107 → 0.038 with step — ~1.6 SE
+apart, consistent with noise; NOT evidence of a fast reversion rate; a purpose-built series would
+be needed for that question.) Scratch run `ai_v9_28` is deletable once the rev-1 spec is relayed.
