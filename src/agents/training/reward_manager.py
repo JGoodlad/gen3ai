@@ -10,6 +10,7 @@ from agents.action.constants import SWITCH_END as _SWITCH_END
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import SELF_KO_MOVES, TurnDelta
 from agents.training.stall import StallConfig as _StallConfig
+from agents.training.reward_verify import build_twin as _build_verify_twin, verify_turn
 from agents.gen3_data import moves as _movedex
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
@@ -303,17 +304,36 @@ class RewardBreakdown:
                      "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar", "bias_refund")),
     )
 
+    # Derived-once memos: per-PROCESS constants that were rebuilt EVERY turn (measured:
+    # `registry_fields` 1.6%, `total`'s `dataclasses.fields()` 2.0% of `process_turn_reward`).
+    # Lazy, not class-body, so they stay DERIVED from the registry rather than a copy of it.
+    _REGISTRY_FIELDS: ClassVar[dict] = {}
+    _TOTAL_FIELDS: ClassVar[tuple] = ()
+
     @classmethod
     def registry_fields(cls, reward_class: "RewardClass") -> tuple:
         """The breakdown fields belonging to ``reward_class`` (the registry is the source of truth)."""
-        return tuple(name for name, c in cls._REGISTRY.items() if c is reward_class)
+        cached = cls._REGISTRY_FIELDS.get(reward_class)
+        if cached is None:
+            cached = tuple(name for name, c in cls._REGISTRY.items() if c is reward_class)
+            cls._REGISTRY_FIELDS[reward_class] = cached
+        return cached
+
+    @classmethod
+    def field_names(cls) -> tuple:
+        """Every declared breakdown field, in declaration order (cached; see `_TOTAL_FIELDS`)."""
+        names = cls._TOTAL_FIELDS
+        if not names:
+            names = cls._TOTAL_FIELDS = tuple(f.name for f in fields(cls))
+        return names
 
     @property
     def total(self) -> float:
-        """Sum every registry term + the bias_refund mechanism. Equivalent to summing all
-        dataclass float fields (the registry covers them 1:1, `bias_refund` is summed too)."""
-        return sum(getattr(self, f.name) for f in fields(self)
-                   if isinstance(getattr(self, f.name), float))
+        """Sum every registry term + the bias_refund mechanism (= every dataclass float field).
+        Sums the cached NAME tuple instead of re-deriving `dataclasses.fields()` and
+        re-`isinstance`-ing 39 values per turn — equivalent only because every field is declared
+        `float`, which `reward_skip_parity_test` pins."""
+        return sum(getattr(self, n) for n in RewardBreakdown.field_names())
 
     def to_dict(self) -> dict:
         """Grouped, compact JSON dict.
@@ -631,7 +651,8 @@ class Gen3RewardManager:
     battle — the env gates this at the call site.
     """
     def __init__(self, log_level: LogLevel = LogLevel.QUIET,
-                 config: Optional[RewardConfig] = None, progress_clock=None):
+                 config: Optional[RewardConfig] = None, progress_clock=None,
+                 *, _shadow: bool = False):
         self.log_level = log_level
         # Per-run reward config (bias_additivity / mat_alive_weight / no_progress_penalty / gamma).
         # Default = the single-variable run (λ=1 bias additive, material always-on).
@@ -690,7 +711,29 @@ class Gen3RewardManager:
         # closeness-stratified training metrics (value lives in close games, |margin|≈0). Reward-neutral.
         self._last_material_margin: float = 0.0
 
+        # --- Suppressed-term fast path — design + shadow mode: `reward_verify.py` ------------
+        # Activeness derived ONCE from `_bias_term_active` (the source the startup census reads),
+        # NEVER a hand-copied name list (the v79 lesson). `_bias_term_active(f) is False` implies
+        # the FINAL `bd.f` is 0.0 on every path; where imprecise it errs ACTIVE (it omits the
+        # progress clock's extra zeroing under --bias-redesign) — time, never correctness.
+        self._active_bias: frozenset = frozenset(
+            n for n in RewardBreakdown.registry_fields(RewardClass.BIAS)
+            if _bias_term_active(self.config, n))
+        self._skip_inactive_bias: bool = not _shadow    # the shadow twin computes EVERYTHING
+        self._verify_twin = None if _shadow else _build_verify_twin(
+            Gen3RewardManager, self.config, progress_clock, LogLevel.QUIET)
+
+    def _bias_active(self, *names: str) -> bool:
+        """Is ANY of these BIAS fields reachable under this run's config? The suppressed-term
+        gate — always True on the shadow twin. Callers pass the field name(s) the guarded
+        computation ASSIGNS, so the gate and its term cannot drift apart."""
+        if not self._skip_inactive_bias:
+            return True
+        return not self._active_bias.isdisjoint(names)
+
     def reset(self):
+        if self._verify_twin is not None:
+            self._verify_twin.reset()
         self.switch_count = 0
         self.forced_switch_count = 0
         self.attack_count = 0
@@ -827,6 +870,11 @@ class Gen3RewardManager:
                 }
 
         self._last_action_idx = action
+
+        # Shadow mode: keep the twin's cross-turn counters in lockstep with ours, or the per-turn
+        # comparison would flag state drift as a skip bug.
+        if self._verify_twin is not None:
+            self._verify_twin.record_action(ctx, action)
 
     def _apply_switch_outcome(self, delta: TurnDelta, bd: "RewardBreakdown") -> None:
         """Settle the voluntary-switch subsidy at OUTCOME time.
@@ -1363,27 +1411,40 @@ class Gen3RewardManager:
         phi = BOOST_WEIGHT * positive * hp_frac
         return max(0.0, min(phi, BOOST_WEIGHT * 6 * 7))
 
-    def _compute_phi_opp_boosts(self, live) -> float:
+    @staticmethod
+    def _opp_positive_boost_stages(live) -> int:
+        """Σ max(0, stage) over the opp active's boosts — the ONE quantity Φ_opp_boosts and Φ_roar
+        both reduce to; 0 with no opp mon on the field."""
+        if not live.opp.active:
+            return 0
+        return sum(max(0, int(v)) for v in (live.opp.active.boosts or {}).values())
+
+    def _compute_phi_opp_boosts(self, live, positive: Optional[int] = None) -> float:
         """Opponent-boost-disruption potential Φ_opp_boosts = −OPP_BOOST_WEIGHT·Σmax(0,b) over the opp
         active's positive boost stages. A successful Roar resets them → next window Φ rises (positive
         shaping scaled by the boosts cleared); a failed Roar leaves them → ΔΦ=0 (failed_roar dissolves).
-        The forced-in mon's hazard chip is priced by Φ_mat, not here. Pure board function."""
+        The forced-in mon's hazard chip is priced by Φ_mat, not here. Pure board function.
+
+        `positive` is the Σ shared with Φ_roar; `None` recomputes it (direct calls stay 1-arg)."""
         if not live.opp.active:
             return 0.0
-        boosts = live.opp.active.boosts or {}
-        positive = sum(max(0, int(v)) for v in boosts.values())
+        if positive is None:
+            positive = self._opp_positive_boost_stages(live)
         phi = -OPP_BOOST_WEIGHT * positive
         bound = OPP_BOOST_WEIGHT * 7
         return max(-bound, min(phi, bound))
 
-    def _compute_phi_roar(self, live) -> float:
+    def _compute_phi_roar(self, live, positive: Optional[int] = None) -> float:
         """DEDICATED phaze-out-boosts potential Φ_roar = −ROAR_BOOST_WEIGHT·Σmax(0,b) over the opp active's
         positive boost stages (same state-potential shape as Φ_opp_boosts, its OWN weight). A successful
         Roar resets the opp active's stages → next window Φ rises by ROAR_BOOST_WEIGHT·(stages cleared) =
-        the proportional roar-out-boosts payout; a failed roar leaves them → ΔΦ=0. Pure board function."""
+        the proportional roar-out-boosts payout; a failed roar leaves them → ΔΦ=0. Pure board function.
+
+        `positive` is the shared Σ (see `_compute_phi_opp_boosts`); `None` recomputes it."""
         if not live.opp.active:
             return 0.0
-        positive = sum(max(0, int(v)) for v in (live.opp.active.boosts or {}).values())
+        if positive is None:
+            positive = self._opp_positive_boost_stages(live)
         bound = ROAR_BOOST_WEIGHT * 7
         return max(-bound, min(-ROAR_BOOST_WEIGHT * positive, bound))
 
@@ -1538,7 +1599,16 @@ class Gen3RewardManager:
     def _pbrs_step(prev: Optional[float], phi_next: float, is_terminal: bool) -> tuple[float, float]:
         """One PBRS shaping step: F = γ·Φ(s′) − Φ(s), with the absorbing ``Φ(terminal)=0`` convention
         and the standard ``prev is None`` first-window skip. Returns ``(shaped, new_prev)``. The
-        terminal-zeroing lives HERE once, so a new potential can't forget it (design §2.3)."""
+        terminal-zeroing lives HERE once, so a new potential can't forget it (design §2.3).
+
+        ⚠️ DO NOT "optimize" this by carrying/telescoping Φ itself. RECOMPUTING Φ FROM THE
+        ONCE-PER-TURN LIVEVIEW IS THE EXACTNESS GUARANTEE: policy-invariance needs Φ to be a pure
+        function of the STATE, and a carried Φ drifts with float accumulation over 250 turns —
+        making it a function of HISTORY, a silent objective change with nothing to fail. Nor is
+        anything quadratic left: `_prev_phi_*` already carries Φ(s), so this is O(1) Φ evaluations
+        per turn and the six cheap potentials are 8% of `process_turn_reward` COMBINED (measured
+        2026-08-23). The one expensive Φ input, Φ_belief's `encode_block` (60%), has a different
+        safe answer: content-keyed memoization of pure functions."""
         phi = 0.0 if is_terminal else phi_next
         shaped = (PBRS_GAMMA * phi - prev) if prev is not None else 0.0
         return shaped, phi
@@ -1596,15 +1666,18 @@ class Gen3RewardManager:
         bd.pbrs_boost, self._prev_phi_boost = self._pbrs_step(
             self._prev_phi_boost, self._compute_phi_boost(live), is_terminal)
 
-    def _fold_opp_boosts_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+    def _fold_opp_boosts_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool,
+                              positive: Optional[int] = None) -> None:
         """Opp-boost-disruption PBRS Φ_opp_boosts → bd.pbrs_opp_boosts. Gated on all_shaping_pbrs (the
-        roar/failed_roar BIAS is suppressed there). Telescopes, Φ(terminal)=0."""
+        roar/failed_roar BIAS is suppressed there). Telescopes, Φ(terminal)=0.
+        `positive` is the opp-positive-boost Σ shared with `_fold_roar_pbrs` (None recomputes)."""
         if not self.config.all_shaping_pbrs:
             return
         bd.pbrs_opp_boosts, self._prev_phi_opp_boosts = self._pbrs_step(
-            self._prev_phi_opp_boosts, self._compute_phi_opp_boosts(live), is_terminal)
+            self._prev_phi_opp_boosts, self._compute_phi_opp_boosts(live, positive), is_terminal)
 
-    def _fold_roar_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
+    def _fold_roar_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool,
+                        positive: Optional[int] = None) -> None:
         """DEDICATED phaze-out-boosts PBRS Φ_roar → bd.pbrs_roar. Folded INTO --all-shaping-pbrs (its own
         flag was removed per owner request), so it rides alongside Φ_opp_boosts there — the two STACK (safe,
         both policy-invariant) for a stronger proportional roar-out-boosts shaping. Telescopes via
@@ -1612,7 +1685,7 @@ class Gen3RewardManager:
         if not self.config.all_shaping_pbrs:
             return
         bd.pbrs_roar, self._prev_phi_roar = self._pbrs_step(
-            self._prev_phi_roar, self._compute_phi_roar(live), is_terminal)
+            self._prev_phi_roar, self._compute_phi_roar(live, positive), is_terminal)
 
     def _apply_progress_clock(self, bd: "RewardBreakdown") -> None:
         """Read the shared ProgressClock's stashed penalty into ``bd.no_progress_tax`` and suppress
@@ -1715,8 +1788,14 @@ class Gen3RewardManager:
         # The survive-the-Explosion credit is now carried by Φ_mat (opp lost a mon, we lost nothing),
         # so the old +2.0 literal is DELETED (design §2.5). The explosion_block bonus (no-sold the
         # Explosion via immunity / 0 damage) is KEPT — it lives inside the same `not we_fainted` gate.
+        # ⚠️ Every `_bias_active(...)`-gated block below is a PURE value computation this run's
+        # composition forces to 0.0. The gate skips the COMPUTE, never a cross-turn MUTATION:
+        # `_compute_spikes_bonus`, `_compute_status_reward`, `_apply_switch_outcome`,
+        # `_update_opp_se_threat` and the `_last_opp_seen_by` update all stay UNGATED, so the
+        # manager's observable state is identical whether the skip fires or not (grep-verified).
         opp_event = delta.opp_damaging_event
-        if opp_event is not None and opp_event.move_id in ("explosion", "selfdestruct"):
+        if opp_event is not None and self._bias_active("explosion_block") \
+                and opp_event.move_id in ("explosion", "selfdestruct"):
             if not delta.we_fainted:
                 if delta.our_hp_delta.sum() == 0.0 or opp_event.effectiveness == 0.0:
                     bd.explosion_block = EXPLOSION_BLOCK_BONUS
@@ -1725,46 +1804,70 @@ class Gen3RewardManager:
 
         # --- Self-KO penalty (HP-scaled): Φ_mat prices a healthy 1-for-1 self-KO trade at ~0, so the
         # critic learns to like throwing away a healthy mon. OFF unless --self-ko-hp-penalty > 0. ---
-        bd.self_ko_penalty = self._compute_self_ko_penalty(delta)
+        if self._bias_active("self_ko_penalty"):
+            bd.self_ko_penalty = self._compute_self_ko_penalty(delta)
 
         # --- Finishing blow ---
-        bd.finishing_blow = self._compute_finishing_blow_bonus(delta, live)
+        if self._bias_active("finishing_blow"):
+            bd.finishing_blow = self._compute_finishing_blow_bonus(delta, live)
 
         # --- Attack signals ---
-        bd.roar = self._compute_roar_bonus(delta, live)
-        bd.futile_attack = self._compute_futile_attack_penalty(delta, live)
-        bd.futile_setup = self._compute_futile_setup_penalty(delta)
-        bd.setup_low_hp = self._compute_setup_low_hp_penalty(delta)
-        bd.boost_utilized = self._compute_boost_utilized(delta, live)
+        if self._bias_active("roar"):
+            bd.roar = self._compute_roar_bonus(delta, live)
+        if self._bias_active("futile_attack"):
+            bd.futile_attack = self._compute_futile_attack_penalty(delta, live)
+        if self._bias_active("futile_setup"):
+            bd.futile_setup = self._compute_futile_setup_penalty(delta)
+        if self._bias_active("setup_low_hp"):
+            bd.setup_low_hp = self._compute_setup_low_hp_penalty(delta)
+        if self._bias_active("boost_utilized"):
+            bd.boost_utilized = self._compute_boost_utilized(delta, live)
 
         # --- Field control ---
+        # NEVER gated: advances `_prev_opp_spikes`, and raw `bd.spikes` feeds the
+        # `_last_attack_had_effect` assembly below (which record_action consumes NEXT turn).
         bd.spikes, bd.futile_spikes = self._compute_spikes_bonus(delta, live)
 
         # --- Positional: penalty for staying in against a known threat ---
-        bd.matchup_penalty = self._compute_matchup_penalty(delta)
+        if self._bias_active("matchup_penalty"):
+            bd.matchup_penalty = self._compute_matchup_penalty(delta)
         # Belief-risk-scaled stay-into-KO tax (the under-switch lever; OFF unless --switch-bias-weight>0).
-        bd.stay_risk_tax = self._compute_stay_risk_tax(delta)
-        # Escalating penalty for refusing to pivot out of a 0×-only matchup.
-        bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, live)
+        if self._bias_active("stay_risk_tax"):
+            bd.stay_risk_tax = self._compute_stay_risk_tax(delta)
+        # Escalating penalty for refusing to pivot out of a 0×-only matchup — the most expensive
+        # BIAS item (2.8% of the stage: a movedex walk + ≤4 effectiveness calls per non-switch
+        # turn). Skippable WHOLE despite mutating `_consecutive_dead_matchup_stays`: that
+        # counter's ONLY reader is this helper (grep-verified — no reference outside this file;
+        # inside, only here / `__init__` / `reset`), so suppressed it is not observable state.
+        if self._bias_active("dead_matchup_tax"):
+            bd.dead_matchup_tax = self._compute_dead_matchup_tax(delta, live)
 
         # --- Switch rewards (see SWITCH_REWARDS.md for full breakdown) ---
         # Pivot, SE, and sleep-out are skipped when phazed — roar removes our
         # choice, so those signals don't apply.
         if delta.our_switch_to is not None:
             if not self._last_switch_was_roared:
-                bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, live)
-                bd.se_switch = self._compute_se_switch_bonus(delta, live)
-                bd.sleep_out = self._compute_sleep_out_bonus(delta, live)
-                # Update per-mon opponent tracker for future se_switch gating
+                if self._bias_active("pivot_protect", "pivot_status", "pivot_damage"):
+                    bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, live)
+                if self._bias_active("se_switch"):
+                    bd.se_switch = self._compute_se_switch_bonus(delta, live)
+                if self._bias_active("sleep_out"):
+                    bd.sleep_out = self._compute_sleep_out_bonus(delta, live)
+                # Update per-mon opponent tracker for future se_switch gating. NEVER gated —
+                # cross-turn state (and `se_switch` is active under other compositions).
                 our_mon_in = live.ours.active
                 opp_mon_in = live.opp.active
                 if our_mon_in and opp_mon_in and not opp_mon_in.fainted:
                     self._last_opp_seen_by[our_mon_in.species] = opp_mon_in.species
-            bd.sleep_in = self._compute_sleep_in_penalty(delta, live)
+            if self._bias_active("sleep_in"):
+                bd.sleep_in = self._compute_sleep_in_penalty(delta, live)
 
         # --- Status signals ---
+        # NEVER gated: advances `_prev_our/opp_statused`, and `_d_opp_statused` feeds the
+        # `_last_attack_had_effect` assembly below.
         bd.status, _d_opp_statused = self._compute_status_reward(delta, live)
-        bd.status_wasted = self._compute_status_wasted_penalty(delta, _d_opp_statused)
+        if self._bias_active("status_wasted"):
+            bd.status_wasted = self._compute_status_wasted_penalty(delta, _d_opp_statused)
 
         # --- Subsidy / taxes ---
         # Attack taxes are action-keyed (a pressed move/struggle reliably resolves or
@@ -1781,7 +1884,7 @@ class Gen3RewardManager:
 
         # --- Progressive stall tax — kept GENTLE (design §4.3): the progress clock is offense-centric
         # and can't see defensive stalls, so a soft absolute-turn term covers them. ~−10 to turn 250.
-        if battle.turn > STALL_TAX_START_TURN:
+        if self._bias_active("stall_tax") and battle.turn > STALL_TAX_START_TURN:
             ramp = (battle.turn - STALL_TAX_START_TURN) / STALL_TAX_RAMP_TURNS
             bd.stall_tax = -min(STALL_TAX_PER_TURN * ramp, STALL_TAX_MAX)
 
@@ -1803,8 +1906,11 @@ class Gen3RewardManager:
         self._fold_progress_pbrs(bd, is_terminal)
         self._fold_hazard_pbrs(bd, live, is_terminal)
         self._fold_boost_pbrs(bd, live, is_terminal)
-        self._fold_opp_boosts_pbrs(bd, live, is_terminal)
-        self._fold_roar_pbrs(bd, live, is_terminal)
+        # Φ_opp_boosts and Φ_roar are the SAME potential at two weights (−w·Σmax(0, opp boost
+        # stage)), so the Σ is computed once and threaded to both instead of walking twice.
+        opp_positive_boosts = self._opp_positive_boost_stages(live)
+        self._fold_opp_boosts_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
+        self._fold_roar_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
 
         # Track whether our last move did anything PRODUCTIVE this turn, for the
         # escalating repetition tax. A move counts as effective if it dealt damage,
@@ -1834,6 +1940,9 @@ class Gen3RewardManager:
         reward = bd.total
         self.total_reward += reward
         self._log_turn(bd, battle, meta)
+        if self._verify_twin is not None:
+            verify_turn(self._verify_twin, battle, delta, bd,
+                        RewardBreakdown.field_names(), self._active_bias)
         return reward
 
     def _log_turn(self, bd: "RewardBreakdown", battle, meta: dict) -> None:

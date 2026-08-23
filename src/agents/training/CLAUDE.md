@@ -280,6 +280,61 @@ holds exactly.
 Pins: `src/main/reward_defaults_test.py` (both defaults, both opt-outs, both compositions, the
 `RewardConfig` ↔ `ModelVersion` default agreement, and the actionable resume FATAL).
 
+#### The census also drives a fast path — `_active_bias` (`gen3_reward_skip_suppressed_v1`)
+
+`process_turn_reward` used to compute every BIAS helper and then hand the results to
+`_apply_pbrs_suppression`, which under the production composition zeroes ~20 of them — a movedex
+walk (`dead_matchup_tax`), two effectiveness loops (`se_switch` / pivot) and a 12-mon status scan,
+every decision, for numbers immediately overwritten with 0.0. The manager now derives
+`self._active_bias` ONCE at `__init__` **from `_bias_term_active`** — the same function the census
+above reads, never a second hand-copied name list (the v79 hand-copied-family-set lesson) — and
+`_bias_active("<field>")` gates each pure value computation. Each gate names the field it ASSIGNS,
+so a rename breaks the assignment beside it instead of silently un-gating a term.
+
+**It is legal because activeness is a per-run CONSTANT**: every flag `_bias_term_active` reads
+(`all_shaping_pbrs`, `stall_pbrs`, `bias_redesign`, `drop_*`, `switch_bias_weight`,
+`self_ko_hp_penalty`) is resume-immutable and value-checked by `check_reward_config`, so a
+constructor-time active set can never go stale mid-run. Where the mirror is imprecise it errs
+ACTIVE (it does not model the progress clock's extra zeroing of repetition/struggle/dead_matchup
+under `--bias-redesign`), which costs time, never correctness.
+
+**The cut is COMPUTE-only, never a cross-turn MUTATION.** `_update_opp_se_threat`,
+`_compute_spikes_bonus` (`_prev_opp_spikes`), `_compute_status_reward` (`_prev_*_statused`),
+`_apply_switch_outcome` (`switch_count` / bounce depth / `_last_switched_from`) and the
+`_last_opp_seen_by` update all stay **ungated**, so the manager's observable state is identical
+turn for turn whether the skip fires or not. The one exception is `_compute_dead_matchup_tax`,
+skipped whole despite mutating `_consecutive_dead_matchup_stays`, because that counter has ZERO
+readers outside `reward_manager.py` — suppressed, it is write-only, not observable state.
+
+**Measured** (2026-08-23, order-alternated same-process A/B, both arms on the same decision;
+absolutes contaminated by a busy box, ratios are the claim): **~1.08× on `process_turn_reward`**
+across four ~1500-decision runs, and a load-free **−20.3% Python calls per call**. Under
+`--no-all-shaping-pbrs` (nothing suppressed) the ratio is 0.990× — a no-op, as required. Riding
+along: `registry_fields` memoized, `total` summing a cached field-NAME tuple instead of
+re-deriving `dataclasses.fields()` (which measured 7.4% of the stage — as much as the whole BIAS
+family), and the Φ_opp_boosts/Φ_roar Σ (the same potential at two weights) computed once.
+
+**Gates — this is THE OBJECTIVE, so bit-identity, not approximation.**
+`reward_skip_parity_fuzz_test.py` plays real bridge battles and compares EVERY breakdown field
+(with `!=`) between the production manager and a `_shadow=True` twin, across the three
+compositions **on the same decision stream** — which is also what makes its trigger-coverage table
+meaningful, since the `--no-all-shaping-pbrs` arm's firings are exactly what the production arm
+skipped. It additionally asserts per turn that the skip is the suppression's exact COMPLEMENT, and
+fails INCONCLUSIVE if the corpus never fired the required signals. `GEN3AI_REWARD_VERIFY=1`
+(`reward_verify.py`) is the shadow mode: a lockstep full-computation twin asserted bit-identical
+every turn — no CLI flag, because the skip is an internal swap and a default branch nobody runs is
+the untested one. Derivation pins: `reward_skip_parity_test.py`.
+
+**`reward_tracker.py` parity holds BY CONSTRUCTION** — it builds the same `Gen3RewardManager`
+through the same factory with the run's `RewardConfig`, and this change adds no constructor input
+the tracker path doesn't thread, so eval traces / falsify / `cf_mc_return` inherit it unchanged.
+
+⚠️ **Do NOT "optimize" the Φ potentials by carrying/telescoping Φ** — recompute-from-the-memoized-
+view IS the exactness guarantee, and the reasoning lives in `_pbrs_step`'s docstring where someone
+would try it. The one expensive Φ input is `pbrs_belief`'s `encode_block` at **60% of the stage**
+(measured), whose safe answer is content-keyed memoization; it is the named DEFERRED follow-up in
+the ledger, and its trigger condition has fired.
+
 ## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
 
 `gen3_defensive_entropy_v1` — the answer to "the model under-uses Recover/Soft-Boiled/Wish/Refresh/Heal Bell

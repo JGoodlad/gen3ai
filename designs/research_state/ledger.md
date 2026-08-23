@@ -2880,3 +2880,95 @@ before, applied twice.
   routine gate (`-m "not slow and not e2e"`) green; ruff + mypy; the size gate green with both
   entries removed and no new file over the 1,000-line target; `python -m main.prober.web
   --check-openapi` OK (the web contract did not move, and `web/app.py`'s imports are untouched).
+
+### Reward-manager Stage LANDED — the census's map was right about the RANKING and wrong about both MAGNITUDES; the suppressed-term skip is real but small, and the deferred item's trigger has FIRED (2026-08-23, `gen3_reward_skip_suppressed_v1`)
+
+**Step 0 first, and it earned its place.** `tmp/reward_perf_census.md` was a static read that marked
+every share UNVERIFIED and made the build conditional on one cProfile. That profile (421 profiled
+`process_turn_reward` calls over real rust-bridge gen3ou battles, `nice -n 10`, box at load 13-33 so
+**absolutes are contaminated and only the within-stage shares are claimed**) moved two numbers by
+more than the whole build is worth:
+
+| phase | census (static estimate) | **MEASURED** (share of `process_turn_reward`) |
+|---|---|---|
+| `_fold_belief_pbrs` → `encode_block` | ~30-45% | **60.0%** (`compute_team_block` 42.5, `_channel_threat` 29.9, `_attacker_threat` 10.8) |
+| the ~20 suppressed BIAS helpers | ~20-30% | **7.5%** (biggest single: `dead_matchup_tax` 2.8) |
+| `bd.total` (`dataclasses.fields()` per turn) | ~5-8% "micro" | **7.4%** — *tied with the entire BIAS family* |
+| `_fold_material_pbrs` (Φ_mat) | ~5-8% | 3.7% |
+| `_apply_pbrs_suppression` (`registry_fields` rebuild) | ~2% | 3.1% (of which `registry_fields` 1.6) |
+| `_update_opp_se_threat` | ~3-5% | 2.1% |
+| all six cheap Φ potentials COMBINED | — | **8%** |
+
+**The RANK order survived (encode_block #1, BIAS family #2); the magnitudes did not.** The census
+over-read the BIAS family by ~3× and under-read `encode_block` by ~1.7×, and it filed as a "micro"
+one item (`total`) that measures the same as its headline target. *A static read can order phases;
+it cannot size them.* Per the brief's stop rule the build stayed at the cheap unambiguous fixes.
+
+- **What ships.** The active BIAS set is derived ONCE at `__init__` from **`_bias_term_active`** —
+  the same single source `reward_class_composition` prints at launch — never a hand-copied name
+  list (the v79 lesson). Each call site gates on the field it ASSIGNS, so a rename breaks the
+  assignment beside it rather than silently un-gating a term. Legal because the composition is a
+  per-run CONSTANT: every flag that function reads is resume-immutable and `check_reward_config`-ed.
+  Plus the three micros: `registry_fields` memoized, `total` summing a cached field-NAME tuple, and
+  the Φ_opp_boosts/Φ_roar Σ (the SAME potential at two weights) computed once.
+- **The cut is COMPUTE-only, never a MUTATION** — and that is where the census contradicted itself.
+  It listed `_update_opp_se_threat` as a dead chain to delete while its own rule said "keep the
+  cheap counter/snapshot mutations, skip the pure value computations". The rule wins:
+  `_update_opp_se_threat`, `_compute_spikes_bonus`, `_compute_status_reward`,
+  `_apply_switch_outcome` and the `_last_opp_seen_by` update all stay UNGATED, so the manager's
+  observable state is identical turn for turn. **2.1% left on the table on purpose**, because
+  state-identity is a far stronger property to hold on THE OBJECTIVE than 2% is to win — and two
+  existing tests read `_prev_opp_se_threat` directly.
+- **One helper IS skipped whole despite mutating**: `_compute_dead_matchup_tax`, the most expensive
+  BIAS item. Its `_consecutive_dead_matchup_stays` counter has ZERO readers outside
+  `reward_manager.py` and only itself inside, so under suppression it is write-only — not
+  observable state. Grep-verified, and stated in the code beside the gate.
+- **Measured win — honest, and smaller than the census projected.** Reported as an
+  order-alternated SAME-PROCESS A/B (both arms on the same decision at the same instant, arm order
+  swapped each turn), because a before/after across two invocations measures the load: the same
+  binary read 0.173 ms at load 13.6 and 0.183 ms at load 26.4. Four runs, ~1500 paired decisions
+  each: **stage ratio 1.066× / 1.081× / 1.087× / 1.100×**, i.e. **~1.08× on `process_turn_reward`
+  (−7%)**, plus a load-free exact figure: **Python calls per call 1138.6 → 907.8, −20.3%**. Against
+  the ~23% reward share that is **~1.6% of worker CPU** — versus the census's −5-9% projection.
+  Control arm: under `--no-all-shaping-pbrs` (nothing suppressed) the ratio is **0.990×**, a no-op
+  within noise, exactly as required.
+- **Gates.** New `reward_skip_parity_fuzz_test.py`: real bridge battles, **10,639 decisions × 3
+  compositions** (default / `--no-all-shaping-pbrs` / `--stall-pbrs`), EVERY field of EVERY
+  breakdown compared with `!=` — zero mismatches — plus a second per-turn assertion that the skip
+  is exactly the suppression's COMPLEMENT (any inactive term found charged on the FULL path fails).
+  `GEN3AI_REWARD_VERIFY=1` shadow mode (a lockstep full-computation twin, `reward_verify.py`) ran
+  clean over 400 production-composition decisions and the whole `reward_value_regression` fuzz; its
+  unit test INJECTS a divergence, because a shadow that cannot fail is worth nothing. New
+  `reward_skip_parity_test.py` pins the derivation against the census across 6 compositions.
+  Routine suite **6414 passed**, mypy/ruff/file-size green. `reward_tracker` parity holds BY
+  CONSTRUCTION — it builds the same `Gen3RewardManager` through the same factory with the run's
+  `RewardConfig`, and this change adds no constructor input the tracker path doesn't thread.
+- **The file-size ratchet caught it and the decomposition was the right answer, not terser prose.**
+  `reward_manager.py` crossed the 2000-line hard bound; the shadow-verify harness moved to
+  `reward_verify.py` (which is where its design note belongs anyway) rather than the comments being
+  shaved to fit. 1994 lines.
+- 🔴 **DEFERRED — and its trigger has now FIRED.** The census deferred the belief-block memo
+  "until step 0 confirms `encode_block`'s share ... build only if ≥ ~35%". **It measures 60.0%**,
+  so the condition is met and this is now the largest single item anywhere in the per-decision CPU
+  budget. The design sketch stands as written (census §3): an `_attacker_threat` memo keyed on
+  `(opp species, revealed move ids, boosts, status, our screens, weather)`; a per-defender
+  `_channel_threat`/`p_outspeed` memo keyed `(Defender, attacker-key, screen)` — `Defender` is a
+  frozen dataclass and a benched mon's is unchanged across most turns, so 4-5 of 6 are warm; and
+  the `dmax_crit == 2·dmax` reuse when no screen is up. Exact by construction (content-keyed pure
+  functions), subject to Stage A's cache-locality rule. **Weigh it against `obs: legal + mask`
+  (22% of worker CPU, still un-attacked)** — same effort, and reward is now the smaller stage.
+- ⚠️ **NOT DONE, deliberately: telescoping/incremental Φ.** Recompute-from-the-memoized-view IS the
+  exactness guarantee — a carried Φ drifts with float accumulation and becomes a function of
+  HISTORY, a silent objective change with nothing to fail — and there is nothing quadratic to
+  remove (`_prev_phi_*` already makes the fold O(1) Φ evaluations/turn) for six potentials that
+  measure 8% COMBINED. The reasoning now lives in `_pbrs_step`'s docstring, where someone would
+  try it.
+- 🐛 **Two pre-existing defects FOUND, not fixed** (both would break this commit's bit-identity
+  claim, so neither belongs in it): (a) `Gen3RewardManager.reset()` omits `_prev_phi_roar` while
+  resetting the other seven `_prev_phi_*`, so Φ_roar's first-window skip leaks 0.0 from the prior
+  episode instead of `None` — `reset()` IS called between episodes (`gen3_env.py:891`,
+  `reward_tracker.py:27`); (b) `self_ko_penalty_fuzz_test.py` FAILS on the unmodified tree —
+  it builds `mgr_on` with `RewardConfig(self_ko_hp_penalty=W)` and the default
+  `all_shaping_pbrs=True`, which suppresses `self_ko_penalty` before the weight is ever consulted,
+  so it asserts a term its own composition zeroes. Verified failing identically with
+  `reward_manager.py` stashed.
