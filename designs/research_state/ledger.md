@@ -2600,3 +2600,26 @@ a deliberate 90-second producer STALL, a poisoned label file and a producer REST
   test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both` (`sim`, **22.5 s**)
   runs two real cycles across a FORCED checkpoint boundary and asserts the re-stamp, the two
   vintages' ages in the real buffer, and the poisoned-row partition.
+
+### Parity-triage rider — the two TRAINING-PATH bugs were live through gen-17 and the whole E-battery (2026-08-23, orchestrator note on `38d8cb1`)
+
+Classes 1 (Return/Frustration BP alias absent from the rust `|request|`) and 3 (single-entry
+request silently accepting `move 2`) reached the TRAINING bridge, i.e. were live under
+`--use-bridge=rust` for gen-17, E1–E4 and the probes now running. Verdict-impact assessment:
+**none invalidated** — (a) every arm trained on the SAME transport, so all cross-arm comparisons
+(the battery, the transfer controls, the probe pair) difference the defect away by construction;
+(b) exposure is rare by measurement (the 22k-episode bridge fuzz and 20-test parity suite ran
+clean pre-fix — these surfaced only on fresh multi-seed goldens); (c) the obs path reads move
+data from `gen3_data` by id, not from the request's display fields. The honest residue: absolute
+behavior vs a node/live-server world differed microscopically for Return/Frustration carriers and
+forced-lock edge cases — a transport-fidelity note, not a result-bearing one. The probes running
+NOW picked up the fixes via `--sync-to-main` mid-arm only at their next launcher restart; their
+readouts are arm-vs-arm on identical code either side, so unaffected.
+
+**And the method finding deserves its standing rule**: per-golden divergence counts ran
+1/0/0/6/8/0/6 across seven seeds — THREE of seven would have read as a GREEN GATE with four real
+bugs live, and the recorded "29"/"1" were single draws read as measurements. *A parity gate's
+verdict is a property of a golden DISTRIBUTION, not a golden* — two seeds is now the documented
+floor. The week's ninth vacuity also fell here: a rust test whose setup opened with
+`Err(_) => return` had SKIPPED ON EVERY TREE IT EVER RAN ON (its packed team never unpacked);
+it asserts its build now.
