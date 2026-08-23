@@ -1925,3 +1925,86 @@ under the environment the run wants, so the child inherits it on any machine und
   skip silently on any other machine via absolute `models/` paths — `arch_tables_test.py:22`,
   `intent_move_cell_test.py:46`, `audit_states_test.py:177` — plus `eval_sharding_fuzz_test.py:44`.
   None are launcher-related; all four want `get_main_repo_root()`.
+
+### Phase 2 LANDED — `pyproject.toml` + editable install; the incantation is now OPTIONAL, and the sys.path ORDER became load-bearing machinery (2026-08-22)
+
+`export PYTHONPATH=$PYTHONPATH:src` — the thing every command in this repo has needed, forever,
+in every shell — is replaced by `pip install -e .`. **ADDITIVE**: PYTHONPATH keeps working
+everywhere unchanged, and the launcher child still sets it. The scope survey called this the 🔴
+phase and it earned the marking: the change is 8 files, and *all* of the risk is in one fact
+about CPython's startup that nothing in this repo controls.
+
+**The fact, and why both halves matter.** PYTHONPATH entries land in `sys.path` BEFORE
+site-packages; an editable install's `.pth` lands AFTER. So:
+
+- **PYTHONPATH beats the `.pth`** ⇒ the launcher's worktree pin survives the install. Verified
+  in a throwaway venv: with the `.pth` naming checkout A and `PYTHONPATH` naming checkout B,
+  `agents` resolved to **B**. Without this, a resumed run would import current HEAD rather than
+  the code its checkpoint was saved on — silently.
+- **The `.pth` loses to a package installed in the same site-packages** ⇒ this is exactly how
+  PyPI `poke-env` would have shadowed the vendored fork the moment `pyproject.toml` landed.
+  **Reproduced in a plain venv with a decoy in site-packages: `poke_env` resolved to the DECOY,
+  and `poke_env_fork_gate_test.py` FIRED with the right diagnosis; deleting the decoy made it
+  pass.** That is Phase 0's landmine, fired on purpose in a sandbox rather than in production.
+
+⚠️ **A `--system-site-packages` venv does NOT reproduce Finding A** and this cost real confusion
+before it was understood: the venv's site-packages is processed first, so its `.pth` paths land
+*ahead* of the system directory and the fork wins anyway. The live conda env has ONE
+site-packages, and there the `.pth` loses. Anyone re-deriving this must use a plain venv.
+
+**Setuptools picked the STATIC `.pth` strategy, not a `MetaPathFinder`** — checked rather than
+assumed, because a finder installs into `sys.meta_path` and the whole precedence argument above
+would have been about the wrong mechanism. The artifact is one file containing one line: the src
+dir.
+
+**The live env was mutated, and the decision was evidence-led rather than nerve-led.** A training
+run (`ai_v9_25_E4_baitbot_0822`, ~2 h in) and another agent's suite were both live at load ~30.
+Scanned **every** process in `/proc` for the site-packages `poke_env` path: **0 maps hits, 0 fd
+hits** — with the honest caveat that the package is pure Python (0 `.so` files), so `maps` is a
+weak instrument there. The decisive evidence was stronger: **all 115 live `gen3ai_stable` python
+processes carry a `src` directory ahead of site-packages in `PYTHONPATH`**, so no live process
+could have been reading the installed copy, and the fork answers every lazy import either way.
+`pip uninstall poke-env` first, `pip install -e .` second — never the reverse, since
+*.pth-present + PyPI-copy-present* is precisely the hazard. The training run was unaffected
+(still running, 37% CPU); the `.pth` adds `/home/goodlad/dev/gen3ai/src`, which is **already** in
+every launcher child's PYTHONPATH, so for the live run it is a literal no-op.
+
+**`pyproject.toml` declares NO dependencies, deliberately.** `environment.yml` owns what is
+installed — 73 pins including a CUDA-local-version torch that is not on PyPI at all. Two owners
+of one question drift, and the drift is repaired by pip mutating a working env. With an empty
+list, `pip install -e .` writes a `.pth` plus a `dist-info` and is *incapable* of resolving or
+replacing anything. Confirmed on the live env: nothing else changed.
+
+**`src/packaging_gate_test.py`** (10 tests, unmarked, 0.08 s) re-proves both orderings on every
+run against real `.pth` files, and pins the rest:
+- the two orderings above, as executable evidence rather than prose in three documents;
+- **the launcher pin END TO END** — drives the real `_launch_child` with a fake pinned worktree
+  and asserts the spawned child imports `agents` **from it**. Revert-verified: deleting child.py's
+  PYTHONPATH export fails 2 of 10 (the literal scan AND the behavioural test), and the literal
+  scan also fails if the 🚨 comment is deleted, because an allowlist entry that outlives its own
+  explanation misleads every reader after it;
+- a **stale `.pth`** pointing at a deleted worktree (Python skips a missing entry *in silence*);
+- **no installed package may claim `agents` / `main` / `utils` / `poke_env`** — the fork hazard
+  generalised to three names a future dependency could plausibly take.
+- ⚠️ That last one **also catches the new worktree footgun**: run a worktree's suite with no
+  PYTHONPATH and it collects its own test files while importing the MAIN checkout's code. It
+  fails loudly with that exact diagnosis. **In a worktree the export is still mandatory** —
+  "optional" means optional in the main checkout, and the root `CLAUDE.md` now says so in a 🚨.
+
+**`bootstrap.sh` gains it as step 3, SKIPPED in a linked worktree** (one absolute path, and a
+worktree's path goes away). Its verify step checks the import with PYTHONPATH deliberately
+**UNSET** — verifying after the export would pass whether or not the install landed, which is
+the same class of mistake as a gate that cannot fail. Both branches exercised via `--dry-run`
+(worktree = skip; a temp non-worktree repo = install), and the "already done" branch confirmed
+live in the main checkout after the real install.
+
+- **Both regimes green, and the counts are IDENTICAL**: `-m "not slow and not e2e" -n 2` →
+  **6039 passed, 12 skipped, 16 xfailed, exit 0** WITH the incantation from the worktree
+  (284.5 s), and byte-for-byte the same tally from the MAIN checkout with **no PYTHONPATH at
+  all** (286.4 s), on a box at load ~30 carrying a live training run. `python -m main.checkargs`
+  clean on **5/5** most-recent archived runs — the recorded-command contract needed no
+  migration, as the scope predicted.
+- **Not done here, on purpose**: the 63 `export PYTHONPATH` docstring headers in run-directly
+  scripts. They are executable instructions people copy, so they get Phase 3's one reviewed
+  mechanical pass rather than incidental edits. `docs/RUNNING.md`, `README.md` and the root
+  `CLAUDE.md` were corrected because they *asserted the export was required*, which is now false.
