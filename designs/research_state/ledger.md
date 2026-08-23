@@ -1726,3 +1726,29 @@ disjoint slices, 14/15/9/4 wide, own gradients — nothing shared to tie).
   cross-run analysis, worth remembering. And mean |dV| is **exactly 0.0** for all four cells in
   all arms — they are policy-only by construction (the pointer route); the critic never sees
   them, which bounds what any critic-side readout of E4 can attribute to the substrate.
+
+### Wall-clock-seed sweep — the antipattern has a SECOND HALF: guarded assertions (2026-08-22, opus agent, `09577b3`)
+
+**Four test files fixed; the named antipattern turned out to be two antipatterns wearing one
+coat.** Half 1 (named): a wall-clock-seeded fixture eventually plays the battle that skips the
+assertion. **Half 2 (found by the sweep): `if x is not None:` WRAPPED AROUND the decisive
+assertion** — both prober integration tests (`lookahead`, `better_line`) could pass while walking
+past the only thing they exist to prove; `falsifier` asserted on a list that could be empty.
+This is the week's THIRD vacuity (the audit's all-legal mask guard; the never-executed ending-arm
+restore; now guarded assertions) — the family rule: *a test that can pass without evaluating its
+assertion is indistinguishable from a passing test, and only an adversarial read finds it.*
+
+- **`random.seed(k)` is NOT the fix, and the reason is measured**: two players share the global
+  `random` and the bridge INTERLEAVES their `choose_move` calls, so a reseed pins the draws but
+  not the draw ORDER (golden_obs_capture had measured decision counts swinging by hundreds). The
+  shared helper (`record_fixture_battle`) instead REMOVES every randomness source — pinned teams,
+  a `SeededRandomPlayer` on its own `random.Random`, seeded recorder, fixed sim seed — with a
+  `key` selecting among deterministic battles (verified: 3 processes × 4 keys → identical obs
+  sha256, 54/51/90/117 decisions). Variety survives as a key sequence, not a dice roll.
+- Fuzz scripts KEEP their clock seeds (their job is a different battle every run — category (b),
+  15+ files verified legitimate); `bridge_impl_parity`'s `seed=None` arm is THE seedless-path
+  check and untouchable. Borderline left honestly: cf_audit/cf_producer redraw randomly —
+  bounded and loud (cannot silently skip) but not reproducible-on-failure; converting them to
+  fixture keys is the finishing move if their flake class ever recurs.
+- Rule added to root `CLAUDE.md`'s fuzz-convention section. Routine suite 5,988 passed exit 0;
+  fixed files 3× stable.
