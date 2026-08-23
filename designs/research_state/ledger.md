@@ -3326,3 +3326,29 @@ can simplify the TRAINING path only — the asyncio client and its race guards s
 so C's payoff is scoped to training-path deletion and it takes on a DUAL-PLAYER maintenance cost
 that would need its own behavior-parity harness (the node/rust precedent). The census verdict and
 any A/B/C decision doc must carry this constraint in its first section.
+
+### poke-env census — 74.3% of the fork is LIVE (the "we use a third" prior dead), upstream still carries our race bug, and the A/B/C options are priced (2026-08-23, read-only census, `tmp/pokeenv_census.md`)
+
+**Reachability: 44/57 modules, 12,448/16,758 lines (74.3%) live** from production entry points —
+the informal "we use maybe a third" prior was wrong by >2×. Slimming (A) therefore CAPS at ~4.5k
+lines / 27% (upstream's `calc/` 2,364 + doubles 1,106 + spectator 437 + z_crystal + player/utils)
+— days, low-risk behind the fork gate, touches NO structural edge. The fork's 9 internal test
+files are live gates, not weight.
+
+- **Option B's true size**: the behavioral seam is ~12 files, but battle parse+state is **7,207
+  lines (43% of the fork) with NO replacement today** — `Gen3Battle` classifies events and
+  delegates ALL mutation to `super()`. B kills the double-bookkeeping edge and is **fully
+  gate-covered by the existing bit-for-bit harnesses** (goldens, roundtrip, parity — the
+  rust-port method applies verbatim). Weeks-class.
+- **Option C's true shape**: an ENV-LOOP REWRITE, not a transport toggle — even the serverless
+  bridge rides POKE_LOOP (`BattleStreamClient` subclasses `PSClient`). Deletion list: ~15 race
+  artifacts, ~1,450 dedicated + ~300-400 embedded lines; the ladder keeps `ps_client` +
+  `concurrency` (628 lines) permanently per the owner constraint. 1-2 weeks + re-gating.
+- **Upstream drift, the inverted burden**: ONE release since our pin (0.16.0, 2026-08-21),
+  nothing gen-3-relevant — and upstream master **still carries the `race_get` bug verbatim**
+  (no cancel-and-await, no queued preference, no timeout). Our fork is AHEAD of upstream on
+  correctness; the maintenance relationship runs the opposite of the usual fork-rot story.
+- **Structure of the decision**: A is a strict PREFIX of both B and C; B and C attack DISJOINT
+  edges (bookkeeping vs threading) and COMPOSE; the full exit is B+C under the ladder
+  constraint. Sequencing left to the owner with the flywheel's slot economics — the census is
+  the evidence base, not the verdict.
