@@ -1363,7 +1363,8 @@ src/
     play.py            # Battle / evaluation entry point
   poke_env/          # Forked poke-env library
   utils/
-    git.py           # get_git_hash(), get_repo_root()
+    paths.py         # PATH DISCOVERY — the one place that knows the tree depth (see below)
+    git.py           # get_git_hash(); the git-based repo roots paths.py wraps
     (other utils)    # Hidden Power, teambuilder, team loader, logging
 data/                # Source of truth — derived by tools/, read via agents.gen3_data
   pokemon/           # species/moves/items/abilities/type_chart/natures + smogon stats & priors
@@ -1381,6 +1382,42 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
   smogon_stats_downloader/ # Smogon usage stats -> data/pokemon/ priors
   sample_team_downloader/, others_team_downloader/  # -> data/teams/
 ```
+
+### Path discovery — `src/utils/paths.py`
+
+**Never hand-write `Path(__file__).resolve().parents[N]` to find the repo root.** That arithmetic
+lives in **one** module, and `paths_test.py` cross-checks it against `git rev-parse` — so moving a
+file is caught, instead of silently changing what ~25 hand-written copies each believed.
+
+| You want | Use | Mechanism |
+|---|---|---|
+| the checkout this code came from (`data/`, `designs/`, `deps/`, `conftest.py`) | `repo_root()` / `repo_path(*parts)` | `__file__` |
+| `src/` (the import root) | `src_root()` / `src_path(*parts)` | `__file__` |
+| the **run archive** `models/` | `main_models_dir()` → `Path` **or `None`** | `git` |
+| git's own opinion / the HEAD hash | `utils.git` (`get_repo_root`, `get_main_repo_root`, `get_git_hash`) | `git` |
+
+The first two are `__file__`-relative on purpose: they run at import time in production modules
+and must work in a checkout with no `.git` at all (a source tarball, a container `COPY`).
+
+🚨 **`models/` is a different question and it is the one that bites.** It is **not committed**, and
+it exists only in the **MAIN checkout** — `repo_root()` inside a worktree is the *worktree*, which
+has none. `main_models_dir()` reaches across via git's shared `--git-common-dir` (the same logic
+the launcher uses) and returns `None` when there is no archive, which every caller must turn into
+a **skip**. Four tests used to hardcode `/home/goodlad/dev/gen3ai/models/...` behind exactly such a
+skip, so on any other machine they skipped *forever* and nothing said so.
+**`$GEN3AI_MODELS_DIR`** overrides and is authoritative (set-but-missing ⇒ `None`, never a quiet
+fall-back) — that is both the escape hatch for an archive on another disk and the seam those
+skip paths are exercised through.
+
+`utils/paths_test.py` closes the class: an **AST scan** fails any module under `src/agents`,
+`src/main`, `src/utils` that uses a `/home/…` literal as a *value*. Comments and docstrings are
+structurally out of scope, so prose may still mention a path.
+
+**When `__file__`-relative is still right and `paths` is the wrong tool:** a module locating a
+file that ships *beside it* (`Path(__file__).parent / "local_sim_bridge.js"`) is not doing
+repo-root discovery, and routing it through the repo root would make a local fact depend on a
+global one. Same for a bootstrap line that puts `src/` on `sys.path` — it cannot import `utils`
+before it has run.
 
 ---
 

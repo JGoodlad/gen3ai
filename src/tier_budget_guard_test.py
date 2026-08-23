@@ -13,11 +13,12 @@ halves, using the documented `GEN3AI_TIMEOUT_SCALE` override so they assert the 
 than waiting for the box to be in a particular state.
 """
 import importlib.util
-from pathlib import Path
 
 import pytest
 
-_CONFTEST = Path(__file__).resolve().parents[1] / "conftest.py"
+from utils.paths import repo_path
+
+_CONFTEST = repo_path("conftest.py")
 
 
 def _load_conftest():

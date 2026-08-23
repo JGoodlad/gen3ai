@@ -59,6 +59,7 @@ import pytest
 
 from main.prober.web import fixture_run
 from utils.contention import describe_contention, scale_timeout
+from utils.paths import repo_root
 
 # MEASURED 2026-08-14: this file alone is 1280 s — 79% of the entire integration tier, and more
 # than the whole rest of the suite put together. Not because the assertions are heavy but because
@@ -68,7 +69,7 @@ from utils.contention import describe_contention, scale_timeout
 # select or skip it by what it needs. See the root CLAUDE.md tier table.
 pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
 
-_REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+_REPO = str(repo_root())
 
 
 def _chrome() -> str:

@@ -18,6 +18,7 @@ import torch
 
 from agents.model.arch_constants import INTENT_MOVE_CELL_DIM
 from agents.model.features_extractor import Gen3FeaturesExtractor
+from utils.paths import run_skip_reason, trace_glob
 from agents.model.intent_move_cell import IntentMoveCell
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
@@ -43,8 +44,9 @@ def _obs(layout, b=3):
     return {"observation": torch.rand(b, layout["total_dim"])}
 
 
-_TRACES = ("/home/goodlad/dev/gen3ai/models/ai_v9_10_gen9_intent_distcritic_0813/"
-           "eval_traces/**/*_states.npz")
+#: The gen-9 run whose traces these gradient-flow tests read. Resolved against the MAIN
+#: checkout's `models/` (a worktree has none) — see `utils.paths`.
+_TRACE_RUN = "ai_v9_10_gen9_intent_distcritic_0813"
 
 
 def _real_obs(n=8):
@@ -53,10 +55,13 @@ def _real_obs(n=8):
     gradient-flow tests need boards where alpha has something to point at."""
     from agents.model.audit_states import collect_states
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    traces = trace_glob(_TRACE_RUN)
+    if traces is None:
+        pytest.skip(run_skip_reason(_TRACE_RUN))
     try:
-        obs, _, _ = collect_states([_TRACES], n, seed=0)
+        obs, _, _ = collect_states([traces], n, seed=0)
     except FileNotFoundError:
-        pytest.skip("no gen-9 eval traces on this machine (models/ lives in the main checkout)")
+        pytest.skip(run_skip_reason(_TRACE_RUN))
     live_dim = Gen3ObservationEncoder(load_mappings()).dimension
     if obs.shape[1] != live_dim:
         pytest.skip(f"eval traces are a different obs layout ({obs.shape[1]} vs live {live_dim}) "

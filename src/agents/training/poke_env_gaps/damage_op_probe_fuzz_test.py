@@ -22,15 +22,15 @@ import json
 import subprocess
 import sys
 import traceback
-from pathlib import Path
 from typing import List, Optional
 
 # Reuse the EXACT band machinery the random-game fuzz uses (single source of truth for the op physics).
 from agents import gen3_data
 from agents.training.poke_env_gaps.damage_op_fuzz_test import (
     _op_band, _OP, _STATS_REGISTRY, _type_idx)
+from utils.paths import src_path
 
-_PROBE_JS = str(Path(__file__).resolve().parents[3] / "utils" / "bridge" / "damage_probe.js")
+_PROBE_JS = str(src_path("utils", "bridge", "damage_probe.js"))
 _TOL = 0.06          # exact-stats + exact-HP ⇒ the only slack is the op's smooth-vs-floored roll rounding
 _FORMAT = "gen3customgame"
 _IVS = {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31}

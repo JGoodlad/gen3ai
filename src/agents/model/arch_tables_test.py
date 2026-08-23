@@ -8,7 +8,8 @@ Three claims, each of which has historically failed silently as prose:
   3. `designs/production_config.json` still reflects the newest production run's
      `model_config.json` on every field BOTH carry — the committed mirror cannot quietly stop
      describing the run everything derives from. (Skipped where `models/` does not exist —
-     worktrees/CI have no run archive.)
+     a fresh clone / CI has no run archive. `models/` lives only in the MAIN checkout, so the
+     archive is resolved with `utils.paths.main_models_dir()` and a worktree reaches across.)
 """
 import json
 import os
@@ -18,8 +19,7 @@ import pytest
 from agents.model.model_version import ARCH_SIGNATURE
 
 from agents.model import arch_tables
-
-_MODELS_DIR = "/home/goodlad/dev/gen3ai/models"
+from utils.paths import main_models_dir, models_skip_reason
 
 
 @pytest.fixture(scope="module")
@@ -73,11 +73,12 @@ def test_head_totals_equal_live_in_features(fe_and_cfg):
 
 def _newest_run_config():
     """The newest run dir (by mtime) under models/ that carries a model_config.json."""
-    if not os.path.isdir(_MODELS_DIR):
+    models_dir = main_models_dir()
+    if models_dir is None:
         return None
     runs = []
-    for d in os.listdir(_MODELS_DIR):
-        run_dir = os.path.join(_MODELS_DIR, d)
+    for d in os.listdir(models_dir):
+        run_dir = os.path.join(models_dir, d)
         cfg_path = os.path.join(run_dir, "model_config.json")
         if os.path.exists(cfg_path):
             runs.append((os.path.getmtime(run_dir), cfg_path))
@@ -94,7 +95,7 @@ def test_production_config_matches_newest_run():
     """
     run_cfg_path = _newest_run_config()
     if run_cfg_path is None:
-        pytest.skip(f"{_MODELS_DIR} has no run with a model_config.json (worktree/CI box)")
+        pytest.skip(f"no run carries a model_config.json — {models_skip_reason()}")
     with open(run_cfg_path) as fh:
         run_cfg = json.load(fh)
     prod_cfg = arch_tables.load_config()

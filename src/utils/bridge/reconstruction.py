@@ -67,6 +67,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
 from utils.contention import describe_contention, scale_timeout
+from utils.paths import repo_path
 
 _DRIVER_JS = str(Path(__file__).parent / "replay_driver.js")
 
@@ -82,7 +83,7 @@ _ALIAS_DUMP_JS = (
     "const a=require(process.argv[1]+'/dist/data/aliases');"
     "process.stdout.write(JSON.stringify(a.Aliases));"
 )
-_PS_PATH = str(Path(__file__).parents[3] / "deps" / "pokemon-showdown")
+_PS_PATH = str(repo_path("deps", "pokemon-showdown"))
 
 
 def _sim_aliases() -> Dict[str, str]:

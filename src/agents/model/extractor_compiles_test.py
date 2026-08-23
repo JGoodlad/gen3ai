@@ -64,6 +64,7 @@ import torch
 
 from agents.model.features_extractor import BeliefHead, Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from utils.paths import repo_path
 
 # Opt-OUT, not opt-in: a model that stops compiling is a ~6.5x regression that is invisible at
 # runtime, so the default has to be "the test suite catches it".
@@ -191,8 +192,7 @@ def test_species_posterior_is_stable_for_large_logits():
 # and the prewarm-era eval workers key on — filtered by the live constructor signature exactly
 # like `delivery_graph.build_graph` and `compile_prewarm` do. The `arch_signature` assertion
 # makes a stale config FAIL LOUD here instead of quietly testing yesterday's model.
-_PRODUCTION_CONFIG = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                                  "designs", "production_config.json")
+_PRODUCTION_CONFIG = str(repo_path("designs", "production_config.json"))
 
 
 def _build_production_extractor(**overrides):

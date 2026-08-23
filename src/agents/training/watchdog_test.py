@@ -61,7 +61,11 @@ def test_orphan_watchdog_no_false_fire_while_parent_alive():
 # --- subprocess entry points -------------------------------------------------
 
 def _child_main():
-    sys.path.insert(0, os.path.join(os.getcwd(), "src"))
+    # Anchored at THIS file, not the cwd: the helper is re-executed as a bare subprocess and
+    # the caller's working directory is not ours to assume. It cannot use `utils.paths` — this
+    # line is what puts `utils` on the path in the first place. src/agents/training/… -> src/.
+    _SRC = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.insert(0, _SRC)
     from agents.training.watchdog import start_orphan_watchdog
     start_orphan_watchdog(label="test", poll_seconds=_POLL)
     end = _CHILD_NATURAL_LIFETIME_S

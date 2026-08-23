@@ -12,8 +12,9 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Dict
 
-# src/agents/gen3_data/_base.py -> repo root is parents[3]; data lives under data/pokemon/.
-_DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "pokemon"
+from utils.paths import repo_path
+
+_DATA_DIR = repo_path("data", "pokemon")
 
 
 def data_path(filename: str) -> Path:

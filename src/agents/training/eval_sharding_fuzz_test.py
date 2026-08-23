@@ -41,14 +41,24 @@ def _arch_toggles_from_config(config_path: str) -> dict:
 
 
 def _find_checkpoint() -> str | None:
-    roots = ["/home/goodlad/dev/gen3ai/models", os.path.join(os.getcwd(), "models")]
+    """Newest checkpoint in the run archive, or None.
+
+    The old cwd fallback (``os.getcwd()/models``) only found anything when you happened to be
+    standing in the repo root, and its companion was this box's hardcoded home path. Both are
+    replaced by ``utils.paths.main_models_dir()``, which reaches the MAIN checkout's archive from
+    a worktree too, and which owns the worktree-local fall-back.
+    """
+    from utils.paths import main_models_dir
+
+    root = main_models_dir()
+    if root is None:
+        return None
     pats = ["*/best_model/best_model.zip", "*/checkpoints/checkpoint_*_steps.zip",
             "*/checkpoint_*_steps.zip", "*/final_model.zip"]
-    for root in roots:
-        for pat in pats:
-            hits = sorted(glob.glob(os.path.join(root, pat)), key=os.path.getmtime, reverse=True)
-            if hits:
-                return hits[0]
+    for pat in pats:
+        hits = sorted(glob.glob(os.path.join(root, pat)), key=os.path.getmtime, reverse=True)
+        if hits:
+            return hits[0]
     return None
 
 
@@ -56,7 +66,9 @@ def main(n_games: int = 8, shard_games: int = 3, compile_extractor: bool = False
          neural_opponent: bool = False) -> int:
     ckpt = _find_checkpoint()
     if not ckpt:
-        print("SKIP eval_sharding_fuzz: no checkpoint found under models/ (needs real weights).")
+        from utils.paths import models_skip_reason
+        print(f"SKIP eval_sharding_fuzz: no checkpoint (needs real weights) — "
+              f"{models_skip_reason()}")
         return 0
     print(f"checkpoint: {ckpt}")
 

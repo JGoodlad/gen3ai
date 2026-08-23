@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from agents.model.audit_states import TraceMaskUnavailable, collect_states, recover_legal_mask
+from utils.paths import run_skip_reason, trace_glob
 
 _A = 11  # action-space width for the fake logits
 
@@ -174,8 +175,9 @@ def test_collect_states_refuses_a_maskless_trace(tmp_path):
         collect_states([str(tmp_path / "eval_traces" / "**" / "*_states.npz")], max_states=10)
 
 
-_REAL_TRACES = ("/home/goodlad/dev/gen3ai/models/ai_v9_21_gen17_pfspoff_0820/"
-                "eval_traces/**/*_states.npz")
+#: The gen-17 run whose real traces this reads. Resolved against the MAIN checkout's `models/`
+#: (a worktree has none) — see `utils.paths`.
+_REAL_TRACE_RUN = "ai_v9_21_gen17_pfspoff_0820"
 
 
 def test_real_gen17_traces_recover_a_mask_with_illegal_actions():
@@ -187,10 +189,13 @@ def test_real_gen17_traces_recover_a_mask_with_illegal_actions():
     average. So a sample that comes back ALL-LEGAL is proof the recovery is broken — which is
     exactly what the pre-fix threshold returned on every trace in the archive.
     """
+    traces = trace_glob(_REAL_TRACE_RUN)
+    if traces is None:
+        pytest.skip(run_skip_reason(_REAL_TRACE_RUN))
     try:
-        _obs, masks, _cov = collect_states([_REAL_TRACES], 256, seed=0)
+        _obs, masks, _cov = collect_states([traces], 256, seed=0)
     except FileNotFoundError:
-        pytest.skip("no gen-17 eval traces on this machine (models/ lives in the main checkout)")
+        pytest.skip(run_skip_reason(_REAL_TRACE_RUN))
     assert not masks.all(), (
         "every sampled real state decoded to ALL actions legal — the mask recovery is back to "
         "reading PRE-mask logits with a -1e8 threshold")

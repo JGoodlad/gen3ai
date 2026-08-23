@@ -2089,3 +2089,59 @@ Nothing about the launcher's spawn contract or a recorded `launcher_command` cha
   Round-trip smoke test PASSED` and 15 finished episodes; a second `--debug --debug-eval
   --self-play` smoke for the callback-assembly path; ruff + mypy + the size gate green with the
   allowlist entry removed.
+
+### Phase 4 LANDED — path discovery consolidated; four tests that skipped forever off this box now RUN, and the class is closed (2026-08-22)
+
+The last scheduled paydown phase. `src/utils/paths.py` is now the ONE module that knows how deep a
+file sits in the tree, and the four tests that reached `models/` through a
+`/home/goodlad/dev/gen3ai/...` literal reach it portably instead.
+
+**The defect was never the skip — it was that the skip was UNFALSIFIABLE.** All four sat behind a
+correct `skip-if-missing` guard, so on the owner's box they ran and everywhere else they skipped,
+and a skip that is supposed to happen is indistinguishable from a skip that is not. A second
+contributor loses `arch_tables`'s production-config drift gate, `audit_states`'s real-trace mask
+recovery (the one test that fails on the pre-fix `logits > -1e8` behaviour), `intent_move_cell`'s
+gradient-flow tests and the `eval_sharding` fuzz — and is never told.
+
+- **Three questions, not one, and conflating them is what bit.** `repo_root()`/`src_root()` are
+  `__file__`-relative (import-time, and must work in a checkout with no `.git`);
+  `main_models_dir()` is **git**-based because `models/` is not committed and lives only in the
+  MAIN checkout — inside a worktree `repo_root()` is the worktree, which has none, so the resolver
+  reaches across via the shared `--git-common-dir` the launcher already uses. `utils/git.py` keeps
+  the git roots and gained an optional `cwd=`; the `--git-common-dir` it returns is RELATIVE to
+  the queried directory, so pinning `cwd` without resolving against it would have silently changed
+  the answer — fixed in the same pass and pinned.
+- **`$GEN3AI_MODELS_DIR` is AUTHORITATIVE, set-but-missing ⇒ `None`.** A quiet fall-back to the
+  real archive would make the override useless as a test seam, which is what it is for: the four
+  skip paths are now driven, on this box, by pointing it at an empty directory. **A skip path
+  nothing exercises is a skip path nobody has ever seen work.**
+- **The CLASS is closed, not the four lines.** `paths_test.py` runs an **AST** scan over
+  `src/agents`, `src/main`, `src/utils` and fails any `/home/…` used as a VALUE. AST rather than
+  grep is the load-bearing choice: comments never reach the AST and docstrings are skipped, so
+  prose that *mentions* a path is structurally out of scope and the gate cannot degrade into a
+  documentation argument. Measured: **exactly one exemption** tree-wide, and it is
+  `interpreter_test.py` naming the regex it scans WITH — plus this file, for the same reason. Both
+  entries carry their reason and a second test fails if either stops being load-bearing (the
+  c-family rule: an allowlist entry that outlives its own fix misleads every reader after).
+  `test_the_scan_can_actually_fail` is the vacuity guard.
+- **Reinvention sweep: 25 sites converted, 18 left as CORRECT, 1 excluded** (+4 `rust_sim/harness`
+  out of scope). The 18 are not debt — `__file__`-relative is the *right* answer there: 11 are a
+  module locating an asset that ships BESIDE it (`Path(__file__).parent / "local_sim_bridge.js"`),
+  which is a local fact that must not be made to depend on a global one; 5 are bootstrap lines
+  that put `src/` on `sys.path` and therefore *cannot* import `utils.paths`, being what makes
+  `utils` importable at all; `audit_states.py:141` takes the dirname of a data path, never the
+  repo root; and `sim_bridge_bin.py:66` stays by scope directive. `watchdog_test.py`'s
+  `os.getcwd() + "/src"` was the one genuine CWD dependency, and it is anchored at `__file__`
+  rather than routed through the helper for the bootstrap reason above.
+- **The exclusion list came out at ONE, not six, because the entry-point decomposition landed
+  first.** Six sites computed a path to `train_rl_agent.py` and were held back to avoid colliding
+  with `main/train/`; rebasing over it deleted three outright (`config_only_pattern_test`,
+  `extractor_arch_test`, `flag_registry_test` now read the package), and the remaining two
+  (`cf_flags_test`, `edge_family_validator_test`) were converted here once the collision risk was
+  gone. Only `launcher/child.py:12` stays, and permanently — it is worktree-isolation machinery.
+- **`sim_bridge_bin.py:66` stays by scope directive**, and the scope's reason ("already correct
+  and portable — verified") is about correctness, not consolidation. Recorded rather than silently
+  overridden; it is a one-line follow-up whenever someone wants it.
+- Gates: routine suite exact-exit green, ruff/mypy/size green, and the four fixed tests RUN on this
+  box (verified before and after — the before-state is what makes the "they run here" claim mean
+  anything).

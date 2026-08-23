@@ -218,6 +218,12 @@ to the launch commit — so pushing to `main` never disturbs a run in flight.
   leaf for the area you are touching.
 - **Never hardcode an observation index.** Every offset comes from named constants in
   `agents/observation/constants.py`; read `Gen3ObservationEncoder.get_layout()`.
+- **Never hardcode a path, and never hand-roll `Path(__file__).parents[N]`.** Use
+  `src/utils/paths.py`: `repo_path(...)` / `src_path(...)` for anything in the tree, and
+  `main_models_dir()` for the `models/` run archive — which is **not committed**, so on your
+  clone it will be absent and the tests that need it will *skip*. That skip is expected; set
+  `$GEN3AI_MODELS_DIR` if you have an archive elsewhere. A tree-wide AST gate
+  (`utils/paths_test.py`) fails any absolute `/home/…` used as a value.
 - **Architecture constants live in exactly one file**: `src/agents/model/arch_constants.py`.
 - **`data/` is the source of truth.** The runtime reads only `data/`, through the
   `agents.gen3_data` facade — never live from poke-env. `tools/` is the only layer that knows

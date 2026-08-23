@@ -26,6 +26,7 @@ from pathlib import Path
 
 from agents.model.features_extractor import _EDGE_FAMILIES
 from main.train import entry_source
+from utils.paths import src_root
 
 _ENTRY = Path(__file__).with_name("train_rl_agent.py")   # still the process to RUN
 # The validator itself moved into `main/train/config.py` with the 2026-08-22 decomposition;
@@ -78,7 +79,7 @@ def test_an_unimplemented_family_is_still_rejected():
     Safe to drive end to end: a REJECTED set exits at once (measured ~1 s), unlike an accepted one.
     """
     env = {**os.environ,
-           "PYTHONPATH": os.environ.get("PYTHONPATH", "") + os.pathsep + str(_ENTRY.parent.parent)}
+           "PYTHONPATH": os.environ.get("PYTHONPATH", "") + os.pathsep + str(src_root())}
     p = subprocess.run([sys.executable, str(_ENTRY), "--edge-bias-families", "d1,notafamily"],
                        capture_output=True, text=True, timeout=120, env=env)
     out = p.stdout + p.stderr

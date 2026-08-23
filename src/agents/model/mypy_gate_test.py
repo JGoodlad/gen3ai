@@ -43,7 +43,9 @@ import sys
 
 import pytest
 
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+from utils.paths import repo_root
+
+_REPO_ROOT = str(repo_root())
 
 # Every package `mypy.ini` is expected to hold at the zero-error bar. Adding one here without
 # adding it to `mypy.ini` fails the scope assertion below — which is the point: the two must

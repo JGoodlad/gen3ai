@@ -23,7 +23,9 @@ import sys
 from main.launcher.checkpoint import _strip_launcher_args
 from main.launcher.run import DEFAULT_NICE, _apply_nice
 
-_SRC = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.paths import src_root
+
+_SRC = str(src_root())
 
 
 def _in_subprocess(body: str) -> str:

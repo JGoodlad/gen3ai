@@ -25,8 +25,10 @@ import time
 from main.launcher import child
 from main.launcher.child import PYTHON_ENV_VAR, resolve_child_python
 
+from utils.paths import src_root
+
 _LAUNCHER_DIR = os.path.dirname(os.path.abspath(__file__))
-_SRC = os.path.dirname(os.path.dirname(_LAUNCHER_DIR))
+_SRC = str(src_root())
 
 
 # --- the resolution rule ---

@@ -26,7 +26,9 @@ import sys
 from main.launcher.run import headless_mode
 from main.launcher.state import LauncherState
 
-_SRC = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.paths import src_root
+
+_SRC = str(src_root())
 
 
 class _FakeStream:

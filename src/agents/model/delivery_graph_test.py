@@ -45,11 +45,12 @@ from agents.model.delivery_graph import (
     to_dot,
 )
 
+from utils.paths import repo_path
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_REPO = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
 _SNAPSHOT = os.path.join(_HERE, "delivery_graph_snapshot.json")
-_DOT = os.path.join(_REPO, "designs", "architecture_graph.dot")
-_CONFIG = os.path.join(_REPO, "designs", "production_config.json")
+_DOT = str(repo_path("designs", "architecture_graph.dot"))
+_CONFIG = str(repo_path("designs", "production_config.json"))
 
 _REGEN = ("Regenerate BOTH artifacts in the same commit:\n"
           "  python -m agents.model.delivery_graph "

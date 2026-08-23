@@ -44,7 +44,9 @@ import sys
 
 import pytest
 
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+from utils.paths import repo_root
+
+_REPO_ROOT = str(repo_root())
 
 # Kept as one list so the docstring, `ruff.toml`'s header and the /gen3ai-ship step can all
 # quote the SAME command. If you change it, change it in those places too — a gate whose

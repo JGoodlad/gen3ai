@@ -38,15 +38,15 @@ import json
 import os
 import subprocess
 import time
-from pathlib import Path
 
 import pytest
 
 from utils.contention import ProgressDeadline
+from utils.paths import repo_root
 
 pytestmark = pytest.mark.integration
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = repo_root()
 BRIDGE = REPO / "src" / "utils" / "bridge" / "local_sim_bridge.js"
 SHOWDOWN = REPO / "deps" / "pokemon-showdown"
 

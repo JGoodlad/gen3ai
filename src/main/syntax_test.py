@@ -6,11 +6,12 @@ imported by the unit suite, so the error only surfaced at launch, crashing the r
 `ast.parse` is milliseconds per file and catches that whole failure class at test time."""
 
 import ast
-import pathlib
 
 import pytest
 
-SRC = pathlib.Path(__file__).resolve().parent.parent  # src/
+from utils.paths import src_root
+
+SRC = src_root()
 _FILES = sorted(
     p for p in SRC.rglob("*.py")
     if "poke_env" not in p.parts        # vendored fork — parsed by its own tooling

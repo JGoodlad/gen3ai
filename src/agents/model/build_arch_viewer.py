@@ -63,8 +63,10 @@ import os
 import re
 from typing import Any, Dict, List, Optional, cast
 
+from utils.paths import repo_root
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_REPO = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))
+_REPO = str(repo_root())
 _SNAPSHOT = os.path.join(_HERE, "delivery_graph_snapshot.json")
 _MEASUREMENTS = os.path.join(_REPO, "designs", "research_state", "measurements")
 _DEFAULT_OUT = os.path.join(_REPO, "designs", "architecture_viewer.html")

@@ -283,6 +283,12 @@ install coexist correctly exactly as long as that line stays. Note the deliberat
 the child **imports from the worktree** while writing `models/` **relative to the launcher's cwd**
 (the main checkout).
 
+That second half is why `models/` exists **only in the main checkout** and never in a worktree —
+so anything else that needs the run archive must reach across rather than look beside itself.
+`utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact
+`utils.git.get_main_repo_root()` reads); see the root `CLAUDE.md` § *Path discovery*. Four tests
+used to encode this box's absolute path instead and therefore skipped forever everywhere else.
+
 ## Showdown port default
 
 ⚠️ **The port default is now MOSTLY UNREACHABLE, because the transport default inverted.**

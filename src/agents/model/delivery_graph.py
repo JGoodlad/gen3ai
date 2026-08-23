@@ -47,6 +47,8 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
+from utils.paths import repo_path
+
 # Edge-type vocabulary. Extending this is a deliberate act: each entry is a claim about a distinct
 # PHYSICAL delivery channel, not a convenience label.
 EDGE_TYPES = ("bias", "content", "concat", "cell", "aux")
@@ -54,11 +56,7 @@ EDGE_TYPES = ("bias", "content", "concat", "cell", "aux")
 # Sinks an `aux` edge may never reach (the leak-safety invariant).
 FORWARD_SINKS = ("pi_projection", "vf_projection")
 
-_DEFAULT_CONFIG = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__))))),
-    "designs", "production_config.json",
-)
+_DEFAULT_CONFIG = str(repo_path("designs", "production_config.json"))
 
 
 # ------------------------------------------------------- COMPLETENESS: every module must be drawn

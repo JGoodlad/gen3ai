@@ -9,11 +9,12 @@ that read the Showdown submodule (``deps/pokemon-showdown``) are integration tes
 """
 import importlib.util
 import json
-from pathlib import Path
 
 import pytest
 
-_REPO = Path(__file__).resolve().parents[3]
+from utils.paths import repo_root
+
+_REPO = repo_root()
 
 
 def _load_sync():

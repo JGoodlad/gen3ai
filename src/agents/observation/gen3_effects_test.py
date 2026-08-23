@@ -7,7 +7,6 @@ volatile / cant reason RAISES rather than being dropped.
 """
 
 import json
-import pathlib
 import re
 
 import numpy as np
@@ -26,7 +25,9 @@ from agents.observation.gen3_effects import (
     normalize_cant_reason,
 )
 
-_ROOT = pathlib.Path(__file__).resolve().parents[3]
+from utils.paths import repo_root
+
+_ROOT = repo_root()
 
 
 def _scan_volatiles(ts_path, allowed_ids) -> set[str]:

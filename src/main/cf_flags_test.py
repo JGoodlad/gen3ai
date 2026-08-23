@@ -12,16 +12,16 @@ invoke in-process from a test runner.
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
 from main.train_rl_agent import build_parser
+from utils.paths import repo_root, src_path
 
 pytestmark = pytest.mark.integration
 
-_REPO = Path(__file__).resolve().parents[2]
-_TRAIN = _REPO / "src" / "main" / "train_rl_agent.py"
+_REPO = repo_root()
+_TRAIN = src_path("main", "train_rl_agent.py")
 
 
 def _run(*flags):

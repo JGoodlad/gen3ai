@@ -82,6 +82,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+from utils.paths import repo_path
+
 
 class Tier(str, Enum):
     CLI = "cli"
@@ -524,8 +526,7 @@ def extractor_kwarg_flags() -> Tuple[ModelFlag, ...]:
 
 
 # ------------------------------------------------------------- designs/flag_registry.md generator
-_DOC = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))), "designs", "flag_registry.md")
+_DOC = str(repo_path("designs", "flag_registry.md"))
 
 SECTIONS = ("registry-table",)
 

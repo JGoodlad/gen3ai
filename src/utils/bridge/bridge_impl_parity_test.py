@@ -62,7 +62,6 @@ import asyncio
 import math
 import os
 import sys
-from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../src")))
 
@@ -74,6 +73,7 @@ from utils.teambuilder import Gen3Teambuilder
 from utils.bridge import local_battle_runner
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.contention import describe_contention
+from utils.paths import src_path
 
 BATTLE_FORMAT = "gen3ou"
 # Short per-battle timeout so an unmodeled-move HANG (some Rust fail-loud paths emit __ERR__ to
@@ -257,7 +257,7 @@ def run(n_battles: int = 60, tol: float = 0.20) -> None:
 def _prebuilt_rust_available() -> bool:
     if os.environ.get("POKESIM_SIM_BRIDGE_BIN"):
         return True
-    shared = Path(__file__).resolve().parents[2] / "rust_sim" / "target" / "release" / "sim_bridge"
+    shared = src_path("rust_sim", "target", "release", "sim_bridge")
     return shared.is_file()
 
 

@@ -47,7 +47,9 @@ from typing import Dict, List, Optional
 
 import pytest
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
+from utils.paths import repo_root
+
+_REPO_ROOT = repo_root()
 
 # Mirrored from `ruff_gate_test.py::_RUFF_ARGV`. If one gate's scope changes, change both — two
 # static gates that disagree about what "the tree" means will eventually let a file live in the

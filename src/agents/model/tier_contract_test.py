@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import inspect
 import json
-import os
 
 import gymnasium as gym
 import numpy as np
@@ -36,9 +35,9 @@ from agents.model.tier_contract import (
 )
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
-_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))))
-_PRODUCTION_CONFIG = os.path.join(_REPO, "designs", "production_config.json")
+from utils.paths import repo_path
+
+_PRODUCTION_CONFIG = str(repo_path("designs", "production_config.json"))
 
 # Every optional phase the contract tiers, switched on together — so the trace exercises all four
 # tiers rather than only the ones production happens to build.

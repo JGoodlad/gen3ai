@@ -507,10 +507,11 @@ def _gen3_status_immunity_from_source():
     If poke-env/Showdown later makes a status-immunity ability gen3-legal, this fails until
     :data:`ABILITY_STATUS_IMMUNITY` is re-derived to match."""
     import json
-    import pathlib
     import re
 
-    root = pathlib.Path(__file__).resolve().parents[2]
+    from utils.paths import repo_root
+
+    root = repo_root()
     txt = (root / "deps/pokemon-showdown/data/abilities.ts").read_text(
         encoding="utf-8", errors="replace"
     )
