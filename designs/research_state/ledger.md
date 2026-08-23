@@ -2257,3 +2257,48 @@ flags remain the honest profile candidates.
 --check` / `flag_registry --check` all green AFTER the refresh; `checkargs` clean on the 5 newest
 runs; `--debug --steps 10000 --cf-winprob-coef 0.5 --cf-records` smoke to `Training complete`,
 recording `config_version 100` with both values, and a flagless `--model` resume resolving them back.
+
+### E4 VERDICT — branch (c) BELOW-THRESHOLD, and the deeper finding: the cells moved, the information arrived, and the BEHAVIOR still didn't (2026-08-23, both sessions' registered limbs assembled, `tmp/e4_adjudication.md`)
+
+**The registered tree selects (c)**: the PRIMARY read E4 1.83% [1.32,2.37] vs the armed E1
+baseline 1.52% [1.02,2.08] — Δ +0.30pp = **0.78σ against a rule armed at 7.6σ** (n.s. = "the 3×
+did not happen," per the pre-declared rule); B1/B3 flat-to-worse on two instruments (with the
+E4-sentinel confound carried); the head-to-head vs the LIVE BaitBot **refutes** (E4 0.830 vs its
+base E1's 0.865 — nine million steps at a VERIFIED 25%/p=0.6 exposure produced no edge against
+the exact opponent supplying it); the injection re-probe reads E4 ≡ E1. Not (a) — nothing
+reached its bars. Not (b) — (b) requires E4 got better by a non-substrate route, and it did not
+get better at all.
+
+- **But the cells DID move**: the declared secondary (pooled `switch_branch`) is +0.40pp
+  [+0.10,+0.71], and the transfer control confirms a **+0.33pp MODEL effect replicated on two
+  independent state sets (≈1.17×)** — real, small, ~a sixth of the registered effect, and it
+  bought nothing measurable. The nominally-significant bait-stratum control read (+0.73
+  [+0.04,+1.43] on E4's states only) is honestly discounted: different pairing convention,
+  no replication on E1's states (a state×model interaction signature), lower bound one resample
+  from n.s. inside a 16-test family. Design limit stated: no dose-0 twin, so "any 10M more steps
+  grows these cells ~12%" is not excluded.
+- **The injection re-probe's real result — knowing-vs-acting SURVIVES the arrival channel.** On
+  probabilities the α/β channel is emphatically live (masked KL 3 orders of magnitude above the
+  gen-15 reading; max|Δp| 0.41; β never bit-zero) — the KL gap vs 2026-08-19 is most plausibly
+  the GENERATION (gen-15 had OA2 OFF; the "missing arrival channel" is now present), flagged as
+  inference not measurement. On DECISIONS: **11 flips in 780 bait decisions = 1.4%, E4 ≡ E1.**
+  The information now arrives; the saturated action still wins. And the retraction's stated
+  reason was NOT the cause — phantom-legality flip counts match real-mask counts (1↔1, 3↔3,
+  4↔4) on these forwards; the retraction was right for the wrong reason, now corrected.
+- **The ecology finding stands beside the verdict**: BaitBot-shaped opponents PROPAGATE baiting
+  through self-play (E4's own pool sentinels' voluntary pivots 574→773), so E4's EFFECTIVE
+  exposure exceeded 25% late-run — and still nothing. This cuts against the simple
+  "turn the dial up" reading of (c): rising effective dose with zero response is what
+  dose-insensitivity looks like, though only a deliberate dial probe can say so.
+- **Accounting riders**: R4 (held-out untrained p_bait) was taken by NEITHER session — recorded
+  as an owed gap the extreme-dial probe would moot; R5 ELO non-inferiority PASSES (E4 2123±13 vs
+  lineage 2112±17, quoted at matched convention, never the raw +75 — newest-node inflation);
+  two intervention guards fired during the probe, one catching a build defect that had silently
+  made the WHOLE injection a no-op (the week's seventh vacuity, caught by its own
+  stash-verification gate before producing a number).
+- **Task #22 (the bait hunt) CLOSES with this entry**: detector built · liveness built · bars
+  registered and read · injection re-probed post-fix · the verdict — the habit resists
+  specialization pressure (E1–E3), verified punishment at effective >25% (E4), AND per-decision
+  certainty injection, even with the arrival channel present. The surviving levers are the ones
+  that do not require the policy to SAMPLE its way out: the search-teacher/OPD (built, dormant)
+  and R2's counterfactual labels (designed, priced) — both deliver the correction off-policy.
