@@ -1803,3 +1803,23 @@ disk all along, in the summary sibling's `invocations[i]["actions"]` `valid` bit
 Also opened: **contributor-readiness tech-debt paydown, due Tuesday morning** (owner) — the
 PYTHONPATH hack, absolute paths, launcher assumptions. Scoping survey dispatched; build follows
 its plan.
+
+### Tech-debt scope landed — two landmines PROVED by experiment before anyone stepped on them (2026-08-22, opus survey, `tmp/tech_debt_scope.md`)
+
+**Architecture verdict: BOTH** — `pyproject.toml` + editable install for the contributor surface,
+AND the launcher child's explicit `PYTHONPATH` retained as **load-bearing worktree-isolation
+machinery** (proved in a throwaway replica env: with cwd=worktree and no PYTHONPATH, a pinned
+old-commit child imports `agents` from the MAIN checkout — the wrong code; PYTHONPATH outranks the
+editable `.pth`, so both coexist safely **provided no future agent "cleans up" `child.py`'s
+PYTHONPATH** — Phase 2 ships a gate test pinning this). Census: 166 PYTHONPATH line-hits but only
+**12 functional, ONE in production**; 7 absolute-path code hits, 5 functional, `child.py:11` the
+lone hard blocker; 3 tests **skip silently on any other machine** (invisible coverage loss).
+
+- **Landmine 1 (silent, proved):** `environment.yml` pins PyPI `poke-env==0.15.0` while the repo
+  vendors the FORK at `src/poke_env/` — an editable install's `.pth` lands AFTER site-packages,
+  so **upstream silently wins over the fork**. Nothing declares the PyPI pin as a dependency;
+  Phase 0 removes it and ships a permanent fork-wins import gate BEFORE Phase 2 may run.
+- **Landmine 2:** the torch pin (`2.5.1+cu121`, no extra-index-url) makes `conda env create`
+  fail outright on a fresh machine — the bootstrap story is broken at step 1 today.
+- 5 phases ≈10 agent-hours, Sat→Mon, Phase 5 (launcher child → editable) DEFERRED as the honest
+  call. A subagent's "0 hardcoded paths" claim was caught wrong by the survey's own recount (7).
