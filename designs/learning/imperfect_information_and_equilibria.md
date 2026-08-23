@@ -84,3 +84,93 @@ here so it reads as a boundary, not a bug.
 theoretically-optimal opponent?* — because the optimal opponent is an equilibrium object defined
 jointly with our own policy; there is no fixed label. The only labels that exist are what THIS
 population actually did, and the fixed point improves as the population does.
+
+## 4. The population game — the literature map for the flywheel era (added 2026-08-23)
+
+*One ply of Pokémon is a matrix game (§1); a TRAINING RUN is a game too — over strategies. This
+section maps the population-level literature onto our components.*
+
+**The algorithm family tree, in ascending order of what they keep:**
+- **Fictitious play** (Brown 1951): best-respond to the AVERAGE of the opponent's history. In
+  two-player zero-sum the average converges to Nash — but only the average; the last iterate can
+  cycle forever. Self-play against a snapshot pool IS approximate fictitious play; the pool is
+  the "history average" made concrete.
+- **Double oracle** (McMahan 2003): keep a restricted strategy set, solve its meta-game exactly,
+  add each side's best response to the meta-Nash, repeat. Converges because each best response
+  either beats the current equilibrium (progress) or certifies it (termination).
+- **PSRO** (Policy-Space Response Oracles, Lanctot 2017): double oracle with RL as the
+  approximate-best-response oracle and an empirical payoff matrix as the meta-game. Our
+  EXPLOITERS are PSRO's oracle step verbatim.
+- **AlphaStar league** (Vinyals 2019): PSRO industrialized — main agents (train vs everything),
+  main exploiters (best-respond to the current main), league exploiters (best-respond to the
+  whole league), PFSP opponent sampling weighted toward beatable-but-not-beaten. Our
+  main-run + exploiter + fold-back recipe is closest to this, with ONE structural difference:
+  we DISTILL the exploiters back into a single policy rather than keeping a population + a
+  meta-mixture at play time.
+- **NeuPL** (Liu 2022): the population held in ONE conditioned network rather than N frozen
+  copies — the population version of our conditioning/FiLM line.
+
+**The convergence subtleties that bite in practice:**
+- **Distillation is our convergence operator, not just compression.** Fictitious play converges
+  in the AVERAGE; a last-iterate self-play policy can orbit a cycle indefinitely. Folding
+  exploiters + pool behavior into one network is an averaging step — the thing the theory says
+  actually converges. (The retention ablation — distilled skill sticks at ~76% with teachers
+  retired — is what makes this real rather than aspirational.)
+- **Entropy-regularized PPO converges to a QUANTAL RESPONSE equilibrium, not Nash** (QRE:
+  logit-smoothed best responses; equivalently the Nash of an entropy-bonused game). Our
+  `--ent-coef` sets the smoothing temperature — the fixed point is deliberately soft. Mindful:
+  the smoothing is not uniform across states; the bait saturation (0.97 confidence) shows local
+  corners survive a global entropy bonus.
+- **Cycles are load-bearing, not noise.** Bait propagates through self-play pools (measured);
+  RPS-like dynamics mean a strategy can be "beaten" by re-discovering its counter's counter.
+  The pool's retention + the anchor bots are what prevent re-cycling; deleting old snapshots is
+  how populations forget and re-enter orbits.
+
+**The geometry of real games — why exploiter COVERAGE is the right frame:**
+- **Hodge/potential-harmonic decomposition** (Candogan 2011): every finite game splits into a
+  TRANSITIVE (potential) component and a CYCLIC (harmonic) component. Our HodgeRank spine/width
+  split is this, applied to the empirical payoff matrix.
+- **Spinning tops** (Czarnecki 2020): real-world games have a long transitive axis and a cyclic
+  width that is WIDEST at mid-skill, pinching toward both the floor and the Nash tip. Two
+  operational corollaries: (1) expect `hodge_width` to shrink as absolute strength rises — a
+  rising width instead says the population is entering the fat mid-band, not regressing; (2) at
+  the tip, progress requires NEW strategic dimensions (for us: team/archetype coverage), which
+  is the quality-diversity note's territory.
+- **Diversity-aware PSRO** (Perez-Nieves 2021, Liu 2021): plain best responses collapse to
+  similar policies; adding a behavioral-diversity term to the oracle finds the strategies the
+  meta-game is missing. Our exploiter coverage board (per-archetype/team coverage) is the
+  hand-rolled version — the literature's warning is that UNDIVERSE exploiters measure the same
+  hole repeatedly while the meta-game's real gaps go unprobed.
+
+**Evaluation under populations:**
+- **Elo/Bradley-Terry is structurally transitive** — it projects the cyclic component to zero.
+  Nash averaging (Balduzzi 2018, "Re-evaluating evaluation") reweights opponents by the
+  meta-Nash so redundant weak opponents can't inflate a rating. Our mitigations: anchored BT +
+  the Hodge width companion + matched-snapshot-count comparisons + the exploiter as a targeted
+  exploitability probe.
+- **Exploitability is the meter that survives the promotion gate.** `win_rate_vs_pool` is pinned
+  ~50% by construction; the honest strength meter for a population-trained agent is "how much
+  does a fixed-compute best response extract" — i.e. TRAIN AN EXPLOITER AS A MEASUREMENT,
+  tracked across generations at matched exploiter compute. (Fixed compute matters: true
+  exploitability needs the true best response, which no one has; the fixed-budget approximation
+  is only comparable at matched budget.)
+
+## 5. Cautions checklist as we lean into Nash approximation / exploiters / opponent ecology
+
+1. **Name which game.** The POLICY game (fixed teams, choose actions), the TEAM meta-game
+   (choose teams), and the POPULATION meta-game (choose training opponents) are three different
+   games with three different equilibria. A claim like "approach Nash" must say which; our
+   ladder constraint (play humans) means the TEAM meta-game's equilibrium is ultimately set by
+   the human ladder distribution, not by our pool.
+2. **An exploiter is an instrument until distilled** (BaitBot lesson): finding a hole ≠ teaching
+   the fix; the credit conviction says the fix arrives only through the distillation target.
+3. **Do not chase last-iterate Nash with on-policy RL** — smooth (QRE) fixed points + averaging
+   via distillation is the convergent recipe we already run; adding explicit Nash solvers at
+   play time is ruled out by the no-search constraint and unnecessary at current evidence.
+4. **Exploitability curves need matched budget AND matched fork policy** (warm-fork vs scratch
+   changed the measured number by ~0.2 at 10x compute).
+5. **Population forgetting re-opens closed holes** — retention policy on the pool is a
+   correctness parameter, not a disk-space one.
+6. **Diversity of exploiters > count of exploiters** (coverage board over Q-queue length).
+7. **Every population metric is ecology-relative** (the G0 sign-flip lesson): name the opponent
+   population on every number; a rating, a bias, a bait rate all flip meaning across ecologies.
