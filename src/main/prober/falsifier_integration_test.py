@@ -3,24 +3,14 @@ its decisions (fix-both luck percentile + paired alternative sweep) through the
 actual reconstruction → re-roll → materializer pipeline. Needs the Node bridge;
 no server."""
 
-import asyncio
 import os
 import tempfile
-import time
 
 import numpy as np
 import pytest
 
-from poke_env import AccountConfiguration
-from poke_env.player import RandomPlayer
-from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
-
-from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
+from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
 from main.prober.falsifier import falsify_battle, falsify_decision, select_anchors
-from utils.bridge.local_battle_runner import run_local_battles
-from utils.bridge.reconstruction import ReconstructionRecord
-from utils.team_loader import TeamLoader
-from utils.teambuilder import Gen3Teambuilder
 
 # gen3 test tiers (MEASURED 2026-08-14): 20.9 s / 3 tests
 pytestmark = pytest.mark.sim
@@ -28,33 +18,15 @@ pytestmark = pytest.mark.sim
 _SEEDS = 8   # small but enough for distribution structure; keep the test fast
 
 
-def _record_one_battle(out_dir: str):
+def _record_one_battle(out_dir: str, key: int = 0):
     """Play one real battle with the round-trip recording harness; return
-    (record, summary, npz)."""
-    ts = int(time.time()) % 100000
-    pool = TeamLoader().get_all_teams()
-    trainee = RecordingFuzzPlayer(
-        out_dir=out_dir, rng_seed=ts,
-        battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"FZz{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1,
-    )
-    opp = RandomPlayer(
-        battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"FZo{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1,
-    )
-    asyncio.run(run_local_battles(trainee, opp, 1))
-    prefix = trainee.trace_prefixes[0]
-    record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
-    import json
-    with open(f"{prefix}_summary.json") as f:
-        summary = json.load(f)
-    with np.load(f"{prefix}_states.npz") as z:
-        npz = {k: z[k] for k in z.files}
-    return record, summary, npz
+    (record, summary, npz).
+
+    The SAME battle every run for a given ``key`` — see `record_fixture_battle`'s
+    wall-clock-seed note. A clock seed here could draw a battle too short to anchor
+    (``assert anchors`` below) or one whose decisions offer no alternatives, which turns
+    the per-alternative loop into a no-op that asserts nothing."""
+    return record_fixture_battle(out_dir, key=key, tag="FZ")
 
 
 @pytest.mark.integration
@@ -91,6 +63,9 @@ def test_falsify_battle_end_to_end():
             # (a float when this anchor had a scorable δ, else None).
             assert "anchor_delta" in d
             assert d["anchor_delta"] is None or isinstance(d["anchor_delta"], float)
+            # The paired ALTERNATIVE sweep is half of what this test gates, and an empty
+            # list would assert nothing at all — so require it, now that the battle is fixed.
+            assert d["alternatives"], "no alternative was swept — the paired arm is untested"
             for alt in d["alternatives"]:
                 assert alt["choice"] and alt["action"] != d["chosen"]["action"]
                 assert 0.0 <= alt["refused_frac"] <= 1.0
@@ -129,8 +104,9 @@ def _build_recon_tree(run_dir: str, n: int) -> str:
     with open(os.path.join(run_dir, "metadata.json"), "w") as f:
         json.dump({"gamma": 0.99}, f)
     for i in range(n):
+        # A DIFFERENT deterministic battle per slot: variety without a coin flip.
         with tempfile.TemporaryDirectory(prefix="rec_") as d:
-            record, summary, npz = _record_one_battle(d)
+            record, summary, npz = _record_one_battle(d, key=i)
         base = os.path.join(traces, f"loss_{i:03d}")
         record.save(base + "_reconstruction.json")
         with open(base + "_summary.json", "w") as f:

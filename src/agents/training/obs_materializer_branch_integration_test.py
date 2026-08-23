@@ -39,7 +39,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 import agents.training.obs_materializer as OM
 from agents.training.obs_materializer import (Branch, materialize_branches,
                                               materialize_decisions, materialize_from_record)
-from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
+from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer, record_fixture_battle
 from main.prober.engine import _has_state
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import ReconstructionRecord, reroll_many
@@ -53,6 +53,12 @@ MIN_TURN = 4          # branch late enough that the shared prefix is a real pref
 
 
 def record_one_battle(out_dir: str):
+    """A RANDOM battle — for the ``main()`` fuzz path, whose job IS a new battle every run.
+
+    The pytest-collected tests below call `record_fixture_battle` instead: a fixture seeded
+    from the clock plays a different battle every run and eventually plays one that cannot
+    satisfy the gate (see its note). Fuzz script and test want opposite things here, so they
+    get different fixtures rather than one compromise."""
     ts = int(time.time() * 1000) % 100000
     pool = TeamLoader().get_all_teams()
     trainee = RecordingFuzzPlayer(
@@ -147,10 +153,11 @@ def check_battle(record, summary, npz) -> int:
 
 def test_shared_prefix_arms_are_bit_identical_to_per_arm_replay():
     with tempfile.TemporaryDirectory(prefix="prefix_share_parity_") as out_dir:
-        record, summary, npz = record_one_battle(out_dir)
+        record, summary, npz = record_fixture_battle(out_dir, key=0, tag="PS")
         gated = check_battle(record, summary, npz)
-    assert gated >= 1, ("no arm reached the successor-obs gate — every branch ended the "
-                        "battle? re-run (the opponent is a RandomPlayer, so this is rare)")
+    # "re-run" is what the old wall-clock fixture's message said here. The battle is FIXED now,
+    # so a zero is a defect and not a draw — there is nothing to re-run into.
+    assert gated >= 1, "no arm reached the successor-obs gate on the FIXED fixture battle"
 
 
 def test_a_branch_whose_prefix_does_not_reach_the_decision_is_refused():
@@ -296,12 +303,16 @@ def test_a_battle_ENDING_arm_does_not_corrupt_the_arms_after_it():
     corrupted shared record only shows up as an obs difference if some arm happens to read the
     field that was corrupted.
     """
+    # A bounded walk over a FIXED sequence of deterministic battles: this test needs a
+    # QUALIFYING battle (one whose last decision has an ending arm and a follower), which not
+    # every battle is — so it redraws, but from a fixed list, so "which battles were tried" is
+    # the same every run. That is the reproducible form of the cf_audit redraw-on-tie fix.
     checked = 0
-    for _ in range(3):        # the anchor must yield at least one ENDING arm; retry a flat battle
+    for key in (0, 1, 2, 3):
         with tempfile.TemporaryDirectory(prefix="branch_end_") as out_dir:
-            record, summary, npz = record_one_battle(out_dir)
+            record, summary, npz = record_fixture_battle(out_dir, key=key, tag="BE")
             checked = check_ending_arms(record, summary, npz)
         if checked:
             break
-    assert checked >= 2, ("no battle produced a terminal decision with an ending arm AND a "
-                          "follower — re-run (the opponent is a RandomPlayer)")
+    assert checked >= 2, ("none of the 4 FIXED fixture battles produced a terminal decision "
+                          "with an ending arm AND a follower — the restore path is ungated")

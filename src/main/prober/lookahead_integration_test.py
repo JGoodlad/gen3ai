@@ -8,25 +8,14 @@ guarantee ``obs_roundtrip_fuzz_test`` gives the recorded line, here exercised on
 
 Needs the Node bridge; no server. Run directly or via ``pytest -m integration``."""
 
-import asyncio
-import json
 import tempfile
-import time
 
 import numpy as np
 import pytest
 
-from poke_env import AccountConfiguration
-from poke_env.player import RandomPlayer
-from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
-
-from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
+from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
 from main.prober.engine import _has_state
 from main.prober.lookahead import lookahead_decision
-from utils.bridge.local_battle_runner import run_local_battles
-from utils.bridge.reconstruction import ReconstructionRecord
-from utils.team_loader import TeamLoader
-from utils.teambuilder import Gen3Teambuilder
 
 # gen3 test tiers (MEASURED 2026-08-14): 7.3 s / 2 tests
 pytestmark = pytest.mark.sim
@@ -47,26 +36,10 @@ class _SumValueModel:
 
 
 def _record_one_battle(out_dir: str):
-    ts = int(time.time()) % 100000
-    pool = TeamLoader().get_all_teams()
-    trainee = RecordingFuzzPlayer(
-        out_dir=out_dir, rng_seed=ts, battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"LAt{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1)
-    opp = RandomPlayer(
-        battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"LAo{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration,
-        start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1))
-    prefix = trainee.trace_prefixes[0]
-    record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
-    with open(f"{prefix}_summary.json") as f:
-        summary = json.load(f)
-    with np.load(f"{prefix}_states.npz") as z:
-        npz = {k: z[k] for k in z.files}
-    return record, summary, npz
+    """The SAME real battle every run — see `record_fixture_battle`'s wall-clock-seed note.
+    This fixture used a clock seed until 2026-08-22, so the gate below was one unlucky draw
+    away from being skipped (or from a battle with no anchor at all)."""
+    return record_fixture_battle(out_dir, key=0, tag="LA")
 
 
 def _first_anchor_with_successor(summary, npz):
@@ -95,35 +68,42 @@ def test_lookahead_chosen_crn_reproduces_recorded_next_obs():
 
         # THE GATE: the chosen action's CRN successor reproduces the realized next state, so its
         # materialized obs (→ obs.sum() via the fake model) equals the recorded next obs's sum.
-        if chosen["value_crn"] is not None:        # None only if the chosen move ENDED the battle
-            expected = float(np.asarray(npz["obs"][anchor + 1], dtype=np.float64).sum())
-            assert abs(chosen["value_crn"] - expected) < 1e-2, (
-                f"chosen CRN successor obs.sum()={chosen['value_crn']} != "
-                f"recorded next obs.sum()={expected} — re-roll/materialize desync")
-            # STRENGTHENED (the sum gate above is loose on a ~19,500-magnitude sum): independently
-            # reproduce the chosen action's CRN successor obs (recorded action + "original" seed, exactly
-            # what lookahead does internally) and assert it equals the recorded next obs BIT-FOR-BIT — the
-            # obs_roundtrip guarantee, here on the RE-ROLLED line (the real proof the V(s′) input is faithful).
-            from agents.training.obs_materializer import materialize_decisions
-            from utils.bridge.reconstruction import reroll_turn
-            actions = np.asarray(npz["actions"], dtype=int)
-            side = record.side_of(record.trainee_username)
-            rr = reroll_turn(record, int(summary["invocations"][anchor]["turn"]),
-                             seeds=["original"], p1_action="recorded", p2_action="recorded")
-            r0 = rr.rerolls[0]
-            assert not r0.outcome.get("ended"), "anchor's turn ended — pick an earlier move decision"
-            prefix = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
-            suffix = r0.p1_chunks if side == "p1" else r0.p2_chunks
-            mt = materialize_decisions(
-                list(prefix) + list(suffix), username=record.username(side),
-                packed_team=record.packed_team(side), side=side,
-                actions=list(actions[:anchor]) + [int(actions[anchor])],
-                battle_format=record.format_id, battle_tag=record.battle_tag,
-                stop_after_decision=anchor + 1)
-            assert len(mt.decisions) > anchor + 1, "no successor row materialized"
-            assert np.array_equal(mt.decisions[anchor + 1].obs,
-                                  np.asarray(npz["obs"][anchor + 1], dtype=np.float32)), (
-                "re-rolled CRN successor obs != recorded next obs BIT-FOR-BIT — materialize desync")
+        #
+        # ASSERTED, not branched on. `value_crn` is None only if the chosen move ENDED the battle,
+        # and the anchor was picked to HAVE a recorded successor — so on the CRN seed it cannot
+        # have ended. An `if` here would have let an unlucky fixture skip the only gate this test
+        # exists for, silently and greenly.
+        assert chosen["value_crn"] is not None, (
+            "the anchor has a recorded successor, so its CRN re-roll cannot have ended the "
+            "battle — a None here is a re-roll defect, not an unlucky battle")
+        expected = float(np.asarray(npz["obs"][anchor + 1], dtype=np.float64).sum())
+        assert abs(chosen["value_crn"] - expected) < 1e-2, (
+            f"chosen CRN successor obs.sum()={chosen['value_crn']} != "
+            f"recorded next obs.sum()={expected} — re-roll/materialize desync")
+        # STRENGTHENED (the sum gate above is loose on a ~19,500-magnitude sum): independently
+        # reproduce the chosen action's CRN successor obs (recorded action + "original" seed, exactly
+        # what lookahead does internally) and assert it equals the recorded next obs BIT-FOR-BIT — the
+        # obs_roundtrip guarantee, here on the RE-ROLLED line (the real proof the V(s′) input is faithful).
+        from agents.training.obs_materializer import materialize_decisions
+        from utils.bridge.reconstruction import reroll_turn
+        actions = np.asarray(npz["actions"], dtype=int)
+        side = record.side_of(record.trainee_username)
+        rr = reroll_turn(record, int(summary["invocations"][anchor]["turn"]),
+                         seeds=["original"], p1_action="recorded", p2_action="recorded")
+        r0 = rr.rerolls[0]
+        assert not r0.outcome.get("ended"), "anchor's turn ended — pick an earlier move decision"
+        prefix = rr.prefix_p1_chunks if side == "p1" else rr.prefix_p2_chunks
+        suffix = r0.p1_chunks if side == "p1" else r0.p2_chunks
+        mt = materialize_decisions(
+            list(prefix) + list(suffix), username=record.username(side),
+            packed_team=record.packed_team(side), side=side,
+            actions=list(actions[:anchor]) + [int(actions[anchor])],
+            battle_format=record.format_id, battle_tag=record.battle_tag,
+            stop_after_decision=anchor + 1)
+        assert len(mt.decisions) > anchor + 1, "no successor row materialized"
+        assert np.array_equal(mt.decisions[anchor + 1].obs,
+                              np.asarray(npz["obs"][anchor + 1], dtype=np.float32)), (
+            "re-rolled CRN successor obs != recorded next obs BIT-FOR-BIT — materialize desync")
 
         # Every candidate maps to a sim choice and gets a numeric V(s′) or a terminal outcome.
         for c in out["candidates"]:
@@ -133,8 +113,7 @@ def test_lookahead_chosen_crn_reproduces_recorded_next_obs():
                 assert c["delta_v"] is not None
 
         # The headline ΔV is relative to the chosen line (chosen ΔV == 0 when it has a successor).
-        if chosen["value_crn"] is not None:
-            assert abs(chosen["delta_v"]) < 1e-6
+        assert abs(chosen["delta_v"]) < 1e-6
 
 
 @pytest.mark.integration

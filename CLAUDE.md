@@ -455,6 +455,21 @@ The canonical pattern (see `src/agents/training/poke_env_gaps/`):
 
 This catches poke-env parsing bugs and encoder gaps that unit tests with mocks cannot — the test exercises the Showdown sim → poke-env → encoder pipeline end to end (the bridge feeds the identical protocol stream the live server would). When asked to write a fuzz test, always follow this pattern rather than writing parametrized unit tests with hand-crafted mock objects.
 
+🚨 **A fuzz SCRIPT wants a new battle every run; a pytest-collected TEST wants the same battle
+every run.** A fixture seeded from the wall clock plays a different battle every run and
+eventually plays the one that *skips its own assertion* — a battle too short to anchor, a tie
+that empties the frame, a line the search outruns. Three shipped and were chased as flakes
+(`better_line`, `cf_audit`, and the guards this rule was written from). So a collected test
+takes its battle from **`obs_roundtrip_fuzz_test.record_fixture_battle(out_dir, key=…)`** —
+reproducible across processes, `key` selecting a different deterministic battle when you want
+variety — and asserts its precondition rather than branching on it (`if x is not None:` around
+the decisive gate is the antipattern's second half; it fails green). ⚠️ **`random.seed(k)` is
+NOT enough**: two players share the global `random` and the bridge interleaves their
+`choose_move` calls, so the draw order still diverges (`golden_obs_capture` measured the
+decision count swinging by hundreds). Reproducibility needs every randomness source *removed* —
+fixed teams, a per-player RNG, a fixed sim seed. Where a test needs a *qualifying* battle
+(cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED sequence of keys.
+
 ---
 
 ## Smoke Test

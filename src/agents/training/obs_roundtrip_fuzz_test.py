@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import sys
 import tempfile
 import time
@@ -104,6 +105,79 @@ class RecordingFuzzPlayer(Gen3Player):
         # here lets the registry complete the pair and write the artifact.
         register_trace_prefix(tag, prefix, extra={"trainee_username": self.username})
         self.trace_prefixes.append(prefix)
+
+
+# ---------------------------------------------------------------------------
+# The REPRODUCIBLE single-battle fixture (shared by every pytest-collected test
+# that needs "one real battle" as an input rather than as its subject)
+# ---------------------------------------------------------------------------
+#
+# 🚨 THE WALL-CLOCK-SEED FIXTURE ANTIPATTERN. A fixture seeded from the clock plays a
+# DIFFERENT battle every run and eventually plays the one that skips the assertion — a
+# short battle with no anchor, a tie that empties the frame, a line the search outruns.
+# Two of those shipped and had to be chased as flakes (`better_line_integration_test`,
+# `cf_audit_integration_test`). A *fuzz script* wants a new battle every run; a
+# *pytest-collected test* wants the same battle every run, because a test that cannot be
+# re-run is a test whose failure cannot be diagnosed.
+#
+# ⚠️ `random.seed(k)` IS NOT ENOUGH, and that is the non-obvious part. Two players share
+# the global `random`, and the bridge interleaves their `choose_move` calls
+# nondeterministically, so the draw ORDER — and the whole trajectory — still diverges
+# (`golden_obs_capture` measured the decision count swinging by hundreds). Reproducibility
+# needs every randomness source REMOVED, not reseeded: fixed teams (no `Gen3Teambuilder`
+# draw), a per-player RNG on each side (never the global module), and a fixed sim seed.
+#
+# `key` selects a DIFFERENT deterministic battle, so a caller that wants variety gets it
+# without giving up reproducibility.
+
+class SeededRandomPlayer(RandomPlayer):
+    """A `RandomPlayer` that draws from its OWN `random.Random` instead of the global module.
+
+    Same policy, but insensitive to who-was-asked-first: its draw sequence is a function of
+    its own decision count alone, so an async interleave cannot change what it plays."""
+
+    def __init__(self, *, rng_seed: int, **kwargs):
+        super().__init__(**kwargs)
+        self._own_rng = random.Random(rng_seed)
+
+    def choose_move(self, battle):
+        orders = getattr(battle, "valid_orders", None)
+        if not orders:
+            return self.choose_default_move()
+        return orders[self._own_rng.randrange(len(orders))]
+
+
+def record_fixture_battle(out_dir: str, *, key: int = 0, tag: str = "Fx", impl: str = "node"):
+    """Play ONE **reproducible** real bridge battle and return ``(record, summary, npz)``.
+
+    Same battle every run for a given ``key`` — see the antipattern note above. The trainee
+    is the recording fuzz player (its own `RandomState`), the opponent is a
+    :class:`SeededRandomPlayer`, both teams are pinned by index, and the sim PRNG seed is
+    fixed. No server; the bridge runs in-process."""
+    import json
+
+    pool = TeamLoader().get_all_teams()
+    assert pool, "no gen3ou teams under data/teams"
+    t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
+    trainee = RecordingFuzzPlayer(
+        out_dir=out_dir, rng_seed=1000 + key, battle_format=BATTLE_FORMAT, team=t1,
+        account_configuration=AccountConfiguration(f"{tag}t{key}", "pw"),
+        server_configuration=LocalhostServerConfiguration,
+        start_listening=False, max_concurrent_battles=1)
+    opp = SeededRandomPlayer(
+        rng_seed=2000 + key, battle_format=BATTLE_FORMAT, team=t2,
+        account_configuration=AccountConfiguration(f"{tag}o{key}", "pw"),
+        server_configuration=LocalhostServerConfiguration,
+        start_listening=False, max_concurrent_battles=1)
+    asyncio.run(run_local_battles(trainee, opp, 1, seed=[11 + key, 22 + key, 33 + key, 44 + key],
+                                  impl=impl))
+    prefix = trainee.trace_prefixes[0]
+    record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
+    with open(f"{prefix}_summary.json") as f:
+        summary = json.load(f)
+    with np.load(f"{prefix}_states.npz") as z:
+        npz = {k: z[k] for k in z.files}
+    return record, summary, npz
 
 
 def _verify_battle(prefix: str) -> int:

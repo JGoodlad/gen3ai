@@ -15,25 +15,14 @@ catching. That cross-impl test is the durable regression gate for ``gen3_rust_se
 
 Needs a bridge; no server. Run directly or via ``pytest -m integration``."""
 
-import asyncio
-import json
 import tempfile
-import time
 
 import numpy as np
 import pytest
 
-from poke_env import AccountConfiguration
-from poke_env.player import RandomPlayer
-from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
-
-from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
+from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
 from main.prober.better_line import better_line_decision
 from main.prober.engine import _has_state
-from utils.bridge.local_battle_runner import run_local_battles
-from utils.bridge.reconstruction import ReconstructionRecord
-from utils.team_loader import TeamLoader
-from utils.teambuilder import Gen3Teambuilder
 
 # gen3 test tiers (MEASURED 2026-08-14): 38.8 s / 8 tests
 pytestmark = pytest.mark.sim
@@ -72,24 +61,13 @@ class _SumModel:
 
 
 def _record_one_battle(out_dir: str, record_impl: str = "node"):
-    ts = int(time.time() * 1000) % 100000
-    pool = TeamLoader().get_all_teams()
-    trainee = RecordingFuzzPlayer(
-        out_dir=out_dir, rng_seed=ts, battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"BLt{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration, start_listening=False, max_concurrent_battles=1)
-    opp = RandomPlayer(
-        battle_format="gen3ou", team=Gen3Teambuilder(pool),
-        account_configuration=AccountConfiguration(f"BLo{ts}", "pw"),
-        server_configuration=LocalhostServerConfiguration, start_listening=False, max_concurrent_battles=1)
-    asyncio.run(run_local_battles(trainee, opp, 1, impl=record_impl))
-    prefix = trainee.trace_prefixes[0]
-    record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
-    with open(f"{prefix}_summary.json") as f:
-        summary = json.load(f)
-    with np.load(f"{prefix}_states.npz") as z:
-        npz = {k: z[k] for k in z.files}
-    return record, summary, npz
+    """The SAME real battle every run — see `record_fixture_battle`'s wall-clock-seed note.
+
+    This fixture is the antipattern's FIRST named instance: it seeded from the clock, so it
+    played a different battle every run and an unlucky one outran the recorded command list
+    the depth-2 beam replays (ledger 2026-08-22). A fixed battle makes that either always
+    true or always false, which is the only state a failure can be diagnosed from."""
+    return record_fixture_battle(out_dir, key=2, tag="BL", impl=record_impl)
 
 
 def _mid_anchor(summary, npz):
@@ -114,11 +92,16 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs(impl):
         # The declared interior-ply regime rides on the live payload too (task #29).
         assert out["interior_opponent_regime"] == "greedy"
         chosen = next(c for c in out["candidates"] if c["is_chosen"])
-        if chosen["value"] is not None:        # None only if the chosen move ENDED the battle
-            expected = float(np.asarray(npz["obs"][anchor + 1], dtype=np.float64).sum())
-            assert abs(chosen["value"] - expected) < 1e-2, (
-                "depth-1 chosen value != sum(recorded next obs) — the value_crn anchor broke "
-                "(clone recorded_exact ≠ recorded next state)")
+        # ASSERTED, not branched on: `_mid_anchor` only returns a decision that HAS a recorded
+        # successor, so the chosen move provably did not end the battle and a None value is a
+        # clone defect. Branching on it let an unlucky fixture skip this file's decisive gate.
+        assert chosen["value"] is not None, (
+            "the anchor has a recorded successor, so the chosen line cannot have ended the "
+            "battle — a None value is a clone/materialize defect, not an unlucky battle")
+        expected = float(np.asarray(npz["obs"][anchor + 1], dtype=np.float64).sum())
+        assert abs(chosen["value"] - expected) < 1e-2, (
+            "depth-1 chosen value != sum(recorded next obs) — the value_crn anchor broke "
+            "(clone recorded_exact ≠ recorded next state)")
         # Every candidate maps to a choice and is scored or terminal; ΔV is relative to the chosen line.
         for c in out["candidates"]:
             assert c["choice"]
@@ -137,10 +120,15 @@ def test_better_line_depth2_beam_produces_principal_variation(impl):
                                    depth=2, beam=3, top_k=4, opp_model=model, impl=impl)
         assert out["depth"] == 2 and out["opp_model_used"] == "reloaded"
         best = out["best_alternative"]
-        if best is not None and best["terminal"] is None:
-            pv = best["principal_variation"]
-            assert 1 <= len(pv) <= 2          # a depth-2 line: the divergence ply + (≤1) interior ply
-            assert pv[0]["action"] == best["action"]
+        # The battle is FIXED, so "did the beam produce a scorable alternative at all?" is a
+        # property of the code, not of the draw — assert it rather than skipping past it.
+        assert best is not None, "the depth-2 beam returned no alternative to the chosen line"
+        assert best["terminal"] is None, (
+            "the mid-battle anchor's best alternative ended the battle — the fixture battle "
+            "changed shape; re-check the anchor rather than weakening the gate")
+        pv = best["principal_variation"]
+        assert 1 <= len(pv) <= 2          # a depth-2 line: the divergence ply + (≤1) interior ply
+        assert pv[0]["action"] == best["action"]
 
 
 @pytest.mark.integration
