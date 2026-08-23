@@ -48,7 +48,7 @@ the generation rewards genuine strategic understanding rather than raw damage ou
 
 The part we're quietly proudest of. Every refactor is gated on **byte-identical model outputs**
 (a sha over the forward pass); the physics are pinned by **oracle fuzz tests** against the real
-engine; 5,000+ tests run in the routine gate with mypy and ruff enforced inside it; the
+engine; 6,500+ tests run in the routine gate with mypy and ruff enforced inside it; the
 architecture diagram is **generated from the live code**, and a module without edges fails a
 completeness test. When we found a silently-dead subsystem this month, the fix shipped with the
 structural guard that makes the whole bug class unrepresentable. History is append-only, claims

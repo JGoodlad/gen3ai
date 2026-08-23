@@ -2972,3 +2972,107 @@ it cannot size them.* Per the brief's stop rule the build stayed at the cheap un
   `all_shaping_pbrs=True`, which suppresses `self_ko_penalty` before the weight is ever consulted,
   so it asserts a term its own composition zeroes. Verified failing identically with
   `reward_manager.py` stashed.
+
+### DOC-TRUTH AUDIT — the token table contradicted its own prose, and the move census was 28 moves stale in two always-current docs (2026-08-23, `gen3_doc_truth_audit_v1`)
+
+Systematic sweep of the ALWAYS-CURRENT doc set (root + every leaf `CLAUDE.md` except the training
+leaf, every `README.md` except the frozen `designs/ai_v3/` one, `CONTRIBUTING.md`,
+`docs/RUNNING.md`, `designs/ARCHITECTURE.md`), recounting every quantitative claim at HEAD rather
+than trusting the number written beside it. The weekend caught five stale figures by ACCIDENT; this
+is the deliberate version.
+
+**Method.** Every claim classified as (1) recountable-now — verified by running the count or reading
+the constant; (2) measured-with-provenance — a stale figure with an honest date STAYS, a stale
+figure presented as CURRENT gets the date or the new value; (3) structural — grep-verified where a
+reader would rely on it.
+
+| Doc | Claim | Was | Is | Class |
+|---|---|---|---|---|
+| `ARCHITECTURE.md` §2.3 | trunk token sequence | "36-token", history seats 12–18, global 19, E3 20–23, E4 24–29, E5 30–35 | **29-token**, no history seats, global 12, E3 13–16, E4 17–22, E5 23–28 | recountable |
+| root, `bridge/README.md` | full-universe move census | 369 → 281 modeled / 88 fail-loud | **369 → 309 / 60** (0 MISMODELED holds) | recountable |
+| root | routine-gate / inner-loop / total test counts | 6067 / 5978 / — | **6676 / 6570 / 6751** | recountable |
+| root | `sim` tier count | 52 | **60** | recountable |
+| root | mypy gate command + scope | `python -m mypy src/agents/model`, "the model package only" | bare `python -m mypy`; `files = src/agents/model, src/agents/observation` | structural |
+| root | file-size 1000–2000 band census | 13 files | **16 files** | recountable |
+| root | size-gate grandfather list | 5 source entries | **2** (3 decomposed 08-22/08-23) | recountable |
+| `ARCHITECTURE.md` §9 | delivery digraph size | 58 nodes / 487 edges | **120 nodes / 1103 edges** | recountable |
+| `ARCHITECTURE.md` §8 items 2, 5 | obs dim, present tense | "live is now 2669" | as-found; **live 2501** | provenance |
+| root | prober arch-drift denominator | "79 of 79", undated | dated 2026-08-13; **99 runs** carry a checkpoint today | provenance |
+| `prober/CLAUDE.md` Tests | test-file map | named `review_test.py` (deleted); omitted 7 prober + 3 web tests | corrected both directions | structural |
+| `README.md` | routine-gate size | "5,000+ tests" | **6,500+** | recountable |
+| `build_arch_viewer.py` | node `doc_section` deep links + docstring | `"2.3 The 36-token sequence"` ×5; "36 seats and 487 edges" | `"2.3 The 29-token sequence"`; "120 nodes and 1103 edges" | structural |
+
+**The worst one is `ARCHITECTURE.md` §2.3**, and not because of the size of the error. The table
+said 36 tokens; the PROSE two lines below it already said the history seats are gone and the base
+count is 13. A reader taking the table got E3 at seat 20 when it is at 13 — and this file's own §8
+item 1 records the identical failure ("the table and the prose contradicted each other in the same
+section") as a finding against the root doc. **A doc that has already diagnosed a bug class is not
+immune to it.**
+
+**THE SHARPEST FINDING CAME FROM FIXING ONE: a consistency guard cannot detect CO-DRIFT.**
+Renaming the §2.3 heading to "The 29-token sequence" turned
+`build_arch_viewer_test.py::test_doc_links_point_at_real_headings` RED — because the arch viewer's
+five seat nodes carry a hardcoded `doc_section` string, `"2.3 The 36-token sequence"`, and that
+test asserts every `doc_section` names a real heading in `ARCHITECTURE.md`. The guard was GREEN for
+as long as the heading and the label were WRONG TOGETHER, and it went red the moment one of them
+became right. **It pins agreement, not truth** — so it could never have flagged the stale heading;
+it could only ever punish the fix. This is the deep-link sibling of the vacuity family: a test that
+compares two copies of a fact tells you they match, never that they are correct. Fixed both sides
+(`build_arch_viewer.py` lines 223-227 + its docstring's "36 seats and 487 edges" → "120 nodes and
+1103 edges") and regenerated the artifact — the committed HTML moved by exactly ONE line.
+**A heading string embedded in code is a doc-truth hazard**: the section can be renamed by anyone
+editing the doc, and only a build gate they may not run will notice.
+
+**The most DANGEROUS one is the move census**, because it was stale in the direction of pessimism
+and in two places at once while `src/rust_sim/CLAUDE.md` carried two NEWER values (281/88 in the
+ROUND-40 entry, 286/83 in ROUND 44), each written as "current" because each was. A round log and an
+always-current doc cannot both hold a copy of a moving number. Fix: `src/rust_sim/CLAUDE.md` now
+opens with a **RECOUNT, never quote** banner naming `SCAN_UNIVERSE=1 node scan_move_coverage.js` as
+the only current answer, saying explicitly that every ROUND entry is round-scoped, and telling the
+next reader to fix the two downstream copies in the same pass. The load-bearing claim was
+re-separated from the volatile one: **0 MISMODELED is the invariant; the modeled/fail-loud split is
+just a progress reading.**
+
+**What was CLEAN, and worth recording so nobody re-derives it:** all four derived-artifact `--check`
+gates green before and after (`arch_tables`, `build_arch_viewer`, `delivery_graph`, `flag_registry`);
+`observation/constants.py`'s 23 derived trailing comments all evaluate to their live constant (the
+literal-under-a-derivation-comment class the audit was hunting is CLOSED there); every backticked
+path across the corpus resolves except runtime artifacts and correctly-marked deletions; the
+observation leaf is freshly re-baselined with provenance; every documented copy-pasteable command
+exits 0 (`checkargs --argv`, `train_rl_agent --help`, `prober.web --check-openapi`, `elo --help`,
+`prober.query --help`, `launcher --help`); the 719-team pool count is pinned by a live test and
+correct; species 419 / 386 base / 33 formes correct.
+
+**⚠️ OBSERVED FLAKE, not ours, worth someone's attention.** The second gate run failed
+`cf_producer_integration_test.py::test_the_whole_label_path_composes_ring_to_buffer` with
+`ANCHOR REFUSED — the scripted full replay did not reproduce the recorded outcome` (rc 3;
+`--impl node`; "scripted full replay → win, record says CPo7066"). It PASSED in the first gate run,
+passes in isolation on this tree, and passes with these changes stashed — so it is not this pass.
+The test plays a fresh random battle each run, so the anchor check samples a different battle every
+time; a refusal means the replay was NOT exact for that sample. The producer's refusal is behaving
+correctly (it declines to emit labels that would measure its own bug), but the underlying
+replay-exactness gap is real and intermittently reachable. Belongs to the live R1 counterfactual
+workstream.
+
+**Gates**: routine gate (`-m "not slow and not e2e"`) green — the ONE red in the first run was the
+co-drift test above, caused by this pass and fixed in it; all four derived-artifact `--check` modes
+green after the edits; `scripts/bootstrap.sh --dry-run` exit 0.
+
+**The durable rule this adds.** The corpus grew **~10% in tests in the single day** between the
+08-22 recount and this one (6067 → 6652 in the routine gate). A count in this tree has a half-life
+measured in days, so the fix is not a fresher number — it is that **every volatile count now ships
+with the command that recounts it**, and the ones that cannot (test census, size-gate band) carry
+the date they were taken. The point proved itself twice inside this one pass: the routine gate read
+6067 on 08-22, **6652** when the audit recounted it, and **6676** an hour later after a rebase over
+one sibling commit. Any count written by hand is already drifting.
+
+**DEFERRED — `src/agents/training/CLAUDE.md`** was excluded from this pass (an active sibling is
+landing reward work into it). Four findings to fold in there:
+1. The CUDA `forward + backward` cell says **"NOT wired up; the test keeps the lever available"** —
+   `--compile-trainer` is wired up and defaults ON for cuda. Stale structural claim.
+2. `79 of 79 archived runs` (line ~2893) is undated, same class as the root copy now fixed.
+3. The `~89% train share` (three sites) is the counterpart of the trainer-turn baseline just
+   corrected from "obs 88 / parse 7 / reward 4" to **63 / 27 / 9** — re-derive it against
+   `measurements/post_paydown_baselines_2026-08-23.json` rather than carrying it forward.
+4. Two different ms pairs are quoted for the same 1.75× compile-trainer result (`150.85 → 86.21`
+   in the table, `155.1 → 88.5` in the root doc). One session or two — say which.

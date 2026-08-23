@@ -316,17 +316,21 @@ The concrete steps:
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
 species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
 
-### 2.3 The 36-token sequence
+### 2.3 The 29-token sequence
 
 | Seats | Index range | Token type | Content |
 |---|---|---|---|
 | our mons | 0–5 | `TOKEN_TYPE_OUR_TEAM` | role token (+ `prefuse_proj` incoming residual) |
 | opp mons | 6–11 | `TOKEN_TYPE_THEIR_TEAM` | role token (+ move-belief reinjection) |
-| history | 12–18 | `TOKEN_TYPE_HISTORY` | embedded TurnDelta + positional emb |
-| global | 19 | `TOKEN_TYPE_GLOBAL` | `[our_ctx, opp_ctx, non_matchup_rest]` → `global_proj` |
-| **E3** our active's moves | 20–23 | `TOKEN_TYPE_OUR_MOVE` | move token in **request order**, `move_seat_proj` 32→128 |
-| **E4** opp threat moves | 24–29 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
-| **E5** tail threats | 30–35 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])` |
+| global | 12 | `TOKEN_TYPE_GLOBAL` | `[our_ctx, opp_ctx, non_matchup_rest]` → `global_proj` |
+| **E3** our active's moves | 13–16 | `TOKEN_TYPE_OUR_MOVE` | move token in **request order**, `move_seat_proj` 32→128 |
+| **E4** opp threat moves | 17–22 | `TOKEN_TYPE_THEIR_THREAT` | `threat_seat_proj([latent(32), w, acc, is_phys])`, K = `entity_topk_seats` = 6 |
+| **E5** tail threats | 23–28 | `TOKEN_TYPE_THEIR_THREAT` + `tail_marker` | per-opp-mon beyond-top-K residual `tail_proj([p_tail, worst_phys, worst_spec, revealed])` |
+
+There are **no `TOKEN_TYPE_HISTORY` seats in the base sequence** — the seven of them went with the
+lag frames (`gen3_frame_deletion_v1`), which is what took the sequence from 36 tokens to 29 and
+shifted every extra seat down by seven. `TOKEN_TYPE_HISTORY` itself survives in the token-type
+table and is what an opt-in event seat takes.
 
 `entity_seats.n_seats` = 16 (4 + 6 + 6). Base seat count = `2·TEAM_SIZE + 1` = 13 (the
 `N_HISTORY_TURNS` history seats went with the lag frames), so **every extra seat index is
@@ -1073,8 +1077,9 @@ not re-derive them.
    was correct — the table and the prose contradicted each other in the same section.
 2. **`src/agents/observation/CLAUDE.md` opens with "2889-dim"**; the live obs at audit time
    was **2925**; since `gen3_entity_rehome_v1` it was **2667**, and since
-   `gen3_deadline_clock_v1` it is **2669** (the
-   per-mon recency block added 12 × 3). Its per-block reference section then describes the
+   `gen3_deadline_clock_v1` it was **2669** (the
+   per-mon recency block added 12 × 3). ⚠️ **Every obs dim in this section is AS-FOUND in 2026-08;
+   live is 2501** — see §1. Its per-block reference section then describes the
    pre-deletion 414-dim reactive layout and the 51-dim incoming-damage / 44-dim move-effect blocks
    as if present. Its own inline banner says to treat the deletion note as authoritative — i.e. the
    file tells you not to trust the rest of the file.
@@ -1088,7 +1093,7 @@ not re-derive them.
    speed-stat GIGO stamp, 59 = `consequence_topk`; now 60 = the re-home stamp). Neither v58 nor
    v59 was described anywhere in the root file.
 5. **`src/agents/model/CLAUDE.md` describes `ObsUnpack` as peeling "the flat 3390-dim
-   observation"** — obs-layout generations out of date (live is now 2669).
+   observation"** — obs-layout generations out of date (2669 at audit time; **2501 live**).
 6. **`PointerNativeActionHead`'s docstring says the move cell is `[low,high,crit,pko,p_land,known,
    sec×10]`.** It is `sec×7` (`_PTR_MOVE_CELL` = 13, not 16) since the outgoing slp/psn/tox columns
    were dropped. `pointer_cells`' own docstring, 900 lines away, says 7 correctly.
@@ -1110,7 +1115,7 @@ not re-derive them.
 
 | Question | File |
 |---|---|
-| **This document as a clickable digraph** — the 58 nodes / 487 edges above, hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `vf_projection` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
+| **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `vf_projection` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
 | Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` |
 | Phase contract, `ExtractorContext`, versioning playbook | `src/agents/model/CLAUDE.md` |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |

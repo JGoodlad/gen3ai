@@ -18,6 +18,26 @@ byte-identical protocol-emission Phase 1+2+3 (132 battles / 19348 lines), and th
 bridge-facing `BattleStream::write_line` streaming surface — per-write byte-gated
 against the real Node `BattleStream` (44 battles / 2377 writes, `writeline_test.rs`).
 
+### 🚨 The move census is RECOUNTED, never quoted
+
+**Every ROUND entry below states the census as of THAT round, and each says "current" because it
+was.** They are round-scoped history — do not read one as today's number. The **only** current
+answer is the tool:
+
+```bash
+cd src/rust_sim/harness && SCAN_UNIVERSE=1 node scan_move_coverage.js   # exits non-zero if any MISMODELED
+cd src/rust_sim/harness && node scan_move_coverage.js                   # the 722-team pool report
+```
+
+**Measured 2026-08-23: 369 gen3-legal moves → 309 MODELED · 60 FAIL-LOUD · 0 MISMODELED**, pool
+722/722 fully engine-playable. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
+both were true when written. **The invariant is the load-bearing claim, not the split:** 0
+MISMODELED is what makes an unmodeled move a loud construction failure rather than a silent
+desync, and it has held under every round separately and combined. Re-run after admitting any move
+class, and fix the two always-current docs that carry a copy of this number (root `CLAUDE.md`,
+`src/utils/bridge/README.md`) in the same pass — both had gone stale by 28 moves before the
+2026-08-23 doc audit.
+
 ## Why "bit-for-bit" is the hard part (read this first)
 
 Reproducing *Gen 3's mechanics* is the easy half. The constraint that costs the

@@ -7,7 +7,7 @@ actually come up in a design conversation:
   1. "What does the critic see?" / "What does the switch logit consume?"  — a PATH query.
   2. "Which of these routes does the policy actually LEAN on?"            — a MEASUREMENT overlay.
 
-A static rendering of 36 seats and 487 edges cannot answer either; it is a hairball. This module
+A static rendering of 120 nodes and 1103 edges cannot answer either; it is a hairball. This module
 emits a single self-contained HTML file where both are one interaction: pick a node and see only
 the subgraph that reaches it; pick a checkpoint and see edge width scale with measured dependence.
 
@@ -220,11 +220,11 @@ DOC_SECTION = {
 }
 DOC_SECTION_PREFIX = [
     ("pointer.", "3.3 The action head is the pointer head — there is no flat `action_net`"),
-    ("E3_move", "2.3 The 36-token sequence"),
-    ("E4_threat", "2.3 The 36-token sequence"),
-    ("E5_tail", "2.3 The 36-token sequence"),
-    ("our_mon", "2.3 The 36-token sequence"),
-    ("opp_mon", "2.3 The 36-token sequence"),
+    ("E3_move", "2.3 The 29-token sequence"),
+    ("E4_threat", "2.3 The 29-token sequence"),
+    ("E5_tail", "2.3 The 29-token sequence"),
+    ("our_mon", "2.3 The 29-token sequence"),
+    ("opp_mon", "2.3 The 29-token sequence"),
     ("history", "1.6 Turn history — 7 slots × 159 dims"),
     ("loss.", "7. Training-only obs keys — the leak-safety list"),
 ]

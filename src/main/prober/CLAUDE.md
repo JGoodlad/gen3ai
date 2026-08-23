@@ -1425,16 +1425,25 @@ hand-written tmp trace via a fake session — no torch, no bridge),
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and
 the `anchor_deltas` δ-map) + `falsifier_integration_test.py` (`@integration`,
 real bridge battle → full falsify pipeline, determinism re-run, and the run-level
-`falsify_scan` over a recorded discoverable tree), `review_test.py` (pure
-`ReviewStore` — flag/note roundtrip, persistence, prune, export),
+`falsify_scan` over a recorded discoverable tree),
 `better_line_test.py` (pure: the SEARCH backup logic — terminal sentinels, max-over-continuations,
 beam pruning, principal variation) + `better_line_integration_test.py` (`@integration`, real bridge,
 fake `V=obs.sum()` model: the depth-1 chosen value == sum(recorded next obs) value_crn anchor, the
 depth-2 beam principal variation, determinism), `model_test.py` (the torch boundary — where each
-forward stash LIVES, plus the `ArchDriftError` diagnosis and the dropped-kwarg recovery):
+forward stash LIVES, plus the `ArchDriftError` diagnosis and the dropped-kwarg recovery),
+`awareness_test.py` (the "did it KNOW?" verdict fold over hand-built atom distributions),
+`loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
+point of the module is that it must not read the rendered timeline), `lookahead_test.py` +
+`replay_test.py` (pure ORCHESTRATION with the bridge/model/players monkeypatched) +
+`lookahead_integration_test.py` (`@integration @sim`, real bridge → materialized successor obs →
+a fake model's V), `hub_contract_test.py`, `groom_test.py` (the eval-data groomer, pure
+filesystem) and `belief_obs_fuzz_test.py` (run directly — real bridge battles over the full
+belief stack):
 
 and the **web** suite under `web/` (`charts_test.py` pure Vega-Lite specs · `app_test.py`
 `TestClient` over a synthetic run, each endpoint compared against a direct `ProbeSession` call ·
+`runs_test.py` the run-picker / no-client-string-joined-to-a-path rule · `auth_test.py` the
+fail-closed password gate · `staleness_test.py` the template-pinning contract ·
 `openapi_snapshot_test.py` the committed-contract drift gate · `render_integration_test.py`
 `@integration`, headless chrome with the network blocked — see `web/CLAUDE.md`):
 

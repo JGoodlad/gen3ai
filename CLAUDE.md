@@ -300,16 +300,18 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | capability | *can this run here?* | *(unmarked)* · `integration` · `sim` · `browser` · `e2e` |
 | **cost** | *should this run routinely?* | **`slow`** |
 
-**Counts re-measured 2026-08-22** (`pytest -m <tier> --collect-only -q`); **durations are still the
-2026-08-14 readings** and have not been re-taken — the box has carried a live run since, and a
-duration measured under starvation is not a measurement (see above). The tree grew ~32% in tests
-over that window, so read the two columns as answering different questions.
+**Counts re-measured 2026-08-23** (`pytest -m <tier> --collect-only -q`; **6751 collected in
+total**); **durations are still the 2026-08-14 readings** and have not been re-taken — the box has
+carried a live run since, and a duration measured under starvation is not a measurement (see
+above). The tree grew ~45% in tests over that window (and ~10% in the single day from 08-22 to
+08-23), so read the two columns as answering different questions — and **recount before quoting a
+count**, because this corpus moves faster than the doc that describes it.
 
-| Tier | Needs | Count (2026-08-22) · duration (2026-08-14) |
+| Tier | Needs | Count (2026-08-23) · duration (2026-08-14) |
 |---|---|---|
-| *(unmarked)* | nothing — pure in-process | 5978 tests, **127 s** serial (~56 s at `-n 4`) |
-| `integration` | an out-of-process dep, no battles, no browser | ~16 s total |
-| `sim` | real battles in-process via the bridge, no server | 52 tests, ~100 s total |
+| *(unmarked)* | nothing — pure in-process | 6570 tests, **127 s** serial (~56 s at `-n 4`) |
+| `integration` | an out-of-process dep, no battles, no browser | 158 tests, ~16 s total |
+| `sim` | real battles in-process via the bridge, no server | 60 tests, ~100 s total |
 | `browser` | headless chrome | 53 tests, **1426 s** — ALL of it also `slow` |
 | `e2e` | a live Showdown server | run directly as scripts |
 | `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
@@ -368,11 +370,11 @@ that the guard may only ever ADD a failure, never clear one.
 
 ### Which command to run
 
-| When | Command | Count (2026-08-22) · duration (2026-08-14) |
+| When | Command | Count (2026-08-23) · duration (2026-08-14) |
 |---|---|---|
-| **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 5978 tests, **127 s** (~56 s at `-n 4`) |
-| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 6067 tests, **4 m 36 s** |
-| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | **31 m** |
+| **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 6570 tests, **127 s** (~56 s at `-n 4`) |
+| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 6676 tests, **4 m 36 s** |
+| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 6751 tests, **31 m** |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | ~24 m |
 
@@ -394,14 +396,17 @@ rots. Both are unmarked (they run even in the fast inner loop) and both are ~fre
 
 | Gate | Runs | Scope | Measured |
 |---|---|---|---|
-| `src/agents/model/mypy_gate_test.py` | `python -m mypy src/agents/model` | the model package only, per `mypy.ini` | **0.28 s warm**, 19.6 s cold |
+| `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold |
 | `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/poke_env --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
 
-They are complementary, not overlapping: mypy is deep over ONE package (`mypy.ini` sets `files =
-src/agents/model` with `follow_imports = silent`, so the rest of the tree is read for types but not
-reported — widening is a `mypy.ini` edit and the test follows it), while ruff is shallow over
-everything. `--select F,E9` is pyflakes + syntax errors only — findings that mean the code is
-**wrong**, never a style opinion, so the gate cannot degrade into a formatting argument.
+They are complementary, not overlapping: mypy is deep over a **declared short list** of packages
+(`mypy.ini` sets `files = src/agents/model, src/agents/observation` with `follow_imports = silent`,
+so the rest of the tree is read for types but not reported), while ruff is shallow over everything.
+**Widening is a `mypy.ini` edit and the test follows it** — the gate invokes bare `python -m mypy`
+with no path argument precisely so the config is the only scope declaration, and its
+`_CHECKED_PACKAGES` assertion fails if `files =` is ever shrunk by accident. `--select F,E9` is
+pyflakes + syntax errors only — findings that mean the code is **wrong**, never a style opinion, so
+the gate cannot degrade into a formatting argument.
 
 **A missing tool FAILS, it does not skip** (both are pinned in `environment.yml`) — a linter that
 silently opts out reads exactly like a linter that found nothing. Opt out explicitly with
@@ -421,9 +426,9 @@ staging (step 1c), so the ship path does not depend on whether the suite was run
 
 **Under 1,000 lines is the TARGET for a core source file; under 2,000 is the STRONG bound.** The
 gate encodes that asymmetry rather than flattening it: over 2,000 **hard-fails**, while the
-1,000-2,000 band fails nobody and is instead **reported** (run with `-s` for the census — 13 files
-today, and the pool the next decomposition should come from). A target that fails the build is a
-bound; a target nothing ever prints is a wish. Same scope as ruff (`src/agents src/main src/utils`,
+1,000-2,000 band fails nobody and is instead **reported** (run with `-s` for the census — 16 files
+on 2026-08-23, and the pool the next decomposition should come from). A target that fails the build
+is a bound; a target nothing ever prints is a wish. Same scope as ruff (`src/agents src/main src/utils`,
 `poke_env`/`rust_sim` excluded), unmarked, **0.04 s**, opt out with `GEN3AI_SKIP_SIZE_GATE=1`.
 
 **Test files are EXEMPT when they exercise a single subject** — a fuzz test, or an `X_test.py` with
@@ -434,10 +439,12 @@ sprawls across six subsystems is the same liability as an oversized source file 
 every test as cross-cutting (the same measurement that killed inferred tier markers). When it
 misfires, rename the test to match its subject or split it — do not park it in the allowlist.
 
-**The ratchet only turns one way.** The two grandfather lists were measured at the gate's landing
-(source: `train_rl_agent` 4574 · `prober/engine` 3058 · `prober/session` 2573 ·
-`features_extractor` 2237 · `instrumented_ppo` 2134; tests: **empty**, since all three >2k test
-files have siblings). A listed file may shrink freely but **fails if it grows ≥10%** past its
+**The ratchet only turns one way, and it HAS turned.** The source list landed with five entries and
+is **down to two** — `features_extractor` 2237 · `instrumented_ppo` 2134 — because
+`train_rl_agent` (4574) became the `main/train/` package on 2026-08-22 and `prober/engine` (3058) +
+`prober/session` (2573) became the `main/prober/engine/` and `main/prober/session/` packages on
+2026-08-23. The test list is **empty** and always was, since every >2k test file has a source
+sibling. A listed file may shrink freely but **fails if it grows ≥10%** past its
 recorded count, and **fails when it drops back under 2,000 without being removed** — the list may
 only shrink, because a stale entry misleads every reader after it (the ruff handoff list and the
 c-family lesson both). So a new oversized file has **nowhere to be parked**: decompose it, the way
@@ -916,8 +923,10 @@ moves and the expiry-draw fix it flushed out)**. Arbitrary ladder gen3ou is ~5% 
 SILENT no-ops / generic hits — is CLOSED by the ROUND 39/40 silent-no-op audits: the 5
 genuinely-effectful unmodeled items (`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync
 moves (`fakeout`, `rollout`, the lock-in family, `eruption`, … —
-`gen3_unmodeled_move_failloud_v2`; full-universe census: 369 gen3-legal moves → 281 modeled, 88
-fail-loud, 0 silent) now FAIL LOUD at construction, and every gen3 ability is modeled or
+`gen3_unmodeled_move_failloud_v2`; full-universe census **re-run 2026-08-23**: 369 gen3-legal
+moves → **309 modeled, 60 fail-loud, 0 silent** — recount with `SCAN_UNIVERSE=1 node
+src/rust_sim/harness/scan_move_coverage.js` rather than quoting this, the modeled count climbs
+with every coverage round) now FAIL LOUD at construction, and every gen3 ability is modeled or
 verified-no-op (none fail-loud). Measured exposure of the guarded sets is ZERO on both surfaces
 (0 pool carriers; 0 in the entire curated randbats movepool) — latent-hazard guards. (The former
 **seeded speed-tied-lead** / unspecified-gender divergence is FIXED —
@@ -1169,7 +1178,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 ```
 
 ⚠ **A model-loading view only works on a run at the CURRENT architecture.** Measured over
-`models/`: 79 of 79 archived runs cannot be re-loaded, so `analyze` / `lookahead` / `better-line` /
+`models/` **on 2026-08-13: 79 of 79 archived runs** could not be re-loaded (the tree has since
+grown to 99 runs carrying a checkpoint, counted 2026-08-23, and the v96 signature bump only added
+to the drift — but the 0-of-N was not re-measured). So `analyze` / `lookahead` / `better-line` /
 `replay-counterfactual` / `probe` return an `ArchDriftError` diagnosis there (naming the obs-dim and
 `arch_signature` drift and the `git checkout` to re-probe from). Everything model-free — `scan`,
 `triage`, `turns`, `falsify`, `calibration` — works on every run regardless. See

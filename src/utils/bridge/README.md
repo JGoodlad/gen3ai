@@ -274,9 +274,14 @@ The old counter-hazard — unmodeled items/moves running as **silent no-ops** �
 the ROUND 39/40 silent-no-op audits: the 5 genuinely-effectful unmodeled items
 (`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync moves (`fakeout`, `rollout`, the lock-in
 family, …, `gen3_unmodeled_move_failloud_v2`) now FAIL LOUD at construction. Full-universe census,
-re-run 2026-08-04: **369 gen3-legal moves → 281 modeled, 88 fail-loud, 0 MISMODELED**, checkable via
+re-run **2026-08-23**: **369 gen3-legal moves → 309 modeled, 60 fail-loud, 0 MISMODELED** (pool
+report: **722/722** teams fully engine-playable). ⚠️ **Recount rather than quote** — the modeled
+count moves with every coverage round, and this line has already gone stale twice (it read
+281/88 from 2026-08-04 while the tree was at 309/60):
 `SCAN_UNIVERSE=1 node src/rust_sim/harness/scan_move_coverage.js` (exits non-zero if any silent
-desync reappears). Measured exposure of the guarded sets is ZERO on both surfaces — they are
+desync reappears). **The load-bearing half is the invariant, not the split**: 0 MISMODELED is what
+makes an unmodeled move a loud construction failure instead of a silent desync, and that has held
+across every round. Measured exposure of the guarded sets is ZERO on both surfaces — they are
 latent-hazard guards, not live failures. (An earlier note here named *Aromatherapy* and *Wish* as
 unmodeled examples — both are in fact MODELED; the pool carries nothing unmodeled at all.)
 - **Turn-0 construction — MODELED (`gen3_turn0_construction_v1`).** The bridge builds via
