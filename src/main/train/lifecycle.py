@@ -100,6 +100,10 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         cf_evidential_reg=float(getattr(model, "cf_evidential_reg", 1e-3)),
         cf_twin_coef=float(getattr(model, "cf_twin_coef", 0.0)),
         cf_shadow_coef=float(getattr(model, "cf_shadow_coef", 0.0)),
+        capacity_telemetry=bool(getattr(model, "capacity_telemetry", False)),
+        canary_reset_steps=int(getattr(model, "canary_reset_steps", 1_000_000)),
+        capacity_cosine_every=int(getattr(model, "capacity_cosine_every", 50)),
+        capacity_velocity_every=int(getattr(model, "capacity_velocity_every", 50)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")

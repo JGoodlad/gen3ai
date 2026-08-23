@@ -216,6 +216,13 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("cf_evidential_reg", 1e-3)        # v100 training-only
     _resolve("cf_twin_coef", 0.0)              # v100 training-only
     _resolve("cf_shadow_coef", 0.0)            # v100 training-only
+    # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
+    # recorded for provenance, never gated, and read back here so a flagless resume (or a
+    # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.
+    _resolve("capacity_telemetry", False)      # v101 training-only diagnostic (no loss, no grad)
+    _resolve("canary_reset_steps", 1_000_000)  # v101 training-only
+    _resolve("capacity_cosine_every", 50)      # v101 training-only
+    _resolve("capacity_velocity_every", 50)    # v101 training-only
     _resolve("species_prior_fusion", False)    # v68 structural bool (version-checked, fresh-only)
     _resolve("t0_species_prior", False)        # v72 structural bool (version-checked, fresh-only)
     _resolve("search_teacher_coef", 0.0)       # training-only AWR weight (inherited on flagless resume)
@@ -364,6 +371,17 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--cf-label-lag-steps must be >= 0 (0 = never expire)")
     if args.cf_records_keep is not None and args.cf_records_keep < 1:
         parser.error("--cf-records-keep must be >= 1")
+    # gen3_capacity_telemetry_v1 — training-only diagnostics, so these parser checks are the ONLY
+    # gate. A reset interval of 0 would re-seed a target on EVERY minibatch, which is not a slower
+    # canary but a different (and meaningless) instrument, so it is refused rather than clamped.
+    if args.canary_reset_steps is not None and args.canary_reset_steps < 1:
+        parser.error("--canary-reset-steps must be >= 1 (it is the ENV-step interval between "
+                     "plasticity-canary resets; there is no 'off' value — use "
+                     "--no-capacity-telemetry to turn the whole instrument off)")
+    if args.capacity_cosine_every is not None and args.capacity_cosine_every < 0:
+        parser.error("--capacity-cosine-every must be >= 0 (0 = skip the half-batch cosine)")
+    if args.capacity_velocity_every is not None and args.capacity_velocity_every < 0:
+        parser.error("--capacity-velocity-every must be >= 0 (0 = skip the feature-velocity probe)")
     # gen3_cf_evidential_head_v1 — the coefficients are training-only, so (as above) these parser
     # checks are the ONLY gate. `--cf-evidential` itself IS version-gated, hence not checked here.
     if args.cf_evidential_coef is not None and args.cf_evidential_coef < 0.0:

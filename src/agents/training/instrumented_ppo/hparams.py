@@ -282,6 +282,23 @@ class PpoHyperparameters:
     # ROUTE change owes C4), so what it produces is evidence, not a training change to the critic.
     # 0.0 = OFF, whole block skipped. TRAINING-only; the STRUCTURAL half is `cf_shadow_critic` (v99).
     cf_shadow_coef: float = 0.0
+    # ---- gen3_capacity_telemetry_v1 — LIVE CAPACITY TELEMETRY (`capacity/*`) -------------------
+    # The master switch for all three probes (plasticity canary / half-batch trunk cosine / feature
+    # velocity). TRAINING-only and, uniquely in this file, it is not even that: it folds NO term
+    # into `loss` and touches no `.grad`, so the policy's parameter updates are bit-identical
+    # whether it is on or off. It buys scalars. OFF holds no state and pays one boolean per
+    # minibatch. Detail: `agents/training/capacity_telemetry.py`.
+    capacity_telemetry: bool = False
+    # ENV steps between canary resets. Each reset re-seeds ONE of the K=4 synthetic targets,
+    # round-robin, and the RE-FIT that follows is the supply-side measurement. Too small and the
+    # head never converges between resets (recovery is noise); too large and a run yields two
+    # points. 1M is ~16 resets per 3-hour launcher window at production throughput.
+    canary_reset_steps: int = 1_000_000
+    # Minibatches between half-batch cosine measurements. The probe costs two extra half-batch
+    # forward+backwards ≈ one extra full one, so 50 amortizes it to ~2% of the train step.
+    capacity_cosine_every: int = 50
+    # `train()` calls between feature-velocity measurements. One 256-row no_grad forward.
+    capacity_velocity_every: int = 50
 
     def _excluded_save_params(self):
         # The search-teacher's `_correction_buffer` lives on the model (the callback↔train() hand-off),
@@ -293,5 +310,11 @@ class PpoHyperparameters:
         # it into our checkpoint; it is re-loaded from its own path on resume (like a stable opponent).
         # `_cf_buffer` is the same genre: transient scaffolding refilled from disk by the producer,
         # and hundreds of MB of obs if pickled. Excluded for the same two reasons.
+        # `_capacity_state` (gen3_capacity_telemetry_v1) is excluded DELIBERATELY and the
+        # consequence is documented rather than hidden: it holds the canary's head, its Adam state,
+        # the projection matrix and the frozen probe batch, so a resume re-inits the canary and its
+        # loss/recovery curves restart. Persisting a diagnostic's optimizer into every checkpoint
+        # is a worse trade than reading recoveries WITHIN a restart window.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
-                                                  "_distill_teachers", "_cf_buffer"]
+                                                  "_distill_teachers", "_cf_buffer",
+                                                  "_capacity_state"]

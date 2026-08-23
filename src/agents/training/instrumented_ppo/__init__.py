@@ -10,6 +10,8 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     distill_terms.py  search-teacher AWR · OPD · the exploiter-distillation family
     value_terms.py    the win-prob BCE · the value-dist HL-Gauss CE · the tail-weighted value loss
     aux_terms.py      the `belief_bank` / `td_aux` / `cf_terms` delegates
+    capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
+                      NOTHING into `loss` (see its docstring)
     constants.py      the four module-level tuning constants
 
 `_verify_upstream_unchanged` and `_EXPECTED_UPSTREAM_TRAIN_HASH` stay HERE, in the hub, on

@@ -55,7 +55,8 @@ _PRE_SPLIT = (
     "_NATURE_CE_WEIGHT", "_SPREAD_LOSS_SCALE",
 )
 
-_BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "DistillTerms", "ValueTerms", "AuxTerms")
+_BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "DistillTerms", "ValueTerms", "AuxTerms",
+          "CapacityTerms")
 
 
 @pytest.mark.parametrize("name", _PRE_SPLIT)
@@ -81,6 +82,8 @@ def test_the_ppo_class_carries_every_term_family():
                    "_hp_type_belief_loss", "_move_belief_latent_loss", "_cf_winprob_term",
                    "_cf_evidential_term", "_cf_twin_terms", "_cf_shadow_term",
                    "_noise_scale_estimate", "_global_grad_sq", "_emit_noise_scale_warnings",
+                   "_capacity", "_capacity_snapshot_features", "_capacity_observe",
+                   "_capacity_finish",
                    "_excluded_save_params", "collect_rollouts", "train"):
         assert callable(getattr(hub.InstrumentedMaskablePPO, method, None)), (
             f"`InstrumentedMaskablePPO.{method}` is gone — a mixin dropped out of the base list "
@@ -107,7 +110,8 @@ def test_maskable_ppo_stays_last_in_the_mro():
         f"a mixin sits after MaskablePPO in the MRO: {[c.__name__ for c in mro]}")
     assert issubclass(hub.InstrumentedMaskablePPO, MaskablePPO)
     excluded = _ExcludeProbe()._excluded_save_params()
-    for name in ("_correction_buffer", "_distill_teachers", "_cf_buffer", "rollout_buffer"):
+    for name in ("_correction_buffer", "_distill_teachers", "_cf_buffer", "_capacity_state",
+                 "rollout_buffer"):
         assert name in excluded, (
             f"{name!r} left `_excluded_save_params` — the last entry can only come from "
             f"upstream, so its absence means the `super()` chain no longer reaches MaskablePPO.")
@@ -126,7 +130,7 @@ def test_the_fold_sequence_stays_in_one_module():
     assert len(src.splitlines()) > 1000, "train() has been carved up — see this test's docstring"
     for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+PopArt", "+TD-AUX", "+CF-WINPROB",
                    "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE", "+WIN-PROB",
-                   "+VALUE-DIST", "+BELIEF"):
+                   "+VALUE-DIST", "+BELIEF", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     # The stash-clobber ordering, read off the source: every stash-reading fold precedes the
     # counterfactual block. `_td_aux_term` is the documented last one before it.

@@ -327,4 +327,12 @@ def _migrate_config(data: dict) -> dict:
                        ("cf_twin_coef", 0.0), ("cf_shadow_coef", 0.0)):
             data.setdefault(_k, _v)
         data["config_version"] = 100
+    # v101 (gen3_capacity_telemetry_v1) — four TRAINING-only DIAGNOSTIC knobs ⇒ v100's shape: no
+    # gate, no refusal, just a default (the ARGPARSE one, which is what every pre-v101 run
+    # necessarily ran with — the telemetry did not exist). Any recorded value migrates untouched.
+    if version < 101:
+        for _k, _v in (("capacity_telemetry", False), ("canary_reset_steps", 1_000_000),
+                       ("capacity_cosine_every", 50), ("capacity_velocity_every", 50)):
+            data.setdefault(_k, _v)
+        data["config_version"] = 101
     return data

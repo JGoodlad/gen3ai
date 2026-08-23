@@ -5671,3 +5671,59 @@ of only annotating it: selection was by the name suffix `*_coef` alone, which si
 loss weight not spelled that way — `intent_label_bot_weight` had been recorded since v97 and
 appeared in **no** generated table (it renders `0.25 | ACTIVE` under the gen-17 config), and
 `cf_evidential_reg` would have joined it.
+
+## v101 — `gen3_capacity_telemetry_v1` (2026-08-23): saturation becomes a curve instead of a probe
+
+**What landed.** `--capacity-telemetry` plus three cadence knobs (`--canary-reset-steps`,
+`--capacity-cosine-every`, `--capacity-velocity-every`), and with them three `capacity/*` scalar
+families that ride the PPO train step continuously: the PLASTICITY CANARY, the HALF-BATCH
+TRUNK-GRADIENT COSINE, and the FIXED-PROBE FEATURE VELOCITY. All four flags are v100's genre exactly
+— the `td_aux_coef` class: an argparse entry defaulting to `None`, a `_resolve` line, a recorded
+`ModelVersion` field, **never gated**. No `ARCH_SIGNATURE` bump and no `flag_registry.py` rows: the
+canary's head is owned by the **PPO object**, not the extractor, so nothing here reaches
+`build_extractor_arch_kwargs`, adds a `state_dict` key, or takes a position in the policy
+optimizer. The migration is v100's shape — a `setdefault` to each argparse default, which is not a
+guess but the only possible past, since before this bump the telemetry did not exist.
+
+**Why it exists.** Every previous answer to *"is the network out of capacity?"* in this tree has
+been an expensive one-shot instrument — a rank sweep, an ablation, an offline battery — each of
+which reports a NUMBER at a MOMENT. Saturation is not a moment; it is a trend, and a trend measured
+twice is a line through two points. The design constraint was therefore cost, not sophistication:
+anything that cannot run on every `train()` cannot produce the reading that matters.
+
+**The canary is the centerpiece, and the RESET is the instrument.** A small detached head regresses
+the trunk's `value_pooled` onto K=4 synthetic targets that are pure functions of the observation
+(`target_k = tanh(obs @ P[:,k] / sqrt(obs_dim))`, `P[:,k]` drawn under `seed(k,e) = 20260823 + k +
+1_000_000·e`, always CPU-seeded so the family is device- and process-independent). Every
+`--canary-reset-steps` env steps ONE target is re-seeded, round-robin, and the head's weights are
+deliberately NOT re-initialised: re-fitting a brand-new random function of the obs, from the same
+representation, with the parameters the network has NOW, is what makes this a SUPPLY-side probe of
+the representation rather than another readout of the policy. `capacity/canary_recovery` (post-reset
+÷ pre-reset loss, read at a matched `capacity/canary_age`) is the one-number form.
+
+**Scope, stated because the two are easy to conflate:** it measures the REPRESENTATION's richness,
+not the policy's headroom. A rising `canary_loss` says the trunk carries less recoverable obs
+structure than it did; it does not say the policy would be stronger if it carried more.
+
+**The isolation is structural, not careful.** Nothing in this feature folds a term into `loss` or
+writes `.grad` — the canary trains through its own Adam over its own parameters on an
+unconditionally-detached input, the cosine reads gradients with `autograd.grad`, and the velocity
+probe is `no_grad`. All three run at the END of the minibatch body, after the optimizer step, so the
+placement is itself the proof; the `train()` fold sequence gains no step. ON and OFF produce
+bit-identical policy updates, and both directions are gated on a real `MaskablePPO`.
+
+**Measured overhead** (CPU, real 2,047,958-param policy over the live 2501-dim obs, 80 minibatches
+per `train()` = the production ratio, arms interleaved, quiet box): **+2.38% / +2.52%** across two
+independent runs, arms disjoint in both, against a <3% budget — and a conservative bound, since the
+benchmark runs the baseline extractor chain whose cheaper forward inflates the probes' share. A
+third run taken while a 4-worker pytest suite shared the box read +4.28% with 13% within-arm spread,
+which is recorded in `capacity_overhead_benchmark.py` as the reason to read the spread before
+believing the delta.
+
+**The honest limitation.** `_capacity_state` is in `_excluded_save_params`, so the canary head, its
+Adam state, the projection matrix and the frozen probe batch are re-created on every resume — and
+the launcher restarts every 3 hours. The canary's loss jumps there and `canary_recovery` restarts
+its curve. The trade was taken deliberately (pickling a diagnostic's optimizer into every checkpoint
+is worse) and the usable reading is to compare recoveries WITHIN a restart window: at production
+throughput a 3-hour window is ~16M env steps, so a 1M-step reset interval still fires ~16 times
+inside one. The startup banner says so out loud.

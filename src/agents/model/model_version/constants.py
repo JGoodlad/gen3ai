@@ -92,7 +92,18 @@ from typing import Any, Dict
 #   recorded and GATED, so a resume could keep the head and lose the coefficient driving it.
 #   A pre-v100 config defaults each to its ARGPARSE default — not a guess: the fields did not
 #   exist, so that is what every such run ran with. No ARCH_SIGNATURE bump, no floor change.
-MODEL_CONFIG_VERSION = 100
+# v101 (gen3_capacity_telemetry_v1): the FOUR live-capacity-telemetry knobs (capacity_telemetry,
+#   canary_reset_steps, capacity_cosine_every, capacity_velocity_every) — v100's shape exactly:
+#   TRAINING-only, RECORDED for provenance + flagless-resume read-back, NEVER gated. They are
+#   weaker than v100's even: a cf coefficient at least scales a loss, whereas these fold nothing
+#   into `loss` and write no `.grad`, so a run's parameter updates are bit-identical on or off.
+#   They are recorded anyway because a DIAGNOSTIC whose provenance is unrecoverable is a number
+#   nobody can interpret six months later — `metadata.json`'s `cli_args` is overwritten by every
+#   resuming process, so `model_config.json` is the only durable record of what a run measured.
+#   A pre-v101 config defaults each to its ARGPARSE default (not a guess: the fields did not
+#   exist). No ARCH_SIGNATURE bump — the canary head is owned by the PPO object, not the
+#   extractor, so no state_dict key and no forward changes.
+MODEL_CONFIG_VERSION = 101
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

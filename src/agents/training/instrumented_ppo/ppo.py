@@ -26,6 +26,7 @@ from agents.training.grad_balance import (
 )
 from agents.training import belief_bank as _belief_bank
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
+from agents.training.instrumented_ppo.capacity_terms import CapacityTerms
 from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
@@ -39,6 +40,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                               DistillTerms,
                               ValueTerms,
                               AuxTerms,
+                              CapacityTerms,
                               MaskablePPO):
     """MaskablePPO with `train/clip_fraction_vf` instrumentation added.
 
@@ -121,6 +123,16 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         The steps AFTER the loop (the grad-accum flush, the noise-scale fold, and the ~260 lines
         of `self.logger.record`) are diagnostics and carry no gradient.
+
+        **CAPACITY TELEMETRY is NOT a fold step, and is placed to make that unarguable.**
+        `--capacity-telemetry` (gen3_capacity_telemetry_v1) runs entirely AFTER the optimizer step
+        for the minibatch, so it appears nowhere in the sequence above and no `loss = loss + …`
+        line belongs to it. Its three probes carry no gradient into the policy by construction —
+        the canary owns its own optimizer over its own params on a detached input, the half-batch
+        cosine reads gradients with `autograd.grad` (which never writes `.grad`), and the velocity
+        probe is `no_grad`. The one thing it needs from inside the fold is a SNAPSHOT of this
+        minibatch's `value_pooled`, taken right after `evaluate_actions` for the same reason steps
+        2-4 sit where they do: the own-forward folds replace the stash.
         """
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
@@ -294,6 +306,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         cell_metrics: dict[str, float] = {}  # cell/<name>_{weight,grad}_norm — per-CELL liveness
         grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
 
+        # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1): the plasticity canary, the half-batch
+        # trunk-gradient cosine and the fixed-probe feature velocity. `None` when the flag is off,
+        # and OFF is the whole cost — no head, no optimizer, no projection matrix, no probe batch,
+        # and no extra forward or backward anywhere below. See `capacity_telemetry.py`.
+        capacity = self._capacity()
+        capacity_metrics: dict[str, float] = {}
+
         # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
         # this rollout's returns; update() also POP-rescales value_net so its de-normalized outputs
         # are preserved. The value loss below then trains in normalized space. No-op when disabled.
@@ -330,6 +349,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     actions,
                     action_masks=rollout_data.action_masks,
                 )
+
+                # +CAPACITY: snapshot THIS forward's `value_pooled` before the TD-aux / CF folds
+                # replace the stash. Detached in the snapshot itself, so nothing downstream can
+                # accidentally hand the canary a live graph.
+                cap_features = (
+                    self._capacity_snapshot_features(self.policy.features_extractor,
+                                                     int(values.shape[0]))
+                    if capacity is not None else None)
 
                 values = values.flatten()
                 # Normalize advantage
@@ -1074,6 +1101,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     self.policy.optimizer.zero_grad()
                     micro_in_group = 0
 
+                # +CAPACITY TELEMETRY: LAST in the minibatch body, deliberately — after the loss
+                # fold, after `loss.backward()`, after the optimizer step. Nothing it does can
+                # reach `loss` or `.grad` from here, which is the point: the placement is the
+                # proof. It costs one `if` per minibatch when the flag is off.
+                if capacity is not None:
+                    self._capacity_observe(capacity, rollout_data, actions, advantages,
+                                           shared_trunk, clip_range, cap_features)
+
             # +GRAD-ACCUM: flush a trailing partial group (#minibatches not divisible by accum).
             # Rescale its accumulated grad from 1/accum to 1/micro_in_group so the short group's step
             # has the right magnitude. EXACT when its micro-batches are equal-size (the common case —
@@ -1100,6 +1135,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             self._n_updates += 1
             if not continue_training:
                 break
+
+        # +CAPACITY TELEMETRY: the once-per-train() half — fold the per-minibatch canary/cosine
+        # samples and (on cadence) run the frozen probe batch through the extractor for the
+        # feature-velocity read. Outside the epoch loop, no gradient, `{}` when the flag is off.
+        if capacity is not None:
+            capacity_metrics = self._capacity_finish(capacity)
+
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs
@@ -1363,6 +1405,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             # evidential head's — this head is a promotion PATH, so its passivity is the contract.
             self.logger.record("train/cf_shadow_grad_share",
                                float(grad_balance.get("grad/cf_shadow_share", 0.0)))
+
+        # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1). Read them as TRENDS, never as levels —
+        # every one of these is a saturation EARLY WARNING and none has a meaningful absolute value:
+        #   canary_loss / canary_recovery / canary_age  the plasticity canary. `canary_recovery` is
+        #       the one-number read (post-reset loss ÷ pre-reset loss for the target that was last
+        #       re-seeded); compare it at a MATCHED `canary_age`, since it decays with age by design.
+        #   canary_steps  how many canary updates this train() actually took. 0 with the flag ON
+        #       means the `value_pooled` snapshot never arrived (a non-Gen3 extractor, or a stash
+        #       that stopped being populated) — the tell that would otherwise be a silent gap.
+        #   halfbatch_cosine  the two half-batches' agreement on the shared trunk. Falling toward
+        #       0 / negative = the batch is fighting itself. Read with halfbatch_grad_norm_ratio.
+        #   feature_velocity{,_cos,_rel}  how far the FROZEN probe batch's features moved since the
+        #       last measurement. Falling velocity at constant `train/grad_norm` = weights move but
+        #       functions do not.
+        for _capk, _capv in capacity_metrics.items():
+            self.logger.record(f"capacity/{_capk}", float(_capv))
 
         # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
         # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion

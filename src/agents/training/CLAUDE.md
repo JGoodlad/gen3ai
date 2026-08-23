@@ -2448,6 +2448,158 @@ target the value→trunk pressure, which can now be tuned to a number instead of
 `+INSTRUMENTATION` markers in `instrumented_ppo.py` flag the added lines; the upstream-drift hash check
 is unaffected since it hashes only `sb3_contrib.MaskablePPO.train`.)
 
+## Live capacity telemetry (`--capacity-telemetry`, `capacity_telemetry.py`)
+
+**Three continuous saturation early-warnings that ride the train loop.** They exist because every
+previous answer to *"is the network out of capacity?"* here has been an expensive one-shot probe —
+a rank sweep, an ablation, an offline battery — each returning a NUMBER at a MOMENT. Saturation is
+not a moment; it is a trend, and a trend measured twice is a line through two points. Everything
+here is cheap enough to run on every `train()`, so the reading that matters (the SHAPE of the curve
+over tens of millions of steps) exists at all.
+
+**Read every one of these as a TREND. None has a meaningful absolute value.**
+
+| scalar | what it answers | alarm shape |
+|---|---|---|
+| `capacity/canary_loss` | how well a small detached head fits K=4 synthetic obs targets (EMA) | rising |
+| `capacity/canary_recovery` | post-reset ÷ pre-reset loss of the target that was last re-seeded | **degrading from reset to reset, at a MATCHED `canary_age`** |
+| `capacity/canary_age` | env steps since the last reset | — (the x-axis `recovery` must be read against) |
+| `capacity/canary_loss_reset` · `canary_resets` · `canary_steps` | the reset target's own EMA · reset count · updates this `train()` | `canary_steps` = **0** with the flag ON ⇒ the probe is measuring nothing |
+| `capacity/halfbatch_cosine` | do two halves of one minibatch agree on the shared trunk? | falling to 0 / **negative** |
+| `capacity/halfbatch_grad_norm_ratio` | are the two halves' gradients comparable in size? | ≪1 ⇒ one half dominates; read it before believing a low cosine |
+| `capacity/feature_velocity` · `_cos` · `_rel` | how far a FROZEN 256-row probe batch's `value_pooled` moved since the last measurement | falling **while `train/grad_norm` holds** ⇒ weights move, functions do not |
+
+### 1. The plasticity canary — the centerpiece, and the only SUPPLY-side probe
+
+A small head (`LayerNorm → Linear → ReLU → Linear`, K outputs) regresses the trunk's **detached**
+`value_pooled` onto K=4 synthetic targets that are pure functions of the observation. Every
+`--canary-reset-steps` env steps (default 1,000,000) **ONE target is re-seeded, round-robin** — and
+that reset is the whole instrument. Re-fitting a *brand-new* random function of the obs, from the
+same representation, with the **same head weights** (they are deliberately NOT re-initialised),
+measures how much usable structure the representation still SUPPLIES. A trunk that has collapsed
+onto the policy's current answers re-fits slower and plateaus higher.
+
+**THE TARGET FAMILY — quoted here because a deferred OFFLINE probe must use the SAME one or the two
+instruments do not cross-validate.** `capacity_telemetry_test.py` pins the arithmetic literally:
+
+```
+seed(k, e) = 20260823 + k + 1_000_000 * e         # k = target index, e = its reseed count
+P[:, k]    = torch.randn(obs_dim, generator=torch.Generator("cpu").manual_seed(seed(k, e)))
+target_k   = tanh( obs @ P[:, k] / sqrt(obs_dim) )
+```
+
+The generator is **CPU-seeded always**, so the same `(k, e)` gives the same column on any device and
+in any process. `tanh` bounds the target into (-1, 1) so `canary_recovery` is a ratio of two
+comparable scales; an unbounded target would make the two sides of that ratio incomparable.
+
+⚠️ **It measures the REPRESENTATION's richness, not the policy's headroom, and those are different
+claims.** A rising `canary_loss` says the trunk carries less recoverable obs structure than it did.
+It does not say the policy would be stronger if it carried more. Treat it as a signal that
+something is narrowing, then go find out what — the same discipline `dV`-ablation results get here.
+
+**The gradient CANNOT reach the trunk, and that is structural rather than careful.** The head is
+owned by the **PPO object**, not the extractor — no `state_dict` key, no policy-optimizer position
+(the ai_v6_13 "128 vs 5" class is unreachable) — it trains through its own Adam over its own
+parameters, and `PlasticityCanary.step` detaches its input unconditionally. Three assertions on a
+real `MaskablePPO` measure that on the actual parameter update and on `.grad`, with a LIVE graph
+handed to it on purpose.
+
+### 2. Half-batch trunk-gradient cosine — INTERFERENCE
+
+Every `--capacity-cosine-every` minibatches (default 50), the current minibatch is split in half,
+each half's gradient on the **shared trunk** is taken, and the cosine between them is logged. Two
+halves of one on-policy batch are i.i.d. draws from the same distribution, so a healthy batch has
+them broadly agreeing; a cosine trending to zero or negative means the batch is increasingly
+fighting itself — capacity going into trading one part of the state space against another instead
+of improving on both.
+
+* **TRUNK is `grad_balance.shared_trunk_parameters`** — the existing allow-list (`embeddings`,
+  `pokemon_encoder`, `team_transformer`, `assembler`), reused rather than re-defined so this cosine
+  and the `grad/*_share` family are talking about the same weights.
+* **The surrogate is the PLAIN PPO objective** (clipped policy loss + `vf_coef`·MSE), not the run's
+  full fold. The question is whether the two halves agree about the RL objective; folding in a dozen
+  auxiliaries would make the answer a statement about the auxiliaries instead. PopArt and
+  tail-weighting are skipped for the same reason — both are monotone rescalings of the same
+  per-sample residual, so they move the gradient's LENGTH, not this angle.
+* **Advantages are sliced from the caller's already-normalized tensor.** Re-normalizing each half
+  against its own mean/std would inject a difference the batch does not have and bias the cosine down.
+* **Orientation, not a threshold**: on a fresh `--debug` run at ~6k steps the cosine reads **0.99**
+  with `halfbatch_grad_norm_ratio` 0.86 (measured 2026-08-23) — an untrained policy's two halves
+  agree almost perfectly, which is what "healthy" looks like at the start. There is no calibrated
+  alarm LEVEL and this is not one; what a saturating run is expected to show is that number
+  *descending* over tens of millions of steps.
+* **It corrupts nothing**: `th.autograd.grad`, never `backward()`, so `.grad` is never written and
+  an in-flight grad-accumulation group survives bit-for-bit. That is a test, not a comment — the
+  gate populates a real accumulated gradient and real Adam state first, because an all-`None`
+  `.grad` would hide exactly the failure worth catching.
+
+### 3. Feature velocity — do the functions still move?
+
+One **fixed** probe batch of 256 obs rows, captured from the first rollout after launch and never
+changed, is forwarded every `--capacity-velocity-every` `train()` calls (default 50) under
+`no_grad`; the mean L2 displacement of `value_pooled` since the previous measurement is logged.
+Read it **beside `train/grad_norm`**: weights moving while functions do not is the fingerprint of a
+network burning gradient on a representation that has stopped changing. `feature_velocity_rel`
+divides by the representation's own norm, because a falling raw velocity can also mean the features
+merely shrank. The forward is the EAGER `type(fe).forward` with an observation-key-only dict, for
+the reasons `cf_terms` gives (the compile flags patch the BOUND `fe.forward`, and a second obs
+shape through the compiled entry point would add a graph for a diagnostic); the
+ObservationDebugger is suppressed, since these are replayed rows.
+
+### Where it sits in `train()`, and the flag's class
+
+**It is NOT a fold step.** All three probes run at the END of the minibatch body — after the loss
+fold, after `loss.backward()`, after the optimizer step — so nothing they do can reach `loss` or
+`.grad`, and the placement is the proof. The one thing taken from inside the fold is a SNAPSHOT of
+this minibatch's `value_pooled`, grabbed right after `evaluate_actions` for the same reason steps
+2-4 of the fold sit where they do: the TD-aux / counterfactual folds run their own forward and
+REPLACE the stash. A stale or missing snapshot is a **skip** (row-count checked), counted in
+`capacity/canary_steps` rather than silently mis-pairing features with observations.
+
+The flag is the **`training_coef` class** (`td_aux_coef` / `cf_records`): an argparse entry
+defaulting to `None`, a `_resolve` line, and a recorded `ModelVersion` field (config **v101**,
+`gen3_capacity_telemetry_v1`) — never in `check_compatible`. It is NOT `structural` (no module in
+the policy tree, no `state_dict` key, forward bit-identical), NOT `resume_immutable` (changing it
+mid-run changes nothing about training, so there is nothing to protect), and NOT `runtime` — a
+runtime knob's value is unrecoverable after the fact, and a DIAGNOSTIC whose provenance is
+unrecoverable is a number nobody can interpret later. It is not a `flag_registry` row either: that
+registry declares **extractor** toggles, and nothing here reaches the extractor.
+
+**OFF is byte- AND cost-identical**: no head, no optimizer, no projection matrix, no probe batch,
+no extra forward or backward — one boolean per minibatch. Gated both ways (an OFF run's update
+equals a no-telemetry run's; an ON run's update equals the OFF run's, exactly).
+
+**Overhead, measured** (2026-08-23, CPU, real 2,047,958-param policy over the live 2501-dim obs, 80
+minibatches per `train()` = the production ratio, 10 reps/arm INTERLEAVED, `OMP_NUM_THREADS=4`, quiet
+box). Two independent clean runs:
+
+| run | OFF median | ON median | overhead (median / minima) |
+|---|---|---|---|
+| 1 | 5797.2 ms | 5943.4 ms | **+2.52% / +2.42%** |
+| 2 | 5800.6 ms | 5938.6 ms | **+2.38% / +2.32%** |
+
+Inside the <3% budget, with the two arms' 10-sample ranges **disjoint** in both runs. That figure is
+a CONSERVATIVE bound for production: it runs the BASELINE extractor chain (no damage op, no belief
+heads), whose forward is far cheaper than the production one, and a cheaper denominator makes the
+probes' share LARGER — smaller again on CUDA under `--compile-trainer`, where the canary's tiny eager
+MLP is noise against a compiled forward+backward. Reproduce:
+`src/agents/training/capacity_overhead_benchmark.py`.
+
+⚠️ **A third run, taken while the 4-worker test suite shared the box, read +4.28%** — and its OFF
+arm alone spread 5840→6618 ms (13%) where a clean arm spreads 1.7%. `warn_if_contended` did NOT
+fire (the one-minute load average lags a job that just started). The interleaving saves the SIGN of
+the effect under contention but not its size, so: read the within-arm spread before believing the
+delta, and take the number on a quiet box.
+
+🚨 **THE CANARY'S STATE IS NOT CHECKPOINTED, and this is the honest limitation.** `_capacity_state`
+is in `_excluded_save_params`, so the head, its Adam state, the projection matrix and the frozen
+probe batch are all re-created on every resume — and the launcher restarts every 3 hours. The
+canary's loss therefore JUMPS at each restart and `canary_recovery` restarts its curve. The trade
+was taken deliberately (persisting a diagnostic's optimizer into every checkpoint is worse), and the
+usable reading is **compare recoveries WITHIN a restart window**: at production throughput a 3-hour
+window is ~16M env steps, so a 1M-step reset interval still fires ~16 times inside one. The startup
+banner says so out loud, because a silent ON here is a misreading waiting to happen.
+
 ## PopArt value-target normalization (`--use-popart`)
 
 The fix for the swamping the diagnostics above reveal. `train()` reads `self.popart =

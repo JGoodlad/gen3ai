@@ -148,7 +148,10 @@ def test_a_pre_v100_config_migrates_to_the_argparse_defaults(layout):
     old["config_version"] = 99
 
     migrated = _migrate_config(old)
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION == 100
+    # `>= 100`, not `== 100`: the property under test is that a pre-v100 config lands on the LIVE
+    # version with this family defaulted. Pinning the live number here made every later, unrelated
+    # schema bump fail in the counterfactual suite (it did, at v101).
+    assert migrated["config_version"] == MODEL_CONFIG_VERSION >= 100
     for field, (default, _other) in CF_COEF_FIELDS.items():
         assert migrated[field] == default, field
     ModelVersion(**migrated)   # the whole point of the setdefault: `cls(**data)` must not TypeError

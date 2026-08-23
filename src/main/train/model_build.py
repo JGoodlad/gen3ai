@@ -144,6 +144,13 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("distill_value_feat_coef",       _F0),      # gen3_exploiter_value_feat_distill_v1
     ("opp_intent_coef",               _F0_OPT),
     ("beta_setvalued_coef",           _F0_OPT),
+    # gen3_capacity_telemetry_v1 — the live saturation early-warnings. Folds NO loss term and
+    # writes no `.grad`, so an ON run's parameter updates are bit-identical to an OFF one; these
+    # four only decide whether the `capacity/*` scalars exist and at what cadence.
+    ("capacity_telemetry",            _PLAIN),
+    ("canary_reset_steps",            _PLAIN),
+    ("capacity_cosine_every",         _PLAIN),
+    ("capacity_velocity_every",       _PLAIN),
 )
 
 
@@ -164,6 +171,14 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
             setattr(model, name, float(getattr(args, name) or 0.0))
         else:
             setattr(model, name, getattr(args, name))
+
+    # gen3_capacity_telemetry_v1: SAY SO at launch. Two of this instrument's properties are
+    # counter-intuitive enough that a silent ON is a misreading waiting to happen — the canary's
+    # state does not survive a resume, and every scalar is a TREND rather than a level.
+    from agents.training.instrumented_ppo.capacity_terms import capacity_startup_banner
+    _cap_line = capacity_startup_banner(model)
+    if _cap_line:
+        emit(_cap_line)
 
     # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
     model._search_teacher_on = bool(args.search_teacher)
@@ -302,6 +317,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_evidential_reg=args.cf_evidential_reg,
             cf_twin_coef=args.cf_twin_coef,
             cf_shadow_coef=args.cf_shadow_coef,
+            capacity_telemetry=args.capacity_telemetry,
+            canary_reset_steps=args.canary_reset_steps,
+            capacity_cosine_every=args.capacity_cosine_every,
+            capacity_velocity_every=args.capacity_velocity_every,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -578,6 +597,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_evidential_reg=args.cf_evidential_reg,
             cf_twin_coef=args.cf_twin_coef,
             cf_shadow_coef=args.cf_shadow_coef,
+            capacity_telemetry=args.capacity_telemetry,
+            canary_reset_steps=args.canary_reset_steps,
+            capacity_cosine_every=args.capacity_cosine_every,
+            capacity_velocity_every=args.capacity_velocity_every,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

@@ -42,6 +42,10 @@ class ModelVersionConstruction(ModelVersionFields):
         cf_evidential_reg: float = 1e-3,
         cf_twin_coef: float = 0.0,
         cf_shadow_coef: float = 0.0,
+        capacity_telemetry: bool = False,
+        canary_reset_steps: int = 1_000_000,
+        capacity_cosine_every: int = 50,
+        capacity_velocity_every: int = 50,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -264,6 +268,10 @@ class ModelVersionConstruction(ModelVersionFields):
             cf_evidential_reg=float(cf_evidential_reg),
             cf_twin_coef=float(cf_twin_coef),
             cf_shadow_coef=float(cf_shadow_coef),
+            capacity_telemetry=bool(capacity_telemetry),
+            canary_reset_steps=int(canary_reset_steps),
+            capacity_cosine_every=int(capacity_cosine_every),
+            capacity_velocity_every=int(capacity_velocity_every),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),

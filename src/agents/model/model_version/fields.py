@@ -432,6 +432,19 @@ class ModelVersionFields:
     cf_evidential_reg: float = 1e-3
     cf_twin_coef: float = 0.0
     cf_shadow_coef: float = 0.0
+    # ---- gen3_capacity_telemetry_v1 (config v101) — LIVE CAPACITY TELEMETRY --------------------
+    # Four TRAINING-only diagnostic knobs (the plasticity canary / half-batch trunk cosine /
+    # feature velocity). They are the td_aux_coef class and then some: td_aux_coef at least scales
+    # a LOSS, while these fold nothing into `loss` and write no `.grad` at all, so the policy's
+    # parameter updates are bit-identical on or off. Recorded for PROVENANCE + flagless-resume
+    # read-back (`_resolve` reads these fields), NEVER compared by check_compatible — a frozen
+    # eval/pool/distill opponent runs no train step, so gating it on a train-step diagnostic would
+    # be a false rejection. Not registry rows: the registry declares EXTRACTOR toggles, and the
+    # canary head is owned by the PPO object, not by the extractor.
+    capacity_telemetry: bool = False
+    canary_reset_steps: int = 1_000_000
+    capacity_cosine_every: int = 50
+    capacity_velocity_every: int = 50
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:
