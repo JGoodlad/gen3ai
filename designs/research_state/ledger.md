@@ -2713,3 +2713,103 @@ trainer walk carries real ones.
   of our mons through a channel whose granularity lives in poke-env. **The next-largest
   un-attacked obs stage is `obs: legal + mask` at 0.145 ms — 22% of worker CPU**, now bigger than
   the encode's remaining pair-history work.
+
+### TREE-WIDE VACUITY HUNT — the week's ten specimens made into a taxonomy, and it found two MORE live ones (2026-08-23, `gen3_vacuity_hunt_v1`)
+
+**The systematic version of what this week found ten times by accident: tests and guards that pass
+without testing.** The taxonomy is now written down (`designs/learning/vacuous_tests_and_guards.md`),
+and the hunt that produced it turned up **two tests that were skipping on every tree, forever** —
+both of them guarding NAMED bug classes, both invisible to every scan, both four seconds away from
+anyone who had ever run `pytest -rs`.
+
+| # | pattern | scanned | found | fixed | reported |
+|---|---|---|---|---|---|
+| 1 | guarded assertions (`if x: assert …`) | 38 AST hits | 4 | **3** | 1 (`counterfactual_fuzz` prefix-slice guard, fires today) |
+| 2 | skip-forever | 52 skip sites + a live `-rs` census | 4 | **4** | 1 (`intent_move_cell`, honest self-describing deferral) |
+| 3 | exception-swallowing setup | 28 AST hits | 2 | **1** | 1 (rust, already fixed pre-hunt) |
+| 4 | guards that cannot fire | reading (automation FAILED — see below) | 2 | **1** | 1 (rust `bridge_test.rs:291`) |
+| 5 | presence-not-value | integration tests | **0** | — | — (a real negative result) |
+| 6 | source-scanning on moved literals | 80 AST hits, 3 in the risky `not in` direction | 1 | **1** | — |
+| 7 | single-draw verdicts | golden gates | 0 new | — | 2 rust (`dex_test` counts, `ability_batch` per-scenario floors, both LOW) |
+
+**THE WORST SPECIMEN — `move_prior_fusion_test::test_prior_logits_hidden_power_sums_typed_usage`,
+dead on every tree since `gen3_typed_hidden_power_ids_v1`.** It selected the typed Hidden Powers by
+`moves.get(mid).num == 237` — true only *before* the 16 typed HPs got their own dex nums 355-370.
+After that the filter matched **nothing for every species**, `typed_sum` was always `0.0`, the floor
+`0.0 > 0.02` was always false, and it skipped with **"no HP-running species in the sample"** — a
+message blaming the DATA, the exact shape of the rust `Err(_) => return` that blamed an unmodeled
+Bide for its own malformed fixture. Production was right the whole time (it keys the fold on the
+move ID via `_belief_num`, never on the num), so this was **pure dead coverage over a named GIGO
+bug class** (`project_opp_hp_immune_bug`). Fixed by routing the test through `_belief_num` — the
+same seam production asks — and asserting `n_ran == 3` instead of skipping. **Verified failing on
+revert**: restoring the num-key now yields `only 0/3 sampled species … Do not turn this back into a
+skip`, where before it yielded a green SKIP.
+
+**SECOND LIVE ONE, and it was hiding real data debt — `teams_integration_test`.** It opened on
+`data/teams/teams.json`, a manifest that does not exist under the current layout (the real ones are
+`sample/teams.json` + `others/*/teams.json`), and skipped blaming the operator ("Run sync-teams
+first"). **Three defects stacked, all the same mistake in three costumes**: the stale manifest path;
+CWD-relative paths throughout (the relative sibling of the `/home/…` literal class `utils.paths`
+closed on 2026-08-22); and a missing team file that printed a warning and `continue`d, so even on
+the happy path a layout change would have validated ZERO teams and reported success. Rewritten to
+ask `TeamLoader` — the seam the trainer asks — validate the whole pool through the batch bridge, and
+assert a count floor. **Measured: 719 loaded teams, 0 invalid, 1.2 s** (the batch entry point spawns
+one Node process; the per-team call is ~0.58 s each and would have made this `slow`). It ships with
+its own vacuity guard (`test_the_legality_check_can_actually_fail`), and is revert-verified on both
+halves — a polluted pool and an empty pool both FAIL where the old form passed.
+- **A finding that is NOT an alarm, recorded so nobody re-raises it**: the 764 RAW team files
+  contain **45 illegal teams** (HP-IV/HP-type mismatches, one moveless Swampert), but the LOADED
+  719-team pool is **100% legal** — the loader's dedupe/filter drops them. There is no live training
+  GIGO here. The raw-vs-loaded distinction is exactly the 719-vs-773/764 split root `CLAUDE.md`
+  already warns reads as one number.
+
+**The other four fixes**, each revert-verified:
+- `search_clone_parity_fuzz_test` — `assert total >= 1, "no obs check ran"` where the per-battle
+  counter was **initialised to 1**. All four of its obs checks sit behind `ended`/`None` guards and
+  can be skipped together, so a run could print `PASS — N battles (N checks bit-for-bit)` having
+  compared **zero** observations. Counter now starts at 0 and counts obs comparisons only.
+- `counterfactual_fuzz_test` — checks 3+4 (divergence-to-terminal + the Monte-Carlo reseed, **six
+  assertions**, the larger half of the script) hung off `if anchor is not None`. It even printed
+  `divergence@turn=n/a` on that line: **an announcement is not a gate.** Now a counted floor.
+- `thread_pinning_test` — the ordering assertion (defending a measured **6 fps vs 231**) sat under
+  `if torch_line is not None`. Proven vacuous by construction: with the detector's root list broken,
+  the fixed form FAILS and the pre-fix form PASSES.
+- `server_port_threading_test` — a **negative** assertion (`"server_configuration=" not in src`)
+  over a loop that swallowed its own `getsource` failure. A negative assertion over a swallowing
+  loop passes just as cheerfully over zero iterations; proven by forcing `getsource` to raise
+  (fixed form fails at `0 source-readable methods`, pre-fix form passes). **The direction matters
+  and is now a rule**: the `in` form fails loudly when its anchor rots, the `not in` form rots
+  silently — only 3 such sites exist tree-wide.
+- Two LATENT ones converted from skip to assert (`intent_axis_alignment` — whose own docstring calls
+  it "**THE** gate" for `project_op_move_order_bugclass`, which "has bitten before" — and
+  `value_entity_pool`). Both **construct the config they then skipped on**, which is the
+  arranged-vs-encountered rule: a condition the test ARRANGED failing is a defect, not an
+  inapplicability.
+
+**METHOD, and the part that generalises. Automation narrows; only reading convicts — and the record
+proves where automation fails.**
+- **Run `pytest -rs` FIRST.** Four seconds, and it is the only instrument that finds a *live*
+  skip-forever. Both worst specimens fell straight out of it; every static scan missed both.
+- **AST, never grep** — comments and docstrings do not reach an AST, so a scan cannot degrade into a
+  documentation argument. Precision varies wildly by class: good for pattern 1 (38 hits → 4 real),
+  **poor for pattern 3** (28 hits → 2 real, all judgment).
+- **Pattern 4 defeated automation outright, and this is worth recording as a limit.** An AST scan
+  for "floor asserted at or below its own counter's initialiser" found the CLASS but not the
+  SPECIMEN — the counter is initialised in `_check_battle` and its floor asserted in `main`, and
+  cross-scope dataflow beat the scanner. The scan returns 0 on the pre-fix file. **Do not read that
+  silence as a clean result**; the working method is "for every guard, ask what input makes it fire,
+  then construct it."
+- **Coverage cannot see this class at all.** The `logits > -1e8` recovery executed on every run for
+  a year. Every line covered; every line wrong.
+- Excluded `src/main/prober/` (concurrent decomposition) — its findings are listed for that
+  follow-up, not fixed here.
+- **Gates:** routine suite `not slow and not e2e` exact-exit **0 before and after** (6390 passed / 12
+  skipped before; the two dead skips are gone after), ruff + mypy green, every fix revert-verified.
+
+**The three sentences the note ends on**, promoted here because they are the reusable part: *a test
+that can pass without evaluating its assertion is indistinguishable from a passing test* · *a guard
+that cannot fire is not a guard* · *a gate that keeps passing while its subject stops existing is
+worse than no gate.* And the meta-lesson: **redundant, differently-plumbed meters are why the big
+decisions survived** — when the mask defect detonated and rankings SWAPPED on the flips/KL axis,
+every `|dV|`-keyed verdict stood, because `|dV|` never touches the mask. Two instruments that agree
+are weak evidence when they can share a defect; two that agree and *cannot* are strong.

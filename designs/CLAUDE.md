@@ -378,3 +378,19 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   activation swap is retrain-class but weight-shape-NEUTRAL, so `check_compatible` cannot see it and an
   sb3-contrib upgrade would silently rewrite four policy layers. Any real swap must bump `ARCH_SIGNATURE`
   deliberately and re-pass the compile gates.
+- **`vacuous_tests_and_guards.md`** — the one failure whose symptom is indistinguishable from
+  success: a test, gate or guard that **passes without evaluating its assertion**. The seven-way
+  taxonomy (guarded assertions · skip-forever · exception-swallowing setup · guards that cannot
+  fire · presence-not-value · source-scanning on moved literals · single-draw verdicts) with the
+  measured 2026-08-22/23 specimen set as its evidence base — the `logits > -1e8` mask recovery that
+  returned ALL-LEGAL on 0-of-800+ traces for a year (38.4% phantom legality in every historical
+  flip/KL audit), the typed-Hidden-Power prior test that skipped on every tree forever because its
+  filter was num-keyed after the nums changed, the rust `Err(_) => return` that blamed an unmodeled
+  Bide for its own malformed fixture, and the 1/0/0/6/8/0/6 golden sweep proving 3-of-7 seeds call
+  the gate green with four live bugs. The **arranged-vs-encountered** rule that decides skip-vs-assert,
+  the per-pattern detection method (and where automation provably fails — cross-scope dataflow), the
+  five design rules that make each class unrepresentable (assert-the-build · value-not-presence ·
+  seams-not-literals · distributions-not-draws · reachability-beside-presence), and the meta-lesson:
+  coverage cannot see this class, only adversarial reading can, and **redundant differently-plumbed
+  meters are why the big decisions survived** (every `|dV|`-keyed verdict stood because `|dV|` never
+  touches the mask).
