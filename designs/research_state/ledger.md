@@ -3984,3 +3984,22 @@ read need not stratify. 9 revert-verified tests incl. a both-seats sim fixture; 
 (only handle_choose pushes there), so `record_is_full_replay_anchorable`'s forfeit exclusion is
 INERT under `--impl rust` — scanning commands for forfeits on rust records reads a false 0.
 Producer restart #3 rides the MORNING relay (training session's lane; owner AFK).
+
+### 🪜 LADDER REQUIREMENTS — owner-registered (2026-08-23, while the readiness audit is in flight)
+
+Binding requirements for any laddering capability, registered before the first rated game:
+1. **Concurrency capped by flag, DEFAULT 1** — a ladder session plays one game at a time unless
+   explicitly raised.
+2. **Full forensics on every ladder game**: the complete state at battle start + per-decision
+   states (the eval_traces convention — states.npz + summary.json — is the existing shape),
+   the FULL raw Showdown protocol log as received from the official server, and OUR TEAM
+   (pinned by sha, the MatchupSpec convention).
+3. **A recorded SEARCH format** — when the search player ladders, every decision's search must
+   be recorded (candidates considered, realized width/depth, per-candidate values, worlds
+   sampled, fallbacks, chosen action + why) in a format the PROBER web viewer can render —
+   the search trace joins the battle trace as a first-class forensic artifact, viewable per
+   turn beside the board (the /battle and /analyze surfaces are the natural homes).
+These fold into: the ladder-readiness go-live checklist (audit in flight — requirements to be
+appended on landing) and the search-dividend driver's record format (the battery's per-decision
+rows are the seed of requirement 3 — design its schema so the ladder search trace is the SAME
+format, not a second one).
