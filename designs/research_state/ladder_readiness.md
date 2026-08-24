@@ -362,3 +362,23 @@ Every step from here to the first rated game.
 | `src/agents/battle/battle_event.py` | the same keywords in `MESSAGE_POLICY` (#11) |
 | `src/agents/battle/battle_event_test.py` | live-room chrome coverage, both registries |
 | `src/agents/inference/player.py` | `_await_connected` names a refused login instead of blaming the network |
+
+---
+
+## Owner-registered requirements (ledger 87a3f91, 2026-08-23) — BINDING for go-live
+
+1. **Concurrency capped by flag, DEFAULT 1** — one ladder game at a time unless explicitly raised
+   (also the polite posture under the measured 12-battles/3-min/IP limit).
+2. **Full forensics on EVERY ladder game**: battle-start state + per-decision states in the
+   `eval_traces` convention (states.npz + summary.json — ladder games become prober-analyzable
+   for free), the FULL raw Showdown protocol log verbatim as received from the official server
+   (doubles as replay-reconstruction ground truth), and our team pinned by sha (the MatchupSpec
+   convention).
+3. **The search trace as a first-class artifact**: when the search player ladders, each decision
+   records candidates considered, realized width/depth, per-candidate values, sampled worlds,
+   fallbacks, and the chosen action — in the SAME schema as the search-dividend driver's
+   per-decision rows (one format, two uses), rendered in the prober web viewer beside the board
+   (/battle's per-turn view is the natural home).
+
+These join the go-live checklist above; the session runner (sized 1 day) is where 1 and 2 land,
+and requirement 3 rides the search-dividend driver's schema.
