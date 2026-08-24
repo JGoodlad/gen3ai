@@ -4217,3 +4217,34 @@ for that check, not the verdict; Q5/Q1 demoted as re-fills. Per-team WRs refresh
 602,635 games (raw, confounded — tiebreak use only). Hodge style-attribution NOT derivable from
 current artifacts (games.jsonl lacks per-team outcomes per pair) — a cheap ladder-writer
 addition owed before the learned-descriptor upgrade.
+
+### 🧪 R1 FIRST READ (`703fdd9`) — NOT flat: the primary is NET-NEGATIVE, and the factory's two design choices are the suspects (2026-08-24)
+
+§2 paired-head read on rev-1 (388 labels/170 battles + an independent replication at 788/204;
+battle-clustered CIs; the heads GENUINELY separated, so §5's dosage escape does NOT apply to
+the direction of this reading): **B−A = +0.065 [+0.042,+0.089]** (the prioritized
+single-outcome stream made head B WORSE than the BCE control), **C−B = −0.036
+[−0.056,−0.016]** (tight-MC variance reduction WORKS, recovering ~55% of the damage),
+**C−A = +0.029 [+0.019,+0.041]** (NET: the R1-labeled head is worse than control). Replicated
+on both seeds. **Two unanticipated findings, both bigger than the headline**:
+1. **The estimand mismatch is now MEASURED**: outcome_label mean 0.7327 vs tight-MC 0.6017 on
+   IDENTICAL states, r=0.240 — the runbook's own self_current ecology caveat quantified. The
+   single-outcome stream teaches inflated optimism; "C−B is budget-matched by construction"
+   was too strong.
+2. **C's Brier win over B is a RE-CENTRING, not sharper resolution** — twin_resolution: C
+   0.286, B 0.281, A 0.235 sd_true_excess: BOTH label-trained twins are BLURRIER than the
+   control. The G0 lesson ("a re-centred head fakes success on the wrong meter") recurring
+   inside R1's own primary — the meter amendment earns its keep again.
+Health split: plumbing PASS (every §6 scalar clean; coverage 1.000; grad shares exactly 0.0),
+dosage FAIL (buffer fill mean 11/2048; 48.2% of train points ran NO fold; ~2,646 of 6,600 rows
+ever ingested — the duty-cycle era's true cost). Evidential: CLEAN NULL (width tracks
+CONFIDENCE, not blur — width_vs_blur unstable across seeds, monotone-in-decile the wrong way).
+One instrument defect flagged (conviction_class CI fails to bracket its point estimate) —
+tasked, primary unaffected.
+**Standing decision**: tick-1 keeps the factory IDENTICAL (the pre-registered dosage
+replication: SIGNAL = C−A crossing negative WITH C's blur dropping below A's; dosage-null =
+C−B stuck at ≈−0.036 with B−A ≈+0.06). **The v2 factory redesign is queued for rev-2
+regardless of that outcome**: (a) the ESTIMAND fix — thread opponent identity through the
+training tap so labels stop being self_current-biased; (b) the SAMPLER — the B−A cost convicts
+the current priority rule's selection bias as a calibration hazard. More labels of the current
+kind are NOT the next move if the dosage-null branch lands; these two fixes are.
