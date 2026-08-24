@@ -4023,3 +4023,24 @@ registration; report GXE + W-L + rprd via users/<id>.json; ~180 games to a conve
 sized 1–2 d) + session runner (1 d, where the owner's registered requirements land) + rating
 readback (0.5 d).** Memo: `designs/research_state/ladder_readiness.md` with the go-live
 checklist + the owner's binding requirements (87a3f91) appended.
+
+### 🪞 MIRROR EVAL PRODUCTIONIZED (`87c5a4e`) — and a MIRROR-DIRECTIONAL silent bias caught before it shipped a wrong verdict (2026-08-23, overnight)
+
+The owner-ordered mode (our side = model WITH search, opponent = SAME net without; flags:
+`--opponents self`, `--max-depth`, `--side-swap` default-on for mirrors) landed with 147 package
+tests. THE FIND: `battle.won` is Optional and None on a gen3 TIE, and the battery inferred
+outcomes from `n_won_battles` (counts truthy only) — **a tie was silently recorded as a LOSS for
+the searched side, error=None**. Mirror-directional by construction: two copies of one network
+tie far more often than policy-vs-bot, and every draw was charged AGAINST search. Fixed: tie is
+its own outcome (excluded from the win-rate denominator, reported beside it), and
+outcome-XOR-named-error is now UNREPRESENTABLE to violate at the one row-construction site.
+**Tonight's first mirror readings (incl. the eyebrow-raising oracle@3s 3/13) were taken under
+the tie-as-loss code — archived as `tmp/search_dividend/v1_tiebiased/`, superseded; cells
+relaunched from zero on the fixed code with side-swap pairing.** Deepening findings: at DEFAULT
+caps width absorbs the entire budget at 1 s and 3 s — realized depth 1.00, deepen rate 0% (the
+registered width-first order working as written); the depth lever is `--max-opp/--max-dice`
+narrowing (1.86 mean depth at max-opp 2), NOT budget. Depth ≥2 is built, gated, and marked
+NOT-YET-TRUSTWORTHY: its successor replay spews poke-env active-mismatch warnings + a mojibake
+KeyError on non-ASCII nicknames ('ptãra'), absent in depth-1 on identical seeds — fails safe as
+counted search_error; the chunk-transport double-encode is the first job before any depth-2
+number is published (tasked).
