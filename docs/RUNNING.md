@@ -134,7 +134,8 @@ Convention on a shared box: 8000 = development, 8001 = training (`main.launcher`
 ## Evaluation and forensics
 
 ```bash
-python src/main/play.py                          # play/evaluate against the server
+python src/main/play.py --mode selfplay --port 9017   # websocket client: selfplay/challenge/accept/ladder
+python src/main/ladder_drift_scan.py --n 200      # pre-flight protocol-drift gate (public replays)
 python -m main.elo models/<run>                  # offline ELO ladder + Elo-vs-step curve
 python -m main.prober models/<run>               # forensic replay inspector (web UI, :6008)
 ```

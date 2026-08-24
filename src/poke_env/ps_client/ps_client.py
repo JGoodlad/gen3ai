@@ -21,7 +21,7 @@ from poke_env.concurrency import (
     create_in_poke_loop,
     handle_threaded_coroutines,
 )
-from poke_env.exceptions import ShowdownException
+from poke_env.exceptions import LoginError, ShowdownException
 from poke_env.ps_client.account_configuration import AccountConfiguration
 from poke_env.ps_client.server_configuration import ServerConfiguration
 
@@ -36,6 +36,44 @@ async def _noop_battle_message(split_messages: List[List[str]]) -> None:
 
 async def _noop_challenge_message(split_message: List[str]) -> None:
     return None
+
+
+def _parse_login_assertion(body: str) -> str:
+    """Extract the login assertion from an ``action.php`` response, or raise.
+
+    The endpoint answers with a JSON object prefixed by one junk character (``]``),
+    which is why the historical code was ``json.loads(text[1:])["assertion"]``. Three
+    real refusals do NOT produce that shape, and each used to surface as a misleading
+    exception in a swallowed ``listen()`` — i.e. as an indefinite hang:
+
+    * wrong password / unknown user → ``{"actionsuccess": false, ...}`` (no
+      ``assertion`` key) ⇒ ``KeyError``;
+    * rate limit / outage → an HTML error page ⇒ ``json.JSONDecodeError`` whose
+      message quotes HTML;
+    * a soft refusal → an ``assertion`` that BEGINS with ``;`` (name needs a
+      password) or ``;;`` (an error message follows). The server rejects such an
+      assertion at ``/trn``, so the client stays un-logged-in with nothing said.
+
+    All three become a :class:`~poke_env.exceptions.LoginError` naming the cause.
+    """
+    try:
+        payload = json.loads(body[1:])
+    except ValueError:
+        snippet = body[:200].replace("\n", " ")
+        raise LoginError(
+            "authentication endpoint did not return JSON (rate limit or outage?): "
+            f"{snippet!r}"
+        ) from None
+    if not isinstance(payload, dict) or "assertion" not in payload:
+        raise LoginError(f"authentication endpoint refused the login: {payload!r}")
+    assertion = payload["assertion"]
+    if not isinstance(assertion, str) or assertion.startswith(";"):
+        raise LoginError(
+            "authentication endpoint refused the login "
+            f"(assertion {assertion!r}); a leading ';' means the name is registered "
+            "and the password was wrong or missing"
+        )
+    return assertion
 
 
 class PSClient:
@@ -122,6 +160,13 @@ class PSClient:
         # connection on purpose is not an error.
         self._closing: bool = False
         self._sending_lock: asyncio.Lock = create_in_poke_loop(asyncio.Lock, loop)
+        # The LoginError that retired this client, if any — read by a caller that only
+        # sees "listen() finished without logging in" and wants to say WHY.
+        self._last_login_error: Optional[Exception] = None
+        # True once `/trn` has gone out. Distinguishes the server's opening
+        # `|updateuser| Guest N` greeting from a Guest identity that SURVIVED our rename
+        # request — see the `updateuser` branch in `_handle_message`.
+        self._trn_sent: bool = False
 
         self.websocket: ClientConnection
         self._logger: Logger = self._create_logger(log_level)
@@ -218,7 +263,25 @@ class PSClient:
                             received_name = split_message[2].strip()
                             if received_name in [self.username, self.username + "@!"]:
                                 self.logged_in.set()
-                            elif received_name.startswith("Guest ") and not self._account_configuration.password:
+                            elif (
+                                received_name.startswith("Guest ")
+                                and self._trn_sent
+                                and not self._account_configuration.password
+                            ):
+                                # A Guest identity AFTER `/trn` means the rename was
+                                # refused and this is as logged-in as we get.
+                                #
+                                # BEFORE `/trn` it means nothing — and honouring it there
+                                # was a real hang: the server greets every connection with
+                                # `|updateuser| Guest N` before `|challstr|`, so a
+                                # passwordless client announced `logged_in` while still
+                                # named "Guest N". `send_challenges` waits on exactly that
+                                # event, so the challenger fired `/challenge <realname>`
+                                # at a user that did not exist yet, got
+                                # `|popup|The user '…' was not found`, and BOTH sides
+                                # waited forever. Reproduced on `play.py --mode selfplay`
+                                # (2026-08-23); training never saw it because every eval /
+                                # self-play account carries a password.
                                 self.logged_in.set()
                         elif "updatechallenges" in msg_type:
                             await self._update_challenges(split_message)
@@ -239,6 +302,21 @@ class PSClient:
                         elif msg_type == "popup":
                             self.logger.warning("Popup message received: %s", "|".join(split_message))
 
+        except LoginError as exception:
+            # `_handle_message` runs as a fire-and-forget task, so a raise here goes
+            # nowhere: `logged_in` is never set and every `await logged_in.wait()`
+            # blocks forever — a refused password would present as a HANG. Close the
+            # socket instead, which retires listen(); that is the exact signal
+            # `Gen3Player._await_connected` turns into a loud ShowdownConnectionError.
+            self.logger.critical("Login refused for %s: %s", self.username, exception)
+            self._last_login_error = exception
+            try:
+                await self.websocket.close()
+            except Exception:  # noqa: BLE001 — already failing; never mask the cause
+                pass
+            # Deliberately NOT re-raised: nobody awaits this task, so a raise would only
+            # add asyncio's "Task exception was never retrieved" traceback underneath the
+            # clear message above. The closed socket IS the signal.
         except Exception as exception:
             self.logger.exception("Unhandled exception in _handle_message:\n%s", message)
             raise exception
@@ -364,12 +442,13 @@ class PSClient:
                 proxies=proxies,
             )
             self.logger.info("Sending authentication request")
-            assertion = json.loads(log_in_request.text[1:])["assertion"]
+            assertion = _parse_login_assertion(log_in_request.text)
         else:
             self.logger.info("Bypassing authentication request")
             assertion = ""
 
         await self.send_message(f"/trn {self.username},0,{assertion}")
+        self._trn_sent = True
 
         await self.change_avatar(self._avatar)
 

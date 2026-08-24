@@ -566,6 +566,7 @@ MESSAGE_POLICY: Dict[str, Tuple[Policy, str]] = {
     "sentchoice": (_C, "choice acknowledgement"),
     "split": (_C, "spectator/player split marker"),
     "askreg": (_C, "registration prompt"),
+    "noinit": (_C, "room join refused / renamed (users.ts: nonexistent|joinfailed|rename)"),
     "": (_C, "empty/blank line"),
     # ---- cosmetic: explicitly irrelevant flavor ----
     ":": (_K, "timestamp"),
@@ -587,7 +588,24 @@ MESSAGE_POLICY: Dict[str, Tuple[Policy, str]] = {
     "debug": (_K, "debug line"),
     "badge": (_K, "user badge"),
     "c": (_K, "chat"),
+    # ---- room-layer chrome the LIVE server can emit into a battle room ----
+    # A local `--no-security` sim never produces any of these, so no fuzz corpus and no
+    # eval battle has ever exercised them; on the public ladder they are ordinary. They
+    # carry no battle state, so COSMETIC is the honest policy — and classifying them here
+    # keeps the tripwire pointed at battle CONTENT, which is what it is for.
+    #
+    # MEASURED 2026-08-23 (local server on :9017, see designs/research_state/
+    # ladder_readiness.md): a battle room sets `noLogTimes = true` (`server/rooms.ts`
+    # GameRoom ctor), so chat there arrives as `|c|user|msg`, NOT the timestamped
+    # `|c:|unix|user|msg`. `c:` is therefore DEFENSIVE, not a reproduced break — it is
+    # the form every non-battle room uses, and one line of it would raise.
+    "c:": (_K, "timestamped chat (the form every non-battle room uses)"),
     "chat": (_K, "chat"),
+    "uhtmlchange": (_K, "updatable-html edit (poke-env's Player also filters it)"),
+    "popup": (_K, "server popup (global, but can ride a battle-room frame)"),
+    "notify": (_K, "client notification"),
+    "tempnotify": (_K, "temporary client notification (best-of series)"),
+    "tempnotifyoff": (_K, "clears a temporary notification"),
     "J": (_K, "user join"),
     "L": (_K, "user leave"),
     "j": (_K, "user join"),

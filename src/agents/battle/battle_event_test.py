@@ -179,3 +179,59 @@ def test_event_kind_values_are_stable():
     assert int(EventKind.DAMAGE) == 5
     assert int(EventKind.SUPEREFFECTIVE) == 19
     assert int(EventKind.UNKNOWN) == 99
+
+
+# --------------------------------------------------------------------------- #
+# LIVE-SERVER room chrome (the ladder-readiness gate)                           #
+# --------------------------------------------------------------------------- #
+# A `--no-security` local sim emits a CLOSED set of battle-room lines, so no fuzz
+# corpus and no eval battle has ever exercised the room-layer chrome the public
+# server adds. `classify` raises on anything unclassified BY DESIGN, and every such
+# raise wedges the battle for good (the parse task dies, no choice is ever sent).
+# These are the keywords measured or sourced from the live protocol; see
+# designs/research_state/ladder_readiness.md.
+_LIVE_ROOM_KEYWORDS = [
+    "c",             # battle-room chat (battle rooms set noLogTimes ⇒ untimestamped)
+    "c:",            # the timestamped chat form every OTHER room uses
+    "html",          # `|html|<div class="message-error">…` — MEASURED on :9017
+    "uhtml",
+    "uhtmlchange",
+    "raw",           # the rated-ladder rating-change block — MEASURED on :9017
+    "rated",         # MEASURED on :9017 (a real rated local-ladder game)
+    "askreg",        # MEASURED on :9017
+    "J", "L", "j", "l", "n",
+    "inactive", "inactiveoff",   # the ladder TIMER
+    "noinit", "popup", "notify", "tempnotify", "tempnotifyoff",
+    "-message", "-hint", ":", "t:",
+]
+
+
+@pytest.mark.parametrize("kw", _LIVE_ROOM_KEYWORDS)
+def test_live_server_room_chrome_never_raises(kw):
+    """None of it is battle CONTENT, so none of it may be a tripwire."""
+    policy, _reason = classify(kw)
+    assert policy in (Policy.COSMETIC, Policy.CONTROL), (
+        f"{kw!r} is live-server room chrome but classified {policy.name}"
+    )
+
+
+# The subset poke-env must IGNORE outright. The complement is handled some other way —
+# `raw`/`inactive`/`-message`/`-hint` get real parse branches, and `noinit`/`popup`/
+# `notify`/`tempnotify*`/`uhtmlchange` are pre-filtered before the battle ever sees them
+# — so demanding ignore-set membership for those would assert a false contract.
+_LIVE_ROOM_MUST_BE_IGNORED = [
+    kw for kw in _LIVE_ROOM_KEYWORDS
+    if kw not in {"raw", "inactive", "-message", "-hint", "notify", "tempnotify",
+                  "tempnotifyoff", "noinit", "popup", "uhtmlchange"}
+]
+
+
+@pytest.mark.parametrize("kw", _LIVE_ROOM_MUST_BE_IGNORED)
+def test_live_server_room_chrome_is_also_ignored_by_poke_env(kw):
+    """`Gen3Battle.parse_message` delegates every non-EVENT line to poke-env, which
+    raises `NotImplementedError` on anything outside ITS own ignore set. Classifying a
+    keyword here without adding it there therefore fixes nothing — the raise just moves
+    one frame down. `c:` is the one that was in neither."""
+    assert kw in AbstractBattle.MESSAGES_TO_IGNORE, (
+        f"{kw!r} is classified here but poke-env would still raise on it"
+    )

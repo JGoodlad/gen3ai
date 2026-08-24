@@ -88,6 +88,14 @@ class Gen3Player(Player):
                 err = None
                 if not listen_fut.cancelled():
                     err = listen_fut.exception()  # usually None — listen() swallows it
+                # A REFUSED LOGIN retires the socket the same way an unreachable server
+                # does, so without this the message would blame the network for a wrong
+                # password. `_last_login_error` is the client's own record of the cause.
+                login_err = getattr(client, "_last_login_error", None)
+                if login_err is not None:
+                    raise ShowdownConnectionError(
+                        f"{client.websocket_url}: authentication was refused — {login_err}"
+                    )
                 raise ShowdownConnectionError(
                     f"{client.websocket_url}: listen task exited without logging in — "
                     f"Showdown server unreachable? "

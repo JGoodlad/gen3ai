@@ -1196,13 +1196,45 @@ worked example are in `src/agents/training/CLAUDE.md` → *Reading an ELO*.
 
 ---
 
-## Playing / Evaluation
+## Playing / Evaluation — and the LADDER path
+
+`src/main/play.py` is the only entry point that talks to a Showdown server **as a client**
+rather than through the in-process bridge, so it is the exact code path a rated ladder game
+uses. Four modes — `selfplay` (two `RandomPlayer`s, no model), `challenge`, `accept`, and
+`ladder` (`/search <format>`):
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py
+export PYTHONPATH=$PYTHONPATH:src
+# local smoke against your OWN throwaway server (8000/8001 are REFUSED in code)
+/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py --mode selfplay --port 9017
+
+# our model, on the OFFICIAL server, under a registered account
+PS_PASSWORD=… /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py \
+  --mode ladder --server official --model models/<run>/final_model.zip \
+  --username <acct> --n-battles 20 --proxy socks5h://127.0.0.1:1080
 ```
 
-Requires the Showdown server to be running (see below).
+`--server local` needs a Showdown server on `--port` (see below); `--server official` needs
+`--username` + a password, because the public ladder does not rate a guest. Inference runs
+on **cpu** by default so a ladder session never contends with a training GPU.
+
+**Before any live-server session, run the protocol-drift gate.** `deps/pokemon-showdown` is
+pinned to a commit; the public server runs master, and `battle_event.classify` raises on an
+unknown keyword **by design** — which on a live battle kills the parse task, sends no choice,
+and loses the game on the timer. The gate pulls real gen3ou games from the public replay
+archive (read-only HTTP, no account, no websocket) and parses each through a real
+`Gen3Battle`, exiting non-zero on any unclassified keyword or structural failure:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/ladder_drift_scan.py --n 200
+```
+
+Measured 2026-08-23: 59 replays / 20 589 protocol lines / 53 distinct keywords, **zero drift**
+— and per-decision latency on the websocket path is **18 ms** against a 150 s ladder timer.
+
+**The full readiness audit — every gap (WORKS / FIXED / SIZED), the smoke results, Showdown's
+bot policy, and the go-live checklist — is
+[`designs/research_state/ladder_readiness.md`](designs/research_state/ladder_readiness.md).**
 
 ---
 
@@ -1441,7 +1473,10 @@ src/
                      #   probe decodability, per-phase param census. Engine:
                      #   agents/model/capacity_probes.py · notes:
                      #   designs/research_state/capacity_battery.md
-    play.py            # Battle / evaluation entry point
+    play.py            # THE WEBSOCKET CLIENT entry point — selfplay/challenge/accept/LADDER,
+                     #   local or the official server; refuses ports 8000/8001 in code
+    ladder_drift_scan.py  # Pre-flight protocol-drift gate: real public gen3ou replays ->
+                     #   Gen3Battle.parse_message; exit 1 on any unclassified keyword
   poke_env/          # Forked poke-env library
   utils/
     paths.py         # PATH DISCOVERY — the one place that knows the tree depth (see below)

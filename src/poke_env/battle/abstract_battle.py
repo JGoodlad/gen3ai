@@ -66,10 +66,25 @@ class AbstractBattle(ABC):
         "askreg",
         "badge",
         "c",
+        # gen3ai: `c:` is the TIMESTAMPED chat form (`server/roomlogs.ts` rewrites `|c|`
+        # to `|c:|<unix>|<user>|<msg>` in every room that keeps log times). A battle room
+        # sets `noLogTimes = true`, so ladder chat arrives as plain `|c|` — measured
+        # 2026-08-23 against a local server. This entry is DEFENSIVE: upstream 0.15.0
+        # ignores only `c`, and one `c:` line reaching here is a NotImplementedError that
+        # wedges the battle for good.
+        "c:",
         "chat",
         "crit",
         "debug",
         "deinit",
+        # Room-layer lines the LIVE server can put in a battle room but a local
+        # `--no-security` sim never does. All are chrome, none carry battle state.
+        "noinit",
+        "notify",
+        "popup",
+        "tempnotify",
+        "tempnotifyoff",
+        "uhtmlchange",
         "gametype",
         "hidelines",
         "html",

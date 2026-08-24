@@ -38,6 +38,13 @@ by agents — see the protocol below and the `feedback-research-state` memory.
   long fruitless hunt. Instrument: `python -m main.capacity <run>` (~7 s, offline). **Tripwire, not
   verdict** — the `PR(K_ū)=17` retraction is why every metric there ships what would have to
   CONFIRM it.
+- **[ladder_readiness.md](ladder_readiness.md)** — the PUBLIC-LADDER gap list (WORKS / FIXED /
+  SIZED), against the owner's permanent "we must be able to play online" constraint and the
+  external Metamon milestone (~Elo 1511 / GXE 64). Carries the two measurements that killed the
+  two loudest fears — **zero protocol drift** over a real 59-replay ladder corpus and **18 ms** per
+  decision against a 150 s timer — Showdown's actual (discretionary) bot policy with sources, the
+  end-to-end smoke results, and a go-live checklist. Instruments: `python src/main/play.py`,
+  `python src/main/ladder_drift_scan.py`.
 - **[The frontier](#the-frontier--what-else-might-be-there)** (below) — the standing list of candidate
   levers NOT yet (fully) investigated. This is the working surface for "there has to be more."
 

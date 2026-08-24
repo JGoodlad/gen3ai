@@ -2302,7 +2302,7 @@ inference-only), and the prober backprops through this same extractor for gradie
 | `search_teacher_persistent_worker` | trainee (per re-freeze) + opponent (per iteration) | `compile_extractor` cfg key |
 | `snapshot_ladder` | both frozen ladder players | **default ON** — offline tool, nothing races it |
 | prober (`session._load`) | the no-grad replay / rollout models | `--compile` (off by default) |
-| `play.py` | nothing — it runs `RandomPlayer` vs `RandomPlayer`, no neural model | n/a |
+| `play.py` | nothing — the websocket/LADDER client loads a plain `MaskablePPO` and stays eager: one process, one battle at a time, and eager already measures **18 ms/decision** against a 150 s ladder timer, so a compile would buy latency nobody is waiting on | n/a |
 
 Eval workers are fresh `Popen` processes, so they hit the shared on-disk Inductor cache the trainer
 already warmed rather than inheriting anything; one worker plays hundreds of games, so the compile

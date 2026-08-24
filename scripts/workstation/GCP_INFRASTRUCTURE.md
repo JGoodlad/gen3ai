@@ -97,8 +97,10 @@ Script: `scripts/workstation/proxy_tunnel.sh`
 python3 src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou \
   --max-concurrent 20 --proxy socks5h://127.0.0.1:1080
 
-# Bot
-python3 src/main/play.py --proxy socks5h://127.0.0.1:1080
+# Bot (public LADDER — needs a registered account; see designs/research_state/ladder_readiness.md)
+PS_PASSWORD=... python3 src/main/play.py --mode ladder --server official \
+  --model models/<run>/final_model.zip --username <acct> --n-battles 20 \
+  --proxy socks5h://127.0.0.1:1080
 ```
 
 The collector dashboard shows **PROXIED** in green when active.
