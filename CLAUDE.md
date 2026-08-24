@@ -1460,6 +1460,15 @@ src/
                      #   web/ — browser front end (FastAPI + Jinja2/HTMX over ProbeSession) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — launcher UI — has CLAUDE.md
+    search_dividend/   # SEARCH-DIVIDEND PROBE — a depth-1 search wrapped around the trained
+                     #   policy + a 3-arm x budget-sweep battery (`python -m main.search_dividend`).
+                     #   arms base / honest (belief-determinized) / oracle (true hidden state);
+                     #   budget = a per-decision wall-clock deadline buying WIDTH in one registered
+                     #   order (α-pruned opp actions → worlds K → CRN dice R).
+                     #   determinize.py (pool-consistent worlds + the prefix byte-identity GATE) ·
+                     #   record.py (a ReconstructionRecord for a battle still IN FLIGHT) ·
+                     #   alpha.py (the α-consumer contract at the sim's legal surface) ·
+                     #   budget.py · search.py · player.py · battery.py · summary.py
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
     train/             # The training entry point's PHASES (train_rl_agent.py is the re-export hub)
                      #   parser.py (build_parser) · config.py (desugar/_resolve/validate) ·
