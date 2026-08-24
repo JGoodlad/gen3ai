@@ -382,3 +382,15 @@ Every step from here to the first rated game.
 
 These join the go-live checklist above; the session runner (sized 1 day) is where 1 and 2 land,
 and requirement 3 rides the search-dividend driver's schema.
+
+### Correction (owner field evidence, 2026-08-23): the datacenter-IP claim, narrowed
+
+The audit's "Showdown auto-locks datacenter/VPS IPs ⇒ ladder from residential" overstated the
+mechanism. **Connection from a datacenter IP works** — the project's own replay watcher uses the
+GCP VM as its proxy and connects fine (owner-supplied proof by existence). A PS "lock" is a
+MODERATION state, primarily a chat sanction: locked users can't talk outside staff channels;
+connecting, browsing and SPECTATING are untouched. The narrow open question is only whether a
+hostfilter-flagged account can initiate rated `/search` games unimpaired. **Go-live checklist
+addition: the five-minute test** — one throwaway account, one rated search through the tunnel;
+settles it empirically. Residential remains the DEFAULT because it deletes the question, not
+because GCP cannot connect.
