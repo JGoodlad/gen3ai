@@ -3841,3 +3841,26 @@ richness not policy headroom, no calibrated alarm level on the cosine (trend onl
 CUDA scale. Benchmark lesson minted: a contended box read +4.28% with 13% within-arm spread and
 `warn_if_contended` did NOT fire (1-min loadavg lags a just-started job) — **read the per-arm
 spread before believing a delta**. Rev-1 launches with this ON.
+
+### 🚨 REV-1 HOUR-2 INCIDENT — R1 label path starved ~100×; training UNAFFECTED; fix in flight (2026-08-23)
+
+Two defects, found by the training session's §6 watch at hour 2 of `ai_v9_29_rev1_0823`
+(policy path healthy throughout — all three detach shares exactly 0.0; run left training):
+1. **A duty-cycle mismatch nobody computed**: `--cf-label-lag-steps` 150k vs a HARDCODED
+   checkpoint interval of 2.4M env-steps (`save_freq=50000` VEC-calls × 48 envs) ⇒ labels
+   acceptable 6.25% of the time; observed 6 ingested / 255 expired, `buffer_fill` 0 — the
+   paired fold never ran. Two individually-sensible defaults, jointly impossible, no gate
+   multiplied them. **Ruling: fix cadence (option 2), NOT the lag bound (option 1)** — raising
+   the lag buys sample by spending label freshness, the one property the bound protects.
+2. **Producer/retention race**: the `--cf-records-keep` 512 ring deletes records the producer
+   enumerated but hadn't read (176 FileNotFoundError deaths / 67 cycles; observed pending 538 >
+   ring) ⇒ ~10% of cap even inside the window.
+Fix (agent in flight): `--checkpoint-every-steps` flag (default preserves today), read-at-
+enumeration + counted vanished-skips + newest-first in the producer, and a FATAL_CONFIG
+duty-cycle guard (<25% with a cf coefficient on refuses at launch, names the numbers) + the
+duty cycle printed in the startup announcer. Restart will carry `--checkpoint-every-steps
+150000 --cf-records-keep 4096` + `--sync-to-main`.
+**Meta-specimen for the vacuous taxonomy**: the session's own `rev1_checks.py` reported "all §6
+rows healthy" through all of this — its PEND gate keyed on `ingested > 0`, a condition the
+consumer-side failure can never satisfy. A check that only reports the failure its author
+imagined; fixed by the session mid-incident (total-rejection is now its own STOP row).
