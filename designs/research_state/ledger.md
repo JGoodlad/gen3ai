@@ -4171,3 +4171,32 @@ climb toward 0.50 ⇒ variance — margin-gate/prior-shrink revive search NOW; p
 bias — the "search is downstream of R1" verdict confirmed at strength. Sourcing note: Wang's
 α/β constants are UNREPORTED and there is no public code — his tree policy is under-determined;
 never cite numeric reproductions of it.
+
+### 🏁 REVOLUTION ONE CLOSED — final rulings, two corrections, and the FIRST registered-prediction hit (2026-08-24 ~09:00)
+
+**CORRECTION 1 (mine, to the owner's morning read): the exploitability extraction is NOT
+significant.** Final both-terms row: baseline 0.4950 [0.426, 0.564] (a perfect coin flip — the
+fork's 1M seniority buys nothing, so the subtraction design is validated), exploiter 0.5650
+[0.496, 0.632], **extraction +7.0pp CI [−2.8, +16.8], z=1.41 — includes zero.** The earlier
+"net positive outside the CI window" framing is RETRACTED; this row establishes the METHOD and
+the baseline property, not a strength fact. Registered for the meter: **~800 games/arm** (±5pp)
+before rev-2's row, or the trend cannot be read.
+**CORRECTION 2 (the training session's, owned cleanly): the gen-over-gen "UNAVAILABLE" was an
+argument error, not a data gap** (`--ref` wants a path; a bare name fell through to the
+misleading first clause of a two-clause error). The ladders were matched BY CONSTRUCTION
+(both 12 nodes × 66 pairs × 100 g/pair). Real verdict: **NON_INFERIOR — 2110.0 ± 29.6 vs
+2075.1 ± 28.3, Δ +34.9 CI [−6.0, +75.9]**. Not worse, not provably better. **2147 is RETIRED**
+(a different fit over a different game set; the dense-ladder convention says 2098/2110) — never
+carry it forward. Fix owed: that error message must name the missing --ref FIRST (small task).
+**THE HODGE READING — P2 FIRES, on a game-count-IMMUNE pair** (identical 66×100 conventions
+both sides — the registry's confound rule satisfied exactly): rev-1 width excess **49** vs
+gen-17's **32**, cyclic 4.0% vs 1.9%, five significant 3-cycles vs two (top: 16M > 24M > 22M >
+16M, curl +162, z=3.25), spine 980 vs 894. Width ROSE at flat-to-rising ELO ⇒ the registry's
+pre-locked interpretation is **P2: a NEW STRATEGIC DIMENSION opened, not regression** — and
+rev-1 is the substrate-on, Baton-Pass-sighted generation, exactly the candidate for one. First
+prediction-registry hit; recorded in hodge_predictions.md terms with the floor beside it.
+Rev-2 seeds confirmed carried: over-batched (noise_scale 0.01–0.07 at eff. 16k — free
+throughput), `threat` DELETION_CANDIDATE (wave-2), critic-below-fresh = the R1 capacity
+baseline, the 800-games/arm meter requirement. The endofrun measurement JSON/MD are committed
+with this entry as the record of reference. Box idle; both runs preserved whole; tick-1 spec
+is next and now has every input it was waiting for.

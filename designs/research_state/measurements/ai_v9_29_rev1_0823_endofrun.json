@@ -1,0 +1,323 @@
+{
+ "run": "ai_v9_29_rev1_0823",
+ "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823",
+ "ref": "models/ai_v9_21_gen17_pfspoff_0820",
+ "steps": {
+  "elo": {
+   "status": "ok",
+   "current_tail": {
+    "k": 4,
+    "steps": [
+     18000000,
+     20000016,
+     22000032,
+     24000000
+    ],
+    "elo": 2110.007392741784,
+    "se": 15.101189319588494
+   },
+   "reference_tail": {
+    "k": 4,
+    "steps": [
+     18000000,
+     20000016,
+     22000032,
+     24000000
+    ],
+    "elo": 2075.0878560253723,
+    "se": 14.439979728076034
+   },
+   "non_inferiority": {
+    "verdict": "NON_INFERIOR",
+    "delta": 34.9,
+    "ci95": [
+     -6.0,
+     75.9
+    ],
+    "rule": "delta >= -15.0 and CI-low > -40.0"
+   },
+   "curve_len": 12,
+   "hodge": {
+    "n_players": 21,
+    "n_edges": 174,
+    "n_components": 1,
+    "n_triangles": 814,
+    "width_scope": "triangles",
+    "n_width_edges": 174,
+    "n_bootstrap": 200,
+    "spine_spread": 5.6396,
+    "spine_spread_elo": 979.7,
+    "width_rms_raw": 0.3499,
+    "width_rms_raw_elo": 60.8,
+    "width_rms_null": 0.2059,
+    "width_rms_null_elo": 35.8,
+    "width_rms_null_plugin": 0.2233,
+    "width_rms_excess": 0.2829,
+    "width_rms_excess_elo": 49.1,
+    "p_value": 0.005,
+    "p_value_plugin": 0.0,
+    "cyclic_energy_fraction": 0.0639,
+    "cyclic_energy_fraction_excess": 0.0403,
+    "energy": {
+     "total": 5916.5954,
+     "transitive": 5538.424,
+     "cyclic": 378.1714
+    },
+    "ratings_elo": {
+     "snap:24000000": 289.0,
+     "snap:22000032": 275.8,
+     "snap:20000016": 262.5,
+     "snap:16000032": 258.3,
+     "snap:18000000": 252.1,
+     "snap:14000016": 238.5,
+     "snap:12000000": 227.7,
+     "snap:10000032": 210.7,
+     "snap:8000016": 153.5,
+     "snap:6000000": 111.8,
+     "snap:4000032": 74.0,
+     "snap:2000016": -98.5,
+     "bot:setup_sweep": -152.0,
+     "bot:setup_sweep_v2": -169.0,
+     "bot:aggressive_v2": -170.2,
+     "bot:heuristic2": -177.5,
+     "bot:heuristic": -178.4,
+     "bot:aggressive": -224.9,
+     "bot:staller": -237.5,
+     "bot:staller_v2": -255.2,
+     "bot:random": -690.7
+    },
+    "cycles": [
+     {
+      "players": [
+       "snap:16000032",
+       "snap:24000000",
+       "snap:22000032"
+      ],
+      "labels": [
+       "16.0M",
+       "24.0M",
+       "22.0M"
+      ],
+      "win_rates": [
+       0.5099,
+       0.6095,
+       0.6095
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 0.9296,
+      "curl_elo": 161.5,
+      "curl_z": 3.25
+     },
+     {
+      "players": [
+       "snap:14000016",
+       "snap:18000000",
+       "snap:16000032"
+      ],
+      "labels": [
+       "14.0M",
+       "18.0M",
+       "16.0M"
+      ],
+      "win_rates": [
+       0.5693,
+       0.5398,
+       0.6095
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 0.8836,
+      "curl_elo": 153.5,
+      "curl_z": 3.09
+     },
+     {
+      "players": [
+       "snap:12000000",
+       "snap:16000032",
+       "snap:14000016"
+      ],
+      "labels": [
+       "12.0M",
+       "16.0M",
+       "14.0M"
+      ],
+      "win_rates": [
+       0.5099,
+       0.6095,
+       0.5846
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 0.8262,
+      "curl_elo": 143.5,
+      "curl_z": 2.89
+     },
+     {
+      "players": [
+       "snap:12000000",
+       "snap:16000032",
+       "snap:24000000"
+      ],
+      "labels": [
+       "12.0M",
+       "16.0M",
+       "24.0M"
+      ],
+      "win_rates": [
+       0.5099,
+       0.5099,
+       0.6791
+      ],
+      "games": [
+       100,
+       100,
+       200
+      ],
+      "curl": 0.8289,
+      "curl_elo": 144.0,
+      "curl_z": 2.58
+     },
+     {
+      "players": [
+       "snap:16000032",
+       "snap:24000000",
+       "snap:18000000"
+      ],
+      "labels": [
+       "16.0M",
+       "24.0M",
+       "18.0M"
+      ],
+      "win_rates": [
+       0.5099,
+       0.6144,
+       0.5398
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 0.6651,
+      "curl_elo": 115.5,
+      "curl_z": 2.33
+     }
+    ],
+    "caveats": []
+   },
+   "reference_hodge": {
+    "n_players": 21,
+    "n_edges": 174,
+    "n_components": 1,
+    "n_triangles": 814,
+    "width_scope": "triangles",
+    "n_width_edges": 174,
+    "n_bootstrap": 200,
+    "spine_spread": 5.1477,
+    "spine_spread_elo": 894.2,
+    "width_rms_raw": 0.2777,
+    "width_rms_raw_elo": 48.2,
+    "width_rms_null": 0.2051,
+    "width_rms_null_elo": 35.6,
+    "width_rms_null_plugin": 0.2183,
+    "width_rms_excess": 0.1873,
+    "width_rms_excess_elo": 32.5,
+    "p_value": 0.005,
+    "p_value_plugin": 0.0,
+    "cyclic_energy_fraction": 0.0445,
+    "cyclic_energy_fraction_excess": 0.0192,
+    "energy": {
+     "total": 5602.492,
+     "transitive": 5353.193,
+     "cyclic": 249.2991
+    },
+    "ratings_elo": {
+     "snap:20000016": 262.7,
+     "snap:22000032": 256.7,
+     "snap:18000000": 246.8,
+     "snap:24000000": 238.3,
+     "snap:16000032": 233.5,
+     "snap:14000016": 223.9,
+     "snap:12000000": 213.5,
+     "snap:10000032": 204.9,
+     "snap:8000016": 200.6,
+     "snap:6000000": 120.9,
+     "snap:4000032": 60.7,
+     "snap:2000016": -105.9,
+     "bot:heuristic2": -146.8,
+     "bot:aggressive_v2": -152.6,
+     "bot:setup_sweep_v2": -184.2,
+     "bot:heuristic": -188.8,
+     "bot:setup_sweep": -191.1,
+     "bot:aggressive": -209.1,
+     "bot:staller": -216.8,
+     "bot:staller_v2": -235.9,
+     "bot:random": -631.5
+    },
+    "cycles": [
+     {
+      "players": [
+       "snap:10000032",
+       "snap:18000000",
+       "snap:16000032"
+      ],
+      "labels": [
+       "10.0M",
+       "18.0M",
+       "16.0M"
+      ],
+      "win_rates": [
+       0.5594,
+       0.6045,
+       0.5995
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 1.0663,
+      "curl_elo": 185.2,
+      "curl_z": 3.72
+     },
+     {
+      "players": [
+       "snap:8000016",
+       "snap:24000000",
+       "snap:12000000"
+      ],
+      "labels": [
+       "8.0M",
+       "24.0M",
+       "12.0M"
+      ],
+      "win_rates": [
+       0.5,
+       0.6443,
+       0.5597
+      ],
+      "games": [
+       100,
+       200,
+       200
+      ],
+      "curl": 0.8339,
+      "curl_elo": 144.9,
+      "curl_z": 2.91
+     }
+    ],
+    "caveats": []
+   }
+  }
+ }
+}
