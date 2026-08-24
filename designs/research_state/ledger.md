@@ -4073,3 +4073,30 @@ model fixed: world_open_s was a frozen default charged to the arms by subtractio
 driver's live-record replay (43/44 root_failed) — joins the depth-2 quarantine as probe debt.**
 Cells relaunched on the landed code (resume keeps finished rows; width regime per row is
 recorded, so the mix is visible not silent).
+
+### 🔮 ORACLE ANOMALY RESOLVED (`83d4687`..`c540830`) — a CLAIRVOYANCE LEAK, and under it the night's real finding: **depth-1 search on today's critic is NEGATIVE** (2026-08-24, ~02:00)
+
+**The defect**: `seeds[0]="original"` in the dice axis is not a sample — it is the battle's
+REALIZED dice (search_driver swaps the PRNG only for non-"original" seeds), so every search arm
+evaluated candidates with **one ply of clairvoyance no player has** (expanding the realized
+action pair under "original" reproduced the real turn byte-for-byte 11/12 vs 14/36 for fresh
+seeds). The leak's share is 1/R — and the width order pins oracle to K=1 so its leftover budget
+went to dice (R≈2.07) while honest sat at R≈1.05: **oracle DILUTED its clairvoyance, honest
+kept it. The "oracle below honest" anomaly was the dice axis, not the truth axis** — paired
+ladder: dice axis +0.125 [+0.035,+0.215]; truth axis +0.015 [−0.096,+0.126] FLAT; post-fix
+honest−oracle +0.000. `record_with_team` byte-exact no-op (prime suspect exonerated); a second
+LATENT defect found by code-read and fixed (shared-extractor stash truncation under POKE_LOOP
+interleave — now width-checked; 0 live occurrences). Every pre-fix row VOID for cross-arm/
+cross-budget reads (a cell tracks its realized r_dice); ROW_VERSION 3 + a report banner make
+v<3 files self-identify. **Specimen minted: a CRN anchor that is CORRECT offline (reproduce the
+recorded battle) is FORBIDDEN in a live search (it is the future).** Same instrument, two
+contexts, opposite validity.
+**The clean finding underneath**: post-fix, oracle and honest land IDENTICAL at **0.3125**
+[0.21,0.42] — **1-ply search actively HURTS, and hidden-team truth buys NOTHING at matched
+widths**. Mechanism, measured: per-leaf dice sd 0.0115 vs top1−top2 margin 0.0213 — the argmax
+acts on noise ≈half its margin and changes 61–71% of decisions, net harmful. This is the
+optimizer's curse on a blurry critic, observed directly — CONVERGENT with the G0 resolution
+conviction and the credit verdict: **the critic cannot tell branches apart at the margins the
+search acts on; until R1-class calibration lands, search amplifies noise, and the
+search-teacher's expected value at tick-1 reprices accordingly.** Clean cells relaunching on
+v3 for the morning table.
