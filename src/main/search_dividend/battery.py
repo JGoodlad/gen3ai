@@ -190,14 +190,35 @@ def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
 
     teams = list(pool_packed) if pool_packed else None
     tb = Gen3Teambuilder(TeamLoader().get_all_teams()) if teams is None else _FixedTeam(teams[0])
-    (_name, opp) = build_eval_opponents(
-        LocalhostServerConfiguration, tb, [opponent_name], tag=tag, start_listening=False)[0]
+    if opponent_name == "self":
+        # The MIRROR opponent (owner-ordered): the SAME network with search structurally OFF —
+        # a base-arm SearchDividendPlayer, so the two sides differ in exactly one thing, the
+        # search. This is the sensitive contrast: the scripted roster is saturated (~90% either
+        # way, the dividend hides in the ceiling), while a mirror pins the no-effect point at
+        # 50% by construction. `dataclasses.replace` keeps every cap/score knob identical to
+        # the searched side's config rather than re-deriving a second one that could drift.
+        from dataclasses import replace
+        opp_engine = SearchEngine(model=model, mappings=mappings,
+                                  cfg=replace(cfg, arm="base", budget_s=0.0),
+                                  pool_packed=pool_packed)
+        opp = SearchDividendPlayer(
+            model=model, team=tb, battle_format=BATTLE_FORMAT,
+            server_configuration=LocalhostServerConfiguration, mappings=mappings,
+            account_configuration=AccountConfiguration(f"SDivSelf{tag}", "password"),
+            start_listening=False, engine=opp_engine, opp_player=None)
+    else:
+        (_name, opp) = build_eval_opponents(
+            LocalhostServerConfiguration, tb, [opponent_name], tag=tag, start_listening=False)[0]
     engine = SearchEngine(model=model, mappings=mappings, cfg=cfg, pool_packed=pool_packed)
     me = SearchDividendPlayer(
         model=model, team=tb, battle_format=BATTLE_FORMAT,
         server_configuration=LocalhostServerConfiguration, mappings=mappings,
         account_configuration=AccountConfiguration(f"SDiv{tag}", "password"),
         start_listening=False, engine=engine, opp_player=opp)
+    if opponent_name == "self":
+        # Each side's in-flight record builder names the OTHER side; wire the back-reference
+        # only after both exist (the ctor merely stores it).
+        opp._opp_player = me
     return me, opp, engine
 
 

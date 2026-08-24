@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--budget", action="append", type=float,
                    help="per-decision wall-clock seconds; repeatable (default 0.5 1 3 8)")
     p.add_argument("--games", type=int, default=20, help="games per (arm, budget, opponent) cell")
-    p.add_argument("--opponents", default="", help="comma-separated bot names; default the roster")
+    p.add_argument("--opponents", default="", help="comma-separated bot names, or \"self\" for the MIRROR (the same network, search off — the sensitive contrast); default the roster")
     p.add_argument("--out", default="tmp/search_dividend.jsonl", help="append-only results JSONL")
     p.add_argument("--summary", metavar="JSONL",
                    help="print the report for an existing results file and exit (no model load)")
