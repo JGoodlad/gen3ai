@@ -19,8 +19,12 @@ Examples::
         --model models/<run>/final_model.zip --username Gen3AI --n-battles 20 \\
         --proxy socks5h://127.0.0.1:1080
 
-`--server official` REQUIRES `--username` and a password, because the public ladder does
-not rate a guest.
+`--server official` REQUIRES `--username` and a password. Not because the server demands
+it (rated play has no registration gate — verified in source, see
+designs/research_state/ladder_readiness.md) but because WE do: a guest name is
+server-assigned and claimable by anyone, the rating we are trying to measure needs a
+stable account to accrue on, and `Config.forceregisterelo` may cut a guest off
+mid-campaign.
 """
 
 import argparse
@@ -137,7 +141,8 @@ def build_account(username: Optional[str], password: Optional[str], server: str,
         if server == "official":
             raise SystemExit(
                 "--server official needs --username (and a password via $PS_PASSWORD): "
-                "the public ladder does not rate guest accounts."
+                "a guest name is server-assigned and claimable, and the rating this run "
+                "exists to measure needs a stable account to accrue on."
             )
         return None
     return AccountConfiguration(f"{username}{suffix}", password)

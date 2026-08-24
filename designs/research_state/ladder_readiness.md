@@ -127,7 +127,7 @@ observed running long.
 |---|---|---|---|
 | 14 | **Reconnect.** `PSClient` has *no* reconnect at any layer: an abnormal close sets `_disconnected` and every consumer raises (`ps_client.py:327–339`). The battle layer merely *tracks* `\|inactive\|disconnected` and never acts. The ladder's disconnection timer is **60 s** (`DISCONNECTION_TIME`, and the ladder uses the non-bank variant), so one dropped socket = one forfeited rated game. | **1–2 days** | THE biggest gap. Needs: reconnect, re-`/join` the battle room, re-issue `\|request\|` (the server re-sends on rejoin), and resume the decision loop without double-choosing. The spectator client already has a reconnect loop (`spectator_client.py:133–137`) — a shape to copy, not code to reuse. |
 | 15 | **A ladder session runner.** `play.py --mode ladder N` plays N games and exits. A campaign wants: crash restart, a per-game JSONL result log, rating readback, a stop condition, and a "don't re-queue after a refusal" rule. | **1 day** | Without it, a 300-game ladder run is babysat by a human. Model it on `main.launcher` (restart loop + result log), not on a bash `while`. |
-| 16 | **Rating readback.** `/ladder <user>` answers as `\|queryresponse\|`, which `PSClient` dispatches to `_on_query_response` — a callback nothing in the agent tree subscribes to. There is no code that can read our own gen3ou Elo/GXE. | **0.5 day** | Without it we cannot report the milestone number, which is the entire point. |
+| 16 | **Rating readback.** No code can read our own gen3ou Elo/GXE. The websocket route is a dead end (`/cmd laddertop` returns `null` on the main server); the working route is plain HTTP — `pokemonshowdown.com/users/<id>.json` or `play.pokemonshowdown.com/api/ladderget?user=<id>` (strip the leading `]`, send a real User-Agent). See the bot-policy section. | **0.5 day** (mostly de-risked — it is one HTTP GET + JSON parse, not a protocol subscription) | Without it we cannot report the milestone number, which is the entire point. Report **GXE with W-L and rprd**, not Elo (Elo decays while idle; GXE does not). |
 | 17 | **Non-blocking auth.** `requests.post` to `action.php` is a **synchronous** call on POKE_LOOP with a 10 s timeout — it blocks the whole event loop, including every other client's battle. | **0.5 day** | Harmless for a single ladder client (once, at startup). It becomes real the moment two accounts ladder in one process. Left alone deliberately; noted so nobody re-derives it as a mystery stall. |
 | 18 | **Outbound message throttling.** `PSClient.send_message` writes straight to the socket; `_sending_lock` is declared (`ps_client.py:162`) and never used. Showdown throttles per connection server-side. | **0.5 day** | Only bites on `--concurrency > 1` or a reconnect storm. `--concurrency 1` (the default) is the mitigation. |
 
@@ -148,55 +148,105 @@ ladder match, by tricking your opponent into forfeiting, etc)."* Playing a stron
 honestly is not on that list. The username rules DO bind us: *"Names may not impersonate"* —
 so the account must not read as a human player of that name.
 
-**The actual enforcement standard** comes from a 2026-era Smogon policy thread about a bot
-running ~223 games/day on the NU ladder
-([Remove Bots from Ladder during Suspect Tests](https://www.smogon.com/forums/threads/remove-bots-from-ladder-during-suspect-tests.3706925/)),
-where Showdown administrator **Maia** stated:
+**The actual enforcement standard** is a staff statement, conditional not prohibitive.
+**Maia** (Battle Simulator Admin, speaking "on behalf of the PS Admin team", Aug 2022, in the
+thread about a bot playing ~223 games/day on the NU ladder —
+[Remove Bots from Ladder during Suspect Tests](https://www.smogon.com/forums/threads/remove-bots-from-ladder-during-suspect-tests.3706925/),
+marked *Implemented*):
 
-> "If a bot is negatively affecting human experience, then we will remove it from the ladder
-> via a permaban."
+> "our official policy stance is as follows: **If a bot is negatively affecting human
+> experience, then we will remove it from the ladder via a permaban.** While it is impossible
+> to completely ban bots due to the difficulty tracking them across the sim, if people feel
+> that a bot is negatively impacting the integrity of a suspect test, then we can and will do
+> the same during the suspect."
 
-and, on suspect tests specifically:
+Reaffirmed by **Hecate** (Battle Simulator Administrator, Dec 2025,
+[Ladder Bots and Usage-Based Tiering](https://www.smogon.com/forums/threads/ladder-bots-and-usage-based-tiering.3774656/)):
+*"Banning bots is ultimately not feasible in any capacity that would solve this problem."*
+That thread closed (Apr 2026) with **rate limiters, not bans** — what the limiters are is
+unverified, so do not assume the 2022 posture is permanent. The repo itself links an official
+**Bot FAQ** ("making Pokemon Showdown bots — mainly chatbots and battle bots") from its
+README, and `PROTOCOL.md` documents the public endpoint. The operative risk is not "will we
+be caught", it is "are we a nuisance" — volume, timing, and whether we are sitting on a
+ladder people are trying to qualify on. No ladder-vs-challenge distinction is written
+anywhere; every recorded complaint concerns ladder VOLUME.
 
-> "if people feel that a bot is negatively impacting the integrity of a suspect test, then we
-> can and will do the same during the suspect."
+**Precedent — including peer-reviewed work on gen3ou specifically.** All laddered under
+ordinary human-looking names; none banned for botting:
 
-The outcome was **not** a blanket ban: bots remain allowed on the regular ladder, and tier
-leaders can request a specific bot's removal during a suspect test. So the operative risk is
-not "will we be caught", it is "are we a nuisance" — volume, timing, and whether we are
-sitting on a ladder people are trying to qualify on.
+| project | laddered? | result |
+|---|---|---|
+| **Metamon** (UT Austin, RLC 2025) | yes — public ladders, ≥400 battles/gen over 4–8 days, accounts like `SmallSparks`, `TheDeadlyTriad` | two top-300 **gen3ou** appearances; accounts intact |
+| **pmariglia/foul-play** | yes — `--bot-mode search_ladder` vs `wss://sim3.psim.us` is a documented flag | 1930+ gen9ou; reported #4 gen3ou |
+| **Future Sight AI** | yes | top ~5% gen8ou; one *lock* ("all it does is battle and say 'gg'") — most probably the VPS auto-lock below, account intact today |
 
-**Precedent.** This is well-trodden. `pmariglia/showdown` ("Foul Play") ships
-`--bot-mode search_ladder --websocket-uri wss://sim3.psim.us/showdown/websocket` as a
-documented, supported configuration — the same endpoint our `ShowdownServerConfiguration`
-already points at. Showdown itself has run an account literally named **AI Bot** since 2013.
-No enforcement action against an AI ladder account surfaced in this search other than the NU
-case above, which was about VOLUME.
+No documented ban *for botting* was found across policy threads 2022–2026. One practitioner
+caveat cuts the other way (pmariglia): *"it is certainly exploitable if the opponent knows it
+is playing a bot"* — a name that declares the bot trades a little strength for standing.
 
-**Registration.** An unregistered guest can search the ladder, but the server gates it:
-`Config.forceregisterelo` refuses `/search` above a rating threshold and sends a
-`|popup|`-with-`|html|` telling you to register
-(`deps/pokemon-showdown/server/chat-commands/core.ts:1466`). The threshold is a private
-config value on the public server and was **not verified** here; the safe assumption is that
-a run targeting ~1500 must be registered. ⚠️ Our client currently only *logs* that popup —
-it would silently stop laddering. Worth a targeted handler when #15 is built.
+**🚨 The biggest practical constraint is not a rule — it is the datacenter-IP auto-lock.**
+`server/punishments.ts:1760`: a host classified `'proxy'` ("datacenters, VPNs, proxy
+services") auto-locks any non-trusted user (`#hostfilter`). The official Bot FAQ says exactly
+this happens to popular VPS hosts and the remedy is asking a Rooms Operator to mark the bot
+trusted. A lock blocks CHAT, not battling — but a laddering account that cannot speak (even
+to say "gg") is a worse look than a home IP. **This inverts the earlier proxy advice: do NOT
+route the ladder session through the GCP tunnel** — its egress is a datacenter IP. Ladder
+from the residential connection, or pre-arrange trusted status first.
 
-**Rate limits.** No documented per-`/search` limit was found. The server throttles chat and
-commands per connection, and `--concurrency 1` (our default) plus the natural pace of one
-game at a time keeps us far under anything the NU case implies is noticeable (223/day was
-enough to draw a thread; a 300-game campaign at one game at a time is a few days).
+**Registration: NOT required for rated play — verified in source.** `prepBattle`
+(`server/ladders.ts:311–327`) has no `user.registered` gate, and `room-battle.ts:877–881`
+handles an *unregistered* winner of a *rated* game (it just sends the `|askreg|` nag we saw
+in our own smoke). The one conditional gate is `Config.forceregisterelo`
+(`server/chat-commands/core.ts:1466`) — refuse `/search` above a threshold — which defaults
+to `false` and whose production value is private/unverified. Register anyway: a guest name
+can be taken by anyone, and our login flow assumes a password. No minimum account age gates
+laddering ("autoconfirmed" = registered ≥1 week + 1 rated win gates chat, not search).
+⚠️ Our client only *logs* the forceregisterelo `|popup|` — it would silently stop laddering;
+worth a handler when #15 is built.
 
-**Decay is a real constraint on a bot campaign**
-([ladder help](https://pokemonshowdown.com/pages/ladderhelp)): above 1400 Elo, at 09:00 GMT,
-*">5 games played = no decay; 1–5 games = −1 per 100 points above 1500; 0 games = −1 per 50
-points above 1400."* Since the milestone is ~1511, **the campaign must play more than 5 games
-a day or the rating bleeds while idle.** GXE is *"an estimate of your win chance against an
-average ladder player"*, Elo is the ordinary ladder rating; the page states **no** minimum
-game count for a stable rating, so the honest practice is to report both plus the game count
-and not quote a rating off a short run.
+**Rate limits — actual constants from server source** (defaults the main server is believed
+to run; skipped under `--no-security` locally):
 
-**Therefore, the etiquette we adopt** (none of it is required by a written rule; all of it is
-cheap insurance against the discretionary standard above):
+| limit | constant | where |
+|---|---|---|
+| battles + team validations | **12 per 3 min per IP** | `Monitor.countPrepBattle`, `server/monitor.ts:229` |
+| concurrent battles | **5 per user** | `monitor.ts:242` |
+| any client→server message (incl. `/choose`) | **600 ms** apart (25 ms with the staff-granted `*` bot rank); 6-deep queue, overflow DROPPED | `THROTTLE_DELAY`, `server/users.ts:33`, enforced `users.ts:1429` |
+| connections | 500 per 30 min per IP → auto "cflood" ban | `monitor.ts:186` |
+| challenges | 10 s apart | `ladders.ts:176` |
+
+The binding ceiling at `--concurrency 1` is the 600 ms message throttle (~1.7 decisions/s —
+still 30× our 18 ms think time, irrelevant in practice), and the 12-per-3-min prep cap bounds
+any campaign at ≤240 games/hour. Matchmaking also never pairs two users on the same IP and
+never re-matches the immediately previous opponent (`Ladder.matchmakingOK`,
+`ladders.ts:332–371`) — so two of OUR accounts on one IP cannot farm each other even by
+accident.
+
+**Ratings, decay, and what to report.** Elo starts/floors at 1000. Decay (Elo only, daily
+09:00 UTC, above 1400): >5 games → none; 1–5 → `(elo−1400)/100`; 0 → `1+(elo−1400)/50` — and
+**non-current-gen formats like gen3ou subtract 2 from each day's decay**, so it only bites
+meaningfully above ~1500–1600 (right at the milestone band; a parked 1511 bleeds slowly).
+GXE is a pure function of Glicko (`gxe = 100/(1+10^((1500−rpr)/400/√(1+0.0000100724·(rprd²+130²))))`,
+from the live login-server source, reproduced against all 500 live gen3ou top-500 rows) and
+**barely moves while idle** — which is why **GXE (with W-L and rprd) is the headline number
+for a fixed-budget run, not Elo**. Appearing on the ladder page needs `rprd ≤ 100` (~6 games
+from a fresh start); a *converged* rating is much further out (≈40 games to RD 50, ≈180 to
+the RD-25 floor — pyuk, loginserver contributor). Current gen3ou top-500 entry bar: Elo
+≈1548. gen3ou has never been reset in ≥8 years (a 2018 row is still served), so a rating,
+once earned, persists.
+
+**Reading our rating programmatically** (this largely de-risks sized item #16): there is
+**no websocket path** — `/cmd laddertop` returns `null` on the main server. Use HTTP:
+`https://pokemonshowdown.com/users/<userid>.json` (official, documented in the client repo's
+WEB-API.md; **send a real User-Agent** — default python-urllib gets a Cloudflare 403, which
+our drift scan already learned the hard way) or
+`https://play.pokemonshowdown.com/api/ladderget?user=<id>` (richest fields; strip the leading
+`]` byte — same quirk as the login response). The post-game `|raw|<user>'s rating: 1099 →
+<strong>1116</strong>` line is Elo-only and possibly stale — use it as a trigger, then re-read
+`ladderget` for truth.
+
+**Therefore, the etiquette we adopt** (none required by a written rule; all cheap insurance
+against the discretionary standard above):
 
 1. A name that cannot be mistaken for a human — declare the bot in the name itself.
 2. Do not ladder during a gen3ou suspect test.
@@ -204,10 +254,12 @@ cheap insurance against the discretionary standard above):
 4. Never forfeit-spam or requeue in a tight loop after a refusal.
 5. Do not chat. (We cannot anyway — nothing in our client sends chat.)
 6. Stop if asked.
+7. Ladder from a residential IP, not the datacenter tunnel.
 
-⚠️ **Not verified:** the numeric `forceregisterelo` on the public server; whether any AI
-account has ever been actioned for anything other than volume; whether a minimum account age
-applies to rated play.
+⚠️ **Not verified:** the main server's production `Config` values (`forceregisterelo`, any
+custom throttles); what the April 2026 anti-bot "limiters" are; why GXE's reference RD is 130
+(vs X-Act's published 350); whether any AI account has ever been actioned for anything other
+than volume.
 
 ---
 
@@ -246,10 +298,10 @@ Every step from here to the first rated game.
 
 **Account**
 
-3. Register a Showdown account. Registration is not optional in practice: `Config.forceregisterelo`
-   gates unregistered laddering above a rating threshold on the public server
-   (`server/chat-commands/core.ts:1466`), and the refusal arrives as a `|popup|` that our
-   client currently only logs.
+3. Register a Showdown account. Not strictly required for rated play (verified in source —
+   see the bot-policy section), but a guest name can be taken by anyone, our login flow
+   assumes a password, and `Config.forceregisterelo` may gate `/search` above a threshold —
+   a refusal our client currently only logs.
 4. Name it so it is obviously a bot, set an avatar, and put the project in the profile — see
    the bot-policy section.
 5. Put the password in a file / env var (`$PS_PASSWORD`), never on the command line — this box
@@ -272,15 +324,20 @@ Every step from here to the first rated game.
 
 **Campaign**
 
-12. Route through the existing SOCKS5 tunnel (`--proxy socks5h://127.0.0.1:1080`, see
-    `scripts/workstation/GCP_INFRASTRUCTURE.md`) so the home IP is not the ladder's identity.
-13. `--concurrency 1`. One game at a time — it is the throttling mitigation and the polite
-    setting.
+12. **Do NOT route through the GCP SOCKS5 tunnel.** Its egress is a datacenter IP, and
+    Showdown auto-locks users on hosts classified `'proxy'` ("datacenters, VPNs, proxy
+    services" — `server/punishments.ts:1760`); the official Bot FAQ names popular VPS hosts
+    as exactly the ones this hits. Ladder from the residential connection, or pre-arrange
+    trusted status via a Rooms Operator first. (This reverses the ai_v7 step-3 plan's proxy
+    advice, which predates finding the host filter.)
+13. `--concurrency 1`. One game at a time — the polite setting, and it keeps us far under
+    the 600 ms message throttle and the 12-battles-per-3-min IP cap.
 14. `--temperature 0` (greedy) is the measurement; consider `>0` only if a repeat opponent
-    starts exploiting a deterministic line.
-15. Play to a **stable** rating: a gen3ou ladder rating needs a real game count before it
-    means anything (see the bot-policy section for the number). Do not quote a rating from
-    20 games.
+    starts exploiting a deterministic line. (Matchmaking never re-pairs the immediately
+    previous opponent, which blunts single-game exploitation.)
+15. Play to a **converged** rating: ~6 games merely puts the account on the board
+    (`rprd ≤ 100`); ≈40 games reaches RD 50 and ≈180 the RD-25 floor. Do not quote a rating
+    from 20 games; report **GXE + W-L + rprd** as the headline, Elo alongside.
 16. Report GXE alongside Elo — the Metamon comparison is stated in both.
 
 **Never**

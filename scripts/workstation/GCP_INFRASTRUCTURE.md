@@ -97,10 +97,12 @@ Script: `scripts/workstation/proxy_tunnel.sh`
 python3 src/main/collect_replays.py --format gen3ou --save-dir replays/gen3ou \
   --max-concurrent 20 --proxy socks5h://127.0.0.1:1080
 
-# Bot (public LADDER — needs a registered account; see designs/research_state/ladder_readiness.md)
+# Bot (public LADDER — registered account; see designs/research_state/ladder_readiness.md)
+# ⚠️ NO --proxy here: Showdown auto-locks accounts on datacenter/VPS/proxy IPs
+# (`server/punishments.ts` '#hostfilter'), and the GCP egress is exactly that class.
+# Ladder from the residential connection, or pre-arrange trusted status first.
 PS_PASSWORD=... python3 src/main/play.py --mode ladder --server official \
-  --model models/<run>/final_model.zip --username <acct> --n-battles 20 \
-  --proxy socks5h://127.0.0.1:1080
+  --model models/<run>/final_model.zip --username <acct> --n-battles 20
 ```
 
 The collector dashboard shows **PROXIED** in green when active.

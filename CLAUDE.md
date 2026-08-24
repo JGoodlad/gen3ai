@@ -1208,14 +1208,18 @@ export PYTHONPATH=$PYTHONPATH:src
 # local smoke against your OWN throwaway server (8000/8001 are REFUSED in code)
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py --mode selfplay --port 9017
 
-# our model, on the OFFICIAL server, under a registered account
+# our model, on the OFFICIAL server, under a registered account.
+# NO --proxy for laddering: Showdown auto-locks accounts on datacenter/VPS/proxy IPs
+# ('#hostfilter'), and the GCP tunnel's egress is exactly that class — use the
+# residential line, or pre-arrange trusted status.
 PS_PASSWORD=… /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/play.py \
   --mode ladder --server official --model models/<run>/final_model.zip \
-  --username <acct> --n-battles 20 --proxy socks5h://127.0.0.1:1080
+  --username <acct> --n-battles 20
 ```
 
-`--server local` needs a Showdown server on `--port` (see below); `--server official` needs
-`--username` + a password, because the public ladder does not rate a guest. Inference runs
+`--server local` needs a Showdown server on `--port` (see below); `--server official`
+requires `--username` + a password (registration itself is not a server-side requirement for
+rated play, but our login flow and account safety assume it). Inference runs
 on **cpu** by default so a ladder session never contends with a training GPU.
 
 **Before any live-server session, run the protocol-drift gate.** `deps/pokemon-showdown` is
