@@ -52,7 +52,10 @@ replaying it K times is the measured bottleneck of the counterfactual label path
 the branched turn itself is ~0.5 ms and the obs encode ~1.8 ms — cost model
 2026-08-21). :func:`materialize_branches` replays the prefix **once**, snapshots
 the player's whole battle/tracker state at the branch decision, and restores that
-snapshot per arm. It is defined to be *exactly* equivalent to calling
+snapshot per arm. The restore is a rebuild from a buffer serialized ONCE, not a
+per-arm ``deepcopy`` — once the prefix is shared it is the loop's largest single
+cost (57% of the per-arm wall) and the two paths are exactly equivalent; see
+:meth:`_PlayerSnapshot._freeze`. It is defined to be *exactly* equivalent to calling
 :func:`materialize_decisions` once per arm on ``prefix + suffix`` — bit-for-bit
 on every obs — and that equivalence is what
 ``obs_materializer_branch_integration_test.py`` pins. Measured on 6 gen-17
@@ -82,7 +85,10 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import io
 import logging
+import pickle
+import sys
 import types
 from collections import deque
 from dataclasses import dataclass, field
@@ -394,6 +400,20 @@ def _immutable_record_types() -> tuple:
     return (BattleEvent, BattleContext)
 
 
+def _shared_singleton_types() -> tuple:
+    """Also shared: PROCESS SINGLETONS that declare themselves one via ``__deepcopy__``.
+
+    ``GenData.__deepcopy__`` returns ``self``, so the deepcopy path shares the gen-3 dex whether
+    or not it is pinned. :meth:`_PlayerSnapshot._freeze` uses PICKLE, which honours no such hook
+    and would deep-copy the whole dex into every arm instead. Pinning makes the two clone
+    mechanisms provably agree rather than agreeing by accident of what is reachable today
+    (measured 2026-08-23: ``GenData`` is NOT reachable from a live battle graph — the frozen blob
+    is ~44 kB — so this is a latent-hazard guard, not a live fix).
+    """
+    from poke_env.data.gen_data import GenData
+    return (GenData,)
+
+
 def _pin_shared(obj, pins: dict, seen: "Optional[set]" = None) -> dict:
     """Walk ``obj``'s object graph and record ``{id: obj}`` for every member of
     :data:`_SHARED_TYPES`, so a later ``deepcopy(..., memo=pins)`` returns them
@@ -401,7 +421,7 @@ def _pin_shared(obj, pins: dict, seen: "Optional[set]" = None) -> dict:
     (a restore copies from the snapshot, whose pinned objects are the same objects)."""
     if seen is None:
         seen = set()
-    shared = _SHARED_TYPES + _immutable_record_types()
+    shared = _SHARED_TYPES + _immutable_record_types() + _shared_singleton_types()
     stack = [obj]
     while stack:
         o = stack.pop()
@@ -436,6 +456,47 @@ def _pin_shared(obj, pins: dict, seen: "Optional[set]" = None) -> dict:
     return pins
 
 
+#: Set once the pickle fast path has been reported as unavailable, so the warning is printed one
+#: time per process rather than once per arm.
+_FREEZE_WARNED = False
+
+
+class _PinnedPickler(pickle.Pickler):
+    """A pickler that writes PINNED objects by reference instead of copying them.
+
+    The exact pickle-side counterpart of ``deepcopy(obj, memo=pins)``: the same
+    ``{id: obj}`` set that a memo pre-seeds is here turned into ``persistent_id`` indices, so a
+    shared logger / mapping proxy / immutable record comes back as itself."""
+
+    def __init__(self, buf, pin_idx: dict):
+        super().__init__(buf, protocol=pickle.HIGHEST_PROTOCOL)
+        self._pin_idx = pin_idx
+
+    def persistent_id(self, obj):
+        return self._pin_idx.get(id(obj))
+
+
+class _PinnedUnpickler(pickle.Unpickler):
+    """The read side: resolve a persistent id back to the very object that was pinned."""
+
+    def __init__(self, buf, pin_list: list):
+        super().__init__(buf)
+        self._pin_list = pin_list
+
+    def persistent_load(self, pid):
+        return self._pin_list[pid]
+
+
+def _pickle_pinned(obj, pin_idx: dict) -> bytes:
+    buf = io.BytesIO()
+    _PinnedPickler(buf, pin_idx).dump(obj)
+    return buf.getvalue()
+
+
+def _unpickle_pinned(blob: bytes, pin_list: list):
+    return _PinnedUnpickler(io.BytesIO(blob), pin_list).load()
+
+
 class _PlayerSnapshot:
     """A restorable copy of everything one replay feed mutates.
 
@@ -447,7 +508,7 @@ class _PlayerSnapshot:
 
     __slots__ = ("battles", "trackers", "stall_loggers", "materialized",
                  "actions_exhausted", "stopped", "action_choices", "queue_depth",
-                 "trying_again", "_pins")
+                 "trying_again", "_pins", "_pin_list", "_blobs")
 
     def __init__(self, player):
         self._pins = {}
@@ -457,6 +518,8 @@ class _PlayerSnapshot:
         self.battles = self._clone(player._battles)
         self.trackers = self._clone(player._trackers)
         self.stall_loggers = self._clone(player._stall_loggers)
+        self._pin_list = list(self._pins.values())
+        self._blobs = self._freeze()
         # MaterializedDecision is frozen and never mutated in place, so the list itself
         # is the only thing that changes (append-only) — a shallow copy is exact.
         self.materialized = list(player._materialized)
@@ -469,12 +532,62 @@ class _PlayerSnapshot:
     def _clone(self, obj):
         return copy.deepcopy(obj, dict(self._pins))
 
+    def _freeze(self) -> Optional[tuple]:
+        """Serialize the three masters ONCE so a restore is a ``loads`` instead of a ``deepcopy``.
+
+        **This is the arm loop's largest single cost.** Measured 2026-08-23 on a live
+        search-dividend oracle decision: ``restore`` was **3.69 ms of the materializer's 6.45 ms
+        per arm — 57% of it and ~25% of the whole search's wall clock**, because a restore is
+        three ``deepcopy`` traversals of the poke-env battle graph and a deepcopy re-walks and
+        re-dispatches every node every time. Pickle walks it once, at snapshot time, and the
+        per-arm cost collapses to a C-level rebuild from a flat buffer: **1.98 → 0.22 ms (9.1×)**
+        on the same graph, against a one-off 0.66 ms to freeze.
+
+        Three properties make it EXACTLY equivalent to the deepcopy path, and each one is a
+        deliberate choice rather than a happy accident:
+
+        * **Three SEPARATE blobs, never one.** ``_clone`` is called once per structure with its
+          own fresh ``dict(self._pins)`` memo, so an object reachable from both ``battles`` and
+          ``trackers`` is DUPLICATED into two independent copies (measured: 12 such objects).
+          One combined blob would alias them, which is a different object graph and a silent
+          aliasing bug of exactly the shape ``_immutable_record_types`` is careful about.
+        * **The pins are honoured**, via ``persistent_id`` — a pinned object is written as an
+          index into :attr:`_pin_list` and comes back as the SAME object, which is what
+          ``memo=pins`` does for deepcopy. Without it a ``logging.Logger`` would drag in every
+          logger in the process and an ``RLock`` would make the graph unpicklable outright.
+        * **Value semantics, not identity semantics.** Pickle mints fresh ``str`` objects where
+          ``_deepcopy_atomic`` returns the interned original. Nothing downstream compares battle
+          state by identity, and the equivalence that matters — bit-identical observations — is
+          what ``obs_materializer_branch_integration_test.py`` asserts on every arm.
+
+        Returns ``None`` if the graph will not pickle, in which case :meth:`restore` keeps using
+        ``deepcopy``. A fall-back is announced ONCE on stderr: it is a ~9× slowdown that no
+        output would otherwise mention, and an invisible perf regression is the failure mode this
+        project has eaten most often.
+        """
+        pin_idx = {id(o): i for i, o in enumerate(self._pin_list)}
+        try:
+            return tuple(_pickle_pinned(x, pin_idx)
+                         for x in (self.battles, self.trackers, self.stall_loggers))
+        except Exception as e:                                  # noqa: BLE001
+            global _FREEZE_WARNED
+            if not _FREEZE_WARNED:
+                _FREEZE_WARNED = True
+                print(f"⚠️ [obs_materializer] branch snapshots fell back to deepcopy "
+                      f"(~9x slower per arm) — {type(e).__name__}: {str(e)[:160]}",
+                      file=sys.stderr, flush=True)
+            return None
+
     def restore(self, player) -> None:
         """Reset ``player`` to the snapshotted state. Every mutable structure is a FRESH
         deep copy, so the caller may mutate it freely and restore again."""
-        player._battles = self._clone(self.battles)
-        player._trackers = self._clone(self.trackers)
-        player._stall_loggers = self._clone(self.stall_loggers)
+        if self._blobs is not None:
+            player._battles, player._trackers, player._stall_loggers = (
+                _unpickle_pinned(b, self._pin_list) for b in self._blobs)
+        else:
+            player._battles = self._clone(self.battles)
+            player._trackers = self._clone(self.trackers)
+            player._stall_loggers = self._clone(self.stall_loggers)
         player._materialized = list(self.materialized)
         player._actions_exhausted = self.actions_exhausted
         player._stopped = self.stopped

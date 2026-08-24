@@ -53,6 +53,7 @@ which frees POKE_LOOP for exactly as long as the search holds it.
 from __future__ import annotations
 
 import random
+import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -129,14 +130,26 @@ def batch_scores(model, obs: np.ndarray, masks: np.ndarray, mode: str) -> Tuple[
 
     ``win_prob`` reads the head's stashed logit from the SAME forward that produced the values,
     so the two never come from different states. ``auto`` prefers it and falls back to the shaped
-    value when the run trained no win-prob head."""
+    value when the run trained no win-prob head.
+
+    **ONE forward for the whole arm set, and that is the single largest perf fact here.** Measured
+    2026-08-23 on the live checkpoint with BLAS pinned: the extractor costs 27.95 ms at B=1 and
+    1.53-1.73 ms per row at B=64-256, so scoring N arms one at a time would cost ~16-18x what this
+    does. It is already the cheapest of the three per-arm costs (1.45-1.95 ms/row against the
+    materializer's 4.8 and the sim branch's 2.3).
+
+    Both tensors are cast to **float32** — the mask arrives from the materializer as whatever the
+    encoder produced, while every LIVE forward passes a float32 one. A dtype difference is
+    invisible to eager and a fresh 1.5 s TRACE under ``--compile-extractor`` (measured), which is
+    the same hazard class as the dict key set. Normalizing here costs a copy of an 11-wide row.
+    """
     import torch
 
     policy = model.policy
     dev = model.device
     with torch.no_grad():
-        inp = {"observation": torch.as_tensor(obs).to(dev),
-               "action_mask": torch.as_tensor(masks).to(dev)}
+        inp = {"observation": torch.as_tensor(obs, dtype=torch.float32).to(dev),
+               "action_mask": torch.as_tensor(masks, dtype=torch.float32).to(dev)}
         values = policy.predict_values(inp).squeeze(-1).float().cpu().numpy()
         wp_logits = getattr(getattr(policy, "features_extractor", None),
                             "last_win_prob_logits", None)
@@ -299,12 +312,15 @@ class SearchEngine:
             if wi and not deadline.fits(batch_cost):
                 widths.deadline_truncated = True
                 break
+            t_open = time.monotonic()
             try:
                 root = ss.open_root(turn, record=wrec)
             except Exception as e:                   # noqa: BLE001
+                widths.open_s += time.monotonic() - t_open
                 widths.worlds_open_failed += 1
                 wmeta["gate"] = f"open_failed: {type(e).__name__}: {e}"
                 continue
+            widths.open_s += time.monotonic() - t_open
             prefix = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
             if not dz.prefix_matches(observed_our_lines, prefix, turn=turn):
                 # THE GATE. A world whose replay does not reproduce the protocol we actually saw
@@ -587,18 +603,43 @@ class SearchEngine:
         return f"sodium,{self.rng.getrandbits(128):032x}"
 
     def _update_cost(self, widths: RealizedWidths) -> None:
-        """EWMA the two measured costs so the next decision's plan reflects THIS battle's turn
-        depth. A constant cost model would over-plan late game (the prefix replay grows linearly
-        in the turn) and under-plan early, which shows up as a budget that is never spent."""
+        """EWMA BOTH measured costs so the next decision's plan reflects THIS battle's turn depth.
+
+        A constant cost model would over-plan late game (the prefix replay grows linearly in the
+        turn) and under-plan early, which shows up as a budget that is never spent.
+
+        ⚠️ ``world_open_s`` used to be exempt from that and carried its 0.05 s default forever,
+        which is not merely imprecise — it is a BIAS, and in the direction that costs width. A real
+        open measures 0.055-0.064 s early and grows, and the arm term is derived by SUBTRACTION
+        (``elapsed - opens*world_open_s``), so every second the model failed to attribute to the
+        opens was attributed to the arms instead. ``arm_s`` is what the allocator divides the
+        budget by, so an inflated one buys fewer arms — and it compounds on the honest arm, where
+        K opens are the term being mis-estimated K times: measured 2026-08-23 interleaved against
+        the un-measured model, the honest arm at 3 s went **K 3.23 → 4.62 worlds** (arms/decision
+        149.7 → 222.5), i.e. the belief marginalization this arm exists for roughly doubled per
+        second of the same budget. (That is the two changes of 2026-08-23 together — this and the
+        materializer's per-arm restore.)
+
+        The budget still under-runs (~65-85% spent) and that residual is GRANULARITY, not waste: a
+        bump on any axis costs a whole world or a whole dice sweep, so the last partial one cannot
+        be bought. Nothing here should "fix" it by over-planning — a committed world's arm set is
+        not interruptible, so an optimistic plan overruns the deadline instead of truncating.
+        """
         if widths.arms_scored <= 0 or widths.elapsed_s <= 0:
             return
         opens = max(1, widths.worlds_gated_ok + widths.worlds_gate_failed
                     + widths.worlds_open_failed)
-        arm_share = max(0.0, widths.elapsed_s - opens * self._cost.world_open_s)
+        # The MEASURED open time when we have it; the running estimate otherwise (a decision that
+        # opened nothing must not drive the term to zero).
+        open_total = widths.open_s if widths.open_s > 0 else opens * self._cost.world_open_s
+        arm_share = max(0.0, widths.elapsed_s - open_total)
         arm_s = arm_share / max(1, widths.arms_expanded)
         a = 0.3
+        world_open_s = self._cost.world_open_s
+        if widths.open_s > 0:
+            world_open_s = max(1e-4, (1 - a) * world_open_s + a * (widths.open_s / opens))
         self._cost = CostModel(
-            world_open_s=self._cost.world_open_s,
+            world_open_s=world_open_s,
             arm_s=max(1e-4, (1 - a) * self._cost.arm_s + a * arm_s))
 
 

@@ -89,6 +89,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--pool-size", type=int, default=0,
                    help="subsample the team pool to N teams (smoke only; 0 = the full pool)")
     p.add_argument("--seed", type=int, default=0, help="engine RNG seed (world sampling)")
+    p.add_argument("--compile-extractor", action="store_true",
+                   help="torch.compile the extractor for the B=1 LIVE decision (5.45x measured; "
+                        "the search's WIDE arm-scoring batch stays eager, where compiling "
+                        "measures 0.15-0.43x). Buys games/hour, NOT search width — the live "
+                        "forward is outside the per-decision budget. OFF by default because it "
+                        "perturbs the forward at ~1e-6 and an argmax over near-tied actions can "
+                        "flip on that, which would make rows incomparable across relaunches. "
+                        "See perf.py.")
     return p
 
 
@@ -180,6 +188,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     from agents.training.eval_callback import eval_opponent_names
 
     model, ckpt = _load_model(args.model, args.device)
+    if args.compile_extractor:
+        from main.search_dividend.perf import compile_b1_extractor
+        ok = compile_b1_extractor(model, enabled=True)
+        print(f"[search_dividend] compile-extractor (B=1 only): "
+              f"{'ON' if ok else 'UNAVAILABLE — running eager'}", flush=True)
     mappings = load_mappings()
     pool = _pool(args.pool_size)
     opponents = ([o.strip() for o in args.opponents.split(",") if o.strip()]

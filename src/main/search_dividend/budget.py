@@ -163,6 +163,12 @@ class RealizedWidths:
     worlds_open_failed: int = 0
     worlds_gate_failed: int = 0
     dice: int = 1
+    # MEASURED seconds spent inside `open_root`, summed over every world this decision opened
+    # (including the ones that then failed the prefix gate — they cost the same). Recorded because
+    # it was the one term of the cost model that was never measured: `world_open_s` sat at its
+    # 0.05 default while a real open costs 0.055-0.064 s and grows with the turn, and the shortfall
+    # was silently charged to `arm_s`, which is the number the allocator divides the budget by.
+    open_s: float = 0.0
     arms_expanded: int = 0
     arms_scored: int = 0
     arms_terminal: int = 0

@@ -3320,6 +3320,21 @@ player's whole battle/tracker state at the branch decision, and restores it per 
 - The clone SHARES append-only immutable records (`BattleEvent`, `BattleContext`) instead of copying
   them — a **contract, not an inference**, and the reason the gate compares every arm: a broken
   contract shows up as arm 2+ reading history arm 1 mutated.
+- **The per-arm RESTORE is serialized ONCE and rebuilt per arm, not deep-copied per arm**
+  (`_PlayerSnapshot._freeze`, 2026-08-23). Once the prefix is shared, `restore` becomes the single
+  largest cost in the loop: measured on a live search-dividend oracle decision it was **3.69 ms of
+  the materializer's 6.45 ms per arm — 57% of it**, because a restore is three `deepcopy`
+  traversals of the battle graph and deepcopy re-walks and re-dispatches every node every time.
+  Pickling each master once at snapshot time and `loads`-ing per arm measures **1.98 → 0.22 ms
+  (9.1×)** on the same graph against a one-off 0.66 ms to freeze. Equivalence rests on three
+  things: **three separate blobs** (one per structure, reproducing the three independent memos —
+  a single blob would ALIAS the 12 objects reachable from both `battles` and `trackers`); **pins
+  honoured via `persistent_id`**, so a `Logger` / `MappingProxyType` / immutable record comes back
+  as itself; and `GenData` added to the pin set, because it declares itself a singleton with
+  `__deepcopy__` and pickle honours no such hook. A graph that will not pickle **falls back to
+  deepcopy and says so once on stderr** — a 9× regression nothing mentions is the failure shape
+  this tree keeps eating. Gates: the every-arm bit-identity test above, plus
+  `obs_materializer_test.py` for the graph contract.
 - `lookahead` uses it for its whole `(candidate × seed)` sweep.
 ## Counterfactual win-prob grounding (`--cf-records` / `--cf-winprob-coef`, `gen3_cf_label_plumbing_v1`)
 
