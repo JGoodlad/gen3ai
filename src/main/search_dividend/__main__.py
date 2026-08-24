@@ -4,13 +4,26 @@
     python -m main.search_dividend <run_dir_or_ckpt> --arm oracle --budget 1 \
         --games 10 --opponents heuristic --out tmp/sd.jsonl
 
+    # the MIRROR: our side searches, the opponent is the SAME network with search off
+    python -m main.search_dividend <run_dir_or_ckpt> --arm oracle --budget 3 \
+        --opponents self --games 30 --out tmp/sd_mirror.jsonl
+
     # read the file back (no model loaded, no battles)
     python -m main.search_dividend --summary tmp/sd.jsonl
 
 Arms: ``base`` (policy alone — the control), ``honest`` (belief-determinized search) and
 ``oracle`` (search on the TRUE hidden state). Budgets are a per-decision WALL-CLOCK deadline in
-seconds; width is bought in the registered order (opponent actions -> worlds -> dice) and the
-REALIZED widths are written into every row, because what a budget actually bought is the finding.
+seconds; width is bought in the registered order (opponent actions -> worlds -> dice), then
+whatever the clock has left buys DEPTH by iterative deepening (``--max-depth``). The REALIZED
+widths AND depth are written into every row, because what a budget actually bought is the finding
+and a cap that was never reached is not one.
+
+``--opponents self`` is the MIRROR mode: the searched side against the same network unsearched, so
+the two differ in exactly one thing and the no-effect point is 0.50 by construction — unlike the
+scripted roster, which saturates near 90% and can hide a real dividend in its ceiling. Mirror
+cells default to ``--side-swap`` (every game played in both team orientations off one pinned seed)
+so the report can difference out the team draw, and they are read against the null rather than
+folded into the anchored-ELO fit, which has no anchor for ``self``.
 """
 
 from __future__ import annotations
@@ -21,7 +34,7 @@ import os
 import sys
 from typing import List, Optional
 
-from main.search_dividend.battery import Cell, ResultsFile, run_cell
+from main.search_dividend.battery import MIRROR, Cell, ResultsFile, run_cell
 from main.search_dividend.budget import WidthCaps
 from main.search_dividend.search import ARMS, SearchConfig
 from main.search_dividend.summary import format_report
@@ -55,12 +68,42 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-opp", type=int, default=6, help="cap on alpha-pruned opponent actions")
     p.add_argument("--max-worlds", type=int, default=8, help="cap on determinized worlds K")
     p.add_argument("--max-dice", type=int, default=8, help="cap on CRN dice resamples R")
+    p.add_argument("--max-depth", type=int, default=3,
+                   help="iterative-deepening CAP in plies (default 3). The wall-clock budget "
+                        "governs the depth actually reached; this only stops it climbing "
+                        "further. 1 = the width-only depth-1 reference. NOTE width is spent "
+                        "FIRST (the registered order), so at the default caps it absorbs the "
+                        "whole budget and every decision reports depth 1 — lower --max-opp / "
+                        "--max-dice to free time for a ply. WARNING depth>=2 is built and gated "
+                        "but its successor replay has an OPEN fidelity defect (see deepen.py); "
+                        "it fails safe as a counted search_error, but do not publish a depth-2 "
+                        "number yet.")
+    p.add_argument("--side-swap", dest="side_swap", action="store_true", default=None,
+                   help="play every game index in BOTH orientations (searched side gets team A "
+                        "then team B, one pinned seed) so the summary can difference out the "
+                        "team draw. DEFAULT ON for --opponents self, off otherwise.")
+    p.add_argument("--no-side-swap", dest="side_swap", action="store_false",
+                   help="disable side-swap pairing even in the mirror")
     p.add_argument("--honest-swap-moves", action="store_true",
                    help="axis M — also resample REVEALED mons' unused moves in the honest arm")
     p.add_argument("--pool-size", type=int, default=0,
                    help="subsample the team pool to N teams (smoke only; 0 = the full pool)")
     p.add_argument("--seed", type=int, default=0, help="engine RNG seed (world sampling)")
     return p
+
+
+def resolve_side_swap(flag: Optional[bool], opponent: str) -> bool:
+    """Side-swap pairing is ON by default in the MIRROR and off against the scripted bots.
+
+    The asymmetry is the measurement, not a preference. In a mirror both sides are the same
+    network, so the ONLY structural difference between them besides the search is which team each
+    happens to draw — and at these n that dominates. Against a scripted bot the two sides are not
+    interchangeable at all (a heuristic bot is not our network), so swapping the teams does not
+    pair anything; it just plays each draw twice. An explicit flag always wins over both.
+    """
+    if flag is not None:
+        return bool(flag)
+    return opponent == MIRROR
 
 
 def _pin_blas() -> None:
@@ -148,14 +191,17 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     print(f"[search_dividend] ckpt={ckpt}\n"
           f"  arms={arms} budgets={budgets} opponents={opponents} games={args.games}\n"
+          f"  max_depth={args.max_depth} side_swap={'auto' if args.side_swap is None else args.side_swap}\n"
           f"  pool={len(pool)} teams  impl={args.impl}/search:{args.search_impl}  out={args.out}",
           flush=True)
 
     def progress(row: dict) -> None:
         fb = ",".join(f"{k}:{v}" for k, v in sorted((row.get("fallbacks") or {}).items())) or "-"
-        print(f"  [{row['arm']}@{row['budget']:g} {row['opponent']} g{row['game']}] "
+        print(f"  [{row['arm']}@{row['budget']:g} {row['opponent']} "
+              f"g{row['game']}/o{row.get('orientation', 0)}] "
               f"{row['result']} {row['wall_s']}s dec={row['n_decisions']} "
-              f"searched={row['n_searched']} changed={row['n_changed']} fb={fb} "
+              f"searched={row['n_searched']} changed={row['n_changed']} "
+              f"deep={row.get('n_deepened', 0)}@{row.get('max_depth_realized', 1)} fb={fb} "
               f"realized={row.get('realized_mean')}" + (f" ERR={row['error']}" if row.get("error") else ""),
               flush=True)
 
@@ -164,13 +210,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         for budget in ([0.0] if arm == "base" else budgets):
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
-                               honest_swap_moves=args.honest_swap_moves, seed=args.seed)
+                               honest_swap_moves=args.honest_swap_moves, seed=args.seed,
+                               max_depth=args.max_depth)
             for opp in opponents:
                 cell = Cell(arm=arm, budget=budget, opponent=opp)
                 n = asyncio.run(run_cell(
                     cell, model=model, mappings=mappings, cfg=cfg, games=args.games,
                     results=results, salt=args.games_seed, impl=args.impl,
-                    pool_packed=pool, progress=progress))
+                    pool_packed=pool, progress=progress,
+                    side_swap=resolve_side_swap(args.side_swap, opp)))
                 total += n
     print(f"\n[search_dividend] played {total} new games -> {args.out}\n", flush=True)
     print(format_report(results.rows(), args.anchors))

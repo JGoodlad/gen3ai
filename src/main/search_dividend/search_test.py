@@ -11,8 +11,9 @@ from __future__ import annotations
 import pytest
 
 from main.search_dividend.budget import FALLBACK_REASONS, WidthCaps
-from main.search_dividend.search import (ARMS, SearchConfig, SearchEngine, _terminal_label,
-                                         batch_scores)
+from main.search_dividend.search import (ARMS, SearchConfig, SearchEngine,
+                                         _selectable_across_worlds, _terminal_label, batch_scores,
+                                         branchable)
 from utils.bridge.reconstruction import ReconstructionRecord
 
 RECORD = ReconstructionRecord(
@@ -205,6 +206,70 @@ def test_elapsed_is_recorded_even_on_a_failed_search():
     eng._session = _FakeSession(raise_on_open=RuntimeError("x"))
     res = _choose(eng, opp_true_packed="T")
     assert res.widths.elapsed_s >= 0.0
+
+
+# -- iterative deepening ------------------------------------------------------
+
+
+def test_the_depth_CAP_defaults_to_the_amendments_three_and_is_a_cap_not_a_target():
+    """The budget governs the realized depth; `--max-depth` only stops it climbing further. A
+    default of 3 therefore costs a 0.5 s cell nothing — it simply never affords a second ply."""
+    assert SearchConfig().max_depth == 3
+    assert _engine("oracle", max_depth=1).cfg.max_depth == 1
+
+
+def test_a_decision_reports_the_depth_it_PLANNED_and_the_depth_it_REACHED():
+    """The whole content of the amendment is that a budget cell says what it bought. A row that
+    printed only the cap would report an intention."""
+    eng = _engine("oracle", max_depth=3)
+    eng._session = _FakeSession(raise_on_open=RuntimeError("x"))
+    res = _choose(eng, opp_true_packed="T")
+    assert res.widths.depth_planned == 3
+    assert res.widths.depth_realized == 1, "a failed search reached nothing deeper than ply 1"
+    assert res.widths.beam_m == 0, "never deepened, so there was no beam"
+
+
+def test_the_base_arm_never_claims_a_depth_it_did_not_search():
+    res = _choose(_engine("base", max_depth=3))
+    assert res.widths.depth_realized == 1 and res.widths.beam_m == 0
+
+
+def test_only_a_clean_MOVE_SELECTION_may_be_branched_at_any_ply():
+    """The root already declines a forced switch (`not_move_selection`); every deeper ply obeys the
+    same rule. It is not symmetry for its own sake: a deeper node's legal surface comes from the
+    action MAPPER, which enumerates switch targets at a forced switch quite happily — branching
+    there sends the sim a move for a side that was never asked for one."""
+    move_req = {"active": [{"moves": [{"id": "surf", "move": "Surf", "pp": 10}]}],
+                "side": {"pokemon": []}}
+    assert branchable({"p1": move_req}, "p1") is True
+    assert branchable({"p1": {"forceSwitch": [True]}}, "p1") is False
+    assert branchable({"p1": {"wait": True}}, "p1") is False
+    assert branchable({"p1": {"teamPreview": True}}, "p1") is False
+    assert branchable(None, "p1") is False
+    assert branchable({"p2": move_req}, "p1") is False, "the rule is per SIDE"
+
+
+def test_the_cross_world_choice_set_is_the_INTERSECTION_of_the_per_world_beams():
+    """An action must be deepened in EVERY world for its cross-world mean to be at one depth.
+    Anything else compares a depth-2 value against a depth-1 one — and the comparison has a
+    DIRECTION, because a deeper value integrates more opponent replies and is systematically the
+    more pessimistic of the two."""
+    choices, rule = _selectable_across_worlds([0, 1, 2, 3], [[0, 1, 2], [1, 2, 3]])
+    assert choices == [1, 2] and rule == "intersection"
+
+
+def test_no_deepening_leaves_EVERY_action_selectable_exactly_as_before():
+    """Depth 1 must stay byte-for-byte the registered experiment — the amendment adds a ply, it
+    does not change what happens when there is no budget for one."""
+    choices, rule = _selectable_across_worlds([0, 1, 2], [])
+    assert choices == [0, 1, 2] and rule == "depth1"
+
+
+def test_disjoint_beams_degrade_to_the_UNION_and_SAY_SO():
+    """Mixing depths is a defect of the reading, not of the search. Naming it keeps it out of the
+    'it just worked' bucket instead of leaving a silent inconsistency in the mean."""
+    choices, rule = _selectable_across_worlds([0, 1, 2, 3], [[0, 1], [2, 3]])
+    assert choices == [0, 1, 2, 3] and rule == "union"
 
 
 # -- terminal scoring ---------------------------------------------------------

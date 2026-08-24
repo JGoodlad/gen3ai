@@ -166,6 +166,18 @@ class RealizedWidths:
     arms_expanded: int = 0
     arms_scored: int = 0
     arms_terminal: int = 0
+    # ITERATIVE DEEPENING (the registered depth amendment). `depth_planned` is the cap the CLI
+    # asked for; `depth_realized` is what the wall-clock actually bought, which is the reportable
+    # one — the whole content of the amendment is that a budget cell should say what depth it
+    # reached rather than assert one. A ply is expanded WHOLE or not at all, so this is an integer
+    # and not an average over half-explored plies.
+    depth_planned: int = 1
+    depth_realized: int = 1
+    # The widest beam that fit at the last deepened ply (0 = never deepened). Reported beside the
+    # depth because "depth 2 over 2 candidates" and "depth 2 over 6" are different searches.
+    beam_m: int = 0
+    deep_arms_expanded: int = 0
+    deep_arms_scored: int = 0
     deadline_truncated: bool = False
     elapsed_s: float = 0.0
 

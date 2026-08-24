@@ -1,12 +1,20 @@
-"""The depth-1 search itself: branch the current decision, score the successors, pick an action.
+"""The search itself: branch the current decision, score the successors, pick an action.
 
-**Shape of the search (FIXED depth 1, registered).** For each determinized world *w*, each of OUR
-legal actions *a*, each α-weighted OPPONENT candidate *c* and each CRN dice draw *r*, roll the
-turn forward once and read the critic on the successor. The action taken is
+**Shape of the first ply.** For each determinized world *w*, each of OUR legal actions *a*, each
+α-weighted OPPONENT candidate *c* and each CRN dice draw *r*, roll the turn forward once and read
+the critic on the successor. The action taken is
 
     argmax_a  Σ_w p(w) · Σ_c α(c) · (1/R) · Σ_r  V(s'(w, a, c, r))
 
-Three properties of that expression are the whole experiment and none is incidental:
+**And then it DEEPENS, while the clock allows** (the owner's depth amendment, minutes after the
+registration: "fixed depth" was shorthand for cheap, not a constraint). The depth-1 sweep above
+runs first and unchanged; then, ply by ply, the top-*m* actions are expanded a ply deeper and the
+values are backed up MAX-over-ours / α-weighted-over-theirs — the same alternation the expression
+above already is, which is the point. The tree, the backup and the beam live in :mod:`deepen`; the
+budget decides the realized depth and the row records it, so a 0.5 s cell reporting depth 1 and an
+8 s cell reporting depth 2 is the finding rather than a configuration.
+
+Three properties of the first-ply expression are the whole experiment and none is incidental:
 
 * **the opponent is MARGINALIZED, the dice are AVERAGED, and OUR action is MAXIMIZED** — the
   three-axis variance measurement put the behavior-weighted split at OPP 59.7% >> DICE 26.5% >
@@ -55,6 +63,7 @@ from main.search_dividend.alpha import (AlphaPublication, build_candidates,
                                         legal_choices_from_request)
 from main.search_dividend.budget import (CostModel, Deadline, RealizedWidths, WidthCaps,
                                          WidthPlan, allocate)
+from main.search_dividend.deepen import TreeNode, per_action_values, plan_beam
 
 ARMS = ("base", "honest", "oracle")
 
@@ -79,6 +88,10 @@ class SearchConfig:
     search_impl: str = "node"
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
+    # The iterative-deepening CAP, not a target: the wall-clock budget governs the realized depth,
+    # and a ply that does not fit is simply not spent. 3 is the amendment's own example of what an
+    # 8 s cell might reach on contenders; raising it costs nothing when the budget is small.
+    max_depth: int = 3
 
     def resolved_caps(self) -> WidthCaps:
         """The ORACLE arm is ONE world by construction (the true state), and the BASE arm has no
@@ -142,11 +155,25 @@ def batch_scores(model, obs: np.ndarray, masks: np.ndarray, mode: str) -> Tuple[
 
 
 @dataclass
-class _Arm:
-    world: int
-    action: int
-    cand: int
-    dice: int
+class _PlyContext:
+    """The per-world facts every ply of one decision's expansion shares."""
+
+    side: str
+    other: str
+    record: object
+    prefix: Sequence[str]
+    our_history: List[int]
+    pub: Optional[AlphaPublication]
+    seeds: Sequence[str]
+    m_opp: int
+
+    def decision_index(self, ply: int) -> int:
+        """Which decision row a ply-``ply`` successor's observation is.
+
+        ``our_history`` holds the actions BEFORE the live decision, so the live decision is row
+        ``len(our_history)`` and each ply adds one. The whole depth generalization is this line:
+        depth 1 encodes at ``+1``, depth 2 at ``+2``, and everything else is unchanged."""
+        return len(self.our_history) + int(ply)
 
 
 class SearchEngine:
@@ -258,6 +285,8 @@ class SearchEngine:
         arm_diag: List[dict] = []
         alpha_diag: List[dict] = []
         world_diag: List[dict] = []
+        beams: List[List[int]] = []
+        widths.depth_planned = max(1, int(self.cfg.max_depth))
         # ⚠️ ONE WORLD AT A TIME, opened AND consumed before the next. `open_root` CLEARS the
         # driver's node cache (that is what bounds a warm session's memory across battles), so
         # opening K roots up front invalidates every earlier one and `expand_many` then fails with
@@ -297,13 +326,17 @@ class SearchEngine:
             if not cands:
                 continue
             widths.opp_candidates = max(widths.opp_candidates, len(cands))
+            ctx = _PlyContext(side=side, other=other, record=record, prefix=prefix,
+                              our_history=list(our_history), pub=pub, seeds=seeds,
+                              m_opp=plan.m_opp)
             got = self._score_world({"root": root, "meta": wmeta, "cands": cands},
-                                    side, other, record, our_history, our_tokens, actions,
-                                    seeds, widths)
+                                    ctx, our_tokens, actions, widths, deadline)
             if got is None:
                 continue
-            per_action, adiag = got
+            per_action, beam, adiag = got
             arm_diag.append(adiag)
+            if beam:
+                beams.append(beam)
             for a in actions:
                 scores[a] += per_action.get(a, 0.0)
             weight_sum += 1.0
@@ -322,64 +355,156 @@ class SearchEngine:
         for a in actions:
             scores[a] /= weight_sum
 
+        # WHICH actions the argmax may pick from. With no deepening: all of them, unchanged. Once
+        # a ply was spent, only the beam — the actions whose values sit at the deepened depth. The
+        # rule ACROSS worlds is the INTERSECTION of the per-world beams, because an action must be
+        # deepened everywhere for its cross-world mean to be depth-consistent; an empty
+        # intersection degrades to the union and says so rather than silently mixing depths.
+        choices, beam_rule = _selectable_across_worlds(actions, beams)
+        widths.beam_m = len(choices) if beams else 0
+
         # Tie-break TOWARD THE POLICY. A search that breaks an exact tie away from the policy's
         # own pick would report a `changed` decision it has no evidence for, and `change_rate` is
         # one of the two headline numbers here.
-        best = max(actions, key=lambda a: (scores[a], a == policy_action))
+        best = max(choices, key=lambda a: (scores[a], a == policy_action))
         return DecisionResult(
             best, None, widths,
             diagnostics={"worlds": world_diag, "alpha": alpha_diag, "arms": arm_diag,
+                         "beam": choices, "beam_rule": beam_rule,
+                         "depth_realized": widths.depth_realized,
                          "score_mode": arm_diag[0].get("score_mode") if arm_diag else None},
             scores={int(a): round(float(v), 5) for a, v in scores.items()},
             policy_action=policy_action)
 
-    def _score_world(self, w: dict, side: str, other: str, record, our_history, our_tokens,
-                     actions: Sequence[int], seeds: Sequence[str],
-                     widths: RealizedWidths) -> Optional[Tuple[Dict[int, float], dict]]:
-        """Expand + score every arm of ONE world. Returns ``({action: E[score]}, diagnostics)``."""
+    def _score_world(self, w: dict, ctx: _PlyContext, our_tokens: Dict[int, str],
+                     actions: Sequence[int], widths: RealizedWidths,
+                     deadline: Deadline) -> Optional[Tuple[Dict[int, float], List[int], dict]]:
+        """Expand + score ONE world, deepening while the clock allows.
+
+        Returns ``({action: E[score]}, beam, diagnostics)`` — ``beam`` empty when the world stayed
+        at depth 1, which is the width-only reference the amendment kept alive inside the same run.
+        """
+        root, cands = w["root"], w["cands"]
+        vroot = TreeNode(node_id=root.node_id, ended=False, our_tokens=dict(our_tokens),
+                         requests=root.requests, path=())
+        first = self._expand_ply(ctx, [(vroot, cands)], ply=1, widths=widths, deep=False)
+        if first["n_scored"] <= 0:
+            return None
+
+        values = per_action_values(vroot)
+        beam: List[int] = []
+        ply = 1
+        n_opp_cache: Dict[int, int] = {}
+
+        def n_opp_at(leaf: TreeNode) -> int:
+            key = id(leaf)
+            if key not in n_opp_cache:
+                n_opp_cache[key] = len(
+                    legal_choices_from_request((leaf.requests or {}).get(ctx.other)))
+            return n_opp_cache[key]
+
+        while ply < max(1, int(self.cfg.max_depth)):
+            cand_beam, leaves, _n_arms = plan_beam(
+                vroot, values, depth=ply, m_opp=ctx.m_opp, n_opp_at=n_opp_at,
+                arm_cost_s=self._cost.arm_s, ply_overhead_s=self._cost.world_open_s,
+                remaining_s=deadline.remaining())
+            if not cand_beam or not leaves:
+                break
+            frontier: List[Tuple[TreeNode, list]] = []
+            for leaf in leaves:
+                legal = legal_choices_from_request((leaf.requests or {}).get(ctx.other))
+                lc, _diag = build_candidates(legal, ctx.pub, m_opp=ctx.m_opp)
+                if lc:
+                    frontier.append((leaf, lc))
+            if not frontier:
+                break
+            grown = self._expand_ply(ctx, frontier, ply=ply + 1, widths=widths, deep=True)
+            if grown["n_scored"] <= 0:
+                # The ply produced nothing scorable; the tree is unchanged in value terms, so the
+                # decision stays at the depth it had rather than claiming one it did not reach.
+                break
+            ply += 1
+            beam = cand_beam
+            values = per_action_values(vroot)
+            widths.depth_realized = max(widths.depth_realized, ply)
+
+        per_action = {int(a): float(values.get(int(a), 0.0)) for a in actions}
+        return per_action, beam, {
+            "score_mode": first["score_mode"], "n_scored": first["n_scored"],
+            "n_terminal": first["n_terminal"], "tier": w["meta"].get("tier"),
+            "depth": ply, "beam": list(beam)}
+
+    def _expand_ply(self, ctx: _PlyContext, frontier: Sequence[Tuple[TreeNode, list]], *,
+                    ply: int, widths: RealizedWidths, deep: bool) -> dict:
+        """Grow ONE ply: expand every (our action x their candidate x dice) arm of every frontier
+        node, materialize the successors' observations in a single shared-prefix replay, score
+        them, and hang the results on the tree.
+
+        The root ply and a deepening ply are the SAME operation — that is why deepening is a loop
+        over this method rather than a second code path. Two things differ and both are arguments:
+        the decision row the observation is read at (``ctx.decision_index``) and the dice, which at
+        a deeper ply is ONE freshly minted CRN seed shared across the whole ply (the dice axis is
+        last in the registered width order, so a deeper ply never spends budget resampling it).
+        """
         from agents.training.obs_materializer import Branch, materialize_branches
 
-        root, cands = w["root"], w["cands"]
-        arms: List[_Arm] = []
-        payload = []
-        for ai, a in enumerate(actions):
-            for ci, c in enumerate(cands):
-                for ri, sd in enumerate(seeds):
-                    label = len(arms)
-                    arms.append(_Arm(world=0, action=a, cand=ci, dice=ri))
-                    payload.append({"node_id": root.node_id,
-                                    f"{side}_action": our_tokens[a],
-                                    f"{other}_action": c.token,
-                                    "seed": sd, "label": label})
+        seeds = list(ctx.seeds) if ply == 1 else [self._crn_seed(0, ply)]
+        parents: List[TreeNode] = []
+        acts: List[int] = []
+        weights: List[float] = []
+        payload: List[dict] = []
+        for parent, cands in frontier:
+            for a in sorted(parent.our_tokens):
+                for c in cands:
+                    for sd in seeds:
+                        label = len(parents)
+                        parents.append(parent)
+                        acts.append(int(a))
+                        weights.append(float(c.weight))
+                        payload.append({"node_id": parent.node_id,
+                                        f"{ctx.side}_action": parent.our_tokens[a],
+                                        f"{ctx.other}_action": c.token,
+                                        "seed": sd, "label": label})
+        if not payload:
+            return {"n_scored": 0, "n_terminal": 0, "score_mode": self.cfg.score}
+
         expanded = self.session().expand_many(payload)
         widths.arms_expanded += len(expanded)
+        if deep:
+            widths.deep_arms_expanded += len(expanded)
 
-        prefix = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
+        username = ctx.record.username(ctx.side)
         branches: List[Branch] = []
         branch_of: List[int] = []
-        terminal: Dict[int, float] = {}
-        username = record.username(side)
+        n_terminal = 0
+        n_scored = 0
         for e in expanded:
             li = int(e.label)
+            parent = parents[li]
             if e.ended:
                 lab = _terminal_label(e.outcome, username)
-                terminal[li] = TERMINAL_VALUE[lab]
+                parent.add_child(acts[li], weights[li],
+                                 TreeNode(node_id=None, ended=True, value=TERMINAL_VALUE[lab],
+                                          path=parent.path + (acts[li],)))
                 widths.arms_terminal += 1
+                n_terminal += 1
+                n_scored += 1
                 continue
-            suffix = e.p1_chunks if side == "p1" else e.p2_chunks
-            branches.append(Branch(chunks=suffix, actions=[arms[li].action], label=li))
+            suffix = e.p1_chunks if ctx.side == "p1" else e.p2_chunks
+            branches.append(Branch(chunks=suffix,
+                                   actions=list(parent.path) + [acts[li]], label=li))
             branch_of.append(li)
 
-        vals: Dict[int, float] = dict(terminal)
         score_mode = self.cfg.score
         if branches:
-            dec_i = len(our_history) + 1
+            dec_i = ctx.decision_index(ply)
             traces = materialize_branches(
-                prefix, branches, username=username, packed_team=record.packed_team(side),
-                side=side, prefix_actions=list(our_history), battle_format=record.format_id,
-                battle_tag=record.battle_tag, mappings=self.mappings,
+                ctx.prefix, branches, username=username,
+                packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
+                prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
+                battle_tag=ctx.record.battle_tag, mappings=self.mappings,
                 map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
-            obs_rows, mask_rows, keys = [], [], []
+            obs_rows, mask_rows, keys, kept = [], [], [], []
             for li, mt in zip(branch_of, traces):
                 if len(mt.decisions) <= dec_i:
                     continue                 # the successor never produced a request (rare)
@@ -387,26 +512,32 @@ class SearchEngine:
                 obs_rows.append(d.obs)
                 mask_rows.append(d.mask)
                 keys.append(li)
+                kept.append(mt)
             if obs_rows:
                 sc, score_mode = batch_scores(self.model, np.stack(obs_rows),
                                               np.stack(mask_rows), self.cfg.score)
-                for li, v in zip(keys, sc):
-                    vals[li] = float(v)
-        widths.arms_scored += len(vals)
-        if not vals:
-            return None
-
-        per_action: Dict[int, float] = {}
-        for a in actions:
-            acc, wsum = 0.0, 0.0
-            for li, arm in enumerate(arms):
-                if arm.action != a or li not in vals:
-                    continue
-                acc += cands[arm.cand].weight * vals[li]
-                wsum += cands[arm.cand].weight
-            per_action[a] = (acc / wsum) if wsum > 0 else 0.0
-        return per_action, {"score_mode": score_mode, "n_scored": len(vals),
-                            "n_terminal": len(terminal), "tier": w["meta"].get("tier")}
+                by_label = {int(e.label): e for e in expanded}
+                for li, mt, v in zip(keys, kept, sc):
+                    parent = parents[li]
+                    e = by_label[li]
+                    # The child's OWN legal surface, from the REAL mapper — this is what makes a
+                    # deeper ply possible at all, and it is already a by-product of the
+                    # materialization the depth-1 pass ran. EMPTIED on a node that is not a clean
+                    # move selection (see `branchable`), which makes such a node a leaf by
+                    # construction everywhere downstream — `expandable()`, `leaves_under` and the
+                    # cost estimate all agree without any of them having to know the rule.
+                    tokens = (dict(mt.action_choices or {})
+                              if branchable(e.requests, ctx.side) else {})
+                    parent.add_child(
+                        acts[li], weights[li],
+                        TreeNode(node_id=e.node_id, ended=False, value=float(v),
+                                 our_tokens=tokens,
+                                 requests=e.requests, path=parent.path + (acts[li],)))
+                    n_scored += 1
+        widths.arms_scored += n_scored
+        if deep:
+            widths.deep_arms_scored += n_scored
+        return {"n_scored": n_scored, "n_terminal": n_terminal, "score_mode": score_mode}
 
     def _worlds(self, record, opp_side: str, observed_our_lines: Sequence[str], k: int,
                 opp_true_packed: Optional[str]) -> List[Tuple[object, dict]]:
@@ -469,6 +600,48 @@ class SearchEngine:
         self._cost = CostModel(
             world_open_s=self._cost.world_open_s,
             arm_s=max(1e-4, (1 - a) * self._cost.arm_s + a * arm_s))
+
+
+def branchable(requests: Optional[dict], side: str) -> bool:
+    """Is this node a clean MOVE-SELECTION for ``side`` — the only kind the search may branch on?
+
+    The root decision already obeys this rule: :meth:`SearchDividendPlayer._search` declines with
+    ``not_move_selection`` on a ``force_switch``, because a forced switch has no branchable choice
+    surface and a team preview none at all. Iterative deepening has to obey it at EVERY ply, and
+    the reason is not symmetry — it is that a deeper node's ``action_choices`` come from the action
+    MAPPER, which happily enumerates switch targets at a forced switch. Branching there sends the
+    sim a move for a side that was never asked for one, and the successor replay then narrates a
+    board the observation encoder does not agree with (measured 2026-08-23: the deepening arm's
+    first live run logged ~1770 poke-env "message thinks p1: X is active, but it's not" warnings,
+    a class the depth-1 arm produces exactly zero of).
+    """
+    return bool(legal_choices_from_request((requests or {}).get(side)))
+
+
+def _selectable_across_worlds(actions: Sequence[int],
+                              beams: Sequence[Sequence[int]]) -> Tuple[List[int], str]:
+    """``(choices, rule)`` — which actions the cross-world argmax may pick from.
+
+    ``rule`` is recorded rather than inferred, because the three cases mean different things and a
+    reader must be able to tell them apart:
+
+    * ``"depth1"`` — no world deepened; every scored action is comparable, unchanged behaviour.
+    * ``"intersection"`` — every deepened world agreed on these, so their cross-world means are all
+      at the same depth.
+    * ``"union"`` — the beams did not overlap. The means then MIX depths, and that is a defect of
+      the reading, not of the search; naming it keeps it out of the "it just worked" bucket.
+    """
+    if not beams:
+        return sorted(actions), "depth1"
+    inter = set(beams[0])
+    for b in beams[1:]:
+        inter &= set(b)
+    if inter:
+        return sorted(inter), "intersection"
+    union: set = set()
+    for b in beams:
+        union |= set(b)
+    return (sorted(union), "union") if union else (sorted(actions), "depth1")
 
 
 def _terminal_label(outcome: dict, username: str) -> str:

@@ -225,6 +225,33 @@ def _safe_alpha(model):
     return alpha_publication(extractor)
 
 
+#: The outcomes a played battle can have. ``tie`` is not decoration: gen 3 really does tie (a
+#: simultaneous last-mon faint — explosion, recoil, sandstorm chip), and poke-env reports one as
+#: ``battle.won is None`` with ``battle.finished`` TRUE. Read through the win COUNTER
+#: (``n_won_battles``, which counts only truthy ``won``) a tie is indistinguishable from a loss,
+#: which is how one used to be recorded: ``result="loss"``, no error, nothing anywhere saying a
+#: draw had happened. That is a directional bias in the MIRROR mode specifically — two copies of
+#: one network draw far more often than a policy and a scripted bot do, and every draw would have
+#: been scored against the searched side.
+OUTCOMES = ("win", "loss", "tie", "unfinished")
+
+
+def battle_outcome(battle) -> str:
+    """``win`` | ``loss`` | ``tie`` | ``unfinished`` for one poke-env battle object.
+
+    The battle object is the AUTHORITY — ``n_won_battles`` and friends are derived from it, and
+    every derivation on the way loses the tie. Reading it directly is both simpler and the only
+    version that can tell a draw from a defeat.
+    """
+    if battle is None or not battle.finished:
+        return "unfinished"
+    if battle.won is True:
+        return "win"
+    if battle.won is False:
+        return "loss"
+    return "tie"
+
+
 async def play_one_battle(player: SearchDividendPlayer, opponent, *, battle_format: str,
                           seed: str, impl: str) -> dict:
     """Play ONE battle with the live record wired up, and return its outcome row.
@@ -233,13 +260,20 @@ async def play_one_battle(player: SearchDividendPlayer, opponent, *, battle_form
     battles (``local_battle_runner``'s own docstring says so) and the record's command order is
     only unambiguous for a single battle in flight. The seed is PINNED because the record needs
     the RESOLVED seed at decision time, not at ``__RECON__`` time.
+
+    The outcome is read off the BATTLE OBJECT, not off the player's win counters. The counters
+    answer "how many did it win", which is a different question from "what happened in this one" —
+    and the difference is exactly a tie (see :func:`battle_outcome`). The battle is found by
+    diffing ``player._battles``, not by trusting ``builder.battle_tag``, because the builder only
+    learns the tag at the first DECISION: a battle that ended before we ever chose would leave the
+    tag ``None`` and the outcome unreadable at precisely the moment it matters most.
     """
     from utils.bridge.local_battle_runner import run_local_battles
 
     chunk_sink: list = []
     builder = player.open_battle(seed, chunk_sink, our_side="p1")
     set_active_builder(builder)
-    won_before, fin_before = player.n_won_battles, player.n_finished_battles
+    tags_before = set(player._battles)
     n_dec_before = len(player.decisions)
     try:
         await run_local_battles(player, opponent, 1, battle_format=battle_format,
@@ -247,11 +281,18 @@ async def play_one_battle(player: SearchDividendPlayer, opponent, *, battle_form
                                 start_extra={"seed": seed})
     finally:
         set_active_builder(None)
+    new_tags = [t for t in player._battles if t not in tags_before]
+    battle = player._battles[new_tags[-1]] if new_tags else None
+    outcome = battle_outcome(battle)
     return {
         "seed": seed,
-        "won": player.n_won_battles - won_before,
-        "finished": player.n_finished_battles - fin_before,
-        "battle_tag": builder.battle_tag,
+        "outcome": outcome,
+        "won": 1 if outcome == "win" else 0,
+        "tied": 1 if outcome == "tie" else 0,
+        "finished": 1 if outcome != "unfinished" else 0,
+        "turns": int(getattr(battle, "turn", 0) or 0),
+        "battle_tag": builder.battle_tag or (new_tags[-1] if new_tags else None),
+        "battle_created": bool(new_tags),
         "n_commands": builder.n_commands,
         "decisions": player.decisions[n_dec_before:],
     }

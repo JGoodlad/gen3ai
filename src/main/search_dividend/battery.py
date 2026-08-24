@@ -8,10 +8,22 @@ that disagree on a game then disagree about the DECISION, not about the battle t
 without that, an arm difference at N=10 is mostly team-draw noise (the exploiter work measured
 exactly that trap: an apparent edge that vanished under an equal-pilot mirror).
 
+**The MIRROR mode, and why it needs side-swap.** ``--opponents self`` plays the searched side
+against the SAME network with search structurally off, so the two sides differ in exactly one
+thing. That pins the no-effect point at 50% by construction — unlike the scripted roster, which
+saturates near 90% and hides a dividend in its ceiling. But a mirror game's TEAM DRAW is
+asymmetric, and at small n that asymmetry is most of the variance: the searched side simply gets a
+better or worse team. ``--side-swap`` plays every game index in BOTH orientations off one pinned
+seed, so the summary can difference the pair and report a win rate the team draw cannot fake.
+
 **Resumable, append-only.** Each finished game appends one JSON line. A relaunch reads the file,
-counts the ``(arm, budget, opponent)`` cells already complete, and plays only what is missing. The
-file is never rewritten — the same discipline ``eval_results.jsonl`` follows, and for the same
-reason: a summary can always be recomputed from rows, but a row lost to a crashed rewrite is gone.
+counts the ``(arm, budget, opponent)`` cells' finished ORIENTATION-GAMES, and plays only what is
+missing. The file is never rewritten — the same discipline ``eval_results.jsonl`` follows, and for
+the same reason: a summary can always be recomputed from rows, but a row lost to a crashed rewrite
+is gone.
+
+**Every row carries an outcome XOR a named error** (:func:`finalize_row`). A row that says nothing
+went wrong on a battle that never happened is the one shape this file must not be able to hold.
 """
 
 from __future__ import annotations
@@ -29,7 +41,11 @@ from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
 
 BATTLE_FORMAT = "gen3ou"
-ROW_VERSION = 1
+# v2 ADDED `orientation` / `tied` / `turns` / `max_depth` and let `result` be ``"tie"``. Every
+# reader defaults the new keys, so a v1 file still summarizes and still resumes — an append-only
+# file outlives its schema by construction, and a version that could not be read back would make
+# the append-only discipline pointless.
+ROW_VERSION = 2
 
 
 def game_seed(opponent: str, game: int, salt: int) -> str:
@@ -42,10 +58,26 @@ def game_seed(opponent: str, game: int, salt: int) -> str:
     return "sodium," + h[:32]
 
 
-def team_pair(opponent: str, game: int, salt: int, packed_teams: Sequence[str]) -> tuple:
-    """The (our, their) packed teams for one game — matched across arms for the same reason."""
+def team_pair(opponent: str, game: int, salt: int, packed_teams: Sequence[str],
+              orientation: int = 0) -> tuple:
+    """The (our, their) packed teams for one game-orientation — matched across arms as above.
+
+    **Orientation 1 SWAPS them, and that is the whole point of side-swap pairing.** A mirror
+    game's team draw is asymmetric: two copies of one network pilot two different teams, so at
+    small n the reported win rate is mostly a measurement of which team is stronger. Playing each
+    ``game`` in both orientations lets the summary difference them out — the same paired design the
+    exploiter work needed when an apparent edge turned out to be pure team draw. The SEED is
+    deliberately NOT varied with orientation, so the pair starts from one dice stream.
+    """
     rng = random.Random(f"{salt}|{opponent}|{game}|teams")
-    return rng.choice(list(packed_teams)), rng.choice(list(packed_teams))
+    a, b = rng.choice(list(packed_teams)), rng.choice(list(packed_teams))
+    return (a, b) if not int(orientation) else (b, a)
+
+
+#: The MIRROR opponent's name. ``--opponents self`` means "the same network with search off" —
+#: the sensitive contrast, because the scripted roster saturates near 90% and pins nothing, while
+#: a mirror pins the no-effect point at exactly 50% by construction.
+MIRROR = "self"
 
 
 @dataclass
@@ -56,6 +88,15 @@ class Cell:
 
     def key(self) -> str:
         return f"{self.arm}|{self.budget:g}|{self.opponent}"
+
+    @property
+    def is_mirror(self) -> bool:
+        return self.opponent == MIRROR
+
+
+def row_unit(row: dict) -> tuple:
+    """A row's ``(game, orientation)`` unit of account, defaulting a pre-side-swap row to 0."""
+    return (int(row["game"]), int(row.get("orientation", 0) or 0))
 
 
 def _cell_tag(cell: Cell) -> str:
@@ -99,16 +140,26 @@ class ResultsFile:
         0.1 s each) stays in the file as evidence but is REPLAYED on resume — the battery's unit
         of account is finished games per cell, and marking a crash done would quietly shrink a
         cell's n. A deterministic crash then costs one extra error row per relaunch, which is
-        bounded and visible, against silently under-powered cells, which is neither."""
+        bounded and visible, against silently under-powered cells, which is neither.
+
+        The unit is the ORIENTATION-GAME, not the game: under side-swap a ``game`` is two battles
+        and finishing one of them finishes half a pair. Rows written before side-swap existed
+        carry no ``orientation`` and read as 0, so an old file resumes exactly as it always did."""
         if not int(row.get("finished", 0)):
             return
         k = Cell(row["arm"], float(row["budget"]), row["opponent"]).key()
-        self._done.setdefault(k, set()).add(int(row["game"]))
+        self._done.setdefault(k, set()).add(row_unit(row))
 
-    def done_games(self, cell: Cell) -> set:
+    def done_units(self, cell: Cell) -> set:
+        """The ``(game, orientation)`` pairs already finished for this cell."""
         return set(self._done.get(cell.key(), ()))
 
+    def done_games(self, cell: Cell) -> set:
+        """The game INDEXES with at least one finished orientation (the pre-side-swap view)."""
+        return {g for (g, _o) in self._done.get(cell.key(), ())}
+
     def n_done(self, cell: Cell) -> int:
+        """How many orientation-games are finished — the battery's unit of account."""
         return len(self._done.get(cell.key(), ()))
 
     def append(self, row: dict) -> None:
@@ -140,10 +191,15 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     ``fallbacks`` is a HISTOGRAM by reason, never a single total: "the search fell back" is not a
     finding, "the search fell back because every determinized world failed the prefix gate" is."""
     fallbacks: Dict[str, int] = {}
-    realized = {"m_opp": [], "k_worlds": [], "r_dice": [], "arms": [], "elapsed": []}
+    # `depth` and `beam` are a schema ADDITION, not a fork: ladder requirement 3 says the ladder's
+    # per-decision search trace is THIS format extended, never a second one, so a new signal joins
+    # the dict a reader already walks.
+    realized = {"m_opp": [], "k_worlds": [], "r_dice": [], "arms": [], "elapsed": [],
+                "depth": [], "beam": []}
     errors: List[str] = []
     n_changed = 0
     n_searched = 0
+    deepened = 0
     truncated = 0
     gate_failed = 0
     for d in decisions:
@@ -162,12 +218,17 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         realized["r_dice"].append(w.get("dice", 0))
         realized["arms"].append(w.get("arms_scored", 0))
         realized["elapsed"].append(w.get("elapsed_s", 0.0))
+        realized["depth"].append(w.get("depth_realized", 1))
+        realized["beam"].append(w.get("beam_m", 0))
+        deepened += 1 if int(w.get("depth_realized", 1) or 1) > 1 else 0
         truncated += 1 if w.get("deadline_truncated") else 0
         gate_failed += int(w.get("worlds_gate_failed", 0))
     return {
         "n_decisions": len(decisions),
         "n_searched": n_searched,
         "n_changed": n_changed,
+        "n_deepened": deepened,
+        "max_depth_realized": max((int(d) for d in realized["depth"]), default=0),
         "fallbacks": fallbacks,
         "fallback_details": errors,
         "deadline_truncated": truncated,
@@ -175,6 +236,35 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
                           for k, v in realized.items()},
     }
+
+
+#: The error a game gets when it produced neither an exception nor an outcome. Named, because the
+#: alternative is a row that says nothing went wrong on a battle that never happened — measured
+#: 2026-08-23, when a pruned worktree took ``local_sim_bridge.js`` out from under a running battery
+#: and 8 straight games recorded clean-looking and empty.
+NEVER_FINISHED = ("battle_never_finished: no exception, no result — the bridge child likely died "
+                  "at spawn (deleted worktree? missing node/dist?)")
+NEVER_CREATED = ("battle_never_created: run_local_battles returned without ever creating a battle "
+                 "object for this player — the bridge child produced no protocol at all")
+
+
+def finalize_row(row: dict) -> dict:
+    """Enforce the one invariant every result row obeys, and repair it rather than trust it.
+
+    **A row carries a real outcome XOR a named error. Never neither.** A game that neither threw
+    nor produced a winner is the single most dangerous shape this file can hold: it reads as a
+    played battle to every consumer, it dilutes a cell's win rate toward whatever it happened to
+    be, and nothing in it points at a cause. So the invariant is checked HERE, at the one place
+    rows are made, instead of being an expectation about the call sites above.
+    """
+    result = row.get("result")
+    if result in ("win", "loss", "tie"):
+        return row
+    if not row.get("error"):
+        row["error"] = NEVER_CREATED if not row.get("battle_created", True) else NEVER_FINISHED
+    row["result"] = "unfinished"
+    row["finished"] = 0
+    return row
 
 
 def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
@@ -241,50 +331,54 @@ def set_teams(me, opp, our_packed: str, their_packed: str) -> None:
 
 async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int,
                    results: ResultsFile, salt: int, impl: str,
-                   pool_packed: Sequence[str], progress=None) -> int:
-    """Play the missing games of one cell, appending a row each. Returns how many were played."""
+                   pool_packed: Sequence[str], progress=None,
+                   side_swap: bool = False) -> int:
+    """Play the missing orientation-games of one cell, appending a row each.
+
+    With ``side_swap`` every ``game`` index is played TWICE — orientation 0 and orientation 1 — so
+    the summary can difference out the team draw. ``games`` therefore keeps meaning "distinct team
+    draws" and the battle count doubles, which is the honest way round: halving ``games`` to keep
+    the battle count would halve the number of independent draws, which is the thing that actually
+    bounds the interval."""
     install_choice_tap()
-    done = results.done_games(cell)
-    todo = [g for g in range(games) if g not in done]
+    orientations = (0, 1) if side_swap else (0,)
+    done = results.done_units(cell)
+    todo = [(g, o) for g in range(games) for o in orientations if (g, o) not in done]
     if not todo:
         return 0
     me, opp, engine = build_players(model, mappings, cfg, cell.opponent,
                                     pool_packed=pool_packed, tag=_cell_tag(cell))
     played = 0
     try:
-        for g in todo:
-            ours, theirs = team_pair(cell.opponent, g, salt, pool_packed)
+        for g, orient in todo:
+            ours, theirs = team_pair(cell.opponent, g, salt, pool_packed, orient)
             set_teams(me, opp, ours, theirs)
+            seed = game_seed(cell.opponent, g, salt)
             t0 = time.monotonic()
             try:
                 out = await play_one_battle(me, opp, battle_format=BATTLE_FORMAT,
-                                            seed=game_seed(cell.opponent, g, salt), impl=impl)
+                                            seed=seed, impl=impl)
                 err = None
             except Exception as e:                    # noqa: BLE001
                 # A crashed game is RECORDED as an error row, not dropped. A dropped game biases
                 # the win rate by whatever made it crash.
-                out, err = {"won": 0, "finished": 0, "decisions": []}, f"{type(e).__name__}: {e}"
-            if err is None and not out["finished"]:
-                # `run_local_battles` returns cleanly on a bridge child that dies at spawn (EOF
-                # in `_demux` breaks the loop with no exception), so a battle can "complete" in
-                # 0.1 s without ever being created. Measured 2026-08-23: a pruned worktree took
-                # `local_sim_bridge.js` out from under a running battery and 8 straight games
-                # recorded as unfinished with error=None — a row that says nothing went wrong on
-                # a game that never happened. Name it, so the summary's error census sees it.
-                err = ("battle_never_finished: no exception, no result — the bridge child "
-                      "likely died at spawn (deleted worktree? missing node/dist?)")
-                out["decisions"] = out.get("decisions") or []
-            row = {
+                out = {"outcome": "unfinished", "won": 0, "tied": 0, "finished": 0,
+                       "battle_created": True, "decisions": []}
+                err = f"{type(e).__name__}: {e}"
+            row = finalize_row({
                 "v": ROW_VERSION, "arm": cell.arm, "budget": cell.budget,
-                "opponent": cell.opponent, "game": g,
-                "result": ("win" if out["won"] else ("loss" if out["finished"] else "unfinished")),
-                "finished": int(out["finished"]), "won": int(out["won"]),
+                "opponent": cell.opponent, "game": g, "orientation": int(orient),
+                "result": out.get("outcome"),
+                "finished": int(out.get("finished", 0)), "won": int(out.get("won", 0)),
+                "tied": int(out.get("tied", 0)), "turns": int(out.get("turns", 0) or 0),
+                "battle_created": bool(out.get("battle_created", False)),
                 "wall_s": round(time.monotonic() - t0, 3),
-                "seed": game_seed(cell.opponent, g, salt),
+                "seed": seed,
                 "score_mode": cfg.score, "search_impl": cfg.search_impl,
+                "max_depth": int(getattr(cfg, "max_depth", 1)),
                 "error": err,
                 **summarize_decisions(out.get("decisions") or []),
-            }
+            })
             results.append(row)
             played += 1
             if progress is not None:
