@@ -45,6 +45,15 @@ by agents — see the protocol below and the `feedback-research-state` memory.
   decision against a 150 s timer — Showdown's actual (discretionary) bot policy with sources, the
   end-to-end smoke results, and a go-live checklist. Instruments: `python src/main/play.py`,
   `python src/main/ladder_drift_scan.py`.
+- **[wang_search_reconciliation.md](wang_search_reconciliation.md)** — why Wang 2024's MCTS ablation
+  (+31 pts, same-policy mirror) and our depth-1 search-dividend probe (−21 pts, same-policy mirror)
+  are the **same phenomenon at different noise levels**, sourced section-by-section from the thesis.
+  The crux: **Wang's leaves are the same trained critic ours are** — "rollout-to-end" is NOT what he
+  did, so do not cite him for it. What he has and we lack is R=1000–2000 samples per decision on a
+  tree that persists across turns, a PUCT policy prior inside selection, and **visit-count argmax
+  chosen explicitly over Q-argmax for the variance reason we then walked into**. Carries the diff
+  table, the noise/margin ladder, and the one experiment that separates variance from a critic-bias
+  floor. Instrument: `python -m main.search_dividend` (the R-ladder is flags only, zero code).
 - **[The frontier](#the-frontier--what-else-might-be-there)** (below) — the standing list of candidate
   levers NOT yet (fully) investigated. This is the working surface for "there has to be more."
 
