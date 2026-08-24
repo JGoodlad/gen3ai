@@ -91,8 +91,19 @@ class ResultsFile:
                     # be replayed — but a SILENT skip would make a short file look complete, so
                     # the loader stops at the first bad line rather than reading past it.
                     break
-                k = Cell(row["arm"], float(row["budget"]), row["opponent"]).key()
-                self._done.setdefault(k, set()).add(int(row["game"]))
+                self._index(row)
+
+    def _index(self, row: dict) -> None:
+        """A game counts as DONE only when it FINISHED. An unfinished row (a crashed bridge
+        child, a killed process, the 2026-08-23 pruned-worktree incident that scored 8 games in
+        0.1 s each) stays in the file as evidence but is REPLAYED on resume — the battery's unit
+        of account is finished games per cell, and marking a crash done would quietly shrink a
+        cell's n. A deterministic crash then costs one extra error row per relaunch, which is
+        bounded and visible, against silently under-powered cells, which is neither."""
+        if not int(row.get("finished", 0)):
+            return
+        k = Cell(row["arm"], float(row["budget"]), row["opponent"]).key()
+        self._done.setdefault(k, set()).add(int(row["game"]))
 
     def done_games(self, cell: Cell) -> set:
         return set(self._done.get(cell.key(), ()))
@@ -106,8 +117,7 @@ class ResultsFile:
             fh.write(json.dumps(row, separators=(",", ":")) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
-        k = Cell(row["arm"], float(row["budget"]), row["opponent"]).key()
-        self._done.setdefault(k, set()).add(int(row["game"]))
+        self._index(row)
 
     def rows(self) -> List[dict]:
         out: List[dict] = []
@@ -233,6 +243,16 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 # A crashed game is RECORDED as an error row, not dropped. A dropped game biases
                 # the win rate by whatever made it crash.
                 out, err = {"won": 0, "finished": 0, "decisions": []}, f"{type(e).__name__}: {e}"
+            if err is None and not out["finished"]:
+                # `run_local_battles` returns cleanly on a bridge child that dies at spawn (EOF
+                # in `_demux` breaks the loop with no exception), so a battle can "complete" in
+                # 0.1 s without ever being created. Measured 2026-08-23: a pruned worktree took
+                # `local_sim_bridge.js` out from under a running battery and 8 straight games
+                # recorded as unfinished with error=None — a row that says nothing went wrong on
+                # a game that never happened. Name it, so the summary's error census sees it.
+                err = ("battle_never_finished: no exception, no result — the bridge child "
+                      "likely died at spawn (deleted worktree? missing node/dist?)")
+                out["decisions"] = out.get("decisions") or []
             row = {
                 "v": ROW_VERSION, "arm": cell.arm, "budget": cell.budget,
                 "opponent": cell.opponent, "game": g,

@@ -51,6 +51,22 @@ def test_resume_is_keyed_by_the_WHOLE_cell_not_just_the_arm(tmp_path):
     assert rf.n_done(Cell("honest", 0.5, "staller")) == 0
 
 
+def test_an_UNFINISHED_game_is_replayed_on_resume_not_counted_done(tmp_path):
+    """The battery's unit of account is FINISHED games per cell. Counting a crash row as done
+    quietly shrinks a cell's n — measured 2026-08-23, when a pruned worktree killed the bridge
+    child mid-battery and 8 straight games recorded as unfinished; a resume that skipped them
+    would have reported an honest-arm cell of n=2 posing as n=10."""
+    path = str(tmp_path / "r.jsonl")
+    rf = ResultsFile(path)
+    rf.append(_row(game=0, result="win", finished=1, won=1))
+    rf.append(_row(game=1, result="unfinished", finished=0, won=0,
+                   error="battle_never_finished: ..."))
+    cell = Cell("base", 0.0, "heuristic")
+    assert rf.done_games(cell) == {0}
+    assert ResultsFile(path).done_games(cell) == {0}, "a reopened file must agree"
+    assert len(rf.rows()) == 2, "the evidence row itself is never dropped"
+
+
 def test_a_truncated_final_line_stops_the_read_rather_than_being_skipped(tmp_path):
     """A row half-written by a kill must not make a SHORT file look complete. Stopping at the bad
     line replays that game; skipping past it would silently drop everything after."""

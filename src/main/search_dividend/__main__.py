@@ -108,7 +108,20 @@ def _pool(n: int) -> List[str]:
     return packed
 
 
+def _pin_sys_path() -> None:
+    """Absolutize every ``sys.path`` entry at startup.
+
+    A relative ``PYTHONPATH=…:src`` entry is re-resolved against the CURRENT cwd at every import,
+    and this driver imports lazily hours into a run (the ELO fit happens at report time). Measured
+    failure, 2026-08-23: the worktree the battery ran from was pruned mid-run, and the final
+    report died on ``No module named 'agents.training.elo'`` AFTER 30 games had played — the rows
+    survived (append-only), but the report should not be hostage to where the process happens to
+    be standing hours after launch."""
+    sys.path[:] = [os.path.abspath(p) if p else os.getcwd() for p in sys.path]
+
+
 def main(argv: Optional[List[str]] = None) -> int:
+    _pin_sys_path()
     args = build_parser().parse_args(argv)
     if args.summary:
         rows = ResultsFile(args.summary).rows()
