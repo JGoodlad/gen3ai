@@ -181,6 +181,31 @@ def test_a_gated_world_whose_arms_never_score_says_no_scored_arm():
     assert res.fallback == "no_scored_arm"
 
 
+def test_NO_arm_is_ever_expanded_on_the_sims_own_realized_dice():
+    """``"original"`` is not a dice SAMPLE — it is THE dice.
+
+    ``search_driver.js`` swaps the PRNG only for a non-``"original"`` seed, and ``open_root``
+    replays the record to the start of turn T, so an ``"original"`` arm resolves the turn from the
+    battle's own mid-game PRNG state. Measured over 12 consecutive live decisions, expanding the
+    REALIZED (our choice, their choice) pair that way reproduced the real turn's our-side protocol
+    byte-for-byte 11/12 times against 14/36 for fresh seeds — one ply of clairvoyance no player
+    has, whose share of each arm's score was 1/R and which therefore made the width ladder measure
+    its own dilution. Every draw must be freshly minted.
+    """
+    eng = _engine("oracle")
+    req = {"p2": {"active": [{"moves": [{"id": "surf", "move": "Surf", "pp": 10}]}],
+                  "side": {"pokemon": []}}}
+    eng._session = _FakeSession(root=_Root(OBSERVED, requests=req))
+    seen: list = []
+    eng._session.expand_many = lambda arms: seen.extend(a["seed"] for a in arms) or []
+    _choose(eng, opp_true_packed="T")
+    assert seen, "the test needs the engine to have expanded at least one arm"
+    assert "original" not in seen, seen
+    assert all(s.startswith("sodium,") for s in seen), seen
+    # ...and still CRN: one seed per draw, shared by every (action, candidate) arm.
+    assert len(set(seen)) == eng.cfg.resolved_caps().r_dice, sorted(set(seen))
+
+
 def test_every_fallback_the_engine_can_emit_is_a_DECLARED_reason():
     """The reason list is the report's vocabulary; an undeclared string would show up in a
     histogram nobody knows how to read."""

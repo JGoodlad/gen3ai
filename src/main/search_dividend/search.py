@@ -21,6 +21,10 @@ Three properties of the first-ply expression are the whole experiment and none i
   OUR 10.0%, so the axis that buys the most per unit of compute is the one α is spent on;
 * **the dice are COMMON across arms** (CRN): draw *r* uses ONE seed shared by every (a, c) pair in
   the world, so a difference between two actions is not a difference between two dice streams.
+  Every draw is a FRESHLY MINTED seed — the sim's own ``"original"`` stream is never used, because
+  it is the dice the turn is actually about to be resolved with and reading it is one ply of
+  clairvoyance (see :meth:`SearchEngine._run`, where the measurement and the reading it corrupted
+  are recorded).
   ⚠️ CRN here shares the dice STREAM, not the roll→event MAPPING — two arms that consume a
   different number of draws desynchronize after the first divergence, which is why a one-seed
   sweep over-reads the OUR×OPP interaction by roughly 2× and why R>1 is on the budget ladder at
@@ -311,7 +315,26 @@ class SearchEngine:
 
         # CRN: ONE seed per dice draw r, SHARED by every (action, candidate) arm — and across
         # worlds too, so two worlds disagree about the TEAM rather than about the dice.
-        seeds = ["original"] + [self._crn_seed(turn, r) for r in range(1, plan.r_dice)]
+        #
+        # 🚨 EVERY DRAW IS A FRESH SEED. Draw 0 used to be the sim's ``"original"`` seed, which
+        # `search_driver.js` honours by NOT swapping the PRNG (`if (!isOriginal) b.prng = new
+        # PRNG(seed)`) — and `open_root` replays the record to the start of turn T, so that arm
+        # resolved turn T from the battle's OWN mid-game PRNG state. Measured 2026-08-24 over 12
+        # consecutive live decisions: expanding the REALIZED (our choice, their choice) pair under
+        # ``"original"`` reproduced the real turn's our-side protocol BYTE-FOR-BYTE **11 of 12**
+        # times, against **14 of 36** for fresh seeds (and those 14 are the turns with no dice in
+        # them). That is not a sample of the dice — it IS the dice, one ply of clairvoyance no
+        # player has.
+        #
+        # It also made the WIDTH LADDER measure the wrong thing, which is how it was found. Every
+        # arm's score is a mean over the R draws, so the realized draw's share is 1/R: the leak
+        # SHRANK as the budget bought resamples. `resolved_caps` pins the ORACLE arm to
+        # ``k_worlds=1`` (the truth is one world) and `WIDTH_ORDER` spends dice LAST, so the oracle
+        # arm is the only one whose leftover budget has nowhere to go but the dice axis — it ran at
+        # R≈2.1 (1 s) and R≈7.2 (3 s) while the honest arm sat at R≈1.05. The mirror cells then
+        # read oracle 0.383 / honest 0.554 against a 0.500 null, and the difference was the
+        # dilution of a leak rather than the value of knowing the hidden team.
+        seeds = [self._crn_seed(turn, r) for r in range(max(1, plan.r_dice))]
 
         actions = sorted(our_tokens)
         scores: Dict[int, float] = {a: 0.0 for a in actions}
