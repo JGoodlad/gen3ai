@@ -3864,3 +3864,30 @@ duty cycle printed in the startup announcer. Restart will carry `--checkpoint-ev
 rows healthy" through all of this — its PEND gate keyed on `ingested > 0`, a condition the
 consumer-side failure can never satisfy. A check that only reports the failure its author
 imagined; fixed by the session mid-incident (total-rejection is now its own STOP row).
+
+### 📚 METAMON VERIFIED (`e38f029`) — three beliefs corrected, one door measured (2026-08-23)
+
+Deep-read of arXiv 2504.04395 v2 (RLC 2025) + the published HF datasets; full memo
+`designs/research_state/metamon_replay_feasibility.md`. Corrections to OUR record:
+1. **"Top-decile in gen1 OU" was wrong in the expensive direction** — top-decile is their
+   ACROSS-GEN floor and the floor-setting generation is OURS: gen3ou best = GXE 64, 90.1st pct
+   of 8,944, two top-300 appearances (their WEAKEST gen, no explanation offered in the paper).
+   Gen1ou = GXE 77, 95.8th pct, peak global #31.
+2. **The owner's "BC as magic bullet" skepticism was RIGHT**: gen3ou BC = 35 GXE, offline RL on
+   the same data = 42, and everything from 42 → 64 came from SELF-PLAY. Human replays are a
+   BOOTSTRAP + diversity source, not the strength lever; the plateau-research memory's framing
+   ("offline-RL-on-human-replays broke it") needs this rider.
+3. **The hard half of replay ingestion is already in our tree**: `obs_materializer` is a
+   PROTOCOL replayer (per-side chunks in, obs out — the `__RECON__` dependency lives one layer
+   up). A public replay needs a second PRODUCER of one-sided chunks + synthesized `|request|`
+   JSON — not re-simulation. Lift estimate ~18–30 days to a measured result (~13–22 to the
+   round-trip gate); biggest risk = HINDSIGHT-IMPUTED own-team early-battle confound, which
+   Metamon could not quantify and we CAN (degrade a bridge battle to spectator view, diff obs
+   per block — build the meter first).
+4. **The parsed dataset is PUBLISHED**: `jakegrigsby/metamon-parsed-replays` (cc-by-nc-4.0;
+   gen3ou slice 2.69 GB, the largest of gens 1–4), raw replays 2.68M rows (no license stated),
+   per-timestep `missing` flags so we can mask their filling policy. Self-scrape ~252
+   gen3ou replays/day via `before=` pagination.
+Strategic read UNCHANGED but sharpened: the human-data door opens when the flywheel's coverage
+flattens (QD kill-condition), as AlphaStar-shaped bootstrap/diversity — and the bar their method
+set in OUR format (GXE 64 @ 90.1 pct) is now a NUMBER on the wall, not a legend.
