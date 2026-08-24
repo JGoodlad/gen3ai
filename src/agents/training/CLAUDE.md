@@ -3812,6 +3812,60 @@ long-lived **standalone sidecar run beside a live trainer** — the `snapshot_la
 consumer share only a file format (that is `cf_label_buffer`'s whole premise), and a producer the
 trainer owned would make a label-path failure a *training* failure.
 
+#### 🚨 THE DUTY CYCLE — the number that decides whether ANY of this works
+
+The producer can only stamp a label with the step of the newest `checkpoints/` zip, and the buffer
+expires a row more than `--cf-label-lag-steps` behind the live policy. **Those two flags define a
+fraction, and until 2026-08-23 nobody computed it:**
+
+```
+duty cycle = --cf-label-lag-steps / (env steps between checkpoints)
+```
+
+The denominator is the trap. SB3's `CheckpointCallback.save_freq` **counts VEC-ENV CALLS, not env
+steps** — one `_on_step` per `vec_env.step()`, which advances `n_envs` envs at once — and it was a
+bare hardcoded `50000` in `main/train/callbacks.py`, read as "50k steps" by everyone including the
+R1 design. At `--n-envs 48` it is **2,400,000 env steps** against a 150,000-step bound: a **6.25%**
+duty cycle. Measured on the live `ai_v9_29_rev1_0823`: **6 labels ingested against 255 expired in
+two hours**, with every counter on both sides reading healthy — the producer was producing, the
+buffer was expiring, and neither knew the other's number.
+
+Two things close the class:
+
+* **`--checkpoint-every-steps <env_steps>`** (trainer) sets the cadence in the unit a reader means.
+  Default `None` = the historical `50000` vec-calls, byte for byte, so a flagless resume is
+  unchanged; a value is converted back by ceil-division (`main.train.constants`).
+* **The launch REFUSES a duty cycle under 25%** and PRINTS it when healthy. With `--cf-records` on
+  and a live `--cf-twin-coef` / `--cf-winprob-coef`, `main/train/config.py` computes it, names all
+  three numbers plus both remedies, and exits `FATAL_CONFIG` (not `parser.error` — a restart would
+  hit the identical config, so the launcher must give up rather than loop). `--debug` prints and
+  is exempt. *A quantity nobody computes is how this shipped, so it is now printed on every launch
+  that has both halves on.*
+
+At the production shape that is `--checkpoint-every-steps 150000 --n-envs 48` → 3125 vec-calls →
+a 100% duty cycle.
+
+#### The producer/retention race (`records_vanished`)
+
+The trainer OWNS `cf_records/` — every env worker prunes it to the newest `--cf-records-keep` (512)
+— and this process only reads it, so a record can be enumerated and then deleted before it is
+opened. Measured on the same run: **176 records lost to `FileNotFoundError` across 67 cycles**,
+with "538 pending" against a ring of 512 (the excess is a guaranteed loss by arithmetic). Three
+properties, all load-bearing, none of them a change to the ring's semantics:
+
+* **Records are taken NEWEST FIRST.** The ring deletes from the OLD end, so the oldest pending
+  record is the one already promised away — and the loop walked exactly that end. Newest-first puts
+  the deletion end of the ring at the low-value end of the work queue. (It is independently the
+  right sampler order: a newer record came from a policy closer to the one the label supervises.)
+* **The batch is READ AT ENUMERATION TIME** (`CfProducer._load_batch`). The window the ring wins is
+  enumerate → anchor (a full scripted replay, seconds to minutes) → claim + fsync → open; reading
+  immediately collapses it, and everything downstream works from an in-memory record.
+* **A vanished file is a COUNTED BENIGN SKIP** — `records_vanished` in the state file, on the
+  heartbeat, and one explanatory log line — **never an exception path.** As an exception it landed
+  in `skip_reasons` as `error:FileNotFoundError`, indistinguishable from a corrupt record, and on
+  the ANCHOR path it reached `anchors_errored`, where an ordinary ring deletion could **exit 3**
+  and stop the factory. The remedy is a larger `--cf-records-keep`, which a restart can raise.
+
 Each cycle: poll `<run>/cf_records/` for unprocessed records → refresh the freshest `checkpoints/`
 snapshot (via `latest.txt`, else the highest-stepped zip; its step is stamped on every label) →
 replay each record ONCE (which yields the realized outcome, every decision's obs, its mask, its
@@ -3992,7 +4046,10 @@ stays track-only), and both go through one `_encode_or_track` step so the two re
 drift on the one operation where drift would silently change an obs rather than fail.
 
 **Tests.** `cf_producer_test.py` (pure: the priority arithmetic incl. the entropy normalization and
-the tie rule, the state file's claim-before-work order and its bounded processed set, the throttle
+the tie rule, the state file's claim-before-work order and its bounded processed set, the
+producer/retention race — `TestProducerRetentionRace` deletes a record mid-cycle and asserts a
+counted skip, newest-first order, that a preloaded record survives its file, and that a vanished
+anchor record is not an anchor FAILURE — the throttle
 and its sliding window, the stale-trainer pause + resume, the anchor's refusal / cadence /
 crash-is-a-failure, the ecology field on every row, checkpoint resolution, and that every help
 string renders). **The deliverable is `cf_producer_integration_test.py` (`sim`)**: a REAL bridge

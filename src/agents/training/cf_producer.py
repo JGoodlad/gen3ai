@@ -16,7 +16,9 @@ failure a training failure.
 Each cycle:
 
 1. **Watch** ``<run_dir>/cf_records/`` for records it has not processed (remembered in
-   ``<run_dir>/cf_producer_state.json``, which is written BEFORE the work — see *Crash safety*).
+   ``<run_dir>/cf_producer_state.json``, which is written BEFORE the work — see *Crash safety*),
+   **NEWEST FIRST**, and READ this cycle's batch into memory at enumeration time — see *The
+   producer/retention race* below.
 2. **Refresh the snapshot** — the freshest ``checkpoints/`` zip (via ``latest.txt``, else the
    highest-stepped one on disk). Its step is stamped on every label it produces.
 3. **Select decisions by a DECLARED priority** — replay each record once (which also yields the
@@ -75,6 +77,26 @@ double-label. That direction is chosen on purpose: the buffer dedups on the obs 
 duplicate is survivable — but it is also a silent re-weighting of the declared sampler, and a
 record aged out of the ring unprocessed is simply a record that was not labelled. Missing a label
 is free; mis-weighting the sampler is not.
+
+The producer/retention race (``records_vanished``)
+--------------------------------------------------
+The trainer owns ``cf_records/``: every env worker prunes it to the newest ``--cf-records-keep``
+(512 by default). This process only reads it. So a record can be ENUMERATED and then DELETED before
+it is opened, and three things follow, all of them load-bearing:
+
+* **Records are taken NEWEST FIRST.** The ring deletes from the OLD end, so the oldest pending
+  record is the one it has already promised to destroy — and the loop used to walk exactly that end.
+  Measured on `ai_v9_29_rev1_0823`: 176 records lost to `FileNotFoundError` across 67 cycles, with
+  "538 pending" against a ring of 512 — the excess is a guaranteed loss by arithmetic alone.
+* **The batch is READ AT ENUMERATION TIME** (:meth:`CfProducer._load_batch`). The gap the race wins
+  is enumerate → anchor (a full scripted replay) → claim + fsync → open. Reading immediately
+  collapses it, and everything downstream works from an in-memory ``ReconstructionRecord``.
+* **A vanished file is a COUNTED BENIGN SKIP** (``records_vanished`` in the state file, on the
+  heartbeat, and one explanatory log line), never an exception path. As an exception it landed in
+  ``skip_reasons`` as ``error:FileNotFoundError`` — indistinguishable from a corrupt record — and on
+  the anchor path it reached ``anchors_errored``, where it could exit 3 over an ordinary deletion.
+  The remedy is a larger ``--cf-records-keep`` on the trainer, which is a flag a restart can raise;
+  nothing here changes the ring's semantics.
 
 The anchor discipline (inherited from `cf_audit`)
 -------------------------------------------------
@@ -415,6 +437,10 @@ class ProducerState:
     #: scripted replay cannot reproduce (`record_is_full_replay_anchorable`). A declared coverage
     #: bound, counted so it can never become invisible.
     anchors_skipped_unanchorable: int = 0
+    #: Records that were ENUMERATED and then DELETED by the trainer's `--cf-records-keep` ring
+    #: before this process could read them. A benign, EXPECTED race between two processes that
+    #: share only a directory — never an error path, and never invisible. See `_note_vanished`.
+    records_vanished: int = 0
     cycles: int = 0
     started_unix: float = dataclasses.field(default_factory=time.time)
     updated_unix: float = 0.0
@@ -652,6 +678,10 @@ class CfProducer:
             lambda path, step: load_snapshot(path, step, device=args.device,
                                              compile_extractor=args.compile_extractor))
         self.snapshot: Optional[Snapshot] = None
+        #: path -> the record READ AT ENUMERATION TIME (see `_load_batch`). `process_record` takes
+        #: from here rather than re-opening a file the ring may have deleted in the meantime; a
+        #: miss falls back to a real load, which is what every direct/test call still does.
+        self._preloaded: "dict[str, ReconstructionRecord]" = {}
         self.label_times: "Deque[float]" = deque()
         self._last_new_ckpt_unix = time.time()
         self._producing = True
@@ -736,12 +766,74 @@ class CfProducer:
         return self._rate_per_hour() >= self.args.max_labels_per_hour
 
     def _pending_records(self) -> "List[str]":
+        """Unprocessed records, **NEWEST FIRST**.
+
+        ⚠️ THE ORDER IS THE FIX, not a preference. The trainer's `--cf-records-keep` ring prunes
+        `cf_records/` to the newest N from every env worker, so the OLDEST pending record is the one
+        about to be deleted — and this loop used to walk exactly that end first. Measured on
+        `ai_v9_29_rev1_0823`: 176 records died of `FileNotFoundError` in 67 cycles with "538
+        pending" against a ring of 512, i.e. the producer spent its cycle on records the ring had
+        already guaranteed it would lose. Newest-first puts the deletion end of the ring at the LOW
+        end of the work queue, where losing a record costs nothing.
+
+        It is also the right SAMPLER order independently: a newer record was produced by a policy
+        closer to the one the label will supervise, and the label's freshness is bounded by
+        `--cf-label-lag-steps` at the consumer either way.
+        """
         try:
             names = sorted(n for n in os.listdir(self.records_dir) if n.endswith(RECON_SUFFIX))
         except OSError:
             return []
-        return [os.path.join(self.records_dir, n) for n in names
+        return [os.path.join(self.records_dir, n) for n in reversed(names)
                 if not self.state.is_processed(n)]
+
+    def _note_vanished(self, name: str) -> None:
+        """A record that was enumerated and then deleted by the ring. COUNTED, never raised.
+
+        Two processes share one directory and only one of them owns its lifetime, so this is an
+        ordinary outcome of the design, not a failure of either side. Reporting it as an exception
+        put it in `skip_reasons` as `error:FileNotFoundError` — indistinguishable from a corrupt
+        record or a replay crash — and on the anchor path it reached `anchors_errored` and could
+        exit 3. It gets its own counter so the operator can see the ring pressure as the number it
+        is, and the fix is a bigger `--cf-records-keep`, never a code change here.
+        """
+        self.state.records_vanished += 1
+        if self.state.records_vanished == 1:
+            self._log(f"⚠️  {name} was deleted by the trainer's --cf-records-keep ring before this "
+                      f"process could read it. That is a BENIGN race (two processes, one "
+                      f"directory, one owner) and is counted as `records_vanished`, never an "
+                      f"error. If the count grows, raise --cf-records-keep on the trainer or lower "
+                      f"--records-per-cycle here. This explanation is printed once.")
+        else:
+            self._log(f"record {name} vanished (ring deletion #{self.state.records_vanished})")
+
+    def _load_batch(self, paths: "Sequence[str]") -> "List[str]":
+        """READ this cycle's records into memory NOW, at enumeration time. Returns the survivors.
+
+        The enumerate → read gap is what the ring wins: a cycle enumerates, then anchors (a FULL
+        scripted replay — seconds to minutes), then claims + fsyncs the state file per record, and
+        only then opens the file. The ring deletes throughout. Reading immediately shrinks the
+        window to the length of this loop, and everything after it works from a `ReconstructionRecord`
+        that no longer has a file to lose.
+        """
+        alive: "List[str]" = []
+        for path in paths:
+            name = os.path.basename(path)
+            try:
+                self._preloaded[path] = ReconstructionRecord.load(path)
+            except FileNotFoundError:
+                # The record is GONE — it can never be retried, so claim it (a name the state file
+                # will never see on disk again) and count it. Any OTHER load failure (a corrupt or
+                # half-written record) is deliberately NOT caught here: it belongs to
+                # `process_record`'s existing claim-then-report path, which names the exception.
+                self.state.claim(name, keep=self.args.keep_processed)
+                self._note_vanished(name)
+                continue
+            except Exception:                                           # noqa: BLE001
+                alive.append(path)      # let process_record re-raise it and report it by type
+                continue
+            alive.append(path)
+        return alive
 
     def _newest_record(self) -> Optional[str]:
         """The newest record that the full-replay anchor can actually adjudicate.
@@ -760,6 +852,11 @@ class CfProducer:
             path = os.path.join(self.records_dir, name)
             try:
                 anchorable = record_is_full_replay_anchorable(ReconstructionRecord.load(path))
+            except FileNotFoundError:
+                # The ring deleted it between the listdir and this read. NOT an anchor error —
+                # that path exits 3 — just an older record to anchor on instead.
+                self._note_vanished(name)
+                continue
             except Exception:                                           # noqa: BLE001
                 return path        # unreadable → let run_anchor report it as an ANCHOR ERROR
             if anchorable:
@@ -822,6 +919,15 @@ class CfProducer:
                           f"the buffer with stale-policy labels. Still watching.")
 
     # -- the anchor ------------------------------------------------------------------
+    def _anchor_error(self, path: str, exc: BaseException) -> bool:
+        """The anchor RAISED. Always False (an anchor that did not complete has certified
+        nothing), counted apart from a MISMATCH, and it says which one it was."""
+        self.anchor_error = f"{type(exc).__name__}: {str(exc)[:300]}"
+        self._log(f"ANCHOR ERROR on {os.path.basename(path)}: {self.anchor_error}")
+        self.state.anchors_run += 1
+        self.state.anchors_errored += 1
+        return False
+
     def run_anchor(self) -> Optional[bool]:
         """The full-replay correctness oracle. None = no record to anchor on.
 
@@ -843,6 +949,17 @@ class CfProducer:
             return None
         try:
             record = ReconstructionRecord.load(path)
+        except FileNotFoundError:
+            # Deleted by the ring between `_newest_record`'s read and this one. An anchor that had
+            # no record to run on is not an anchor that FAILED — returning False here would exit 3
+            # over an ordinary ring deletion.
+            self._note_vanished(os.path.basename(path))
+            return None
+        except Exception as exc:                                        # noqa: BLE001
+            # A record that is UNREADABLE for any other reason (corrupt, half-written) is the
+            # anchor ERROR it always was — only the vanished case is exempted above.
+            return self._anchor_error(path, exc)
+        try:
             side = _trainee_side(record)
             rec = dataclasses.replace(record, trainee_username=record.username(side))
             expected = replay_battle(record, impl=self.args.impl).outcome
@@ -855,11 +972,7 @@ class CfProducer:
                 seed=record.start_options().get("seed"), impl=self.args.impl)
             got = {"win": 1.0, "loss": 0.0}.get(res["outcome"], 0.5)
         except Exception as exc:                                        # noqa: BLE001
-            self.anchor_error = f"{type(exc).__name__}: {str(exc)[:300]}"
-            self._log(f"ANCHOR ERROR on {os.path.basename(path)}: {self.anchor_error}")
-            self.state.anchors_run += 1
-            self.state.anchors_errored += 1
-            return False
+            return self._anchor_error(path, exc)
         self.state.anchors_run += 1
         # THE STRICTER HALF, and the sensitive one. A `divergence_turn=None` replay scripts every
         # decision of both sides, so a side that runs OUT of recorded commands and finishes on the
@@ -883,7 +996,9 @@ class CfProducer:
     def process_record(self, path: str) -> "List[dict]":
         """Replay, rank, roll out. Returns the label rows (possibly empty)."""
         assert self.snapshot is not None
-        record = ReconstructionRecord.load(path)
+        # Preloaded by `_load_batch` at enumeration time; `pop` so the cycle cannot leak memory
+        # across records. A direct call (a test, a one-shot) still loads from disk.
+        record = self._preloaded.pop(path, None) or ReconstructionRecord.load(path)
         side = _trainee_side(record)
         rep = replay_battle(record, impl=self.args.impl)
         chunks = rep.p1_chunks if side == "p1" else rep.p2_chunks
@@ -1045,7 +1160,6 @@ class CfProducer:
             return 0
         self._check_trainer_alive()
 
-        pending = self._pending_records()
         if self.state.anchors_run == 0 or (
                 self.args.anchor_every > 0
                 and self.state.records_since_anchor >= self.args.anchor_every):
@@ -1055,9 +1169,15 @@ class CfProducer:
                 self.state.save()
                 return 3
 
+        # Enumerated AFTER the anchor, deliberately: a full scripted replay takes seconds to
+        # minutes, and every one of them is ring-deletion time against a list built before it.
+        pending = self._pending_records()
+
         produced = 0
         if self._producing and not self._throttled():
-            for path in pending[: self.args.records_per_cycle]:
+            # NEWEST FIRST (`_pending_records`) and READ NOW (`_load_batch`) — the two halves of
+            # the producer/retention race. Everything below works from an in-memory record.
+            for path in self._load_batch(pending[: self.args.records_per_cycle]):
                 # CLAIM FIRST (see *Crash safety*): the record is recorded as processed and the
                 # state is fsync-replaced BEFORE any rollout runs, so a crash can lose this
                 # record's labels but can never emit them twice.
@@ -1083,6 +1203,7 @@ class CfProducer:
                 if self._throttled():
                     break
 
+        self._preloaded.clear()      # nothing survives a cycle: the next one re-reads what is live
         self._emit_heartbeat(t0, new=len(pending), produced=produced)
         self.state.save()
         return 0
@@ -1107,7 +1228,10 @@ class CfProducer:
               f"snapshot {'step ' + format(snap.step, ',') if snap else 'NONE'}"
               f"{f' (lag {lag:,})' if lag else ''} | "
               f"records {new} pending / {self.state.records_processed} done"
-              f"{f' / {self.state.records_skipped} skipped' if self.state.records_skipped else ''} | "
+              f"{f' / {self.state.records_skipped} skipped' if self.state.records_skipped else ''}"
+              # A number, not an error: `records_vanished` is ring PRESSURE (raise
+              # --cf-records-keep), and it is on the heartbeat so it can never be invisible.
+              f"{f' / {self.state.records_vanished} vanished' if self.state.records_vanished else ''} | "
               f"labels {produced} (+{self.state.labels_total} total, "
               f"{self._rate_per_hour():.0f}/h) | "
               f"anchor {anchors} | "

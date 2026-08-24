@@ -188,6 +188,19 @@ def build_parser() -> argparse.ArgumentParser:
                              "full minibatch OOMs: e.g. --batch-size 4096 --grad-accum-steps 4 ≈ "
                              "--batch-size 16384 at ¼ the activation peak. A train-loop knob (not "
                              "version-locked); pass it on every resume like --batch-size.")
+    parser.add_argument("--checkpoint-every-steps", "--checkpoint_every_steps",
+                        dest="checkpoint_every_steps", type=int, default=None,
+                        help="ENV-STEP interval between periodic checkpoints. Default None = the "
+                             "historical hardcoded cadence, which is 50000 VEC-ENV CALLS and "
+                             "therefore 50000 x --n-envs ENV STEPS (2,400,000 at --n-envs 48) — a "
+                             "multiplier that was invisible until it starved the counterfactual "
+                             "label path. A value here is converted back to vec-calls by "
+                             "ceil-division, so it is honoured to within one rollout. Lower it "
+                             "when an out-of-process consumer reloads the newest checkpoint (the "
+                             "cf label producer): --cf-label-lag-steps divided by this is the "
+                             "label DUTY CYCLE the launch announces, and a value under 25%% is "
+                             "refused. A train-loop knob (not version-locked); pass it on every "
+                             "resume like --batch-size.")
     parser.add_argument("--n-epochs", type=int, default=5, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")

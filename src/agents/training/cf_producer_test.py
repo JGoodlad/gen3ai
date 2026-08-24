@@ -371,6 +371,91 @@ class TestCycle:
         assert prod._producing is True
 
 
+class TestProducerRetentionRace:
+    """The trainer's `--cf-records-keep` ring deletes records this process is still working from.
+
+    MEASURED on `ai_v9_29_rev1_0823`: 176 records lost to `FileNotFoundError` across 67 cycles,
+    with "538 pending" against a ring of 512 — an excess that is a guaranteed loss by arithmetic,
+    because the loop walked the OLD end of the ring, which is the end the ring deletes from.
+    """
+
+    def test_a_record_deleted_after_enumeration_is_a_counted_skip_not_an_error(self, tmp_path):
+        """The ring deletes between the listdir and the read. That is an ordinary outcome of two
+        processes sharing one directory — it must never look like a corrupt record or a crash."""
+        run = _mk_run(tmp_path)
+        _mk_record(run, name="0000000000000000001_1_a_reconstruction.json")
+        _mk_record(run, name="0000000000000000002_1_b_reconstruction.json")
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.run_anchor = lambda: True                              # type: ignore[assignment]
+        real_enum = prod._pending_records
+
+        def _enumerate_then_the_ring_deletes():
+            out = real_enum()
+            os.remove(out[-1])           # the OLDEST — exactly what the ring prunes
+            return out
+
+        prod._pending_records = _enumerate_then_the_ring_deletes    # type: ignore[assignment]
+        done = []
+        prod.process_record = lambda path: done.append(path) or []  # type: ignore[assignment]
+
+        assert prod.cycle() == 0, "a vanished record must never be an exception path"
+        st = P.ProducerState.load(str(run))
+        assert st.records_vanished == 1
+        assert not any(k.startswith("error:") for k in st.skip_reasons), st.skip_reasons
+        assert [os.path.basename(p) for p in done] == \
+            ["0000000000000000002_1_b_reconstruction.json"], "the survivor must still be processed"
+        assert "1 vanished" in prod.heartbeat, "ring pressure must be visible on the heartbeat"
+
+    def test_a_vanished_record_is_claimed_so_it_is_never_retried(self, tmp_path):
+        run = _mk_run(tmp_path)
+        p = _mk_record(run)
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p_, s: _StubSnapshot(p_, s))
+        prod.run_anchor = lambda: True                              # type: ignore[assignment]
+        real_enum = prod._pending_records
+        prod._pending_records = lambda: (real_enum(), os.remove(p))[0]  # type: ignore[assignment]
+        prod.cycle()
+        assert P.ProducerState.load(str(run)).is_processed(os.path.basename(p))
+
+    def test_records_are_taken_NEWEST_first(self, tmp_path):
+        """The ring deletes from the OLD end, so the oldest pending record is the one already
+        promised away. Working it first is how ~90% of the yield was lost inside the window."""
+        run = _mk_run(tmp_path)
+        for i in (1, 2, 3):
+            _mk_record(run, name=f"000000000000000000{i}_1_t_reconstruction.json")
+        prod = P.CfProducer(_args(run, records_per_cycle=1),
+                            snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.run_anchor = lambda: True                              # type: ignore[assignment]
+        done = []
+        prod.process_record = lambda path: done.append(path) or []  # type: ignore[assignment]
+        prod.cycle()
+        assert [os.path.basename(p) for p in done] == \
+            ["0000000000000000003_1_t_reconstruction.json"]
+
+    def test_the_record_is_read_at_enumeration_time_not_at_process_time(self, tmp_path):
+        """The gap the race wins is enumerate → anchor → claim+fsync → open. Deleting the file
+        AFTER the batch is loaded must not disturb the record already in hand."""
+        run = _mk_run(tmp_path)
+        p = _mk_record(run)
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p_, s: _StubSnapshot(p_, s))
+        alive = prod._load_batch([str(p)])
+        os.remove(p)                                     # the ring, mid-cycle
+        assert alive == [str(p)]
+        assert prod._preloaded[str(p)].format_id == "gen3ou", (
+            "the record must survive the deletion of its file")
+
+    def test_an_anchor_whose_record_vanishes_is_NOT_an_anchor_failure(self, tmp_path):
+        """An anchor failure exits 3 and stops the factory. A ring deletion must not be able to
+        do that — the anchor simply had no record to adjudicate this cycle."""
+        run = _mk_run(tmp_path)
+        ghost = str(run / P.RECORDS_DIRNAME / "0000000000000000009_1_g_reconstruction.json")
+        prod = P.CfProducer(_args(run), snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        prod._newest_record = lambda: ghost                         # type: ignore[assignment]
+        assert prod.run_anchor() is None
+        assert prod.state.anchors_errored == 0 and prod.state.anchors_run == 0
+        assert prod.state.records_vanished == 1
+
+
 class TestAnchorRefusal:
     def test_a_failed_anchor_exits_three_and_writes_no_labels(self, tmp_path):
         run = _mk_run(tmp_path)

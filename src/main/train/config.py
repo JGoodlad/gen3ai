@@ -22,8 +22,13 @@ from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
 from main.launcher.ipc import emit
 from main.train.checkpoint_state import _load_saved_version
+from main.exit_codes import TrainExitCode
 from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
+)
+from main.train.constants import (
+    CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle, checkpoint_interval_env_steps,
+    checkpoint_save_freq_vec_calls,
 )
 from poke_env import LocalhostServerConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
@@ -37,6 +42,68 @@ class ResolvedRunConfig:
     server_config: Any
     annealing_mode: bool
     log_level: LogLevel
+
+
+def _announce_cf_duty_cycle(args) -> None:
+    """PRINT the counterfactual label DUTY CYCLE, and REFUSE a starved one.
+
+    THE DEFECT THIS MAKES UNREPRESENTABLE (`ai_v9_29_rev1_0823`, 2026-08-23). The label producer
+    can only stamp labels with the step of the newest `checkpoints/` zip, and `cf_label_buffer`
+    expires a row more than `--cf-label-lag-steps` behind the live policy. So the two flags define
+    a fraction — and NOBODY WAS COMPUTING IT. At the hardcoded 50 000 VEC-CALL cadence and
+    `--n-envs 48` the checkpoint interval is 2 400 000 env steps against a 150 000-step bound: a
+    6.25% duty cycle, observed as **6 labels ingested against 255 expired in two hours**, with
+    every counter on both sides reading healthy (the producer was producing; the buffer was
+    expiring; neither knew about the other's number).
+
+    So the number is now PRINTED on every launch that has both halves on, healthy or not — a
+    quantity nobody computes is how this shipped — and refused below the floor. A refusal exits
+    `FATAL_CONFIG` rather than `parser.error`, because restarting would hit the identical config
+    every time and the launcher must give up rather than loop.
+
+    `--debug` is exempt: a smoke has one env and runs for thousands of steps, so its duty cycle is
+    an artifact of the smoke rather than a statement about the recipe.
+    """
+    on = bool((args.cf_twin_coef and args.cf_twin_coef > 0)
+              or (args.cf_winprob_coef and args.cf_winprob_coef > 0))
+    if not (on and args.cf_records):
+        return
+    n_envs = 1 if args.debug else int(args.n_envs)
+    every = getattr(args, "checkpoint_every_steps", None)
+    vec_calls = checkpoint_save_freq_vec_calls(every, n_envs)
+    interval = checkpoint_interval_env_steps(every, n_envs)
+    duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
+    shown = "unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf") \
+        else f"{duty:.1%}"
+    line = (f"🧾 [CF] label DUTY CYCLE {shown} — --cf-label-lag-steps "
+            f"{args.cf_label_lag_steps:,} / {interval:,} env-steps between checkpoints "
+            f"({vec_calls:,} vec-calls x {n_envs} envs)")
+    if args.debug:
+        emit(line + "  [--debug: the floor is not enforced]")
+        return
+    if duty >= CF_DUTY_CYCLE_FLOOR:
+        emit(line)
+        return
+    print(
+        f"\n[CF] FATAL: the counterfactual label path is STARVED BY CONSTRUCTION.\n"
+        f"  --cf-label-lag-steps         : {args.cf_label_lag_steps:,} env steps\n"
+        f"  checkpoint interval          : {interval:,} env steps "
+        f"({vec_calls:,} vec-calls x {n_envs} envs)\n"
+        f"  --checkpoint-every-steps     : "
+        f"{'(unset — the 50000-vec-call default)' if every is None else format(every, ',')}\n"
+        f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"
+        f"  The producer stamps every label with the newest checkpoint's step, so outside that\n"
+        f"  window EVERY label it writes is expired by the buffer on arrival. Two remedies, and\n"
+        f"  either alone is enough:\n"
+        # Both remedies are printed WITHOUT thousands separators: they are copy-pasteable argv
+        # values, and `--checkpoint-every-steps 600,000` is an argparse error.
+        f"    * checkpoint MORE OFTEN: --checkpoint-every-steps "
+        f"{max(1, int(args.cf_label_lag_steps / CF_DUTY_CYCLE_FLOOR))} or less\n"
+        f"    * widen the staleness bound: --cf-label-lag-steps "
+        f"{max(1, int(CF_DUTY_CYCLE_FLOOR * interval))} or more (a label then supervises a\n"
+        f"      policy further from the one that produced it — the cost this bound exists to cap)\n",
+        file=sys.stderr, flush=True)
+    sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
 def resolve_config(args, parser) -> ResolvedRunConfig:
@@ -425,6 +492,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # never produces one, so the flag would be a silent no-op.
         parser.error("--cf-records requires the in-process bridge (--use-bridge node|rust) — the "
                      "reconstruction record is a bridge frame; a websocket run emits none")
+    if getattr(args, "checkpoint_every_steps", None) is not None and args.checkpoint_every_steps < 1:
+        parser.error("--checkpoint-every-steps must be >= 1 (it is an ENV-STEP interval; there is "
+                     "no 'off' value — omit the flag for the historical 50000-vec-call cadence)")
+    _announce_cf_duty_cycle(args)
     if args.distill_coef is not None and args.distill_coef < 0.0:
         parser.error("--distill-coef must be >= 0 (0 = off)")
     if args.distill_value_coef is not None and args.distill_value_coef < 0.0:

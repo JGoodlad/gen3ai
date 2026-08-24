@@ -19,7 +19,9 @@ from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from agents.training.selfplay_callback import SelfPlayCallback
-from main.train.constants import DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS
+from main.train.constants import (
+    DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_save_freq_vec_calls,
+)
 from main.train.run_io import _HparamLogCallback, _TrackingCheckpointCallback
 
 
@@ -44,8 +46,22 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # --- Callback Setup (Shared) ---
     # Periodic checkpoints land in <run>/checkpoints/ (SB3 makedirs it); the callback
     # keeps latest.txt + metadata.json at the run root (derived from save_path).
+    #
+    # 🚨 `save_freq` IS IN VEC-ENV CALLS, NOT ENV STEPS — one `_on_step` per `vec_env.step()`, which
+    # advances `n_envs` envs at once, so the real interval is `save_freq * n_envs`. This was a bare
+    # hardcoded `50000` and was read as "50k steps" by everyone including the counterfactual R1
+    # design; at `--n-envs 48` it is 2,400,000 env steps, which starved the label producer by 16x
+    # its own staleness bound (`constants.checkpoint_save_freq_vec_calls` carries the measurement).
+    # The conversion lives in `main.train.constants` because `config`'s duty-cycle refusal must
+    # agree with it to the step, and phase 1 cannot import phase 4.
+    #
+    # A run that passes no `--checkpoint-every-steps` gets DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS
+    # back verbatim, so its checkpointer is byte-identical to the pre-flag one.
+    _n_envs = 1 if args.debug else int(args.n_envs)      # --debug is DummyVecEnv: one env, always
+    _save_freq = checkpoint_save_freq_vec_calls(
+        getattr(args, "checkpoint_every_steps", None), _n_envs)
     checkpoint_callback = _TrackingCheckpointCallback(
-        save_freq=50000,
+        save_freq=_save_freq,
         save_path=os.path.join(model_dir, "checkpoints"),
         name_prefix="checkpoint",
     )
