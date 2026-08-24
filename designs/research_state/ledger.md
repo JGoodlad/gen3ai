@@ -4200,3 +4200,20 @@ throughput), `threat` DELETION_CANDIDATE (wave-2), critic-below-fresh = the R1 c
 baseline, the 800-games/arm meter requirement. The endofrun measurement JSON/MD are committed
 with this entry as the record of reference. Box idle; both runs preserved whole; tick-1 spec
 is next and now has every input it was waiting for.
+
+### 🎯 TOCK-1 TARGETS ORDERED (`f7b9816`) — the diversity rule REVERSED the deficit queue (2026-08-24)
+
+The covered set measured 5-of-8 STALL (four banked teachers = four views of one sand/spikes/
+phaze region); the deficit-ordered queue head was pointing at near-duplicates of covered teams
+(Q1: two of three members at 0.071 from a covered team; Q5: novelty 0.166). Diversity-first
+picks: **ZapDug** fffd943e9e (novelty 0.655, trap+boom hyper-offense — the widest unoccupied
+gap), **Jynx Special Offense** 8aa51ef85c (the ONLY setup_heavy+spin+trap carrier; setup_heavy
+was 0/8 covered — a whole descriptor axis unfilled), **Raikou Celebi Slop** 69af2f1507 (top
+novelty band AND weakest of the top five, 0.772@n=197) + **MixZap** bd4af7191a riding for
+cohesion — launched as ONE K=4 arm (merges Q7+Q9, clears the board's only orphan; cohesion
+0.341 ≈ Q3's). Flags banked: **E1 ≡ E4 at d=0.000** (composition) — merge REVIEW owed, but the
+registered merge criterion is BEHAVIORAL (near-parallel teacher deltas), so this is the trigger
+for that check, not the verdict; Q5/Q1 demoted as re-fills. Per-team WRs refreshed from rev-1's
+602,635 games (raw, confounded — tiebreak use only). Hodge style-attribution NOT derivable from
+current artifacts (games.jsonl lacks per-team outcomes per pair) — a cheap ladder-writer
+addition owed before the learned-descriptor upgrade.
