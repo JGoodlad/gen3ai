@@ -628,3 +628,29 @@ another reason not to skip it. (4) **the ceiling may simply be low** — Metamon
 result is **GXE 35**, and offline RL on the same data only reached **42**; everything above that came
 from **self-play**. Replays are a bootstrap, not a strength lever, and we should expect them to move
 the human-agreement metric more convincingly than they move ELO.
+
+---
+
+## Addendum (2026-08-23): GXE 64 in ladder-Elo terms — measured, not folklore
+
+**GXE 64 ≈ Showdown Elo 1490–1560 on the live gen3ou ladder (median 1511; 10th–90th pct
+1447–1606)** — n=43 players at GXE 63–65 inside an 868-player un-truncated sample built from
+per-user lookups over the last ~1,500 uploaded gen3ou replays (2026-08-24 09:00 UTC). Stable
+across band widths and activity filters. ⚠️ The top-500 page alone is ~+75 Elo biased for this
+question (cutoff 1548 hides most GXE-64 players; the survivors are the grinder tail).
+
+Anchors that day: #1 = 1874 Elo / 89.9 GXE · #50 = 1713 / 79.5 · #300 = 1589 · cutoff 1548.
+Local slope ≈ 14 Elo per GXE point. Deterministic half recovered and validated to 0.05 GXE on
+all 500 rows: `GXE = 100/(1+10^(-(rpr-1500)/S))`, `S = sqrt(1.6255·rprd² + 187205)` ⇒ GXE 64 ⇔
+**Glicko-1 ≈ 1608** (do not quote Glicko and Elo interchangeably). Elo–GXE correlation is 0.88
+population-wide (0.45 inside the top 500 — range restriction); residuals driven by inactivity
+decay (−0.41) and grind volume (+0.20). Elo is NOT comparable across formats or eras (ADV-boom
+inflation: Metamon's Feb–Mar 2025 contemporaneous Elo for GXE 64 was likely somewhat below 1511).
+
+**Human terms: Metamon's best gen3ou agent ≈ an Elo-1511, 83rd-percentile ladder regular** —
+competent, above-average, ~200 Elo / 15 GXE below the tournament-player tier at #50. Its "two
+top-300 appearances" were peak-Elo grinding moments, not its typical seat.
+
+⚠️ **Scale hygiene**: OUR anchored Bradley-Terry ELO (~2000–2070 on the internal bot-anchored
+ladder) is a different scale entirely — never compare it numerically to Showdown ladder Elo.
+The only honest cross-walk is playing the ladder.
