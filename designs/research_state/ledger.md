@@ -3945,3 +3945,14 @@ Owner sign-off: "get all 3" arms + a BUDGET SWEEP. Design registered before buil
   scorer, not the width).
 Prior (registered, wide): honest-arm dividend +40–150 anchored ELO at depth-1 with today's
 critic. Oracle−honest gap: no prior — first measurement of its kind here.
+
+### 🔭 SEARCH-DIVIDEND PROBE — DEPTH AMENDMENT (owner, 2026-08-23, minutes after registration)
+
+"Fixed depth" in the registration was the owner's shorthand for CHEAP, not a constraint: the
+search may take whatever depth the budget affords. Amended design: **iterative deepening under
+the wall-clock** — depth-1 sweep first (unchanged), then while time remains expand the top-m
+candidates a ply deeper (the better_line beam shape, live). Realized DEPTH joins realized
+widths in the per-decision record, so each budget cell reports what it actually bought
+(e.g. 0.5 s ≈ width-limited depth-1; 8 s ≈ depth-2/3 on contenders). The depth-1-everywhere
+readings survive as the width-only reference inside the same runs; the build lands depth-1
+first and the deepening rides as the follow-up pass on the same driver.
