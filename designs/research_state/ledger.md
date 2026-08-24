@@ -4276,3 +4276,25 @@ values; global knobs inherit from the base):**
    rain carriers, 0/8-covered axis; next in the reordered queue) at the same recipe, 3M fixed
    — Phase B then folds TWO teachers (K=4 diverse + rain), a materially richer first tick for
    ~2 h of box time.
+
+### 🧯 COMPILE-FLOOR CORRECTION (supersedes part of 5e63ecb) — the GATE is broken, not the target class (2026-08-24)
+
+**Retraction of the banked mechanism**: 5e63ecb's "~half the workers land under the floor for a
+frozen fork; compiling this class buys ~5%" is FALSIFIED by the training session's own follow-up
+— the SAME checkpoint that FATAL'd at 0.78× compiled at **6.3× median (1.10–47.8×) across 48/48
+workers** once allowed through. The ~5% reading was itself one noisy pair. Real root cause: the
+1.05× floor compares a RATIO OF TWO SINGLE TIMINGS whose eager arm spreads **7.7×** (14.9–115.7
+ms same model, same box) — the verdict is decided by which end of the spread each arm lands on.
+Rev-1's 81/0 clean record under strict is a measurement-REGIME difference (one opponent class,
+warm cache, eager consistently measured slow), not an opponent-class difference. Boundary tell
+that should have ended the debugging earlier: attempt 2 failed at EXACTLY 1.05×. **The gate is
+currently uninformative in BOTH directions** — a cold-measured eager arm lets a genuinely broken
+compile sail through at 29×, so the 0/48-below-floor reading is not proof of health. The error
+text asserts "graph is probably fragmented" — a cause the measurement cannot distinguish from
+timing noise (the vacuous-diagnosis family; same rule the perf agent minted last night: read the
+per-arm spread before believing a delta — this gate structurally cannot).
+Rulings: the tick-1 strict-drop (beyond the earlier endorsement's scope) is RATIFIED — mechanism
+proven identical, 141 ON / 0 REVERTED; **NO re-runs** — the science is unaffected
+(--compile-opponents on and excellent). FIX DISPATCHED (my lane): median-of-N both arms +
+identical warm-up + QUORUM verdict (per-worker warning; fatal only if >25% of workers revert) +
+an error text that reports the measurements instead of asserting a cause.
