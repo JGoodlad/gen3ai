@@ -4298,3 +4298,19 @@ proven identical, 141 ON / 0 REVERTED; **NO re-runs** — the science is unaffec
 (--compile-opponents on and excellent). FIX DISPATCHED (my lane): median-of-N both arms +
 identical warm-up + QUORUM verdict (per-worker warning; fatal only if >25% of workers revert) +
 an error text that reports the measurements instead of asserting a cause.
+
+### 🛠️ COMPILE-FLOOR FIX LANDED (`cd07aa7`) — median-of-5 alternated, identical warm-up, cross-process quorum (2026-08-24)
+
+All four fixes shipped; floor stays 1.05 (a sound measurement needs no loosening). The
+synthetic-regime test REPRODUCES both recorded extremes from the mechanism without being fitted
+to them (drift 64× → 0.77× vs the real 0.78×; drift 1/64 → 51× vs the real 47.8×); over 400
+draws the old logic's verdict FLIPS, the new one is stable at 6.7× median. Quorum is a real
+cross-process one (run-dir marker files, fatal only >25% reverted AND ≥4 reported; documented
+PREFIX-estimate limit — a healthy startup dilutes a later regression; compile ERRORS stay
+immediately fatal). Honest residual pinned in its own test: alternation leaves a drift^0.1 bias
+that lets a marginal 0.70× compile survive ~2% of draws — which is exactly why below-floor is
+the quorum's business, not a per-worker verdict. "The graph is probably fragmented" DELETED
+from the message (assert measurements, never causes). Real read on the live tick-1 checkpoint:
+**7.52× median, spread 1.015 across 3 reps**. Bonus: the warm-up now goes through the live call
+signature (action_mask float32) so the first real decision no longer re-traces. Strict can be
+restored on future launches once this is the deployed benchmark.
