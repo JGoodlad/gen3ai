@@ -3,7 +3,7 @@
 The forensic ``states.npz`` saves the obs vectors of states that *happened*; it
 cannot score a counterfactual (a re-rolled turn), and the encoder's stateful
 trackers (HiddenPowerTracker, ability/usage narrowing, the turn-history deltas,
-the progress clock) are not recoverable from the 3457-dim output vector. The way
+the progress clock) are not recoverable from the flat output vector. The way
 to get the obs of ANY point — recorded or re-rolled — is to replay the one-sided
 protocol stream through the *real* obs pipeline from battle start, rebuilding
 the tracker state exactly as the live player did. That replay is what this
