@@ -194,7 +194,18 @@ class SearchSession:
         per-side action semantics of :func:`reconstruction.reroll_turn` (``"recorded"`` only
         reproduces the realized turn on the ROOT via ``recorded_exact``; off-root a
         ``"recorded"`` source falls through to the follow-up policy, so callers pass explicit
-        choice strings for the opponent at interior plies)."""
+        choice strings for the opponent at interior plies).
+
+        🚨 ``seed="original"`` IS NOT A DICE SAMPLE — it is the REALIZED stream. The driver swaps
+        the PRNG only for a non-``"original"`` seed (``if (!isOriginal) b.prng = new PRNG(seed)``)
+        and ``open_root`` replays the record to the start of the turn, so the arm resolves from the
+        battle's own mid-game PRNG state: measured 2026-08-24 over 12 consecutive live decisions,
+        expanding the realized ``(p1_action, p2_action)`` pair that way reproduced the real turn's
+        our-side protocol BYTE-FOR-BYTE 11 of 12 times, against 14 of 36 for fresh seeds. That is
+        exactly what an OFFLINE counterfactual wants (a CRN anchor against what really happened),
+        and exactly what a LIVE search must not have — reading it is a ply of clairvoyance no
+        player has, and it silently made the search-dividend probe's dice-width ladder measure its
+        own dilution. In a live decision, mint every seed."""
         out = self._call({"cmd": "expand_many", "arms": [dict(a) for a in arms]})
         return [
             ExpandedNode(
