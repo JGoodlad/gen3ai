@@ -4003,3 +4003,23 @@ These fold into: the ladder-readiness go-live checklist (audit in flight — req
 appended on landing) and the search-dividend driver's record format (the battery's per-decision
 rows are the seed of requirement 3 — design its schema so the ladder search trace is the SAME
 format, not a second one).
+
+### 🪜 LADDER READINESS LANDED (`683b607`+) — ~2–3 days from a first rated game; three walls MEASURED DOWN (2026-08-23)
+
+The audit's verdict, all measured: **protocol drift ZERO** (59 real public gen3ou rated replays,
+20,589 lines through a real Gen3Battle — 0 unknown keywords; re-runnable gate
+`src/main/ladder_drift_scan.py`); **latency 18 ms/decision** vs the 150 s timer (~3,500×
+margin, measured on the real websocket path under training load); **bot policy
+unwritten-but-tolerated** (server source + admin statements sourced; Metamon laddered publicly;
+measured limits: 600 ms message throttle, 12 battles/3 min/IP). Real bugs FIXED with
+revert-verified tests: play.py rebuilt as the ladder client (selfplay/challenge/accept/ladder ×
+local/official, verified incl. a real rated /search on a throwaway :9017 server); a
+**guest-rename race that hung `battle_against` forever** (2/2 hangs pre-fix — "Guest N" read as
+logged-in before /trn); refused login now a named LoginError instead of a hang; :8000/:8001
+refused IN CODE for ladder runs. Research corrections: ladder from the RESIDENTIAL line
+(Showdown auto-locks datacenter IPs — the GCP-tunnel advice was backwards); rated play needs no
+registration; report GXE + W-L + rprd via users/<id>.json; ~180 games to a converged rating.
+**Remaining gap: reconnect (poke-env has none at any layer vs a 60 s disconnection timer,
+sized 1–2 d) + session runner (1 d, where the owner's registered requirements land) + rating
+readback (0.5 d).** Memo: `designs/research_state/ladder_readiness.md` with the go-live
+checklist + the owner's binding requirements (87a3f91) appended.
