@@ -3904,3 +3904,22 @@ correct precedence. Under rpc=8 `buffer_fill` hit 0 — at low acceptance the pa
 intermittently STARVES, so cycle latency is correctness-adjacent (bursty head training), not just
 statistical power. Reverted to rpc=4; resting until the warm-path landing (in build — the ~8 s/label
 vs the banked ~0.2–0.8 s cost model is the real lever; batching never was).
+
+### ⚡ PRODUCER WARM-PATH LANDED (`53870dd`) — the 8 s/label was the POLICY FORWARD; my brief's levers measured ~nothing (2026-08-23)
+
+Profile-first vindicated against the dispatching brief itself: warm session reuse ≈ 0.2%,
+prefix sharing ≈ 3% — the banked 162 ms/label cost model was the MATERIALIZER path (one-ply
+labels, per-arm prefix replay); THIS producer's labels are rollouts-to-end, whose cost is 93%
+`choose_move` forwards at 26.3 ms eager B=1. **Scope a cost model to its measured PATH before
+citing it.** Fix: `--compile-extractor` default ON in the producer (26.3 → 4.1 ms, compile
+keys on the code object so one ~40 s cost per PROCESS, 1.1 s per checkpoint reload) + three
+compile-signature stalls closed, each a durable lesson for any B=1 compile user: (1) a BATCHED
+scoring forward in front of B=1 rollouts forces a 79 s re-trace — forward one row at a time
+under compile; (2) mask dtype int8-vs-float32 is a guard-key miss (19.5 s); (3) warm the graph
+through the LIVE call signature — the kwargs KEY SET is part of the guard (`observation` alone
+≠ `observation`+`action_mask`, 19.5 s). `--rollout-concurrency` measured a WASH (everything
+serializes on poke-env's single POKE_LOOP thread) — kept at sequential default. Result,
+load-fair interleaved: **8.09 → 1.81 s/label rollout wall (4.5×)**; cycle 198 → 99 s on live
+records. Byte-compatible (18/18 buffer ingest; only Inductor 6th-decimal drift on a
+non-thresholded field). Not the <1 s target — multi-process rollout workers judged too risky
+for a same-night production restart; ~1.8–3.2 s/label sits at/under the 2000/h cap regardless.
