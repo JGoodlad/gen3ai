@@ -4146,3 +4146,28 @@ snapshot-listing self-correction is accepted — a transient read as fact, caugh
   DELETION_CANDIDATE (|dV| 5%, 0 flips) — wave-2 deletion on the wave-1 evidence pattern;
   (3) the endofrun's gen-over-gen tail-sampling defect needs a permanent fix (extend ladder
   sampling or re-sample the ref tail at matched count).
+
+### 🔬 WANG RECONCILED (`e0a1545`) — his leaves were OUR KIND OF CRITIC; the difference is the ESTIMATOR REGIME, and the R-LADDER now decides variance-vs-bias (2026-08-24)
+
+Thesis read in full (MIT DSpace; local copy in designs/references/). **The crux: Wang's MCTS
+leaves are a trained V_θ — the same estimator class as ours, NO random playouts** (truncated
+MCTS by design, §2.3). The parent hypothesis "his leaves were rollouts-to-end" is REFUTED as a
+Wang ingredient (rollout leaves survive as a lever on independent grounds only — and at R1's
+measured ~100 ms/rollout the affordable form is a top-2 PLAYOFF after a critic screen, not a
+leaf swap). What actually separates the results, all estimator-side: **R = 1,000–2,000
+simulations/decision on a tree PERSISTENT across the game** (vs our r≈1–8; noise/margin ~4–5%
+his vs 54% ours), a **PUCT prior inside selection** (`Q + α·P^β·√M/(N+1)`, P = π_θ — ours has
+none), and **VISIT-COUNT argmax, not Q-argmax** — he names our exact failure mode and designed
+around the optimizer's curse. Both headline gains are same-policy mirror ablations, so the
+results are CONSISTENT once the estimator regime is matched. **Two new bias terms surfaced**:
+our flat-α opponent model (α ratio 0.97 — a bias averaging can never remove; Wang samples π_θ)
+and our depth≥2 MAX-over-our-actions backup (E[max] ≥ max E under noise — mechanistically
+explains "most-deepened = most-harmed"). **Caveat that keeps this open**: oracle@3s at ~19%
+noise/margin still read 0.434 — a pure-variance account predicts nearer 0.50; our four cells
+confound arm with budget, so variance-vs-BIAS-FLOOR is undecided and the two readings imply
+OPPOSITE next actions. **THE R-LADDER IS LAUNCHED** (zero new code, self-controlled: oracle
+mirror @10 s, max-opp 2/worlds 1/depth 1, R ∈ {1,2,4,8,16,32}, 40 games/cell, seed 11):
+climb toward 0.50 ⇒ variance — margin-gate/prior-shrink revive search NOW; plateau below ⇒
+bias — the "search is downstream of R1" verdict confirmed at strength. Sourcing note: Wang's
+α/β constants are UNREPORTED and there is no public code — his tree policy is under-determined;
+never cite numeric reproductions of it.
