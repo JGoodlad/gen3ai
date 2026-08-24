@@ -3923,3 +3923,25 @@ load-fair interleaved: **8.09 → 1.81 s/label rollout wall (4.5×)**; cycle 198
 records. Byte-compatible (18/18 buffer ingest; only Inductor 6th-decimal drift on a
 non-thresholded field). Not the <1 s target — multi-process rollout workers judged too risky
 for a same-night production restart; ~1.8–3.2 s/label sits at/under the 2000/h cap regardless.
+
+### 🔭 SEARCH-DIVIDEND PROBE — REGISTERED (owner-ordered, 2026-08-23); build dispatches on next agent slot
+
+Owner sign-off: "get all 3" arms + a BUDGET SWEEP. Design registered before build:
+- **Arms**: (1) policy alone · (2) HONEST search (belief-determinized worlds — the deployable
+  number) · (3) ORACLE search (true hidden state — the ceiling; arm3−arm2 = the ELO cost of
+  imperfect beliefs, the first value-denominated belief measurement).
+- **Budget sweep at FIXED depth-1**: 0.5 s / 1 s / 3 s per decision + a SMALL batch at 8 s.
+  Budget buys WIDTH, not depth: more α-pruned opponent actions, more determinized worlds K,
+  more CRN dice resamples R (allocation order registered in the build spec). Ladder timer
+  context per owner: **10 s/turn grace + 2.5 min bank** — 0.5–3 s arms are always-timer-safe,
+  the 8 s arm models bank-dipping play.
+- **Matrix**: arm1 baseline + arms {2,3} × 4 budgets = 9 cells, anchored-ELO battery vs the
+  fixed bots + pool sentinels, matched games per cell, harness noise floor (±0.045 @400)
+  quoted beside every contrast. Runs on the idle box after rev-1 completes.
+- **What it gates**: the search-teacher's ceiling at tick-1 (distillation can recover only a
+  fraction of the measured dividend); the bait-class prediction (one-ply search sees the whiff
+  in the sim — expect the loops census to collapse in search arms); the budget curve's shape
+  (flat past 1 s ⇒ cheap search suffices; still rising at 8 s ⇒ the critic is the binding
+  scorer, not the width).
+Prior (registered, wide): honest-arm dividend +40–150 anchored ELO at depth-1 with today's
+critic. Oracle−honest gap: no prior — first measurement of its kind here.
