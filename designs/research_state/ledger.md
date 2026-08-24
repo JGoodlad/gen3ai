@@ -4100,3 +4100,18 @@ conviction and the credit verdict: **the critic cannot tell branches apart at th
 search acts on; until R1-class calibration lands, search amplifies noise, and the
 search-teacher's expected value at tick-1 reprices accordingly.** Clean cells relaunching on
 v3 for the morning table.
+
+### 📉 SEARCH-DIVIDEND FINAL TABLE (clean v3 cells, full n, 2026-08-24 ~04:10) — NEGATIVE at every point, dose-response confirms the mechanism
+
+Paired vs the 0.50 null (side-swap, exact-50 control, leak fixed): honest@1s **0.294**
+[0.24,0.35] n=120 pairs · honest@3s **0.276** [0.18,0.37] · oracle@1s **0.325** [0.23,0.42] ·
+oracle@3s **0.434** [0.32,0.55]. Depth-1 search COSTS ~17–22 points of mirror win rate; truth
+(oracle) ≈ belief (honest) throughout. **The dose-response is the mechanism's signature**: the
+most dice-AVERAGED cell (oracle@3s, R≈7.9) is least harmed; the most DEEPENED cell (honest@3s,
+24% deepen, beam 0.79) is most harmed — averaging reduces leaf noise, searching amplifies it.
+Registered readings resolved: the budget curve's rising-with-averaging shape = "the critic is
+the binding scorer" in its strongest form. **Standing verdict for tick-1: search (and the
+search-teacher) is DOWNSTREAM of critic calibration — R1-class resolution work is the
+prerequisite, not the parallel track. Re-run this probe (it is now cheap, validated, and
+self-controlled) after each critic milestone; the mirror table IS the critic-resolution meter
+in behavioral units.**
