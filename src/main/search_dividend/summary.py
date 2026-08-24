@@ -246,11 +246,41 @@ def elo_by_arm(rows: Sequence[dict], anchors_path: Optional[str] = None) -> dict
     }
 
 
+#: Rows below this ``v`` were played while dice draw 0 was the sim's ``"original"`` seed — i.e.
+#: the realized stream, reproducing the actual turn byte-for-byte (measured 11/12 live decisions).
+#: Their scores mix one clairvoyant ply with ``R-1`` honest ones, so a cell's reading depends on
+#: its realized ``r_dice``, and the ORACLE arm — pinned to ``k_worlds=1``, with dice last in
+#: ``WIDTH_ORDER`` — was the only arm that routinely bought R>1. Cross-arm and cross-budget
+#: comparisons among them are NOT valid. The file is append-only and these rows stay in it, so the
+#: report has to say so rather than let a reader assume one schema.
+DICE_LEAK_ROW_VERSION = 3
+
+
+def leaked_rows(rows: Sequence[dict]) -> int:
+    """How many rows predate the dice-clairvoyance fix. ``v`` is absent on the oldest rows."""
+    return sum(1 for r in rows if int(r.get("v", 1) or 1) < DICE_LEAK_ROW_VERSION)
+
+
 def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> str:
     """The human-readable summary the CLI prints."""
     per = per_cell(rows)
-    lines = ["arm      budget  opponent          n   wr     ci95           tie "
-             "chg    dep    m/k/r/arms/depth        s/dec  fallbacks"]
+    lines: List[str] = []
+    n_leak = leaked_rows(rows)
+    if n_leak:
+        lines += [
+            f"🚨 {n_leak} of {len(rows)} rows were played BEFORE the dice-clairvoyance fix "
+            f"(v<{DICE_LEAK_ROW_VERSION}).",
+            "   Dice draw 0 was the sim's own `original` stream — the dice the turn was actually",
+            "   about to be resolved with (11/12 live decisions reproduced the real turn byte-for-",
+            "   byte). Each arm's score is a mean over R draws, so the leak's share is 1/R and a",
+            "   cell's reading tracks its realized r_dice. The ORACLE arm is pinned to k_worlds=1",
+            "   and dice are spent LAST, so it was the only arm that routinely bought R>1 — its",
+            "   sub-null mirror readings are that dilution, not the value of the hidden team.",
+            "   DO NOT compare these rows across arms or budgets; replay the cells.",
+            "",
+        ]
+    lines.append("arm      budget  opponent          n   wr     ci95           tie "
+                 "chg    dep    m/k/r/arms/depth        s/dec  fallbacks")
     for c in per:
         rm = c["realized_mean"]
         widths = (f"{rm['opp_candidates']}/{rm['worlds']}/{rm['dice']}/{rm['arms_scored']}"

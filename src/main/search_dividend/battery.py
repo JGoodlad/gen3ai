@@ -45,7 +45,13 @@ BATTLE_FORMAT = "gen3ou"
 # reader defaults the new keys, so a v1 file still summarizes and still resumes — an append-only
 # file outlives its schema by construction, and a version that could not be read back would make
 # the append-only discipline pointless.
-ROW_VERSION = 2
+#
+# v3 adds NO field. It is a MEANING change: before it, dice draw 0 was the sim's ``"original"``
+# seed — the realized stream, which reproduced the actual turn byte-for-byte in 11 of 12 live
+# decisions — so every score mixed one clairvoyant ply with `R-1` honest ones and a cell's reading
+# tracked its realized `r_dice`. A version bump is the only thing that can tell those rows apart
+# from these in an append-only file, and `summary.format_report` prints a banner when it sees one.
+ROW_VERSION = 3
 
 
 def game_seed(opponent: str, game: int, salt: int) -> str:

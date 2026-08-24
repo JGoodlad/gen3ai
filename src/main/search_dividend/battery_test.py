@@ -387,3 +387,32 @@ def test_elo_reports_a_DELTA_vs_base_and_carries_its_caveats():
     assert cells[("base", 0.0)]["delta_vs_base"] == 0.0
     assert cells[("oracle", 1.0)]["delta_vs_base"] > 0
     assert out["caveats"], "an ELO must never be published here without its caveats"
+
+
+# -- the dice-clairvoyance schema break ---------------------------------------
+
+
+def test_rows_played_under_the_DICE_LEAK_announce_themselves_in_the_report():
+    """An append-only file outlives its schema, and here the schema break is a MEANING break.
+
+    Before `ROW_VERSION` 3, dice draw 0 was the sim's own `original` stream — the dice the turn was
+    actually about to be resolved with (11 of 12 live decisions reproduced the real turn's protocol
+    byte-for-byte). Each arm's score is a mean over R draws, so the leak's share is 1/R and a cell's
+    reading tracks its realized `r_dice`; the ORACLE arm, pinned to `k_worlds=1` with dice last in
+    `WIDTH_ORDER`, was the only arm that routinely bought R>1 and was the only one to read below the
+    mirror null. Those rows stay in the file, so the REPORT is what has to say so — a stale artifact
+    that reads like a current one misleads every reader after it.
+    """
+    from main.search_dividend.battery import ROW_VERSION
+    from main.search_dividend.summary import (DICE_LEAK_ROW_VERSION, format_report, leaked_rows)
+
+    assert ROW_VERSION >= DICE_LEAK_ROW_VERSION, "a freshly played row must never look leaked"
+    old = [_row(v=2, game=g, won=g % 2, result="win" if g % 2 else "loss") for g in range(4)]
+    new = [_row(v=ROW_VERSION, game=g, won=g % 2, result="win" if g % 2 else "loss")
+           for g in range(4)]
+    assert leaked_rows(old) == 4 and leaked_rows(new) == 0
+    assert leaked_rows([{k: v for k, v in r.items() if k != "v"} for r in old]) == 4, \
+        "the oldest rows carry no `v` at all and must not read as clean"
+    report = format_report(old)
+    assert "dice-clairvoyance" in report and "4 of 4 rows" in report
+    assert "dice-clairvoyance" not in format_report(new)
