@@ -4115,3 +4115,34 @@ search-teacher) is DOWNSTREAM of critic calibration — R1-class resolution work
 prerequisite, not the parallel track. Re-run this probe (it is now cheap, validated, and
 self-controlled) after each critic milestone; the mirror table IS the critic-resolution meter
 in behavioral units.**
+
+### 🌅 REVOLUTION ONE COMPLETE — end-of-generation adjudication (2026-08-24 morning)
+
+Run complete at 25,067,760 steps, 1 benign restart-crash. **Headline: dense-ladder 2147 ± 33 at
+the 24M node** — above the gen-13..17 band (2015–2068) — but the endofrun's matched
+gen-over-gen contrast returned UNAVAILABLE (rev-1 tail under-sampled vs gen-17), and per the
+battery's own discipline the rev-1-vs-gen-17 verdict DOES NOT EXIST until the tail is re-sampled
+at matched count. The direction is promising; it is not yet a claim. (The training session's
+snapshot-listing self-correction is accepted — a transient read as fact, caught by its author.)
+- **Hodge width 49 ELO excess (p=0.005)** with 5 significant 3-cycles routing through the 16M
+  node — REAL late-run non-transitivity. ⚠️ NOT yet readable against the prediction registry:
+  rev-1's ladder ran 1,400–2,000 games/node vs the registered 100 g/pair convention, and width
+  is games-per-pair-sensitive BY CONSTRUCTION (the registry's own confound rule). ORDERED: the
+  matched-count thinning before any P1/P2 reading.
+- **Capacity row vs the gen-17-era baseline: NO DRIFT.** value_pooled PR 2.58 (was 2.47),
+  vf_features 3.09 (was 3.05) — the below-fresh critic rank is the scalar objective's steady
+  state, not new damage; policy side expanded (pi 19.6 vs 16.0). vf trainability 0.874 = the
+  worst tap, consistent with implicit under-parameterization pressure. This row is the
+  R1-should-raise-it baseline the meter was built for.
+- **R1 corpus final: 6,600 label rows** (the warm path landed ~4 h before run end; the duty-cycle
+  arc capped the night's total). The runbook §2 paired-head read on the endpoint is TODAY's
+  first analysis; at this n a null is a DOSAGE reading per §5's own amendment — pre-registered
+  before looking.
+- **Exploitability probe running** with the baseline arm (extraction = exploiter_wr −
+  baseline_wr) — the head-start confound was caught by the training session before launch;
+  procedure endorsed. First standing-meter reading lands ~09:00.
+- **Rev-2 spec seeds banked**: (1) `train/noise_scale_ratio 0.01 — OVER-BATCHED` all night at
+  effective 16k ⇒ free throughput via smaller effective batch; (2) `threat` critic route reads
+  DELETION_CANDIDATE (|dV| 5%, 0 flips) — wave-2 deletion on the wave-1 evidence pattern;
+  (3) the endofrun's gen-over-gen tail-sampling defect needs a permanent fix (extend ladder
+  sampling or re-sample the ref tail at matched count).
