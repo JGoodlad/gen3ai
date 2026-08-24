@@ -337,3 +337,20 @@ def test_an_explicit_value_mode_ignores_the_win_prob_head():
     m = _FakeModel(_FakePolicy([0.7], wp=torch.tensor([[10.0]])))
     scores, mode = batch_scores(m, obs, mask, "value")
     assert mode == "value" and scores == pytest.approx([0.7])
+
+
+def test_a_win_prob_stash_from_a_DIFFERENT_forward_raises_instead_of_scoring_one_arm():
+    """The stash lives on ONE shared extractor and the mirror runs two players through it — the
+    searched side in a worker thread, the unsearched side on POKE_LOOP. A B=1 forward landing
+    between ``predict_values`` and the stash read yields a length-1 score vector for an N-arm
+    batch, which ``zip`` in ``_expand_ply`` truncates in silence: N-1 arms vanish and the decision
+    goes to whichever action sorted first. Width-check it like α's clause 3 does."""
+    import numpy as np
+    import torch
+
+    obs = np.zeros((4, 3), dtype=np.float32)
+    mask = np.ones((4, 4), dtype=np.float32)
+    # 4 values (the batch really was 4 rows) but a stash left behind by someone else's B=1 forward.
+    m = _FakeModel(_FakePolicy([0.7, 0.1, 0.2, 0.3], wp=torch.tensor([[10.0]])))
+    with pytest.raises(RuntimeError, match="win-prob stash width 1 != scored batch 4"):
+        batch_scores(m, obs, mask, "auto")

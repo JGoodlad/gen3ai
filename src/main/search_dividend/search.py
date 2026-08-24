@@ -142,17 +142,38 @@ def batch_scores(model, obs: np.ndarray, masks: np.ndarray, mode: str) -> Tuple[
     encoder produced, while every LIVE forward passes a float32 one. A dtype difference is
     invisible to eager and a fresh 1.5 s TRACE under ``--compile-extractor`` (measured), which is
     the same hazard class as the dict key set. Normalizing here costs a copy of an 11-wide row.
+
+    🚨 **THE STASH IS SHARED MUTABLE STATE AND ITS WIDTH IS CHECKED, NEVER ASSUMED.**
+    ``last_win_prob_logits`` is an attribute of ONE extractor object, and in the MIRROR mode both
+    sides play the same ``model``: the searched side runs this call in a worker thread (so
+    ``materialize_branches`` is off ``POKE_LOOP``) while the unsearched side's own B=1 forward runs
+    on ``POKE_LOOP``. A forward that lands between ``predict_values`` returning and the ``getattr``
+    below leaves a stash describing a DIFFERENT state — and at B=1 against an N-arm batch the
+    consequence is not a wrong number but a SHORT one, which ``zip`` in ``_expand_ply`` would
+    silently truncate to one scored arm, handing the decision to whichever action happened to sort
+    first. Every other tie between a value and a stash in this tree is width-checked (α's clause 3
+    raises on exactly this shape); this one was not. A mismatch now RAISES, which
+    :meth:`SearchEngine.choose` records as a counted ``search_error`` fallback — visible in the
+    histogram, never a silently mis-scored decision.
     """
     import torch
 
     policy = model.policy
     dev = model.device
+    n = int(np.asarray(obs).shape[0])
     with torch.no_grad():
         inp = {"observation": torch.as_tensor(obs, dtype=torch.float32).to(dev),
                "action_mask": torch.as_tensor(masks, dtype=torch.float32).to(dev)}
         values = policy.predict_values(inp).squeeze(-1).float().cpu().numpy()
         wp_logits = getattr(getattr(policy, "features_extractor", None),
                             "last_win_prob_logits", None)
+        if wp_logits is not None and int(wp_logits.shape[0]) != n:
+            raise RuntimeError(
+                f"win-prob stash width {int(wp_logits.shape[0])} != scored batch {n} — the "
+                "stash belongs to a DIFFERENT forward. In the mirror both players share one "
+                "policy object and the unsearched side forwards on POKE_LOOP while this call "
+                "runs in the search's worker thread; give each side its own model, or score "
+                "with --score value.")
         wp = (torch.sigmoid(wp_logits.float()).squeeze(-1).cpu().numpy()
               if wp_logits is not None else None)
     if mode == "value" or (wp is None and mode in ("auto", "win_prob")):
