@@ -4053,3 +4053,23 @@ orientation pair is the same battle relabeled) holding exactly. **Zero ties in 6
 ties are rare (the tie-as-loss fix was about the accounting hole, not frequency). Verdict: no
 p1/p2 asymmetry, no tie inflation; every mirror deviation from 50% from here on is the SEARCH.
 The control cost ~10 minutes and is now the standing first cell of any future mirror battery.
+
+### ⚡ SEARCH-PATH PERF AUDIT LANDED (`11b4622`) — 9× on the hot spot; the compile recipe has a WIDE-forward trap (2026-08-23, overnight)
+
+Owner-ordered audit, profile-first: at 1 s budget the decision spends 51% in the materializer —
+57% of THAT was a per-arm deepcopy. Fixed (serialize once, rebuild per arm: 1.98 → 0.22 ms/arm,
+9.1×); realized WIDTH at fixed budget: oracle@1s 54 → 98 arms (1.81×), honest@1s 1.36×,
+honest@3s 1.49×; budget utilization 65–69% → 79–84%. Semantics HASH-IDENTICAL before/after on
+133 decisions (per-action scores, not just argmax). **Durable trap minted: 53870dd's compile
+recipe does NOT generalize to wide forwards** — compiled B=64 measured **0.15×** (755 ms vs
+110 eager) + 78–120 s of re-trace per new batch size; the search's arm count varies per
+decision, so `--compile-extractor` here compiles B=1 ONLY and routes wide forwards to eager
+(default OFF: ~1e-6 perturbation could flip a near-tie argmax; 20/20 battles identical is
+evidence not proof). Batching was already right on both sides (critic one forward per arm-set;
+expand_many one call per ply). Mirror players SERIALIZE on POKE_LOOP (97% of wall accounted,
+≤3% overlap) — cross-cell process parallelism is the correct answer and is what we run. Cost
+model fixed: world_open_s was a frozen default charged to the arms by subtraction; now measured.
+**Next multiple, sized: `--search-impl rust` (~8× on the 26% sim share) is blocked by the rust
+driver's live-record replay (43/44 root_failed) — joins the depth-2 quarantine as probe debt.**
+Cells relaunched on the landed code (resume keeps finished rows; width regime per row is
+recorded, so the mix is visible not silent).
