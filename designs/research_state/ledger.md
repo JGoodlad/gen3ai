@@ -3965,3 +3965,22 @@ budgets (0.5/1/3/8 s) are bank-safe by construction — that is why the owner pi
 No arm models reserve-spending; the 8 s cell stays a small batch purely for EVAL wall-clock
 cost (a ~30-decision game at 8 s ≈ 4 min/game), not timer risk. The deployable-configuration
 reading simplifies: every swept budget is ladder-legal at steady state.
+
+### 🎯 #34 CLOSED (`f8eec73`) — capped rollouts were a DETERMINISTIC 0 on the trainee, not a race (2026-08-23)
+
+The register's wording was wrong on both mechanism and sign, and the agent verified rather than
+inherited it: at the turn cap BOTH RLPlayers stall-forfeit and p1's FORCELOSE always processes
+first — and `_trainee_side` seats the trainee on p1 ALWAYS, so every capped rollout scored a
+hard **0** (reproduced 4/4 per seat per impl, node AND rust). Tight-MC labels were biased
+DOWNWARD on stall-shaped positions (the in-code comment guessed "upward" — corrected, not
+repeated). Fix `gen3_cf_draw_at_cap_v1`: capped ⇒ 0.5, exact detection via the players' own
+stall threshold; `n_capped` beside `n_rollouts` (schema ADDITION, buffer ingests 0-skip);
+heartbeat `capped N/M`. **Census: the damage to tonight's corpus is SINGLE DIGITS of ~8,000
+rollouts** (bounded by base rates: labels sit at turn ≤96 p90=25, cap needs ≥154 further turns;
+~0.05% stall rate in the surrounding population) — not re-derivable per label (a capped 0 is
+indistinguishable from a played 0), so the bound is the honest statement and the end-of-run
+read need not stratify. 9 revert-verified tests incl. a both-seats sim fixture; suite 6,939.
+**New trap minted (separate task)**: rust bridge records carry NO `forcelose` in `commands`
+(only handle_choose pushes there), so `record_is_full_replay_anchorable`'s forfeit exclusion is
+INERT under `--impl rust` — scanning commands for forfeits on rust records reads a false 0.
+Producer restart #3 rides the MORNING relay (training session's lane; owner AFK).
