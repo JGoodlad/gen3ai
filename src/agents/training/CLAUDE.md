@@ -1938,6 +1938,7 @@ Four guards, each protecting against a failure that actually happened while buil
   so the helper **times eager vs compiled at load and REVERTS** below a 1.05× floor. This used to be
   load-bearing because `suppress_errors` made a failed compile silent; with suppression gone a failure
   raises and is caught, and this is now a second line of defence against a merely-fragmented graph.
+  **The floor value is unchanged; the MEASUREMENT under it was rebuilt 2026-08-24 — see below.**
 - **A LATE failure.** `torch.compile` guards on input properties, so an unseen shape can trigger a
   fresh trace at CALL time, long after load. `_eager_fallback_on_error` wraps the compiled callable so
   that degrades THIS opponent to eager (and says so) instead of killing a 3-hour run. This is the
@@ -2029,8 +2030,80 @@ stderr**, which under the launcher lands in `launcher_child.log`.
 opponent forward that is otherwise invisible — the run just produces fewer steps/hour forever and
 looks healthy. Every failure path (`DISABLED`, `REVERTED`, mid-run `FELL BACK`, mis-declared
 `hide_cuda`) goes through `_compile_warn`: stderr **and** the launcher event stream, so it surfaces in
-the TUI. `--compile-opponents-strict` promotes all of them to a `CompileExtractorError` for anyone who
-would rather fail at startup than find it in the FPS graph a day later.
+the TUI. `--compile-opponents-strict` promotes them to a `CompileExtractorError` for anyone who would
+rather fail at startup than find it in the FPS graph a day later — **but a below-floor TIMING verdict
+is promoted only on a quorum**, for the reason immediately below.
+
+### 🧯 The floor's MEASUREMENT was broken, and the fix is under the gate, not on it (2026-08-24)
+
+**The gate killed three production launches on timing noise, and it was uninformative in BOTH
+directions.** Measured on the same checkpoint, the same box, `--n-envs 48`: the **eager arm alone
+spread 7.7×** (14.94–115.71 ms) and the compiled arm 2.08–17.90 ms. The old gate compared ONE eager
+aggregate to ONE compiled aggregate, so the verdict was decided by which end of each spread the two
+arms landed on — the same checkpoint that scored **0.78× (FATAL under strict)** scored **6.3× median
+across 48/48 workers** minutes later, and one failure landed at **exactly 1.05×**, the boundary tell
+that should have ended the debugging. The false-PASS direction is equally live: a cold-measured eager
+arm lets a genuinely broken compile read 29×, so "0 workers below the floor" was never evidence of
+health.
+
+⚠️ **Two beliefs from that week are RETRACTED. Do not re-derive a plan from either.** "~half the
+workers land under the floor for a frozen fork of the current net, so compiling this class buys ~5%"
+was **one noisy pair**, not an opponent-class fact — the target class was never the problem. And the
+error text's "the graph is probably fragmented" asserted a cause **a ratio of two timings cannot
+distinguish from a busy box**; it sent three separate investigations after the wrong thing. Dropping
+the floor to 0.7× was proposed and **rejected**: widening a broken instrument buys a confidently
+wrong answer in the other direction.
+
+**What ships instead (all four compose — `agents/model/compile_opponents.py`):**
+
+| | old | now |
+|---|---|---|
+| aggregation | one min-of-12 per arm | **median of 5 samples**, each a min-of-4 |
+| ordering | eager block, then compiled block | **alternated** sample-by-sample, round order flipping |
+| warm-up | 3 calls *inside* each arm's own timing, eager measured cold-first | **both arms warmed identically before EITHER is timed** (`_warm_arm`) |
+| strict verdict | any one worker below the floor is fatal | **quorum**: warn always; fatal only if **>25%** of the reporting compiles reverted, and never on the first 4 |
+| message | asserts a cause | prints **both arms' full sample series, both medians, the ratio, the floor, and the running quorum** |
+
+Alternation is the load-bearing one, and it is why this is a *measurement* fix rather than a
+tolerance: this box normally carries a trainer and 47 sibling workers each running a ~30 s compile,
+so the regime **drifts across the measurement window**. Back-to-back arms charge that drift entirely
+to whichever arm ran during it; interleaving charges it to both.
+
+**The quorum is cross-process and its shape is a deliberate compromise.** `arm_compile_quorum(run_dir)`
+is called once in `train_rl_agent` before the vec env exists; it clears and publishes
+`<run_dir>/.compile_quorum` in `GEN3AI_COMPILE_QUORUM_DIR`, which every `SubprocVecEnv` worker,
+forkserver child and Popen'd eval worker inherits. Each verdict is one empty file (`<pid>-<ns>.ok` /
+`.revert`) — create-and-count, no lock, no server. ⚠️ **It is a PREFIX estimate, stated rather than
+hidden**: a worker sees only the verdicts written before it looked, so an isolated bad reading can
+never be fatal (1 of a growing denominator, and the first 4 decide nothing) while a systemic failure
+trips as soon as enough workers agree. Within a restart window the tally also spans the whole process
+tree, so a healthy startup dilutes a later mid-run regression. A real barrier across 48 spawned
+workers is cross-process plumbing this perf knob does not justify. A **compile that ERRORS** is
+unaffected — that is a fact, not a reading, and stays fatal in its own process immediately.
+
+**One honest residual, pinned by a test rather than glossed** (`test_the_residual_drift_BIAS_is_bounded_but_real`):
+alternation cancels most of a drifting regime but not all of it — each arm's five samples sit at
+slightly different moments, leaving a bias of order `drift^0.1` (~1.5× under a hostile 64× drift).
+That is enough to carry a *marginally* losing 0.70× compile up to the floor in ~2% of draws (98%
+still revert, median reading 0.72×) — which is precisely why a below-floor reading is the quorum's
+business and not one worker's. A compile losing by a real margin (0.40×) survives no drift the
+regime produces (max reading 0.62×).
+
+The warm-up obs now also carries **`action_mask` as float32** alongside `observation`: dynamo guards
+on a dict's KEY SET and on dtype as hard as it guards on shape, and every real opponent call arrives
+through `policy.get_distribution` with both keys. Warming with one key left the first LIVE decision
+to re-trace the whole extractor — **19.5 s against a 3.8 ms steady state**, measured in the cf
+producer (53870dd).
+
+**Verification.** `compile_extractor_test.py::TestTheProductionRegime` feeds the recorded regime
+through both decision logics via a drift model that reproduces **both** recorded extremes without
+being fitted to them (0.77× and 51× against the real 0.78× and 47.8×): the old logic's verdict flips
+run-to-run, the new one does not, and the ratio spread collapses by >10×. Revert-verified — restoring
+the back-to-back design fails 7 tests, and making the below-floor verdict per-worker-fatal fails 6.
+Measured live on this box (nice'd, beside the live run, real `ai_v9_34_tick1_0824` checkpoint, 3
+repetitions): **7.52× median, range 7.45–7.56×, spread 1.015×**, eager ~14.9 ms / compiled ~2.0 ms.
+Note the old design also reads stably *there* — a single warm process is not the regime that breaks
+it, which is exactly why the synthetic-regime test exists.
 
 **Caught at CODE time — and for all FOUR compile targets, not just this one.**
 `src/agents/model/extractor_compiles_test.py` owns the device x grad matrix, because Inductor's CPU

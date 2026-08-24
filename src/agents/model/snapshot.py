@@ -622,9 +622,10 @@ def load_model_snapshot(
 # Compiled-opponent machinery lives in `compile_opponents.py` (split 2026-08-16); re-exported
 # here because the historical import path is this module.
 from agents.model.compile_opponents import (   # noqa: F401
-    DEFAULT_INDUCTOR_CACHE_DIR, CompileExtractorError, maybe_compile_extractor,
+    COMPILE_QUORUM_ENV, DEFAULT_INDUCTOR_CACHE_DIR, CompileExtractorError, arm_compile_quorum,
+    maybe_compile_extractor,
     _compile_warn, _compile_warmup_obs, _eager_fallback_on_error, _inductor_cache_dir,
-    _time_forward,
+    _measure_arms, _time_forward,
 )
 
 

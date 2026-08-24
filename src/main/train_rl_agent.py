@@ -68,6 +68,7 @@ import threading
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from agents.model.extractor_arch import build_extractor_arch_kwargs
+from agents.model.compile_opponents import arm_compile_quorum
 from agents.model.compile_prewarm import prewarm_extractor_compile
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.reward_manager import Gen3RewardManager
@@ -252,6 +253,12 @@ async def main():
     # proves single-threadedness after its compile and RAISES otherwise (loud env-construction
     # failure, never a silent wedge); `compile_prewarm_test.py` pins the import invariant.
     if args.compile_opponents and not args.debug:
+        # Publish ONE tally directory for this process tree before any worker exists. Every env
+        # worker / eval worker inherits it through the environment and reports its keep-or-revert
+        # verdict there, which is what lets --compile-opponents-strict be fatal on a SYSTEMIC
+        # failure instead of on one worker's timing draw (three launches died that way on
+        # 2026-08-24). Cleared per process, so a restart counts fresh.
+        arm_compile_quorum(model_dir)
         if args.compile_opponents_preload:
             import multiprocessing as _mp
             from agents.model.extractor_arch import arch_kwargs_to_plain
