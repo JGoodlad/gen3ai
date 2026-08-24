@@ -4044,3 +4044,12 @@ NOT-YET-TRUSTWORTHY: its successor replay spews poke-env active-mismatch warning
 KeyError on non-ASCII nicknames ('ptãra'), absent in depth-1 on identical seeds — fails safe as
 counted search_error; the chunk-transport double-encode is the first job before any depth-2
 number is published (tasked).
+
+### ✅ MIRROR HARNESS VALIDATED — the owner-ordered base-vs-base control read EXACTLY 50% (2026-08-23, overnight)
+
+30 swap-pairs of no-search-vs-no-search, pinned dice, side-swap: paired win rate **0.5000
+[0.50, 0.50] — every pair split 1–1, zero exceptions**, the by-construction prediction (an
+orientation pair is the same battle relabeled) holding exactly. **Zero ties in 60 games** —
+ties are rare (the tie-as-loss fix was about the accounting hole, not frequency). Verdict: no
+p1/p2 asymmetry, no tie inflation; every mirror deviation from 50% from here on is the SEARCH.
+The control cost ~10 minutes and is now the standing first cell of any future mirror battery.
