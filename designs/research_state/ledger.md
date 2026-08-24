@@ -3956,3 +3956,12 @@ widths in the per-decision record, so each budget cell reports what it actually 
 (e.g. 0.5 s ≈ width-limited depth-1; 8 s ≈ depth-2/3 on contenders). The depth-1-everywhere
 readings survive as the width-only reference inside the same runs; the build lands depth-1
 first and the deepening rides as the follow-up pass on the same driver.
+
+### 🔭 SEARCH-DIVIDEND PROBE — TIMER CORRECTION (owner, 2026-08-23)
+
+The registration's "8 s arm models bank-dipping play" is WRONG — struck. The Showdown timer
+GRANTS +10 s per turn, so an 8 s/decision search NETS +2 s of bank every turn: **all four
+budgets (0.5/1/3/8 s) are bank-safe by construction — that is why the owner picked them.**
+No arm models reserve-spending; the 8 s cell stays a small batch purely for EVAL wall-clock
+cost (a ~30-decision game at 8 s ≈ 4 min/game), not timer risk. The deployable-configuration
+reading simplifies: every swept budget is ladder-legal at steady state.
