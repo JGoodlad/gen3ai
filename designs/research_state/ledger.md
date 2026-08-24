@@ -4248,3 +4248,31 @@ regardless of that outcome**: (a) the ESTIMAND fix — thread opponent identity 
 training tap so labels stop being self_current-biased; (b) the SAMPLER — the B−A cost convicts
 the current priority rule's selection bias as a calibration hazard. More labels of the current
 kind are NOT the next move if the dosage-null branch lands; these two fixes are.
+
+### 📏 ERA STANDING-METER ROW 1 FINAL + PHASE-B RULINGS (2026-08-24 ~11:00)
+
+**Exploitability at the registered 800/arm: extraction +3.5pp, CI [−1.4, +8.4], z=1.40 — NOT
+significant.** The 200-game +7.0 point estimate HALVED at 4× data (the ordinary fate of an
+underpowered first read — never carry the 200-game number); baseline a coin flip (0.5062) at
+4× data, so the subtraction design is clean. Reading: 2M dedicated steps extract ≤~8pp from
+rev-1's endpoint and cannot be separated from zero — a floor on confidence, not a clean bill.
+**ai_v9_30 EXCLUDED as a Phase-B teacher** (its attached condition — real extraction at
+800/arm — failed).
+**Tock-1 attempt history banked**: `--compile-opponents-strict` killed two launches — ~half
+the workers land under the 1.05× compile floor for a FROZEN FORK of the current net (14.4 vs
+15.1 ms — the flag's 6.5×-invisible-regression rationale holds for neither half on this
+target class; the fallback warns loudly and costs ~5%). Deviation ENDORSED: strict dropped
+for single-frozen-target exploiter runs; the training session's own attempt-1 "flake"
+misdiagnosis self-owned (count the ON/REVERTED split before relaunching — now written down).
+Attempt 3: 47/48 ON, running, ETA 12:14.
+**Phase-B rulings (the principle: flags that exist BECAUSE teachers exist take the RECIPE's
+values; global knobs inherit from the base):**
+1. `--distill-value-feat-coef 0.5` — the A/B-validated value from ai_v7_21_fitnet_valuefeat_ab
+   (ai_v8_14 predates a6ae04f; its 0.0 is not the recipe, it is the gap the fix closed).
+2. `--stable-opponent-pfsp True` + `--stable-opponent-selfplay-share 0.35` (ai_v8_14's
+   recorded values — teacher-subsystem knobs). `--team-pfsp off` UNCHANGED (a different flag;
+   its A/B is tick-2's experiment).
+3. **NEW ORDER — tock-1b**: after tock-1a completes, run the Q3 RAIN arm (the board's only
+   rain carriers, 0/8-covered axis; next in the reordered queue) at the same recipe, 3M fixed
+   — Phase B then folds TWO teachers (K=4 diverse + rain), a materially richer first tick for
+   ~2 h of box time.
