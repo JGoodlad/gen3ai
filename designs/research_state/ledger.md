@@ -3891,3 +3891,16 @@ Deep-read of arXiv 2504.04395 v2 (RLC 2025) + the published HF datasets; full me
 Strategic read UNCHANGED but sharpened: the human-data door opens when the flywheel's coverage
 flattens (QD kill-condition), as AlphaStar-shaped bootstrap/diversity — and the bar their method
 set in OUR format (GXE 64 @ 90.1 pct) is now a NUMBER on the wall, not a legend.
+
+### 🏭 PRODUCER BATCHING: THREE-ARM RESULT — compute-bound CONFIRMED, rpc=4 is the resting place (2026-08-23)
+
+`ai_v9_29` producer, records-per-cycle swept 4/8/16 (logs preserved as `cf_producer_rpc{4,8,16}.log`):
+rate **86 / 43 / 99 per hour** (invariant within noise across 4× — batching buys nothing; the
+producer is COMPUTE-bound), acceptance **31% / 13.9% / 24%** tracking CYCLE TIME (~100/244/395 s
+— a longer cycle stamps labels against a snapshot the trainer already walked past). rpc=8's n=1
+first read (106/h, 36.4%) **inverted completely at n=4** — one-cycle windows are unreadable;
+the step-back ladder fired on its own terms after the pre-approval's premise failed, which is the
+correct precedence. Under rpc=8 `buffer_fill` hit 0 — at low acceptance the paired fold
+intermittently STARVES, so cycle latency is correctness-adjacent (bursty head training), not just
+statistical power. Reverted to rpc=4; resting until the warm-path landing (in build — the ~8 s/label
+vs the banked ~0.2–0.8 s cost model is the real lever; batching never was).
