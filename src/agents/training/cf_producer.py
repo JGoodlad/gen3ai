@@ -125,6 +125,50 @@ has always done) and rendered apart by :func:`anchor_refusal_message`, which add
 2026-08-23: one flaky composition-test failure read as a replay-exactness gap because the text
 asserted that cause for both.
 
+Where the time goes (MEASURED 2026-08-23, and it is not where the cost model said)
+----------------------------------------------------------------------------------
+Profiled on three live `ai_v9_29_rev1_0823` ring records against that run's own checkpoint
+(`tmp`-copied, read-only), beside the live trainer at load ~15-25:
+
+===================================================  =========  ======
+stage                                                 share      note
+===================================================  =========  ======
+rollouts (R × `replay_counterfactual`)                **93%**    of which 93% is `choose_move`
+`replay_battle` (the offline replay driver)              ~0.2%   ~35 ms/record, once
+`scan_record` (replay + obs materialize)                 ~0.3%   ~170 ms/record, once
+`score` (the ranking forward)                            ~0.1%
+record parse / label write                              <0.1%
+===================================================  =========  ======
+
+Inside a rollout, **the live policy forward is essentially the whole thing**: 832 `choose_move`
+calls at 15.4 ms each against 0.40 ms of prefix `embed_battle`, 0.14 ms of `_invert_choice` and a
+~9 MB rust child spawn. A B=1 CPU decision measured **26.3 ms eager → 4.1 ms compiled (6.4×)**;
+the extractor alone is 21.5 → 3.3 ms, i.e. ~82% of it.
+
+Three consequences, all of them corrections to the banked ~162 ms/label cost model:
+
+* **A warm/persistent search-driver session buys ~0.2% here.** That model was built on the
+  *materializer* path (one-ply labels, prefix replayed per arm), where driver spawns dominate.
+  This producer already replays each record ONCE (`scan_record` takes the `chunks=` from the
+  single `replay_battle`) and its labels are ROLLOUTS-TO-END, which spawn no driver at all —
+  they play a live bridge battle whose cost is policy forwards.
+* **Prefix sharing buys ~3%.** The R arms do each replay the recorded prefix, but a scripted
+  prefix decision costs 0.4 ms against the 4-26 ms of every live one, and the arms diverge
+  before most of the battle. Cloning the mid-battle state would have to clone two poke-env
+  players' trackers as well — a large change for a rounding error.
+* **The lever that IS big is `--compile-extractor`** (now default ON, 6.4× on every rollout
+  decision; ~40 s once per PROCESS — a later checkpoint refresh reuses the graph in ~1.1 s).
+  `--rollout-concurrency` measured a WASH and defaults to 1: every forward *and* every protocol
+  parse runs on poke-env's single `POKE_LOOP` thread, so overlapping arms finds almost no idle
+  to fill.
+
+Measured end to end, a REAL one-cycle run over the same 6 records against the same checkpoint:
+**198.5 s → 99.4 s of cycle wall**, i.e. **10.8 → 3.2 s per label** once the one-time snapshot
+load + compile is taken out; interleaved arm-by-arm on the same decisions (the load-fair form)
+**8.09 → 1.81 s of rollout wall per label, 4.5×**. The eager arm reproduces the live producer's own
+~8.2 s/label. The labels are unchanged — same key set, same decisions, same ranking; the only
+difference anywhere is `priority.win_prob` in the 6th decimal (Inductor arithmetic, max|Δ| ~5e-7).
+
 Observability
 -------------
 The producer is a separate process, so it has no TensorBoard. Instead it prints one **heartbeat**
@@ -318,37 +362,67 @@ class Snapshot:
     checkpoint (the same substitution `cf_audit_integration_test` makes, and the same one only).
     """
 
-    def __init__(self, path: str, step: int, model, mappings) -> None:
+    def __init__(self, path: str, step: int, model, mappings, *, compiled: bool = False) -> None:
         self.path = path
         self.step = int(step)
         self.model = model
         self.mappings = mappings
+        #: True when this snapshot's extractor went through `torch.compile`. It changes ONE thing
+        #: here — the batch size :meth:`score` forwards at — and the reason is in that method.
+        self.compiled = bool(compiled)
         self._player_seq = 0
 
     # -- scoring ---------------------------------------------------------------------
     def score(self, obs: np.ndarray, masks: np.ndarray):
-        """``(win_probs | None, entropies)`` for a BATCH of decisions — ONE forward.
+        """``(win_probs | None, entropies)`` for a batch of decisions.
 
         ``win_probs`` is None when the checkpoint trained no win-prob head; the caller must fall
         back to entropy-only ranking and SAY so, rather than reading a missing head as a
         confident 0.0.
+
+        ⚠️ **UNDER `torch.compile` THIS FORWARDS ONE ROW AT A TIME, on purpose.** The rollouts —
+        99% of this process's work — forward at **B=1**, and dynamo specializes a compiled graph on
+        the batch dimension: a single `B=29` scoring call therefore forces a second trace, and
+        coming back to `B=1` a third. Measured 2026-08-23 on the live `ai_v9_29_rev1_0823`
+        checkpoint: with a batched score in front of them, the FIRST label's 8 rollouts cost
+        **79.4 s** against **3.0 s** for the second — ~76 s of pure recompilation, once per record
+        shape. Row-wise scoring keeps exactly ONE shape alive in the whole process. It costs
+        ~0.12 s per record against ~0.04 s batched (29 candidates × 4.1 ms), i.e. it trades 80 ms
+        for the recompiles, and it is a pure win the moment a second batch size would have appeared.
+        EAGER snapshots have no such guard to keep, so they still take the single batched forward.
         """
         import torch as th
 
         policy = self.model.policy
-        ot = th.as_tensor(np.asarray(obs, dtype=np.float32))
-        mt = th.as_tensor(np.asarray(masks))
+        obs_a = np.asarray(obs, dtype=np.float32)
+        # ⚠️ float32 IS THE POINT, not tidiness. A materialized decision's mask arrives as `int8`
+        # while the live rollout path's mask (straight out of `embed_battle`) is float32 — and a
+        # compiled graph guards on DTYPE as hard as it does on shape. Measured 2026-08-23: with the
+        # int8 mask, the first scored row cost **19.5 s** (one full re-trace) against a 3.8 ms
+        # steady state. Same reason as the B=1 chunking below: keep exactly one signature alive.
+        mask_a = np.asarray(masks, dtype=np.float32)
+        step = 1 if self.compiled else len(obs_a)
+        probs_rows: "List[np.ndarray]" = []
+        wp_rows: "List[np.ndarray]" = []
+        have_wp = True
         with th.no_grad():
-            dist = policy.get_distribution({"observation": ot, "action_mask": mt})
-            logits = dist.distribution.logits
-            masked = th.where(mt.bool(), logits, th.full_like(logits, -1e8))
-            probs = th.softmax(masked, 1).cpu().numpy()
-            # The win-prob head's output is a STASH written by the forward we just ran, so it is
-            # read off the same pass rather than paid for with a second one.
-            fe = getattr(policy, "features_extractor", None)
-            wp_logits = getattr(fe, "last_win_prob_logits", None) if fe is not None else None
-            win_probs = (th.sigmoid(wp_logits[:, 0]).cpu().numpy()
-                         if wp_logits is not None else None)
+            for lo in range(0, len(obs_a), max(1, step)):
+                ot = th.as_tensor(obs_a[lo:lo + step])
+                mt = th.as_tensor(mask_a[lo:lo + step])
+                dist = policy.get_distribution({"observation": ot, "action_mask": mt})
+                logits = dist.distribution.logits
+                masked = th.where(mt.bool(), logits, th.full_like(logits, -1e8))
+                probs_rows.append(th.softmax(masked, 1).cpu().numpy())
+                # The win-prob head's output is a STASH written by the forward we just ran, so it
+                # is read off the same pass rather than paid for with a second one.
+                fe = getattr(policy, "features_extractor", None)
+                wp_logits = getattr(fe, "last_win_prob_logits", None) if fe is not None else None
+                if wp_logits is None:
+                    have_wp = False
+                else:
+                    wp_rows.append(th.sigmoid(wp_logits[:, 0]).cpu().numpy())
+        probs = np.concatenate(probs_rows, axis=0)
+        win_probs = np.concatenate(wp_rows, axis=0) if (have_wp and wp_rows) else None
         ent = np.asarray([normalized_entropy(row) for row in probs], dtype=float)
         return win_probs, ent
 
@@ -374,8 +448,40 @@ class Snapshot:
             max_concurrent_battles=1, stochastic=True, start_listening=False)
 
 
+def _warm_the_compiled_graph(model) -> float:
+    """Force the re-trace the FIRST REAL decision would otherwise pay for. Returns seconds spent.
+
+    `maybe_compile_extractor` warms the graph with ``{"observation": zeros(1, D)}`` — one key. Every
+    call this process actually makes arrives through ``policy.get_distribution`` with **two**
+    (``observation`` + ``action_mask``), and dynamo guards on the dict's KEY SET exactly as hard as
+    it does on shape and dtype. So the compile looks warm and the first live forward silently
+    re-traces the whole extractor.
+
+    MEASURED 2026-08-23 on the live `ai_v9_29_rev1_0823` checkpoint: that first forward cost
+    **19.5 s** against a 3.8 ms steady state — 17 s of a 27 s six-label pass, charged to whichever
+    record happened to be first. Paying it HERE makes it a startup cost that announces itself
+    rather than a mystery in the first cycle's heartbeat. Never fatal: a warm-up that raises has
+    cost nothing but the warm-up (the real call would simply re-trace as before).
+    """
+    import torch as th
+
+    t0 = time.perf_counter()
+    try:
+        space = model.observation_space
+        dim = int(space["observation"].shape[0])
+        n_act = int(space["action_mask"].shape[0])
+        obs = {"observation": th.zeros(1, dim, dtype=th.float32),
+               "action_mask": th.ones(1, n_act, dtype=th.float32)}
+        with th.no_grad():
+            model.policy.get_distribution(obs)
+    except Exception as exc:                                            # noqa: BLE001
+        print(f"[cf_producer] compiled-graph warm-up skipped ({type(exc).__name__}: "
+              f"{str(exc)[:160]}) — the first real decision will re-trace instead", flush=True)
+    return time.perf_counter() - t0
+
+
 def load_snapshot(path: str, step: Optional[int], *, device: str = "cpu",
-                  compile_extractor: bool = False) -> Snapshot:
+                  compile_extractor: bool = True) -> Snapshot:
     """Load a checkpoint for scoring + rollouts.
 
     Uses the prober's `sanitized_load_custom_objects` (drop extractor kwargs the CURRENT
@@ -396,12 +502,21 @@ def load_snapshot(path: str, step: Optional[int], *, device: str = "cpu",
     for mod in model.policy.modules():
         if hasattr(mod, "_debugger"):
             mod._debugger = None
+    compiled = False
     if compile_extractor:
         from agents.model.compile_opponents import maybe_compile_extractor
-        maybe_compile_extractor(model, True, label=f"cf_producer:{os.path.basename(path)}",
-                                hide_cuda=True)
+        t0 = time.perf_counter()
+        compiled = bool(maybe_compile_extractor(
+            model, True, label=f"cf_producer:{os.path.basename(path)}", hide_cuda=True))
+        if compiled:
+            warm = _warm_the_compiled_graph(model)
+            print(f"[cf_producer] extractor compiled in {time.perf_counter() - t0 - warm:.0f}s "
+                  f"(+{warm:.0f}s warming the live call signature) — paid ONCE PER PROCESS, not "
+                  f"per checkpoint: dynamo keys on the CODE object and the weights are graph "
+                  f"inputs, so the NEXT refresh reuses this graph (measured 1.1 s for a whole "
+                  f"second load). It is ~6.4x on every rollout decision", flush=True)
     resolved = int(getattr(model, "num_timesteps", 0) or 0) or int(step or 0)
-    return Snapshot(path, resolved, model, load_mappings())
+    return Snapshot(path, resolved, model, load_mappings(), compiled=compiled)
 
 
 # ---------------------------------------------------------------------------
@@ -1076,78 +1191,121 @@ class CfProducer:
         The tracking is armed at the DIVERGENCE decision through the scripted-prefix hook, not at
         the first live one: our turn-T move is scripted (it IS the substitute), so a live-only hook
         would miss ``r_T`` and shift the whole return by one turn against the state it labels.
+
+        **THIS IS THE WHOLE COST OF THE PRODUCER** — 93% of the wall, measured (§ *Where the time
+        goes*) — so it is also the only place worth parallelising. Every arm is INDEPENDENT (its own
+        pair of players, its own bridge child, its own post-divergence dice) and the aggregate is a
+        SUM over arms, so running them together changes no label semantics: `wins`/`n` are
+        order-free counts and `returns` is reduced by a mean. ``--rollout-concurrency`` picks how
+        many overlap; 1 is the byte-identical sequential path.
         """
         from main.prober.falsifier import fresh_seeds
-        from agents.training.cf_mc_return import attach_return_recording
 
         rec = dataclasses.replace(record, trainee_username=record.username(side))
         seed = record.start_options().get("seed")
         seeds = fresh_seeds(self.args.rollouts, salt=f"{tag}:{d.index}:cfp{self.args.seed}")
+        # Built up front, on THIS thread: `make_player` hands out account names off a shared
+        # counter and the mc_return hook patches the player, so neither belongs in a worker.
+        arms = [self._prepare_arm(rec, side, d, ps) for ps in seeds]
+
+        conc = max(1, min(int(getattr(self.args, "rollout_concurrency", 1) or 1), len(arms)))
+        if conc == 1:
+            results = [self._play_arm(a, rec, side, d, seed, tag) for a in arms]
+        else:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=conc, thread_name_prefix="cf-roll") as ex:
+                results = list(ex.map(
+                    lambda a: self._play_arm(a, rec, side, d, seed, tag), arms))
+
         wins = n = 0
         returns: "List[float]" = []
-        for ps in seeds:
-            trainee = self.snapshot.make_player(rec, side, role="T")
-            recorder = None
-            hook = None
-            if self._mc_return_on:
-                recorder = attach_return_recording(
-                    trainee, reward_fn_factory=self._reward_factory)
-            if recorder is None and self._mc_return_on and not self._said_no_return_path:
+        for ok, won, g in results:
+            if not ok:
+                continue
+            n += 1
+            wins += int(won)
+            if g is not None:
+                returns.append(g)
+        return wins, n, returns
+
+    def _prepare_arm(self, rec: ReconstructionRecord, side: str, d: RecordDecision, ps) -> dict:
+        """One rollout arm's players + its mc_return hook. Main-thread only — see :meth:`_rollout`."""
+        from agents.training.cf_mc_return import attach_return_recording
+
+        trainee = self.snapshot.make_player(rec, side, role="T")
+        opponent = self.snapshot.make_player(rec, _other(side), role="O")
+        recorder = None
+        hook = None
+        if self._mc_return_on:
+            recorder = attach_return_recording(
+                trainee, reward_fn_factory=self._reward_factory)
+            if recorder is None and not self._said_no_return_path:
                 self._said_no_return_path = True
                 self._log("⚠️  this snapshot's player exposes no obs/order seam, so no shaped "
                           "RETURN can be measured — rows will carry NO mc_return and the SHADOW "
                           "critic will train on nothing. (Expected only under a test double; a "
                           "real RLPlayer supports it.) Said once.")
-            if recorder is not None:
-                fired = {"done": False}
+        if recorder is not None:
+            fired = {"done": False}
 
-                def hook(battle, obs, _choice, _rec=recorder, _t=int(d.turn),
-                         _a=int(d.action), _f=fired):
-                    # Fires on every OUR-side scripted decision; only the DIVERGENCE turn matters.
-                    # The recorder decides nothing — this closure does, which is what keeps reward
-                    # tracking out of `utils.bridge.counterfactual` entirely.
-                    #
-                    # ⚠️ ARM **THEN** NOTE, in that order, and this line is the whole point of the
-                    # hook. Turn T's move is SCRIPTED (it IS the substitute), so it never reaches
-                    # the live `choose_move` the recorder is otherwise driven by. Arming alone —
-                    # leaving the note to the first LIVE decision at T+1 — would make T+1 the armed
-                    # decision and drop r_T, which is exactly the off-by-one the hook exists to
-                    # close: the label would be G(s_{T+1}) against an obs row for s_T, biased by
-                    # whatever happened on the divergence turn (a KO there is the largest single
-                    # shaping term), i.e. correlated with the state and shaped like a real signal.
-                    if _f["done"] or int(getattr(battle, "turn", 0) or 0) != _t:
-                        return
-                    mask = (obs or {}).get("action_mask")
-                    if mask is None:                       # a non-Gen3 player; nothing to record
-                        return
-                    _f["done"] = True
-                    _rec.arm_at_next()
-                    _rec.note(battle, _a, mask)
-            try:
-                res = _run_one(
-                    rec,
-                    trainee=trainee,
-                    opponent=self.snapshot.make_player(rec, _other(side), role="O"),
-                    divergence_turn=int(d.turn), substitute_choice=d.choice,
-                    seed=seed, post_t_seed=ps, impl=self.args.impl,
-                    trainee_decision_hook=hook)
-            except Exception as exc:                                    # noqa: BLE001
-                self._log(f"rollout failed ({tag} inv {d.index}): "
-                          f"{type(exc).__name__}: {str(exc)[:200]}")
-                continue
-            n += 1
-            wins += int(res["outcome"] == "win")
-            if recorder is not None:
-                g = recorder.value(self._gamma)
-                if g is not None:
-                    returns.append(g)
-                elif not self._warned_no_return:
-                    self._warned_no_return = True
-                    self._log("⚠️  a rollout produced NO measurable shaped return (the divergence "
-                              "decision was never reached, or the battle ended in the prefix) — "
-                              "that rollout contributes no mc_return. Said once; watch "
-                              "cf/mc_return_coverage on the trainer side.")
-        return wins, n, returns
+            def hook(battle, obs, _choice, _rec=recorder, _t=int(d.turn),
+                     _a=int(d.action), _f=fired):
+                # Fires on every OUR-side scripted decision; only the DIVERGENCE turn matters.
+                # The recorder decides nothing — this closure does, which is what keeps reward
+                # tracking out of `utils.bridge.counterfactual` entirely.
+                #
+                # ⚠️ ARM **THEN** NOTE, in that order, and this line is the whole point of the
+                # hook. Turn T's move is SCRIPTED (it IS the substitute), so it never reaches
+                # the live `choose_move` the recorder is otherwise driven by. Arming alone —
+                # leaving the note to the first LIVE decision at T+1 — would make T+1 the armed
+                # decision and drop r_T, which is exactly the off-by-one the hook exists to
+                # close: the label would be G(s_{T+1}) against an obs row for s_T, biased by
+                # whatever happened on the divergence turn (a KO there is the largest single
+                # shaping term), i.e. correlated with the state and shaped like a real signal.
+                if _f["done"] or int(getattr(battle, "turn", 0) or 0) != _t:
+                    return
+                mask = (obs or {}).get("action_mask")
+                if mask is None:                           # a non-Gen3 player; nothing to record
+                    return
+                _f["done"] = True
+                _rec.arm_at_next()
+                _rec.note(battle, _a, mask)
+        return {"trainee": trainee, "opponent": opponent, "recorder": recorder,
+                "hook": hook, "post_t_seed": ps}
+
+    def _play_arm(self, arm: dict, rec: ReconstructionRecord, side: str, d: RecordDecision,
+                  seed, tag: str) -> "tuple[bool, bool, Optional[float]]":
+        """Play ONE prepared arm to a terminal. ``(ok, won, shaped_return | None)``.
+
+        Runs on a worker thread when ``--rollout-concurrency`` > 1. It touches nothing shared: the
+        players, the recorder and the bridge child all belong to this arm, and the only producer
+        state it writes is a once-flag whose worst case is the same warning printed twice. A
+        rollout that RAISES is reported and returns ``ok=False`` — the label is then computed over
+        the arms that finished, exactly as the sequential path always did.
+        """
+        try:
+            res = _run_one(
+                rec,
+                trainee=arm["trainee"],
+                opponent=arm["opponent"],
+                divergence_turn=int(d.turn), substitute_choice=d.choice,
+                seed=seed, post_t_seed=arm["post_t_seed"], impl=self.args.impl,
+                trainee_decision_hook=arm["hook"])
+        except Exception as exc:                                        # noqa: BLE001
+            self._log(f"rollout failed ({tag} inv {d.index}): "
+                      f"{type(exc).__name__}: {str(exc)[:200]}")
+            return False, False, None
+        g = None
+        recorder = arm["recorder"]
+        if recorder is not None:
+            g = recorder.value(self._gamma)
+            if g is None and not self._warned_no_return:
+                self._warned_no_return = True
+                self._log("⚠️  a rollout produced NO measurable shaped return (the divergence "
+                          "decision was never reached, or the battle ended in the prefix) — "
+                          "that rollout contributes no mc_return. Said once; watch "
+                          "cf/mc_return_coverage on the trainer side.")
+        return True, res["outcome"] == "win", g
 
     # -- one cycle -------------------------------------------------------------------
     def cycle(self) -> int:
@@ -1295,8 +1453,27 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--impl", default="rust", choices=["node", "rust"],
                    help="replay driver AND live bridge impl (default rust)")
     p.add_argument("--device", default="cpu", help="torch device for the snapshot (default cpu)")
-    p.add_argument("--compile-extractor", action="store_true",
-                   help="torch.compile the snapshot's extractor (amortizes over a long session)")
+    p.add_argument("--compile-extractor", "--compile_extractor", dest="compile_extractor",
+                   action=argparse.BooleanOptionalAction, default=True,
+                   help="torch.compile the snapshot's extractor. DEFAULT ON, because it is THE "
+                        "lever here: 93%% of this process's wall is the live rollout policy "
+                        "forward, and compiling takes a B=1 CPU decision 26.3 -> 4.1 ms (6.4x, "
+                        "measured 2026-08-23 on the ai_v9_29_rev1_0823 checkpoint). It costs ~20 s "
+                        "ONCE per checkpoint refresh, amortized over the hundreds of rollouts that "
+                        "follow. --no-compile-extractor is the fallback when the compile is the "
+                        "suspect; a compile FAILURE already degrades to eager on its own")
+    p.add_argument("--rollout-concurrency", "--rollout_concurrency", dest="rollout_concurrency",
+                   type=int, default=1,
+                   help="how many of a decision's --rollouts arms play at once. DEFAULT 1 (the "
+                        "sequential path) because it MEASURED A WASH: 10 paired label-arms, "
+                        "conc=1 mean 3.86 s vs conc=8 mean 4.17 s, no consistent sign. Every "
+                        "policy forward runs on poke-env's single POKE_LOOP thread — and so does "
+                        "the protocol parse — so overlapping arms finds almost no idle to fill. "
+                        "Kept as a knob for a box where the sim, not the forward, is the wait")
+    p.add_argument("--torch-threads", type=int, default=1,
+                   help="intra-op torch threads (default 1). This process shares the box with a "
+                        "trainer; 1 is the sidecar-shaped choice and the compile is where the "
+                        "speed comes from")
     p.add_argument("--seed", type=int, default=20260822,
                    help="salts the post-divergence dice, so a re-run reproduces")
     p.add_argument("--mc-return", "--mc_return", dest="mc_return",
@@ -1334,7 +1511,7 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
         return 2
     try:
         import torch
-        torch.set_num_threads(1)
+        torch.set_num_threads(max(1, int(getattr(args, "torch_threads", 1) or 1)))
     except ImportError:                                                 # pragma: no cover
         pass
 
@@ -1347,6 +1524,10 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
     prod._log(f"watching {records_dir} → {prod.labels_dir}  "
               f"(R={args.rollouts}, top-{args.top_n}, impl={args.impl}, "
               f"sampler={SAMPLER_VERSION})")
+    prod._log(f"throughput: compile-extractor={'ON' if args.compile_extractor else 'OFF'}, "
+              f"rollout-concurrency={args.rollout_concurrency}, torch-threads={args.torch_threads}"
+              f" — 93% of this process's wall is the live rollout forward (measured), so those "
+              f"three knobs are the whole cost model")
     prod._log("OPPONENT ECOLOGY: rollouts play the CURRENT snapshot on BOTH sides, stochastic — "
               "a training record names no opponent. Every label says opponent=self_current.")
 

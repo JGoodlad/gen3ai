@@ -3845,6 +3845,74 @@ Two things close the class:
 At the production shape that is `--checkpoint-every-steps 150000 --n-envs 48` → 3125 vec-calls →
 a 100% duty cycle.
 
+#### 🚨 THROUGHPUT — the ~8 s/label was the POLICY FORWARD, not the drivers
+
+Profiled 2026-08-23 on `/tmp` copies of live `ai_v9_29_rev1_0823` ring records against that run's
+own checkpoint, beside the live trainer (load 15-25):
+
+| stage | share | note |
+|---|---|---|
+| **rollouts** (R × `replay_counterfactual`) | **93%** | of which **93% is `choose_move`** |
+| `scan_record` (replay + obs materialize) | 0.3% | ~170 ms/record, ONCE |
+| `replay_battle` (offline replay driver) | 0.2% | ~35 ms/record, ONCE |
+| `score` (the ranking forward) | 0.1% | |
+| record parse / label write | <0.1% | |
+
+Inside a rollout: **832 `choose_move` calls at 15.4 ms** against 0.40 ms of scripted-prefix
+`embed_battle`, 0.14 ms of `_invert_choice`, and a 9 MB rust child spawn. A B=1 CPU decision
+measured **26.3 ms eager → 4.1 ms compiled (6.4×)**; the extractor alone is 21.5 → 3.3 ms, i.e.
+~82% of it.
+
+**That contradicts the banked ~162 ms/label cost model, and the correction is the useful part.**
+That model was measured on the *materializer* path (one-ply labels, whole-prefix replay per arm),
+where cold driver spawns dominate and a warm rust `SearchSession` is 289×. This producer is a
+different shape: it replays each record **once** (`scan_record` takes `chunks=` from the single
+`replay_battle`) and its labels are **rollouts to end**, which spawn no offline driver at all — they
+play a live bridge battle whose cost is policy forwards. So a **warm/persistent search-driver
+session buys ~0.2% here, and prefix sharing ~3%** (a scripted prefix decision is 0.4 ms against
+4-26 ms for every live one, and cloning the mid-battle state would have to clone two poke-env
+players' trackers as well). *When a cost model is carried across a path shape, re-measure before
+building to it.*
+
+**What shipped (`gen3_cf_producer_compiled_rollouts_v1`), and the three shape hazards it closed:**
+
+* **`--compile-extractor` now DEFAULTS ON.** It is a fallback, not an opt-in;
+  `--no-compile-extractor` is there for when the compile is the suspect (a compile *failure*
+  already degrades to eager on its own). It costs ~40 s **once per PROCESS, not per checkpoint**:
+  dynamo keys on the CODE object and the weights are graph inputs, so the next refresh reuses the
+  graph — measured **1.1 s for an entire second `load_snapshot`** against 39.7 s for the first.
+* **`score` forwards ONE ROW AT A TIME under compile.** Dynamo specializes on the batch dimension,
+  so a single `B=29` scoring call in front of B=1 rollouts forced a re-trace: measured **79.4 s for
+  the first label's 8 rollouts against 3.0 s for the second**. Row-wise costs ~0.12 s/record against
+  ~0.04 s batched and keeps exactly one signature alive. Eager snapshots keep the batched forward.
+* **The mask is cast to `float32` there too.** A materialized mask is `int8` and a live one is
+  `float32`, and a compiled graph guards on DTYPE as hard as on shape — **19.5 s on the first
+  scored row** before the cast.
+* **The compiled graph is warmed through the LIVE call signature** (`_warm_the_compiled_graph`).
+  `maybe_compile_extractor` warms with `{"observation": …}` alone; every real call also carries
+  `action_mask`, and a dict's KEY SET is part of the guard — so the compile looked warm and the
+  first real decision re-traced for **19.5 s**, charged to whichever record was first. It is now a
+  startup cost that announces itself.
+* **`--rollout-concurrency` (default 1) is a KNOB, not a win.** Measured a wash over 10 paired
+  label-arms (conc=1 mean 3.86 s vs conc=8 4.17 s, no consistent sign): every policy forward *and*
+  every protocol parse runs on poke-env's single `POKE_LOOP` thread, so overlapping arms finds
+  almost no idle to fill. The arms are independent by construction (own players, own bridge child,
+  own post-divergence dice) and one that dies costs that arm alone.
+
+**Measured before/after — a REAL one-cycle run, same 6 records, same checkpoint, same box:**
+
+| | cycle wall | per label (excl. one-time load/compile) |
+|---|---|---|
+| before (`d78aa81`, eager) | 198.5 s @ load 17 | **10.8 s** |
+| after (compiled) | 99.4-102.9 s @ load 20-22 | **3.2 s** |
+
+Interleaved arm-by-arm on the same decisions (the load-fair form): **8.09 s → 1.81 s of rollout
+wall per label, 4.5×**. The eager arm reproduces the live producer's own 8.2 s/label, which is what
+says the harness measured the right thing. **The label output is unchanged**: identical key set,
+the same decisions selected with the same ranking, and the real `CfLabelBuffer` ingests 18/18 rows.
+The only difference anywhere is `priority.win_prob` in the **6th decimal** (0.670049 → 0.670050) —
+Inductor's arithmetic, the documented max|Δ| ~5e-7, on a field nothing thresholds.
+
 #### The producer/retention race (`records_vanished`)
 
 The trainer OWNS `cf_records/` — every env worker prunes it to the newest `--cf-records-keep` (512)
@@ -4052,7 +4120,14 @@ counted skip, newest-first order, that a preloaded record survives its file, and
 anchor record is not an anchor FAILURE — the throttle
 and its sliding window, the stale-trainer pause + resume, the anchor's refusal / cadence /
 crash-is-a-failure, the ecology field on every row, checkpoint resolution, and that every help
-string renders). **The deliverable is `cf_producer_integration_test.py` (`sim`)**: a REAL bridge
+string renders). The THROUGHPUT contract has its own classes: `TestScoreForwardSignature` (a
+compiled snapshot scores one row at a time, an eager one keeps the batched forward, the mask
+reaches the graph as `float32` either way, and the chunking changes not a single number),
+`TestCompiledGraphWarmUp` (the warm-up forwards BOTH obs keys — the live signature — and a warm-up
+that raises is survivable), and `TestRolloutArms` (arms aggregate to the same label sequential or
+overlapped, one dead arm costs that arm alone and the arms after it still run, every arm gets its
+own players and its own dice, all-arms-dead is a skip rather than a phantom 0.0).
+**The deliverable is `cf_producer_integration_test.py` (`sim`)**: a REAL bridge
 battle → the REAL `CfRecordRing` in the TRAINING tap's shape (**`trainee_username` stripped**) →
 ONE REAL producer cycle → the REAL `CfLabelBuffer`, asserting every row INGESTED with **zero skips**,
 digests verifying, correct `policy_step`, and — the strongest assertion in the file — that the obs

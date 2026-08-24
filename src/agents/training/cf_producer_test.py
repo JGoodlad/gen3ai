@@ -743,6 +743,210 @@ class TestTraineeSide:
         assert P._trainee_side(rec) == "p2"
 
 
+# ---------------------------------------------------------------------------
+# The throughput contract: ONE compiled signature, and independent rollout arms
+# ---------------------------------------------------------------------------
+
+class _RecordingPolicy:
+    """A policy stand-in that REMEMBERS the shape and dtype of every forward it was handed.
+
+    The whole point of the scoring changes is *which signature* reaches a compiled graph, so the
+    test subject is the call record, not the numbers — and the numbers are checked too, because a
+    chunked forward that changes the ranking would be a silent sampler change.
+    """
+
+    def __init__(self, *, win_head: bool = True) -> None:
+        self.calls: list = []
+        self.features_extractor = SimpleNamespace(last_win_prob_logits=None)
+        self._win_head = win_head
+
+    def get_distribution(self, obs):
+        import torch as th
+        o, m = obs["observation"], obs["action_mask"]
+        self.calls.append({"n": int(o.shape[0]), "obs_dtype": o.dtype, "mask_dtype": m.dtype})
+        # Deterministic per-row logits so a chunked pass and a batched one are comparable.
+        logits = th.arange(o.shape[0], dtype=th.float32).unsqueeze(1) + th.arange(
+            m.shape[1], dtype=th.float32).unsqueeze(0)
+        if self._win_head:
+            self.features_extractor.last_win_prob_logits = th.zeros(o.shape[0], 1)
+        return SimpleNamespace(distribution=SimpleNamespace(logits=logits))
+
+
+def _snapshot_with(policy, *, compiled: bool):
+    return P.Snapshot("/ckpt.zip", 7, SimpleNamespace(policy=policy), None, compiled=compiled)
+
+
+class TestScoreForwardSignature:
+    def _inputs(self, n=5):
+        obs = np.arange(n * 4, dtype=np.float32).reshape(n, 4)
+        masks = np.ones((n, 3), dtype=np.int8)
+        masks[:, 2] = 0
+        return obs, masks
+
+    def test_a_compiled_snapshot_scores_ONE_ROW_AT_A_TIME(self):
+        """B=1 is the shape every rollout forwards at; a batched score would force a SECOND trace.
+
+        Measured 2026-08-23 on the live checkpoint: with a batched score in front of them, the
+        first label's rollouts cost 79 s against 3 s for the second — pure recompilation."""
+        pol = _RecordingPolicy()
+        obs, masks = self._inputs(5)
+        _snapshot_with(pol, compiled=True).score(obs, masks)
+        assert [c["n"] for c in pol.calls] == [1, 1, 1, 1, 1]
+
+    def test_an_eager_snapshot_still_takes_the_single_batched_forward(self):
+        """There is no graph to keep one signature for, so the cheap path stays the cheap path."""
+        pol = _RecordingPolicy()
+        obs, masks = self._inputs(5)
+        _snapshot_with(pol, compiled=False).score(obs, masks)
+        assert [c["n"] for c in pol.calls] == [5]
+
+    def test_the_mask_reaches_the_graph_as_float32_not_int8(self):
+        """A materialized mask is int8 and a live one is float32 — and dynamo guards on DTYPE as
+        hard as on shape. That mismatch measured a 19.5 s re-trace on the first scored row."""
+        import torch as th
+        for compiled in (True, False):
+            pol = _RecordingPolicy()
+            obs, masks = self._inputs(3)
+            assert masks.dtype == np.int8
+            _snapshot_with(pol, compiled=compiled).score(obs, masks)
+            assert {c["mask_dtype"] for c in pol.calls} == {th.float32}
+            assert {c["obs_dtype"] for c in pol.calls} == {th.float32}
+
+    def test_chunking_does_not_change_a_single_number(self):
+        """The sampler ranks on these values, so the two paths must agree exactly."""
+        obs, masks = self._inputs(6)
+        wp_c, ent_c = _snapshot_with(_RecordingPolicy(), compiled=True).score(obs, masks)
+        wp_e, ent_e = _snapshot_with(_RecordingPolicy(), compiled=False).score(obs, masks)
+        assert np.allclose(ent_c, ent_e)
+        assert np.allclose(wp_c, wp_e)
+
+    def test_a_headless_checkpoint_reports_no_win_probs_through_either_path(self):
+        for compiled in (True, False):
+            obs, masks = self._inputs(4)
+            wp, ent = _snapshot_with(
+                _RecordingPolicy(win_head=False), compiled=compiled).score(obs, masks)
+            assert wp is None and len(ent) == 4
+
+
+class TestCompiledGraphWarmUp:
+    def test_a_warm_up_that_raises_is_survivable_and_says_so(self, capsys):
+        """It is a perf warm-up, not a gate: a model whose spaces are not what we assumed must
+        cost the warm-up and nothing else."""
+        broken = SimpleNamespace(observation_space={}, policy=SimpleNamespace())
+        assert P._warm_the_compiled_graph(broken) >= 0.0
+        assert "warm-up skipped" in capsys.readouterr().out
+
+    def test_it_forwards_the_LIVE_signature_both_keys(self):
+        """`maybe_compile_extractor` warms with `observation` ALONE; every real call also carries
+        `action_mask`, and a dict's KEY SET is part of the guard — so warming with one key leaves
+        the first real decision to re-trace (19.5 s, measured)."""
+        seen = {}
+
+        class _Space:
+            def __init__(self, n):
+                self.shape = (n,)
+
+        def _get_distribution(obs):
+            seen["keys"] = sorted(obs)
+            seen["shapes"] = {k: tuple(v.shape) for k, v in obs.items()}
+
+        model = SimpleNamespace(
+            observation_space={"observation": _Space(9), "action_mask": _Space(11)},
+            policy=SimpleNamespace(get_distribution=_get_distribution))
+        P._warm_the_compiled_graph(model)
+        assert seen["keys"] == ["action_mask", "observation"]
+        assert seen["shapes"] == {"observation": (1, 9), "action_mask": (1, 11)}
+
+
+def _seed_is_even(seed) -> bool:
+    """A stable win/loss rule over a `fresh_seeds` entry (a `"a,b,c,d"` gen-5 seed string)."""
+    return sum(int(x) for x in str(seed).split(",")) % 2 == 0
+
+
+def _rollout_record():
+    from utils.bridge.reconstruction import ReconstructionRecord
+    return ReconstructionRecord(
+        format_id="gen3ou", prng_seed="1,2,3,4",
+        input_log=('>start {"formatid":"gen3ou","seed":[1,2,3,4]}',
+                   '>player p1 {"name":"Ann","team":"x"}',
+                   '>player p2 {"name":"Bob","team":"y"}'),
+        commands=())
+
+
+def _decision():
+    from agents.training.obs_materializer import RecordDecision
+    return RecordDecision(index=4, turn=6, action=7, choice="move icebeam",
+                          mask=np.ones(11, dtype=np.int8), obs=np.zeros(4, dtype=np.float32))
+
+
+class TestRolloutArms:
+    """`_rollout` is 93% of this process's wall (measured), so its arms are the thing to get right:
+    independent, aggregated by a SUM, and individually survivable."""
+
+    def _prod(self, tmp_path, **over):
+        run = _mk_run(tmp_path)
+        prod = P.CfProducer(_args(run, rollouts=6, mc_return=False, **over),
+                            snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        return prod
+
+    @pytest.mark.parametrize("conc", [1, 4])
+    def test_the_arms_aggregate_to_the_same_label_sequential_or_overlapped(
+            self, tmp_path, monkeypatch, conc):
+        """Overlapping the arms is a SCHEDULING change: wins/n are order-free counts."""
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: {
+            "outcome": "win" if _seed_is_even(kw["post_t_seed"]) else "loss"})
+        prod = self._prod(tmp_path, rollout_concurrency=conc)
+        wins, n, returns = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert n == 6 and returns == []
+        assert wins == self._expected_wins(prod)
+
+    def _expected_wins(self, prod):
+        from main.prober.falsifier import fresh_seeds
+        return sum(_seed_is_even(s)
+                   for s in fresh_seeds(prod.args.rollouts, salt=f"t:4:cfp{prod.args.seed}"))
+
+    @pytest.mark.parametrize("conc", [1, 4])
+    def test_one_arm_that_DIES_costs_that_arm_and_nothing_else(
+            self, tmp_path, monkeypatch, conc, capsys):
+        """The bridge child is spawned per arm, so one can die (a transport error, a wedged
+        child, a `ProgressTimeout` on a saturated box). The label must then be measured over the
+        arms that finished — never crash the record, never count the dead arm as a loss, which
+        would bias every label a dead child touched DOWNWARD."""
+        calls = {"n": 0}
+
+        def _boom(record, **kw):
+            calls["n"] += 1
+            if calls["n"] == 2:
+                raise RuntimeError("local_sim_bridge error: child died")
+            return {"outcome": "win"}
+
+        monkeypatch.setattr(P, "_run_one", _boom)
+        prod = self._prod(tmp_path, rollout_concurrency=conc)
+        wins, n, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert calls["n"] == 6, "a dead arm must not stop the arms after it"
+        assert (wins, n) == (5, 5), "the label is over the arms that FINISHED"
+        assert "rollout failed" in capsys.readouterr().out
+
+    def test_every_arm_gets_its_own_players_and_its_own_dice(self, tmp_path, monkeypatch):
+        """Independence is what makes overlapping them legal at all."""
+        seen = []
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: (
+            seen.append((id(kw["trainee"]), id(kw["opponent"]), tuple(kw["post_t_seed"]))),
+            {"outcome": "loss"})[1])
+        prod = self._prod(tmp_path, rollout_concurrency=3)
+        prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert len({s[0] for s in seen}) == 6 and len({s[1] for s in seen}) == 6
+        assert len({s[2] for s in seen}) == 6, "the arms must not share a dice stream"
+
+    def test_all_arms_dead_is_a_skip_not_a_label(self, tmp_path, monkeypatch):
+        """`process_record` reads n == 0 as `rollouts_all_failed`; it must not see a phantom 0.0."""
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: (_ for _ in ()).throw(
+            RuntimeError("dead")))
+        prod = self._prod(tmp_path, rollout_concurrency=4)
+        assert prod._rollout(_rollout_record(), "p1", _decision(), tag="t") == (0, 0, [])
+
+
 class TestCli:
     def test_a_run_without_the_tap_refuses_rather_than_idling(self, tmp_path, capsys):
         (tmp_path / "run").mkdir()
@@ -763,6 +967,21 @@ class TestCli:
         assert a.rollouts == 8 and a.top_n == 3 and a.impl == "rust"
         assert a.max_labels_per_hour == 2000 and a.anchor_every == 50
         assert a.lag_warn_steps == 150_000, "must match the buffer's DEFAULT_LAG_BOUND"
+
+    def test_the_compile_defaults_ON_and_can_be_turned_off(self):
+        """It is a FALLBACK, not an opt-in: 93% of this process's wall is the rollout forward and
+        compiling it is 6.4x, so a producer launched with no flags must get it."""
+        assert P.build_parser().parse_args(["/tmp/x"]).compile_extractor is True
+        assert P.build_parser().parse_args(
+            ["/tmp/x", "--no-compile-extractor"]).compile_extractor is False
+
+    def test_the_rollout_concurrency_default_is_declared(self):
+        a = P.build_parser().parse_args(["/tmp/x"])
+        assert a.rollout_concurrency == 1, (
+            "measured a wash — the forwards serialize on poke-env's single loop thread either "
+            "way — so the default stays the sequential path")
+        assert P.build_parser().parse_args(
+            ["/tmp/x", "--rollout-concurrency", "4"]).rollout_concurrency == 4
 
     def test_the_lag_warning_default_tracks_the_buffers_bound(self):
         from agents.training.cf_label_buffer import DEFAULT_LAG_BOUND
