@@ -284,21 +284,53 @@ def summarize_trajectory(side: str, sink: list, *, max_turns: int = 80) -> list:
     return [{"turn": t["turn"], "events": _dedup(t["events"])} for t in turns[:max_turns]]
 
 
-def _battle_outcome(player, trainee_username: str) -> dict:
+def turn_cap_of(*players) -> Optional[int]:
+    """The turn at which THIS pairing forfeits, or None if neither player has a stall threshold.
+
+    Every player that stall-forfeits carries its own ``StallConfig`` (``_stall_config.threshold``,
+    250 by default), and the battle ends when the FIRST of them reaches it — so the effective cap
+    is the minimum over the players that have one. A plain poke-env baseline has no stall handling
+    at all and contributes nothing; if neither side does, there is no cap and ``None`` says so
+    rather than inventing 250.
+    """
+    caps = [int(t) for t in
+            (getattr(getattr(p, "_stall_config", None), "threshold", None) for p in players)
+            if t is not None]
+    return min(caps) if caps else None
+
+
+def _battle_outcome(player, trainee_username: str, *, turn_cap: Optional[int] = None) -> dict:
     """Read the terminal result of the (single) battle ``player`` just finished. ``player`` is the
-    trainee, so ``battle.won`` is from our perspective."""
+    trainee, so ``battle.won`` is from our perspective.
+
+    ``capped`` — the battle ended at the TURN CAP, i.e. by a stall forfeit rather than by play.
+    **A capped battle's win/loss is decided by forfeit ORDERING, not by the position**, so a caller
+    that scores outcomes must read it as a DRAW-AT-CAP: measured 2026-08-23 over 16 capped lines on
+    both ``node`` and ``rust``, the outcome is fully determined by SEAT — p1's ``FORCELOSE`` is
+    always processed first, so p1 always loses — and a training record always seats the trainee on
+    p1. That is a systematic 0, not a coin flip.
+
+    ``finished and turn >= turn_cap`` is exact rather than a heuristic. ``_handle_stall`` returns a
+    forfeit for EVERY decision at ``turn >= threshold``, before any move at that turn can be chosen,
+    so a battle can never resolve normally on or after the cap turn; and ``battle.turn`` only
+    advances on a ``|turn|N`` line, which the sim emits when it is about to ask for choices. So the
+    cap turn being reached at all implies both sides were asked and both forfeited.
+    """
     battles = list(getattr(player, "_battles", {}).values())
     battle = battles[-1] if battles else None
     if battle is None:
-        return {"outcome": "unfinished", "ended": False, "turns": 0, "winner": None}
+        return {"outcome": "unfinished", "ended": False, "turns": 0, "winner": None,
+                "capped": False}
     won = getattr(battle, "won", None)
     finished = getattr(battle, "finished", False)
+    turns = int(getattr(battle, "turn", 0) or 0)
     return {
         "outcome": ("win" if won is True else "loss" if won is False else
                     "tie" if finished else "unfinished"),
         "ended": bool(finished),
-        "turns": int(getattr(battle, "turn", 0) or 0),
+        "turns": turns,
         "winner": (trainee_username if won is True else None),
+        "capped": bool(finished and turn_cap is not None and turns >= int(turn_cap)),
     }
 
 
@@ -319,7 +351,9 @@ def replay_counterfactual(
 ) -> dict:
     """Play ONE counterfactual line: replay ``record`` to ``divergence_turn``, substitute
     ``substitute_choice`` for OUR side, then continue live (``trainee`` policy vs ``opponent``) to a
-    terminal. Returns ``{outcome, ended, turns, winner, divergence_turn, substitute, [trainee_obs]}``.
+    terminal. Returns ``{outcome, ended, turns, winner, capped, divergence_turn, substitute,
+    [trainee_obs]}`` — ``capped`` marks a line that ended at the stall-forfeit TURN CAP, whose
+    win/loss is an artifact of forfeit ordering and must be read as a draw (see `_battle_outcome`).
 
     ``trainee`` / ``opponent`` are pre-built poke-env players (the caller sets the policy / reloads the
     opponent); this runner forces their teams to the RECORDED packed teams and scripts the prefix.
@@ -369,7 +403,8 @@ def replay_counterfactual(
         p1_player, p2_player, 1, battle_format=record.format_id, seed=seed, start_extra=start_extra,
         chunk_sink=traj_sink, impl=impl))
 
-    result = _battle_outcome(trainee, record.username(our_side))
+    result = _battle_outcome(trainee, record.username(our_side),
+                             turn_cap=turn_cap_of(trainee, opponent))
     result.update(divergence_turn=divergence_turn, substitute=substitute_choice)
     # Which sides ran OUT of recorded commands and finished on the live policy. Expected past a
     # real ``divergence_turn``; a DEFECT when ``divergence_turn is None``, where nothing is

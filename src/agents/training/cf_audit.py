@@ -333,9 +333,15 @@ def stratified_sample(frame: Sequence[Decision], n_states: int, *, seed: int,
 # Statistics
 # ---------------------------------------------------------------------------
 
-def wilson_ci(wins: int, n: int, z: float = 1.96) -> "tuple[float, float]":
+def wilson_ci(wins: float, n: int, z: float = 1.96) -> "tuple[float, float]":
     """Wilson score interval — the right small-N binomial CI (a normal approximation gives
-    the degenerate [0, 0] at 0 wins). ``(0.0, 1.0)`` for n == 0."""
+    the degenerate [0, 0] at 0 wins). ``(0.0, 1.0)`` for n == 0.
+
+    ``wins`` may be FRACTIONAL: `cf_producer` scores a draw-at-the-turn-cap 0.5, so its success
+    total is a sum over ``{0, 0.5, 1}``. The arithmetic is unchanged and well-defined, but such a
+    sample is not Bernoulli, so the interval becomes an approximation that errs NARROW — which is
+    why the label row carries `n_capped` beside it.
+    """
     if n <= 0:
         return 0.0, 1.0
     p = wins / n

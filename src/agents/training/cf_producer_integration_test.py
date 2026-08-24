@@ -424,6 +424,66 @@ def test_a_new_checkpoint_mid_run_restamps_the_labels_and_the_buffer_takes_both(
     assert buf.stats(step2)["cf/labels_skipped_total"] == 1.0
 
 
+def test_a_rollout_that_reaches_the_TURN_CAP_is_a_draw_on_either_seat(tmp_path):
+    """`gen3_cf_draw_at_cap_v1`, on REAL battles — the half a stubbed `_run_one` cannot prove.
+
+    THE DEFECT. Both sides of a producer rollout stall-forfeit at `MAX_TURNS`, so a continuation
+    that reaches the cap has BOTH sides forfeit and the recorded winner is decided by which
+    ``FORCELOSE`` the sim processes first. Measured here — and, when this was root-caused, over 16
+    lines on `node` and `rust` alike — the ordering is not even random: **p1 always loses**. A
+    training record always seats the trainee on p1 (`_trainee_side`), so before the fix EVERY
+    capped rollout scored a hard 0 and the tight-MC P(win) labels of stall-shaped positions were
+    biased DOWNWARD, silently.
+
+    The two seats are the assertion. The same board, the same dice, played from either side, must
+    produce the same label — and only a draw-at-cap score does that.
+
+    REPRODUCIBLE, not wall-clock-seeded (root `CLAUDE.md`'s fuzz-script-vs-collected-test rule):
+    the record comes from `record_fixture_battle(key=…)` and the cap is FORCED down to a handful
+    of turns rather than waiting 250, so the battle reaches it by construction on every run.
+
+    REVERT-VERIFIED: with `rollout_outcome_score`'s ``capped`` branch removed, the two seats score
+    0.0 and 1.0 and the equality assertion fails.
+    """
+    import dataclasses
+
+    from agents.training.stall import StallConfig
+    from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
+    from utils.bridge.counterfactual import replay_counterfactual
+
+    cap = 6
+    raw, _summary, _npz = record_fixture_battle(str(tmp_path), key=3, tag="Cap", impl=IMPL)
+
+    scores, flags = {}, {}
+    for side in ("p1", "p2"):
+        other = "p2" if side == "p1" else "p1"
+        rec = dataclasses.replace(raw, trainee_username=raw.username(side))
+
+        def _mk(role, seat):
+            return _Gen3RandomPlayer(
+                rng_seed=77, observation_encoder=None, mappings=None,
+                battle_format=rec.format_id, team=rec.packed_team(seat),
+                server_configuration=LocalhostServerConfiguration,
+                account_configuration=AccountConfiguration(f"Cap{role}{side}", "pw"),
+                stall_config=StallConfig(threshold=cap),
+                max_concurrent_battles=1, start_listening=False)
+
+        res = replay_counterfactual(
+            rec, trainee=_mk("T", side), opponent=_mk("O", other),
+            divergence_turn=3, seed=rec.start_options().get("seed"), impl=IMPL)
+        assert res["turns"] >= cap and res["ended"], (
+            f"the {cap}-turn cap was not reached ({res['turns']} turns) — this test proves "
+            f"nothing unless the battle actually caps")
+        flags[side] = res["capped"]
+        scores[side] = P.rollout_outcome_score(res)
+
+    assert flags == {"p1": True, "p2": True}, (
+        f"the runner did not flag a capped battle as capped: {flags}")
+    assert scores["p1"] == scores["p2"] == 0.5, (
+        f"a capped rollout must be a DRAW on either seat, got {scores} — the label is being "
+        f"decided by which side's forfeit the sim processed first, not by the position")
+
+
 def test_a_record_the_replay_cannot_reproduce_refuses_to_produce(tmp_path):
     """LABEL TRUST BEFORE LABELS, the `cf_audit` rule inherited. If the scripted full replay does
     not reproduce the recorded outcome, the replay is not exact and every label after it measures

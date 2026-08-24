@@ -897,8 +897,8 @@ class TestRolloutArms:
         monkeypatch.setattr(P, "_run_one", lambda record, **kw: {
             "outcome": "win" if _seed_is_even(kw["post_t_seed"]) else "loss"})
         prod = self._prod(tmp_path, rollout_concurrency=conc)
-        wins, n, returns = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
-        assert n == 6 and returns == []
+        wins, n, n_capped, returns = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert n == 6 and n_capped == 0 and returns == []
         assert wins == self._expected_wins(prod)
 
     def _expected_wins(self, prod):
@@ -923,7 +923,7 @@ class TestRolloutArms:
 
         monkeypatch.setattr(P, "_run_one", _boom)
         prod = self._prod(tmp_path, rollout_concurrency=conc)
-        wins, n, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        wins, n, _capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
         assert calls["n"] == 6, "a dead arm must not stop the arms after it"
         assert (wins, n) == (5, 5), "the label is over the arms that FINISHED"
         assert "rollout failed" in capsys.readouterr().out
@@ -944,7 +944,112 @@ class TestRolloutArms:
         monkeypatch.setattr(P, "_run_one", lambda record, **kw: (_ for _ in ()).throw(
             RuntimeError("dead")))
         prod = self._prod(tmp_path, rollout_concurrency=4)
-        assert prod._rollout(_rollout_record(), "p1", _decision(), tag="t") == (0, 0, [])
+        assert prod._rollout(_rollout_record(), "p1", _decision(), tag="t") == (0, 0, 0, [])
+
+
+class TestDrawAtCap:
+    """`gen3_cf_draw_at_cap_v1` — a rollout that reaches the 250-turn stall-forfeit cap is a DRAW.
+
+    THE DEFECT (measured 2026-08-23, before the fix, over 16 capped lines on both `node` and
+    `rust`). Both sides of a rollout are players that stall-forfeit at `MAX_TURNS`, so at the cap
+    BOTH forfeit and the winner is whichever ``FORCELOSE`` the sim processes first. That is not a
+    fact about the position — and it is not a coin flip either: **p1's forfeit is always processed
+    first**, and `_trainee_side` seats a training record's trainee on p1 ALWAYS. So every capped
+    rollout scored a hard 0, biasing tight-MC P(win) labels DOWNWARD on exactly the stall-shaped
+    positions where the cap is reachable, with nothing anywhere recording that it had happened.
+
+    These are the label-side half, driven off a stubbed `_run_one` so they are fast and
+    deterministic; that the runner actually SETS ``capped`` on a real battle is
+    `counterfactual_test`'s `_battle_outcome` pair plus the `sim` test in
+    `cf_producer_integration_test`.
+    """
+
+    def _prod(self, tmp_path, **over):
+        run = _mk_run(tmp_path)
+        prod = P.CfProducer(_args(run, rollouts=8, mc_return=False, **over),
+                            snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        return prod
+
+    def test_a_capped_rollout_scores_half_whichever_side_the_forfeit_hit(
+            self, tmp_path, monkeypatch, capsys):
+        """The whole point: BOTH orderings must map to the same number.
+
+        REVERT-VERIFIED. With `rollout_outcome_score`'s ``capped`` branch removed (the pre-fix
+        `res["outcome"] == "win"`), the ``win`` arm scores 8.0 → label 1.0 and the ``loss`` arm
+        scores 0.0 → label 0.0 — the manufactured 1s and 0s this test exists to forbid.
+        """
+        prod = self._prod(tmp_path)
+        for raced in ("win", "loss"):
+            monkeypatch.setattr(P, "_run_one", lambda record, _o=raced, **kw: {
+                "outcome": _o, "ended": True, "turns": 250, "capped": True})
+            wins, n, n_capped, _ = prod._rollout(
+                _rollout_record(), "p1", _decision(), tag="t")
+            assert (n, n_capped) == (8, 8)
+            assert wins == pytest.approx(4.0), (
+                f"a capped rollout recorded as a {raced!r} must score 0.5, not by which side's "
+                f"forfeit landed first")
+            assert wins / n == pytest.approx(0.5)
+        assert "stall-forfeit CAP" in capsys.readouterr().out, (
+            "a capped rollout must SAY so once — the operator's only warning that a chunk of the "
+            "corpus is draws-at-cap")
+
+    def test_a_genuine_tie_is_a_draw_too_and_used_to_score_a_LOSS(self, tmp_path, monkeypatch):
+        """Same family, same line of code: ``outcome == "win"`` is False for a tie, so a drawn
+        rollout scored 0. A tie IS a draw and scores 0.5."""
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: {
+            "outcome": "tie", "ended": True, "turns": 90, "capped": False})
+        prod = self._prod(tmp_path)
+        wins, n, n_capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert (wins, n, n_capped) == (4.0, 8, 0), "a tie is 0.5 and is NOT a cap"
+
+    def test_a_mixed_batch_counts_only_the_capped_arms(self, tmp_path, monkeypatch):
+        """`n_capped` must be the count of CAPPED arms, not of draws — the two are different
+        questions and only the first tells a reader the label sat on a stall-shaped position."""
+        calls = {"n": 0}
+
+        def _mixed(record, **kw):
+            calls["n"] += 1
+            if calls["n"] <= 3:
+                return {"outcome": "loss", "ended": True, "turns": 250, "capped": True}
+            return {"outcome": "win", "ended": True, "turns": 40, "capped": False}
+
+        monkeypatch.setattr(P, "_run_one", _mixed)
+        prod = self._prod(tmp_path)
+        wins, n, n_capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        assert (n, n_capped) == (8, 3)
+        assert wins == pytest.approx(3 * 0.5 + 5 * 1.0)
+
+    def test_the_row_records_n_capped_beside_n_rollouts(self):
+        """A 0.5 from 8 draws-at-cap and a 0.5 from 4 wins + 4 losses are the same number about
+        different positions, and the reader cannot re-derive which afterwards. So the count is
+        WRITTEN — a schema ADDITION, never a change to an existing field."""
+        from agents.training.obs_materializer import RecordDecision
+        d = RecordDecision(index=3, turn=210, action=7, choice="move icebeam",
+                           mask=np.ones(11, dtype=np.int8), obs=np.arange(8, dtype=np.float32))
+        row = P.label_row(record_path="/r/x_reconstruction.json", decision=d, wins=4.0, n=8,
+                          n_capped=8, step=24_000_000, surprise=0.4, entropy=0.6, score=0.61,
+                          win_prob=0.8)
+        assert row["n_capped"] == 8 and row["n_rollouts"] == 8
+        assert row["label"] == pytest.approx(0.5)
+        assert row["schema"] == 1, "an additive field must NOT move the refusal gate"
+        # A fractional success total must still produce a usable interval that brackets the label.
+        assert row["wilson_lo"] <= row["label"] <= row["wilson_hi"]
+        # The default is 0, so every pre-existing caller keeps writing a row that reads "no caps"
+        # rather than a row that is silent about it.
+        bare = P.label_row(record_path="/r/x_reconstruction.json", decision=d, wins=5.0, n=8,
+                           step=1, surprise=0.0, entropy=0.0, score=0.0, win_prob=None)
+        assert bare["n_capped"] == 0
+
+    def test_the_producer_state_counts_capped_rollouts(self, tmp_path):
+        """It must never go invisible: the state file is this process's whole operator surface,
+        and the heartbeat prints the ratio as soon as it is non-zero."""
+        st = P.ProducerState(path=str(tmp_path / "s.json"))
+        assert st.rollouts_capped == 0
+        st.rollouts_capped += 3
+        st.save()
+        assert json.loads((tmp_path / "s.json").read_text())["rollouts_capped"] == 3
+        assert P.ProducerState.load(str(tmp_path)).rollouts_capped == 0, "a fresh dir starts at 0"
 
 
 class TestCli:

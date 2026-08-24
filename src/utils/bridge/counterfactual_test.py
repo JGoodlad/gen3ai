@@ -10,7 +10,7 @@ from poke_env.player.battle_order import SingleBattleOrder
 
 from utils.bridge.counterfactual import (
     _battle_outcome, _force_switch, _invert_choice, _passthrough, install_scripted_prefix,
-    summarize_trajectory)
+    summarize_trajectory, turn_cap_of)
 
 
 def test_passthrough_message():
@@ -35,6 +35,44 @@ def test_battle_outcome_maps_win_loss_tie():
     assert _battle_outcome(player(None, True), "me")["outcome"] == "tie"
     assert _battle_outcome(player(None, False), "me")["outcome"] == "unfinished"
     assert _battle_outcome(SimpleNamespace(_battles={}), "me")["outcome"] == "unfinished"
+    # No cap declared ⇒ nothing is capped. `capped` is always PRESENT, never absent-means-false.
+    assert _battle_outcome(player(True, True), "me")["capped"] is False
+    assert _battle_outcome(SimpleNamespace(_battles={}), "me")["capped"] is False
+
+
+def test_turn_cap_of_takes_the_lowest_threshold_and_None_when_nobody_has_one():
+    """The battle ends when the FIRST side forfeits, so the effective cap is the minimum. A plain
+    poke-env baseline has no stall handling and contributes nothing; if neither side does, there
+    is no cap — and `None` says so rather than inventing 250."""
+    def p(threshold):
+        return SimpleNamespace(_stall_config=SimpleNamespace(threshold=threshold))
+    assert turn_cap_of(p(250), p(250)) == 250
+    assert turn_cap_of(p(250), p(9)) == 9
+    assert turn_cap_of(SimpleNamespace(), p(30)) == 30
+    assert turn_cap_of(SimpleNamespace(), SimpleNamespace()) is None
+    assert turn_cap_of() is None
+
+
+def test_battle_outcome_flags_a_battle_that_ENDED_AT_THE_CAP():
+    """`gen3_cf_draw_at_cap_v1`. At the cap BOTH sides forfeit and the winner is decided by which
+    ``FORCELOSE`` the sim processes first — measured 2026-08-23 over 16 capped lines on `node` and
+    `rust` alike, p1's is ALWAYS first, so p1 always loses. A caller scoring outcomes must be able
+    to see that the win/loss it was handed is an artifact of ordering, and this flag is how.
+
+    ``finished and turn >= cap`` is EXACT, not a heuristic: `_handle_stall` forfeits at every
+    decision from the cap turn onward, before any move at that turn is chosen, so a battle can
+    never resolve normally on or after it."""
+    def player(won, finished, turn):
+        return SimpleNamespace(_battles={"t": SimpleNamespace(won=won, finished=finished,
+                                                             turn=turn)})
+    # The raced pair: opposite outcomes, both capped — which is exactly why the caller must not
+    # read the outcome.
+    assert _battle_outcome(player(False, True, 250), "me", turn_cap=250)["capped"] is True
+    assert _battle_outcome(player(True, True, 250), "me", turn_cap=250)["capped"] is True
+    # One turn short of the cap is a real result.
+    assert _battle_outcome(player(True, True, 249), "me", turn_cap=250)["capped"] is False
+    # An UNFINISHED battle is a transport pathology, not a cap, however long it ran.
+    assert _battle_outcome(player(None, False, 260), "me", turn_cap=250)["capped"] is False
 
 
 class _FakeTracker:

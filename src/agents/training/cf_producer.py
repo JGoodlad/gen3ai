@@ -26,7 +26,9 @@ Each cycle:
    ``critic_surprise`` + ``policy_entropy`` (§ *The sampler*). Label the top ``--top-n``; skip the
    rest. This is a SAMPLER, not a sweep.
 4. **Roll out** ``--rollouts`` tight-MC continuations per selected decision: play the RECORDED
-   action at that turn, then both sides live to termination on fresh post-divergence dice.
+   action at that turn, then both sides live to termination on fresh post-divergence dice. A
+   continuation that reaches the 250-turn stall-forfeit cap is a **DRAW AT CAP** and scores 0.5 —
+   see :meth:`CfProducer._play_arm`; the per-label count rides out as ``n_capped``.
 5. **Write** the shared v1 label schema to
    ``<run_dir>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`` — one NEW file per batch (never a
    rewrite, so the buffer's ``(name, inode)`` offset map can never be wrong about it).
@@ -196,6 +198,7 @@ from typing import Deque, List, Optional, Sequence
 import numpy as np
 
 from agents.action.constants import MOVE_START
+from agents.observation.constants import MAX_TURNS
 from agents.training.cf_audit import LabelRow, obs_b64, obs_digest, wilson_ci
 from agents.training.obs_materializer import RecordDecision, scan_record
 from utils.bridge.counterfactual import replay_counterfactual as _run_one
@@ -539,6 +542,12 @@ class ProducerState:
     seq: int = 0
     labels_total: int = 0
     rollouts_total: int = 0
+    #: Rollouts that ended at the stall-forfeit TURN CAP and were therefore scored 0.5 rather than
+    #: by play (`gen3_cf_draw_at_cap_v1`). It is the operator's only view of how much of the label
+    #: corpus is draw-at-cap, and it must never go invisible: before the fix these were scored a
+    #: hard 0 (p1's forfeit is always processed first and the trainee is always p1), which biased
+    #: stall-shaped positions DOWNWARD with nothing anywhere saying so.
+    rollouts_capped: int = 0
     records_processed: int = 0
     records_skipped: int = 0
     records_since_anchor: int = 0
@@ -630,17 +639,27 @@ def write_label_batch(labels_dir: str, rows: "Sequence[dict]", *, step: int, seq
     return path
 
 
-def label_row(*, record_path: str, decision: RecordDecision, wins: int, n: int,
+def label_row(*, record_path: str, decision: RecordDecision, wins: float, n: int,
               step: int, surprise: float, entropy: float, score: float,
-              win_prob: Optional[float],
+              win_prob: Optional[float], n_capped: int = 0,
               outcome_label: Optional[float] = None,
               mc_return: Optional[float] = None, mc_return_n: int = 0,
               reward_sha1: str = "", reward_composition: str = "") -> dict:
     """The shared v1 schema, plus additive provenance the buffer ignores by design.
 
-    The extra keys (`sampler_version`, `priority`, `label_regime`) are NOT schema changes — the
-    buffer reads a fixed key set and ignores the rest — but they are the difference between a
-    label file you can audit a year later and a bag of numbers.
+    The extra keys (`sampler_version`, `priority`, `label_regime`, `n_capped`) are NOT schema
+    changes — the buffer reads a fixed key set and ignores the rest — but they are the difference
+    between a label file you can audit a year later and a bag of numbers.
+
+    ``wins`` is a FLOAT, not a count (`gen3_cf_draw_at_cap_v1`). A draw scores 0.5, and the
+    turn-cap forfeit is a draw (see :meth:`CfProducer._play_arm`), so a label over R rollouts is a
+    mean of ``{0, 0.5, 1}`` rather than of ``{0, 1}``. ``n_capped`` records how many of the R hit
+    the cap, because a label of 0.5 built from 8 draws-at-cap and a label of 0.5 built from 4 wins
+    and 4 losses are the same number about different positions — and the reader who wants to
+    stratify or caveat cannot re-derive it from the row afterwards. ``wilson_lo``/``wilson_hi``
+    keep taking the fractional success total: the Wilson interval is a binomial-proportion
+    interval, so with draws in the sample it is an APPROXIMATION (the sample is no longer
+    Bernoulli) — it errs narrow, which is why `n_capped` sits beside it.
 
     ``outcome_label`` / ``mc_return`` ARE read by the buffer (`gen3_cf_twin_heads_v1`) and are
     additive-optional at schema v1: an older consumer ignores them, a newer one supervises nothing
@@ -654,7 +673,7 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: int, n: int,
     composition` is printed at launch: a hex digest tells a reader that two rewards DIFFER, and
     nothing about how.
     """
-    lo, hi = wilson_ci(int(wins), int(n))
+    lo, hi = wilson_ci(float(wins), int(n))
     row = LabelRow(
         battle=record_path, decision_idx=int(decision.index),
         obs_sha1=obs_digest(decision.obs), obs_npz=None, obs_inline=obs_b64(decision.obs),
@@ -667,6 +686,9 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: int, n: int,
         label_regime="self_current_stochastic_both_sides",
         turn=int(decision.turn),
         recorded_action=int(decision.action),
+        # How many of `n_rollouts` ended at the 250-turn stall-forfeit cap and were therefore
+        # scored 0.5 rather than by play. Additive-only; the buffer never reads it.
+        n_capped=int(n_capped),
         priority={"score": round(float(score), 6),
                   "critic_surprise": round(float(surprise), 6),
                   "policy_entropy": round(float(entropy), 6),
@@ -694,6 +716,30 @@ def _outcome_scalar(record: ReconstructionRecord, side: str, outcome: dict) -> f
     if not winner:
         return 0.5                      # a tie / the turn cap — maximally uninformative
     return 1.0 if winner == record.username(side) else 0.0
+
+
+def rollout_outcome_score(res: dict) -> float:
+    """One ROLLOUT's contribution to a tight-MC P(win) label, in [0, 1].
+
+    ``gen3_cf_draw_at_cap_v1``. Win 1.0, loss 0.0, **draw 0.5 — and a line that ended at the
+    stall-forfeit turn cap IS a draw** whatever ``outcome`` says, because at the cap both sides
+    forfeit and the winner is decided by which ``FORCELOSE`` the sim processes first. The full
+    mechanism (and why it is a systematic 0 rather than a coin flip on a training record) is in
+    :meth:`CfProducer._play_arm`.
+
+    ``unfinished`` — the battle never terminated — is a transport pathology rather than a result,
+    and it takes the same 0.5 as a draw for want of anything better. It is near-unreachable here
+    (``run_local_battles`` returns only when the battle completes, and anything that goes wrong on
+    the way RAISES and is caught as a failed arm), but the OLD code scored it a hard 0 alongside
+    the tie, and a pathology must not read as a confident loss.
+
+    Deliberately NOT the same function as :func:`_outcome_scalar`, which reads a RECORDED battle's
+    referee-view outcome dict off the replay driver. This one reads a LIVE
+    :func:`replay_counterfactual` result, which is the only place ``capped`` exists.
+    """
+    if res.get("capped"):
+        return 0.5
+    return {"win": 1.0, "loss": 0.0}.get(res.get("outcome"), 0.5)
 
 
 #: The substring that means "the box, not the replay" — it covers `TimeoutError`,
@@ -731,11 +777,13 @@ def record_is_full_replay_anchorable(record: ReconstructionRecord) -> bool:
     reproduce that ordering. Excluding the class is a declared coverage bound — the anchor still
     adjudicates every non-forfeit record, and it is never retried until it passes.
 
-    ⚠️ **The ROLLOUT path inherits the same asymmetry and it is NOT addressed here.** A label's
-    rollouts play both sides with `RLPlayer`s that both stall-forfeit, whereas the recorded training
-    battle had only the trainee forfeiting — so a rollout that runs to the 250-turn cap can be
-    scored a WIN purely because the opponent's forfeit landed first. That biases the labels of long
-    games upward. Task-ready, not fixed: see the training leaf.
+    The ROLLOUT path inherits the same asymmetry — a label's rollouts play both sides with
+    `RLPlayer`s that both stall-forfeit, so a rollout reaching the 250-turn cap has its winner
+    decided by forfeit ordering — and that is **FIXED** (`gen3_cf_draw_at_cap_v1`): a capped
+    rollout is scored 0.5, never by the ordering. See :meth:`CfProducer._play_arm`. (An older note
+    here guessed the bias was UPWARD; it was measured DOWNWARD — p1's forfeit always lands first
+    and the trainee is always p1.) The anchor's own exclusion below stands regardless: a capped
+    ANCHOR would still have to reproduce a recorded winner it cannot reproduce.
     """
     return not any(side == "forcelose" for side, _ in record.commands)
 
@@ -805,6 +853,7 @@ class CfProducer:
         self._said_unanchorable = False
         self._warned_lag = False
         self._warned_no_return = False
+        self._said_capped = False
         self._said_no_return_path = False
         self.anchor_failed = False
         #: Set by :meth:`run_anchor` when the anchor RAISED instead of returning a verdict — the
@@ -1158,14 +1207,16 @@ class CfProducer:
                           f"(--max-labels-per-hour {self.args.max_labels_per_hour}) — "
                           f"stopping this record early")
                 break
-            wins, n, returns = self._rollout(record, side, d, tag=os.path.basename(path))
+            wins, n, n_capped, returns = self._rollout(
+                record, side, d, tag=os.path.basename(path))
             if n == 0:
                 self.state.note_skip("rollouts_all_failed")
                 continue
             self.label_times.append(time.time())
             self.state.rollouts_total += n
+            self.state.rollouts_capped += n_capped
             rows.append(label_row(
-                record_path=path, decision=d, wins=wins, n=n,
+                record_path=path, decision=d, wins=wins, n=n, n_capped=n_capped,
                 step=self.snapshot.step, surprise=s, entropy=e,
                 score=score, win_prob=wp,
                 # HEAD B's label is the RECORDED battle's realized outcome — already computed above
@@ -1179,10 +1230,13 @@ class CfProducer:
         return rows
 
     def _rollout(self, record: ReconstructionRecord, side: str, d: RecordDecision,
-                 *, tag: str) -> "tuple[int, int, List[float]]":
+                 *, tag: str) -> "tuple[float, int, int, List[float]]":
         """R continuations from ``d``: the RECORDED action, then both sides live on fresh dice.
 
-        Returns ``(wins, n, returns)``. ``returns`` is the per-rollout DISCOUNTED SHAPED RETURN from
+        Returns ``(wins, n, n_capped, returns)``. ``wins`` is a FRACTIONAL success total — a draw
+        scores 0.5 and a turn-cap forfeit is a draw (`gen3_cf_draw_at_cap_v1`, see
+        :meth:`_play_arm`) — and ``n_capped`` is how many of the ``n`` finished arms hit the cap.
+        ``returns`` is the per-rollout DISCOUNTED SHAPED RETURN from
         the labelled decision (`gen3_cf_twin_heads_v1`, the shadow critic's stream) and is EMPTY
         when `--no-mc-return` is set or when a rollout produced no measurable return — never
         zero-padded, because a zero return is the middle of this reward's range and would read as a
@@ -1217,16 +1271,18 @@ class CfProducer:
                 results = list(ex.map(
                     lambda a: self._play_arm(a, rec, side, d, seed, tag), arms))
 
-        wins = n = 0
+        wins = 0.0
+        n = n_capped = 0
         returns: "List[float]" = []
-        for ok, won, g in results:
+        for ok, outcome_score, capped, g in results:
             if not ok:
                 continue
             n += 1
-            wins += int(won)
+            wins += float(outcome_score)
+            n_capped += int(capped)
             if g is not None:
                 returns.append(g)
-        return wins, n, returns
+        return wins, n, n_capped, returns
 
     def _prepare_arm(self, rec: ReconstructionRecord, side: str, d: RecordDecision, ps) -> dict:
         """One rollout arm's players + its mc_return hook. Main-thread only — see :meth:`_rollout`."""
@@ -1274,14 +1330,30 @@ class CfProducer:
                 "hook": hook, "post_t_seed": ps}
 
     def _play_arm(self, arm: dict, rec: ReconstructionRecord, side: str, d: RecordDecision,
-                  seed, tag: str) -> "tuple[bool, bool, Optional[float]]":
-        """Play ONE prepared arm to a terminal. ``(ok, won, shaped_return | None)``.
+                  seed, tag: str) -> "tuple[bool, float, bool, Optional[float]]":
+        """Play ONE prepared arm to a terminal. ``(ok, outcome_score, capped, shaped_return|None)``.
 
         Runs on a worker thread when ``--rollout-concurrency`` > 1. It touches nothing shared: the
         players, the recorder and the bridge child all belong to this arm, and the only producer
         state it writes is a once-flag whose worst case is the same warning printed twice. A
         rollout that RAISES is reported and returns ``ok=False`` — the label is then computed over
         the arms that finished, exactly as the sequential path always did.
+
+        🚨 **A ROLLOUT THAT REACHES THE 250-TURN CAP IS A DRAW, and scoring it as a win or a loss
+        was a label-quality defect** (`gen3_cf_draw_at_cap_v1`, fixed 2026-08-23). Both sides of a
+        rollout are `RLPlayer`s that stall-forfeit at ``MAX_TURNS``, so at the cap BOTH forfeit and
+        the recorded winner is decided by which ``FORCELOSE`` the sim processes FIRST. That is not
+        a fact about the position, and — measured over 16 capped lines across `node` and `rust` —
+        it is not even a coin flip: **p1's forfeit is always processed first, so p1 always loses**,
+        and `_trainee_side` seats a training record's trainee on p1 ALWAYS. Every capped rollout
+        therefore used to score a hard 0, biasing tight-MC P(win) labels DOWNWARD on exactly the
+        stall-shaped positions where the cap is reachable.
+
+        So a capped line scores **0.5**, the same as a genuine tie (which was also scored 0 —
+        ``outcome == "win"`` is False for a tie — and is likewise a draw). Both possible forfeit
+        orderings now map to the same label, which is what makes the ordering unobservable rather
+        than merely unlikely. The count rides out to the row as `n_capped`. The scoring itself is
+        :func:`rollout_outcome_score`.
         """
         try:
             res = _run_one(
@@ -1294,7 +1366,7 @@ class CfProducer:
         except Exception as exc:                                        # noqa: BLE001
             self._log(f"rollout failed ({tag} inv {d.index}): "
                       f"{type(exc).__name__}: {str(exc)[:200]}")
-            return False, False, None
+            return False, 0.0, False, None
         g = None
         recorder = arm["recorder"]
         if recorder is not None:
@@ -1305,7 +1377,14 @@ class CfProducer:
                           "decision was never reached, or the battle ended in the prefix) — "
                           "that rollout contributes no mc_return. Said once; watch "
                           "cf/mc_return_coverage on the trainer side.")
-        return True, res["outcome"] == "win", g
+        capped = bool(res.get("capped"))
+        if capped and not self._said_capped:
+            self._said_capped = True
+            self._log(f"⚠️  a rollout reached the {MAX_TURNS}-turn stall-forfeit CAP ({tag} inv "
+                      f"{d.index}) — scored 0.5 (a draw at cap), not by which side's forfeit "
+                      f"landed first. Counted per label as `n_capped` and in the state file's "
+                      f"`rollouts_capped`. Said once.")
+        return True, rollout_outcome_score(res), capped, g
 
     # -- one cycle -------------------------------------------------------------------
     def cycle(self) -> int:
@@ -1392,6 +1471,11 @@ class CfProducer:
               f"{f' / {self.state.records_vanished} vanished' if self.state.records_vanished else ''} | "
               f"labels {produced} (+{self.state.labels_total} total, "
               f"{self._rate_per_hour():.0f}/h) | "
+              # Same rule as `vanished`: a number, not an error. Draw-at-cap rollouts are a real
+              # part of the label mix on stall-shaped positions, and a reader stratifying the
+              # corpus needs to see the rate here rather than reconstruct it from the rows.
+              + (f"capped {self.state.rollouts_capped}/{self.state.rollouts_total} | "
+                 if self.state.rollouts_capped else "") +
               f"anchor {anchors} | "
               f"{'PRODUCING' if self._producing else 'PAUSED'} | "
               f"load {os.getloadavg()[0]:.1f} | {time.perf_counter() - t0:.1f}s"

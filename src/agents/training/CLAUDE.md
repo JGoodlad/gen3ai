@@ -3977,6 +3977,43 @@ sentinel labels LOW by a measured +0.037 [+0.007, +0.066].
 transport's own invariant: `BridgeSession` seats `env.agent1` — the trainee — on **p1**, always. A
 record that DOES name a trainee (an eval sibling handed to this tool) is honoured instead.
 
+🚨 **A rollout that reaches the 250-turn cap is a DRAW AT CAP and scores 0.5** — never a win or a
+loss (`gen3_cf_draw_at_cap_v1`, fixed 2026-08-23). Both sides of a rollout stall-forfeit at
+`MAX_TURNS`, so at the cap BOTH forfeit and the recorded winner is decided by which `FORCELOSE` the
+sim processes first — a fact about ordering, not about the position. **Measured over 16 capped
+lines on `node` and `rust` alike, the ordering is not even a coin flip: p1's forfeit is always
+processed first, so p1 always loses**, and `_trainee_side` puts the trainee on p1 always. Every
+capped rollout therefore used to score a hard 0, biasing tight-MC P(win) labels **DOWNWARD** on
+exactly the stall-shaped positions where the cap is reachable — an *upward* bias was guessed when
+the class was first noted, and the guess was wrong. A genuine tie went the same way (`outcome ==
+"win"` is False for a tie) and is likewise 0.5 now. The count rides out as **`n_capped` beside
+`n_rollouts`** on every row (an ADDITION; the buffer reads a fixed key set and ignores the rest,
+and `schema` stays 1) and as `rollouts_capped` in the state file + the heartbeat — because a 0.5
+built from 8 draws-at-cap and a 0.5 built from 4 wins and 4 losses are the same number about
+different positions, and no reader can re-derive which afterwards. `wilson_lo`/`wilson_hi` now take
+a fractional success total, so with draws in the sample the interval is an approximation that errs
+narrow; `n_capped` is what says how much. Detection is exact rather than heuristic —
+`replay_counterfactual` returns `capped = finished and turn >= turn_cap_of(both players)`, and
+`_handle_stall` forfeits at every decision from the cap turn onward, so a battle can never resolve
+normally on or after it. Gated by `cf_producer_test::TestDrawAtCap` (revert-verified),
+`counterfactual_test::test_battle_outcome_flags_a_battle_that_ENDED_AT_THE_CAP`, and the `sim`
+`cf_producer_integration_test::test_a_rollout_that_reaches_the_TURN_CAP_is_a_draw_on_either_seat`,
+which plays the same fixture board from BOTH seats at a forced low cap and requires one label.
+
+⚠️ **Labels written before that fix carry no `n_capped`, and cap-reaching is NOT re-derivable from
+them** — the rollouts leave no artifact and a capped 0 is indistinguishable from a played-out 0. On
+`ai_v9_29_rev1_0823` (999 rows / 333 source records / 7,992 rollouts as of 2026-08-23) what IS
+derivable bounds it: every label sits at a decision turn ≤ **96** (p50 9, p90 25), so a rollout
+needs ≥154 further turns to cap; and the cap's base rate in the surrounding training population is
+**2 stall events across the 4,097 episodes in the record ring's 5.1-minute window (~0.05%)**, which
+puts the expected count in the single digits of ~8,000 rollouts. Treat that as a base-rate estimate,
+not a measurement of the corpus. **Do NOT scan a record's `commands` for `forcelose` to answer this**
+— the rust bridge (the production default) pushes `commands` only in `handle_choose`, so a rust
+record never carries a `forcelose` entry and the scan reads 0 on a capped battle. That also means
+`record_is_full_replay_anchorable`'s forfeit exclusion is INERT under `--impl rust`
+(`anchors_skipped_unanchorable` is 0 on the live run for that reason, not for want of forfeits);
+untouched here, and a separate task.
+
 **The sampler is DECLARED and VERSIONED** (`cf_producer_priority_v1`), written into the state file
 AND every label row, because a silent priority change is a distribution-shift confound for every
 downstream readout (design decision-of-record 3):
