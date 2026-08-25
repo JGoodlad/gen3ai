@@ -4095,12 +4095,22 @@ derivable bounds it: every label sits at a decision turn ≤ **96** (p50 9, p90 
 needs ≥154 further turns to cap; and the cap's base rate in the surrounding training population is
 **2 stall events across the 4,097 episodes in the record ring's 5.1-minute window (~0.05%)**, which
 puts the expected count in the single digits of ~8,000 rollouts. Treat that as a base-rate estimate,
-not a measurement of the corpus. **Do NOT scan a record's `commands` for `forcelose` to answer this**
-— the rust bridge (the production default) pushes `commands` only in `handle_choose`, so a rust
-record never carries a `forcelose` entry and the scan reads 0 on a capped battle. That also means
-`record_is_full_replay_anchorable`'s forfeit exclusion is INERT under `--impl rust`
-(`anchors_skipped_unanchorable` is 0 on the live run for that reason, not for want of forfeits);
-untouched here, and a separate task.
+not a measurement of the corpus.
+
+⚠️ **A record written BEFORE 2026-08-24 by the rust bridge carries no `forcelose` entry at all, so a
+scan of its `commands` reads a false 0.** The rust `sim_bridge` pushed `commands` only in
+`handle_choose`, while node has always pushed `['forcelose', <side>]` — so under the PRODUCTION
+default (`--use-bridge rust`) a forfeited battle's record looked exactly like one that played on.
+Two consumers read that field and both were silently wrong: the offline replay path
+(`search::feed_recorded_cmd` has a `"forcelose"` arm; `recorded_turn_choices` stops at one) never
+reproduced the forfeit, and `record_is_full_replay_anchorable`'s forfeit exclusion was **INERT**
+(`anchors_skipped_unanchorable` reading 0 on the live run means the exclusion never fired, not that
+there were no forfeits — it is what misled the #34 census). **FIXED at the record writer**
+(`handle_forcelose` now pushes the entry, at the site node does), which repairs the record itself
+rather than one of its readers. Gate:
+`bridge_impl_parity_test::test_a_forfeited_battles_record_logs_the_forcelose_command`, over BOTH
+impls — verified failing on the rust arm when the push is reverted. **Records already on disk are
+frozen wrong**; a forfeit census over an old rust corpus is not re-derivable from `commands`.
 
 **The sampler is DECLARED and VERSIONED** (`cf_producer_priority_v1`), written into the state file
 AND every label row, because a silent priority change is a distribution-shift confound for every

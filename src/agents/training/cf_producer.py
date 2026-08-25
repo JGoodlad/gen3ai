@@ -755,7 +755,18 @@ def record_is_full_replay_anchorable(record: ReconstructionRecord) -> bool:
     THE CLASS (root-caused 2026-08-23; this is the intermittent `ANCHOR REFUSED` the R1 composition
     test hit once). A battle that reaches ``StallConfig.threshold`` (= ``MAX_TURNS``, 250) is ended
     by ONE side forfeiting, and the bridge logs that as a ``['forcelose', <side>]`` entry in
-    ``record.commands``. `install_scripted_prefix` builds each side's script as
+    ``record.commands``.
+
+    ⚠️ **On RUST-written records this exclusion was INERT until 2026-08-24** — the rust
+    `sim_bridge` pushed `commands` only in `handle_choose`, so a forfeited battle's record carried
+    no `forcelose` entry and this scan returned True on exactly the class it exists to exclude
+    (`anchors_skipped_unanchorable` read 0 on the live run for that reason, not for want of
+    forfeits). Fixed at the WRITER — `handle_forcelose` now records the entry where node always
+    did — so this predicate is impl-agnostic again. Gate:
+    `bridge_impl_parity_test::test_a_forfeited_battles_record_logs_the_forcelose_command`, over
+    both impls. Records written before that fix are frozen wrong and read as anchorable.
+
+    `install_scripted_prefix` builds each side's script as
     ``[c for (s, c) in commands if s == side]``, so ``'forcelose'`` matches NEITHER side and is
     silently dropped: the scripted replay has no way to reproduce the recorded forfeit. What it
     does instead is let BOTH players re-derive one from their own `_handle_stall` at turn >= 250,

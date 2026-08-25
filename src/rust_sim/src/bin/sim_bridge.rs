@@ -436,6 +436,18 @@ fn handle_forcelose(sess: &mut Session, side: &str, out: &mut impl Write) -> Res
         "p2" => 1,
         other => return Err(format!("FORCELOSE: bad side {other:?}")),
     };
+    // Record the forfeit in `commands` BEFORE running it, exactly where the Node bridge does
+    // (`cmdLog.push(['forcelose', rest])`). `commands` is the ordered log the offline replay
+    // path drives (`search::feed_recorded_cmd` has a `"forcelose"` arm, and
+    // `recorded_turn_choices` stops at one), so a rust record that omitted it replayed a
+    // FORFEITED battle as if it had played on — and, downstream,
+    // `cf_producer.record_is_full_replay_anchorable`'s forfeit exclusion scans this very field,
+    // so under `--impl rust` it was INERT and a census of forfeits read a false 0. Recording it
+    // here is the smaller of the two honest fixes (one push, at the site that already knows the
+    // side) and it fixes the record itself rather than one of its readers.
+    sess.recon
+        .cmds
+        .push(("forcelose".to_string(), side.to_string()));
     // Run the forfeit through the live session so the win lines land in its chunk stream,
     // then flush everything past the cursor (the pending batch AND the win batch). The
     // forfeit marks the session ended, so the flush emits `__END__` on its own — exactly like
@@ -505,7 +517,10 @@ fn json_quote(v: &str) -> String {
 /// `{v, format_id, prng_seed, input_log, commands}`, mirroring the node bridge:
 ///   * `input_log` — `>start` with the RESOLVED seed, both `>player` lines, then the
 ///     COMMITTED choices. STATE-faithful: replaying it rebuilds the battle.
-///   * `commands`  — every CHOOSE processed, refusals included. PROTOCOL-faithful.
+///   * `commands`  — every CHOOSE processed, refusals included, PLUS a
+///     `["forcelose", <side>]` entry for a forfeit (mirroring the node bridge's `cmdLog`).
+///     PROTOCOL-faithful. The offline replay path drives this field, and a forfeit that is
+///     absent from it replays as a battle that played on.
 ///
 /// HONEST SCOPE. The `>start`/`>player` lines are exact, and they are the only part any
 /// consumer currently reads (`ReconstructionRecord.start_options()` / `.players()`; the

@@ -669,6 +669,74 @@ def test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child(impl, en
         child.close()
 
 
+@pytest.mark.integration
+@pytest.mark.parametrize("impl", _BOTH_IMPLS)
+def test_a_forfeited_battles_record_logs_the_forcelose_command(impl):
+    """A FORFEITED battle's `__RECON__` must carry `['forcelose', <side>]` in `commands` — on BOTH
+    impls — and `record_is_full_replay_anchorable` must therefore REFUSE it.
+
+    THE PLANTED VIOLATION. Node has always pushed the entry (`cmdLog.push(['forcelose', rest])`);
+    rust pushed `commands` only in `handle_choose`, so a rust record of a forfeited battle looked
+    byte-for-byte like a battle that played on. Two consumers read that field and both were
+    silently wrong under the PRODUCTION default (`--use-bridge rust`):
+
+    * `search::feed_recorded_cmd` has a `"forcelose"` arm and `recorded_turn_choices` stops at one
+      — the offline replay of a rust forfeit record never forfeited;
+    * `cf_producer.record_is_full_replay_anchorable` excludes the forfeit class by scanning this
+      field, so the exclusion was INERT and a census of forfeits read a false 0 (it is what made
+      `anchors_skipped_unanchorable` 0 on the live run).
+
+    This test drives a real battle to a mid-game `FORCELOSE p1` — the training seam's
+    reset-mid-battle path — and asserts the record it produces is refused. It FAILS on rust
+    pre-fix and passes on node either way, which is the point: the parity is the claim.
+    """
+    if impl == "rust" and not _prebuilt_rust_available():
+        pytest.skip("no pre-built rust sim_bridge binary")
+    import base64 as _b64
+    import json as _json
+    from agents.training.cf_producer import record_is_full_replay_anchorable
+    from utils.bridge.reconstruction import ReconstructionRecord
+
+    child = _RawChild(impl)
+    try:
+        child.send("START " + _start_json(TeamLoader().get_all_teams()))
+        decisions, forfeited, recon = 0, False, None
+        while True:
+            line = child.readline(timeout=30.0)
+            assert line is not None, f"{impl}: child went silent before __END__"
+            assert line != "", f"{impl}: child exited before __END__"
+            if line == "__END__":
+                break
+            assert not line.startswith("__ERR__"), \
+                f"{impl}: unexpected __ERR__ mid-battle: {_err_text(line)!r}"
+            if line.startswith("__RECON__"):
+                recon = _json.loads(_b64.b64decode(line.split(" ", 1)[1]).decode())
+                continue
+            side, choice = line.split(" ", 1)[0], _choice_for(_decode_frame(line))
+            if choice is None:
+                continue
+            decisions += 1
+            assert decisions < 4000, f"{impl}: battle never ended (driver fixture bug)"
+            if not forfeited and decisions >= 6 and side == "p2":
+                forfeited = True
+                child.send("FORCELOSE p1")
+                continue
+            child.send(f"CHOOSE {side} {choice}")
+
+        assert forfeited, f"{impl}: the fixture never reached a FORCELOSE — nothing was tested"
+        assert recon is not None, f"{impl}: a forfeited battle emitted no __RECON__"
+        record = ReconstructionRecord.from_dict(recon)
+        assert ("forcelose", "p1") in record.commands, (
+            f"{impl}: the record of a FORFEITED battle carries no ['forcelose', 'p1'] entry in "
+            f"`commands` ({[c for c in record.commands[-4:]]}). The offline replay path drives this "
+            f"field, so the forfeit is unreproducible, and every reader that scans it for forfeits "
+            f"— including record_is_full_replay_anchorable — reads a false 0.")
+        assert record_is_full_replay_anchorable(record) is False, (
+            f"{impl}: the forfeit exclusion did not FIRE on a genuinely forfeited battle")
+    finally:
+        child.close()
+
+
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     run(n)
