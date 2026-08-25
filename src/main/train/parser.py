@@ -824,7 +824,9 @@ def build_parser() -> argparse.ArgumentParser:
                              "(scalar value-distill CRYSTALLIZES the critic — value_cls rank DROPS). Default 0.0 = "
                              "OFF (byte-identical; no teacher value_pooled read). Requires --distill-coef > 0. "
                              "Training-only, inherited on resume. Composes with / is an A/B alternative to "
-                             "--distill-value-coef — watch distill/value_feat_cos ↓ + the value_cls rank probe.")
+                             "--distill-value-coef — watch distill/value_feat_dist (the cosine DISTANCE 1-cos, so "
+                             "LOWER = better aligned; the legacy alias distill/value_feat_cos holds the same "
+                             "value and reads as its own opposite) fall + the value_cls rank probe.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
                         type=float, default=0.4,
                         help="Fraction of trainee episodes biased to the teacher's team (rest = pool "

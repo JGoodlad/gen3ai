@@ -4355,10 +4355,19 @@ transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (s
   `get_distribution` forward, detached — no extra teacher forward) go through the static `_value_feat_distill`
   (masked mean cosine distance, per-teacher averaged like the KL). **Requires `--distill-coef > 0`** (the
   policy KL makes the teacher's `value_pooled` the right target — V^π is policy-relative). Metrics
-  `distill/{value_feat_cos, tK_value_feat_cos}`. **The A/B lever:** scalar (`--distill-value-coef`) vs FitNets
+  `distill/{value_feat_dist, tK_value_feat_dist}`. **The A/B lever:** scalar (`--distill-value-coef`) vs FitNets
   (`--distill-value-feat-coef`), read out by the value_cls effective-rank probe — does the HINT enrich the
   critic where the scalar crystallized it. Composes with the scalar term (both can be on). OFF byte-identical
   (no teacher `value_pooled` read); training-only, NOT version-locked (inherited on a flagless resume).
+
+  🚨 **The metric is a DISTANCE (`1 − cos`), and the ORIGINAL key name said the opposite.**
+  `distill/*_value_feat_cos` records the loss term, so it FALLS toward 0 as the two hints ALIGN — a
+  reading of 0.005 means cos ≈ 0.995, i.e. near-PARALLEL. That name produced a real inverted report
+  ("the hint is near-orthogonal") off exactly that data. Both metric sites now publish
+  **`*_value_feat_dist` as the canonical key**; `*_value_feat_cos` carries the identical value and is
+  kept ONE release for TensorBoard continuity, after which it goes. Read the `_dist` key, and treat a
+  `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
+  `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
 
 Tests: `instrumented_ppo_test.py::test_distill_*` (policy KL: identical→0, masking, illegal-mask, None-guard,
 grad-student-only, reuse-bit-identical, multi-teacher averaging) + `::test_value_distill_*` (equal→0, masking,

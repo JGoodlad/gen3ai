@@ -274,6 +274,24 @@ def test_value_feat_distill_grad_student_only():
     assert t.grad is None
 
 
+def test_value_feat_metric_is_published_under_the_distance_name_too():
+    """THE NAMING TRAP. `_value_feat_distill` returns ``1 − cos`` — a DISTANCE — and the historical TB
+    keys spell it `*_value_feat_cos`, which reads as its own opposite: a run logging 0.005 was reported
+    as "the hint is near-ORTHOGONAL" when the data said cos ≈ 0.995 (near-parallel). Every site that
+    records the old key must ALSO record the canonical `*_value_feat_dist`, so the honest name exists in
+    TensorBoard while the old one stays alive for continuity."""
+    import inspect
+    src = inspect.getsource(InstrumentedMaskablePPO.train)
+    per_teacher = 'f"t{_k}_value_feat_dist", f"t{_k}_value_feat_cos"'
+    assert per_teacher in src, "the per-teacher site must publish t<k>_value_feat_dist beside the old key"
+    assert '"value_feat_dist", "value_feat_cos"' in src, (
+        "the aggregate site must publish value_feat_dist beside the old key")
+    # …and the value really is a distance: aligned hints read 0, not 1.
+    f = th.randn(4, 8)
+    assert float(InstrumentedMaskablePPO._value_feat_distill(f.clone(), f.clone(), th.ones(4, 1))) \
+        == pytest.approx(0.0, abs=1e-6)
+
+
 def test_distill_reuse_masked_logits_bit_identical():
     """The #3 optimization (reuse the evaluate_actions forward, whose logits are MASKED) must give a
     BIT-IDENTICAL KL to a fresh (RAW) get_distribution forward: over LEGAL actions the logits are the same

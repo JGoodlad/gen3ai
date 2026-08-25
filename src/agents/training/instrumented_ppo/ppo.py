@@ -802,7 +802,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                 _vfd_k = self._value_feat_distill(_s_vfeat, _t_vfeat, _sel)
                                 if _vfd_k is not None:
                                     _per_teacher_vfd.append(_vfd_k)
-                                    distill_metrics.setdefault(f"t{_k}_value_feat_cos", []).append(float(_vfd_k))
+                                    # NAMING (read this before quoting the number): the recorded value is the
+                                    # cosine DISTANCE `1 − cos`, i.e. the loss term — it FALLS toward 0 as the
+                                    # student and teacher hints align, so a reading of 0.005 means cos ≈ 0.995
+                                    # (near-PARALLEL), not near-orthogonal. `*_value_feat_dist` is the canonical
+                                    # key; `*_value_feat_cos` is the historical spelling, which reads as its own
+                                    # opposite and is kept ONE release for TensorBoard continuity.
+                                    for _vfd_key in (f"t{_k}_value_feat_dist", f"t{_k}_value_feat_cos"):
+                                        distill_metrics.setdefault(_vfd_key, []).append(float(_vfd_k))
                             if _vd_on:
                                 # Teacher V (real-unit, frozen); masked MSE vs student V in the PopArt frame.
                                 with th.no_grad():
@@ -826,7 +833,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         if _per_teacher_vfd:
                             _distill_vfd = th.stack(_per_teacher_vfd).mean()  # balanced like the policy KL
                             loss = loss + self.distill_value_feat_coef * _distill_vfd
-                            distill_metrics.setdefault("value_feat_cos", []).append(float(_distill_vfd))
+                            # Same naming note as the per-teacher site above: DISTANCE (1 − cos), lower =
+                            # better aligned. `value_feat_dist` is canonical; `value_feat_cos` is the
+                            # deprecated alias kept one release.
+                            for _vfd_key in ("value_feat_dist", "value_feat_cos"):
+                                distill_metrics.setdefault(_vfd_key, []).append(float(_distill_vfd))
 
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
