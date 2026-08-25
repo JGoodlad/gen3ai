@@ -4463,3 +4463,19 @@ Also banked: **strict compile gate held 48/0 on its first live test post-cd07aa7
 single-shot floor was failing ~half of workers); the training session's two integrity checks
 (the 398/800 tie re-salted before reporting; the p1/p2 baseline-fairness caveat) are the
 discipline working. Endofrun artifacts committed with this entry.
+
+### 🧭 OPEN THREADS SNAPSHOT (2026-08-25 morning — the handoff line for any fresh session)
+
+AWAITING EXECUTION (training session): retro teacher-extraction rows for tock-1a/1b/1c @800/arm
+with matched baselines — THE tick-2 discriminator (input-quality vs recipe). AWAITING ANALYSIS
+(ideation session): the §2 dose read on ai_v9_37_tick1_dosext endpoint (11,370 cumulative
+labels); the playoff cell's final read (tmp/search_dividend/playoff_10s.jsonl — final-read rules
+in task notes: exclude g0/o1, rates WITH paired wr; its agent worktree agent-a6c1260df535a67fc
+must not be removed while the cell runs); the E1≡E4 behavioral merge check (teacher-delta
+parallelism). DECIDED AND STANDING: rev-1 final is the era's base (tick-1 inferior, preserved as
+the graded negative); teacher-admission gate universal; search parked behind critic calibration
+(the plan doc); v2 label factory queued for rev-2 (estimand + sampler); rev-2 seeds banked
+(smaller effective batch per noise-scale, threat deletion wave-2, exploitability @800/arm,
+gen-over-gen needs matched tails). PARKED OWNER-CALL ITEMS: battle-state redesign
+(post-flywheel); the replay/BC door (opens on coverage-flattening; imputation meter's spread-
+floor finding is the standing caveat); designs/CLAUDE.md run row (updates at next launch).
