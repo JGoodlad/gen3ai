@@ -4495,3 +4495,30 @@ recurred at scale — failures fall back to the policy, biasing TOWARD null, so 
 anything conservative, but the count must be explained before the cell's n is quoted as clean).
 Agent worktree stays until the formal read. Disposition unchanged: search parked; the playoff
 pattern (screen + honest arbiter + refuse-on-noise) is the template IF search ever deploys.
+
+### ⚗️ DISCRIMINATOR VERDICT: THE TEACHERS WERE GOOD — the fold produced NEGATIVE TRANSFER; factorial arm ordered (2026-08-25 ~07:45)
+
+All three tocks pass the admission gate NET OF SENIORITY (a: +8.3pp z=3.35 · b: +8.8 z=3.63 ·
+c: +11.6 z=4.84; seniority ~0 on all three; 9/9 teams positive, 5/9 individually significant).
+The training session's DEVIATION — adding the rev-1-final seniority arm beyond the ordered
+baseline — is ENDORSED as the thing that made the verdict safe (the ordered baseline was matched
+on head start but not seniority; had the arm read +8pp the report would have inverted).
+**THE INDICTMENT — the RETENTION decomposition** (piloting − extraction on the same reference/
+teams/target, the session's own construction, now the fold's STANDING meter): mean retention
+**−47%** — the fold landed BELOW the pre-fold base on 5/7 teams, WORST where the teacher was
+strongest (MedichamCune: teacher +10.1 significant → fold −13.0). This is NEGATIVE transfer,
+not failed transfer. Rulings: "better tocks" is NOT the tick-2 prerequisite; the recipe is.
+**ORDERED — the FACTORIAL discriminator, not the bare coefficient arm**: the report's candidate
+list omits the strongest confound — ruling #2 ALSO changed the OPPONENT ECOLOGY
+(stable_opponent_selfplay_share 0.35 + pfsp toward three near-copies of the student = a large
+diversity reduction in the training mixture, an independent rank-collapse channel per the
+ecology-is-first-order lesson). Three +3M arms from rev-1 final, identical but for:
+  A `--distill-coef 0.3`, stable opponents ON (pull strength);
+  B `--distill-coef 1.0`, stable opponents OFF — teachers distill-only (loss channel isolated);
+  C `--distill-coef 0.0`, stable opponents ON (pure ecology arm).
+Arm meters (registered): per-team piloting on the 9 pinned teams n=100 + the capacity row +
+FitNets dist trajectory; full endofrun only on any arm that looks non-inferior. A↔B↔C
+separates pull-strength vs loss-channel vs ecology; tick-1 itself is the "1.0 + stable ON"
+corner. Parked candidates: FitNets term (at 0.995 alignment its gradient is ~0 — low prior),
+dose interaction (dosext exists). Script-defect noted as the third member of the
+reader-scoped-to-one-thing family in a week.
