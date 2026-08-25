@@ -4314,3 +4314,23 @@ from the message (assert measurements, never causes). Real read on the live tick
 **7.52× median, spread 1.015 across 3 reps**. Bonus: the warm-up now goes through the live call
 signature (action_mask float32) so the first real decision no longer re-traces. Strict can be
 restored on future launches once this is the deployed benchmark.
+
+### ⚖️ R-LADDER VERDICT — **BIAS, not variance**: flat across a 32× dice sweep; search formally PARKS behind critic calibration (2026-08-24)
+
+The fork-in-the-road experiment (oracle mirror @10 s, max-opp 2/worlds 1/depth 1, R ∈
+{1,2,4,8,16,32}, 40 games × both orientations per cell, seed 11): win rates **0.125 / 0.138 /
+0.266 / 0.188 / 0.253 / 0.205** — NO climb toward 0.50 across a 32× averaging range (per-arm
+dice noise shrinks √32 ≈ 5.7×; the harm barely moves). The pre-registered reading fires:
+**BIAS FLOOR — the critic's (and the α opponent-model's) systematic error, not estimator
+variance, is what search amplifies.** "Search is downstream of R1-class calibration" is now
+confirmed at strength, not inferred. SECONDARY finding, free: these narrow-width cells
+(m_opp≈2.0) are far MORE harmful (~0.19 pooled) than the full-width production cells were
+(~0.29–0.43 at m_opp≈5.7) — restricting opponent candidates concentrates the α opponent-model
+bias the Wang diff flagged; opponent-model quality is a live term, not a rounding error.
+(Fallback counts ran high in this config — root_failed 31–79/cell on the node driver at turn-1
+boundaries — all COUNTED fallbacks to the policy action, harm-bounded by design.)
+**Standing disposition of the search program**: PARKED as a strength lever; the mirror table is
+the permanent critic-resolution meter (re-run after every critic milestone — R1-v2, rev-2);
+the bounded-harm fixes (margin gate + PUCT prior) remain worth ONE cheap pass someday for
+LADDER play (search that provably never hurts), not for strength now. Wang's regime (R≈1500,
+persistent tree, PUCT, visit-argmax) remains the blueprint IF the critic ever earns it.
