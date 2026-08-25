@@ -4334,3 +4334,24 @@ the permanent critic-resolution meter (re-run after every critic milestone — R
 the bounded-harm fixes (margin gate + PUCT prior) remain worth ONE cheap pass someday for
 LADDER play (search that provably never hurts), not for strength now. Wang's regime (R≈1500,
 persistent tree, PUCT, visit-argmax) remains the blueprint IF the critic ever earns it.
+
+### 🔄 TICK-1 MID-RUN RULINGS (18:40 PT, 2026-08-24)
+
+1. **FitNets "not moving" INVERTED by code-read**: `distill/*_value_feat_cos` records the
+   cosine DISTANCE (1−cos — `ppo.py:801` "Masked cosine distance", summed into the loss), so
+   0.0047 = cosine ≈ 0.995, and the observed downward drift is alignment IMPROVING. The hint
+   term is at/near its optimum (expected: common-ancestor forks only 3M diverged + an active
+   pull). Honest residual: near-1 cosine may also mean the term has little to teach at this
+   teacher distance — the payoff meters remain Phase C's per-slice piloting + capacity rank.
+   **Naming defect tasked**: a scalar named `_cos` holding a distance is a misread trap that
+   just fired on its first serious reader.
+2. **Label shortfall: producer-only restart at --records-per-cycle 8 ORDERED** — the cold-path
+   sweep's "batching buys nothing" premise died when the warm path moved the compute bound
+   4.5×; expected ~1,200–1,500/h. Same step-back ladder (cycle <150 s, acceptance not below
+   current, else back to 4). Even so the tick lands ~7–8k of the 15k target: PRE-REGISTERED —
+   the §2 replication reads at ROUGHLY HALF DOSE and its dosage-null branch stays live.
+3. noise_scale 0.39 in-band and climbing: the grad-accum experiment is LANDING; the training
+   session's transient-floor self-correction endorsed; no step to 1.
+4. The tb-reader fix banked as a specimen: **a reader scoped to one CHILD, reporting on a
+   RUN** — same family as the per-child counter resets; ABSENT-that-looks-like-stop is the
+   dangerous rendering.
