@@ -37,6 +37,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
+from main.search_dividend.playoff import PlayoffConfig, PlayoffRunner, fold_playoff
 from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
 
@@ -241,6 +242,9 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "worlds_gate_failed": gate_failed,
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
                           for k, v in realized.items()},
+        # ADDITIVE (ladder requirement 3, 87a3f91). Zero on every arm but `playoff`, so a row
+        # written by any other cell — or by any earlier version of this file — folds identically.
+        **fold_playoff(decisions),
     }
 
 
@@ -274,7 +278,8 @@ def finalize_row(row: dict) -> dict:
 
 
 def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
-                  pool_packed: Optional[Sequence[str]] = None, tag: str = ""):
+                  pool_packed: Optional[Sequence[str]] = None, tag: str = "",
+                  playoff_cfg: Optional[PlayoffConfig] = None):
     """The trainee (search-wrapped) + one scripted bot, both bridge-transport (no server).
 
     Teams are injected per game by :func:`set_teams`, so the teambuilders here are placeholders
@@ -305,7 +310,14 @@ def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
     else:
         (_name, opp) = build_eval_opponents(
             LocalhostServerConfiguration, tb, [opponent_name], tag=tag, start_listening=False)[0]
-    engine = SearchEngine(model=model, mappings=mappings, cfg=cfg, pool_packed=pool_packed)
+    # The second-stage scorer exists ONLY on the playoff arm. Building it unconditionally would
+    # be harmless (it is never called) but would misdescribe every other cell's engine.
+    runner = None
+    if cfg.arm == "playoff":
+        runner = PlayoffRunner(model=model, mappings=mappings, battle_format=BATTLE_FORMAT,
+                               cfg=playoff_cfg or PlayoffConfig(), tag=tag)
+    engine = SearchEngine(model=model, mappings=mappings, cfg=cfg, pool_packed=pool_packed,
+                          playoff=runner)
     me = SearchDividendPlayer(
         model=model, team=tb, battle_format=BATTLE_FORMAT,
         server_configuration=LocalhostServerConfiguration, mappings=mappings,
@@ -338,7 +350,8 @@ def set_teams(me, opp, our_packed: str, their_packed: str) -> None:
 async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int,
                    results: ResultsFile, salt: int, impl: str,
                    pool_packed: Sequence[str], progress=None,
-                   side_swap: bool = False) -> int:
+                   side_swap: bool = False,
+                   playoff_cfg: Optional[PlayoffConfig] = None) -> int:
     """Play the missing orientation-games of one cell, appending a row each.
 
     With ``side_swap`` every ``game`` index is played TWICE — orientation 0 and orientation 1 — so
@@ -353,7 +366,8 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
     if not todo:
         return 0
     me, opp, engine = build_players(model, mappings, cfg, cell.opponent,
-                                    pool_packed=pool_packed, tag=_cell_tag(cell))
+                                    pool_packed=pool_packed, tag=_cell_tag(cell),
+                                    playoff_cfg=playoff_cfg)
     played = 0
     try:
         for g, orient in todo:
@@ -382,6 +396,8 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 "seed": seed,
                 "score_mode": cfg.score, "search_impl": cfg.search_impl,
                 "max_depth": int(getattr(cfg, "max_depth", 1)),
+                "playoff_rollouts": (int(playoff_cfg.rollouts) if playoff_cfg
+                                     and cfg.arm == "playoff" else 0),
                 "error": err,
                 **summarize_decisions(out.get("decisions") or []),
             })

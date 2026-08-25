@@ -33,16 +33,17 @@ from typing import Dict, List, Optional
 from agents.inference.player import RLPlayer
 from main.search_dividend.alpha import alpha_publication
 from main.search_dividend.record import LiveRecordBuilder, set_active_builder
-from main.search_dividend.search import DecisionResult, SearchEngine
+from main.search_dividend.search import TRUE_WORLD_ARMS, DecisionResult, SearchEngine
 
 
 class SearchDividendPlayer(RLPlayer):
     """An ``RLPlayer`` whose decision is (optionally) chosen by a depth-1 search.
 
     ``opp_player`` is the opponent object this player is matched against — used ONLY on the
-    ORACLE arm, to read its ``_current_packed_team``. It is passed explicitly rather than
+    TRUE-WORLD arms (:data:`~main.search_dividend.search.TRUE_WORLD_ARMS`: ``oracle`` and the
+    ``playoff`` screen), to read its ``_current_packed_team``. It is passed explicitly rather than
     discovered so that an honest-arm player literally cannot reach the truth: the engine raises if
-    handed a team on any arm but ``oracle``.
+    handed a team on any other arm.
     """
 
     def __init__(self, *args, engine: SearchEngine, battle_format: str,
@@ -173,7 +174,7 @@ class SearchDividendPlayer(RLPlayer):
                                   policy_action=policy_action)
         record = builder.build()
         opp_true = (getattr(self._opp_player, "_current_packed_team", None)
-                    if cfg.arm == "oracle" else None)
+                    if cfg.arm in TRUE_WORLD_ARMS else None)
         return self.engine.choose(
             record=record, side=side, turn=int(battle.turn), our_history=history,
             our_tokens=tokens, observed_our_lines=builder.our_lines, pub=pub,
@@ -206,6 +207,10 @@ class SearchDividendPlayer(RLPlayer):
             row["policy_action"] = result.policy_action
             row["changed"] = result.changed
             row["widths"] = result.widths.as_dict()
+            if result.playoff is not None:
+                # ADDITIVE: absent on every arm but `playoff`, so every existing reader of this
+                # dict is unchanged and the ladder keeps ONE decision schema.
+                row["playoff"] = result.playoff
             # A counted fallback whose REASON cannot be read is only half the discipline: it says
             # the search declined without saying what to fix. Carry the message for the two
             # reasons that have one.

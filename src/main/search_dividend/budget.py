@@ -206,4 +206,11 @@ FALLBACK_REASONS = (
     "no_scored_arm",         # every arm failed to materialize an obs
     "deadline",              # the clock expired before a single arm was scored
     "search_error",          # any other exception, captured rather than crashing the battle
+    # --- the `playoff` arm's SECOND stage (see `playoff.py`). All three hand the decision back to
+    # the POLICY, and that is the arm's design rule rather than a convenience: an unresolved
+    # playoff must never fall through to the screen's own argmax, because the screen is the biased
+    # estimator the rollouts were called in to replace.
+    "playoff_inconclusive",  # the paired difference did not clear 2·SE — the honest refusal
+    "playoff_no_budget",     # the deadline bought no pair (or a candidate had no sim token)
+    "playoff_error",         # a rollout family raised; counted, never a lost game
 )

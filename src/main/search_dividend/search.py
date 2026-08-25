@@ -70,7 +70,12 @@ from main.search_dividend.budget import (CostModel, Deadline, RealizedWidths, Wi
                                          WidthPlan, allocate)
 from main.search_dividend.deepen import TreeNode, per_action_values, plan_beam
 
-ARMS = ("base", "honest", "oracle")
+ARMS = ("base", "honest", "oracle", "playoff")
+
+#: The arms that search the TRUE opponent team. ``playoff`` inherits the oracle's world because its
+#: depth-1 sweep is only a SCREEN — the hidden-information question is deliberately held fixed so
+#: the cell measures the leaf ESTIMATOR (critic vs rollout) and nothing else.
+TRUE_WORLD_ARMS = ("oracle", "playoff")
 
 # Terminal successors, on the WIN-PROB scale. On the value scale the same constants are used and
 # the caveat is reported with the row: a shaped-return V and a ±1 terminal are not the same units,
@@ -102,11 +107,28 @@ class SearchConfig:
         """The ORACLE arm is ONE world by construction (the true state), and the BASE arm has no
         search at all. Encoding that here rather than at every call site means a budget can never
         be spent on a world axis that does not exist."""
+        if self.arm == "playoff":
+            # The sweep is a SCREEN, not the verdict — it nominates two candidates and the paired
+            # rollouts settle them. So it is pinned to the CHEAPEST honest configuration (one true
+            # world, one dice draw) and every second the budget can spare goes to the rollouts,
+            # which are the unbiased half. Spending the budget on screen width instead would buy
+            # more of the estimator this arm exists to stop trusting.
+            return WidthCaps(m_opp=self.caps.m_opp, k_worlds=1, r_dice=1)
         if self.arm == "oracle":
             return WidthCaps(m_opp=self.caps.m_opp, k_worlds=1, r_dice=self.caps.r_dice)
         if self.arm == "base":
             return WidthCaps(m_opp=0, k_worlds=0, r_dice=0)
         return self.caps
+
+    def effective_max_depth(self) -> int:
+        """The deepening cap this arm may actually use.
+
+        ``playoff`` is pinned to 1 and it is not a tuning choice. The MAX backup at interior plies
+        is a biased-high estimator under leaf noise (``E[max] >= max E``, the reconciliation memo's
+        candidate (e)), so a deeper screen would ADD exactly the bias the rollouts are here to
+        remove, and the cell would no longer isolate the leaf estimator.
+        """
+        return 1 if self.arm == "playoff" else max(1, int(self.max_depth))
 
 
 @dataclass
@@ -117,6 +139,9 @@ class DecisionResult:
     diagnostics: dict = field(default_factory=dict)
     scores: Optional[dict] = None       # {action_index: aggregated score}
     policy_action: Optional[int] = None
+    #: The ``playoff`` arm's second-stage block, or ``None`` on every other arm. An ADDITIVE row
+    #: field (ladder requirement 3, 87a3f91): one schema, extended, never a second one.
+    playoff: Optional[dict] = None
 
     @property
     def changed(self) -> bool:
@@ -219,11 +244,14 @@ class SearchEngine:
     model, so the ~0.6 s driver spawn is paid once per battery rather than once per decision."""
 
     def __init__(self, *, model, mappings, cfg: SearchConfig,
-                 pool_packed: Optional[Sequence[str]] = None):
+                 pool_packed: Optional[Sequence[str]] = None, playoff=None):
         self.model = model
         self.mappings = mappings
         self.cfg = cfg
         self.rng = random.Random(cfg.seed)
+        #: The second-stage scorer, or ``None``. Present only on the ``playoff`` arm — injected
+        #: rather than constructed here so a test can drive the decision rule with a scripted sim.
+        self.playoff = playoff
         self._session = None
         # An EWMA of the two measured costs. Seeded from the CostModel defaults and updated after
         # every decision, so a battery that starts fast and slows down (the prefix grows with the
@@ -298,9 +326,42 @@ class SearchEngine:
             return DecisionResult(policy_action, "search_error", widths,
                                   diagnostics={"error": f"{type(e).__name__}: {e}"},
                                   policy_action=policy_action)
+        if self.cfg.arm == "playoff" and res.fallback is None:
+            # THE SECOND STAGE. The sweep above is now only a nomination: it is the same biased
+            # critic estimator the R-ladder convicted, so its argmax is deliberately NOT acted on.
+            # `_adjudicate` replaces the top1-vs-top2 comparison — the one the memo measured at 54%
+            # noise-to-margin — with paired rollouts to a terminal, and hands the decision back to
+            # the POLICY whenever those do not resolve it.
+            res = self._adjudicate(res, record=record, turn=turn, our_tokens=our_tokens,
+                                   policy_action=policy_action, deadline=deadline)
         widths.elapsed_s = round(deadline.elapsed(), 4)
         self._update_cost(widths)
         return res
+
+    def _adjudicate(self, res: DecisionResult, *, record, turn: int,
+                    our_tokens: Dict[int, str], policy_action: int,
+                    deadline: Deadline) -> DecisionResult:
+        """Run the top-2 playoff over a successful screen and fold its verdict into the result.
+
+        A playoff that RAISES is caught here for the same reason a search failure is caught in
+        :meth:`choose` — the battery's unit of account is a finished game, and a crashed decision
+        would drop one. It becomes a counted ``playoff_error`` fallback to the policy's action.
+        """
+        from main.search_dividend.playoff import PlayoffResult, STAGE_ERROR
+
+        if self.playoff is None:
+            return res
+        try:
+            po = self.playoff.adjudicate(
+                scores=res.scores or {}, policy_action=policy_action, our_tokens=our_tokens,
+                record=record, turn=int(turn), deadline=deadline, rng=self.rng)
+        except Exception as e:                           # noqa: BLE001
+            po = PlayoffResult(int(policy_action), STAGE_ERROR,
+                               error=f"{type(e).__name__}: {e}")
+        diag = dict(res.diagnostics or {})
+        diag["playoff"] = po.as_dict()
+        return DecisionResult(int(po.action), po.fallback, res.widths, diagnostics=diag,
+                              scores=res.scores, policy_action=policy_action, playoff=po.as_dict())
 
     # -- internals ----------------------------------------------------------
 
@@ -343,7 +404,7 @@ class SearchEngine:
         alpha_diag: List[dict] = []
         world_diag: List[dict] = []
         beams: List[List[int]] = []
-        widths.depth_planned = max(1, int(self.cfg.max_depth))
+        widths.depth_planned = self.cfg.effective_max_depth()
         # ⚠️ ONE WORLD AT A TIME, opened AND consumed before the next. `open_root` CLEARS the
         # driver's node cache (that is what bounds a warm session's memory across battles), so
         # opening K roots up front invalidates every earlier one and `expand_many` then fails with
@@ -463,7 +524,7 @@ class SearchEngine:
                     legal_choices_from_request((leaf.requests or {}).get(ctx.other)))
             return n_opp_cache[key]
 
-        while ply < max(1, int(self.cfg.max_depth)):
+        while ply < self.cfg.effective_max_depth():
             cand_beam, leaves, _n_arms = plan_beam(
                 vroot, values, depth=ply, m_opp=ctx.m_opp, n_opp_at=n_opp_at,
                 arm_cost_s=self._cost.arm_s, ply_overhead_s=self._cost.world_open_s,
@@ -603,9 +664,9 @@ class SearchEngine:
                 opp_true_packed: Optional[str]) -> List[Tuple[object, dict]]:
         """The records to search. ORACLE = the truth, K=1. HONEST = K pool-consistent
         determinizations of the never-revealed slots."""
-        if self.cfg.arm == "oracle":
+        if self.cfg.arm in TRUE_WORLD_ARMS:
             if opp_true_packed is None:
-                raise ValueError("the oracle arm needs the opponent's true packed team")
+                raise ValueError(f"the {self.cfg.arm} arm needs the opponent's true packed team")
             return [(dz.record_with_team(record, opp_side, opp_true_packed, "-oracle"),
                      {"kind": "oracle", "tier": 0})]
         if opp_true_packed is not None:

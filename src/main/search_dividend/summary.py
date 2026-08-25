@@ -44,6 +44,12 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         "n_decisions": 0, "n_searched": 0, "n_changed": 0, "n_deepened": 0,
         "deadline_truncated": 0,
         "worlds_gate_failed": 0, "fallbacks": defaultdict(int),
+        # The `playoff` arm's second stage. POOLED AS SUMS (Σ over decisions), never as a mean of
+        # per-game means — the same exactness rule `eval_sharding` follows, and it matters here
+        # because games differ in decision count by 2-3x.
+        "n_screen_decisive": 0, "n_playoff": 0, "n_playoff_inconclusive": 0,
+        "n_playoff_no_budget": 0, "n_playoff_capped": 0, "n_playoff_failed": 0,
+        "n_playoff_ran": 0, "playoff_r_total": 0, "playoff_wall_s": 0.0,
         "_m": [], "_k": [], "_r": [], "_arms": [], "_elapsed": [], "_depth": [], "_beam": [],
     })
     for r in rows:
@@ -55,8 +61,12 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         a["errors"] += 1 if r.get("error") else 0
         a["wall_s"] += float(r.get("wall_s", 0.0))
         for key in ("n_decisions", "n_searched", "n_changed", "n_deepened",
-                    "deadline_truncated", "worlds_gate_failed"):
+                    "deadline_truncated", "worlds_gate_failed",
+                    "n_screen_decisive", "n_playoff", "n_playoff_inconclusive",
+                    "n_playoff_no_budget", "n_playoff_capped", "n_playoff_failed",
+                    "n_playoff_ran", "playoff_r_total"):
             a[key] += int(r.get(key, 0) or 0)
+        a["playoff_wall_s"] += float(r.get("playoff_wall_s", 0.0) or 0.0)
         for reason, n in (r.get("fallbacks") or {}).items():
             a["fallbacks"][reason] += int(n)
         rm = r.get("realized_mean") or {}
@@ -88,6 +98,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
                             if a["n_searched"] else None),
             "deadline_truncated": a["deadline_truncated"],
             "worlds_gate_failed": a["worlds_gate_failed"],
+            "playoff": _playoff_block(a),
             "fallbacks": dict(a["fallbacks"]),
             "realized_mean": {
                 "opp_candidates": _mean(a["_m"]), "worlds": _mean(a["_k"]),
@@ -101,6 +112,39 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
 
 def _mean(v: Sequence[float]) -> Optional[float]:
     return round(sum(v) / len(v), 3) if v else None
+
+
+def _playoff_block(a: dict) -> Optional[dict]:
+    """The playoff arm's second-stage fold, or ``None`` on a cell that never ran one.
+
+    ``None`` rather than a block of zeros, so a reader (and the printed report) can tell "this arm
+    has no second stage" from "the second stage ran and did nothing" — which are opposite findings
+    and the second one is the whole risk this instrument carries.
+
+    The three RATES share one denominator on purpose: every SEARCHED decision on this arm reaches
+    the screen, so screen-decisive + played + inconclusive + no-budget accounts for all of them.
+    A rate quoted against the decisions that happened to reach a rollout would flatter whichever
+    branch was cheapest.
+    """
+    reached = (a["n_screen_decisive"] + a["n_playoff"] + a["n_playoff_inconclusive"]
+               + a["n_playoff_no_budget"])
+    if not reached:
+        return None
+    ran = a["n_playoff_ran"]
+    return {
+        "reached": reached,
+        "screen_decisive": a["n_screen_decisive"],
+        "played": a["n_playoff"],
+        "inconclusive": a["n_playoff_inconclusive"],
+        "no_budget": a["n_playoff_no_budget"],
+        "screen_decisive_rate": round(a["n_screen_decisive"] / reached, 4),
+        "playoff_rate": round((reached - a["n_screen_decisive"]) / reached, 4),
+        "inconclusive_rate": round(a["n_playoff_inconclusive"] / reached, 4),
+        "realized_r": round(a["playoff_r_total"] / ran, 3) if ran else 0.0,
+        "playoff_s": round(a["playoff_wall_s"] / ran, 3) if ran else 0.0,
+        "rollouts_capped": a["n_playoff_capped"],
+        "pairs_failed": a["n_playoff_failed"],
+    }
 
 
 MIRROR = "self"
@@ -169,6 +213,7 @@ def mirror_report(rows: Sequence[dict]) -> dict:
             "change_rate": cell["change_rate"], "deepen_rate": cell["deepen_rate"],
             "searched": cell["searched"], "decisions": cell["decisions"],
             "fallbacks": cell["fallbacks"],
+            "playoff": cell["playoff"],
             "realized_mean": rm,
         })
     return {
@@ -318,6 +363,15 @@ def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> s
                 # 0, not None: a beam of zero is the honest statement "no ply was ever afforded",
                 # whereas a bare None reads like a missing measurement.
                 f"beam={c['realized_mean']['beam'] or 0}")
+            po = c.get("playoff")
+            if po:
+                lines.append(
+                    f"           playoff: screen_decisive={po['screen_decisive_rate']:.3f} "
+                    f"playoff={po['playoff_rate']:.3f} "
+                    f"inconclusive={po['inconclusive_rate']:.3f} "
+                    f"over {po['reached']} screened | realized R={po['realized_r']} "
+                    f"@{po['playoff_s']}s/decision "
+                    f"(capped={po['rollouts_capped']}, failed_pairs={po['pairs_failed']})")
         for note in mirror.get("notes", []):
             lines.append(f"  ! {note}")
 

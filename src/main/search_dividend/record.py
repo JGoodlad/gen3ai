@@ -92,6 +92,28 @@ class LiveRecordBuilder:
     def ready(self) -> bool:
         return "p1" in self._players and "p2" in self._players
 
+    def accepts_room(self, room: str) -> bool:
+        """Does a choice written to ``room`` belong to THIS battle?
+
+        The tap is a process-wide class patch, and since the top-2 playoff arm exists the process
+        plays OTHER battles while this one is mid-decision: each paired rollout is a full
+        ``run_local_battles`` line, and every choice it commits passes through the same
+        ``_write_choice``. Appending those to this builder would produce a record that replays a
+        battle nobody played — well-formed, gate-passing right up until the interleaved commands
+        shift, and then silently answering about the wrong position.
+
+        It is a ROOM filter and not an on/off switch for one specific reason: in the mirror the
+        UNSEARCHED side commits its live choice on ``POKE_LOOP`` while our search holds a worker
+        thread, so a rollout window overlaps real live commands. Suspending the tap outright would
+        drop them and desynchronize the record in the other direction.
+
+        ``battle_tag is None`` accepts, because before our first decision the tag is not yet known
+        and the only battle in flight is this one — the driver plays one at a time
+        (:func:`set_active_builder` enforces it), and a rollout can only ever start from inside a
+        decision, i.e. after the tag has been adopted.
+        """
+        return self.battle_tag is None or room == self.battle_tag
+
     # -- emit ---------------------------------------------------------------
 
     def build(self) -> ReconstructionRecord:
@@ -133,10 +155,16 @@ class LiveRecordBuilder:
 #     already missed whichever side moved first.
 #
 # The tap is a CLASS patch guarded by a module-level active builder. That is deliberate global
-# state and it is safe for exactly one reason: the driver plays ONE battle at a time per process
-# (``chunk_sink`` is not side-deduped across concurrent battles either — see
-# ``local_battle_runner``'s own docstring). :func:`set_active_builder` asserts that rather than
-# trusting it.
+# state, and it is kept safe by TWO independent rules because one battle at a time stopped being
+# true:
+#
+#   * the driver plays one LIVE battle at a time per process (``chunk_sink`` is not side-deduped
+#     across concurrent battles either — see ``local_battle_runner``'s own docstring), and
+#     :func:`set_active_builder` asserts that rather than trusting it;
+#   * the ``playoff`` arm plays ROLLOUT battles from inside a live decision, so a second battle IS
+#     in flight — and its commands are rejected by ROOM
+#     (:meth:`LiveRecordBuilder.accepts_room`), not by suspending the tap, because the mirror's
+#     unsearched side commits real live choices during exactly that window.
 
 _ACTIVE: dict = {"builder": None}
 _ORIGINAL_WRITE_CHOICE = None
@@ -153,7 +181,7 @@ def install_choice_tap() -> None:
 
     async def _tapped(self, room: str, choice: str):
         builder = _ACTIVE["builder"]
-        if builder is not None:
+        if builder is not None and builder.accepts_room(room):
             builder.add_command(self._side, choice)
         return await inner(self, room, choice)
 

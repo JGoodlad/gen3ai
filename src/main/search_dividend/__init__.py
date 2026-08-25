@@ -7,6 +7,13 @@ The registered experiment (ledger ``7ae7e79``): three arms x a budget sweep.
 | ``base`` | nothing — the policy's own argmax | the control |
 | ``honest`` | K pool-consistent DETERMINIZATIONS of the opponent's never-revealed slots | what a real player could get |
 | ``oracle`` | the TRUE hidden state (K=1) | the ceiling: what a perfect belief would be worth |
+| ``playoff`` | the same true world, but only as a SCREEN — the top-2 are settled by paired rollouts to a terminal | is the harm LEAF BIAS? (added after the R-ladder verdict; see ``playoff.py``) |
+
+The fourth arm is the R-ladder's consequence, not a fourth guess. Sweeping the dice 32x moved the
+harm by nothing, which rules out estimator VARIANCE and convicts leaf BIAS — so the only remaining
+move that is not already refuted is to replace the leaf estimator itself on the one comparison that
+decides the action. ``playoff`` is opt-in by name and belongs to the MIRROR, where a self-rollout is
+the exact estimand rather than an approximation of it.
 
 Budgets are a per-decision wall-clock deadline (0.5 / 1 / 3 s, plus a small 8 s batch) and buy
 WIDTH in one registered order — alpha-pruned opponent actions, then determinized worlds, then CRN

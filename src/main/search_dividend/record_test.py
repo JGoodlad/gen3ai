@@ -190,3 +190,57 @@ def test_the_start_line_is_valid_json_the_sim_can_parse():
     parsed = json.loads(start[len(">start "):])
     assert parsed["formatid"] == "gen3ou"
     assert parsed["seed"].startswith("sodium,")
+
+
+def test_the_tap_rejects_a_ROLLOUT_battles_commands_by_room():
+    """The playoff arm plays whole battles from inside a live decision, and every one of their
+    choices passes through the same patched ``_write_choice``. Letting them into this builder would
+    produce a record that replays a battle nobody played — and it would look perfectly well-formed
+    until the interleaved commands shifted the whole line.
+
+    The filter is on the ROOM and not an on/off switch, because in the mirror the UNSEARCHED side
+    commits its real live choice on ``POKE_LOOP`` during exactly the window a rollout occupies: a
+    blanket suspend would drop that command and desynchronize the record the other way. Both halves
+    are asserted here.
+    """
+    import asyncio
+
+    from main.search_dividend.record import install_choice_tap
+    from utils.bridge.battle_stream_client import BattleStreamClient
+
+    install_choice_tap()
+    b = _builder()
+    b.battle_tag = "battle-gen3ou-7"
+    set_active_builder(b)
+
+    class _Fake:
+        def __init__(self, side):
+            self._side = side
+            self.sent = None
+
+        async def _write_raw(self, room, command):
+            self.sent = command
+
+    live_us, live_them, rollout = _Fake("p1"), _Fake("p2"), _Fake("p1")
+    asyncio.run(BattleStreamClient._write_choice(live_us, "battle-gen3ou-7", "move surf"))
+    # a paired rollout's own battle, in flight at the same time
+    asyncio.run(BattleStreamClient._write_choice(rollout, "battle-gen3ou-8", "move explosion"))
+    # the mirror's unsearched side, committing its LIVE choice inside the rollout's window
+    asyncio.run(BattleStreamClient._write_choice(live_them, "battle-gen3ou-7", "switch 3"))
+
+    assert b.build().commands == (("p1", "move surf"), ("p2", "switch 3"))
+    # the write itself is never swallowed for anyone — the tap only observes
+    assert rollout.sent == "CHOOSE p1 move explosion"
+
+
+def test_an_untagged_builder_still_accepts_its_first_commands():
+    """Before our first decision the battle TAG is not known (``run_local_battles`` mints it), and
+    the opponent may commit turn 1 first. Rejecting an unknown room would silently lose that
+    command — and a rollout can only ever start from INSIDE a decision, i.e. after the tag has been
+    adopted, so accepting here cannot let a rollout in."""
+    b = _builder()
+    assert b.battle_tag is None
+    assert b.accepts_room("battle-gen3ou-1")
+    b.battle_tag = "battle-gen3ou-1"
+    assert b.accepts_room("battle-gen3ou-1")
+    assert not b.accepts_room("battle-gen3ou-2")
