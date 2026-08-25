@@ -4379,3 +4379,27 @@ noise-artifacts of critic blur almost in their entirety, corroborating the bias 
 ground truth rather than by dose-response. Cell runs overnight (~14 h, resumable);
 `n_playoff_reversed` endorsed as the post-cell schema addition (the crispest leaf-bias number
 this instrument can produce).
+
+### 🎲 THE FORMAT TERM (owner's frame, 2026-08-24 evening) — Wang played RANDOMS; we play the richest meta on the board
+
+The owner surfaced the condition my reconciliation summaries under-weighted: Wang's thesis is
+literally titled "Winning at Pokémon RANDOM Battles" (gen4randombattles). The hypothesis —
+randoms ≈ six 1v1s, so the value function's job is categorically easier — is CORRECT and joins
+the estimator-regime story as a MULTIPLYING factor, not a rival: format sets the value-
+complexity denominator (his margins wide, value near-additive), machinery sets the estimator
+numerator (his R≈1500 + PUCT). He had both favorable; we have neither. Mechanism, unpacked:
+(1) random teams carry no engineered synergy — no hazard economies, wish cores, win-condition
+plans — so V ≈ additive matchup+material+HP, a low-rank near-linear structure a modest critic
+resolves (our FitNets geometry showed OU teachers' value subspaces are low-rank but
+COMPLEMENTARY = per-team structure OUR critic must store); (2) decision margins are coarser
+(preserve-the-check swings, not razor plan-equity trades); (3) hidden info is GENERATOR-
+symmetric — he determinizes from Showdown's own randbats RNG (a true documented posterior)
+where OUR hidden info is adversarially SELECTED by a meta; (4) no team-level amortization gap
+(fresh team every game ⇒ one generic value currency). External gradient corroborates: Metamon
+strongest in gen1 OU (simplest), WEAKEST in gen3 OU (mechanically richest of 1–4); Wang in
+randoms. **Agent strength tracks inversely with team-structure richness, and we are
+deliberately on the hardest square.** Implication for the calibration plan: part of the blur is
+INTRINSIC format complexity (team-compositional value), which is exactly what label-grounding +
+per-team value structure attack. Candidate probe banked (not ordered): measure critic blur on
+randbats-style boards vs pool boards — if blur collapses on random teams, the format term gets
+a NUMBER.
