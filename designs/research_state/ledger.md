@@ -4433,3 +4433,33 @@ nor Metamon anticipated it; it reframes replay training's cost from "noisy early
 truth — 3.91/6 own mons unseen at turns 1–5 is the unmeasured axis; measure before any Stage A
 pass). Instrument committed as a run-directly probe + 37 reveal-rule tests (Sleep Talk callee
 in-set, Metronome's not, Knock-Off-on-them reveals nothing of ours). Suite 7,167 green.
+
+### 🔻 TICK-1 GRADED: THE FOLD DID NOT PAY — inferior on three independent meters, with a mechanism and a prime suspect (2026-08-25 morning)
+
+**Ladder INFERIOR** (2012 vs rev-1's 2110, Δ −97.8 CI [−139.9, −55.7]); **piloting NEGATIVE on
+5/7 of the very slices the teachers taught** (pooled −4.0pp; the working-distill reference
+0.438→0.710 would have been seen easily); **exploitability +11.8pp self-exploitable
+[+6.9, +16.6] z=4.74 vs rev-1's matched +0.000 [−4.9, +4.9]** (the matched rev-1 row makes the
+era's meter apples-to-apples; row-1's +3.5 carried fork seniority). **Mechanism (capacity row):
+BROAD representation-rank collapse** — pi_features 19.6→12.4, team_tokens 16.5→12.0, every tap
+down, trainability ~1.0 everywhere (collapse, not plasticity loss). Hodge: **P3's direction
+CONFIRMED (width 49→26, cyclic 4.0→0.9%, 5 sig cycles→0) but arrived WITH a 91-ELO spine fall**
+— a width reduction bought by losing the strength that generated the width is not the
+prediction succeeding; banked with that caveat (and the 100-vs-814 triangle-count power note).
+**PRIME SUSPECT — UNVERIFIED TEACHERS**: ai_v9_30 was excluded for failing the extraction gate,
+but tock-1a/b were never extraction-gated at all — we folded teachers whose exploitation
+content was never measured, trained 3M vs a frozen stochastic target on narrow slices, at
+distill-coef 1.0 against models only 3M diverged (FitNets already 0.995-aligned at hour one =
+little to teach, strong pull toward NARROWER). **STANDING RULE MINTED: no teacher folds without
+significant extraction at 800/arm — the teacher-admission gate is now universal, not
+ai_v9_30-specific.** Correction to one implied read: R1 labels "failing to press value_pooled
+up" is EXPECTED at heads-only (grad shares 0.0 — nothing reaches the trunk); the capacity-rise
+hypothesis belongs to the trunk-open stage. **LINEAGE RULING: rev-1 final REMAINS the era's
+base; tick-2 forks from rev-1, never from tick-1.** Distillation is NOT concluded dead: one
+tick, one coefficient, unverified 3M-diverged teachers, 76% label dose. Discriminator ordered
+BEFORE any coefficient arm: measure tock-1a/b extraction @800/arm retroactively (eval-only) —
+if the teachers show ~0, the fold folded nothing and the failure is explained at the INPUT.
+Also banked: **strict compile gate held 48/0 on its first live test post-cd07aa7** (the
+single-shot floor was failing ~half of workers); the training session's two integrity checks
+(the 398/800 tie re-salted before reporting; the p1/p2 baseline-fairness caveat) are the
+discipline working. Endofrun artifacts committed with this entry.
