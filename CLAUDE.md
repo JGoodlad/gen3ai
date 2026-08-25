@@ -1461,8 +1461,13 @@ src/
                      #   engine.py (pure analysis), model.py, discovery.py, app.py
     tui/               # Shared Textual base (Gen3App, theme, colors) — launcher UI — has CLAUDE.md
     search_dividend/   # SEARCH-DIVIDEND PROBE — a search wrapped around the trained policy + a
-                     #   3-arm x budget-sweep battery (`python -m main.search_dividend`).
-                     #   arms base / honest (belief-determinized) / oracle (true hidden state);
+                     #   4-arm x budget-sweep battery (`python -m main.search_dividend`).
+                     #   arms base / honest (belief-determinized) / oracle (true hidden state) /
+                     #   playoff (OPT-IN, not in the flagless default: the oracle sweep demoted to
+                     #   a SCREEN, top-2 settled by PAIRED ROLLOUTS to a terminal — the R-ladder's
+                     #   answer to a leaf-BIAS verdict that averaging cannot touch; see
+                     #   playoff.py, and note it needs --battle-timeout-s/--battle-idle-s because
+                     #   a timed-out game poisons the rest of a cell);
                      #   budget = a per-decision wall-clock deadline buying WIDTH in one registered
                      #   order (α-pruned opp actions → worlds K → CRN dice R), then DEPTH:
                      #   iterative deepening of the top-m actions, `--max-depth` capping what the
