@@ -34,6 +34,75 @@ def test_non_inferiority_three_verdicts():
     assert non_inferiority(None, cur)["verdict"] == "UNAVAILABLE"
 
 
+def test_unavailable_says_which_of_the_four_causes_it_was():
+    """THE MISLEADING TWO-CLAUSE ERROR. Every UNAVAILABLE used to read "tail rating missing on one
+    side (under-sampled ladder or no --ref)", and in a real incident the FIRST clause was quoted as
+    the diagnosis while the SECOND was the truth. The four causes have different fixes, so each
+    gets its own message — and the reference cases are checked FIRST, since a missing --ref makes
+    the ladder question moot."""
+    cur = {"elo": 2100.0, "se": 5.0}
+
+    # (1) no --ref at all: say THAT, first, with the flag to pass.
+    no_ref = non_inferiority(cur, None, ref_requested=False)
+    assert no_ref["verdict"] == "UNAVAILABLE"
+    assert "no --ref given" in no_ref["why"]
+    assert "--ref models/<previous-run>" in no_ref["why"]
+    assert "under-sampled" not in no_ref["why"], "the wrong clause must not appear at all"
+
+    # …and it wins even when the ladder is ALSO short — the argument is the actionable fact.
+    both = non_inferiority(None, None, ref_requested=False)
+    assert "no --ref given" in both["why"] and "under-sampled" not in both["why"]
+
+    # (2) a --ref that could not be read: name the argument and the error, not the ladder.
+    bad = non_inferiority(cur, None, ref_error="FileNotFoundError: models/nope")
+    assert bad["verdict"] == "UNAVAILABLE"
+    assert "could not be read" in bad["why"] and "models/nope" in bad["why"]
+    assert "under-sampled" not in bad["why"]
+
+    # (3) a resolvable --ref whose ladder is too short.
+    short_ref = non_inferiority(cur, None)
+    assert short_ref["verdict"] == "UNAVAILABLE"
+    assert "--ref run's ladder is under-sampled" in short_ref["why"]
+    assert "no --ref" not in short_ref["why"]
+
+    # (4) THIS run's ladder is too short.
+    short_cur = non_inferiority(None, cur)
+    assert short_cur["verdict"] == "UNAVAILABLE"
+    assert "this run's ladder is under-sampled" in short_cur["why"]
+    assert "--ref" not in short_cur["why"]
+
+
+def test_step_elo_reports_an_unresolvable_ref_as_a_ref_problem(monkeypatch):
+    """An unreadable ``--ref`` must not take the whole elo step down with it. Pre-fix it raised
+    out of `step_elo` into the blanket handler, so the report read `status: error` and the run's
+    OWN tail — which was computed fine — never appeared."""
+    from main import elo as elo_cli
+    from main.endofrun import step_elo
+
+    class _Fit:
+        def snapshot_curve(self):
+            return _curve(2000, 2010, 2020, 2030)
+
+    def _analyze(run_dir, source="auto", anchors_path=None):
+        if "nope" in run_dir:
+            raise FileNotFoundError(run_dir)
+        return [], _Fit(), {}
+
+    monkeypatch.setattr(elo_cli, "analyze", _analyze)
+    monkeypatch.setattr(elo_cli, "hodge_read", lambda *a, **k: None)
+
+    out = step_elo("models/good", "models/nope", "anchors.json")
+    assert out["status"] == "ok", "an unreadable --ref must not void the run's own tail"
+    assert out["current_tail"] is not None
+    assert "models/nope" in out["reference_error"]
+    assert "could not be read" in out["non_inferiority"]["why"]
+
+    # No --ref at all is the OTHER message, and no reference_error.
+    out2 = step_elo("models/good", None, "anchors.json")
+    assert out2["reference_error"] is None
+    assert "no --ref given" in out2["non_inferiority"]["why"]
+
+
 def test_route_verdicts_ratio_rule_and_confound():
     arms = {
         "all_off": {"kl_mean": 0.1, "kl_p95": 0.3, "flip_rate": 0.05, "dv_mean": 1.00},

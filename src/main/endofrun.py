@@ -71,12 +71,38 @@ def tail_rating(curve: List[tuple], k: int = TAIL_K) -> Optional[dict]:
 
 
 def non_inferiority(cur: Optional[dict], ref: Optional[dict],
-                    margin: float = NONINF_MARGIN, hard: float = NONINF_HARD) -> dict:
+                    margin: float = NONINF_MARGIN, hard: float = NONINF_HARD,
+                    *, ref_requested: bool = True, ref_error: Optional[str] = None) -> dict:
     """The §1/§5 rule: NON_INFERIOR when the tail-K delta is within ``margin`` AND the 95% CI
-    excludes ``hard``; INFERIOR when the whole CI sits below ``margin``; else INCONCLUSIVE."""
-    if cur is None or ref is None:
+    excludes ``hard``; INFERIOR when the whole CI sits below ``margin``; else INCONCLUSIVE.
+
+    ⚠️ **UNAVAILABLE has FOUR distinct causes and they must not share one message.** This used to
+    answer every one of them with "tail rating missing on one side (under-sampled ladder or no
+    --ref)" — a two-clause string where only one clause is ever true. In a real incident the FIRST
+    clause was quoted as the diagnosis ("the ladder is under-sampled") while the truth was the
+    second (no ``--ref`` was passed at all), and the two have opposite fixes: one needs more
+    snapshots, the other needs one more CLI argument. So the reference cases are checked FIRST and
+    each says exactly what happened and what to do about it.
+
+    ``ref_requested`` is False when no ``--ref`` was given; ``ref_error`` carries the exception text
+    when a ``--ref`` was given but could not be read. Both are supplied by :func:`step_elo`.
+    """
+    if ref_error is not None:
         return {"verdict": "UNAVAILABLE",
-                "why": "tail rating missing on one side (under-sampled ladder or no --ref)"}
+                "why": f"--ref was given but could not be read ({ref_error}) — point --ref at a "
+                       f"run dir that has an eval_results.jsonl or a TensorBoard ladder"}
+    if not ref_requested:
+        return {"verdict": "UNAVAILABLE",
+                "why": "no --ref given — a non-inferiority verdict is a COMPARISON and there is "
+                       "nothing to compare against; re-run with `--ref models/<previous-run>`"}
+    if ref is None:
+        return {"verdict": "UNAVAILABLE",
+                "why": f"the --ref run's ladder is under-sampled — fewer than {TAIL_K} snapshots, "
+                       f"so it has no tail-{TAIL_K} rating (the convention forbids a mid-run read)"}
+    if cur is None:
+        return {"verdict": "UNAVAILABLE",
+                "why": f"this run's ladder is under-sampled — fewer than {TAIL_K} snapshots, so it "
+                       f"has no tail-{TAIL_K} rating (the convention forbids a mid-run read)"}
     delta = cur["elo"] - ref["elo"]
     se = (cur["se"] ** 2 + ref["se"] ** 2) ** 0.5
     lo, hi = delta - 1.96 * se, delta + 1.96 * se
@@ -210,13 +236,21 @@ def step_elo(run_dir: str, ref_run: Optional[str], anchors: str) -> dict:
         from main import elo as elo_cli
         _rows, fit, _a = elo_cli.analyze(run_dir, source="auto", anchors_path=anchors)
         cur = tail_rating(fit.snapshot_curve())
-        ref = None
+        ref, ref_error = None, None
         if ref_run:
-            _r2, fit2, _a2 = elo_cli.analyze(ref_run, source="auto", anchors_path=anchors)
-            ref = tail_rating(fit2.snapshot_curve())
+            # An UNRESOLVABLE --ref is a fact about the argument, not a failure of this run's
+            # battery: caught here so the elo step still reports the current tail and the verdict
+            # names the --ref as the problem, instead of the whole step reading `status: error`.
+            try:
+                _r2, fit2, _a2 = elo_cli.analyze(ref_run, source="auto", anchors_path=anchors)
+                ref = tail_rating(fit2.snapshot_curve())
+            except Exception as e:  # noqa: BLE001
+                ref_error = f"{type(e).__name__}: {e}"
         return {"status": "ok",
                 "current_tail": cur, "reference_tail": ref,
-                "non_inferiority": non_inferiority(cur, ref),
+                "reference_error": ref_error,
+                "non_inferiority": non_inferiority(cur, ref, ref_requested=bool(ref_run),
+                                                  ref_error=ref_error),
                 "curve_len": len(fit.snapshot_curve()),
                 "hodge": _hodge(run_dir, anchors),
                 "reference_hodge": _hodge(ref_run, anchors) if ref_run else None}
