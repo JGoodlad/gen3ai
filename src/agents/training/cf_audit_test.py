@@ -122,6 +122,92 @@ def test_cluster_bootstrap_ci_refuses_a_single_cluster():
     assert cluster_bootstrap_ci([1.0, 2.0], ["b", "b"]) == (None, None)
 
 
+# ------------------------------------------- the DIFFERENCE of means (conviction-class readout)
+
+def _two_arms(mean_a, mean_b, n_batt_a, n_batt_b, per_battle=8, sd=0.02, seed=11):
+    """Two disjoint battle-clustered arms with KNOWN means. Deliberately lopsided in battle
+    count, which is where the old pooled construction came apart."""
+    rng = np.random.default_rng(seed)
+
+    def arm(mean, n_batt, tag):
+        vals, cls = [], []
+        for b in range(n_batt):
+            for _ in range(per_battle):
+                vals.append(mean + rng.normal(0, sd))
+                cls.append(f"{tag}{b}")
+        return vals, cls
+    return arm(mean_a, n_batt_a, "L"), arm(mean_b, n_batt_b, "W")
+
+
+def test_cluster_bootstrap_diff_ci_recovers_a_KNOWN_difference_and_brackets_it():
+    """Synthetic arms at +0.30 and +0.10 ⇒ the difference is +0.20, and the interval must contain
+    both the truth and its own point estimate — at a 3:1 arm imbalance, which is the real shape."""
+    from agents.training.cf_audit import cluster_bootstrap_diff_ci
+    (va, ca), (vb, cb) = _two_arms(0.30, 0.10, n_batt_a=30, n_batt_b=10)
+    point, lo, hi = cluster_bootstrap_diff_ci(va, ca, vb, cb, draws=800, seed=1)
+    assert point == pytest.approx(0.20, abs=0.01)
+    assert lo <= point <= hi, f"the CI [{lo}, {hi}] does not contain its own estimate {point}"
+    assert lo <= 0.20 <= hi                                  # …and it covers the truth
+
+
+def test_cluster_bootstrap_diff_ci_beats_the_POOLED_construction_it_replaced():
+    """THE DEFECT, reproduced. The readout used to take its point estimate from
+    ``mean(a) − mean(b)`` and its CI from ``cluster_bootstrap_ci(a + [−x for x in b])`` — the mean
+    of the CONCATENATION, i.e. ``(Σa − Σb)/(n_a + n_b)``, a size-weighted pooled mean. The two
+    coincide only at equal arm sizes; at the real imbalance they diverge far enough that the
+    published interval excluded its own point estimate (the observed +0.205 vs [+0.070, +0.158]).
+    Nothing about that reads as broken — it reads as a precise result.
+
+    The cleanest demonstration is two arms with the SAME mean at 3:1 sizes: the difference is
+    exactly 0, while the pooled statistic is ``(3m − m)/4 = m/2`` and confidently reports an effect
+    that does not exist."""
+    from agents.training.cf_audit import cluster_bootstrap_diff_ci
+    (va, ca), (vb, cb) = _two_arms(0.30, 0.30, n_batt_a=30, n_batt_b=10)
+    point = float(np.mean(va) - np.mean(vb))
+    assert point == pytest.approx(0.0, abs=0.01)             # the truth: no difference
+
+    pooled = list(va) + [-x for x in vb]
+    assert float(np.mean(pooled)) == pytest.approx(0.15, abs=0.01), (   # (3m − m)/4, not m − m
+        "the pooled construction is supposed to invent an effect here — if it no longer does, "
+        "this test has stopped reproducing the defect it guards")
+    old_lo, old_hi = cluster_bootstrap_ci(pooled, list(ca) + list(cb), draws=800, seed=1)
+    assert not (old_lo <= point <= old_hi), (
+        f"the old CI [{old_lo}, {old_hi}] is supposed to exclude the true difference {point}")
+
+    _p, lo, hi = cluster_bootstrap_diff_ci(va, ca, vb, cb, draws=800, seed=1)
+    assert lo <= point <= hi and lo <= 0.0 <= hi             # …the honest statistic finds none
+
+
+def test_cluster_bootstrap_diff_ci_refuses_when_an_ARM_has_one_cluster():
+    """Same refusal convention as the single-arm CI: the point estimate still stands (it needs no
+    resampling), but an un-resamplable arm gets no interval rather than a fake-narrow one."""
+    from agents.training.cf_audit import cluster_bootstrap_diff_ci
+    point, lo, hi = cluster_bootstrap_diff_ci([0.3, 0.4], ["b", "b"], [0.1, 0.2], ["w1", "w2"])
+    assert point == pytest.approx(0.2) and (lo, hi) == (None, None)
+    assert cluster_bootstrap_diff_ci([], [], [0.1], ["w"]) == (None, None, None)
+
+
+def test_the_conviction_class_CI_brackets_its_own_gap():
+    """End-to-end through `bias_map`: whatever the arms' sizes, `loss_minus_win_ci` must contain
+    `loss_minus_win_gap`. That is the invariant the shipped report violated."""
+    from agents.training.cf_audit import bias_map
+    labels = []
+    # 24 conviction battles (lost) at gap +0.30, 8 control battles (won) at gap +0.10.
+    for tag, n_batt, wp, mc, oc in (("L", 24, 0.90, 0.60, "loss"), ("W", 8, 0.90, 0.80, "win")):
+        for b in range(n_batt):
+            for k in range(6):
+                labels.append({"battle": f"/t/{tag}{b}", "opponent": "heuristic",
+                               "opp_class": "bot", "outcome": oc, "turn": 10 + k,
+                               "win_prob": wp, "mc": mc})
+    frame = [_dec(win_prob=r["win_prob"], outcome=r["outcome"], battle=r["battle"], turn=r["turn"])
+             for r in labels]
+    design = {"turn_tercile_edges": [12.0, 14.0], "sampler_version": "test", "seed": 0}
+    cc = bias_map(labels, frame, n_rollouts=8, design=design, accounting={})["conviction_class"]
+    gap, (lo, hi) = cc["loss_minus_win_gap"], cc["loss_minus_win_ci"]
+    assert gap == pytest.approx(0.20, abs=1e-9)              # (0.90−0.60) − (0.90−0.80)
+    assert lo <= gap <= hi, f"CI [{lo}, {hi}] excludes its own estimate {gap}"
+
+
 # ----------------------------------------------------------------- stratifier
 
 def test_stratum_is_confidence_decile_by_outcome_by_turn_tercile():

@@ -415,6 +415,56 @@ def cluster_bootstrap_ci(values: Sequence[float], clusters: Sequence[str], *,
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
+def _cluster_pools(values: Sequence[float], clusters: Sequence[str]) -> "Optional[List[np.ndarray]]":
+    """Group ``values`` by cluster key; None when there is nothing to resample (< 2 clusters)."""
+    by_c: "Dict[str, List[float]]" = defaultdict(list)
+    for v, c in zip(values, clusters):
+        by_c[c].append(float(v))
+    if len(by_c) < 2:
+        return None
+    return [np.asarray(by_c[k]) for k in by_c]
+
+
+def cluster_bootstrap_diff_ci(values_a: Sequence[float], clusters_a: Sequence[str],
+                              values_b: Sequence[float], clusters_b: Sequence[str], *,
+                              draws: int = 2000, seed: int = 7,
+                              ) -> "tuple[Optional[float], Optional[float], Optional[float]]":
+    """``mean(a) − mean(b)`` and its 95% cluster-bootstrap CI — returned TOGETHER, on purpose.
+
+    Returns ``(point, lo, hi)``. The two groups' clusters are resampled INDEPENDENTLY (they are
+    disjoint at every call site: a battle has one outcome, so a decision is in the loss arm or the
+    win arm, never both), and the bootstrap statistic is the SAME functional as ``point`` — which
+    is what makes the interval bracket the estimate instead of describing a different quantity.
+
+    ⚠️ **THE DEFECT THIS EXISTS TO PREVENT.** The conviction-class readout used to get its point
+    estimate from ``mean(a) − mean(b)`` while getting its CI from
+    ``cluster_bootstrap_ci(a + [−x for x in b], …)`` — the mean of the CONCATENATION, which is
+    ``(Σa − Σb) / (n_a + n_b)``, a SIZE-WEIGHTED pooled mean and not a difference of means at all.
+    The two agree only when ``n_a == n_b``; at the real 3:1 imbalance they came apart badly enough
+    that the published interval did not contain its own point estimate (+0.205 vs [+0.070,
+    +0.158]). A CI that does not bracket its estimate is not a wide CI, it is a different
+    statistic — and it reads as a precise result.
+
+    ``(None, None, None)`` when either arm has fewer than 2 clusters (nothing to resample), matching
+    :func:`cluster_bootstrap_ci`'s refusal convention.
+    """
+    if len(values_a) < 1 or len(values_b) < 1:
+        return None, None, None
+    point = float(np.mean(np.asarray(values_a, dtype=float))
+                  - np.mean(np.asarray(values_b, dtype=float)))
+    pools_a, pools_b = _cluster_pools(values_a, clusters_a), _cluster_pools(values_b, clusters_b)
+    if pools_a is None or pools_b is None:
+        return point, None, None
+    rng = np.random.default_rng(seed)
+    stat = np.empty(draws)
+    for i in range(draws):
+        ia = rng.integers(0, len(pools_a), size=len(pools_a))
+        ib = rng.integers(0, len(pools_b), size=len(pools_b))
+        stat[i] = (float(np.concatenate([pools_a[j] for j in ia]).mean())
+                   - float(np.concatenate([pools_b[j] for j in ib]).mean()))
+    return point, float(np.percentile(stat, 2.5)), float(np.percentile(stat, 97.5))
+
+
 def sd_true_excess(mc: Sequence[float], n_rollouts: int,
                    weights: "Optional[Sequence[float]]" = None) -> dict:
     """THE PRIMARY METER — the within-cell spread of the TRUE win probability, net of the
@@ -586,12 +636,17 @@ def bias_map(labels: Sequence[dict], frame: Sequence[Decision], *, n_rollouts: i
         c["median_predicted"] = float(np.median([r["win_prob"] for r in conv]))
         c["median_mc"] = float(np.median([r["mc"] for r in conv]))
         if ctrl:
+            # The point estimate and its CI come from ONE call, so they cannot drift apart again:
+            # the difference of MEANS, bootstrapped as the difference of means. (It used to pool
+            # `diff + [-x for x in dctl]` into `cluster_bootstrap_ci`, which averages the
+            # concatenation — a size-weighted pooled mean, a different statistic, and at the real
+            # 3:1 arm imbalance an interval that did not contain its own estimate.)
             diff = [r["win_prob"] - r["mc"] for r in conv]
             dctl = [r["win_prob"] - r["mc"] for r in ctrl]
-            lo, hi = cluster_bootstrap_ci(
-                diff + [-x for x in dctl],
-                [r["battle"] for r in conv] + [r["battle"] for r in ctrl])
-            c["loss_minus_win_gap"] = float(np.mean(diff) - np.mean(dctl))
+            gap, lo, hi = cluster_bootstrap_diff_ci(
+                diff, [r["battle"] for r in conv],
+                dctl, [r["battle"] for r in ctrl])
+            c["loss_minus_win_gap"] = gap
             c["loss_minus_win_ci"] = [lo, hi]
         out["conviction_class"] = c
 
