@@ -4355,3 +4355,27 @@ persistent tree, PUCT, visit-argmax) remains the blueprint IF the critic ever ea
 4. The tb-reader fix banked as a specimen: **a reader scoped to one CHILD, reporting on a
    RUN** — same family as the per-child counter resets; ABSENT-that-looks-like-stop is the
    dangerous rendering.
+
+### 🎾 PLAYOFF ARM LANDED (`000709a`+`c51cdb2`) — and game 1's shape already corroborates the bias verdict from a new angle (2026-08-24 evening)
+
+The top-2 terminal-rollout playoff shipped (+22 tests, four rules revert-verified: room-filtered
+tap, inconclusive→POLICY never the screen's top1, paired-seed CRN, capped=0.5 shared with the
+producer). **Two hazards closed that would have faked nulls silently**: (1) the process-wide
+choice tap was writing ROLLOUT commands into the live reconstruction record (battle-room filter,
+not a suspend — the unsearched side commits real choices in the same window); (2) **a 180 s
+battle-timeout leaves the killed decision's search driving the shared session from an
+uncancellable thread, poisoning the NEXT games' prefix gates** (measured 22/23 gate failures
+post-timeout vs 0/56 control) — new `--battle-timeout-s/--battle-idle-s`. ⚠️ RIDER on the
+R-ladder: its 1–2 timeouts/cell degraded subsequent games; poisoned games fall back toward the
+policy (bias TOWARD 0.50, uniform across cells), so the flat-curve verdict STANDS but the cell
+absolutes carry attenuation noise. Deviations ratified: budget 20 s (at 10 s realized R=3 pairs
+< the instrument's own 4-pair floor — a 10 s cell would read 100% inconclusive BY CONSTRUCTION;
+raising budget is honest, lowering the floor would manufacture verdicts) — NOTE this makes the
+playoff a SCIENCE instrument, not a ladder-deployable config (20 s/turn out-accrues the timer).
+**Game 1 (n=1, no verdict): 95% of the screen's overrides went INCONCLUSIVE** — 10 paired
+terminal rollouts cannot separate top1 from top2 on the very decisions the earlier arms
+overrode 60–66% of the time. If the cell holds this shape, the prior arms' overrides were
+noise-artifacts of critic blur almost in their entirety, corroborating the bias verdict by
+ground truth rather than by dose-response. Cell runs overnight (~14 h, resumable);
+`n_playoff_reversed` endorsed as the post-cell schema addition (the crispest leaf-bias number
+this instrument can produce).
