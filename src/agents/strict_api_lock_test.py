@@ -95,6 +95,19 @@ ALLOWLISTED_BATTLE_READS = frozenset({
     # poke-env mon being iterated, so it is intrinsically a raw-object check, not state we
     # could re-source from LiveView (which holds primitives, no Pokemon back-reference).
     ("observation/state_encoder.py", "opponent_active_pokemon"),
+
+    # training/replay_imputation_probe.py — the own-side imputation METER, and the one entry
+    # here that must WRITE to the raw objects rather than read a projection of them. It
+    # measures how far the observation moves when our own not-yet-revealed details are
+    # replaced by Smogon priors, which it does by overwriting `Pokemon._moves` / `_item` /
+    # `_ivs` / `_evs` / `_nature` / `_stats` / `_max_hp` and re-encoding. LiveView is a frozen
+    # primitives-only snapshot with no back-reference to the Pokemon BY DESIGN, so there is
+    # nothing to route this through — the raw team IS the subject. It is a run-directly
+    # measurement script (no training path imports it), it restores every field it touched,
+    # and it then re-encodes truth and asserts bit-equality, so a write cannot outlive the
+    # decision it was made for.
+    ("training/replay_imputation_probe.py", "active_pokemon"),
+    ("training/replay_imputation_probe.py", "team"),
 })
 
 

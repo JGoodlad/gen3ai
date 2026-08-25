@@ -654,3 +654,121 @@ top-300 appearances" were peak-Elo grinding moments, not its typical seat.
 ⚠️ **Scale hygiene**: OUR anchored Bradley-Terry ELO (~2000–2070 on the internal bot-anchored
 ladder) is a different scale entirely — never compare it numerically to Showdown ladder Elo.
 The only honest cross-walk is playing the ladder.
+
+---
+
+## Results (2026-08-24): the own-side imputation meter — §2.7's risk, measured
+
+**Built the meter first, as §2.6 said to.** §2.7 named own-side imputation as this project's
+single biggest risk and noted that *"Metamon does not quantify this anywhere"*. We can, because
+we own a simulator: on our own bridge battles the TRUE observation is known at every decision,
+so the imputed variant can be built beside it and the error read off directly.
+
+Instrument: **`src/agents/training/replay_imputation_probe.py`** (run directly; reveal rules
+pinned by `replay_imputation_probe_test.py`, 37 unit tests, ~1 s). It plays reproducible bridge
+battles, and at each of our decisions replaces our own side's **not-yet-revealed-by-then**
+moves / item / EVs+nature with the top Smogon-prior candidate for the species — the memo's
+Naive-equivalent, i.e. Metamon's `NaiveUsagePredictor` — then re-encodes and diffs against
+truth, per obs block, per phase. Reveal tracking mirrors a **replay**, not poke-env: moves on
+use, item on activation, spreads never. No transcoder and no `|request|` synthesis: this is the
+meter only.
+
+```
+export PYTHONPATH=$PYTHONPATH:src
+python src/agents/training/replay_imputation_probe.py 20 --json out.json
+```
+
+**Sample: 20 reproducible battles, 2,640 decisions** (106 at turns 1–5, 209 at 6–15, 2,325 at
+16+). Every decision passes an integrity gate that re-encodes truth after the restore and
+requires bit-equality, so a leak that would contaminate later decisions is impossible rather
+than unlikely.
+
+### Per obs block × phase
+
+`relL2` = ‖Δ‖₂ / ‖true‖₂ within the block — the scale-free column, and the one to read.
+`frac_dims` = share of the block's dims that moved at all. `mean |Δ|` is **not comparable
+across rows** (blocks mix raw embedding ids in the hundreds with 0–1 scalars).
+
+| block | turns 1–5 relL2 · frac_dims | turns 6–15 | turns 16+ |
+|---|---|---|---|
+| **whole obs** | **0.364** · 0.045 | **0.249** · 0.044 | **0.136** · 0.028 |
+| our_team | 0.413 · 0.149 | 0.417 · 0.145 | 0.264 · 0.095 |
+| ├ our_team.**moves** | **0.555** · 0.305 | **0.561** · 0.293 | **0.357** · 0.154 |
+| ├ our_team.**spread** | 0.268 · 0.255 | 0.268 · 0.254 | **0.256** · 0.256 |
+| ├ our_team.**items** | 0.036 · 0.022 | 0.037 · 0.021 | 0.016 · 0.007 |
+| ├ our_team.hp (rounding) | 0.0001 · 0.039 | 0.0002 · 0.148 | 0.0004 · 0.175 |
+| └ species / types / abilities / condition / status / hp_block / protect / tail | **0.000** | **0.000** | **0.000** |
+| opp_team | **0.000** | **0.000** | **0.000** |
+| active context (boosts + volatiles) | **0.000** | **0.000** | **0.000** |
+| global env | **0.000** | **0.000** | **0.000** |
+| pair history (H-A2) | **0.000** | **0.000** | **0.000** |
+| event window (H-B) | **0.000** | **0.000** | **0.000** |
+| reactive board scalars | **0.000** | **0.000** | **0.000** |
+| ⚠️ reactive.active_req_moves | 0.503 · 0.307 | 0.412 · 0.252 | 0.126 · 0.077 |
+
+⚠️ **The last row is an ARTIFACT, not a measurement, and must never be quoted as one.** The
+`|request|` is held at truth (synthesizing one is Gap 1, out of scope), so a request slot naming
+a move the imputation dropped resolves to neutral zeros. A real pipeline would synthesize the
+request *from* the imputed set and put the imputed move's id there — still ≠ truth, but a
+different number. Read the direction (this block does carry error), not the size.
+
+### What was imputed
+
+| | turns 1–5 | turns 6–15 | turns 16+ |
+|---|---|---|---|
+| decisions | 106 | 209 | 2,325 |
+| fraction of our move slots imputed | **96.5%** | 86.1% | 38.5% |
+| our mons with an unrevealed item | 5.50 / 6 | 4.11 / 6 | 1.18 / 6 |
+| our mons with an imputed spread | **6 / 6** | **6 / 6** | **6 / 6** |
+| decisions where the ACTIVE mon's set is wrong | **77.4%** | 73.2% | 24.2% |
+| our mons never yet seen on the field | 3.91 / 6 | 1.48 / 6 | 0.04 / 6 |
+
+### The three-sentence read
+
+**The error is structurally confined to our own six mon slots** — the opponent block, active
+context, global env, pair history and the H-B event window are *exactly* zero at all 2,640
+decisions, because every one of them is opponent- or log-derived and own-side imputation
+cannot reach them — and inside that block it is almost entirely the **moves** sub-block
+(relL2 0.56 early), with **items essentially free in gen3ou** (relL2 0.036; Leftovers is both
+the true item and the top prior on ~5–6 of 6 mons on a typical pool team) and HP a ≤0.04%
+rounding residual, exactly as §2.1 predicted. **§2.7's early-game confound is CONFIRMED and
+sized: the whole-obs error is ~2.7× larger at turns 1–5 than at turn 16+** (relL2 0.364 → 0.136;
+96.5% of our move slots imputed early vs 38.5% late; the active mon's set is wrong on 77% of
+early decisions vs 24% of late ones) — so yes, the states where a human label is most
+informative are the states we describe worst. **But the decay is entirely a moves-reveal
+effect, and the spread channel is a permanent floor that does not decay at all** (relL2 0.268 /
+0.268 / 0.256, ~25.5% of the spread dims wrong at *every* decision of *every* battle) — which
+is the finding neither the memo nor Metamon anticipated: no amount of battle progress ever
+tells a replay what EVs the player ran, so a replay-trained policy reads its own damage rolls,
+speed tiers and bulk off a guess forever, not just early.
+
+### Limitations (all of them make the number a LOWER bound, except the last)
+
+1. **Species are held at truth.** A real replay does not know which six mons were brought until
+   they appear, so an unrevealed *slot* would be imputed too (`teammate_priors`). At turns 1–5
+   **3.91 of our 6 mons had never been on the field** — the largest single unmeasured axis, and
+   it is largest exactly early, so the early-game figures above understate the real confound.
+2. **The `|request|` is truth** (the ⚠️ row above).
+3. **Ability is not imputed** — near-deterministic per species in gen 3, and §2.2 scopes the
+   risk to moves/item/spread.
+4. **The naive filler is the weakest one.** It inherits Metamon's own `score_pokemon` caveat
+   verbatim (frequently-*possible* ranked above frequently-*used*); a `ReplayPredictor`-equivalent
+   can only lower these numbers, never raise them.
+5. **This is imputation error, not label error** — it says nothing about whether the human's
+   *action* is recoverable (Gap 3).
+6. **Phase mass is skewed by random play.** 2,325 of 2,640 decisions sit at turn 16+ because
+   random-vs-random battles run long (several hit the 250-turn cap). The per-phase rows are the
+   readable ones; there is deliberately no pooled figure, because pooling would be dominated by
+   the long, low-error tail a human ladder game does not have.
+
+### What this means for the decision
+
+It does **not** kill the replay path, and it sharpens where the effort should go. Two-thirds of
+the obs is untouchable by this error class, and the touched part decays as the battle reveals
+itself — except the spread channel, which is a hard floor. Concretely: (a) a
+`ReplayPredictor`-equivalent buys most where it is cheapest to test, in the moves sub-block;
+(b) **item imputation is not worth engineering for gen3ou** — it is already ~free; (c) the
+spread floor argues for either masking early-turn labels (Metamon publishes per-timestep
+`missing` flags precisely so a consumer can mask rather than inherit) or for conditioning the BC
+term on a spread-uncertainty signal, and the species axis (limitation 1) should be measured
+before Stage A is called passed.
