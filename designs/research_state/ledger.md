@@ -4417,3 +4417,19 @@ exactly as suspected (point = unweighted diff of means, bootstrap = pooled conca
 equal only at equal arm sizes) and fixed so point+interval come from ONE call, with a
 reproduction test showing the old form confidently reporting +0.15 where truth is 0. Suite
 4,160 green; r1_first_read §7 closed with a dated note. Tasks #37/#39 complete.
+
+### 🎭 IMPUTATION METER LANDED (`280fbe1`) — the replay door's risk is now numbers, and one finding nobody anticipated (2026-08-24 night)
+
+20 reproducible battles / 2,640 decisions, mutate-encode-restore with a bit-identity restore
+GATE: own-side imputation error is STRUCTURALLY CONFINED to our six mon slots (opp/context/
+global/history/event blocks exactly zero). Moves relL2 0.555 early → 0.357 late; whole-obs
+0.364 → 0.136 — **the memo's early-game confound CONFIRMED at ~2.7×, entirely a moves-reveal
+effect**. Items nearly FREE in gen3ou (Leftovers is truth AND top prior on ~5–6/6 mons — not
+worth engineering). **THE NEW FINDING: the SPREAD channel is a PERMANENT floor (~0.26–0.27
+relL2) that never decays — no battle event ever reveals an EV spread, so a replay-trained
+policy reads its own damage rolls, speed tiers and bulk off a guess FOREVER.** Neither our memo
+nor Metamon anticipated it; it reframes replay training's cost from "noisy early game" to
+"a standing distortion on the physics channel". All figures are LOWER bounds (species held at
+truth — 3.91/6 own mons unseen at turns 1–5 is the unmeasured axis; measure before any Stage A
+pass). Instrument committed as a run-directly probe + 37 reveal-rule tests (Sleep Talk callee
+in-set, Metronome's not, Knock-Off-on-them reveals nothing of ours). Suite 7,167 green.
