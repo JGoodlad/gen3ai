@@ -4403,3 +4403,17 @@ INTRINSIC format complexity (team-compositional value), which is exactly what la
 per-team value structure attack. Candidate probe banked (not ordered): measure critic blur on
 randbats-style boards vs pool boards — if blur collapses on random teams, the format term gets
 a NUMBER.
+
+### 🧹 CLEANUPS BATCH LANDED (`d6e7ffa`..`1c8d784`) — four owed fixes, one bonus find (2026-08-24 evening)
+
+#39 value_feat naming (canonical `_dist` key added, `_cos` kept one release, the 0.005≈cos-0.995
+note at the metric site); **#37 fixed at the rust record WRITER — and the fix caught a SECOND
+silently-wrong consumer the incident never named**: `search::feed_recorded_cmd` has a forcelose
+arm the records never fed, so offline replay of a rust forfeit record never forfeited either
+(one push fixes both; old on-disk rust forfeit records are frozen wrong — noted in the docs);
+endofrun's two-clause error split into FOUR named causes with the reference cases first (the
+misquoted-clause incident cannot recur); the R1 audit's conviction-class CI defect diagnosed
+exactly as suspected (point = unweighted diff of means, bootstrap = pooled concatenation mean —
+equal only at equal arm sizes) and fixed so point+interval come from ONE call, with a
+reproduction test showing the old form confidently reporting +0.15 where truth is 0. Suite
+4,160 green; r1_first_read §7 closed with a dated note. Tasks #37/#39 complete.

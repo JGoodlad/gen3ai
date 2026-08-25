@@ -304,3 +304,11 @@ dosage-null is `C_minus_B` staying at ≈−0.036 with `B_minus_A` still ≈+0.0
 sampler's population cost is structural and the next move is the **sampler**
 (`cf_producer_priority_v1`) and the **label estimand** (§2's +0.131 self-play offset), not more
 labels.
+
+---
+**Closure note (2026-08-24 evening):** the §7 instrument defect (`conviction_class.loss_minus_win_ci`
+failing to bracket its own point estimate) is FIXED at `1c8d784` — the point was an unweighted
+difference of arm means while the bootstrap resampled the pooled concatenation (a size-weighted
+mean; they coincide only at equal arm sizes). `cluster_bootstrap_diff_ci` now returns point and
+interval from one call, so drift is unrepresentable. The §2 primary meters never used the pooled
+form; nothing above changes.
