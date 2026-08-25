@@ -4479,3 +4479,19 @@ the graded negative); teacher-admission gate universal; search parked behind cri
 gen-over-gen needs matched tails). PARKED OWNER-CALL ITEMS: battle-state redesign
 (post-flywheel); the replay/BC door (opens on coverage-flattening; imputation meter's spread-
 floor finding is the standing caveat); designs/CLAUDE.md run row (updates at next launch).
+
+### 🎾 PLAYOFF CELL COMPLETE (80/80, 2026-08-25 morning) — the honest-null branch lands: harm NEUTRALIZED, no dividend
+
+Final: **paired 0.450 [0.37, 0.53] — null not excluded**, against the plain-search arms' 0.19–0.33.
+The mechanism is in the rates: the playoff OVERRODE the policy on only **7.4%** of decisions
+(plain arms: 61–66%) because ground truth at R≈10 paired terminal rollouts ruled **70% of the
+critic's contested top-2 comparisons INDISTINGUISHABLE** (screen-decisive 15.8%). Reading:
+search that is honest about what it cannot distinguish neither helps nor hurts — the harm was
+never "search" but UNJUSTIFIED OVERRIDES, and an unbiased arbiter simply declines them. The
+bias verdict is confirmed a third way (by refusal, after dose-response and the flat R-ladder).
+CAVEATS before the formal read (owed, task #35 rules): exclude the tainted g0/o1 build-era game;
+**failed_pairs=4068 needs its fallback_details diagnosis** (the playoff_error class may have
+recurred at scale — failures fall back to the policy, biasing TOWARD null, so the 0.45 is if
+anything conservative, but the count must be explained before the cell's n is quoted as clean).
+Agent worktree stays until the formal read. Disposition unchanged: search parked; the playoff
+pattern (screen + honest arbiter + refuse-on-noise) is the template IF search ever deploys.
