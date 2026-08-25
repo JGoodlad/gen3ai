@@ -4522,3 +4522,31 @@ separates pull-strength vs loss-channel vs ecology; tick-1 itself is the "1.0 + 
 corner. Parked candidates: FitNets term (at 0.995 alignment its gradient is ~0 — low prior),
 dose interaction (dosext exists). Script-defect noted as the third member of the
 reader-scoped-to-one-thing family in a week.
+
+### 🧨 FACTORIAL VERDICT: THE LOSS CHANNEL — and the collapse is a SWITCH, not a dial (2026-08-25 ~16:45)
+
+fdB (coef 1.0/ecology OFF) −7.9pp z=−7.05 retention −87% · fdA (0.3/ON) −5.5pp z=−4.85 · fdC
+(0.0/ON) −1.2pp n.s. — **the loss channel convicted, the ECOLOGY EXONERATED** (fdC spans zero
+on all nine cells; teachers-as-opponents is safe, so double-sided defense stays available).
+**THE HEADLINE MECHANISM: pi_features rank = 12.50 at BOTH nonzero doses (identical to two
+decimals from separate arms) vs 21.87 at zero — ALL-OR-NOTHING. A tunable dose would grade;
+this switches. The coefficient is DEAD as a lever** (the session's own morning recommendation
+retracted by its own experiment — the right way). fdC ABOVE rev-1 on every capacity tap: +3M
+ordinary continuation EXPANDS representation; the distill loss is what collapses it. And the
+distillation CONVERGED CORRECTLY (KL 0.098→0.033, agreement →0.92) onto teachers measured
++9.2pp better — **successful optimization of the objective caused the damage: the OBJECTIVE is
+the wrong object.** Session hypothesis (endorsed, = the amortization gap made acute): matching
+three specialists pinned to disjoint team sets forces the student to average away conditional
+structure — AND the coverage numbers say most matched states carried NO teacher competence
+(t1_coverage 0.24, t2 0.12: the KL pulled toward narrower near-copies on states where they
+know nothing special). ORDERED — two more +3M arms to split the hypothesis:
+  **D** coef 1.0, ecology OFF, `--distill-team-bias 1.0` — distill ONLY on teacher-competence
+      states (the one-flag competence gate);
+  **E** coef 1.0, ecology OFF, SINGLE teacher (tock-1c alone, the strongest at +11.6) at
+      bias 1.0 — removes multi-teacher averaging on top of D's gate.
+Readings: D healthy+retains ⇒ WRONG-STATES convicted — tick-2 = competence-gated fold. D
+collapses but E healthy ⇒ MULTI-TEACHER averaging convicted — tick-2 folds serially/one
+teacher per fold. Both collapse ⇒ the KL-to-specialist form itself is wrong at any gating —
+redesign at the target level (advantage-weighted/disagreement-gated distill), the deep branch.
+Same arm meters (piloting 9 teams, capacity row, retention). No endofrun on A/B/C (none
+earned it; fdC's null needs no 40-min confirmation).
