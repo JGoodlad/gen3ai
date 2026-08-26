@@ -4576,3 +4576,21 @@ E ≫ D ⇒ (c) contributes. New candidate levers if (a) holds: TEMPERATURE-SOFT
 targets, advantage/disagreement-gated distill, and LONGER/OPPONENT-VARIED tocks (the "better
 tocks" branch partially returns — not for extraction, for DISTRIBUTION quality). Owner-credit:
 the second wrong claim this week exposed by a plain question (Baton Pass, now this).
+
+### 🔴 CORRECTION-OF-THE-CORRECTION (owner's memory right again; amends 3c12508's teacher-length claim, 2026-08-25)
+
+The "v8 teachers were long-trained (400M-step configs)" clause misread the argparse `--steps`
+TARGET as training length. Verified from checkpoints + original_command: all three v8 teachers
+forked from `ai_v8_04_distill_4teacher` (a deep ~276M-cumulative generalist) and trained
+**~9–20M steps each** (v8_06: 276→285M ≈ 9M; v8_09 →296M; v8_13 →290M) — the owner's memory
+(warm-fork from a deep generalist, ~10M-scale specialization, fork ≫ scratch) is exactly the
+record. So teacher TRAINING LENGTH differs from our tocks by only ~3–6×, not ~100×. **The
+narrowness hypothesis survives but its load-bearing leg moves to the training REGIME, not the
+length**: the v8 teachers exploited SLICES against varied opposition (pool-10/3-team slices,
+exploiter-bot-fraction era, chain-forked through a distill lineage), where our tocks trained
+vs ONE frozen stochastic snapshot as SOLE opponent — the purest possible overfitting target
+for a policy distribution. Candidate fix list reordered accordingly: (1) tock recipe = varied
+opponents (keep bots + pool fraction in exploiter training, as v8 did) and/or ≥9M budgets;
+(2) temperature-softened / advantage-gated targets; (3) the D/E exposure readings still
+arbitrate. Two owner-catches in one evening are now ledgered — the record self-corrects
+fastest when he reads it.
