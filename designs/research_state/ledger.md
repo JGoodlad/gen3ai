@@ -4633,3 +4633,24 @@ ran `--capacity-telemetry` — **nobody has read their capacity/* scalars**. Pre
 halfbatch trunk-gradient cosine degrades and canary recovery worsens in fdA/fdB (and tick-1)
 vs fdC's clean arm, tracking the collapse. The telemetry read is ORDERED (the instrument was
 built for exactly this and then forgotten in its first real incident — a lesson in itself).
+
+### 🧲 TELEMETRY TRIAGE (`88091ca`) — INTERFERENCE signature fires; the mechanism is settled enough to design against (2026-08-25 night)
+
+The forgotten capacity telemetry, finally read across tick-1 + the factorial arms vs fdC/rev-1:
+**the interference signature fires** — the KL-shaped trunk yields a measurably more internally
+inconsistent plain-PPO gradient (pooled Δ halfbatch-cosine **−0.030, p=0.001** in distill arms
+vs control), and the effect is **binary in coefficient (0.3 ≈ 1.0)** — matching the rank
+switch exactly. The canary/collapse half of the battery either did not fire or never sampled
+in these arms (an instrument-coverage gap on its first real case — noted for the telemetry's
+own docs, not fatal: the cosine half carried the verdict). COMPOSED with the sharpness probe:
+the mechanism is now **"an on-pin KL toward a GLOBALLY-different (not narrower) teacher policy
+fights PPO's own gradient in the shared trunk; the conflict — not the magnitude — does the
+damage."** Coefficient-scaling is unsupported by both instruments independently. The v8
+tension (more-diverged teachers folded fine) resolves under OBJECTIVE AGREEMENT: their
+teachers' differences pointed where PPO also wanted to go (better vs varied play); ours point
+at one frozen opponent's quirks that PPO contradicts everywhere else. TICK-2 DESIGN AXIS this
+selects: make the two objectives AGREE — either teachers whose gains generalize (longer/
+broader tocks — v8's shape, now for the RIGHT reason), or targets gated to where the teacher
+is verifiably better under the student's OWN experience (advantage-gated distill), or
+sequencing (distill-only phases, no simultaneous PPO on the same trunk). Awaiting D/E's relay
+to close the exposure/multi-teacher questions before the tick-2 spec.
