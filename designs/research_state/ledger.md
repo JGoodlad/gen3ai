@@ -4847,3 +4847,32 @@ needs a short fdB-config CALIBRATION probe first** (relaunch fdB's argv on curre
 `grad/distill_share` over ~50–100 train() calls, kill; that share is G1's matching target).
 Ordered to the training session with the G1/G2 argv essentials; arm F relaunch + transfer-gate
 rows already in flight from the morning orders.
+
+### 🚀 ARM F LIVE (two-phase) + TRANSFER GATE RUNNING — phase-2 interpretation ENDORSED; one near-miss caught by an assert (2026-08-26)
+
+**Arm F relaunched** (`ai_v9_45_fdF_p1` / `ai_v9_46_fdF_p2`, +1.5M each, two run dirs so phase 1's
+final survives for the capacity row): phase 1 = fdB's exact distill config with
+`--policy-grad-coef 0.0` (KL + critic, vf_coef untouched); phase 2 = **plain PPO** — distill coefs
+0.0, `--distill-teacher` KEPT so `--distill-team-bias 0.4` holds the team distribution constant
+across phases. **The phase-2 reading was the training session's interpretation call and it is
+ENDORSED as the design's own §5 pre-registration** (F-AMBIGUOUS = "recovery after the PPO resume";
+reversibility is the non-redundant question; distill-on phase 2 ≈ an fdB re-run). The coef-0
+teacher-kept refinement removes a piloting-meter confound neither wording had named. Registered
+decisive cell: phase-1 `pi_features` PR ~12.5–13.6 ⇒ **the KL corrupts alone** (no simultaneity
+needed); ~19.6–21.9 ⇒ **interference with the policy gradient is REQUIRED** (refs: rev-1 19.60 ·
+fdC 21.87 · every distilled arm 12.50–13.57).
+
+**Transfer gate running** (4 teachers + 2 shared reference arms, 800/arm, off-pin drawn with the
+sharpness probe's OFF_PIN_SEED so both instruments mean the same thing by "off-pin"). Registered:
+off-slice net ≈ on-slice net ⇒ SKILL; ≈ 0 ⇒ Nash-distance memorization (on-slice refs: +0.0825 /
++0.0875 / +0.1162 / +0.0875). **NEAR-MISS BANKED (instrument-defect taxonomy, derived-key family —
+third specimen after the coverage misread and the dH sign):** the pinned-team identifiers were
+ASSUMED to be `sha1(team_str)`; they are FILENAMES, and `_team_str()` strips while the loader does
+not — the exclusion set silently resolved 0/9, so "off-pin" could have CONTAINED the pinned teams,
+inverting the gate's meaning while looking healthy. Caught because an arithmetic check existed and
+fired (`assert hits == 9`); now asserted not assumed. The rule this re-proves: a derived key's
+convention is READ, never inferred — and every exclusion set gets a resolved-count assert.
+
+Both phases pool-seeded; Monitor + `:21` fallback cron carry the setsid rule and the phase-2 note.
+G1/G2 argvs already issued (with the fdB share-calibration step 0); ETA phase 1 ~08:40, transfer
+gate ~09:30, phase 2 ~10:20.
