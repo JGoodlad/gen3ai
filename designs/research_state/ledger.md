@@ -4935,3 +4935,14 @@ Ops: the chain n≥55 wait-forever defect (fdB's argv can only produce ~31 share
 third `pkill -f` self-kill (heredoc carries the literal path past the bracket trick — kill by
 explicit PID, standing). Arm F phase 1 formally VOID in the record; corrected `ai_v9_50_fdF_p1c`
 queued behind G2; `ai_v9_45` preserved as the entropy-dissolution specimen.
+
+### 🎯 G1 LAUNCHED — the discriminator is live (2026-08-26 10:15)
+
+Calibration closed at n=30: **dose target `grad/distill_share` = 0.2378** (median; halves 0.2419
+vs 0.2181, 9.8% apart — within tolerance; max 0.5537 is the warmup point, excluded by the median).
+Null-dose band [0.1189, 0.4756]. `ai_v9_48_G1_action_0826` launched per the design: fdB's
+teachers/coef, `--distill-target action --distill-topk 1 --distill-gate none`,
+`--rank-tripwire warn`, pool-seeded; null-dose check fires at 6 share points (~11:40). This is the
+week's load-bearing arm: same rows, same dose, only WHAT THE LOSS ASKS FOR changed. Registered
+bands: pi_features ~12.5–13.6 = form was never the lever; ~19–22 with retention ≥ 0 = the fold
+recipe is fixed.
