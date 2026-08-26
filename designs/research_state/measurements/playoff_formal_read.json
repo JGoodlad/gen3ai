@@ -1,0 +1,69 @@
+{
+  "cell": "search_dividend playoff mirror",
+  "date": "2026-08-25",
+  "source": "tmp/search_dividend/playoff_10s.jsonl (80 rows) + playoff_10s.log",
+  "code_worktree": "agent-a6c1260df535a67fc (post playoff-observability fixes)",
+  "checkpoint": "models/ai_v9_29_rev1_0823/final_model.zip",
+  "config": {
+    "arm": "playoff", "opponents": "self", "games": 40, "orientations": 2, "seed": 11,
+    "budget_s": 20.0, "budget_note": "registered 10 s; ratified deviation to 20 s (at 10 s realized R=3 < MIN_PAIRS=4 => 100% inconclusive by construction); file keeps the playoff_10s name",
+    "playoff_rollouts_cap": 12, "se_multiple": 2.0, "min_pairs": 4, "screen_margin": 0.023,
+    "max_depth": 1, "max_worlds": 1, "max_dice": 1,
+    "battle_timeout_s": 5400, "battle_idle_s": 180
+  },
+  "exclusion": {
+    "excluded_rows": ["g0/o1"],
+    "reason": "tainted v1 build-era game (pre-observability-fix): 17 playoff_error decisions / 204 failed pairs with fallback_details=[]; directionally neutral (all fall back to policy)",
+    "note": "g0/o0 also predates the fix but carried 0 errors and 0 failed pairs; retained. Excluding g0/o1 leaves g0 unpaired, so the paired estimate runs over 39 swap-pairs."
+  },
+  "headline_excluding_g0o1": {
+    "n_orientation_games": 79, "won": 35, "tied": 0,
+    "win_rate": 0.443,
+    "paired_win_rate": 0.4359, "paired_ci95": [0.362, 0.509], "n_pairs": 39, "unpaired_games": 1,
+    "null": 0.50, "null_excluded": false,
+    "decisions_total": 3314, "decisions_reaching_playoff_stage": 2710,
+    "screen_decisive": 425, "screen_decisive_rate": 0.1568,
+    "resolved_played": 52, "resolved_rate": 0.0192,
+    "inconclusive": 1911, "inconclusive_rate": 0.7052,
+    "error_zero_pairs": 322, "error_rate": 0.1188,
+    "settled_verdict_fraction": 0.176,
+    "changed_actions": 36, "changed_action_rate_of_all_decisions": 0.0109,
+    "changed_of_resolved": 0.692,
+    "realized_R_pairs_per_playoff": 10.14, "n_playoffs_ran": 1963,
+    "playoff_wall_s_per_ran": 15.22, "capped_rollouts": 114, "capped_rollout_rate": 0.0029
+  },
+  "headline_all_80": {
+    "win_rate": 0.450, "win_rate_ci95": [0.35, 0.56],
+    "paired_win_rate": 0.450, "paired_ci95": [0.37, 0.53], "n_pairs": 40,
+    "screen_decisive_rate": 0.1581, "resolved_rate": 0.0189,
+    "inconclusive_rate": 0.6999, "error_rate": 0.1232
+  },
+  "failed_pairs_diagnosis": {
+    "failed_pairs_all_80": 4068, "failed_pairs_excl_g0o1": 3864,
+    "identity": "failed_pairs == 12 * playoff_error_decisions on EVERY row (339*12=4068; zero deviations)",
+    "meaning": "failures are wholesale per-decision (all 12 pairs of an affected decision fail), never partial; no decision lost some pairs and concluded on the rest",
+    "error_decisions_all_80": 339, "error_decisions_excl_g0o1": 322,
+    "rows_affected": 13, "rows_affected_post_fix": 12,
+    "orientation_split": {"o0": 116, "o1": 223},
+    "causes_from_fallback_details": {
+      "bridge_no_progress_reject_loop": {"texts": 13, "example": "local_sim_bridge error: no-progress reject loop on p2: 9 consecutive refusals with no committed decision"},
+      "prefix_replay_decision_count_mismatch": {"texts": 4, "example": "prefix replay produced N decisions for a branch at index N - prefix_chunks and prefix_actions disagree"}
+    },
+    "census_caveat": "fallback_details caps at 3 unique texts/row, so cause counts are a sample, not a census; every post-fix error row carries >=1 text",
+    "direction": "error decisions fall back to the policy action => bias TOWARD the 0.50 null; the paired 0.436 is if anything conservative"
+  },
+  "screen_level_failures": {
+    "root_failed": 170, "prefix_gate_failed": 60, "search_error": 5,
+    "wholesale_games": ["g6/o1", "g8/o0", "g31/o1", "g36/o1"],
+    "blast_radius": "contained within each game; the following game is clean in all four cases"
+  },
+  "timeouts": {"occurred": 0, "max_game_wall_s": 1610.9, "backstop_s": 5400, "idle_s": 180,
+    "note": "zero timeout/idle-kill strings in either log; the known timeout->session-poison defect had no opportunity to fire"},
+  "n_playoff_reversed": {
+    "status": "endorsed post-cell schema addition; NOT derivable from shipped counters",
+    "nearest_proxy": "changed-vs-policy: 36 of 52 resolved playoffs (69%) played a non-policy action; the a1-vs-a2 (screen-pick reversal) split needs the new field"
+  },
+  "mirror_caveat": "opponents=self carries no ELO anchor; win rates read directly, never through the anchored-ELO fit",
+  "verdict": "HONEST NULL. At 20 s/decision a terminal-ground-truth playoff on top of the critic screen buys nothing measurable: ground truth refuses 70.5% of the critic's contested top-2 comparisons, settles only 1.9%, changes 1.1% of all decisions, and the paired mirror reads 0.436 [0.36, 0.51] - null not excluded. The harm of plain search is NEUTRALIZED (0.44-0.45 vs the plain arms' 0.19-0.33) but no dividend appears. Search stays PARKED behind critic calibration / R1; this read does not change that disposition.",
+  "total_cell_wall_h": 9.14
+}

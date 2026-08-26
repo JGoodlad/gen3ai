@@ -4709,3 +4709,26 @@ never all-clear. **OWNER ADJUDICATION ITEM #1 for morning: the doc formally cont
 decision D-F** ("always full-distribution, never hard actions", 2026-08-18) — made before the
 negative space existed; `--distill-topk` preserves part of D-F if wanted. Build blocked on the
 adjudication; arm-F's overnight verdict edits §3 as pre-registered.
+
+### 🎾 PLAYOFF FORMAL READ BANKED (`measurements/playoff_formal_read.md`) — honest NULL confirmed, failed-pairs diagnosed, cell closed (2026-08-25)
+
+The formal read confirms the preliminary entry and closes the cell. Headline (g0/o1 EXCLUDED per
+the pre-registered rule — the tainted v1 build-era game; its 17 playoff_error / 204 failed pairs
+are a pre-observability-fix artifact, directionally neutral): over 2,710 screened decisions,
+**screen_decisive 15.7% / resolved 1.9% / inconclusive 70.5% / error 11.9%**, paired
+**0.436 [0.362, 0.509]** over 39 swap-pairs (all-80: 0.450 [0.37, 0.53]) — null not excluded,
+point below it; only **1.1%** of all decisions changed. **failed_pairs=4068 DIAGNOSED**: on every
+row `n_playoff_failed == 12 × playoff_error` (zero deviations) — failures are WHOLESALE (an
+affected decision loses all 12 pairs; none concluded on a partial sweep), so the count is the 339
+error decisions ×12, not scattered pair loss; causes from the captured details = the bridge
+no-progress reject loop in the nested rollout (13/17 texts) + the prefix_chunks/prefix_actions
+branch mismatch (4/17); errors fall back to the policy ⇒ bias TOWARD null ⇒ 0.436 is
+conservative. Zero timeouts (backstops 5400/180 s held; longest game 1,611 s) — no poison
+exposure. Screen-session deaths in 4 games were contained within-game. `n_playoff_reversed`
+endorsed post-cell: NOT derivable from shipped counters (proxy: 36/52 resolved playoffs = 69%
+played a non-policy action, but that conflates endorse-vs-overturn of the screen). **Verdict: a
+terminal-ground-truth playoff at 20 s/decision buys nothing — harm neutralized (0.44–0.45 vs the
+plain arms' 0.19–0.33), no dividend; the bias verdict is confirmed by refusal.** Disposition
+UNCHANGED: search parked behind critic calibration/R1; playoff pattern stays the deployment
+template if search ever returns. The `agent-a6c1260df535a67fc` worktree may now be cleaned by the
+orchestrator.
