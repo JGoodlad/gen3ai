@@ -1,0 +1,400 @@
+{
+  "provenance": {
+    "generation": "tick-1 (gen-18 era)",
+    "run": "ai_v9_29_rev1_0823 + ai_v9_31_tock1_k4_0824 + ai_v9_36_tock1c_q6_0824",
+    "checkpoint": "final_model.zip (each); opponent = ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "step": "base 25M \u00b7 teachers base+3M \u00b7 opponent 24M",
+    "date": "2026-08-25",
+    "producer": "designs/research_state/measurements/teacher_sharpness_probe.py",
+    "note": "policy-distribution sharpness only \u2014 no outcome/ELO claim is made here",
+    "n_states": 5056
+  },
+  "meta": {
+    "base_run": "ai_v9_29_rev1_0823",
+    "opponent": "ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "teachers": {
+      "tock1a_k4": "ai_v9_31_tock1_k4_0824",
+      "tock1c_q6": "ai_v9_36_tock1c_q6_0824"
+    },
+    "pinned_teams": {
+      "tock1a_k4": [
+        "eccfe630ec08de27",
+        "023a2d47648b85e6",
+        "8e768980fc8f3b5f",
+        "710d8d529538ff90"
+      ],
+      "tock1c_q6": [
+        "9eb3abdc52876a63",
+        "e0d97b0ed592889d"
+      ]
+    },
+    "battles_per_cell": 10,
+    "impl": "rust",
+    "device": "cpu",
+    "n_off_pin_teams": 6,
+    "off_pin_seed": 20260825,
+    "arch_signature": "gen3_critic_route_wave_v1"
+  },
+  "cells": {
+    "tock1a_k4|on_pin|pilot=base": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 462,
+        "n_forced": 9,
+        "mean_n_legal": 6.611,
+        "mean_entropy_nats": 0.841,
+        "median_entropy_nats": 0.8807,
+        "eff_n_actions": 2.568,
+        "entropy_frac_of_uniform": 0.4671,
+        "top1_median": 0.6591,
+        "top1_p90": 0.9739,
+        "top1_over_0p9_frac": 0.2009
+      },
+      "base": {
+        "n_states": 462,
+        "n_forced": 9,
+        "mean_n_legal": 6.611,
+        "mean_entropy_nats": 0.78,
+        "median_entropy_nats": 0.8268,
+        "eff_n_actions": 2.391,
+        "entropy_frac_of_uniform": 0.4295,
+        "top1_median": 0.7011,
+        "top1_p90": 0.9804,
+        "top1_over_0p9_frac": 0.2208
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0611,
+        "delta_entropy_ci95": [
+          0.0035,
+          0.1367
+        ],
+        "delta_top1": -0.0421,
+        "delta_top1_ci95": [
+          -0.0819,
+          -0.0104
+        ],
+        "kl_teacher_base": 0.4529,
+        "kl_teacher_base_ci95": [
+          0.3831,
+          0.5369
+        ],
+        "n_scored": 453
+      }
+    },
+    "tock1a_k4|on_pin|pilot=teacher": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 540,
+        "n_forced": 13,
+        "mean_n_legal": 6.522,
+        "mean_entropy_nats": 0.7877,
+        "median_entropy_nats": 0.7974,
+        "eff_n_actions": 2.421,
+        "entropy_frac_of_uniform": 0.4405,
+        "top1_median": 0.7026,
+        "top1_p90": 0.974,
+        "top1_over_0p9_frac": 0.2277
+      },
+      "base": {
+        "n_states": 540,
+        "n_forced": 13,
+        "mean_n_legal": 6.522,
+        "mean_entropy_nats": 0.7118,
+        "median_entropy_nats": 0.7328,
+        "eff_n_actions": 2.23,
+        "entropy_frac_of_uniform": 0.3983,
+        "top1_median": 0.7386,
+        "top1_p90": 0.9891,
+        "top1_over_0p9_frac": 0.2676
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0759,
+        "delta_entropy_ci95": [
+          0.0422,
+          0.1099
+        ],
+        "delta_top1": -0.0386,
+        "delta_top1_ci95": [
+          -0.0521,
+          -0.0263
+        ],
+        "kl_teacher_base": 0.4756,
+        "kl_teacher_base_ci95": [
+          0.3976,
+          0.5512
+        ],
+        "n_scored": 527
+      }
+    },
+    "tock1a_k4|off_pin|pilot=base": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 745,
+        "n_forced": 20,
+        "mean_n_legal": 6.601,
+        "mean_entropy_nats": 0.8105,
+        "median_entropy_nats": 0.8361,
+        "eff_n_actions": 2.491,
+        "entropy_frac_of_uniform": 0.4461,
+        "top1_median": 0.689,
+        "top1_p90": 0.9733,
+        "top1_over_0p9_frac": 0.2234
+      },
+      "base": {
+        "n_states": 745,
+        "n_forced": 20,
+        "mean_n_legal": 6.601,
+        "mean_entropy_nats": 0.7891,
+        "median_entropy_nats": 0.8016,
+        "eff_n_actions": 2.453,
+        "entropy_frac_of_uniform": 0.4364,
+        "top1_median": 0.7079,
+        "top1_p90": 0.9807,
+        "top1_over_0p9_frac": 0.2428
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0214,
+        "delta_entropy_ci95": [
+          -0.0376,
+          0.0873
+        ],
+        "delta_top1": -0.0091,
+        "delta_top1_ci95": [
+          -0.037,
+          0.0157
+        ],
+        "kl_teacher_base": 0.4088,
+        "kl_teacher_base_ci95": [
+          0.3513,
+          0.4761
+        ],
+        "n_scored": 725
+      }
+    },
+    "tock1a_k4|off_pin|pilot=teacher": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 887,
+        "n_forced": 6,
+        "mean_n_legal": 6.62,
+        "mean_entropy_nats": 0.8022,
+        "median_entropy_nats": 0.8068,
+        "eff_n_actions": 2.494,
+        "entropy_frac_of_uniform": 0.4367,
+        "top1_median": 0.6912,
+        "top1_p90": 0.9765,
+        "top1_over_0p9_frac": 0.2554
+      },
+      "base": {
+        "n_states": 887,
+        "n_forced": 6,
+        "mean_n_legal": 6.62,
+        "mean_entropy_nats": 0.7579,
+        "median_entropy_nats": 0.7807,
+        "eff_n_actions": 2.408,
+        "entropy_frac_of_uniform": 0.4091,
+        "top1_median": 0.7275,
+        "top1_p90": 0.984,
+        "top1_over_0p9_frac": 0.3031
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0443,
+        "delta_entropy_ci95": [
+          -0.0241,
+          0.1189
+        ],
+        "delta_top1": -0.0213,
+        "delta_top1_ci95": [
+          -0.054,
+          0.0094
+        ],
+        "kl_teacher_base": 0.3598,
+        "kl_teacher_base_ci95": [
+          0.2923,
+          0.42
+        ],
+        "n_scored": 881
+      }
+    },
+    "tock1c_q6|on_pin|pilot=base": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 471,
+        "n_forced": 4,
+        "mean_n_legal": 6.991,
+        "mean_entropy_nats": 0.6637,
+        "median_entropy_nats": 0.6846,
+        "eff_n_actions": 2.125,
+        "entropy_frac_of_uniform": 0.3535,
+        "top1_median": 0.7565,
+        "top1_p90": 0.9899,
+        "top1_over_0p9_frac": 0.3169
+      },
+      "base": {
+        "n_states": 471,
+        "n_forced": 4,
+        "mean_n_legal": 6.991,
+        "mean_entropy_nats": 0.6254,
+        "median_entropy_nats": 0.6012,
+        "eff_n_actions": 2.092,
+        "entropy_frac_of_uniform": 0.3368,
+        "top1_median": 0.8063,
+        "top1_p90": 0.9958,
+        "top1_over_0p9_frac": 0.4069
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0384,
+        "delta_entropy_ci95": [
+          0.0001,
+          0.0787
+        ],
+        "delta_top1": -0.018,
+        "delta_top1_ci95": [
+          -0.0405,
+          0.0007
+        ],
+        "kl_teacher_base": 0.4311,
+        "kl_teacher_base_ci95": [
+          0.3646,
+          0.5073
+        ],
+        "n_scored": 467
+      }
+    },
+    "tock1c_q6|on_pin|pilot=teacher": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 526,
+        "n_forced": 4,
+        "mean_n_legal": 6.948,
+        "mean_entropy_nats": 0.7353,
+        "median_entropy_nats": 0.7442,
+        "eff_n_actions": 2.302,
+        "entropy_frac_of_uniform": 0.3895,
+        "top1_median": 0.724,
+        "top1_p90": 0.9797,
+        "top1_over_0p9_frac": 0.2778
+      },
+      "base": {
+        "n_states": 526,
+        "n_forced": 4,
+        "mean_n_legal": 6.948,
+        "mean_entropy_nats": 0.6669,
+        "median_entropy_nats": 0.6459,
+        "eff_n_actions": 2.144,
+        "entropy_frac_of_uniform": 0.3562,
+        "top1_median": 0.7875,
+        "top1_p90": 0.9865,
+        "top1_over_0p9_frac": 0.3161
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0684,
+        "delta_entropy_ci95": [
+          0.0266,
+          0.0979
+        ],
+        "delta_top1": -0.036,
+        "delta_top1_ci95": [
+          -0.053,
+          -0.014
+        ],
+        "kl_teacher_base": 0.4594,
+        "kl_teacher_base_ci95": [
+          0.3637,
+          0.5582
+        ],
+        "n_scored": 522
+      }
+    },
+    "tock1c_q6|off_pin|pilot=base": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 686,
+        "n_forced": 26,
+        "mean_n_legal": 6.63,
+        "mean_entropy_nats": 0.7846,
+        "median_entropy_nats": 0.8006,
+        "eff_n_actions": 2.416,
+        "entropy_frac_of_uniform": 0.4318,
+        "top1_median": 0.7103,
+        "top1_p90": 0.9716,
+        "top1_over_0p9_frac": 0.2439
+      },
+      "base": {
+        "n_states": 686,
+        "n_forced": 26,
+        "mean_n_legal": 6.63,
+        "mean_entropy_nats": 0.7431,
+        "median_entropy_nats": 0.7532,
+        "eff_n_actions": 2.309,
+        "entropy_frac_of_uniform": 0.4128,
+        "top1_median": 0.7224,
+        "top1_p90": 0.9802,
+        "top1_over_0p9_frac": 0.2515
+      },
+      "paired": {
+        "delta_entropy_nats": 0.0415,
+        "delta_entropy_ci95": [
+          -0.0164,
+          0.1152
+        ],
+        "delta_top1": -0.0113,
+        "delta_top1_ci95": [
+          -0.0405,
+          0.014
+        ],
+        "kl_teacher_base": 0.3569,
+        "kl_teacher_base_ci95": [
+          0.2939,
+          0.4161
+        ],
+        "n_scored": 660
+      }
+    },
+    "tock1c_q6|off_pin|pilot=teacher": {
+      "n_battles": 10,
+      "teacher": {
+        "n_states": 739,
+        "n_forced": 4,
+        "mean_n_legal": 6.381,
+        "mean_entropy_nats": 0.8799,
+        "median_entropy_nats": 0.9492,
+        "eff_n_actions": 2.671,
+        "entropy_frac_of_uniform": 0.4931,
+        "top1_median": 0.6478,
+        "top1_p90": 0.9738,
+        "top1_over_0p9_frac": 0.2
+      },
+      "base": {
+        "n_states": 739,
+        "n_forced": 4,
+        "mean_n_legal": 6.381,
+        "mean_entropy_nats": 0.7796,
+        "median_entropy_nats": 0.8233,
+        "eff_n_actions": 2.433,
+        "entropy_frac_of_uniform": 0.44,
+        "top1_median": 0.7145,
+        "top1_p90": 0.988,
+        "top1_over_0p9_frac": 0.2748
+      },
+      "paired": {
+        "delta_entropy_nats": 0.1003,
+        "delta_entropy_ci95": [
+          0.0042,
+          0.2139
+        ],
+        "delta_top1": -0.0425,
+        "delta_top1_ci95": [
+          -0.0936,
+          -0.0013
+        ],
+        "kl_teacher_base": 0.4204,
+        "kl_teacher_base_ci95": [
+          0.3433,
+          0.51
+        ],
+        "n_scored": 735
+      }
+    }
+  }
+}
