@@ -443,6 +443,18 @@ Arm F is a **pure-distill phase** (KL only, PPO off) followed by a PPO resume: i
 alone corrupts the trunk"* from *"KL × PPO simultaneous conflict corrupts the trunk."* Its outcome
 does not change whether this design proceeds — it changes which rungs matter.
 
+**⚠️ THE SUBTRACTION RULE (2026-08-26, learned live):** *a coefficient that removes one term does
+not isolate the term you kept — it isolates everything else, including terms that were only safe
+because the removed term opposed them.* The first fdF phase 1 ran `--policy-grad-coef 0` with
+`--ent-coef 0.02` still live: the entropy bonus, unopposed, drove the policy toward uniform
+(entropy 0.892 → 1.354, +52% and climbing; the two teams outside every teacher's slice fell to
+3.7%/10.0% win rates — dissolution, not transfer), and since entropy maximisation mechanically
+lowers effective rank, the arm's decisive capacity cell (12.99, squarely in the collapsed band)
+became unreadable — consistent with both hypotheses at once. **Phase 1 therefore requires
+`--ent-coef 0` beside `--policy-grad-coef 0`**, and phase 2 must fork the CORRECTED phase 1.
+Standing requirement for every future "turn off X" arm: **enumerate what X was holding in check
+before launch** — here the entropy bonus; `--vf-coef` would have the same character.
+
 ### 5.1 F-CLEAN — the trunk survives the KL-only phase and PPO resumes healthily
 
 **Reading:** simultaneity is the culprit. The objective-agreement frame is *confirmed* and gains a

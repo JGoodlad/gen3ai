@@ -4876,3 +4876,27 @@ convention is READ, never inferred — and every exclusion set gets a resolved-c
 Both phases pool-seeded; Monitor + `:21` fallback cron carry the setsid rule and the phase-2 note.
 G1/G2 argvs already issued (with the fdB share-calibration step 0); ETA phase 1 ~08:40, transfer
 gate ~09:30, phase 2 ~10:20.
+
+### 🛑 ARM F PHASE 1 CONFOUNDED AND VOIDED — the SUBTRACTION RULE minted; rerun ordered post-G1 (2026-08-26)
+
+The training session caught it before reporting: `--policy-grad-coef 0` left `--ent-coef 0.02`
+UNOPPOSED, so phase 1 was not "KL alone" but "KL + entropy maximisation" — entropy 0.892 → 1.354
+(+52%, monotone; fdB flat at ±3%), and the fingerprint is decisive: the seven teacher-slice teams
+(KL-anchored) took survivable −3 to −12pp, while Q6a/Q6b — the two teams NO teacher covers, where
+nothing opposed the bonus — dissolved to 3.7%/10.0% win rates. The capacity cell (pi_features
+12.99, squarely in the collapsed band) is UNREADABLE: entropy maximisation mechanically lowers
+rank on its own, so the cell is consistent with both hypotheses. **The registered decisive read is
+NOT answered and was not reported as if it were** — the honest-stop discipline holding for the
+second time in two days. **DECISION (this session's call, scheduling-tier): option (b)** — rerun
+phase 1 with `--ent-coef 0` beside `--policy-grad-coef 0` AFTER G1/G2 take the GPU (calibration
+owns it to ~13:00; the corrected phase 1 costs ~1h whenever); phase 2 UNLAUNCHED, must fork the
+CORRECTED phase 1 (forking the dissolved model would measure recovery from the wrong damage).
+**THE SUBTRACTION RULE banked into design §5** (standing requirement): a coefficient that removes
+one term isolates everything ELSE — every future "turn off X" arm enumerates what X was holding in
+check before launch. **One incidental observation, carefully bounded:** the confound accidentally
+showed the KL ANCHORS the policy on covered teams (−3–12pp vs −51pp uncovered) — the channel does
+transmit teacher behavior on-pin; it is the trunk cost, not the transmission, that fails. Do not
+over-read: this is a byproduct of a voided arm, not a measurement. Unaffected and running:
+calibration (n=6, median grad/distill_share 0.2509 — G1's dose target forming), transfer gate
+(reference arms done, teacher arms in progress). Voided-arm run dirs: `ai_v9_45_fdF_p1_0826`
+(26,640,624 steps, mechanically clean, wrong experiment).
