@@ -101,8 +101,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         The sequence, per minibatch:
 
           1. `loss = pg_term + ent_coef * ent_loss_used + vf_term`   (the upstream PPO loss;
-             `pg_term` is the UNSCALED `policy_loss` tensor at `pg_coef == 1.0` — the default,
-             byte-identical to upstream — else `pg_coef * policy_loss` (`--pg-coef`; 0.0 removes
+             `pg_term` is the UNSCALED `policy_loss` tensor at `policy_grad_coef == 1.0` — the default,
+             byte-identical to upstream — else `policy_grad_coef * policy_loss` (`--policy-grad-coef`; 0.0 removes
              the policy-gradient term alone, the arm-F pure-distill/aux phase — entropy and the
              value term keep their own coefficients). `_value_loss_from_se` is the only other
              delta, and at `value_tail_weight == 0` it is `F.mse_loss` byte-for-byte)
@@ -260,12 +260,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             distill_on and isinstance(_buf_obs, dict) and "distill_mask" in _buf_obs
             and float(np.max(_buf_obs["distill_mask"])) >= 1.0
         )
-        # +PG-COEF (gen3_pg_coef_v1, `--pg-coef`): the PPO policy-gradient term's own weight.
+        # +PG-COEF (gen3_policy_grad_coef_v1, `--policy-grad-coef`): the PPO policy-gradient term's own weight.
         # 1.0 (default) takes the UNSCALED `policy_loss` tensor — the loss expression is then
         # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone (the
         # arm-F pure-distill/aux phase). Scales ONLY `policy_loss` — entropy and the value term
         # keep their own coefficients (`ent_coef`, `vf_coef`).
-        pg_coef = float(getattr(self, "pg_coef", 1.0))
+        policy_grad_coef = float(getattr(self, "policy_grad_coef", 1.0))
         # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
         # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
         # byte-identical to today). See `_td_aux_term`.
@@ -465,11 +465,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the CE below at vf_coef is the critic). value_loss is still logged as the
                 # E[Z]-mean-vs-return diagnostic. Off → the standard vf_coef·MSE term.
                 _vf_term = 0.0 if value_from_dist else self.vf_coef * value_loss
-                # +PG-COEF: at 1.0 (the default) `_pg_term` IS the `policy_loss` tensor, so the
+                # +PG-COEF: at 1.0 (the default) `_policy_grad_term` IS the `policy_loss` tensor, so the
                 # line below is literally the old `loss = policy_loss + …` expression —
                 # byte-identical. Any other value scales ONLY the policy-gradient term.
-                _pg_term = policy_loss if pg_coef == 1.0 else pg_coef * policy_loss
-                loss = _pg_term + self.ent_coef * ent_loss_used + _vf_term
+                _policy_grad_term = policy_loss if policy_grad_coef == 1.0 else policy_grad_coef * policy_loss
+                loss = _policy_grad_term + self.ent_coef * ent_loss_used + _vf_term
 
                 # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
@@ -1080,9 +1080,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # rather than suppressing the whole probe (the cf escape's reason).
                         and (not distill_rows_in_buffer or distill_term is not None)):
                     grad_balance = grad_balance_metrics(
-                        # +PG-COEF: the probe measures the terms AS FOLDED — `_pg_term`, not the
+                        # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
                         # raw `policy_loss` (at the 1.0 default they are the same tensor).
-                        _pg_term + self.ent_coef * entropy_loss,
+                        _policy_grad_term + self.ent_coef * entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
                         # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
                         (value_dist_term if (value_from_dist and value_dist_term is not None)

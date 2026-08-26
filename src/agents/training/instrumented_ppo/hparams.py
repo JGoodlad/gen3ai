@@ -38,7 +38,7 @@ class PpoHyperparameters:
     # of the worst value misses — see _value_loss_from_se.
     value_tail_weight: float = 0.0
 
-    # POLICY-GRADIENT term weight (gen3_pg_coef_v1, `--pg-coef`). Multiplies ONLY `policy_loss`
+    # POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1, `--policy-grad-coef`). Multiplies ONLY `policy_loss`
     # (the clipped PPO surrogate) in the loss fold — never entropy, never the value term, never
     # any aux. 1.0 (default) takes the UNSCALED `policy_loss` tensor itself, so the loss
     # expression is byte-identical to upstream; 0.0 removes the policy-gradient contribution
@@ -46,7 +46,7 @@ class PpoHyperparameters:
     # TRAINING-only (scales a loss, never a forward pass) -> NOT version-locked / NOT in
     # check_compatible; recorded on ModelVersion for provenance + flagless-resume read-back,
     # like td_aux_coef.
-    pg_coef: float = 1.0
+    policy_grad_coef: float = 1.0
 
     # Set by train_rl_agent after construction (like value_tail_weight). The hidden-opponent belief
     # aux-loss coefficient: opp_belief_aux_coef * (species_CE + moves_weight·moves_BCE) over the

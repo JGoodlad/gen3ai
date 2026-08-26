@@ -1824,16 +1824,16 @@ def test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_C
 
 
 # ---------------------------------------------------------------------------------------------
-# gen3_pg_coef_v1 (--pg-coef): the policy-gradient term's own weight.
+# gen3_policy_grad_coef_v1 (--policy-grad-coef): the policy-gradient term's own weight.
 # Provenance genre (recorded / _resolve-inherited / never gated) is pinned in
-# agents/model/pg_coef_provenance_test.py; here is the loss-fold behavior itself.
+# agents/model/policy_grad_coef_provenance_test.py; here is the loss-fold behavior itself.
 # ---------------------------------------------------------------------------------------------
 
-def test_pg_coef_class_default_is_one():
-    assert InstrumentedMaskablePPO.pg_coef == 1.0
+def test_policy_grad_coef_class_default_is_one():
+    assert InstrumentedMaskablePPO.policy_grad_coef == 1.0
 
 
-def test_pg_coef_one_short_circuits_to_the_unscaled_policy_loss():
+def test_policy_grad_coef_one_short_circuits_to_the_unscaled_policy_loss():
     """The byte-identity claim, pinned at the SOURCE: at the 1.0 default the fold takes the
     `policy_loss` tensor ITSELF (not `1.0 * policy_loss`, a new graph node), so the loss
     expression is literally the pre-flag `loss = policy_loss + …` — identical bits, identical
@@ -1841,13 +1841,13 @@ def test_pg_coef_one_short_circuits_to_the_unscaled_policy_loss():
     import inspect
 
     src = inspect.getsource(InstrumentedMaskablePPO.train)
-    assert "_pg_term = policy_loss if pg_coef == 1.0 else pg_coef * policy_loss" in src, (
-        "the 1.0 short-circuit is gone — --pg-coef's default is no longer structurally "
+    assert "_policy_grad_term = policy_loss if policy_grad_coef == 1.0 else policy_grad_coef * policy_loss" in src, (
+        "the 1.0 short-circuit is gone — --policy-grad-coef's default is no longer structurally "
         "byte-identical to upstream")
 
 
-def test_pg_coef_zero_removes_exactly_the_policy_gradient():
-    """pg_coef=0 (with ent_coef=0, the tiny harness default): the parameters reached ONLY by the
+def test_policy_grad_coef_zero_removes_exactly_the_policy_gradient():
+    """policy_grad_coef=0 (with ent_coef=0, the tiny harness default): the parameters reached ONLY by the
     policy-gradient term — the action head and the mlp extractor's policy branch — are
     BIT-unchanged from init (their gradients are exactly zero, and Adam's zero-state step on a
     zero gradient is exactly zero), while the value path keeps training. That is the arm-F
@@ -1857,7 +1857,7 @@ def test_pg_coef_zero_removes_exactly_the_policy_gradient():
     init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
     model.learn(total_timesteps=8 * 4)
 
-    model.pg_coef = 0.0
+    model.policy_grad_coef = 0.0
     after = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
 
     policy_only = [k for k in after
@@ -1867,12 +1867,12 @@ def test_pg_coef_zero_removes_exactly_the_policy_gradient():
     assert policy_only and value_side, "policy layout drifted — fix the prefixes"
     for k in policy_only:
         assert th.equal(after[k], init_sd[k]), (
-            f"pg_coef=0 still moved {k} — the policy-gradient term was not exactly removed")
+            f"policy_grad_coef=0 still moved {k} — the policy-gradient term was not exactly removed")
     assert any(not th.equal(after[k], init_sd[k]) for k in value_side), (
-        "pg_coef=0 froze the value path too — it must scale ONLY policy_loss")
+        "policy_grad_coef=0 froze the value path too — it must scale ONLY policy_loss")
 
 
-def test_pg_coef_between_zero_and_one_is_live():
+def test_policy_grad_coef_between_zero_and_one_is_live():
     """A non-default value must actually reach the fold — 0.5 produces a different update than
     the 1.0 default on the same init/data/seed."""
     model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
@@ -1881,10 +1881,10 @@ def test_pg_coef_between_zero_and_one_is_live():
     model.learn(total_timesteps=8 * 4)
 
     base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
-    model.pg_coef = 0.5
+    model.policy_grad_coef = 0.5
     scaled = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
     assert any(not th.equal(base[k], scaled[k]) for k in base), (
-        "pg_coef=0.5 left every parameter unchanged — the coefficient never reached the loss")
+        "policy_grad_coef=0.5 left every parameter unchanged — the coefficient never reached the loss")
 
 
 # ---------------------------------------------------------------------------------------------

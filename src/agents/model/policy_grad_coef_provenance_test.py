@@ -1,6 +1,6 @@
-"""Gates for `gen3_pg_coef_v1` (config v102) — the policy-gradient term's own weight.
+"""Gates for `gen3_policy_grad_coef_v1` (config v102) — the policy-gradient term's own weight.
 
-`--pg-coef` multiplies ONLY the clipped PPO surrogate (`pg_coef * policy_loss`) in the loss
+`--policy-grad-coef` multiplies ONLY the clipped PPO surrogate (`policy_grad_coef * policy_loss`) in the loss
 fold; 1.0 (the default) is the upstream expression byte-for-byte and 0.0 is the arm-F
 pure-distill/aux phase the flag exists for. It is the `td_aux_coef` provenance genre exactly:
 TRAINING-only, recorded on `ModelVersion` for provenance, `_resolve`-inherited on a flagless
@@ -48,7 +48,7 @@ def test_the_cli_flag_defaults_to_none_so_a_flagless_resume_can_inherit():
     the value the run is already training with, on every 3-hour launcher restart."""
     from main.train.parser import build_parser
 
-    assert build_parser().parse_args([]).pg_coef is None
+    assert build_parser().parse_args([]).policy_grad_coef is None
 
 
 def test_the_flag_has_a_resolve_line():
@@ -58,15 +58,15 @@ def test_the_flag_has_a_resolve_line():
     from main.train.config import resolve_config
 
     names = set(re.findall(r"_resolve\(\s*\"([a-z0-9_]+)\"", inspect.getsource(resolve_config)))
-    assert "pg_coef" in names, (
-        "no `_resolve('pg_coef', ...)` in resolve_config — a flagless resume will not inherit it")
+    assert "policy_grad_coef" in names, (
+        "no `_resolve('policy_grad_coef', ...)` in resolve_config — a flagless resume will not inherit it")
 
 
 def test_the_flag_still_parses_an_explicit_value():
     from main.train.parser import build_parser
 
-    assert build_parser().parse_args(["--pg-coef", "0.0"]).pg_coef == 0.0
-    assert build_parser().parse_args(["--pg-coef", "0.5"]).pg_coef == 0.5
+    assert build_parser().parse_args(["--policy-grad-coef", "0.0"]).policy_grad_coef == 0.0
+    assert build_parser().parse_args(["--policy-grad-coef", "0.5"]).policy_grad_coef == 0.5
 
 
 def test_a_negative_value_is_refused():
@@ -78,7 +78,7 @@ def test_a_negative_value_is_refused():
     parser = build_parser()
     # `--use-bridge node`: keep resolve_config from touching the rust sim_bridge binary
     # (the checkpoint_cadence_test convention); irrelevant to the coefficient under test.
-    args = parser.parse_args(["--pg-coef", "-0.5", "--steps", "1", "--use-bridge", "node"])
+    args = parser.parse_args(["--policy-grad-coef", "-0.5", "--steps", "1", "--use-bridge", "node"])
     with pytest.raises(SystemExit):
         resolve_config(args, parser)
 
@@ -87,15 +87,15 @@ def test_a_negative_value_is_refused():
 
 def test_the_field_is_recorded_and_round_trips(layout):
     v = ModelVersion.from_layout_and_policy_kwargs(
-        layout, {"net_arch": [512, 512]}, pg_coef=_OTHER)
-    assert getattr(v, "pg_coef") == _OTHER
-    assert getattr(ModelVersion(**json.loads(v.to_json())), "pg_coef") == _OTHER
+        layout, {"net_arch": [512, 512]}, policy_grad_coef=_OTHER)
+    assert getattr(v, "policy_grad_coef") == _OTHER
+    assert getattr(ModelVersion(**json.loads(v.to_json())), "policy_grad_coef") == _OTHER
 
 
 def test_it_is_a_model_version_field_with_the_upstream_default():
     fields = {f.name: f for f in dataclasses.fields(ModelVersion)}
-    assert "pg_coef" in fields, "pg_coef is not a ModelVersion field"
-    assert fields["pg_coef"].default == _DEFAULT
+    assert "policy_grad_coef" in fields, "policy_grad_coef is not a ModelVersion field"
+    assert fields["policy_grad_coef"].default == _DEFAULT
 
 
 def test_it_is_not_gated_by_check_compatible(layout):
@@ -103,7 +103,7 @@ def test_it_is_not_gated_by_check_compatible(layout):
     would be a false rejection that breaks league play."""
     pk = {"net_arch": [512, 512]}
     a = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
-    b = ModelVersion.from_layout_and_policy_kwargs(layout, pk, pg_coef=_OTHER)
+    b = ModelVersion.from_layout_and_policy_kwargs(layout, pk, policy_grad_coef=_OTHER)
     a.check_compatible(b)
     b.check_compatible(a)
 
@@ -115,14 +115,14 @@ def test_a_pre_v102_config_migrates_to_upstream_one(layout):
     pre-v102 run, so 1.0 is what every such run trained with."""
     v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
     old = json.loads(v.to_json())
-    old.pop("pg_coef")
+    old.pop("policy_grad_coef")
     old["config_version"] = 101
 
     migrated = _migrate_config(old)
     # `>= 102`, not `== 102` (the cf-family lesson): the property is that a pre-v102 config
     # lands on the LIVE version with this field defaulted, whatever the live version is.
     assert migrated["config_version"] == MODEL_CONFIG_VERSION >= 102
-    assert migrated["pg_coef"] == _DEFAULT
+    assert migrated["policy_grad_coef"] == _DEFAULT
     ModelVersion(**migrated)   # `cls(**data)` must not TypeError
 
 
@@ -130,6 +130,6 @@ def test_a_recorded_value_survives_the_migration_untouched(layout):
     """`setdefault`, not assignment — an arm-F config carrying 0.0 must not be reset to 1.0 by
     the branch that exists to help pre-v102 ones."""
     v = ModelVersion.from_layout_and_policy_kwargs(
-        layout, {"net_arch": [512, 512]}, pg_coef=_OTHER)
+        layout, {"net_arch": [512, 512]}, policy_grad_coef=_OTHER)
     migrated = _migrate_config(json.loads(v.to_json()))
-    assert migrated["pg_coef"] == _OTHER
+    assert migrated["policy_grad_coef"] == _OTHER

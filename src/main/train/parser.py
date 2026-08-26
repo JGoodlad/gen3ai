@@ -1150,9 +1150,9 @@ def build_parser() -> argparse.ArgumentParser:
                              "(not version-locked; inherited on a flagless resume). Costs one extra "
                              "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
                              "td_aux/resid_mean stay near 0.")
-    parser.add_argument("--pg-coef", "--pg_coef", dest="pg_coef",
+    parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
-                        help="POLICY-GRADIENT term weight (gen3_pg_coef_v1): multiplies ONLY the "
+                        help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "
                              "clipped PPO surrogate `policy_loss` in the loss fold — never entropy "
                              "(--ent-coef), never the value term (--vf-coef), never any aux/distill "
                              "coefficient. Default 1.0 = the upstream expression, byte-identical "

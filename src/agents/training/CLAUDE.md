@@ -27,7 +27,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 in one module because the ORDER the terms are folded in is straight-line source order, and that is
 only checkable by reading while it stays one straight line. Per minibatch:
 
-1. the upstream PPO loss (`pg_coef·policy_loss + ent_coef·entropy + vf_term` — `--pg-coef`
+1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
    scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
    `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
    term alone — the arm-F pure-distill/aux phase. Training-only, the `td_aux_coef` provenance

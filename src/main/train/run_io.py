@@ -71,7 +71,7 @@ def _model_hparams(model) -> dict:
         "hp_type_belief_coef": float(getattr(model, "hp_type_belief_coef", 0.0)),
         "item_belief_coef": float(getattr(model, "item_belief_coef", 0.0)),
         "td_aux_coef": float(getattr(model, "td_aux_coef", 0.0)),
-        "pg_coef": float(getattr(model, "pg_coef", 1.0)),
+        "policy_grad_coef": float(getattr(model, "policy_grad_coef", 1.0)),
         "intent_label_bot_weight": float(getattr(model, "intent_label_bot_weight", 1.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),

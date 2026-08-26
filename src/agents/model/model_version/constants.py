@@ -103,8 +103,8 @@ from typing import Any, Dict
 #   A pre-v101 config defaults each to its ARGPARSE default (not a guess: the fields did not
 #   exist). No ARCH_SIGNATURE bump — the canary head is owned by the PPO object, not the
 #   extractor, so no state_dict key and no forward changes.
-# v102 (gen3_pg_coef_v1): `pg_coef` — the weight on the PPO POLICY-GRADIENT term itself
-#   (`pg_coef * policy_loss`; scales ONLY the clipped surrogate — never entropy, never the value
+# v102 (gen3_policy_grad_coef_v1): `policy_grad_coef` — the weight on the PPO POLICY-GRADIENT term itself
+#   (`policy_grad_coef * policy_loss`; scales ONLY the clipped surrogate — never entropy, never the value
 #   term, never an aux). A TRAINING-only loss coefficient, the td_aux_coef class exactly: recorded
 #   for provenance and for flagless-resume read-back, never gated. 1.0 = the upstream expression
 #   (byte-identical — the unscaled tensor is used); 0.0 = arm F's pure-distill/aux phase, the

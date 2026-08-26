@@ -243,7 +243,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like win_prob_coef)
-    _resolve("pg_coef", 1.0)                   # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
+    _resolve("policy_grad_coef", 1.0)                   # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
@@ -415,11 +415,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
         # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
         parser.error("--td-aux-coef must be >= 0 (0 = off)")
-    if args.pg_coef is not None and args.pg_coef < 0.0:
+    if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
-        # 0.0 (arm F's pure-distill/aux phase) is the intended floor. pg_coef is training-only
+        # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only
         # (not version-locked), so guard it here — the only gate.
-        parser.error("--pg-coef must be >= 0 (1 = upstream PPO; 0 = no policy-gradient term)")
+        parser.error("--policy-grad-coef must be >= 0 (1 = upstream PPO; 0 = no policy-gradient term)")
     if args.intent_label_bot_weight is not None and args.intent_label_bot_weight < 0.0:
         # A negative weight would train alpha/beta to be MAXIMALLY wrong about bots — the opposite
         # of "train on them less". 0.0 (ignore bot rows entirely) is the intended floor.
