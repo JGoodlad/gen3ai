@@ -4594,3 +4594,21 @@ opponents (keep bots + pool fraction in exploiter training, as v8 did) and/or �
 (2) temperature-softened / advantage-gated targets; (3) the D/E exposure readings still
 arbitrate. Two owner-catches in one evening are now ledgered — the record self-corrects
 fastest when he reads it.
+
+### 🔴 CORRECTION 3 OF THE EVENING (amends 1022747's regime clause; owner-verified) — the opponent regimes were IDENTICAL too (2026-08-25)
+
+Recorded configs, both eras: v8 exploiters ran `team_pfsp off`, NO pool opponents, NO pfsp —
+opponents were the frozen self-target + **exploiter_bot_fraction 0.5** (half the episodes vs
+the 9 scripted bots). OUR tocks inherited the SAME 0.5 bot fraction (the relays' "sole
+opponent" meant the sole MODEL opponent) and the same team_pfsp off. **The opponent-variety
+leg of the narrowness hypothesis is dead.** After three verifications, the +69 arc and tick-1
+now differ on exactly TWO measured facts: **teacher TRAINING BUDGET (v8: ~9–20M steps
+post-fork; ours: 3M)** and **teacher SLICE BREADTH (v8: 10/3/10 teams per teacher; ours:
+4/3/2)** — both pointing the same way (longer + broader teachers develop richer on-pin
+distributions worth copying; 3M on 2–4 teams may sit before the distribution matures even
+though extraction already registers). The tock prescription simplifies to v8's literal shape:
+**~9M+ budgets on ~10-team slices**. D/E's exposure readings still arbitrate the mechanism.
+META, owned: three unverified claims tonight (teacher length, on-pin gating's absence,
+opponent variety), all three caught by the owner's plain questions and killed by the
+recorded configs. The standing rule this earns: **assert lineage/config facts only after
+reading the metadata — cli_args outlive memory, and memory of a recipe is not the recipe.**
