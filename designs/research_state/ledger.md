@@ -4654,3 +4654,35 @@ broader tocks — v8's shape, now for the RIGHT reason), or targets gated to whe
 is verifiably better under the student's OWN experience (advantage-gated distill), or
 sequencing (distill-only phases, no simultaneous PPO on the same trunk). Awaiting D/E's relay
 to close the exposure/multi-teacher questions before the tick-2 spec.
+
+### 🕳️ ARM E — THE DEEP BRANCH FIRES: the KL-to-specialist FORM is wrong at any gating, dose, or multiplicity (2026-08-25 ~21:00)
+
+fdE (coef 1.0, ONE teacher, its own 2 teams, hard-gated): **−7.2pp z=−6.41, retention −80%,
+pi_features 13.57 — statistically fdB.** Multi-teacher averaging EXONERATED. Arm D correctly
+NOT run (its premise died with the on-pin-gating correction; no corrected one-flag form
+exists). **Established across five +3M arms + tick-1, all code-matched: the distillation loss
+causes the regression; ecology doesn't; coefficient is not a lever; the state-gate is not a
+lever; teacher count is not a lever. pi_features is BINARY: 21.87 with no KL, 12.5–13.6 with
+ANY KL.** And the localization claim dies too: **IN-gate and OUT-gate states are BOTH damaged
+in every arm** (every figure negative, 5/6 significant; the "worse OUT" directional claim from
+the training session's 17:36 relay did not survive full n — that relay was never banked here,
+so nothing to strike; recorded now as unsupported either direction, and the n=100
+non-replication counter hits THREE for the day: preliminary cells never carry claims). The
+optimization was again textbook — the single-teacher arm matched its teacher best of any arm
+(agree 0.938, KL 3.6× fall) on a verified +11.6pp teacher, and lost 8.8pp on those very teams.
+**NOT established: WHY.** Every arm manipulated where/how hard the KL applies; none manipulated
+WHAT IT ASKS FOR. Offered mechanism (session's, endorsed as the working frame): matching a
+specialist's FULL action distribution forces the student to encode a policy its trunk cannot
+jointly represent with the general one; rank collapse is the compromise, and the damage is
+global because the trunk is shared. Composed with the telemetry (PPO gradient turns internally
+inconsistent) this is REPRESENTATIONAL INCOMPATIBILITY expressed as interference.
+**Two roads forward, both ordered/queued:** (1) THE LAST CHEAP DISCRIMINATOR — arm F:
+pure-distill PHASE (KL only, PPO off) then PPO resume, separating "KL alone corrupts the
+trunk" from "KL×PPO simultaneous conflict corrupts" — sequencing is a real fix candidate only
+if F is clean; (2) THE DESIGN TASK — advantage/disagreement-gated distillation: distill toward
+the teacher's action ONLY where it has demonstrably higher realized return (the counterfactual
+rollout machinery is the natural judge) — a design doc before any implementation. **The +69
+arc now needs re-explanation** — its ELO/piloting gains stand as measured, but why ITS fold
+didn't collapse is open; one speculative lead (flagged as such): v8's student was itself a
+product of prior folds (v8_04 = distill_4teacher) — fold-tolerance may be trained, and rev-1
+is a never-folded fresh trunk. Tick-2 remains BLOCKED pending F + the design.
