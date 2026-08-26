@@ -4832,3 +4832,18 @@ hard prerequisite is MET and arm F is unblocked.**
 
 **G1/G2 BUILD DISPATCHED** (this session): the action-level CE target form + the advantage gate +
 the `rank/policy_pr` tripwire, per the design's §7.1 v1 scope. Launch argvs follow once landed.
+
+### 🏗️ v103 LANDED — G1/G2 are launchable; the whole fold-repair stack built in one morning (2026-08-26)
+
+`10e9395` (agent-built): the target-form selector (`--distill-target kl|action` + `--distill-topk`,
+kl default byte-identical — SHA256-verified on plain AND distill-KL arms), the advantage gate
+(`--distill-gate advantage`, τ in normalized-advantage units, AWR β weighting), and the §4.1 rank
+tripwire (`--rank-tripwire warn` DEFAULT — every future run carries it; abort mode stops learn()
+cleanly on a latched TRIP). 83 new tests + 8,167 fast-tier green; §7.3 identities pinned (K=1 ≡
+searchteacher CE, K≥n ≡ full KL); v103 `gen3_distill_target_gate_v1`, provenance genre, no
+signature bump. CHANGELOG v103 appended. **One calibration fact the arms must respect:
+`grad/distill_share` did not exist when fdB ran, so fdB's share is UNRECORDED — G1's dose-matching
+needs a short fdB-config CALIBRATION probe first** (relaunch fdB's argv on current code, read
+`grad/distill_share` over ~50–100 train() calls, kill; that share is G1's matching target).
+Ordered to the training session with the G1/G2 argv essentials; arm F relaunch + transfer-gate
+rows already in flight from the morning orders.

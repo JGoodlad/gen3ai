@@ -5750,3 +5750,29 @@ term. And the advantage-gated design's G1 arm is dose-matched on GRADIENT SHARE,
 requires the share to be a logged quantity. One pass serves both. The flag was born `--pg-coef` and
 renamed the same morning before any run recorded it — an opaque two-letter name on a recorded
 provenance field is the `value_feat_cos` lesson waiting to recur.
+
+## v103 — `gen3_distill_target_gate_v1` (2026-08-26): the fold recipe becomes a choice instead of a fate
+
+**What landed.** The advantage-gated design's v1 scope, hours after its adjudication: a
+**target-form selector** for the exploiter-distillation loss (`--distill-target {kl,action}` +
+`--distill-topk K` — `kl` is the literal untouched call and stays the default; `action` at K=1 is
+argmax cross-entropy, K ≥ n_actions reproduces full KL, and the §7.3 identities are pinned by
+test); the **advantage gate** (`--distill-gate {none,advantage}` + `--distill-gate-tau` +
+`--distill-beta` — fire only where teacher argmax ≠ the sampled action AND the student's own
+normalized advantage says the action was a mistake); and the **rank tripwire**
+(`--rank-tripwire {off,warn,abort}`, default warn, `agents/training/rank_tripwire.py`) — §4.1
+verbatim: baseline = median of `rank/policy_pr` over train() calls [5,25), EMA half-life 10, WARN
+at 0.90·base ×3 consecutive, TRIP at 0.80·base ×3 (latched; `abort` stops learn() cleanly with a
+checkpoint), missing reading = counters frozen, never all-clear. §4.3 liveness metrics under
+`distill/` (`gated_frac`, `n_gated`, `gate_agree_rate`, `mean_gate_adv`). All seven flags v100
+provenance genre; config 102 → 103; no ARCH_SIGNATURE change, no state_dict or optimizer changes.
+Byte-identity at defaults SHA256-verified on BOTH a plain arm and a distill-KL arm.
+
+**Why it exists.** Five +3M arms plus tick-1 eliminated every teacher-side and knob-side
+explanation for the fold's negative transfer and left the full-distribution KL's target form as
+the last variable standing; the owner upheld the design's contest of flywheel D-F (amended:
+full distribution remains the long-term aspiration, with the late-generation converged-trunk
+retry as its pre-registered re-entry path). G1 (action, ungated, dose-matched on
+`grad/distill_share`) is the discriminator; G2 (action + gate) is the product. The tripwire
+exists so no fold ever runs blind to rank collapse again — it fires on all five known-bad arms
+and on none of the controls.
