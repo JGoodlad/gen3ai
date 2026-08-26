@@ -1,0 +1,4927 @@
+{
+ "primary_seed20260822_states400": {
+  "n_rollouts": 8,
+  "sampler": {
+   "sampler_version": "cf_audit_strata_v1",
+   "seed": 20260822,
+   "n_requested": 400,
+   "n_drawn": 400,
+   "conviction_boost": 4.0,
+   "conviction_decile_floor": 7,
+   "max_per_battle": 12,
+   "turn_tercile_edges": [
+    8.0,
+    15.0
+   ],
+   "cells": [
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 15,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 68,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 4,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 49,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 89,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 1,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 4,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 15,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 53,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 109,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 3,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 1,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 8,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 35,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 59,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 82,
+     "target": 6,
+     "drawn": 6
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 3,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 10,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 12,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 54,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 91,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 57,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 14,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 15,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 17,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 101,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 76,
+     "target": 6,
+     "drawn": 6
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 60,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 46,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 28,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 25,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 147,
+     "target": 11,
+     "drawn": 11
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 96,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 64,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 142,
+     "target": 11,
+     "drawn": 11
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 95,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 41,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 171,
+     "target": 52,
+     "drawn": 52
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 86,
+     "target": 26,
+     "drawn": 26
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 74,
+     "target": 22,
+     "drawn": 22
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 227,
+     "target": 17,
+     "drawn": 17
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 99,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 36,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 88,
+     "target": 27,
+     "drawn": 27
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 64,
+     "target": 19,
+     "drawn": 19
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 67,
+     "target": 20,
+     "drawn": 20
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 174,
+     "target": 13,
+     "drawn": 13
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 140,
+     "target": 11,
+     "drawn": 11
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 62,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 2,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 7,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 2,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 63,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 237,
+     "target": 18,
+     "drawn": 18
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 214,
+     "target": 16,
+     "drawn": 16
+    }
+   ]
+  },
+  "accounting": {
+   "frame_decisions": 3601,
+   "frame_battles": 184,
+   "evidential_scored": 400,
+   "twin_scored": 400,
+   "tasks_issued": 400,
+   "labelled": 400,
+   "errors": 0,
+   "anchors_issued": 20,
+   "anchors_reproduced": 19,
+   "anchor_errors": 0,
+   "anchor_rate": 0.95,
+   "rollouts": 3200,
+   "core_minutes": 4.54,
+   "loadavg": 2.20556640625,
+   "skipped": {
+    "turn_1_unopenable": 184,
+    "forced_switch_rounds": 723
+   },
+   "label_trust_passed": true
+  },
+  "by_outcome": [
+   {
+    "stratum": "win",
+    "n": 130,
+    "n_battles": 73,
+    "mean_predicted": 0.7857862948225095,
+    "mean_mc": 0.8817307692307692,
+    "mean_gap": -0.09594447440825976,
+    "gap_ci": [
+     -0.12583594872341433,
+     -0.06397479391075621
+    ]
+   },
+   {
+    "stratum": "loss",
+    "n": 270,
+    "n_battles": 82,
+    "mean_predicted": 0.6527821691913738,
+    "mean_mc": 0.48564814814814816,
+    "mean_gap": 0.16713402104322558,
+    "gap_ci": [
+     0.09699460761043958,
+     0.24574773076273085
+    ]
+   }
+  ],
+  "by_decile_outcome": [
+   {
+    "stratum": "decile0/loss",
+    "n": 6,
+    "n_battles": 6,
+    "mean_predicted": 0.07547764666378498,
+    "mean_mc": 0.08333333333333333,
+    "mean_gap": -0.007855686669548353,
+    "gap_ci": [
+     -0.09652638249099255,
+     0.06909592573841412
+    ],
+    "decile": 0,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile1/loss",
+    "n": 11,
+    "n_battles": 11,
+    "mean_predicted": 0.1304496337066997,
+    "mean_mc": 0.03409090909090909,
+    "mean_gap": 0.09635872461579063,
+    "gap_ci": [
+     0.060050246932289816,
+     0.12760159822011535
+    ],
+    "decile": 1,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile2/win",
+    "n": 1,
+    "n_battles": 1,
+    "mean_predicted": 0.22420625388622284,
+    "mean_mc": 0.75,
+    "mean_gap": -0.5257937461137772,
+    "gap_ci": [
+     null,
+     null
+    ],
+    "decile": 2,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile2/loss",
+    "n": 13,
+    "n_battles": 12,
+    "mean_predicted": 0.25226812752393574,
+    "mean_mc": 0.15384615384615385,
+    "mean_gap": 0.09842197367778191,
+    "gap_ci": [
+     0.028392636902875953,
+     0.16799526071796808
+    ],
+    "decile": 2,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile3/win",
+    "n": 2,
+    "n_battles": 1,
+    "mean_predicted": 0.35125017166137695,
+    "mean_mc": 0.4375,
+    "mean_gap": -0.08624982833862305,
+    "gap_ci": [
+     null,
+     null
+    ],
+    "decile": 3,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile3/loss",
+    "n": 13,
+    "n_battles": 13,
+    "mean_predicted": 0.3607882559299469,
+    "mean_mc": 0.2980769230769231,
+    "mean_gap": 0.06271133285302383,
+    "gap_ci": [
+     -0.08922378203043571,
+     0.18805144171302132
+    ],
+    "decile": 3,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile4/win",
+    "n": 3,
+    "n_battles": 3,
+    "mean_predicted": 0.43267689148585003,
+    "mean_mc": 0.375,
+    "mean_gap": 0.057676891485850014,
+    "gap_ci": [
+     0.04107344150543213,
+     0.08002430200576782
+    ],
+    "decile": 4,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile4/loss",
+    "n": 15,
+    "n_battles": 14,
+    "mean_predicted": 0.44610948363939923,
+    "mean_mc": 0.36666666666666664,
+    "mean_gap": 0.07944281697273255,
+    "gap_ci": [
+     -0.10025293916109063,
+     0.22466200839947248
+    ],
+    "decile": 4,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile5/win",
+    "n": 7,
+    "n_battles": 6,
+    "mean_predicted": 0.544863896710532,
+    "mean_mc": 0.6785714285714286,
+    "mean_gap": -0.1337075318608965,
+    "gap_ci": [
+     -0.31278790522898947,
+     0.09760929147402446
+    ],
+    "decile": 5,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile5/loss",
+    "n": 19,
+    "n_battles": 17,
+    "mean_predicted": 0.5455248355865479,
+    "mean_mc": 0.4276315789473684,
+    "mean_gap": 0.11789325663917943,
+    "gap_ci": [
+     0.013966478550397206,
+     0.20320069351882641
+    ],
+    "decile": 5,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile6/win",
+    "n": 21,
+    "n_battles": 18,
+    "mean_predicted": 0.6456346738906134,
+    "mean_mc": 0.8154761904761905,
+    "mean_gap": -0.1698415165855771,
+    "gap_ci": [
+     -0.269785868326076,
+     -0.04624928494746041
+    ],
+    "decile": 6,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile6/loss",
+    "n": 23,
+    "n_battles": 22,
+    "mean_predicted": 0.6584779024124146,
+    "mean_mc": 0.45108695652173914,
+    "mean_gap": 0.20739094589067542,
+    "gap_ci": [
+     0.08544692547307184,
+     0.3203620770977293
+    ],
+    "decile": 6,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile7/win",
+    "n": 28,
+    "n_battles": 26,
+    "mean_predicted": 0.7520668974944523,
+    "mean_mc": 0.8660714285714286,
+    "mean_gap": -0.11400453107697624,
+    "gap_ci": [
+     -0.16074456186206254,
+     -0.0632835399221491
+    ],
+    "decile": 7,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile7/loss",
+    "n": 100,
+    "n_battles": 52,
+    "mean_predicted": 0.7458390498161316,
+    "mean_mc": 0.51,
+    "mean_gap": 0.2358390498161316,
+    "gap_ci": [
+     0.13721888645128416,
+     0.3290697894686904
+    ],
+    "decile": 7,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile8/win",
+    "n": 29,
+    "n_battles": 26,
+    "mean_predicted": 0.8436158402212734,
+    "mean_mc": 0.9482758620689655,
+    "mean_gap": -0.10466002184769203,
+    "gap_ci": [
+     -0.14318066035707794,
+     -0.05593474494771484
+    ],
+    "decile": 8,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile8/loss",
+    "n": 66,
+    "n_battles": 25,
+    "mean_predicted": 0.8466073870658875,
+    "mean_mc": 0.7083333333333334,
+    "mean_gap": 0.1382740537325541,
+    "gap_ci": [
+     -0.006298552980749517,
+     0.2977842202119819
+    ],
+    "decile": 8,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile9/win",
+    "n": 39,
+    "n_battles": 28,
+    "mean_predicted": 0.9495480289826026,
+    "mean_mc": 0.9807692307692307,
+    "mean_gap": -0.031221201786628135,
+    "gap_ci": [
+     -0.05205751069494196,
+     0.0012512818124290647
+    ],
+    "decile": 9,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile9/loss",
+    "n": 4,
+    "n_battles": 4,
+    "mean_predicted": 0.93301060795784,
+    "mean_mc": 0.65625,
+    "mean_gap": 0.27676060795783997,
+    "gap_ci": [
+     0.052111998200416565,
+     0.532850906252861
+    ],
+    "decile": 9,
+    "outcome": "loss"
+   }
+  ],
+  "by_turn_tercile": [
+   {
+    "stratum": "turn<=8/win",
+    "n": 50,
+    "n_battles": 43,
+    "mean_predicted": 0.7503907310962677,
+    "mean_mc": 0.86,
+    "mean_gap": -0.1096092689037323,
+    "gap_ci": [
+     -0.1603280121770998,
+     -0.048055131242743604
+    ]
+   },
+   {
+    "stratum": "turn<=8/loss",
+    "n": 107,
+    "n_battles": 65,
+    "mean_predicted": 0.7184972264499307,
+    "mean_mc": 0.647196261682243,
+    "mean_gap": 0.07130096476768778,
+    "gap_ci": [
+     0.01526331822204622,
+     0.12761509079960576
+    ]
+   },
+   {
+    "stratum": "turn 8-15/win",
+    "n": 48,
+    "n_battles": 39,
+    "mean_predicted": 0.8105623330920935,
+    "mean_mc": 0.9036458333333334,
+    "mean_gap": -0.09308350024123986,
+    "gap_ci": [
+     -0.13731942618649234,
+     -0.046012340889980914
+    ]
+   },
+   {
+    "stratum": "turn 8-15/loss",
+    "n": 80,
+    "n_battles": 53,
+    "mean_predicted": 0.6443780424073339,
+    "mean_mc": 0.528125,
+    "mean_gap": 0.11625304240733385,
+    "gap_ci": [
+     0.03167245792987913,
+     0.20800576793774103
+    ]
+   },
+   {
+    "stratum": "turn>15/win",
+    "n": 32,
+    "n_battles": 23,
+    "mean_predicted": 0.8039278057403862,
+    "mean_mc": 0.8828125,
+    "mean_gap": -0.07888469425961375,
+    "gap_ci": [
+     -0.14062406769288438,
+     -0.020697175617077613
+    ]
+   },
+   {
+    "stratum": "turn>15/loss",
+    "n": 83,
+    "n_battles": 38,
+    "mean_predicted": 0.5761655308306217,
+    "mean_mc": 0.23644578313253012,
+    "mean_gap": 0.3397197476980916,
+    "gap_ci": [
+     0.18696444121115216,
+     0.4677502680923567
+    ]
+   }
+  ],
+  "by_opponent": [
+   {
+    "stratum": "aggressive",
+    "n": 21,
+    "n_battles": 8,
+    "mean_predicted": 0.7853213743794532,
+    "mean_mc": 0.5714285714285714,
+    "mean_gap": 0.21389280295088178,
+    "gap_ci": [
+     -0.10543290624564344,
+     0.34358789275066465
+    ]
+   },
+   {
+    "stratum": "aggressive_v2",
+    "n": 24,
+    "n_battles": 11,
+    "mean_predicted": 0.7146483575925231,
+    "mean_mc": 0.59375,
+    "mean_gap": 0.1208983575925231,
+    "gap_ci": [
+     -0.015813101614552617,
+     0.2651295600444651
+    ]
+   },
+   {
+    "stratum": "ext_ai_v9_31_tock1_k4_0824",
+    "n": 38,
+    "n_battles": 19,
+    "mean_predicted": 0.6228568566668975,
+    "mean_mc": 0.46381578947368424,
+    "mean_gap": 0.15904106719321326,
+    "gap_ci": [
+     0.09299815727924171,
+     0.2184249665792611
+    ]
+   },
+   {
+    "stratum": "ext_ai_v9_32_tock1b_rain_0824",
+    "n": 56,
+    "n_battles": 20,
+    "mean_predicted": 0.6217475347220898,
+    "mean_mc": 0.5758928571428571,
+    "mean_gap": 0.045854677579232624,
+    "gap_ci": [
+     -0.016182470490631314,
+     0.10828730659748512
+    ]
+   },
+   {
+    "stratum": "heuristic",
+    "n": 22,
+    "n_battles": 9,
+    "mean_predicted": 0.7227734814990651,
+    "mean_mc": 0.5625,
+    "mean_gap": 0.16027348149906506,
+    "gap_ci": [
+     -0.14735175038759527,
+     0.3280255644731222
+    ]
+   },
+   {
+    "stratum": "heuristic2",
+    "n": 43,
+    "n_battles": 15,
+    "mean_predicted": 0.737916829800883,
+    "mean_mc": 0.7703488372093024,
+    "mean_gap": -0.03243200740841932,
+    "gap_ci": [
+     -0.09289346657249899,
+     0.02612311886157835
+    ]
+   },
+   {
+    "stratum": "random",
+    "n": 5,
+    "n_battles": 4,
+    "mean_predicted": 0.9296633005142212,
+    "mean_mc": 1.0,
+    "mean_gap": -0.07033669948577881,
+    "gap_ci": [
+     -0.1280069798231125,
+     -0.044909278551737465
+    ]
+   },
+   {
+    "stratum": "sentinel_0",
+    "n": 41,
+    "n_battles": 18,
+    "mean_predicted": 0.6166688665384199,
+    "mean_mc": 0.5945121951219512,
+    "mean_gap": 0.022156671416468737,
+    "gap_ci": [
+     -0.050806427777127516,
+     0.10404877321104909
+    ]
+   },
+   {
+    "stratum": "setup_sweep",
+    "n": 45,
+    "n_battles": 13,
+    "mean_predicted": 0.792502494653066,
+    "mean_mc": 0.6,
+    "mean_gap": 0.192502494653066,
+    "gap_ci": [
+     -0.0894363589054937,
+     0.47415132909702734
+    ]
+   },
+   {
+    "stratum": "setup_sweep_v2",
+    "n": 26,
+    "n_battles": 10,
+    "mean_predicted": 0.6704392238305166,
+    "mean_mc": 0.4519230769230769,
+    "mean_gap": 0.2185161469074396,
+    "gap_ci": [
+     -0.0798128112086228,
+     0.35151867933319625
+    ]
+   },
+   {
+    "stratum": "staller",
+    "n": 35,
+    "n_battles": 12,
+    "mean_predicted": 0.7028783300093242,
+    "mean_mc": 0.725,
+    "mean_gap": -0.02212166999067579,
+    "gap_ci": [
+     -0.15932286620140076,
+     0.15668544899672263
+    ]
+   },
+   {
+    "stratum": "staller_v2",
+    "n": 44,
+    "n_battles": 16,
+    "mean_predicted": 0.7049026848240332,
+    "mean_mc": 0.6960227272727273,
+    "mean_gap": 0.008879957551305944,
+    "gap_ci": [
+     -0.11937579905628261,
+     0.11282224885020564
+    ]
+   }
+  ],
+  "conviction_class": {
+   "stratum": "wp>=0.75 & LOST",
+   "n": 116,
+   "n_battles": 40,
+   "mean_predicted": 0.8213309774111057,
+   "mean_mc": 0.59375,
+   "mean_gap": 0.22758097741110572,
+   "gap_ci": [
+    0.09923659259910392,
+    0.36877716594499454
+   ],
+   "control": {
+    "stratum": "wp>=0.75 & WON",
+    "n": 83,
+    "n_battles": 55,
+    "mean_predicted": 0.8803029440971742,
+    "mean_mc": 0.9503012048192772,
+    "mean_gap": -0.06999826072210288,
+    "gap_ci": [
+     -0.09460456191968893,
+     -0.042417387305792316
+    ]
+   },
+   "share_mc_ge_0.75": 0.5,
+   "share_mc_lt_0.50": 0.3448275862068966,
+   "share_mc_lt_0.25": 0.21551724137931033,
+   "median_predicted": 0.8144537806510925,
+   "median_mc": 0.6875,
+   "loss_minus_win_gap": 0.29757923813320863,
+   "loss_minus_win_ci": [
+    0.17094554396715805,
+    0.4424138808121744
+   ]
+  },
+  "resolution": [
+   {
+    "n": 13,
+    "mean": 0.15384615384615383,
+    "sd_observed": 0.1364910535247922,
+    "sd_binomial_floor": 0.12704373219529522,
+    "sd_true_excess": 0.04989687166744832,
+    "frac_variance_real": 0.13364055299539196,
+    "decile": 2,
+    "mean_predicted": 0.25226812752393574,
+    "evid_width_mean": 0.2606060023491199,
+    "evid_precision_mean": 2.5440404415130615
+   },
+   {
+    "n": 13,
+    "mean": 0.298076923076923,
+    "sd_observed": 0.27261494870313,
+    "sd_binomial_floor": 0.14173667737846019,
+    "sd_true_excess": 0.23287254999704132,
+    "frac_variance_real": 0.7296881016557566,
+    "decile": 3,
+    "mean_predicted": 0.36078825592994684,
+    "evid_width_mean": 0.26348947103206927,
+    "evid_precision_mean": 2.54913905950693
+   },
+   {
+    "n": 18,
+    "mean": 0.36821236559139775,
+    "sd_observed": 0.30116361153995497,
+    "sd_binomial_floor": 0.14490598281508862,
+    "sd_true_excess": 0.26401094117513796,
+    "frac_variance_real": 0.7684911271460588,
+    "decile": 4,
+    "mean_predicted": 0.443617954449628,
+    "evid_width_mean": 0.2634067169360576,
+    "evid_precision_mean": 2.519229456173476
+   },
+   {
+    "n": 26,
+    "mean": 0.5015692132116004,
+    "sd_observed": 0.25662403248339916,
+    "sd_binomial_floor": 0.16330640625852033,
+    "sd_true_excess": 0.19795684308194,
+    "frac_variance_real": 0.5950403117203398,
+    "decile": 5,
+    "mean_predicted": 0.5453300946677219,
+    "evid_width_mean": 0.26058320479545544,
+    "evid_precision_mean": 2.6463249861777913
+   },
+   {
+    "n": 44,
+    "mean": 0.6242497035975298,
+    "sd_observed": 0.32464841519148846,
+    "sd_binomial_floor": 0.137092687885164,
+    "sd_true_excess": 0.29428249763580244,
+    "frac_variance_real": 0.8216791980661695,
+    "decile": 6,
+    "mean_predicted": 0.6523746245849604,
+    "evid_width_mean": 0.24812473385818903,
+    "evid_precision_mean": 3.028887136221603
+   },
+   {
+    "n": 128,
+    "mean": 0.6959997938569364,
+    "sd_observed": 0.30603330827585573,
+    "sd_binomial_floor": 0.13041366110427602,
+    "sd_true_excess": 0.27685494897444757,
+    "frac_variance_real": 0.8184029539254933,
+    "decile": 7,
+    "mean_predicted": 0.7490922689496841,
+    "evid_width_mean": 0.24180868776203718,
+    "evid_precision_mean": 3.1724471346905876
+   },
+   {
+    "n": 95,
+    "mean": 0.8599608809040856,
+    "sd_observed": 0.26007921603089007,
+    "sd_binomial_floor": 0.08771483685251637,
+    "sd_true_excess": 0.2448413894895608,
+    "frac_variance_real": 0.8862543425895946,
+    "decile": 8,
+    "mean_predicted": 0.8447169305724839,
+    "evid_width_mean": 0.20897131611692835,
+    "evid_precision_mean": 4.072915305562102
+   },
+   {
+    "n": 43,
+    "mean": 0.9739697802197801,
+    "sd_observed": 0.1177869532072537,
+    "sd_binomial_floor": 0.04109464757490656,
+    "sd_true_excess": 0.1103856706576628,
+    "frac_variance_real": 0.8782760198486982,
+    "decile": 9,
+    "mean_predicted": 0.9492015306373217,
+    "evid_width_mean": 0.13920313326612352,
+    "evid_precision_mean": 7.048104665567586
+   }
+  ],
+  "headline": {
+   "population_weighted_gap": 0.02840559183673896,
+   "population_weighted_sd_true_excess": 0.22416220301877737,
+   "n_labels": 400,
+   "n_battles": 155
+  },
+  "evidential": {
+   "width_vs_blur_spearman": -0.04761904761904763,
+   "width_vs_blur_ci": [
+    -0.4047619047619048,
+    0.7142857142857144
+   ],
+   "n_strata": 8,
+   "draws_usable": 1000,
+   "evid_width_mean": 0.23043385161086916,
+   "evid_precision_mean": 3.568968741297722,
+   "n_labels_scored": 400
+  },
+  "twin_paired": {
+   "heads_present": [
+    "A",
+    "B",
+    "C"
+   ],
+   "n_labels": 400,
+   "n_battles": 155,
+   "by_head": {
+    "A": {
+     "mean_pred": 0.6960085100214929,
+     "brier": 0.09604542598041825,
+     "abs_err": 0.23070735354907812
+    },
+    "B": {
+     "mean_pred": 0.5162021119520068,
+     "brier": 0.25570057222650416,
+     "abs_err": 0.43038897793740033
+    },
+    "C": {
+     "mean_pred": 0.5968668576609343,
+     "brier": 0.142932008635797,
+     "abs_err": 0.30725414262153206
+    }
+   },
+   "contrasts": [
+    {
+     "contrast": "B_minus_A",
+     "isolates": "COVERAGE \u2014 the same loss form on the cf-labelled states",
+     "brier": 0.1596551462460859,
+     "brier_ci": [
+      0.10492931006517107,
+      0.20364755480519134
+     ],
+     "abs_err": 0.19968162438832224,
+     "abs_err_ci": [
+      0.13682986823863108,
+      0.2525811424913524
+     ],
+     "mean_abs_pred_diff": 0.4086185646150261
+    },
+    {
+     "contrast": "C_minus_B",
+     "isolates": "PRECISION \u2014 the same states, a tight-MC target instead of one draw",
+     "brier": -0.11276856359070717,
+     "brier_ci": [
+      -0.15024529893863617,
+      -0.06417410147590838
+     ],
+     "abs_err": -0.12313483531586826,
+     "abs_err_ci": [
+      -0.16597968604903357,
+      -0.06638236600105661
+     ],
+     "mean_abs_pred_diff": 0.2916060689929873
+    },
+    {
+     "contrast": "C_minus_A",
+     "isolates": "the TOTAL effect (coverage + precision), i.e. the original R1 claim",
+     "brier": 0.04688658265537876,
+     "brier_ci": [
+      0.02983405209461651,
+      0.06254638238873236
+     ],
+     "abs_err": 0.07654678907245398,
+     "abs_err_ci": [
+      0.05326608960840566,
+      0.09810612178746039
+     ],
+     "mean_abs_pred_diff": 0.1835614625364542
+    }
+   ]
+  },
+  "twin_resolution": {
+   "weighting": "UNWEIGHTED \u2014 not comparable with the bias map's population_weighted_sd_true_excess; see the docstring",
+   "by_head": {
+    "A": {
+     "cells": [
+      {
+       "n": 14,
+       "mean": 0.1964285714285714,
+       "sd_observed": 0.20635507646388926,
+       "sd_binomial_floor": 0.1300019623085807,
+       "sd_true_excess": 0.16025575614727838,
+       "frac_variance_real": 0.6031105990783411,
+       "decile": 2,
+       "mean_predicted": 0.2502637079783848
+      },
+      {
+       "n": 15,
+       "mean": 0.3166666666666667,
+       "sd_observed": 0.2581988897471611,
+       "sd_binomial_floor": 0.1484042099261659,
+       "sd_true_excess": 0.21128856368212917,
+       "frac_variance_real": 0.6696428571428573,
+       "decile": 3,
+       "mean_predicted": 0.35951651136080426
+      },
+      {
+       "n": 18,
+       "mean": 0.3680555555555555,
+       "sd_observed": 0.30459780081516985,
+       "sd_binomial_floor": 0.1439073500444831,
+       "sd_true_excess": 0.2684594845868041,
+       "frac_variance_real": 0.7767906281940404,
+       "decile": 4,
+       "mean_predicted": 0.44387071828047436
+      },
+      {
+       "n": 26,
+       "mean": 0.49519230769230765,
+       "sd_observed": 0.25367491310427515,
+       "sd_binomial_floor": 0.16392548897003764,
+       "sd_true_excess": 0.1935959596799365,
+       "frac_variance_real": 0.5824216873899354,
+       "decile": 5,
+       "mean_predicted": 0.5453468905045435
+      },
+      {
+       "n": 44,
+       "mean": 0.625,
+       "sd_observed": 0.32461963430566576,
+       "sd_binomial_floor": 0.1370047160056624,
+       "sd_true_excess": 0.29429171712597,
+       "frac_variance_real": 0.8218763994626064,
+       "decile": 6,
+       "mean_predicted": 0.6523481797088276
+      },
+      {
+       "n": 128,
+       "mean": 0.587890625,
+       "sd_observed": 0.3339984495785364,
+       "sd_binomial_floor": 0.13710881855300192,
+       "sd_true_excess": 0.3045589207294151,
+       "frac_variance_real": 0.8314837153196623,
+       "decile": 7,
+       "mean_predicted": 0.7472013914957643
+      },
+      {
+       "n": 95,
+       "mean": 0.7815789473684213,
+       "sd_observed": 0.31736553791874544,
+       "sd_binomial_floor": 0.10074907413892013,
+       "sd_true_excess": 0.3009493457686941,
+       "frac_variance_real": 0.8992227284910211,
+       "decile": 8,
+       "mean_predicted": 0.8456941780291105
+      },
+      {
+       "n": 43,
+       "mean": 0.9505813953488373,
+       "sd_observed": 0.1593782910111214,
+       "sd_binomial_floor": 0.056271913413377526,
+       "sd_true_excess": 0.14911375324369994,
+       "frac_variance_real": 0.875340599455041,
+       "decile": 9,
+       "mean_predicted": 0.9480096642361131
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.26687501660560703
+    },
+    "B": {
+     "cells": [
+      {
+       "n": 38,
+       "mean": 0.5789473684210527,
+       "sd_observed": 0.4093718951105475,
+       "sd_binomial_floor": 0.10729938440986901,
+       "sd_true_excess": 0.39505973043536624,
+       "frac_variance_real": 0.9312997347480106,
+       "decile": 1,
+       "mean_predicted": 0.1566339041057386
+      },
+      {
+       "n": 70,
+       "mean": 0.6946428571428569,
+       "sd_observed": 0.3132315454024334,
+       "sd_binomial_floor": 0.1283977000874825,
+       "sd_true_excess": 0.2857061981256998,
+       "frac_variance_real": 0.831971286321908,
+       "decile": 2,
+       "mean_predicted": 0.2485285644020353
+      },
+      {
+       "n": 55,
+       "mean": 0.7659090909090909,
+       "sd_observed": 0.27539381046376266,
+       "sd_binomial_floor": 0.12237503565126896,
+       "sd_true_excess": 0.24671056217985782,
+       "frac_variance_real": 0.8025408276518154,
+       "decile": 3,
+       "mean_predicted": 0.34375908483158457
+      },
+      {
+       "n": 42,
+       "mean": 0.7589285714285714,
+       "sd_observed": 0.28610192562562364,
+       "sd_binomial_floor": 0.12133224470618756,
+       "sd_true_excess": 0.25909997730846623,
+       "frac_variance_real": 0.8201498091754161,
+       "decile": 4,
+       "mean_predicted": 0.4464505747670219
+      },
+      {
+       "n": 35,
+       "mean": 0.6964285714285714,
+       "sd_observed": 0.32125345369755176,
+       "sd_binomial_floor": 0.12601627688840963,
+       "sd_true_excess": 0.2955058027717708,
+       "frac_variance_real": 0.8461286804798255,
+       "decile": 5,
+       "mean_predicted": 0.5527729221752712
+      },
+      {
+       "n": 32,
+       "mean": 0.58984375,
+       "sd_observed": 0.37865739978414564,
+       "sd_binomial_floor": 0.12131855572947493,
+       "sd_true_excess": 0.35869657713310366,
+       "frac_variance_real": 0.8973493824641797,
+       "decile": 6,
+       "mean_predicted": 0.6502722650766373
+      },
+      {
+       "n": 31,
+       "mean": 0.6129032258064515,
+       "sd_observed": 0.32811779946016434,
+       "sd_binomial_floor": 0.13787391555280407,
+       "sd_true_excess": 0.29774498103699226,
+       "frac_variance_real": 0.8234349919743178,
+       "decile": 7,
+       "mean_predicted": 0.754940725141956
+      },
+      {
+       "n": 42,
+       "mean": 0.4880952380952381,
+       "sd_observed": 0.3813582151592569,
+       "sd_binomial_floor": 0.12414674770603695,
+       "sd_true_excess": 0.3605851817580247,
+       "frac_variance_real": 0.8940247424150594,
+       "decile": 8,
+       "mean_predicted": 0.8548003193877992
+      },
+      {
+       "n": 48,
+       "mean": 0.359375,
+       "sd_observed": 0.34846261895433006,
+       "sd_binomial_floor": 0.126111132962728,
+       "sd_true_excess": 0.3248417752558433,
+       "frac_variance_real": 0.8690231739513055,
+       "decile": 9,
+       "mean_predicted": 0.9464345388114452
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.3085268560196596
+    },
+    "C": {
+     "cells": [
+      {
+       "n": 15,
+       "mean": 0.42500000000000004,
+       "sd_observed": 0.3054563330961914,
+       "sd_binomial_floor": 0.14990076082274598,
+       "sd_true_excess": 0.26614532371118854,
+       "frac_variance_real": 0.7591706539074959,
+       "decile": 2,
+       "mean_predicted": 0.2631732145945231
+      },
+      {
+       "n": 43,
+       "mean": 0.555232558139535,
+       "sd_observed": 0.3253916202574619,
+       "sd_binomial_floor": 0.1431941622633838,
+       "sd_true_excess": 0.29219024355283324,
+       "frac_variance_real": 0.8063409053766956,
+       "decile": 3,
+       "mean_predicted": 0.3570370868194935
+      },
+      {
+       "n": 72,
+       "mean": 0.5555555555555556,
+       "sd_observed": 0.30176191010668707,
+       "sd_binomial_floor": 0.1498180112934907,
+       "sd_true_excess": 0.26194429538224306,
+       "frac_variance_real": 0.753510050636796,
+       "decile": 4,
+       "mean_predicted": 0.45256132466925514
+      },
+      {
+       "n": 60,
+       "mean": 0.7041666666666666,
+       "sd_observed": 0.3459562609106487,
+       "sd_binomial_floor": 0.11378237372909994,
+       "sd_true_excess": 0.3267098190931032,
+       "frac_variance_real": 0.8918298105493857,
+       "decile": 5,
+       "mean_predicted": 0.55117127597332
+      },
+      {
+       "n": 87,
+       "mean": 0.6681034482758621,
+       "sd_observed": 0.31830514226544043,
+       "sd_binomial_floor": 0.1317940187663857,
+       "sd_true_excess": 0.2897386757235352,
+       "frac_variance_real": 0.82856318386865,
+       "decile": 6,
+       "mean_predicted": 0.6485567880772997
+      },
+      {
+       "n": 56,
+       "mean": 0.6160714285714286,
+       "sd_observed": 0.42697212415472136,
+       "sd_binomial_floor": 0.09061510325975196,
+       "sd_true_excess": 0.41724584823149446,
+       "frac_variance_real": 0.9549596107365476,
+       "decile": 7,
+       "mean_predicted": 0.7518358528614044
+      },
+      {
+       "n": 25,
+       "mean": 0.5850000000000001,
+       "sd_observed": 0.4560359086738675,
+       "sd_binomial_floor": 0.07849021777084254,
+       "sd_true_excess": 0.4492304928589395,
+       "frac_variance_real": 0.9703767307073091,
+       "decile": 8,
+       "mean_predicted": 0.8491826081275939
+      },
+      {
+       "n": 35,
+       "mean": 0.7214285714285714,
+       "sd_observed": 0.391881906409863,
+       "sd_binomial_floor": 0.08601138984851639,
+       "sd_true_excess": 0.3823263911735039,
+       "frac_variance_real": 0.9518272425249169,
+       "decile": 9,
+       "mean_predicted": 0.9426215291023254
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.32621922911706036
+    }
+   }
+  },
+  "shadow": {
+   "n": 400,
+   "n_battles": 155,
+   "shadow_mean": -3.5798037201166153,
+   "live_v_mean": 1.484657485485077,
+   "shadow_vs_live_v": -5.064461205601692,
+   "shadow_vs_live_v_ci": [
+    -6.148178780742825,
+    -3.864520203590439
+   ],
+   "shadow_vs_live_v_abs": 10.73209377706051
+  },
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825",
+  "traces": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825/eval_traces/step_40000032",
+  "policy_step": 40000032,
+  "impl": "rust"
+ },
+ "replication_seed20260824_states800": {
+  "n_rollouts": 8,
+  "sampler": {
+   "sampler_version": "cf_audit_strata_v1",
+   "seed": 20260824,
+   "n_requested": 800,
+   "n_drawn": 800,
+   "conviction_boost": 4.0,
+   "conviction_decile_floor": 7,
+   "max_per_battle": 12,
+   "turn_tercile_edges": [
+    8.0,
+    15.0
+   ],
+   "cells": [
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 15,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 68,
+     "target": 10,
+     "drawn": 10
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 4,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 49,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 89,
+     "target": 14,
+     "drawn": 14
+    },
+    {
+     "decile": 1,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 4,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 15,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 53,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 109,
+     "target": 17,
+     "drawn": 17
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 3,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 1,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 8,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 35,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 59,
+     "target": 9,
+     "drawn": 9
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 82,
+     "target": 12,
+     "drawn": 12
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 3,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 10,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 12,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 54,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 91,
+     "target": 14,
+     "drawn": 14
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 57,
+     "target": 9,
+     "drawn": 9
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 14,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 15,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 17,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 101,
+     "target": 15,
+     "drawn": 15
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 76,
+     "target": 12,
+     "drawn": 12
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 60,
+     "target": 9,
+     "drawn": 9
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 46,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 28,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 25,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 147,
+     "target": 22,
+     "drawn": 22
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 96,
+     "target": 15,
+     "drawn": 15
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 64,
+     "target": 10,
+     "drawn": 10
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 142,
+     "target": 22,
+     "drawn": 22
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 95,
+     "target": 14,
+     "drawn": 14
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 41,
+     "target": 6,
+     "drawn": 6
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 171,
+     "target": 104,
+     "drawn": 104
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 86,
+     "target": 52,
+     "drawn": 52
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 74,
+     "target": 45,
+     "drawn": 45
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 227,
+     "target": 34,
+     "drawn": 34
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 99,
+     "target": 15,
+     "drawn": 15
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 36,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 88,
+     "target": 53,
+     "drawn": 53
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 64,
+     "target": 39,
+     "drawn": 39
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 67,
+     "target": 41,
+     "drawn": 41
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 174,
+     "target": 26,
+     "drawn": 26
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 140,
+     "target": 21,
+     "drawn": 21
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 62,
+     "target": 9,
+     "drawn": 9
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 2,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 7,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 2,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 63,
+     "target": 10,
+     "drawn": 10
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 237,
+     "target": 36,
+     "drawn": 36
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 214,
+     "target": 32,
+     "drawn": 32
+    }
+   ]
+  },
+  "accounting": {
+   "frame_decisions": 3601,
+   "frame_battles": 184,
+   "evidential_scored": 800,
+   "twin_scored": 800,
+   "tasks_issued": 800,
+   "labelled": 800,
+   "errors": 0,
+   "anchors_issued": 20,
+   "anchors_reproduced": 19,
+   "anchor_errors": 0,
+   "anchor_rate": 0.95,
+   "rollouts": 6400,
+   "core_minutes": 8.32,
+   "loadavg": 1.13330078125,
+   "skipped": {
+    "turn_1_unopenable": 184,
+    "forced_switch_rounds": 723
+   },
+   "label_trust_passed": true
+  },
+  "by_outcome": [
+   {
+    "stratum": "win",
+    "n": 259,
+    "n_battles": 88,
+    "mean_predicted": 0.7886195689094573,
+    "mean_mc": 0.9136100386100386,
+    "mean_gap": -0.12499046970058132,
+    "gap_ci": [
+     -0.14963873647720496,
+     -0.10292467593459845
+    ]
+   },
+   {
+    "stratum": "loss",
+    "n": 541,
+    "n_battles": 87,
+    "mean_predicted": 0.6505172790584194,
+    "mean_mc": 0.4771256931608133,
+    "mean_gap": 0.1733915858976061,
+    "gap_ci": [
+     0.12746836161021877,
+     0.22242110573945595
+    ]
+   }
+  ],
+  "by_decile_outcome": [
+   {
+    "stratum": "decile0/loss",
+    "n": 12,
+    "n_battles": 10,
+    "mean_predicted": 0.06200090361138185,
+    "mean_mc": 0.0625,
+    "mean_gap": -0.0004990963886181513,
+    "gap_ci": [
+     -0.059853583861452835,
+     0.05383271519405146
+    ],
+    "decile": 0,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile1/win",
+    "n": 1,
+    "n_battles": 1,
+    "mean_predicted": 0.19816656410694122,
+    "mean_mc": 1.0,
+    "mean_gap": -0.8018334358930588,
+    "gap_ci": [
+     null,
+     null
+    ],
+    "decile": 1,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile1/loss",
+    "n": 22,
+    "n_battles": 17,
+    "mean_predicted": 0.15128779038786888,
+    "mean_mc": 0.03977272727272727,
+    "mean_gap": 0.1115150631151416,
+    "gap_ci": [
+     0.07633146454757522,
+     0.14109154774083033
+    ],
+    "decile": 1,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile2/win",
+    "n": 2,
+    "n_battles": 2,
+    "mean_predicted": 0.2469879314303398,
+    "mean_mc": 0.625,
+    "mean_gap": -0.3780120685696602,
+    "gap_ci": [
+     -0.6214818060398102,
+     -0.1345423310995102
+    ],
+    "decile": 2,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile2/loss",
+    "n": 27,
+    "n_battles": 22,
+    "mean_predicted": 0.25214601887596977,
+    "mean_mc": 0.1712962962962963,
+    "mean_gap": 0.08084972257967349,
+    "gap_ci": [
+     0.005798798266960228,
+     0.14882028391817584
+    ],
+    "decile": 2,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile3/win",
+    "n": 4,
+    "n_battles": 3,
+    "mean_predicted": 0.3661917671561241,
+    "mean_mc": 0.6875,
+    "mean_gap": -0.3213082328438759,
+    "gap_ci": [
+     -0.6893644034862518,
+     0.011040687561035156
+    ],
+    "decile": 3,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile3/loss",
+    "n": 26,
+    "n_battles": 19,
+    "mean_predicted": 0.34492994730289167,
+    "mean_mc": 0.2644230769230769,
+    "mean_gap": 0.08050687037981473,
+    "gap_ci": [
+     -0.053628372126210036,
+     0.18440918359409997
+    ],
+    "decile": 3,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile4/win",
+    "n": 7,
+    "n_battles": 6,
+    "mean_predicted": 0.4659243268626077,
+    "mean_mc": 0.6428571428571429,
+    "mean_gap": -0.17693281599453517,
+    "gap_ci": [
+     -0.44328465064366657,
+     0.023597046732902527
+    ],
+    "decile": 4,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile4/loss",
+    "n": 31,
+    "n_battles": 22,
+    "mean_predicted": 0.4480846120465186,
+    "mean_mc": 0.28225806451612906,
+    "mean_gap": 0.1658265475303896,
+    "gap_ci": [
+     0.09241322603904538,
+     0.2379993311425645
+    ],
+    "decile": 4,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile5/win",
+    "n": 15,
+    "n_battles": 12,
+    "mean_predicted": 0.5621584177017211,
+    "mean_mc": 0.8083333333333333,
+    "mean_gap": -0.24617491563161215,
+    "gap_ci": [
+     -0.34274364028658183,
+     -0.14793074252083904
+    ],
+    "decile": 5,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile5/loss",
+    "n": 36,
+    "n_battles": 28,
+    "mean_predicted": 0.5500897202226851,
+    "mean_mc": 0.4375,
+    "mean_gap": 0.11258972022268507,
+    "gap_ci": [
+     0.013199300201315631,
+     0.22063441207475296
+    ],
+    "decile": 5,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile6/win",
+    "n": 42,
+    "n_battles": 28,
+    "mean_predicted": 0.6610098566327777,
+    "mean_mc": 0.8392857142857143,
+    "mean_gap": -0.17827585765293666,
+    "gap_ci": [
+     -0.2287583404866767,
+     -0.1314731739916806
+    ],
+    "decile": 6,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile6/loss",
+    "n": 47,
+    "n_battles": 39,
+    "mean_predicted": 0.6517951298267284,
+    "mean_mc": 0.47606382978723405,
+    "mean_gap": 0.1757313000394943,
+    "gap_ci": [
+     0.09014114840699149,
+     0.2541003062256745
+    ],
+    "decile": 6,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile7/win",
+    "n": 54,
+    "n_battles": 41,
+    "mean_predicted": 0.7476198275883993,
+    "mean_mc": 0.9189814814814815,
+    "mean_gap": -0.17136165389308222,
+    "gap_ci": [
+     -0.2111817251449945,
+     -0.12567280117560317
+    ],
+    "decile": 7,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile7/loss",
+    "n": 201,
+    "n_battles": 62,
+    "mean_predicted": 0.7484655522588474,
+    "mean_mc": 0.5080845771144279,
+    "mean_gap": 0.2403809751444195,
+    "gap_ci": [
+     0.16249522379995593,
+     0.3190534626083886
+    ],
+    "decile": 7,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile8/win",
+    "n": 56,
+    "n_battles": 36,
+    "mean_predicted": 0.8556655613439423,
+    "mean_mc": 0.9397321428571429,
+    "mean_gap": -0.08406658151320048,
+    "gap_ci": [
+     -0.1240171585740827,
+     -0.03888169831466921
+    ],
+    "decile": 8,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile8/loss",
+    "n": 133,
+    "n_battles": 37,
+    "mean_predicted": 0.8400716015270778,
+    "mean_mc": 0.6860902255639098,
+    "mean_gap": 0.15398137596316805,
+    "gap_ci": [
+     0.07682585612351171,
+     0.24503558890273172
+    ],
+    "decile": 8,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile9/win",
+    "n": 78,
+    "n_battles": 40,
+    "mean_predicted": 0.9532122589074649,
+    "mean_mc": 0.9935897435897436,
+    "mean_gap": -0.04037748468227875,
+    "gap_ci": [
+     -0.04719320188021964,
+     -0.033033324290538235
+    ],
+    "decile": 9,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile9/loss",
+    "n": 6,
+    "n_battles": 5,
+    "mean_predicted": 0.9303435981273651,
+    "mean_mc": 0.7916666666666666,
+    "mean_gap": 0.13867693146069845,
+    "gap_ci": [
+     -0.03555823223931449,
+     0.38260616064071656
+    ],
+    "decile": 9,
+    "outcome": "loss"
+   }
+  ],
+  "by_turn_tercile": [
+   {
+    "stratum": "turn<=8/win",
+    "n": 102,
+    "n_battles": 68,
+    "mean_predicted": 0.7504737152188432,
+    "mean_mc": 0.8933823529411765,
+    "mean_gap": -0.14290863772233328,
+    "gap_ci": [
+     -0.17578624295844353,
+     -0.10757457932912644
+    ]
+   },
+   {
+    "stratum": "turn<=8/loss",
+    "n": 211,
+    "n_battles": 75,
+    "mean_predicted": 0.7188858930109802,
+    "mean_mc": 0.6261848341232228,
+    "mean_gap": 0.0927010588877574,
+    "gap_ci": [
+     0.043230676007626936,
+     0.14384594433857367
+    ]
+   },
+   {
+    "stratum": "turn 8-15/win",
+    "n": 94,
+    "n_battles": 58,
+    "mean_predicted": 0.8171031208748513,
+    "mean_mc": 0.9188829787234043,
+    "mean_gap": -0.10177985784855295,
+    "gap_ci": [
+     -0.14219930514324192,
+     -0.05988414235723074
+    ]
+   },
+   {
+    "stratum": "turn 8-15/loss",
+    "n": 162,
+    "n_battles": 70,
+    "mean_predicted": 0.645762569328517,
+    "mean_mc": 0.45447530864197533,
+    "mean_gap": 0.19128726068654178,
+    "gap_ci": [
+     0.12830171902888807,
+     0.2654214287109263
+    ]
+   },
+   {
+    "stratum": "turn>15/win",
+    "n": 63,
+    "n_battles": 41,
+    "mean_predicted": 0.8078802544919271,
+    "mean_mc": 0.9384920634920635,
+    "mean_gap": -0.13061180900013636,
+    "gap_ci": [
+     -0.18263594900930755,
+     -0.08670171098836231
+    ]
+   },
+   {
+    "stratum": "turn>15/loss",
+    "n": 168,
+    "n_battles": 56,
+    "mean_predicted": 0.5692344542504066,
+    "mean_mc": 0.3117559523809524,
+    "mean_gap": 0.25747850186945426,
+    "gap_ci": [
+     0.16324356799440695,
+     0.35442100061031506
+    ]
+   }
+  ],
+  "by_opponent": [
+   {
+    "stratum": "aggressive",
+    "n": 36,
+    "n_battles": 11,
+    "mean_predicted": 0.8289193212985992,
+    "mean_mc": 0.7291666666666666,
+    "mean_gap": 0.09975265463193257,
+    "gap_ci": [
+     -0.11548924065982141,
+     0.25812048394449805
+    ]
+   },
+   {
+    "stratum": "aggressive_v2",
+    "n": 78,
+    "n_battles": 14,
+    "mean_predicted": 0.7396012254250355,
+    "mean_mc": 0.655448717948718,
+    "mean_gap": 0.08415250747631757,
+    "gap_ci": [
+     -0.028244696282406275,
+     0.19380244605294067
+    ]
+   },
+   {
+    "stratum": "ext_ai_v9_31_tock1_k4_0824",
+    "n": 88,
+    "n_battles": 20,
+    "mean_predicted": 0.6466877344487743,
+    "mean_mc": 0.5610795454545454,
+    "mean_gap": 0.08560818899422884,
+    "gap_ci": [
+     0.02608897021752508,
+     0.145601509659418
+    ]
+   },
+   {
+    "stratum": "ext_ai_v9_32_tock1b_rain_0824",
+    "n": 101,
+    "n_battles": 20,
+    "mean_predicted": 0.6032068433959296,
+    "mean_mc": 0.568069306930693,
+    "mean_gap": 0.03513753646523646,
+    "gap_ci": [
+     -0.03349401253029133,
+     0.10481370912338724
+    ]
+   },
+   {
+    "stratum": "heuristic",
+    "n": 42,
+    "n_battles": 11,
+    "mean_predicted": 0.7297271958419255,
+    "mean_mc": 0.5982142857142857,
+    "mean_gap": 0.13151291012763977,
+    "gap_ci": [
+     -0.16047130660304137,
+     0.32492430247502885
+    ]
+   },
+   {
+    "stratum": "heuristic2",
+    "n": 85,
+    "n_battles": 15,
+    "mean_predicted": 0.7352530129692134,
+    "mean_mc": 0.6573529411764706,
+    "mean_gap": 0.07790007179274279,
+    "gap_ci": [
+     -0.06090483728341742,
+     0.21806311115017157
+    ]
+   },
+   {
+    "stratum": "random",
+    "n": 18,
+    "n_battles": 8,
+    "mean_predicted": 0.867990771929423,
+    "mean_mc": 0.9930555555555556,
+    "mean_gap": -0.12506478362613255,
+    "gap_ci": [
+     -0.2170543201149456,
+     -0.03302030013874174
+    ]
+   },
+   {
+    "stratum": "sentinel_0",
+    "n": 96,
+    "n_battles": 19,
+    "mean_predicted": 0.5972460112534463,
+    "mean_mc": 0.57421875,
+    "mean_gap": 0.02302726125344634,
+    "gap_ci": [
+     -0.031211056084803377,
+     0.08309917992595185
+    ]
+   },
+   {
+    "stratum": "setup_sweep",
+    "n": 68,
+    "n_battles": 13,
+    "mean_predicted": 0.821900907684775,
+    "mean_mc": 0.6452205882352942,
+    "mean_gap": 0.17668031944948084,
+    "gap_ci": [
+     -0.0328725722763404,
+     0.41773386315807043
+    ]
+   },
+   {
+    "stratum": "setup_sweep_v2",
+    "n": 55,
+    "n_battles": 12,
+    "mean_predicted": 0.6865793220021508,
+    "mean_mc": 0.5340909090909091,
+    "mean_gap": 0.1524884129112417,
+    "gap_ci": [
+     -0.010326379628803596,
+     0.28370035231113433
+    ]
+   },
+   {
+    "stratum": "staller",
+    "n": 57,
+    "n_battles": 16,
+    "mean_predicted": 0.6402912707182399,
+    "mean_mc": 0.6710526315789473,
+    "mean_gap": -0.03076136086070747,
+    "gap_ci": [
+     -0.13512272251744767,
+     0.09919184641361359
+    ]
+   },
+   {
+    "stratum": "staller_v2",
+    "n": 76,
+    "n_battles": 16,
+    "mean_predicted": 0.7179958840439978,
+    "mean_mc": 0.59375,
+    "mean_gap": 0.12424588404399783,
+    "gap_ci": [
+     -0.010804558292757024,
+     0.20711305013636375
+    ]
+   }
+  ],
+  "conviction_class": {
+   "stratum": "wp>=0.75 & LOST",
+   "n": 233,
+   "n_battles": 52,
+   "mean_predicted": 0.8166355288591508,
+   "mean_mc": 0.6003218884120172,
+   "mean_gap": 0.2163136404471336,
+   "gap_ci": [
+    0.13468852469618037,
+    0.3027244250230963
+   ],
+   "control": {
+    "stratum": "wp>=0.75 & WON",
+    "n": 159,
+    "n_battles": 66,
+    "mean_predicted": 0.8906129726074027,
+    "mean_mc": 0.9614779874213837,
+    "mean_gap": -0.07086501481398097,
+    "gap_ci": [
+     -0.09233057166567946,
+     -0.04928578585012501
+    ]
+   },
+   "share_mc_ge_0.75": 0.4892703862660944,
+   "share_mc_lt_0.50": 0.33905579399141633,
+   "share_mc_lt_0.25": 0.1759656652360515,
+   "median_predicted": 0.8112316131591797,
+   "median_mc": 0.625,
+   "loss_minus_win_gap": 0.2871786552611146,
+   "loss_minus_win_ci": [
+    0.2040807105286973,
+    0.3730645493567487
+   ]
+  },
+  "resolution": [
+   {
+    "n": 12,
+    "mean": 0.0625,
+    "sd_observed": 0.11306675421666137,
+    "sd_binomial_floor": 0.08183170883849714,
+    "sd_true_excess": 0.07802347299154493,
+    "frac_variance_real": 0.47619047619047633,
+    "decile": 0,
+    "mean_predicted": 0.06200090361138185,
+    "evid_width_mean": 0.2296692555149396,
+    "evid_precision_mean": 3.2321146925290423
+   },
+   {
+    "n": 22,
+    "mean": 0.039772727272727265,
+    "sd_observed": 0.08079187360017613,
+    "sd_binomial_floor": 0.06757030970216692,
+    "sd_true_excess": 0.04428972890614804,
+    "frac_variance_real": 0.3005181347150258,
+    "decile": 1,
+    "mean_predicted": 0.15128779038786883,
+    "evid_width_mean": 0.22599343684586606,
+    "evid_precision_mean": 3.3266691077839234
+   },
+   {
+    "n": 27,
+    "mean": 0.1712962962962963,
+    "sd_observed": 0.17727961720982674,
+    "sd_binomial_floor": 0.12631582573330957,
+    "sd_true_excess": 0.12438800121946997,
+    "frac_variance_real": 0.492310805341967,
+    "decile": 2,
+    "mean_predicted": 0.2521460188759698,
+    "evid_width_mean": 0.23540329491650622,
+    "evid_precision_mean": 3.129891960709184
+   },
+   {
+    "n": 30,
+    "mean": 0.3170445847684653,
+    "sd_observed": 0.30311766233550747,
+    "sd_binomial_floor": 0.13507236238882037,
+    "sd_true_excess": 0.27135912392703126,
+    "frac_variance_real": 0.8014314313079393,
+    "decile": 3,
+    "mean_predicted": 0.3475744522597613,
+    "evid_width_mean": 0.2527158387173558,
+    "evid_precision_mean": 2.7939784964792485
+   },
+   {
+    "n": 38,
+    "mean": 0.3491433774342202,
+    "sd_observed": 0.28529611270877653,
+    "sd_binomial_floor": 0.1454011075855739,
+    "sd_true_excess": 0.24546362223276033,
+    "frac_variance_real": 0.7402570784918465,
+    "decile": 4,
+    "mean_predicted": 0.4513935914075673,
+    "evid_width_mean": 0.26174895880378085,
+    "evid_precision_mean": 2.585753554732196
+   },
+   {
+    "n": 51,
+    "mean": 0.5467633928571429,
+    "sd_observed": 0.34818969380924397,
+    "sd_binomial_floor": 0.13572782801063776,
+    "sd_true_excess": 0.3206462530242476,
+    "frac_variance_real": 0.8480481561374767,
+    "decile": 5,
+    "mean_predicted": 0.553645675729901,
+    "evid_width_mean": 0.25452703546939626,
+    "evid_precision_mean": 2.7946473893783397
+   },
+   {
+    "n": 89,
+    "mean": 0.6486718364377938,
+    "sd_observed": 0.29504168349304777,
+    "sd_binomial_floor": 0.14234024539888057,
+    "sd_true_excess": 0.25843538755015394,
+    "frac_variance_real": 0.7672505488327293,
+    "decile": 6,
+    "mean_predicted": 0.6561740940183208,
+    "evid_width_mean": 0.24921413131100087,
+    "evid_precision_mean": 3.0425663977566417
+   },
+   {
+    "n": 255,
+    "mean": 0.7227233640998153,
+    "sd_observed": 0.31551185105430984,
+    "sd_binomial_floor": 0.1203937495199118,
+    "sd_true_excess": 0.29163860038111167,
+    "frac_variance_real": 0.854394919984612,
+    "decile": 7,
+    "mean_predicted": 0.7480237740038658,
+    "evid_width_mean": 0.24161235550660823,
+    "evid_precision_mean": 3.195341039125951
+   },
+   {
+    "n": 189,
+    "mean": 0.8463748657357678,
+    "sd_observed": 0.25458268030704556,
+    "sd_binomial_floor": 0.0969096112597473,
+    "sd_true_excess": 0.23541637232317555,
+    "frac_variance_real": 0.8550974614812945,
+    "decile": 8,
+    "mean_predicted": 0.8499259357979032,
+    "evid_width_mean": 0.21304358784534208,
+    "evid_precision_mean": 3.8988068948129793
+   },
+   {
+    "n": 84,
+    "mean": 0.9893589743589736,
+    "sd_observed": 0.05271649743415716,
+    "sd_binomial_floor": 0.03334477825498674,
+    "sd_true_excess": 0.0408308077908246,
+    "frac_variance_real": 0.5999055079402106,
+    "decile": 9,
+    "mean_predicted": 0.9527331060149291,
+    "evid_width_mean": 0.1401712726911709,
+    "evid_precision_mean": 7.063434373345565
+   }
+  ],
+  "headline": {
+   "population_weighted_gap": 0.01947616934544944,
+   "population_weighted_sd_true_excess": 0.21505305513793488,
+   "n_labels": 800,
+   "n_battles": 175
+  },
+  "evidential": {
+   "width_vs_blur_spearman": 0.7696969696969697,
+   "width_vs_blur_ci": [
+    0.25098413827317023,
+    0.8335606060606058
+   ],
+   "n_strata": 10,
+   "draws_usable": 1000,
+   "evid_width_mean": 0.23038664429914207,
+   "evid_precision_mean": 3.561790139377117,
+   "n_labels_scored": 800
+  },
+  "twin_paired": {
+   "heads_present": [
+    "A",
+    "B",
+    "C"
+   ],
+   "n_labels": 800,
+   "n_battles": 175,
+   "by_head": {
+    "A": {
+     "mean_pred": 0.6952278953976929,
+     "brier": 0.0939489552312147,
+     "abs_err": 0.23410162679851054
+    },
+    "B": {
+     "mean_pred": 0.507774068126455,
+     "brier": 0.25029876497792325,
+     "abs_err": 0.42508265185169875
+    },
+    "C": {
+     "mean_pred": 0.6014997277921066,
+     "brier": 0.12937348885004107,
+     "abs_err": 0.29554369959514587
+    }
+   },
+   "contrasts": [
+    {
+     "contrast": "B_minus_A",
+     "isolates": "COVERAGE \u2014 the same loss form on the cf-labelled states",
+     "brier": 0.15634980974670853,
+     "brier_ci": [
+      0.11969911916964365,
+      0.191134777805514
+     ],
+     "abs_err": 0.1909810250531882,
+     "abs_err_ci": [
+      0.14684214226992987,
+      0.23350536066502625
+     ],
+     "mean_abs_pred_diff": 0.4100757670495659
+    },
+    {
+     "contrast": "C_minus_B",
+     "isolates": "PRECISION \u2014 the same states, a tight-MC target instead of one draw",
+     "brier": -0.12092527612788218,
+     "brier_ci": [
+      -0.15248362954930217,
+      -0.08995799387207776
+     ],
+     "abs_err": -0.12953895225655288,
+     "abs_err_ci": [
+      -0.16545972537108344,
+      -0.09388665104051583
+     ],
+     "mean_abs_pred_diff": 0.2836088336771354
+    },
+    {
+     "contrast": "C_minus_A",
+     "isolates": "the TOTAL effect (coverage + precision), i.e. the original R1 claim",
+     "brier": 0.03542453361882636,
+     "brier_ci": [
+      0.0220331047970626,
+      0.04885615478181397
+     ],
+     "abs_err": 0.06144207279663533,
+     "abs_err_ci": [
+      0.04235133730923527,
+      0.07986207543786063
+     ],
+     "mean_abs_pred_diff": 0.1855040756938979
+    }
+   ]
+  },
+  "twin_resolution": {
+   "weighting": "UNWEIGHTED \u2014 not comparable with the bias map's population_weighted_sd_true_excess; see the docstring",
+   "by_head": {
+    "A": {
+     "cells": [
+      {
+       "n": 12,
+       "mean": 0.0625,
+       "sd_observed": 0.11306675421666137,
+       "sd_binomial_floor": 0.08183170883849714,
+       "sd_true_excess": 0.07802347299154493,
+       "frac_variance_real": 0.47619047619047633,
+       "decile": 0,
+       "mean_predicted": 0.06200090361138185
+      },
+      {
+       "n": 23,
+       "mean": 0.08152173913043478,
+       "sd_observed": 0.2152188884844318,
+       "sd_binomial_floor": 0.06608506657971012,
+       "sd_true_excess": 0.20482171255906823,
+       "frac_variance_real": 0.9057142857142857,
+       "decile": 1,
+       "mean_predicted": 0.15332599794087204
+      },
+      {
+       "n": 29,
+       "mean": 0.20258620689655174,
+       "sd_observed": 0.2175702706256039,
+       "sd_binomial_floor": 0.12864153808236686,
+       "sd_true_excess": 0.1754656015858991,
+       "frac_variance_real": 0.6504065040650406,
+       "decile": 2,
+       "mean_predicted": 0.25179028870730563
+      },
+      {
+       "n": 30,
+       "mean": 0.32083333333333336,
+       "sd_observed": 0.3056284744061261,
+       "sd_binomial_floor": 0.1350154312168304,
+       "sd_true_excess": 0.2741889817282041,
+       "frac_variance_real": 0.8048452220726783,
+       "decile": 3,
+       "mean_predicted": 0.34776485661665596
+      },
+      {
+       "n": 38,
+       "mean": 0.3486842105263158,
+       "sd_observed": 0.2849814697876563,
+       "sd_binomial_floor": 0.14541876268677775,
+       "sd_true_excess": 0.2450873754010587,
+       "frac_variance_real": 0.7396199859254047,
+       "decile": 4,
+       "mean_predicted": 0.451370875302114
+      },
+      {
+       "n": 51,
+       "mean": 0.5465686274509803,
+       "sd_observed": 0.34817451112348596,
+       "sd_binomial_floor": 0.13574284676615292,
+       "sd_true_excess": 0.32062340798497413,
+       "frac_variance_real": 0.8480012708682341,
+       "decile": 5,
+       "mean_predicted": 0.553639337128284
+      },
+      {
+       "n": 89,
+       "mean": 0.6474719101123595,
+       "sd_observed": 0.295300428296323,
+       "sd_binomial_floor": 0.14244271750026516,
+       "sd_true_excess": 0.25867434194974087,
+       "frac_variance_real": 0.7673235938163873,
+       "decile": 6,
+       "mean_predicted": 0.6561436525891337
+      },
+      {
+       "n": 255,
+       "mean": 0.5950980392156863,
+       "sd_observed": 0.3320561838727126,
+       "sd_binomial_floor": 0.13686669791150394,
+       "sd_true_excess": 0.30253729728896206,
+       "frac_variance_real": 0.8301081936634069,
+       "decile": 7,
+       "mean_predicted": 0.7482864576227525
+      },
+      {
+       "n": 189,
+       "mean": 0.7612433862433863,
+       "sd_observed": 0.3006352565307725,
+       "sd_binomial_floor": 0.1145478970147703,
+       "sd_true_excess": 0.27795743695540326,
+       "frac_variance_real": 0.8548241358314729,
+       "decile": 8,
+       "mean_predicted": 0.844692034065408
+      },
+      {
+       "n": 84,
+       "mean": 0.9791666666666665,
+       "sd_observed": 0.08641394261293514,
+       "sd_binomial_floor": 0.04312909745889714,
+       "sd_true_excess": 0.07488157604038928,
+       "frac_variance_real": 0.7509003601440577,
+       "decile": 9,
+       "mean_predicted": 0.9515787831374577
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.2545243778115555
+    },
+    "B": {
+     "cells": [
+      {
+       "n": 12,
+       "mean": 0.37499999999999994,
+       "sd_observed": 0.41628770645486823,
+       "sd_binomial_floor": 0.10386862122985208,
+       "sd_true_excess": 0.403121277122982,
+       "frac_variance_real": 0.9377439500390321,
+       "decile": 0,
+       "mean_predicted": 0.0925271138548851
+      },
+      {
+       "n": 87,
+       "mean": 0.6091954022988505,
+       "sd_observed": 0.3660782683843259,
+       "sd_binomial_floor": 0.12282592111012937,
+       "sd_true_excess": 0.3448580747013397,
+       "frac_variance_real": 0.8874275384903073,
+       "decile": 1,
+       "mean_predicted": 0.15847864669972453
+      },
+      {
+       "n": 123,
+       "mean": 0.676829268292683,
+       "sd_observed": 0.3119572455814606,
+       "sd_binomial_floor": 0.13212833834292947,
+       "sd_true_excess": 0.282594099863228,
+       "frac_variance_real": 0.8206085284470083,
+       "decile": 2,
+       "mean_predicted": 0.24916335564803302
+      },
+      {
+       "n": 127,
+       "mean": 0.7440944881889763,
+       "sd_observed": 0.2907546402766337,
+       "sd_binomial_floor": 0.12337241853750386,
+       "sd_true_excess": 0.26328218167320333,
+       "frac_variance_real": 0.8199542608976876,
+       "decile": 3,
+       "mean_predicted": 0.3446401134719999
+      },
+      {
+       "n": 90,
+       "mean": 0.6749999999999999,
+       "sd_observed": 0.3308781302513838,
+       "sd_binomial_floor": 0.12598815766974242,
+       "sd_true_excess": 0.305953135636221,
+       "frac_variance_real": 0.8550149159514138,
+       "decile": 4,
+       "mean_predicted": 0.44613393810060287
+      },
+      {
+       "n": 67,
+       "mean": 0.6865671641791047,
+       "sd_observed": 0.35580490159128186,
+       "sd_binomial_floor": 0.11369449956972141,
+       "sd_true_excess": 0.3371508397794263,
+       "frac_variance_real": 0.8978931083430358,
+       "decile": 5,
+       "mean_predicted": 0.5506970224095814
+      },
+      {
+       "n": 64,
+       "mean": 0.66796875,
+       "sd_observed": 0.33498012112305864,
+       "sd_binomial_floor": 0.126111132962728,
+       "sd_true_excess": 0.3103347606867078,
+       "frac_variance_real": 0.8582677165354331,
+       "decile": 6,
+       "mean_predicted": 0.6453244620934129
+      },
+      {
+       "n": 66,
+       "mean": 0.553030303030303,
+       "sd_observed": 0.36166057056080675,
+       "sd_binomial_floor": 0.13003912165257484,
+       "sd_true_excess": 0.33747325099657177,
+       "frac_variance_real": 0.8707157177863348,
+       "decile": 7,
+       "mean_predicted": 0.7546503679318861
+      },
+      {
+       "n": 71,
+       "mean": 0.4982394366197182,
+       "sd_observed": 0.3978137563084634,
+       "sd_binomial_floor": 0.1158632632660063,
+       "sd_true_excess": 0.3805673250997799,
+       "frac_variance_real": 0.9151734276292265,
+       "decile": 8,
+       "mean_predicted": 0.856540710153714
+      },
+      {
+       "n": 93,
+       "mean": 0.4099462365591398,
+       "sd_observed": 0.3849961141981035,
+       "sd_binomial_floor": 0.11665706565717285,
+       "sd_true_excess": 0.3668966298290258,
+       "frac_variance_real": 0.9081858952244838,
+       "decile": 9,
+       "mean_predicted": 0.945527575349295
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.32054654194819315
+    },
+    "C": {
+     "cells": [
+      {
+       "n": 30,
+       "mean": 0.30833333333333335,
+       "sd_observed": 0.2912764220169365,
+       "sd_binomial_floor": 0.13693063937629152,
+       "sd_true_excess": 0.2570835545556901,
+       "frac_variance_real": 0.7790008467400508,
+       "decile": 2,
+       "mean_predicted": 0.26563551276922226
+      },
+      {
+       "n": 76,
+       "mean": 0.5460526315789472,
+       "sd_observed": 0.35522416940055723,
+       "sd_binomial_floor": 0.13274856101339788,
+       "sd_true_excess": 0.32948752643338103,
+       "frac_variance_real": 0.860345598093252,
+       "decile": 3,
+       "mean_predicted": 0.3639288795621772
+      },
+      {
+       "n": 149,
+       "mean": 0.526006711409396,
+       "sd_observed": 0.31072984043769664,
+       "sd_binomial_floor": 0.14804373106864346,
+       "sd_true_excess": 0.2731960604212872,
+       "frac_variance_real": 0.7730061349693251,
+       "decile": 4,
+       "mean_predicted": 0.4517916322954549
+      },
+      {
+       "n": 155,
+       "mean": 0.6806451612903226,
+       "sd_observed": 0.31825605842848437,
+       "sd_binomial_floor": 0.12913662254026156,
+       "sd_true_excess": 0.2908791010803782,
+       "frac_variance_real": 0.8353561596029314,
+       "decile": 5,
+       "mean_predicted": 0.5484157427664726
+      },
+      {
+       "n": 125,
+       "mean": 0.6430000000000001,
+       "sd_observed": 0.34221762553352864,
+       "sd_binomial_floor": 0.12726518994378852,
+       "sd_true_excess": 0.31767353470879167,
+       "frac_variance_real": 0.8617024416156767,
+       "decile": 6,
+       "mean_predicted": 0.6443340439796448
+      },
+      {
+       "n": 100,
+       "mean": 0.6962499999999999,
+       "sd_observed": 0.38198668269662983,
+       "sd_binomial_floor": 0.09785649113443042,
+       "sd_true_excess": 0.3692396686441381,
+       "frac_variance_real": 0.934372957412189,
+       "decile": 7,
+       "mean_predicted": 0.7499930149316788
+      },
+      {
+       "n": 85,
+       "mean": 0.6705882352941175,
+       "sd_observed": 0.3966222052148213,
+       "sd_binomial_floor": 0.09668887989731972,
+       "sd_true_excess": 0.3846562545620043,
+       "frac_variance_real": 0.940570919815258,
+       "decile": 8,
+       "mean_predicted": 0.8453525963951559
+      },
+      {
+       "n": 68,
+       "mean": 0.7665441176470587,
+       "sd_observed": 0.35480734456311114,
+       "sd_binomial_floor": 0.08857384281068593,
+       "sd_true_excess": 0.34357375645656374,
+       "frac_variance_real": 0.937680240047636,
+       "decile": 9,
+       "mean_predicted": 0.9469841455712038
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.3188299341315578
+    }
+   }
+  },
+  "shadow": {
+   "n": 800,
+   "n_battles": 175,
+   "shadow_mean": -3.22418129093945,
+   "live_v_mean": 1.852645334005356,
+   "shadow_vs_live_v": -5.076826624944806,
+   "shadow_vs_live_v_ci": [
+    -6.132517534611077,
+    -3.938181423222183
+   ],
+   "shadow_vs_live_v_abs": 10.443585728779436
+  },
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825",
+  "traces": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825/eval_traces/step_40000032",
+  "policy_step": 40000032,
+  "impl": "rust"
+ },
+ "rev1_recheck_seed20260822_states400": {
+  "n_rollouts": 8,
+  "sampler": {
+   "sampler_version": "cf_audit_strata_v1",
+   "seed": 20260822,
+   "n_requested": 400,
+   "n_drawn": 400,
+   "conviction_boost": 4.0,
+   "conviction_decile_floor": 7,
+   "max_per_battle": 12,
+   "turn_tercile_edges": [
+    11.0,
+    23.0
+   ],
+   "cells": [
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 8,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 117,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 0,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 166,
+     "target": 7,
+     "drawn": 7
+    },
+    {
+     "decile": 0,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 1,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 19,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 107,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 1,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 94,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 1,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 1,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 32,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 101,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 2,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 116,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 2,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 11,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 2,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 7,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 66,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 101,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 3,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 129,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 7,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 13,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 3,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 11,
+     "target": 0,
+     "drawn": 0
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 106,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 108,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 4,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 98,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 15,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 17,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 4,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 17,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 190,
+     "target": 8,
+     "drawn": 8
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 139,
+     "target": 6,
+     "drawn": 6
+    },
+    {
+     "decile": 5,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 98,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 48,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 28,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 5,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 28,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 225,
+     "target": 9,
+     "drawn": 9
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 137,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 6,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 97,
+     "target": 4,
+     "drawn": 4
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 117,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 54,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 6,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 29,
+     "target": 1,
+     "drawn": 1
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 290,
+     "target": 47,
+     "drawn": 47
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 139,
+     "target": 22,
+     "drawn": 22
+    },
+    {
+     "decile": 7,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 78,
+     "target": 13,
+     "drawn": 13
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 258,
+     "target": 10,
+     "drawn": 10
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 83,
+     "target": 3,
+     "drawn": 3
+    },
+    {
+     "decile": 7,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 60,
+     "target": 2,
+     "drawn": 2
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 155,
+     "target": 25,
+     "drawn": 25
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 113,
+     "target": 18,
+     "drawn": 18
+    },
+    {
+     "decile": 8,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 74,
+     "target": 12,
+     "drawn": 12
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 295,
+     "target": 12,
+     "drawn": 12
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 136,
+     "target": 5,
+     "drawn": 5
+    },
+    {
+     "decile": 8,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 143,
+     "target": 6,
+     "drawn": 6
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 0,
+     "frame_n": 84,
+     "target": 14,
+     "drawn": 14
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 1,
+     "frame_n": 91,
+     "target": 15,
+     "drawn": 15
+    },
+    {
+     "decile": 9,
+     "outcome": "loss",
+     "turn_tercile": 2,
+     "frame_n": 99,
+     "target": 16,
+     "drawn": 16
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 0,
+     "frame_n": 392,
+     "target": 16,
+     "drawn": 16
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 1,
+     "frame_n": 610,
+     "target": 25,
+     "drawn": 25
+    },
+    {
+     "decile": 9,
+     "outcome": "win",
+     "turn_tercile": 2,
+     "frame_n": 797,
+     "target": 32,
+     "drawn": 32
+    }
+   ]
+  },
+  "accounting": {
+   "frame_decisions": 6557,
+   "frame_battles": 229,
+   "evidential_scored": 388,
+   "twin_scored": 388,
+   "tasks_issued": 400,
+   "labelled": 388,
+   "errors": 12,
+   "anchors_issued": 20,
+   "anchors_reproduced": 20,
+   "anchor_errors": 0,
+   "anchor_rate": 1.0,
+   "rollouts": 3104,
+   "core_minutes": 7.27,
+   "loadavg": 1.17822265625,
+   "skipped": {
+    "turn_1_unopenable": 229,
+    "forced_switch_rounds": 878
+   },
+   "label_trust_passed": true
+  },
+  "by_outcome": [
+   {
+    "stratum": "win",
+    "n": 127,
+    "n_battles": 73,
+    "mean_predicted": 0.8713885456558288,
+    "mean_mc": 0.9281496062992126,
+    "mean_gap": -0.056761060643383834,
+    "gap_ci": [
+     -0.08668338383419463,
+     -0.031151220238889044
+    ]
+   },
+   {
+    "stratum": "loss",
+    "n": 261,
+    "n_battles": 97,
+    "mean_predicted": 0.671347254296672,
+    "mean_mc": 0.5296934865900383,
+    "mean_gap": 0.14165376770663365,
+    "gap_ci": [
+     0.09217482613318728,
+     0.18771023495188965
+    ]
+   }
+  ],
+  "by_decile_outcome": [
+   {
+    "stratum": "decile0/loss",
+    "n": 12,
+    "n_battles": 12,
+    "mean_predicted": 0.03680565491473923,
+    "mean_mc": 0.010416666666666666,
+    "mean_gap": 0.026388988248072565,
+    "gap_ci": [
+     -0.0020258595982644086,
+     0.04894021879493568
+    ],
+    "decile": 0,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile1/loss",
+    "n": 9,
+    "n_battles": 8,
+    "mean_predicted": 0.15650361196862328,
+    "mean_mc": 0.041666666666666664,
+    "mean_gap": 0.1148369453019566,
+    "gap_ci": [
+     0.0930806584097445,
+     0.1382561062152187
+    ],
+    "decile": 1,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile2/loss",
+    "n": 10,
+    "n_battles": 9,
+    "mean_predicted": 0.24600508362054824,
+    "mean_mc": 0.3375,
+    "mean_gap": -0.09149491637945176,
+    "gap_ci": [
+     -0.33767357984764707,
+     0.1028613669459115
+    ],
+    "decile": 2,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile3/win",
+    "n": 1,
+    "n_battles": 1,
+    "mean_predicted": 0.3551281690597534,
+    "mean_mc": 0.5,
+    "mean_gap": -0.14487183094024658,
+    "gap_ci": [
+     null,
+     null
+    ],
+    "decile": 3,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile3/loss",
+    "n": 12,
+    "n_battles": 10,
+    "mean_predicted": 0.3547981431086858,
+    "mean_mc": 0.25,
+    "mean_gap": 0.1047981431086858,
+    "gap_ci": [
+     -0.09496318362653255,
+     0.2786917965859175
+    ],
+    "decile": 3,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile4/win",
+    "n": 3,
+    "n_battles": 3,
+    "mean_predicted": 0.4774699608484904,
+    "mean_mc": 0.75,
+    "mean_gap": -0.2725300391515096,
+    "gap_ci": [
+     -0.41405490040779114,
+     -0.13662946224212646
+    ],
+    "decile": 4,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile4/loss",
+    "n": 12,
+    "n_battles": 12,
+    "mean_predicted": 0.4454563533266385,
+    "mean_mc": 0.3229166666666667,
+    "mean_gap": 0.12253968665997188,
+    "gap_ci": [
+     -0.03404281785090764,
+     0.2634995749220252
+    ],
+    "decile": 4,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile5/win",
+    "n": 4,
+    "n_battles": 4,
+    "mean_predicted": 0.5395001620054245,
+    "mean_mc": 0.8125,
+    "mean_gap": -0.2729998379945755,
+    "gap_ci": [
+     -0.4668631851673126,
+     -0.07913649082183838
+    ],
+    "decile": 5,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile5/loss",
+    "n": 18,
+    "n_battles": 16,
+    "mean_predicted": 0.5529402560657926,
+    "mean_mc": 0.4236111111111111,
+    "mean_gap": 0.1293291449546814,
+    "gap_ci": [
+     0.0006804918687717588,
+     0.25279431145165354
+    ],
+    "decile": 5,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile6/win",
+    "n": 8,
+    "n_battles": 8,
+    "mean_predicted": 0.665455661714077,
+    "mean_mc": 0.703125,
+    "mean_gap": -0.037669338285923004,
+    "gap_ci": [
+     -0.22252084389328958,
+     0.14215519130229912
+    ],
+    "decile": 6,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile6/loss",
+    "n": 18,
+    "n_battles": 14,
+    "mean_predicted": 0.6564645932780372,
+    "mean_mc": 0.5625,
+    "mean_gap": 0.09396459327803718,
+    "gap_ci": [
+     -0.002771658757153679,
+     0.20579471875514302
+    ],
+    "decile": 6,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile7/win",
+    "n": 15,
+    "n_battles": 13,
+    "mean_predicted": 0.7434206406275431,
+    "mean_mc": 0.9333333333333333,
+    "mean_gap": -0.1899126927057902,
+    "gap_ci": [
+     -0.23972544191139084,
+     -0.1336879504637586
+    ],
+    "decile": 7,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile7/loss",
+    "n": 82,
+    "n_battles": 56,
+    "mean_predicted": 0.7517081811660673,
+    "mean_mc": 0.6036585365853658,
+    "mean_gap": 0.1480496445807015,
+    "gap_ci": [
+     0.07651926850707366,
+     0.21924883769457812
+    ],
+    "decile": 7,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile8/win",
+    "n": 23,
+    "n_battles": 20,
+    "mean_predicted": 0.8465802928675776,
+    "mean_mc": 0.9184782608695652,
+    "mean_gap": -0.07189796800198762,
+    "gap_ci": [
+     -0.11571160367001658,
+     -0.02307335373049255
+    ],
+    "decile": 8,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile8/loss",
+    "n": 55,
+    "n_battles": 31,
+    "mean_predicted": 0.852942022410306,
+    "mean_mc": 0.6409090909090909,
+    "mean_gap": 0.21203293150121516,
+    "gap_ci": [
+     0.12799934286770176,
+     0.3060746237923476
+    ],
+    "decile": 8,
+    "outcome": "loss"
+   },
+   {
+    "stratum": "decile9/win",
+    "n": 73,
+    "n_battles": 46,
+    "mean_predicted": 0.9695137665696341,
+    "mean_mc": 0.9743150684931506,
+    "mean_gap": -0.004801301923516678,
+    "gap_ci": [
+     -0.023603694907449072,
+     0.012263781897075481
+    ],
+    "decile": 9,
+    "outcome": "win"
+   },
+   {
+    "stratum": "decile9/loss",
+    "n": 33,
+    "n_battles": 20,
+    "mean_predicted": 0.9390048131798253,
+    "mean_mc": 0.7575757575757576,
+    "mean_gap": 0.18142905560406772,
+    "gap_ci": [
+     0.08681699691547289,
+     0.31360437718353096
+    ],
+    "decile": 9,
+    "outcome": "loss"
+   }
+  ],
+  "by_turn_tercile": [
+   {
+    "stratum": "turn<=11/win",
+    "n": 46,
+    "n_battles": 41,
+    "mean_predicted": 0.8188558214384577,
+    "mean_mc": 0.9266304347826086,
+    "mean_gap": -0.10777461334415105,
+    "gap_ci": [
+     -0.15014309367917114,
+     -0.06542579133291634
+    ]
+   },
+   {
+    "stratum": "turn<=11/loss",
+    "n": 112,
+    "n_battles": 69,
+    "mean_predicted": 0.745799668266305,
+    "mean_mc": 0.6785714285714286,
+    "mean_gap": 0.06722823969487633,
+    "gap_ci": [
+     0.018882141032552893,
+     0.12317354680285832
+    ]
+   },
+   {
+    "stratum": "turn 11-23/win",
+    "n": 38,
+    "n_battles": 32,
+    "mean_predicted": 0.8855944628778257,
+    "mean_mc": 0.9407894736842105,
+    "mean_gap": -0.05519501080638484,
+    "gap_ci": [
+     -0.10511630482173392,
+     -0.014891425277604621
+    ]
+   },
+   {
+    "stratum": "turn 11-23/loss",
+    "n": 85,
+    "n_battles": 54,
+    "mean_predicted": 0.6523906071341651,
+    "mean_mc": 0.475,
+    "mean_gap": 0.17739060713416513,
+    "gap_ci": [
+     0.09629051023948944,
+     0.26691371036554673
+    ]
+   },
+   {
+    "stratum": "turn>23/win",
+    "n": 43,
+    "n_battles": 21,
+    "mean_predicted": 0.9150322772735773,
+    "mean_mc": 0.9186046511627907,
+    "mean_gap": -0.0035723738892133846,
+    "gap_ci": [
+     -0.03777710587556718,
+     0.027217547477237758
+    ]
+   },
+   {
+    "stratum": "turn>23/loss",
+    "n": 64,
+    "n_battles": 31,
+    "mean_predicted": 0.5662323268625187,
+    "mean_mc": 0.341796875,
+    "mean_gap": 0.22443545186251868,
+    "gap_ci": [
+     0.13049993489266318,
+     0.30377931678152925
+    ]
+   }
+  ],
+  "by_opponent": [
+   {
+    "stratum": "aggressive",
+    "n": 24,
+    "n_battles": 11,
+    "mean_predicted": 0.7495820847495148,
+    "mean_mc": 0.3958333333333333,
+    "mean_gap": 0.3537487514161815,
+    "gap_ci": [
+     0.11959501050723097,
+     0.47937028868174214
+    ]
+   },
+   {
+    "stratum": "aggressive_v2",
+    "n": 27,
+    "n_battles": 13,
+    "mean_predicted": 0.8018872884826528,
+    "mean_mc": 0.6666666666666666,
+    "mean_gap": 0.1352206218159861,
+    "gap_ci": [
+     0.026155209636670493,
+     0.23794835965182662
+    ]
+   },
+   {
+    "stratum": "heuristic",
+    "n": 25,
+    "n_battles": 13,
+    "mean_predicted": 0.777573452591896,
+    "mean_mc": 0.66,
+    "mean_gap": 0.11757345259189605,
+    "gap_ci": [
+     -0.0066087738350033755,
+     0.2369778991105373
+    ]
+   },
+   {
+    "stratum": "heuristic2",
+    "n": 12,
+    "n_battles": 9,
+    "mean_predicted": 0.5853762480740746,
+    "mean_mc": 0.40625,
+    "mean_gap": 0.1791262480740746,
+    "gap_ci": [
+     -0.040173760791205694,
+     0.3754791160452771
+    ]
+   },
+   {
+    "stratum": "random",
+    "n": 11,
+    "n_battles": 7,
+    "mean_predicted": 0.9116336703300476,
+    "mean_mc": 1.0,
+    "mean_gap": -0.08836632966995239,
+    "gap_ci": [
+     -0.1527512470881144,
+     -0.03830704633146527
+    ]
+   },
+   {
+    "stratum": "sentinel_0",
+    "n": 38,
+    "n_battles": 17,
+    "mean_predicted": 0.6994694474790442,
+    "mean_mc": 0.618421052631579,
+    "mean_gap": 0.08104839484746519,
+    "gap_ci": [
+     -0.03295198115021257,
+     0.15906113605053587
+    ]
+   },
+   {
+    "stratum": "sentinel_1",
+    "n": 42,
+    "n_battles": 17,
+    "mean_predicted": 0.7140147605733502,
+    "mean_mc": 0.6904761904761905,
+    "mean_gap": 0.02353857009715977,
+    "gap_ci": [
+     -0.09853422493355252,
+     0.13179987978952587
+    ]
+   },
+   {
+    "stratum": "sentinel_2",
+    "n": 46,
+    "n_battles": 15,
+    "mean_predicted": 0.7224161477516526,
+    "mean_mc": 0.6630434782608695,
+    "mean_gap": 0.05937266949078311,
+    "gap_ci": [
+     0.0022627975063567824,
+     0.11024891272039902
+    ]
+   },
+   {
+    "stratum": "sentinel_3",
+    "n": 41,
+    "n_battles": 16,
+    "mean_predicted": 0.7379304475673452,
+    "mean_mc": 0.7896341463414634,
+    "mean_gap": -0.05170369877411825,
+    "gap_ci": [
+     -0.12133757208758279,
+     0.0027392315777400697
+    ]
+   },
+   {
+    "stratum": "sentinel_4",
+    "n": 37,
+    "n_battles": 16,
+    "mean_predicted": 0.7047213554961255,
+    "mean_mc": 0.7263513513513513,
+    "mean_gap": -0.021629995855225903,
+    "gap_ci": [
+     -0.07638824610539492,
+     0.03252299314132896
+    ]
+   },
+   {
+    "stratum": "setup_sweep",
+    "n": 12,
+    "n_battles": 8,
+    "mean_predicted": 0.5706634856760502,
+    "mean_mc": 0.5833333333333334,
+    "mean_gap": -0.012669847657283148,
+    "gap_ci": [
+     -0.2683801022518163,
+     0.1975486656699281
+    ]
+   },
+   {
+    "stratum": "setup_sweep_v2",
+    "n": 25,
+    "n_battles": 12,
+    "mean_predicted": 0.6817534092068672,
+    "mean_mc": 0.57,
+    "mean_gap": 0.11175340920686722,
+    "gap_ci": [
+     0.05323776021777164,
+     0.19299862551354408
+    ]
+   },
+   {
+    "stratum": "staller",
+    "n": 15,
+    "n_battles": 6,
+    "mean_predicted": 0.7942786514759064,
+    "mean_mc": 0.675,
+    "mean_gap": 0.11927865147590637,
+    "gap_ci": [
+     -0.05299548506736755,
+     0.2353012789698208
+    ]
+   },
+   {
+    "stratum": "staller_v2",
+    "n": 33,
+    "n_battles": 10,
+    "mean_predicted": 0.8430246394692045,
+    "mean_mc": 0.6856060606060606,
+    "mean_gap": 0.15741857886314392,
+    "gap_ci": [
+     -0.006318285316228866,
+     0.276428821881612
+    ]
+   }
+  ],
+  "conviction_class": {
+   "stratum": "wp>=0.75 & LOST",
+   "n": 129,
+   "n_battles": 53,
+   "mean_predicted": 0.8508924523065257,
+   "mean_mc": 0.6773255813953488,
+   "mean_gap": 0.1735668709111768,
+   "gap_ci": [
+    0.10969946464666953,
+    0.24601734856721336
+   ],
+   "control": {
+    "stratum": "wp>=0.75 & WON",
+    "n": 102,
+    "n_battles": 60,
+    "mean_predicted": 0.9301680928351832,
+    "mean_mc": 0.9620098039215687,
+    "mean_gap": -0.031841711086385394,
+    "gap_ci": [
+     -0.05483331808736012,
+     -0.01182032355994129
+    ]
+   },
+   "share_mc_ge_0.75": 0.5813953488372093,
+   "share_mc_lt_0.50": 0.20930232558139536,
+   "share_mc_lt_0.25": 0.10077519379844961,
+   "median_predicted": 0.8468170762062073,
+   "median_mc": 0.75,
+   "loss_minus_win_gap": 0.2054085819975622,
+   "loss_minus_win_ci": [
+    0.13494871984364573,
+    0.281997881909006
+   ]
+  },
+  "resolution": [
+   {
+    "n": 12,
+    "mean": 0.010416666666666666,
+    "sd_observed": 0.036084391824351615,
+    "sd_binomial_floor": 0.03608439182435161,
+    "sd_true_excess": 4.656612873077393e-10,
+    "frac_variance_real": 1.6653345369377346e-16,
+    "decile": 0,
+    "mean_predicted": 0.03680565491473923,
+    "evid_width_mean": 0.1742829034725825,
+    "evid_precision_mean": 5.92282219727834
+   },
+   {
+    "n": 12,
+    "mean": 0.25,
+    "sd_observed": 0.29193710406057116,
+    "sd_binomial_floor": 0.125,
+    "sd_true_excess": 0.2638224265055432,
+    "frac_variance_real": 0.8166666666666668,
+    "decile": 3,
+    "mean_predicted": 0.35479814310868585,
+    "evid_width_mean": 0.17566142976284024,
+    "evid_precision_mean": 6.290687362353006
+   },
+   {
+    "n": 15,
+    "mean": 0.38088642659279776,
+    "sd_observed": 0.31316203971594714,
+    "sd_binomial_floor": 0.1436505142858313,
+    "sd_true_excess": 0.2782714373852779,
+    "frac_variance_real": 0.7895852675893511,
+    "decile": 4,
+    "mean_predicted": 0.44980169063569875,
+    "evid_width_mean": 0.1551159239569309,
+    "evid_precision_mean": 8.048459741217277
+   },
+   {
+    "n": 22,
+    "mean": 0.49977767315337923,
+    "sd_observed": 0.31590253367093424,
+    "sd_binomial_floor": 0.14868358494711684,
+    "sd_true_excess": 0.27872495824197235,
+    "frac_variance_real": 0.7784764872100438,
+    "decile": 5,
+    "mean_predicted": 0.5503079212592421,
+    "evid_width_mean": 0.15331053567633615,
+    "evid_precision_mean": 8.330709525296118
+   },
+   {
+    "n": 26,
+    "mean": 0.6051783004552351,
+    "sd_observed": 0.256394668206961,
+    "sd_binomial_floor": 0.15844237443870832,
+    "sd_true_excess": 0.2015793636937615,
+    "frac_variance_real": 0.6181219422971954,
+    "decile": 6,
+    "mean_predicted": 0.6591932938656062,
+    "evid_width_mean": 0.14072292279989115,
+    "evid_precision_mean": 8.967320504789106
+   },
+   {
+    "n": 97,
+    "mean": 0.7492528025500519,
+    "sd_observed": 0.2790533695191096,
+    "sd_binomial_floor": 0.12610134637232517,
+    "sd_true_excess": 0.24893620364072314,
+    "frac_variance_real": 0.79579568952387,
+    "decile": 7,
+    "mean_predicted": 0.7480481550031287,
+    "evid_width_mean": 0.12810026752229106,
+    "evid_precision_mean": 9.95790300550333
+   },
+   {
+    "n": 78,
+    "mean": 0.8148443568013529,
+    "sd_observed": 0.2575882830611528,
+    "sd_binomial_floor": 0.11072636068237268,
+    "sd_true_excess": 0.23257557184801173,
+    "frac_variance_real": 0.8152221782610378,
+    "decile": 8,
+    "mean_predicted": 0.8489555237667183,
+    "evid_width_mean": 0.11333248061044932,
+    "evid_precision_mean": 9.50927934284145
+   },
+   {
+    "n": 106,
+    "mean": 0.9456674219946621,
+    "sd_observed": 0.15845444405943226,
+    "sd_binomial_floor": 0.06158044696154191,
+    "sd_true_excess": 0.14599883353712273,
+    "frac_variance_real": 0.8489652693411222,
+    "decile": 9,
+    "mean_predicted": 0.9654812276266487,
+    "evid_width_mean": 0.08897604956710146,
+    "evid_precision_mean": 11.01637331868949
+   }
+  ],
+  "headline": {
+   "population_weighted_gap": 0.03304869921359634,
+   "population_weighted_sd_true_excess": 0.1993239747224424,
+   "n_labels": 388,
+   "n_battles": 170
+  },
+  "evidential": {
+   "width_vs_blur_spearman": 0.28571428571428575,
+   "width_vs_blur_ci": [
+    -0.5238943174021885,
+    0.8857142857142858
+   ],
+   "n_strata": 8,
+   "draws_usable": 1000,
+   "evid_width_mean": 0.12383547117069517,
+   "evid_precision_mean": 9.343219157346745,
+   "n_labels_scored": 388
+  },
+  "twin_paired": {
+   "heads_present": [
+    "A",
+    "B",
+    "C"
+   ],
+   "n_labels": 388,
+   "n_battles": 170,
+   "by_head": {
+    "A": {
+     "mean_pred": 0.736824687293097,
+     "brier": 0.07720662617376692,
+     "abs_err": 0.19583009732719125
+    },
+    "B": {
+     "mean_pred": 0.8747478667742659,
+     "brier": 0.14224510355890047,
+     "abs_err": 0.26967769779610573
+    },
+    "C": {
+     "mean_pred": 0.771792327639522,
+     "brier": 0.10642531142512741,
+     "abs_err": 0.2342476592658414
+    }
+   },
+   "contrasts": [
+    {
+     "contrast": "B_minus_A",
+     "isolates": "COVERAGE \u2014 the same loss form on the cf-labelled states",
+     "brier": 0.06503847738513353,
+     "brier_ci": [
+      0.04238872715181999,
+      0.08914595469932887
+     ],
+     "abs_err": 0.07384760046891446,
+     "abs_err_ci": [
+      0.04580188887996049,
+      0.10124567222054408
+     ],
+     "mean_abs_pred_diff": 0.19021792337178378
+    },
+    {
+     "contrast": "C_minus_B",
+     "isolates": "PRECISION \u2014 the same states, a tight-MC target instead of one draw",
+     "brier": -0.03581979213377304,
+     "brier_ci": [
+      -0.05585883955265158,
+      -0.015472778652045237
+     ],
+     "abs_err": -0.035430038530264316,
+     "abs_err_ci": [
+      -0.0609456374550689,
+      -0.010208849112405176
+     ],
+     "mean_abs_pred_diff": 0.1743078006853916
+    },
+    {
+     "contrast": "C_minus_A",
+     "isolates": "the TOTAL effect (coverage + precision), i.e. the original R1 claim",
+     "brier": 0.029218685251360503,
+     "brier_ci": [
+      0.018972179662512294,
+      0.0405282476288056
+     ],
+     "abs_err": 0.03841756193865014,
+     "abs_err_ci": [
+      0.024385448441653693,
+      0.05256026571228256
+     ],
+     "mean_abs_pred_diff": 0.08189036415712236
+    }
+   ]
+  },
+  "twin_resolution": {
+   "weighting": "UNWEIGHTED \u2014 not comparable with the bias map's population_weighted_sd_true_excess; see the docstring",
+   "by_head": {
+    "A": {
+     "cells": [
+      {
+       "n": 12,
+       "mean": 0.010416666666666666,
+       "sd_observed": 0.036084391824351615,
+       "sd_binomial_floor": 0.03608439182435161,
+       "sd_true_excess": 4.656612873077393e-10,
+       "frac_variance_real": 1.6653345369377346e-16,
+       "decile": 0,
+       "mean_predicted": 0.03680565491473923
+      },
+      {
+       "n": 13,
+       "mean": 0.2692307692307693,
+       "sd_observed": 0.2879803679206142,
+       "sd_binomial_floor": 0.1310356045902398,
+       "sd_true_excess": 0.2564417334159217,
+       "frac_variance_real": 0.79296066252588,
+       "decile": 3,
+       "mean_predicted": 0.3548235297203064
+      },
+      {
+       "n": 15,
+       "mean": 0.4083333333333333,
+       "sd_observed": 0.3185719624168066,
+       "sd_binomial_floor": 0.14485214136195176,
+       "sd_true_excess": 0.28373570868142833,
+       "frac_variance_real": 0.7932551319648093,
+       "decile": 4,
+       "mean_predicted": 0.4518590748310089
+      },
+      {
+       "n": 22,
+       "mean": 0.49431818181818177,
+       "sd_observed": 0.31452267483762275,
+       "sd_binomial_floor": 0.14906363584881302,
+       "sd_true_excess": 0.27695585470349865,
+       "frac_variance_real": 0.7753846153846153,
+       "decile": 5,
+       "mean_predicted": 0.550496602600271
+      },
+      {
+       "n": 26,
+       "mean": 0.6057692307692308,
+       "sd_observed": 0.2566425230069729,
+       "sd_binomial_floor": 0.15833092344416272,
+       "sd_true_excess": 0.2019819380457156,
+       "frac_variance_real": 0.6193952033368092,
+       "decile": 6,
+       "mean_predicted": 0.6592310758737417
+      },
+      {
+       "n": 97,
+       "mean": 0.6546391752577319,
+       "sd_observed": 0.29191202247591547,
+       "sd_binomial_floor": 0.14230378838426094,
+       "sd_true_excess": 0.2548769520326757,
+       "frac_variance_real": 0.76235484742101,
+       "decile": 7,
+       "mean_predicted": 0.7504266027322749
+      },
+      {
+       "n": 78,
+       "mean": 0.72275641025641,
+       "sd_observed": 0.29924650768383637,
+       "sd_binomial_floor": 0.1264793414337844,
+       "sd_true_excess": 0.27120370305629776,
+       "frac_variance_real": 0.8213590540658319,
+       "decile": 8,
+       "mean_predicted": 0.8510661278015528
+      },
+      {
+       "n": 106,
+       "mean": 0.9068396226415093,
+       "sd_observed": 0.2196190700711208,
+       "sd_binomial_floor": 0.07241153167236186,
+       "sd_true_excess": 0.20733814415048285,
+       "frac_variance_real": 0.8912885292662339,
+       "decile": 9,
+       "mean_predicted": 0.9600156961746935
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.23520090468399418
+    },
+    "B": {
+     "cells": [
+      {
+       "n": 21,
+       "mean": 0.6607142857142857,
+       "sd_observed": 0.3238992347717331,
+       "sd_binomial_floor": 0.13323231717618683,
+       "sd_true_excess": 0.29522849446755345,
+       "frac_variance_real": 0.8308004052684904,
+       "decile": 6,
+       "mean_predicted": 0.650517653851282
+      },
+      {
+       "n": 33,
+       "mean": 0.4204545454545454,
+       "sd_observed": 0.3614994027406106,
+       "sd_binomial_floor": 0.12925653206801999,
+       "sd_true_excess": 0.33760119534676875,
+       "frac_variance_real": 0.8721532091097309,
+       "decile": 7,
+       "mean_predicted": 0.7686482541488878
+      },
+      {
+       "n": 68,
+       "mean": 0.5900735294117645,
+       "sd_observed": 0.33446715547990663,
+       "sd_binomial_floor": 0.13714622172868554,
+       "sd_true_excess": 0.3050560472443814,
+       "frac_variance_real": 0.8318639881226105,
+       "decile": 8,
+       "mean_predicted": 0.859799366663484
+      },
+      {
+       "n": 243,
+       "mean": 0.763374485596708,
+       "sd_observed": 0.2907423735475743,
+       "sd_binomial_floor": 0.11738253537896064,
+       "sd_true_excess": 0.2659933611278378,
+       "frac_variance_real": 0.8369989851727452,
+       "decile": 9,
+       "mean_predicted": 0.959017551239626
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.281426947388889
+    },
+    "C": {
+     "cells": [
+      {
+       "n": 14,
+       "mean": 0.41071428571428564,
+       "sd_observed": 0.3683009698542815,
+       "sd_binomial_floor": 0.12876968840942818,
+       "sd_true_excess": 0.34505647616374796,
+       "frac_variance_real": 0.877757685352622,
+       "decile": 4,
+       "mean_predicted": 0.434861210840089
+      },
+      {
+       "n": 19,
+       "mean": 0.5,
+       "sd_observed": 0.28565227501671014,
+       "sd_binomial_floor": 0.1570702156093858,
+       "sd_true_excess": 0.23859205684733778,
+       "frac_variance_real": 0.6976483762597985,
+       "decile": 5,
+       "mean_predicted": 0.5490515232086182
+      },
+      {
+       "n": 39,
+       "mean": 0.5961538461538461,
+       "sd_observed": 0.33253108588058816,
+       "sd_binomial_floor": 0.13784713091621278,
+       "sd_true_excess": 0.3026137663344013,
+       "frac_variance_real": 0.8281573498964804,
+       "decile": 6,
+       "mean_predicted": 0.6661864733084654
+      },
+      {
+       "n": 76,
+       "mean": 0.662828947368421,
+       "sd_observed": 0.31492045082985193,
+       "sd_binomial_floor": 0.13395989608609918,
+       "sd_true_excess": 0.2850081342549344,
+       "frac_variance_real": 0.8190544633232381,
+       "decile": 7,
+       "mean_predicted": 0.7577395156810158
+      },
+      {
+       "n": 76,
+       "mean": 0.7236842105263156,
+       "sd_observed": 0.2763721746981204,
+       "sd_binomial_floor": 0.13341065270674263,
+       "sd_true_excess": 0.24203961802095394,
+       "frac_variance_real": 0.7669804355850867,
+       "decile": 8,
+       "mean_predicted": 0.8527869982154745
+      },
+      {
+       "n": 135,
+       "mean": 0.7935185185185186,
+       "sd_observed": 0.32044690928362946,
+       "sd_binomial_floor": 0.09405264201977247,
+       "sd_true_excess": 0.30633367787191007,
+       "frac_variance_real": 0.9138550496153579,
+       "decile": 9,
+       "mean_predicted": 0.9471825595255251
+      }
+     ],
+     "sample_weighted_sd_true_excess": 0.28572883654347886
+    }
+   }
+  },
+  "shadow": {
+   "n": 388,
+   "n_battles": 170,
+   "shadow_mean": 9.22794467425838,
+   "live_v_mean": 3.705679453832587,
+   "shadow_vs_live_v": 5.522265220425792,
+   "shadow_vs_live_v_ci": [
+    3.3469087242164846,
+    7.53088619616554
+   ],
+   "shadow_vs_live_v_abs": 9.822439590680231
+  },
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823",
+  "traces": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/eval_traces/step_24000000",
+  "policy_step": 24000000,
+  "impl": "rust"
+ },
+ "audited_checkpoint": {
+  "run": "models/ai_v9_37_tick1_dosext_0825",
+  "trace_step": "eval_traces/step_40000032",
+  "checkpoint": "eval_traces/step_40000032/snapshot.zip",
+  "tier": "exact",
+  "step": 40000032,
+  "git_hash": "530db5439b5d648a34158ae032a130515f527dbb",
+  "arch_signature": "gen3_critic_route_wave_v1",
+  "config_version": 101,
+  "audit_code": "d87393d (carries the 1c8d784 conviction-CI fix)",
+  "note": "resolved by ProbeSession exact->nearest->recent from the first labelled battle; verified by hand because cf_audit does not record it"
+ },
+ "lineage": {
+  "model": "models/ai_v9_34_tick1_0824/final_model.zip",
+  "tick1_model": "models/ai_v9_29_rev1_0823/final_model.zip",
+  "distill_coef": 1.0,
+  "teachers": [
+   "ai_v9_31_tock1_k4_0824",
+   "ai_v9_32_tock1b_rain_0824"
+  ],
+  "confound": "distill-collapsed trunk; cross-read magnitude comparisons confound dose with trunk state"
+ },
+ "label_corpus": {
+  "tick1_rows": 7344,
+  "extension_rows": 4026,
+  "lineage_cumulative_rows": 11370,
+  "rev1_rows_first_read": 6600,
+  "three_run_lineage_rows": 17970,
+  "tick1_mc_mean": 0.5493,
+  "tick1_outcome_mean": 0.6503,
+  "tick1_offset": 0.101,
+  "tick1_pearson": 0.273,
+  "ext_mc_mean": 0.5655,
+  "ext_outcome_mean": 0.6744,
+  "ext_offset": 0.1089,
+  "ext_pearson": 0.289,
+  "combined_mc_mean": 0.555,
+  "combined_outcome_mean": 0.6588,
+  "combined_offset": 0.1038,
+  "ext_production_rate_rows_per_hour": 1122,
+  "ext_hours": 3.59,
+  "ext_step_span": [
+   35244768,
+   40066752
+  ]
+ },
+ "effective_dosage": {
+  "ext_row_ingestions": 1368,
+  "tick1_row_ingestions": 2238,
+  "lineage_row_ingestions": 3606,
+  "rev1_row_ingestions_first_read": 2646,
+  "buffer_capacity": 2048,
+  "buffer_fill_mean": 28.45,
+  "buffer_fill_median": 15.0,
+  "buffer_fill_max": 93,
+  "rows_sampled_zero_fraction": 0.327,
+  "rows_sampled_zero_with_nonempty_buffer": 0
+ },
+ "discrimination_pearson_vs_mc": {
+  "dosext_primary": {
+   "A": 0.562,
+   "B": -0.213,
+   "C": 0.18
+  },
+  "dosext_replication": {
+   "A": 0.566,
+   "B": -0.194,
+   "C": 0.274
+  },
+  "rev1_recheck": {
+   "A": 0.647,
+   "B": 0.463,
+   "C": 0.493
+  },
+  "note": "NOT produced by cf_audit; computed from the emitted label file + a re-forward of the twin heads"
+ },
+ "bias_share_of_brier": {
+  "dosext_primary": {
+   "A": 0.069,
+   "B": 0.038,
+   "C": 0.002
+  },
+  "dosext_replication": {
+   "A": 0.063,
+   "B": 0.049,
+   "C": 0.002
+  },
+  "rev1_recheck": {
+   "A": 0.076,
+   "B": 0.324,
+   "C": 0.117
+  }
+ },
+ "health_scalars": {
+  "cf/twin_b_coverage": {
+   "n": 33,
+   "min": 1.0,
+   "max": 1.0,
+   "mean": 1.0,
+   "median": 1.0,
+   "first": 1.0,
+   "last": 1.0,
+   "last10_mean": 1.0
+  },
+  "cf/outcome_label_coverage": {
+   "n": 49,
+   "min": 0.0,
+   "max": 1.0,
+   "mean": 0.673469387755102,
+   "median": 1.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.7
+  },
+  "cf/mc_return_coverage": {
+   "n": 49,
+   "min": 0.0,
+   "max": 1.0,
+   "mean": 0.673469387755102,
+   "median": 1.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.7
+  },
+  "cf/shadow_coverage": {
+   "n": 33,
+   "min": 1.0,
+   "max": 1.0,
+   "mean": 1.0,
+   "median": 1.0,
+   "first": 1.0,
+   "last": 1.0,
+   "last10_mean": 1.0
+  },
+  "train/cf_twin_grad_share": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "train/cf_shadow_grad_share": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "train/cf_evidential_grad_share": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "cf/labels_future_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "cf/labels_replaced_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 1.0,
+   "mean": 0.30612244897959184,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.5
+  },
+  "cf/labels_skipped_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "cf/labels_field_skipped_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "cf/labels_mc_return_rejected_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 0.0,
+   "mean": 0.0,
+   "median": 0.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 0.0
+  },
+  "cf/label_age_steps_p50": {
+   "n": 49,
+   "min": 0.0,
+   "max": 145728.0,
+   "mean": 66500.57142857143,
+   "median": 78768.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 73963.2
+  },
+  "cf/labels_ingested_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 1185.0,
+   "mean": 516.3673469387755,
+   "median": 462.0,
+   "first": 0.0,
+   "last": 183.0,
+   "last10_mean": 627.6
+  },
+  "cf/labels_expired_total": {
+   "n": 49,
+   "min": 0.0,
+   "max": 3624.0,
+   "mean": 1656.142857142857,
+   "median": 1656.0,
+   "first": 0.0,
+   "last": 3624.0,
+   "last10_mean": 3166.6
+  },
+  "cf/rows_sampled": {
+   "n": 49,
+   "min": 0.0,
+   "max": 44640.0,
+   "mean": 13655.510204081633,
+   "median": 7200.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 15840.0
+  },
+  "cf/buffer_fill": {
+   "n": 49,
+   "min": 0.0,
+   "max": 93.0,
+   "mean": 28.448979591836736,
+   "median": 15.0,
+   "first": 0.0,
+   "last": 0.0,
+   "last10_mean": 33.0
+  },
+  "cf/twin_b_vs_c_abs": {
+   "n": 33,
+   "min": 0.05596110597252846,
+   "max": 0.5531178116798401,
+   "mean": 0.24609689651565117,
+   "median": 0.23403103649616241,
+   "first": 0.14366735517978668,
+   "last": 0.2661267817020416,
+   "last10_mean": 0.27100990563631056
+  },
+  "cf/evid_nll": {
+   "n": 33,
+   "min": 0.17120960354804993,
+   "max": 0.6822632551193237,
+   "mean": 0.5529413787704526,
+   "median": 0.600333571434021,
+   "first": 0.4613531529903412,
+   "last": 0.6114585399627686,
+   "last10_mean": 0.590511155128479
+  },
+  "cf/shadow_shadow_vs_live_v": {
+   "n": 33,
+   "min": -29.435291290283203,
+   "max": 22.299991607666016,
+   "mean": -4.244330171382789,
+   "median": -4.201135158538818,
+   "first": -7.705678462982178,
+   "last": -0.3304087817668915,
+   "last10_mean": -5.295255228877068
+  },
+  "cf/shadow_live_v_vs_label": {
+   "n": 33,
+   "min": -22.332090377807617,
+   "max": 30.56593132019043,
+   "mean": 4.201686732019439,
+   "median": 4.216154098510742,
+   "first": 7.662431716918945,
+   "last": 0.10271761566400528,
+   "last10_mean": 5.174305555969477
+  },
+  "cf/twin_b_onpolicy_brier": {
+   "n": 49,
+   "min": 0.068965844810009,
+   "max": 0.22832544147968292,
+   "mean": 0.16585066443195148,
+   "median": 0.18083937466144562,
+   "first": 0.07546772062778473,
+   "last": 0.18739241361618042,
+   "last10_mean": 0.19088038951158523
+  },
+  "cf/twin_c_onpolicy_brier": {
+   "n": 49,
+   "min": 0.06672482937574387,
+   "max": 0.19963987171649933,
+   "mean": 0.14969558405632877,
+   "median": 0.16504009068012238,
+   "first": 0.07331299781799316,
+   "last": 0.16680754721164703,
+   "last10_mean": 0.16976292580366134
+  },
+  "win_prob/brier": {
+   "n": 49,
+   "min": 0.06021690368652344,
+   "max": 0.16646632552146912,
+   "mean": 0.1411853373354795,
+   "median": 0.15746088325977325,
+   "first": 0.07197270542383194,
+   "last": 0.16070057451725006,
+   "last10_mean": 0.15898537039756774
+  },
+  "cf/twin_b_onpolicy_acc": {
+   "n": 49,
+   "min": 0.6594117879867554,
+   "max": 0.9171987175941467,
+   "mean": 0.7540817808131782,
+   "median": 0.7289614677429199,
+   "first": 0.9047936797142029,
+   "last": 0.7230111956596375,
+   "last10_mean": 0.709733110666275
+  },
+  "cf/twin_c_onpolicy_acc": {
+   "n": 49,
+   "min": 0.6968252062797546,
+   "max": 0.9197033643722534,
+   "mean": 0.7751282331894855,
+   "median": 0.7493179440498352,
+   "first": 0.9076500535011292,
+   "last": 0.7478461861610413,
+   "last10_mean": 0.7374602735042572
+  },
+  "win_prob/acc": {
+   "n": 49,
+   "min": 0.7470787167549133,
+   "max": 0.9241340756416321,
+   "mean": 0.7905614400396541,
+   "median": 0.7638170719146729,
+   "first": 0.9093817472457886,
+   "last": 0.7578645944595337,
+   "last10_mean": 0.7611945986747741
+  },
+  "belief/species_acc": {
+   "n": 49,
+   "min": 0.5724825263023376,
+   "max": 0.7366012930870056,
+   "mean": 0.6666533971319393,
+   "median": 0.6646823883056641,
+   "first": 0.5724825263023376,
+   "last": 0.6909859776496887,
+   "last10_mean": 0.6762767910957337
+  },
+  "belief/item_acc": {
+   "n": 49,
+   "min": 0.94068443775177,
+   "max": 0.9750930666923523,
+   "mean": 0.9627330899238586,
+   "median": 0.9643623232841492,
+   "first": 0.9487481713294983,
+   "last": 0.9648069143295288,
+   "last10_mean": 0.9640170097351074
+  },
+  "belief/hptype_acc": {
+   "n": 49,
+   "min": 0.8323046565055847,
+   "max": 0.9071557521820068,
+   "mean": 0.8815158921845105,
+   "median": 0.8844760060310364,
+   "first": 0.8400143980979919,
+   "last": 0.8858639001846313,
+   "last10_mean": 0.8855569779872894
+  },
+  "belief/natureev_nature_acc": {
+   "n": 49,
+   "min": 0.7526612877845764,
+   "max": 0.859682023525238,
+   "mean": 0.8119208788385197,
+   "median": 0.8155062198638916,
+   "first": 0.7526612877845764,
+   "last": 0.8208733201026917,
+   "last10_mean": 0.8189656436443329
+  },
+  "rank/policy_pr": {
+   "n": 49,
+   "min": 19.711923599243164,
+   "max": 28.177509307861328,
+   "mean": 25.223633902413503,
+   "median": 26.101911544799805,
+   "first": 20.228647232055664,
+   "last": 26.257387161254883,
+   "last10_mean": 25.8838529586792
+  },
+  "rank/trunk_pr": {
+   "n": 49,
+   "min": 14.725841522216797,
+   "max": 18.238054275512695,
+   "mean": 16.96634022070437,
+   "median": 17.124435424804688,
+   "first": 14.725841522216797,
+   "last": 17.43124008178711,
+   "last10_mean": 16.909091567993165
+  },
+  "rank/value_cls_pr": {
+   "n": 49,
+   "min": 5.043723106384277,
+   "max": 7.44331169128418,
+   "mean": 6.04337351662772,
+   "median": 5.861847400665283,
+   "first": 6.892890930175781,
+   "last": 5.728927135467529,
+   "last10_mean": 5.65843825340271
+  }
+ },
+ "guards": {
+  "edge_families_nonzero_grad_at_end": "17/17",
+  "elo_ladder_nodes": {
+   "36000000": [
+    1947.0,
+    15.6
+   ],
+   "40000032": [
+    2020.0,
+    18.3
+   ]
+  },
+  "elo_note": "two nodes only; NOT evaluable as non-inferiority and not a generation verdict; the acting path is bit-identical across A/B/C by construction"
+ },
+ "registered_branches": {
+  "signal": {
+   "fired": false,
+   "reason": "C_minus_A significantly POSITIVE (+0.047/+0.035) and C sd_true_excess (0.326/0.319) ABOVE A (0.267/0.255)"
+  },
+  "dosage_null": {
+   "decision_fires": true,
+   "literal_numbers_fire": false,
+   "reason": "contrasts did not stay stuck at ~-0.036/+0.06 \u2014 they grew AGAINST the arm; the registered decision (v2 factory: estimand + sampler, not more labels) is licensed",
+   "caveat": "76% of the 15k pre-registered dose \u21d2 formally WEAKENED, not retired; and the growth may not be attributed to dose (trunk confound)"
+  }
+ }
+}
