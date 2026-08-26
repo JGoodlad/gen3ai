@@ -103,7 +103,16 @@ from typing import Any, Dict
 #   A pre-v101 config defaults each to its ARGPARSE default (not a guess: the fields did not
 #   exist). No ARCH_SIGNATURE bump — the canary head is owned by the PPO object, not the
 #   extractor, so no state_dict key and no forward changes.
-MODEL_CONFIG_VERSION = 101
+# v102 (gen3_pg_coef_v1): `pg_coef` — the weight on the PPO POLICY-GRADIENT term itself
+#   (`pg_coef * policy_loss`; scales ONLY the clipped surrogate — never entropy, never the value
+#   term, never an aux). A TRAINING-only loss coefficient, the td_aux_coef class exactly: recorded
+#   for provenance and for flagless-resume read-back, never gated. 1.0 = the upstream expression
+#   (byte-identical — the unscaled tensor is used); 0.0 = arm F's pure-distill/aux phase, the
+#   value it exists for (design_advantage_gated_distillation.md §5 needed a way to run PPO with
+#   the policy-gradient term OFF, and no flag could zero it). A pre-v102 config defaults it to
+#   1.0 = upstream — not a guess: the term entered at an implicit 1.0 in every run ever made.
+#   No ARCH_SIGNATURE bump — computed in the PPO step, never in the extractor forward.
+MODEL_CONFIG_VERSION = 102
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

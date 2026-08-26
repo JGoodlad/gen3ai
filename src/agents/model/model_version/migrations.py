@@ -335,4 +335,10 @@ def _migrate_config(data: dict) -> dict:
                        ("capacity_cosine_every", 50), ("capacity_velocity_every", 50)):
             data.setdefault(_k, _v)
         data["config_version"] = 101
+    # v102 (gen3_pg_coef_v1) — one TRAINING-only coefficient ⇒ v97's shape: no gate, no refusal,
+    # just a default. 1.0 is not a guess: the policy-gradient term entered the loss at an implicit
+    # 1.0 in every pre-v102 run, so that is what every such run trained with.
+    if version < 102:
+        data.setdefault("pg_coef", 1.0)
+        data["config_version"] = 102
     return data

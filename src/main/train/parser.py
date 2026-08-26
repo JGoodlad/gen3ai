@@ -803,9 +803,10 @@ def build_parser() -> argparse.ArgumentParser:
                              "Requires --distill-teacher ('TEACHER:TEAM' pairs). Training-only (inherited on "
                              "a flagless resume). Watch distill/kl (the mean over active teachers) FALL "
                              "and the per-teacher distill/t<k>_agree_rate RISE, with distill/t<k>_coverage "
-                             "confirming the trainee actually pilots that teacher's team. NOTE there is no "
-                             "grad/distill_share — the distillation KL is not in the grad-balance probe "
-                             "(only the search-teacher's grad/searchteacher_share and grad/opd_share are).")
+                             "confirming the trainee actually pilots that teacher's team, and "
+                             "grad/distill_share (gen3_grad_distill_share_v1) reading the KL's own "
+                             "shared-trunk gradient share — the dose meter G1/G2 arms are matched on "
+                             "(design_advantage_gated_distillation.md §6.2).")
     parser.add_argument("--distill-value-coef", "--distill_value_coef", dest="distill_value_coef",
                         type=float, default=None,
                         help="VALUE-distillation weight (gen3_exploiter_value_distill_v1): also pour the "
@@ -1149,6 +1150,19 @@ def build_parser() -> argparse.ArgumentParser:
                              "(not version-locked; inherited on a flagless resume). Costs one extra "
                              "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
                              "td_aux/resid_mean stay near 0.")
+    parser.add_argument("--pg-coef", "--pg_coef", dest="pg_coef",
+                        type=float, default=None,
+                        help="POLICY-GRADIENT term weight (gen3_pg_coef_v1): multiplies ONLY the "
+                             "clipped PPO surrogate `policy_loss` in the loss fold — never entropy "
+                             "(--ent-coef), never the value term (--vf-coef), never any aux/distill "
+                             "coefficient. Default 1.0 = the upstream expression, byte-identical "
+                             "(the unscaled tensor is used). 0.0 removes the policy-gradient "
+                             "contribution entirely — the pure-distill/aux phase (arm F of "
+                             "design_advantage_gated_distillation.md §5): every other term keeps "
+                             "training while PPO's own policy pull is off. TRAINING-only (not "
+                             "version-locked; recorded for provenance and inherited on a flagless "
+                             "resume, the td_aux_coef class). Watch grad/policy_share read ~0 at "
+                             "0.0 — the live confirmation the term is actually gone.")
     parser.add_argument("--move-latent", "--move_latent", dest="move_latent",
                         action=BoolFlag, default=None,
                         help="MoveLatentEncoder (gen3_unified_move_system_v1): a context-free, "

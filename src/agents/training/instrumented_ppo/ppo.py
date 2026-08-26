@@ -100,9 +100,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         The sequence, per minibatch:
 
-          1. `loss = policy_loss + ent_coef * ent_loss_used + vf_term`   (the upstream PPO loss;
-             `_value_loss_from_se` is the only delta, and at `value_tail_weight == 0` it is
-             `F.mse_loss` byte-for-byte)
+          1. `loss = pg_term + ent_coef * ent_loss_used + vf_term`   (the upstream PPO loss;
+             `pg_term` is the UNSCALED `policy_loss` tensor at `pg_coef == 1.0` — the default,
+             byte-identical to upstream — else `pg_coef * policy_loss` (`--pg-coef`; 0.0 removes
+             the policy-gradient term alone, the arm-F pure-distill/aux phase — entropy and the
+             value term keep their own coefficients). `_value_loss_from_se` is the only other
+             delta, and at `value_tail_weight == 0` it is `F.mse_loss` byte-for-byte)
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
           3. the WIN-PROB BCE, then the CF-TWIN on-policy mirror
@@ -245,6 +248,24 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         distill_on = (
             bool(getattr(self, "_distill_teachers", None)) and self.distill_coef != 0.0
         )
+        # +DISTILL-SHARE (gen3_grad_distill_share_v1): does THIS rollout hold any teacher-team rows
+        # at all? Decides whether the grad-balance probe below WAITS for a minibatch with a live
+        # distill term (so `grad/distill_share` — the §6.2 dose meter of
+        # designs/ai_v10/design_advantage_gated_distillation.md — isn't silently dropped from the
+        # per-train() sample) or samples immediately: an all-zero buffer would otherwise suppress
+        # the WHOLE probe for the call (the cf starving-buffer lesson at the probe's gate). One
+        # np.max over the buffer per train(); off (no teachers / coef 0) it short-circuits free.
+        _buf_obs = getattr(self.rollout_buffer, "observations", None) if distill_on else None
+        distill_rows_in_buffer = (
+            distill_on and isinstance(_buf_obs, dict) and "distill_mask" in _buf_obs
+            and float(np.max(_buf_obs["distill_mask"])) >= 1.0
+        )
+        # +PG-COEF (gen3_pg_coef_v1, `--pg-coef`): the PPO policy-gradient term's own weight.
+        # 1.0 (default) takes the UNSCALED `policy_loss` tensor — the loss expression is then
+        # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone (the
+        # arm-F pure-distill/aux phase). Scales ONLY `policy_loss` — entropy and the value term
+        # keep their own coefficients (`ent_coef`, `vf_coef`).
+        pg_coef = float(getattr(self, "pg_coef", 1.0))
         # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
         # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
         # byte-identical to today). See `_td_aux_term`.
@@ -444,7 +465,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the CE below at vf_coef is the critic). value_loss is still logged as the
                 # E[Z]-mean-vs-return diagnostic. Off → the standard vf_coef·MSE term.
                 _vf_term = 0.0 if value_from_dist else self.vf_coef * value_loss
-                loss = policy_loss + self.ent_coef * ent_loss_used + _vf_term
+                # +PG-COEF: at 1.0 (the default) `_pg_term` IS the `policy_loss` tensor, so the
+                # line below is literally the old `loss = policy_loss + …` expression —
+                # byte-identical. Any other value scales ONLY the policy-gradient term.
+                _pg_term = policy_loss if pg_coef == 1.0 else pg_coef * policy_loss
+                loss = _pg_term + self.ent_coef * ent_loss_used + _vf_term
 
                 # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
@@ -979,6 +1004,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
+                # +DISTILL-SHARE (gen3_grad_distill_share_v1): the exploiter-distillation KL's own
+                # shared-trunk pull — `grad/distill_share`, on the SAME policy+value+Σaux
+                # denominator as every other `grad/*_share` (grad_balance.py), like
+                # `grad/searchteacher_share` / `grad/opd_share`. THE dose meter §6.2 of
+                # designs/ai_v10/design_advantage_gated_distillation.md dose-matches the G1/G2
+                # arms on (gradient share, not coefficient). The POLICY KL term only,
+                # deliberately: the value-side distill coefficients are held fixed across those
+                # arms (§6.1), so folding them in would compress the very differences the meter
+                # exists to read. None (distill off / no teacher-team rows this minibatch) → not
+                # logged; a non-distill run pays nothing.
+                if distill_term is not None:       aux_probe_terms["distill"] = distill_term
                 # THE FIGHT DETECTOR. Registering the intent term here is what produces
                 # `grad/opp_intent_policy_cosine` — the angle between the intent objective's pull on
                 # the shared trunk and the policy's. Under `--opp-intent-grad-mode detached` the
@@ -1036,9 +1072,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # rest of the run — the `len(cf_buffer) == 0` escape says "there are no
                         # labels at all, sample anyway"; `cf/buffer_fill` is where that is read.
                         and (not cf_any_on or cf_term is not None or cf_evid_term is not None
-                             or len(cf_buffer) == 0)):
+                             or len(cf_buffer) == 0)
+                        # +DISTILL-SHARE: wait for a minibatch with a live distill term so
+                        # `grad/distill_share` isn't dropped from the per-train() sample — but
+                        # ONLY when the rollout holds teacher-team rows at all
+                        # (`distill_rows_in_buffer`); a row-less rollout samples immediately
+                        # rather than suppressing the whole probe (the cf escape's reason).
+                        and (not distill_rows_in_buffer or distill_term is not None)):
                     grad_balance = grad_balance_metrics(
-                        policy_loss + self.ent_coef * entropy_loss,
+                        # +PG-COEF: the probe measures the terms AS FOLDED — `_pg_term`, not the
+                        # raw `policy_loss` (at the 1.0 default they are the same tensor).
+                        _pg_term + self.ent_coef * entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
                         # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
                         (value_dist_term if (value_from_dist and value_dist_term is not None)

@@ -127,6 +127,7 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("win_prob_coef",                 _PLAIN),   # win-prob head BCE (mode none = off)
     ("value_dist_coef",               _PLAIN),   # value-dist HL-Gauss (mode none = off)
     ("td_aux_coef",                   _PLAIN),   # TD-consistency aux (0.0 = byte-identical)
+    ("pg_coef",                       _PLAIN),   # policy-gradient term weight (1.0 = upstream)
     ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
     # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
     # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -306,6 +307,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
+            pg_coef=args.pg_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,
@@ -586,6 +588,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
+            pg_coef=args.pg_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,

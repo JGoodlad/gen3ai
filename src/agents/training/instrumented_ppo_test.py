@@ -1821,3 +1821,135 @@ def test_the_only_coupling_between_a_headonly_term_and_the_trunk_is_the_GLOBAL_C
 
     assert _run(0.5), "preconditions: a binding clip must couple the term to the other params"
     assert _run(1e9) == [], "a head-only term moved a non-twin parameter with the clip inactive"
+
+
+# ---------------------------------------------------------------------------------------------
+# gen3_pg_coef_v1 (--pg-coef): the policy-gradient term's own weight.
+# Provenance genre (recorded / _resolve-inherited / never gated) is pinned in
+# agents/model/pg_coef_provenance_test.py; here is the loss-fold behavior itself.
+# ---------------------------------------------------------------------------------------------
+
+def test_pg_coef_class_default_is_one():
+    assert InstrumentedMaskablePPO.pg_coef == 1.0
+
+
+def test_pg_coef_one_short_circuits_to_the_unscaled_policy_loss():
+    """The byte-identity claim, pinned at the SOURCE: at the 1.0 default the fold takes the
+    `policy_loss` tensor ITSELF (not `1.0 * policy_loss`, a new graph node), so the loss
+    expression is literally the pre-flag `loss = policy_loss + …` — identical bits, identical
+    graph, identical backward."""
+    import inspect
+
+    src = inspect.getsource(InstrumentedMaskablePPO.train)
+    assert "_pg_term = policy_loss if pg_coef == 1.0 else pg_coef * policy_loss" in src, (
+        "the 1.0 short-circuit is gone — --pg-coef's default is no longer structurally "
+        "byte-identical to upstream")
+
+
+def test_pg_coef_zero_removes_exactly_the_policy_gradient():
+    """pg_coef=0 (with ent_coef=0, the tiny harness default): the parameters reached ONLY by the
+    policy-gradient term — the action head and the mlp extractor's policy branch — are
+    BIT-unchanged from init (their gradients are exactly zero, and Adam's zero-state step on a
+    zero gradient is exactly zero), while the value path keeps training. That is the arm-F
+    contract: every other term survives, PPO's own policy pull alone is gone."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model.pg_coef = 0.0
+    after = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    policy_only = [k for k in after
+                   if k.startswith(("action_net", "mlp_extractor.policy_net"))]
+    value_side = [k for k in after
+                  if k.startswith(("value_net", "mlp_extractor.value_net"))]
+    assert policy_only and value_side, "policy layout drifted — fix the prefixes"
+    for k in policy_only:
+        assert th.equal(after[k], init_sd[k]), (
+            f"pg_coef=0 still moved {k} — the policy-gradient term was not exactly removed")
+    assert any(not th.equal(after[k], init_sd[k]) for k in value_side), (
+        "pg_coef=0 froze the value path too — it must scale ONLY policy_loss")
+
+
+def test_pg_coef_between_zero_and_one_is_live():
+    """A non-default value must actually reach the fold — 0.5 produces a different update than
+    the 1.0 default on the same init/data/seed."""
+    model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    model.pg_coef = 0.5
+    scaled = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert any(not th.equal(base[k], scaled[k]) for k in base), (
+        "pg_coef=0.5 left every parameter unchanged — the coefficient never reached the loss")
+
+
+# ---------------------------------------------------------------------------------------------
+# gen3_grad_distill_share_v1: `grad/distill_share` — the exploiter-distillation KL's own
+# shared-trunk gradient share, the §6.2 dose meter of
+# designs/ai_v10/design_advantage_gated_distillation.md. The toy policy's CombinedExtractor has
+# no parameters, so `shared_trunk_parameters` is monkeypatched to the mlp extractor's — the
+# probe's own math (grad_balance.py) is pinned in grad_balance_test.py; these pin the FOLD.
+# ---------------------------------------------------------------------------------------------
+
+def _patch_toy_trunk(monkeypatch, model):
+    from agents.training.instrumented_ppo import ppo as ppo_mod
+    monkeypatch.setattr(
+        ppo_mod, "shared_trunk_parameters",
+        lambda fe, _m=model: [p for p in _m.policy.mlp_extractor.parameters()
+                              if p.requires_grad])
+
+
+def test_grad_distill_share_is_published_when_the_distill_term_is_live(monkeypatch):
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    model._distill_teachers = [teacher]
+    model.distill_coef = 5.0
+    _patch_toy_trunk(monkeypatch, model)
+    model.learn(total_timesteps=8 * 4)
+    model.train()
+    logged = model.logger.name_to_value
+    assert "grad/distill_share" in logged, f"missing (got {sorted(k for k in logged if k.startswith('grad/'))})"
+    assert 0.0 < logged["grad/distill_share"] < 1.0
+    # Same denominator family as every other share — the property dose-matching relies on.
+    assert "grad/policy_share" in logged and "grad/distill_policy_cosine" in logged
+
+
+def test_grad_distill_share_absent_when_distill_is_off(monkeypatch):
+    """coef 0 ⇒ no `grad/distill_share` (not logged, per the design's inactive semantics) — but
+    the probe itself still runs, so its absence is the term's absence, not the probe's."""
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    model._distill_teachers = [teacher]
+    model.distill_coef = 0.0
+    _patch_toy_trunk(monkeypatch, model)
+    model.learn(total_timesteps=8 * 4)
+    model.train()
+    logged = model.logger.name_to_value
+    assert "grad/policy_share" in logged, "the probe itself failed to run"
+    assert "grad/distill_share" not in logged
+
+
+def test_grad_distill_share_telemetry_does_not_change_the_update(monkeypatch):
+    """TELEMETRY ONLY: the probe (including the new distill entry) is read-only autograd.grad —
+    the same init/data/seed produce bit-identical parameters with the probe sampling and with it
+    disabled entirely. The one property the feature must never lose."""
+    from agents.training.instrumented_ppo import ppo as ppo_mod
+
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    model._distill_teachers = [teacher]
+    model.distill_coef = 5.0
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    _patch_toy_trunk(monkeypatch, model)
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert "grad/distill_share" in model.logger.name_to_value, (
+        "precondition: the probe (with the distill entry) must actually have sampled")
+
+    monkeypatch.setattr(ppo_mod, "shared_trunk_parameters", lambda fe: [])   # probe fully off
+    off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in on:
+        assert th.equal(on[k], off[k]), f"the grad probe perturbed {k} — telemetry only!"

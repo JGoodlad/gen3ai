@@ -27,7 +27,11 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 in one module because the ORDER the terms are folded in is straight-line source order, and that is
 only checkable by reading while it stays one straight line. Per minibatch:
 
-1. the upstream PPO loss (`policy_loss + ent_coef·entropy + vf_term`)
+1. the upstream PPO loss (`pg_coef·policy_loss + ent_coef·entropy + vf_term` — `--pg-coef`
+   scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
+   `policy_loss` tensor is used, byte-identical to upstream, and 0.0 removes the policy-gradient
+   term alone — the arm-F pure-distill/aux phase. Training-only, the `td_aux_coef` provenance
+   class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
 3. the win-prob BCE, then the CF-twin on-policy mirror
@@ -2470,6 +2474,14 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
     sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`/`value_dist`
     are ≈0 under `read_only` (stop-grad), real under `shaping`.
+  - **`grad/distill_share`** (`gen3_grad_distill_share_v1`): the exploiter-distillation **policy KL**'s
+    own entry in the same dict — the dose meter `design_advantage_gated_distillation.md` §6.2
+    dose-matches the G1/G2 arms on (gradient share, not coefficient). Policy KL ONLY, deliberately:
+    the value-side distill coefficients are held fixed across those arms, so folding them in would
+    compress the very differences the meter reads. When distill is on, the once-per-`train()` sample
+    waits for a minibatch with a live distill term (unless the whole rollout holds no teacher-team
+    rows, in which case it samples immediately rather than suppressing the probe); distill off → not
+    logged, zero cost.
 - **Per-edge-family LIVENESS — `edge/<fam>_weight_norm` + `edge/<fam>_grad_norm`**
   (`edge_family_metrics`, sampled once per `train()` right after the backward so `.grad` is still
   populated; parameters only, so the forward — and therefore the CPU opponent path — pays nothing).

@@ -409,6 +409,14 @@ class ModelVersionFields:
     # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field), never compared by check_compatible or any check_*.
     td_aux_coef: float = 0.0
+    # v102 TRAINING-ONLY coefficient (gen3_pg_coef_v1, NOT version-locked): the weight on the PPO
+    # policy-gradient term itself — `pg_coef * policy_loss` in the loss fold, scaling ONLY the
+    # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream
+    # expression, byte-identical (the unscaled tensor is used); 0.0 = the pure-distill/aux phase
+    # (arm F). The td_aux_coef class exactly: it scales a loss, touches no forward pass, so it is
+    # recorded here for PROVENANCE and for flagless-resume read-back (`_resolve` reads this field)
+    # and is never compared by check_compatible or any check_*.
+    pg_coef: float = 1.0
     # gen3_intent_label_bot_weight_v1 (config v97): per-sample weight on the opponent-intent
     # (alpha/beta) label rows whose opponent was a heuristic BOT (`opp_class == 0`); every other
     # class stays 1.0. 1.0 = OFF (the unweighted cross_entropy call is taken unchanged, so the loss
