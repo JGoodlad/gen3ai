@@ -4612,3 +4612,24 @@ META, owned: three unverified claims tonight (teacher length, on-pin gating's ab
 opponent variety), all three caught by the owner's plain questions and killed by the
 recorded configs. The standing rule this earns: **assert lineage/config facts only after
 reading the metadata — cli_args outlive memory, and memory of a recipe is not the recipe.**
+
+### 🔬 SHARPNESS PROBE (`978b1aa`) — the narrowness theory REFUTED; the surviving finding reframes the mechanism (2026-08-25 night)
+
+The theory's own prediction came back REVERSED, 8/8 cells: teacher entropy is slightly HIGHER
+than the base on identical paired states (on-pin Δ +0.04..+0.08 nats, top-1 LOWER; neither
+model near degenerate at 0.34–0.47 of uniform). **The over-sharp-script mechanism does not
+exist in these teachers — do NOT carry the "sharpness" reasoning into any 9M-tock
+prescription.** What SURVIVES: KL(teacher‖base) ≈ 0.43–0.48 nats on-pin AND nearly as large
+off-pin (0.36–0.41) — 3M steps moved the teachers to a GLOBALLY different policy, barely
+slice-specific. The injection story becomes "the on-pin KL drags the shared trunk toward a
+globally-different function while PPO pulls elsewhere" — a TUG-OF-WAR/interference mechanism,
+not an overconfidence one. ⚠️ TENSION this must resolve: v8's teachers were MORE diverged
+(9–20M) yet folded at +69 — so raw divergence cannot be the poison either. Refined candidate:
+**OBJECTIVE AGREEMENT** — a fold pays when the teacher's difference lies in directions PPO's
+own experience corroborates (v8: better vs varied play → both objectives pulled together);
+it collapses when the difference is idiosyncratic style PPO keeps contradicting (ours: quirks
+of beating ONE frozen opponent). DIRECTLY TESTABLE ON DISK: tick-1 and the factorial arms all
+ran `--capacity-telemetry` — **nobody has read their capacity/* scalars**. Prediction: the
+halfbatch trunk-gradient cosine degrades and canary recovery worsens in fdA/fdB (and tick-1)
+vs fdC's clean arm, tracking the collapse. The telemetry read is ORDERED (the instrument was
+built for exactly this and then forgotten in its first real incident — a lesson in itself).
