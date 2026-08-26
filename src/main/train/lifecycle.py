@@ -105,6 +105,14 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         canary_reset_steps=int(getattr(model, "canary_reset_steps", 1_000_000)),
         capacity_cosine_every=int(getattr(model, "capacity_cosine_every", 50)),
         capacity_velocity_every=int(getattr(model, "capacity_velocity_every", 50)),
+        # gen3_distill_target_gate_v1 (v103): the five loss knobs live on the model; the two
+        # rank-tripwire knobs are callback config (not model attrs) and default here — this
+        # version only feeds the round-trip smoke, and neither is gated.
+        distill_target=str(getattr(model, "distill_target", "kl")),
+        distill_topk=int(getattr(model, "distill_topk", 1)),
+        distill_gate=str(getattr(model, "distill_gate", "none")),
+        distill_gate_tau=float(getattr(model, "distill_gate_tau", 0.0)),
+        distill_beta=float(getattr(model, "distill_beta", 1.0)),
     )
     total_dim = layout["total_dim"]
     tmpdir = tempfile.mkdtemp(prefix="roundtrip_")

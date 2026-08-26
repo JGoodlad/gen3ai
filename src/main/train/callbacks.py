@@ -119,6 +119,15 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     )
     graceful_restart_callback = GracefulRestartCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
+    # RANK TRIPWIRE (gen3_distill_target_gate_v1, design_advantage_gated_distillation.md §4.1):
+    # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
+    # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —
+    # no loss, no grad, no forward — except that "abort" stops learn() cleanly on a confirmed
+    # collapse. "off" registers nothing.
+    if getattr(args, "rank_tripwire", "warn") != "off":
+        from agents.training.rank_tripwire import RankTripwireCallback
+        callbacks.append(RankTripwireCallback(mode=args.rank_tripwire,
+                                              drop=args.rank_tripwire_drop))
     # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
     # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when

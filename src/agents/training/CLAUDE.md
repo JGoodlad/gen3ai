@@ -18,7 +18,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence** |
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (`value_tail_weight`, the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor |
-| `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL, value MSE, the FitNets hint) |
+| `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL — or the top-K/action-CE form with the advantage gate, `_gated_action_distill_loss` — value MSE, the FitNets hint) |
 | `value_terms.py` | the win-prob BCE · the value-dist HL-Gauss CE · `_value_loss_from_se` |
 | `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
 | `constants.py` | `_VALUE_TAIL_FRAC` · `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
@@ -36,7 +36,9 @@ only checkable by reading while it stays one straight line. Per minibatch:
    nature-EV / HP-type / item belief, move-latent
 3. the win-prob BCE, then the CF-twin on-policy mirror
 4. the value-dist HL-Gauss CE
-5. the distill family — policy KL, value MSE, the value-feature hint
+5. the distill family — the policy term (full KL, or the top-K/action-CE form with the optional
+   advantage gate under `--distill-target action` — gen3_distill_target_gate_v1), value MSE, the
+   value-feature hint
 6. search-teacher AWR, then OPD
 7. **TD-AUX**
 8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow
@@ -4430,6 +4432,51 @@ transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (s
   kept ONE release for TensorBoard continuity, after which it goes. Read the `_dist` key, and treat a
   `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
   `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
+
+### Advantage-gated / action-form distillation (`--distill-target` / `--distill-topk` / `--distill-gate` / `--distill-gate-tau` / `--distill-beta`) + the rank tripwire (`--rank-tripwire`)
+
+`gen3_distill_target_gate_v1` (config **v103**; `designs/ai_v10/design_advantage_gated_distillation.md`
+§3.1/§3.3/§4.1, the §7.1 v1 scope) — the five-arm record convicted the full-distribution KL's
+*content*, and the target FORM is the one axis no arm ever manipulated. All seven knobs are the
+`td_aux_coef` provenance genre (argparse `None` → `_resolve` → recorded on `ModelVersion`, never
+gated); **every default is byte-identical to today** (SHA256-verified over seeded tiny runs).
+
+- **`--distill-target {kl,action}`** (default `kl` = the untouched `_distill_loss` call). `action`
+  dispatches the policy term to **`_gated_action_distill_loss`**: the teacher's **top-K**
+  probabilities renormalized over the legal set (`--distill-topk`, default 1 = pure argmax CE — one
+  bit of ordering, no tail shape; `K ≥ n_actions` reproduces the KL to fp tolerance — the §7.3
+  identity that makes the new path a superset, unit-pinned), AWR-weighted
+  `w = clamp(exp(|Â|/--distill-beta), 20)` with `Â` the NORMALIZED minibatch advantage (the clip
+  objective's own tensor; with `Â ≡ 0` the weighted mean IS the old masked mean, the other §7.3
+  identity). K=1 with the weight reproduces `_searchteacher_loss`'s CE (also pinned). Requires
+  `--distill-coef > 0`.
+- **`--distill-gate {none,advantage}`** (default `none` = every on-pin row, exactly the KL's rows —
+  arm G1). `advantage` keeps a row only when **the teacher's argmax disagrees with the SAMPLED
+  action AND `Â(s,a) < -τ`** (`--distill-gate-tau`, normalized-advantage units): on such a row PPO
+  pushes probability off `a` and the CE toward `a_T ≠ a` pushes the same way — objective agreement
+  by construction, from the same number. An empty gate returns `None`, never a NaN (pinned
+  end-to-end: τ=1e9 is byte-identical to no distillation). Requires `--distill-target action`.
+  §4.3 liveness under `distill/`: `gated_frac` · `n_gated` (**0 is a reading**, the gate found
+  nothing) · `gate_agree_rate` (student argmax == teacher argmax ON GATED ROWS) ·
+  `mean_gate_adv` — read beside `grad/distill_share`, the §6.2 dose meter (G2's coefficient is set
+  by SHARE, never by eye: the gated row count is ~10–20× smaller, so a healthy G2 at an unmatched
+  dose is uninterpretable).
+- **`--rank-tripwire {off,warn,abort}`** (default **warn**) + **`--rank-tripwire-drop`** (default
+  0.20) — §4.1 verbatim, `agents/training/rank_tripwire.py` (`RankTripwireCallback`, registered in
+  `main/train/callbacks.py` unless `off`). **No fold runs blind again**: the five failed arms'
+  `rank/policy_pr` collapse (21.87 → 12.5–13.6, 38–43%) was on an instrument already running and
+  read five days late. The callback re-reads the EXISTING `rank/policy_pr` scalar out of
+  `logger.name_to_value` at each rollout boundary (no new probe, no forward): EMA (half-life 10
+  train() calls) vs the run's own baseline (median of readings [5, 25), logged as
+  `rank/policy_pr_baseline`); **WARN** at `ema < (1−drop/2)·base` ×3 consecutive (launcher event
+  via `main.launcher.ipc.emit` + `rank/policy_pr_ratio`); **TRIP** at `< (1−drop)·base` ×3 (loud
+  event + `rank/tripwire_fired = 1` latched; under `abort` the callback returns False from
+  `_on_step`, so `learn()` stops cleanly and the normal final save runs). A missing reading is
+  **"no reading"** — `rank/tripwire_no_reading`, counters frozen (not reset), never a trip and
+  never an all-clear. 20% is calibrated: fires on all five known-bad arms, on no known-good
+  control; 20–38% is the margin. Pure diagnostic — no loss, no grad; `abort` changes *when*
+  training ends, never what a step computes. State machine pinned in `rank_tripwire_test.py`;
+  provenance in `agents/model/distill_target_gate_provenance_test.py`.
 
 Tests: `instrumented_ppo_test.py::test_distill_*` (policy KL: identical→0, masking, illegal-mask, None-guard,
 grad-student-only, reuse-bit-identical, multi-teacher averaging) + `::test_value_distill_*` (equal→0, masking,

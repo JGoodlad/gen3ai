@@ -301,6 +301,16 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
     _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
     _resolve("distill_value_feat_coef", 0.0)   # training-only FitNets value-FEATURE distill cosine weight (inherited on resume)
+    # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
+    # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
+    # never gated, read back here so a flagless resume keeps the arm it was launched as.
+    _resolve("distill_target", "kl")           # v103 training-only TARGET FORM ("kl" = byte-identical)
+    _resolve("distill_topk", 1)                # v103 training-only top-K (1 = argmax CE)
+    _resolve("distill_gate", "none")           # v103 training-only JUDGE (rung a)
+    _resolve("distill_gate_tau", 0.0)          # v103 training-only gate threshold (normalized-adv units)
+    _resolve("distill_beta", 1.0)              # v103 training-only AWR |adv| temperature
+    _resolve("rank_tripwire", "warn")          # v103 training-only diagnostic (§4.1; no loss, no grad)
+    _resolve("rank_tripwire_drop", 0.20)       # v103 training-only TRIP threshold (fractional drop)
     _resolve("opd_beta", 1.0)                  # training-only OPD softmax temperature β
     _resolve("damage_topk_k", 0)               # v30 structural int (top-K incoming; version-checked, fresh-only)
     _resolve("damage_matrices_outgoing", False)  # v32 structural (outgoing damage matrix; version-checked, fresh-only)
@@ -543,6 +553,27 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                 args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
         except (ValueError, FileNotFoundError) as _e:
             parser.error(str(_e))
+    # gen3_distill_target_gate_v1 (design §7.5): the action-form family's dependency graph.
+    # Checked on the RESOLVED values (after `_resolve`), so an incoherent combination is refused
+    # whether it was typed on this launch or inherited from the checkpoint's recorded config.
+    if args.distill_target == "action" and not (args.distill_coef and args.distill_coef > 0):
+        parser.error("--distill-target action requires --distill-coef > 0 — the target form is a "
+                     "property of the distill term; without the term there is nothing to shape")
+    if args.distill_topk < 1:
+        parser.error("--distill-topk must be >= 1 (1 = argmax CE; K >= n_actions recovers the KL)")
+    if args.distill_topk != 1 and args.distill_target != "action":
+        parser.error("--distill-topk requires --distill-target action — the top-K dial "
+                     "parameterizes the action-form target; the 'kl' path has no K")
+    if args.distill_gate != "none" and args.distill_target != "action":
+        parser.error("--distill-gate requires --distill-target action (design §7.5: the gate "
+                     "rides the action-form term)")
+    if args.distill_gate_tau != 0.0 and args.distill_gate != "advantage":
+        parser.error("--distill-gate-tau requires --distill-gate advantage — tau is the advantage "
+                     "gate's threshold")
+    if args.distill_beta <= 0.0:
+        parser.error("--distill-beta must be > 0 (an AWR temperature)")
+    if not (0.0 < args.rank_tripwire_drop < 1.0):
+        parser.error("--rank-tripwire-drop must be in (0, 1) — a fractional drop from baseline")
     if args.distill_coef and args.distill_coef > 0 and (args.trainee_team or args.trainee_teams):
         parser.error("--distill-coef is mutually exclusive with --trainee-team/--trainee-teams: "
                      "distillation biases the trainee toward the teacher team via --distill-team-bias "

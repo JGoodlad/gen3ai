@@ -511,6 +511,168 @@ def test_distill_on_folds_into_the_update_and_pulls_toward_the_teacher():
     assert kl() < before, "the distillation KL did not fall over repeated updates"
 
 
+# ---- gen3_distill_target_gate_v1 (--distill-target / --distill-topk / --distill-gate /
+# --distill-gate-tau / --distill-beta): the ACTION-FORM distill target + the advantage gate
+# (design_advantage_gated_distillation.md §3.1/§3.3/§7.3). The provenance genre is gated in
+# agents/model/distill_target_gate_provenance_test.py; here is the loss itself + the fold.
+
+def test_action_distill_at_K_full_and_no_gate_reproduces_the_kl():
+    """§7.3 identity 1: K = n_actions + gate=none + Â ≡ 0 reproduces `_distill_loss`'s masked-mean
+    forward KL to floating-point tolerance — the identity that makes the new path a SUPERSET of
+    the old rather than a replacement (with zero advantages the AWR weight is exp(0) = 1 for every
+    row, so the weighted mean IS the plain masked mean)."""
+    th.manual_seed(3)
+    B, A = 6, 5
+    student, teacher = th.randn(B, A), th.randn(B, A)
+    amask = th.ones(B, A); amask[:, 4] = 0.0                       # one illegal column (both sides)
+    dmask = th.tensor([1.0, 1.0, 0.0, 1.0, 0.0, 1.0])
+    adv = th.zeros(B)
+    acts = th.zeros(B, dtype=th.long)
+    ref, ref_m = InstrumentedMaskablePPO._distill_loss(student, teacher, amask, dmask)
+    out = InstrumentedMaskablePPO._gated_action_distill_loss(
+        student, teacher, amask, dmask, adv, acts, top_k=A, tau=0.0, beta=1.0, gate="none")
+    assert out is not None
+    loss, m = out
+    assert float(loss) == pytest.approx(float(ref), rel=1e-5)
+    assert m["n_gated"] == ref_m["n"]                              # same rows: every on-pin one
+
+
+def test_action_distill_at_K1_reproduces_the_searchteacher_ce():
+    """§7.3 identity 2: K=1 (one-hot target ⇒ the KL form degenerates to −log π_S(a_T)) with the
+    AWR weight reproduces `_searchteacher_loss`'s weighted CE when the 'better action' IS the
+    teacher's argmax and every advantage is ≥ 0 (there |Â| = Â, as in the AWR buffer)."""
+    th.manual_seed(4)
+    B, A = 5, 4
+    student, teacher = th.randn(B, A), th.randn(B, A)
+    amask = th.ones(B, A)
+    adv = th.rand(B) * 3.0                                         # ≥ 0, like a confirmed improvement
+    t_argmax = teacher.argmax(-1)
+    ref, _ = InstrumentedMaskablePPO._searchteacher_loss(student, amask, t_argmax, adv, beta_awr=1.3)
+    out = InstrumentedMaskablePPO._gated_action_distill_loss(
+        student, teacher, amask, th.ones(B), adv, th.zeros(B, dtype=th.long),
+        top_k=1, tau=0.0, beta=1.3, gate="none")
+    assert out is not None
+    assert float(out[0]) == pytest.approx(float(ref), rel=1e-5)
+
+
+def test_action_distill_hand_checked_kl_vs_topk_vs_ce():
+    """The three target forms on one hand-checkable row: teacher p = (0.5, 0.3, 0.2), student
+    uniform over 3 legal actions, Â = 0 (w ≡ 1).
+
+      full KL (K=3): ln3 − H(p)                       ≈ 0.0690
+      top-2 KL:      q = (0.625, 0.375, 0); Σq·ln q + ln3 ≈ 0.4370
+      argmax CE (K=1): −ln(1/3) = ln 3                ≈ 1.0986
+
+    CE > top-K > KL — the dial monotonically trades tail shape for ordering."""
+    import math
+    teacher = th.log(th.tensor([[0.5, 0.3, 0.2]]))
+    student = th.zeros(1, 3)                                       # uniform
+    amask, dmask = th.ones(1, 3), th.ones(1)
+    adv, acts = th.zeros(1), th.zeros(1, dtype=th.long)
+
+    def run(k):
+        out = InstrumentedMaskablePPO._gated_action_distill_loss(
+            student, teacher, amask, dmask, adv, acts, top_k=k, tau=0.0, beta=1.0, gate="none")
+        assert out is not None
+        return float(out[0])
+
+    h_p = -(0.5 * math.log(0.5) + 0.3 * math.log(0.3) + 0.2 * math.log(0.2))
+    assert run(3) == pytest.approx(math.log(3) - h_p, abs=1e-4)                       # ≈ 0.0690
+    q1, q2 = 0.5 / 0.8, 0.3 / 0.8
+    assert run(2) == pytest.approx(q1 * math.log(q1) + q2 * math.log(q2) + math.log(3), abs=1e-4)
+    assert run(1) == pytest.approx(math.log(3), abs=1e-4)                             # ≈ 1.0986
+    assert run(1) > run(2) > run(3)
+
+
+def test_advantage_gate_selects_exactly_the_disagreeing_negative_rows():
+    """§3.1: a row fires iff BOTH (teacher argmax ≠ sampled action) AND (Â < −τ) AND on-pin.
+    Four rows, one per exclusion reason — only row 0 contributes, and a row above −τ contributes
+    NOTHING (the loss equals the loss computed with that row absent)."""
+    A = 3
+    teacher = th.tensor([[0.0, 0.0, 5.0]] * 4)                     # argmax = 2 on every row
+    student = th.tensor([[0.0, 2.0, 0.0]] * 4)                     # argmax = 1 (disagrees w/ teacher)
+    amask = th.ones(4, A)
+    dmask = th.tensor([1.0, 1.0, 1.0, 0.0])                        # row 3: off-pin
+    acts = th.tensor([0, 0, 2, 0])                                 # row 2: sampled the teacher's action
+    adv = th.tensor([-1.0, -0.2, -1.0, -1.0])                      # row 1: above −τ (τ = 0.5)
+    out = InstrumentedMaskablePPO._gated_action_distill_loss(
+        student, teacher, amask, dmask, adv, acts, top_k=1, tau=0.5, beta=1.0, gate="advantage")
+    assert out is not None
+    loss, m = out
+    assert m["n_gated"] == 1.0 and m["gated_frac"] == pytest.approx(0.25)
+    assert m["gate_agree_rate"] == 0.0                             # student argmax 1 ≠ teacher 2
+    assert m["mean_gate_adv"] == pytest.approx(-1.0)
+    # Row 0 alone: CE toward action 2 under the student's softmax (the single-row weighted mean —
+    # the weight cancels).
+    expect = float(F.cross_entropy(student[:1], th.tensor([2])))
+    assert float(loss) == pytest.approx(expect, rel=1e-5)
+    # The above-−τ row contributes nothing: removing it changes nothing.
+    out2 = InstrumentedMaskablePPO._gated_action_distill_loss(
+        student[[0, 2, 3]], teacher[[0, 2, 3]], amask[[0, 2, 3]], dmask[[0, 2, 3]],
+        adv[[0, 2, 3]], acts[[0, 2, 3]], top_k=1, tau=0.5, beta=1.0, gate="advantage")
+    assert float(out2[0]) == pytest.approx(float(loss), rel=1e-6)
+
+
+def test_an_empty_gate_returns_none_never_nan():
+    """§7.3: an empty gated subset returns None (the term is skipped), never a 0/0 NaN."""
+    A = 3
+    teacher = th.tensor([[0.0, 0.0, 5.0]] * 2)
+    student = th.zeros(2, A)
+    out = InstrumentedMaskablePPO._gated_action_distill_loss(
+        student, teacher, th.ones(2, A), th.ones(2),
+        th.tensor([0.5, 1.0]),                                     # every advantage POSITIVE → no row
+        th.tensor([0, 0]), top_k=1, tau=0.0, beta=1.0, gate="advantage")
+    assert out is None
+
+
+def test_action_distill_end_to_end_folds_and_an_empty_gate_is_byte_identical():
+    """The fold half (through a real train()): `--distill-target action` enters the update; and
+    with an advantage gate no minibatch ever satisfies (τ = 1e9), the update is byte-identical to
+    no distillation at all — the None guard end-to-end — while distill/n_gated still logs 0.0
+    (a reading, not an absence)."""
+    model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model.learn(total_timesteps=8 * 4)
+
+    model._distill_teachers = []
+    model.distill_coef = 0.0
+    base = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+
+    model._distill_teachers = [teacher]
+    model.distill_coef = 10.0
+    model.distill_target = "action"
+    on = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    assert any(not th.equal(base[k], on[k]) for k in base), (
+        "--distill-target action did not enter the update")
+    assert model.logger.name_to_value.get("distill/n_gated", 0.0) > 0.0
+    assert "distill/gated_frac" in model.logger.name_to_value
+    assert "distill/gate_agree_rate" in model.logger.name_to_value
+
+    model.distill_gate = "advantage"
+    model.distill_gate_tau = 1e9                                   # Â < −1e9 never holds
+    gated = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
+    for k in base:
+        assert th.equal(base[k], gated[k]), (
+            f"an empty advantage gate still perturbed {k} — the None guard failed end-to-end")
+    assert model.logger.name_to_value.get("distill/n_gated") == 0.0
+    assert model.logger.name_to_value.get("distill/gated_frac") == 0.0
+
+
+def test_distill_target_class_default_is_kl_and_dispatch_is_source_guarded():
+    """The default is the untouched full-distribution path: the class attribute says 'kl' and the
+    fold dispatches to the LITERAL `_distill_loss` call on that branch (byte-identity at the
+    default is the C6 build-vs-enable contract, §7.3)."""
+    assert InstrumentedMaskablePPO.distill_target == "kl"
+    assert InstrumentedMaskablePPO.distill_gate == "none"
+    assert InstrumentedMaskablePPO.distill_topk == 1
+    import inspect
+    src = inspect.getsource(InstrumentedMaskablePPO.train)
+    assert 'if _d_target == "kl":' in src and "_gated_action_distill_loss(" in src, (
+        "the target-form dispatch left the fold — the kl default must take the literal "
+        "_distill_loss call")
+
+
 @pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (5, 3, 15)])
 def test_grad_accum_matches_full_batch(micro, accum, full):
     """accum=K over micro-batches of size B reproduces the parameter update of accum=1 over a single

@@ -110,7 +110,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
           3. the WIN-PROB BCE, then the CF-TWIN on-policy mirror
           4. the VALUE-DIST HL-Gauss CE
-          5. the DISTILL family — policy KL, value MSE, the FitNets value-feature hint
+          5. the DISTILL family — the policy term (full KL, or the top-K/action-CE form with the
+             optional advantage gate under `--distill-target action` — gen3_distill_target_gate_v1),
+             value MSE, the FitNets value-feature hint
           6. SEARCH-TEACHER AWR, then OPD
           7. TD-AUX (the Bellman-residual consistency term)
           8. the COUNTERFACTUAL block — cf-winprob, cf-evidential, cf-twin, cf-shadow
@@ -797,6 +799,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # stash is not clobbered. OFF (coef 0) → no teacher value_pooled read, loss byte-identical.
                         _vfd_on = self.distill_value_feat_coef != 0.0
                         _s_vfeat = self.policy.features_extractor.last_value_pooled if _vfd_on else None
+                        # +DISTILL TARGET FORM (gen3_distill_target_gate_v1,
+                        # design_advantage_gated_distillation.md §3.1/§3.3): WHAT the policy term
+                        # asks for. "kl" (the default) takes the literal `_distill_loss` call below
+                        # — byte-identical to every run before the flag existed. "action" dispatches
+                        # to `_gated_action_distill_loss` (teacher top-K renormalized target, K=1 =
+                        # argmax CE, AWR-weighted by |Â|), optionally row-gated on the student's OWN
+                        # normalized advantage (`--distill-gate advantage`: teacher disagrees AND
+                        # Â < -τ). `advantages`/`actions` are the very tensors the clip objective
+                        # uses, so τ is in clip-objective units. Everything else — the teacher
+                        # forwards, the per-teacher balancing, every value-side term — is untouched.
+                        _d_target = str(getattr(self, "distill_target", "kl"))
+                        _gate_n = _gate_agree = _gate_adv = 0.0   # §4.3 liveness, summed over teachers
                         _per_teacher_kl, _per_teacher_vd, _per_teacher_vfd = [], [], []
                         for _k, _teacher in enumerate(self._distill_teachers, start=1):
                             _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
@@ -815,10 +829,23 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                 # + overwrites it. Under no_grad → detached (the FitNets target is frozen).
                                 _t_vfeat = (_teacher.policy.features_extractor.last_value_pooled
                                             if _vfd_on else None)
-                            _d_out = self._distill_loss(_s_logits, _t_logits, rollout_data.action_masks, _sel)
+                            if _d_target == "kl":
+                                _d_out = self._distill_loss(_s_logits, _t_logits, rollout_data.action_masks, _sel)
+                            else:
+                                _d_out = self._gated_action_distill_loss(
+                                    _s_logits, _t_logits, rollout_data.action_masks, _sel,
+                                    advantages, actions,
+                                    top_k=int(getattr(self, "distill_topk", 1)),
+                                    tau=float(getattr(self, "distill_gate_tau", 0.0)),
+                                    beta=float(getattr(self, "distill_beta", 1.0)),
+                                    gate=str(getattr(self, "distill_gate", "none")))
                             if _d_out is not None:
                                 _kl_k, _m_k = _d_out
                                 _per_teacher_kl.append(_kl_k)
+                                if _d_target != "kl":
+                                    _gate_n += _m_k["n_gated"]
+                                    _gate_agree += _m_k["gate_agree_rate"] * _m_k["n_gated"]
+                                    _gate_adv += _m_k["mean_gate_adv"] * _m_k["n_gated"]
                                 for _mk, _mv in _m_k.items():   # per-teacher diagnostics (distill/t{k}_*)
                                     distill_metrics.setdefault(f"t{_k}_{_mk}", []).append(float(_mv))
                             if _vfd_on:
@@ -843,6 +870,20 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                 if _vd_k is not None:
                                     _per_teacher_vd.append(_vd_k)
                                     distill_metrics.setdefault(f"t{_k}_value_mse", []).append(float(_vd_k))
+                        if _d_target != "kl":
+                            # +GATE LIVENESS (§4.3): the aggregate-across-teachers row for THIS
+                            # minibatch. `n_gated == 0` is a READING — the gate found nothing to
+                            # teach here — not an absence; the rate metrics are gated on n>0
+                            # because a 0/0 agree-rate would be a fabricated perfect score.
+                            _B_rows = float(_tid_flat.shape[0])
+                            distill_metrics.setdefault("n_gated", []).append(_gate_n)
+                            distill_metrics.setdefault("gated_frac", []).append(
+                                _gate_n / max(_B_rows, 1.0))
+                            if _gate_n > 0:
+                                distill_metrics.setdefault("gate_agree_rate", []).append(
+                                    _gate_agree / _gate_n)
+                                distill_metrics.setdefault("mean_gate_adv", []).append(
+                                    _gate_adv / _gate_n)
                         if _per_teacher_kl:
                             # Per-archetype balancing: average the per-teacher mean-KLs so a teacher with
                             # fewer states still contributes comparable gradient (not swamped by a big one).
@@ -1333,6 +1374,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # masked forward KL(π_teacher ‖ π_student) being minimized (should FALL as the student matches the
         # specialist), `agree_rate` = student ↔ teacher mode agreement on teacher-team states (should RISE),
         # `coverage` = fraction of the minibatch on the teacher's team, `n` = teacher-team state count.
+        # Under `--distill-target action` (gen3_distill_target_gate_v1) the §4.3 liveness row rides the
+        # same prefix: `gated_frac` / `n_gated` (0 is a reading: the gate found nothing) /
+        # `gate_agree_rate` (student argmax == teacher argmax ON GATED ROWS) / `mean_gate_adv` — the
+        # dose meters G2's share-matching is read against (with grad/distill_share).
         # Empty (off / no teacher-team states in any minibatch) → not logged.
         if distill_metrics:
             for _dk, _dvals in distill_metrics.items():

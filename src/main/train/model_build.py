@@ -143,6 +143,14 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("distill_coef",                  _F0),
     ("distill_value_coef",            _F0),
     ("distill_value_feat_coef",       _F0),      # gen3_exploiter_value_feat_distill_v1
+    # gen3_distill_target_gate_v1 — the action-form/top-K target + advantage gate (v103).
+    # (`rank_tripwire`/`rank_tripwire_drop` are CALLBACK config, not model attrs — see
+    # main.train.callbacks — so they are deliberately not rows here.)
+    ("distill_target",                _PLAIN),
+    ("distill_topk",                  _PLAIN),
+    ("distill_gate",                  _PLAIN),
+    ("distill_gate_tau",              _PLAIN),
+    ("distill_beta",                  _PLAIN),
     ("opp_intent_coef",               _F0_OPT),
     ("beta_setvalued_coef",           _F0_OPT),
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. Folds NO loss term and
@@ -323,6 +331,13 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
             capacity_velocity_every=args.capacity_velocity_every,
+            distill_target=args.distill_target,
+            distill_topk=args.distill_topk,
+            distill_gate=args.distill_gate,
+            distill_gate_tau=args.distill_gate_tau,
+            distill_beta=args.distill_beta,
+            rank_tripwire=args.rank_tripwire,
+            rank_tripwire_drop=args.rank_tripwire_drop,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -604,6 +619,13 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
             capacity_velocity_every=args.capacity_velocity_every,
+            distill_target=args.distill_target,
+            distill_topk=args.distill_topk,
+            distill_gate=args.distill_gate,
+            distill_gate_tau=args.distill_gate_tau,
+            distill_beta=args.distill_beta,
+            rank_tripwire=args.rank_tripwire,
+            rank_tripwire_drop=args.rank_tripwire_drop,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

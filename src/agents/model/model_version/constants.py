@@ -112,7 +112,23 @@ from typing import Any, Dict
 #   the policy-gradient term OFF, and no flag could zero it). A pre-v102 config defaults it to
 #   1.0 = upstream — not a guess: the term entered at an implicit 1.0 in every run ever made.
 #   No ARCH_SIGNATURE bump — computed in the PPO step, never in the extractor forward.
-MODEL_CONFIG_VERSION = 102
+# v103 (gen3_distill_target_gate_v1): the ADVANTAGE-GATED / ACTION-FORM DISTILLATION family + the
+#   RANK TRIPWIRE (design_advantage_gated_distillation.md §3.1/§3.3/§4.1/§7.1). Seven TRAINING-only
+#   knobs, the td_aux_coef class exactly — recorded for provenance + flagless-resume read-back,
+#   never gated. `distill_target` ("kl" = the untouched full-distribution KL, the byte-identical
+#   default; "action" = the teacher's top-K probabilities renormalized over the legal set —
+#   `distill_topk`=1 ⇒ pure argmax CE, the §3.3 axis no arm had ever manipulated; K >= n_actions
+#   recovers the KL), `distill_gate` "advantage" + `distill_gate_tau` (rung (a): a row fires only
+#   where the teacher's argmax disagrees with the SAMPLED action AND the student's own NORMALIZED
+#   advantage reads it as a mistake, Â < -τ — so the distill gradient pushes a logit PPO is
+#   already pushing down, by construction), `distill_beta` (the AWR |Â| temperature, mirroring
+#   search_teacher_beta), and `rank_tripwire`/`rank_tripwire_drop` (§4.1: the rank/policy_pr
+#   EMA-vs-own-baseline watchdog, default "warn"; "abort" may stop learn() cleanly — it changes
+#   WHEN training ends, never what a step computes). A pre-v103 config defaults each to its
+#   argparse default — not a guess: "kl" is the one loss every such run trained with, and the
+#   tripwire did not exist. No ARCH_SIGNATURE bump — nothing here touches a forward pass or a
+#   weight shape.
+MODEL_CONFIG_VERSION = 103
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

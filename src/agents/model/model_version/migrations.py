@@ -341,4 +341,16 @@ def _migrate_config(data: dict) -> dict:
     if version < 102:
         data.setdefault("policy_grad_coef", 1.0)
         data["config_version"] = 102
+    # v103 (gen3_distill_target_gate_v1) — seven TRAINING-only knobs ⇒ v100's shape: no gate, no
+    # refusal, just the argparse defaults. Not a guess: "kl" IS the loss every pre-v103 run
+    # trained with (the one constant across every arm in the five-arm record), no run ever had a
+    # gate, and the rank tripwire did not exist (its "warn" default folds nothing into any
+    # update). Any recorded value migrates untouched.
+    if version < 103:
+        for _k, _v in (("distill_target", "kl"), ("distill_topk", 1),
+                       ("distill_gate", "none"), ("distill_gate_tau", 0.0),
+                       ("distill_beta", 1.0), ("rank_tripwire", "warn"),
+                       ("rank_tripwire_drop", 0.20)):
+            data.setdefault(_k, _v)
+        data["config_version"] = 103
     return data

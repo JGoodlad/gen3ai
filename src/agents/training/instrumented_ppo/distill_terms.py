@@ -97,6 +97,72 @@ class DistillTerms:
         return loss, metrics
 
     @staticmethod
+    def _gated_action_distill_loss(student_logits, teacher_logits, action_mask, distill_mask,
+                                   advantages, sampled_actions, *, top_k: int = 1,
+                                   tau: float = 0.0, beta: float = 1.0, gate: str = "none",
+                                   w_clip: float = 20.0):
+        """ACTION-FORM exploiter distillation (``--distill-target action``) — rungs (c)+(a) of
+        designs/ai_v10/design_advantage_gated_distillation.md.
+
+        THE TARGET FORM (rung c, §3.3): instead of the teacher's whole distribution, distil its
+        TOP-K probabilities renormalized over the legal set. ``top_k=1`` is a pure argmax CE (the
+        one-hot target's ``log q`` term is 0, so the KL form below IS ``-log π_S(a_T)``) — one bit
+        of ordering information, no tail shape; ``top_k >= n_actions`` leaves the softmax untouched
+        and reproduces :meth:`_distill_loss`'s full forward KL exactly — the identity that makes
+        this path a superset rather than a replacement. Each row carries the §3.3 AWR weight
+        ``w = clamp(exp(|Â|/beta), max=w_clip)`` with ``Â`` the minibatch's NORMALIZED advantage
+        (the same tensor the clip objective uses, so ``tau`` is in clip-objective units); the
+        weighted mean ``Σ(w·row·m)/Σ(w·m)`` reduces to `_distill_loss`'s plain masked mean when
+        every ``Â`` is 0 (``w ≡ 1``).
+
+        THE JUDGE (rung a, §3.1): ``gate="advantage"`` keeps only rows where BOTH (1) the teacher's
+        argmax DISAGREES with the sampled action — there is something to teach — and (2)
+        ``Â(s,a) < -tau`` — the student's own experience says the action it took was a mistake. On
+        such a row PPO pushes probability off ``a`` and a CE toward ``a_T ≠ a`` also pushes
+        probability off ``a``: the two gradients agree on the decisive logit by construction, using
+        the same number. ``gate="none"`` fires on every on-pin row — exactly the rows
+        `_distill_loss` fires on (arm G1, the dose-confound-free discriminator).
+
+        Masked-mean over gated rows exactly as `_distill_loss` masks over on-pin rows, so per-row
+        gradient magnitude is preserved and only the row FRACTION changes (what makes §6.2's
+        `grad/distill_share` dose-matching meaningful). Returns ``(loss, metrics)`` or ``None``
+        when no row survives the gate — an empty gate must never NaN-poison the loss."""
+        if student_logits is None or teacher_logits is None or distill_mask is None:
+            return None
+        m = distill_mask.reshape(-1).to(student_logits.dtype)              # [B] 1.0 on on-pin rows
+        neg = (action_mask.to(student_logits.dtype) - 1.0) * 1e9           # illegal → −inf (both sides)
+        s_masked = student_logits + neg
+        t_masked = teacher_logits + neg
+        t_mode = t_masked.argmax(-1)                                       # [B] the teacher's action
+        adv = advantages.reshape(-1).to(student_logits.dtype)              # [B] NORMALIZED Â(s, a)
+        if gate == "advantage":
+            a = sampled_actions.reshape(-1).long()
+            m = m * (t_mode != a).to(m.dtype) * (adv < -float(tau)).to(m.dtype)
+        n_gated = m.sum()
+        if float(n_gated) < 1.0:
+            return None                                                    # empty gate → no term, never NaN
+        p_t = F.softmax(t_masked, dim=-1)                                  # teacher probs over legal (detached)
+        k = max(1, int(top_k))
+        if k < p_t.shape[-1]:
+            vals, idx = p_t.topk(k, dim=-1)
+            p_t = th.zeros_like(p_t).scatter_(-1, idx, vals)
+            p_t = p_t / p_t.sum(-1, keepdim=True).clamp_min(1e-9)          # renormalize over the kept set
+        logp_s = F.log_softmax(s_masked, dim=-1)                           # student log-probs over legal
+        row = (p_t * (th.log(p_t.clamp_min(1e-9)) - logp_s)).sum(-1)       # [B] KL form; one-hot ⇒ plain CE
+        w = th.exp(adv.abs() / beta).clamp(max=w_clip)                     # AWR |Â| weight (sign is the gate's job)
+        wm = w * m
+        loss = (row * wm).sum() / wm.sum().clamp(min=1e-6)
+        with th.no_grad():
+            agree_row = (s_masked.argmax(-1) == t_mode).float()
+            metrics = {"loss": float(loss),
+                       "n_gated": float(n_gated.item()),
+                       "gated_frac": float(m.mean()),                      # of the WHOLE minibatch
+                       "gate_agree_rate": float((agree_row * m).sum() / n_gated),
+                       "mean_gate_adv": float((adv * m).sum() / n_gated),
+                       "mean_w": float((w * m).sum() / n_gated)}
+        return loss, metrics
+
+    @staticmethod
     def _value_distill_mse(student_values, teacher_values, distill_mask, popart=None):
         """VALUE DISTILLATION — masked MSE(V_teacher ‖ V_student) over the teacher-team rows.
 

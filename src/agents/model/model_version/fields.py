@@ -453,6 +453,24 @@ class ModelVersionFields:
     canary_reset_steps: int = 1_000_000
     capacity_cosine_every: int = 50
     capacity_velocity_every: int = 50
+    # ---- gen3_distill_target_gate_v1 (config v103) — DISTILL TARGET FORM + ADVANTAGE GATE ------
+    # Seven TRAINING-only knobs (design_advantage_gated_distillation.md §3.1/§3.3/§4.1/§7.5). The
+    # five distill knobs shape the exploiter policy-distillation term in the PPO step: `distill_target`
+    # ("kl" = the full-distribution KL, the byte-identical default; "action" = the teacher's top-K
+    # renormalized target, `distill_topk`=1 ⇒ argmax CE), `distill_gate`/"advantage" + `distill_gate_tau`
+    # (rung (a): fire only where the teacher disagrees with the sampled action AND the student's own
+    # normalized Â < -τ), `distill_beta` (the AWR |Â| temperature). The two rank-tripwire knobs
+    # configure a pure DIAGNOSTIC callback (v101's class — no loss, no grad; "abort" may STOP learn(),
+    # which changes when training ends, never what a step computes). None is read by the extractor
+    # forward, none changes a weight shape ⇒ the td_aux_coef class exactly: recorded for PROVENANCE +
+    # flagless-resume read-back (`_resolve` reads these fields), NEVER compared by check_compatible.
+    distill_target: str = "kl"
+    distill_topk: int = 1
+    distill_gate: str = "none"
+    distill_gate_tau: float = 0.0
+    distill_beta: float = 1.0
+    rank_tripwire: str = "warn"
+    rank_tripwire_drop: float = 0.20
     # gen3_belief_grad_mode_v1 (config v41): which gradient ARROW between the state-prediction belief
     # heads and the rest of the network is cut. THE TWO NON-DEFAULT MODES CUT OPPOSITE ARROWS — see
     # `Gen3FeaturesExtractor.__init__` for the four-route table:

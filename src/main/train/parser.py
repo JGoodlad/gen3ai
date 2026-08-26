@@ -832,6 +832,66 @@ def build_parser() -> argparse.ArgumentParser:
                         type=float, default=0.4,
                         help="Fraction of trainee episodes biased to the teacher's team (rest = pool "
                              "rehearsal). Default 0.4. Only used when --distill-coef > 0.")
+    # --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE
+    # (gen3_distill_target_gate_v1; designs/ai_v10/design_advantage_gated_distillation.md
+    # §3.1/§3.3/§4.1/§7). ALL TRAINING-only, the td_aux_coef provenance class (config v103):
+    # argparse default None so `_resolve` can inherit on a flagless resume; recorded on
+    # ModelVersion for provenance; never gated. Defaults are byte-identical to today.
+    parser.add_argument("--distill-target", "--distill_target", dest="distill_target",
+                        choices=["kl", "action"], default=None,
+                        help="TARGET FORM of the exploiter-distillation policy term (rung (c), the "
+                             "axis no arm has ever manipulated). 'kl' (default) = today's "
+                             "full-distribution forward KL, byte-identical. 'action' = distil the "
+                             "teacher's top-K probabilities renormalized over the legal set "
+                             "(--distill-topk; K=1 = pure argmax CE — one bit of ordering, no tail "
+                             "shape), AWR-weighted w = clamp(exp(|adv|/--distill-beta), 20). "
+                             "Requires --distill-coef > 0. Watch distill/gated_frac + "
+                             "distill/gate_agree_rate + grad/distill_share (the §6.2 dose meter).")
+    parser.add_argument("--distill-topk", "--distill_topk", dest="distill_topk",
+                        type=int, default=None,
+                        help="With --distill-target action: distil toward the teacher's top-K "
+                             "probabilities renormalized over the legal set (default 1 = pure argmax "
+                             "CE; K >= n_actions recovers the full KL — the D-F dial, K=3 the "
+                             "defensible middle). Requires --distill-target action.")
+    parser.add_argument("--distill-gate", "--distill_gate", dest="distill_gate",
+                        choices=["none", "advantage"], default=None,
+                        help="THE JUDGE (rung (a)). 'none' (default) = every on-pin row, exactly the "
+                             "rows the KL fired on (arm G1). 'advantage' = keep only rows where the "
+                             "teacher DISAGREES with the sampled action AND the student's own "
+                             "NORMALIZED advantage reads it as a mistake (adv < -tau) — the distill "
+                             "gradient then pushes a logit PPO is already pushing down, by "
+                             "construction. Requires --distill-target action. Watch distill/n_gated "
+                             "(0 is a reading, not an absence) and the §6.2 dose confound: G2's coef "
+                             "is set by grad/distill_share, never by eye.")
+    parser.add_argument("--distill-gate-tau", "--distill_gate_tau", dest="distill_gate_tau",
+                        type=float, default=None,
+                        help="Advantage-gate threshold tau (default 0.0): a row contributes only when "
+                             "adv(s,a) < -tau, in NORMALIZED advantage units (the same normalization "
+                             "the clip objective uses). Requires --distill-gate advantage.")
+    parser.add_argument("--distill-beta", "--distill_beta", dest="distill_beta",
+                        type=float, default=None,
+                        help="AWR temperature beta for the action-form target's |adv| weight, "
+                             "w = clamp(exp(|adv|/beta), max=20) — mirrors --search-teacher-beta "
+                             "(default 1.0). Only used with --distill-target action.")
+    parser.add_argument("--rank-tripwire", "--rank_tripwire", dest="rank_tripwire",
+                        choices=["off", "warn", "abort"], default=None,
+                        help="RANK TRIPWIRE (§4.1 — no fold runs blind again): watch the existing "
+                             "rank/policy_pr probe as an EMA (half-life 10 train() calls) against the "
+                             "run's own baseline (median over readings [5,25), logged as "
+                             "rank/policy_pr_baseline). WARN (launcher event + rank/policy_pr_ratio) "
+                             "at ema < (1 - drop/2)*base for 3 consecutive readings; TRIP at "
+                             "ema < (1 - drop)*base x3 (loud event + rank/tripwire_fired latched; "
+                             "under 'abort' the callback stops learn() cleanly, checkpoint saved). "
+                             "Default 'warn' — a tripwire that ends a run by default would be a new "
+                             "way to lose a training window. A missing reading is 'no reading' "
+                             "(rank/tripwire_no_reading), never a trip and never an all-clear.")
+    parser.add_argument("--rank-tripwire-drop", "--rank_tripwire_drop", dest="rank_tripwire_drop",
+                        type=float, default=None,
+                        help="TRIP threshold as a fractional drop from baseline (default 0.20: trip "
+                             "at 0.80x base, WARN at half the drop = 0.90x). Calibrated against the "
+                             "record: every KL-collapse arm fell 38-43%%, every control 0%% — 20%% "
+                             "fires on all five known-bad arms and no known-good control; 20-38%% is "
+                             "the honest margin.")
     parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
                         dest="search_teacher_batch_size", type=int, default=None,
                         help="Corrections sampled per train() for the AWR forward (default 256).")

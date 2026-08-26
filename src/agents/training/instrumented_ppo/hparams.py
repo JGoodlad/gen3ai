@@ -222,6 +222,27 @@ class PpoHyperparameters:
     # value_pooled read); training-only, NOT version-locked. Composes with / is an A/B alternative to
     # distill_value_coef (scalar) — read out by the value_cls effective-rank probe (does the HINT enrich it?).
     distill_value_feat_coef: float = 0.0
+    # ---- gen3_distill_target_gate_v1 — the DISTILL TARGET FORM + ADVANTAGE GATE (config v103;
+    # designs/ai_v10/design_advantage_gated_distillation.md §3.1/§3.3/§7.1). WHAT the exploiter
+    # policy-distillation term asks for. "kl" (default) = the full-distribution forward KL above,
+    # byte-identical to every pre-flag run (the dispatch takes the literal `_distill_loss` call).
+    # "action" = `_gated_action_distill_loss`: the teacher's top-K probabilities renormalized over
+    # the legal set (distill_topk=1 ⇒ pure argmax CE — one bit of ordering, no tail shape;
+    # K >= n_actions recovers the KL — the D-F dial), AWR-weighted w = clamp(exp(|Â|/distill_beta),
+    # 20) with Â the NORMALIZED minibatch advantage. All TRAINING-only (a loss FORM: no forward
+    # read, no weight shape) → NOT gated by check_compatible; recorded on ModelVersion (v103) for
+    # provenance + flagless-resume read-back, like td_aux_coef.
+    distill_target: str = "kl"
+    distill_topk: int = 1
+    # THE JUDGE (rung a). "none" = every on-pin row — exactly the rows `_distill_loss` fires on
+    # (arm G1). "advantage" = keep only rows where the teacher's argmax DISAGREES with the sampled
+    # action AND the student's own normalized advantage reads that action as a mistake
+    # (Â < -distill_gate_tau), so the distill gradient pushes a logit PPO is already pushing down,
+    # by construction. Requires distill_target="action" (enforced in config.resolve_config).
+    distill_gate: str = "none"
+    distill_gate_tau: float = 0.0
+    # AWR temperature β for the |Â| weight (mirrors search_teacher_beta; w clamped at 20, as there).
+    distill_beta: float = 1.0
 
     # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
     # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
