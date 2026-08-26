@@ -120,7 +120,26 @@ where PPO's gradient already points, by construction rather than by hope.**
   trunk. §6.4 makes this the kill-branch's successor question.
 - The **teacher prescription** (v8's literal shape: ~9M+ budgets on ~10-team slices) remains a live
   and *orthogonal* lever. This document assumes today's teachers and changes the loss; the two are
-  composable and should not be confounded in one arm.
+  composable and should not be confounded in one arm. **Lineage refinement (2026-08-25 evening,
+  read from `metadata.json`, not memory):** the tock-1 teachers are `rev-1 + ~3M` forks — *closer*
+  cousins by ancestry than v8's ~9–20M forks off a 276M parent — so ancestry is NOT the variable;
+  **distributional distance is**, and two mechanisms decouple the two on a young trunk:
+  **plasticity** (3M steps on a 25M-step net renovates; 20M on a converged 276M net barely moves)
+  and **narrowness** (tock-1 trained on K=4-team slices; v8's teachers covered 23 teams across 3 —
+  narrow objectives on plastic nets drift globally, which is what the flatness probe and fdE's
+  IN+OUT damage both measured). Tock-2.0 deliberately BUNDLES both (9M × all nine teams); if it
+  folds cleanly the separating follow-up is one arm (9M-narrow or 3M-broad), pre-named here so the
+  bundle is not read as settling the ingredient.
+- **Teacher CONTENT quality is not separated by any current gate** (owner question, 2026-08-25:
+  is the exploiter's edge transferable skill, or memorized exploitation of one opponent's distance
+  from Nash?). The admission gate measures extraction **against the target**, which is
+  exploit-shaped by construction — a teacher could pass on pure opponent-memorization. Proposed
+  amendment (**OWNER ADJUDICATION ITEM #2**): add a **transfer term** to admission — the teacher's
+  edge measured against opponents it never trained on (held-out pool members or the fixed bots);
+  an edge that vanishes off-target is Nash-distance memorization and does not fold, however clean
+  the channel. This is a CONTENT gate, orthogonal to everything else in this document (which
+  repairs the CHANNEL); the v8 +69 being *anchored* (vs fixed bots) is the existing evidence that
+  at least some exploit content transfers.
 
 ---
 
@@ -320,6 +339,19 @@ rung (c).**
 | **(a)** | JUDGE | student's own `Â` sign | free (already in the minibatch) | **SHIP IN v1 — but see the dose confound, §6.2** |
 | **(b)** | JUDGE | paired CRN rollouts, refusal rule | ~10–25 s per usable verdict, 4 workers (§A) | **v2 — flywheel-cadence, off-policy buffer only** |
 | **(d)** | magnitude | *n/a* | free | **PARK — magnitude is measured dead; keep only the per-state variant as a D-F rescue** |
+| **(e)** | GRADIENT (surgery) | the measured PPO↔distill gradient cosine | one projection per fold step (PCGrad-style) | **PRE-REGISTERED RUNG 3 — fires only on §6.4's KILL (G1 AND G2 both collapse)** |
+
+Rung (e), stated before any result can bias it: if BOTH arms collapse, the conflict is
+irreducible at the **loss** level — every axis will have been manipulated, including what the loss
+asks for — and the remaining lever is the **optimizer** level: project the distill gradient onto
+the plane orthogonal to PPO's whenever their cosine is negative (PCGrad, Yu et al. 2020), i.e.
+referee the collision instead of preventing it. It is listed LAST deliberately: it alters PPO's
+descent direction (its own failure surface on a touchy optimizer), and it manages a conflict the
+cheaper rungs try to eliminate at source. Its judge already runs — the same gradient-cosine
+telemetry that convicted the interference (Δcos −0.030, p = 0.001) adjudicates whether projection
+cures it, with the rank tripwire as the second meter. Ordering vs the §6.4 fold-tolerance arm:
+**(e) runs first** — it is one code change in the fold step and reuses the standard +3M arm shape,
+where the fold-tolerance arm needs a pre-conditioning phase plus a paired run.
 
 ---
 
@@ -527,11 +559,15 @@ non-replications in a single day are already on the record.
 > becomes the **fold-tolerance-is-trained** speculation of §1.4: `v8_04` was itself
 > `distill_4teacher`, and `rev-1` is a fresh trunk that has never been folded.
 >
-> **The successor experiment is then pre-registered here so the kill is not a dead end:** a
-> **fold-tolerance arm** — pre-condition `rev-1` with a *self*-distillation phase (a fold with
-> nothing to learn), then apply the real fold, and ask whether the trunk that has been through one
-> fold survives the second. If it does, the flywheel's D-G cadence needs a warm-up revolution and
-> the whole era's fold sequencing changes.
+> **Two successor experiments are pre-registered here, in order, so the kill is not a dead end.**
+> **First, rung (e) — gradient surgery** (§3.5): the loss level is exhausted, so referee the
+> collision at the optimizer level (project the distill gradient off PPO's when their cosine goes
+> negative); one code change, the standard +3M arm shape, adjudicated by the same gradient-cosine
+> telemetry that convicted the interference plus the rank tripwire. **Second, the fold-tolerance
+> arm** — pre-condition `rev-1` with a *self*-distillation phase (a fold with nothing to learn),
+> then apply the real fold, and ask whether the trunk that has been through one fold survives the
+> second. If it does, the flywheel's D-G cadence needs a warm-up revolution and the whole era's
+> fold sequencing changes.
 
 ---
 

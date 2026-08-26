@@ -4732,3 +4732,34 @@ plain arms' 0.19–0.33), no dividend; the bias verdict is confirmed by refusal.
 UNCHANGED: search parked behind critic calibration/R1; playoff pattern stays the deployment
 template if search ever returns. The `agent-a6c1260df535a67fc` worktree may now be cleaned by the
 orchestrator.
+
+### 🌙 EVENING OWNER EXCHANGE BANKED — lineage verified, rung (e) pre-registered, transfer gate proposed (2026-08-25, before the arm-F/tock-2 relays)
+
+Three products of the owner's evening questions, banked BEFORE tonight's training-side results
+arrive so no timestamp ambiguity attaches. (1) **Lineage facts VERIFIED from `metadata.json`**
+(per the config-archaeology rule): all three tock-1 teachers (`ai_v9_31/32/36`) fork from
+`ai_v9_29_rev1` final with `--steps 28,067,760` = a TARGET ⇒ **~+3M actual fork steps** on a ~25M
+parent; tock-2 (`ai_v9_44`) targets 34,067,760 ⇒ ~+9M. So tick-1's teachers are CLOSER cousins by
+ancestry than v8's (~9–20M on a 276M parent) — **ancestry is not the variable; distributional
+distance is**, decomposed as PLASTICITY (a 3M fork renovates a young trunk) × NARROWNESS (K=4-team
+slices vs v8's 23-teams-across-3; narrow objectives on plastic nets drift globally — consistent
+with the 8/8 flatness probe and fdE's IN+OUT damage). Tock-2 BUNDLES both ingredients; the
+separating follow-up (9M-narrow or 3M-broad) is pre-named in the design §1.4 so a clean tock-2 is
+not over-read. (2) **Rung (e) — gradient surgery (PCGrad) — added to the design ladder** (§3.5 +
+§6.4): fires only on the KILL branch (G1 AND G2 both collapse), runs BEFORE the fold-tolerance
+arm (one code change vs a pre-conditioning phase), judged by the same gradient-cosine telemetry
+that convicted the interference. Also answers the owner's "why not dropout/regularization"
+question, recorded in the design's terms: a regularizer only shapes geometry w.r.t. pressures it
+can see — isotropic unit-dropout cannot allocate objective-orthogonal subspaces, and dropout
+corrupts PPO's importance ratio besides; the targeted family (PCGrad/EWC/rank penalties/adapters)
+is refereeing machinery, sequenced AFTER the cheaper stop-generating-the-conflict rungs. (3)
+**OWNER ADJUDICATION ITEM #2 (morning): the teacher-admission TRANSFER GATE** — admission today
+measures extraction vs the TARGET (exploit-shaped by construction; cannot distinguish transferable
+skill from Nash-distance memorization of one opponent). Proposed: an off-target term (held-out
+pool members or fixed bots); an edge that vanishes off-target does not fold. Design §1.4 carries
+the spec; v8's +69 being ANCHORED is the existing evidence some exploit content transfers. Also
+restated for the record: the "fold-tolerance is trained" speculation is operationalized in the
+design as the (now second) kill-branch successor — the self-distillation vaccination arm — and the
+owner's two other candidate mechanisms are graded: Adam momentum CANNOT carry it (washes out in
+~1k updates), fold CADENCE cannot explain tick-1 (first fold, nothing to accumulate; it remains a
+live design parameter for consolidation once folds work).
