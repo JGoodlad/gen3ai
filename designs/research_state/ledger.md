@@ -4686,3 +4686,26 @@ arc now needs re-explanation** — its ELO/piloting gains stand as measured, but
 didn't collapse is open; one speculative lead (flagged as such): v8's student was itself a
 product of prior folds (v8_04 = distill_4teacher) — fold-tolerance may be trained, and rev-1
 is a never-folded fresh trunk. Tick-2 remains BLOCKED pending F + the design.
+
+### 📐 ADVANTAGE-GATED DISTILL DESIGN LANDED (`3de0fbe`) — and it argues the brief down: TARGET FORM leads, not the gate (2026-08-25 night)
+
+The doc's core argument, accepted as the working design: **a gate alone is a sixth "where"
+manipulation, and five arms proved "where" is not a lever — the one variable never moved
+across tick-1/fdA/fdB/fdE AND the +69 arc is the full-distribution KL itself.** v1 = rung (c)
+action-form targets + rung (a)'s agreement gate, built as one flag family, run as two arms
+with **G1 leading** (action-form CE, UNGATED, dose-matched via a new `grad/distill_share`
+scalar — a hard build prerequisite — firing on exactly fdB's rows: the scientifically clean
+form test) and G2 (gated) as the product arm; the ~10–20× dose confound between them is
+pre-registered (a healthy G2 alone is uninterpretable — the R1 PER lesson applied in advance).
+The gate's judge is the student's OWN advantage on its sampled action (Â < −τ: "my experience
+says this was a mistake") — sign-aligned with PPO on the decisive logit by construction, no
+new error axis; "teacher is better" comes from the admission gate. Rung (b) rollout-judging
+DEFERRED ON COST not merit (~0.01–0.07% coverage per arm at measured rollout rates; ⊂ rung (c)
+when it comes; ~1 agent-day since every primitive exists). Rung (d) parked (magnitude dead on
+two instruments). **TRIPWIRE SPEC ships with it, free**: `rank/policy_pr` EMA vs steps-[5,25)
+baseline, WARN −10%/TRIP −20% ×3 consecutive (calibrated: fires on all five known-bad arms,
+no controls), `--rank-tripwire {off,warn,abort}` default warn; missing reading = "no reading",
+never all-clear. **OWNER ADJUDICATION ITEM #1 for morning: the doc formally contests flywheel
+decision D-F** ("always full-distribution, never hard actions", 2026-08-18) — made before the
+negative space existed; `--distill-topk` preserves part of D-F if wanted. Build blocked on the
+adjudication; arm-F's overnight verdict edits §3 as pre-registered.
