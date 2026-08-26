@@ -4900,3 +4900,38 @@ over-read: this is a byproduct of a voided arm, not a measurement. Unaffected an
 calibration (n=6, median grad/distill_share 0.2509 — G1's dose target forming), transfer gate
 (reference arms done, teacher arms in progress). Voided-arm run dirs: `ai_v9_45_fdF_p1_0826`
 (26,640,624 steps, mechanically clean, wrong experiment).
+
+### 🚪 TRANSFER GATE: BELOW-ZERO — team-scoped exploitation with collateral damage; the v8 reconciliation hypothesis; #2b flagged for re-adjudication (2026-08-26)
+
+**All four teachers FAIL the gate, below the registered floor**: off-slice net vs `rev1final` =
+tock-1a **−0.0762** z=−3.06 · tock-1b **−0.0750** z=−3.01 · tock-1c **−0.0975** z=−3.92 · tock-2.0
+**−0.1013** z=−4.07 (800/arm, 2 verified-off-pin pool teams, shared reference arms, matched
+harness; seniority itself is +0.0513 z=+2.06 off-slice — a plain fork DOES carry a general edge;
+the teachers gave it up and more). The registered branches were ≈on-slice ⇒ SKILL / ≈0 ⇒
+MEMORIZATION; the answer is NEITHER: **negative**. Reading: the exploit is **TEAM-SCOPED** — same
+opponent both rows, so the teachers learned "beat the target WITH these teams" while their general
+piloting DEGRADED (consistent with the plasticity account, with the KL-distance growth, and with
+ai_v10's exploiter-scaling finding that no team-scoped abstraction transfers). tock-2.0 worst
+despite 3× budget/9 teams — breadth bought no transfer either.
+
+**THE v8 RECONCILIATION HYPOTHESIS (banked as hypothesis, not verdict):** v8's +69 folds were 3
+teachers × 23 teams — if exploit content is team-local, a fold can still lift the generalist when
+the slice UNION covers the play distribution; locality is not fatal, PER-TEACHER generality was
+never the requirement. v8's teachers were never transfer-tested, so this is unverified — but it
+reconciles today's result with the one success without contradiction.
+
+**DECISIONS:** (1) **G1/G2 PROCEED unchanged** — they are CHANNEL diagnostics; the KL queries
+teachers only on-pin where their edge is real (+8–12pp), retention is measured on taught teams,
+and comparability with fdB requires these teachers. The below-zero row does not enter the arms'
+§6.4 criteria. (2) **#2b FLAGGED FOR OWNER RE-ADJUDICATION:** the ruling as given ("an edge that
+vanishes off-target does not fold") vetoes ALL current teachers and, at face value, the flywheel;
+the union-coverage synthesis suggests the gate's proper roles are (a) confirming the on-slice edge
+is opponent-real and (b) requiring slice-UNION coverage across the teacher set — with the off-slice
+row as a NEVER-QUERY-OFF-PIN constraint (already structurally true of the loss) rather than a
+per-teacher veto. Owner decides which gate the flywheel gets.
+
+Ops: the chain n≥55 wait-forever defect (fdB's argv can only produce ~31 share points; threshold
+55→30 + launcher-exit escape; halves agree to 2.3% — the full-3M sample is the honest maximum);
+third `pkill -f` self-kill (heredoc carries the literal path past the bracket trick — kill by
+explicit PID, standing). Arm F phase 1 formally VOID in the record; corrected `ai_v9_50_fdF_p1c`
+queued behind G2; `ai_v9_45` preserved as the entropy-dissolution specimen.
