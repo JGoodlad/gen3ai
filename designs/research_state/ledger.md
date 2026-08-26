@@ -4550,3 +4550,29 @@ teacher per fold. Both collapse ⇒ the KL-to-specialist form itself is wrong at
 redesign at the target level (advantage-weighted/disagreement-gated distill), the deep branch.
 Same arm meters (piloting 9 teams, capacity row, retention). No endofrun on A/B/C (none
 earned it; fdC's null needs no 40-min confirmation).
+
+### 🔴 CORRECTION (supersedes b4f7766's mechanism clause) — the KL was ALWAYS on-pin-gated; the owner's question exposed the misread (2026-08-25 evening)
+
+Verified in code (ppo.py:777 `_sel = (_tid_flat == _k)` — "states on teacher k's team", and
+matchup_setup builds per-teacher species-sets the env matches): **the distillation KL fires ONLY
+on states where the trainee is piloting one of that teacher's pinned teams — in tick-1, in the
+factorial arms, and in the v8 arc alike.** `t1_coverage 0.24 / t2 0.12` is the FIRE fraction
+(≈ the 0.4 sampling bias split across teachers), not evidence of off-pin coaching. **The
+"wrong-states / non-expert coach on 76% of states" hypothesis is DEAD — it was never possible**;
+my b4f7766 clause and the factorial report's own reading both carried the misread. ALSO
+verified: ai_v8_14 used the IDENTICAL recipe (bias 0.4, coef 1.0, same gating) — the recipe did
+not change between the +69 success and this failure. **What differs is the TEACHERS: the v8
+teachers were long-trained runs (400M-step configs, some forked from other exploiter/distill
+lineages — deeply diverged, opponent-varied), ours are 3M forks specialized against ONE frozen
+stochastic opponent.** Live hypotheses, replacing wrong-states: (a) **teacher-distribution
+NARROWNESS** — a 3M single-opponent exploiter's on-pin policy is degenerately sharp (extraction
+measures OUTCOME, not distribution quality as a target); KL-matching it injects overconfident
+narrowness through the SHARED trunk → global rank collapse, which fits the switch (any coef,
+same collapse — the direction is poisoned, not the magnitude); (b) PPO-vs-KL conflict on the
+same states; (c) multi-teacher averaging (arm E still separates this). **Arms D/E reinterpreted
+before their data arrives**: bias 1.0 = MORE on-pin exposure + NO pool rehearsal — under (a)
+they collapse HARDER; readings rewritten: D/E worse-than-B ⇒ (a) confirmed as exposure-dosed;
+E ≫ D ⇒ (c) contributes. New candidate levers if (a) holds: TEMPERATURE-SOFTENED teacher
+targets, advantage/disagreement-gated distill, and LONGER/OPPONENT-VARIED tocks (the "better
+tocks" branch partially returns — not for extraction, for DISTRIBUTION quality). Owner-credit:
+the second wrong claim this week exposed by a plain question (Baton Pass, now this).
