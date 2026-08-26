@@ -422,11 +422,14 @@ real case. So the arm-read protocol carries an explicit check:
 
 ### 4.3 The term's own liveness
 
-`grad/distill_share` **does not exist today** — the parser says so in as many words (`parser.py:808`:
-*"only the search-teacher's `grad/searchteacher_share` and `grad/opd_share` are"*). That gap is
-tolerable for a term whose dose is a coefficient and whose row-count is fixed; it is **not**
-tolerable for a *gated* term, whose dose is the coefficient **times a fraction that moves during
-training**. §6.2 turns this into a hard requirement.
+`grad/distill_share` **is BUILT (2026-08-26, config v102 — with `--policy-grad-coef`, arm F's
+unblock, in the same pass):** the distill policy-KL term folds into the existing
+`grad_balance_metrics` `aux_terms` as `"distill"`, same denominator as `grad/searchteacher_share` /
+`grad/opd_share`, once per `train()`, read-only, telemetry-verified update-neutral; not logged (zero
+cost) when distillation is off. The gap it closed: a coefficient-only dose is tolerable for a term
+whose row-count is fixed; it is **not** tolerable for a *gated* term, whose dose is the coefficient
+**times a fraction that moves during training**. §6.2's dose-matching is now runnable. **G1's hard
+build prerequisite is MET.**
 
 New metrics, all cheap: `distill/gated_frac` · `distill/n_gated` · `distill/gate_agree_rate`
 (student argmax == teacher argmax *on gated rows*) · `distill/mean_gate_adv` · and

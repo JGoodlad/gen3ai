@@ -4808,3 +4808,27 @@ binding constraint; **the target FORM is the last variable standing**, exactly t
 tock-2.0 stands ready as the strong, rank-intact teacher for whichever recipe wins the morning
 adjudication — and is the natural first teacher through the proposed TRANSFER GATE (adjudication
 item #2).
+
+### ⚖️ MORNING ADJUDICATIONS BANKED + v102 LANDED — the fold recipe is decided; G1/G2 build dispatched (2026-08-26)
+
+**The v102 build landed** (`8a8e57c`, agent-built, 471+ targeted tests green, byte-identity
+SHA256-verified vs pre-change code) and the flag was **renamed `--pg-coef` → `--policy-grad-coef`
+the same morning, before any run recorded the field** (owner naming review; the `value_feat_cos`
+lesson applied prospectively). CHANGELOG v102 entry appended; design §4.3 flipped to BUILT — **G1's
+hard prerequisite is MET and arm F is unblocked.**
+
+**Owner adjudications (2026-08-26 morning):**
+- **#1 D-F: the contest is UPHELD, amended not rescinded.** Action-level CE leads (G1/G2 as
+  designed). **Standing long-term aspiration recorded: return to FULL DISTRIBUTION when possible**
+  — and the plasticity finding gives that a concrete, testable re-entry path: if full-KL's harm is
+  a property of a plastic trunk, it should shrink as the generalist converges, so the pre-named
+  re-entry experiment is a full-distribution fold LATE in a generation's life (the regime v8
+  actually folded in). D-F's spirit survives as the end state; action-CE is the bridge.
+- **#2 Transfer gate: HELD-OUT POOL MEMBER, not bots** (owner: the bots are saturated — an edge vs
+  them carries no information). Admission grows an off-target extraction row vs a pool team outside
+  the teacher's slice; an edge that vanishes off-target does not fold.
+- **#3 Arm F: RELAUNCH APPROVED**, phase 1 = `--policy-grad-coef 0` (KL + critic; avoids the
+  resume-immutable `vf_coef` gate; the critic never collapsed rank in any control).
+
+**G1/G2 BUILD DISPATCHED** (this session): the action-level CE target form + the advantage gate +
+the `rank/policy_pr` tripwire, per the design's §7.1 v1 scope. Launch argvs follow once landed.

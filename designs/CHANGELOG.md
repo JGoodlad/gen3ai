@@ -5727,3 +5727,26 @@ its curve. The trade was taken deliberately (pickling a diagnostic's optimizer i
 is worse) and the usable reading is to compare recoveries WITHIN a restart window: at production
 throughput a 3-hour window is ~16M env steps, so a 1M-step reset interval still fires ~16 times
 inside one. The startup banner says so out loud.
+
+## v102 — `policy_grad_coef` + `grad/distill_share` (2026-08-26): arm F's unblock and G1's dose meter
+
+**What landed.** `--policy-grad-coef` — a weight on the PPO policy-gradient term ALONE (`loss =
+policy_grad_coef · policy_loss + ent_coef · ent_loss + vf_term`; entropy, value and every aux keep
+their own coefficients), default 1.0 with a short-circuit that uses the unscaled tensor itself, so
+the default is byte-identical by construction (verified: SHA256 over every policy param after a
+seeded 3-rollout run, identical vs the pre-change code). v100's `td_aux_coef` provenance genre
+exactly: argparse `None`, `_resolve` to 1.0 with a `>= 0` guard, recorded on `ModelVersion`, v102
+`setdefault` migration (1.0 is the only possible past — every pre-v102 run trained at an implicit
+1.0), never gated. Plus **`grad/distill_share`**: the exploiter-distillation policy-KL term folded
+into the grad-balance probe's `aux_terms` (same denominator as `grad/searchteacher_share`), once per
+`train()`, read-only `autograd.grad`, verified update-neutral, absent (zero cost) when distillation
+is off. No `ARCH_SIGNATURE` bump; no `state_dict` keys; no optimizer positions.
+
+**Why it exists.** Arm F (the pure-distill-phase probe) stopped on its own pre-registered condition:
+the policy-gradient term had no coefficient, and `vf_coef` is both resume-immutable and — under
+`--value-from-dist` — the critic loss itself, so no existing flag could isolate the distillation
+term. And the advantage-gated design's G1 arm is dose-matched on GRADIENT SHARE, not coefficient
+(full-distribution KL and action-level CE at the same coefficient are wildly different doses), which
+requires the share to be a logged quantity. One pass serves both. The flag was born `--pg-coef` and
+renamed the same morning before any run recorded it — an opaque two-letter name on a recorded
+provenance field is the `value_feat_cos` lesson waiting to recur.
