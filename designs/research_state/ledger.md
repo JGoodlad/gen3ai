@@ -4763,3 +4763,48 @@ design as the (now second) kill-branch successor — the self-distillation vacci
 owner's two other candidate mechanisms are graded: Adam momentum CANNOT carry it (washes out in
 ~1k updates), fold CADENCE cannot explain tick-1 (first fold, nothing to accumulate; it remains a
 live design parameter for consolidation once folds work).
+
+### 🌅 OVERNIGHT RELAYS BANKED — arm F stopped honestly; the teacher side is FULLY eliminated; the narrowness half of the distance decomposition is DEAD (2026-08-26)
+
+**(1) ARM F NOT LAUNCHED — the ordered stop condition fired on both losses.** The PPO
+policy-gradient term has no coefficient (implicit 1.0 at `instrumented_ppo/ppo.py:447`; no
+`--pg-coef`/`--freeze-policy` exists), and `vf_coef` is resume-immutable AND under
+`--value-from-dist` the HL-Gauss CE *at* `vf_coef` IS the critic loss — so `--vf-coef 0` deletes
+the critic rather than isolating the KL. The §5 pre-registered edit is UNDETERMINED; the
+KL-alone-vs-simultaneity question now costs a feature. **Prerequisite build DISPATCHED from the
+ideation session** (adjudication-independent infrastructure): `--pg-coef` (training-coef genre,
+default 1.0 byte-identical, v100 provenance conventions) + the `grad/distill_share` telemetry —
+G1's hard build prerequisite AND arm F's unblock in one pass.
+
+**(2) TOCK-2.0 ADMITTED; the teacher-budget/breadth lever is DEAD.** Net extraction **+0.0875
+[+0.040,+0.135] z=+3.57** (ordered +0.1013 z=+4.13), seniority ~0 — clears the 800/arm gate. But
+9M/9-teams equals tock-1b's 3M/3-team row EXACTLY, and the narrowest 3M specialist (tock-1c,
++0.1162 z=+4.84) still holds the best row. Breadth REDISTRIBUTED competence (wins RaikouCelebi/
+ZapDug/JynxSO/CBMeta; loses Q6a/Q6b/MedichamCune — worst on tock-1c's own pinned pair; per-cell
+n≈89, the nine-cell pattern is the claim, no single row). Piloting +0.0702 z=+5.85 (8/9 teams
+above ref) — teachers keep passing the meter every student fails. **CAPACITY: tock-2.0
+`pi_features` 18.19 — INTACT after 9M of exploiter training** (vs 12.50 distilled): specialization
+does not collapse rank, ONLY the distill loss does; the teachers are not damaged goods. Ops note
+banked: the fdE-class benign teardown crash (`exitcode=-15` after final aggregate; 2nd occurrence
+— `crashes=1` on this path must be read off the crash log's last line), and the `nohup`-inside-
+tool-timeout launch footgun (SIGTERM hits the process group; `setsid` is the fix, now in the chain
+scripts).
+
+**(3) SHARPNESS RE-RUN (with tock-2.0): teachers BROADER, third confirmation — and the distance
+readout adjudicates yesterday's decomposition.** 11/12 cells dH significantly POSITIVE (teacher
+HIGHER entropy; sign convention verified in source per the `_cos` lesson), zero negative. New:
+tock-2.0's KL(T||B) is **0.66–0.76 vs the 3M teachers' 0.32–0.50** — 9M/9-team training moved the
+policy substantially FARTHER from base, spending the change on breadth ("bigger KL to match, no
+better outcomes to transfer" — the worst fold-target combination). **Consequence for the §1.4
+decomposition banked yesterday: the NARROWNESS half is DEAD as the distance driver** (breadth did
+not offset the step effect; directional, steps+breadth confounded, but decisive for the operative
+question) — **PLASTICITY survives alone**: v8's teacher proximity was its converged 276M parent's
+property and is unreproducible by teacher recipe on a ~25M trunk. The pre-named 9M-narrow/3M-broad
+arm is SUPERSEDED; design §1.4 updated in the same pass.
+
+**Programme position (training session's reading, ENDORSED):** coefficient, ecology, gating,
+teacher-count, budget/breadth, and sharpness are ALL eliminated — teacher quality was never the
+binding constraint; **the target FORM is the last variable standing**, exactly the design's claim.
+tock-2.0 stands ready as the strong, rank-intact teacher for whichever recipe wins the morning
+adjudication — and is the natural first teacher through the proposed TRANSFER GATE (adjudication
+item #2).

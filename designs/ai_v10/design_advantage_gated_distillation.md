@@ -129,7 +129,16 @@ where PPO's gradient already points, by construction rather than by hope.**
   narrow objectives on plastic nets drift globally, which is what the flatness probe and fdE's
   IN+OUT damage both measured). Tock-2.0 deliberately BUNDLES both (9M × all nine teams); if it
   folds cleanly the separating follow-up is one arm (9M-narrow or 3M-broad), pre-named here so the
-  bundle is not read as settling the ingredient.
+  bundle is not read as settling the ingredient. **2026-08-26 update — the sharpness re-run
+  answered the separating question without that arm, against the narrowness half:** tock-2.0
+  (9M × 9 teams) sits FARTHER from base (KL(T||B) 0.66–0.76 vs the 3M teachers' 0.32–0.50) while
+  *broader*-entropy (11/12 cells dH > 0) — if narrowness drove distance, breadth should have
+  offset the step effect and did not (steps and breadth moved together, so this is directional,
+  not a clean 2×2 — but the direction is decisive for the operative question). **Narrowness is
+  dead as the distance driver; PLASTICITY survives alone**: v8's teacher proximity was a property
+  of its converged 276M parent, not of teacher breadth, and cannot be reproduced by any teacher
+  recipe on a ~25M trunk. The 9M-narrow/3M-broad follow-up is SUPERSEDED. Extraction agrees the
+  lever is dead: tock-2.0's net +0.0875 equals tock-1b's 3M row exactly, below tock-1c's +0.1162.
 - **Teacher CONTENT quality is not separated by any current gate** (owner question, 2026-08-25:
   is the exploiter's edge transferable skill, or memorized exploitation of one opponent's distance
   from Nash?). The admission gate measures extraction **against the target**, which is
