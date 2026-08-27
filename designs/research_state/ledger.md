@@ -4995,3 +4995,25 @@ Ops note banked: the capacity-file/meter-file naming split (run-stem vs meter-ta
 false "pending" — flagged by the training session before it cost anything; two conventions in one
 chain is a trap for later cleanup. Next: F2c (reversibility) ~20:30, G1′ (the gate cell, coef
 0.1629) ~22:45.
+
+### 🏁 CAPSTONE AUTHORIZED — flywheel revolution two, pre-registered; #2b RESOLVED as union-coverage; PCGrad shelved with a registered prediction (2026-08-26 evening)
+
+Owner authorization: two days of box time for the flywheel proof-of-concept — the era's capstone.
+Spec pre-registered BEFORE any fleet training: `designs/ai_v10/design_flywheel_rev2_capstone.md`.
+The shape: a fresh fleet of FIVE tock-1c-shaped exploiters (2 teams each, +3M, same frozen target;
+10 slots = 9 meter teams + ONE deliberate ZapDug overlap — the first within-fleet consistency
+measurement), admitted per the **#2b RESOLUTION (owner): union-coverage gate** — on-slice
+extraction per teacher + set-level slice-union coverage; the off-slice transfer row is
+INFORMATIONAL, not a per-teacher veto. Fold battery of four arms off rev-1 final at the calibrated
+dose: **R2-ACTION** (capstone; gate flag set by tonight's G1′) · R2-TOPK (K=3 content
+dose-response — the instrument for the owner's recorded return-to-full-distribution aspiration) ·
+R2-KL (reproducibility control) · **R2-CTRL (no distill — the opportunity-cost baseline the
+capstone must beat)**. Success bars pre-registered (§4): R2-ACTION − R2-CTRL > 0 at z≥2 pooled AND
+no off-slice regression AND ≥6/9 team rows non-negative; PARTIAL and FAIL branches named;
+**wheel-turns-twice commitment** — a HOLD triggers revolution three as confirmation before any
+"flywheel works" claim. **PCGrad SHELVED with a registered prediction** (would land within noise
+of fdB's −7.5pp: F1c falsified conflict-as-cause, and Δcos −0.030 means projection passes ~97% of
+the gradient) — auditable if anyone ever wants the falsification arm. The untested import this
+capstone exists to test: UNION AGGREGATION — whether folding team-local teachers produces
+union-wide gains (the only surviving explanation of v8's +69). Era note: the post-capstone
+optimization era is NOT ai_v11 (taken: human replay); next free number when it opens.
