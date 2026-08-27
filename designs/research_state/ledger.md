@@ -5047,3 +5047,24 @@ cross-teacher floor + the style fingerprint. **FOLD-OVERLAP RULING: ZapDug folds
 F5e's copy is measurement-only** — two masters on one slice hands the student conflicting action
 targets, reintroducing the incoherence the action form cured; the two-master fold is a designed
 optimization-era experiment if divergence is real, never a capstone accident.
+
+### 🚀 FLEET ARMED + R2-CTRL CONTROL CORRECTED — the fdC-derivation confound caught pre-launch (2026-08-26 ~21:00, training relay + adjudication)
+
+Fleet queued behind tonight's arms (G1′ ~22:40 → F5a–F5e serial ~22:45→06:45 → R2-CTRL auto
+~08:45): five tock-1c-shaped exploiters, all checkargs-clean, `--exploiter` target verified
+identical across arms (opponent axis held fixed). A no-`final_model` arm logs as **SLICE
+UNCOVERED**, never a silent skip. **The catch of the night (training session): R2-CTRL as first
+built was the WRONG control** — derived from fdC's argv, it carried ecology ON (old
+stable-opponent teachers, share 0.35) + the old teacher set, i.e. two extra variables inside the
+one denominator every capstone bar divides by (`R2-ACTION − R2-CTRL`). Rebuilt from fdB's argv:
+ecology OFF, share 0.20, all five fleet runs as `--distill-teacher` at **coef 0.0** (team-bias
+constancy over the same slices). Now the control differs from the fold arms in exactly the
+distillation loss. ADJUDICATED + spec §3 amended with the construction of record and a
+**pre-registered admission-failure rule** for the flagged residual (control biased over a slice
+the fold arms drop if a teacher fails): ≤1 failure ⇒ the mismatch stands as a named caveat
+(second-order, mixed-direction — extra control practice on uncovered teams is conservative for
+bar 1; slightly more concentrated fold-arm bias on covered teams is mildly anti-conservative;
+quoted beside any bar landing within ~1pp); ≥2 failures ⇒ R2-CTRL is relaunched from the
+surviving set before the verdict is read. This is the same genre as the matched-extraction-row
+lesson: the control's job is to make the subtraction mean one thing, and it nearly meant three.
+Fold arms deliberately NOT built — argvs freeze after admission, launch on confirm, per §4.

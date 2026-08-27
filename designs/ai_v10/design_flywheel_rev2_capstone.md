@@ -112,6 +112,25 @@ detector only — never gates a verdict, per the 2026-08-26 §6.4 amendment).
 R2-CTRL ≈ 0 (fdC's −1.2 n.s. band); R2-ACTION > R2-CTRL (the capstone bar, §4); R2-TOPK between
 R2-ACTION and R2-KL — where it lands is the finding, not a success/failure.
 
+**R2-CTRL construction of record (corrected 2026-08-26 late, training session):** derived from
+**fdB's argv, not fdC's**. As first built (from fdC) it carried ecology ON (the old stable-opponent
+teachers, share 0.35) and the old teacher set — two extra variables in the one number every
+capstone bar divides by. Rebuilt: ecology OFF, share 0.20, `--distill-teacher` = all five fleet
+runs with **both distill coefficients 0.0** (team-bias constancy: `--distill-team-bias 0.4`
+spreads over the same slices as the fold arms). R2-CTRL now differs from the fold arms in exactly
+the distillation loss. fdC remains the historical no-distill reference; it is NOT this control.
+
+**Admission-failure rule (pre-registered, resolves the flagged residual):** R2-CTRL launches
+before admission closes, so a failed teacher leaves it biased over one slice the fold arms drop.
+- **≤1 teacher fails:** the mismatch STANDS and is a named caveat in the verdict. It is
+  second-order (a 0.4 total bias re-divided over 10 vs 8 slots) and mixed-direction — R2-CTRL gets
+  extra practice on the uncovered meter teams (conservative for bar 1 there) while the fold arms
+  get slightly more concentrated bias on covered teams (mildly anti-conservative there). If the
+  pooled verdict lands within ~1pp of a bar, the caveat is quoted beside it.
+- **≥2 teachers fail:** the mismatch is no longer second-order — R2-CTRL is RELAUNCHED from the
+  surviving teacher set before the verdict is read (schedule affords it: fewer covered slices to
+  meter).
+
 ## 4. Success bars (pre-registered)
 
 The capstone claim **HOLDS** iff, on the standing 9-team piloting meter (n=300/team, paired draws)
