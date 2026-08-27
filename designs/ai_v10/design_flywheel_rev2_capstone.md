@@ -15,11 +15,23 @@ the failure names the missing ingredient: every channel question was settled thi
 capstone failure indicts CONTENT AGGREGATION — the union-coverage assumption — and that too is
 decision-grade.
 
-**The one assumption imported from v8, tested here for the first time: folding several TEAM-LOCAL
-teachers produces union-wide gains.** The 2026-08-26 transfer gate proved exploit content is
-team-scoped (all four teachers −8 to −10pp off-slice, same opponent); v8's +69 is reconciled only
-if slice-UNION coverage, not per-teacher generality, is what a fold needs. Nothing has ever
-measured that directly.
+**The one assumption imported from v8, tested here for the first time: folding several
+VERIFIED-TEAM-LOCAL teachers produces union-wide gains.** Precision matters here (owner question,
+2026-08-26 evening): v8's fold WAS a union — 3 teachers / 23 teams — so union folding per se has a
+precedent. What v8 did NOT establish is this cell: its teachers were never transfer-tested, and
+the plasticity account predicts they were NOT team-local (a fork off a rigid 276M parent
+specializes without renovating, so it plausibly keeps its general competence — transfer-positive).
+Ours are measured local (−8 to −10pp off-slice, same opponent), the student is plastic, and the
+channel is action-form. v8 is encouraging precedent for a DIFFERENT cell, not evidence for this
+one.
+
+**REGISTERED PREDICTION — the per-team budget law (owner question, same exchange):** across the
+four admitted teachers, net extraction tracks STEPS-PER-TEAM monotonically (0.75M → +0.0825 ·
+1.0M → +0.0875 · 1.0M → +0.0875 [tock-2.0, 3× budget AND breadth, identical row] · 1.5M →
++0.1162), suggesting breadth never diluted anything — a fixed budget divided more ways did. The
+fleet sits uniformly at 1.5M/team, so the law predicts **every F5x admission row lands near
++0.11**. Scattered rows (±0.05) kill the law and mean slice CONTENT matters; clustered rows
+confirm it and make teams-per-exploiter a pure cost knob (~1.5M steps per team) for the next era.
 
 ## 1. Decisions of record folded into this spec
 

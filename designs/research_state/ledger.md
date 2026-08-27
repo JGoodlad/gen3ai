@@ -5017,3 +5017,20 @@ the gradient) — auditable if anyone ever wants the falsification arm. The unte
 capstone exists to test: UNION AGGREGATION — whether folding team-local teachers produces
 union-wide gains (the only surviving explanation of v8's +69). Era note: the post-capstone
 optimization era is NOT ai_v11 (taken: human replay); next free number when it opens.
+
+### 📐 SPEC SHARPENED BY TWO OWNER QUESTIONS — the v8-union cell corrected; the PER-TEAM BUDGET LAW registered (2026-08-26 evening)
+
+(1) "Didn't v8 test many exploiters as a union?" — YES, and the spec's "never tested" was
+imprecise: v8's fold was 3 teachers / 23 teams. Corrected in place: what v8 did not establish is
+THIS cell — verified-team-LOCAL teachers (transfer gate −8 to −10pp) × plastic student ×
+action-form channel; plasticity predicts v8's rigid-parent forks were NOT local (specialize
+without renovating ⇒ plausibly transfer-positive), so v8 is precedent for a different cell.
+(2) "Why could v8 train more teams per exploiter?" — the answer was sitting in our own four rows:
+**net extraction tracks STEPS-PER-TEAM monotonically** (0.75M→+0.0825 · 1.0M→+0.0875 ·
+1.0M→+0.0875 [tock-2.0: 3× budget AND breadth, IDENTICAL row] · 1.5M→+0.1162). Breadth never
+diluted; a fixed budget divided more ways did. v8's forks ran 1.2–2.5M/team — at or above our best
+ratio — so v8 "afforded" breadth by fork LENGTH. **REGISTERED PREDICTION (pre-fleet): the budget
+law puts every F5x admission row near +0.11** (all five sit at 1.5M/team). Scattered rows kill the
+law (slice content matters); clustered rows make teams-per-exploiter a pure cost knob (~1.5M/team)
+for the optimization era. n=4 and correlational — which is exactly why it gets a free prospective
+test before anyone leans on it.
