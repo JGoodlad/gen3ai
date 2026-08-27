@@ -565,6 +565,18 @@ span) does not reach 10–20×. Two mitigations, both binding:
 taught teams — **AND** terminal `rank/policy_pr ≥ 0.85 · pr_base` (the healthy band; the five failed
 arms all fell 38–43% and would fail this, fdC rose and would pass).
 
+**⚠️ AMENDED 2026-08-26 (by the arms' own data): the rank condition is STRUCK from SUCCESS.** G1
+landed `pi_features` 12.36 — inside the "collapsed" band — while delivering **+4.0pp pooled
+piloting** (the first positive distill arm ever), and G2 sat at 12.95 with a clean null; fdB sat at
+12.50 with −7.9pp. Three arms in one band spanning −7.9pp to +4.0pp: **rank tracks whether a
+distillation loss is PRESENT and carries no information about whether it is helping.** The
+mechanism story "the compression is the damage" is FALSIFIED. Success is **retention alone**; rank
+is recorded descriptively. The §4 tripwire is hereby reclassified an **ACTIVITY DETECTOR** — it
+still fires on every distill arm and on no controls, so it detects an unexpected/undeclared distill
+dose (a real failure class: the resume that silently drops a coefficient), but a TRIP is not
+evidence of harm and must never gate a verdict. `--rank-tripwire abort` should not be used on arms
+whose distill term is intentional.
+
 **PARTIAL — G1 healthy, G2 collapses (or the reverse).** A real result, not a muddle: it separates
 target form from gate. G1-healthy/G2-collapsed says the **gate** is the harmful half (and given
 §6.2, most likely via some interaction the design did not anticipate — re-spec before another arm).

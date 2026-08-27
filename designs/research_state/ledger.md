@@ -4946,3 +4946,31 @@ teachers/coef, `--distill-target action --distill-topk 1 --distill-gate none`,
 week's load-bearing arm: same rows, same dose, only WHAT THE LOSS ASKS FOR changed. Registered
 bands: pi_features ~12.5–13.6 = form was never the lever; ~19–22 with retention ≥ 0 = the fold
 recipe is fixed.
+
+### 🎉 G1/G2 IN — the TARGET FORM was the lever: +7.6pp at matched dose; the rank-collapse mechanism story FALSIFIED (2026-08-26)
+
+**The dose-controlled contrast (the one that counts): G2 − fdB = +0.0762 [+0.051,+0.101] z=+6.01
+at 0.97× dose** (G2 realized 0.2313 vs fdB 0.2378 — an accidental match: G2 aimed at G1's dose and
+missed low; the miss produced the controlled pair). Switching the distillation target from
+full-distribution KL to action+gate converts a decisive −7.9pp regression into a statistical null
+(G2 − fdC = +0.009, z=+0.71). **G1 (ungated action, 1.78× dose) is the first POSITIVE distill arm
+in the program's history: pooled +0.0398 [+0.016,+0.064] z=+3.29.** All-9 piloting table banked
+(fdB −7.9 / fdA −5.5 / fdE −7.2 / fdC −1.2 n.s. / G1 +4.0 / G2 −0.3 n.s.). Gate liveness clean
+(gated_frac 0.032–0.072, above floor). **STILL CONFOUNDED: the GATE question** — G1 − G2 = +4.3pp
+z=+3.20 at 1.83× dose apart; reading it as "the gate hurts" is the null-dose error by construction.
+**ORDERED: the one-shot G1′** (ungated action at fdB's dose, coef ≈ 0.10, ~2h) making
+G1′/G2/fdB mutually matched — isolates the gate in a single comparison; runs after F2c.
+
+**THE RANK FINDING HARDENS INTO A FALSIFICATION (mine to eat):** pi_features 12.36 (G1, +4.0pp) ·
+12.50 (fdB, −7.9pp) · 12.95 (G2, null) — three arms in one band spanning the full outcome range.
+Rank collapse tracks distill PRESENCE, not harm; "the compression is the damage" is DEAD, and with
+it the interference-via-rank mechanism I argued two nights ago. Design §6.4 AMENDED by the arms'
+own data: the rank condition is STRUCK from SUCCESS (G1 fails it while succeeding); the tripwire is
+reclassified an ACTIVITY DETECTOR (still valuable: it catches undeclared/silently-dropped distill
+doses — the v100 resume class — but a TRIP is not harm and never gates a verdict; abort mode not
+for intentional-distill arms). What survives of the mechanism picture: the gradient-cosine
+interference measurement stands (it measured the conflict, not the damage pathway), and the
+plasticity account of teacher DISTANCE stands — what died is the claimed link from rank to harm.
+
+F1c complete (26,640,624 steps clean, meters running), F2c forks it ~19:15 — its capacity row now
+reads WITH piloting, per the decoupling, not as decisive alone.
