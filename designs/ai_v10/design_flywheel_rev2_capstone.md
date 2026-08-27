@@ -69,6 +69,25 @@ first WITHIN-FLEET CONSISTENCY measurement (do two exploiters agree on how to pi
 extraction row F5a-on-ZapDug vs F5e-on-ZapDug, and their action agreement if cheap). No arm has
 ever measured whether exploit content is convergent or idiosyncratic.
 
+**The consistency protocol (owner exchange, 2026-08-26 evening).** Readings: CONVERGENT = exploits
+are discoverable objects → redundant seeds are waste, fleet design maximizes coverage; DIVERGENT =
+the piloting space is multimodal under one objective → seed-ensembling becomes a content
+multiplier for the optimization era. **Confound registered: under-convergence fakes divergence** —
+two half-finished searches also disagree. Disambiguator (interlocks with the budget law): both
+teachers at ~+0.11 on ZapDug AND disagreeing = true multimodality; disagreeing with one extracting
+markedly less = one teacher lagging, read as "1.5M/team sits near the convergence edge".
+Measurement layers, each with its baseline: (1) the two extraction rows; (2) action agreement +
+policy KL over the SAME recorded ZapDug decision states, anchored by each-vs-rev-1 (the
+shared-inheritance floor — the informative quantity is agreement ABOVE what ancestry predicts) and
+by a cross-teacher floor (a different-slice teacher on the same states); (3) the style fingerprint
+(switch rate, move-class mix) — catches same-winrate-different-style.
+
+**Fold-overlap ruling: ZapDug folds from F5a ONLY; F5e's ZapDug copy is measurement-only.** Two
+masters on one slice would hand the student conflicting action targets on the same rows —
+reintroducing exactly the incoherence the action form cured. If the consistency check returns
+divergent-and-both-good, "fold two disagreeing teachers on one slice" becomes a designed
+optimization-era experiment, never a capstone accident.
+
 **Admission per teacher:** the standing 800/arm matched row (target + rev1final references, shared)
 on its 2 teams + the off-slice informational row (2 held-out pool teams, the transfer-gate
 instrument, its OFF_PIN_SEED convention and resolved-count asserts). Gate: on-slice net > 0 at

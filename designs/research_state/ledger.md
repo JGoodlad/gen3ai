@@ -5034,3 +5034,16 @@ law puts every F5x admission row near +0.11** (all five sit at 1.5M/team). Scatt
 law (slice content matters); clustered rows make teams-per-exploiter a pure cost knob (~1.5M/team)
 for the optimization era. n=4 and correlational — which is exactly why it gets a free prospective
 test before anyone leans on it.
+
+### 🔀 CONSISTENCY PROTOCOL REGISTERED + FOLD-OVERLAP RULING (2026-08-26 evening, owner exchange)
+
+The ZapDug overlap gets its protocol BEFORE the fleet trains: convergent = exploits are
+discoverable objects (redundancy is waste); divergent = piloting is multimodal (seed-ensembling
+becomes a content multiplier). **Registered confound: under-convergence fakes divergence** —
+disambiguated by the budget-law interlock (both ~+0.11 AND disagreeing = true multimodality; one
+lagging = the ratio sits near the convergence edge). Measurement = extraction rows + action
+agreement/policy-KL on SHARED recorded states anchored by the rev-1 shared-inheritance floor and a
+cross-teacher floor + the style fingerprint. **FOLD-OVERLAP RULING: ZapDug folds from F5a only;
+F5e's copy is measurement-only** — two masters on one slice hands the student conflicting action
+targets, reintroducing the incoherence the action form cured; the two-master fold is a designed
+optimization-era experiment if divergence is real, never a capstone accident.
