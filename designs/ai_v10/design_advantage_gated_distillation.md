@@ -111,6 +111,20 @@ Ours encode the quirks of beating one frozen opponent — PPO contradicts them e
 **This document's single design requirement follows directly: the distill gradient must point only
 where PPO's gradient already points, by construction rather than by hope.**
 
+**AMENDED IN PLACE 2026-08-26, per §5.2's instruction — the corrected arm F fired F-COLLAPSES:**
+with `--policy-grad-coef 0 --ent-coef 0`, the KL alone produced **−7.1pp on-slice** (z=−5.13) vs
+fdB's −7.5pp with the policy gradient running — removing simultaneity changed the damage by 0.4pp.
+So **interference is a CONSEQUENCE, not the cause**: the Δcos −0.030 measurement stands as measured,
+but PPO was never needed for the harm — the KL's *content* (matching a distant, broader
+distribution) degrades the policy with no opposing gradient present at all. The "agreement"
+requirement above survives in weakened form — G1/G2 confirm that an action-level target (which
+cannot demand distribution-matching) removes the harm — but the mechanism is now *what the target
+asks for*, not *who it argues with*. Consequential edits per §5.2: sequencing is dead as a fix
+(F2c still runs, as a REVERSIBILITY question, not a fix); rung (d) is dead; rung (a) is demoted to
+a dose reducer pending G1′; **rung (e) gradient surgery is MOOT twice over** — its premise
+(conflict causes the harm) is falsified by F1c, and its trigger (§6.4 KILL) cannot fire after G1's
+success.
+
 ### 1.4 What is NOT established
 
 - **WHY**, mechanically, at the level of weights. §1.2 is a signature, not a proof.

@@ -4974,3 +4974,24 @@ plasticity account of teacher DISTANCE stands — what died is the claimed link 
 
 F1c complete (26,640,624 steps clean, meters running), F2c forks it ~19:15 — its capacity row now
 reads WITH piloting, per the decoupling, not as decisive alone.
+
+### 🔬 F-COLLAPSES FIRED — KL-ALONE corrupts; interference demoted to consequence; §1.3 amended in place per its own pre-registration (2026-08-26)
+
+Corrected arm F phase 1 (`ai_v9_50_fdF_p1c`, pg=0 AND ent=0, 26.6M steps clean): **on-slice
+piloting −0.0706 z=−5.13, statistically indistinguishable from fdB's −0.0749 with the policy
+gradient RUNNING** — removing simultaneity changed the damage by 0.4pp. The registered branch is
+**KL-ALONE CORRUPTS**. The entropy confound separated cleanly (voided vs corrected p1: on-slice
+−6.3 vs −7.1pp, agree within a point; off-slice −50.9 vs −15.1pp — the 36pp gap WAS the unopposed
+entropy bonus; the void was the right call and the corrected off-slice stays excluded as passive
+drift, not a KL reading). §5.2's pre-registered edits APPLIED: §1.3 amended in place —
+**interference is a CONSEQUENCE of the incompatible content, not the cause** (the Δcos measurement
+stands as measured; the mechanism is what the target ASKS FOR, not who it argues with); sequencing
+dead as a fix (F2c continues as the REVERSIBILITY question only); rung (d) dead; rung (a) demoted
+to dose reducer pending G1′; rung (e) gradient surgery MOOT twice over (premise falsified by F1c,
+trigger extinguished by G1's success). Four-arm synthesis now on the record: KL+PPO −7.5 / KL alone
+−7.1 / action ungated +4.4 / action gated ~0, all at rank 12.4–13.2 — **the KL objective is the
+harmful object independent of context; the action form removes the harm; rank tracks none of it.**
+Ops note banked: the capacity-file/meter-file naming split (run-stem vs meter-tag) reported a
+false "pending" — flagged by the training session before it cost anything; two conventions in one
+chain is a trap for later cleanup. Next: F2c (reversibility) ~20:30, G1′ (the gate cell, coef
+0.1629) ~22:45.
