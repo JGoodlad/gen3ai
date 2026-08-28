@@ -1,0 +1,260 @@
+{
+  "probe": "C — era diff v8 vs gen (archaeology)",
+  "date": "2026-08-28",
+  "method": "read-only; every recipe value from models/<run>/metadata.json cli_args (resolved argparse namespace) unless noted; v8-era code via `git show <hash>:<path>`; no model loaded, no training run, nothing under models/ written",
+  "companion": "designs/research_state/measurements/plasticity_forensics_v8_vs_gen_2026-08-28.{md,json}",
+
+  "record_correction": {
+    "target": "ledger.md 'CORRECTION 3 OF THE EVENING ... the opponent regimes were IDENTICAL too (2026-08-25)'",
+    "claim": "OUR tocks inherited the SAME 0.5 bot fraction; the opponent-variety leg of the narrowness hypothesis is dead",
+    "verdict": "FALSE",
+    "why": "exploiter_bot_fraction is INERT unless --exploiter-keep-bots (store_true) is passed; wrappers.py:380 reads `if self._exploiter_keep_bots and self._rng.random() < self._exploiter_bot_fraction`. The 0.5 appears in every cli_args because it is the flag DEFAULT.",
+    "evidence": {
+      "exploiter_keep_bots": {
+        "ai_v8_06": true, "ai_v8_09": true, "ai_v8_13": true,
+        "ai_v9_30_rev1_exploit": false,
+        "ai_v9_31_tock1_k4": false, "ai_v9_32_tock1b_rain": false, "ai_v9_36_tock1c_q6": false,
+        "ai_v9_53_R2F5a": false, "ai_v9_54_R2F5b": false, "ai_v9_55_R2F5c": false,
+        "ai_v9_56_R2F5d": false, "ai_v9_57_R2F5e": false
+      },
+      "exploiter_temp_mode": {"v8_forks": "ratchet", "all_gen_forks": "fixed"},
+      "exploiter_temp_start": {"v8_forks": 5.0, "all_gen_forks": null},
+      "exploiter_temp_state_json": {
+        "ai_v8_06": {"temp": 1.0, "n_ratchets": 16},
+        "ai_v8_09": {"temp": 1.0, "n_ratchets": 16},
+        "ai_v8_13": {"temp": 1.0, "n_ratchets": 16},
+        "any_gen_run": "FILE DOES NOT EXIST"
+      },
+      "bot_weights": {"v8": "aggressive_v2=3,heuristic2=3", "gen": null},
+      "heuristic_floor": {"v8": 0.2, "gen": null}
+    },
+    "consequence": "the retraction chain 3c12508 -> 1022747 -> CORRECTION-3 closed the opponent-variety branch on a misread default; the opponent-regime leg is REOPENED as candidate C1"
+  },
+
+  "axis1_exploiter_recipe": {
+    "v8": {
+      "runs": ["ai_v8_06_semistall_3team_exploiter_0722", "ai_v8_09_pool10_exploiter_0723", "ai_v8_13_defensive10_exploiter_0725"],
+      "git_hashes": ["722e2fb9a2f74d1911e1468422e607ac70f79455", "f9175eaaec9a122d91a6e313e5248ad4e611e8c1", "b13b30b289c5eaba136a930a4ab63451e209fbe5"],
+      "init_model": "models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+      "init_steps": 277178472,
+      "exploiter_target": "models/ai_v8_04_distill_4teacher_0722 (parent run dir = the init)",
+      "teams_per_teacher": [3, 10, 10],
+      "distinct_teams_total": 23,
+      "max_checkpoint_steps": [284951488, 295343200, 290381348],
+      "fork_length_steps": [7773016, 18164728, 13202876],
+      "steps_per_pinned_team": [2591005, 1816473, 1320288],
+      "exploiter_keep_bots": true,
+      "exploiter_bot_fraction_live": 0.5,
+      "exploiter_temp_start": 5.0, "exploiter_temp_end": 1.0, "exploiter_temp_mode": "ratchet",
+      "exploiter_temp_ratchet_wr": 0.55, "exploiter_temp_ratchet_factor": 0.9, "exploiter_temp_ratchet_games": 500,
+      "ratchets_completed": 16,
+      "self_play": false, "team_pfsp": "off", "team_block_episodes": 1,
+      "ent_coef": 0.05, "lr": 7e-05, "min_lr": 1e-05, "max_lr": 0.0006,
+      "clip_range": 0.10, "n_epochs": 7, "batch_size": 2048, "grad_accum_steps": 16,
+      "effective_batch": 32768, "n_steps": 2048, "n_envs": 48, "vf_coef": 0.2
+    },
+    "gen": {
+      "runs": ["ai_v9_53_R2F5a_0826", "ai_v9_54_R2F5b_0826", "ai_v9_55_R2F5c_0826", "ai_v9_56_R2F5d_0826", "ai_v9_57_R2F5e_0826"],
+      "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+      "init_model": "models/ai_v9_29_rev1_0823/final_model.zip",
+      "init_steps": 25067760,
+      "exploiter_target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip (parent minus 1.068M steps)",
+      "teams_per_teacher": [2, 2, 2, 2, 2],
+      "team_slots_total": 10,
+      "distinct_teams_total": 9,
+      "duplicate_team": "data/teams/sample/eccfe630ec08de27.txt pinned by BOTH F5a (slot 1) and F5e (slot 2)",
+      "max_checkpoint_steps": 28067760,
+      "fork_length_steps": 3000000,
+      "steps_per_pinned_team": 1500000,
+      "exploiter_keep_bots": false,
+      "exploiter_bot_fraction_live": 0.0,
+      "exploiter_temp_start": null, "exploiter_temp_end": 1.0, "exploiter_temp_mode": "fixed",
+      "effective_target_temperature": 1.0,
+      "self_play": false, "team_pfsp": "off", "team_block_episodes": 1,
+      "ent_coef": 0.02, "lr": 0.0003, "min_lr": 1e-05, "max_lr": null,
+      "clip_range": 0.15, "n_epochs": 10, "batch_size": 2048, "grad_accum_steps": 8,
+      "effective_batch": 16384, "n_steps": 2048, "n_envs": 48, "vf_coef": 0.5
+    }
+  },
+
+  "gen_fleet_pinning_defect": {
+    "what": "data/teams/sample/eccfe630ec08de27.txt is pinned by F5a AND F5e",
+    "effect_1": "Gen3Env._distill_mask (gen3_env.py:760-777) iterates teachers 1-indexed and `break`s on the first match, so that team ALWAYS resolves to teacher 1 (F5a). F5e's distillation KL NEVER fires on it -> F5e effectively teaches on ONE team.",
+    "effect_2": "matchup_setup.py builds _team_strs with all 10 entries incl. the duplicate, so --distill-team-bias 0.4 gives that team 2/10 = 8% and the other eight 4% each.",
+    "warning_emitted": false,
+    "also_affects": "tock-1a (ai_v9_31) pins the same file"
+  },
+
+  "axis2_distill_recipe": {
+    "code_identity": {
+      "claim": "_distill_loss is BYTE-IDENTICAL across the eras",
+      "v8": "git show b13b30b:src/agents/training/instrumented_ppo.py lines 449-477",
+      "gen": "src/agents/training/instrumented_ppo/distill_terms.py:69-97",
+      "kl_direction": "FORWARD, KL(pi_teacher || pi_student) — mass-covering — both eras",
+      "temperature": "NONE in either era; both sides softmax at tau=1; no teacher-softening parameter exists in the code path",
+      "masking": "illegal logits + (-1e9); masked-mean over on-pin rows; None guard on an empty subset",
+      "state_source": "on-policy rollout minibatch, both eras"
+    },
+    "ai_v8_14_distill3_0725": {
+      "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+      "init_model": "models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+      "init_steps": 277178472, "max_checkpoint_steps": 292100648, "fold_length_steps": 14922176,
+      "distill_coef": 1.0, "distill_target": "kl (flag did not exist)",
+      "distill_value_coef": 0.0, "distill_value_feat_coef": 0.0,
+      "distill_team_bias": 0.4, "teachers": 3, "teacher_teams": 23,
+      "grad_accum_steps": 16, "effective_batch": 32768, "n_epochs": 7, "lr": 7e-05, "ent_coef": 0.05,
+      "approx_on_pin_distilled_transitions": 5968870
+    },
+    "gen_folds": {
+      "ai_v9_61_R2KL_0827": {"distill_coef": 1.0, "distill_target": "kl", "distill_topk": 1, "distill_gate": "none", "distill_value_feat_coef": 0.5},
+      "ai_v9_59_R2ACTION_0827": {"distill_coef": 0.1810, "distill_target": "action", "distill_topk": 1, "distill_gate": "none", "distill_value_feat_coef": 0.5},
+      "ai_v9_60_R2TOPK_0827": {"distill_coef": 0.1810, "distill_target": "action", "distill_topk": 3, "distill_gate": "none", "distill_value_feat_coef": 0.5},
+      "ai_v9_58_R2CTRL_0827": {"distill_coef": 0.0, "note": "plumbing on, term off — verified no-fork control"},
+      "ai_v9_62_R2PLAIN_0827": {"distill_coef": 0.0, "note": "no distill plumbing at all; only 4 checkpoints (25.2M-25.7M) — INCOMPLETE at read time"},
+      "common": {"distill_team_bias": 0.4, "teachers": 5, "teacher_team_slots": 10, "distinct_teacher_teams": 9,
+                 "fold_length_steps": 3000000, "grad_accum_steps": 2, "effective_batch": 4096,
+                 "n_epochs": 10, "lr": 0.0003, "ent_coef": 0.02,
+                 "approx_on_pin_distilled_transitions": 1200000}
+    },
+    "never_replicated": "no gen run has executed ai_v8_14's literal fold recipe: R2KL matches on coef 1.0 + target kl but adds --distill-value-feat-coef 0.5 (v8_14 ran 0.0)"
+  },
+
+  "axis3_fold_ecology": {
+    "ai_v8_14": {"self_play": true, "n_sentinels": 10, "pfsp_scale": 2.5, "pool_spread": true,
+                 "stable_opponents": "the 3 teachers", "stable_opponent_selfplay_share": 0.35,
+                 "stable_opponent_pfsp": true, "team_pfsp": "onesided", "team_block_episodes": 64,
+                 "bot_weights": "aggressive_v2=3,heuristic2=3", "heuristic_floor": 0.2,
+                 "eval_sentinel_greedy": true, "film_grad_accum_steps": 6},
+    "gen_folds": {"self_play": true, "n_sentinels": 5, "pfsp_scale": 0.0, "pool_spread": false,
+                  "stable_opponents": null, "stable_opponent_selfplay_share": 0.20,
+                  "stable_opponent_pfsp": false, "team_pfsp": "off", "team_block_episodes": 1,
+                  "bot_weights": null, "heuristic_floor": null},
+    "tick1_ai_v9_34_for_reference": {"stable_opponents": "the 2 tocks", "stable_opponent_selfplay_share": 0.35,
+                                     "stable_opponent_pfsp": true, "team_block_episodes": 1,
+                                     "distill_coef": 1.0, "distill_value_feat_coef": 0.5}
+  },
+
+  "axis4_architecture": {
+    "v8": {"config_version": 45, "arch_signature": "gen3_opp_hp_typed_candidates_v1", "obs_total_dim": 2992,
+           "history": "7 x 159 TurnDelta lag frames (n_history_turns)",
+           "action_head": "flat action_net = Linear(512, 11) — 11 INDEPENDENT output rows",
+           "per_team_conditioning": "zarch FiLM, zarch_dim 32, zarch_film heads, recon 1.0, vicreg 0.1, film_grad_accum_steps 6",
+           "vf_coef": 0.2, "value_dist_coef": 0.2, "win_prob_coef": 0.2,
+           "move_belief_mode": "revealed", "opp_belief_cls_k": 0, "damage_topk_k": 5,
+           "params": {"total": 3512397, "G1_input_encoders": 201363, "G2_trunk": 1151502,
+                      "G3_pools_value_trunk": 861326, "G4_aux_belief_heads": 241426,
+                      "G5_mlp_extractor": 1050624, "G6_action_value_head": 6156},
+           "pi_features_participation_ratio": 50.24},
+    "gen": {"config_version": 103, "arch_signature": "gen3_critic_route_wave_v1", "obs_total_dim": 2501,
+            "history": "frames DELETED; 32 x 22 typed event window (history_events)",
+            "action_head": "pointer_head (PointerNativeActionHead): move_score/switch_score/struggle_score each Linear(POINTER_HIDDEN,1) SHARED across all candidates of their family — 3 output rows, ZERO per-action free parameters; action_net is a raising stub",
+            "per_team_conditioning": "NONE",
+            "vf_coef": 0.5, "value_dist_coef": 1.0, "win_prob_coef": 0.05,
+            "move_belief_mode": "both", "opp_belief_cls_k": 6, "damage_topk_k": 6,
+            "params": {"total": 3147887, "G1_input_encoders": 221631, "G2_trunk": 889394,
+                       "G3_pools_value_trunk": 309952, "G4_aux_belief_heads": 620090,
+                       "G5_mlp_extractor": 1050624, "G6_action_value_head": 56196},
+            "pi_features_participation_ratio": 20.59},
+    "flags_only_in_v8": ["active_ctx_hidden", "damage_matrices_outgoing_all", "damage_reattend", "damage_refine_rounds", "hp_type_belief_mode", "mask_active_move_scalars_obs", "mask_incoming_damage_obs", "mask_move_effects_obs", "move_belief_prefuse", "n_history_turns", "opp_belief_latent", "opp_belief_latent_coef", "pubval_coef", "pubval_mode", "spread_belief_nature_marginalize", "threat_refine_outgoing", "threat_status_refine", "threat_unrevealed_outgoing", "value_active_readout", "zarch_dim", "zarch_film", "zarch_recon_coef", "zarch_vicreg_coef"],
+    "flags_only_in_gen": ["canary_reset_steps", "capacity_cosine_every", "capacity_telemetry", "capacity_velocity_every", "cf_evidential", "cf_evidential_coef", "cf_evidential_reg", "cf_head_only", "cf_label_lag_steps", "cf_label_likelihood", "cf_records", "cf_records_keep", "cf_shadow_coef", "cf_shadow_critic", "cf_twin_coef", "cf_twin_heads", "cf_winprob_coef", "conditional_threat_cell", "consequence_topk", "damage_candidate_k", "distill_beta", "distill_gate", "distill_gate_tau", "distill_target", "distill_topk", "edge_bias_families", "entity_tail_seats", "entity_topk_seats", "history_events", "hp_belief_mode", "intent_conditional", "intent_label_bot_weight", "intent_move_cell", "intent_threshold", "item_belief", "item_belief_coef", "op_believed_lean", "op_drop_renders", "opp_intent", "opp_intent_grad_mode", "pair_outcome_cell", "pair_outcome_switch", "pair_value_route", "policy_grad_coef", "rank_tripwire", "rank_tripwire_drop", "species_prior_fusion", "switch_branch_cell", "t0_species_prior", "td_aux_coef", "value_entity_pool", "value_entity_pool_full", "value_threat_inject"],
+    "same_in_both": ["belief_grad_mode=shaping", "use_popart=True", "batch_size=2048", "n_steps=2048", "n_envs=48", "warmstart_bc_steps=4000", "weight_decay=1e-05", "seed=42", "defensive_entropy_boost=1.0", "defensive_entropy_anneal_frac=0.0"]
+  },
+
+  "axis5_parent_maturity": {
+    "v8_parent_ai_v8_04": {"steps": 277178472, "lineage": "ai_v8_03_zarch_control (to 267.6M) -> a 4-TEACHER DISTILL FOLD (distill_coef 1.0, four ai_v7 specialist teachers, team_bias 0.4) -> 277M; i.e. the flywheel was already on its SECOND turn",
+                            "lr": 7e-05, "lr_band": [1e-05, 0.0006], "ent_coef": 0.05,
+                            "lyle_capacity_ratio_pi_features": 1.154,
+                            "baseline_per_team_piloting_on_taught_teams": 0.438,
+                            "teacher_level": 0.72, "available_headroom": 0.282},
+    "gen_parent_ai_v9_29_rev1": {"steps": 25067760, "lineage": "fresh generation, never folded",
+                                  "lr": 0.0003, "lr_band": [1e-05, null], "ent_coef": 0.02,
+                                  "lyle_capacity_ratio_pi_features": 0.948,
+                                  "baseline_per_team_piloting_on_meter_teams": 0.575,
+                                  "baseline_derivation": "ZapDug readout: F5a-on-ZapDug 0.7075 at net +0.1325",
+                                  "teacher_level": 0.69, "available_headroom": 0.115}
+  },
+
+  "outcomes_for_reference": {
+    "v8": {"elo_before": [1986, 26], "elo_after": [2055, 29], "delta": 69,
+           "per_team_piloting": {"before": 0.438, "after": 0.710, "teacher": 0.72},
+           "source": "ledger.md D1 row"},
+    "gen_R2": {"teacher_admission_mean_pp": 11.65, "teacher_admission_sd_pp": 0.98,
+               "per_teacher": {"F5a": 0.1300, "F5b": 0.1212, "F5c": 0.1162, "F5d": 0.1150, "F5e": 0.1000},
+               "fold_pooled_yield_pp": 1.6, "fold_yield_significance": "n.s.",
+               "transfer_efficiency": 0.13,
+               "harm_ordering_pp": {"R2KL": -3.2, "R2TOPK": -2.4, "R2ACTION": 1.6},
+               "source": "ledger.md 2026-08-27/28 entries; designs/ai_v10/design_rev3_improvement_bar.md"}
+  },
+
+  "ranked_candidates": [
+    {"rank": 1, "id": "C1", "name": "exploiter opponent CURRICULUM — 50% bots + a WR-ratcheted target",
+     "mechanism": "v8's fork opened against a near-random target (temp 5.0) and hardened it only after clearing 55% WR per 500-game window, 16 times, while 50% of episodes faced scripted bots. That parks the fork in the max-advantage-signal zone for its whole length and imposes a second, non-self-referential objective per pinned team. The R2 fork faces one full-strength near-mirror as SOLE opponent from step 0: WR ~0.5 by construction, small symmetric advantages, update dominated by entropy/value/drift.",
+     "evidence_for": ["cli_args.exploiter_keep_bots True(v8)/False(ALL gen incl. tick-1 tocks)", "exploiter_temp_mode ratchet/fixed", "exploiter_temp_state.json {temp:1.0,n_ratchets:16} in all 3 v8 forks, absent in every gen run", "wrappers.py:380 gates bot_fraction on keep_bots", "forensics: fork logit-shift 231-257 vs no-fork control 259; on-slice top-1 0.692-0.768 vs off-slice 0.709-0.742 (no differentiation)"],
+     "evidence_against": ["R2 admission rows show a real +11.65pp mean extraction, so the fork did learn something — the claim is about the KIND of content, not its existence"],
+     "discriminator": "re-run ONE R2 fork (3M, ~2 GPU-h) adding --exploiter-keep-bots --exploiter-bot-fraction 0.5 --bot-weights aggressive_v2=3,heuristic2=3 --heuristic-floor 0.2 --exploiter-temp-start 5.0 --exploiter-temp-mode ratchet, then re-run the forensics on/off-slice top-1 split (CPU, scripts exist). NO FOLD NEEDED. Prediction: on-slice agreement drops BELOW off-slice (the v8 signature). 2-arm version (bots-only vs ratchet-only) separates the halves for 4 GPU-h.",
+     "cost_gpu_hours": 2},
+
+    {"rank": 2, "id": "C2", "name": "FOLD duration and on-slice gradient DENSITY",
+     "mechanism": "14.92M vs 3.00M fold steps; effective batch 32768 vs 4096; team_block_episodes 64 vs 1. On-pin distilled transitions differ ~5x (6.0M vs 1.2M) and optimizer steps 8x. Team-blocking gives temporally coherent per-team gradient; block=1 across 48 envs makes the on-pin rows a thin constantly-reshuffled sample of 9 conditions — the worst case for learning a CONDITIONAL mapping, the same shape as this project's own FiLM sample-starvation finding that the flag was built to counter.",
+     "evidence_for": ["cli_args team_block_episodes 64 vs 1", "grad_accum_steps 16 vs 2", "checkpoint step ranges", "matchup_setup.py:99-102 names the mechanism"],
+     "evidence_against": ["rev-3 already tests +4.5M fold length and dose 0.35, addressing the duration leg"],
+     "discriminator": "one 3M fold arm identical to R2ACTION except --team-block-episodes 64 --grad-accum-steps 16. ~2 GPU-h, reads on the existing 9-team piloting meter. The ONLY untested factor on this axis.",
+     "cost_gpu_hours": 2},
+
+    {"rank": 3, "id": "C3", "name": "POINTER HEAD — copying a decision now requires moving the shared trunk",
+     "mechanism": "v8's flat Linear(512,11) gave every action logit an independent 512-dim row, so a teacher's preference could be written LOCALLY with zero representation cost. The pointer head has NO per-action parameters: move_score/switch_score/struggle_score are one Linear(H,1) each shared across all candidates of their family, so the only route to a RELATIVE preference change is through entity tokens (team_transformer, trunk) or latent_pi (mlp_extractor, trunk). Distillation is therefore structurally a representation edit. Predicts BOTH the all-or-nothing global rank collapse (pi_features 21.87->12.50 at any nonzero coef) and the failure to differentiate on-slice, from one cause.",
+     "evidence_for": ["pointer_head.py:199-224 (3 shared scorers)", "policy.py:58-120 (action_net is a raising stub)", "G6 6156 params/11 rows vs 56196/3 rows", "per-parameter the gen head moved LESS (1.8% of d2 on 9x the params vs 0.7% on 1x)", "the rank collapse is a SWITCH, not a dose response"],
+     "evidence_against": ["forensics function-level inter-fork cosine is FLAT across eras (+0.375 v8 vs +0.383 gen)", "v8's fork delta was TRUNK-HEAVY (G2 0.47 vs gen 0.28; G2+G5 = 0.76 of d2) — v8 renovated the trunk MORE and still folded cleanly, which falsifies 'the flat head let v8 keep changes local' as a description of the FORK; the surviving form is about the FOLD"],
+     "discriminator": "PARAMETER-GROUP GRAFTING, pure CPU, read-only, hours: graft ONLY R2ACTION's G6 (pointer_head + value_net) onto rev-1 and measure teacher-agreement recovery on recorded on-slice states; then only G2+G5; then both. Mirror on v8 (graft ai_v8_14's action_net onto ai_v8_04). Causal test is dearer: bolt a zero-init residual Linear(latent_pi,11) beside the pointer head (byte-identical at init) and re-run one fold arm (~1 day + 2 GPU-h).",
+     "cost_gpu_hours": 0},
+
+    {"rank": 4, "id": "C4", "name": "HEADROOM — v8 baseline 0.438 vs current ~0.575",
+     "mechanism": "A fold's yield is bounded by what there is to take. v8 had ~0.28 of win rate available on teams its parent was actively bad at; rev-1 has ~0.12. A '96% conversion' and a '13% conversion' against denominators differing 2.3x are not comparable. Worse, the KIND of content differs: lifting a losing policy to 0.71 is coarse and transferable as a global shift; lifting 0.575 to 0.69 is fine-grained conditional play, which a global shift cannot carry — closing the loop with the differentiation finding.",
+     "evidence_for": ["ledger D1 (0.438 -> 0.710, teacher 0.72)", "ZapDug readout (F5a 0.7075 at net +0.1325 => baseline 0.575)"],
+     "evidence_against": ["explains a RATIO difference, not the differentiation finding — undifferentiated teachers is not a headroom fact"],
+     "discriminator": "free first pass: regress conversion on baseline across every archived fold (ai_v8_14, tick-1, fdA/B/C/E, G1/G2, R2ACTION/TOPK/KL) using each fold's own recorded baseline piloting (n~10, confounded, but prices the term). Cleaner: rev-3 already picks coverage teams by WORST rev-1 piloting — piggyback a per-team conversion-vs-baseline readout at zero extra cost.",
+     "cost_gpu_hours": 0},
+
+    {"rank": 5, "id": "C5", "name": "TEACHERS IN THE OPPONENT MIX + a richer fold ecology",
+     "mechanism": "v8's fold put the 3 teachers in the opponent mix at 0.35 share with PFSP; a specialist stable opponent pilots its OWN pinned team. So on exactly the teams the KL taught, the student (i) visited states in the teacher's own region on-policy — the DAgger argument — and (ii) had an RL gradient pointing the same way as the KL. The R2 folds have no stable opponents at all, plus no pfsp_scale, no pool_spread, 5 sentinels not 10, team_pfsp off not onesided, no bot floor.",
+     "evidence_for": ["cli_args stable_opponents / share 0.35 / stable_opponent_pfsp True in ai_v8_14 vs None/0.20/False in every R2 fold", "fdC tested ecology WITHOUT a distill term; tick-1 tested it with 3M UNDIFFERENTIATED teachers — neither tests the interaction the v8 arc ran"],
+     "evidence_against": ["fdC (coef 0.0, ecology ON at 0.35) measured -1.2pp n.s. -> 'ecology EXONERATED'", "tick-1 DID carry stable-opponents + 0.35 + pfsp and was graded INFERIOR on three meters"],
+     "discriminator": "it is an INTERACTION and cannot be tested cheaply before C1 lands. Make it the second arm of the C1 experiment: if a curriculum-trained fork differentiates, fold it BOTH with and without --stable-opponents <teachers> --stable-opponent-selfplay-share 0.35 --stable-opponent-pfsp. ~2 extra GPU-h on top of C1.",
+     "cost_gpu_hours": 2},
+
+    {"rank": 6, "id": "C6", "name": "the fold recipe was never literally replicated — FitNets 0.5 vs v8's 0.0",
+     "mechanism": "--distill-value-feat-coef pulls the student's 128-dim value_pooled toward each teacher's by cosine on the SAME on-pin rows the policy KL fires on — a shared-trunk pull exactly where the rank collapse was observed. R2KL carries the 'this is v8's channel' claim and differs from ai_v8_14 by this one live term.",
+     "evidence_for": ["cli_args.distill_value_feat_coef 0.0 (ai_v8_14) vs 0.5 (every gen fold incl. tick-1)"],
+     "evidence_against": ["ledger 4452 estimates FitNets alignment 0.995 at hour one => ~0 gradient", "the Phase-B ruling adopting 0.5 is explicit and reasoned", "BUT ledger 4340 records this same metric previously read INVERTED, so record confidence is low"],
+     "discriminator": "read distill/*_value_feat_cos out of the R2 arms' TensorBoard — MINUTES, CPU, no new run. cos >= 0.99 throughout => C6 dies. Otherwise one 3M arm at --distill-value-feat-coef 0.0 (~2 GPU-h) settles it AND delivers the literal v8 replication never yet run.",
+     "cost_gpu_hours": 0},
+
+    {"rank": 7, "id": "C7", "name": "OPTIMIZER regime — ~4x the lr at 1/4 the effective batch",
+     "mechanism": "lr 3e-4 vs 7e-5, clip 0.15 vs 0.10, n_epochs 10 vs 7, effective batch 16384/4096 vs 32768. More UNDIRECTED movement per unit of directed signal — which is the forensics' drift-anchor observation: R2CTRL (verified no-fork) drifts KL 0.3245, INSIDE the forks' 0.269-0.349. If drift equals content in size, no fold can separate them.",
+     "evidence_for": ["cli_args", "the R2CTRL row", "global rel-Frobenius 0.026 (gen) vs 0.021 (v8) at a 3-4% SHORTER fork"],
+     "evidence_against": ["rel-Frobenius differs only 1.23x despite a 4.3x lr gap", "the parents differ in maturity, which independently sets how far a step moves the function"],
+     "discriminator": "one 3M fork at --lr 7e-5 --clip-range 0.10 --n-epochs 7 --grad-accum-steps 16, then fork-vs-CTRL logit-shift norm and the on/off-slice split (CPU scripts exist). Run C1 first or factor them — a joint arm cannot attribute.",
+     "cost_gpu_hours": 2},
+
+    {"rank": 8, "id": "C8", "name": "no per-team CONDITIONING path exists in the current architecture",
+     "mechanism": "v8 carried zarch FiLM (z-dim 32, --zarch-film heads, recon 1.0, vicreg 0.1, --film-grad-accum-steps 6) and the D1 ledger row reports 'far-z FiLM range +70%' for the fold itself — the fold USED the conditioning path. The current architecture has none. A conditional teacher can only be copied if the student can represent the condition.",
+     "evidence_for": ["model_config zarch_* present in v8, absent in gen", "D1's far-z FiLM range +70%"],
+     "evidence_against": ["LUT result: a free per-team code did NOT close the N=20 gap (+0.024, CI [-0.016,+0.064])", "COUNT-dominates-conditioning 2x2: count +0.077 sig, conditioning +0.027 n.s."],
+     "discriminator": "none cheap; the existing null makes it poor value. Recorded so the era diff is complete and so D1's FiLM figure is not mistaken for something the current arch could reproduce.",
+     "cost_gpu_hours": null},
+
+    {"rank": 9, "id": "C9", "name": "slice BREADTH — 23 teams total / 3-10 per teacher vs 2",
+     "mechanism": "A 2-team pin can be satisfied by a global shift; a 10-team pin cannot, so breadth FORCES team-conditional structure into the teacher.",
+     "evidence_for": ["the differentiation contrast is exactly 23-team-total vs 2-team teachers"],
+     "evidence_against": ["the admission table is flat across the fleet (mean +0.1165, sd 0.0098, five different team pairs) — extraction SIZE does not track breadth", "tock-1a's 4 teams showed no differentiation gain"],
+     "discriminator": "Probe A, already dispatched. CAVEAT FOR ITS READER: every rung of the archive's breadth ladder except the 23 is a gen-era fork with NO bots and NO temperature ratchet (C1), so a FLAT result across 2->9 does not distinguish 'breadth doesn't matter' from 'the gen regime suppresses differentiation at every breadth'.",
+     "cost_gpu_hours": 0}
+  ],
+
+  "not_explained_by_this_diff": [
+    "the distillation channel is byte-identical across eras — nothing about the KL implementation regressed",
+    "forward (mass-covering) KL direction and the total absence of temperature are properties of BOTH eras, so they cannot be a difference (they may still be a shared defect — Probe D's question)",
+    "belief_grad_mode=shaping, PopArt, distill_team_bias 0.4, on-policy state sourcing, PPO beside the distill loss, self_play off in forks, team_pfsp off in forks are the SAME in both eras",
+    "the parents differ 11x in maturity and 2.3x in headroom; no dimensionless statistic removes that, so every candidate is a contributing term, not a sole cause"
+  ]
+}
