@@ -5591,3 +5591,31 @@ is the CONFLICT MATRIX ITSELF as a fold-curriculum instrument: co-schedule posit
 teams, separate balance↔offense pairs early — feeds the strided-blocking design (7dfd8a8) and
 the optimization era's team-synergy agenda directly. (3) The offline PPO-advantage row is
 UNRESOLVED-BY-CONSTRUCTION (self-diagnosed impossible values) — never quote it.
+
+### 🟢 DISTILLABILITY INDEX: instrument ADMITTED — absorption RISES with age; the collateral is mostly ADAM OVERSHOOT, not content rejection (2026-08-29 early)
+
+Record `designs/research_state/measurements/distillability_index_gen_2026-08-28.md` (landed
+e52c01c; 41 cells / 6.1 CPU-h; sanity cells EXACT — self-distill step-0 agreement 1.000,
+KL 0.000; fresh-init = biggest absorption + worst collateral as pre-registered; gain@400
+repeatable to ≤0.018; the step-1 shock metric honestly EXCLUDED as ordering-only). **Findings:**
+(1) **The absorption ceiling RISES with training age in all six arms (ρ +0.83…+1.00), including
+an ancestry-free lineage** — the model becomes a BETTER STUDENT as it trains, independent of
+fork kinship. The owner's two-currencies framing now has a measurement: the second currency
+exists and accrues while Elo is flat. "Absorption slows with age" is FALSE (gain_max falls only
+because the starting agreement rises faster than the ceiling). (2) **Collateral's SIGN is set by
+the step size**: at lr 3e-4 it rises with age; at 1e-4 it FALLS (ρ −1.00/−0.89) and 2M→25M is a
+strict PARETO gain (ceiling 0.756→0.854 AND KL 0.662→0.436). (3) **The zero-content control is
+the mechanism**: distilling a checkpoint onto ITS OWN argmax carries ~79% of the mature cell's
+collateral, and that content-free damage rises with age — Adam's first steps are a fixed
+weight-space displacement, and a SHARPENED landscape converts fixed weight motion into MORE
+function motion. Most measured "rigidity cost" at 3e-4 is OVERSHOOT, not content rejection.
+**Registered prediction (untested in a real fold): the fold runs ABOVE the mature student's
+damage threshold — lowering the distill-term step size buys ceiling AND collateral together,
+nothing traded.** A post-rev-3 cell, never a mid-flight change to the frozen arms. (4) **A fold
+does NOT consume distillability** — R2-ACTION (already folded once) posts the highest a0 AND
+a_max of any cell: the wheel can keep turning. (5) **The critic is the main casualty** —
+off-slice |ΔV| 4–9 on a ±12 scale within steps; connects to the value-feat hint question
+(probe C: no gen fold ever ran v8_14's literal 0.0) and to why value-side anchoring may matter
+more than policy-side. MISSING held honestly: teacher-independence of the age ordering (one
+bonus cell only); everything PPO-context. With this, ALL SEVEN of the day's agents are landed
+and scored.
