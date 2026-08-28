@@ -5465,3 +5465,26 @@ signal attenuates cosine — an under-read of at most ~0.02, nowhere near 0.5); 
 pairs. **The v8 no-fork control is now the blocking input for THREE programs** (forensics,
 probe D, probe E) — an era-pinned +3M continuation off the v8 parent (GPU, v8 code via the
 pinned-worktree recipe) is QUEUED as a post-rev-3 candidate arm, owner/schedule decision.
+
+### 📏 THE +69 AUDIT (owner challenge, 2026-08-28 late) — ELO leg downgraded, piloting+retention legs solid, and the DOSE ARITHMETIC un-mysteries v8
+
+Owner: "did we just get lucky with the v8 capstone — did we run evals enough to be outside CI?"
+Audited from artifacts: **(ELO leg — DOWNGRADED under current reading rules.)** The recorded
+"1986±26 → 2055±29 CIs disjoint" used the ±29 live estimator, spans runs, and PREDATES the
+newest-node-inflation lesson (gen-10 fell −68 over refits — the size of the whole claim).
+ai_v9_14's own dense ladder reads the within-run move **2015.6±9.0 → 2049.1±13.7 = +33.5
+z≈2.0**, on an interrupted run with n_frozen_pairs=1. Alone, this would not clear today's bar.
+**(Piloting leg — SOLID, not luck-shaped.)** 0.438→0.710 on 23 taught teams (≈ the teachers'
+own 0.72) + head-to-head 0.228→0.36 + the INDEPENDENT retention arm's coherent decay-to-
+equilibrium (0.645, flat 9M steps, ~76% retained) — flukes do not produce equilibrium curves.
+Gap: per-team n not recorded in the ledger line (script survives, `tmp/pool10_perteam_eval.py`).
+**(Reconciliation — ARITHMETIC, flagged as such, not measurement.)** rev-2's measured ~+8pp
+on-slice came from ~1.2M on-pin transitions at block-1 into 0.575 headroom; v8 ran ~6M on-pin
+(5×) at block-64 (64× denser conditional sampling) into 0.438 headroom (~2×) over 14.9M steps —
+scaling our own on-slice effect by v8's multipliers lands near its +27pp. **Correction to probe
+E's entry: v8 is now LESS mysterious, not more** — the exotic explanations died and the boring
+ones (dose × density × headroom) fit the magnitudes. This is exactly what rev-3's restored
+recipe (block-64, longer forks, improvement bar) tests: if the boring account holds, rev-3
+moves; if not, the queued v8 no-fork control is the next probe. Meta-lesson banked: the +69 was
+recorded before the ELO reading rules existed — headline numbers inherit the instruments of
+their era, and an audit against CURRENT rules is cheap.
