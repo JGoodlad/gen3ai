@@ -5187,3 +5187,38 @@ live) — F5a vs F5e on shared recorded ZapDug states, top-1 agreement + symmetr
 anchored each-vs-rev-1 (shared-inheritance floor) — doubling as the shakedown of §4's rider
 instrument before the R3 arms need it. R2-PLAIN cleared to launch (GPU idle since 19:04);
 coverage-team picks arrive with the rev-1 piloting sweep before the fleet goes.
+
+### 🔴 PLASTICITY FORENSICS VERDICT — the account is NOT SUPPORTED; two reframes replace it (2026-08-28)
+
+Scored against the pre-registered predictions (record:
+`designs/research_state/measurements/plasticity_forensics_v8_vs_gen_2026-08-28.md`, landed
+f8868d9; validation: recorded logits reproduced to 1e-5 with top-1 agreement 1.000 both eras;
+trainability probe matches canonical main.capacity to 3 decimals via a separate code path):
+**P1 REFUTED-OPPOSITE** — the 277M v8 parent shows NO capacity loss (Lyle 1.154) while plastic
+rev-1 shows mild loss (0.948); "converged in loss" ≠ "rigid in capacity". **P3
+REFUTED-OPPOSITE** — v8 teacher deltas were TRUNK-heavy (0.47 vs R2's 0.28); v8 was the
+trunk-renovating era. **P2 MIXED** (trunk CKA-drift supports 3.4×, value-head contradicts),
+**P4 MIXED** (KL supports, top-1 agreement contradicts). The week's surviving explanation of
+v8's +69 is dead as stated. **TWO REFRAMES, both from the forensics' observations:**
+**(1) TEACHER DIFFERENTIATION** — every v8 teacher changed its behavior MORE on its own slice
+(agreement 0.42–0.52 on vs 0.54–0.58 off = genuine specialization); NO R2 fork differentiates
+(flat 0.69–0.77 on and off). The fleet's +12/−8 is an UNDIFFERENTIATED GLOBAL SHIFT that pays on
+two teams and costs elsewhere — a SUPPLY problem, not a transfer problem: there may be little
+slice-conditional content TO fold. Candidate cause for v8's differentiation: 23 teams/teacher
+FORCES team-conditional behavior where 2 teams can be satisfied by a global shift — the owner's
+"why could v8 train more teams" question returns with a mechanism. **(2) THE DRIFT-ANCHOR
+HYPOTHESIS** — R2CTRL (verified no-exploiter) drifts as far as the forks (KL 0.3245 inside the
+fork range 0.269–0.349): at this plasticity 3M of ANY training is a large undirected walk, which
+EXPLAINS the R2-CTRL −5.8pp anomaly (drift is costly) and implies the rev-2 fold's +7.4-vs-ctrl
+may be ANCHORING (five rev-1-descended targets ≈ stay-near-rev-1 regularization), not content.
+**ACTIONS: rev-3 spec amended pre-launch** — R3-SELF arm added (distill toward the FROZEN parent
+itself, dose 0.24; content = R3-ACTION − R3-SELF, and THAT difference now licenses the word
+"flywheel", not bar 1 alone) + admission DIFFERENTIATION row (the forensics instrument, per
+teacher, informational this revolution). **New registered predictions:** R2-PLAIN ≈ R2-CTRL
+(≈−6pp); R3-SELF ≥ rev-1-level; fleet differentiation flat-at-2-teams. Biggest MISSING cell,
+honestly held: v8 never ran a no-fork control, so "was v8's fork delta also ordinary-drift-sized"
+is unanswerable from the archive. Gen-era side-finding parked: the fresh generation runs at HALF
+v8's participation ratio at equal width (20.6 vs 50.2) — a generation-level representation
+difference worth an eventual look. The four learning notes shipped to
+`designs/research_state/learning_notes/` carry STATUS BANNERS marking which parts this verdict
+refuted — honesty preserved in the artifact, not just the ledger.

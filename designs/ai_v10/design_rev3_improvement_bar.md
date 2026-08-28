@@ -53,6 +53,15 @@ The 2 held-out teams remain untouched by any pin — they are the narrowness ins
 rev-1 references) + the off-slice informational row. Gate unchanged: on-slice net > 0 at z ≥ 2
 pooled per slice; failures logged SLICE UNCOVERED, never silent.
 
+**Admission adds a DIFFERENTIATION row (2026-08-28, forensics-forced):** per teacher, argmax
+agreement with its parent on-slice vs off-slice (the forensics instrument — CPU, recorded
+states). The forensics found v8's teachers DIFFERENTIATED (changed more on their own slice:
+0.417–0.519 agreement on-slice vs 0.543–0.577 off) while the R2 fleet did NOT (flat 0.69–0.77
+everywhere) — an undifferentiated global shift may be why there was so little slice-conditional
+content to fold. Registered reading: differentiation predicts foldable content; its absence
+predicts the fold reduces to anchoring (see R3-SELF). Informational this revolution — it becomes
+a gate only if rev-3 confirms the correlation.
+
 **Registered predictions (fleet):**
 - **Budget law, next point:** the measured curve ends at 1.5M/team → +0.1162. If monotone
   continues, 2.5M/team rows land **+0.13–0.16**; a plateau at ~+0.12 is equally informative (the
@@ -72,10 +81,26 @@ slices, `--rank-tripwire warn`.
 |---|---|---|
 | **R3-ACTION** | ≈ 0.24 (the calibrated standard) | **PRIMARY** |
 | R3-ACTION-HI | ≈ 0.35 | the transfer hedge — tests the per-slice-dilution hypothesis from the supply side |
+| **R3-SELF** | ≈ 0.24 | **the ANCHOR CONTROL (added 2026-08-28, forensics-forced):** distill target = the FROZEN parent (R2-ACTION final) itself — pure self-anchoring, no exploiter content (Learning-without-Forgetting shape) |
+
+**Why R3-SELF exists (the drift-anchor hypothesis, from the plasticity forensics):** R2CTRL's
+function drift sits INSIDE the fork range (KL 0.3245 vs forks' 0.269–0.349) — at this
+plasticity, 3M of ANY training moves the policy that far, which both explains the R2-CTRL −5.8pp
+anomaly (undirected drift is costly) and raises the possibility that the rev-2 fold's entire
++7.4-vs-control was ANCHORING (five rev-1-descended teachers averaging to "stay near rev-1"),
+not content transfer. R3-SELF separates them: **content = R3-ACTION − R3-SELF.** If
+R3-ACTION ≈ R3-SELF, the flywheel reduces to a self-anchor — which would itself be a major,
+much cheaper discovery (no exploiters needed to prevent drift-decline), but is not the flywheel.
 
 Multiplicity, pre-registered: the primary claim is R3-ACTION's. If only R3-ACTION-HI clears the
 bar, the improvement claim stands WITH the two-arm multiplicity caveat quoted, and 0.35 becomes
-the recipe of record for the confirmation turn.
+the recipe of record for the confirmation turn. R3-SELF is a control, never a claimant.
+
+**Additional registered predictions (2026-08-28, post-forensics, pre-launch):** R2-PLAIN lands
+≈ R2-CTRL (≈ −6pp) — under the drift account plain continuation drifts and declines the same;
+R3-SELF ≥ 0 vs rev-1 baseline-region (anchoring prevents decline); the capstone-relevant number
+is R3-ACTION − R3-SELF > 0 at z ≥ 2 — that difference, not bar 1 alone, is what licenses the
+word "flywheel".
 
 ## 4. Bars (pre-registered)
 
