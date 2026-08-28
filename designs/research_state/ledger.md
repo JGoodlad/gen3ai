@@ -5639,3 +5639,26 @@ candidate confound, and the demonstrated-inert single arm runs post-rev-3 only i
 makes it matter.** Fleet 2/7 (F6a/F6b complete, 0 crashes), fleet → ~17:45, F6-CURR last;
 admission battery wiring-verified (12 teams, 6 teachers, F6-CURR excluded from folds, target =
 R2-ACTION final). Fold argvs freeze at admission, launch on confirm — gate unchanged.
+
+### 🧭 TRAJECTORY REVIEW (owner question, 2026-08-28 morning) — two promotions; parkings ratified
+
+Owner asked whether the current experiment set is near-optimal for what we're learning. Verdict:
+the set is well-gated (effect → modifier → shape, each conditioned on the last); TWO promotions
+issued: **(1) DRIFT becomes a first-class question with a unifying suspect — the LR/OVERSHOOT
+hypothesis.** The generalist currently cannot train without declining (R2-CTRL −5.8; R2-PLAIN
+pending), and the distillability index's mechanism (fixed Adam displacement × sharpened
+landscape = function-space overshoot; step-size flip made teaching strictly Pareto) applies to
+ORDINARY training too: our runs never anneal lr off 3e-4. **Queued cell R2-PLAIN-LOWLR** (plain
++3M continuation at lr 1e-4, ~2h GPU, post-R3-folds). Registered readings: no decline ⇒ drift is
+overshoot, the generalist can keep improving via schedule alone, the fold's anchor value
+repriced, and lr-annealing enters the standard generation recipe; declines the same ⇒ drift is
+data/non-stationarity (pool, self-play), and the anchor account stands. **(2) The rev-3 verdict
+gains a SECONDARY anchored-ELO row** — snapshot-ladder over R3-ACTION vs rev-1 final (±10
+instrument), non-gating: a HOLDS on the piloting meter alone has a circularity exposure (a fold
+aimed at the meter's teams moving the meter), and the era's currency is anchored ELO. Parkings
+RATIFIED as choices, not blind spots: teacher-guided starts (next transfer lever after
+step-size), reverse KL (after the action channel's ceiling), LoRA/adapter annexes (post-proof),
+value-side factory (priority +1 from the critic-casualty finding, still behind the proof),
+human-replay era (behind the flywheel). Hygiene: no new CLAIMANT arms — controls and
+instruments free, claims rationed against the family-wise error budget; pre-registration + the
+wheel-turns-twice replication are the standing defenses.
