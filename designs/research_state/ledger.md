@@ -5440,3 +5440,28 @@ outcome-entropy sense; the C1 claim is about ADVANTAGE DENSITY — 0.5 vs a dive
 frontier (PFSP's regime, rich per-action counterfactual spread) is not 0.5 vs your own
 near-twin (flat advantage, outcome dominated by symmetric variance). That distinction is itself
 a HYPOTHESIS under test (F6-CURR, F6-LADDER), not settled.
+
+### 🔴 PROBE E VERDICT: v8's teacher tails are NOT special — the full-KL re-entry path loses its main empirical pillar (2026-08-28, ~6 min turnaround from existing dumps)
+
+Record `designs/research_state/measurements/v8_tail_agreement_2026-08-28.md` (landed 5fd3820→main;
+validation: independent re-implementation reproduces probe D's published gen numbers to 3 dp).
+**v8 inter-fork tail cosine mean 0.349 (pairs 0.330–0.361, tight) vs gen 0.344 LIKE-FOR-LIKE —
+difference +0.005, CI [−0.021, +0.033].** Two thirds of v8's apparent lead was the MASK REGIME
+(gen's published 0.327 is on real 6.72/11 masks; on v8's all-legal footing it is 0.344), and
+under the state-restricted construction the sign FLIPS (v8 0.384 < gen 0.401) — the era
+difference is smaller than the choice of measure. The 0.5+ support bar is not reached by any
+construction at any checkpoint (max anywhere: 0.460, length-unmatched finals). **Registered
+reading selected: "≈ gen's level ⇒ the full-KL re-entry path loses its main empirical pillar."**
+The consolidation-restores-dark-knowledge story now has NO support in our own data — it rests
+on the external literature alone. Sharpest detail: **v8's tail cosine EXCEEDS its mode cosine
+(0.349 > 0.303), the REVERSE of gen (0.344 < 0.385)** — v8's forks differentiated their
+DECISIONS less, not their tails more. Consequence, held honestly: **v8's +69 full-KL fold
+success is now MORE mysterious, not less** — with tails unspecial, the surviving candidates are
+C2 (fold duration/density: 14.9M steps, block-64) and C4 (headroom 0.438), plus one UNMEASURED
+narrative (a converged student as a low-pass filter — rigidity resists incoherent tail noise
+while persistent mode signal accumulates; flagged as narrative, not banked as finding). Caveats:
+no v8 no-fork control exists (raw agreement, no ancestry-drift baseline; a smaller shared
+signal attenuates cosine — an under-read of at most ~0.02, nowhere near 0.5); 3 forks = 3
+pairs. **The v8 no-fork control is now the blocking input for THREE programs** (forensics,
+probe D, probe E) — an era-pinned +3M continuation off the v8 parent (GPU, v8 code via the
+pinned-worktree recipe) is QUEUED as a post-rev-3 candidate arm, owner/schedule decision.
