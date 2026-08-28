@@ -5619,3 +5619,23 @@ off-slice |ΔV| 4–9 on a ±12 scale within steps; connects to the value-feat h
 more than policy-side. MISSING held honestly: teacher-independence of the age ordering (one
 bonus cell only); everything PPO-context. With this, ALL SEVEN of the day's agents are landed
 and scored.
+
+### ⚖️ value-feat-coef ADJUDICATED: 0.0 for all three R3 arms — recipe fidelity, NOT demonstrated inertness; critic-watch tripwire attached (2026-08-28 morning)
+
+Training session read the `value_feat_cos` scalars (cosine DISTANCE, lower=aligned) across every
+fold arm that carried the term at 0.5: all converge 0.010–0.016 → 0.004–0.008, i.e. the term
+optimizes a quantity ~99% satisfied before it acts. Recommendation 0.0 for R3, honestly flagged
+as UNDEMONSTRATED (no 0.0 comparison arm exists — "already good" is consistent with both
+"unnecessary" and "working cheaply"). **ENDORSED, on three legs:** (1) v8_14's literal recipe —
+the thing the improvement bar restores — ran 0.0; (2) no-headroom argument (0.988→0.994 is the
+term's whole measured effect); (3) all three arms share the setting, so within-rev-3 comparisons
+are unaffected and the bar is absolute. **THE SUBTRACTION RULE applied, not skipped:** what 0.5
+was plausibly holding in check is CRITIC-side feature drift — and the distillability index found
+the critic is action-distill's MAIN casualty in the unprotected micro-probe (off-slice |ΔV| 4–9,
+value correlation → 0.42 in steps). In a real fold PPO's own vf loss maintains the critic, so
+the risk is judged small — but it is NAMED: **tripwire = watch value-loss/explained-variance on
+the R3 folds against R2-ACTION's traces; a marked degradation is quoted in the verdict as a
+candidate confound, and the demonstrated-inert single arm runs post-rev-3 only if the verdict
+makes it matter.** Fleet 2/7 (F6a/F6b complete, 0 crashes), fleet → ~17:45, F6-CURR last;
+admission battery wiring-verified (12 teams, 6 teachers, F6-CURR excluded from folds, target =
+R2-ACTION final). Fold argvs freeze at admission, launch on confirm — gate unchanged.
