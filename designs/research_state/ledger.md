@@ -5142,3 +5142,26 @@ measurement. **Also on the record: the ZapDug consistency readout NEVER REACHED 
 — the day-1 admission relay isn't in the banked record and `fleet_admission.json` isn't at any
 path reachable from here; the two extraction rows + agreement-above-ancestry + style fingerprint
 are REQUESTED from the training session before the registered readings get applied.
+
+### 🔭 PLASTICITY FORENSICS DISPATCHED — v8 era vs current era, CPU-only, predictions pre-registered (2026-08-28, owner directive)
+
+Owner: "was it really plasticity? Because if it is, that's just the cost of getting a model into
+a relatively flat state." An Opus agent measures BOTH eras' (parent, exploiter, product) triples
+offline: v8 (the converged 276M parent, its 3 fold teachers, the +69 distilled product) vs
+current (rev-1 final, the R2 fleet F5a–e, R2-ACTION). **Predictions registered BEFORE any
+number exists — score, never adjust:**
+- **P1 (trainability):** the Lyle probe reads the v8 parent as markedly LESS trainable than
+  rev-1 final (rigid vs plastic). If v8 ≈ rev-1, the plasticity account loses its foundation.
+- **P2 (representation drift):** fork-vs-parent feature drift (CKA / probe-transfer on SHARED
+  recorded states) is SMALLER for v8's teachers than for our fleet — especially in trunk/encoder
+  phases. This is the central discriminator: renovation is a representation event.
+- **P3 (where the change landed):** per-layer weight-delta profiles show v8 teacher deltas
+  concentrated in heads/late modules; our fleet's spread into trunk/encoders.
+- **P4 (function drift off-slice):** fork-vs-parent policy KL on off-slice states — v8 low,
+  ours high; on-slice may be comparable. Off-slice KL is the behavioral renovation signature.
+Any single prediction failing weakens the account; P2+P4 both failing kills it and re-elevates
+the HEADROOM alternative (v8's 0.438 baseline did the work, not geometry). A MISSING cell is a
+result, never interpolated — v8-era checkpoints need era-pinned code (arch drift), and some
+instruments postdate v8. If the account HOLDS, the owner's framing is confirmed: plasticity's
+transfer tax is the purchase price of reaching the flat, distillation-friendly state — and the
+distillability-vs-training-age curve becomes an optimization-era instrument.
