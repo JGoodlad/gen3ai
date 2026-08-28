@@ -5165,3 +5165,25 @@ result, never interpolated — v8-era checkpoints need era-pinned code (arch dri
 instruments postdate v8. If the account HOLDS, the owner's framing is confirmed: plasticity's
 transfer tax is the purchase price of reaching the flat, distillation-friendly state — and the
 distillability-vs-training-age curve becomes an optimization-era instrument.
+
+### 📊 ZAPDUG READOUT + THE BUDGET LAW'S PROSPECTIVE CONFIRMATION + one honest gap (2026-08-27 ~20:05, training relay, banked 08-28)
+
+**Admission table (5 teachers, per-row CIs, artifact `~/.claude/jobs/1046b1d6/tmp/probes/fleet_admission.json`):**
+F5a +0.1300 z=5.47 · F5b +0.1212 z=5.02 · F5c +0.1162 z=4.77 · F5d +0.1150 z=4.87 · F5e +0.1000
+z=4.12 — **mean +0.1165, sd 0.0098, every row within 0.020 of the registered ~+0.11. THE BUDGET
+LAW'S PREREGISTERED PREDICTION CONFIRMED PROSPECTIVELY** (n=5, five different team pairs and
+archetypes; the ±0.05 scatter kill-threshold not approached). Extraction size tracks
+steps-per-team, not slice content — teams-per-exploiter moves toward being a pure cost knob;
+rev-3's 2.5M/team point tests the curve's next segment. F5e's ordered figure (+0.0575) hid a
+−0.0425 seniority term — the matched-row discipline is what made its +0.1000 readable.
+**ZapDug (the overlap slice):** F5a-on-ZapDug 0.7075, F5e-on-ZapDug 0.6550, both extracting
+significantly (F5a net +0.1325 z=3.94 · F5e +0.0800 z=2.33); difference +0.0525 [−0.012,+0.117]
+z=1.60 NOT significant — but n=400/arm resolves ~±6.5pp, so multimodality is UNSUPPORTED, not
+excluded. **Honest gap, training session's own flag: the action-agreement/policy-KL layer and
+style fingerprint were NEVER RUN** (spec §2's "if cheap" read as optional) — the banked
+consistency row has no mechanism behind it, and win rates cannot distinguish same-exploit from
+different-exploits-of-equal-size at any n. **ORDERED: run it now** (CPU ~20 min, both models
+live) — F5a vs F5e on shared recorded ZapDug states, top-1 agreement + symmetric policy-KL,
+anchored each-vs-rev-1 (shared-inheritance floor) — doubling as the shakedown of §4's rider
+instrument before the R3 arms need it. R2-PLAIN cleared to launch (GPU idle since 19:04);
+coverage-team picks arrive with the rev-1 piloting sweep before the fleet goes.
