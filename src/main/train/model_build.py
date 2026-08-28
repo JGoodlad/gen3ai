@@ -199,6 +199,11 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # gen3_exploiter_distill_v1: attach the frozen per-team teachers (foreign exploiters) on the
     # training device. OFF (coef 0 / no teacher) → the list stays empty so the loss block is
     # skipped (byte-identical). A bad path FATALs config, never a crash-restart loop.
+    #
+    # THE COEFFICIENT IS THE GATE, NOT THE PAIRS (gen3_distill_bias_at_coef0_v1). Since the fix,
+    # `_distill_pairs` is populated at ANY coefficient — the team bias reads it — so a coef-0
+    # CONTROL arm now arrives here with N teachers named. It must still load NONE of them: N frozen
+    # networks of RAM and a forward per minibatch, to be multiplied by a coefficient of zero.
     model._distill_teachers = []          # teacher-id = index + 1
     if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
         from agents.model.snapshot import (

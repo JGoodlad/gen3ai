@@ -4388,6 +4388,25 @@ mean-KLs are AVERAGED (a small-coverage teacher still contributes comparable gra
 training-only, NOT version-locked (inherited on a flagless resume). Validated (ai_v7_16→_19): offense
 transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (see the memory).
 
+🚨 **THE COEFFICIENT GATES THE LOSS, NOT THE TEAM BOOKKEEPING** (`gen3_distill_bias_at_coef0_v1`).
+`--distill-teacher` is what turns `--distill-team-bias` on, at ANY coefficient — including
+`--distill-coef 0`, which is the CONTROL-arm shape: same teachers, same teams, same 0.4 bias, no
+loss. That is not a nicety; it is the only way an arm holds the trainee's team distribution constant
+against its treatment arm. It used to be the other way round — `args._distill_pairs` was populated
+only above coef 0, so `ai_v9_58_R2CTRL_0827` trained at an EFFECTIVE bias of **0.0** while its argv,
+its `metadata.json` and its startup banner all said 0.4, and the rev-2 capstone's arms silently
+differed in the one variable its design pinned. What stays coefficient-gated is everything that
+costs or changes something: no teacher is LOADED at coef 0 (N frozen networks and a forward per
+minibatch, to be multiplied by zero), no loss is folded, and `_distill_species` stays `None` so the
+env does NOT emit the `distill_mask` obs key — emitting it would move the observation SPACE of a run
+with no distill term to read it. Two guards make the silence unrepresentable: an explicit
+`--distill-team-bias > 0` with no `--distill-teacher` is a `parser.error` (the flag's argparse
+default is `None`, resolved to 0.4 in `resolve_config`, exactly so a typed bias is distinguishable
+from an unset one), and `--distill-teacher` with `--trainee-team/--trainee-teams` is refused at every
+coefficient because the bias REPLACES the trainee teambuilder and would discard the pin. Gate:
+`src/main/distill_team_bias_test.py` — it MEASURES the draw (4000 draws, 0.4 ± 0.04; pre-fix 0 of
+4000), because the flag's value was never the thing that was wrong.
+
 - **VALUE distillation (`gen3_exploiter_value_distill_v1`, `--distill-value-coef`, default 0 = OFF).** The
   policy KL is POLICY-ONLY — the student pilots the teacher's team with its own amortized (~4-dim) critic,
   so it mimics the MOVES but never gets the teacher's per-team VALUE (confirmed: value_cls effective rank

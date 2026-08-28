@@ -15,6 +15,13 @@ from typing import Optional
 BATTLE_FORMAT = "gen3ou"
 CLIP_RANGE_DEFAULT = 0.15
 
+#: `--distill-team-bias` when the flag is not typed. The FLAG's argparse default is `None`, not
+#: this — a None sentinel is what makes "the user typed a bias" distinguishable from "the user
+#: typed nothing", which is what lets `config` refuse a bias with no teacher instead of refusing
+#: every ordinary run. `resolve_config` fills this in before anything reads the value, so a
+#: flagless run is unchanged (and `metadata.json`, snapshotted after resolution, still records 0.4).
+DEFAULT_DISTILL_TEAM_BIAS = 0.4
+
 
 # --- CHECKPOINT CADENCE ---------------------------------------------------------------------
 #

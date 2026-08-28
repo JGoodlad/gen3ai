@@ -829,9 +829,14 @@ def build_parser() -> argparse.ArgumentParser:
                              "LOWER = better aligned; the legacy alias distill/value_feat_cos holds the same "
                              "value and reads as its own opposite) fall + the value_cls rank probe.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
-                        type=float, default=0.4,
-                        help="Fraction of trainee episodes biased to the teacher's team (rest = pool "
-                             "rehearsal). Default 0.4. Only used when --distill-coef > 0.")
+                        type=float, default=None,
+                        help="Fraction of trainee episodes biased to the teacher TEAMS (rest = pool "
+                             "rehearsal). Default 0.4. Applies whenever --distill-teacher is given — "
+                             "INCLUDING --distill-coef 0, which is the CONTROL-ARM shape: the loss is "
+                             "off but the team distribution is held constant against the treatment arm. "
+                             "Requires --distill-teacher (there is no team to bias toward without one). "
+                             "The argparse default is None so an explicitly-typed value is "
+                             "distinguishable from the unset flag; it resolves to 0.4 in resolve_config.")
     # --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE
     # (gen3_distill_target_gate_v1; designs/ai_v10/design_advantage_gated_distillation.md
     # §3.1/§3.3/§4.1/§7). ALL TRAINING-only, the td_aux_coef provenance class (config v103):

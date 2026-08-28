@@ -226,6 +226,9 @@ class MatchupSpec:
         # teacher's TEAM ADVANTAGE, not whether the distillation transferred. (This is the same
         # eval-pilots-what-training-pilots invariant the single-team pin already enforces; the distill
         # path silently violated it — the eval read 0.36 while an offline per-team probe read 0.710.)
+        # Keyed on the PAIRS, so it follows the team bias exactly — including a `--distill-coef 0`
+        # CONTROL arm, which since `gen3_distill_bias_at_coef0_v1` IS biased onto the teacher teams
+        # and so must be MEASURED on them too, or the invariant would hold for one arm of a pair only.
         eval_trainee = None
         _dp = getattr(args, "_distill_pairs", None)
         if _dp:

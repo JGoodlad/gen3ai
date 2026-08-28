@@ -50,6 +50,61 @@ class MatchupSetup:
     promote_threshold: float
 
 
+def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
+    """gen3_exploiter_distill_v1: point `--distill-team-bias` of the trainee's episodes at the
+    TEACHER TEAMS (rest = pool rehearsal), and precompute those teams' species id-sets for the
+    env's per-state `distill_mask`. Returns the trainee teambuilder to use (the argument itself
+    when there is no teacher), and sets `args._distill_species`.
+
+    🚨 **THE BIAS IS KEYED ON THE TEACHERS, THE MASK ON THE COEFFICIENT** — and the split is the
+    whole point of `gen3_distill_bias_at_coef0_v1`. A `--distill-coef 0` CONTROL arm exists to hold
+    the team distribution constant against its treatment arm while folding no loss, so the bias
+    must apply at coef 0; `ai_v9_58_R2CTRL_0827` asked for exactly that, got an effective bias of
+    0.0 (the pairs were parsed only above coef 0), and its argv and metadata both said 0.4.
+    `_distill_species` stays coefficient-gated in the other direction: it is what makes the env emit
+    the training-only `distill_mask` obs key, so populating it at coef 0 would change the
+    OBSERVATION SPACE of a run that has no distill term to read it — a difference between the arms
+    where the design asks for none, and a resume-breaking change for a live control run.
+    """
+    args._distill_species = None
+    _pairs = getattr(args, "_distill_pairs", None)
+    if not _pairs:
+        return trainee_teambuilder
+    from poke_env.teambuilder.teambuilder import Teambuilder as _TB
+    from poke_env.data.normalize import to_id_str as _to_id
+    _loss_on = bool(args.distill_coef and args.distill_coef > 0)
+    _species_sets, _team_strs = [], []
+    for _tp, _tfs in _pairs:
+        _sets = []
+        for _tf in _tfs:
+            with open(_tf, encoding="utf-8") as _df:
+                _s = _df.read()
+            _team_strs.append(_s)
+            if _loss_on:
+                # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
+                _sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
+        _species_sets.append(_sets)
+    if _loss_on:
+        # list (per TEACHER, teacher-id = index+1) of LISTS of species-frozensets (that teacher's teams) —
+        # a multi-team teacher's KL fires on ANY of its teams (the env matches `cur in sp_list`).
+        args._distill_species = _species_sets
+    # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
+    trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
+                                          bias_prob=args.distill_team_bias,
+                                          team_pfsp=args.team_pfsp,
+                                          team_pfsp_cap=args.team_pfsp_cap,
+                                          team_pfsp_floor=args.team_pfsp_floor)
+    emit(f"🧪 [DISTILL] {len(_pairs)} teacher(s) / {len(_team_strs)} team(s), "
+         f"coef={args.distill_coef}"
+         f"{'' if _loss_on else ' (LOSS OFF — team bias only, no teacher loaded, no distill_mask)'}"
+         f" | trainee biased {args.distill_team_bias:.0%} across all "
+         f"{len(_team_strs)} teacher team(s); rest = pool rehearsal")
+    for _i, (_tp, _tfs) in enumerate(_pairs, start=1):
+        emit(f"   [{_i}] {_tp} ← {len(_tfs)} team(s): "
+             f"{', '.join(os.path.basename(_f) for _f in _tfs)}")
+    return trainee_teambuilder
+
+
 def build_matchup_and_opponents(args) -> MatchupSetup:
     """Load the team pool, declare the matchup, and resolve every opponent source."""
     # Load all teams using the new TeamLoader
@@ -101,39 +156,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     if args.team_block_episodes > 1:
         trainee_teambuilder.set_block_episodes(args.team_block_episodes)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
-    # gen3_exploiter_distill_v1: bias the trainee toward the teacher's team (rest = pool rehearsal) so it
-    # gets enough distillation signal, and precompute the teacher team's species id-set for the env's
-    # per-state `distill_mask`. --distill-coef is mutually exclusive with --trainee-team (a pin would
-    # defeat the mixed-team rehearsal that guards against forgetting).
-    args._distill_species = None
-    if getattr(args, "_distill_pairs", None):
-        from poke_env.teambuilder.teambuilder import Teambuilder as _TB
-        from poke_env.data.normalize import to_id_str as _to_id
-        _species_sets, _team_strs = [], []
-        for _tp, _tfs in args._distill_pairs:
-            _sets = []
-            for _tf in _tfs:
-                with open(_tf, encoding="utf-8") as _df:
-                    _s = _df.read()
-                _team_strs.append(_s)
-                # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
-                _sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
-            _species_sets.append(_sets)
-        # list (per TEACHER, teacher-id = index+1) of LISTS of species-frozensets (that teacher's teams) —
-        # a multi-team teacher's KL fires on ANY of its teams (the env matches `cur in sp_list`).
-        args._distill_species = _species_sets
-        # Bias the trainee across ALL N teacher teams (bias_prob total, split evenly); rest = pool rehearsal.
-        trainee_teambuilder = Gen3Teambuilder(all_teams, bias_teams=_team_strs,
-                                              bias_prob=args.distill_team_bias,
-                                              team_pfsp=args.team_pfsp,
-                                              team_pfsp_cap=args.team_pfsp_cap,
-                                              team_pfsp_floor=args.team_pfsp_floor)
-        emit(f"🧪 [DISTILL] {len(args._distill_pairs)} teacher(s) / {len(_team_strs)} team(s), "
-             f"coef={args.distill_coef} | trainee biased {args.distill_team_bias:.0%} across all "
-             f"{len(_team_strs)} teacher team(s); rest = pool rehearsal")
-        for _i, (_tp, _tfs) in enumerate(args._distill_pairs, start=1):
-            emit(f"   [{_i}] {_tp} ← {len(_tfs)} team(s): "
-                 f"{', '.join(os.path.basename(_f) for _f in _tfs)}")
+    trainee_teambuilder = apply_distill_team_bias(args, all_teams, trainee_teambuilder)
     for _ln in matchup.summary_lines():
         emit(_ln)
     if matchup.trainee_teams.kind == "pin_multi":

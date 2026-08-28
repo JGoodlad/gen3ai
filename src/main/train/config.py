@@ -27,8 +27,8 @@ from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
 )
 from main.train.constants import (
-    CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle, checkpoint_interval_env_steps,
-    checkpoint_save_freq_vec_calls,
+    CF_DUTY_CYCLE_FLOOR, DEFAULT_DISTILL_TEAM_BIAS, cf_label_duty_cycle,
+    checkpoint_interval_env_steps, checkpoint_save_freq_vec_calls,
 )
 from poke_env import LocalhostServerConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
@@ -533,14 +533,49 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # so ONE multi-team teacher (a --trainee-teams z-cluster exploiter) binds to all its teams without being
     # repeated N times (which would cost N identical teacher forwards per batch). The legacy comma-separated
     # pair form ('T1:a.txt,T2:b.txt') still parses (a comma segment containing ':' starts a new teacher).
+    #
+    # `--distill-team-bias` carries a None argparse default so a TYPED value is distinguishable from
+    # the unset flag; the guard below refuses a typed bias with no teacher, and could not exist if
+    # every flagless run arrived carrying 0.4. Resolved here, before any reader.
+    _team_bias_explicit = args.distill_team_bias is not None
+    if args.distill_team_bias is None:
+        args.distill_team_bias = DEFAULT_DISTILL_TEAM_BIAS
+    #
+    # THE COEFFICIENT GATES THE LOSS, NOT THE BOOKKEEPING (gen3_distill_bias_at_coef0_v1). The pairs
+    # are parsed whenever --distill-teacher is given, at ANY coefficient — because `--distill-team-bias`
+    # (the trainee's team distribution) reads them, and a CONTROL arm is precisely "the same teacher
+    # teams, the same bias, no loss". Gating the parse on the coefficient made that arm silently
+    # UNBIASED: run `ai_v9_58_R2CTRL_0827` recorded `--distill-teacher <5> --distill-coef 0
+    # --distill-team-bias 0.4` and trained at an EFFECTIVE bias of 0.0, so the capstone's
+    # "team-bias constancy" design was violated by the config layer, invisibly, in both metadata and
+    # argv. What DOES stay coefficient-gated is everything that costs something or changes a tensor:
+    # the teacher model LOADING (main.train.model_build), the loss fold (instrumented_ppo), and the
+    # training-only `distill_mask` obs key (main.train.matchup_setup — emitting it at coef 0 would
+    # change the observation SPACE of a run that folds no distill term).
     args._distill_pairs = []
-    if args.distill_coef and args.distill_coef > 0:
-        _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
-        if not _items:
-            parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)")
-        if not all(":" in x for x in _items):
+    _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
+    if args.distill_coef and args.distill_coef > 0 and not _items:
+        parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)")
+    if _team_bias_explicit and args.distill_team_bias > 0 and not _items:
+        # The bias is a bias TOWARD THE TEACHER TEAMS; with no teacher there is no team to bias
+        # toward, so the flag would be a silent no-op — the exact failure this whole block exists to
+        # make impossible. (Not reachable from the unset flag: the argparse default is None and the
+        # 0.4 resolution happens above, so only a TYPED value lands here.)
+        parser.error("--distill-team-bias > 0 requires --distill-teacher — the bias points at the "
+                     "TEACHER TEAMS ('TEACHER:TEAM[,TEAM...]' groups) and there is nothing to bias "
+                     "toward without one; the flag would be a silent no-op. Drop it, pass "
+                     "--distill-team-bias 0, or name the teacher(s).")
+    if _items:
+        if ":" not in _items[0]:
             # The bare-list + parallel --distill-teacher-team form is DELETED (no run ever passed it;
             # verified across every models/*/metadata.json 2026-08-16). One form, no misalignment.
+            #
+            # The check is on the FIRST segment, which is the one that distinguishes the two forms.
+            # It used to be `all(":" in x for x in _items)`, which also rejected the DOCUMENTED
+            # multi-team group 'T1:a.txt,b.txt' (a teacher's 2nd and later teams are comma segments
+            # with no colon by construction) — unless another ';'-joined teacher happened to follow,
+            # which is the only reason the multi-team form was ever seen to work. A later bare
+            # segment with no preceding teacher is still refused, by `parse_distill_teacher_spec`.
             parser.error("--distill-teacher takes 'TEACHER:TEAM[,TEAM...]' colon groups — the bare "
                          "teacher list (with the deleted --distill-teacher-team) is no longer accepted")
         from agents.training.distill_spec import parse_distill_teacher_spec
@@ -574,11 +609,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--distill-beta must be > 0 (an AWR temperature)")
     if not (0.0 < args.rank_tripwire_drop < 1.0):
         parser.error("--rank-tripwire-drop must be in (0, 1) — a fractional drop from baseline")
-    if args.distill_coef and args.distill_coef > 0 and (args.trainee_team or args.trainee_teams):
-        parser.error("--distill-coef is mutually exclusive with --trainee-team/--trainee-teams: "
-                     "distillation biases the trainee toward the teacher team via --distill-team-bias "
+    if args._distill_pairs and (args.trainee_team or args.trainee_teams):
+        # Keyed on the PAIRS, not the coefficient (gen3_distill_bias_at_coef0_v1): the team bias now
+        # applies at coef 0 too, and it REPLACES the trainee teambuilder — so at coef 0 a pin would
+        # not merely be redundant, it would be silently DISCARDED. Refuse instead.
+        parser.error("--distill-teacher is mutually exclusive with --trainee-team/--trainee-teams: "
+                     "distillation biases the trainee toward the teacher teams via --distill-team-bias "
                      "while keeping the pool for rehearsal; a hard pin would remove the rehearsal (and "
-                     "cause forgetting)")
+                     "cause forgetting), and the bias would override the pin anyway")
     if args.move_belief_mode in ("unrevealed", "both") and not (args.opp_belief_aux_coef > 0.0):
         # FAIL LOUD on a nonsensical config: 'unrevealed'/'both' score the HIDDEN opp slots, but without
         # the species-belief head (--opp-belief-aux-coef>0) those slots are never filled with learned

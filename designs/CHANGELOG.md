@@ -5776,3 +5776,35 @@ retry as its pre-registered re-entry path). G1 (action, ungated, dose-matched on
 `grad/distill_share`) is the discriminator; G2 (action + gate) is the product. The tripwire
 exists so no fold ever runs blind to rank collapse again — it fires on all five known-bad arms
 and on none of the controls.
+
+## `gen3_distill_bias_at_coef0_v1` (2026-08-27): `--distill-team-bias` becomes effective at coef 0 — the control arm was never bias-matched
+
+**What landed.** `main.train.config` now parses `--distill-teacher` into `args._distill_pairs`
+whenever the flag is given, at ANY `--distill-coef`. The coefficient still gates everything that
+costs something or changes a tensor — the teacher model LOADING (`model_build`), the loss fold
+(`instrumented_ppo`), and `_distill_species`, which is what makes the env emit the training-only
+`distill_mask` obs key — but the TEAM BOOKKEEPING no longer rides on it, so the trainee's team draw
+is biased onto the teacher teams at coef 0 exactly as the flag says. The bias block moved into
+`matchup_setup.apply_distill_team_bias` so it can be measured directly rather than only through a
+whole run. Three guards ride along: `--distill-team-bias > 0` with no `--distill-teacher` is now a
+`parser.error` (the flag's argparse default became `None`, resolving to 0.4 in `resolve_config`, so
+a TYPED bias is distinguishable from an unset one and the guard can exist without refusing every
+ordinary run); `--distill-teacher` alongside `--trainee-team/--trainee-teams` is refused for all
+coefficients, since the bias REPLACES the trainee teambuilder and would silently discard a pin; and
+the spec's bare-list check now looks at the FIRST comma segment only, which un-breaks the documented
+single multi-team group `T1:a.txt,b.txt` (previously rejected unless another `;`-joined teacher
+happened to follow it). No `ARCH_SIGNATURE` bump, no `MODEL_CONFIG_VERSION` bump, no `state_dict`
+keys, no optimizer positions — a run with no `--distill-teacher`, and a run with teachers at coef
+> 0, are both unchanged.
+
+**Why it exists.** `ai_v9_58_R2CTRL_0827` — the rev-2 capstone's CONTROL arm — was launched with
+five teachers, `--distill-coef 0` and `--distill-team-bias 0.4` precisely so the team distribution
+would be held constant against the treatment arm while folding no loss. `_distill_pairs` was
+populated only under `if args.distill_coef > 0`, so its effective bias was **0.0** while its argv,
+its `metadata.json` and its startup banner all read 0.4. The arms therefore differed in the one
+variable the design pinned, and nothing anywhere said so: this is the recorded-flag ≠ effective-
+behavior class, which this project treats as drop-everything for the reason on display here — an
+experiment does not fail loudly when its control is quietly a different experiment. Gate:
+`src/main/distill_team_bias_test.py`, which MEASURES the draw (4000 draws, teacher-team fraction
+0.4 ± 0.04; pre-fix 0 of 4000) rather than asserting the flag's value, and pins the coefficient-gated
+half in both directions (no teacher network is loaded at coef 0; the loader IS reached above it).
