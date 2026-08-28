@@ -5094,3 +5094,27 @@ commitment, not violating it; readings pre-registered in spec §4.2 (≈−6 ⇒
 real, verdict upgrades, rev-3 proceeds · flat ⇒ verdict DOWNGRADES to PARTIAL, rev-3 paused,
 bias-only cell next · ~−3 ⇒ both contribute, disambiguate first). Every bar in this capstone
 rests on a denominator; the 2h buys knowing what it is.
+
+### 🎯 REVOLUTION THREE REDIRECTED TO AN IMPROVEMENT BAR + DEPRECATION FREEZE (owner direction, 2026-08-27 evening)
+
+Owner: "I want to see an improvement before we deprecate anything that is now tech debt... an
+experiment where the bar is improvement. We may need to both train exploiters more and have
+greater coverage." Two rulings minted: **(1) THE DEPRECATION FREEZE** — nothing the fold program
+made arguable tech debt (the full-KL path, superseded distill flags, old teacher machinery) is
+deleted until an improvement bar clears; stabilization does not license cleanup. **(2) Rev-3's
+bar is ABSOLUTE** — R3-ACTION − rev-1 final > 0 at z≥2 pooled, control-free, which removes the
+un-diagnosed R2-CTRL from the verdict's denominator entirely (capstone §4.2's gate marked
+superseded; R2-PLAIN demoted to diagnosis-only). Spec pre-registered:
+`designs/ai_v10/design_rev3_improvement_bar.md`. The design's sizing argument: rev-2's transfer
+efficiency was ~13% (teachers ~+12pp/slice → +1.6pp pooled), so the owner's two supply levers
+alone arithmetically land ~+2–3pp — marginal at z≥2. Therefore THREE levers move together, as a
+DEMONSTRATION not an ablation: per-team budget 1.5M→2.5M (the budget law's next prospective
+point, registered +0.13–0.16 if monotone), coverage 9→12 slices (3 new pool teams, worst rev-1
+piloting rows, archetype-spread, held-outs untouched), and the TRANSFER step (fold +3M→+4.5M
+scaled to coverage, plus R3-ACTION-HI at dose 0.35 hedging the per-slice-dilution hypothesis;
+multiplicity caveat pre-registered). Fleet targets R2-ACTION's frozen final — the wheel's
+product — so the admission table doubles as the era's first per-team HEADROOM reading. Verdict
+meter tightened to n=500/team (CI ~±1.9pp). Failure semantics pre-named: strong admission + flat
+yield indicts TRANSFER (next: fold-side dose ladder on the SAME fleet, no new exploiter
+training); flat admission at 2.5M/team indicts SUPPLY (the budget law's ceiling). HOLDS lifts
+the freeze and pre-commits revolution four as confirmation. ~One box-day.

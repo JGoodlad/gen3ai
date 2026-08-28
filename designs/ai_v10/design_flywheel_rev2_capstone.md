@@ -182,7 +182,10 @@ Post-hoc hypothesis on record, not an explanation: the fold assigns each state's
 slice's designated teacher, so total dose 0.31 over five slices ≈ 0.06 PER SLICE vs fdB's ~0.12 —
 if KL harm scales with per-slice dose, more teachers at higher total dose harm less.
 
-### 4.2 SECOND CONTROL — pre-registered, GATES revolution three
+### 4.2 SECOND CONTROL — pre-registered. ⚠️ GATE SUPERSEDED (2026-08-27 late): owner redirected
+revolution three to an ABSOLUTE improvement bar (`design_rev3_improvement_bar.md`), which removes
+the control from the verdict's denominator entirely — R2-PLAIN still runs and its readings below
+still apply, but as DIAGNOSIS of the R2-CTRL anomaly only; it no longer gates rev-3.
 
 **R2-PLAIN**: fork rev-1 final, +3M, fdB ecology, **no `--distill-teacher` at all** (removes both
 the coef-0 plumbing and the 0.4 team bias — deliberately two-at-once as the first cut), same
