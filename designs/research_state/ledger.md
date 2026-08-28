@@ -5488,3 +5488,30 @@ recipe (block-64, longer forks, improvement bar) tests: if the boring account ho
 moves; if not, the queued v8 no-fork control is the next probe. Meta-lesson banked: the +69 was
 recorded before the ELO reading rules existed — headline numbers inherit the instruments of
 their era, and an audit against CURRENT rules is cheap.
+
+### 🟢 F6-LADDER BUILD LANDED (7514fba) — the pool-ratchet exploiter curriculum is launchable (2026-08-28 late)
+
+Flag surface: `--exploiter-ladder` (ordered weakest-first rung list, or `auto:<run_dir>` which
+draws `--exploiter-ladder-rungs` (4) evenly-ELO-spaced snapshots from the run's
+snapshot_ladder/ladder.json and appends the `--exploiter` target as the terminal rung — verified
+against real data: auto on ai_v9_27 yields 1888.6/1967.9/2024.6/2087.4 → best_model) ·
+`--exploiter-ladder-gate` (0.55, matching the temp-ratchet's WR gate) · `--exploiter-ladder-window`
+(500 games, DISJOINT windows — the agent found the existing ratchet's window is disjoint despite
+"rolling" prose, and named it honestly rather than inheriting the word). Design points worth
+keeping: rung swaps ride the existing `env_method` idiom, DEFERRED to the next `reset()` (an
+opponent's brain is never replaced mid-battle; the in-flight episode scores against the rung it
+actually played); per-rung WR is correct BY CONSTRUCTION (counters zeroed in the same operation
+as the swap; stale rows dropped by rung index); `--exploiter-keep-bots` composes without
+interacting (bot episodes never count toward the gate WR). **State artifact
+`exploiter_ladder_state.json`** (atomic; promotion log with steps/WRs) restores BY LABEL FIRST
+so an edited ladder resumes at the same OPPONENT — without it the 3-hourly launcher restart
+would silently reset the curriculum to rung 0 forever. 52 new tests, revert-verified on four
+behaviors (live-rung filter, deferred swap, resume restore, no-demotion); 4130-test sweep +
+static gates green; CHANGELOG + training CLAUDE.md updated same pass. Ratchet archaeology
+banked: the temp ratchet restores temp but not window counters (mirrored, with cumulative
+per-rung counts persisted so the artifact shows how long each rung took), and its `_persist` is
+fail-soft — the ladder keeps fail-soft but prints on restore. **The F6-LADDER arm (82c8272's
+spec) is now launchable**: fork rev-1, +5M, 2 teams, `--exploiter <R2-ACTION final>
+--exploiter-ladder auto:<rev-1 run dir>`, measurement-only; joins the GPU queue behind the
+fleet/folds; validity check = ladder_state.json shows ≥3 promotions, else the curriculum never
+engaged (a null of the GATE, not the concept).
