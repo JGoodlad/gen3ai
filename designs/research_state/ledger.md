@@ -5662,3 +5662,24 @@ value-side factory (priority +1 from the critic-casualty finding, still behind t
 human-replay era (behind the flywheel). Hygiene: no new CLAIMANT arms — controls and
 instruments free, claims rationed against the family-wise error budget; pre-registration + the
 wheel-turns-twice replication are the standing defenses.
+
+### 📡 SIGNAL-RATE TB METRICS ORDERED (owner, 2026-08-28) — outcome entropy × advantage density as a live pair; build dispatched
+
+Owner: surface last night's advantage-information-rate / PFSP-rate concepts as TensorBoard
+scalars, "so we can understand how much PPO is likely able to extract." Design: a `signal/`
+scalar group, ALWAYS-ON (pure observability, no gradient path): **(a) advantage density** —
+pre-normalization GAE std + abs-mean (units = PopArt-normalized returns, documented — comparable
+within a run, cautiously across) + kurtosis (exploit signal is SPARSE; heavy tails = concentrated
+decisive moments); **(b) outcome entropy** — rolling p(1−p) per opponent KIND (exploiter
+target/rung, pool, bots) pooled + min, and per-rung on ladder runs (the WR machinery already
+exists there). **The PAIR is the instrument, singly each misleads**: vs the near-twin p≈0.5 puts
+outcome entropy at its MAX (0.25) while advantage density is the thing that's low — the mirror
+paradox made visible live. Registered predictions: curriculum/ladder exploiters (F6-CURR,
+F6-LADDER) show HIGHER advantage density than same-age standard exploiters at similar outcome
+entropy — the C1 mechanism's live signature; the mature generalist under plain continuation
+shows LOW density at high entropy (the drift regime). Caveats banked: raw-advantage scale rides
+PopArt units; the GOLD standard for "attributable share" stays the OFFLINE counterfactual
+decomposition (the three-axis OUR/OPP/DICE instrument) — the live scalars are its cheap running
+proxy, never its replacement. Timing: lands for F6-LADDER and future runs; the fleet
+(mid-flight) is not disturbed; R3 fold argvs may include it ONLY if landed+pulled before freeze
+and checkargs-clean — never worth delaying the freeze for.
