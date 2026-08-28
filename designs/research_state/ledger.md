@@ -5548,3 +5548,20 @@ INTERLEAVED batching (simultaneous conflict, within-update); the tools that part
 BLOCKED batching are the ACROSS-TIME protectors (Gradient Projection Memory / EWC — protect the
 consolidated subspace of finished blocks), because blocking's failure mode is sequential
 overwriting, which no within-update surgery can see.
+
+### 💡 STRIDED BLOCKING REGISTERED (owner concept, 2026-08-28 late) — overlapping team windows; queued behind R3-BLOCK1 + the micro-probe instrument
+
+Owner: "batch and stride? 16a,16b,16c then 16b,16c,16d then…" — massed chunks (within-chunk
+conditional coherence) + overlapping turnover (each team revisited across ~3 consecutive
+windows before rotating out). Three registered virtues: spacing prevents pure blocking's
+long-absence forgetting; ~1/3-per-window turnover keeps the data distribution slowly varying
+(Adam second moments + value calibration stay fresh — abrupt block switches are optimizer-
+hostile); knobs collapse to (chunk, revisit interval, active-set size). One sharpening banked
+with it: at n_envs=48 with per-env blocking and desynchronized redraw phases, the GLOBAL batch
+composition already turns over smoothly — so striding's marginal value over plain block-64 is
+likely modest in the live fold and LARGEST in single-stream settings, which is exactly what the
+distillability MICRO-PROBE is. **Plan: once the micro-probe instrument is admitted, batch-
+schedule shapes (flat-blocked vs strided vs interleaved, matched totals) become a CPU-cheap
+ablation on it — hours of CPU, no GPU arms — and a strided arm joins the block LADDER only if
+R3-BLOCK1 first shows the block effect is real.** Ordering: effect first, modifier second,
+schedule-shape third; each gated on the one before.
