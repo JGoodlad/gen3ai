@@ -5396,3 +5396,22 @@ another `;` teacher followed (failed loudly, never silently). flag_registry deli
 touched (its scope is extractor-arch toggles by its own docstring; the parser.error is the
 correct gate, matching every other distill dependency). Training session: pull ≥6ff4c04 before
 freezing R3 fold argvs; re-run checkargs; R3-SELF's bias now works as recorded.
+
+### 📏 EPISTEMIC AUDIT (owner challenge, 2026-08-28 late) — what is MEASURED vs NARRATIVE in the day's two headline stories; probe E dispatched
+
+Owner: "did we measure 8 vs 9 or just 9?" and "do we have evidence" for the curriculum account.
+Audit banked: **(1) tail-noise** — the v9 claim is MEASURED (inter-fork tail cos 0.327 vs
+no-fork-control 0.306; the control subtraction is the strength); the v8 half ("consolidated
+tails carry dark knowledge") is NARRATIVE — the decisive v8 cell is blocked by the never-run v8
+no-fork control, and only a suggestive scale-confounded read exists (v8 on-slice mode-dominated,
+divergence 2.5× smaller, masks not comparable). **(2) curriculum (C1)** — the regime DIFFERENCE
+is PROVEN (recorded namespaces + ratchet artifacts); the CAUSAL claim has zero within-era
+evidence and is confounded with fork length across eras, where probe A holds actual directional
+evidence (z=2.43) — by evidence quality LENGTH currently leads CURRICULUM; the recap sentence
+that read C1 as established is retracted to "top-ranked hypothesis". F6-CURR at matched 5M
+de-confounds tomorrow. **PROBE E DISPATCHED (registered prediction):** compute v8's inter-fork
+tail cosine from existing dumps (3 teachers, shared v8 states, no control subtraction possible).
+Reading: v8 inter-fork tail cos MARKEDLY above gen's 0.327 (≈0.5+) ⇒ consolidation-restores-
+dark-knowledge gains real support; ≈ gen's level ⇒ the full-KL re-entry path loses its main
+pillar and needs a different justification; ambiguous ⇒ propose the v8 no-fork control arm
+(GPU, era-pinned) as the only clean finish.
