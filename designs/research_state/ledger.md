@@ -5530,3 +5530,21 @@ batch-composition-SNR account's specific signature). Block ladder (16/64/256) on
 positive first read. This keeps the demonstration-vs-ablation boundary clean: rev-3 demonstrates
 with the full restored recipe; attribution of the block knob comes after, gated on there being
 an effect to attribute.
+
+### 🔭 PROBE F DISPATCHED — per-team GRADIENT GEOMETRY under the fold (owner question: does PCGrad pair with blocking?) (2026-08-28 late)
+
+Owner asks whether PCGrad + team-blocking is a natural pair (surgery fights between-team
+interference while blocking builds conditional structure). The idea has a measurable substrate
+question: PCGrad only acts on NEGATIVE pairwise cosines, and both prior geometry measurements
+here found near-orthogonality (FiLM per-team gradients ORTHOGONAL with 2/3 of energy in ONE
+shared direction; distill-vs-PPO Δcos −0.030 ⇒ projection passes ~97%). **Registered
+predictions:** per-team gradient pairwise cosines (distill loss AND policy loss, at a rev-2 fold
+checkpoint) are ≈0-to-positive (no conflict for PCGrad to remove); the SHARED component
+dominates (large first-PC energy fraction) — i.e. the enemy is DOMINATION-BY-AVERAGE, which
+surgery cannot touch and batch-composition (blocking) addresses directly. If instead real
+negative cosines appear between specific team pairs, the PCGrad-with-blocking idea gains a
+substrate and gets a design. Conceptual pairing banked with it: PCGrad partners with
+INTERLEAVED batching (simultaneous conflict, within-update); the tools that partner with
+BLOCKED batching are the ACROSS-TIME protectors (Gradient Projection Memory / EWC — protect the
+consolidated subspace of finished blocks), because blocking's failure mode is sequential
+overwriting, which no within-update surgery can see.
