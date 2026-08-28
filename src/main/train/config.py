@@ -395,7 +395,24 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             if args.exploiter_temp_start <= args.exploiter_temp_end:
                 parser.error("--exploiter-temp-mode ratchet needs --exploiter-temp-start > "
                              "--exploiter-temp-end (it ratchets the temp DOWN from start toward end).")
-    elif args.exploiter_temp_mode == "ratchet":
+    # gen3_exploiter_pool_ladder_v1 — the POOL-LADDER opponent curriculum. Same shape of dependency
+    # as --exploiter-keep-bots above: it only means anything in exploiter mode, and it names rungs
+    # that end at the --exploiter target, so a ladder with no target is a config with no terminus.
+    if args.exploiter_ladder:
+        if not args.exploiter:
+            parser.error("--exploiter-ladder only applies in exploiter mode — pass --exploiter "
+                         "<target> too (the ladder's TERMINAL rung IS that target; without it the "
+                         "curriculum has no destination).")
+        if not 0.0 < args.exploiter_ladder_gate < 1.0:
+            parser.error("--exploiter-ladder-gate must be a win-rate in (0, 1).")
+        if args.exploiter_ladder_window < 1:
+            parser.error("--exploiter-ladder-window must be >= 1.")
+        if args.exploiter_ladder_rungs < 1:
+            parser.error("--exploiter-ladder-rungs must be >= 1 (the number of auto: rungs drawn "
+                         "BEFORE the --exploiter target is appended).")
+    elif args.exploiter_ladder_rungs < 1:
+        parser.error("--exploiter-ladder-rungs must be >= 1.")
+    if args.exploiter_temp_start is None and args.exploiter_temp_mode == "ratchet":
         parser.error("--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
                      "temperature to ratchet down from — set it HIGH, e.g. 5.0).")
     if args.opp_belief_cls_k < 0:

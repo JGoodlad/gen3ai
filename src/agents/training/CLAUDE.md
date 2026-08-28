@@ -1419,6 +1419,62 @@ at the target and it's the only opponent.
     (hovers near the threshold) + `train/exploiter_temp_ratchets`. Requires `--exploiter-temp-start >
     --exploiter-temp-end`. Tests: `exploiter_temp_callback_test.py` (`_decide` one-way/floor + windowed
     control loop + resume round-trip), `wrappers_test.py::test_exploiter_winrate_totals_*`.
+- **Pool-ladder curriculum (`gen3_exploiter_pool_ladder_v1`, `--exploiter-ladder`,
+  `exploiter_ladder.py`).** The SECOND difficulty axis, and the complement of the temperature
+  curriculum above: that one keeps ONE opponent and makes it play NOISILY; this keeps play honest and
+  swaps in a genuinely **WEAKER** opponent — an earlier frozen snapshot — promoting up a ladder that
+  ENDS at the `--exploiter` target. Motivation is the same C1 hypothesis (a full-strength near-twin
+  from step 0 makes nearly every episode a loss, and PPO's advantage is a *within-batch* contrast, so
+  a batch of uniform losses says almost nothing about WHICH decision was bad) attacked along strength
+  rather than stochasticity. The two are orthogonal knobs and compose.
+  - **Two input forms.** An ORDERED comma-separated list of checkpoint specs in the
+    `--stable-opponents` grammar (`path[@step][:label]`), weakest first — the order is the user's and
+    is not re-sorted; or **`auto:<run_dir>`**, which draws `--exploiter-ladder-rungs` (default 4)
+    **evenly-ELO-spaced** snapshots from that run's `snapshot_ladder/ladder.json`. 🚨 The auto draw
+    orders by **ELO, not by step** — training is not monotone in strength (measured in
+    `ai_v9_27_extremedial_probe_0823`: 42.0M rates 1888.6, the WEAKEST of its 20 snapshots, while
+    45.0M rates 2087.4), so "the earliest N snapshots" would build a curriculum that is not a
+    curriculum. The `--exploiter` target is ALWAYS appended as the terminal rung (deduped when the
+    list already ends there), so the default auto ladder is 5 rungs, and a ladder that resolves to
+    the target alone is refused rather than silently being the no-ladder run.
+  - **The gate.** Promote one rung when the trainee's **training** WR vs the **CURRENT rung** ≥
+    `--exploiter-ladder-gate` (default 0.55, the `--exploiter-temp-ratchet-wr` value and the same
+    reasoning) over a completed window of `--exploiter-ladder-window` games (default 500, the same
+    disjoint-window semantics as `--exploiter-temp-ratchet-games`). **No demotion, terminal rung
+    sticky** — the same one-way property, for the same anti-comfort-trap reason.
+  - **The WR is per-rung by construction, not by convention.** The wrapper carries a rung index +
+    its own `(games, wins)` pair (`exploiter_rung_totals`), zeroed in the same operation that swaps
+    the rung in; the callback DROPS worker rows whose index isn't the live one (a worker that hasn't
+    reset since the push). So a promotion window can never pool games played against two different
+    opponents. Bot episodes under `--exploiter-keep-bots` were already excluded (only episodes whose
+    opponent IS the exploiter player count), so **the bots keep their independent per-episode share
+    at every rung** — the ladder changes who the non-bot opponent is, never how often it appears.
+  - **The swap rides the established opponent mechanism.** `env_method("set_exploiter_rung", index,
+    zip, config)` — the `set_self_play_target` / `set_exploiter_temperature` idiom, change-guarded so
+    a steady rung costs no IPC. The worker DEFERS it to the next `reset()` (an opponent's brain must
+    not be replaced mid-battle, and the episode in flight must be scored against the rung it was
+    actually played against), then assigns into the persistent `RLPlayer` exactly as
+    `_ensure_pool_model` does for a self-play snapshot. The loader is INJECTED from `env_factory` (a
+    `(zip, config) -> model` closure owning the arch gate, device and `--compile-opponents` policy),
+    so rungs compile like any frozen opponent and the wrapper stays free of model-loading policy.
+    **The swap changes WEIGHTS ONLY** — the target's pinned team (fold-back), its temperature, and
+    the bot fraction are untouched, so the curriculum varies exactly one thing.
+  - **Resume-safe.** Live rung + per-rung counts + the promotion log (step, labels, WR, games) go to
+    `<run>/exploiter_ladder_state.json` (atomic, on every promotion + every 20 rollouts) and are
+    restored on a launcher restart — **by LABEL first**, so an edited ladder resumes at the same
+    OPPONENT rather than at whatever now sits at that index; corrupt/partial state fails soft to rung
+    0. Without this a 3-hourly restart would silently drop the trainee to rung 0 and the curriculum
+    would never finish. Metrics: `train/exploiter_rung`, `train/exploiter_rung_wr`,
+    `train/exploiter_ladder_promotions`.
+  - **Training-only** (no weight-shape/forward change → never versioned, no `flag_registry` entry;
+    it lands in `cli_args`/`metadata.json` like every train-loop knob) and **registered only when
+    `--exploiter-ladder` is given**, so an off run adds no callback, makes no `env_method` call, and
+    builds its wrapper with `exploiter_rung_loader=None` (every rung branch inert). Rungs are
+    resolved + arch-gated + load-validated in phase 2 (`matchup_setup`), so a bad rung is a
+    `FATAL_CONFIG` at startup, not a crash in every env worker. Tests:
+    `exploiter_ladder_test.py` (52: the ELO draw, both input forms + every malformed one, the gate
+    incl. never-demote/terminal-sticky/live-rung-only, the state artifact + the launcher-restart
+    resume, the deferred swap seam, and the OFF byte-identity half).
 - **The target AUTO-registers for eval** (opponent-parity Proposal A,
   `fixed_opponent_pool.register_exploiter_for_eval`): `--exploiter` alone now produces the verdict
   metric `eval/win_rate_vs_ext_<target>` — the resolved target entry is appended to the eval-side

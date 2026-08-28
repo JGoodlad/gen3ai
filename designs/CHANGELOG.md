@@ -5808,3 +5808,68 @@ experiment does not fail loudly when its control is quietly a different experime
 `src/main/distill_team_bias_test.py`, which MEASURES the draw (4000 draws, teacher-team fraction
 0.4 ± 0.04; pre-fix 0 of 4000) rather than asserting the flag's value, and pins the coefficient-gated
 half in both directions (no teacher network is loaded at coef 0; the loader IS reached above it).
+
+---
+
+## `gen3_exploiter_pool_ladder_v1` (2026-08-27): `--exploiter-ladder` — the exploiter's opponent becomes a curriculum, not a wall
+
+**Motivation (C1).** `--exploiter <target>` trains a specialist against ONE frozen, full-strength
+target from step 0. When that target is a near-twin of the trainee's own init — which is the
+recommended recipe (`--exploiter X --model X`) — the trainee loses nearly every game. PPO's advantage
+is a *within-batch* contrast, so a batch in which every episode ends in a loss carries almost no
+information about WHICH decisions were the bad ones: the exploiter is starved of variance in outcome
+rather than of capacity. `ExploiterTempRatchetCallback` (`gen3_exploiter_temp_anneal_v1`) already
+attacks that along the STOCHASTICITY axis — one opponent, made to play noisily. This is the owner's
+pool-ladder design for the other axis: keep every opponent's play honest and instead start against a
+genuinely WEAKER one, promoting up a ladder that terminates at the real target.
+
+**What landed.** `--exploiter-ladder` takes an ORDERED, weakest-first rung list — either an explicit
+comma-separated list of checkpoint specs in the `--stable-opponents` grammar, or `auto:<run_dir>`,
+which draws `--exploiter-ladder-rungs` (default 4) evenly-ELO-spaced snapshots from that run's
+`snapshot_ladder/ladder.json`. The `--exploiter` target is always appended as the terminal rung. The
+controller promotes one rung when the trainee's TRAINING win-rate vs the CURRENT rung clears
+`--exploiter-ladder-gate` (default 0.55) over a completed window of `--exploiter-ladder-window`
+games (default 500 — the `--exploiter-temp-ratchet-games` semantics and value). One-way: no
+demotion, terminal rung sticky.
+
+**The auto draw orders by ELO, not by step, and that is not a stylistic choice.** Training is not
+monotone in strength: in `ai_v9_27_extremedial_probe_0823`'s 20-snapshot ladder, step 42.0M rates
+1888.6 — the WEAKEST snapshot in the run — while 45.0M rates 2087.4. "The earliest N snapshots"
+would therefore have built a curriculum whose third rung was weaker than its first.
+
+**The gate reads ONE opponent, by construction rather than by convention.** The wrapper carries a
+rung index alongside its own `(games, wins)` pair, zeroed in the same operation that swaps the rung
+in, and the callback drops any worker row whose index is not the live one — so a promotion window
+can never pool games played against two different rungs. Bot episodes under `--exploiter-keep-bots`
+were already excluded from that counter, so the two flags compose without interacting: the ladder
+changes WHO the non-bot opponent is, never how often it appears.
+
+**The swap rides the existing opponent mechanism.** `env_method("set_exploiter_rung", index, zip,
+config)` is the `set_self_play_target` / `set_exploiter_temperature` idiom, change-guarded so a
+steady rung costs no IPC; the worker DEFERS it to the next `reset()` (an opponent's brain must not be
+replaced mid-battle, and the episode in flight must be scored against the rung it was actually played
+against) and then assigns into the persistent `RLPlayer` exactly as `_ensure_pool_model` does for a
+self-play snapshot. The model loader is injected from `env_factory` as a closure, so it owns the arch
+gate, the device and `--compile-opponents` — rungs compile like any other frozen opponent — and the
+wrapper stays free of model-loading policy. Only WEIGHTS move: the target's pinned team (the
+fold-back contract), its sampling temperature and the bot fraction are all untouched, so the
+curriculum varies exactly one quantity and remains orthogonal to the temperature ratchet.
+
+**Resume.** The live rung, per-rung counts and the promotion log are persisted atomically to
+`<run>/exploiter_ladder_state.json` (on every promotion, plus every 20 rollouts) and restored at
+training start — **by rung LABEL first**, so an edited ladder resumes at the same OPPONENT rather
+than at whatever now occupies that index. This is the same lesson `exploiter_temp_state.json` records:
+the launcher restarts the child every three hours, and without a restored artifact the curriculum
+resets to rung 0 each time and never reaches the target, silently.
+
+**Training-only, and OFF is byte-identical.** No weight-shape or forward change, so it is not
+version-locked and carries no `flag_registry` entry — it lands in `cli_args` / `metadata.json` like
+every train-loop knob. Rungs are resolved, arch-gated and load-validated in phase 2
+(`matchup_setup`), so a bad rung is a `FATAL_CONFIG` at startup rather than a crash in every env
+worker; with no flag, no rungs are stashed, no callback is registered, no `env_method` is ever
+called, and the wrapper is built with `exploiter_rung_loader=None`, which makes every rung branch a
+single `is None` test. `--exploiter-ladder` without `--exploiter` is a `parser.error` (the terminal
+rung IS the target — a ladder without one has no destination). Gate:
+`src/agents/training/exploiter_ladder_test.py` (52 tests), revert-verified on the four load-bearing
+behaviors: dropping the live-rung filter, applying the swap immediately instead of at `reset()`,
+skipping the resume restore, and admitting a demotion each fail a named test.

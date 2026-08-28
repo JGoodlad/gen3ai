@@ -49,7 +49,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                  stable_teams=None, exploiter_team=None, opponent_pool_team=None,
-                 stable_pfsp=False, team_wr_tracking=True):
+                 stable_pfsp=False, team_wr_tracking=True, exploiter_rung_loader=None):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -146,6 +146,19 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         # temperature — the signal the fixed schedule lacks. Inert unless an exploiter is set.
         self._exploiter_games = 0
         self._exploiter_wins = 0.0
+        # gen3_exploiter_pool_ladder_v1 (--exploiter-ladder): the target's WEIGHTS are swapped up a
+        # ladder of frozen opponents as the trainee clears a win-rate gate. `exploiter_rung_loader`
+        # is the worker-side `(zip_path, config_path) -> model` closure (it owns the arch gate,
+        # device and opponent-compile settings; the wrapper stays free of model-loading policy) and
+        # is None off the ladder path, which makes every branch below inert. The swap is DEFERRED to
+        # the next `reset()` so an episode is never scored against two different opponents, and the
+        # per-rung counters below reset with it — that is what makes the gate's win-rate a
+        # per-rung quantity rather than a pooled one.
+        self._exploiter_rung_loader = exploiter_rung_loader
+        self._exploiter_rung_index = None    # None until the first push (those episodes count for no rung)
+        self._exploiter_rung_games = 0
+        self._exploiter_rung_wins = 0.0
+        self._pending_exploiter_rung = None  # (index, zip_path, config_path)
         self._self_play_fraction = float(self_play_fraction)
         self._target_generation = 0
         self._scanned_generation = -1   # -1 forces a pool re-scan on the first pool selection
@@ -169,6 +182,43 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         if self._exploiter_player is not None:
             self._exploiter_player._temperature = float(temperature)
 
+    def set_exploiter_rung(self, index: int, zip_path: str, config_path: str) -> None:
+        """Live update of WHICH frozen opponent the exploiter target is (pushed via
+        ``VecEnv.env_method`` by ``ExploiterLadderCallback`` on each promotion — the
+        ``set_self_play_target`` idiom).
+
+        The load is DEFERRED to the next ``reset()`` rather than done here, for two reasons: the
+        episode in flight must not have its opponent's brain replaced mid-battle, and its outcome
+        must be attributed to the rung it was actually played against. No-op when this env has no
+        exploiter player or no rung loader (i.e. every non-ladder run — byte-identical)."""
+        if self._exploiter_player is None or self._exploiter_rung_loader is None:
+            return
+        self._pending_exploiter_rung = (int(index), str(zip_path), str(config_path))
+
+    def _apply_pending_exploiter_rung(self) -> None:
+        """Swap a promoted rung's weights into the persistent exploiter player, between episodes.
+
+        Mirrors ``_ensure_pool_model``'s "load once, assign to the persistent player" mechanism (a
+        promotion happens a handful of times per run, so the ~27 MB load is far rarer than the
+        once-per-generation pool reload). The team pin, temperature and bot fraction are deliberately
+        NOT touched: the ladder varies opponent STRENGTH and nothing else."""
+        if self._pending_exploiter_rung is None:
+            return
+        idx, zip_path, config_path = self._pending_exploiter_rung
+        self._pending_exploiter_rung = None
+        if idx == self._exploiter_rung_index:
+            return
+        self._exploiter_player.model = self._exploiter_rung_loader(zip_path, config_path)
+        self._exploiter_rung_index = idx
+        self._exploiter_rung_games = 0     # a new rung is a new measurement — never pool across rungs
+        self._exploiter_rung_wins = 0.0
+
+    def exploiter_rung_totals(self):
+        """``(rung_index, games, wins)`` vs the CURRENT ladder rung — read via ``VecEnv.env_method``
+        by ``ExploiterLadderCallback``, which drops rows whose index isn't the live one (a worker
+        that hasn't reset since the push). ``(None, 0, 0.0)`` off the ladder path."""
+        return (self._exploiter_rung_index, self._exploiter_rung_games, self._exploiter_rung_wins)
+
     def _record_exploiter_outcome(self, won: float) -> None:
         """Count an episode outcome vs the EXPLOITER target (ratchet-mode WR signal). Only counts
         when THIS episode's opponent was the exploiter target (bot episodes under
@@ -176,6 +226,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         if self._exploiter_player is not None and self.opponent is self._exploiter_player:
             self._exploiter_games += 1
             self._exploiter_wins += float(won)
+            # …and against the LIVE LADDER RUNG, when a ladder is running. `_exploiter_rung_index`
+            # is None before the first push, so the handful of episodes in flight at training start
+            # are counted for no rung at all rather than mis-attributed to rung 0.
+            if self._exploiter_rung_index is not None:
+                self._exploiter_rung_games += 1
+                self._exploiter_rung_wins += float(won)
 
     def _maybe_record_team_pfsp(self, won: float) -> None:
         """Record the trainee's team outcome for ``--team-pfsp``, but ONLY on SELF-PLAY POOL battles
@@ -411,6 +467,9 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                 id(self.opponent), self._opponent_pool_team)
 
     def reset(self, *, seed=None, options=None):
+        # A promoted ladder rung lands BETWEEN episodes (see `set_exploiter_rung`). Inert — one
+        # `is None` test — on every run that isn't using --exploiter-ladder.
+        self._apply_pending_exploiter_rung()
         self._select_episode_opponent()
         self._apply_opponent_team()
         # Push the class down for the intent metrics. Same direction as `_apply_opponent_team`

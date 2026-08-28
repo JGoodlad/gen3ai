@@ -1732,6 +1732,39 @@ def build_parser() -> argparse.ArgumentParser:
                         type=int, default=500,
                         help="RATCHET mode: min target-games per decision window before a ratchet check (default 500 "
                              "— the noise guard; larger = smoother/slower).")
+    # gen3_exploiter_pool_ladder_v1 — the OTHER difficulty axis. --exploiter-temp-* makes ONE target
+    # play noisily; this swaps in genuinely WEAKER frozen opponents and promotes on a win-rate gate,
+    # ending at the --exploiter target itself. Training-only knob (never versioned).
+    parser.add_argument("--exploiter-ladder", dest="exploiter_ladder", type=str, default=None,
+                        help="EXPLOITER MODE (requires --exploiter): POOL-LADDER opponent curriculum — "
+                             "train against progressively STRONGER frozen snapshots, promoting a rung "
+                             "each time the trainee's training win-rate vs the CURRENT rung clears "
+                             "--exploiter-ladder-gate. Two forms: an ORDERED comma-separated list of "
+                             "checkpoint paths, weakest first (--stable-opponents grammar, "
+                             "path[@step][:label]); or 'auto:<run_dir>', which draws "
+                             "--exploiter-ladder-rungs evenly-ELO-spaced snapshots from that run's "
+                             "snapshot_ladder/ladder.json. The --exploiter target is ALWAYS appended as "
+                             "the terminal rung, and the ladder never demotes. Rung state survives a "
+                             "launcher restart via <run>/exploiter_ladder_state.json. Default None = OFF "
+                             "(byte-identical: the target is the sole opponent from step 0).")
+    parser.add_argument("--exploiter-ladder-gate", dest="exploiter_ladder_gate", type=float,
+                        default=0.55,
+                        help="--exploiter-ladder: the trainee TRAINING win-rate vs the CURRENT rung at "
+                             "which it is promoted to the next one (default 0.55 — keeps play near the "
+                             "~0.5 max-advantage-signal zone, matching --exploiter-temp-ratchet-wr). "
+                             "Measured per window of --exploiter-ladder-window games.")
+    parser.add_argument("--exploiter-ladder-window", dest="exploiter_ladder_window", type=int,
+                        default=500,
+                        help="--exploiter-ladder: min games vs the CURRENT rung per promotion check "
+                             "(default 500 — the same noise guard, and the same disjoint-window "
+                             "semantics, as --exploiter-temp-ratchet-games). Bot episodes under "
+                             "--exploiter-keep-bots do not count.")
+    parser.add_argument("--exploiter-ladder-rungs", dest="exploiter_ladder_rungs", type=int,
+                        default=4,
+                        help="--exploiter-ladder auto:<run_dir> ONLY: how many evenly-ELO-spaced "
+                             "snapshots to draw from that run's ladder (default 4), BEFORE the "
+                             "--exploiter target is appended — so the default auto ladder is 5 rungs. "
+                             "Ignored for an explicit rung list.")
     parser.add_argument("--trainee-team", dest="trainee_team", type=str, default=None,
                         help="SPECIALIST MODE: pin the TRAINEE's team pool to the ONE team in this file "
                              "(a Showdown EXPORT string, like data/teams/sample/*.txt), so the agent "

@@ -205,6 +205,24 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                     stochastic=True, temperature=exploiter_entry.temperature,
                 )
 
+            # gen3_exploiter_pool_ladder_v1: with --exploiter-ladder the target's WEIGHTS are swapped
+            # up a ladder of frozen opponents mid-run. The wrapper gets a LOADER rather than a list
+            # of paths, so the arch gate / device / opponent-compile policy stays here beside the
+            # initial load (and the wrapper stays free of model-loading concerns). None off the
+            # ladder path → every rung branch in the wrapper is inert.
+            exploiter_rung_loader = None
+            if exploiter_player is not None and getattr(args, "exploiter_ladder", None):
+                def exploiter_rung_loader(zip_path, config_path):   # noqa: F811 — the None above is the off case
+                    from agents.model.compile_opponents import maybe_compile_extractor
+                    from agents.model.snapshot import load_foreign_opponent
+                    _m, _ = load_foreign_opponent(
+                        zip_path, current_version=opponent_version,
+                        device=opponent_device, config_path=config_path)
+                    maybe_compile_extractor(_m, args.compile_opponents,
+                                            label="exploiter-rung", hide_cuda=True,
+                                            strict=args.compile_opponents_strict)
+                    return _m
+
             wrapped = MaskableAgentWrapper(
                 env, heuristic_opponents=heuristic_opponents, pool=pool,
                 pool_player=pool_player, self_play_fraction=self_play_fraction, rng_seed=idx,
@@ -222,6 +240,7 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 # per-episode alongside the exploiter target. No-op unless exploiter_player is set.
                 exploiter_keep_bots=args.exploiter_keep_bots,
                 exploiter_bot_fraction=args.exploiter_bot_fraction,
+                exploiter_rung_loader=exploiter_rung_loader,
                 team_wr_tracking=getattr(args, "team_wr_tracking", True),
             )
 

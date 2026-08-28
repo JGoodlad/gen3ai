@@ -145,6 +145,18 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             callbacks.append(ExploiterTempAnnealCallback(
                 temp_start=args.exploiter_temp_start, temp_end=args.exploiter_temp_end,
                 anneal_frac=args.exploiter_temp_anneal_frac))
+    # gen3_exploiter_pool_ladder_v1: the OTHER difficulty axis — swap the exploiter target's WEIGHTS
+    # up a ladder of frozen opponents (weakest → the --exploiter target) as the trainee's training
+    # win-rate vs the LIVE rung clears the gate. Orthogonal to the temperature curriculum above (that
+    # one varies stochasticity, this one varies strength) and composable with it. The rungs were
+    # resolved + arch-gated in phase 2 (main.train.matchup_setup); registered ONLY when they exist →
+    # an off run adds no callback and makes no env_method call (byte-identical). Training-only.
+    _ladder_rungs = getattr(args, "_exploiter_ladder_rungs", None)
+    if _ladder_rungs:
+        from agents.training.exploiter_ladder import ExploiterLadderCallback
+        callbacks.append(ExploiterLadderCallback(
+            rungs=_ladder_rungs, gate=args.exploiter_ladder_gate,
+            window=args.exploiter_ladder_window, run_dir=model_dir))
     # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
     if args.win_prob_mode != "none":
