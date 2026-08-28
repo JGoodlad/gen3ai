@@ -5415,3 +5415,28 @@ Reading: v8 inter-fork tail cos MARKEDLY above gen's 0.327 (≈0.5+) ⇒ consoli
 dark-knowledge gains real support; ≈ gen's level ⇒ the full-KL re-entry path loses its main
 pillar and needs a different justification; ambiguous ⇒ propose the v8 no-fork control arm
 (GPU, era-pinned) as the only clean finish.
+
+### 🧪 F6-LADDER ORDERED (owner design, 2026-08-28 late) — the pool-ratchet exploiter; build dispatched; predictions registered
+
+Owner: "try an exploiter with ratchet on the weaker pool self play opponents and transition to
+the most competent one as win rate improves." The design merges the two live supply hypotheses
+into one arm: REAL graded opponents (rev-1's own snapshot ladder, ELO-ordered from
+snapshot_ladder/ladder.json) instead of v8's scripted bots, with a WR-GATED promotion (rolling
+WR ≥ gate ⇒ advance a rung) ending at the standard frozen target — so the exploiter spends its
+whole fork at the advantage-signal frontier while seeing DIVERSE opponent ages/styles.
+**BUILD dispatched:** `--exploiter-ladder` (ordered snapshot list or auto-built from a run's
+ladder.json) + gate/window flags; a `ladder_state.json` run-dir artifact mirroring
+`exploiter_temp_state.json` (the artifact convention is what let probe C PROVE v8's ratchet
+ran — verifiability by construction); state survives launcher restarts; OFF = byte-identical;
+compat via arch_signature. **Arm spec (measurement-only fleet rider, joins when GPU frees):**
+fork rev-1, +5M, 2 teams (matched to the fleet), terminal rung = R2-ACTION final (the fleet's
+target, for admission comparability). **Registered predictions:** F6-LADDER differentiates ≥
+F6-CURR (real graded opponents ≥ bots+temperature at matched length — the two riders become a
+2-arm curriculum-content comparison); admission row ≥ the standard arms'; the ladder artifact
+must show ≥3 promotions or the curriculum never engaged (an arm whose gate never fires is a
+null of the GATE, not of the concept — report which). **Conceptual note banked with it:** the
+owner's challenge "isn't 0.5 max signal — isn't that what PFSP exists for?" is CORRECT in the
+outcome-entropy sense; the C1 claim is about ADVANTAGE DENSITY — 0.5 vs a diverse learnable
+frontier (PFSP's regime, rich per-action counterfactual spread) is not 0.5 vs your own
+near-twin (flat advantage, outcome dominated by symmetric variance). That distinction is itself
+a HYPOTHESIS under test (F6-CURR, F6-LADDER), not settled.
