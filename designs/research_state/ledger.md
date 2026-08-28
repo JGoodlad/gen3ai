@@ -5222,3 +5222,21 @@ v8's participation ratio at equal width (20.6 vs 50.2) — a generation-level re
 difference worth an eventual look. The four learning notes shipped to
 `designs/research_state/learning_notes/` carry STATUS BANNERS marking which parts this verdict
 refuted — honesty preserved in the artifact, not just the ledger.
+
+### 🔭 TWO FOLLOW-UP PROBES DISPATCHED on the replacement accounts — predictions registered pre-result (2026-08-28, owner directive)
+
+**Probe A — DIFFERENTIATION vs BREADTH.** The archive already spans teams-per-teacher: the R2
+fleet (2), tock-1c (2), tock-1b (3), tock-1a (4), tock-2.0 (9), v8's teachers (23, already
+measured by the forensics). Measure per-teacher on/off-slice differentiation (agreement-with-
+parent split) across that ladder on current-arch checkpoints, reusing the forensics scripts.
+**Registered readings:** differentiation RISES with breadth ⇒ the mechanism holds — 2-team
+exploiters were never going to carry slice-conditional content, and the budget law needs a
+STRUCTURE rider (extraction SIZE clusters, but foldable CONTENT may require breadth); FLAT
+across the ladder ⇒ breadth is not the cause, and the difference is parent-era or recipe.
+**Probe B — DRIFT-ANCHOR DECOMPOSITION of the rev-2 fold arms.** On shared recorded states,
+current arch, observational: (1) distance-to-rev-1 for R2-ACTION/TOPK/KL/CTRL — anchor account
+predicts distill arms sit CLOSER to rev-1 than CTRL, roughly by dose; (2) teacher-alignment
+above the inheritance floor, on-slice vs off-slice — CONTENT predicts on-slice alignment gain >
+off-slice; ANCHOR-ONLY predicts both ≈ 0; (3) drift-vs-decline correlation across the five
+arms (n=5, directional only). This is observational — R3-SELF stays the causal test; agreement
+between the two is what would let us read R3's verdict with confidence.
