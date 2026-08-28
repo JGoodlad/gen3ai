@@ -1,0 +1,1758 @@
+{
+ "ladder": {
+  "F5a": {
+   "run": "ai_v9_53_R2F5a_0826",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3159,
+     "agreement": 0.768281101614435,
+     "agreement_se": 0.00750699263587759,
+     "kl": 0.33228814601898193,
+     "v_corr": 0.8956710408510644
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.734,
+     "agreement_se": 0.008067300250600155,
+     "kl": 0.3345850110054016,
+     "v_corr": 0.9414896940151272
+    },
+    "differentiation_delta": -0.03428110161443498,
+    "delta_se": 0.011019812692076653,
+    "z": -3.1108606445809563,
+    "kl_delta": -0.0022968649864196777
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 601,
+     "agreement": 0.7587354409317804,
+     "agreement_se": 0.017452382166081047,
+     "kl": 0.39690226316452026,
+     "v_corr": 0.9086241571165973
+    },
+    "cross_slice": {
+     "n": 2803,
+     "agreement": 0.7716732072779166,
+     "agreement_se": 0.007928364350399324,
+     "kl": 0.2853684425354004,
+     "v_corr": 0.9337619120765164
+    },
+    "differentiation_delta": 0.012937766346136192,
+    "delta_se": 0.01916884463246616,
+    "z": 0.6749372011823589,
+    "kl_delta": 0.11153382062911987
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.7567412507171544,
+     0.7824858757062146
+    ],
+    "n": [
+     1743,
+     1416
+    ],
+    "Q": 2.9087242325250484,
+    "df": 1,
+    "p_value": 0.08810154101922596,
+    "pbar": 0.768281101614435,
+    "sd_obs": 0.01280316269711089,
+    "sd_expected": 0.010673830395185834,
+    "sd_excess": 0.007070383281230149
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.794392523364486,
+     0.7784679089026915,
+     0.8237704918032787,
+     0.7510121457489879,
+     0.7599164926931107,
+     0.7601351351351351,
+     0.8012048192771084,
+     0.6422413793103449,
+     0.7656903765690377
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     true,
+     false,
+     false,
+     true,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    "Q": 31.886001281176938,
+    "df": 8,
+    "p_value": 9.762348545248616e-05,
+    "pbar": 0.7693889541715628,
+    "sd_obs": 0.040767894277304095,
+    "sd_expected": 0.025391789398745198,
+    "sd_excess": 0.031894799496708155
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.794392523364486,
+     0.7510121457489879
+    ],
+    "n": [
+     107,
+     494
+    ],
+    "Q": 0.9041469257301044,
+    "df": 1,
+    "p_value": 0.341672196236801,
+    "pbar": 0.7587354409317804,
+    "sd_obs": 0.016594883940086777,
+    "sd_expected": 0.032259588651493434,
+    "sd_excess": 0.0
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 0
+   }
+  },
+  "F5b": {
+   "run": "ai_v9_54_R2F5b_0826",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3299,
+     "agreement": 0.6989996968778418,
+     "agreement_se": 0.00798602751928691,
+     "kl": 0.42573463916778564,
+     "v_corr": 0.8920332872943514
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.7326666666666667,
+     "agreement_se": 0.008080144846519815,
+     "kl": 0.29526036977767944,
+     "v_corr": 0.9545973003134155
+    },
+    "differentiation_delta": 0.033666969788824885,
+    "delta_se": 0.011360694357280657,
+    "z": 2.9634605711620914,
+    "kl_delta": 0.1304742693901062
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 476,
+     "agreement": 0.7352941176470589,
+     "agreement_se": 0.020221290375622307,
+     "kl": 0.3876556158065796,
+     "v_corr": 0.9149239544793564
+    },
+    "cross_slice": {
+     "n": 2928,
+     "agreement": 0.769808743169399,
+     "agreement_se": 0.007779475108311829,
+     "kl": 0.2803195118904114,
+     "v_corr": 0.9373413702301979
+    },
+    "differentiation_delta": 0.03451462552234008,
+    "delta_se": 0.021666121420689924,
+    "z": 1.5930228051514823,
+    "kl_delta": 0.10733610391616821
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.6875642343268242,
+     0.7154471544715447
+    ],
+    "n": [
+     1946,
+     1353
+    ],
+    "Q": 2.9491095568657038,
+    "df": 1,
+    "p_value": 0.0859248895681255,
+    "pbar": 0.6989996968778418,
+    "sd_obs": 0.013714382427664729,
+    "sd_expected": 0.011480949425788804,
+    "sd_excess": 0.007501472232483357
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.8598130841121495,
+     0.7349896480331263,
+     0.7827868852459017,
+     0.7651821862348178,
+     0.7473903966597077,
+     0.7533783783783784,
+     0.8036144578313253,
+     0.6853448275862069,
+     0.7573221757322176
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     false,
+     false,
+     true,
+     false,
+     false,
+     false,
+     false,
+     true,
+     false
+    ],
+    "Q": 24.397643982793408,
+    "df": 8,
+    "p_value": 0.0019649865376401023,
+    "pbar": 0.7649823736780259,
+    "sd_obs": 0.035896747579466946,
+    "sd_expected": 0.025559727138058378,
+    "sd_excess": 0.025204698677269842
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7827868852459017,
+     0.6853448275862069
+    ],
+    "n": [
+     244,
+     232
+    ],
+    "Q": 5.801483575152325,
+    "df": 1,
+    "p_value": 0.016012658093401997,
+    "pbar": 0.7352941176470589,
+    "sd_obs": 0.04870554408470594,
+    "sd_expected": 0.028606314890615592,
+    "sd_excess": 0.03941964957944424
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 0
+   }
+  },
+  "F5c": {
+   "run": "ai_v9_55_R2F5c_0826",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3128,
+     "agreement": 0.7608695652173914,
+     "agreement_se": 0.007626743856252,
+     "kl": 0.3601870834827423,
+     "v_corr": 0.9081109160375734
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.7406666666666667,
+     "agreement_se": 0.00800165723575551,
+     "kl": 0.27265793085098267,
+     "v_corr": 0.9381474659822276
+    },
+    "differentiation_delta": -0.020202898550724657,
+    "delta_se": 0.011054127752445967,
+    "z": -1.827633894158164,
+    "kl_delta": 0.08752915263175964
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 1069,
+     "agreement": 0.7333956969130028,
+     "agreement_se": 0.013524272212573523,
+     "kl": 0.40080365538597107,
+     "v_corr": 0.9345684090634618
+    },
+    "cross_slice": {
+     "n": 2335,
+     "agreement": 0.7524625267665953,
+     "agreement_se": 0.00893139861331862,
+     "kl": 0.30521392822265625,
+     "v_corr": 0.8963703380076959
+    },
+    "differentiation_delta": 0.019066829853592537,
+    "delta_se": 0.016207276762916653,
+    "z": 1.1764363706812693,
+    "kl_delta": 0.09558972716331482
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.7655571635311144,
+     0.7516587677725118
+    ],
+    "n": [
+     2073,
+     1055
+    ],
+    "Q": 0.7422826326971064,
+    "df": 1,
+    "p_value": 0.3889306492237836,
+    "pbar": 0.7608695652173914,
+    "sd_obs": 0.006570884154408867,
+    "sd_expected": 0.01140683150811464,
+    "sd_excess": 0.0
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.8691588785046729,
+     0.7660455486542443,
+     0.7827868852459017,
+     0.7449392712550608,
+     0.7369519832985386,
+     0.7398648648648649,
+     0.708433734939759,
+     0.7025862068965517,
+     0.8200836820083682
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     true,
+     false,
+     true
+    ],
+    "Q": 27.042071072678862,
+    "df": 8,
+    "p_value": 0.0006952569579572484,
+    "pbar": 0.7464747356051704,
+    "sd_obs": 0.03877424750725635,
+    "sd_expected": 0.026223971253388947,
+    "sd_excess": 0.028561260501865207
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.708433734939759,
+     0.8200836820083682
+    ],
+    "n": [
+     830,
+     239
+    ],
+    "Q": 11.83068303161999,
+    "df": 1,
+    "p_value": 0.0005826261832894771,
+    "pbar": 0.7333956969130028,
+    "sd_obs": 0.04651776206448065,
+    "sd_expected": 0.022952955476279027,
+    "sd_excess": 0.040460647824665234
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 43,
+    "n": 43,
+    "agreement": 0.7906976744186046,
+    "agreement_se": 0.06203803448665818,
+    "kl": 0.36569660902023315,
+    "v_corr": 0.9537212780962101,
+    "UNDERPOWERED": true
+   }
+  },
+  "F5d": {
+   "run": "ai_v9_56_R2F5d_0826",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3734,
+     "agreement": 0.7166577396893412,
+     "agreement_se": 0.007374361407496465,
+     "kl": 0.38224300742149353,
+     "v_corr": 0.9144286254185826
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.713,
+     "agreement_se": 0.008258954736123291,
+     "kl": 0.33080026507377625,
+     "v_corr": 0.9486772854829815
+    },
+    "differentiation_delta": -0.003657739689341244,
+    "delta_se": 0.01107210637149529,
+    "z": -0.33035626344395985,
+    "kl_delta": 0.051442742347717285
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 779,
+     "agreement": 0.711168164313222,
+     "agreement_se": 0.01623827735084475,
+     "kl": 0.36264926195144653,
+     "v_corr": 0.9234871531456809
+    },
+    "cross_slice": {
+     "n": 2625,
+     "agreement": 0.7478095238095238,
+     "agreement_se": 0.008476082651101488,
+     "kl": 0.32196590304374695,
+     "v_corr": 0.9459634190087501
+    },
+    "differentiation_delta": 0.03664135949630176,
+    "delta_se": 0.0183173586641541,
+    "z": 2.000362616036261,
+    "kl_delta": 0.040683358907699585
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.7417640807651434,
+     0.6911447084233261
+    ],
+    "n": [
+     1882,
+     1852
+    ],
+    "Q": 11.778680723979665,
+    "df": 1,
+    "p_value": 0.0005991293013938228,
+    "pbar": 0.7166577396893412,
+    "sd_obs": 0.025308869292052182,
+    "sd_expected": 0.010429258524240646,
+    "sd_excess": 0.023060126441039643
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.7289719626168224,
+     0.7308488612836439,
+     0.7704918032786885,
+     0.771255060728745,
+     0.6764091858037579,
+     0.6790540540540541,
+     0.772289156626506,
+     0.7241379310344828,
+     0.7656903765690377
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     false,
+     true,
+     false,
+     false,
+     false,
+     true,
+     false,
+     false,
+     false
+    ],
+    "Q": 25.325781413602854,
+    "df": 8,
+    "p_value": 0.0013687116394518505,
+    "pbar": 0.7394242068155111,
+    "sd_obs": 0.03786173553932652,
+    "sd_expected": 0.026460262448515116,
+    "sd_excess": 0.027080722464616815
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7308488612836439,
+     0.6790540540540541
+    ],
+    "n": [
+     483,
+     296
+    ],
+    "Q": 2.3969361133562206,
+    "df": 1,
+    "p_value": 0.121573150756626,
+    "pbar": 0.711168164313222,
+    "sd_obs": 0.025140168505509274,
+    "sd_expected": 0.02365609163652285,
+    "sd_excess": 0.008509841418606709
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 0
+   }
+  },
+  "F5e": {
+   "run": "ai_v9_57_R2F5e_0826",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 4170,
+     "agreement": 0.7378896882494005,
+     "agreement_se": 0.006810354935422059,
+     "kl": 0.3067994713783264,
+     "v_corr": 0.8945957858445575
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.714,
+     "agreement_se": 0.0082503333265996,
+     "kl": 0.3011515140533447,
+     "v_corr": 0.9338893992882139
+    },
+    "differentiation_delta": -0.02388968824940052,
+    "delta_se": 0.010698080872120364,
+    "z": -2.2330816652973735,
+    "kl_delta": 0.0056479573249816895
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 586,
+     "agreement": 0.7559726962457338,
+     "agreement_se": 0.01774285313873963,
+     "kl": 0.2983660101890564,
+     "v_corr": 0.9454918672170083
+    },
+    "cross_slice": {
+     "n": 2818,
+     "agreement": 0.7902767920511,
+     "agreement_se": 0.007669064065891172,
+     "kl": 0.23997503519058228,
+     "v_corr": 0.9544077496521077
+    },
+    "differentiation_delta": 0.0343040958053662,
+    "delta_se": 0.01932933990465339,
+    "z": 1.7747163625131217,
+    "kl_delta": 0.05839097499847412
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.784656796769852,
+     0.7119970193740686
+    ],
+    "n": [
+     1486,
+     2684
+    ],
+    "Q": 26.108254873266375,
+    "df": 1,
+    "p_value": 3.22801001291062e-07,
+    "pbar": 0.7378896882494005,
+    "sd_obs": 0.03479835132842885,
+    "sd_expected": 0.01005518680499103,
+    "sd_excess": 0.03331393812645843
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.7757009345794392,
+     0.7681159420289855,
+     0.8401639344262295,
+     0.8076923076923077,
+     0.7515657620041754,
+     0.7398648648648649,
+     0.7975903614457831,
+     0.7758620689655172,
+     0.799163179916318
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     true,
+     false,
+     false,
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "Q": 14.661973575894319,
+    "df": 8,
+    "p_value": 0.06606116928194923,
+    "pbar": 0.7843713278495887,
+    "sd_obs": 0.02699078711296918,
+    "sd_expected": 0.02479101969717419,
+    "sd_excess": 0.010672765871691577
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7757009345794392,
+     0.7515657620041754
+    ],
+    "n": [
+     107,
+     479
+    ],
+    "Q": 0.276170928770816,
+    "df": 1,
+    "p_value": 0.5992219795919878,
+    "pbar": 0.7559726962457338,
+    "sd_obs": 0.00932421841434616,
+    "sd_expected": 0.032474795913877884,
+    "sd_excess": 0.0
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 26,
+    "n": 26,
+    "agreement": 0.7307692307692307,
+    "agreement_se": 0.08698929247330862,
+    "kl": 0.2609838843345642,
+    "v_corr": 0.9558533543889317,
+    "UNDERPOWERED": true
+   }
+  },
+  "tock1c": {
+   "run": "ai_v9_36_tock1c_q6_0824",
+   "breadth": 2,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3682,
+     "agreement": 0.7275936990765888,
+     "agreement_se": 0.00733687545778598,
+     "kl": 0.3949754238128662,
+     "v_corr": 0.9406576690020448
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.72,
+     "agreement_se": 0.00819756061276768,
+     "kl": 0.3417035639286041,
+     "v_corr": 0.9543461002215344
+    },
+    "differentiation_delta": -0.0075936990765888,
+    "delta_se": 0.011001351802531461,
+    "z": -0.6902514539023701,
+    "kl_delta": 0.053271859884262085
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 962,
+     "agreement": 0.7401247401247402,
+     "agreement_se": 0.01413993435028538,
+     "kl": 0.39637449383735657,
+     "v_corr": 0.9440622445293849
+    },
+    "cross_slice": {
+     "n": 2442,
+     "agreement": 0.7788697788697788,
+     "agreement_se": 0.00839815037632053,
+     "kl": 0.27941858768463135,
+     "v_corr": 0.9597942806651767
+    },
+    "differentiation_delta": 0.03874503874503865,
+    "delta_se": 0.0164458710068416,
+    "z": 2.3559128445626527,
+    "kl_delta": 0.11695590615272522
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.7181767648693719,
+     0.7365905469994689
+    ],
+    "n": [
+     1799,
+     1883
+    ],
+    "Q": 1.5739017618867186,
+    "df": 1,
+    "p_value": 0.2096412868673304,
+    "pbar": 0.7275936990765888,
+    "sd_obs": 0.009204494823840049,
+    "sd_expected": 0.010378609977709681,
+    "sd_excess": 0.0
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.7663551401869159,
+     0.7142857142857143,
+     0.8237704918032787,
+     0.7550607287449392,
+     0.7661795407098121,
+     0.7668918918918919,
+     0.8036144578313253,
+     0.7413793103448276,
+     0.7531380753138075
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     false,
+     true,
+     false,
+     false,
+     true,
+     false,
+     false,
+     false,
+     false
+    ],
+    "Q": 19.680171878183778,
+    "df": 8,
+    "p_value": 0.011616219316552894,
+    "pbar": 0.7679200940070505,
+    "sd_obs": 0.032099365926797775,
+    "sd_expected": 0.02544819986887057,
+    "sd_excess": 0.019564212642896768
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7142857142857143,
+     0.7661795407098121
+    ],
+    "n": [
+     483,
+     479
+    ],
+    "Q": 3.3672014798084517,
+    "df": 1,
+    "p_value": 0.0665066390433786,
+    "pbar": 0.7401247401247402,
+    "sd_obs": 0.0259466889130066,
+    "sd_expected": 0.01999705979455513,
+    "sd_excess": 0.016533247264869846
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 26,
+    "n": 26,
+    "agreement": 0.6538461538461539,
+    "agreement_se": 0.09330087000722768,
+    "kl": 0.35026243329048157,
+    "v_corr": 0.8946094648699404,
+    "UNDERPOWERED": true
+   }
+  },
+  "tock1b": {
+   "run": "ai_v9_32_tock1b_rain_0824",
+   "breadth": 3,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3063,
+     "agreement": 0.7603656545870062,
+     "agreement_se": 0.007712803714596199,
+     "kl": 0.33113521337509155,
+     "v_corr": 0.9196945914722751
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.7356666666666667,
+     "agreement_se": 0.008051112184500189,
+     "kl": 0.2893351912498474,
+     "v_corr": 0.9343203761330808
+    },
+    "differentiation_delta": -0.024698987920339532,
+    "delta_se": 0.011149338480255065,
+    "z": -2.2152872983522958,
+    "kl_delta": 0.04180002212524414
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 1365,
+     "agreement": 0.7619047619047619,
+     "agreement_se": 0.011528143479405761,
+     "kl": 0.3333720564842224,
+     "v_corr": 0.9386741073680592
+    },
+    "cross_slice": {
+     "n": 2039,
+     "agreement": 0.775380088278568,
+     "agreement_se": 0.00924214622192746,
+     "kl": 0.27990540862083435,
+     "v_corr": 0.9276984004986393
+    },
+    "differentiation_delta": 0.013475326373806107,
+    "delta_se": 0.014775498599683653,
+    "z": 0.9120048493046872,
+    "kl_delta": 0.05346664786338806
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.7605746209098164,
+     0.7748397435897436,
+     0.7277580071174378
+    ],
+    "n": [
+     1253,
+     1248,
+     562
+    ],
+    "Q": 4.714683324034221,
+    "df": 2,
+    "p_value": 0.09467155798036922,
+    "pbar": 0.7603656545870062,
+    "sd_obs": 0.016747058704840355,
+    "sd_expected": 0.014325231269314212,
+    "sd_excess": 0.00867477517541702
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.8691588785046729,
+     0.7763975155279503,
+     0.7827868852459017,
+     0.8076923076923077,
+     0.7411273486430062,
+     0.7263513513513513,
+     0.7686746987951807,
+     0.7241379310344828,
+     0.7824267782426778
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true,
+     true,
+     false,
+     true
+    ],
+    "Q": 18.650019221261747,
+    "df": 8,
+    "p_value": 0.01684765533786502,
+    "pbar": 0.7699764982373678,
+    "sd_obs": 0.03115083599080325,
+    "sd_expected": 0.02536910355801483,
+    "sd_excess": 0.018077144895935378
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7263513513513513,
+     0.7686746987951807,
+     0.7824267782426778
+    ],
+    "n": [
+     296,
+     830,
+     239
+    ],
+    "Q": 2.8271050416468553,
+    "df": 2,
+    "p_value": 0.2432774978268818,
+    "pbar": 0.7619047619047619,
+    "sd_obs": 0.019383417298031003,
+    "sd_expected": 0.023024910856798742,
+    "sd_excess": 0.0
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 43,
+    "n": 43,
+    "agreement": 0.8837209302325582,
+    "agreement_se": 0.048884830885783305,
+    "kl": 0.21660904586315155,
+    "v_corr": 0.9528931864927646,
+    "UNDERPOWERED": true
+   }
+  },
+  "tock1a": {
+   "run": "ai_v9_31_tock1_k4_0824",
+   "breadth": 4,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3582,
+     "agreement": 0.7247347850362926,
+     "agreement_se": 0.007462810763968033,
+     "kl": 0.3662644326686859,
+     "v_corr": 0.9086466065580607
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.7023333333333334,
+     "agreement_se": 0.00834787841754263,
+     "kl": 0.33931758999824524,
+     "v_corr": 0.9620755363911149
+    },
+    "differentiation_delta": -0.022401451702959263,
+    "delta_se": 0.011197348729626634,
+    "z": -2.0006032002636593,
+    "kl_delta": 0.026946842670440674
+   },
+   "controlled": {
+    "on_slice": {
+     "n": 1077,
+     "agreement": 0.7316620241411328,
+     "agreement_se": 0.013501700658753415,
+     "kl": 0.3786185383796692,
+     "v_corr": 0.9047453962479626
+    },
+    "cross_slice": {
+     "n": 2327,
+     "agreement": 0.7679415556510528,
+     "agreement_se": 0.008751138983031929,
+     "kl": 0.2674400508403778,
+     "v_corr": 0.955678822283792
+    },
+    "differentiation_delta": 0.03627953150992003,
+    "delta_se": 0.016089697143791225,
+    "z": 2.25482998130389,
+    "kl_delta": 0.11117848753929138
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.6913716814159292,
+     0.700587084148728,
+     0.7792207792207793,
+     0.7085828343313373
+    ],
+    "n": [
+     904,
+     1022,
+     1155,
+     501
+    ],
+    "Q": 25.87421935526207,
+    "df": 3,
+    "p_value": 1.0133588876087512e-05,
+    "pbar": 0.7247347850362926,
+    "sd_obs": 0.037960861252531224,
+    "sd_expected": 0.01570663772119094,
+    "sd_excess": 0.03455905841496826
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.822429906542056,
+     0.7391304347826086,
+     0.6967213114754098,
+     0.7510121457489879,
+     0.7473903966597077,
+     0.8040540540540541,
+     0.7927710843373494,
+     0.6853448275862069,
+     0.7364016736401674
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     true,
+     false,
+     true,
+     true,
+     false,
+     false,
+     false,
+     true,
+     false
+    ],
+    "Q": 24.80564398848074,
+    "df": 8,
+    "p_value": 0.0016769034835717826,
+    "pbar": 0.7564629847238543,
+    "sd_obs": 0.03664011330873259,
+    "sd_expected": 0.025873585223057053,
+    "sd_excess": 0.025943313030181145
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.822429906542056,
+     0.6967213114754098,
+     0.7510121457489879,
+     0.6853448275862069
+    ],
+    "n": [
+     107,
+     244,
+     494,
+     232
+    ],
+    "Q": 9.484478642979205,
+    "df": 3,
+    "p_value": 0.023497056178519656,
+    "pbar": 0.7316620241411328,
+    "sd_obs": 0.04158102651905368,
+    "sd_expected": 0.031157758436393155,
+    "sd_excess": 0.027534993292129502
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 0
+   }
+  },
+  "tock2_3M": {
+   "run": "ai_v9_44_tock2_v8shape_0825",
+   "breadth": 9,
+   "fork_steps_M": 3.0,
+   "trace_step": "step_28000032",
+   "primary": {
+    "on_slice": {
+     "n": 3404,
+     "agreement": 0.7461809635722679,
+     "agreement_se": 0.007459151060284138,
+     "kl": 0.30420228838920593,
+     "v_corr": 0.9260729467275342
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.7193333333333334,
+     "agreement_se": 0.00820351324918962,
+     "kl": 0.30786168575286865,
+     "v_corr": 0.9563451482879116
+    },
+    "differentiation_delta": -0.02684763023893455,
+    "delta_se": 0.01108767622947963,
+    "z": -2.4213937783963027,
+    "kl_delta": -0.0036593973636627197
+   },
+   "controlled": {
+    "NOT_DEFINED": "teacher pins the entire bank universe"
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.8691588785046729,
+     0.7391304347826086,
+     0.7008196721311475,
+     0.7692307692307693,
+     0.7411273486430062,
+     0.7297297297297297,
+     0.7397590361445783,
+     0.7456896551724138,
+     0.7573221757322176
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "Q": 13.532845778612074,
+    "df": 8,
+    "p_value": 0.09478398409498223,
+    "pbar": 0.7461809635722679,
+    "sd_obs": 0.027439991261259174,
+    "sd_expected": 0.026233996684539285,
+    "sd_excess": 0.00804552909220777
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.8691588785046729,
+     0.7391304347826086,
+     0.7008196721311475,
+     0.7692307692307693,
+     0.7411273486430062,
+     0.7297297297297297,
+     0.7397590361445783,
+     0.7456896551724138,
+     0.7573221757322176
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "Q": 13.532845778612074,
+    "df": 8,
+    "p_value": 0.09478398409498223,
+    "pbar": 0.7461809635722679,
+    "sd_obs": 0.027439991261259174,
+    "sd_expected": 0.026233996684539285,
+    "sd_excess": 0.00804552909220777
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.8691588785046729,
+     0.7391304347826086,
+     0.7008196721311475,
+     0.7692307692307693,
+     0.7411273486430062,
+     0.7297297297297297,
+     0.7397590361445783,
+     0.7456896551724138,
+     0.7573221757322176
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "Q": 13.532845778612074,
+    "df": 8,
+    "p_value": 0.09478398409498223,
+    "pbar": 0.7461809635722679,
+    "sd_obs": 0.027439991261259174,
+    "sd_expected": 0.026233996684539285,
+    "sd_excess": 0.00804552909220777
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 69,
+    "n": 69,
+    "agreement": 0.7246376811594203,
+    "agreement_se": 0.05377595931313635,
+    "kl": 0.24616672098636627,
+    "v_corr": 0.9198700936806861,
+    "UNDERPOWERED": true
+   }
+  },
+  "tock2_9M": {
+   "run": "ai_v9_44_tock2_v8shape_0825",
+   "breadth": 9,
+   "fork_steps_M": 9.0,
+   "trace_step": "step_34000032",
+   "primary": {
+    "on_slice": {
+     "n": 4066,
+     "agreement": 0.6143630103295622,
+     "agreement_se": 0.007633402885572587,
+     "kl": 0.6205838918685913,
+     "v_corr": 0.9113276915061629
+    },
+    "off_slice": {
+     "n": 3000,
+     "agreement": 0.6266666666666667,
+     "agreement_se": 0.00883092210276963,
+     "kl": 0.5143265128135681,
+     "v_corr": 0.9398047173700145
+    },
+    "differentiation_delta": 0.012303656337104507,
+    "delta_se": 0.011672789932087918,
+    "z": 1.0540458972265379,
+    "kl_delta": 0.1062573790550232
+   },
+   "controlled": {
+    "NOT_DEFINED": "teacher pins the entire bank universe"
+   },
+   "per_team_own_traces": {
+    "agreement": [
+     0.59375,
+     0.5910224438902744,
+     0.5836177474402731,
+     0.5942668136714443,
+     0.6205607476635514,
+     0.5909090909090909,
+     0.6689008042895442,
+     0.6073394495412844,
+     0.632183908045977
+    ],
+    "n": [
+     224,
+     401,
+     293,
+     907,
+     535,
+     154,
+     746,
+     545,
+     261
+    ],
+    "Q": 14.312006049541504,
+    "df": 8,
+    "p_value": 0.07398690441960919,
+    "pbar": 0.6143630103295622,
+    "sd_obs": 0.02887808832051935,
+    "sd_expected": 0.026582511867668523,
+    "sd_excess": 0.011283352686722958
+   },
+   "per_team_bank": {
+    "agreement": [
+     0.7102803738317757,
+     0.567287784679089,
+     0.6885245901639344,
+     0.6680161943319838,
+     0.6910229645093946,
+     0.6418918918918919,
+     0.6518072289156627,
+     0.6206896551724138,
+     0.6276150627615062
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "is_pinned": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "Q": 23.400720170054324,
+    "df": 8,
+    "p_value": 0.0028861196295457436,
+    "pbar": 0.6474735605170387,
+    "sd_obs": 0.039611993820595444,
+    "sd_expected": 0.028799645891399064,
+    "sd_excess": 0.027197250798066203
+   },
+   "per_team_bank_pinned_only": {
+    "agreement": [
+     0.7102803738317757,
+     0.567287784679089,
+     0.6885245901639344,
+     0.6680161943319838,
+     0.6910229645093946,
+     0.6418918918918919,
+     0.6518072289156627,
+     0.6206896551724138,
+     0.6276150627615062
+    ],
+    "n": [
+     107,
+     483,
+     244,
+     494,
+     479,
+     296,
+     830,
+     232,
+     239
+    ],
+    "Q": 23.400720170054324,
+    "df": 8,
+    "p_value": 0.0028861196295457436,
+    "pbar": 0.6474735605170387,
+    "sd_obs": 0.039611993820595444,
+    "sd_expected": 0.028799645891399064,
+    "sd_excess": 0.027197250798066203
+   },
+   "mitigation": {
+    "parent_onpin_coverage": 69,
+    "n": 69,
+    "agreement": 0.5942028985507246,
+    "agreement_se": 0.05911494745925731,
+    "kl": 0.513290286064148,
+    "v_corr": 0.9500809622440911,
+    "UNDERPOWERED": true
+   }
+  }
+ },
+ "provenance": {
+  "parent": "models/ai_v9_29_rev1_0823/final_model.zip",
+  "parent_trace_step": "step_24000000",
+  "off_shared": {
+   "n": 3000,
+   "pool": 7595,
+   "obs_dim": 2501
+  },
+  "bank": {
+   "source_run": "ai_v9_44_tock2_v8shape_0825",
+   "trace_step": "step_28000032",
+   "n": 3404,
+   "team_keys": [
+    [
+     "celebi",
+     "claydol",
+     "dugtrio",
+     "metagross",
+     "suicune",
+     "zapdos"
+    ],
+    [
+     "celebi",
+     "metagross",
+     "salamence",
+     "skarmory",
+     "starmie",
+     "tyranitar"
+    ],
+    [
+     "celebi",
+     "raikou",
+     "registeel",
+     "salamence",
+     "swampert",
+     "tyranitar"
+    ],
+    [
+     "claydol",
+     "dugtrio",
+     "gengar",
+     "jirachi",
+     "jynx",
+     "suicune"
+    ],
+    [
+     "claydol",
+     "jirachi",
+     "salamence",
+     "snorlax",
+     "suicune",
+     "tyranitar"
+    ],
+    [
+     "claydol",
+     "metagross",
+     "salamence",
+     "snorlax",
+     "suicune",
+     "tyranitar"
+    ],
+    [
+     "heracross",
+     "magneton",
+     "metagross",
+     "salamence",
+     "snorlax",
+     "suicune"
+    ],
+    [
+     "jirachi",
+     "metagross",
+     "salamence",
+     "swampert",
+     "tyranitar",
+     "zapdos"
+    ],
+    [
+     "magneton",
+     "medicham",
+     "metagross",
+     "salamence",
+     "snorlax",
+     "suicune"
+    ]
+   ],
+   "per_team_n": {
+    "0": 107,
+    "1": 483,
+    "2": 244,
+    "3": 494,
+    "4": 479,
+    "5": 296,
+    "6": 830,
+    "7": 232,
+    "8": 239
+   }
+  },
+  "note": "all ladder runs fork from the SAME parent; the 9 pinned team files are one shared universe at every breadth"
+ },
+ "acid_test": {
+  "snapshot": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/eval_traces/step_24000000/snapshot.zip",
+  "n": 256,
+  "max_abs_diff": 1.9073486328125e-05,
+  "max_abs_diff_legal": 1.9073486328125e-05,
+  "corr": 0.9999999999995651,
+  "top1_agreement": 1.0
+ },
+ "v8_reference_cited": {
+  "semistall3": {
+   "breadth": 3,
+   "on_slice_agreement": 0.5193333333333333,
+   "off_slice_agreement": 0.5773333333333334,
+   "differentiation_delta": 0.05800000000000005,
+   "delta_se": 0.015740309187983994,
+   "z": 3.6848069060979256,
+   "n_on": 1500,
+   "n_off": 3000,
+   "SOURCE": "plasticity_forensics_v8_vs_gen_2026-08-28.json",
+   "NOTE": "v8 teachers pinned 3/10/10 teams; the '23 teams' figure is the TOTAL across the three teachers, not the per-teacher breadth",
+   "CHECKPOINT": "FINAL (not the forensics matched-3.13-3.15M checkpoints)",
+   "fork_steps_past_fork_M": "~7.4-18.7 (range over the three v8 teachers)",
+   "PROVENANCE_NOTE": "the forensics onslice_kl off-slice values are identical to its \"as-distilled finals\" row, NOT its matched-length _m row -- so the v8-vs-gen contrast is breadth-comparable but NOT length-matched"
+  },
+  "pool10": {
+   "breadth": 10,
+   "on_slice_agreement": 0.496,
+   "off_slice_agreement": 0.5426666666666666,
+   "differentiation_delta": 0.046666666666666634,
+   "delta_se": 0.015791849749744916,
+   "z": 2.955110858208389,
+   "n_on": 1500,
+   "n_off": 3000,
+   "SOURCE": "plasticity_forensics_v8_vs_gen_2026-08-28.json",
+   "NOTE": "v8 teachers pinned 3/10/10 teams; the '23 teams' figure is the TOTAL across the three teachers, not the per-teacher breadth",
+   "CHECKPOINT": "FINAL (not the forensics matched-3.13-3.15M checkpoints)",
+   "fork_steps_past_fork_M": "~7.4-18.7 (range over the three v8 teachers)",
+   "PROVENANCE_NOTE": "the forensics onslice_kl off-slice values are identical to its \"as-distilled finals\" row, NOT its matched-length _m row -- so the v8-vs-gen contrast is breadth-comparable but NOT length-matched"
+  },
+  "defensive10": {
+   "breadth": 10,
+   "on_slice_agreement": 0.41733333333333333,
+   "off_slice_agreement": 0.5516666666666666,
+   "differentiation_delta": 0.1343333333333333,
+   "delta_se": 0.015638233063020045,
+   "z": 8.590058275253185,
+   "n_on": 1500,
+   "n_off": 3000,
+   "SOURCE": "plasticity_forensics_v8_vs_gen_2026-08-28.json",
+   "NOTE": "v8 teachers pinned 3/10/10 teams; the '23 teams' figure is the TOTAL across the three teachers, not the per-teacher breadth",
+   "CHECKPOINT": "FINAL (not the forensics matched-3.13-3.15M checkpoints)",
+   "fork_steps_past_fork_M": "~7.4-18.7 (range over the three v8 teachers)",
+   "PROVENANCE_NOTE": "the forensics onslice_kl off-slice values are identical to its \"as-distilled finals\" row, NOT its matched-length _m row -- so the v8-vs-gen contrast is breadth-comparable but NOT length-matched"
+  }
+ },
+ "summary": {
+  "registered_reading_selected": "FLAT",
+  "breadth_slopes": {
+   "primary__all": {
+    "n_teachers": 10,
+    "teachers": [
+     "F5a",
+     "F5b",
+     "F5c",
+     "F5d",
+     "F5e",
+     "tock1c",
+     "tock1b",
+     "tock1a",
+     "tock2_3M",
+     "tock2_9M"
+    ],
+    "slope_per_extra_team": 0.00029911771080215813,
+    "slope_se": 0.0013113284023737325,
+    "z": 0.2281028232597594,
+    "ci95": [
+     -0.0022710859578503576,
+     0.002869321379454674
+    ],
+    "pooled_mean_delta": -0.012293667765596464,
+    "pearson_r": 0.052826877718813864
+   },
+   "primary__length_controlled_3M_only": {
+    "n_teachers": 9,
+    "teachers": [
+     "F5a",
+     "F5b",
+     "F5c",
+     "F5d",
+     "F5e",
+     "tock1c",
+     "tock1b",
+     "tock1a",
+     "tock2_3M"
+    ],
+    "slope_per_extra_team": -0.0025499217561019125,
+    "slope_se": 0.001691816427036615,
+    "z": -1.507209479321793,
+    "ci95": [
+     -0.005865881953093678,
+     0.0007660384408898525
+    ],
+    "pooled_mean_delta": -0.014750526431223302,
+    "pearson_r": -0.29988380169606427
+   },
+   "controlled__all": {
+    "n_teachers": 8,
+    "teachers": [
+     "F5a",
+     "F5b",
+     "F5c",
+     "F5d",
+     "F5e",
+     "tock1c",
+     "tock1b",
+     "tock1a"
+    ],
+    "slope_per_extra_team": 0.00025353949293771197,
+    "slope_se": 0.008360203877711535,
+    "z": 0.03032695095076008,
+    "ci95": [
+     -0.016132460107376897,
+     0.01663953909325232
+    ],
+    "pooled_mean_delta": 0.02749670853698444,
+    "pearson_r": 0.022505140281407706
+   },
+   "controlled__length_controlled_3M_only": {
+    "n_teachers": 8,
+    "teachers": [
+     "F5a",
+     "F5b",
+     "F5c",
+     "F5d",
+     "F5e",
+     "tock1c",
+     "tock1b",
+     "tock1a"
+    ],
+    "slope_per_extra_team": 0.00025353949293771197,
+    "slope_se": 0.008360203877711535,
+    "z": 0.03032695095076008,
+    "ci95": [
+     -0.016132460107376897,
+     0.01663953909325232
+    ],
+    "pooled_mean_delta": 0.02749670853698444,
+    "pearson_r": 0.022505140281407706
+   }
+  },
+  "cell_means": {
+   "primary": {
+    "2": {
+     "n": 6,
+     "mean": -0.009326359565277553,
+     "min": -0.03428110161443498,
+     "max": 0.033666969788824885
+    },
+    "3": {
+     "n": 1,
+     "mean": -0.024698987920339532,
+     "min": -0.024698987920339532,
+     "max": -0.024698987920339532
+    },
+    "4": {
+     "n": 1,
+     "mean": -0.022401451702959263,
+     "min": -0.022401451702959263,
+     "max": -0.022401451702959263
+    },
+    "9": {
+     "n": 2,
+     "mean": -0.0072719869509150215,
+     "min": -0.02684763023893455,
+     "max": 0.012303656337104507
+    }
+   },
+   "controlled": {
+    "2": {
+     "n": 6,
+     "mean": 0.02936828596146257,
+     "min": 0.012937766346136192,
+     "max": 0.03874503874503865
+    },
+    "3": {
+     "n": 1,
+     "mean": 0.013475326373806107,
+     "min": 0.013475326373806107,
+     "max": 0.013475326373806107
+    },
+    "4": {
+     "n": 1,
+     "mean": 0.03627953150992003,
+     "min": 0.03627953150992003,
+     "max": 0.03627953150992003
+    }
+   }
+  },
+  "length_axis_at_breadth_9": {
+   "tock2_3M": {
+    "on_slice_agreement": 0.7461809635722679,
+    "off_slice_agreement": 0.7193333333333334,
+    "on_slice_kl": 0.30420228838920593,
+    "per_team_sd_excess_own_traces": 0.00804552909220777,
+    "per_team_Q_p_own_traces": 0.09478398409498223
+   },
+   "tock2_9M": {
+    "on_slice_agreement": 0.6143630103295622,
+    "off_slice_agreement": 0.6266666666666667,
+    "on_slice_kl": 0.6205838918685913,
+    "per_team_sd_excess_own_traces": 0.011283352686722958,
+    "per_team_Q_p_own_traces": 0.07398690441960919
+   },
+   "delta_of_delta": {
+    "value": 0.03915128657603906,
+    "se": 0.016099397161646167,
+    "z": 2.4318479867873406,
+    "comparison_breadth_effect_over_full_2_to_9_span": -0.017849452292713387,
+    "strength": "DIRECTIONAL, not established",
+    "caveats": [
+     "n=1 pair",
+     "measured on the PRIMARY (distribution-confounded) metric",
+     "the two readings use different on-slice trace steps (step_28000032 vs step_34000032), so part of the shift may be distributional",
+     "per-team heterogeneity does NOT rise significantly with length (sd_excess 0.0080 -> 0.0113, both Q p>0.07)"
+    ]
+   }
+  },
+  "v8_vs_gen_on_the_PRIMARY_metric": {
+   "v8_mean_delta": 0.07966666666666666,
+   "gen_mean_delta": -0.011760257091679415,
+   "matched_breadth_3": {
+    "v8_semistall3": 0.05800000000000005,
+    "gen_tock1b": -0.024698987920339532,
+    "note": "same metric, same breadth (3 pinned teams), OPPOSITE sign"
+   }
+  },
+  "per_team_heterogeneity_own_traces": {
+   "F5a": {
+    "breadth": 2,
+    "sd_excess": 0.007070383281230149,
+    "Q_p_value": 0.08810154101922596
+   },
+   "F5b": {
+    "breadth": 2,
+    "sd_excess": 0.007501472232483357,
+    "Q_p_value": 0.0859248895681255
+   },
+   "F5c": {
+    "breadth": 2,
+    "sd_excess": 0.0,
+    "Q_p_value": 0.3889306492237836
+   },
+   "F5d": {
+    "breadth": 2,
+    "sd_excess": 0.023060126441039643,
+    "Q_p_value": 0.0005991293013938228
+   },
+   "F5e": {
+    "breadth": 2,
+    "sd_excess": 0.03331393812645843,
+    "Q_p_value": 3.22801001291062e-07
+   },
+   "tock1c": {
+    "breadth": 2,
+    "sd_excess": 0.0,
+    "Q_p_value": 0.2096412868673304
+   },
+   "tock1b": {
+    "breadth": 3,
+    "sd_excess": 0.00867477517541702,
+    "Q_p_value": 0.09467155798036922
+   },
+   "tock1a": {
+    "breadth": 4,
+    "sd_excess": 0.03455905841496826,
+    "Q_p_value": 1.0133588876087512e-05
+   },
+   "tock2_3M": {
+    "breadth": 9,
+    "sd_excess": 0.00804552909220777,
+    "Q_p_value": 0.09478398409498223
+   },
+   "tock2_9M": {
+    "breadth": 9,
+    "sd_excess": 0.011283352686722958,
+    "Q_p_value": 0.07398690441960919
+   }
+  },
+  "verdict": "BREADTH FLAT (registered reading 2 selected): slope +0.0003+-0.0013 per team (primary, n=10) and +0.0003+-0.0084 (controlled, n=8); integrated over 2->9 breadth buys -0.018. The axis that moves differentiation is FORK LENGTH: +0.039+-0.016 (z=2.43) at fixed K=9 for 3M->9M, directional only."
+ },
+ "acid_test_teacher_end": {
+  "tock1a": {
+   "snapshot": "/home/goodlad/dev/gen3ai/models/ai_v9_31_tock1_k4_0824/eval_traces/step_28000032/snapshot.zip",
+   "n": 256,
+   "snapshot_vs_recorded_maxabs": 2.574920654296875e-05,
+   "snapshot_vs_recorded_top1": 1.0,
+   "final_ckpt_vs_trace_snapshot_top1": 0.90234375,
+   "parent_vs_trace_snapshot_top1": 0.7578125
+  },
+  "F5d": {
+   "snapshot": "/home/goodlad/dev/gen3ai/models/ai_v9_56_R2F5d_0826/eval_traces/step_28000032/snapshot.zip",
+   "n": 256,
+   "snapshot_vs_recorded_maxabs": 2.765655517578125e-05,
+   "snapshot_vs_recorded_top1": 1.0,
+   "final_ckpt_vs_trace_snapshot_top1": 0.93359375,
+   "parent_vs_trace_snapshot_top1": 0.67578125
+  },
+  "tock2_9M": {
+   "snapshot": "/home/goodlad/dev/gen3ai/models/ai_v9_44_tock2_v8shape_0825/eval_traces/step_34000032/snapshot.zip",
+   "n": 256,
+   "snapshot_vs_recorded_maxabs": 3.719329833984375e-05,
+   "snapshot_vs_recorded_top1": 1.0,
+   "final_ckpt_vs_trace_snapshot_top1": 0.9140625,
+   "parent_vs_trace_snapshot_top1": 0.484375
+  }
+ },
+ "recipe_control": {
+  "flags_identical_across_ladder": 121,
+  "flags_that_differ": [
+   "--trainee-teams (the breadth manipulation)",
+   "--steps (tock-2.0 only: 34,067,760 vs 28,067,760)",
+   "--compile-opponents-strict (perf knob, unversioned, absent in tock1a/tock1b)"
+  ],
+  "shared_parent": "models/ai_v9_29_rev1_0823/final_model.zip (25,067,760 steps)",
+  "shared_exploiter_target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "note": "every ladder run forks the SAME parent with the SAME frozen target and 121 identical flags; breadth is the only manipulated axis except tock-2.0's length"
+ },
+ "MISSING_cells": {
+  "controlled_read_at_breadth_9": "tock-2.0 pins the ENTIRE 9-team universe, so it has no within-bank cross-slice; no fork-trajectory states exist outside the 9 teams (every exploiter trace is 100% on-pin). Structurally undefined.",
+  "mitigation_sets": "parent-trace coverage of the pinned teams is 0-69 decisions of 7664 (0.90% of the parent's pool lands on the 9-team universe); 4 of 10 teachers have ZERO parent battles on their pins. All computed cells are UNDERPOWERED (n<=69) and are reported as uninformative.",
+  "v8_controlled_read": "not computed - v8 needs era pinning (out of scope) and the bank construction requires a teacher that pins the whole universe, which the v8 fleet does not provide. v8 is cited on the PRIMARY metric only.",
+  "long_fork_at_narrow_breadth": "ABSENT from the archive - the cell that would cross breadth against length. Named as the cheapest next test: a 9M fork at K=2.",
+  "v8_length_matched_on_off": "the forensics computed matched-3.1M-length v8 checkpoints for its other phases but its on/off table uses the finals; a matched-length v8 on/off read is not in that JSON and re-deriving it needs era pinning (out of scope)"
+ }
+}
