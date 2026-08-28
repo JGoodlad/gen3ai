@@ -5240,3 +5240,28 @@ above the inheritance floor, on-slice vs off-slice — CONTENT predicts on-slice
 off-slice; ANCHOR-ONLY predicts both ≈ 0; (3) drift-vs-decline correlation across the five
 arms (n=5, directional only). This is observational — R3-SELF stays the causal test; agreement
 between the two is what would let us read R3's verdict with confidence.
+
+### 🔭 PROBES C + D DISPATCHED — era recipe diff + the dark-knowledge decomposition (2026-08-28, owner directive)
+
+**Probe C — V8-VS-V9 ERA DIFF (archaeology, light):** a structured diff of everything that could
+explain the differentiation/transfer gap besides parent rigidity (now refuted): exploiter recipe
+(teams/teacher, fork length, target), distill recipe (channel, KL direction, temperature, dose,
+duration), ecology (PFSP/pool/stable opponents), ARCHITECTURE (v8's flat 5.6k action_net vs the
+gen pointer head — distilling through a pointer head that scores entity tokens is a structurally
+different write; obs space flat-vs-entity), hyperparams (ent-coef, lr), parent maturity. Output:
+ranked candidate explanations + the discriminating evidence each would need.
+**Probe D — DARK-KNOWLEDGE DECOMPOSITION (the full-KL heartbreak):** the forensics' P4 anomaly
+is the clue — current-era teachers show HIGH KL to parent WITH HIGH argmax agreement: the
+distributions moved without the decisions moving, i.e. the divergence lives in the TAILS, and
+the transfer gate says that movement is mostly noise. **Registered prediction: per-state
+decomposition of teacher-vs-parent divergence into MODE component (argmax flips) vs TAIL
+component (KL where argmax agrees) shows current teachers TAIL-dominated and v8's relatively
+MODE-dominated — full-distribution KL here copies dark NOISE, not dark knowledge, and the
+harm ordering (KL −3.2 < TOPK −2.4 < ACTION +1.6) tracks the tail mass each target form
+copies.** Also in scope: which KL direction/temperature v103's fold actually implements
+(forward KL is mass-covering = copies tails aggressively — read the code, report); entropy
+profiles of teachers/arms (the "acting more decisively" check); belief/intent-phase drift rows
+if the forensics dumps allow (the owner's opponent-prediction question, partial data answer).
+If the prediction holds, dark knowledge is not refuted — the REGIME is wrong: tails carry
+structure only on a consolidated policy, which is exactly the recorded late-generation
+full-distribution re-entry path.
