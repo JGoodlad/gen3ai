@@ -5319,3 +5319,60 @@ pinning all nine teams) every teacher at every breadth is WEAKLY team-selective 
 pooled). "The fleet never differentiated at all" was too strong; "differentiates far less than
 long forks do" survives. Rev-3's admission differentiation row should use the
 distribution-controlled metric.
+
+### 🟡 PROBE D VERDICT: MIXED — mechanism SUPPORTED, premise REFUTED; the tail is certifiably DRIFT (2026-08-28)
+
+Record `designs/research_state/measurements/dark_knowledge_decomposition_2026-08-28.md` (landed
+026eee1; acid test 1.9e-5 / top-1 1.000). **Premise refuted:** teacher-vs-parent divergence is
+NOT tail-dominated by KL mass — the argmax-flip minority is 4.2× more divergent per state, so
+the integral is mode-dominated (tail share 0.37–0.42). **Mechanism supported, with the correct
+meter = copied tail SHAPE:** each form's transmitted signal's cosine with the full-KL tail
+signal goes 1.000 (full) / 0.916 (top-3) / 0.308 (action) — MONOTONE with benefit +2.6 / +3.4 /
++7.4pp — and it is NOT dose (ACTION runs at 1.81× TOPK's loss magnitude, transmits LESS tail,
+delivers MORE; sign-reversed against dose). **And the tail is certifiably NOISE:** inter-fork
+tail cosine 0.327 vs fork-vs-no-fork-control 0.306 — five exploiters agree about their tails NO
+BETTER than with a run that never had a teacher (excess +0.021; mode excess +0.043). Dark
+noise, measured. **Code facts:** forward KL(teacher‖student) = mass-covering (tails copied as
+OBLIGATION), no temperature anywhere on the path, masks applied both sides (legal-tail only);
+AWR advantage-weighting exists ONLY on the action path — conservative against the winning arm.
+**Entropy/decisiveness (the owner's control-theory question, part 1):** teachers AND the no-fork
+control are LESS decisive than the parent (+0.03…+0.12 nats — drift raises entropy); KL
+inherited it; **ACTION reversed it hard (−0.297 nats on-slice; p_top1 0.754→0.866) — the arm
+that worked is the one that SHARPENED.** **Framing correction adopted:** in the 5-teacher rev-2
+setting every distill arm beat doing nothing (full-KL +2.6pp vs CTRL) — full-KL HELPS LEAST, it
+does not hurt there; the −7.5pp harm readings are the 1–2-teacher settings. **(Part 2, weight
+level:** `opp_intent` is the highest-drift phase in every column — but the no-fork CONTROL
+drifts more there than any fork ⇒ continued training does it, not forking; localized, not
+causal; grad-accum + cf-head confounds noted.) **Actionables registered:** the TAIL-SPECIFICITY
+EXCESS admission column (needs a no-fork control → R2-PLAIN serves, two programs now want it);
+and the unbuilt REVERSE-KL channel — KL(student‖teacher), mode-seeking, treats teacher tail
+mass as PERMISSION rather than obligation — registered as the future channel variant to try
+before ever re-shipping forward-KL on plastic teachers.
+
+### 🚨 PROBE C: the 2026-08-25 "CORRECTION 3" IS FALSE — v8's exploiters trained in a DIFFERENT OPPONENT REGIME; C1–C5 ranked (2026-08-28)
+
+Record `designs/research_state/measurements/era_diff_v8_vs_gen_2026-08-28.md` (landed b200586).
+**SUPERSESSION (append-only correction): the "CORRECTION 3 OF THE EVENING (2026-08-25)" entry —
+"our tocks inherited the SAME 0.5 bot fraction... the opponent-variety leg is dead" — is FALSE.**
+`exploiter_bot_fraction` is INERT unless `--exploiter-keep-bots` is passed (`wrappers.py:380`);
+the 0.5 in every gen cli_args is the argparse DEFAULT. Recorded namespaces: `exploiter_keep_bots`
+**True in all three v8 forks, False in every gen fork**; v8 additionally ran the WR-ratcheted
+difficulty curriculum (`exploiter_temp_start 5.0`, ratchet) with run-dir PROOF of completion
+(`exploiter_temp_state.json` = temp 1.0, 16 ratchets — absent from every gen run dir). Fourth
+specimen of the recorded≠effective genre, and this one invalidated a kill. **Ranked candidates
+for the differentiation/transfer gap:** C1 opponent curriculum (max-advantage-signal zone + an
+alien opponent class vs WR≈0.5 against your own parent — matches the forensics' fork≈control
+shift; discriminator = ONE 3M fork with v8's flags, no fold needed) · C2 fold duration/density
+(14.9M vs 3.0M; `--team-block-episodes` **64 vs 1** — block-1 is the FiLM-starvation shape) ·
+C3 pointer head (zero per-action params — preference changes must route through the trunk;
+demoted by the forensics' trunk-heavy v8 deltas) · C4 headroom (0.438-vs-0.72 is not
+0.575-vs-0.69) · C5 teachers-in-opponent-mix (only the interaction with differentiated teachers
+survives fdC/tick-1). Also: the distill LOSS is byte-identical across eras (no channel
+regression), **no gen run has ever executed ai_v8_14's literal fold recipe**
+(`--distill-value-feat-coef` 0.0 there, 0.5 in every gen fold — the TB `distill/*_value_feat_cos`
+scalars settle it in minutes), and a live silent defect: a team pinned by TWO teachers gets
+first-match-only teaching AND double team-bias (the rev-2 ZapDug pin) — guard queued for the
+cleanup batch. **ORDERS ISSUED (spec amended pre-launch): F6-CURR fleet rider** (one
+measurement-only arm with v8's curriculum flags — the C1 causal read, ~2.7 GPU-h, registered
+prediction: it differentiates) and **`--team-block-episodes 64` on all R3 fold arms** (C2
+restoration, all arms so within-rev-3 stays valid).

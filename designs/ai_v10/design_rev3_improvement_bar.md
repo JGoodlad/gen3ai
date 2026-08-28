@@ -53,6 +53,32 @@ The 2 held-out teams remain untouched by any pin — they are the narrowness ins
 rev-1 references) + the off-slice informational row. Gate unchanged: on-slice net > 0 at z ≥ 2
 pooled per slice; failures logged SLICE UNCOVERED, never silent.
 
+**FLEET RIDER — the C1 CURRICULUM DISCRIMINATOR (added 2026-08-28, probe C, pre-launch):** probe
+C found the biggest un-tested era difference is the EXPLOITER'S OPPONENT REGIME — v8 forks ran
+`--exploiter-keep-bots` (50% scripted bots) plus a WR-ratcheted difficulty curriculum
+(`exploiter_temp_start 5.0`, ratchet mode; run-dir artifacts prove it completed), while every gen
+fork faces one full-strength near-mirror from step 0 — sitting at WR≈0.5 vs its own parent,
+where the advantage signal is weakest and the update is dominated by entropy/value/drift
+(matching the forensics: fork shift ≈ no-fork-control shift). **One extra fleet arm, F6-CURR:**
+same 2 pinned teams as one standard arm, +v8's curriculum flags, same +5M — **MEASUREMENT-ONLY,
+never a fold teacher** (a duplicate-pin teacher would re-create the two-masters problem AND the
+silent duplicate-pin bias defect probe C found). Registered prediction: F6-CURR shows the on/off
+differentiation split the standard forks lack, and its admission row ≥ the standard arm's. ~2.7
+GPU-h; the cheapest possible causal read on the top-ranked binding-constraint candidate.
+
+**FOLD RECIPE RESTORATION (C2): all R3 fold arms take `--team-block-episodes 64`** — v8's fold
+ran 64, every gen fold ran 1 (the worst case for learning a team-CONDITIONAL mapping; same shape
+as the FiLM sample-starvation finding). Applied to ALL arms so within-rev-3 comparisons stay
+valid; noted as a deliberate rev-2→rev-3 recipe change (demonstration, not ablation). Also at
+argv freeze: read the existing `distill/*_value_feat_cos` TB scalars — no gen fold has ever run
+ai_v8_14's literal recipe (it had `--distill-value-feat-coef 0.0`; every gen fold adds 0.5) —
+and decide 0.0-vs-0.5 from the scalars, not from habit.
+
+**Admission adds a TAIL-SPECIFICITY column (probe D):** `inter-fork tail cosine − fork-vs-control
+tail cosine` — a seconds-cheap read of whether a teacher's DISTRIBUTION carries content beyond
+its argmax (rev-2 fleet: +0.021, i.e. the tails were drift). Its no-fork control is R2-PLAIN
+(ai_v9_62) once final. Informational; also the instrument that would someday re-license full-KL.
+
 **Admission adds a DIFFERENTIATION row (2026-08-28, forensics-forced):** per teacher, argmax
 agreement with its parent on-slice vs off-slice (the forensics instrument — CPU, recorded
 states). The forensics found v8's teachers DIFFERENTIATED (changed more on their own slice:
