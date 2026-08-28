@@ -5376,3 +5376,23 @@ cleanup batch. **ORDERS ISSUED (spec amended pre-launch): F6-CURR fleet rider** 
 measurement-only arm with v8's curriculum flags — the C1 causal read, ~2.7 GPU-h, registered
 prediction: it differentiates) and **`--team-block-episodes 64` on all R3 fold arms** (C2
 restoration, all arms so within-rev-3 stays valid).
+
+### 🟢 BIAS FIX LANDED (6ff4c04) — --distill-team-bias now effective at coef 0, revert-verified (2026-08-28)
+
+`_distill_pairs` parses whenever `--distill-teacher` is given; the coefficient still gates
+everything that COSTS something — teacher loading, the loss fold (never computed at coef 0),
+and `_distill_species`/the `distill_mask` obs key (kept OFF at coef 0 deliberately: populating
+it would move the OBSERVATION SPACE between arms and break a live control's resume). The bias
+block became a measurable function (`matchup_setup.apply_distill_team_bias`), and the decisive
+test MEASURES the draw: 4000 seeded draws must land teacher-team fraction in 0.4 ± 0.04 —
+pre-fix it is 0/4000. 17 new tests, revert-verified both directions; 4076-test sweep + all
+three static gates green. Extras in the same pass: `--distill-team-bias` default became a None
+sentinel resolved to 0.4 (a hard default made "asked for bias" and "typed nothing"
+indistinguishable, so the guard would have refused every ordinary run — provenance still
+records 0.4 post-resolve); `--distill-teacher`+`--trainee-team*` now refused at EVERY
+coefficient (at coef 0 the pin was silently DISCARDED, not redundant); and a latent parse bug
+fixed — the bare-list guard rejected the documented multi-team group `T1:a.txt,b.txt` unless
+another `;` teacher followed (failed loudly, never silently). flag_registry deliberately NOT
+touched (its scope is extractor-arch toggles by its own docstring; the parser.error is the
+correct gate, matching every other distill dependency). Training session: pull ≥6ff4c04 before
+freezing R3 fold argvs; re-run checkargs; R3-SELF's bias now works as recorded.
