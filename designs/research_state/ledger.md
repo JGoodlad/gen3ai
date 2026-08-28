@@ -5118,3 +5118,27 @@ meter tightened to n=500/team (CI ~±1.9pp). Failure semantics pre-named: strong
 yield indicts TRANSFER (next: fold-side dose ladder on the SAME fleet, no new exploiter
 training); flat admission at 2.5M/team indicts SUPPLY (the budget law's ceiling). HOLDS lifts
 the freeze and pre-commits revolution four as confirmation. ~One box-day.
+
+### 🔬 TRANSFER-EFFICIENCY DECOMPOSITION REGISTERED + ZapDug readout MISSING from the record (2026-08-27 late, owner exchange)
+
+Owner asked why transfer efficiency is ~13% and how that squares with v8. Four candidates banked,
+none yet measured against each other: (1) **state-distribution mismatch** — the action channel
+corrects the student only in states IT visits; an exploiter's edge lives in LINES whose states
+the student never reaches (the behavior-cloning distribution-shift problem, the reason DAgger
+exists); team bias fixes which TEAM is piloted, not which STATES are reached. (2) **dose ×
+duration arithmetic** — teacher: 100% of gradient × 2.5M steps × 2 teams; student: 24% × 3M ÷ 9
+slices ≈ 3–5% of the teacher's per-slice effort, so 13% conversion may simply be undertrained
+transfer (rev-3's +4.5M fold + HI-dose arm test this). (3) **the +12pp is partly not piloting**
+— content specific to reading the ONE frozen opponent, undecomposed to date. (4) **the v8
+corollary of the plasticity account** — v8's rigid-parent teachers specialized WITHOUT renovating
+⇒ near-additive deltas in the parent's own representation, cheap to copy back; our plastic-forked
+teachers REWIRED ⇒ the student copies decisions but must re-derive implementation. Locality
+(−8pp off-slice) and low transfer efficiency are two faces of that one property. Plus v8's raw
+headroom (0.438 baseline vs rev-1's much higher). **RIDER added to rev-3 spec §4: post-fold
+student–teacher ACTION-AGREEMENT per slice** on recorded states, anchored each-vs-rev-1 — high
+agreement + small gain ⇒ content wasn't the value (dose won't help); low agreement ⇒ channel
+undertrained / states unreachable (dose is the lever). Converts rev-3's failure branch into a
+measurement. **Also on the record: the ZapDug consistency readout NEVER REACHED this session**
+— the day-1 admission relay isn't in the banked record and `fleet_admission.json` isn't at any
+path reachable from here; the two extraction rows + agreement-above-ancestry + style fingerprint
+are REQUESTED from the training session before the registered readings get applied.

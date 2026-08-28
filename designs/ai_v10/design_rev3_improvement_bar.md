@@ -89,6 +89,16 @@ coverage teams (informational rows), paired draws throughout.
    R2-ACTION fails the run even if bar 1 squeaks).
 3. **No narrowness: held-out 2 teams ≥ rev-1 final − 2pp.**
 
+**RIDER — the transfer-efficiency decomposition (added 2026-08-27 late, owner exchange).**
+Rev-2 converted ~+12pp/slice of teacher supply into +1.6pp pooled (~13%), and no measurement says
+where the rest went. The verdict battery therefore adds **post-fold student–teacher ACTION
+AGREEMENT per slice**, on recorded slice states, anchored by each-vs-rev-1 (the
+shared-inheritance floor — the ZapDug protocol's trick, reused): HIGH agreement + small gain ⇒
+the copied decisions were not where the value was (opponent-specific content, or ceiling) — more
+dose will not help; LOW agreement ⇒ the channel is undertrained or the teacher's lines reach
+states the student never visits (the imitation distribution-shift account) — dose/duration is the
+right lever. This converts §4's failure branch from inference to measurement. CPU-only.
+
 **HOLDS** = all three ⇒ the flywheel ADDS gain; the deprecation freeze LIFTS; the confirmation
 turn (revolution four, same recipe off R3's product) is pre-committed before any "flywheel works"
 claim — the wheel-turns-twice commitment transfers here unchanged. **FAIL** ⇒ read the
