@@ -5683,3 +5683,22 @@ decomposition (the three-axis OUR/OPP/DICE instrument) — the live scalars are 
 proxy, never its replacement. Timing: lands for F6-LADDER and future runs; the fleet
 (mid-flight) is not disturbed; R3 fold argvs may include it ONLY if landed+pulled before freeze
 and checkargs-clean — never worth delaying the freeze for.
+
+### 🟢 SIGNAL-RATE TB METRICS LANDED (21066fa → main) — `signal/` group live for every future run (2026-08-28)
+
+Advantage density read at the LAST unmodified point (`rollout_buffer.advantages` before the
+minibatch loop's normalize_advantage forces std→1): `signal/adv_raw_std` / `adv_raw_abs_mean` /
+`adv_kurtosis` (excess; the sparse-vs-spread discrimination test pins +195 vs −2.0 at MATCHED
+std). Outcome entropy via a new always-on `SignalMetricsCallback`: pooled rolling-200 p(1−p) +
+per-kind splits `{bots,pool,stable,target}` (all four wrapper classes — `stable` shipped free) +
+`outcome_n[_kind]` so a thin split reads as thin, + `outcome_entropy_rung` emitted from the
+ladder callback (the only owner of a per-rung window — a promotion swaps weights, so the
+`_target` window straddles opponents at the boundary). Producer side: ONE additive
+`info["opponent_class"]` key. Splits honestly impossible and recorded as such: which heuristic
+bot (identity never crosses the pipe), which pool snapshot (step lives parent-side). Async
+rollout COVERED (reads `infos`/`wave_infos` whichever exists; per-episode aggregate needs no row
+alignment). Byte-identity proven at atol=0.0 + buffer-bytes-unchanged; 36 new tests; 4169
+sweep + static gates green; CHANGELOG `gen3_signal_rate_metrics_v1` + training CLAUDE.md
+(mirror-paradox 2×2, PopArt-units caveat, "tripwire — falsify-scan/cf_audit stay the gold
+standard"). Available to F6-LADDER and, if pulled+checkargs before freeze, the R3 arms —
+observability only, never worth delaying the freeze.
