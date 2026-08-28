@@ -5294,3 +5294,28 @@ argv); build agent dispatched to make bias-at-coef-0 work as recorded (pairs bui
 bias-without-pairs; regression tests incl. R2-CTRL's exact argv). Probe B's R3 prior registered:
 R3-ACTION > R3-SELF by a MODEST margin. Row 3 (drift-vs-decline, n=4) supports nothing — the
 sign disagreement is driven by ACTION being farthest-by-KL and best-performing; no inference.
+
+### 🔴 PROBE A VERDICT: FLAT — breadth does NOT drive differentiation; fork LENGTH is the surviving candidate (2026-08-28)
+
+Record `designs/research_state/measurements/differentiation_vs_breadth_2026-08-28.md` (landed
+a20e34f; acid tests both ends, top-1 1.000). The ladder (2/3/4/9 teams, recipe-controlled: same
+parent, same frozen target, 121 identical flags) is **FLAT**: slope +0.0003 ± 0.0013 (z=0.23);
+the length-controlled comparison is fully DISCHARGED (tock-2.0 has a checkpoint at exactly the
+3M tocks' step count) and non-monotone across 2/3/4. **The breadth mechanism registered
+yesterday is DEAD; the budget law needs NO breadth rider** (consistent with
+count-dominates-conditioning). **TWO CORRECTIONS to the record, both metadata-verified:** (1)
+v8's teachers pinned **3/10/10 teams, not 23 each** (23 was the fleet total — my error,
+propagated into two ledger entries and the rev-3 spec's context; corrected here, the durable
+copy); (2) the forensics' v8 differentiation numbers were FINAL-checkpoint reads at **7.4–18.7M
+fork steps**, not length-matched to the gen era's 3M. **What DOES move: FORK LENGTH** — at fixed
+K=9, 3M→9M shifts differentiation +0.039 ± 0.016 (z=2.43), twice breadth's whole range, and
+tock-2.0@9M is the only gen-era teacher with positive Δ. Directional (n=1 pair), but it
+coheres: v8's differentiated teachers were 7.4–18.7M forks. Cheapest discriminating cell the
+archive lacks: **a 9M fork at K=2** (GPU, post-rev-3 candidate; rev-3's 5M fleet lands a free
+intermediate length point via the admission differentiation row). **METHOD CORRECTION that
+softens the forensics' obs 2:** the on/off metric confounds team with trajectory distribution
+and the confound FLIPS THE SIGN — under a distribution-controlled read (shared state bank
+pinning all nine teams) every teacher at every breadth is WEAKLY team-selective (+0.028
+pooled). "The fleet never differentiated at all" was too strong; "differentiates far less than
+long forks do" survives. Rev-3's admission differentiation row should use the
+distribution-controlled metric.
