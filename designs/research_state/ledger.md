@@ -5565,3 +5565,29 @@ schedule shapes (flat-blocked vs strided vs interleaved, matched totals) become 
 ablation on it — hours of CPU, no GPU arms — and a strided arm joins the block LADDER only if
 R3-BLOCK1 first shows the block effect is real.** Ordering: effect first, modifier second,
 schedule-shape third; each gated on the one before.
+
+### 🟡 PROBE F VERDICT: PCGrad has a substrate at fold-INIT and none at fold-END — and the conflict has ARCHETYPE structure (2026-08-28 late)
+
+Record `designs/research_state/measurements/per_team_gradient_geometry_2026-08-28.md` (landed
+9f76802; acid test passed pre-belief; every cosine read against its own within-team noise
+ceiling with 10-split jackknife). **At the fold student's END state: zero negative pairs of 36,
+PCGrad would remove 0.000 of the gradient norm — P1 selected.** **At INIT (the fork point,
+where a fold's first step actually lands): 12/36 negative pairs (11 robust in all 10 splits),
+PCGrad would remove 0.324 of norm = 5.2% of energy — P3 selected, P1 falsified there.** The
+conflict is INTERPRETABLE: every robust negative pair crosses the balance↔offense line (the two
+fat-balance teams sit at +0.591 with each other and go negative vs the offense cluster; worst
+pair −0.248±0.025), and it MIGRATES — at INIT it lives in the trunk (encoder+transformer = 82%
+of gradient energy, heavily negative); at END the trunk is clean (min +0.134) and the residue
+retreats into policy_head+projection_pool (5.3% of energy; a head-restricted PCGrad could touch
+≤2.5% of norm). **P2 selected at BOTH epochs: PC1 carries 0.466–0.519 of total energy vs the
+1/9=0.111 isotropic null (4.2–4.7×) — domination-by-average is the structural fact; the
+conflict is the transient.** Caveats: per-team states come from each team's own fork's traces
+(inflates between-team difference — the END null is conservative, the INIT conflict possibly
+overstated); geometry ≠ payoff — whether early conflict-resolution costs transfer budget or is
+handled fine by averaging, only a matched arm answers. **RULINGS:** (1) PCGrad-early-fold is a
+LEGAL but LOW-PRIORITY conditional cell (≤5.2% of energy bounds the win; joins a ladder only
+after R3-BLOCK1 and only if rev-3's content signal is strong). (2) The more valuable artifact
+is the CONFLICT MATRIX ITSELF as a fold-curriculum instrument: co-schedule positive-cosine
+teams, separate balance↔offense pairs early — feeds the strided-blocking design (7dfd8a8) and
+the optimization era's team-synergy agenda directly. (3) The offline PPO-advantage row is
+UNRESOLVED-BY-CONSTRUCTION (self-diagnosed impossible values) — never quote it.
