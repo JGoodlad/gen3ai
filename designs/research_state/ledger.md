@@ -5265,3 +5265,32 @@ if the forensics dumps allow (the owner's opponent-prediction question, partial 
 If the prediction holds, dark knowledge is not refuted — the REGIME is wrong: tails carry
 structure only on a consolidated policy, which is exactly the recorded late-generation
 full-distribution re-entry path.
+
+### 🟢 PROBE B VERDICT: MIXED — content is REAL (≥+4.0pp, confound-free) AND the rev-2 control was never bias-matched (2026-08-28)
+
+Record `designs/research_state/measurements/drift_anchor_decomposition_2026-08-28.md` (landed
+38dd4c9; pipeline acid-tested: recorded logits reproduced to 4e-5, top-1 1.000). **Row 1
+(anchoring): real but NARROW** — all three distill arms retain the parent's argmax more than the
+control (+2.3–3.5pp SIG) but the row is NOT dose-ordered (most-anchored = TOPK at the LOWEST
+dose), and R2-ACTION sits FARTHER from the parent by KL while agreeing more by argmax — the
+action-form pins exactly the functional it optimizes. **Row 2 (content): the CONTENT shape (on >
+off > ≈0) holds — and the decisive number is the ZapDug NATURAL EXPERIMENT**: team `eccfe630` is
+pinned by F5a AND F5e but `_distill_mask()` breaks on first match, so F5a alone taught it — same
+states, same practice, different teacher. Difference-in-differences: **ACTION +0.0400 SIG · KL
++0.0408 SIG · CTRL −0.0050 n.s. (the null behaves)** ⇒ ≥+4.0pp teacher-SPECIFIC content, ~48% of
+the ZapDug on-slice gain, a LOWER bound (shared content cancels in a DiD). **The flywheel has now
+demonstrably transferred content at least once.** **Third result (unasked): ALIGNMENT ≠ BENEFIT**
+— R2-KL absorbed the MOST teacher shift (0.492 vs ACTION's 0.188, below even the control's
+0.347) and still finished 4.8pp behind R2-ACTION: copying the teacher's DIRECTION is what hurts;
+copying its DECISION is what pays. Feeds the dark-noise account directly. **🚨 CONFOUND
+DISCOVERED — the third specimen of the recorded≠effective genre** (after td_aux provenance and
+the pinned-key near-miss): `--distill-team-bias` gates on `_distill_pairs`, empty at coef 0
+(`config.py:537`), so R2-CTRL's recorded bias 0.4 was EFFECTIVELY 0.0 — the capstone control
+differed from the fold arms in TWO variables; capstone spec §4.1 amended with the addendum.
+**ACTIONS:** rev-3 spec gains the BIAS-PARITY ORDER (R3-SELF carries real pairs — parent bound
+to all 12 slice teams; every arm's effective bias verified from team-draw telemetry, never the
+argv); build agent dispatched to make bias-at-coef-0 work as recorded (pairs built whenever
+--distill-teacher is present; teacher LOADING still skipped at coef 0; loud guard for
+bias-without-pairs; regression tests incl. R2-CTRL's exact argv). Probe B's R3 prior registered:
+R3-ACTION > R3-SELF by a MODEST margin. Row 3 (drift-vs-decline, n=4) supports nothing — the
+sign disagreement is driven by ACTION being farthest-by-KL and best-performing; no inference.

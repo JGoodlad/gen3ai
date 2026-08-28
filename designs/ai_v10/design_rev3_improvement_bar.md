@@ -100,7 +100,19 @@ the recipe of record for the confirmation turn. R3-SELF is a control, never a cl
 ≈ R2-CTRL (≈ −6pp) — under the drift account plain continuation drifts and declines the same;
 R3-SELF ≥ 0 vs rev-1 baseline-region (anchoring prevents decline); the capstone-relevant number
 is R3-ACTION − R3-SELF > 0 at z ≥ 2 — that difference, not bar 1 alone, is what licenses the
-word "flywheel".
+word "flywheel". **Probe B prior (observational):** content is real (ZapDug DiD ≥+4.0pp
+teacher-specific agreement, confound-free) but anchoring + practice carry most of the rev-2
+fold-vs-control gap — so R3-ACTION > R3-SELF is expected by a MODEST margin; a null there
+contradicts probe B and would itself be a finding.
+
+**BIAS-PARITY ORDER (2026-08-28, probe B's confound discovery):** `--distill-team-bias` is inert
+when `_distill_pairs` is empty (coef 0), which silently un-matched rev-2's control. For rev-3:
+**R3-SELF must carry real distill pairs** — the frozen parent as teacher bound to ALL 12 slice
+teams (`PARENT:t1,…,t12`) at coef 0.24 — so its team bias is effective and identical to
+R3-ACTION/HI's. Every arm's EFFECTIVE bias is verified from telemetry (team-draw counts), never
+from the argv. A config fix making bias-at-coef-0 work as recorded (pairs built whenever
+`--distill-teacher` is given; teacher LOADING still skipped at coef 0) is being landed with a
+loud guard + regression tests — R3 argvs re-checked with `checkargs` after it lands.
 
 ## 4. Bars (pre-registered)
 

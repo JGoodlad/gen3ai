@@ -182,6 +182,17 @@ Post-hoc hypothesis on record, not an explanation: the fold assigns each state's
 slice's designated teacher, so total dose 0.31 over five slices ≈ 0.06 PER SLICE vs fdB's ~0.12 —
 if KL harm scales with per-slice dose, more teachers at higher total dose harm less.
 
+**§4.1 ADDENDUM (2026-08-28, probe B):** the control was NEVER BIAS-MATCHED — `--distill-team-bias`
+is gated on `_distill_pairs`, which `config.py` leaves empty at coef 0, so effective bias was 0.4
+for the fold arms and **0.0 for R2-CTRL** despite its recorded argv. Bar 1's +7.4pp therefore
+bundles anchoring + a team-practice differential + content. Probe B's ZapDug
+difference-in-differences (same states, same practice, different teacher — the confound cancels)
+isolates **≥+4.0pp genuine teacher-specific content** in R2-ACTION (and R2-KL), ~48% of the
+on-slice gain, a lower bound. Anchoring is real but NARROW (argmax retention +2.3–3.5pp over
+control, not dose-ordered) and R2-ACTION moves the *distribution* farther than the control while
+retaining the *decision* — the action-form pins exactly the functional it optimizes. Record:
+`designs/research_state/measurements/drift_anchor_decomposition_2026-08-28.md`.
+
 ### 4.2 SECOND CONTROL — pre-registered. ⚠️ GATE SUPERSEDED (2026-08-27 late): owner redirected
 revolution three to an ABSOLUTE improvement bar (`design_rev3_improvement_bar.md`), which removes
 the control from the verdict's denominator entirely — R2-PLAIN still runs and its readings below
