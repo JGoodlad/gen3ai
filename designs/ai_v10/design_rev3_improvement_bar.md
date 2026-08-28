@@ -162,6 +162,18 @@ dose will not help; LOW agreement ⇒ the channel is undertrained or the teacher
 states the student never visits (the imitation distribution-shift account) — dose/duration is the
 right lever. This converts §4's failure branch from inference to measurement. CPU-only.
 
+**CONDITIONAL FOLLOW-UP — the BLOCK-LENGTH ablation (owner order, 2026-08-28 late):** IF rev-3
+shows a real content signal (gate: R3-ACTION − R3-SELF ≥ +4pp pooled — below that a modifier is
+statistically invisible at n=500/team, where a two-arm difference resolves ~±2.4pp), THEN run
+**R3-BLOCK1**: identical to R3-ACTION except `--team-block-episodes 1`, same fleet, same dose
+(~2.5 GPU-h). The owner's registered reasoning: the block knob MODIFIES the conditional-learning
+component, so its effect is only resolvable in proportion to the main improvement signal —
+measure the modifier where the signal is strong, never where it is absent. Registered
+predictions: R3-ACTION − R3-BLOCK1 > 0, and the student's PER-TEAM behavioral spread (the
+differentiation instrument) higher under block-64 — the second prediction is the mechanism
+check (batch-composition SNR), the first is the payoff check. A block LADDER (16/64/256) only
+if the single ablation reads positive.
+
 **HOLDS** = all three ⇒ the flywheel ADDS gain; the deprecation freeze LIFTS; the confirmation
 turn (revolution four, same recipe off R3's product) is pre-committed before any "flywheel works"
 claim — the wheel-turns-twice commitment transfers here unchanged. **FAIL** ⇒ read the

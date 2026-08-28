@@ -5515,3 +5515,18 @@ spec) is now launchable**: fork rev-1, +5M, 2 teams, `--exploiter <R2-ACTION fin
 --exploiter-ladder auto:<rev-1 run dir>`, measurement-only; joins the GPU queue behind the
 fleet/folds; validity check = ladder_state.json shows ≥3 promotions, else the curriculum never
 engaged (a null of the GATE, not the concept).
+
+### 🧪 BLOCK-LENGTH ABLATION REGISTERED AS CONDITIONAL (owner order, 2026-08-28 late)
+
+Owner: "add block length tests if we find that fold length was effective. My guess is the better
+the improvement signal the more we can see the effect of the batch knob." Registered in rev-3
+spec §4: **R3-BLOCK1** (R3-ACTION minus block-64, everything else identical) runs IFF the rev-3
+content signal clears **R3-ACTION − R3-SELF ≥ +4pp** — the owner's SNR logic formalized: a
+modifier of the conditional-learning component is only resolvable in proportion to the main
+effect (a two-arm difference at n=500/team resolves ~±2.4pp, so testing a ~40% modifier of a
++6pp effect is sensible; of a +2pp effect, noise). Predictions registered: payoff check
+(R3-ACTION > R3-BLOCK1) and mechanism check (per-team behavioral spread higher under 64 — the
+batch-composition-SNR account's specific signature). Block ladder (16/64/256) only on a
+positive first read. This keeps the demonstration-vs-ablation boundary clean: rev-3 demonstrates
+with the full restored recipe; attribution of the block knob comes after, gated on there being
+an effect to attribute.
