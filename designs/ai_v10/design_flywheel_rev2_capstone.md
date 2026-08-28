@@ -1,7 +1,8 @@
 # design — FLYWHEEL REVOLUTION TWO: the capstone proof-of-concept
 
-**Status: AUTHORIZED (owner, 2026-08-26 evening) — two days of box time. Pre-registered before any
-fleet training begins.**
+**Status: VERDICT IN (2026-08-27 evening) — HOLDS-BY-LETTER, QUALIFIED. See §4.1. Revolution
+three is GATED on the second control (§4.2).** Originally authorized (owner, 2026-08-26 evening),
+pre-registered before any fleet training began.
 
 ## 0. The claim under test, in one paragraph
 
@@ -153,6 +154,51 @@ scale (fdE tested 1-vs-2, never 5).
 targeting R2-ACTION's product, folded the same way) is the confirmation run — pre-committed here
 so one good revolution is never reported as "the flywheel works". The flywheel claim needs
 compounding, or at least repetition.
+
+### 4.1 VERDICT OF RECORD (2026-08-27): HOLDS-BY-LETTER, QUALIFIED
+
+All three bars PASS as pre-registered: (1) R2-ACTION − R2-CTRL = +0.0741 z=+5.47; (2) off-slice
++8.9pp above the R2-CTRL−2pp bar; (3) 9 of 9 team rows non-negative. **Qualification, recorded
+with equal weight:** R2-ACTION vs its own parent (rev-1 final) is **+0.0161 z=+1.33, not
+significant** — R2-CTRL fell −0.0580 z=−4.73 against a registered prediction of ≈0, so
+essentially all of bar (1) is the control's decline. The defensible claim: **one revolution
+prevented the 5.8pp loss the same budget of ordinary training incurred, and matched the parent.**
+Not the compounding-gain result the flywheel thesis needs.
+
+Findings that stand independent of the control (measured vs rev-1 directly): the monotone content
+ordering **action +1.6 > top-3 −2.4 > full-KL −3.2 > no-distill −5.8** (R2-TOPK's "between"
+prediction lands exactly; direction safe against its 0.52× dose confound since it lost to
+R2-ACTION at HALF the dose, z=−2.96); the **off-slice union result** — five measurably team-local
+teachers (~+12/−8pp, 4/5 significant) produced a student LEVEL with rev-1 off-slice
+(+0.0125 n.s.): narrowness did not transmit through the action channel; and the **budget law's
+prospective test** (~+12pp on-slice per teacher vs the registered ~+0.11).
+
+Two anomalies, both registered: **(a) R2-CTRL declined broadly** (−5.8 on-pin AND −7.6 off-pin) —
+the team-bias hypothesis predicted off-pin-concentrated harm and is WITHDRAWN (training session,
+same relay). Note fdC (−1.2 n.s., same +3M shape) differed in ecology (stable opponents ON,
+0.35): "plain continuation off rev-1 declines unless stabilized" is a live candidate.
+**(b) R2-KL missed its −7±2pp prediction** at −3.2pp despite 1.32× dose (flagged pre-run).
+Post-hoc hypothesis on record, not an explanation: the fold assigns each state's target to its
+slice's designated teacher, so total dose 0.31 over five slices ≈ 0.06 PER SLICE vs fdB's ~0.12 —
+if KL harm scales with per-slice dose, more teachers at higher total dose harm less.
+
+### 4.2 SECOND CONTROL — pre-registered, GATES revolution three
+
+**R2-PLAIN**: fork rev-1 final, +3M, fdB ecology, **no `--distill-teacher` at all** (removes both
+the coef-0 plumbing and the 0.4 team bias — deliberately two-at-once as the first cut), same
+9+2-team meter. Readings, registered before launch:
+
+- **R2-PLAIN ≈ R2-CTRL (~−6pp):** continuation-is-costly is REAL. The verdict's reading upgrades
+  — the null model of +3M is decline, the fold is the thing that prevents it while matching the
+  parent — and revolution three PROCEEDS on that understanding. Opens an era question (why does
+  plain continuation decline? the fdC comparison points at stable-opponent ecology as the
+  stabilizer) but does not block the wheel.
+- **R2-PLAIN flat (fdC-like, ≳−1.5pp n.s.):** R2-CTRL was anomalous → the harm came from the
+  coef-0 plumbing and/or the team bias; a bias-only cell disambiguates (~2h more). All bars
+  re-base against R2-PLAIN: R2-ACTION − R2-PLAIN ≈ +1.6 n.s. ⇒ **verdict downgrades to PARTIAL**
+  ("no harm, no significant gain") and revolution three is PAUSED pending the re-read.
+- **Intermediate (~−3pp):** both effects contribute; run the bias-only cell before any verdict
+  sentence is quoted.
 
 ## 5. Schedule (owner-authorized two days)
 

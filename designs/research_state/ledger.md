@@ -5068,3 +5068,29 @@ quoted beside any bar landing within ~1pp); ≥2 failures ⇒ R2-CTRL is relaunc
 surviving set before the verdict is read. This is the same genre as the matched-extraction-row
 lesson: the control's job is to make the subtraction mean one thing, and it nearly meant three.
 Fold arms deliberately NOT built — argvs freeze after admission, launch on confirm, per §4.
+
+### 🏁 CAPSTONE VERDICT — HOLDS-BY-LETTER, QUALIFIED; revolution three GATED on a second control (2026-08-27 evening)
+
+All three pre-registered bars PASS: R2-ACTION − R2-CTRL **+0.0741 z=+5.47** · off-slice +8.9pp
+above the bar · 9/9 team rows non-negative. And the honest sentence beside it, reported by the
+training session in the same relay and adopted as the reading of record: **R2-ACTION vs its own
+parent is +0.0161 z=+1.33 n.s.** — R2-CTRL fell −0.0580 z=−4.73 against a registered prediction
+of ≈0, so the fold PREVENTED a 5.8pp loss and matched the parent; it did not add gain. What
+stands independent of the control (all vs rev-1 directly): the monotone content ordering
+**action +1.6 > top-3 −2.4 > full-KL −3.2 > nothing −5.8** on a fresh fleet (R2-TOPK's "between"
+prediction lands exactly, and it lost to R2-ACTION at HALF the dose, z=−2.96 — direction safe
+against the dose confound); the **off-slice union result** — five measured team-local teachers
+(~+12/−8pp) produced a student LEVEL with rev-1 off-slice (+0.0125 n.s.), so narrowness did NOT
+transmit through the action channel (the no-precedent cell §0 named, answered clean); the
+**budget law's prospective test** (~+12pp on-slice/teacher vs registered ~+0.11). Two anomalies
+registered, both pointing at the control: (a) **R2-CTRL declined broadly** (on-pin −5.8 AND
+off-pin −7.6) — the team-bias hypothesis predicted off-pin-concentrated harm and is WITHDRAWN;
+fdC (−1.2 n.s., same shape, ecology ON 0.35) makes "plain continuation declines unless
+stabilized" the live candidate. (b) **R2-KL missed −7±2pp at −3.2** despite 1.32× dose (flagged
+pre-run) — post-hoc hypothesis banked: per-slice dose ≈ 0.06 across five teachers vs fdB's ~0.12,
+so if KL harm scales per-slice, more teachers harm less. **RULING: R2-PLAIN (+3M off rev-1, NO
+distill plumbing at all, ~2h) runs BEFORE revolution three** — sequencing the wheel-turns-twice
+commitment, not violating it; readings pre-registered in spec §4.2 (≈−6 ⇒ continuation-is-costly
+real, verdict upgrades, rev-3 proceeds · flat ⇒ verdict DOWNGRADES to PARTIAL, rev-3 paused,
+bias-only cell next · ~−3 ⇒ both contribute, disambiguate first). Every bar in this capstone
+rests on a denominator; the 2h buys knowing what it is.
