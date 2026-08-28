@@ -2963,6 +2963,102 @@ math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_si
 matches a manual sum, and `_logged_only_when_accumulating` (real `train()`: skipped at accum=1, EMA
 updated + scalar emitted at accum=2).
 
+## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
+
+**How much action-attributable learning signal is PPO actually receiving?** Two always-on, flagless
+scalar families answer it live. Pure observability: no gradient path, no extra battle, no env call —
+a handful of numpy means per rollout.
+
+**THE PAIR IS THE INSTRUMENT. Neither number is readable alone.**
+
+| scalar | recorded by | is |
+|---|---|---|
+| `signal/adv_raw_std` | `instrumented_ppo/ppo.py::train()` | population std of the rollout's RAW GAE advantages |
+| `signal/adv_raw_abs_mean` | same | `E|Â|` — the outlier-robust companion to std |
+| `signal/adv_kurtosis` | same | EXCESS kurtosis (Fisher; normal = 0), **scale-free** |
+| `signal/outcome_entropy` | `signal_callback.py::SignalMetricsCallback` | `p(1−p)` over a rolling 200-episode window, POOLED |
+| `signal/outcome_entropy_{bots,pool,stable,target}` | same | the same, split by `MaskableAgentWrapper.OPP_CLASS_*` |
+| `signal/outcome_win_rate`, `signal/outcome_n[_<kind>]` | same | the window's `p` and its depth — so a thin split is visible as thin |
+| `signal/outcome_entropy_rung` | `exploiter_ladder.py::ExploiterLadderCallback._record` | `p(1−p)` of the LIVE `--exploiter-ladder` rung's gate window |
+
+### Why the pair — the MIRROR PARADOX
+
+Outcome entropy is **maximal (0.25) against a near-twin**, which is exactly the regime where a
+single action's effect on the outcome is *smallest* and the games are closest to coin flips. So a
+high `outcome_entropy` is **not** "lots of signal" — it is "lots of outcome VARIANCE", which only
+becomes signal to the extent the critic localizes it onto actions. That localization is what
+`adv_raw_std` / `adv_kurtosis` measure. Read the 2×2:
+
+| outcome entropy | advantage density | reading |
+|---|---|---|
+| high | high | decisive moments exist and the critic finds them — healthy |
+| high | **LOW** | coin-flip games nothing can be attributed to — the mirror paradox, or a stale critic |
+| **LOW** | high | a lopsided matchup, but its few live decisions are sharp — a curriculum problem |
+| low | low | the opponent is a wall or a pushover — no gradient to be had |
+
+`adv_kurtosis` is the third axis and it is the one that distinguishes *shape* from *scale*: exploit
+signal is sparse — a few decisive turns inside a long stretch of forced or irrelevant ones — so a
+healthy rollout is HEAVY-TAILED (positive). Near 0 or negative means the advantage mass is smeared
+evenly across decisions, i.e. nothing is being localized even though the std may look fine.
+
+### ⚠️ UNITS — within a run freely, across runs only cautiously
+
+The advantages ride the run's own **PopArt-normalized returns** (`--use-popart`, default on), whose
+σ moves over training. `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's current
+normalized-return units*, not a fixed scale: their TREND is meaningful, their absolute level is not
+portable. Across two runs with different reward composition, `gamma`/`gae_lambda`, or PopArt state,
+only **`adv_kurtosis`** — scale-free by construction — compares directly.
+
+### ⚠️ This is a TRIPWIRE, not the attributable-share measurement
+
+`signal/` tells you *when* to go and measure; it does not do the measurement. The gold standard for
+how much of an outcome was actually action-reducible remains the **offline counterfactual
+decomposition** — `python -m main.prober.query falsify-scan` (the luck / unattributed /
+proven-`policy_reducible` crater bracket) and `cf_audit.py`. Those re-roll the real dice and sweep
+alternative actions; `signal/` only reports the critic's own opinion of its rollout.
+
+### Where each half is measured, and why there
+
+**Advantage density is read ONCE per `train()`, off `self.rollout_buffer.advantages`, BEFORE the
+epoch loop** — because that is the last point at which the raw GAE advantages still exist. The
+minibatch loop applies `normalize_advantage`, which forces std→1 per minibatch and so *destroys the
+quantity being measured*. Composes with `--grad-accum-steps` for free (the read is per-rollout, not
+per-optimizer-step) and is untouched by `--compile-trainer` (it is numpy over the buffer, outside
+any traced graph). Degenerate rollouts are NaN-safe: an empty buffer publishes nothing, a constant
+rollout reports a real std/abs-mean with `adv_kurtosis` **NaN** — TensorBoard drops NaN, so the
+curve gaps rather than reporting a fabricated 0.0 that would read as "evenly smeared".
+
+**Outcome entropy rides the info dicts the loop already sees.** `MaskableAgentWrapper.step` publishes
+`info["win_outcome"]` (which the win-prob head already used) and, new here, `info["opponent_class"]`
+— purely additive keys, so nothing downstream changes. `SignalMetricsCallback` pushes each `done`
+into rolling per-kind deques in `_on_step` and records in `_on_rollout_end`.
+
+**`--async-rollout` IS covered.** The stock collector publishes `infos`/`dones` in the callback
+locals; `collect_rollouts_async` publishes `wave_infos`/`wave_dones` (a wave = a macro-step over
+whichever envs came ready). The callback reads whichever pair is present. Unlike
+`WinProbLabelCallback` — which needs the `(step, env)` BUFFER ROW and therefore cannot use the wave
+batching at all — outcome entropy is a per-episode aggregate with no row alignment, so the wave form
+carries everything it needs. The advantage half is transport-agnostic (both paths call
+`compute_returns_and_advantage` into the same buffer). Works under `--debug` — the callback is in
+`build_callbacks`' unconditional base list.
+
+**Which opponent splits are REAL.** The wrapper's four `OPP_CLASS_*` values are the whole of what
+survives the env-worker boundary — only the integer crosses the pipe. So `bots` / `pool` / `stable`
+/ `target` are real, and finer identity is **not**: which *heuristic* bot (the class collapses
+random and every heuristic into one), and which *pool snapshot* (its provenance — the step it was
+frozen at — is held by `SnapshotPool` in the parent and never reaches the wrapper). `_rung` is the
+one finer split that exists, and it exists only because the ladder callback keeps its own per-rung
+window in the parent process.
+
+State is process-local and NOT checkpointed — a launcher restart re-warms the windows in a few
+hundred episodes, the same contract the noise-scale EMAs take.
+
+Tests: `signal_metrics_test.py` — hand-computed moments, an independently-written closed form, the
+sparse-vs-spread kurtosis discrimination at MATCHED std, scale-freeness, every degenerate input,
+the rolling-window eviction, the kind routing, both rollout paths' locals, the
+`OPP_CLASS_SUFFIX` ↔ wrapper-constant pin, and the byte-identity of `train()` with the read
+monkeypatched out.
+
 ## ⚠️ Reading a belief target: `belief_supervision(...)`, never `last_*`
 
 Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`). Under

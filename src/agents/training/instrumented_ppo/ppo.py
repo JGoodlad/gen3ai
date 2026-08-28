@@ -31,6 +31,7 @@ from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
+from agents.training.instrumented_ppo.signal_metrics import advantage_density_metrics
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe
 
@@ -344,6 +345,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             popart.update(
                 th.as_tensor(self.rollout_buffer.returns, device=self.device), self.policy.value_net
             )
+
+        # +SIGNAL (gen3_signal_rate_metrics_v1): ADVANTAGE DENSITY — how much action-attributable
+        # learning signal this rollout carries. Read ONCE per train() off the buffer's RAW GAE
+        # advantages, HERE, because this is the last point at which they still exist unmodified:
+        # the minibatch loop below applies `normalize_advantage`, which forces std→1 per minibatch
+        # and so erases the very quantity being measured. Read-only numpy over the buffer — no
+        # torch, no RNG, no gradient path, and the advantages PPO fits are untouched.
+        # ⚠️ UNITS: these ride the run's PopArt-normalized returns, whose σ moves over training, so
+        # `adv_raw_std`/`adv_raw_abs_mean` compare WITHIN a run and only cautiously across runs
+        # (`adv_kurtosis` is scale-free and does compare). Must be read WITH `signal/outcome_entropy`
+        # — see signal_metrics.py's module docstring for the mirror paradox and the 2x2 reading.
+        signal_metrics = advantage_density_metrics(self.rollout_buffer.advantages)
 
         # +GRAD-ACCUM: number of `batch_size` micro-batches whose gradients are summed before one
         # optimizer.step() (1 = OFF, stock one-step-per-minibatch). See the class attr docstring.
@@ -1292,6 +1305,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             self.logger.record(_key, _val)
         if grad_norms:
             self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
+
+        # +SIGNAL (gen3_signal_rate_metrics_v1): the ADVANTAGE-DENSITY half of the `signal/` group,
+        # measured above off the RAW pre-normalization advantages. `adv_raw_std` = how much the critic
+        # thinks this rollout's actions mattered; `adv_raw_abs_mean` = its outlier-robust companion
+        # (std rising alone ⇒ a few runaway points, not a broader density); `adv_kurtosis` = EXCESS
+        # kurtosis, POSITIVE when the signal is concentrated in a few decisive turns (which is what
+        # exploit signal looks like) and ≈0 when advantage mass is smeared evenly across decisions.
+        # Read WITH `signal/outcome_entropy` (SignalMetricsCallback) — high outcome entropy with LOW
+        # density is the mirror paradox, not health. NaN on a degenerate (constant) rollout.
+        for _sk, _sv in signal_metrics.items():
+            self.logger.record(f"signal/{_sk}", float(_sv))
 
         # +NOISE-SCALE: fold this call's two-batch-size sample into the EMAs and log the smoothed
         # McCandlish 'simple' gradient noise scale B_simple = tr(Σ)/|G|² — the critical batch size.

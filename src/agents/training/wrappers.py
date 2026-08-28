@@ -491,6 +491,13 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             b = getattr(self.env, "battle1", None)
             won = 1.0 if (b is not None and b.won is True) else 0.0
             info["win_outcome"] = won
+            # +SIGNAL (gen3_signal_rate_metrics_v1): tag the outcome with the opponent CLASS so the
+            # `signal/outcome_entropy` meters can be split by kind (target / pool / stable / bots).
+            # A pooled outcome entropy averages over a mix whose members mean different things — the
+            # same reason `_opponent_class` already exists for the intent metrics. Purely additive to
+            # the info dict (SB3 reads only `episode`/`terminal_observation`/`TimeLimit.truncated`),
+            # so nothing downstream changes; the class is the one selected for THIS episode at reset.
+            info["opponent_class"] = int(getattr(self, "_opponent_class", self.OPP_CLASS_BOT))
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
             self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
             self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)

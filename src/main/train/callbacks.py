@@ -18,6 +18,7 @@ from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLR
 from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
+from agents.training.signal_callback import SignalMetricsCallback
 from agents.training.selfplay_callback import SelfPlayCallback
 from main.train.constants import (
     DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_save_freq_vec_calls,
@@ -118,7 +119,14 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         (lambda: lr_callback.handoff_lr) if isinstance(lr_callback, TwoPhaseLRCallback) else None
     )
     graceful_restart_callback = GracefulRestartCallback()
-    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback]
+    # SIGNAL METRICS (gen3_signal_rate_metrics_v1): the `signal/outcome_entropy*` half of the
+    # signal-rate group — rolling p(1−p) over the episode outcomes the training loop ALREADY sees
+    # (`info["win_outcome"]` / `info["opponent_class"]`), split by opponent kind. ALWAYS ON and
+    # flagless: it plays no battles, touches no env, and costs a handful of numpy means over ≤200-
+    # element deques per rollout. Its partner `signal/adv_*` is recorded inside `train()`; the two
+    # are only readable together (see agents/training/CLAUDE.md → the `signal/` group).
+    signal_callback = SignalMetricsCallback()
+    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback, signal_callback]
     # RANK TRIPWIRE (gen3_distill_target_gate_v1, design_advantage_gated_distillation.md §4.1):
     # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
     # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —

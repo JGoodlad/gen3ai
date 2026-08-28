@@ -5873,3 +5873,85 @@ rung IS the target — a ladder without one has no destination). Gate:
 `src/agents/training/exploiter_ladder_test.py` (52 tests), revert-verified on the four load-bearing
 behaviors: dropping the live-rung filter, applying the swap immediately instead of at `reset()`,
 skipping the resume restore, and admitting a demotion each fail a named test.
+
+---
+
+## `gen3_signal_rate_metrics_v1` (2026-08-28): the `signal/` group — how much action-attributable signal is actually arriving
+
+**The gap.** Every meter this tree carries answers *how well is the update going* (`train/loss`,
+`approx_kl`, `explained_variance`, `grad/*`, `rank/*`, `train/noise_scale`). None answered the prior
+question — *is there anything in this rollout to learn from?* A run whose opponent has become a wall
+and a run whose opponent has become a coin flip both produce a healthy-looking PPO step; the
+difference only shows up months later as a flat ELO curve. `signal/` makes it a live curve.
+
+**What landed.** Two always-on, flagless scalar families. Pure observability: no gradient path, no
+flag, no extra battle, no env round trip, a handful of numpy means per rollout.
+
+* **Advantage density**, recorded in `instrumented_ppo/ppo.py::train()` — `signal/adv_raw_std`,
+  `signal/adv_raw_abs_mean`, `signal/adv_kurtosis` (excess, Fisher).
+* **Outcome entropy**, recorded by the new `SignalMetricsCallback` — `signal/outcome_entropy`
+  (rolling `p(1−p)` over 200 episodes, pooled) plus `_bots` / `_pool` / `_stable` / `_target` splits,
+  the window's `outcome_win_rate` and `outcome_n[_<kind>]`, and — from
+  `ExploiterLadderCallback._record`, which owns the only per-rung window —
+  `signal/outcome_entropy_rung`.
+
+**THE PAIR IS THE INSTRUMENT, and shipping only one of them would have been worse than shipping
+neither.** Outcome entropy is MAXIMAL against a near-twin, which is exactly the regime where a single
+action's effect on the outcome is smallest — the mirror paradox. So a high outcome entropy is not
+"lots of signal", it is "lots of outcome VARIANCE", which is only signal to the extent the critic
+localizes it onto actions; that localization is what the advantage density measures. High-entropy ×
+low-density is the diagnosis this group exists to make, and neither axis alone can make it.
+
+**Why the third moment.** Exploit signal is SPARSE — a few decisive turns inside a long stretch of
+forced or irrelevant ones — so a healthy rollout is heavy-tailed. `adv_kurtosis` separates shape from
+scale: the gate test builds a 0.5%-support rollout and an evenly-spread one with the SAME
+`adv_raw_std` to 9 significant figures, and they read +195 and −2.0.
+
+**Measured WHERE it still exists.** The advantage read sits before the epoch loop, off
+`self.rollout_buffer.advantages`, because the minibatch loop's `normalize_advantage` forces std→1 per
+minibatch and so destroys the exact quantity being measured. That also makes it transport-agnostic
+(both the stock collector and `collect_rollouts_async` fill the same buffer) and free under
+`--grad-accum-steps` (one read per rollout, not per optimizer step).
+
+**⚠️ UNITS.** The advantages ride the run's PopArt-normalized returns, whose σ moves over training.
+`adv_raw_std` / `adv_raw_abs_mean` compare WITHIN a run; only `adv_kurtosis`, scale-free by
+construction, compares across runs. Stated in the code comment, the module docstring and the
+training leaf, because a scalar whose units are silent will be cross-run compared eventually.
+
+**⚠️ It is a TRIPWIRE, not the measurement.** The gold standard for attributable share remains the
+offline counterfactual decomposition (`prober falsify-scan`'s luck / unattributed /
+proven-`policy_reducible` bracket, and `cf_audit`), which re-rolls the real dice and sweeps
+alternative actions. `signal/` reports only the critic's own opinion of its own rollout — it tells
+you when to go and run one.
+
+**`--async-rollout` is covered, not documented-around.** The stock collector publishes
+`infos`/`dones` in the callback locals; the async collector publishes `wave_infos`/`wave_dones`. The
+callback reads whichever is present. `WinProbLabelCallback` cannot do this — it needs the
+`(step, env)` buffer row, which wave batching destroys, hence its inline capture inside the async
+collector — but outcome entropy is a per-episode aggregate with no row alignment, so the wave form is
+sufficient.
+
+**Which opponent splits are REAL, and which are structurally impossible.** Only an integer crosses
+the env-worker pipe, so the wrapper's four `OPP_CLASS_*` values are the whole available alphabet:
+`bots` / `pool` / `stable` / `target` ship. WHICH heuristic bot does not (the class collapses random
+and every heuristic into one) and WHICH pool snapshot does not (its frozen-at step is held by
+`SnapshotPool` in the parent and never reaches the wrapper). `_rung` is the one finer split that
+exists, and only because the ladder callback keeps its window in the parent process. The producer
+side is one additive `info["opponent_class"]` key beside the existing `info["win_outcome"]`; SB3
+reads only `episode` / `terminal_observation` / `TimeLimit.truncated` from an info dict, so nothing
+downstream changes.
+
+**NaN-safe, never fabricating.** An empty buffer publishes nothing; a constant rollout reports a real
+std/abs-mean with `adv_kurtosis` NaN, and TensorBoard drops NaN — so a degenerate rollout leaves a
+GAP rather than a 0.0 that would read identically to a genuine "advantage mass is evenly smeared".
+Same rule on the outcome side: a window with no episodes yet publishes nothing rather than the 0.0 a
+100%-loss wall would produce.
+
+**Observability, proven rather than asserted.** `signal_metrics_test.py` (36 tests) runs one
+`train()` with the estimator live and one with it monkeypatched to a no-op from the same captured
+init, and requires the resulting parameters to be equal at `atol=0.0`; a companion test requires
+`rollout_buffer.advantages` to be the same bytes and dtype after the read. The rest pins the
+arithmetic (hand-computed constants + an independently written closed form), every degenerate input,
+window eviction, kind routing, both rollout paths' locals, and the `OPP_CLASS_SUFFIX` ↔ wrapper-
+constant correspondence — the integer is all that crosses the pipe, so a renumbering there would
+otherwise silently relabel a curve.
