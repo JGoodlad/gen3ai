@@ -5846,3 +5846,42 @@ quickly with CRN-paired CIs clearing the leaf-noise floor (I's U-shape: separabl
 Δwp is the critic's CLAIM not realized gain (relative ranking only); ground truth is one-ply
 vs recorded opp move; move_selection only; bot-distribution coverage optimistic, feature
 ordering should transfer.
+
+### 🟡 PROBE G VERDICT: MIXED — offset is 73% and cancels in pairs; contrastive training SIZED not convicted; and the WIN-PROB HEAD beats the played action (2026-08-29 early)
+
+Record `designs/research_state/measurements/critic_bias_split_2026-08-28.md` (landed 7021e67;
+317 decisions / 142,208 terminal rollouts; noise floor MEASURED by split-half CRN blocks;
+synthetic gates exact; validation to 3.1e-05 on V). **Decomposition: SHARED per-decision offset
+= 0.728 of true MSE [0.674,0.780] (RMS 0.200), DIFFERENTIAL = 0.272 (RMS 0.122)** — the offset
+is per-DECISION not global (global 0.26%), so it cancels between siblings at the same decision
+and NOT across depth ⇒ **shallow paired search is favored; at depth ≥2 the offset becomes
+dominant again.** Differential is real (cross-fitted flip rate 0.202 [0.174,0.229]; regret
+0.057, concentrated in losses 0.095 and pivotal 0.074) but **the binding-lever half of the
+prediction is REFUTED**: the critic already captures 71% of achievable ranking gain and its
+excess over a 32-rollout MC oracle does not clear zero (+0.017 [−0.004,+0.040]). **Ordering:
+PAIR FIRST — pairing cancels 73% for free; contrastive training is SIZED at ≤5.7pp of
+per-decision regret, a later lever not the constraint. THE BANKABLE SURPRISE: ranking by the
+one-ply WIN-PROB head beats the action the policy actually played by +0.0219 [+0.0089,+0.0364]
+(35% agreement, critic better); the SCALAR value head does NOT clear zero (+0.0135
+[−0.0007,+0.0280]) — any search must read the win-prob head, not V.** Caveats: opponent frozen
+at recorded move (differential is a LOWER bound; the marginalized arm is a one-field change);
+1-ply claims; Q-under-greedy checked not assumed; win/loss quota split reported.
+
+### 🎯 THE SYNTHESIS: "DEFENSIVE PAIRED SEARCH" — the program's ≥1-interesting-to-try, assembled from G×H×I, build+first-cell dispatched (2026-08-29)
+
+Every component now carries a measurement: **(gate, H)** play the policy instantly unless
+n_legal≥2 AND |P(win)−0.5|<0.15 (82.5% forced, 5.7× budget concentration, the critic knows when
+being overruled wouldn't matter); **(evaluate, G×I)** on contested decisions, RACE the
+candidates on CRN-PAIRED one-ply WIN-PROB reads (pairing cancels the 73% offset; the win-prob
+head is the only leaf that beats the played action; racing's seq rule, floor 5, depth 1 — G's
+depth caveat makes shallow-paired the right regime); **(futility, I)** the 52% that never
+separate keep the policy action and bank the clock; **(confirm, H-context)** an overrule
+requires the paired difference to clear the measured floor, with optional top-2 paired-rollout
+confirmation (the playoff mechanism — the only historical arm that didn't lose). **Registered
+bars for the first mirror cell (side-swapped, null 0.50): PRIMARY — DEFENSIVE decisively above
+honest_1s's 0.292 with CI reaching 0.50 ("search stops losing"); STRETCH — CI above 0.50
+("search finally pays"; needs more games than the first cell, stated honestly). Prediction:
+overrule rate lands near H's contested×separable ≈ 8–17% and the arm does NOT lose.** Builder
+agent dispatched: compose the strategy in search_dividend from the landed racing machinery +
+the H rule + win-prob leaf, tests, then a first mirror cell (~300–400 games, CPU, niced,
+beside rev-3). The 50%-weekly-quota authorization covers continued iteration.
