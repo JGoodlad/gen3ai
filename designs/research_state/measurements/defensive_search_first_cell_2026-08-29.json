@@ -1,0 +1,312 @@
+{
+ "date": "2026-08-29",
+ "checkpoint": "models/ai_v9_29_rev1_0823/checkpoints/checkpoint_9995088_steps.zip (the SAME checkpoint the historical mirror arms played)",
+ "invocation": "python -m main.search_dividend <ckpt> --arm honest --budget 1 --root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 0 --games 200 --games-seed 7 --opponents self --battle-timeout-s 1800 --battle-idle-s 120",
+ "null": 0.5,
+ "arm": {
+  "label": "defensive_1s",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 400,
+  "finished": 400,
+  "decisive": 397,
+  "won": 196,
+  "ties": 3,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.4937,
+  "ci95": [
+   0.4448,
+   0.5427
+  ],
+  "paired_win_rate": 0.4938,
+  "paired_ci95": [
+   0.4586,
+   0.5289
+  ],
+  "n_pairs": 200,
+  "decisions": 16942,
+  "searched": 3915,
+  "changed": 270,
+  "searched_frac": 0.2311,
+  "change_rate": 0.069,
+  "mean_wall_s": 10.73,
+  "total_wall_h": 1.19,
+  "fallbacks": {
+   "defensive_forced": 11059,
+   "not_move_selection": 1711,
+   "search_error": 25,
+   "root_failed": 148,
+   "prefix_gate_failed": 84
+  },
+  "rates": {
+   "forced": 0.7385,
+   "forced_wp": 0.7385,
+   "forced_n_legal": 0.0,
+   "raced": 0.2615,
+   "separated_of_raced": 0.1568,
+   "futility_of_raced": 0.8432,
+   "kept_of_raced": 0.0879,
+   "overrule_of_all": 0.018,
+   "overrule_of_raced": 0.069
+  },
+  "counts": {
+   "n_defensive": 14974,
+   "n_defensive_forced": 11059,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 11059,
+   "n_defensive_raced": 3915,
+   "n_defensive_separated": 614,
+   "n_defensive_overruled": 270,
+   "n_defensive_futility": 3301,
+   "n_defensive_kept": 344,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_confirm_declined": 0,
+   "defensive_banked_s": 11536.88
+  },
+  "race": {
+   "raced": 3915,
+   "rounds_total": 18027,
+   "rounds_per_race": 4.605,
+   "seq_floor": 5,
+   "eliminated_per_race": 2.527,
+   "arms_saved_total": 6973,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 3301,
+   "mean_search_s_per_raced_decision": 0.8969
+  },
+  "banked": {
+   "total_s": 11536.88,
+   "per_decision_s": 0.7705,
+   "per_game_s": 28.842,
+   "of_notional_budget": 0.7705
+  }
+ },
+ "historical": {
+  "mirror_base": {
+   "what": "the policy alone \u2014 the control; 0.500 by construction",
+   "path": "tmp/search_dividend/mirror_base.jsonl",
+   "budget_s": 0.0,
+   "arm": "base",
+   "orientation_games": 60,
+   "finished": 60,
+   "decisive": 60,
+   "won": 30,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.5,
+   "ci95": [
+    0.3773,
+    0.6227
+   ],
+   "paired_win_rate": 0.5,
+   "paired_ci95": [
+    0.5,
+    0.5
+   ],
+   "n_pairs": 30,
+   "decisions": 2534,
+   "searched": 0,
+   "changed": 0,
+   "searched_frac": 0.0,
+   "change_rate": null,
+   "mean_wall_s": 5.07
+  },
+  "mirror_honest_1s": {
+   "what": "THE PRIMARY BAR: plain depth-1 grid search, belief-determinized, 1 s/decision",
+   "path": "tmp/search_dividend/mirror_honest_1s.jsonl",
+   "budget_s": 1.0,
+   "arm": "honest",
+   "orientation_games": 240,
+   "finished": 240,
+   "decisive": 239,
+   "won": 70,
+   "ties": 1,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.2929,
+   "ci95": [
+    0.2388,
+    0.3535
+   ],
+   "paired_win_rate": 0.2938,
+   "paired_ci95": [
+    0.2353,
+    0.3522
+   ],
+   "n_pairs": 120,
+   "decisions": 9166,
+   "searched": 7929,
+   "changed": 4842,
+   "searched_frac": 0.865,
+   "change_rate": 0.6107,
+   "mean_wall_s": 26.17
+  },
+  "mirror_honest_3s": {
+   "what": "the same at 3 s",
+   "path": "tmp/search_dividend/mirror_honest_3s.jsonl",
+   "budget_s": 3.0,
+   "arm": "honest",
+   "orientation_games": 80,
+   "finished": 79,
+   "decisive": 78,
+   "won": 21,
+   "ties": 1,
+   "errors": 1,
+   "unfinished": 1,
+   "win_rate": 0.2692,
+   "ci95": [
+    0.1834,
+    0.3768
+   ],
+   "paired_win_rate": 0.2756,
+   "paired_ci95": [
+    0.1825,
+    0.3688
+   ],
+   "n_pairs": 39,
+   "decisions": 3047,
+   "searched": 2600,
+   "changed": 1660,
+   "searched_frac": 0.8533,
+   "change_rate": 0.6385,
+   "mean_wall_s": 78.76
+  },
+  "mirror_oracle_1s": {
+   "what": "grid search on the TRUE hidden team, 1 s",
+   "path": "tmp/search_dividend/mirror_oracle_1s.jsonl",
+   "budget_s": 1.0,
+   "arm": "oracle",
+   "orientation_games": 120,
+   "finished": 120,
+   "decisive": 118,
+   "won": 38,
+   "ties": 2,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.322,
+   "ci95": [
+    0.2445,
+    0.4108
+   ],
+   "paired_win_rate": 0.325,
+   "paired_ci95": [
+    0.2346,
+    0.4154
+   ],
+   "n_pairs": 60,
+   "decisions": 4769,
+   "searched": 4166,
+   "changed": 2661,
+   "searched_frac": 0.8736,
+   "change_rate": 0.6387,
+   "mean_wall_s": 33.62
+  },
+  "mirror_oracle_3s": {
+   "what": "...at 3 s",
+   "path": "tmp/search_dividend/mirror_oracle_3s.jsonl",
+   "budget_s": 3.0,
+   "arm": "oracle",
+   "orientation_games": 80,
+   "finished": 78,
+   "decisive": 78,
+   "won": 34,
+   "ties": 0,
+   "errors": 2,
+   "unfinished": 2,
+   "win_rate": 0.4359,
+   "ci95": [
+    0.3314,
+    0.5464
+   ],
+   "paired_win_rate": 0.4342,
+   "paired_ci95": [
+    0.3223,
+    0.5461
+   ],
+   "n_pairs": 38,
+   "decisions": 3061,
+   "searched": 2685,
+   "changed": 1616,
+   "searched_frac": 0.8772,
+   "change_rate": 0.6019,
+   "mean_wall_s": 76.88
+  },
+  "playoff_10s": {
+   "what": "the screen + paired terminal rollouts at 20 s \u2014 the only historical arm that did not lose",
+   "path": "tmp/search_dividend/playoff_10s.jsonl",
+   "budget_s": 20.0,
+   "arm": "playoff",
+   "orientation_games": 80,
+   "finished": 80,
+   "decisive": 80,
+   "won": 36,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.45,
+   "ci95": [
+    0.3458,
+    0.5588
+   ],
+   "paired_win_rate": 0.45,
+   "paired_ci95": [
+    0.3731,
+    0.5269
+   ],
+   "n_pairs": 40,
+   "decisions": 3361,
+   "searched": 487,
+   "changed": 36,
+   "searched_frac": 0.1449,
+   "change_rate": 0.0739,
+   "mean_wall_s": 411.36
+  }
+ },
+ "comparisons": {
+  "vs_honest_1s_unpaired": {
+   "delta": 0.2008,
+   "ci95": [
+    0.1229,
+    0.2738
+   ],
+   "excludes_zero": true
+  },
+  "vs_honest_1s_paired_on_game": {
+   "n_shared_games": 120,
+   "delta": 0.2167,
+   "ci95": [
+    0.1393,
+    0.294
+   ],
+   "excludes_zero": true,
+   "note": "both cells ran at --games-seed 7 off the same checkpoint, so game g is the same pinned dice and the same team draw in both arms"
+  }
+ },
+ "bars": {
+  "primary": {
+   "registered": "DEFENSIVE decisively above the historical honest_1s mirror arm (0.292) with its CI reaching 0.50 \u2014 'search stops losing'",
+   "above_honest_1s": true,
+   "ci_reaches_null": true,
+   "paired_ci_reaches_null": true
+  },
+  "stretch": {
+   "registered": "CI above 0.50 \u2014 'search finally pays'",
+   "unpaired_ci_above_null": false,
+   "paired_ci_above_null": false
+  },
+  "prediction_overrule_rate": {
+   "registered": [
+    0.08,
+    0.17
+   ],
+   "measured_of_all_decisions": 0.018,
+   "measured_of_raced": 0.069,
+   "in_range": false
+  }
+ }
+}
