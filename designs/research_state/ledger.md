@@ -6428,3 +6428,36 @@ world leans on the head hardest at its historically weakest point. If probe O co
 blind spot, the mitigation is a HEAD fix (stall-tail labels from the factory — outcome-unit,
 theoretically clean) before any bias term is considered — the repair stays inside the clean
 worldview.
+
+### 🟡 PROBE O VERDICT: the clock fix HELD (81%→22% over seven generations) — but 35% of cap tails still read hopeful, and the exposure is CONDITIONAL (2026-08-29 late)
+
+Record `designs/research_state/measurements/stall_tail_head_reading_2026-08-29.md` (landed
+f0533d8; model-free, recorded values only, 2,350 clock-era games; every headline reported both
+run-clustered-bootstrap AND per-run-differences per the Simpson discipline — all four SIG
+results agree). **P1 CONFIRMED both halves:** positive-V-at-final-decision on cap losses fell
+**81.2% pre-clock → 22.2% post-clock** (the 13/14 hand count reproduces at 84.9% n=93; the
+break sits exactly at the clock boundary; held seven generations) — AND residual: **34.8% of
+cap tails end φ_T ≥ 0.5 on games that lose by construction** (4.3× the regular-loss rate;
+4.4% ≥ 0.98; worst specimen: φ 0.999 held five straight decisions into a −30 forfeit with
+V=+14.16). LONG_WIN at 0.986 proves it is not a length effect. **P2 SPLIT, scored as
+registered: fails by the letter** (the composite criterion's "declining" half saturates in
+every class — a criterion defect, noted) **passes by the substance** (φ_T ≤ 0.5: 0.652 vs
+0.908, −0.256 [−0.315,−0.185]). Historical delta: decisively better than the 13/14 era;
+**vs C3, the clock era is the FIRST where caps are distinctively worse than their own era's
+regular losses** (1.25× vs pre-clock's 0.81×). Bonus closure: **gen14_endofrun_runbook §(c)
+CLOSED via its own sanctioned route** (n=134/23 runs, all three deltas SIG). Finding from an
+EMPTY pre-registered class: non-capping stall losses have ZERO members — stall pattern ≡ cap
+ending in this population (81.5% of caps have zero-faint tails vs 0.0% of long non-cap
+losses). **CLEAN-WORLD IMPLICATION: the escalation trigger is NOT fired and the no-bias launch
+STANDS** — the exposure is conditional (65% of tails read correctly; a flat bias would tax the
+correct majority to reach the 35%), supporting the registered head-fix-before-bias ordering.
+Caveats: current-arch caps are n=14 (thin, no verdict — consistent with the pool); the traced
+cap fraction is quota-sampled and must NEVER be quoted as a stall-rate baseline for the
+escalation trigger. **THE DISCRIMINATING FOLLOW-UP, registered NOT dispatched:** is the φ≥0.98
+tail REDUCIBLE? The runbook already measured stall states at **14× over-exposure in training**
+— so if the head is still wrong there, the defect is REPRESENTATIONAL (obs/feature gap), not
+data quantity, and factory labels alone won't fix it. The test = offline probe decodability
+(obs → cap-doom) on the over-confident subset specifically — but the subset is ~47 games
+across mixed archs: UNDERPOWERED today. Prerequisite: purpose-harvested cap games at scale
+(bridge self-play, cheap CPU) before the probe is worth running — queued as the head-fix
+program's first step.
