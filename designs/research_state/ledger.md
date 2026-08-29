@@ -6033,3 +6033,28 @@ registered: the SCAFFOLDING GAUGE** — divergence between V-implied outcome and
 head across states; should shrink with maturity, and its trajectory is the signal for when
 shaping coefficients can begin annealing toward the pure game. Cheap to compute from existing
 traces; a candidate TB scalar for the optimization era.
+
+### 🔭 PROBE L DISPATCHED — does the WIN-PROB HEAD already know about the whiffs? (owner question, 2026-08-29) + two verified corrections
+
+**Corrections banked from the live docs first:** (1) there are TWO α/β pairs — the
+opponent-intent `alpha_head`/`beta_head` (α = stop-grad softmax over opponent MOVES feeding
+every Σα·f op reduction + search α-pruning; β = switch-target companion) and the
+**`CfEvidentialHead` Beta(α,β) confession head** on win probability (softplus+1 ⇒ α,β≥1
+unimodal; mean α/(α+β); α+β = EVIDENCE; Beta(1,1) = reachable honest ignorance;
+ALWAYS-DETACHED by design — a confession must not influence the confessor; built customer =
+the label factory's priority sampler). (2) **The main win-prob head is NOT detached**:
+`win_prob_mode="shaping"` coef 0.05 is ACTIVE in the gen-17 base — gen-12's plan shipped; the
+critic-rank question is now a DOSE question, not an attach question. Empowerment program
+amended: audit the Beta head's evidence output as the racing-threshold input BEFORE building
+checkpoint ensembles. **PROBE L (dispatched): the whiff × head-knowledge cross-tab.** On
+recorded battles, join the prober's model-free bait-loop/whiff census (immune-move clicks
+against pivots, raw-protocol) with the model's own reads at those decisions: did α predict the
+switch, and did the one-ply WIN-PROB ranking prefer a non-whiff action AT DECISION TIME (not
+just confess the drop after)? **Registered predictions:** per the bait verdict (credit
+CONVICTED, punishment null), the head KNOWS — ≥60% of immune-whiff decisions have the win-prob
+ranking preferring an alternative at decision time with real margin; α flags the pivot on a
+majority. **Decision rule:** head-knows + policy-ignores ⇒ the sanctioned lever is
+DISTILLATION-SHAPED — self-distill from the head's own ranking on high-confidence
+disagreements (the defensive-search overrule mechanism recast as a training signal), and/or a
+shaping-dose ladder above 0.05; head-doesn't-know ⇒ the gap is obs/coverage (the old
+incoming-damage under-read family) and shaping cannot help until the head is fixed.
