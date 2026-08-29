@@ -5908,3 +5908,30 @@ UNCHANGED; n=800 pairs for stretch resolution (paired CI ~±0.025). Registered p
 separated-of-raced rises from 0.157 toward I's ~0.48 ceiling; overrules 1.8% → 6–12%; win rate
 ≥ iteration 1 (no regression is the primary bar); STRETCH resolves only if true rate ≥~0.525 —
 stated in advance so a 0.51 result is read as "real but unresolved", not failure.**
+
+### 🔴 DEFENSIVE SEARCH ITER 2: the mechanism moved EXACTLY to spec and the dividend is ZERO — the LEAF is convicted (2026-08-29)
+
+Record `designs/research_state/measurements/defensive_search_iter2_2026-08-29.md` (landed
+934fb20+c3b6fb0; 1600 games / 800 pairs, zero errors, first 400 seed-identical to iter 1;
+paired CI ±0.020). **Win rate 0.5003 [0.4803, 0.5203] — the point estimate IS the null.**
+No-regression HELD (vs iter 1 on 200 shared seeds: −0.0037 [−0.051,+0.043]); stretch REFUTED
+at resolving width (not the pre-stated grey zone). **The mechanism did everything asked:**
+separated-of-raced 0.157→0.4542 (95% of probe I's ceiling), overrules 1.8%→5.82% (3,531,
+13×), rounds/race 4.61→13.17, genuine-vs-deadline futility now counted (6 vs 8,223), envelope
+verified (21.5 search-s/game inside the 37.9s notional, 43% still banked). **The finding:
+13× more evidence-certified overrules moved the win rate onto the null EXACTLY — the leaf,
+not the allocator, is why search doesn't pay.** Both of iter 1's candidate next moves were one
+lever; it is now measured at zero. **Mechanism analysis banked: the WINNER'S CURSE of a biased
+instrument** — CRN pairing removes dice noise and the shared offset, so what racing CERTIFIES
+is the leaf's residual DIFFERENTIAL bias (RMS 0.122, larger than most true gaps) as much as
+signal; statistical separation of a biased reader is not correctness. And probe G's own caveat
+now reads as prophecy: its +2.2pp win-prob-head edge was measured under a FROZEN opponent —
+the axis that is NOT dominant — and may not survive opponent response. **TWO DISPATCHES:
+(J) ITER 3 = enable the built `--defensive-confirm` (top-2 paired ROLLOUT confirmation before
+any overrule — rollouts contain the opponent response the one-ply leaf lacks; the playoff
+mechanism, the only historically non-losing arm). Registered: overrules fall to ~1.5–3.5%
+(many certifications fail confirmation), win ≥ 0.50 no-regression, stretch same rule.
+(K) DIAGNOSIS = re-evaluate iter 2's 3,531 recorded overrules under opponent-MARGINALIZED
+paired rollouts: what fraction were leaf-bias artifacts vs real-but-canceling — decides
+whether the +2.2pp was a frozen-opponent artifact and whether contrastive training (G's
+sized ≤5.7pp lever) is worth its GPU.** Quota within the 50% authorization.
