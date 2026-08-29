@@ -1,0 +1,501 @@
+{
+ "date": "2026-08-29",
+ "iteration": 2,
+ "one_change": "--defensive-contested-deadline-s 3.0 \u2014 a decision that PASSES the triage gate is granted 3 s instead of the uniform --budget of 1 s. Gate threshold 0.15, seq rule, elimination floor 5, win-prob leaf, depth 1, confirm 0, max_rounds supply 64: ALL UNCHANGED.",
+ "checkpoint": "models/ai_v9_29_rev1_0823/checkpoints/checkpoint_9995088_steps.zip (the SAME checkpoint iteration 1 and the historical mirror arms played)",
+ "invocation": "python -m main.search_dividend <ckpt> --arm honest --budget 1 --root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 0 --defensive-contested-deadline-s 3.0 --games-start <lo> --games <n> --games-seed 7 --opponents self --battle-timeout-s 1800 --battle-idle-s 120",
+ "shards": {
+  "shardA.jsonl": {
+   "orientation_games": 534,
+   "game_index_range": [
+    0,
+    266
+   ]
+  },
+  "shardB.jsonl": {
+   "orientation_games": 534,
+   "game_index_range": [
+    267,
+    533
+   ]
+  },
+  "shardC.jsonl": {
+   "orientation_games": 532,
+   "game_index_range": [
+    534,
+    799
+   ]
+  }
+ },
+ "null": 0.5,
+ "arm": {
+  "label": "defensive_1s_contested3s",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "contested_deadline_s": 3.0,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 1600,
+  "finished": 1600,
+  "decisive": 1591,
+  "won": 796,
+  "ties": 9,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.5003,
+  "ci95": [
+   0.4758,
+   0.5249
+  ],
+  "paired_win_rate": 0.5003,
+  "paired_ci95": [
+   0.4803,
+   0.5203
+  ],
+  "paired_ci_halfwidth": 0.02,
+  "n_pairs": 800,
+  "decisions": 68585,
+  "searched": 15076,
+  "changed": 3531,
+  "searched_frac": 0.2198,
+  "change_rate": 0.2342,
+  "fallbacks": {
+   "defensive_forced": 45586,
+   "not_move_selection": 6812,
+   "search_error": 81,
+   "root_failed": 473,
+   "prefix_gate_failed": 556,
+   "no_scored_arm": 1
+  },
+  "rates": {
+   "forced": 0.7515,
+   "forced_wp": 0.7515,
+   "forced_n_legal": 0.0,
+   "raced": 0.2485,
+   "separated_of_raced": 0.4542,
+   "futility_of_raced": 0.5458,
+   "kept_of_raced": 0.22,
+   "overrule_of_all": 0.0582,
+   "overrule_of_raced": 0.2342,
+   "futility_deadline_frac": 0.9993
+  },
+  "counts": {
+   "n_defensive": 60662,
+   "n_defensive_confirm_declined": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_forced": 45586,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 45586,
+   "n_defensive_futility": 8229,
+   "n_defensive_futility_deadline": 8223,
+   "n_defensive_kept": 3316,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 3531,
+   "n_defensive_raced": 15076,
+   "n_defensive_separated": 6847,
+   "defensive_banked_s": 56715.56
+  },
+  "futility_split": {
+   "total": 8229,
+   "deadline_truncated": 8223,
+   "genuine_non_separation": 6,
+   "note": "iteration-1 rows predate the counter, so `deadline_truncated` is None there rather than 0 \u2014 the record states it was 100% by the exact identity futility == deadline_truncated over its 3,301 stops"
+  },
+  "race": {
+   "raced": 15076,
+   "rounds_total": 198615,
+   "rounds_per_race": 13.174,
+   "seq_floor": 5,
+   "max_rounds_supply": 64,
+   "eliminated_per_race": 5.347,
+   "arms_saved_total": 630394,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 8223,
+   "mean_search_s_per_raced_decision": 2.2776
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 24.44,
+   "total_wall_h": 10.86,
+   "search_s_per_game": 21.46,
+   "contested_decisions_per_game": 9.42,
+   "uniform_notional_s_per_game": 37.91,
+   "inside_uniform_notional": true,
+   "banked_vs_uniform_s_per_game": 16.45,
+   "banked_frac_of_uniform": 0.434
+  },
+  "banked": {
+   "total_s": 56715.56,
+   "per_decision_s": 0.9349,
+   "per_game_s": 35.447,
+   "of_notional_budget": 0.9349,
+   "caveat": "the RAW counter, mixing scales once the contested deadline differs from --budget: a forced decision banks --budget while a raced one banks the residual of its own (larger) deadline. Quote envelope.banked_frac_of_uniform instead, which is derived from measured SPEND on one scale."
+  }
+ },
+ "iteration1": {
+  "label": "defensive_1s (iteration 1)",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "contested_deadline_s": null,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 400,
+  "finished": 400,
+  "decisive": 397,
+  "won": 196,
+  "ties": 3,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.4937,
+  "ci95": [
+   0.4448,
+   0.5427
+  ],
+  "paired_win_rate": 0.4938,
+  "paired_ci95": [
+   0.4586,
+   0.5289
+  ],
+  "paired_ci_halfwidth": 0.0352,
+  "n_pairs": 200,
+  "decisions": 16942,
+  "searched": 3915,
+  "changed": 270,
+  "searched_frac": 0.2311,
+  "change_rate": 0.069,
+  "fallbacks": {
+   "defensive_forced": 11059,
+   "not_move_selection": 1711,
+   "search_error": 25,
+   "root_failed": 148,
+   "prefix_gate_failed": 84
+  },
+  "rates": {
+   "forced": 0.7385,
+   "forced_wp": 0.7385,
+   "forced_n_legal": 0.0,
+   "raced": 0.2615,
+   "separated_of_raced": 0.1568,
+   "futility_of_raced": 0.8432,
+   "kept_of_raced": 0.0879,
+   "overrule_of_all": 0.018,
+   "overrule_of_raced": 0.069,
+   "futility_deadline_frac": null
+  },
+  "counts": {
+   "n_defensive": 14974,
+   "n_defensive_confirm_declined": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_forced": 11059,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 11059,
+   "n_defensive_futility": 3301,
+   "n_defensive_kept": 344,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 270,
+   "n_defensive_raced": 3915,
+   "n_defensive_separated": 614,
+   "defensive_banked_s": 11536.88
+  },
+  "futility_split": {
+   "total": 3301,
+   "deadline_truncated": null,
+   "genuine_non_separation": null,
+   "note": "iteration-1 rows predate the counter, so `deadline_truncated` is None there rather than 0 \u2014 the record states it was 100% by the exact identity futility == deadline_truncated over its 3,301 stops"
+  },
+  "race": {
+   "raced": 3915,
+   "rounds_total": 18027,
+   "rounds_per_race": 4.605,
+   "seq_floor": 5,
+   "max_rounds_supply": 64,
+   "eliminated_per_race": 2.527,
+   "arms_saved_total": 6973,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 3301,
+   "mean_search_s_per_raced_decision": 0.8969
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 10.73,
+   "total_wall_h": 1.19,
+   "search_s_per_game": 8.78,
+   "contested_decisions_per_game": 9.79,
+   "uniform_notional_s_per_game": 37.44,
+   "inside_uniform_notional": true,
+   "banked_vs_uniform_s_per_game": 28.66,
+   "banked_frac_of_uniform": 0.7655
+  },
+  "banked": {
+   "total_s": 11536.88,
+   "per_decision_s": 0.7705,
+   "per_game_s": 28.842,
+   "of_notional_budget": 0.7705,
+   "caveat": "the RAW counter, mixing scales once the contested deadline differs from --budget: a forced decision banks --budget while a raced one banks the residual of its own (larger) deadline. Quote envelope.banked_frac_of_uniform instead, which is derived from measured SPEND on one scale."
+  }
+ },
+ "historical": {
+  "mirror_base": {
+   "what": "the policy alone \u2014 the control; 0.500 by construction",
+   "path": "tmp/search_dividend/mirror_base.jsonl",
+   "budget_s": 0.0,
+   "arm": "base",
+   "orientation_games": 60,
+   "finished": 60,
+   "decisive": 60,
+   "won": 30,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.5,
+   "ci95": [
+    0.3773,
+    0.6227
+   ],
+   "paired_win_rate": 0.5,
+   "paired_ci95": [
+    0.5,
+    0.5
+   ],
+   "n_pairs": 30,
+   "decisions": 2534,
+   "searched": 0,
+   "changed": 0,
+   "searched_frac": 0.0,
+   "change_rate": null,
+   "mean_wall_s": 5.07
+  },
+  "mirror_honest_1s": {
+   "what": "THE HISTORICAL BAR: plain depth-1 grid search, belief-determinized, 1 s/decision",
+   "path": "tmp/search_dividend/mirror_honest_1s.jsonl",
+   "budget_s": 1.0,
+   "arm": "honest",
+   "orientation_games": 240,
+   "finished": 240,
+   "decisive": 239,
+   "won": 70,
+   "ties": 1,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.2929,
+   "ci95": [
+    0.2388,
+    0.3535
+   ],
+   "paired_win_rate": 0.2938,
+   "paired_ci95": [
+    0.2353,
+    0.3522
+   ],
+   "n_pairs": 120,
+   "decisions": 9166,
+   "searched": 7929,
+   "changed": 4842,
+   "searched_frac": 0.865,
+   "change_rate": 0.6107,
+   "mean_wall_s": 26.17
+  },
+  "mirror_honest_3s": {
+   "what": "the same at a UNIFORM 3 s \u2014 the arm that says the deadline alone is not the mechanism",
+   "path": "tmp/search_dividend/mirror_honest_3s.jsonl",
+   "budget_s": 3.0,
+   "arm": "honest",
+   "orientation_games": 80,
+   "finished": 79,
+   "decisive": 78,
+   "won": 21,
+   "ties": 1,
+   "errors": 1,
+   "unfinished": 1,
+   "win_rate": 0.2692,
+   "ci95": [
+    0.1834,
+    0.3768
+   ],
+   "paired_win_rate": 0.2756,
+   "paired_ci95": [
+    0.1825,
+    0.3688
+   ],
+   "n_pairs": 39,
+   "decisions": 3047,
+   "searched": 2600,
+   "changed": 1660,
+   "searched_frac": 0.8533,
+   "change_rate": 0.6385,
+   "mean_wall_s": 78.76
+  },
+  "mirror_oracle_1s": {
+   "what": "grid search on the TRUE hidden team, 1 s",
+   "path": "tmp/search_dividend/mirror_oracle_1s.jsonl",
+   "budget_s": 1.0,
+   "arm": "oracle",
+   "orientation_games": 120,
+   "finished": 120,
+   "decisive": 118,
+   "won": 38,
+   "ties": 2,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.322,
+   "ci95": [
+    0.2445,
+    0.4108
+   ],
+   "paired_win_rate": 0.325,
+   "paired_ci95": [
+    0.2346,
+    0.4154
+   ],
+   "n_pairs": 60,
+   "decisions": 4769,
+   "searched": 4166,
+   "changed": 2661,
+   "searched_frac": 0.8736,
+   "change_rate": 0.6387,
+   "mean_wall_s": 33.62
+  },
+  "mirror_oracle_3s": {
+   "what": "...at 3 s",
+   "path": "tmp/search_dividend/mirror_oracle_3s.jsonl",
+   "budget_s": 3.0,
+   "arm": "oracle",
+   "orientation_games": 80,
+   "finished": 78,
+   "decisive": 78,
+   "won": 34,
+   "ties": 0,
+   "errors": 2,
+   "unfinished": 2,
+   "win_rate": 0.4359,
+   "ci95": [
+    0.3314,
+    0.5464
+   ],
+   "paired_win_rate": 0.4342,
+   "paired_ci95": [
+    0.3223,
+    0.5461
+   ],
+   "n_pairs": 38,
+   "decisions": 3061,
+   "searched": 2685,
+   "changed": 1616,
+   "searched_frac": 0.8772,
+   "change_rate": 0.6019,
+   "mean_wall_s": 76.88
+  },
+  "playoff_10s": {
+   "what": "the screen + paired terminal rollouts at 20 s \u2014 the best prior arm",
+   "path": "tmp/search_dividend/playoff_10s.jsonl",
+   "budget_s": 20.0,
+   "arm": "playoff",
+   "orientation_games": 80,
+   "finished": 80,
+   "decisive": 80,
+   "won": 36,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.45,
+   "ci95": [
+    0.3458,
+    0.5588
+   ],
+   "paired_win_rate": 0.45,
+   "paired_ci95": [
+    0.3731,
+    0.5269
+   ],
+   "n_pairs": 40,
+   "decisions": 3361,
+   "searched": 487,
+   "changed": 36,
+   "searched_frac": 0.1449,
+   "change_rate": 0.0739,
+   "mean_wall_s": 411.36
+  }
+ },
+ "comparisons": {
+  "vs_honest_1s_unpaired": {
+   "delta": 0.2074,
+   "ci95": [
+    0.142,
+    0.2668
+   ],
+   "excludes_zero": true
+  },
+  "vs_honest_1s_paired_on_game": {
+   "n_shared_games": 120,
+   "delta": 0.1938,
+   "ci95": [
+    0.1063,
+    0.2812
+   ],
+   "excludes_zero": true,
+   "note": "both cells ran at --games-seed 7 off the same checkpoint, so game g is the same pinned dice and the same team draw in both arms"
+  },
+  "vs_iteration1_unpaired": {
+   "delta": 0.0066,
+   "ci95": [
+    -0.0482,
+    0.0613
+   ],
+   "excludes_zero": false
+  },
+  "vs_iteration1_paired_on_game": {
+   "n_shared_games": 200,
+   "delta": -0.0037,
+   "ci95": [
+    -0.0505,
+    0.043
+   ],
+   "excludes_zero": false,
+   "note": "THE REGISTERED NO-REGRESSION ROW: the two cells differ in exactly one flag (--defensive-contested-deadline-s), and on the shared indices they are the same pinned dice and the same team draw"
+  }
+ },
+ "bars": {
+  "primary_no_regression": {
+   "registered": "win rate >= iteration 1 (NO REGRESSION is the primary bar)",
+   "iteration1_paired": 0.4938,
+   "iteration2_paired": 0.5003,
+   "paired_delta_on_shared_games": -0.0037,
+   "held": true,
+   "held_within_ci": true
+  },
+  "stretch_ci_above_null": {
+   "registered": "paired CI above 0.50 \u2014 resolves only if the true rate is >= ~0.525; a 0.51-ish point estimate is 'real but unresolved', PRE-STATED",
+   "paired_win_rate": 0.5003,
+   "paired_ci95": [
+    0.4803,
+    0.5203
+   ],
+   "paired_ci_above_null": false,
+   "unpaired_ci_above_null": false,
+   "resolvable_at_this_n": "a true rate >= 0.52 would have cleared 0.50 at this n"
+  },
+  "prediction_separated_of_raced": {
+   "registered": "rises from 0.157 toward probe I's ~0.48 ceiling",
+   "iteration1": 0.1568,
+   "iteration2": 0.4542,
+   "probe_i_ceiling": 0.478,
+   "held": true
+  },
+  "prediction_overrule_rate": {
+   "registered": [
+    0.06,
+    0.12
+   ],
+   "iteration1": 0.018,
+   "iteration2": 0.0582,
+   "in_range": false
+  },
+  "envelope_claim": {
+   "registered": "~11 contested/game x 3 s ~ 33 s/game stays inside the same total-time envelope the uniform-1s notional implies (~42 s) \u2014 reported so the claim is checked, not assumed",
+   "contested_decisions_per_game": 9.42,
+   "search_s_per_game": 21.46,
+   "uniform_notional_s_per_game": 37.91,
+   "inside_uniform_notional": true,
+   "still_banked_frac": 0.434,
+   "iteration1_banked_frac": 0.7655
+  }
+ }
+}
