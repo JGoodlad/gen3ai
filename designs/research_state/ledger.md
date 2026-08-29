@@ -6213,3 +6213,19 @@ distinct per iter-2's lesson: amortization residual (predictive) vs behavioral d
 (realized; the transfer cell measures it now). Caution of record: ground truth is Q under the
 CURRENT policy's continuation — label freshness discipline required (#28's dedup/expiry
 decisions cover the class). Era placement: ai_v12; nothing built beyond what is landed.
+
+### 📖 VALUE-FOUNDATIONS ADDENDUM (owner question, 2026-08-29 late) — the critic is PLUMBING, and its demotion is the design
+
+Owner: "why is a value function in reward units even useful — is it a second-tier citizen?"
+Banked framing (completes 596608e/b070d6e): **the critic holds no knowledge; its entire job is
+policy-gradient VARIANCE REDUCTION** (A = R − V(s)); its predictive accuracy buys learning
+speed, never wisdom. Reward units are an ACCOUNTING IDENTITY, not a preference — GAE's
+R + γV(s′) − V(s) cannot mix currencies, so shaping ⇒ shaped critic. AlphaGo's V ≡ P(win)
+because it didn't shape: a different REWARD choice, same law. Precise seniority statement:
+**epistemically second-tier BY DESIGN (V = the shadow of the training wheels, exactly as
+important as shaping itself), operationally first-tier BY NECESSITY** (the gradient engine
+runs on it). The managed demotion is instrumented: the SCAFFOLDING GAUGE measures V's residual
+distinct content; PBRS-φ inverts seniority the day it ships (the win-prob head writes the
+reward, V becomes its accountant); the annealed endpoint is the AlphaZero configuration —
+one outcome-grounded critic. FP&A-vs-market analogy of record: internal-metrics accounting,
+indispensable while young, designed to merge into outcome units at maturity.
