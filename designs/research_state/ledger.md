@@ -6058,3 +6058,25 @@ DISTILLATION-SHAPED — self-distill from the head's own ranking on high-confide
 disagreements (the defensive-search overrule mechanism recast as a training signal), and/or a
 shaping-dose ladder above 0.05; head-doesn't-know ⇒ the gap is obs/coverage (the old
 incoming-damage under-read family) and shaping cannot help until the head is fixed.
+
+### 📐 CORRECTION + the BAROMETER/COACH distinction (owner exchange, 2026-08-29) — two "shapings" were conflated; only one is live and it carries no behavioral force
+
+Owner's argument, CONFIRMED and banked: the ACTIVE `win_prob_mode="shaping"` @0.05 is
+REPRESENTATION shaping — the BCE-on-terminal-outcome loss pushes outcome-predictive features
+into the shared trunk, but exerts ZERO force on behavior (no gradient path from predict-wins to
+choose-winning-actions; a feature SUBSIDY in the UNREAL sense — available to every head,
+compelled on none; V compresses to its own target regardless, hence the 7× critic-rank steady
+state). Sharpened: the head is a BAROMETER, not a COACH — its labels are self-referential
+(outcomes under the CURRENT policy), so habitual whiffs that still win 55% teach it "55%",
+never "the whiff was the mistake"; action-level badness needs a counterfactual contrast the
+state label lacks (the one-ply successor read is what manufactures it for search). **THE
+CORRECTION (to 596608e's foundations ruling): gen-12 exonerated the REPRESENTATION mode — that
+is what shipped and is live. Reward-level PBRS with φ(s)=P(win) as the potential is a DISTINCT,
+UNSANCTIONED proposal** — promising (it is the only route that converts the post-whiff
+probability drop into literal reward the policy gradient must answer for), but it needs its own
+registration + arm; do not quote it as adjudicated. Consequence for the standing puzzle:
+"shaping is live yet the bait loops persist" was never a dose mystery — the live mode was never
+pointed at behavior. The three force-carrying routes, for the record: reward-level PBRS-φ
+(unsanctioned, register before running), target-level distillation from the head's one-ply
+ranking (bait-sanctioned lever shape; probe L's decision rule), inference-level defensive-search
+overrules (validated). Probe L's shaping-accounting row should be read against THIS framing.
