@@ -5993,3 +5993,21 @@ FitNets history). **(4) RE-AUDIT v29** (the existing calibrated distributional v
 SEARCH-uncertainty source before building new machinery — its "not a training lever" verdict
 never tested this job. Sequencing: nothing dispatched until iter 3 + probe K land (hours) —
 K's labels are also (2)'s validation set, so waiting buys the ground truth.
+
+### 🔄 PROBE K (via iter-2 relay, provisional pending K's own report): the LEAF IS PARTIALLY EXONERATED — the zero is a per-decision→per-episode TRANSFER failure (2026-08-29)
+
+K's essentials, relayed: iter-2's overrule population re-judged under marginalized ground truth
+shows **+0.0474 [+0.0216,+0.0730] per-decision gain — REAL**, and G's +2.2pp was NOT a
+frozen-opponent artifact (paired diff +0.0062 n.s.). Iter-2's game-level zero stands as fact,
+but its ATTRIBUTION to the leaf does not: +4.7pp × ~2.2 overrules/game bought +0.0003 —
+a >2×-CI disagreement between two sound measurements. Iter-2's agent, correctly, is NOT
+retro-editing its committed record (append-only honored; K's record carries the correction).
+**Three suspects, K's caveats: checkpoint (mirror @~10M vs labels @24M), population (mirror
+twin vs eval roster), compounding (one-substitution Q^π assumes the POLICY plays on; live, the
+SEARCHER plays on).** **DISPATCHED — K's own §6 decisive test: the iter-2 configuration vs the
+EVAL ROSTER at step_24000000** — isolates the transfer coefficient. Registered readings: arm
+wins ≈ +ε·(overrules/game × per-decision gain) vs the no-search baseline ⇒ transfer is fine and
+the mirror/checkpoint was the confound (search pays off-mirror — the LADDER-relevant outcome);
+still ≈ 0 vs baseline ⇒ compounding/selection destroys per-decision gains in vivo and the
+confirm mechanism (iter 3, running) or overrule-rate throttling becomes the fix. Full K scoring
+lands when its own report arrives.
