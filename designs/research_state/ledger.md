@@ -6080,3 +6080,25 @@ pointed at behavior. The three force-carrying routes, for the record: reward-lev
 (unsanctioned, register before running), target-level distillation from the head's one-ply
 ranking (bait-sanctioned lever shape; probe L's decision rule), inference-level defensive-search
 overrules (validated). Probe L's shaping-accounting row should be read against THIS framing.
+
+### 🧩 THE THREE-ROUTE TAXONOMY crystallized (owner exchange, 2026-08-29) — suppress vs prescribe; route 3 feeds route 2
+
+Owner's mapping CONFIRMED and sharpened: route 1 (PBRS φ=P(win), reward-level, UNSANCTIONED)
+edits the RETURN stream — per-turn, game-unit-denominated credit repair working THROUGH the RL
+machinery; route 2 (ranking distillation, target-level, bait-sanctioned shape) edits the POLICY
+DISTRIBUTION directly at chosen states, bypassing credit entirely. "One's value, one's policy."
+Three asymmetries banked: **(1) SUPPRESS vs PRESCRIBE** — PBRS can punish a whiff without
+knowing the alternative (softmax renormalization redistributes the suppressed mass); distill
+can prescribe the alternative without carrying why. Complementary blindness, not mere
+alignment. **(2) generalization** — PBRS teaches the SHAPE of the lesson via the value pathway
+(transfers to unseen whiffs); distill teaches point-decisions (generalization = network
+interpolation). **(3) risk** — PBRS is protected by the telescoping invariance theorem
+(miscalibrated φ costs speed, not correctness; footnote: a LEARNED, drifting φ weakens exact to
+approximate invariance — name it in the arm design); distill has NO shield and imports the
+head's differential bias — the ITER-2 WINNER'S CURSE — so it carries the search program's
+discipline as a requirement: high-confidence disagreements clearing the noise floor,
+rollout-confirmed or marginalized-label-trained. **Route 3 amendment: not merely
+defense-in-depth — CONFIRMED overrules are route 2's highest-quality training targets** (the
+AlphaZero loop in miniature: search manufactures the curriculum). Pipeline of record when this
+program runs: 3 filters → 2 transplants → 1 repairs credit; arms to be designed and registered
+post-rev-3, PBRS-φ first needing its own sanction (per b070d6e).
