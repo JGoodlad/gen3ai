@@ -5702,3 +5702,28 @@ sweep + static gates green; CHANGELOG `gen3_signal_rate_metrics_v1` + training C
 (mirror-paradox 2×2, PopArt-units caveat, "tripwire — falsify-scan/cf_audit stay the gold
 standard"). Available to F6-LADDER and, if pulled+checkargs before freeze, the R3 arms —
 observability only, never worth delaying the freeze.
+
+### 🎯 TEACHER-AS-OPPONENT ANALYZED (owner question, 2026-08-28) — the fold currently SKIPS the population move; hole-persistence probe registered
+
+Owner: "does it help we use them as both the teacher and the opponent?" Fact of record: gen-era
+folds DO NOT (teachers are teacher-only; fdB ecology = stable opponents OFF); v8's folds DID
+(0.35 share). The two channels are distinct: **teacher-as-TEACHER transfers the exploit's
+OFFENSE** (pilot the teams better — what distillation moves); **teacher-as-OPPONENT patches the
+DEFENSE** (close the hole the exploiter found — PSRO's population move, and in the theory it is
+THE mechanism by which exploitability falls; distillation alone has no obvious reason to close
+the hole it teaches you to use). Prior evidence: the v8-era DOUBLE-SIDED recipe MEASURED both
+(offense held + defense recovered, "keep the teacher in the pool"); fdC's ecology-ON null and
+tick-1's inferiority both used STALE/undifferentiated teachers, so only the interaction with
+GOOD teachers survives (C5's caveat). RULINGS: (1) rev-3 stays frozen single-sided — no
+mid-flight design change. (2) **Rev-4 registered cell: DOUBLE-SIDED fold** (admitted teachers
+also in the opponent mix at ~0.2–0.35 share) vs single-sided, defense meter = the standardized
+best-response probe against each product (the exploitability-curve instrument from the PSRO
+note). (3) **HOLE-PERSISTENCE PROBE (registered now, data arrives with tomorrow's admission):**
+do the F6 exploiters (targeting R2-ACTION) exploit the SAME weaknesses the F5 fleet found in
+rev-1? Measurement: on shared slices, F6-vs-F5 action agreement/style fingerprint above the
+ancestry floor (the consistency tooling), plus whether F6 admission rows exceed the budget-law
+~+0.11 baseline. **Registered readings: same holes ⇒ single-sided folding patches NO defense —
+the strongest possible argument for the rev-4 double-sided cell; different holes ⇒ the fold
+(or continued training) closes holes as a side effect, and teacher-as-opponent is optional.**
+Confound named: the budget law predicts row SIZE from dose alone, so the discriminator is the
+fingerprint/agreement layer, not row size.
