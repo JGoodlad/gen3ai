@@ -6011,3 +6011,25 @@ the mirror/checkpoint was the confound (search pays off-mirror — the LADDER-re
 still ≈ 0 vs baseline ⇒ compounding/selection destroys per-decision gains in vivo and the
 confirm mechanism (iter 3, running) or overrule-rate throttling becomes the fix. Full K scoring
 lands when its own report arrives.
+
+### ⚖️ VALUE-FUNCTION FOUNDATIONS RULING (owner question, 2026-08-29) — the bootstrap pick was RIGHT; two jobs, two instruments; the blend is PBRS
+
+Owner asked whether the value-function design should be re-evaluated ("I just picked something
+to bootstrap"). Ruling banked: **(1) the shaped-return critic is DEFINITIONALLY CORRECT for its
+job** — GAE advantages must be estimated in the units of the reward stream being optimized;
+given shaped rewards, no other critic is legal. **(2) The win-prob head is the correct GAME
+VALUE** — outcome units, no discount distortion (γ makes V prefer near wins over distant
+certain ones), no PopArt drift; the two-head structure is the automatic CONSEQUENCE of choosing
+shaped rewards (the right bootstrap call; industry-standard for sparse hard-credit games), not
+a design accident to repair. The only error was the battery using instrument A for job B —
+found (probe G) and fixed. **(3) BLEND AT THE REWARD LEVEL, not the head level**: φ(s)=P(win|s)
+as a PBRS potential — policy-invariant by the telescoping argument, and ALREADY SANCTIONED
+(gen-12: win-prob shaping exonerated @0.05, never yet shipped) — creates the virtuous loop
+(better head → better shaping → better policy → better outcome data). **(4) Uncertainty
+flavor:** a binary outcome's mean IS its full aleatoric distribution — a distributional
+win-prob head has nothing to add; what is missing is EPISTEMIC (checkpoint-disagreement, per
+the empowerment program); v29's re-audit stands for the return side. **(5) NEW INSTRUMENT
+registered: the SCAFFOLDING GAUGE** — divergence between V-implied outcome and the win-prob
+head across states; should shrink with maturity, and its trajectory is the signal for when
+shaping coefficients can begin annealing toward the pure game. Cheap to compute from existing
+traces; a candidate TB scalar for the optimization era.
