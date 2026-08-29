@@ -5935,3 +5935,42 @@ mechanism, the only historically non-losing arm). Registered: overrules fall to 
 paired rollouts: what fraction were leaf-bias artifacts vs real-but-canceling — decides
 whether the +2.2pp was a frozen-opponent artifact and whether contrastive training (G's
 sized ≤5.7pp lever) is worth its GPU.** Quota within the 50% authorization.
+
+### 🏆 REV-3 ADMISSION: 6/6 ADMIT — and the TEACHER CEILING dissolves the budget law; fold launch CONFIRMED (2026-08-29)
+
+**The mid-flight save banked first (fifth specimen of the recorded≠effective/derived-key genre,
+and the costliest averted yet):** the admission harness's team dict disagreed with recorded
+`--trainee-teams` at 16/36 cells — the 3 coverage picks were silently REJECTED by the curated-32
+constraint and re-picked, never written back. Cost if missed: false REJECT for 2/6 teachers ⇒
+the R2CTRL_RULE would have ordered a FULL R2-CTRL RELAUNCH on fabricated grounds (the true
+answer is N_FAILED=0 — the exact opposite), and R3SELF's frozen argv carried the 3 dead paths
+(bias routed onto teams no teacher trained on). Nothing would have LOOKED broken — a wrong team
+returns a plausible low win rate. Fix: slices READ from recorded metadata; both harnesses print
+slice↔recorded VERIFIED or refuse. 9 meter cells provably unaffected, reused. **ADMISSION:
+6/6 ADMIT, N_FAILED=0** (F6a +0.0988 z4.2 · F6b +0.0863 · F6c +0.1413 · F6d +0.0700 · F6e
++0.1962 z8.1 · F6f +0.2175 z9.1); bias mismatch stands as the named caveat, NO relaunch.
+**§2 — THE HEADLINE REFRAME, adopted: teachers hit a CEILING ~0.6881 [0.672,0.704] set-mean,
+INVARIANT to budget (1.5 vs 2.5M/team: +0.0019 z0.16) and to target start (0.46–0.61). Target
+rose +0.0587, extraction fell −0.0569 — the same number. EXTRACTION WAS NEVER A TEACHER
+PROPERTY; it is headroom to a fixed ceiling. THE BUDGET LAW IS DISSOLVED** — its prospective
+"confirmation" (rev-2's sd 0.0098 cluster) was constant headroom in disguise; the training
+session's registration-was-ill-posed self-critique is adopted (and my registration inherited
+the same flaw — co-owned). Meter headroom 13.4→7.7→~2–4pp: **meter teams nearly exhausted;
+coverage teams are the frontier** (target 0.46). **§4 differentiation:** fleet mean 0.360,
+ratio 1.34× the ancestry floor (rank the mean only; ±0.15 draw noise per teacher). **§5
+coherence:** the six teachers genuinely diverge (controlled discriminator +0.2058 — a
+different slice costs 36 points of agreement where SGD noise costs 16) ⇒ `--distill-team-bias`
+is what makes a 6-teacher fold coherent at all. **§6 h2h pair 3 selects REDISTRIBUTION:
+R2-PLAIN is −2.1pp on the meter yet +1.5pp (n.s.) at free draws** — plain continuation does
+not decay generally, it redistributes competence away from pinned/meter lines. Consequences:
+the R2-CTRL anomaly shrinks further; the fold's "anchor" value re-reads as retention of
+meter-team competence; **R2-PLAIN-LOWLR DEMOTED** (still queued — the overshoot mechanism
+question survives — but drift is no longer a general-decay emergency). **§7 the taught/untaught
+seniority split is WITHDRAWN by its author** (selection on the minimum of 23 noisy estimates;
+regression-to-mean +0.061 — the honest kill adopted). **§8 FOLD LAUNCH CONFIRMED: R3-ACTION →
+R3-ACTION-HI → R3-SELF**, argvs frozen and validated BY EXECUTION (12/12 team sets, both
+directions). **§9 endorsed as a concept with one amendment: F6-CURR IS the first ceiling
+manipulation and it already ran** — its absolute-vs-~0.69 row is REQUESTED before any new
+ceiling experiment is designed; if the v8 curriculum lifts the ceiling, rev-4's lever is found.
+Also requested: the tail-specificity column and F6-CURR's differentiation row (the C1 causal
+read), absent from this relay.

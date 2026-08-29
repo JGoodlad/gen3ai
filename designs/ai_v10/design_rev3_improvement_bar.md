@@ -88,6 +88,18 @@ content to fold. Registered reading: differentiation predicts foldable content; 
 predicts the fold reduces to anchoring (see R3-SELF). Informational this revolution — it becomes
 a gate only if rev-3 confirms the correlation.
 
+**§2 ADDENDUM (2026-08-29, admission results — read before quoting the budget law):** the fleet
+revealed a **TEACHER CEILING**: teachers land at ~0.69 set-level absolute regardless of budget
+(1.5M vs 2.5M/team: +0.0019 n.s.) or target start (0.46–0.61 span). **"Extraction" = ceiling −
+target — a headroom reading, not a teacher property.** The pre-registered budget law is
+DISSOLVED as a law about budget (both registered models missed because the question was
+ill-posed: the metric has a moving reference); its earlier "confirmation" (rev-2's tight +0.1165
+cluster) was constant-headroom masquerading as budget-dependence. Consequences: meter-team
+headroom is nearly exhausted (13.4pp → 7.7pp → ~2–4pp by rev-4); coverage teams are not (target
+0.46, hence F6e/F6f's +0.20/+0.26); and rev-4's lever is whatever RAISES the per-team ceiling —
+budget provably does not, past ~1.5M/team. Per-team absolutes span 0.59–0.775; ~0.69 is the set
+mean.
+
 **Registered predictions (fleet):**
 - **Budget law, next point:** the measured curve ends at 1.5M/team → +0.1162. If monotone
   continues, 2.5M/team rows land **+0.13–0.16**; a plateau at ~+0.12 is equally informative (the
