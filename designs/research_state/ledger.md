@@ -6389,3 +6389,17 @@ extractor forward required — the head consumes its own trunk's value_pooled; c
 train(), one teacher-sized GPU resident). Sizing flags: PopArt needs --clip-range-vf none +
 σ-collapse watch; ent-coef NOT rescaled (advantages minibatch-normalized); pbrs_reward_share
 needs a companion metric on a terminal-only stream; compile-trainer × frozen model UNVERIFIED.
+
+### ✅ CLEAN-WORLD ARM STRUCTURE CONFIRMED (owner, 2026-08-29 late) — the potential-source ladder
+
+Owner confirmed the three arms, all at terminal {+1, −1, draw −1 per probe N}: **SPARSE** (no
+potential — the famine test) · **SELF-φ** (the run's own live head — self-bootstrapping,
+co-evolving potential) · **FROZEN-φ** (mature prior-gen head, frozen — ancestral scaffolding,
+EXACT invariance). Every pairwise difference is a named quantity: SELF−SPARSE = the value of
+self-shaping (and the direct test of the demoted bootstrap hypothesis); FROZEN−SELF = the value
+of maturity + exact-vs-approximate invariance; FROZEN−SPARSE = the total worth of
+outcome-grounded shaping. **The incumbent comparison comes FREE as a reference** — existing
+rev-1-class 25M checkpoints via h2h + anchored ELO (imperfect control: era-config differences;
+a purity fourth arm only if the verdict is close). Probe N's amendments baked in (draw −1,
+coefficient spelling, stall-rate primary endpoint); launch gated on the four build gaps (B1–B4)
+and sized by the 5M sparse-vs-shaped pre-test. This supersedes 579279d's two-arm sketch.
