@@ -6586,3 +6586,17 @@ switch rate, scaffolding gauge, whiff census). **CLOCK (largely-successful branc
 verdict ~Aug 30 · rev-4 fleet Aug 30–31 · capstone twice-confirmed ~Sep 1–2 · builds land in
 parallel by ~Sep 2 · AI_V12 OPENS ~Sep 3–5.** Error bars: PARTIAL on rev-3 adds 1–2 diagnosis
 days; FAIL re-opens teacher supply and slips the era by the accounting's length.
+
+### 💡 POPART RETIREMENT registered as a clean-world simplification (owner, 2026-08-30 early)
+
+Clarification banked: the coefficient-spelling ruling concerns the SHAPING LEDGER only —
+clean-world RETURNS are ±1-ish by construction either way, so the critic becomes unit-valued
+(V directly readable as expected outcome; the scaffolding gauge goes unit-free; AlphaZero
+precedent: tanh-bounded [−1,1] value). **Registered: the sparse and clean arms run WITHOUT
+PopArt** — its job (scale-30 drifting shaped returns swamping the trunk) is deleted by the
+reward design; retirement buys one less moving part, cleaner weight-drift diagnostics (PopArt's
+pop-rescale confounded the plasticity audit's readings), and a simpler vf_coef/resume story.
+Guards: `--clip-range-vf none` handled; a value-loss-scale tripwire (probe N's σ-collapse
+caveat cuts against KEEPING PopArt on near-sparse streams as much as for it). Note: policy-side
+magnitude comparability is already scale-free (per-minibatch advantage normalization — the
+reason ent-coef is not rescaled); ±1's real gift is STATIONARITY, not range.
