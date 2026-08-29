@@ -6569,3 +6569,20 @@ shown to PREDICT performance — the exact bar the LUT arm failed. **(3) where t
 construction debuts: the SURVIVAL-CONDITIONED READOUT** — φ = f(position) ⊗ g(CLS over
 temporal context) — the decoupled gate aimed at the one MEASURED multiplicative defect (the
 0.999 tails), semantics-free, slotted as the gated-readout rung of the general program.
+
+### 🗺️ THE ROAD TO AI_V12 (owner request, 2026-08-30 early) — build list + clock, banked for both sessions
+
+Three workstreams: **(1) capstone completion** — rev-3 arms → verdict battery → on HOLDS the
+pre-committed rev-4 confirmation (wheel-turns-twice). **(2) build gaps, CPU-parallel to the
+GPU**: clean-world B1–B4 (~1 agent-day, specced) · THE HARVEST+FACTORY PIPELINE (~2–3
+agent-days — the era's backbone; pieces exist, assembly is the work) · E5 Q-win-prob head
+(~1–2 days) · queued fixes post-verdict (SITOUT/switch-progress/staller-RNG, ~½ day) ·
+gauge+exploitability instruments (small) · gated-readout/SwiGLU NOT built (gated behind
+harvest-then-reducibility per the owner's ruling). Era-heavy machinery ALREADY SHIPPED this
+week: v104 PBRS, winprob-teacher+confirm, defensive search+racing, signal meters, exploiter
+ladder — all dormant. **(3) era opening**: 5M sparse pre-test → register clean-world 3 arms +
+E1 re-sized ladder + the zero-code tax-off arm against the frozen endpoints (stall rate,
+switch rate, scaffolding gauge, whiff census). **CLOCK (largely-successful branch): rev-3
+verdict ~Aug 30 · rev-4 fleet Aug 30–31 · capstone twice-confirmed ~Sep 1–2 · builds land in
+parallel by ~Sep 2 · AI_V12 OPENS ~Sep 3–5.** Error bars: PARTIAL on rev-3 adds 1–2 diagnosis
+days; FAIL re-opens teacher supply and slips the era by the accounting's length.
