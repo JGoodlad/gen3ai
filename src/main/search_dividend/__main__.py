@@ -69,6 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--budget", action="append", type=float,
                    help="per-decision wall-clock seconds; repeatable (default 0.5 1 3 8)")
     p.add_argument("--games", type=int, default=20, help="games per (arm, budget, opponent) cell")
+    p.add_argument("--games-start", type=int, default=0, metavar="I",
+                   help="play game indices [I, I+--games) instead of [0, --games). SHARDING only: "
+                        "the per-game seed and team draw are functions of the index, so two "
+                        "processes over disjoint windows write rows that concatenate into exactly "
+                        "the file one process would have. Use this rather than a second "
+                        "--games-seed, which would re-use index 0 for a different battle and break "
+                        "the summary's paired differencing.")
     p.add_argument("--opponents", default="", help="comma-separated bot names, or \"self\" for the MIRROR (the same network, search off — the sensitive contrast); default the roster")
     p.add_argument("--out", default="tmp/search_dividend.jsonl", help="append-only results JSONL")
     p.add_argument("--summary", metavar="JSONL",
@@ -126,6 +133,18 @@ def build_parser() -> argparse.ArgumentParser:
                         "through the playoff mechanism, and keep the policy's action unless the "
                         "paired difference clears 2*SE. Off in the first registered cell — one "
                         "new mechanism at a time. --root-strategy defensive only.")
+    p.add_argument("--defensive-contested-deadline-s", type=float, default=None, metavar="SEC",
+                   help="THE TIME MANAGER (default: unset = a contested decision gets --budget, "
+                        "i.e. the first registered cell's behaviour exactly). The triage gate "
+                        "forces ~74%% of decisions and spends nothing on them, so the notional "
+                        "budget they would have burned is real and BANKED — measured at 0.77 s of "
+                        "every 1 s, 28.8 s per game. This grants a CONTESTED decision that clock "
+                        "instead. It buys ROUNDS: the first cell's mean race ran 4.61 rounds "
+                        "against the seq rule's elimination FLOOR of 5, and every one of its "
+                        "futility stops was also deadline-truncated, so the strategy was "
+                        "budget-limited at the floor rather than evidence-limited. Size it so "
+                        "(contested decisions per game) x SEC stays inside the uniform notional "
+                        "the gate hands back. --root-strategy defensive only.")
     p.add_argument("--racing-rule", default=RacingConfig.rule, choices=list(RULES),
                    help="`z` = a one-sided normal test per look (aggressive; the A/B ran on this); "
                         "`seq` inflates the radius by a union bound over rounds and comparisons so "
@@ -343,12 +362,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         _raise_battle_backstop(args.battle_timeout_s, args.battle_idle_s)
 
     print(f"[search_dividend] ckpt={ckpt}\n"
-          f"  arms={arms} budgets={budgets} opponents={opponents} games={args.games}\n"
+          f"  arms={arms} budgets={budgets} opponents={opponents} "
+          f"games=[{args.games_start},{args.games_start + args.games})\n"
           f"  max_depth={args.max_depth} side_swap={'auto' if args.side_swap is None else args.side_swap}\n"
           f"  pool={len(pool)} teams  impl={args.impl}/search:{args.search_impl}  out={args.out}\n"
           f"  root_strategy={args.root_strategy}"
           + (f"  defensive: leaf={args.defensive_leaf} "
              f"wp_margin={args.defensive_wp_margin:g} confirm={args.defensive_confirm} "
+             f"contested_deadline="
+             f"{'budget' if args.defensive_contested_deadline_s is None else f'{args.defensive_contested_deadline_s:g}s'} "
              f"racing_rule={args.racing_rule} floor="
              f"{RacingConfig(rule=args.racing_rule, min_samples=args.racing_min_samples).effective_min_samples()}"
              if args.root_strategy == "defensive" else ""),
@@ -378,7 +400,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                                defensive=DefensiveConfig(
                                    wp_margin=args.defensive_wp_margin,
                                    leaf=args.defensive_leaf,
-                                   confirm_rollouts=args.defensive_confirm))
+                                   confirm_rollouts=args.defensive_confirm,
+                                   contested_deadline_s=args.defensive_contested_deadline_s))
             for opp in opponents:
                 cell = Cell(arm=arm, budget=budget, opponent=opp)
                 n = asyncio.run(run_cell(
@@ -386,6 +409,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     results=results, salt=args.games_seed, impl=args.impl,
                     pool_packed=pool, progress=progress,
                     side_swap=resolve_side_swap(args.side_swap, opp),
+                    games_start=args.games_start,
                     playoff_cfg=playoff_cfg))
                 total += n
     print(f"\n[search_dividend] played {total} new games -> {args.out}\n", flush=True)

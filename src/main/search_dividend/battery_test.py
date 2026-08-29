@@ -117,6 +117,33 @@ def test_the_team_draw_is_matched_too():
     assert a != team_pair("heuristic", 4, 99, pool)
 
 
+def test_sharding_by_game_INDEX_is_what_makes_two_processes_one_cell():
+    """The safety claim behind ``--games-start``, asserted rather than assumed.
+
+    A shard is legitimate only because the battle is a function of the INDEX alone — same seed,
+    same team pair, whichever process plays it — so two disjoint windows concatenate into exactly
+    the file one process would have written. The alternative (a second ``--games-seed`` per shard)
+    would re-use index 0 for a different battle and silently break the summary's paired read.
+    """
+    pool = [f"Mon{i}||item|ability|move|Serious|||||" for i in range(20)]
+    whole = [(game_seed("self", g, 7), team_pair("self", g, 7, pool, o))
+             for g in range(12) for o in (0, 1)]
+    shards = [(game_seed("self", g, 7), team_pair("self", g, 7, pool, o))
+              for lo, n in ((0, 5), (5, 4), (9, 3)) for g in range(lo, lo + n) for o in (0, 1)]
+    assert shards == whole
+
+
+def test_run_cell_takes_a_games_start_so_a_cell_can_be_sharded():
+    """The window has to reach the driver, not merely parse. ``games_start`` is keyword-only and
+    defaults to 0, so every existing call plays [0, games) exactly as before."""
+    import inspect
+
+    from main.search_dividend.battery import run_cell
+
+    p = inspect.signature(run_cell).parameters["games_start"]
+    assert p.default == 0 and p.kind is inspect.Parameter.KEYWORD_ONLY
+
+
 # -- side-swap pairing --------------------------------------------------------
 
 

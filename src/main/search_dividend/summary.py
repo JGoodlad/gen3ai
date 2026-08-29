@@ -388,6 +388,9 @@ def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> s
                     f"raced={df['race_rate']:.3f} "
                     f"separated={df['separation_rate'] if df['separation_rate'] is not None else '-'} "
                     f"futility={df['futility_rate'] if df['futility_rate'] is not None else '-'} "
+                    # SPLIT, because the first cell's 1.000 here is what said the strategy was
+                    # budget-limited rather than evidence-limited (see defensive.fold_defensive).
+                    f"(deadline {df['futility_deadline_frac'] if df['futility_deadline_frac'] is not None else '-'}) "
                     f"OVERRULE={df['overrule_rate']:.4f} "
                     f"(of raced {df['overrule_rate_raced'] if df['overrule_rate_raced'] is not None else '-'}) "
                     f"over {df['decisions']} decisions | banked={df['banked_s']:.0f}s "

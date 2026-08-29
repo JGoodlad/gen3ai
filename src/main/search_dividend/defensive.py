@@ -115,11 +115,25 @@ class DefensiveConfig:
     they measured. ``confirm_rollouts`` is the OPTIONAL fourth stage: 0 (the default) means an
     overrule acts on the race alone, and any positive value settles the proposed overrule with
     that many PAIRED terminal rollouts through the playoff mechanism first.
+
+    ``contested_deadline_s`` is the TIME MANAGER, and it is the one change iteration 2 makes.
+    ``None`` (the default) means a contested decision gets the same ``--budget`` every decision
+    would have got, which is exactly what the first cell measured. A positive value spends the
+    bank instead: the gate already hands back the whole budget on the ~74% of decisions it
+    forces, so the notional clock a uniform search would have burned there is real and unspent
+    (measured: **0.77 s of every 1 s, 28.8 s per game**), and this is what lets a contested
+    decision draw on it. The first cell's diagnosis is the entire reason the knob exists — its
+    mean race ran **4.61 rounds against the ``seq`` rule's elimination FLOOR of 5**, and every
+    one of its 3,301 futility stops was also ``deadline_truncated`` (an exact identity), so the
+    strategy was BUDGET-limited at the floor rather than evidence-limited. It buys ROUNDS and
+    nothing else: :func:`~main.search_dividend.budget.allocate`'s only live output on the racing
+    path is ``m_opp``, which the first cell already ran at a mean of 5.77 against its cap of 6.
     """
 
     wp_margin: float = DEFAULT_WP_MARGIN
     leaf: str = "winprob"
     confirm_rollouts: int = 0
+    contested_deadline_s: Optional[float] = None
 
     def __post_init__(self) -> None:
         if self.leaf not in LEAVES:
@@ -130,6 +144,22 @@ class DefensiveConfig:
             raise ValueError("wp_margin must lie in [0.0, 0.5]")
         if int(self.confirm_rollouts) < 0:
             raise ValueError("confirm_rollouts must be >= 0")
+        if self.contested_deadline_s is not None and float(self.contested_deadline_s) <= 0.0:
+            # 0 is NOT "off" — off is `None`. A zero deadline would expire before the first round
+            # and turn every contested decision into a fallback, which reads in the counters as a
+            # strategy that refused rather than a clock that was never granted.
+            raise ValueError("contested_deadline_s must be > 0 (None = use --budget)")
+
+    def deadline_for(self, budget_s: float) -> float:
+        """The wall-clock a CONTESTED decision actually gets.
+
+        One function, so the ``Deadline`` and the width ``allocate`` can never be handed two
+        different numbers — a plan sized to a budget the clock does not honour over-runs, and a
+        plan sized below the clock silently leaves the extra seconds unreachable, which is the
+        precise failure the first cell measured on the *forced* side of the gate.
+        """
+        return (float(budget_s) if self.contested_deadline_s is None
+                else float(self.contested_deadline_s))
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -232,10 +262,20 @@ def fold_defensive(decisions: Sequence[Mapping]) -> dict:
     ``defensive_banked_s`` is the clock the strategy did NOT spend: the whole per-decision budget
     on a gated decision, and whatever the race left on a futility stop. It is the quantity a time
     manager would redistribute, so it is carried as a total rather than inferred from a rate.
+
+    ``n_defensive_futility_deadline`` SPLITS the futility mass, and the split is the whole reason
+    iteration 2 can be scored. A futility stop means "the race did not separate", but that sentence
+    has two readings which the first cell could not tell apart because they coincided in 100% of
+    its 3,301 stops: the race **ran out of clock** (``deadline_truncated`` — a budget finding, and
+    the one the time manager is meant to remove), or it ran its supply out and the actions were
+    GENUINELY indistinguishable (probe I's U-shape — a fact about the game). Reporting the total
+    alone would let a strategy that merely bought more rounds look identical to one that learned
+    something, so the two are counted apart at the fold rather than inferred afterwards.
     """
     out = {"n_defensive": 0, "n_defensive_forced": 0, "n_defensive_forced_n_legal": 0,
            "n_defensive_forced_wp": 0, "n_defensive_raced": 0, "n_defensive_separated": 0,
-           "n_defensive_overruled": 0, "n_defensive_futility": 0, "n_defensive_kept": 0,
+           "n_defensive_overruled": 0, "n_defensive_futility": 0,
+           "n_defensive_futility_deadline": 0, "n_defensive_kept": 0,
            "n_defensive_no_win_prob": 0, "n_defensive_confirmed": 0,
            "n_defensive_confirm_declined": 0, "defensive_banked_s": 0.0}
     for d in decisions:
@@ -257,6 +297,8 @@ def fold_defensive(decisions: Sequence[Mapping]) -> dict:
             out["n_defensive_raced"] += 1
             if v == VERDICT_FUTILITY:
                 out["n_defensive_futility"] += 1
+                if w.get("deadline_truncated"):
+                    out["n_defensive_futility_deadline"] += 1
             else:
                 out["n_defensive_separated"] += 1
                 if v == VERDICT_KEPT:
@@ -291,6 +333,8 @@ def defensive_block(a: Mapping) -> Optional[dict]:
     raced = int(a.get("n_defensive_raced", 0) or 0)
     sep = int(a.get("n_defensive_separated", 0) or 0)
     over = int(a.get("n_defensive_overruled", 0) or 0)
+    fut = int(a.get("n_defensive_futility", 0) or 0)
+    fut_dl = int(a.get("n_defensive_futility_deadline", 0) or 0)
 
     def rate(k: int, d: int) -> Optional[float]:
         return round(k / d, 4) if d else None
@@ -302,7 +346,11 @@ def defensive_block(a: Mapping) -> Optional[dict]:
         "forced_wp": int(a.get("n_defensive_forced_wp", 0) or 0),
         "raced": raced,
         "separated": sep,
-        "futility": int(a.get("n_defensive_futility", 0) or 0),
+        "futility": fut,
+        # The two readings of a futility stop, kept apart (see `fold_defensive`): a race the CLOCK
+        # ended, versus a race that ran and found the actions genuinely indistinguishable.
+        "futility_deadline": fut_dl,
+        "futility_genuine": fut - fut_dl,
         "kept": int(a.get("n_defensive_kept", 0) or 0),
         "overruled": over,
         "no_win_prob": int(a.get("n_defensive_no_win_prob", 0) or 0),
@@ -315,7 +363,11 @@ def defensive_block(a: Mapping) -> Optional[dict]:
         # manager buying more contested decisions would move.
         "overrule_rate_raced": rate(over, raced),
         "separation_rate": rate(sep, raced),
-        "futility_rate": rate(int(a.get("n_defensive_futility", 0) or 0), raced),
+        "futility_rate": rate(fut, raced),
+        # Of the futility mass, how much the time manager could still buy back. 1.0 is the first
+        # cell's reading — every stop was the clock — and driving it down is what a larger
+        # contested deadline is FOR, so it is the number that says whether the knob worked.
+        "futility_deadline_frac": rate(fut_dl, fut),
         "banked_s": round(float(a.get("defensive_banked_s", 0.0) or 0.0), 2),
         "banked_s_per_decision": (round(float(a.get("defensive_banked_s", 0.0) or 0.0) / n, 3)
                                   if n else None),

@@ -364,7 +364,7 @@ def set_teams(me, opp, our_packed: str, their_packed: str) -> None:
 async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int,
                    results: ResultsFile, salt: int, impl: str,
                    pool_packed: Sequence[str], progress=None,
-                   side_swap: bool = False,
+                   side_swap: bool = False, games_start: int = 0,
                    playoff_cfg: Optional[PlayoffConfig] = None) -> int:
     """Play the missing orientation-games of one cell, appending a row each.
 
@@ -372,11 +372,22 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
     the summary can difference out the team draw. ``games`` therefore keeps meaning "distinct team
     draws" and the battle count doubles, which is the honest way round: halving ``games`` to keep
     the battle count would halve the number of independent draws, which is the thing that actually
-    bounds the interval."""
+    bounds the interval.
+
+    ``games_start`` plays the HALF-OPEN index window ``[games_start, games_start + games)`` instead
+    of ``[0, games)``. It is a SHARDING knob and nothing more: :func:`game_seed` and
+    :func:`team_pair` are functions of the index alone, so game 500 is the same dice and the same
+    team draw whichever process plays it, and two shards over disjoint windows concatenate into
+    exactly the file one process would have written. That is what lets a cell whose per-game wall
+    exceeds the session budget be split across cores without any arm becoming a different
+    experiment — the alternative (a different ``--games-seed`` per shard) would re-use index 0 for
+    two different battles and silently break the pairing the summary does on it.
+    """
     install_choice_tap()
     orientations = (0, 1) if side_swap else (0,)
     done = results.done_units(cell)
-    todo = [(g, o) for g in range(games) for o in orientations if (g, o) not in done]
+    lo = int(games_start)
+    todo = [(g, o) for g in range(lo, lo + games) for o in orientations if (g, o) not in done]
     if not todo:
         return 0
     me, opp, engine = build_players(model, mappings, cfg, cell.opponent,

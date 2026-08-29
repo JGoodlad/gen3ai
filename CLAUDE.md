@@ -1496,10 +1496,18 @@ src/
                      #   never separates keeps the policy action and banks the clock, because 52.2%
                      #   of decisions never separate and the separable ones separate immediately;
                      #   (confirm, OPT-IN) `--defensive-confirm N` settles a proposed overrule with
-                     #   N paired terminal rollouts first. Per-decision provenance
-                     #   (forced/raced/separated/overruled/futility + banked seconds) folds
-                     #   additively into every results row. First cell:
-                     #   designs/research_state/measurements/defensive_search_first_cell_2026-08-29.md ·
+                     #   N paired terminal rollouts first; (TIME MANAGER, OPT-IN)
+                     #   `--defensive-contested-deadline-s SEC` grants a decision that PASSED the
+                     #   gate that clock instead of the uniform `--budget` — the gate forces ~74% of
+                     #   decisions and spends nothing on them, so the notional they would have burned
+                     #   is real and banked. UNSET = the first cell's behaviour exactly. Per-decision
+                     #   provenance (forced/raced/separated/overruled/futility, the futility mass
+                     #   SPLIT into deadline-truncated vs genuine non-separation, + banked seconds)
+                     #   folds additively into every results row. `--games-start I` shards a cell
+                     #   over disjoint game-index windows (the seed and team draw are functions of
+                     #   the index, so the rows concatenate). Cells:
+                     #   designs/research_state/measurements/defensive_search_first_cell_2026-08-29.md
+                     #   and .../defensive_search_iter2_2026-08-29.md (the contested-deadline cell) ·
                      #   determinize.py (pool-consistent worlds + the prefix byte-identity GATE) ·
                      #   record.py (a ReconstructionRecord for a battle still IN FLIGHT) ·
                      #   alpha.py (the α-consumer contract at the sim's legal surface) ·

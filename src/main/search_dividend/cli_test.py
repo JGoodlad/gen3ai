@@ -55,6 +55,8 @@ def test_the_defensive_knobs_default_to_the_probe_measured_operating_point():
     assert a.defensive_leaf == "winprob"          # probe G: the value head does not clear zero
     assert a.defensive_wp_margin == 0.15          # probe H's chosen frontier point
     assert a.defensive_confirm == 0               # one new mechanism at a time in the first cell
+    # UNSET, not a number: the flagless default must reproduce the first registered cell.
+    assert a.defensive_contested_deadline_s is None
 
 
 def test_every_defensive_flag_reaches_the_config_it_names():
@@ -63,14 +65,38 @@ def test_every_defensive_flag_reaches_the_config_it_names():
     a = build_parser().parse_args(["m", "--root-strategy", "defensive",
                                    "--defensive-leaf", "value",
                                    "--defensive-wp-margin", "0.3",
-                                   "--defensive-confirm", "6"])
-    cfg = SearchConfig(root_strategy=a.root_strategy,
-                       defensive=DefensiveConfig(wp_margin=a.defensive_wp_margin,
-                                                 leaf=a.defensive_leaf,
-                                                 confirm_rollouts=a.defensive_confirm))
+                                   "--defensive-confirm", "6",
+                                   "--defensive-contested-deadline-s", "3"])
+    cfg = SearchConfig(root_strategy=a.root_strategy, budget_s=1.0,
+                       defensive=DefensiveConfig(
+                           wp_margin=a.defensive_wp_margin, leaf=a.defensive_leaf,
+                           confirm_rollouts=a.defensive_confirm,
+                           contested_deadline_s=a.defensive_contested_deadline_s))
     assert cfg.defensive_cfg() == DefensiveConfig(wp_margin=0.3, leaf="value",
-                                                  confirm_rollouts=6)
+                                                  confirm_rollouts=6,
+                                                  contested_deadline_s=3.0)
     assert cfg.effective_score() == "value"
+    assert cfg.contested_budget_s() == 3.0
+
+
+def test_the_contested_deadline_flag_survives_the_hop_the_cell_actually_takes():
+    """The mirror opponent is built by ``dataclasses.replace(cfg, arm='base', budget_s=0.0)``, so
+    a knob that only worked on the searched side would still read correctly here while the
+    UNSEARCHED side quietly acquired it. ``arm='base'`` short-circuits before the gate, so it must
+    resolve to no search at all rather than a 3 s one."""
+    from dataclasses import replace
+
+    cfg = SearchConfig(arm="honest", root_strategy="defensive", budget_s=1.0,
+                       defensive=DefensiveConfig(contested_deadline_s=3.0))
+    mirror = replace(cfg, arm="base", budget_s=0.0)
+    assert mirror.resolved_caps().k_worlds == 0        # the base arm never reaches the clock
+
+
+def test_games_start_defaults_to_zero_and_shards_a_half_open_window():
+    p = build_parser()
+    assert p.parse_args(["m"]).games_start == 0
+    a = p.parse_args(["m", "--games-start", "267", "--games", "266"])
+    assert (a.games_start, a.games) == (267, 266)
 
 
 def test_the_parser_refuses_a_leaf_it_does_not_know():

@@ -58,6 +58,101 @@ def test_the_default_operating_point_is_probe_h_s():
     assert cfg.wp_margin == 0.15
     assert cfg.leaf == "winprob"
     assert cfg.confirm_rollouts == 0          # the first cell runs ONE new mechanism
+    assert cfg.contested_deadline_s is None   # ...and iteration 2 adds exactly one more
+
+
+# ---------------------------------------------------------------------------
+# the CONTESTED DEADLINE (iteration 2's one change) — see `DefensiveConfig`
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad", [0.0, -1.0, -0.001])
+def test_the_config_refuses_a_non_positive_contested_deadline(bad):
+    """0 is not "off" — off is ``None``. A zero deadline expires before round 1 and turns every
+    contested decision into a counted fallback, which reads like a strategy that refused rather
+    than a clock that was never granted."""
+    with pytest.raises(ValueError, match="contested_deadline_s"):
+        dfn.DefensiveConfig(contested_deadline_s=bad)
+
+
+@pytest.mark.parametrize("budget", [0.5, 1.0, 3.0, 8.0])
+def test_an_unset_contested_deadline_is_the_first_cells_behaviour_exactly(budget):
+    """THE REVERT-CATCHER for the iteration-1 baseline: with the knob unset, the clock a contested
+    decision gets is ``--budget`` and nothing else, at every budget the battery ships."""
+    assert dfn.DefensiveConfig().deadline_for(budget) == budget
+    cfg = SearchConfig(root_strategy="defensive", budget_s=budget)
+    assert cfg.contested_budget_s() == budget
+
+
+def test_a_set_contested_deadline_replaces_the_budget_for_a_contested_decision():
+    cfg = SearchConfig(root_strategy="defensive", budget_s=1.0,
+                       defensive=dfn.DefensiveConfig(contested_deadline_s=3.0))
+    assert cfg.contested_budget_s() == 3.0
+    # ...and the notional per-decision budget is UNCHANGED, because that is what the gate hands
+    # back on a forced decision and what the banked total is quoted against.
+    assert cfg.budget_s == 1.0
+
+
+@pytest.mark.parametrize("strategy", ["grid", "racing"])
+def test_a_contested_deadline_is_inert_off_the_defensive_strategy(strategy):
+    cfg = SearchConfig(root_strategy=strategy, budget_s=1.0,
+                       defensive=dfn.DefensiveConfig(contested_deadline_s=30.0))
+    assert cfg.contested_budget_s() == 1.0
+
+
+def _capture_search_clock(cfg: SearchConfig, win_prob: float) -> dict:
+    """Drive the REAL ``choose`` far enough to read the clock the search was handed.
+
+    ``_run`` is the one method every root strategy funnels through — the racer consults exactly
+    this ``Deadline`` in its ``deadline.fits(batch_cost)`` guard — so capturing its arguments is
+    the seam, not a re-derivation of the arithmetic above.
+    """
+    eng = _engine(cfg, _FakeModel(3))
+    seen: dict = {}
+
+    def _spy(record, side, turn, our_history, our_tokens, observed_our_lines, pub,
+             policy_action, opp_true_packed, plan, widths, deadline):
+        seen["deadline_budget_s"] = deadline.budget_s
+        seen["plan"] = plan
+        return DecisionResult(policy_action, "no_candidates", widths,
+                              policy_action=policy_action)
+
+    eng._run = _spy                                     # type: ignore[assignment]
+    eng.choose(record=None, side="p1", turn=5, our_history=[],
+               our_tokens={0: "move 1", 1: "move 2", 6: "switch 2"},
+               observed_our_lines=[], pub=None, policy_action=0, root_win_prob=win_prob)
+    return seen
+
+
+def test_the_contested_deadline_actually_reaches_the_racer():
+    """THE SEAM. A knob that parses, validates and is never consulted is the failure this pins."""
+    base = SearchConfig(arm="honest", root_strategy="defensive", budget_s=1.0)
+    assert _capture_search_clock(base, 0.52)["deadline_budget_s"] == 1.0
+    bumped = replace(base, defensive=dfn.DefensiveConfig(contested_deadline_s=3.0))
+    assert _capture_search_clock(bumped, 0.52)["deadline_budget_s"] == 3.0
+
+
+def test_the_width_plan_is_sized_to_the_SAME_clock_the_deadline_enforces():
+    """One number, not two. A plan sized to a budget the clock does not honour over-runs it; a
+    plan sized below the clock leaves the extra seconds structurally unreachable — which is the
+    precise defect the first cell measured on the FORCED side of the gate."""
+    bumped = SearchConfig(arm="honest", root_strategy="defensive", budget_s=1.0,
+                          defensive=dfn.DefensiveConfig(contested_deadline_s=3.0))
+    seen = _capture_search_clock(bumped, 0.52)
+    from main.search_dividend.budget import allocate
+    eng = _engine(bumped, _FakeModel(3))
+    assert seen["plan"] == allocate(3.0, 3, eng._cost, bumped.resolved_caps())
+
+
+def test_a_FORCED_decision_still_banks_the_uniform_notional_not_the_contested_deadline():
+    """The bank is what a UNIFORM search would have burned on the decisions the gate declined —
+    that is the quantity a time manager redistributes. Charging a forced decision the contested
+    deadline it never received would inflate the bank by the very knob that spends it."""
+    reason, w = _gate(SearchConfig(root_strategy="defensive", budget_s=1.0,
+                                   defensive=dfn.DefensiveConfig(contested_deadline_s=3.0)),
+                      6, 0.93)
+    assert reason == "defensive_forced"
+    assert w.defensive_banked_s == 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +454,34 @@ def test_forced_and_futility_are_never_summed_into_one_counter():
     assert forced["n_defensive_forced"] == 1 and forced["n_defensive_futility"] == 0
     assert futile["n_defensive_futility"] == 1 and futile["n_defensive_forced"] == 0
     assert forced["n_defensive_raced"] == 0 and futile["n_defensive_raced"] == 1
+
+
+def test_the_fold_splits_a_futility_the_CLOCK_ended_from_a_genuine_non_separation():
+    """The first cell could not tell these apart — all 3,301 of its futility stops were also
+    ``deadline_truncated``, an exact identity — so "the race ran out of clock" and "the actions
+    are genuinely indistinguishable" arrived as one number. A time manager that merely bought more
+    rounds would then look identical to one that learned something."""
+    rows = [
+        _dec(defensive_verdict=dfn.VERDICT_FUTILITY, deadline_truncated=True),
+        _dec(defensive_verdict=dfn.VERDICT_FUTILITY, deadline_truncated=True),
+        _dec(defensive_verdict=dfn.VERDICT_FUTILITY, deadline_truncated=False),
+        # A truncated race that STILL separated is not futility and must not be counted as one.
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, deadline_truncated=True),
+    ]
+    out = dfn.fold_defensive(rows)
+    assert out["n_defensive_futility"] == 3
+    assert out["n_defensive_futility_deadline"] == 2
+    b = dfn.defensive_block(out)
+    assert b["futility_deadline"] == 2 and b["futility_genuine"] == 1
+    assert b["futility_deadline_frac"] == pytest.approx(2 / 3, abs=1e-4)
+
+
+def test_the_futility_split_folds_to_zero_on_a_cell_that_never_raced():
+    out = dfn.fold_defensive([_dec(defensive_verdict=dfn.VERDICT_FORCED,
+                                   defensive_gate_reason=dfn.GATE_WP_EXTREME)])
+    assert out["n_defensive_futility_deadline"] == 0
+    b = dfn.defensive_block(out)
+    assert b["futility_genuine"] == 0 and b["futility_deadline_frac"] is None
 
 
 def test_the_fold_splits_a_confirm_that_acted_from_one_that_declined():

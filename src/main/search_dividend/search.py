@@ -147,6 +147,24 @@ class SearchConfig:
         cfg = self.defensive_cfg()
         return self.score if cfg is None else dfn.resolve_score_mode(cfg.leaf)
 
+    def contested_budget_s(self) -> float:
+        """The wall-clock a decision that PASSED the gate is granted.
+
+        ``budget_s`` everywhere except a defensive search carrying a
+        ``contested_deadline_s`` — see
+        :meth:`~main.search_dividend.defensive.DefensiveConfig.deadline_for`. It is a method on the
+        config rather than a branch at the call site so that the ``Deadline`` and the width
+        ``allocate`` provably read the same number, and so that ``grid``/``racing`` cannot acquire
+        the behaviour by accident.
+
+        Note what this does NOT touch: ``defensive_banked_s`` on a FORCED decision still records
+        ``budget_s``, because that counter answers "what did the uniform notional hand back", which
+        is the quantity a time manager redistributes. Charging a forced decision the contested
+        deadline it never got would inflate the bank by the very knob that spends it.
+        """
+        cfg = self.defensive_cfg()
+        return float(self.budget_s) if cfg is None else cfg.deadline_for(self.budget_s)
+
     def resolved_caps(self) -> WidthCaps:
         """The ORACLE arm is ONE world by construction (the true state), and the BASE arm has no
         search at all. Encoding that here rather than at every call site means a budget can never
@@ -364,8 +382,13 @@ class SearchEngine:
             widths.planned = WidthPlan(0, 0, 0).as_dict()
             return DecisionResult(policy_action, gated, widths, policy_action=policy_action)
 
-        deadline = Deadline(self.cfg.budget_s)
-        plan = allocate(self.cfg.budget_s, len(our_tokens), self._cost, caps)
+        # THE CONTESTED CLOCK. Past the gate this decision is contested by definition, so it may
+        # draw on the bank the gate builds — `contested_budget_s` is `budget_s` on every other
+        # strategy and on a defensive search that did not ask for a time manager, which is what
+        # keeps the first cell reproducible byte for byte.
+        contested_s = self.cfg.contested_budget_s()
+        deadline = Deadline(contested_s)
+        plan = allocate(contested_s, len(our_tokens), self._cost, caps)
         widths.planned = plan.as_dict()
         widths.dice = plan.r_dice
         widths.worlds_requested = plan.k_worlds
