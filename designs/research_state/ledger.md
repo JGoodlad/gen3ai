@@ -6505,3 +6505,26 @@ behind the reducibility probe** (post-harvest): if more mass alone teaches the s
 existing features, features here must also be earned by a measured gap, not plausibility. Side
 note: the answer-count family would also serve the bait/pivot pathology (the opponent pivots
 to the mon our attack cannot touch — the same coverage object from the other side).
+
+### ⚖️ OWNER RULING: NO HAND-PICKED AGGREGATES — the GENERAL multiplicative program supersedes the feature family (2026-08-29 late)
+
+Owner rejected the answer-count feature family as shipping candidates ("forces us to pick
+what's relevant... the worst way to solve the pathology") — ruling ADOPTED, fully: **00c5a11's
+family is DEMOTED to probe-side instruments only** (legal for measuring what the model knows,
+never shipped as obs). The distinction of record: the damage op ships GAME RULES (exact
+physics); answer-counts are OUR judgment of what matters — a step over the line. **The general
+program, three levels, zero chosen semantics: (1) GATED ACTIVATIONS** — the towers are plain
+Tanh (sums through squashes ⇒ slopes); the GLU family (SwiGLU/GeGLU, the modern transformer
+FFN default) gives every layer an elementwise learned-gate PRODUCT — the canonical general
+multiplicative primitive (Shazeer 2020; Jayakumar et al. 2020 "Multiplicative Interactions" —
+the family strictly enlarges the EASILY-LEARNABLE class, which is where the cliff problem
+lives). **(2) MI junctions** — low-rank bilinear/FiLM-style layers where streams meet
+(context injections, value_pooled→heads), incl. the GATED READOUT that subsumes the clock-gate
+generically. **(3) EXTREMAL POOLING** — min/softmin/max channels beside the attention/mean
+pools: averages wash out worst-cases by construction; the operator set is a VERB, not a noun.
+Depth noted as the blunt lever (capacity without bias change). **Sequencing, owner's
+counterfactual-sampling point as leg one: (i) harvest + factory over-representation
+(Beta-head priority — also semantics-free) + the reducibility probe on CURRENT arch — data
+may suffice; (ii) SwiGLU/MI A/B at 5M-pre-test scale if not (arch-version, retrain-class,
+Inductor re-verification required); (iii) extremal pooling only if aggregate-level failures
+survive both.** Every step general, every step earned by a measured gap.
