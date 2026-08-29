@@ -6483,3 +6483,25 @@ escalation path if a true veto is still needed is a LEARNED multiplicative clock
 head — outcome-units, inside the clean worldview. Analogy of record: the strong player who has
 rarely played with a clock — "flag-fall loses" is trivial to state and still takes lived
 instances to become reflex.
+
+### 💡 THE GATE-STRUCTURE FAMILY registered (owner insight, 2026-08-29 late) — coverage/answer-count features + learned multiplicative gates
+
+Owner: "lost my single Roar mon / rock resist / win-con — game over" — is the architecture
+wrong to not allow negative multiplicative features? Banked analysis: all three examples are
+ONE object — a team-level ANSWER-COUNT crossing 1→0, with P(win) structured as a product of
+gates; the turn-249 cliff generalized to the composition axis. The deficiency is NOT
+expressiveness (attention is bilinear; FiLM exists; the damage op IS this lesson at the
+feature level — "precompute every nonlinearity of two numbers IN THE OP", "ship the MARGIN")
+— it is SAMPLE ECONOMICS: rare vetoes on thin slices hit all three 0.999 mechanisms.
+**Registered feature family (era backlog, the v93-95 delivery pattern): COVERAGE/ANSWER-COUNT
+reductions over the existing pair matrices** — per THEIR mon, the count of OUR living mons
+that both survive its best hit and threaten back (+ margin-to-zero per the saturation rule);
+living-phazer count against boosters; living-resist count per revealed threat axis. All
+one-hop contractions over op-owned tensors (the spin_denied shape); all RAW BOARD FACTS, legal
+under provide-facts-don't-bake-priors. Plus the head-side generalization of the queued
+clock-gate: a small learned multiplicative gate reading (clock, answer-counts) modulating φ —
+architecture supplies the multiplication, data supplies the decision. **Sequenced DELIBERATELY
+behind the reducibility probe** (post-harvest): if more mass alone teaches the stall veto from
+existing features, features here must also be earned by a measured gap, not plausibility. Side
+note: the answer-count family would also serve the bait/pivot pathology (the opponent pivots
+to the mon our attack cannot touch — the same coverage object from the other side).
