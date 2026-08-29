@@ -1,0 +1,1156 @@
+{
+ "date": "2026-08-29",
+ "cell": "TRANSFER-COEFFICIENT CELL \u2014 probe K \u00a76 decisive test",
+ "question": "does the +0.0474 [+0.0216,+0.0730] per-decision overrule gain probe K measured under marginalized ground truth arrive at the GAME level, once the checkpoint and the population suspects are removed?",
+ "checkpoint": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip \u2014 BYTE-IDENTICAL (md5 df3d5620...) to eval_traces/step_24000000/snapshot.zip, the exact weights probe G labelled and probe K re-judged. Iteration 2 ran checkpoint_9995088_steps.zip (~10M): the CHECKPOINT suspect.",
+ "population": "the EVAL ROSTER \u2014 the battery's default --opponents, i.e. eval_opponent_names(): the 9 fixed scripted bots. Pool sentinels are not constructible as battery opponents, so the roster here is the bot half of the population probe G/K drew their decisions from; stated as a limit, not glossed. Iteration 2 ran --opponents self (the mirror twin): the POPULATION suspect.",
+ "arms": {
+  "A": "--arm honest --budget 1 --root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 0 --defensive-contested-deadline-s 3.0 \u2014 iteration 2's configuration verbatim",
+  "B": "--arm base \u2014 the same network with search structurally off, playing the masked argmax; the literal control",
+  "matching": "one battery invocation per shard plays both arms, so a unit is the same pinned sim seed and the same team draw in A and B and the two arms' trajectories are identical until the first overrule"
+ },
+ "invocation": "python -m main.search_dividend <ckpt> --arm base --arm honest --budget 1 --root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 0 --defensive-contested-deadline-s 3.0 --games-start <lo> --games 150 --games-seed 7 --battle-timeout-s 1800 --battle-idle-s 120",
+ "shards": {
+  "shardA.jsonl": {
+   "rows": 2700,
+   "game_index_range": [
+    0,
+    149
+   ]
+  },
+  "shardB.jsonl": {
+   "rows": 2700,
+   "game_index_range": [
+    150,
+    299
+   ]
+  },
+  "shardC.jsonl": {
+   "rows": 2700,
+   "game_index_range": [
+    300,
+    449
+   ]
+  }
+ },
+ "accounting": {
+  "rows": 8100,
+  "unfinished": 0,
+  "errors": 0,
+  "unfinished_frac": 0.0,
+  "longest_game_s": 148.7,
+  "livelock_backstop_s": 1800,
+  "idle_wedge_s": 120,
+  "note": "a timed-out or unfinished game is its own bucket and is excluded from BOTH arms of its pair, never scored as a semantic outcome"
+ },
+ "balance": {
+  "units_finished_in_both_arms": 4050,
+  "dropped_A_only": 0,
+  "dropped_B_only": 0,
+  "pairs_per_opponent": {
+   "aggressive": 450,
+   "aggressive_v2": 450,
+   "heuristic": 450,
+   "heuristic2": 450,
+   "random": 450,
+   "setup_sweep": 450,
+   "setup_sweep_v2": 450,
+   "staller": 450,
+   "staller_v2": 450
+  },
+  "why": "the battery plays arm base over all opponents before arm honest, so an early stop would leave a leading-opponent-heavy honest arm; every statistic is restricted to units both arms finished"
+ },
+ "primary_A_minus_B": {
+  "n_pairs": 4050,
+  "a_win_rate": 0.9273,
+  "b_win_rate": 0.9253,
+  "delta": 0.002,
+  "ci95": [
+   -0.0039,
+   0.0079
+  ],
+  "ci_halfwidth": 0.0059,
+  "excludes_zero": false,
+  "discordant": {
+   "a_only": 83,
+   "b_only": 75,
+   "total": 158,
+   "frac_of_pairs": 0.039
+  },
+  "identical_pairs": 3892
+ },
+ "opponent_balanced_A_minus_B": {
+  "n_opponents": 9,
+  "delta": 0.002,
+  "ci95": [
+   -0.0055,
+   0.0095
+  ],
+  "note": "mean over the nine per-opponent deltas, CI across OPPONENTS (n=9) \u2014 a much weaker interval than the pooled one by construction; it is here to show the pooled number is not an artifact of unequal per-opponent n, not to replace it"
+ },
+ "transfer_coefficient": {
+  "overrules_per_game": 0.2449,
+  "per_decision_gain": 0.0474,
+  "per_decision_gain_ci": [
+   0.0216,
+   0.073
+  ],
+  "naive_additive_expectation": 0.0116,
+  "naive_expectation_range_from_K_ci": [
+   0.0053,
+   0.0179
+  ],
+  "realized_delta": 0.002,
+  "tau_point": 0.172,
+  "tau_range_from_K_ci": [
+   0.112,
+   0.378
+  ],
+  "tau_range_from_realized_delta_ci": [
+   -0.336,
+   0.681
+  ],
+  "full_transfer_excluded": true,
+  "zero_transfer_excluded": false,
+  "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+ },
+ "overrule_conditioned": {
+  "zero_overrule_INTEGRITY_CHECK": {
+   "label": "no overrule \u2014 the arms are the SAME battle",
+   "n_pairs": 3448,
+   "total_overrules": 0,
+   "overrules_per_game": 0.0,
+   "a_win_rate": 0.9556,
+   "b_win_rate": 0.955,
+   "delta": 0.0006,
+   "ci95": [
+    -0.0006,
+    0.0017
+   ],
+   "excludes_zero": false,
+   "discordant": {
+    "a_only": 3,
+    "b_only": 1,
+    "total": 4
+   },
+   "must_be_exactly_zero_on_deterministic_opponents": true,
+   "deterministic7": {
+    "label": "no overrule, DETERMINISTIC bots only",
+    "n_pairs": 2693,
+    "total_overrules": 0,
+    "overrules_per_game": 0.0,
+    "a_win_rate": 0.9543,
+    "b_win_rate": 0.9543,
+    "delta": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 0,
+     "b_only": 0,
+     "total": 0
+    }
+   },
+   "coin_flip_family": {
+    "label": "no overrule, COIN-FLIP bots only",
+    "n_pairs": 755,
+    "total_overrules": 0,
+    "overrules_per_game": 0.0,
+    "a_win_rate": 0.9603,
+    "b_win_rate": 0.9576,
+    "delta": 0.0026,
+    "ci95": [
+     -0.0025,
+     0.0078
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 3,
+     "b_only": 1,
+     "total": 4
+    }
+   },
+   "passes_on_deterministic7": true,
+   "why": "with no overrule the searcher plays the policy's own argmax at every decision, so the two arms should be the SAME battle and the paired difference should be exactly 0. It is, across every unit of the seven DETERMINISTIC bots \u2014 which is a positive verification of the matching on 78% of the cell rather than an assumption about it.",
+   "the_exception_and_its_cause": "The staller family is NOT deterministic: `Gen3StallerPlayer` and `Gen3StallerV2Player` decide whether to Protect with `random.random() < _PROTECT_PROBABILITY` \u2014 a draw from the PROCESS-WIDE `random` module. Both players in a battle share that module, and the searched arm interleaves its `choose_move` differently (it awaits an executor; the base arm runs inline), so the coin can land differently in the two arms with no overrule involved. The failure is CONFINED to exactly those two bots by measurement, which is what identifies the cause: 0 of 2688 deterministic-bot zero-overrule pairs diverge, against 4 of 760 staller-family ones. This is unbiased NOISE, not a bias \u2014 it inflates the discordant count in both directions and widens the interval; the `deterministic7_POSTHOC` stratum is the arm free of it, and it moves the headline by 0.15 pp."
+  },
+  "at_least_one_overrule": {
+   "label": ">= 1 overrule \u2014 the treated units",
+   "n_pairs": 602,
+   "total_overrules": 992,
+   "overrules_per_game": 1.6478,
+   "a_win_rate": 0.765,
+   "b_win_rate": 0.755,
+   "delta": 0.01,
+   "ci95": [
+    -0.0293,
+    0.0492
+   ],
+   "excludes_zero": false,
+   "discordant": {
+    "a_only": 80,
+    "b_only": 74,
+    "total": 154
+   }
+  },
+  "by_overrule_count": {
+   "0": {
+    "label": "no overrule \u2014 the arms are the SAME battle",
+    "n_pairs": 3448,
+    "total_overrules": 0,
+    "overrules_per_game": 0.0,
+    "a_win_rate": 0.9556,
+    "b_win_rate": 0.955,
+    "delta": 0.0006,
+    "ci95": [
+     -0.0006,
+     0.0017
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 3,
+     "b_only": 1,
+     "total": 4
+    }
+   },
+   "1": {
+    "label": "exactly 1",
+    "n_pairs": 401,
+    "total_overrules": 401,
+    "overrules_per_game": 1.0,
+    "a_win_rate": 0.7781,
+    "b_win_rate": 0.7394,
+    "delta": 0.0387,
+    "ci95": [
+     -0.0062,
+     0.0835
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 53,
+     "b_only": 37,
+     "total": 90
+    }
+   },
+   "2": {
+    "label": "exactly 2",
+    "n_pairs": 117,
+    "total_overrules": 234,
+    "overrules_per_game": 2.0,
+    "a_win_rate": 0.7521,
+    "b_win_rate": 0.7735,
+    "delta": -0.0214,
+    "ci95": [
+     -0.1115,
+     0.0688
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 14,
+     "b_only": 17,
+     "total": 31
+    }
+   },
+   "3+": {
+    "label": "3 or more",
+    "n_pairs": 84,
+    "total_overrules": 357,
+    "overrules_per_game": 4.25,
+    "a_win_rate": 0.7202,
+    "b_win_rate": 0.8036,
+    "delta": -0.0833,
+    "ci95": [
+     -0.2139,
+     0.0472
+    ],
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 13,
+     "b_only": 20,
+     "total": 33
+    }
+   }
+  },
+  "transfer_on_treated_units": {
+   "overrules_per_game": 1.6478,
+   "per_decision_gain": 0.0474,
+   "per_decision_gain_ci": [
+    0.0216,
+    0.073
+   ],
+   "naive_additive_expectation": 0.0781,
+   "naive_expectation_range_from_K_ci": [
+    0.0356,
+    0.1203
+   ],
+   "realized_delta": 0.01,
+   "tau_point": 0.128,
+   "tau_range_from_K_ci": [
+    0.083,
+    0.281
+   ],
+   "tau_range_from_realized_delta_ci": [
+    -0.375,
+    0.63
+   ],
+   "full_transfer_excluded": true,
+   "zero_transfer_excluded": false,
+   "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+  }
+ },
+ "strata": {
+  "all": {
+   "opponents": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+   ],
+   "A_defensive_search": {
+    "games": 4050,
+    "finished": 4050,
+    "decisive": 4035,
+    "won": 3748,
+    "ties": 15,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9289,
+    "ci95": [
+     0.9205,
+     0.9364
+    ]
+   },
+   "B_policy_only": {
+    "games": 4050,
+    "finished": 4050,
+    "decisive": 4037,
+    "won": 3741,
+    "ties": 13,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9267,
+    "ci95": [
+     0.9182,
+     0.9343
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 4050,
+    "a_win_rate": 0.9273,
+    "b_win_rate": 0.9253,
+    "delta": 0.002,
+    "ci95": [
+     -0.0039,
+     0.0079
+    ],
+    "ci_halfwidth": 0.0059,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 83,
+     "b_only": 75,
+     "total": 158,
+     "frac_of_pairs": 0.039
+    },
+    "identical_pairs": 3892
+   },
+   "overrules_per_game": 0.2449,
+   "transfer": {
+    "overrules_per_game": 0.2449,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0116,
+    "naive_expectation_range_from_K_ci": [
+     0.0053,
+     0.0179
+    ],
+    "realized_delta": 0.002,
+    "tau_point": 0.172,
+    "tau_range_from_K_ci": [
+     0.112,
+     0.378
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -0.336,
+     0.681
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  },
+  "hard4": {
+   "opponents": [
+    "aggressive_v2",
+    "setup_sweep_v2",
+    "heuristic",
+    "heuristic2"
+   ],
+   "A_defensive_search": {
+    "games": 1800,
+    "finished": 1800,
+    "decisive": 1789,
+    "won": 1613,
+    "ties": 11,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9016,
+    "ci95": [
+     0.8869,
+     0.9146
+    ]
+   },
+   "B_policy_only": {
+    "games": 1800,
+    "finished": 1800,
+    "decisive": 1791,
+    "won": 1621,
+    "ties": 9,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9051,
+    "ci95": [
+     0.8906,
+     0.9178
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 1800,
+    "a_win_rate": 0.8992,
+    "b_win_rate": 0.9031,
+    "delta": -0.0039,
+    "ci95": [
+     -0.0138,
+     0.006
+    ],
+    "ci_halfwidth": 0.0099,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 42,
+     "b_only": 48,
+     "total": 90,
+     "frac_of_pairs": 0.05
+    },
+    "identical_pairs": 1710
+   },
+   "overrules_per_game": 0.26,
+   "transfer": {
+    "overrules_per_game": 0.26,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0123,
+    "naive_expectation_range_from_K_ci": [
+     0.0056,
+     0.019
+    ],
+    "realized_delta": -0.0039,
+    "tau_point": -0.316,
+    "tau_range_from_K_ci": [
+     -0.205,
+     -0.694
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -1.12,
+     0.487
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  },
+  "no_random": {
+   "opponents": [
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+   ],
+   "A_defensive_search": {
+    "games": 3600,
+    "finished": 3600,
+    "decisive": 3585,
+    "won": 3298,
+    "ties": 15,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9199,
+    "ci95": [
+     0.9106,
+     0.9284
+    ]
+   },
+   "B_policy_only": {
+    "games": 3600,
+    "finished": 3600,
+    "decisive": 3587,
+    "won": 3291,
+    "ties": 13,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9175,
+    "ci95": [
+     0.908,
+     0.926
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 3600,
+    "a_win_rate": 0.9182,
+    "b_win_rate": 0.916,
+    "delta": 0.0022,
+    "ci95": [
+     -0.0044,
+     0.0089
+    ],
+    "ci_halfwidth": 0.0066,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 83,
+     "b_only": 75,
+     "total": 158,
+     "frac_of_pairs": 0.0439
+    },
+    "identical_pairs": 3442
+   },
+   "overrules_per_game": 0.2461,
+   "transfer": {
+    "overrules_per_game": 0.2461,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0117,
+    "naive_expectation_range_from_K_ci": [
+     0.0053,
+     0.018
+    ],
+    "realized_delta": 0.0022,
+    "tau_point": 0.189,
+    "tau_range_from_K_ci": [
+     0.122,
+     0.414
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -0.377,
+     0.763
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  },
+  "random_only": {
+   "opponents": [
+    "random"
+   ],
+   "A_defensive_search": {
+    "games": 450,
+    "finished": 450,
+    "decisive": 450,
+    "won": 450,
+    "ties": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 1.0,
+    "ci95": [
+     0.9915,
+     1.0
+    ]
+   },
+   "B_policy_only": {
+    "games": 450,
+    "finished": 450,
+    "decisive": 450,
+    "won": 450,
+    "ties": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 1.0,
+    "ci95": [
+     0.9915,
+     1.0
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 450,
+    "a_win_rate": 1.0,
+    "b_win_rate": 1.0,
+    "delta": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_halfwidth": 0.0,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 0,
+     "b_only": 0,
+     "total": 0,
+     "frac_of_pairs": 0.0
+    },
+    "identical_pairs": 450
+   },
+   "overrules_per_game": 0.2356,
+   "transfer": {
+    "overrules_per_game": 0.2356,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0112,
+    "naive_expectation_range_from_K_ci": [
+     0.0051,
+     0.0172
+    ],
+    "realized_delta": 0.0,
+    "tau_point": 0.0,
+    "tau_range_from_K_ci": [
+     0.0,
+     0.0
+    ],
+    "tau_range_from_realized_delta_ci": [
+     0.0,
+     0.0
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  },
+  "deterministic7_POSTHOC": {
+   "opponents": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+   ],
+   "A_defensive_search": {
+    "games": 3150,
+    "finished": 3150,
+    "decisive": 3137,
+    "won": 2906,
+    "ties": 13,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9264,
+    "ci95": [
+     0.9167,
+     0.935
+    ]
+   },
+   "B_policy_only": {
+    "games": 3150,
+    "finished": 3150,
+    "decisive": 3140,
+    "won": 2906,
+    "ties": 10,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9255,
+    "ci95": [
+     0.9158,
+     0.9342
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 3150,
+    "a_win_rate": 0.9246,
+    "b_win_rate": 0.9241,
+    "delta": 0.0005,
+    "ci95": [
+     -0.006,
+     0.0069
+    ],
+    "ci_halfwidth": 0.0065,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 59,
+     "b_only": 57,
+     "total": 116,
+     "frac_of_pairs": 0.0368
+    },
+    "identical_pairs": 3034
+   },
+   "overrules_per_game": 0.2327,
+   "transfer": {
+    "overrules_per_game": 0.2327,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.011,
+    "naive_expectation_range_from_K_ci": [
+     0.005,
+     0.017
+    ],
+    "realized_delta": 0.0005,
+    "tau_point": 0.045,
+    "tau_range_from_K_ci": [
+     0.029,
+     0.099
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -0.544,
+     0.626
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  },
+  "coin_flip_family_POSTHOC": {
+   "opponents": [
+    "staller",
+    "staller_v2"
+   ],
+   "A_defensive_search": {
+    "games": 900,
+    "finished": 900,
+    "decisive": 898,
+    "won": 842,
+    "ties": 2,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9376,
+    "ci95": [
+     0.9199,
+     0.9517
+    ]
+   },
+   "B_policy_only": {
+    "games": 900,
+    "finished": 900,
+    "decisive": 897,
+    "won": 835,
+    "ties": 3,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.9309,
+    "ci95": [
+     0.9124,
+     0.9457
+    ]
+   },
+   "paired_A_minus_B": {
+    "n_pairs": 900,
+    "a_win_rate": 0.9367,
+    "b_win_rate": 0.9294,
+    "delta": 0.0072,
+    "ci95": [
+     -0.0068,
+     0.0212
+    ],
+    "ci_halfwidth": 0.014,
+    "excludes_zero": false,
+    "discordant": {
+     "a_only": 24,
+     "b_only": 18,
+     "total": 42,
+     "frac_of_pairs": 0.0467
+    },
+    "identical_pairs": 858
+   },
+   "overrules_per_game": 0.2878,
+   "transfer": {
+    "overrules_per_game": 0.2878,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0136,
+    "naive_expectation_range_from_K_ci": [
+     0.0062,
+     0.021
+    ],
+    "realized_delta": 0.0072,
+    "tau_point": 0.528,
+    "tau_range_from_K_ci": [
+     0.343,
+     1.158
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -0.498,
+     1.554
+    ],
+    "full_transfer_excluded": false,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  }
+ },
+ "per_opponent": {
+  "aggressive": {
+   "recorded_eval_wr_24M": 0.92,
+   "A_win_rate": 0.951,
+   "B_win_rate": 0.931,
+   "n_pairs": 450,
+   "delta": 0.02,
+   "ci95": [
+    0.0044,
+    0.0356
+   ],
+   "discordant": {
+    "a_only": 11,
+    "b_only": 2,
+    "total": 13,
+    "frac_of_pairs": 0.0289
+   },
+   "overrules_per_game": 0.16,
+   "forced": 0.9347,
+   "raced": 0.0653,
+   "overrule_of_all": 0.0083
+  },
+  "aggressive_v2": {
+   "recorded_eval_wr_24M": 0.88,
+   "A_win_rate": 0.8946,
+   "B_win_rate": 0.8795,
+   "n_pairs": 450,
+   "delta": 0.0133,
+   "ci95": [
+    -0.0073,
+    0.034
+   ],
+   "discordant": {
+    "a_only": 15,
+    "b_only": 9,
+    "total": 24,
+    "frac_of_pairs": 0.0533
+   },
+   "overrules_per_game": 0.3178,
+   "forced": 0.8945,
+   "raced": 0.1055,
+   "overrule_of_all": 0.0151
+  },
+  "heuristic": {
+   "recorded_eval_wr_24M": 0.89,
+   "A_win_rate": 0.9011,
+   "B_win_rate": 0.921,
+   "n_pairs": 450,
+   "delta": -0.0178,
+   "ci95": [
+    -0.037,
+    0.0014
+   ],
+   "discordant": {
+    "a_only": 8,
+    "b_only": 16,
+    "total": 24,
+    "frac_of_pairs": 0.0533
+   },
+   "overrules_per_game": 0.2667,
+   "forced": 0.9256,
+   "raced": 0.0744,
+   "overrule_of_all": 0.0124
+  },
+  "heuristic2": {
+   "recorded_eval_wr_24M": 0.91,
+   "A_win_rate": 0.9018,
+   "B_win_rate": 0.9089,
+   "n_pairs": 450,
+   "delta": -0.0089,
+   "ci95": [
+    -0.0309,
+    0.0131
+   ],
+   "discordant": {
+    "a_only": 12,
+    "b_only": 15,
+    "total": 27,
+    "frac_of_pairs": 0.06
+   },
+   "overrules_per_game": 0.2689,
+   "forced": 0.9262,
+   "raced": 0.0738,
+   "overrule_of_all": 0.0114
+  },
+  "random": {
+   "recorded_eval_wr_24M": 1.0,
+   "A_win_rate": 1.0,
+   "B_win_rate": 1.0,
+   "n_pairs": 450,
+   "delta": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "discordant": {
+    "a_only": 0,
+    "b_only": 0,
+    "total": 0,
+    "frac_of_pairs": 0.0
+   },
+   "overrules_per_game": 0.2356,
+   "forced": 0.9596,
+   "raced": 0.0404,
+   "overrule_of_all": 0.0095
+  },
+  "setup_sweep": {
+   "recorded_eval_wr_24M": 0.93,
+   "A_win_rate": 0.9265,
+   "B_win_rate": 0.9267,
+   "n_pairs": 450,
+   "delta": -0.0011,
+   "ci95": [
+    -0.0164,
+    0.0141
+   ],
+   "discordant": {
+    "a_only": 6,
+    "b_only": 7,
+    "total": 13,
+    "frac_of_pairs": 0.0289
+   },
+   "overrules_per_game": 0.1933,
+   "forced": 0.9275,
+   "raced": 0.0725,
+   "overrule_of_all": 0.0095
+  },
+  "setup_sweep_v2": {
+   "recorded_eval_wr_24M": 0.88,
+   "A_win_rate": 0.9089,
+   "B_win_rate": 0.9111,
+   "n_pairs": 450,
+   "delta": -0.0022,
+   "ci95": [
+    -0.0191,
+    0.0147
+   ],
+   "discordant": {
+    "a_only": 7,
+    "b_only": 8,
+    "total": 15,
+    "frac_of_pairs": 0.0333
+   },
+   "overrules_per_game": 0.1867,
+   "forced": 0.9299,
+   "raced": 0.0701,
+   "overrule_of_all": 0.009
+  },
+  "staller": {
+   "recorded_eval_wr_24M": 0.96,
+   "A_win_rate": 0.942,
+   "B_win_rate": 0.9351,
+   "n_pairs": 450,
+   "delta": 0.0078,
+   "ci95": [
+    -0.0098,
+    0.0253
+   ],
+   "discordant": {
+    "a_only": 10,
+    "b_only": 7,
+    "total": 17,
+    "frac_of_pairs": 0.0378
+   },
+   "overrules_per_game": 0.2089,
+   "forced": 0.9256,
+   "raced": 0.0744,
+   "overrule_of_all": 0.0093
+  },
+  "staller_v2": {
+   "recorded_eval_wr_24M": 0.96,
+   "A_win_rate": 0.9333,
+   "B_win_rate": 0.9267,
+   "n_pairs": 450,
+   "delta": 0.0067,
+   "ci95": [
+    -0.0151,
+    0.0285
+   ],
+   "discordant": {
+    "a_only": 14,
+    "b_only": 11,
+    "total": 25,
+    "frac_of_pairs": 0.0556
+   },
+   "overrules_per_game": 0.3667,
+   "forced": 0.9097,
+   "raced": 0.0903,
+   "overrule_of_all": 0.0149
+  }
+ },
+ "rate_table_vs_iteration2": {
+  "forced": {
+   "iteration2_mirror_10M": 0.7515,
+   "this_cell_roster_24M": 0.9262
+  },
+  "raced": {
+   "iteration2_mirror_10M": 0.2485,
+   "this_cell_roster_24M": 0.0738
+  },
+  "separated_of_raced": {
+   "iteration2_mirror_10M": 0.4542,
+   "this_cell_roster_24M": 0.3379
+  },
+  "kept_of_raced": {
+   "iteration2_mirror_10M": 0.22,
+   "this_cell_roster_24M": 0.1876
+  },
+  "overrule_of_raced": {
+   "iteration2_mirror_10M": 0.2342,
+   "this_cell_roster_24M": 0.1502
+  },
+  "overrule_of_all": {
+   "iteration2_mirror_10M": 0.0582,
+   "this_cell_roster_24M": 0.0111
+  },
+  "futility_of_raced": {
+   "iteration2_mirror_10M": 0.5458,
+   "this_cell_roster_24M": 0.6621
+  },
+  "rounds_per_race": {
+   "iteration2_mirror_10M": 13.17,
+   "this_cell_roster_24M": 10.476
+  },
+  "eliminated_per_race": {
+   "iteration2_mirror_10M": 5.35,
+   "this_cell_roster_24M": 4.676
+  },
+  "mean_search_s_per_raced_decision": {
+   "iteration2_mirror_10M": 2.278,
+   "this_cell_roster_24M": 2.5309
+  },
+  "contested_decisions_per_game": {
+   "iteration2_mirror_10M": 9.42,
+   "this_cell_roster_24M": 1.63
+  },
+  "search_s_per_game": {
+   "iteration2_mirror_10M": 21.46,
+   "this_cell_roster_24M": 4.13
+  },
+  "mean_wall_s_per_game": {
+   "iteration2_mirror_10M": 24.44,
+   "this_cell_roster_24M": 5.6
+  },
+  "overrules_per_game": {
+   "iteration2_mirror_10M": 2.2069,
+   "this_cell_roster_24M": 0.2449
+  }
+ },
+ "arm_A_fold": {
+  "games": 4050,
+  "decisions": 100397,
+  "searched": 6603,
+  "changed": 992,
+  "searched_frac": 0.0658,
+  "change_rate": 0.1502,
+  "decisions_per_game": 24.79,
+  "counts": {
+   "n_defensive": 89422,
+   "n_defensive_confirm_declined": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_forced": 82819,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 82819,
+   "n_defensive_futility": 4372,
+   "n_defensive_futility_deadline": 4369,
+   "n_defensive_kept": 1239,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 992,
+   "n_defensive_raced": 6603,
+   "n_defensive_separated": 2231
+  },
+  "rates": {
+   "forced": 0.9262,
+   "forced_wp": 0.9262,
+   "forced_n_legal": 0.0,
+   "raced": 0.0738,
+   "separated_of_raced": 0.3379,
+   "kept_of_raced": 0.1876,
+   "futility_of_raced": 0.6621,
+   "overrule_of_all": 0.0111,
+   "overrule_of_raced": 0.1502,
+   "futility_deadline_frac": 0.9993
+  },
+  "overrules": 992,
+  "overrules_per_game": 0.2449,
+  "race": {
+   "raced_decisions": 6603,
+   "rounds_total": 69171,
+   "rounds_per_race": 10.476,
+   "eliminated_per_race": 4.676,
+   "deadline_truncated_decisions": 4369,
+   "mean_search_s_per_raced_decision": 2.5309
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 5.6,
+   "total_wall_h": 6.31,
+   "search_s_per_game": 4.13,
+   "contested_decisions_per_game": 1.63
+  }
+ },
+ "readings": {
+  "R1_transfer_is_fine": {
+   "registered": "A-B ~ + (overrules/game x per-decision gain), roughly +5-12 pp if overrule behaviour matches iteration 2's ~2.2/game at +4.7 pp",
+   "status_of_the_pp_band": "UNREACHABLE BY CONSTRUCTION on this population and scored as such, not as missed: the subject's own recorded win_rate_vs_bots at 24M is 0.9162, so the arithmetic ceiling on A-B is +0.0838. The band was registered from mirror arithmetic before the roster's saturation was in view. The population ALSO changed the strategy's behaviour, so the rate factor is re-measured here.",
+   "selected": false
+  },
+  "R2_compounding_destroys_it": {
+   "registered": "A-B ~ 0 => compounding/selection destroys per-decision gains in vivo",
+   "selected": true,
+   "resolution": "a true |A-B| >= 0.0059 would have resolved at this n"
+  },
+  "R3_intermediate": {
+   "registered": "report the transfer coefficient \u2014 the number itself is the finding",
+   "tau": {
+    "overrules_per_game": 0.2449,
+    "per_decision_gain": 0.0474,
+    "per_decision_gain_ci": [
+     0.0216,
+     0.073
+    ],
+    "naive_additive_expectation": 0.0116,
+    "naive_expectation_range_from_K_ci": [
+     0.0053,
+     0.0179
+    ],
+    "realized_delta": 0.002,
+    "tau_point": 0.172,
+    "tau_range_from_K_ci": [
+     0.112,
+     0.378
+    ],
+    "tau_range_from_realized_delta_ci": [
+     -0.336,
+     0.681
+    ],
+    "full_transfer_excluded": true,
+    "zero_transfer_excluded": false,
+    "note": "tau = 1 means every per-decision win-probability point arrived at the scoreboard; tau = 0 means none did. The additive accounting is FIRST-ORDER by construction \u2014 win-probability gains at different decisions of one game are not independent and do not literally sum \u2014 so tau is a diagnostic ratio against a stated benchmark, not an unbiased estimator of anything."
+   }
+  }
+ },
+ "coin_flip_bots": {
+  "bots": [
+   "staller",
+   "staller_v2"
+  ],
+  "site": "agents/opponents.py \u2014 `random.random() < _PROTECT_PROBABILITY` in Gen3StallerPlayer and Gen3StallerV2Player",
+  "effect": "a shared process-wide RNG the two arms can consume in a different order, so a pair can diverge with zero overrules; found by the integrity check, confined to these two bots by measurement, unbiased in direction",
+  "sensitivity": "the `deterministic7_POSTHOC` stratum excludes them and is the exactly-paired arm"
+ },
+ "prereg": "tmp/tcell/PREREG.md, written after a 36-battle cost pilot and BEFORE the main run; the hard4 stratum is defined from the subject's own recorded latest_eval per-opponent win rates, which are external to this cell's data"
+}
