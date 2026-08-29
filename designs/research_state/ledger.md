@@ -6119,3 +6119,32 @@ paired-rollout confirmation, the defensive-search discipline) as the target-qual
 "3 filters → 2 transplants" pipeline as code. Everything OFF = byte-identical; train-loop
 knobs, never version-locked; the winner's-curse and learned-φ-invariance caveats are REQUIRED
 sections in the doc, not footnotes. Nothing runs until its era registers arms.
+
+### 🏆 PROBE L VERDICT: the head KNOWS 96.4% OF THE WHIFFS AT DECISION TIME — and the "shaping" lever is structurally REFUTED (2026-08-29)
+
+Record `designs/research_state/measurements/whiff_head_knowledge_2026-08-29.md` (landed 760fe1e;
+617 immune-whiff decisions / 834 battles / 11 checkpoint steps each scored by its OWN snapshot;
+load path to 1.3e-05). **Scored: (P1 head-knows) PASSED overwhelmingly — 0.964 [0.948,0.978]
+vs the ≥60% bar**, median margin 0.049 win-prob units clearing the measured floor by TWO ORDERS
+OF MAGNITUDE (within-decision sd 0.00062; preference survives all six dice streams on 86.7%).
+The contrast carries the claim: whiff-vs-hit_pivot **+0.213**, vs no_pivot **+0.342** — the
+knowledge is WHIFF-SPECIFIC, not probe G's generic edge. **(P2 α) PASSED with a sharpening:**
+α flags THE PIVOT (+0.209 vs no_pivot) not the whiff (null vs hit_pivot) — correct division of
+labor; the whiff knowledge lives in the win-prob head. **(Repeat-offender) REFUTED BY A
+CEILING: the head is at 1.000 on the FIRST click of a loop** — it knew immediately, forever,
+and was ignored every time. **Starvation sized: the policy samples the head's preferred action
+at median p=0.002** (77% below 5%). **(The shaping half of the decision rule) REFUTED AS
+MIS-SPECIFIED, superseding parts of b070d6e further:** `win_prob_mode="shaping"` is a stop-grad
+toggle on an aux head's INPUT — trunk share 1.02% (L1 upper bound) at cosine −0.133 AGAINST the
+policy gradient; the reward registry has NO win-prob member; even hypothetical PBRS@0.05 is
+homeopathic (1.6e-3/step, 5.4e-5 of terminal). "Raise the dose" names no real mechanism.
+**THE DISTILLATION BRANCH FIRES, with a structural argument the registration lacked: the
+head's ranking IS NOT A QUANTITY THE NETWORK COMPUTES — it is the head COMPOSED WITH A
+SIMULATOR (one re-roll per action), a composition PPO never performs. No coefficient can
+deliver it; only an explicit teacher that materializes the ranking and writes it back as a
+policy target.** Consequence for the ai_v12 doc (build in flight, briefed to incorporate this
+record): route 2 is PRIMARY; route 1 is suppress-only and needs a coef far above 0.05 to be
+non-homeopathic — its experiment ladder should start there. Bonus: measurement 4 DONE — the
+CfEvidentialHead is LIVE (mean tracks the head r=0.82, 0% at Beta(1,1)) and CONFIDENT where it
+disagrees (evidence 10.07 at whiffs vs 9.24 ordinary) — the uncertainty machinery works,
+low-dosage caveat carried.
