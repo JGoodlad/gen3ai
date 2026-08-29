@@ -5974,3 +5974,22 @@ manipulation and it already ran** — its absolute-vs-~0.69 row is REQUESTED bef
 ceiling experiment is designed; if the v8 curriculum lifts the ceiling, rev-4's lever is found.
 Also requested: the tail-specificity column and F6-CURR's differentiation row (the C1 causal
 read), absent from this relay.
+
+### 🧭 WIN-PROB HEAD EMPOWERMENT PROGRAM registered (owner direction, 2026-08-29) — "the binding constraint gets everything"
+
+Owner: if the win-prob head is the leaf, upgrade it — CI + route its loss into the model.
+Program registered, ranked by leverage, gated on tonight's iter-3/probe-K door: **(1) LABELS —
+the weakest link**: retrain the head on the R1 v2 factory's opponent-MARGINALIZED, CONTRASTIVE
+(sibling-differenced) tight-MC labels — trains exactly the differential-ranking ability search
+consumes (G sized the residual ≤5.7pp). Jumps to front if probe K returns ARTIFACT. **(2)
+EPISTEMIC UNCERTAINTY for the racer** — the winner's-curse hole is that paired CIs see sampling
+noise, not leaf error; first version = CHECKPOINT-DISAGREEMENT spread (no retraining, 2–3×
+cheap 1-ply cost), validated against probe K's labels ("does disagreement predict leaf
+error?"); wire into racing separation thresholds if yes. Note: a learned variance head captures
+ALEATORIC (the ~39% hidden-info floor), not the epistemic bias that burned iter 2 — flavor
+matters. **(3) LOSS ROUTING — already adjudicated**: gen-12 exonerated win-prob shaping @0.05
+(label_only convicted); ship it in a run with the crystallization rank-watch (the value_cls/
+FitNets history). **(4) RE-AUDIT v29** (the existing calibrated distributional value head) as a
+SEARCH-uncertainty source before building new machinery — its "not a training lever" verdict
+never tested this job. Sequencing: nothing dispatched until iter 3 + probe K land (hours) —
+K's labels are also (2)'s validation set, so waiting buys the ground truth.
