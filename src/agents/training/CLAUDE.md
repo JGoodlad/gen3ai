@@ -4879,6 +4879,100 @@ any-None → None), `teacher/produce_test::test_pi_target_*` (π' sums to 1 over
 A* / temperature flattens / completed-Q floor). End-to-end pipeline (selection → exact-opp search →
 confirm → gate → Correction) validated against a real run.
 
+### The WIN-PROB ONE-PLY teacher (`--search-teacher-mode winprob_oneply`, ai_v12 routes 2+3)
+
+**`--search-teacher-mode` defaults to `crater` — everything above — and that default is
+byte-identical to the behaviour before the flag existed. Nothing has run `winprob_oneply`; no arm is
+registered.** Design:
+[`designs/ai_v12/design_winprob_behavior_coupling.md`](../../../designs/ai_v12/design_winprob_behavior_coupling.md).
+
+A new **SUPPLY** of corrections on this exact seam, not a new pipeline. It produces the SAME
+`Correction` record, so the shard format, `CorrectionBuffer`, `_searchteacher_loss` and
+`--search-teacher-coef` are all untouched and cannot tell the two modes apart. Only the SELECTION and
+PRODUCTION halves are swapped, and the dispatch lives in ONE place (`teacher/modes.py`) because there
+are three call sites and a mode string validated in three places will eventually mean three things.
+
+| | `crater` (default) | `winprob_oneply` |
+|---|---|---|
+| asks | *where did the model lose the most value, and is there a strictly better LINE?* | *at a decision the head calls CONTESTED, does a one-ply read prefer another action by a margin that survives confirmation?* |
+| selection | `select_candidates` — value craters, falsify-gated to reducible mistakes, ±window | `select_winprob_candidates` — the H rule, **model-free** off the trace's recorded `win_probs` / `action_mask` |
+| production | `produce_correction` — a depth-2 beam over the **critic**, Wilson-gated | `produce_winprob_correction` — one-ply **win-prob** ranking → margin floor → paired rollouts |
+| battles used | LOSSES only | **every outcome** — a whiff in a won game is still a whiff, and the head's self-referential labels are exactly why it never noticed |
+
+The pipeline, which is the design doc's "3 filters → 2 transplants" as code:
+
+1. **CONTESTED gate** — `n_legal ≥ 2` AND `|P(win|s) − 0.5| < --winprob-teacher-band` (default
+   `0.15`). **Imported from `main.search_dividend.defensive.gate`**, not re-typed: two definitions of
+   "contested" that could drift apart while both looked right is a failure this tree has paid for,
+   and the teacher's band IS `DefensiveConfig.wp_margin`. A decision with no recorded win-prob (NaN)
+   is never contested and is **never imputed** — one we cannot judge is one we do not teach from.
+2. **ONE-PLY read** — `ProbeSession.lookahead` re-rolls the turn under each legal action (opponent
+   plays its RECORDED move), materializes the successor through the real encoder, reads the heads.
+   We take the **win-prob** read, not V: the critic estimates shaped return in PopArt units, and
+   probe G measured the win-prob head beating the played action on exactly this job. A candidate with
+   no win-prob read is **dropped, never scored from the critic** — a fall-back would silently run a
+   different teacher under the same flag (the confusion `defensive.check_leaf` exists to prevent).
+3. **MARGIN gate** — `--winprob-teacher-margin` (default `0.02`), against the **PLAYED** action, not
+   the runner-up: the target exists to move probability OFF what the policy did.
+4. **CONFIRMATION** — `--teacher-confirm-rollouts` (the **existing** flag, default 8) paired
+   `replay_counterfactual` rollouts to a terminal for A\* and for the played action. A rollout
+   contains the opponent response the one-ply leaf structurally lacks. The test is **asymmetric on
+   purpose** — A\*'s Wilson LOWER bound against the played action's POINT rate — because the failure
+   it catches is a flattering estimate of the challenger.
+
+⚠️ **STEP 4 IS A REQUIREMENT, NOT A REFINEMENT — the WINNER'S CURSE.** Defensive-search iter 2
+(`designs/research_state/measurements/defensive_search_iter2_2026-08-29.md`) un-throttled its
+allocator, produced **13× more evidence-certified overrules (1.8% → 5.82%)** and landed the win rate
+on **0.5003 [0.4803, 0.5203] — the point estimate IS the null**. CRN pairing removes dice noise *and*
+the shared offset, so what a separation procedure certifies is the leaf's residual **differential**
+bias (RMS 0.122, larger than most true gaps) as much as signal. **Statistical separation of a biased
+reader is not correctness**, and unlike route 1's PBRS a distillation target has **no invariance
+shield** — a wrong target simply trains the policy to be wrong. `--teacher-confirm-rollouts 0` exists
+only because the design doc's **E2** needs an undisciplined control arm to demonstrate this.
+
+The counter-evidence that keeps the mode alive: **probe K** re-judged iter 2's 3,531 overrules under
+opponent-MARGINALIZED ground truth and found **+0.0474 [+0.0216, +0.0730] per decision — REAL**. The
+overrules were right; the per-decision → per-episode TRANSFER failed (+4.7pp × ~2.2 overrules/game
+bought +0.0003). A **training** target changes the policy everywhere the network generalizes, not
+only at the 2.2 decisions per game where a searcher intervened — which is why the response to probe K
+is route 2 rather than a fourth iteration of route 3 as an inference lever.
+
+**Why `--winprob-teacher-margin` defaults to 0.02 and not 0.122.** 0.122 is the *measured* leaf-bias
+RMS, and running there collapses target volume by roughly an order of magnitude before any arm has
+asked whether it should. E4 is the arm that measures the volume/quality trade; E2 runs at the working
+default. ⚠️ If the head's differential bias is ever fixed at source (the empowerment program's
+contrastive marginalized labels), **this default and E4's whole premise need re-measuring** — they
+are keyed to a bias that would no longer exist.
+
+**What was reused from `search_dividend/` and what was not.** `defensive.gate` + `DefensiveConfig`:
+imported. `defensive.verdict` / `resolve_action`: NOT — they answer "which action do I PLAY", and the
+teacher answers "is this a target". `racing.Racer` and the budget/deadline machinery: NOT — they are
+the *allocator*, racing arms against a wall clock inside a battle in flight, and the teacher works
+offline from a recorded reconstruction with no clock to race. `playoff.PlayoffRunner`: NOT — it needs
+a live `SearchEngine` and a shared `Deadline`; the confirmation goes through
+`ProbeSession.replay_counterfactual`, the same offline primitive `produce_correction` already uses.
+The residual duplication is the paired-margin arithmetic, a handful of lines, and it is deliberate.
+
+**Flags** (all OPERATIONAL — re-pass on resume, like `--search-teacher` itself; not `_resolve`d, not
+on `ModelVersion`, recorded in `metadata.json`'s `cli_args` like the rest of this family):
+`--search-teacher-mode {crater,winprob_oneply}` (default `crater`), `--winprob-teacher-band` (0.15),
+`--winprob-teacher-margin` (0.02). The confirm count is the **existing** `--teacher-confirm-rollouts`
+— adding a second spelling for one number is how a flag surface rots.
+
+**Config gates** (the only gates there are): `winprob_oneply` without `--search-teacher` is refused
+(no teacher would run at all); without `--win-prob-mode read_only|shaping` it is refused (the ranking
+IS the head, and falling back to the critic would run a different teacher under the same flag); the
+band must be in `(0, 0.5]` and the margin in `[0, 1)`. An unknown mode string **raises** at callback
+construction rather than falling back to `crater` — and a worker config with no `mode` key defaults
+to `crater`, so an older parent's config still runs exactly as it did.
+
+**Tests.** `teacher/winprob_oneply_test.py` (40): every gate as a pure function (contested / ranking /
+margin / Wilson / paired confirmation, including the synthetic winner's-curse rejection and the
+asymmetry of the test); the mode seam (default, unknown-mode raise, both dispatch pairs, the two
+margins staying separate parameters, both workers' `crater` fall-back, callback-time validation); the
+consumer contract (a winprob `Correction` runs through the real `_searchteacher_loss`); crater-path
+argument identity; and all five config gates.
+
 ## Process liveness guards (`watchdog.py`)
 
 Two daemon-thread watchdogs keep a hung/abandoned run from lingering:

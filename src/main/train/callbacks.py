@@ -196,6 +196,11 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             n_battles=args.teacher_gen_battles,
             # OPD: when --opd-coef>0 the workers ALSO build the improved distribution π' (the KL target).
             opd_build_pi_target=bool(args.opd_coef and args.opd_coef > 0), opd_beta=args.opd_beta,
+            # ai_v12 routes 2+3: which TEACHER produces the corrections. "crater" (the default) is
+            # the behaviour that existed before the flag; "winprob_oneply" swaps the selection +
+            # production halves and leaves everything downstream of the CorrectionBuffer alone.
+            mode=args.search_teacher_mode, wp_band=args.winprob_teacher_band,
+            wp_margin=args.winprob_teacher_margin,
             # The workers' sim engine follows the run's --use-bridge impl (no separate flag);
             # "node" when the bridge is off, which is the historical behaviour.
             impl=args.bridge_impl,

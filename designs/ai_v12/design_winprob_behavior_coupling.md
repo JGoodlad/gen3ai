@@ -365,10 +365,23 @@ does.
 - `agents/training/teacher/generate.py` — fresh loss-trace generation for the persistent worker.
   Unchanged.
 
-**What is new** (`agents/training/teacher/winprob_oneply.py`): the *selection and production*
-half only — the contested gate, the one-ply φ ranking over legal actions, the margin gate, and
-the assembly of a `Correction` from a confirmed preference. It sits beside `selection.py` /
-`produce.py` as a peer, and the mode string chooses between them.
+**What is new** — two files, and only two:
+
+- `agents/training/teacher/winprob_oneply.py`: the *selection and production* half — the contested
+  gate, the one-ply φ ranking over legal actions, the margin gate, the paired-rollout confirmation,
+  and the assembly of a `Correction` from a confirmed preference. It sits beside `selection.py` /
+  `produce.py` as a peer.
+- `agents/training/teacher/modes.py`: the dispatcher. The mode is validated and routed in **one**
+  place because there are **three** call sites — the per-cycle worker, the persistent worker, and
+  the callback's own selection — and a mode string validated in three places will eventually mean
+  three things. An unknown mode **raises** rather than falling back to `crater`; a worker config
+  with no `mode` key defaults to `crater`, so a config written by an older parent still runs
+  exactly as it did.
+
+The two producers take **two different margins**, and they are two parameters rather than one on
+purpose: `margin_min` gates the `crater` mode's Wilson bound in win-RATE units against the played
+loss line, while `wp_margin` gates `winprob_oneply`'s one-ply Δφ in win-PROBABILITY units.
+Collapsing them would silently re-purpose whichever value a run happened to set.
 
 **What was REUSED from `src/main/search_dividend/`, and what was not.** The defensive-search
 machinery is the conceptual source of the confirm discipline, and §2.5 is built on its

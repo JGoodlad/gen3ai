@@ -20,7 +20,7 @@ def run(cfg_path: str) -> None:
     from utils.bridge.search_session import SearchSession
     from agents.training.teacher.selection import Candidate
     from agents.training.teacher.opponent_resolver import resolve_opponent
-    from agents.training.teacher.produce import produce_correction
+    from agents.training.teacher.modes import produce_for_mode
 
     with open(cfg_path) as f:
         cfg = json.load(f)
@@ -31,6 +31,10 @@ def run(cfg_path: str) -> None:
     # ("node" default). Session-wide on the ProbeSession AND on the warm SearchSession below, so
     # both halves of a correction (search + confirm) are produced by the same engine.
     impl = cfg.get("impl", "node")
+    # --search-teacher-mode (ai_v12 routes 2+3). Absent ⇒ "crater", the historical behaviour, so
+    # a config written by an older parent still runs exactly as it did.
+    mode = cfg.get("mode", "crater")
+    wp_margin = float(cfg.get("wp_margin", 0.02))   # the one-ply delta-phi floor (NOT margin_min)
 
     # The FROZEN trainee snapshot drives both the search (ProbeModel) and the confirm (raw model) —
     # ckpt_override pins every battle's model to it (instead of the exact→nearest→recent ladder).
@@ -47,11 +51,11 @@ def run(cfg_path: str) -> None:
         for c in cands:
             opp_ckpt, opp_src = resolve_opponent(run_dir, c.opponent, c.step)
             try:
-                corr, st = produce_correction(
-                    sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
+                corr, st = produce_for_mode(
+                    mode, sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
                     confirm_rollouts=int(cfg["confirm_rollouts"]), depth=int(cfg["depth"]),
                     beam=int(cfg["beam"]), top_k=int(cfg["top_k"]),
-                    margin_min=float(cfg["margin_min"]), search_session=ss,
+                    margin_min=float(cfg["margin_min"]), wp_margin=wp_margin, search_session=ss,
                     build_pi_target=opd_build_pi_target, opd_beta=opd_beta)
             except Exception as e:  # noqa: BLE001 — one bad candidate never kills the worker's slice
                 corr, st = None, f"error:{type(e).__name__}"

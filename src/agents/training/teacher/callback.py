@@ -51,6 +51,7 @@ class SearchTeacherCallback(BaseCallback):
                  margin_min: float = 0.0, falsify_gate: bool = True, scan_limit: int = 60,
                  persistent: bool = False, refresh_steps: int = 500_000, n_battles: int = 12,
                  opd_build_pi_target: bool = False, opd_beta: float = 1.0,
+                 mode: str = "crater", wp_band: float = 0.15, wp_margin: float = 0.02,
                  impl: str = "node", verbose: int = 0):
         super().__init__(verbose)
         self.run_dir = run_dir
@@ -60,6 +61,15 @@ class SearchTeacherCallback(BaseCallback):
         self.depth, self.beam, self.top_k = depth, beam, top_k
         self.confirm_rollouts, self.margin_min = confirm_rollouts, margin_min
         self.falsify_gate, self.scan_limit = falsify_gate, scan_limit
+        # --search-teacher-mode (ai_v12 routes 2+3). `crater` is the default and is the
+        # behaviour that existed before the flag; `winprob_oneply` swaps the SELECTION and
+        # PRODUCTION halves for the one-ply win-prob ranking teacher. Everything downstream of
+        # the CorrectionBuffer is shared and cannot tell them apart. Validated HERE (not at the
+        # worker) so a bad mode fails at callback construction rather than in a subprocess.
+        from agents.training.teacher.modes import validate_mode
+        self.mode = validate_mode(mode)
+        self.wp_band = float(wp_band)      # the CONTESTED band half-width (|P(win)-0.5| <)
+        self.wp_margin = float(wp_margin)  # the one-ply delta-phi floor; NOT margin_min (see modes.py)
         # OPD (on-policy self-distillation): tell the workers to ALSO build the improved distribution π'
         # (the KL target) on each correction. off = AWR-only (no π' → the KL loss is skipped).
         self.opd_build_pi_target = bool(opd_build_pi_target)
@@ -180,6 +190,7 @@ class SearchTeacherCallback(BaseCallback):
             "top_k": self.top_k, "confirm_rollouts": self.confirm_rollouts,
             "margin_min": self.margin_min,
             "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
+            "mode": self.mode, "wp_band": self.wp_band, "wp_margin": self.wp_margin,
             "impl": self.impl,
         }
         cfg_path = os.path.join(self._persist_dir, f"config_{wid}.json")
@@ -303,10 +314,10 @@ class SearchTeacherCallback(BaseCallback):
     def _launch(self) -> None:
         self._last_launch_step = self.num_timesteps
         try:
-            from agents.training.teacher.selection import select_candidates
-            cands = select_candidates(
-                self.run_dir, budget=self.budget, scan_limit=self.scan_limit,
-                falsify_gate=self.falsify_gate, window=2)
+            from agents.training.teacher.modes import select_for_mode
+            cands = select_for_mode(
+                self.mode, self.run_dir, budget=self.budget, scan_limit=self.scan_limit,
+                falsify_gate=self.falsify_gate, window=2, wp_band=self.wp_band)
         except Exception as e:  # noqa: BLE001 — selection must never crash training
             if self.verbose:
                 print(f"[SearchTeacher] selection failed: {e}")
@@ -340,6 +351,7 @@ class SearchTeacherCallback(BaseCallback):
                 "depth": self.depth, "beam": self.beam, "top_k": self.top_k,
                 "confirm_rollouts": self.confirm_rollouts, "margin_min": self.margin_min,
                 "opd_build_pi_target": self.opd_build_pi_target, "opd_beta": self.opd_beta,
+                "mode": self.mode, "wp_band": self.wp_band, "wp_margin": self.wp_margin,
                 "impl": self.impl,
             }
             cfg_path = os.path.join(self._cycle_dir, f"config_{wid}.json")

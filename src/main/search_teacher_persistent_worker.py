@@ -77,8 +77,7 @@ def run(cfg_path: str) -> None:
     from utils.teambuilder import Gen3Teambuilder
     from utils.bridge.search_session import SearchSession
     from agents.training.teacher.generate import generate_loss_traces
-    from agents.training.teacher.selection import select_candidates
-    from agents.training.teacher.produce import produce_correction
+    from agents.training.teacher.modes import produce_for_mode, select_for_mode
     from main.prober.session import ProbeSession
 
     with open(cfg_path) as f:
@@ -119,6 +118,11 @@ def run(cfg_path: str) -> None:
     # the searches (SearchSession) and the replay/re-roll driver (ProbeSession). One value, so a
     # correction is never half-produced on one engine and half on the other.
     impl = cfg.get("impl", "node")
+    # --search-teacher-mode (ai_v12 routes 2+3). Absent ⇒ "crater" — an older parent's
+    # config runs exactly as it did.
+    mode = cfg.get("mode", "crater")
+    wp_band = float(cfg.get("wp_band", 0.15))
+    wp_margin = float(cfg.get("wp_margin", 0.02))
     ss = SearchSession(timeout=timeout, impl=impl)
     try:
         while True:
@@ -196,16 +200,18 @@ def run(cfg_path: str) -> None:
                 # long-lived worker doesn't accumulate model objects across thousands of iterations.
                 with ProbeSession(gen_root, ckpt_override=snapshot_path, impl=impl) as sess:
                     # plentiful fresh supply → skip the expensive falsify gate; the CONFIRM is the real gate.
-                    cands = select_candidates(gen_root, budget=int(cfg["per_iter_budget"]),
-                                              scan_limit=int(cfg["per_iter_budget"]),
-                                              falsify_gate=False, window=1)
+                    cands = select_for_mode(mode, gen_root, budget=int(cfg["per_iter_budget"]),
+                                            scan_limit=int(cfg["per_iter_budget"]),
+                                            falsify_gate=False, window=1, wp_band=wp_band,
+                                            session=sess)
                     for c in cands:
                         try:
-                            corr, _ = produce_correction(
-                                sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
+                            corr, _ = produce_for_mode(
+                                mode, sess, c, opponent_ckpt=opp_ckpt, opponent_source=opp_src,
                                 confirm_rollouts=int(cfg["confirm_rollouts"]), depth=int(cfg["depth"]),
                                 beam=int(cfg["beam"]), top_k=int(cfg["top_k"]),
-                                margin_min=float(cfg["margin_min"]), search_session=ss,
+                                margin_min=float(cfg["margin_min"]), wp_margin=wp_margin,
+                                search_session=ss,
                                 build_pi_target=bool(cfg.get("opd_build_pi_target", False)),
                                 opd_beta=float(cfg.get("opd_beta", 1.0)))
                         except Exception:  # noqa: BLE001 — one bad candidate never kills the loop

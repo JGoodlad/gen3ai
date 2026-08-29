@@ -472,6 +472,25 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # build π'), so it can't run standalone.
         parser.error("--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
                      "correction buffer; its workers build the π' targets)")
+    # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the
+    # correction buffer; `crater` is the default and needs no gate. Two ways `winprob_oneply` can be
+    # asked for and be unable to run, both silent otherwise (the callback is simply never built, or
+    # every candidate is skipped for want of a head):
+    if args.search_teacher_mode != "crater":
+        if not args.search_teacher:
+            parser.error(f"--search-teacher-mode {args.search_teacher_mode} requires "
+                         "--search-teacher — the mode selects which teacher fills the correction "
+                         "buffer, and without the flag no teacher runs at all.")
+        if args.win_prob_mode == "none":
+            parser.error(f"--search-teacher-mode {args.search_teacher_mode} requires "
+                         "--win-prob-mode read_only|shaping — the one-ply RANKING *is* the win-prob "
+                         "head, and --win-prob-mode none builds no head. Falling back to the critic's "
+                         "shaped-return ranking would run a DIFFERENT teacher under the same flag.")
+    if not (0.0 < args.winprob_teacher_band <= 0.5):
+        # 0 admits nothing; > 0.5 admits every decision and the gate stops being a gate.
+        parser.error("--winprob-teacher-band must be in (0, 0.5] (the |P(win) - 0.5| half-width)")
+    if not (0.0 <= args.winprob_teacher_margin < 1.0):
+        parser.error("--winprob-teacher-margin must be in [0, 1) — it is a win-PROBABILITY gap")
     # gen3_cf_label_plumbing_v1 — training-only, so these parser checks are the ONLY gate.
     if args.cf_winprob_coef is not None and args.cf_winprob_coef < 0.0:
         parser.error("--cf-winprob-coef must be >= 0 (0 = off)")

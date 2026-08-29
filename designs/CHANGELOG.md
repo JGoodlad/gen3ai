@@ -6040,3 +6040,74 @@ over 40 random episode layouts; truncation vs terminal; an off-by-one revert-cat
 coef-0 buffer identity plus the source contract that the import is local to the non-zero branch; the
 raw-reward / GAE-recompute order; chunk-boundary coverage; the loud-refusal path; both config gates;
 the v104 migration. Three revert-catchers were verified failing on a deliberate revert.
+
+---
+
+## `gen3_winprob_oneply_teacher_v1` (2026-08-29): `--search-teacher-mode` — the ExIt seam gains a second SUPPLY, not a second pipeline
+
+**`--search-teacher-mode` defaults to `crater`, which is byte-identical to the behaviour before the
+flag. Nothing has run `winprob_oneply`; no arm is registered.** ai_v12 routes 2+3 —
+`designs/ai_v12/design_winprob_behavior_coupling.md`. No config-version bump: all three flags are
+OPERATIONAL (the `--search-teacher` / `--teacher-search-budget` class), re-passed on resume and
+recorded in `metadata.json`'s `cli_args`, not on `ModelVersion`.
+
+**The question the new mode asks, and why it is a different one.** `crater` asks *"where did the
+model lose the most value, and is there a strictly better LINE"* — value craters, falsify-gated to
+reducible mistakes, then a depth-2 beam over the CRITIC. `winprob_oneply` asks *"at a decision the
+model's own win-prob head calls CONTESTED, does a one-ply successor read prefer another action by a
+margin that survives paired-rollout confirmation?"* It also takes **every outcome**, not only losses:
+a whiff in a won game is still a whiff, and the head's self-referential labels — outcomes under the
+current policy — are exactly why it never noticed.
+
+**It is a SUPPLY, not a pipeline.** The output is the same `Correction` record, so the shard format,
+`CorrectionBuffer`, `_searchteacher_loss` and `--search-teacher-coef` are untouched and cannot tell
+the modes apart. Only selection and production are swapped, and the dispatch lives in ONE module
+(`teacher/modes.py`) because there are three call sites — the per-cycle worker, the persistent worker
+and the callback's own selection — and a mode string validated in three places will eventually mean
+three things. A worker config with no `mode` key defaults to `crater`, so a config written by an
+older parent still runs exactly as it did.
+
+**The filters, in order.** CONTESTED (`n_legal ≥ 2` AND `|P(win) − 0.5| < --winprob-teacher-band`,
+default 0.15) — **imported from `search_dividend.defensive.gate`**, not re-typed, so the teacher's
+notion of "contested" and the searcher's cannot drift apart; model-free, off the trace's recorded
+`win_probs`/`action_mask`. ONE-PLY (`ProbeSession.lookahead`, the **win-prob** read — a candidate
+with no win-prob read is DROPPED, never scored from the critic, because a fall-back would silently
+run a different teacher under the same flag). MARGIN (`--winprob-teacher-margin`, default 0.02,
+against the PLAYED action rather than the runner-up — the target exists to move probability OFF what
+the policy did). CONFIRMATION (`--teacher-confirm-rollouts`, the EXISTING flag: paired
+`replay_counterfactual` rollouts, A\*'s Wilson LOWER bound against the played action's POINT rate —
+asymmetric on purpose, because the failure it catches is a flattering estimate of the challenger).
+
+⚠️ **CONFIRMATION IS A REQUIREMENT, NOT A REFINEMENT — the WINNER'S CURSE.** Defensive-search iter 2
+un-throttled its allocator, produced **13× more evidence-certified overrules (1.8% → 5.82%)** and
+landed the win rate on **0.5003 [0.4803, 0.5203] — the point estimate IS the null**. CRN pairing
+removes dice noise *and* the shared offset, so what a separation procedure certifies is the leaf's
+residual **differential** bias (RMS 0.122, larger than most true gaps) as much as signal.
+**Statistical separation of a biased reader is not correctness** — and unlike route 1's PBRS, a
+distillation target has **no invariance shield**: a wrong target simply trains the policy to be
+wrong. `--teacher-confirm-rollouts 0` exists only as the design doc's E2 control arm.
+
+**What keeps the mode alive rather than killing it:** probe K re-judged iter 2's 3,531 overrules
+under opponent-MARGINALIZED ground truth and found **+0.0474 [+0.0216, +0.0730] per decision — REAL**.
+The overrules were right; the per-decision → per-episode TRANSFER failed. A training target changes
+the policy everywhere the network generalizes, not only at the ~2.2 decisions per game where a
+searcher intervened.
+
+**The default margin is 0.02, deliberately NOT the measured 0.122.** Shipping the leaf-bias RMS as
+the floor collapses target volume by roughly an order of magnitude before any arm has asked whether
+it should; E4 is where the volume/quality trade gets measured. If the head's differential bias is
+ever fixed at source, this default and E4's premise both need re-measuring.
+
+**Reused vs not, recorded so nobody "fixes" it.** `defensive.gate` + `DefensiveConfig`: imported.
+`defensive.verdict`/`resolve_action`: not — they answer "which action do I PLAY". `racing.Racer` and
+the budget/deadline machinery: not — they are the allocator, racing arms against a wall clock inside
+a battle in flight, and the teacher works offline from a recorded reconstruction with no clock to
+race; importing them would drag a live-battle dependency into a path that has none.
+`playoff.PlayoffRunner`: not — it needs a live `SearchEngine` and a shared `Deadline`.
+
+**Tests** `teacher/winprob_oneply_test.py` (40): every gate as a pure function including the
+synthetic winner's-curse rejection and the asymmetry of the confirmation test; the mode seam (unknown
+mode RAISES rather than falling back, both dispatch pairs, the two margins staying separate
+parameters, both workers' `crater` fall-back, callback-time validation); the consumer contract (a
+winprob `Correction` runs through the real `_searchteacher_loss`); crater-path argument identity; all
+five config gates.
