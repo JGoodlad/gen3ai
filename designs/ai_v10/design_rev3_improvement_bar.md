@@ -148,6 +148,21 @@ coverage teams (informational rows), paired draws throughout.
 
 1. **THE IMPROVEMENT BAR: R3-ACTION − rev-1 final > 0 at z ≥ 2, pooled over the 9 meter teams.**
    Absolute, control-free — the owner's bar.
+
+**SCOPE AMENDMENT (2026-08-28 evening, pre-fold-launch — forced by the rev-2 general-strength
+h2h):** the verdict battery adds **free-draw head-to-head rows** (R3-ACTION vs rev-1 final and
+vs R2-ACTION; both orientations; n ≥ 600/pair) and the anchored-ELO row already ordered. Their
+READING is fixed now, before any arm runs, by the DILUTION ARITHMETIC: taught teams are 12 of
+719, so a free-draw game features one ~1.7% of the time per side — even COMPLETE transfer of an
+~+8pp per-team gain moves full-pool h2h by ~0.1–0.2pp, invisible at any feasible n. Therefore:
+**the h2h rows CANNOT corroborate a team-local gain and are not asked to; they guard against
+hidden general REGRESSION (bar: h2h ≥ 0.5 − 4pp) and detect any large unexpected general gain.**
+The verdict sentence is scope-explicit by construction: the piloting bar + R3-SELF split proves
+the MECHANISM (the fold adds team-local skill above anchoring); general strength at this
+coverage is NOT expected to move, and the era-level path to it is the steering equation
+**general gain ≈ per-team gain × coverage fraction × retention** — coverage is the
+optimization-era knob, not a rev-3 deliverable. Rev-2's own h2h (R2-ACTION level with rev-1 and
+R2-PLAIN at ±4pp) is CONSISTENT with this arithmetic, not evidence of failed generalization.
 2. **Compounding: R3-ACTION ≥ R2-ACTION** (pooled, point estimate; a significant regression vs
    R2-ACTION fails the run even if bar 1 squeaks).
 3. **No narrowness: held-out 2 teams ≥ rev-1 final − 2pp.**

@@ -5727,3 +5727,29 @@ the strongest possible argument for the rev-4 double-sided cell; different holes
 (or continued training) closes holes as a side effect, and teacher-as-opponent is optional.**
 Confound named: the budget law predicts row SIZE from dose alone, so the discriminator is the
 fingerprint/agreement layer, not row size.
+
+### ⚠️ GENERAL-STRENGTH H2H BANKED + THE DILUTION CORRECTION — the h2h cannot see team-local gains BY ARITHMETIC (2026-08-28 evening)
+
+Training relay: free-draw h2h (719-pool, both orientations, n=600/pair) — R2-ACTION vs rev-1
+0.4717 [0.432,0.512], vs R2-PLAIN 0.4750 [0.435,0.515]; both CIs contain 0.500; resolution
+~±4pp. Their reading ("the piloting gains do not show up as general strength") is banked WITH A
+CORRECTION adopted as the reading of record: **the instrument dilutes taught-team gains to
+invisibility by construction** — taught teams are 9–12 of 719, drawn ~1.7% of games per side,
+so even COMPLETE transfer of +8pp/team moves full-pool h2h by ~0.1–0.2pp. "Does not generalise"
+and "cannot be seen by this instrument" are both true sentences with different implications;
+the h2h adds "no hidden general gain OR regression ≥4pp," which is consistent with everything
+measured (off-slice ≈ 0 was already known from bar 2). **The strategic sharpening it forces is
+real though: at 9–12-team coverage the flywheel CANNOT move general strength; the era-level
+steering equation is general gain ≈ per-team gain × coverage fraction × retention** — coverage
+is the knob, and the road at 12/719/revolution is long (≈60 revolutions at full transfer;
+usage-weighting shortens it if taught teams are common archetypes — an optimization-era
+computation). Rev-3 spec §4 amended PRE-FOLD-LAUNCH: h2h rows added with the scope-explicit
+reading (guard against general REGRESSION at −4pp, never a corroboration requirement — asking
+h2h > 0.5 would be requiring the arithmetic impossible). **INFERENCE flagged, formal row
+requested: R2-ACTION beats R2-PLAIN by only +3.7pp on the meter ⇒ R2-PLAIN ≈ −2.1pp vs rev-1 —
+near the "fdC-like flat" registered branch, NOT the ≈−6 drift prediction ⇒ R2-CTRL's −5.8 was
+substantially ANOMALOUS and the capstone reading likely re-bases toward PARTIAL** (per §4.2's
+frozen branches); lead candidate for the CTRL−PLAIN gap = the cf-heads config delta probe D
+noted on CTRL/ACTION. Pair 3 (R2-PLAIN vs rev-1 h2h, running) decides whether continuation's
+cost is meter-local (drift as REDISTRIBUTION away from pinned-team lines) or general (decay).
+Fleet: F6f closing ~19:00; admission + h2h pair 3 land ~00:20 unattended.
