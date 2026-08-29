@@ -6353,3 +6353,39 @@ registered:** the famine claim is about EARLY learning — a paired ~5M sparse-v
 pre-test (same seeds) decides crater/crawl/keep-pace in hours-of-GPU and sizes the full 25M
 arms before three generation-scale runs are committed. Same genre as the probe-E lesson:
 the claims most worth auditing are the ones load-bearing enough that nobody thought to check.
+
+### 📜 PROBE N VERDICT: COMPOSITION DRIFT — the switch toll was DESIGNED against counterweights that were later deleted; clean-world spec amended twice (2026-08-29 late)
+
+Record `designs/research_state/measurements/no_progress_tax_review_2026-08-29.md` (landed
+f1698f2, every claim with sha/file:line). **The intent verdict: charging a voluntary switch was
+DESIGNED IN WRITING** (design doc 6a2cab4: "a pure tempo-pivot that lands nothing pays the
+front-loaded toll once (correctly)") — **but designed inside a reward where a switch also
+collected +0.35 net of bonuses** (SWITCH_BASE_BONUS 0.5, se_switch, escape_threat, pivot_*).
+`928a00b` (2026-06-12) zeroed every counterweight and kept the toll; the net sign on switching
+flipped +0.35 → −0.15 and nobody re-derived the term — the manager still carries a comment
+describing the dead world ("does not out-weigh the per-switch reframes"). **A NEW DEFECT GENRE
+for the record: COMPOSITION DRIFT — every piece individually correct, the ensemble's meaning
+inverted by sibling deletion, invisible to every per-piece test by construction.** Per path:
+seven charge paths INTENDED; voluntary switch DESIGNED-then-net-DRIFTED at 928a00b; forced
+switch a bug at origin. Probe M's defects cross-checked: #1 confirmed in substance (literal
+compression overstated — opponent-caused events can satisfy clauses on switch turns; no escape
+is CAUSED by the switch); #2 SITOUT off-by-one confirmed EXACTLY, root cause named (the
+attribute was minted for the obs slot where its tense is correct, reused in a different tense —
+same name, both readings true of the same delta, hence untestable); **#3 NEW: the trapped gate
+reads the upcoming legal too** (same three lines; 2.9%). Fix spec queued retrain-class: F1
+(new prev-tense field + thread prev legal; restores 36% of charges) + F2b (freeze-not-charge
+voluntary switches — F2a would reintroduce the hand-coded switch heuristic 928a00b deleted).
+**The tax-OFF causal arm needs NO code** (`--no-progress-penalty 0.0`). **CLEAN-WORLD SPEC
+AMENDED TWICE by scope 2: (1) 🚨 draw must be −1, not 0** — {+1,−1,0} makes the 250-turn stall
+the best non-winning outcome in an arm with zero anti-stall terms (inverts the ordering
+draw_penalty −35 < −30 exists to enforce); stall-rate promoted to PRIMARY endpoint. **(2) the
+coefficient spelling (coef 2 on φ=p), never 2p−1** — the affine constant at γ<1 pays a per-step
+bonus for LONGER episodes (wrong sign), and the terminal φ:=0 convention is correct for [0,1]
+and wrong for [−1,+1]. Build gaps enumerated: B1 pbrs_material/belief UNGATED (and
+--no-all-shaping-pbrs is ANTI-correlated — kills 5 PBRS but revives 26 BIAS terms); B2
+VICTORY_VALUE is a module constant, needs promotion to RewardConfig; B3 pre-cap tie hardcoded
+−VICTORY_VALUE; B4 frozen-φ source (spec: reuse the distill-teacher loader; FULL frozen
+extractor forward required — the head consumes its own trunk's value_pooled; cost ~1% of
+train(), one teacher-sized GPU resident). Sizing flags: PopArt needs --clip-range-vf none +
+σ-collapse watch; ent-coef NOT rescaled (advantages minibatch-normalized); pbrs_reward_share
+needs a companion metric on a terminal-only stream; compile-trainer × frozen model UNVERIFIED.
