@@ -6600,3 +6600,22 @@ Guards: `--clip-range-vf none` handled; a value-loss-scale tripwire (probe N's �
 caveat cuts against KEEPING PopArt on near-sparse streams as much as for it). Note: policy-side
 magnitude comparability is already scale-free (per-minibatch advantage normalization — the
 reason ent-coef is not rescaled); ±1's real gift is STATIONARITY, not range.
+
+### 📐 TURN-ZERO MECHANICS + a correction to the unit-valued-critic claim (owner exchange, 2026-08-30 early)
+
+Banked from the walkthrough: **(1) PBRS pays transitions only** — φ(s0) is never paid in; the
+opening mark is the first payment's subtrahend. The uncentered potential's episode total is
+R_T − 2p0 (a flat −1/game in a calibrated mirror), and **constants are free by construction:
+the critic baseline absorbs them** (calibrated V(s0) = −1 for every opening state; advantages
+identical). The centering intuition INVERTS under PBRS: mean level is free (baselines), offsets
+are charged (the γ<1 drift + terminal refund) — supervised-learning instincts about output
+means do not transfer to differential-payment schemes. **(2) CORRECTION to 2d38a4a's
+"V directly readable as expected outcome": that holds for the SPARSE arm and the win-prob head
+only.** In SHAPED arms, PBRS-with-a-good-potential drives V_shaped toward a CONSTANT (the
+classic φ=V* result — all evaluative content migrates into the reward stream; advantages go
+fully local, the design working as intended); the outcome-readable quantity is recovered as
+V_shaped + coef·φ (what the scaffolding gauge computes). The shaped critic's informative
+content is the RESIDUAL — where this generation's learning disagrees with the frozen
+ancestor's φ — arguably a more interesting diagnostic than the raw value. Clean-world
+endpoint implication: the near-constancy of V_shaped in the frozen-φ arm is itself a
+CHECKABLE PREDICTION of the theory (a cheap sanity row for that arm's battery).
