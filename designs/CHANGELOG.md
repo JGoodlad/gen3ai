@@ -6111,3 +6111,18 @@ mode RAISES rather than falling back, both dispatch pairs, the two margins stayi
 parameters, both workers' `crater` fall-back, callback-time validation); the consumer contract (a
 winprob `Correction` runs through the real `_searchteacher_loss`); crater-path argument identity; all
 five config gates.
+
+**Probe L folded in the same day (`d395556`+`bda8382`).** It fires the distillation branch — the
+head ranks an alternative above the played action on **96.4%** of immune whiffs, **+0.213
+[+0.177, +0.248]** over the tightest matched control, dice-invariant at two orders of magnitude
+above its own measured floor, while the policy samples that alternative at a median **p = 0.002**.
+It also supplies the structural argument this mode's existence rests on: **the head's ranking is
+not a quantity the network computes** — it is the head composed with a SIMULATOR, one re-roll per
+candidate action, and nothing in PPO performs that composition. No coefficient and no gradient
+route can deliver it; only an explicit teacher that materializes the ranking and writes it back as
+a policy target. Two consequences recorded in the design doc: the "shaping-dose ladder above 0.05"
+lever is **refuted, not merely unselected**, and **v104's E1 coefficient ladder was re-sized by two
+orders of magnitude** (it had been drafted against an assumed terminal reward of order 1; the live
+scale is `VICTORY_VALUE = 30`, so `{0, 0.1, 0.3}` became `{0, 3, 9}`). `train/pbrs_reward_share`
+is the metric that makes a homeopathic coefficient visible within one rollout rather than after a
+generation.

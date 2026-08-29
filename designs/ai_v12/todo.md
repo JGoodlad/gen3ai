@@ -12,5 +12,8 @@ Built and OFF (2026-08-29):
 * **Routes 2+3** — `--search-teacher-mode winprob_oneply` (one-ply win-prob ranking targets
   behind a contested gate, a margin floor, and paired-rollout confirmation).
 
-Blocking dependency: **probe L** (does the head already know about the whiffs?) — §7. Nothing
-runs until an era registers arms from §6's ladder.
+**Probe L has landed and is folded in (§7): the head KNOWS.** It ranks an alternative above the
+played action on 96.4% of immune whiffs (+0.213 over the tightest control, dice-invariant) while
+the policy samples that alternative at a median p = 0.002. The distillation branch FIRES, so
+**route 2 is the first arm**; route 1's E1 ladder was re-sized by two orders of magnitude in the
+same pass (§7.2). Nothing runs until an era registers arms from §6's ladder.

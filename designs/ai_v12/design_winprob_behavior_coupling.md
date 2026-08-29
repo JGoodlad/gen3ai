@@ -10,9 +10,16 @@
 > Everything built here is a **train-loop knob** — never version-locked, never consulted by
 > `check_compatible`, recorded for provenance in the `td_aux_coef` class.
 >
+> **Probe L has LANDED and is incorporated (§7).** Its headline — the head ranks an alternative
+> above the played action on **96.4%** of immune whiffs, **+0.213 [+0.177, +0.248]** over the
+> tightest control, with the policy sampling that alternative at a median **p = 0.002** — fires
+> the distillation branch and makes route 2 the FIRST arm. It also forced two corrections to this
+> document: the "shaping-dose ladder" half of the decision rule is **refuted** (§7.1), and **E1's
+> coefficient ladder was re-sized by two orders of magnitude** (§7.2).
+>
 > Provenance for the framing: ledger `b070d6e` (representation-vs-reward shaping unconflated;
 > the barometer/coach distinction), `1984dc7` (the three-route taxonomy), `85aadd4` (probe L
-> registration), `6b43618` (this build's dispatch).
+> registration), `6b43618` (this build's dispatch), `d395556`+`bda8382` (probe L's record).
 
 ---
 
@@ -446,16 +453,28 @@ consume a generation slot.
 
 ### E1 — the PBRS coefficient ladder (route 1 alone)
 
-Three arms on a **fixed mature base**: `--win-prob-pbrs-coef ∈ {0.0, 0.1, 0.3}`, everything else
-identical, matched steps, matched team draws.
+> ⚠️ **RE-SIZED after probe L (§7.2). The first draft's `{0, 0.1, 0.3}` was wrong by two orders of
+> magnitude** — it assumed a terminal reward of order 1, and the live scale is
+> `VICTORY_VALUE = 30`. Do not run the old ladder; it would measure nothing and the null would be
+> misread as a verdict on the lever.
+
+Three arms on a **fixed mature base**: `--win-prob-pbrs-coef ∈ {0, 3, 9}`, everything else
+identical, matched steps, matched team draws. **Runs SECOND, after E2** (§7.3).
 
 *Why start from a mature base and not fresh:* §2.4 item 3 — an untrained φ drifts fastest, which
 is the worst case for the shield. Starting mature tests the lever, not the shield's boundary.
 
-*Why this coefficient range:* the shaping term is in raw reward units and telescopes to
-`−coef·φ(s_0)`, i.e. at coef 0.1 the total per-episode shaping is bounded by 0.1 reward units
-against a terminal reward of order 1. 0.3 is the point at which the shaping is a third of the
-outcome signal — a deliberate upper arm chosen to be visibly aggressive rather than safe.
+*Why this coefficient range:* the shaping is in raw reward units and telescopes to `−coef·φ(s_0)`,
+so with φ ∈ [0, 1] the natural unit is **`VICTORY_VALUE` itself** — `coef = 30` would make
+`coef·φ(s)` an estimate of the expected terminal reward, which is the textbook potential (φ ≈ V\*).
+The ladder is 0, 0.1× and 0.3× of that. Concretely, against a median whiff-turn ΔP(win) of −0.0326
+(probe L), coef 3 puts a whiff's shaping at ~0.10 — three `BOOST_WEIGHT` steps, a fifth of a
+25%-HP material chunk — and coef 9 caps the per-episode total at 9, ~30% of the terminal: visibly
+aggressive rather than safe, which is what the upper arm is for.
+
+*The sanity check that must pass before the arm is believed:* `train/pbrs_reward_share` should read
+a real fraction, not a rounding error. If it reads ~1e-4 the arm is homeopathic and is measuring
+nothing, regardless of what its endpoints say.
 
 **Registered predictions.** (i) Whiff rate falls monotonically in the coefficient — this is the
 suppress mechanism's most direct prediction and the one route 1 is *for*. (ii) Piloting is flat
@@ -534,56 +553,141 @@ program's centre of gravity.
 
 ### Sequencing
 
-E1 and E2 are independent and can run in either order or concurrently (route 1 shares no
-plumbing with routes 2/3). E3 requires both. E4 requires E2. **All four are gated behind an era
-that has a generation slot for them; none is registered by this document.**
+**E2 FIRST** (§7.3): probe L makes route 2 the indicated lever and — via §7.1's structural
+argument — the only mechanism that can deliver the head's ranking at all. E1 is independent of it
+(route 1 shares no plumbing with routes 2/3) and can run concurrently on spare capacity, but it is
+the second arm on evidence, at the corrected `{0, 3, 9}` ladder. E3 requires both. E4 requires E2.
+**All four are gated behind an era that has a generation slot for them; none is registered by this
+document.**
 
 ---
 
-## 7. Probe L — does the head already know?
+## 7. Probe L — the head already knows, and it cannot act on it
 
-> **STATUS: PENDING.** Probe L (`85aadd4`) was dispatched concurrently with this build and its
-> record — `designs/research_state/measurements/whiff_head_knowledge_2026-08-29.md` — had **not
-> landed on `main` as of this document's last check (2026-08-29)**. This section is the
-> structure it will fill; the predictions below are quoted from the registration and are **not
-> results**.
+> **STATUS: LANDED and INCORPORATED.** Record:
+> [`designs/research_state/measurements/whiff_head_knowledge_2026-08-29.md`](../research_state/measurements/whiff_head_knowledge_2026-08-29.md)
+> (`d395556` + `bda8382`), read into this document on 2026-08-29. Registration: `85aadd4`.
 
-**The question.** On recorded battles, join the prober's model-free bait-loop/whiff census
-(immune-move clicks against pivots, read off the raw protocol) with the model's own reads at
-those same decisions. Two sub-questions:
+**Registered predictions, kept above the results** (per the pre-registration discipline): *the
+head KNOWS* — **≥ 60%** of immune-whiff decisions have the win-prob ranking preferring an
+alternative at decision time with real margin — and **α flags the pivot on a majority**. A third,
+un-numbered expectation: disagreement **grows** across the clicks of a loop as α's evidence
+accumulates.
 
-1. Did **α** (the opponent-intent head) predict the pivot?
-2. Did the **one-ply win-prob ranking prefer a non-whiff action AT DECISION TIME** — not merely
-   confess the probability drop afterwards?
+**Results.** 2,013 decisions over 382 battles on `models/ai_v9_29_rev1_0823`, each trace step
+scored by *its own* snapshot, with two matched controls drawn from the same battles and a
+**measured** dice floor.
 
-**Registered predictions** (verbatim from `85aadd4`, per the bait verdict where credit is
-CONVICTED and punishment is null): *the head KNOWS* — **≥ 60% of immune-whiff decisions have the
-win-prob ranking preferring an alternative at decision time with real margin**, and **α flags
-the pivot on a majority**.
+| arm | n | head ranks an alternative above the played action | median margin |
+|---|---|---|---|
+| **immune whiff** | 617 | **0.964** [0.948, 0.978] | **0.0492** |
+| `hit_pivot` control (they pivoted, we moved in, it CONNECTED) | 676 | 0.751 [0.720, 0.783] | 0.0317 |
+| `no_pivot` control | 665 | 0.623 [0.585, 0.661] | 0.0079 |
 
-**The decision rule, and what it does to THIS document.**
+The bar was 60%; it reads **96.4%**. But the claim rides the **contrast**, one CI on the
+difference: **+0.213 [+0.177, +0.248]** over the tightest control available. The disagreement is
+elevated *whiff-specifically*, not merely present.
 
-| probe L outcome | consequence for ai_v12 |
+**Four findings that change this document, in order of how much they change it:**
+
+1. **The margin is two orders of magnitude above its own dice floor.** Re-rolling 149 decisions on
+   6 independent dice streams puts the within-decision sd of the margin at **6.2e-04** against a
+   median margin of 4.9e-02, and the preference survives *every* stream in 86.7% of whiff cases
+   (0.53–0.60 in the controls). **This is the single most important number for route 2**: it says
+   the ranking at a whiff is not a coin-flip that a separation procedure would be certifying out
+   of noise. Note what it does NOT say — probe L's own caveat 3 — Δwp is *the head's claim*, not
+   realized gain, and nothing there was confirmed by rollouts to a terminal. §2.5's confirmation
+   requirement therefore stands unweakened; what probe L supplies is the *prior* that the
+   confirmation will have something real to confirm.
+2. **The policy samples the head's preferred action at a median probability of 0.002**, below 0.05
+   three-quarters of the time. This is the starvation reading, and it is why a route-2 target has
+   something to do that PPO's own exploration will not do for it.
+3. **α is elevated at PIVOTS, not at WHIFFS** — whiff − `no_pivot` = +0.209 [+0.181, +0.237],
+   whiff − `hit_pivot` = **+0.010 [−0.023, +0.043]**, a clean null. Correct behaviour (α predicts
+   the *opponent's* action and has no business knowing whether our move connects), and it locates
+   the whiff-specific knowledge squarely in the win-prob head.
+4. **The "disagreement grows across a loop" expectation is REFUTED by a ceiling.** The head is at
+   **1.000** disagreement on the *first* click. The evidence never needed to accumulate; it had
+   the answer before the loop began.
+
+### 7.1 The structural finding — and it is the strongest argument in this document
+
+Probe L §6 supplies an argument the registration did not have, and it is the reason route 2 is not
+merely *indicated* but **structurally required**:
+
+> **The head's ranking is not a quantity the network computes.** It is the head *composed with a
+> simulator* — one re-roll per candidate action. `ProjectionAssembler.forward` returns
+> `(pi_combined, value_pooled)`; the win-prob head reads `value_pooled` and feeds nothing forward,
+> so its only route to action selection is a shared-trunk gradient. Nothing in PPO performs that
+> composition. Therefore **no coefficient, no dose and no gradient route can deliver it** — only
+> an explicit teacher that materializes the ranking and writes it back as a policy target.
+
+Measured at 25.07M steps: `grad/win_prob_share` **0.0102** (an upper bound — the metric is an
+L1-of-norms proxy), `grad/win_prob_norm_shared` 1.73% of the policy head's own pull, and
+`grad/win_prob_policy_cosine` **−0.133** — it pulls *against* the policy gradient.
+
+**This retires the "shaping-dose ladder above 0.05" half of the registered decision rule.** Not
+unselected — **refuted**: `win_prob_mode="shaping"` is a stop-grad toggle on an auxiliary BCE, so
+0.05 was never a dose of a behavioral quantity. This document's §1 was written from the same
+correction (`b070d6e`) and needs no change; but anyone reading the old rule should read this
+instead.
+
+### 7.2 ⚠️ What probe L does to ROUTE 1 — an honest hit, and a correction to §6's E1
+
+Probe L §6 also prices the *hypothetical* PBRS term this document builds, and the arithmetic is
+unflattering at the coefficients E1 originally named. Median realized ΔP(win) on a whiff turn is
+**−0.0326**; at coef 0.05 that is 1.6e-03 per step, which against `VICTORY_VALUE = 30` is 5.4e-05
+— **homeopathic**, and per-minibatch advantage normalization would sweep it out.
+
+**E1's coefficient ladder as first drafted — {0, 0.1, 0.3} — was WRONG, and the error was this
+document's, not probe L's.** It was sized against an assumed terminal reward of order 1. The live
+reward scale is `VICTORY_VALUE = 30.0`, `HP_VALUE = 2.0` (so a 25% HP chunk of material PBRS ≈
+0.5), `BOOST_WEIGHT = 0.03`. At coef 0.3 a whiff's shaping is ~0.01 — a third of ONE boost step,
+and 1/50th of one HP chunk. The ladder would have measured nothing, and the null would have been
+read as a verdict on the lever.
+
+**The natural unit is `VICTORY_VALUE` itself.** φ ∈ [0, 1] and the terminal is ±30, so
+`coef = VICTORY_VALUE` makes `coef·φ(s)` an estimate of the *expected terminal reward* — which is
+the textbook choice of potential (φ ≈ V\* is the shaping that makes the problem myopic). **E1's
+ladder is therefore restated as fractions of VICTORY_VALUE: `{0, 3, 9}` (= 0, 0.1×, 0.3× of 30).**
+At coef 3 a whiff's shaping is ~0.10 — comparable to three boost steps and a fifth of an HP chunk,
+i.e. a real dense term; at coef 9 the per-episode telescoped total is bounded by 9, about 30% of
+the terminal, which is the deliberately-aggressive upper arm the ladder wanted in the first place.
+
+**`train/pbrs_reward_share` is exactly the instrument that surfaces this**, and its existence is
+now doing work rather than decorating: it reports the shaping's mean magnitude as a fraction of
+the unshaped reward stream's, so a run at a homeopathic coefficient says so in its own metrics
+within one rollout instead of after a generation.
+
+**The honest summary for route 1 after probe L.** It is *not* refuted — nothing has measured a
+PBRS term, because none has ever run (probe L §6 is explicit: "no such term runs"). It is
+**re-sized**, and its prior is weakened in one specific way: the mechanism probe L convicted is
+*actuation* — a starved action at p = 0.002 — and suppressing the whiff redistributes mass by the
+policy's own current preferences, which at p = 0.002 on the right answer is a slow way to find it.
+Route 2 prescribes the alternative directly. **§2.1's complementary-blindness claim is unchanged,
+but the expected ORDER of the two routes' payoffs is not: probe L moves route 2 to the front.**
+
+### 7.3 The decision rule, resolved
+
+| the rule (`85aadd4`) | outcome |
 |---|---|
-| **head knows + policy ignores** (the predicted case) | Every route above is live. The sanctioned lever family is **distillation-shaped** — route 2 is directly indicated, and a shaping-dose ladder above 0.05 is licensed. E1/E2/E3 proceed as written. |
-| **head does NOT know** | The gap is **obs/coverage** (the incoming-damage under-read family), and *no* amount of coupling helps until the head is fixed. Routes 1–3 are all premature: route 1's φ would be blurry exactly where it matters, and route 2's targets would be noise. **The whole document parks** behind an obs/coverage fix, and the built code stays OFF as pre-positioned machinery. |
+| head knows + policy ignores ⇒ a **distillation-shaped** lever | **FIRES.** 96.4%, +0.21 over the tightest control, dice-invariant, with the policy at p = 0.002 on the head's pick. Route 2 is the indicated lever, and §7.1 makes it the *only* mechanism that can deliver the ranking. |
+| …and a shaping-dose ladder above 0.05 is licensed | **REFUTED** (§7.1) — 0.05 was never a dose of a behavioral quantity. |
+| head does NOT know ⇒ the gap is obs/coverage and the document parks | **Does not apply.** |
 
-**This is the document's single largest external dependency.** The code is built either way —
-that was the point of building it ahead of its era — but §6's ladder is only worth a generation
-slot in the first row.
-
-*(When probe L lands, replace this section with its measured cross-tab: n decisions, the
-head-prefers-alternative fraction with its CI, the margin distribution against the 0.122
-differential-bias RMS, and α's pivot-flag rate. Keep the registered predictions above the
-results, per the pre-registration discipline.)*
-
----
+**Consequence for §6's sequencing: E2 goes first.** E1 remains worth running — it is the only
+route with an invariance shield and the only one that generalizes through the value pathway — but
+it is now the *second* arm, at the corrected `{0, 3, 9}` ladder, and E3 tests whether it adds
+anything on top of a working route 2 rather than the other way round.
 
 ## 8. What would kill this document
 
-- **Probe L returns head-doesn't-know** (§7) — parks everything until the obs/coverage fix.
+- ~~Probe L returns head-doesn't-know — parks everything until the obs/coverage fix.~~
+  **RESOLVED 2026-08-29: it returned head-KNOWS at 96.4% (§7).** This kill condition did
+  not fire; the document's largest external dependency is discharged.
 - **E1's kill condition on the whiff census** — route 1 carries no force at any dose we would
-  run.
+  run. ⚠️ Only readable at the CORRECTED `{0, 3, 9}` ladder with `train/pbrs_reward_share`
+  confirming a real fraction; a null at a homeopathic coefficient kills nothing (§7.2).
 - **E1's piloting-down-at-0.1 condition** — the learned-φ drift injects real bias; §2.4's caveat
   becomes a verdict.
 - **E2 both-arms-flat** — route 2's achievable target volume is too small to matter, and the
