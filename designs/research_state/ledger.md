@@ -6528,3 +6528,23 @@ counterfactual-sampling point as leg one: (i) harvest + factory over-representat
 may suffice; (ii) SwiGLU/MI A/B at 5M-pre-test scale if not (arch-version, retrain-class,
 Inductor re-verification required); (iii) extremal pooling only if aggregate-level failures
 survive both.** Every step general, every step earned by a measured gap.
+
+### 📐 THE HARVEST DESIGN OPERATIONALIZED (owner exchange, 2026-08-29 late) — no propagation problem exists for the head; the chain that solves the policy's
+
+Banked from the walkthrough: **the head has NO credit-assignment-through-time problem BY
+CONSTRUCTION** — MC labels stamp the terminal outcome onto every step (verified in
+win_prob_callback's backward scan), so turn-100 of a capped game is labeled 0 directly; the
+failure is a CENSUS problem (discrimination mass at time-slices), not signal travel. **Harvest
+design of record: (1) MID-GAME RE-SEEDING + MULTI-ROLLOUT** — recorded turn-100–200 states
+(drag-prone signatures) rolled to terminal many times with CRN via the bridge ⇒ each state
+yields a tight per-state win RATE (dense, low-variance) instead of one bit; **(2) PRIORITIZED
+SELECTION** by Beta-head evidence + head-vs-realized gap (semantics-free active learning — the
+over-confident 35% get hammered automatically); **(3) SLICE RE-WEIGHTING** of the BCE by
+turn-slice rarity so late-game accuracy is worth what it should be to the optimizer. Under
+this diet the survival slide is an ordinary smooth fit; architecture is implicated only if the
+diet measurably fails (the reducibility probe's job). **The honest remainder: the POLICY's
+temporal credit (choices at turn 30 setting up the drag) is the real
+hardest-class problem — and the registered chain solves it indirectly: harvest → head learns
+the slide → PBRS-φ meters the terminal badness out along the drag as immediate per-turn
+shaping → the policy's problem reduces to one-step learning.** The value channel carries the
+time structure so the policy channel never has to.
