@@ -1,0 +1,355 @@
+{
+  "n_decisions": 180,
+  "n_banked": 180,
+  "gold": {
+    "rounds_mean": 32.0,
+    "doubling_check_moved": 11,
+    "doubling_check_frac": 0.0611
+  },
+  "price": {
+    "open_s": 0.0019,
+    "arm_s": 0.01448
+  },
+  "racing_cfg": {
+    "rule": "z",
+    "z": 2.0,
+    "delta": 0.05,
+    "min_samples": 3,
+    "max_rounds": 0
+  },
+  "curves": {
+    "grid": [
+      {
+        "budget_s": 0.1033,
+        "n": 87,
+        "agreement": 0.7816,
+        "mean_regret": 0.008955,
+        "mean_regret_on_disagree": 0.041005,
+        "n_disagree": 19,
+        "mean_rounds": 1.0,
+        "mean_arms": 5.84,
+        "spend_s": 0.0864
+      },
+      {
+        "budget_s": 0.1415,
+        "n": 180,
+        "agreement": 0.7,
+        "mean_regret": 0.005655,
+        "mean_regret_on_disagree": 0.018851,
+        "n_disagree": 54,
+        "mean_rounds": 1.07,
+        "mean_arms": 7.5,
+        "spend_s": 0.1106
+      },
+      {
+        "budget_s": 0.1939,
+        "n": 180,
+        "agreement": 0.7056,
+        "mean_regret": 0.004881,
+        "mean_regret_on_disagree": 0.016577,
+        "n_disagree": 53,
+        "mean_rounds": 1.4,
+        "mean_arms": 9.23,
+        "spend_s": 0.1364
+      },
+      {
+        "budget_s": 0.2657,
+        "n": 180,
+        "agreement": 0.7944,
+        "mean_regret": 0.002534,
+        "mean_regret_on_disagree": 0.012329,
+        "n_disagree": 37,
+        "mean_rounds": 2.23,
+        "mean_arms": 15.44,
+        "spend_s": 0.2279
+      },
+      {
+        "budget_s": 0.3641,
+        "n": 180,
+        "agreement": 0.7944,
+        "mean_regret": 0.002097,
+        "mean_regret_on_disagree": 0.010201,
+        "n_disagree": 37,
+        "mean_rounds": 3.22,
+        "mean_arms": 21.64,
+        "spend_s": 0.3195
+      },
+      {
+        "budget_s": 0.499,
+        "n": 180,
+        "agreement": 0.8056,
+        "mean_regret": 0.002286,
+        "mean_regret_on_disagree": 0.011757,
+        "n_disagree": 35,
+        "mean_rounds": 4.38,
+        "mean_arms": 29.59,
+        "spend_s": 0.4368
+      },
+      {
+        "budget_s": 0.6838,
+        "n": 180,
+        "agreement": 0.8722,
+        "mean_regret": 0.001451,
+        "mean_regret_on_disagree": 0.011358,
+        "n_disagree": 23,
+        "mean_rounds": 6.28,
+        "mean_arms": 42.66,
+        "spend_s": 0.6296
+      },
+      {
+        "budget_s": 0.937,
+        "n": 180,
+        "agreement": 0.8611,
+        "mean_regret": 0.001441,
+        "mean_regret_on_disagree": 0.010376,
+        "n_disagree": 25,
+        "mean_rounds": 8.83,
+        "mean_arms": 60.19,
+        "spend_s": 0.8883
+      },
+      {
+        "budget_s": 1.2841,
+        "n": 180,
+        "agreement": 0.9278,
+        "mean_regret": 0.000782,
+        "mean_regret_on_disagree": 0.010821,
+        "n_disagree": 13,
+        "mean_rounds": 12.14,
+        "mean_arms": 82.28,
+        "spend_s": 1.2144
+      },
+      {
+        "budget_s": 1.7596,
+        "n": 180,
+        "agreement": 0.9444,
+        "mean_regret": 0.00013,
+        "mean_regret_on_disagree": 0.002337,
+        "n_disagree": 10,
+        "mean_rounds": 16.93,
+        "mean_arms": 115.26,
+        "spend_s": 1.7011
+      },
+      {
+        "budget_s": 2.4113,
+        "n": 180,
+        "agreement": 0.9722,
+        "mean_regret": 4.1e-05,
+        "mean_regret_on_disagree": 0.00149,
+        "n_disagree": 5,
+        "mean_rounds": 23.06,
+        "mean_arms": 158.69,
+        "spend_s": 2.3416
+      },
+      {
+        "budget_s": 3.3043,
+        "n": 180,
+        "agreement": 0.9889,
+        "mean_regret": 4.6e-05,
+        "mean_regret_on_disagree": 0.004129,
+        "n_disagree": 2,
+        "mean_rounds": 28.76,
+        "mean_arms": 202.91,
+        "spend_s": 2.9928
+      }
+    ],
+    "racing": [
+      {
+        "budget_s": 0.1033,
+        "n": 87,
+        "agreement": 0.7816,
+        "mean_regret": 0.008955,
+        "mean_regret_on_disagree": 0.041005,
+        "n_disagree": 19,
+        "mean_rounds": 1.0,
+        "mean_arms": 5.84,
+        "spend_s": 0.0864
+      },
+      {
+        "budget_s": 0.1415,
+        "n": 180,
+        "agreement": 0.7,
+        "mean_regret": 0.005655,
+        "mean_regret_on_disagree": 0.018851,
+        "n_disagree": 54,
+        "mean_rounds": 1.07,
+        "mean_arms": 7.5,
+        "spend_s": 0.1106
+      },
+      {
+        "budget_s": 0.1939,
+        "n": 180,
+        "agreement": 0.7056,
+        "mean_regret": 0.004881,
+        "mean_regret_on_disagree": 0.016577,
+        "n_disagree": 53,
+        "mean_rounds": 1.4,
+        "mean_arms": 9.23,
+        "spend_s": 0.1364
+      },
+      {
+        "budget_s": 0.2657,
+        "n": 180,
+        "agreement": 0.7889,
+        "mean_regret": 0.002704,
+        "mean_regret_on_disagree": 0.01281,
+        "n_disagree": 38,
+        "mean_rounds": 2.23,
+        "mean_arms": 15.3,
+        "spend_s": 0.2258
+      },
+      {
+        "budget_s": 0.3641,
+        "n": 180,
+        "agreement": 0.7944,
+        "mean_regret": 0.002045,
+        "mean_regret_on_disagree": 0.00995,
+        "n_disagree": 37,
+        "mean_rounds": 3.24,
+        "mean_arms": 20.48,
+        "spend_s": 0.3028
+      },
+      {
+        "budget_s": 0.499,
+        "n": 180,
+        "agreement": 0.8444,
+        "mean_regret": 0.001673,
+        "mean_regret_on_disagree": 0.010755,
+        "n_disagree": 28,
+        "mean_rounds": 4.8,
+        "mean_arms": 25.9,
+        "spend_s": 0.3842
+      },
+      {
+        "budget_s": 0.6838,
+        "n": 180,
+        "agreement": 0.8722,
+        "mean_regret": 0.001066,
+        "mean_regret_on_disagree": 0.008344,
+        "n_disagree": 23,
+        "mean_rounds": 6.36,
+        "mean_arms": 29.51,
+        "spend_s": 0.4394
+      },
+      {
+        "budget_s": 0.937,
+        "n": 180,
+        "agreement": 0.9222,
+        "mean_regret": 0.000476,
+        "mean_regret_on_disagree": 0.006122,
+        "n_disagree": 14,
+        "mean_rounds": 8.1,
+        "mean_arms": 33.39,
+        "spend_s": 0.4989
+      },
+      {
+        "budget_s": 1.2841,
+        "n": 180,
+        "agreement": 0.9278,
+        "mean_regret": 0.00047,
+        "mean_regret_on_disagree": 0.006508,
+        "n_disagree": 13,
+        "mean_rounds": 9.8,
+        "mean_arms": 37.19,
+        "spend_s": 0.5571
+      },
+      {
+        "budget_s": 1.7596,
+        "n": 180,
+        "agreement": 0.9222,
+        "mean_regret": 0.000473,
+        "mean_regret_on_disagree": 0.006076,
+        "n_disagree": 14,
+        "mean_rounds": 10.27,
+        "mean_arms": 38.39,
+        "spend_s": 0.5754
+      },
+      {
+        "budget_s": 2.4113,
+        "n": 180,
+        "agreement": 0.9333,
+        "mean_regret": 0.000469,
+        "mean_regret_on_disagree": 0.00704,
+        "n_disagree": 12,
+        "mean_rounds": 10.36,
+        "mean_arms": 38.64,
+        "spend_s": 0.5792
+      },
+      {
+        "budget_s": 3.3043,
+        "n": 180,
+        "agreement": 0.9333,
+        "mean_regret": 0.000469,
+        "mean_regret_on_disagree": 0.00704,
+        "n_disagree": 12,
+        "mean_rounds": 10.36,
+        "mean_arms": 38.64,
+        "spend_s": 0.5792
+      }
+    ]
+  },
+  "budget_ratio": {
+    "80%": {
+      "grid_s": 0.4316,
+      "racing_s": 0.3792,
+      "reduction_x": 1.138
+    },
+    "90%": {
+      "grid_s": 1.1394,
+      "racing_s": 0.8246,
+      "reduction_x": 1.382
+    },
+    "95%": {
+      "grid_s": 1.8909,
+      "racing_s": null,
+      "reduction_x": null
+    }
+  },
+  "spend_ratio": {
+    "80%": {
+      "grid_s": 0.3782,
+      "racing_s": 0.3119,
+      "reduction_x": 1.213
+    },
+    "90%": {
+      "grid_s": 1.0785,
+      "racing_s": 0.4725,
+      "reduction_x": 2.283
+    },
+    "95%": {
+      "grid_s": 1.8301,
+      "racing_s": null,
+      "reduction_x": null
+    }
+  },
+  "separation": {
+    "n": 180,
+    "never_separated": 30,
+    "never_frac": 0.1667,
+    "median_rounds_to_separate": 3,
+    "mean_rounds_to_separate": 6.03,
+    "histogram": {
+      "23": 1,
+      "4": 19,
+      "29": 2,
+      "11": 2,
+      "3": 82,
+      "6": 8,
+      "9": 4,
+      "19": 5,
+      "never": 30,
+      "8": 3,
+      "5": 8,
+      "17": 2,
+      "7": 3,
+      "12": 1,
+      "15": 2,
+      "14": 1,
+      "10": 1,
+      "16": 4,
+      "30": 1,
+      "21": 1
+    },
+    "mean_within_race_saving": 0.2394
+  },
+  "source": "tmp/racing_bank.json"
+}

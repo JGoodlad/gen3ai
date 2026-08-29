@@ -43,7 +43,8 @@ from main.search_dividend.battery import MIRROR, Cell, ResultsFile, run_cell
 from main.search_dividend.budget import WidthCaps
 from main.search_dividend.playoff import (DEFAULT_ROLLOUTS, DEFAULT_SCREEN_MARGIN, MIN_PAIRS,
                                           SE_MULTIPLE, PlayoffConfig)
-from main.search_dividend.search import ARMS, SearchConfig
+from main.search_dividend.racing import RULES, RacingConfig
+from main.search_dividend.search import ARMS, ROOT_STRATEGIES, SearchConfig
 from main.search_dividend.summary import format_report
 
 DEFAULT_BUDGETS = (0.5, 1.0, 3.0, 8.0)
@@ -93,6 +94,28 @@ def build_parser() -> argparse.ArgumentParser:
                         "but its successor replay has an OPEN fidelity defect (see deepen.py); "
                         "it fails safe as a counted search_error, but do not publish a depth-2 "
                         "number yet.")
+    p.add_argument("--root-strategy", default="grid", choices=list(ROOT_STRATEGIES),
+                   help="how the budget is spread ACROSS OUR ROOT ACTIONS. `grid` (default) is "
+                        "the registered fixed sweep — every action on every sample. `racing` "
+                        "eliminates candidates whose CRN-paired difference CI separates below the "
+                        "leader and spends the saved arm evaluations on MORE samples instead; the "
+                        "width ORDER is unchanged, and a racing round is depth 1 (racing and "
+                        "iterative deepening are not composed). See racing.py.")
+    p.add_argument("--racing-rule", default=RacingConfig.rule, choices=list(RULES),
+                   help="`z` = a one-sided normal test per look (aggressive; the A/B ran on this); "
+                        "`seq` inflates the radius by a union bound over rounds and comparisons so "
+                        "the error is controlled ANYTIME. --root-strategy racing only.")
+    p.add_argument("--racing-z", type=float, default=RacingConfig.z,
+                   help=f"elimination threshold in SEs of the paired difference (default "
+                        f"{RacingConfig.z}); --racing-rule z only")
+    p.add_argument("--racing-delta", type=float, default=RacingConfig.delta,
+                   help=f"family-wise error target for --racing-rule seq (default "
+                        f"{RacingConfig.delta})")
+    p.add_argument("--racing-min-samples", type=int, default=RacingConfig.min_samples,
+                   help=f"rounds every action is scored on before ANY elimination (default "
+                        f"{RacingConfig.min_samples}). Below this a paired sd is not an estimate "
+                        "and an elimination made on it is a coin flip the race then treats as "
+                        "settled forever.")
     p.add_argument("--side-swap", dest="side_swap", action="store_true", default=None,
                    help="play every game index in BOTH orientations (searched side gets team A "
                         "then team B, one pinned seed) so the summary can difference out the "
@@ -316,7 +339,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
                                honest_swap_moves=args.honest_swap_moves, seed=args.seed,
-                               max_depth=args.max_depth)
+                               max_depth=args.max_depth,
+                               root_strategy=args.root_strategy,
+                               racing=RacingConfig(rule=args.racing_rule, z=args.racing_z,
+                                                   delta=args.racing_delta,
+                                                   min_samples=args.racing_min_samples))
             for opp in opponents:
                 cell = Cell(arm=arm, budget=budget, opponent=opp)
                 n = asyncio.run(run_cell(

@@ -1475,6 +1475,15 @@ src/
                      #   `--opponents self` = the MIRROR (same network, search off on one side —
                      #   null 0.50 by construction), `--side-swap` (default on there) plays every
                      #   game in both orientations so the team draw differences out.
+                     #   `--root-strategy {grid,racing}` chooses how the budget is spread across OUR
+                     #   ROOT ACTIONS: `grid` (DEFAULT — the registered fixed sweep, code path
+                     #   untouched) or `racing` (successive elimination on CRN-paired difference
+                     #   CIs; a candidate whose CI separates below the leader stops being scored and
+                     #   the saved arm evaluations buy MORE samples). The width ORDER is inherited
+                     #   unchanged and a racing round is depth 1 — racing and iterative deepening
+                     #   are not composed. racing.py (the pure racer) · ab_racing.py (the offline
+                     #   bank-and-replay A/B; verdict in
+                     #   designs/research_state/measurements/racing_root_selection_2026-08-28.md) ·
                      #   determinize.py (pool-consistent worlds + the prefix byte-identity GATE) ·
                      #   record.py (a ReconstructionRecord for a battle still IN FLIGHT) ·
                      #   alpha.py (the α-consumer contract at the sim's legal surface) ·

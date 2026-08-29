@@ -69,8 +69,16 @@ from main.search_dividend.alpha import (AlphaPublication, build_candidates,
 from main.search_dividend.budget import (CostModel, Deadline, RealizedWidths, WidthCaps,
                                          WidthPlan, allocate)
 from main.search_dividend.deepen import TreeNode, per_action_values, plan_beam
+from main.search_dividend.racing import Racer, RacingConfig
 
 ARMS = ("base", "honest", "oracle", "playoff")
+
+#: How the budget is allocated ACROSS OUR ROOT ACTIONS. ``grid`` is the registered allocator — a
+#: fixed K x R sweep scoring every action on every sample. ``racing`` is the adaptive alternative
+#: (:mod:`racing`): the same samples, but candidates whose CRN-paired difference CI separates below
+#: the leader stop being scored, and the saved arm evaluations buy more samples instead. ``grid``
+#: is the DEFAULT and its code path is untouched.
+ROOT_STRATEGIES = ("grid", "racing")
 
 #: The arms that search the TRUE opponent team. ``playoff`` inherits the oracle's world because its
 #: depth-1 sweep is only a SCREEN — the hidden-information question is deliberately held fixed so
@@ -102,6 +110,15 @@ class SearchConfig:
     # and a ply that does not fit is simply not spent. 3 is the amendment's own example of what an
     # 8 s cell might reach on contenders; raising it costs nothing when the budget is small.
     max_depth: int = 3
+    #: ``grid`` (the registered fixed sweep, DEFAULT) or ``racing``. See :data:`ROOT_STRATEGIES`.
+    root_strategy: str = "grid"
+    #: Only consulted on ``root_strategy="racing"``.
+    racing: RacingConfig = field(default_factory=RacingConfig)
+
+    def __post_init__(self) -> None:
+        if self.root_strategy not in ROOT_STRATEGIES:
+            raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
+                             f"(want one of {ROOT_STRATEGIES})")
 
     def resolved_caps(self) -> WidthCaps:
         """The ORACLE arm is ONE world by construction (the true state), and the BASE arm has no
@@ -368,6 +385,13 @@ class SearchEngine:
     def _run(self, record, side, turn, our_history, our_tokens, observed_our_lines, pub,
              policy_action, opp_true_packed, plan: WidthPlan, widths: RealizedWidths,
              deadline: Deadline) -> DecisionResult:
+        if self.cfg.root_strategy == "racing":
+            # A WHOLE separate allocator, not a mode flag threaded through this one. The grid body
+            # below is left byte-identical on purpose: `--root-strategy racing` is an experiment,
+            # and an experiment that also perturbs its own control is not one.
+            return self._run_racing(record, side, turn, our_history, our_tokens,
+                                    observed_our_lines, pub, policy_action, opp_true_packed,
+                                    plan, widths, deadline)
         other = "p2" if side == "p1" else "p1"
         ss = self.session()
 
@@ -462,15 +486,7 @@ class SearchEngine:
                 scores[a] += per_action.get(a, 0.0)
             weight_sum += 1.0
         if weight_sum <= 0:
-            if widths.worlds_gated_ok == 0:
-                # A broken DRIVER and a wrong WORLD are different diagnoses; report the one that
-                # actually happened. Ties go to the driver — if it died, nothing else is trustworthy.
-                reason = "root_failed" if widths.worlds_open_failed else "prefix_gate_failed"
-            elif not any(d.get("n_legal") for d in alpha_diag):
-                reason = "no_candidates"
-            else:
-                reason = "no_scored_arm"
-            return DecisionResult(policy_action, reason, widths,
+            return DecisionResult(policy_action, _no_arm_reason(widths, alpha_diag), widths,
                                   diagnostics={"worlds": world_diag, "alpha": alpha_diag},
                                   policy_action=policy_action)
         for a in actions:
@@ -497,9 +513,133 @@ class SearchEngine:
             scores={int(a): round(float(v), 5) for a, v in scores.items()},
             policy_action=policy_action)
 
+    def _run_racing(self, record, side, turn, our_history, our_tokens, observed_our_lines, pub,
+                    policy_action, opp_true_packed, plan: WidthPlan, widths: RealizedWidths,
+                    deadline: Deadline) -> DecisionResult:
+        """The ADAPTIVE root allocator — successive elimination over CRN-paired samples.
+
+        The width ORDER is inherited, not redesigned. ``m_opp`` is still whatever
+        :func:`~main.search_dividend.budget.allocate` spent the first axis on, and a round is still
+        one determinized world; what changes is that ``k_worlds`` and ``r_dice`` stop being a fixed
+        grid and become a round SUPPLY, drawn in the registered order — every world once, then
+        every world again with fresh CRN dice, up to ``k_worlds * r_dice`` rounds. The clock
+        decides how many are actually spent, and because an eliminated action stops being scored,
+        each later round is cheaper than the one before it. That is the entire mechanism: the same
+        seconds buy more SAMPLES on fewer ACTIONS.
+
+        **A round is depth 1.** Racing and iterative deepening are two different ways to spend the
+        same clock and this build does not compose them — a first round allowed to deepen would
+        consult ``deadline.remaining()`` and swallow the budget the race needs, so the race would
+        be over a single sample. ``max_depth=1`` here is that decision made explicitly rather than
+        emerging from whichever call happened to ask for the clock first.
+
+        **An INCOMPLETE round is discarded rather than folded in.** If any live action failed to
+        materialize a successor, the grid path's ``+= 0.0`` merely dilutes a mean; here it would
+        eliminate that action permanently on a value that was never measured. The round is dropped
+        with a counter instead — pairing integrity is the premise of every CI in this method.
+        """
+        other = "p2" if side == "p1" else "p1"
+        ss = self.session()
+        caps = self.cfg.resolved_caps()
+
+        # The round SUPPLY asks for the CAP's worth of worlds, not the grid plan's. `plan.k_worlds`
+        # is what a uniform sweep could afford over the full action set — precisely the number
+        # racing exists to beat — so planning to it would cap the experiment at its own control.
+        worlds = self._worlds(record, other, observed_our_lines, max(1, caps.k_worlds),
+                              opp_true_packed)
+        widths.worlds_requested = len(worlds)
+        max_rounds = max(1, caps.k_worlds) * max(1, caps.r_dice)
+
+        actions = sorted(our_tokens)
+        racer = Racer(actions, self.cfg.racing)
+        widths.depth_planned = 1
+        widths.dice = 1
+        arm_diag: List[dict] = []
+        alpha_diag: List[dict] = []
+        world_diag: List[dict] = []
+        stop = "rounds"
+        for j in range(max_rounds):
+            if racer.resolved():
+                stop = "resolved"
+                break
+            live = racer.live
+            batch_cost = (self._cost.world_open_s
+                          + self._cost.arm_s * len(live) * plan.m_opp)
+            if j and not deadline.fits(batch_cost):
+                widths.deadline_truncated = True
+                stop = "deadline"
+                break
+            # Worlds cycle: rounds beyond the supply re-open an earlier world with FRESH dice,
+            # which is the `r_dice` axis of the registered order arriving after `k_worlds`.
+            wrec, wmeta = worlds[j % len(worlds)]
+            wmeta = dict(wmeta)
+            wmeta["round"] = j
+            world_diag.append(wmeta)
+            t_open = time.monotonic()
+            try:
+                root = ss.open_root(turn, record=wrec)
+            except Exception as e:                   # noqa: BLE001
+                widths.open_s += time.monotonic() - t_open
+                widths.worlds_open_failed += 1
+                wmeta["gate"] = f"open_failed: {type(e).__name__}: {e}"
+                continue
+            widths.open_s += time.monotonic() - t_open
+            prefix = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
+            if not dz.prefix_matches(observed_our_lines, prefix, turn=turn):
+                widths.worlds_gate_failed += 1
+                wmeta["gate"] = "prefix_mismatch"
+                continue
+            widths.worlds_gated_ok += 1
+            wmeta["gate"] = "ok"
+
+            legal = legal_choices_from_request((root.requests or {}).get(other))
+            cands, diag = build_candidates(legal, pub, m_opp=plan.m_opp)
+            alpha_diag.append(diag)
+            if not cands:
+                continue
+            widths.opp_candidates = max(widths.opp_candidates, len(cands))
+            ctx = _PlyContext(side=side, other=other, record=record, prefix=prefix,
+                              our_history=list(our_history), pub=pub,
+                              seeds=[self._crn_seed(turn, j)], m_opp=plan.m_opp)
+            got = self._score_world({"root": root, "meta": wmeta, "cands": cands},
+                                    ctx, {a: our_tokens[a] for a in live}, live, widths,
+                                    deadline, max_depth=1)
+            if got is None:
+                continue
+            per_action, _beam, adiag = got
+            arm_diag.append(adiag)
+            if not set(adiag.get("valued") or ()) >= set(live):
+                # Not every live action produced a value; folding a 0.0 in would eliminate it on a
+                # measurement that never happened.
+                widths.racing_rounds_incomplete += 1
+                wmeta["gate"] = "incomplete_round"
+                continue
+            racer.observe({a: per_action[a] for a in live})
+        else:
+            stop = "resolved" if racer.resolved() else "rounds"
+
+        if racer.rounds <= 0:
+            return DecisionResult(policy_action, _no_arm_reason(widths, alpha_diag), widths,
+                                  diagnostics={"worlds": world_diag, "alpha": alpha_diag},
+                                  policy_action=policy_action)
+        out = racer.outcome(prefer=policy_action, stop_reason=stop)
+        widths.racing_rounds = out.rounds
+        widths.racing_eliminated = len(out.eliminated)
+        widths.racing_resolved = out.stop_reason == "resolved"
+        widths.racing_arms_saved = out.arms_grid - out.arms_spent
+        return DecisionResult(
+            out.action, None, widths,
+            diagnostics={"worlds": world_diag, "alpha": alpha_diag, "arms": arm_diag,
+                         "racing": out.as_dict(), "depth_realized": 1,
+                         "score_mode": arm_diag[0].get("score_mode") if arm_diag else None},
+            scores={int(a): round(float(v), 5) for a, v in out.means.items()},
+            policy_action=policy_action)
+
     def _score_world(self, w: dict, ctx: _PlyContext, our_tokens: Dict[int, str],
                      actions: Sequence[int], widths: RealizedWidths,
-                     deadline: Deadline) -> Optional[Tuple[Dict[int, float], List[int], dict]]:
+                     deadline: Deadline, *,
+                     max_depth: Optional[int] = None
+                     ) -> Optional[Tuple[Dict[int, float], List[int], dict]]:
         """Expand + score ONE world, deepening while the clock allows.
 
         Returns ``({action: E[score]}, beam, diagnostics)`` — ``beam`` empty when the world stayed
@@ -524,7 +664,8 @@ class SearchEngine:
                     legal_choices_from_request((leaf.requests or {}).get(ctx.other)))
             return n_opp_cache[key]
 
-        while ply < self.cfg.effective_max_depth():
+        md = self.cfg.effective_max_depth() if max_depth is None else max(1, int(max_depth))
+        while ply < md:
             cand_beam, leaves, _n_arms = plan_beam(
                 vroot, values, depth=ply, m_opp=ctx.m_opp, n_opp_at=n_opp_at,
                 arm_cost_s=self._cost.arm_s, ply_overhead_s=self._cost.world_open_s,
@@ -553,7 +694,11 @@ class SearchEngine:
         return per_action, beam, {
             "score_mode": first["score_mode"], "n_scored": first["n_scored"],
             "n_terminal": first["n_terminal"], "tier": w["meta"].get("tier"),
-            "depth": ply, "beam": list(beam)}
+            "depth": ply, "beam": list(beam),
+            # WHICH actions actually backed up to a value, as opposed to which were asked for.
+            # `per_action` defaults a missing action to 0.0, which the grid's running mean merely
+            # dilutes but a racer would read as a measurement and eliminate on.
+            "valued": sorted(int(a) for a in values)}
 
     def _expand_ply(self, ctx: _PlyContext, frontier: Sequence[Tuple[TreeNode, list]], *,
                     ply: int, widths: RealizedWidths, deep: bool) -> dict:
@@ -746,6 +891,19 @@ class SearchEngine:
         self._cost = CostModel(
             world_open_s=world_open_s,
             arm_s=max(1e-4, (1 - a) * self._cost.arm_s + a * arm_s))
+
+
+def _no_arm_reason(widths: RealizedWidths, alpha_diag: Sequence[dict]) -> str:
+    """Why a decision produced no scored arm — the counted fallback reason.
+
+    A broken DRIVER and a wrong WORLD are different diagnoses; report the one that actually
+    happened. Ties go to the driver — if it died, nothing else is trustworthy.
+    """
+    if widths.worlds_gated_ok == 0:
+        return "root_failed" if widths.worlds_open_failed else "prefix_gate_failed"
+    if not any(d.get("n_legal") for d in alpha_diag):
+        return "no_candidates"
+    return "no_scored_arm"
 
 
 def branchable(requests: Optional[dict], side: str) -> bool:

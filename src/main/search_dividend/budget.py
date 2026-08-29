@@ -184,6 +184,19 @@ class RealizedWidths:
     beam_m: int = 0
     deep_arms_expanded: int = 0
     deep_arms_scored: int = 0
+    # RACING (`--root-strategy racing`; see `racing.py`). All zero on the default GRID allocator,
+    # which is what makes a mixed results file readable: a row with `racing_rounds == 0` did not
+    # race. `racing_arms_saved` is the headline — arm evaluations the elimination avoided against
+    # what a uniform sweep over the SAME rounds would have spent — and `racing_resolved` says
+    # whether the field actually collapsed to one action or the clock simply ran out with several
+    # still live, which are opposite findings and must not read alike.
+    racing_rounds: int = 0
+    racing_eliminated: int = 0
+    racing_resolved: bool = False
+    racing_arms_saved: int = 0
+    #: Rounds DISCARDED because some live action produced no value. Counted rather than folded in:
+    #: on the grid a missing arm dilutes a mean, but a racer would eliminate on it permanently.
+    racing_rounds_incomplete: int = 0
     deadline_truncated: bool = False
     elapsed_s: float = 0.0
 

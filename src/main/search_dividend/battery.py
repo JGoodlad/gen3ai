@@ -38,6 +38,7 @@ from typing import Dict, List, Optional, Sequence
 
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
 from main.search_dividend.playoff import PlayoffConfig, PlayoffRunner, fold_playoff
+from main.search_dividend.racing import fold_racing
 from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
 
@@ -245,6 +246,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         # ADDITIVE (ladder requirement 3, 87a3f91). Zero on every arm but `playoff`, so a row
         # written by any other cell — or by any earlier version of this file — folds identically.
         **fold_playoff(decisions),
+        **fold_racing(decisions),
     }
 
 
