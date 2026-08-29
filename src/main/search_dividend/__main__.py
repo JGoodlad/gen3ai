@@ -132,7 +132,16 @@ def build_parser() -> argparse.ArgumentParser:
                         "settle race-winner vs policy action with N PAIRED rollouts to a terminal "
                         "through the playoff mechanism, and keep the policy's action unless the "
                         "paired difference clears 2*SE. Off in the first registered cell — one "
-                        "new mechanism at a time. --root-strategy defensive only.")
+                        "new mechanism at a time. Pair it with --defensive-confirm-deadline-s: "
+                        "on the race's leftover clock the runner can afford ONE pair and "
+                        "MIN_PAIRS=4 then declines every confirm. --root-strategy defensive only.")
+    p.add_argument("--defensive-confirm-deadline-s", type=float, default=None, metavar="SEC",
+                   help="the CONFIRM stage's own wall clock (default: unset = share whatever the "
+                        "race left, which is the built behaviour and is ~1 s against a measured "
+                        "~1.5 s per PAIR). Set it so N pairs, not the clock, is what binds — and "
+                        "it doubles as the ADJUDICATION CAP that keeps a nested rollout family "
+                        "inside the live battle's --battle-idle-s watchdog. "
+                        "--defensive-confirm > 0 only.")
     p.add_argument("--defensive-contested-deadline-s", type=float, default=None, metavar="SEC",
                    help="THE TIME MANAGER (default: unset = a contested decision gets --budget, "
                         "i.e. the first registered cell's behaviour exactly). The triage gate "
@@ -368,7 +377,8 @@ def main(argv: Optional[List[str]] = None) -> int:
           f"  pool={len(pool)} teams  impl={args.impl}/search:{args.search_impl}  out={args.out}\n"
           f"  root_strategy={args.root_strategy}"
           + (f"  defensive: leaf={args.defensive_leaf} "
-             f"wp_margin={args.defensive_wp_margin:g} confirm={args.defensive_confirm} "
+             f"wp_margin={args.defensive_wp_margin:g} confirm={args.defensive_confirm}"
+             f"@{'race-residual' if args.defensive_confirm_deadline_s is None else f'{args.defensive_confirm_deadline_s:g}s'} "
              f"contested_deadline="
              f"{'budget' if args.defensive_contested_deadline_s is None else f'{args.defensive_contested_deadline_s:g}s'} "
              f"racing_rule={args.racing_rule} floor="
@@ -401,6 +411,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                                    wp_margin=args.defensive_wp_margin,
                                    leaf=args.defensive_leaf,
                                    confirm_rollouts=args.defensive_confirm,
+                                   confirm_deadline_s=args.defensive_confirm_deadline_s,
                                    contested_deadline_s=args.defensive_contested_deadline_s))
             for opp in opponents:
                 cell = Cell(arm=arm, budget=budget, opponent=opp)

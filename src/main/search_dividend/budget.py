@@ -215,6 +215,17 @@ class RealizedWidths:
     defensive_no_win_prob: bool = False
     #: The confirm stage's outcome when ``--defensive-confirm`` is on (``""`` when it is off).
     defensive_confirm_stage: str = ""
+    #: WALL SECONDS the confirm's paired rollouts cost, kept OUT of ``elapsed_s`` on purpose.
+    #: ``elapsed_s`` feeds ``SearchEngine._update_cost``, which derives ``arm_s`` by SUBTRACTION —
+    #: so folding a 10 s rollout family into it would charge terminal rollouts to the price of a
+    #: search arm and collapse every later decision's width plan. The two clocks measure two
+    #: different things and are reported apart.
+    defensive_confirm_s: float = 0.0
+    #: The RACE's own margin between the action it certified and the policy's, in leaf units —
+    #: the free diagnostic for what a trustworthy overrule looks like. ⚠️ An ELIMINATED action's
+    #: mean is frozen at the round it went out (see ``search._defensive_confirm``), so this is the
+    #: racer's recorded means and not a same-sample contrast.
+    defensive_leaf_margin: float = 0.0
     defensive_banked_s: float = 0.0
     deadline_truncated: bool = False
     elapsed_s: float = 0.0

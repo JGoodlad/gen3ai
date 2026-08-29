@@ -23,7 +23,13 @@ from main.search_dividend.defensive import defensive_block, fold_defensive
 #: from the fold's own output rather than hand-copied, so a counter cannot be added in one place
 #: and silently dropped in the other (the `train` CLI's hand-copied edge-family set is the
 #: cautionary case this project already paid for).
-_DEFENSIVE_COUNTS = tuple(k for k in fold_defensive(()) if k != "defensive_banked_s")
+_DEFENSIVE_COUNTS = tuple(k for k, v in fold_defensive(()).items() if isinstance(v, int))
+
+#: The fold's SECOND-clock totals (banked / confirm seconds), pooled as float sums. Split from the
+#: counts by the fold's own value TYPES rather than by a name list, for the reason above — and
+#: the fold's per-decision EVENT LIST is deliberately in neither, because a summary pools rates
+#: and the events are a per-decision diagnostic the report reads off the rows themselves.
+_DEFENSIVE_SUMS = tuple(k for k, v in fold_defensive(()).items() if isinstance(v, float))
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple:
@@ -60,7 +66,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         "n_playoff_ran": 0, "playoff_r_total": 0, "playoff_wall_s": 0.0,
         # `--root-strategy defensive` (see `defensive.py`), pooled as SUMS for the same
         # exactness reason. Zero on every other strategy, so a mixed file still reads.
-        **{k: 0 for k in _DEFENSIVE_COUNTS}, "defensive_banked_s": 0.0,
+        **{k: 0 for k in _DEFENSIVE_COUNTS}, **{k: 0.0 for k in _DEFENSIVE_SUMS},
         "_m": [], "_k": [], "_r": [], "_arms": [], "_elapsed": [], "_depth": [], "_beam": [],
     })
     for r in rows:
@@ -78,7 +84,8 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
                     "n_playoff_ran", "playoff_r_total") + _DEFENSIVE_COUNTS:
             a[key] += int(r.get(key, 0) or 0)
         a["playoff_wall_s"] += float(r.get("playoff_wall_s", 0.0) or 0.0)
-        a["defensive_banked_s"] += float(r.get("defensive_banked_s", 0.0) or 0.0)
+        for key in _DEFENSIVE_SUMS:
+            a[key] += float(r.get(key, 0.0) or 0.0)
         for reason, n in (r.get("fallbacks") or {}).items():
             a["fallbacks"][reason] += int(n)
         rm = r.get("realized_mean") or {}
@@ -395,8 +402,16 @@ def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> s
                     f"(of raced {df['overrule_rate_raced'] if df['overrule_rate_raced'] is not None else '-'}) "
                     f"over {df['decisions']} decisions | banked={df['banked_s']:.0f}s "
                     f"({df['banked_s_per_decision']}s/dec)"
-                    + (f" | confirm played={df['confirmed']} declined={df['confirm_declined']}"
-                       if (df['confirmed'] or df['confirm_declined']) else "")
+                    # The CONFIRM stage's own line, and the number on it is the REJECT RATE: the
+                    # fraction of race-certified overrules that paired terminal rollouts would not
+                    # stand behind. `reversed` (conclusive AGAINST the overrule) is printed apart
+                    # from `inconclusive` (the honest refusal) because only the first is a finding
+                    # about the leaf — the second is a finding about the rollout budget.
+                    + (f" | confirm {df['confirmed']}/{df['confirm_attempted']} upheld "
+                       f"(reject={df['confirm_reject_rate']:.3f}: rev={df['confirm_reversed']} "
+                       f"inc={df['confirm_inconclusive']} nb={df['confirm_no_budget']} "
+                       f"err={df['confirm_error']}) {df['confirm_s_per_attempt']}s/att"
+                       if df['confirm_attempted'] else "")
                     + (f" | NO-WIN-PROB {df['no_win_prob']}" if df['no_win_prob'] else ""))
             po = c.get("playoff")
             if po:

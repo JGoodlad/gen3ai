@@ -116,6 +116,19 @@ class DefensiveConfig:
     overrule acts on the race alone, and any positive value settles the proposed overrule with
     that many PAIRED terminal rollouts through the playoff mechanism first.
 
+    ``confirm_deadline_s`` is the clock the CONFIRM stage runs on, and it exists because the
+    built confirm had no reachable one. The confirm was handed the race's OWN
+    :class:`~main.search_dividend.budget.Deadline`, i.e. whatever the race left over — and
+    iteration 2 measured that residual at roughly a second on a separated race against a
+    ``playoff``-measured **1.5 s per PAIR**. The playoff runner always runs its first pair and
+    then requires ``deadline.fits(2 * rollout_cost_s)``, so a shared clock buys exactly ONE pair,
+    ``paired_stats`` returns ``se = inf`` at ``n = 1``, and :func:`~playoff.is_conclusive` refuses
+    below ``MIN_PAIRS = 4``. Every confirm would have declined, for want of a clock rather than
+    for want of evidence — a null that would have read as a finding. ``None`` (the default) keeps
+    that shared-clock behaviour exactly, so the built code is unchanged until asked; a positive
+    value gives the confirm its OWN fresh deadline, which is simultaneously the adjudication CAP
+    that keeps a nested rollout family from out-accruing the live battle's idle watchdog.
+
     ``contested_deadline_s`` is the TIME MANAGER, and it is the one change iteration 2 makes.
     ``None`` (the default) means a contested decision gets the same ``--budget`` every decision
     would have got, which is exactly what the first cell measured. A positive value spends the
@@ -133,6 +146,7 @@ class DefensiveConfig:
     wp_margin: float = DEFAULT_WP_MARGIN
     leaf: str = "winprob"
     confirm_rollouts: int = 0
+    confirm_deadline_s: Optional[float] = None
     contested_deadline_s: Optional[float] = None
 
     def __post_init__(self) -> None:
@@ -144,6 +158,11 @@ class DefensiveConfig:
             raise ValueError("wp_margin must lie in [0.0, 0.5]")
         if int(self.confirm_rollouts) < 0:
             raise ValueError("confirm_rollouts must be >= 0")
+        if self.confirm_deadline_s is not None and float(self.confirm_deadline_s) <= 0.0:
+            # Same reasoning as the contested deadline below: 0 is not "off" (``None`` is), and a
+            # zero confirm clock would decline every overrule for lack of a second rather than for
+            # lack of evidence — the exact failure this field exists to make impossible.
+            raise ValueError("confirm_deadline_s must be > 0 (None = share the race's clock)")
         if self.contested_deadline_s is not None and float(self.contested_deadline_s) <= 0.0:
             # 0 is NOT "off" — off is `None`. A zero deadline would expire before the first round
             # and turn every contested decision into a fallback, which reads in the counters as a
@@ -263,6 +282,22 @@ def fold_defensive(decisions: Sequence[Mapping]) -> dict:
     on a gated decision, and whatever the race left on a futility stop. It is the quantity a time
     manager would redistribute, so it is carried as a total rather than inferred from a rate.
 
+    ``n_defensive_confirmed`` counts an overrule the CONFIRM STAGE UPHELD, and "upheld" is read
+    off the VERDICT rather than off the playoff's stage — because ``stage == "played"`` does not
+    mean the overrule survived. :func:`~playoff.decide` returns ``STAGE_PLAYED`` whenever the
+    paired difference clears ``2·SE`` **in either direction**, so a confirm whose rollouts
+    conclusively preferred the POLICY's action is also ``played``, and counting it as a
+    confirmation would have inverted the one number this stage exists to report. The rejections
+    are therefore split four ways — ``reversed`` (conclusive, and against the overrule),
+    ``inconclusive`` (the honest refusal), ``no_budget``, ``error`` — because only the first two
+    are findings about the leaf and the last two are findings about the clock.
+
+    ``defensive_confirm_events`` carries ONE compact record per attempted confirm (turn, legal
+    count, root P(win), the race's own leaf margin, the paired mean/SE and the verdict). It is a
+    LIST rather than more counters because the registered diagnostic is "what distinguishes a
+    confirmed overrule from a rejected one", which is a per-decision question and cannot be
+    answered from sums. At ~2 confirms per game it costs the row a few hundred bytes.
+
     ``n_defensive_futility_deadline`` SPLITS the futility mass, and the split is the whole reason
     iteration 2 can be scored. A futility stop means "the race did not separate", but that sentence
     has two readings which the first cell could not tell apart because they coincided in 100% of
@@ -276,8 +311,12 @@ def fold_defensive(decisions: Sequence[Mapping]) -> dict:
            "n_defensive_forced_wp": 0, "n_defensive_raced": 0, "n_defensive_separated": 0,
            "n_defensive_overruled": 0, "n_defensive_futility": 0,
            "n_defensive_futility_deadline": 0, "n_defensive_kept": 0,
-           "n_defensive_no_win_prob": 0, "n_defensive_confirmed": 0,
-           "n_defensive_confirm_declined": 0, "defensive_banked_s": 0.0}
+           "n_defensive_no_win_prob": 0, "n_defensive_confirm_attempted": 0,
+           "n_defensive_confirmed": 0, "n_defensive_confirm_declined": 0,
+           "n_defensive_confirm_reversed": 0, "n_defensive_confirm_inconclusive": 0,
+           "n_defensive_confirm_no_budget": 0, "n_defensive_confirm_error": 0,
+           "defensive_confirm_s": 0.0, "defensive_banked_s": 0.0}
+    events: list = []
     for d in decisions:
         w = d.get("widths") or {}
         v = str(w.get("defensive_verdict") or "")
@@ -307,12 +346,42 @@ def fold_defensive(decisions: Sequence[Mapping]) -> dict:
                     out["n_defensive_overruled"] += 1
         stage = str(w.get("defensive_confirm_stage") or "")
         if stage:
-            if stage == "played":
+            out["n_defensive_confirm_attempted"] += 1
+            out["defensive_confirm_s"] += float(w.get("defensive_confirm_s", 0.0) or 0.0)
+            upheld = (v == VERDICT_OVERRULED)
+            if upheld:
                 out["n_defensive_confirmed"] += 1
             else:
                 out["n_defensive_confirm_declined"] += 1
+                if stage == "played":
+                    # CONCLUSIVE, and against the overrule: the rollouts cleared 2·SE preferring
+                    # the policy's own action. The sharpest single reading of leaf bias this
+                    # instrument produces — it is not "we could not tell", it is "the leaf was
+                    # wrong" — so it never shares a counter with the refusals below it.
+                    out["n_defensive_confirm_reversed"] += 1
+                elif stage == "inconclusive":
+                    out["n_defensive_confirm_inconclusive"] += 1
+                elif stage == "error":
+                    out["n_defensive_confirm_error"] += 1
+                else:
+                    out["n_defensive_confirm_no_budget"] += 1
+            po = d.get("playoff") or {}
+            events.append({
+                "turn": int(d.get("turn", 0) or 0),
+                "n_legal": int(w.get("n_our_actions", 0) or 0),
+                "wp": round(float(w.get("defensive_root_win_prob", -1.0) or -1.0), 4),
+                "leaf_margin": round(float(w.get("defensive_leaf_margin", 0.0) or 0.0), 5),
+                "stage": stage,
+                "upheld": bool(upheld),
+                "r": int(po.get("r", 0) or 0),
+                "mean": float(po.get("mean", 0.0) or 0.0),
+                "se": float(po.get("se", 0.0) or 0.0),
+                "wall_s": round(float(w.get("defensive_confirm_s", 0.0) or 0.0), 3),
+            })
         out["defensive_banked_s"] += float(w.get("defensive_banked_s", 0.0) or 0.0)
     out["defensive_banked_s"] = round(out["defensive_banked_s"], 3)
+    out["defensive_confirm_s"] = round(out["defensive_confirm_s"], 3)
+    out["defensive_confirm_events"] = events
     return out
 
 
@@ -335,6 +404,8 @@ def defensive_block(a: Mapping) -> Optional[dict]:
     over = int(a.get("n_defensive_overruled", 0) or 0)
     fut = int(a.get("n_defensive_futility", 0) or 0)
     fut_dl = int(a.get("n_defensive_futility_deadline", 0) or 0)
+    att = int(a.get("n_defensive_confirm_attempted", 0) or 0)
+    conf = int(a.get("n_defensive_confirmed", 0) or 0)
 
     def rate(k: int, d: int) -> Optional[float]:
         return round(k / d, 4) if d else None
@@ -371,6 +442,19 @@ def defensive_block(a: Mapping) -> Optional[dict]:
         "banked_s": round(float(a.get("defensive_banked_s", 0.0) or 0.0), 2),
         "banked_s_per_decision": (round(float(a.get("defensive_banked_s", 0.0) or 0.0) / n, 3)
                                   if n else None),
-        "confirmed": int(a.get("n_defensive_confirmed", 0) or 0),
+        "confirm_attempted": att,
+        "confirmed": conf,
         "confirm_declined": int(a.get("n_defensive_confirm_declined", 0) or 0),
+        "confirm_reversed": int(a.get("n_defensive_confirm_reversed", 0) or 0),
+        "confirm_inconclusive": int(a.get("n_defensive_confirm_inconclusive", 0) or 0),
+        "confirm_no_budget": int(a.get("n_defensive_confirm_no_budget", 0) or 0),
+        "confirm_error": int(a.get("n_defensive_confirm_error", 0) or 0),
+        # THE LEAF-BIAS METER IN VIVO. An attempted confirm is a decision the race certified as an
+        # overrule on the one-ply leaf; the rejection rate is the fraction of those certifications
+        # that terminal paired rollouts — which contain the opponent's response, and the leaf does
+        # not — would not stand behind.
+        "confirm_reject_rate": rate(int(a.get("n_defensive_confirm_declined", 0) or 0), att),
+        "confirm_s": round(float(a.get("defensive_confirm_s", 0.0) or 0.0), 2),
+        "confirm_s_per_attempt": (round(float(a.get("defensive_confirm_s", 0.0) or 0.0) / att, 3)
+                                  if att else None),
     }

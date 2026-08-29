@@ -406,7 +406,13 @@ class SearchEngine:
             return DecisionResult(policy_action, "search_error", widths,
                                   diagnostics={"error": f"{type(e).__name__}: {e}"},
                                   policy_action=policy_action)
+        search_elapsed: Optional[float] = None
         if self.cfg.defensive_cfg() is not None:
+            # MEASURED BEFORE THE CONFIRM. The confirm nests whole terminal rollouts inside this
+            # decision, and `deadline.elapsed()` is wall-clock from the race's start — so reading
+            # it afterwards would bill the rollout family to the SEARCH and hand `_update_cost` an
+            # `arm_s` an order of magnitude too large. The two are recorded apart.
+            search_elapsed = deadline.elapsed()
             if res.fallback is None:
                 res = self._defensive_confirm(res, record=record, turn=turn,
                                               our_tokens=our_tokens,
@@ -414,8 +420,10 @@ class SearchEngine:
             # The clock the strategy handed back. On a futility stop the race stopped early and
             # this is real time a time manager could move to a contested decision; on an overrule
             # it is the granularity residual. Recorded either way so the two can be told apart by
-            # the verdict beside it rather than by inference.
-            widths.defensive_banked_s = round(max(0.0, deadline.remaining()), 4)
+            # the verdict beside it rather than by inference. NET of the confirm: a stage that
+            # spent seconds did not bank them, whichever clock it spent them against.
+            widths.defensive_banked_s = round(
+                max(0.0, contested_s - search_elapsed - widths.defensive_confirm_s), 4)
         if self.cfg.arm == "playoff" and res.fallback is None:
             # THE SECOND STAGE. The sweep above is now only a nomination: it is the same biased
             # critic estimator the R-ladder convicted, so its argmax is deliberately NOT acted on.
@@ -424,7 +432,8 @@ class SearchEngine:
             # the POLICY whenever those do not resolve it.
             res = self._adjudicate(res, record=record, turn=turn, our_tokens=our_tokens,
                                    policy_action=policy_action, deadline=deadline)
-        widths.elapsed_s = round(deadline.elapsed(), 4)
+        widths.elapsed_s = round(deadline.elapsed() if search_elapsed is None else search_elapsed,
+                                 4)
         self._update_cost(widths)
         return res
 
@@ -482,7 +491,16 @@ class SearchEngine:
         an ELIMINATED action's mean is FROZEN at the round it went out — it can exceed the final
         leader's mean without ever having dominated it, which would silently swap the pair. The
         race's real means stay in ``scores``/``diagnostics``; the ``playoff.margin`` field on a
-        confirmed decision is therefore 1.0 by construction and is not a margin.
+        confirmed decision is therefore 1.0 by construction and is not a margin. The race's own
+        margin between the two is recorded separately as ``defensive_leaf_margin``.
+
+        **The CLOCK is the confirm's own when ``confirm_deadline_s`` is set, and the race's
+        leftover when it is not.** Sharing the race's clock is what the built code did and it is
+        kept as the default for exact reproducibility, but it cannot work at a contested budget:
+        a separated race leaves ~1 s, a pair costs ~1.5 s, the runner buys one pair, and
+        ``MIN_PAIRS = 4`` then declines every confirm ever attempted — a refusal for want of a
+        second, indistinguishable in the counters from a refusal for want of evidence. A fresh
+        deadline makes N the binding constraint and doubles as the adjudication cap.
         """
         from main.search_dividend.playoff import STAGE_ERROR, PlayoffResult
 
@@ -494,13 +512,21 @@ class SearchEngine:
         a1, a2 = int(res.action), int(policy_action)
         if a1 not in our_tokens or a2 not in our_tokens:
             return res
+        scores = res.scores or {}
+        if int(a1) in scores and int(a2) in scores:
+            res.widths.defensive_leaf_margin = round(
+                float(scores[int(a1)]) - float(scores[int(a2)]), 6)
+        confirm_deadline = (Deadline(float(cfg.confirm_deadline_s))
+                            if cfg.confirm_deadline_s else deadline)
+        t0 = time.monotonic()
         try:
             po = self.playoff.adjudicate(
                 scores={a1: 1.0, a2: 0.0}, policy_action=policy_action, our_tokens=our_tokens,
-                record=record, turn=int(turn), deadline=deadline, rng=self.rng)
+                record=record, turn=int(turn), deadline=confirm_deadline, rng=self.rng)
         except Exception as e:                           # noqa: BLE001
             po = PlayoffResult(int(policy_action), STAGE_ERROR,
                                error=f"{type(e).__name__}: {e}")
+        res.widths.defensive_confirm_s = round(time.monotonic() - t0, 4)
         action = int(po.action)
         res.widths.defensive_confirm_stage = po.stage
         # The verdict follows the ACTION, not the stage: a confirm that declined played the

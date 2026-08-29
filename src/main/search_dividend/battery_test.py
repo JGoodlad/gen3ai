@@ -518,7 +518,12 @@ def test_the_summary_pools_every_defensive_counter_the_fold_emits():
     would read as a flat zero in every report — the `train` CLI's unlaunchable edge family in
     miniature."""
     from main.search_dividend.defensive import fold_defensive
-    from main.search_dividend.summary import _DEFENSIVE_COUNTS
+    from main.search_dividend.summary import _DEFENSIVE_COUNTS, _DEFENSIVE_SUMS
 
-    emitted = set(fold_defensive(())) - {"defensive_banked_s"}
-    assert set(_DEFENSIVE_COUNTS) == emitted
+    # A PARTITION of everything the fold emits: integer counters, float second-totals, and the
+    # per-decision event LIST — which is the one thing a cell summary must not pool, because
+    # concatenating 1,600 games' events into a report is not an aggregate.
+    emitted = set(fold_defensive(()))
+    assert set(_DEFENSIVE_COUNTS).isdisjoint(_DEFENSIVE_SUMS)
+    assert set(_DEFENSIVE_COUNTS) | set(_DEFENSIVE_SUMS) | {"defensive_confirm_events"} == emitted
+    assert "defensive_banked_s" in _DEFENSIVE_SUMS and "defensive_confirm_s" in _DEFENSIVE_SUMS

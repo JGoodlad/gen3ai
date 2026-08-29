@@ -57,6 +57,7 @@ def test_the_defensive_knobs_default_to_the_probe_measured_operating_point():
     assert a.defensive_confirm == 0               # one new mechanism at a time in the first cell
     # UNSET, not a number: the flagless default must reproduce the first registered cell.
     assert a.defensive_contested_deadline_s is None
+    assert a.defensive_confirm_deadline_s is None
 
 
 def test_every_defensive_flag_reaches_the_config_it_names():
@@ -66,17 +67,36 @@ def test_every_defensive_flag_reaches_the_config_it_names():
                                    "--defensive-leaf", "value",
                                    "--defensive-wp-margin", "0.3",
                                    "--defensive-confirm", "6",
+                                   "--defensive-confirm-deadline-s", "18",
                                    "--defensive-contested-deadline-s", "3"])
     cfg = SearchConfig(root_strategy=a.root_strategy, budget_s=1.0,
                        defensive=DefensiveConfig(
                            wp_margin=a.defensive_wp_margin, leaf=a.defensive_leaf,
                            confirm_rollouts=a.defensive_confirm,
+                           confirm_deadline_s=a.defensive_confirm_deadline_s,
                            contested_deadline_s=a.defensive_contested_deadline_s))
     assert cfg.defensive_cfg() == DefensiveConfig(wp_margin=0.3, leaf="value",
                                                   confirm_rollouts=6,
+                                                  confirm_deadline_s=18.0,
                                                   contested_deadline_s=3.0)
     assert cfg.effective_score() == "value"
     assert cfg.contested_budget_s() == 3.0
+
+
+def test_every_defensive_config_FIELD_is_wired_from_an_argv_flag_at_the_real_call_site():
+    """The test above builds the config ITSELF, so it can only ever pin the flags it was told
+    about — a new field wired nowhere would pass it. This one reads the REAL construction site in
+    ``__main__.main`` and fails if any field of the dataclass is not fed from ``args``. That is
+    exactly the failure mode this repo has already paid for once (the `train` CLI's hand-copied
+    edge-family set, which made a whole family unlaunchable while every test stayed green)."""
+    import dataclasses
+    import inspect
+
+    import main.search_dividend.__main__ as M
+
+    src = inspect.getsource(M.main)
+    for f in dataclasses.fields(DefensiveConfig):
+        assert f"{f.name}=args." in src, f"DefensiveConfig.{f.name} is fed by no CLI flag"
 
 
 def test_the_contested_deadline_flag_survives_the_hop_the_cell_actually_takes():

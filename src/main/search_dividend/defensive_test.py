@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 from main.search_dividend import defensive as dfn
-from main.search_dividend.budget import FALLBACK_REASONS, RealizedWidths
+from main.search_dividend.budget import FALLBACK_REASONS, Deadline, RealizedWidths
 from main.search_dividend.racing import RacingConfig
 from main.search_dividend.search import ROOT_STRATEGIES, DecisionResult, SearchConfig, SearchEngine
 
@@ -561,3 +561,217 @@ def test_a_fixed_seed_engine_gates_identically_across_two_constructions():
     a = _gate(SearchConfig(root_strategy="defensive", budget_s=1.0, seed=11), 6, 0.7)
     b = _gate(SearchConfig(root_strategy="defensive", budget_s=1.0, seed=11), 6, 0.7)
     assert a[0] == b[0] and a[1].as_dict() == b[1].as_dict()
+
+
+# ---------------------------------------------------------------------------
+# the CONFIRM stage (iteration 3) — the clock, the accounting, and what it counts
+# ---------------------------------------------------------------------------
+#
+# The confirm was BUILT in iteration 1 and never exercised in a cell, and two defects survived
+# that way. Both are pinned below, and both are the kind that produce a clean-looking null:
+#
+#   1. it was handed the RACE's leftover clock, which buys one pair against a MIN_PAIRS of 4 —
+#      so every confirm would have declined for want of a second, not for want of evidence;
+#   2. its rollout wall was billed to `elapsed_s`, which `_update_cost` divides into `arm_s`.
+#
+# The rollouts are INJECTED here (the same discipline `playoff_test` uses): the arithmetic and the
+# clock are the half that decides, and the live rollout is exercised by the cell itself.
+
+
+def _confirm_engine(rollout_fn, *, confirm=6, confirm_deadline_s=None, budget_s=1.0,
+                    contested_deadline_s=3.0, rollouts_cfg=None, arm="base"):
+    from main.search_dividend.playoff import PlayoffConfig, PlayoffRunner
+
+    cfg = SearchConfig(
+        arm=arm, root_strategy="defensive", budget_s=budget_s,
+        defensive=dfn.DefensiveConfig(confirm_rollouts=confirm,
+                                      confirm_deadline_s=confirm_deadline_s,
+                                      contested_deadline_s=contested_deadline_s))
+    runner = PlayoffRunner(model=None, mappings=None, battle_format="gen3ou",
+                           cfg=rollouts_cfg or PlayoffConfig(rollouts=confirm),
+                           rollout_fn=rollout_fn)
+    return SearchEngine(model=_FakeModel(3), mappings=None, cfg=cfg, playoff=runner)
+
+
+def _scripted_rollouts(winner_choice: str):
+    """A rollout family in which ``winner_choice`` always wins and the other line always loses.
+
+    Deterministic on purpose: the confirm's verdict must be a function of the rollout outcomes and
+    nothing else, so a test that pinned it with random draws would be pinning the RNG."""
+    calls = []
+
+    def fn(*, record, turn, choice, sim_seed, torch_seed):
+        calls.append(choice)
+        return {"outcome": "win" if choice == winner_choice else "loss"}
+
+    return fn, calls
+
+
+def _overruled(action=7, policy_action=2) -> DecisionResult:
+    w = RealizedWidths(planned={}, n_our_actions=5)
+    w.racing_rounds = 13
+    w.racing_resolved = True
+    w.defensive_verdict = dfn.VERDICT_OVERRULED
+    return DecisionResult(action, None, w, scores={action: 0.61, policy_action: 0.44},
+                          policy_action=policy_action)
+
+
+def test_the_confirm_config_refuses_a_zero_clock_and_defaults_to_the_built_behaviour():
+    assert dfn.DefensiveConfig().confirm_deadline_s is None
+    with pytest.raises(ValueError, match="confirm_deadline_s"):
+        dfn.DefensiveConfig(confirm_rollouts=6, confirm_deadline_s=0.0)
+
+
+def test_the_race_s_LEFTOVER_clock_buys_ONE_pair_and_therefore_declines_every_confirm():
+    """THE DEFECT THIS ITERATION HAD TO FIX, pinned as a measurement rather than a story.
+
+    ``PlayoffRunner`` always runs its first pair and then requires ``fits(2*rollout_cost_s)`` with
+    ``rollout_cost_s`` seeded at 1.0 — so on the ~1 s a separated race leaves, it buys exactly one
+    pair, ``paired_stats`` reports ``se = inf`` at ``n = 1``, and ``MIN_PAIRS = 4`` declines. A
+    cell run this way would have reported a 100% rejection rate that was entirely about the clock.
+    """
+    fn, calls = _scripted_rollouts("move slot7")
+    eng = _confirm_engine(fn, confirm=8, confirm_deadline_s=None)
+    res = eng._defensive_confirm(_overruled(), record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(0.001))
+    assert len(calls) == 2                                   # ONE pair, then the clock refused
+    assert res.widths.defensive_confirm_stage == "inconclusive"
+    assert res.action == 2                                   # ...and the policy's action stands
+
+
+def test_its_OWN_clock_makes_N_the_binding_constraint_and_lets_a_confirm_actually_act():
+    fn, calls = _scripted_rollouts("move slot7")
+    eng = _confirm_engine(fn, confirm=8, confirm_deadline_s=20.0)
+    res = eng._defensive_confirm(_overruled(), record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(0.001))
+    assert len(calls) == 16                                  # 8 PAIRS, the N that was asked for
+    assert res.widths.defensive_confirm_stage == "played"
+    assert res.action == 7                                   # the overrule survived confirmation
+    assert res.widths.defensive_verdict == dfn.VERDICT_OVERRULED
+
+
+def test_a_confirm_that_the_rollouts_REVERSE_keeps_the_policy_action_and_is_not_a_confirmation():
+    """The rollouts conclusively preferred the POLICY. ``stage`` is still ``played`` — the paired
+    difference cleared 2*SE — so a counter keyed on the stage alone would report this as a
+    confirmed overrule while the decision played the opposite action."""
+    fn, _calls = _scripted_rollouts("move slot2")             # the POLICY's move wins every line
+    eng = _confirm_engine(fn, confirm=8, confirm_deadline_s=20.0)
+    res = eng._defensive_confirm(_overruled(), record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(0.001))
+    assert res.action == 2
+    assert res.widths.defensive_confirm_stage == "played"
+    assert res.widths.defensive_verdict == dfn.VERDICT_KEPT
+    out = dfn.fold_defensive([{"widths": res.widths.as_dict(), "playoff": res.playoff,
+                               "turn": 9}])
+    assert out["n_defensive_confirmed"] == 0
+    assert out["n_defensive_confirm_reversed"] == 1
+    assert out["n_defensive_confirm_declined"] == 1
+
+
+def test_the_confirm_records_the_races_own_leaf_margin_for_the_confirmed_vs_rejected_read():
+    fn, _ = _scripted_rollouts("move slot7")
+    eng = _confirm_engine(fn, confirm=8, confirm_deadline_s=20.0)
+    res = eng._defensive_confirm(_overruled(), record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(0.001))
+    assert res.widths.defensive_leaf_margin == pytest.approx(0.17)   # 0.61 - 0.44
+
+
+def test_the_confirm_is_a_NO_OP_when_it_is_off_even_with_a_runner_attached():
+    """OFF must be byte-identical: iteration 2's rows have to remain reproducible."""
+    fn, calls = _scripted_rollouts("move slot7")
+    eng = _confirm_engine(fn, confirm=0, confirm_deadline_s=20.0)
+    res = _overruled()
+    out = eng._defensive_confirm(res, record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(3.0))
+    assert out is res and not calls
+    assert out.widths.defensive_confirm_stage == "" and out.widths.defensive_confirm_s == 0.0
+    assert out.widths.defensive_leaf_margin == 0.0
+
+
+def test_a_race_that_did_not_overrule_never_reaches_the_rollouts():
+    fn, calls = _scripted_rollouts("move slot7")
+    eng = _confirm_engine(fn, confirm=8, confirm_deadline_s=20.0)
+    res = _overruled()
+    res.widths.defensive_verdict = dfn.VERDICT_FUTILITY
+    out = eng._defensive_confirm(res, record=None, turn=9,
+                                 our_tokens={7: "move slot7", 2: "move slot2"},
+                                 policy_action=2, deadline=Deadline(3.0))
+    assert out is res and not calls
+
+
+def test_the_confirms_seconds_are_kept_OUT_of_elapsed_s_and_OUT_of_the_bank():
+    """``elapsed_s`` feeds ``_update_cost``, which derives ``arm_s`` by SUBTRACTION — so a rollout
+    family folded into it would price a terminal rollout as a search arm and collapse every later
+    decision's width plan. The two clocks are recorded apart, and the BANK is net of both."""
+    import time as _t
+
+    def slow(*, record, turn, choice, sim_seed, torch_seed):
+        _t.sleep(0.01)
+        return {"outcome": "win" if choice == "move slot7" else "loss"}
+
+    eng = _confirm_engine(slow, confirm=4, confirm_deadline_s=20.0, contested_deadline_s=3.0,
+                          arm="honest")
+
+    def _fake_run(*a, **k):
+        """Stand in for the race — on the SAME widths object `choose` built, which is how the
+        real `_run` reports (and is what makes the banked/elapsed arithmetic below the real one)."""
+        w = a[10]
+        w.racing_rounds, w.racing_resolved = 13, True
+        w.defensive_verdict = dfn.VERDICT_OVERRULED
+        return DecisionResult(7, None, w, scores={7: 0.61, 2: 0.44}, policy_action=2)
+
+    eng._run = _fake_run                                      # no sim, no session
+    res = eng.choose(record=None, side="p1", turn=9, our_history=[],
+                     our_tokens={7: "move slot7", 2: "move slot2"},
+                     observed_our_lines=[], pub=None, policy_action=2, root_win_prob=0.52)
+    w = res.widths
+    assert w.defensive_confirm_s >= 0.07                      # 4 pairs x 2 rollouts x 10 ms
+    assert w.elapsed_s < 0.02                                 # the SEARCH cost, which was ~nothing
+    assert w.defensive_banked_s == pytest.approx(3.0 - w.elapsed_s - w.defensive_confirm_s, abs=1e-3)
+
+
+def test_the_fold_emits_one_event_per_attempted_confirm_with_the_diagnostic_fields():
+    rows = [
+        _dec(defensive_verdict=dfn.VERDICT_OVERRULED, defensive_confirm_stage="played",
+             defensive_confirm_s=9.1, defensive_leaf_margin=0.21, n_our_actions=6,
+             defensive_root_win_prob=0.53),
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, defensive_confirm_stage="inconclusive",
+             defensive_confirm_s=8.7, defensive_leaf_margin=0.04, n_our_actions=4,
+             defensive_root_win_prob=0.47),
+    ]
+    rows[0]["turn"] = 12
+    rows[1]["turn"] = 30
+    out = dfn.fold_defensive(rows)
+    assert out["n_defensive_confirm_attempted"] == 2
+    assert out["defensive_confirm_s"] == pytest.approx(17.8)
+    ev = out["defensive_confirm_events"]
+    assert [e["turn"] for e in ev] == [12, 30]
+    assert [e["upheld"] for e in ev] == [True, False]
+    assert [e["leaf_margin"] for e in ev] == [0.21, 0.04]
+    assert [e["n_legal"] for e in ev] == [6, 4]
+    b = dfn.defensive_block(out)
+    assert b["confirm_reject_rate"] == pytest.approx(0.5)
+    assert b["confirm_s_per_attempt"] == pytest.approx(8.9)
+
+
+def test_the_four_rejection_reasons_are_counted_apart():
+    """Only ``reversed`` and ``inconclusive`` are findings about the LEAF; ``no_budget`` and
+    ``error`` are findings about the clock and the driver, and summing them would let a broken
+    rollout family read as evidence that the leaf was wrong."""
+    out = dfn.fold_defensive([
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, defensive_confirm_stage="played"),
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, defensive_confirm_stage="inconclusive"),
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, defensive_confirm_stage="no_budget"),
+        _dec(defensive_verdict=dfn.VERDICT_KEPT, defensive_confirm_stage="error"),
+        _dec(defensive_verdict=dfn.VERDICT_OVERRULED, defensive_confirm_stage="played"),
+    ])
+    assert out["n_defensive_confirm_attempted"] == 5
+    assert out["n_defensive_confirmed"] == 1
+    assert (out["n_defensive_confirm_reversed"], out["n_defensive_confirm_inconclusive"],
+            out["n_defensive_confirm_no_budget"], out["n_defensive_confirm_error"]) == (1, 1, 1, 1)
+    assert out["n_defensive_confirm_declined"] == 4
