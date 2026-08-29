@@ -6102,3 +6102,20 @@ defense-in-depth — CONFIRMED overrules are route 2's highest-quality training 
 AlphaZero loop in miniature: search manufactures the curriculum). Pipeline of record when this
 program runs: 3 filters → 2 transplants → 1 repairs credit; arms to be designed and registered
 post-rev-3, PBRS-φ first needing its own sanction (per b070d6e).
+
+### 🏗️ AI_V12 PROGRAM BUILD DISPATCHED (owner order, 2026-08-29) — all three win-prob→behavior routes implemented ahead of their era, OFF by default
+
+Owner: implement routes 1/2/3 now (far-out era, ai_v12 — ai_v11 stays reserved for human
+replay), with a design doc + high-level experiments + probe L's whiff-detection results folded
+in. Build agent dispatched, staged doc-first: **(doc)**
+`designs/ai_v12/design_winprob_behavior_coupling.md` — the three-route taxonomy (1984dc7), the
+barometer/coach frame (b070d6e), the experiment ladder, probe-L results section (pending its
+landing if needed). **(Route 1)** PBRS reward shaping `γφ(s′)−φ(s)` with φ = the win-prob
+head's DETACHED read — trainer-side buffer augmentation before GAE (env workers have no model),
+φ(terminal)=0 convention, telescoping unit test, no-grad-through-φ assert. **(Route 2+3
+unified)** the existing search-teacher (ExIt) plumbing gains a new teacher mode: one-ply
+win-prob-ranking targets (route 2), with the CONFIRMED-OVERRULE filter (route 3 — separation +
+paired-rollout confirmation, the defensive-search discipline) as the target-quality gate — the
+"3 filters → 2 transplants" pipeline as code. Everything OFF = byte-identical; train-loop
+knobs, never version-locked; the winner's-curse and learned-φ-invariance caveats are REQUIRED
+sections in the doc, not footnotes. Nothing runs until its era registers arms.
