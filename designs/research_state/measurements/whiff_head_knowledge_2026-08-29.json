@@ -1,0 +1,716 @@
+{
+ "what": "PROBE L \u2014 the whiff x head-knowledge cross-tab",
+ "date": "2026-08-29",
+ "run": "ai_v9_29_rev1_0823",
+ "scope": "sentinel_* eval traces, all 11 steps with traces; one snapshot per step (the EXACT model that wrote those traces)",
+ "coverage": {
+  "swept": 2031,
+  "duplicate_rows_dropped": 63,
+  "errors": 17,
+  "error_kinds": {
+   "RuntimeError": 8,
+   "ArchDriftError": 9
+  },
+  "unreadable_decisions": 1,
+  "after_min_legal": 2013,
+  "min_legal": 3,
+  "wp_map_verified": 2013,
+  "by_tag": {
+   "hit_pivot": 676,
+   "no_pivot": 665,
+   "whiff": 672
+  },
+  "whiff_kinds": {
+   "immune": 617,
+   "fail": 54,
+   "near_zero": 1
+  },
+  "battles": 382
+ },
+ "cross_tab": {
+  "whiff_all": {
+   "n": 672,
+   "n_battles": 381,
+   "head_prefers_alt": {
+    "metric": "win-prob head ranks an alternative above the played action",
+    "n": 672,
+    "n_battles": 381,
+    "frac": 0.9642857142857143,
+    "ci": [
+     0.9480910933925295,
+     0.9788436545238389
+    ]
+   },
+   "head_prefers_NONWHIFF_alt": {
+    "metric": "\u2026and that alternative is not itself a move seen to whiff against this arrival in this battle",
+    "n": 672,
+    "n_battles": 381,
+    "frac": 0.9642857142857143,
+    "ci": [
+     0.9480910933925295,
+     0.9788436545238389
+    ]
+   },
+   "wp_margin_mean": 0.06612425595238094,
+   "wp_margin_ci": [
+    0.05979837661104161,
+    0.07263799158309457
+   ],
+   "wp_margin_median": 0.04425000000000001,
+   "wp_margin_p75": 0.09575000000000003,
+   "wp_margin_p90": 0.15925999999999998,
+   "v_head_prefers_alt": {
+    "metric": "scalar V ranks an alternative above the played action",
+    "n": 672,
+    "n_battles": 381,
+    "frac": 0.9761904761904762,
+    "ci": [
+     0.9601664295874822,
+     0.9892307692307692
+    ]
+   },
+   "v_margin_mean": 3.3692122023809525,
+   "v_margin_ci": [
+    3.0615442887483266,
+    3.6881927826079552
+   ],
+   "v_margin_median": 2.3556499999999994,
+   "median_chosen_prob": 0.8765,
+   "best_alt_is_switch_frac": 0.4017857142857143,
+   "median_wp_s": 0.7273516952991486,
+   "median_policy_p_on_head_best": 0.002,
+   "frac_head_best_under_p05": 0.7515432098765432
+  },
+  "whiff_immune": {
+   "n": 617,
+   "n_battles": 373,
+   "head_prefers_alt": {
+    "metric": "win-prob head ranks an alternative above the played action",
+    "n": 617,
+    "n_battles": 373,
+    "frac": 0.9643435980551054,
+    "ci": [
+     0.9476268412438625,
+     0.9783702826407814
+    ]
+   },
+   "head_prefers_NONWHIFF_alt": {
+    "metric": "\u2026and that alternative is not itself a move seen to whiff against this arrival in this battle",
+    "n": 617,
+    "n_battles": 373,
+    "frac": 0.9643435980551054,
+    "ci": [
+     0.9476268412438625,
+     0.9783702826407814
+    ]
+   },
+   "wp_margin_mean": 0.06961150729335494,
+   "wp_margin_ci": [
+    0.0629252990117595,
+    0.07631383972877177
+   ],
+   "wp_margin_median": 0.049199999999999966,
+   "wp_margin_p75": 0.10309999999999997,
+   "wp_margin_p90": 0.16346,
+   "v_head_prefers_alt": {
+    "metric": "scalar V ranks an alternative above the played action",
+    "n": 617,
+    "n_battles": 373,
+    "frac": 0.9837925445705025,
+    "ci": [
+     0.9709478162001097,
+     0.9936512959614225
+    ]
+   },
+   "v_margin_mean": 3.503837925445705,
+   "v_margin_ci": [
+    3.1957115959658218,
+    3.8290879775348707
+   ],
+   "v_margin_median": 2.4664,
+   "median_chosen_prob": 0.907,
+   "best_alt_is_switch_frac": 0.4019448946515397,
+   "median_wp_s": 0.7043390274047852,
+   "median_policy_p_on_head_best": 0.002,
+   "frac_head_best_under_p05": 0.773109243697479
+  },
+  "hit_pivot": {
+   "n": 676,
+   "n_battles": 284,
+   "head_prefers_alt": {
+    "metric": "win-prob head ranks an alternative above the played action",
+    "n": 676,
+    "n_battles": 284,
+    "frac": 0.7514792899408284,
+    "ci": [
+     0.7202960460222285,
+     0.7830049102413605
+    ]
+   },
+   "head_prefers_NONWHIFF_alt": {
+    "metric": "\u2026and that alternative is not itself a move seen to whiff against this arrival in this battle",
+    "n": 676,
+    "n_battles": 284,
+    "frac": 0.7514792899408284,
+    "ci": [
+     0.7202960460222285,
+     0.7830049102413605
+    ]
+   },
+   "wp_margin_mean": 0.03797337278106509,
+   "wp_margin_ci": [
+    0.032577022058823527,
+    0.04362542019449116
+   ],
+   "wp_margin_median": 0.031700000000000006,
+   "wp_margin_p75": 0.06500000000000002,
+   "wp_margin_p90": 0.11459999999999995,
+   "v_head_prefers_alt": {
+    "metric": "scalar V ranks an alternative above the played action",
+    "n": 675,
+    "n_battles": 283,
+    "frac": 0.8133333333333334,
+    "ci": [
+     0.7833320433436533,
+     0.8411515630954718
+    ]
+   },
+   "v_margin_mean": 2.1194896296296295,
+   "v_margin_ci": [
+    1.8428740441882236,
+    2.408077474444046
+   ],
+   "v_margin_median": 1.7976999999999999,
+   "median_chosen_prob": 0.7925,
+   "best_alt_is_switch_frac": 0.3032544378698225,
+   "median_wp_s": 0.7339955270290375,
+   "median_policy_p_on_head_best": 0.01,
+   "frac_head_best_under_p05": 0.6771653543307087
+  },
+  "no_pivot": {
+   "n": 665,
+   "n_battles": 295,
+   "head_prefers_alt": {
+    "metric": "win-prob head ranks an alternative above the played action",
+    "n": 665,
+    "n_battles": 295,
+    "frac": 0.6225563909774436,
+    "ci": [
+     0.5853649408500072,
+     0.6608230134158927
+    ]
+   },
+   "head_prefers_NONWHIFF_alt": {
+    "metric": "\u2026and that alternative is not itself a move seen to whiff against this arrival in this battle",
+    "n": 665,
+    "n_battles": 295,
+    "frac": 0.6225563909774436,
+    "ci": [
+     0.5853649408500072,
+     0.6608230134158927
+    ]
+   },
+   "wp_margin_mean": 0.019738496240601505,
+   "wp_margin_ci": [
+    0.012237378208486123,
+    0.02728072587413295
+   ],
+   "wp_margin_median": 0.007899999999999997,
+   "wp_margin_p75": 0.050199999999999995,
+   "wp_margin_p90": 0.12464,
+   "v_head_prefers_alt": {
+    "metric": "scalar V ranks an alternative above the played action",
+    "n": 650,
+    "n_battles": 291,
+    "frac": 0.6723076923076923,
+    "ci": [
+     0.6365029537055579,
+     0.7081372670662955
+    ]
+   },
+   "v_margin_mean": 1.3369773846153845,
+   "v_margin_ci": [
+    0.9964052148884871,
+    1.6734817554399979
+   ],
+   "v_margin_median": 0.8995000000000002,
+   "median_chosen_prob": 0.62,
+   "best_alt_is_switch_frac": 0.37293233082706767,
+   "median_wp_s": 0.6767368316650391,
+   "median_policy_p_on_head_best": 0.0665,
+   "frac_head_best_under_p05": 0.4323671497584541
+  }
+ },
+ "whiff_minus_control": {
+  "head_prefers_alt_vs_hit_pivot": {
+   "diff": 0.21286430811427703,
+   "ci": [
+    0.1772769593823079,
+    0.247852570124068
+   ]
+  },
+  "wp_margin_vs_hit_pivot": {
+   "diff": 0.03163813451228985,
+   "ci": [
+    0.02333915582984292,
+    0.04080210490867345
+   ]
+  },
+  "head_prefers_alt_vs_no_pivot": {
+   "diff": 0.34178720707766175,
+   "ci": [
+    0.3003700157363819,
+    0.3839835750837773
+   ]
+  },
+  "wp_margin_vs_no_pivot": {
+   "diff": 0.049873011052753435,
+   "ci": [
+    0.040290456217071516,
+    0.06006584782887032
+   ]
+  }
+ },
+ "dice_floor": {
+  "note": "R independent dice streams per action beside the CRN line; the paired margin max_alt wp - chosen wp is recomputed on each. sd across those streams IS the leaf noise floor for this comparison.",
+  "n_with_seeds": 149,
+  "whiff_immune": {
+   "n": 45,
+   "n_battles": 39,
+   "median_within_decision_sd_of_margin": 0.0006192387637927762,
+   "mean_within_decision_sd_of_margin": 0.010763887933733115,
+   "p90_within_decision_sd": 0.022716205561776594,
+   "mean_sign_stability_across_dice": 0.9,
+   "frac_crn_margin_gt_2sd": 0.8222222222222222,
+   "frac_crn_margin_gt_2sd_ci": [
+    0.7045454545454546,
+    0.9285714285714286
+   ],
+   "frac_preference_holds_on_every_dice_stream": 0.8666666666666667,
+   "frac_preference_holds_on_every_dice_stream_ci": [
+    0.7608695652173914,
+    0.9555555555555556
+   ]
+  },
+  "hit_pivot": {
+   "n": 57,
+   "n_battles": 36,
+   "median_within_decision_sd_of_margin": 0.018601224094586002,
+   "mean_within_decision_sd_of_margin": 0.026007419941027766,
+   "p90_within_decision_sd": 0.0738660177729463,
+   "mean_sign_stability_across_dice": 0.7748538011695907,
+   "frac_crn_margin_gt_2sd": 0.49122807017543857,
+   "frac_crn_margin_gt_2sd_ci": [
+    0.375,
+    0.5967741935483871
+   ],
+   "frac_preference_holds_on_every_dice_stream": 0.5964912280701754,
+   "frac_preference_holds_on_every_dice_stream_ci": [
+    0.48,
+    0.7058823529411765
+   ]
+  },
+  "no_pivot": {
+   "n": 45,
+   "n_battles": 32,
+   "median_within_decision_sd_of_margin": 0.0017465852227583347,
+   "mean_within_decision_sd_of_margin": 0.027561933557405504,
+   "p90_within_decision_sd": 0.11868091950272705,
+   "mean_sign_stability_across_dice": 0.6925925925925926,
+   "frac_crn_margin_gt_2sd": 0.4888888888888889,
+   "frac_crn_margin_gt_2sd_ci": [
+    0.34146341463414637,
+    0.625
+   ],
+   "frac_preference_holds_on_every_dice_stream": 0.5333333333333333,
+   "frac_preference_holds_on_every_dice_stream_ci": [
+    0.3695652173913043,
+    0.7
+   ]
+  }
+ },
+ "repeat_offenders": {
+  "not_in_loop": {
+   "n": 412,
+   "n_battles": 330,
+   "head_prefers_alt": 0.9611650485436893,
+   "ci": [
+    0.9421686746987952,
+    0.978209548373513
+   ],
+   "wp_margin_mean": 0.06766626213592233,
+   "wp_margin_ci": [
+    0.061377725121899256,
+    0.07403409702723572
+   ],
+   "wp_margin_median": 0.046750000000000014,
+   "median_chosen_prob": 0.858,
+   "median_alpha_switch_p": 0.4895
+  },
+  "click_1": {
+   "n": 81,
+   "n_battles": 77,
+   "head_prefers_alt": 1.0,
+   "ci": [
+    1.0,
+    1.0
+   ],
+   "wp_margin_mean": 0.07152222222222222,
+   "wp_margin_ci": [
+    0.05603405217659771,
+    0.0885137448574787
+   ],
+   "wp_margin_median": 0.03510000000000002,
+   "median_chosen_prob": 0.958,
+   "median_alpha_switch_p": 0.6255999999999999
+  },
+  "click_2": {
+   "n": 81,
+   "n_battles": 77,
+   "head_prefers_alt": 0.9506172839506173,
+   "ci": [
+    0.9,
+    0.9879518072289156
+   ],
+   "wp_margin_mean": 0.06870617283950615,
+   "wp_margin_ci": [
+    0.05525648932926829,
+    0.08290424284638555
+   ],
+   "wp_margin_median": 0.05170000000000008,
+   "median_chosen_prob": 0.946,
+   "median_alpha_switch_p": 0.56235
+  },
+  "click_3plus": {
+   "n": 43,
+   "n_battles": 26,
+   "head_prefers_alt": 0.9534883720930233,
+   "ci": [
+    0.8809523809523809,
+    1.0
+   ],
+   "wp_margin_mean": 0.08635581395348836,
+   "wp_margin_ci": [
+    0.056411875,
+    0.11901316426570627
+   ],
+   "wp_margin_median": 0.06230000000000002,
+   "median_chosen_prob": 0.953,
+   "median_alpha_switch_p": 0.5337
+  },
+  "later_minus_first_margin": {
+   "diff": 0.0033043906810035772,
+   "ci": [
+    -0.021374363608104307,
+    0.026925663144122376
+   ],
+   "n_later": 124,
+   "n_first": 81
+  },
+  "later_minus_first_prefers": {
+   "diff": -0.048387096774193505,
+   "ci": [
+    -0.0964983022071307,
+    -0.014385919835560134
+   ]
+  }
+ },
+ "alpha_elevation": {
+  "whiff_immune": {
+   "n": 606,
+   "mean_alpha_switch_p": 0.5027013201320132,
+   "ci": [
+    0.4821160874063213,
+    0.5231657107710365
+   ],
+   "median_alpha_switch_p": 0.5316,
+   "alpha_top1_is_switch": 0.7244732576985413,
+   "top1_ci": [
+    0.6849070236551484,
+    0.7620670218474096
+   ]
+  },
+  "whiff_all": {
+   "n": 655,
+   "mean_alpha_switch_p": 0.48322122137404583,
+   "ci": [
+    0.45983925723883096,
+    0.5069541586921849
+   ],
+   "median_alpha_switch_p": 0.5006,
+   "alpha_top1_is_switch": 0.6904761904761905,
+   "top1_ci": [
+    0.6492249283667623,
+    0.7315731911512949
+   ]
+  },
+  "hit_pivot": {
+   "n": 639,
+   "mean_alpha_switch_p": 0.492437558685446,
+   "ci": [
+    0.4662725220048375,
+    0.5180846852344683
+   ],
+   "median_alpha_switch_p": 0.4864,
+   "alpha_top1_is_switch": 0.7233727810650887,
+   "top1_ci": [
+    0.6817522959539415,
+    0.7630066417994021
+   ]
+  },
+  "no_pivot": {
+   "n": 527,
+   "mean_alpha_switch_p": 0.2938294117647059,
+   "ci": [
+    0.2743240362852471,
+    0.3127595846728582
+   ],
+   "median_alpha_switch_p": 0.2372,
+   "alpha_top1_is_switch": 0.35639097744360904,
+   "top1_ci": [
+    0.3143286374642307,
+    0.4
+   ]
+  },
+  "whiff_immune_minus_hit_pivot": {
+   "diff": 0.01026376144656721,
+   "ci": [
+    -0.022863095855499106,
+    0.04294721229003617
+   ]
+  },
+  "whiff_immune_minus_no_pivot": {
+   "diff": 0.2088719083673073,
+   "ci": [
+    0.1808393099550634,
+    0.23656991191305263
+   ]
+  },
+  "loop_steps": {
+   "n": 205,
+   "median_alpha_switch_p": 0.5757,
+   "alpha_top1_is_switch": 0.7365853658536585
+  }
+ },
+ "by_step": {
+  "step_10000032": {
+   "n": 42,
+   "head_prefers_alt": 0.8809523809523809,
+   "wp_margin_median": 0.05875
+  },
+  "step_12000000": {
+   "n": 46,
+   "head_prefers_alt": 1.0,
+   "wp_margin_median": 0.06220000000000003
+  },
+  "step_14000016": {
+   "n": 64,
+   "head_prefers_alt": 0.921875,
+   "wp_margin_median": 0.04444999999999999
+  },
+  "step_16000032": {
+   "n": 83,
+   "head_prefers_alt": 0.9759036144578314,
+   "wp_margin_median": 0.06230000000000002
+  },
+  "step_18000000": {
+   "n": 81,
+   "head_prefers_alt": 0.9259259259259259,
+   "wp_margin_median": 0.03639999999999999
+  },
+  "step_20000016": {
+   "n": 96,
+   "head_prefers_alt": 0.96875,
+   "wp_margin_median": 0.05424999999999999
+  },
+  "step_22000032": {
+   "n": 70,
+   "head_prefers_alt": 0.9857142857142858,
+   "wp_margin_median": 0.046300000000000036
+  },
+  "step_24000000": {
+   "n": 87,
+   "head_prefers_alt": 1.0,
+   "wp_margin_median": 0.04720000000000002
+  },
+  "step_6000000": {
+   "n": 17,
+   "head_prefers_alt": 1.0,
+   "wp_margin_median": 0.033499999999999974
+  },
+  "step_8000016": {
+   "n": 31,
+   "head_prefers_alt": 1.0,
+   "wp_margin_median": 0.04509999999999997
+  }
+ },
+ "by_outcome": {
+  "LOSS": {
+   "n": 338,
+   "head_prefers_alt": 0.9763313609467456,
+   "wp_margin_median": 0.06219999999999996
+  },
+  "WIN": {
+   "n": 279,
+   "head_prefers_alt": 0.9498207885304659,
+   "wp_margin_median": 0.028800000000000048
+  }
+ },
+ "realized_cost": {
+  "n": 617,
+  "median_delta_win_prob_on_whiff_turn": -0.03256356716156006,
+  "mean_delta_win_prob": -0.03858650344721309,
+  "p10": -0.13327397108078,
+  "loop_step_median": -0.03478211164474487,
+  "control_no_pivot_median": null,
+  "note": "realized per-turn change in the recorded win-prob series, from the census (worst decision on the turn); the input to the shaping-dose accounting."
+ },
+ "census": {
+  "all_steps": {
+   "battles": 834,
+   "moved_into_pivots": 4567,
+   "whiffs": 677,
+   "decisions": 30553,
+   "whiff_rate_per_pivot": 0.1482373549375958,
+   "whiff_rate_per_decision": 0.022158216869047228,
+   "B1_within_battle_reclick_rate": 0.22304283604135894,
+   "reclicks": 151,
+   "B2_loop_battle_rate": 0.10071942446043165,
+   "loop_battles": 84,
+   "B3_median_chosen_prob_on_loop_steps": 0.915,
+   "n_loop_steps": 243
+  },
+  "step_24000000": {
+   "battles": 96,
+   "moved_into_pivots": 565,
+   "whiffs": 90,
+   "decisions": 3266,
+   "whiff_rate_per_pivot": 0.1592920353982301,
+   "whiff_rate_per_decision": 0.027556644213104716,
+   "B1_within_battle_reclick_rate": 0.2222222222222222,
+   "reclicks": 20,
+   "B2_loop_battle_rate": 0.11458333333333333,
+   "loop_battles": 11,
+   "B3_median_chosen_prob_on_loop_steps": 0.9625,
+   "n_loop_steps": 32
+  },
+  "by_outcome": {
+   "WIN": {
+    "battles": 360,
+    "moved_into_pivots": 2123,
+    "whiffs": 317,
+    "decisions": 13718,
+    "whiff_rate_per_pivot": 0.14931700423928404,
+    "whiff_rate_per_decision": 0.02310832482869223,
+    "B1_within_battle_reclick_rate": 0.24290220820189273,
+    "reclicks": 77,
+    "B2_loop_battle_rate": 0.12222222222222222,
+    "loop_battles": 44,
+    "B3_median_chosen_prob_on_loop_steps": 0.9255,
+    "n_loop_steps": 124
+   },
+   "LOSS": {
+    "battles": 474,
+    "moved_into_pivots": 2444,
+    "whiffs": 360,
+    "decisions": 16835,
+    "whiff_rate_per_pivot": 0.14729950900163666,
+    "whiff_rate_per_decision": 0.021384021384021384,
+    "B1_within_battle_reclick_rate": 0.20555555555555555,
+    "reclicks": 74,
+    "B2_loop_battle_rate": 0.08438818565400844,
+    "loop_battles": 40,
+    "B3_median_chosen_prob_on_loop_steps": 0.91,
+    "n_loop_steps": 119
+   }
+  },
+  "gen15_baseline_for_reference": {
+   "whiff_rate_per_pivot": 0.167,
+   "B1": 0.322,
+   "B2": 0.139,
+   "B3": 0.963,
+   "source": "loops.LOOP_BASELINES / bait_loop_hunt.md; a reference, not a target"
+  }
+ },
+ "evidential_head": {
+  "question": "is the Beta(alpha,beta) confession head CONFIDENT when it disagrees?",
+  "head_built": true,
+  "config": {
+   "cf_evidential": true,
+   "cf_evidential_coef": 0.05,
+   "cf_evidential_reg": 0.001,
+   "cf_head_only": true,
+   "cf_label_lag_steps": 150000,
+   "cf_label_likelihood": "binomial"
+  },
+  "read_via": "no trace key exists (the extractor forward never calls the head) \u2014 read by a fresh forward on the recorded obs, taking features_extractor.stash.value_pooled and applying cf_evid_head, which is the same composition the training term uses",
+  "liveness": {
+   "n": 500,
+   "mean_range": [
+    0.2132614552974701,
+    0.9379866719245911
+   ],
+   "mean_sd": 0.16503714738113465,
+   "evidence_range": [
+    4.436012268066406,
+    16.261972427368164
+   ],
+   "evidence_median": 9.667644500732422,
+   "corr_mean_vs_winprob_head": 0.8191232973384055,
+   "corr_mean_vs_outcome": 0.4879298505627337,
+   "corr_winprob_head_vs_outcome": 0.5887679945758648,
+   "at_beta_1_1_frac": 0.0,
+   "verdict": "LIVE \u2014 the head's mean tracks the win-prob head and the realized outcome, and its evidence varies across states"
+  },
+  "by_tag": {
+   "whiff": {
+    "n": 90,
+    "median_evidence": 10.067244529724121,
+    "median_mean": 0.7455312609672546,
+    "median_sd": 0.131735009524655,
+    "median_winprob_head": 0.7526885867118835
+   },
+   "hit_pivot": {
+    "n": 79,
+    "median_evidence": 10.036832809448242,
+    "median_mean": 0.7698253393173218,
+    "median_sd": 0.12430902714237294,
+    "median_winprob_head": 0.7469136118888855
+   },
+   "no_pivot": {
+    "n": 331,
+    "median_evidence": 9.235870361328125,
+    "median_mean": 0.7837898135185242,
+    "median_sd": 0.131111881577395,
+    "median_winprob_head": 0.7324972748756409
+   }
+  },
+  "reading": "LIVE and CONFIDENT at whiffs. Evidence alpha+beta is if anything HIGHER at whiff decisions (10.07) than at ordinary ones (9.24) and equal to the hit-pivot control (10.04); the Beta epistemic sd is ~0.13 in all three arms. The head is not confessing uncertainty where the policy is wrong.",
+  "caveat": "the head is trained on very little \u2014 cf/evid_n ~12 rows per fold over 129 folds (~1.5k row-visits) and cf/evid_nll is flat at ~ln 2 \u2014 so a NULL here is weak evidence; the non-null direction (equal-or-higher confidence at whiffs) is the readable part."
+ },
+ "shaping_accounting": {
+  "HEADLINE_CORRECTION": "win_prob_mode=\"shaping\" is NOT reward shaping and NOT PBRS. In this codebase \"shaping\" is a stop-gradient toggle on an auxiliary supervised head's INPUT (extractor_forward.py:726-728: wp_in = value_pooled if mode==\"shaping\" else value_pooled.detach()). The term added to the loss is win_prob_coef * BCEwithLogits(win_logit(s), MC episode outcome) \u2014 ONE state, no successor, no potential difference (instrumented_ppo/ppo.py:728-740, value_terms.py:45-46).",
+  "reward_registry": "reward_manager.py:265-292 is the declared exhaustive registry; its 8 PBRS members are material/belief/status/progress/hazard/boost/opp_boosts/roar and its one TERMINAL member is win_loss. No win-prob entry in any family; grep over src/agents/training/reward*.py returns zero hits for win_prob.",
+  "route_to_the_policy": "ProjectionAssembler.forward (projection.py:82-104) returns (pi_combined, value_pooled): pi_combined = [our_team_pooled, their_team_pooled, our_active_refined, ctx.non_matchup_rest (+hidden_opp_belief)]. value_pooled is the VALUE half ONLY. The win-prob head reads value_pooled and feeds nothing forward, so its only route to action selection is a shared-trunk gradient.",
+  "measured_trunk_share_at_step_25067760": {
+   "grad/win_prob_share": 0.01016,
+   "grad/win_prob_norm_shared": 0.03977,
+   "grad/win_prob_policy_cosine": -0.13336,
+   "grad/value_share": 0.16376,
+   "grad/value_norm_shared": 0.64099,
+   "derived_policy_norm": 2.298,
+   "derived_policy_share": 0.587,
+   "win_prob_pull_as_frac_of_policy_pull": 0.0173,
+   "note": "grad_balance.py:107-111 documents grad/*_share as an L1-of-norms PROXY = an upper bound, so 1.02% is a ceiling on the true share. The negative cosine means the term pulls the trunk mildly AGAINST the policy gradient."
+  },
+  "if_it_were_PBRS_hypothetical_only": {
+   "realized_whiff_dP_win_median": -0.03256356716156006,
+   "per_step_reward_at_coef_0.05": 0.00163,
+   "vs_VICTORY_VALUE_30": 5.433333333333333e-05,
+   "vs_smallest_registered_dense_term_BOOST_WEIGHT_0.03": 0.05433333333333333,
+   "vs_one_25pct_HP_chunk_of_material_PBRS_0.5": 0.00326,
+   "verdict": "HOMEOPATHIC \u2014 1.6e-3 per step, 5.4e-5 of the terminal, and swept out by the per-minibatch advantage normalization (ppo.py:401). But this is a HYPOTHETICAL: no such term exists in the run."
+  },
+  "verdict": "The registered lever \"a shaping-dose ladder above the ACTIVE 0.05\" is MIS-SPECIFIED. 0.05 is an auxiliary BCE weight on a side readout, not a PBRS dose. Raising it raises a representational pressure on value_pooled that is already pointing against the policy gradient; it cannot express a per-ACTION preference to the policy at any coefficient, because the head is a state-level scalar and the ranking measured here only exists once a SIMULATOR has been composed with it."
+ }
+}
