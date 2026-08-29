@@ -5796,3 +5796,26 @@ gold reference at matched compute. Registered prediction: ≥2× budget reductio
 decision quality. All CPU-only, ≤2 cores each, nice 15 — the box runs rev-3's fleet/admission
 tonight. "Interesting to try" = a concrete intervention with a measured expected benefit ready
 for a live battery/arm; iteration continues until at least one exists.
+
+### 🟡 PROBE I VERDICT: racing lands the MIDDLE branch (1.47× deadline / 1.87–2.40× spend) — and finds the battery's own 1s cell is 14% allocator noise (2026-08-29 early)
+
+Record `designs/research_state/measurements/racing_root_selection_2026-08-28.md` (landed
+fdd456c; 249 tests incl. false-drop bounds, pairing-as-equality, OFF-untouched; feature =
+`--root-strategy racing`, seq rule default — the registered z rule CEILINGS at 0.933 agreement
+and cannot reach 95% at any budget). ≥2× NOT met on the deadline axis (frontier flat at
+1.47–1.50×); met on the spend axis at high quality (1.87× @95%, 2.40× top). **The two findings
+that outrank the ratio: (1) the separation distribution is U-SHAPED with an empty middle** —
+52.2% of decisions NEVER separate within 32 samples; of the rest, the median separates AT THE
+FLOOR (5) — separable decisions separate immediately or not at all. Racing's own
+non-separation signal is therefore a TRIAGE detector available mid-search, and the follow-on
+is a TIME MANAGER with a FUTILITY STOP (quit sampling when separation is unreachable; bank the
+clock for pivotal turns) — probe I independently re-derives probe H's premise from the
+allocator side. **(2) RETROACTIVE CAVEAT ON EVERY PRIOR SEARCH-DIVIDEND CELL: the grid at the
+battery's own 1s budget agrees with its own large-budget argmax on only 86.1% of decisions** —
+~1 in 7 "searched" decisions in past battery runs was allocator noise. Banked as a standing
+caveat: any load-bearing battery conclusion should be re-read against it before being quoted.
+Gold-resolution caveat carried honestly (the gold's own doubling check moved 6.1% of argmaxes
+vs the <2% bar — absolutes are at gold resolution; arm-vs-arm differences are the reportable
+quantity). CHAIN: hold for probes G (bias split) + H (triage thresholds), then synthesize the
+composite ladder-search config — racer + futility stop + clock banker — as the "interesting to
+try" candidate.
