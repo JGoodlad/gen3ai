@@ -6193,3 +6193,23 @@ expensive, teacher-time) proves the knowledge transfers; the Q head is its SCALI
 (approximate, instant, everywhere). This entry connects two previously separate programs —
 the win-prob coupling routes and the licensed R1 factory — into one pipeline; the Q head
 becomes an ai_v12 experiment-ladder candidate (E5) when that era registers.
+
+### 🔄 E5 COMPLETED AS A CLOSED LOOP (owner design, 2026-08-29) — predict → ground → prioritize → teach → measure
+
+Owner's formulation, confirmed and banked as the completed shape of the Q-win-prob program
+(extends 229e9f1): **(1) PREDICT** — one shared per-action win-prob readout over the pointer
+head's action tokens, read_only-or-lightly-shaping (the light-shaping justification: an aux
+loss on COUNTERFACTUALLY-grounded labels is a representation subsidy with genuinely new
+content, unlike the barometer's self-referential labels); **(2) GROUND** — factory re-rolls as
+the training labels; **(3) PRIORITIZE** — the CfEvidentialHead's evidence output as the
+factory's priority sampler (its designed role): label where the head confesses uncertainty or
+the head-vs-ground gap is large — active learning over the 12M/day budget; **(4) TEACH** — the
+same grounded labels double as route-2 distill targets (one label, two consumers); **(5)
+MEASURE — the AMORTIZATION RESIDUAL (Q-head vs true re-roll, per state class) IS the value of
+one-ply search as a number**: shrinking ⇒ the AlphaZero ratchet (search's value migrates into
+the net; search must deepen to add value); stubborn-large classes ⇒ the states that genuinely
+need live search — a triage signal feeding back into the ladder time manager. Two meters kept
+distinct per iter-2's lesson: amortization residual (predictive) vs behavioral dividend
+(realized; the transfer cell measures it now). Caution of record: ground truth is Q under the
+CURRENT policy's continuation — label freshness discipline required (#28's dedup/expiry
+decisions cover the class). Era placement: ai_v12; nothing built beyond what is landed.
