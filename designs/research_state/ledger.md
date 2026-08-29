@@ -6403,3 +6403,28 @@ rev-1-class 25M checkpoints via h2h + anchored ELO (imperfect control: era-confi
 a purity fourth arm only if the verdict is close). Probe N's amendments baked in (draw −1,
 coefficient spelling, stall-rate primary endpoint); launch gated on the four build gaps (B1–B4)
 and sized by the 5M sparse-vs-shaped pre-test. This supersedes 579279d's two-arm sketch.
+
+### ⚖️ CLEAN-WORLD EXECUTIVE DECISIONS (owner, 2026-08-29 late) — draw = loss; NO launch bias, escalation must be EARNED; probe O dispatched on the stall tail
+
+Owner decisions of record: **(1) draw = −1 ADOPTED** ("a tie is just as bad as a loss") —
+weaker than the old strict ordering (draw −35 < loss −30) and deliberately so. **(2) NO
+anti-stall bias at launch.** The reasoning, banked: with draw = loss, stalling is WEAKLY
+DOMINATED — any line with ε win probability beats it — so a stall bias is only needed if the
+model lands in a can't-win-won't-lose local optimum, which is an EMPIRICAL condition, not a
+theoretical one. "The bias would have to be earned after we find the model refuses to win."
+**Escalation rule pre-registered: the bias enters ONLY if the stall-rate primary endpoint
+fires** (cap-terminations materially above the incumbent's rate at matched strength — exact
+trigger frozen at arm registration), and enters as a REGISTERED change, never a mid-run patch.
+**Probe O dispatched — the check the design leans on:** what does the win-prob head read over
+the FIVE PENULTIMATE decisions before stall/cap outcomes? The prior evidence thread is
+adverse: C3 (gen-12 rollout-PIT) found stall-tail OVER-CONFIDENCE — φ 0.7–0.98 on decisions
+whose resampled-dice win rate was 0.0–0.4 — and the pre-clock era had POSITIVE V on the final
+decision in 13/14 timeout losses (the finding that bought the 3-scalar deadline clock).
+**Registered predictions: improved vs the 13/14 era (the clock now exists in obs) but RESIDUAL
+stall-tail over-confidence** — detection rate (φ declining-or-≤0.5 over the last 5) HIGHER on
+regular losses than stall/cap endings. Why it matters structurally: frozen-φ shaping pays
+POSITIVE reward while marching toward a cap exactly where the head over-reads — the clean
+world leans on the head hardest at its historically weakest point. If probe O confirms the
+blind spot, the mitigation is a HEAD fix (stall-tail labels from the factory — outcome-unit,
+theoretically clean) before any bias term is considered — the repair stays inside the clean
+worldview.
