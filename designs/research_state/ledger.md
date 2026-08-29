@@ -6307,3 +6307,30 @@ reward-registration items, beside the staller-RNG fix. The answer to the owner's
 question: the one live bias is NOT annealable scaffolding aligned with the head — the head
 audited it and found an action-kind tax with an off-by-one, which is precisely what the audit
 instrument existed to find.
+
+### 🔭 PROBE N DISPATCHED (no_progress_tax intent review) + THE CLEAN-WORLD EXPERIMENT REGISTERED (owner, 2026-08-29 late)
+
+**Probe N:** the owner believes he wrote no_progress_tax to punish only "obviously irrefutably
+poor choices"; probe M measured 73% of voluntary switches charged. Review agent dispatched:
+reconstruct the rule's INTENT (original design docs/commits/comments) vs its IMPLEMENTATION,
+line by line — with probe M's two named defects (`_is_progress` unsatisfiable by switches; the
+SITOUT off-by-one) as anchors — and report where intent diverged, when, and what the
+minimal intent-restoring fix would be. Second scope: enumerate the exact flag/config surface
+for the CLEAN-WORLD arm below and what is missing. **THE CLEAN-WORLD EXPERIMENT (registered
+concept, next-era flagship, NOT scheduled):** terminal reward ∈ {+1, −1} (draw 0) + FULL PBRS
+from the win-prob head as the ONLY dense signal — φ' = 2·P(win)−1 maps [0,1]→[−1,+1], the
+telescoping gives it all back, every hand-tuned PBRS term and the tax retired. A/B: fresh 25M
+clean-world vs fresh 25M current-reward, head-to-head + anchored ELO + piloting meter;
+secondary endpoints REGISTERED NOW: switch rate (the under-switch hypothesis — note the A/B is
+demonstration-class, many things change; the tax-only arm stays the causal test), whiff/loop
+census, scaffolding-gauge trajectory. **THE DESIGN TRAP, named: the bootstrap.** A fresh run's
+OWN head is noise at step 0 — PBRS from a noise potential is harmless (invariance) but
+helpless, and the early run would face near-sparse ±1. **The fix that solves two problems at
+once: φ from a FROZEN MATURE HEAD of the prior generation** (rev-1-class, probe-validated,
+calibrated −0.011 vs pool) — dense outcome-grounded shaping from step 0, AND a frozen φ
+restores the PBRS invariance theorem EXACTLY (the drifting-φ caveat vanishes). Build gap: v104's
+`--win-prob-pbrs-coef` reads the live model's own head; the clean arm needs a
+`--win-prob-pbrs-source <ckpt>` frozen-external option (small build, queued with probe N's
+enumeration). Cost: 2 × 25M fresh ≈ 2 base runs — sequenced after rev-3/rev-4 obligations.
+The owner's framing adopted verbatim as the experiment's purpose line: "if we can get to a
+conceptually cleaner world view, we liberate the complexity hidden in the hand-tuned terms."
