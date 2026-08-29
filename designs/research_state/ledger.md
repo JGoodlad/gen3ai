@@ -6148,3 +6148,29 @@ non-homeopathic — its experiment ladder should start there. Bonus: measurement
 CfEvidentialHead is LIVE (mean tracks the head r=0.82, 0% at Beta(1,1)) and CONFIDENT where it
 disagrees (evidence 10.07 at whiffs vs 9.24 ordinary) — the uncertainty machinery works,
 low-dosage caveat carried.
+
+### 🟢 AI_V12 BUILD LANDED (7d1a851→6ec053a) — all three routes implemented, OFF-by-default; and the build caught a 2-order-of-magnitude arm-sizing error (2026-08-29)
+
+The program shipped complete: `designs/ai_v12/design_winprob_behavior_coupling.md` (+todo) ·
+**Route 1** `--win-prob-pbrs-coef` (v104, td_aux provenance class; φ read = a batched
+POST-COLLECTION re-forward, which is what makes `--async-rollout` genuinely covered — the wave
+collector cannot recover env→row mapping per-step; TB incl. `train/pbrs_reward_share`) ·
+**Routes 2+3** `--search-teacher-mode winprob_oneply` + band/margin flags, confirm via the
+EXISTING `--teacher-confirm-rollouts` (sensible naming deviation, documented);
+`defensive.gate`/`DefensiveConfig` IMPORTED so the teacher's "contested" and the searcher's
+cannot drift; confirmation through `ProbeSession.replay_counterfactual` (the live-battle
+racer/playoff deliberately NOT imported — recorded so nobody "fixes" it into a wall-clock
+dependency). 62 new tests, 3 revert-catchers verified failing on deliberate revert, 4398 sweep
++ static gates green. **Probe L folded mid-run and changed the document twice: route 2 promoted
+to FIRST ARM (structurally required — the simulator-composition argument), and 🔴 the build
+CAUGHT ITS OWN E1 SIZING ERROR: the PBRS coef ladder {0, 0.1, 0.3} was sized against an assumed
+terminal reward of order 1, but VICTORY_VALUE=30 — coef 0.3 puts a whiff's shaping at a third
+of one BOOST_WEIGHT step, so the arm would have measured NOTHING and the null would have read
+as a verdict. Restated {0, 3, 9} as fractions of VICTORY_VALUE; `pbrs_reward_share` is the
+one-rollout instrument for exactly this error class.** Route 1 is re-sized, not refuted — no
+PBRS term has ever actually run. Both required caveats have their own doc sections + module
+docstrings (learned-drifting-φ: exact invariance per rollout, approximate across, prefer a
+mature base; winner's curse: `--teacher-confirm-rollouts 0` exists only as E2's control arm).
+training/CLAUDE.md gains a 🚨 correction that `win_prob_mode="shaping"` carries no behavioral
+force. The ai_v12 era is born with its instruments built, its caveats written, and its first
+arm already chosen by measurement — nothing runs until the era registers.
