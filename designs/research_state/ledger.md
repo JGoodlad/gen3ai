@@ -6334,3 +6334,22 @@ restores the PBRS invariance theorem EXACTLY (the drifting-φ caveat vanishes). 
 enumeration). Cost: 2 × 25M fresh ≈ 2 base runs — sequenced after rev-3/rev-4 obligations.
 The owner's framing adopted verbatim as the experiment's purpose line: "if we can get to a
 conceptually cleaner world view, we liberate the complexity hidden in the hand-tuned terms."
+
+### 📏 CORRECTION (owner challenge, 2026-08-29 late) — "shaping was necessary" is NARRATIVE, not measured; the clean-world design gains a PURE-SPARSE control arm
+
+The owner caught the famine claim ("the early run would face nearly-sparse ±1 — the
+label-density famine that made shaping necessary") stated as fact: **it is unmeasured lore.**
+The original reward design predates PBRS knowledge and any understanding of what the features
+could represent; NO sparse-reward arm has ever run in this project. Evidence actually in hand
+cuts both ways: AlphaZero-class sparse success is a different regime (scale + search targets),
+and our own win-prob head trains well on pure MC outcome labels at our scale (calibrated
+−0.011; 96.4% whiff knowledge) — supervised prediction, not control credit, but proof the
+representation learns from outcome-only signal. **DESIGN AMENDMENT: the clean-world experiment
+(579279d) gains a third arm — PURE SPARSE: terminal ±1, no PBRS of any kind.** Three-story
+separation: sparse-trains-fine ⇒ the scaffolding era was unnecessary and frozen-φ is
+decoration; sparse-craters ⇒ the famine becomes a MEASUREMENT and clean-world's value =
+the gap; sparse-is-slower ⇒ the shaping↔wall-clock exchange rate, priced. **SIZING PRE-TEST
+registered:** the famine claim is about EARLY learning — a paired ~5M sparse-vs-shaped
+pre-test (same seeds) decides crater/crawl/keep-pace in hours-of-GPU and sizes the full 25M
+arms before three generation-scale runs are committed. Same genre as the probe-E lesson:
+the claims most worth auditing are the ones load-bearing enough that nobody thought to check.
