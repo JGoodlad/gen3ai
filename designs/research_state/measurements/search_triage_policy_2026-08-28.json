@@ -1,0 +1,5423 @@
+{
+ "n_decisions_labelled": 4986,
+ "n_lookahead_errors": 14,
+ "n_terminal_imputed": 246,
+ "population_decisions": 51731,
+ "base": {
+  "flip_rate": 0.6941436020858404,
+  "flip_ci": [
+   0.6812083955366381,
+   0.706779872467701
+  ],
+  "mean_claimed_dwp": 0.0368176293622142,
+  "mean_claimed_dwp_ci": [
+   0.03488605846369836,
+   0.038895540513437625
+  ],
+  "median_dwp": 0.0048499999999999654,
+  "material_flip_rate_2pp": 0.3600080224628961,
+  "material_flip_rate_5pp": 0.22743682310469315,
+  "material_flip_rate_10pp": 0.11411953469715203,
+  "dwp_share_from_flips_ge_5pp": 0.8303271673838214
+ },
+ "frontiers": [
+  {
+   "feature": "masked_top1_top2_gap",
+   "direction": ">=",
+   "points": [
+    {
+     "threshold": 6.281781792640686,
+     "coverage": 0.05014039310068191,
+     "in_class_flip_rate": 0.46,
+     "in_class_flip_ci": [
+      0.3992896616885707,
+      0.5219210460913992
+     ],
+     "missed_dwp_per_decision": 0.0016701363818692342,
+     "missed_dwp_share": 0.045362409552182875,
+     "missed_material_5pp": 51,
+     "n_forced": 250,
+     "concentration": 1.052787162162162
+    },
+    {
+     "threshold": 4.808156967163087,
+     "coverage": 0.10008022462896109,
+     "in_class_flip_rate": 0.5130260521042084,
+     "in_class_flip_ci": [
+      0.46923833385759794,
+      0.5566147379646219
+     ],
+     "missed_dwp_per_decision": 0.003641776975531488,
+     "missed_dwp_share": 0.09891394526528181,
+     "missed_material_5pp": 112,
+     "n_forced": 499,
+     "concentration": 1.111210162692222
+    },
+    {
+     "threshold": 3.9500579833984375,
+     "coverage": 0.15002005615724026,
+     "in_class_flip_rate": 0.5320855614973262,
+     "in_class_flip_ci": [
+      0.49625421824804417,
+      0.567589016816363
+     ],
+     "missed_dwp_per_decision": 0.00578822703569996,
+     "missed_dwp_share": 0.15721346365772254,
+     "missed_material_5pp": 174,
+     "n_forced": 748,
+     "concentration": 1.1764983482774893
+    },
+    {
+     "threshold": 3.3535046577453613,
+     "coverage": 0.20016044925792217,
+     "in_class_flip_rate": 0.5490981963927856,
+     "in_class_flip_ci": [
+      0.5180971645444798,
+      0.5797226904106347
+     ],
+     "missed_dwp_per_decision": 0.0073979743281187334,
+     "missed_dwp_share": 0.20093565110716358,
+     "missed_material_5pp": 217,
+     "n_forced": 998,
+     "concentration": 1.2502507522567703
+    },
+    {
+     "threshold": 2.8952080011367807,
+     "coverage": 0.2501002807862014,
+     "in_class_flip_rate": 0.5613472333600642,
+     "in_class_flip_ci": [
+      0.5336582757759192,
+      0.5886593701993987
+     ],
+     "missed_dwp_per_decision": 0.009188146811071,
+     "missed_dwp_share": 0.2495583493624052,
+     "missed_material_5pp": 270,
+     "n_forced": 1247,
+     "concentration": 1.3335116341267719
+    },
+    {
+     "threshold": 2.4732023477554326,
+     "coverage": 0.3000401123144805,
+     "in_class_flip_rate": 0.5822192513368984,
+     "in_class_flip_ci": [
+      0.5570474105066228,
+      0.6069699097223935
+     ],
+     "missed_dwp_per_decision": 0.010923285198555956,
+     "missed_dwp_share": 0.2966862719783497,
+     "missed_material_5pp": 327,
+     "n_forced": 1496,
+     "concentration": 1.4286532951289397
+    },
+    {
+     "threshold": 2.179418325424195,
+     "coverage": 0.3499799438427597,
+     "in_class_flip_rate": 0.5977077363896848,
+     "in_class_flip_ci": [
+      0.5745096652955632,
+      0.6204765472922433
+     ],
+     "missed_dwp_per_decision": 0.013150260730044123,
+     "missed_dwp_share": 0.3571729347555492,
+     "missed_material_5pp": 395,
+     "n_forced": 1745,
+     "concentration": 1.5384140697315645
+    },
+    {
+     "threshold": 1.9091877937316906,
+     "coverage": 0.3999197753710389,
+     "in_class_flip_rate": 0.607321965897693,
+     "in_class_flip_ci": [
+      0.5857003313676095,
+      0.6285308669416059
+     ],
+     "missed_dwp_per_decision": 0.014752426795026074,
+     "missed_dwp_share": 0.40068920923427065,
+     "missed_material_5pp": 447,
+     "n_forced": 1994,
+     "concentration": 1.6664438502673795
+    },
+    {
+     "threshold": 1.6689249277114868,
+     "coverage": 0.4500601684717208,
+     "in_class_flip_rate": 0.6221033868092691,
+     "in_class_flip_ci": [
+      0.6018493188307303,
+      0.6419401012066956
+     ],
+     "missed_dwp_per_decision": 0.016692358604091455,
+     "missed_dwp_share": 0.4533795057761857,
+     "missed_material_5pp": 509,
+     "n_forced": 2244,
+     "concentration": 1.8183807439824946
+    },
+    {
+     "threshold": 1.4608524441719055,
+     "coverage": 0.5,
+     "in_class_flip_rate": 0.6349779382270357,
+     "in_class_flip_ci": [
+      0.6158848841006055,
+      0.6536556426192313
+     ],
+     "missed_dwp_per_decision": 0.018730786201363817,
+     "missed_dwp_share": 0.5087450367075279,
+     "missed_material_5pp": 570,
+     "n_forced": 2493,
+     "concentration": 2.0
+    },
+    {
+     "threshold": 1.2545659244060516,
+     "coverage": 0.5499398315282792,
+     "in_class_flip_rate": 0.637855579868709,
+     "in_class_flip_ci": [
+      0.6196845448309132,
+      0.655640878165082
+     ],
+     "missed_dwp_per_decision": 0.02025954673084637,
+     "missed_dwp_share": 0.5502675506761081,
+     "missed_material_5pp": 629,
+     "n_forced": 2742,
+     "concentration": 2.22192513368984
+    },
+    {
+     "threshold": 1.0697853565216064,
+     "coverage": 0.600080224628961,
+     "in_class_flip_rate": 0.6463903743315508,
+     "in_class_flip_ci": [
+      0.6290815339551613,
+      0.6633237787956864
+     ],
+     "missed_dwp_per_decision": 0.02210808263136783,
+     "missed_dwp_share": 0.6004754519599047,
+     "missed_material_5pp": 685,
+     "n_forced": 2992,
+     "concentration": 2.50050150451354
+    },
+    {
+     "threshold": 0.8916876763105396,
+     "coverage": 0.6500200561572402,
+     "in_class_flip_rate": 0.6513421783400185,
+     "in_class_flip_ci": [
+      0.6347650529295215,
+      0.6675609527528514
+     ],
+     "missed_dwp_per_decision": 0.02374574809466506,
+     "missed_dwp_share": 0.6449559220951699,
+     "missed_material_5pp": 738,
+     "n_forced": 3241,
+     "concentration": 2.8573065902578794
+    },
+    {
+     "threshold": 0.7390919923782349,
+     "coverage": 0.6999598876855194,
+     "in_class_flip_rate": 0.6584527220630373,
+     "in_class_flip_ci": [
+      0.642552477483518,
+      0.6740045181169695
+     ],
+     "missed_dwp_per_decision": 0.026177878058563978,
+     "missed_dwp_share": 0.7110147641778979,
+     "missed_material_5pp": 809,
+     "n_forced": 3490,
+     "concentration": 3.332887700534759
+    },
+    {
+     "threshold": 0.5944153219461441,
+     "coverage": 0.7498997192137986,
+     "in_class_flip_rate": 0.6635464027814924,
+     "in_class_flip_ci": [
+      0.6482401302681232,
+      0.6785169518376223
+     ],
+     "missed_dwp_per_decision": 0.02777059767348576,
+     "missed_dwp_share": 0.7542744645581833,
+     "missed_material_5pp": 858,
+     "n_forced": 3739,
+     "concentration": 3.998396150761828
+    },
+    {
+     "threshold": 0.4568331241607666,
+     "coverage": 0.8000401123144806,
+     "in_class_flip_rate": 0.6683379293055903,
+     "in_class_flip_ci": [
+      0.6535714339796416,
+      0.6827805014439924
+     ],
+     "missed_dwp_per_decision": 0.02932894103489771,
+     "missed_dwp_share": 0.7966004749072165,
+     "missed_material_5pp": 905,
+     "n_forced": 3989,
+     "concentration": 5.001003009027082
+    },
+    {
+     "threshold": 0.3238750696182251,
+     "coverage": 0.8499799438427598,
+     "in_class_flip_rate": 0.6762623879188296,
+     "in_class_flip_ci": [
+      0.6620208667958098,
+      0.6901846469602908
+     ],
+     "missed_dwp_per_decision": 0.03097131969514641,
+     "missed_dwp_share": 0.8412089597200455,
+     "missed_material_5pp": 958,
+     "n_forced": 4238,
+     "concentration": 6.665775401069521
+    },
+    {
+     "threshold": 0.21712639927864075,
+     "coverage": 0.899919775371039,
+     "in_class_flip_rate": 0.6835301983507912,
+     "in_class_flip_ci": [
+      0.6697692170302082,
+      0.6969771852477079
+     ],
+     "missed_dwp_per_decision": 0.03289316085038107,
+     "missed_dwp_share": 0.8934078977974395,
+     "missed_material_5pp": 1017,
+     "n_forced": 4487,
+     "concentration": 9.991983967935877
+    },
+    {
+     "threshold": 0.10643932223320007,
+     "coverage": 0.9498596068993181,
+     "in_class_flip_rate": 0.6896114864864865,
+     "in_class_flip_ci": [
+      0.6762855939671594,
+      0.702630022115876
+     ],
+     "missed_dwp_per_decision": 0.03496249498596069,
+     "missed_dwp_share": 0.9496128781676143,
+     "missed_material_5pp": 1080,
+     "n_forced": 4736,
+     "concentration": 19.94400000000002
+    }
+   ]
+  },
+  {
+   "feature": "masked_top1_prob",
+   "direction": ">=",
+   "points": [
+    {
+     "threshold": 0.9970951974391937,
+     "coverage": 0.05014039310068191,
+     "in_class_flip_rate": 0.48,
+     "in_class_flip_ci": [
+      0.4188413078841016,
+      0.5417640460058832
+     ],
+     "missed_dwp_per_decision": 0.0019297031688728442,
+     "missed_dwp_share": 0.052412477454436314,
+     "missed_material_5pp": 55,
+     "n_forced": 250,
+     "concentration": 1.052787162162162
+    },
+    {
+     "threshold": 0.9874747097492219,
+     "coverage": 0.10008022462896109,
+     "in_class_flip_rate": 0.501002004008016,
+     "in_class_flip_ci": [
+      0.4572915139226132,
+      0.5446971839098651
+     ],
+     "missed_dwp_per_decision": 0.0036661652627356595,
+     "missed_dwp_share": 0.09957635312876043,
+     "missed_material_5pp": 112,
+     "n_forced": 499,
+     "concentration": 1.111210162692222
+    },
+    {
+     "threshold": 0.970384418964386,
+     "coverage": 0.15002005615724026,
+     "in_class_flip_rate": 0.516042780748663,
+     "in_class_flip_ci": [
+      0.4802384293785361,
+      0.5516831881536673
+     ],
+     "missed_dwp_per_decision": 0.005600441235459286,
+     "missed_dwp_share": 0.152113032057599,
+     "missed_material_5pp": 167,
+     "n_forced": 748,
+     "concentration": 1.1764983482774893
+    },
+    {
+     "threshold": 0.9487683773040771,
+     "coverage": 0.20016044925792217,
+     "in_class_flip_rate": 0.5390781563126252,
+     "in_class_flip_ci": [
+      0.5080608299690889,
+      0.5697957892809004
+     ],
+     "missed_dwp_per_decision": 0.007466947452868031,
+     "missed_dwp_share": 0.20280902334606402,
+     "missed_material_5pp": 217,
+     "n_forced": 998,
+     "concentration": 1.2502507522567703
+    },
+    {
+     "threshold": 0.9191742092370988,
+     "coverage": 0.2501002807862014,
+     "in_class_flip_rate": 0.5581395348837209,
+     "in_class_flip_ci": [
+      0.5304391009461554,
+      0.5854828511219562
+     ],
+     "missed_dwp_per_decision": 0.00944263939029282,
+     "missed_dwp_share": 0.25647059720753684,
+     "missed_material_5pp": 277,
+     "n_forced": 1247,
+     "concentration": 1.3335116341267719
+    },
+    {
+     "threshold": 0.887275218963623,
+     "coverage": 0.3000401123144805,
+     "in_class_flip_rate": 0.5775401069518716,
+     "in_class_flip_ci": [
+      0.5523420251540889,
+      0.6023409760375036
+     ],
+     "missed_dwp_per_decision": 0.011418632170076213,
+     "missed_dwp_share": 0.31014034221864145,
+     "missed_material_5pp": 338,
+     "n_forced": 1496,
+     "concentration": 1.4286532951289397
+    },
+    {
+     "threshold": 0.8479370027780533,
+     "coverage": 0.3499799438427597,
+     "in_class_flip_rate": 0.5925501432664756,
+     "in_class_flip_ci": [
+      0.569316659338156,
+      0.6153770258989746
+     ],
+     "missed_dwp_per_decision": 0.013467007621339752,
+     "missed_dwp_share": 0.3657760658311394,
+     "missed_material_5pp": 400,
+     "n_forced": 1745,
+     "concentration": 1.5384140697315645
+    },
+    {
+     "threshold": 0.8080849647521973,
+     "coverage": 0.4001203369434416,
+     "in_class_flip_rate": 0.6025062656641604,
+     "in_class_flip_ci": [
+      0.5808541290843854,
+      0.6237643859595281
+     ],
+     "missed_dwp_per_decision": 0.015278359406337746,
+     "missed_dwp_share": 0.4149740130204546,
+     "missed_material_5pp": 456,
+     "n_forced": 1995,
+     "concentration": 1.667001003009027
+    },
+    {
+     "threshold": 0.7634771019220352,
+     "coverage": 0.4500601684717208,
+     "in_class_flip_rate": 0.6127450980392157,
+     "in_class_flip_ci": [
+      0.5924137123715281,
+      0.6326911170790881
+     ],
+     "missed_dwp_per_decision": 0.017030445246690732,
+     "missed_dwp_share": 0.46256224373231963,
+     "missed_material_5pp": 510,
+     "n_forced": 2244,
+     "concentration": 1.8183807439824946
+    },
+    {
+     "threshold": 0.7237319052219391,
+     "coverage": 0.5,
+     "in_class_flip_rate": 0.6261532290413157,
+     "in_class_flip_ci": [
+      0.6069802588082306,
+      0.6449380046490908
+     ],
+     "missed_dwp_per_decision": 0.018815503409546734,
+     "missed_dwp_share": 0.5110460324438221,
+     "missed_material_5pp": 572,
+     "n_forced": 2493,
+     "concentration": 2.0
+    },
+    {
+     "threshold": 0.686039999127388,
+     "coverage": 0.5499398315282792,
+     "in_class_flip_rate": 0.6360320933625091,
+     "in_class_flip_ci": [
+      0.6178442143019828,
+      0.6538393380194621
+     ],
+     "missed_dwp_per_decision": 0.021078600080224632,
+     "missed_dwp_share": 0.5725137779201375,
+     "missed_material_5pp": 644,
+     "n_forced": 2742,
+     "concentration": 2.22192513368984
+    },
+    {
+     "threshold": 0.6448395252227783,
+     "coverage": 0.600080224628961,
+     "in_class_flip_rate": 0.6437165775401069,
+     "in_class_flip_ci": [
+      0.6263821794966641,
+      0.6606823969482319
+     ],
+     "missed_dwp_per_decision": 0.023068712394705176,
+     "missed_dwp_share": 0.6265670222206243,
+     "missed_material_5pp": 707,
+     "n_forced": 2992,
+     "concentration": 2.50050150451354
+    },
+    {
+     "threshold": 0.6035359501838685,
+     "coverage": 0.6500200561572402,
+     "in_class_flip_rate": 0.6454797901882136,
+     "in_class_flip_ci": [
+      0.6288469833419332,
+      0.6617681271152307
+     ],
+     "missed_dwp_per_decision": 0.024700661853188928,
+     "missed_dwp_share": 0.6708922405128868,
+     "missed_material_5pp": 763,
+     "n_forced": 3241,
+     "concentration": 2.8573065902578794
+    },
+    {
+     "threshold": 0.5640205144882202,
+     "coverage": 0.6999598876855194,
+     "in_class_flip_rate": 0.6527220630372493,
+     "in_class_flip_ci": [
+      0.6367659705411183,
+      0.668342309124451
+     ],
+     "missed_dwp_per_decision": 0.026461833132771756,
+     "missed_dwp_share": 0.7187272399436299,
+     "missed_material_5pp": 824,
+     "n_forced": 3490,
+     "concentration": 3.332887700534759
+    },
+    {
+     "threshold": 0.5249059498310089,
+     "coverage": 0.7498997192137986,
+     "in_class_flip_rate": 0.6600695373094411,
+     "in_class_flip_ci": [
+      0.6447287770914436,
+      0.6750817112818823
+     ],
+     "missed_dwp_per_decision": 0.028846028880866428,
+     "missed_dwp_share": 0.7834841455183696,
+     "missed_material_5pp": 884,
+     "n_forced": 3739,
+     "concentration": 3.998396150761828
+    },
+    {
+     "threshold": 0.4848899841308594,
+     "coverage": 0.8000401123144806,
+     "in_class_flip_rate": 0.6663324141388819,
+     "in_class_flip_ci": [
+      0.6515457779998776,
+      0.6807989861901168
+     ],
+     "missed_dwp_per_decision": 0.030761552346570395,
+     "missed_dwp_share": 0.8355114894534971,
+     "missed_material_5pp": 946,
+     "n_forced": 3989,
+     "concentration": 5.001003009027082
+    },
+    {
+     "threshold": 0.44347256422042847,
+     "coverage": 0.8499799438427598,
+     "in_class_flip_rate": 0.6748466257668712,
+     "in_class_flip_ci": [
+      0.660590425843632,
+      0.6887861279626203
+     ],
+     "missed_dwp_per_decision": 0.032562896109105496,
+     "missed_dwp_share": 0.8844376097317302,
+     "missed_material_5pp": 1003,
+     "n_forced": 4238,
+     "concentration": 6.665775401069521
+    },
+    {
+     "threshold": 0.4027373492717743,
+     "coverage": 0.899919775371039,
+     "in_class_flip_rate": 0.6799643414308001,
+     "in_class_flip_ci": [
+      0.6661657539538318,
+      0.693455035165072
+     ],
+     "missed_dwp_per_decision": 0.034078158844765345,
+     "missed_dwp_share": 0.9255935114535004,
+     "missed_material_5pp": 1050,
+     "n_forced": 4487,
+     "concentration": 9.991983967935877
+    },
+    {
+     "threshold": 0.34696561843156815,
+     "coverage": 0.9498596068993181,
+     "in_class_flip_rate": 0.6868665540540541,
+     "in_class_flip_ci": [
+      0.673511157308899,
+      0.6999190433965423
+     ],
+     "missed_dwp_per_decision": 0.035549819494584835,
+     "missed_dwp_share": 0.965565141221979,
+     "missed_material_5pp": 1095,
+     "n_forced": 4736,
+     "concentration": 19.94400000000002
+    }
+   ]
+  },
+  {
+   "feature": "masked_policy_entropy",
+   "direction": "<=",
+   "points": [
+    {
+     "threshold": 0.02205640310421586,
+     "coverage": 0.05014039310068191,
+     "in_class_flip_rate": 0.476,
+     "in_class_flip_ci": [
+      0.4149231875977522,
+      0.5378032370702297
+     ],
+     "missed_dwp_per_decision": 0.001966064981949459,
+     "missed_dwp_share": 0.05340009707325763,
+     "missed_material_5pp": 56,
+     "n_forced": 250,
+     "concentration": 1.052787162162162
+    },
+    {
+     "threshold": 0.07624589279294014,
+     "coverage": 0.10008022462896109,
+     "in_class_flip_rate": 0.49899799599198397,
+     "in_class_flip_ci": [
+      0.45530281609013473,
+      0.5427084860773866
+     ],
+     "missed_dwp_per_decision": 0.003579843561973526,
+     "missed_dwp_share": 0.09723177792776377,
+     "missed_material_5pp": 110,
+     "n_forced": 499,
+     "concentration": 1.111210162692222
+    },
+    {
+     "threshold": 0.15503917261958125,
+     "coverage": 0.15002005615724026,
+     "in_class_flip_rate": 0.5147058823529411,
+     "in_class_flip_ci": [
+      0.47890543717226947,
+      0.5503560455655838
+     ],
+     "missed_dwp_per_decision": 0.0058678299237866025,
+     "missed_dwp_share": 0.1593755498502773,
+     "missed_material_5pp": 170,
+     "n_forced": 748,
+     "concentration": 1.1764983482774893
+    },
+    {
+     "threshold": 0.2448224276304245,
+     "coverage": 0.20016044925792217,
+     "in_class_flip_rate": 0.5430861723446894,
+     "in_class_flip_ci": [
+      0.5120738601789668,
+      0.5737680533530726
+     ],
+     "missed_dwp_per_decision": 0.007669755314881669,
+     "missed_dwp_share": 0.20831746768446507,
+     "missed_material_5pp": 225,
+     "n_forced": 998,
+     "concentration": 1.2502507522567703
+    },
+    {
+     "threshold": 0.3393498882651329,
+     "coverage": 0.2501002807862014,
+     "in_class_flip_rate": 0.5597433841218925,
+     "in_class_flip_ci": [
+      0.5320485431545259,
+      0.5870712558671887
+     ],
+     "missed_dwp_per_decision": 0.009604813477737666,
+     "missed_dwp_share": 0.26087539160234613,
+     "missed_material_5pp": 282,
+     "n_forced": 1247,
+     "concentration": 1.3335116341267719
+    },
+    {
+     "threshold": 0.4362470507621765,
+     "coverage": 0.3000401123144805,
+     "in_class_flip_rate": 0.5762032085561497,
+     "in_class_flip_ci": [
+      0.5509980508558819,
+      0.6010180020393038
+     ],
+     "missed_dwp_per_decision": 0.011647292418772564,
+     "missed_dwp_share": 0.3163509606820622,
+     "missed_material_5pp": 345,
+     "n_forced": 1496,
+     "concentration": 1.4286532951289397
+    },
+    {
+     "threshold": 0.5371436923742294,
+     "coverage": 0.3499799438427597,
+     "in_class_flip_rate": 0.5919770773638968,
+     "in_class_flip_ci": [
+      0.5687398207709145,
+      0.614810250316141
+     ],
+     "missed_dwp_per_decision": 0.013758142799839551,
+     "missed_dwp_share": 0.3736835597014153,
+     "missed_material_5pp": 401,
+     "n_forced": 1745,
+     "concentration": 1.5384140697315645
+    },
+    {
+     "threshold": 0.624584972858429,
+     "coverage": 0.4001203369434416,
+     "in_class_flip_rate": 0.6,
+     "in_class_flip_ci": [
+      0.5783300038878701,
+      0.6212856134777079
+     ],
+     "missed_dwp_per_decision": 0.015676093060569597,
+     "missed_dwp_share": 0.4257768175769055,
+     "missed_material_5pp": 464,
+     "n_forced": 1995,
+     "concentration": 1.667001003009027
+    },
+    {
+     "threshold": 0.6989895105361938,
+     "coverage": 0.4500601684717208,
+     "in_class_flip_rate": 0.6114081996434938,
+     "in_class_flip_ci": [
+      0.5910664091317541,
+      0.631369193092175
+     ],
+     "missed_dwp_per_decision": 0.01770659847573205,
+     "missed_dwp_share": 0.4809271749012789,
+     "missed_material_5pp": 520,
+     "n_forced": 2244,
+     "concentration": 1.8183807439824946
+    },
+    {
+     "threshold": 0.7651083767414093,
+     "coverage": 0.5,
+     "in_class_flip_rate": 0.6265543521861211,
+     "in_class_flip_ci": [
+      0.6073848677295562,
+      0.645334407694243
+     ],
+     "missed_dwp_per_decision": 0.02024125551544324,
+     "missed_dwp_share": 0.5497707447784992,
+     "missed_material_5pp": 595,
+     "n_forced": 2493,
+     "concentration": 2.0
+    },
+    {
+     "threshold": 0.8428327292203903,
+     "coverage": 0.5499398315282792,
+     "in_class_flip_rate": 0.6349380014587892,
+     "in_class_flip_ci": [
+      0.6167401498283769,
+      0.6527582800883378
+     ],
+     "missed_dwp_per_decision": 0.022191436020858404,
+     "missed_dwp_share": 0.6027394051512017,
+     "missed_material_5pp": 663,
+     "n_forced": 2742,
+     "concentration": 2.22192513368984
+    },
+    {
+     "threshold": 0.9197147488594056,
+     "coverage": 0.600080224628961,
+     "in_class_flip_rate": 0.6400401069518716,
+     "in_class_flip_ci": [
+      0.622671516619911,
+      0.6570495474043017
+     ],
+     "missed_dwp_per_decision": 0.024146089049338147,
+     "missed_dwp_share": 0.6558295432817626,
+     "missed_material_5pp": 727,
+     "n_forced": 2992,
+     "concentration": 2.50050150451354
+    },
+    {
+     "threshold": 0.9866816252470016,
+     "coverage": 0.6500200561572402,
+     "in_class_flip_rate": 0.6479481641468683,
+     "in_class_flip_ci": [
+      0.6313384716304841,
+      0.6642075420793995
+     ],
+     "missed_dwp_per_decision": 0.02608963096670678,
+     "missed_dwp_share": 0.7086178936192582,
+     "missed_material_5pp": 792,
+     "n_forced": 3241,
+     "concentration": 2.8573065902578794
+    },
+    {
+     "threshold": 1.0562063455581667,
+     "coverage": 0.6999598876855194,
+     "in_class_flip_rate": 0.6544412607449857,
+     "in_class_flip_ci": [
+      0.6385016567422941,
+      0.6700412377037506
+     ],
+     "missed_dwp_per_decision": 0.027832731648616126,
+     "missed_dwp_share": 0.7559620793287891,
+     "missed_material_5pp": 848,
+     "n_forced": 3490,
+     "concentration": 3.332887700534759
+    },
+    {
+     "threshold": 1.1364069283008575,
+     "coverage": 0.7498997192137986,
+     "in_class_flip_rate": 0.6600695373094411,
+     "in_class_flip_ci": [
+      0.6447287770914436,
+      0.6750817112818823
+     ],
+     "missed_dwp_per_decision": 0.029634877657440835,
+     "missed_dwp_share": 0.8049099893393735,
+     "missed_material_5pp": 905,
+     "n_forced": 3739,
+     "concentration": 3.998396150761828
+    },
+    {
+     "threshold": 1.2155539989471436,
+     "coverage": 0.8000401123144806,
+     "in_class_flip_rate": 0.6680872399097518,
+     "in_class_flip_ci": [
+      0.653318210684758,
+      0.6825328283346711
+     ],
+     "missed_dwp_per_decision": 0.03140491375852387,
+     "missed_dwp_share": 0.8529857653125983,
+     "missed_material_5pp": 965,
+     "n_forced": 3989,
+     "concentration": 5.001003009027082
+    },
+    {
+     "threshold": 1.302258551120758,
+     "coverage": 0.8499799438427598,
+     "in_class_flip_rate": 0.6708352996696555,
+     "in_class_flip_ci": [
+      0.6565383040312364,
+      0.6848228632504462
+     ],
+     "missed_dwp_per_decision": 0.0330105094263939,
+     "missed_dwp_share": 0.8965951908971214,
+     "missed_material_5pp": 1021,
+     "n_forced": 4238,
+     "concentration": 6.665775401069521
+    },
+    {
+     "threshold": 1.4001308083534245,
+     "coverage": 0.899919775371039,
+     "in_class_flip_rate": 0.678404279028304,
+     "in_class_flip_ci": [
+      0.6645895270367335,
+      0.6919138063251025
+     ],
+     "missed_dwp_per_decision": 0.03434173686321701,
+     "missed_dwp_share": 0.9327525280175103,
+     "missed_material_5pp": 1067,
+     "n_forced": 4487,
+     "concentration": 9.991983967935877
+    },
+    {
+     "threshold": 1.541426181793213,
+     "coverage": 0.9498596068993181,
+     "in_class_flip_rate": 0.6864442567567568,
+     "in_class_flip_ci": [
+      0.6730843686662943,
+      0.6995019219810558
+     ],
+     "missed_dwp_per_decision": 0.03586361813076615,
+     "missed_dwp_share": 0.9740881950311784,
+     "missed_material_5pp": 1111,
+     "n_forced": 4736,
+     "concentration": 19.94400000000002
+    }
+   ]
+  },
+  {
+   "feature": "n_legal",
+   "direction": "<=",
+   "points": [
+    {
+     "threshold": 2.0,
+     "coverage": 0.006016847172081829,
+     "in_class_flip_rate": 0.4666666666666667,
+     "in_class_flip_ci": [
+      0.30232127224128236,
+      0.6385798671847496
+     ],
+     "missed_dwp_per_decision": 0.00025377055756117134,
+     "missed_dwp_share": 0.006892637086015515,
+     "missed_material_5pp": 12,
+     "n_forced": 30,
+     "concentration": 1.0060532687651331
+    },
+    {
+     "threshold": 3.0,
+     "coverage": 0.015042117930204572,
+     "in_class_flip_rate": 0.5733333333333334,
+     "in_class_flip_ci": [
+      0.46052588692688007,
+      0.6789943663404308
+     ],
+     "missed_dwp_per_decision": 0.000498977135980746,
+     "missed_dwp_share": 0.013552668779181216,
+     "missed_material_5pp": 19,
+     "n_forced": 75,
+     "concentration": 1.015271838729383
+    },
+    {
+     "threshold": 4.0,
+     "coverage": 0.08443642198154834,
+     "in_class_flip_rate": 0.6389548693586699,
+     "in_class_flip_ci": [
+      0.5920082203351493,
+      0.6833885393042081
+     ],
+     "missed_dwp_per_decision": 0.004564500601684718,
+     "missed_dwp_share": 0.12397595067240391,
+     "missed_material_5pp": 111,
+     "n_forced": 421,
+     "concentration": 1.092223439211391
+    },
+    {
+     "threshold": 5.0,
+     "coverage": 0.16967509025270758,
+     "in_class_flip_rate": 0.6501182033096927,
+     "in_class_flip_ci": [
+      0.6173664981807365,
+      0.681512728253931
+     ],
+     "missed_dwp_per_decision": 0.00887280385078219,
+     "missed_dwp_share": 0.24099335031842972,
+     "missed_material_5pp": 223,
+     "n_forced": 846,
+     "concentration": 1.2043478260869565
+    },
+    {
+     "threshold": 6.0,
+     "coverage": 0.28941034897713597,
+     "in_class_flip_rate": 0.6673596673596673,
+     "in_class_flip_ci": [
+      0.6426332281562543,
+      0.6911973722356612
+     ],
+     "missed_dwp_per_decision": 0.014152446851183312,
+     "missed_dwp_share": 0.38439321315206454,
+     "missed_material_5pp": 375,
+     "n_forced": 1443,
+     "concentration": 1.4072819644369179
+    },
+    {
+     "threshold": 7.0,
+     "coverage": 0.4608904933814681,
+     "in_class_flip_rate": 0.6901653611836379,
+     "in_class_flip_ci": [
+      0.6709541076260409,
+      0.7087418714543615
+     ],
+     "missed_dwp_per_decision": 0.020213437625350984,
+     "missed_dwp_share": 0.5490151858092189,
+     "missed_material_5pp": 573,
+     "n_forced": 2298,
+     "concentration": 1.8549107142857144
+    },
+    {
+     "threshold": 8.0,
+     "coverage": 0.6913357400722022,
+     "in_class_flip_rate": 0.6921961125616478,
+     "in_class_flip_ci": [
+      0.676579799230082,
+      0.7073845067525514
+     ],
+     "missed_dwp_per_decision": 0.02819340152426795,
+     "missed_dwp_share": 0.7657581982506113,
+     "missed_material_5pp": 842,
+     "n_forced": 3447,
+     "concentration": 3.2397660818713456
+    }
+   ]
+  },
+  {
+   "feature": "win_prob_extremity",
+   "direction": ">=",
+   "points": [
+    {
+     "threshold": 0.4952252060174942,
+     "coverage": 0.05014039310068191,
+     "in_class_flip_rate": 0.752,
+     "in_class_flip_ci": [
+      0.6949232766848457,
+      0.8014492643013442
+     ],
+     "missed_dwp_per_decision": 2.5110308864821674e-05,
+     "missed_dwp_share": 0.0006820186225947588,
+     "missed_material_5pp": 0,
+     "n_forced": 250,
+     "concentration": 1.052787162162162
+    },
+    {
+     "threshold": 0.48557904362678544,
+     "coverage": 0.10008022462896109,
+     "in_class_flip_rate": 0.7775551102204409,
+     "in_class_flip_ci": [
+      0.7390217794840545,
+      0.8118475201124785
+     ],
+     "missed_dwp_per_decision": 0.00017334536702767744,
+     "missed_dwp_share": 0.004708216417800685,
+     "missed_material_5pp": 3,
+     "n_forced": 499,
+     "concentration": 1.111210162692222
+    },
+    {
+     "threshold": 0.47290781140327454,
+     "coverage": 0.15002005615724026,
+     "in_class_flip_rate": 0.7847593582887701,
+     "in_class_flip_ci": [
+      0.7538902751497948,
+      0.812718436046819
+     ],
+     "missed_dwp_per_decision": 0.0005673485760128358,
+     "missed_dwp_share": 0.01540969871881821,
+     "missed_material_5pp": 11,
+     "n_forced": 748,
+     "concentration": 1.1764983482774893
+    },
+    {
+     "threshold": 0.4567747712135315,
+     "coverage": 0.20016044925792217,
+     "in_class_flip_rate": 0.7745490981963928,
+     "in_class_flip_ci": [
+      0.7475983348032625,
+      0.7993943235171747
+     ],
+     "missed_dwp_per_decision": 0.0011830525471319693,
+     "missed_dwp_share": 0.032132773555109226,
+     "missed_material_5pp": 20,
+     "n_forced": 998,
+     "concentration": 1.2502507522567703
+    },
+    {
+     "threshold": 0.43763428088277584,
+     "coverage": 0.2501002807862014,
+     "in_class_flip_rate": 0.7746591820368885,
+     "in_class_flip_ci": [
+      0.7506460634999113,
+      0.7969852273046159
+     ],
+     "missed_dwp_per_decision": 0.002034275972723626,
+     "missed_dwp_share": 0.05525276906642436,
+     "missed_material_5pp": 35,
+     "n_forced": 1247,
+     "concentration": 1.3335116341267719
+    },
+    {
+     "threshold": 0.418819397687912,
+     "coverage": 0.3000401123144805,
+     "in_class_flip_rate": 0.7633689839572193,
+     "in_class_flip_ci": [
+      0.7411740274692119,
+      0.7842147869229213
+     ],
+     "missed_dwp_per_decision": 0.003008543922984356,
+     "missed_dwp_share": 0.08171476477711555,
+     "missed_material_5pp": 63,
+     "n_forced": 1496,
+     "concentration": 1.4286532951289397
+    },
+    {
+     "threshold": 0.398811474442482,
+     "coverage": 0.3499799438427597,
+     "in_class_flip_rate": 0.7524355300859599,
+     "in_class_flip_ci": [
+      0.7316451058319137,
+      0.7721169272761733
+     ],
+     "missed_dwp_per_decision": 0.004251323706377858,
+     "missed_dwp_share": 0.11546978390577683,
+     "missed_material_5pp": 99,
+     "n_forced": 1745,
+     "concentration": 1.5384140697315645
+    },
+    {
+     "threshold": 0.37794679403305054,
+     "coverage": 0.4001203369434416,
+     "in_class_flip_rate": 0.7433583959899749,
+     "in_class_flip_ci": [
+      0.7237367011912403,
+      0.7620446633751163
+     ],
+     "missed_dwp_per_decision": 0.005691997593261131,
+     "missed_dwp_share": 0.15459978526218768,
+     "missed_material_5pp": 150,
+     "n_forced": 1995,
+     "concentration": 1.667001003009027
+    },
+    {
+     "threshold": 0.3578298091888428,
+     "coverage": 0.45026073004412354,
+     "in_class_flip_rate": 0.7367483296213808,
+     "in_class_flip_ci": [
+      0.7181372980541796,
+      0.754550507080695
+     ],
+     "missed_dwp_per_decision": 0.007396490172482953,
+     "missed_dwp_share": 0.2008953401023137,
+     "missed_material_5pp": 205,
+     "n_forced": 2245,
+     "concentration": 1.8190441444728198
+    },
+    {
+     "threshold": 0.33760856091976166,
+     "coverage": 0.5,
+     "in_class_flip_rate": 0.7220216606498195,
+     "in_class_flip_ci": [
+      0.7041039337341752,
+      0.739256189711381
+     ],
+     "missed_dwp_per_decision": 0.008748215002005616,
+     "missed_dwp_share": 0.23760940488427745,
+     "missed_material_5pp": 259,
+     "n_forced": 2493,
+     "concentration": 2.0
+    },
+    {
+     "threshold": 0.3127593696117401,
+     "coverage": 0.5499398315282792,
+     "in_class_flip_rate": 0.7159008023340627,
+     "in_class_flip_ci": [
+      0.6987274118045707,
+      0.7324700760621731
+     ],
+     "missed_dwp_per_decision": 0.010992900120336943,
+     "missed_dwp_share": 0.2985770760031312,
+     "missed_material_5pp": 329,
+     "n_forced": 2742,
+     "concentration": 2.22192513368984
+    },
+    {
+     "threshold": 0.288646399974823,
+     "coverage": 0.600080224628961,
+     "in_class_flip_rate": 0.7115641711229946,
+     "in_class_flip_ci": [
+      0.6950677195176688,
+      0.7275180406907481
+     ],
+     "missed_dwp_per_decision": 0.012973525872442842,
+     "missed_dwp_share": 0.3523726567185644,
+     "missed_material_5pp": 391,
+     "n_forced": 2992,
+     "concentration": 2.50050150451354
+    },
+    {
+     "threshold": 0.2658170908689499,
+     "coverage": 0.6500200561572402,
+     "in_class_flip_rate": 0.7019438444924406,
+     "in_class_flip_ci": [
+      0.685964582477959,
+      0.7174449398851666
+     ],
+     "missed_dwp_per_decision": 0.014745006016847173,
+     "missed_dwp_share": 0.40048765421002147,
+     "missed_material_5pp": 455,
+     "n_forced": 3241,
+     "concentration": 2.8573065902578794
+    },
+    {
+     "threshold": 0.24055247008800507,
+     "coverage": 0.6999598876855194,
+     "in_class_flip_rate": 0.6982808022922636,
+     "in_class_flip_ci": [
+      0.6828410022412024,
+      0.7132845691069665
+     ],
+     "missed_dwp_per_decision": 0.0172925792218211,
+     "missed_dwp_share": 0.46968203877809717,
+     "missed_material_5pp": 537,
+     "n_forced": 3490,
+     "concentration": 3.332887700534759
+    },
+    {
+     "threshold": 0.20953944325447083,
+     "coverage": 0.7498997192137986,
+     "in_class_flip_rate": 0.6953730944102702,
+     "in_class_flip_ci": [
+      0.6804260790884356,
+      0.7099190533371527
+     ],
+     "missed_dwp_per_decision": 0.019822864019253914,
+     "missed_dwp_share": 0.5384068546140032,
+     "missed_material_5pp": 614,
+     "n_forced": 3739,
+     "concentration": 3.998396150761828
+    },
+    {
+     "threshold": 0.17813462018966675,
+     "coverage": 0.8000401123144806,
+     "in_class_flip_rate": 0.6919027325144146,
+     "in_class_flip_ci": [
+      0.6773956404269489,
+      0.7060405569919518
+     ],
+     "missed_dwp_per_decision": 0.02289981949458484,
+     "missed_dwp_share": 0.6219797388173732,
+     "missed_material_5pp": 706,
+     "n_forced": 3989,
+     "concentration": 5.001003009027082
+    },
+    {
+     "threshold": 0.138575091958046,
+     "coverage": 0.8499799438427598,
+     "in_class_flip_rate": 0.6937234544596508,
+     "in_class_flip_ci": [
+      0.6796752254053561,
+      0.7074207943988723
+     ],
+     "missed_dwp_per_decision": 0.026638808664259928,
+     "missed_dwp_share": 0.7235340549003202,
+     "missed_material_5pp": 818,
+     "n_forced": 4238,
+     "concentration": 6.665775401069521
+    },
+    {
+     "threshold": 0.09521856904029846,
+     "coverage": 0.899919775371039,
+     "in_class_flip_rate": 0.6924448406507688,
+     "in_class_flip_ci": [
+      0.6787819322687461,
+      0.7057785029067007
+     ],
+     "missed_dwp_per_decision": 0.029601764941837146,
+     "missed_dwp_share": 0.8040106181365748,
+     "missed_material_5pp": 920,
+     "n_forced": 4487,
+     "concentration": 9.991983967935877
+    },
+    {
+     "threshold": 0.050117917358875275,
+     "coverage": 0.9498596068993181,
+     "in_class_flip_rate": 0.6944679054054054,
+     "in_class_flip_ci": [
+      0.6811955404088358,
+      0.7074250413422506
+     ],
+     "missed_dwp_per_decision": 0.03290318892900121,
+     "missed_dwp_share": 0.8936802694518303,
+     "missed_material_5pp": 1023,
+     "n_forced": 4736,
+     "concentration": 19.94400000000002
+    }
+   ]
+  },
+  {
+   "feature": "turn",
+   "direction": "<=",
+   "points": [
+    {
+     "threshold": 2.0,
+     "coverage": 0.0820296831127156,
+     "in_class_flip_rate": 0.589242053789731,
+     "in_class_flip_ci": [
+      0.5409469398583883,
+      0.6358763260140431
+     ],
+     "missed_dwp_per_decision": 0.002836060970718011,
+     "missed_dwp_share": 0.07702997232159249,
+     "missed_material_5pp": 102,
+     "n_forced": 409,
+     "concentration": 1.0893598426917195
+    },
+    {
+     "threshold": 3.0,
+     "coverage": 0.1313678299237866,
+     "in_class_flip_rate": 0.5816793893129771,
+     "in_class_flip_ci": [
+      0.5435330321846101,
+      0.6188732275294091
+     ],
+     "missed_dwp_per_decision": 0.004614961893301244,
+     "missed_dwp_share": 0.1253465248372988,
+     "missed_material_5pp": 156,
+     "n_forced": 655,
+     "concentration": 1.1512352805356731
+    },
+    {
+     "threshold": 4.0,
+     "coverage": 0.17168070597673485,
+     "in_class_flip_rate": 0.5957943925233645,
+     "in_class_flip_ci": [
+      0.562561920489368,
+      0.6281708842504817
+     ],
+     "missed_dwp_per_decision": 0.006000381066987565,
+     "missed_dwp_share": 0.1629757583780159,
+     "missed_material_5pp": 207,
+     "n_forced": 856,
+     "concentration": 1.2072639225181598
+    },
+    {
+     "threshold": 5.0,
+     "coverage": 0.21660649819494585,
+     "in_class_flip_rate": 0.6074074074074074,
+     "in_class_flip_ci": [
+      0.5779515913528298,
+      0.6361018275231388
+     ],
+     "missed_dwp_per_decision": 0.007518030485359004,
+     "missed_dwp_share": 0.2041964845535311,
+     "missed_material_5pp": 261,
+     "n_forced": 1080,
+     "concentration": 1.2764976958525345
+    },
+    {
+     "threshold": 6.0,
+     "coverage": 0.26073004412354595,
+     "in_class_flip_rate": 0.62,
+     "in_class_flip_ci": [
+      0.5932970556917527,
+      0.6459958154668297
+     ],
+     "missed_dwp_per_decision": 0.00916458082631368,
+     "missed_dwp_share": 0.24891827597458666,
+     "missed_material_5pp": 321,
+     "n_forced": 1300,
+     "concentration": 1.352685838307108
+    },
+    {
+     "threshold": 8.0,
+     "coverage": 0.3469715202567188,
+     "in_class_flip_rate": 0.6335260115606937,
+     "in_class_flip_ci": [
+      0.610547601468224,
+      0.6559127257035317
+     ],
+     "missed_dwp_per_decision": 0.012209526674689131,
+     "missed_dwp_share": 0.3316217498571411,
+     "missed_material_5pp": 415,
+     "n_forced": 1730,
+     "concentration": 1.5313267813267812
+    },
+    {
+     "threshold": 9.0,
+     "coverage": 0.38648215002005615,
+     "in_class_flip_rate": 0.6419304618578101,
+     "in_class_flip_ci": [
+      0.6202611550650686,
+      0.6630349993165233
+     ],
+     "missed_dwp_per_decision": 0.013622162053750502,
+     "missed_dwp_share": 0.36999020006787503,
+     "missed_material_5pp": 459,
+     "n_forced": 1927,
+     "concentration": 1.629944426283099
+    },
+    {
+     "threshold": 10.0,
+     "coverage": 0.4296028880866426,
+     "in_class_flip_rate": 0.6507936507936508,
+     "in_class_flip_ci": [
+      0.6303512324084067,
+      0.6706961515177879
+     ],
+     "missed_dwp_per_decision": 0.015489410348977137,
+     "missed_dwp_share": 0.420706346858765,
+     "missed_material_5pp": 517,
+     "n_forced": 2142,
+     "concentration": 1.7531645569620253
+    },
+    {
+     "threshold": 11.0,
+     "coverage": 0.4725230645808263,
+     "in_class_flip_rate": 0.6566213921901528,
+     "in_class_flip_ci": [
+      0.6372063510998912,
+      0.6755265035120456
+     ],
+     "missed_dwp_per_decision": 0.016943602085840358,
+     "missed_dwp_share": 0.4602035052052948,
+     "missed_material_5pp": 560,
+     "n_forced": 2356,
+     "concentration": 1.8958174904942964
+    },
+    {
+     "threshold": 12.0,
+     "coverage": 0.51544324107501,
+     "in_class_flip_rate": 0.6626459143968871,
+     "in_class_flip_ci": [
+      0.6441353137583679,
+      0.6806709991087487
+     ],
+     "missed_dwp_per_decision": 0.01859251905334938,
+     "missed_dwp_share": 0.5049895763367865,
+     "missed_material_5pp": 618,
+     "n_forced": 2570,
+     "concentration": 2.0637417218543046
+    },
+    {
+     "threshold": 13.0,
+     "coverage": 0.5577617328519856,
+     "in_class_flip_rate": 0.6634304207119741,
+     "in_class_flip_ci": [
+      0.6456529671529665,
+      0.6807569801847924
+     ],
+     "missed_dwp_per_decision": 0.020291897312474928,
+     "missed_dwp_share": 0.5511462216331731,
+     "missed_material_5pp": 663,
+     "n_forced": 2781,
+     "concentration": 2.2612244897959184
+    },
+    {
+     "threshold": 15.0,
+     "coverage": 0.6307661452065784,
+     "in_class_flip_rate": 0.6680445151033386,
+     "in_class_flip_ci": [
+      0.6513898364404462,
+      0.6842891637353643
+     ],
+     "missed_dwp_per_decision": 0.02299925792218211,
+     "missed_dwp_share": 0.6246805761423131,
+     "missed_material_5pp": 742,
+     "n_forced": 3145,
+     "concentration": 2.7083107007061376
+    },
+    {
+     "threshold": 16.0,
+     "coverage": 0.6644604893702367,
+     "in_class_flip_rate": 0.6697856927256263,
+     "in_class_flip_ci": [
+      0.6535826933350123,
+      0.685595397050733
+     ],
+     "missed_dwp_per_decision": 0.02419400320898516,
+     "missed_dwp_share": 0.6571309350464422,
+     "missed_material_5pp": 774,
+     "n_forced": 3313,
+     "concentration": 2.980274955170353
+    },
+    {
+     "threshold": 18.0,
+     "coverage": 0.7218210990774168,
+     "in_class_flip_rate": 0.675465407057516,
+     "in_class_flip_ci": [
+      0.6599886455547632,
+      0.6905679817474195
+     ],
+     "missed_dwp_per_decision": 0.02664939831528279,
+     "missed_dwp_share": 0.7238216793673569,
+     "missed_material_5pp": 837,
+     "n_forced": 3599,
+     "concentration": 3.594808940158616
+    },
+    {
+     "threshold": 20.0,
+     "coverage": 0.7675491375852387,
+     "in_class_flip_rate": 0.676509014894173,
+     "in_class_flip_ci": [
+      0.6615167986141139,
+      0.6911472217411001
+     ],
+     "missed_dwp_per_decision": 0.028096289610910548,
+     "missed_dwp_share": 0.7631205511494901,
+     "missed_material_5pp": 882,
+     "n_forced": 3827,
+     "concentration": 4.301984469370147
+    },
+    {
+     "threshold": 22.0,
+     "coverage": 0.8002406738868832,
+     "in_class_flip_rate": 0.6794486215538847,
+     "in_class_flip_ci": [
+      0.6648010101609806,
+      0.6937510165393274
+     ],
+     "missed_dwp_per_decision": 0.029438648215002007,
+     "missed_dwp_share": 0.7995802208062528,
+     "missed_material_5pp": 917,
+     "n_forced": 3990,
+     "concentration": 5.006024096385541
+    },
+    {
+     "threshold": 27.0,
+     "coverage": 0.8598074608904934,
+     "in_class_flip_rate": 0.6832283648238862,
+     "in_class_flip_ci": [
+      0.6691432995643564,
+      0.696985340560695
+     ],
+     "missed_dwp_per_decision": 0.03155078219013237,
+     "missed_dwp_share": 0.8569476833973678,
+     "missed_material_5pp": 980,
+     "n_forced": 4287,
+     "concentration": 7.133047210300432
+    },
+    {
+     "threshold": 33.0,
+     "coverage": 0.9031287605294825,
+     "in_class_flip_rate": 0.6870974905618477,
+     "in_class_flip_ci": [
+      0.6733997215148692,
+      0.7004762984455394
+     ],
+     "missed_dwp_per_decision": 0.03331847172081829,
+     "missed_dwp_share": 0.9049597244034653,
+     "missed_material_5pp": 1029,
+     "n_forced": 4503,
+     "concentration": 10.322981366459626
+    },
+    {
+     "threshold": 46.0,
+     "coverage": 0.9514640994785399,
+     "in_class_flip_rate": 0.6895025295109612,
+     "in_class_flip_ci": [
+      0.676186819055819,
+      0.7025115772849521
+     ],
+     "missed_dwp_per_decision": 0.03497637384677096,
+     "missed_dwp_share": 0.9499898405372913,
+     "missed_material_5pp": 1075,
+     "n_forced": 4744,
+     "concentration": 20.60330578512398
+    }
+   ]
+  },
+  {
+   "feature": "RANDOM_null",
+   "direction": "<=",
+   "points": [
+    {
+     "threshold": 0.05,
+     "coverage": 0.04773365423184918,
+     "in_class_flip_rate": 0.6554621848739496,
+     "in_class_flip_ci": [
+      0.5930478812780764,
+      0.7129375240450773
+     ],
+     "missed_dwp_per_decision": 0.001400601684717208,
+     "missed_dwp_share": 0.038041604225464896,
+     "missed_material_5pp": 42,
+     "n_forced": 238,
+     "concentration": 1.0501263689974727
+    },
+    {
+     "threshold": 0.1,
+     "coverage": 0.10048134777376655,
+     "in_class_flip_rate": 0.6846307385229541,
+     "in_class_flip_ci": [
+      0.6426677342613838,
+      0.7237838418369409
+     ],
+     "missed_dwp_per_decision": 0.0035176494183714402,
+     "missed_dwp_share": 0.09554252892723156,
+     "missed_material_5pp": 101,
+     "n_forced": 501,
+     "concentration": 1.111705685618729
+    },
+    {
+     "threshold": 0.15000000000000002,
+     "coverage": 0.1466105094263939,
+     "in_class_flip_rate": 0.6867305061559508,
+     "in_class_flip_ci": [
+      0.6522041000749252,
+      0.7193045352554643
+     ],
+     "missed_dwp_per_decision": 0.0053425591656638596,
+     "missed_dwp_share": 0.14510872259328322,
+     "missed_material_5pp": 158,
+     "n_forced": 731,
+     "concentration": 1.171797884841363
+    },
+    {
+     "threshold": 0.2,
+     "coverage": 0.19634977938227036,
+     "in_class_flip_rate": 0.6853932584269663,
+     "in_class_flip_ci": [
+      0.6556281587853819,
+      0.7137090772453275
+     ],
+     "missed_dwp_per_decision": 0.006971821099077416,
+     "missed_dwp_share": 0.18936094528216885,
+     "missed_material_5pp": 212,
+     "n_forced": 979,
+     "concentration": 1.2443224357374596
+    },
+    {
+     "threshold": 0.25,
+     "coverage": 0.248896911351785,
+     "in_class_flip_rate": 0.6897663174858985,
+     "in_class_flip_ci": [
+      0.663476309857341,
+      0.714885081664279
+     ],
+     "missed_dwp_per_decision": 0.009049739269955876,
+     "missed_dwp_share": 0.24579907578850232,
+     "missed_material_5pp": 276,
+     "n_forced": 1241,
+     "concentration": 1.3313751668891856
+    },
+    {
+     "threshold": 0.3,
+     "coverage": 0.30806257521058966,
+     "in_class_flip_rate": 0.6927083333333334,
+     "in_class_flip_ci": [
+      0.669177977778953,
+      0.7152771505926925
+     ],
+     "missed_dwp_per_decision": 0.01133024468511833,
+     "missed_dwp_share": 0.30773965845684026,
+     "missed_material_5pp": 339,
+     "n_forced": 1536,
+     "concentration": 1.4452173913043478
+    },
+    {
+     "threshold": 0.35000000000000003,
+     "coverage": 0.36181307661452067,
+     "in_class_flip_rate": 0.697339246119734,
+     "in_class_flip_ci": [
+      0.6757381923830406,
+      0.7181016219015739
+     ],
+     "missed_dwp_per_decision": 0.013625772162053748,
+     "missed_dwp_share": 0.3700882538634557,
+     "missed_material_5pp": 410,
+     "n_forced": 1804,
+     "concentration": 1.5669390320553112
+    },
+    {
+     "threshold": 0.4,
+     "coverage": 0.4119534697152026,
+     "in_class_flip_rate": 0.6952288218111002,
+     "in_class_flip_ci": [
+      0.6749725778943911,
+      0.7147561553569921
+     ],
+     "missed_dwp_per_decision": 0.01564636983553951,
+     "missed_dwp_share": 0.4249695079932909,
+     "missed_material_5pp": 467,
+     "n_forced": 2054,
+     "concentration": 1.7005457025920871
+    },
+    {
+     "threshold": 0.45,
+     "coverage": 0.4636983553951063,
+     "in_class_flip_rate": 0.6976643598615917,
+     "in_class_flip_ci": [
+      0.6786280821318675,
+      0.7160448523209897
+     ],
+     "missed_dwp_per_decision": 0.017710028078620137,
+     "missed_dwp_share": 0.48102032600708056,
+     "missed_material_5pp": 530,
+     "n_forced": 2312,
+     "concentration": 1.8646222887060584
+    },
+    {
+     "threshold": 0.5,
+     "coverage": 0.5114320096269555,
+     "in_class_flip_rate": 0.6968627450980392,
+     "in_class_flip_ci": [
+      0.6787382187951704,
+      0.7143950123339647
+     ],
+     "missed_dwp_per_decision": 0.019243822703569995,
+     "missed_dwp_share": 0.5226795705461651,
+     "missed_material_5pp": 583,
+     "n_forced": 2550,
+     "concentration": 2.0467980295566504
+    },
+    {
+     "threshold": 0.55,
+     "coverage": 0.5575611712795828,
+     "in_class_flip_rate": 0.6946043165467626,
+     "in_class_flip_ci": [
+      0.6772242930947179,
+      0.7114472462629813
+     ],
+     "missed_dwp_per_decision": 0.02114945848375451,
+     "missed_dwp_share": 0.5744383560300633,
+     "missed_material_5pp": 640,
+     "n_forced": 2780,
+     "concentration": 2.260199456029012
+    },
+    {
+     "threshold": 0.6000000000000001,
+     "coverage": 0.6022864019253911,
+     "in_class_flip_rate": 0.6933066933066933,
+     "in_class_flip_ci": [
+      0.676575653099184,
+      0.709543788643274
+     ],
+     "missed_dwp_per_decision": 0.022692238267148016,
+     "missed_dwp_share": 0.6163416455714821,
+     "missed_material_5pp": 690,
+     "n_forced": 3003,
+     "concentration": 2.5143721633888045
+    },
+    {
+     "threshold": 0.6500000000000001,
+     "coverage": 0.6508223024468511,
+     "in_class_flip_rate": 0.689060092449923,
+     "in_class_flip_ci": [
+      0.6729180645416569,
+      0.7047550113017452
+     ],
+     "missed_dwp_per_decision": 0.024356177296430002,
+     "missed_dwp_share": 0.6615357294412513,
+     "missed_material_5pp": 740,
+     "n_forced": 3245,
+     "concentration": 2.863871338311315
+    },
+    {
+     "threshold": 0.7000000000000001,
+     "coverage": 0.7021660649819494,
+     "in_class_flip_rate": 0.6892316481005427,
+     "in_class_flip_ci": [
+      0.6737005690110809,
+      0.7043478997128694
+     ],
+     "missed_dwp_per_decision": 0.026063036502206184,
+     "missed_dwp_share": 0.7078955639918137,
+     "missed_material_5pp": 794,
+     "n_forced": 3501,
+     "concentration": 3.3575757575757574
+    },
+    {
+     "threshold": 0.7500000000000001,
+     "coverage": 0.7490974729241877,
+     "in_class_flip_rate": 0.6883534136546184,
+     "in_class_flip_ci": [
+      0.6733121092939969,
+      0.703007657769684
+     ],
+     "missed_dwp_per_decision": 0.02770956678700361,
+     "missed_dwp_share": 0.7526168106695603,
+     "missed_material_5pp": 846,
+     "n_forced": 3735,
+     "concentration": 3.9856115107913666
+    },
+    {
+     "threshold": 0.8,
+     "coverage": 0.7956277577216205,
+     "in_class_flip_rate": 0.6871691454499622,
+     "in_class_flip_ci": [
+      0.6725657312370482,
+      0.7014104052071756
+     ],
+     "missed_dwp_per_decision": 0.029353269153630165,
+     "missed_dwp_share": 0.7972612485407689,
+     "missed_material_5pp": 898,
+     "n_forced": 3967,
+     "concentration": 4.893032384690874
+    },
+    {
+     "threshold": 0.8500000000000001,
+     "coverage": 0.8479743281187324,
+     "in_class_flip_rate": 0.6906338694418165,
+     "in_class_flip_ci": [
+      0.6765329286142123,
+      0.7043887013447163
+     ],
+     "missed_dwp_per_decision": 0.03116915363016446,
+     "missed_dwp_share": 0.8465823077178688,
+     "missed_material_5pp": 962,
+     "n_forced": 4228,
+     "concentration": 6.577836411609497
+    },
+    {
+     "threshold": 0.9000000000000001,
+     "coverage": 0.9019253910950662,
+     "in_class_flip_rate": 0.6924616410940627,
+     "in_class_flip_ci": [
+      0.678814294493428,
+      0.7057804444105139
+     ],
+     "missed_dwp_per_decision": 0.033010709987966305,
+     "missed_dwp_share": 0.8966006383302092,
+     "missed_material_5pp": 1029,
+     "n_forced": 4497,
+     "concentration": 10.196319018404909
+    },
+    {
+     "threshold": 0.9500000000000001,
+     "coverage": 0.9532691536301645,
+     "in_class_flip_rate": 0.6911424363559857,
+     "in_class_flip_ci": [
+      0.6778573175090828,
+      0.7041188239710118
+     ],
+     "missed_dwp_per_decision": 0.03509211793020457,
+     "missed_dwp_share": 0.9531335541722707,
+     "missed_material_5pp": 1085,
+     "n_forced": 4753,
+     "concentration": 21.399141630901312
+    }
+   ]
+  }
+ ],
+ "drop_one_feature_missed_dwp_share_at_cov_0.6": {
+  "without_n_legal": 0.3516,
+  "without_gap": 0.3278,
+  "without_entropy": 0.3365,
+  "without_top1_prob": 0.3332,
+  "without_wp_extremity": 0.4974,
+  "without_turn": 0.3534
+ },
+ "ablation_missed_dwp_at_matched_coverage": {
+  "masked_top1_top2_gap": {
+   "0.2": {
+    "missed_dwp_share": 0.2009,
+    "in_class_flip_rate": 0.5491,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.2967,
+    "in_class_flip_rate": 0.5822,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.4007,
+    "in_class_flip_rate": 0.6073,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.5087,
+    "in_class_flip_rate": 0.635,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.6005,
+    "in_class_flip_rate": 0.6464,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.711,
+    "in_class_flip_rate": 0.6585,
+    "coverage": 0.7
+   }
+  },
+  "masked_top1_prob": {
+   "0.2": {
+    "missed_dwp_share": 0.2028,
+    "in_class_flip_rate": 0.5391,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.3101,
+    "in_class_flip_rate": 0.5775,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.415,
+    "in_class_flip_rate": 0.6025,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.511,
+    "in_class_flip_rate": 0.6262,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.6266,
+    "in_class_flip_rate": 0.6437,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.7187,
+    "in_class_flip_rate": 0.6527,
+    "coverage": 0.7
+   }
+  },
+  "masked_policy_entropy": {
+   "0.2": {
+    "missed_dwp_share": 0.2083,
+    "in_class_flip_rate": 0.5431,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.3164,
+    "in_class_flip_rate": 0.5762,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.4258,
+    "in_class_flip_rate": 0.6,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.5498,
+    "in_class_flip_rate": 0.6266,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.6558,
+    "in_class_flip_rate": 0.64,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.756,
+    "in_class_flip_rate": 0.6544,
+    "coverage": 0.7
+   }
+  },
+  "n_legal": {
+   "0.2": {
+    "missed_dwp_share": 0.241,
+    "in_class_flip_rate": 0.6501,
+    "coverage": 0.17
+   },
+   "0.3": {
+    "missed_dwp_share": 0.3844,
+    "in_class_flip_rate": 0.6674,
+    "coverage": 0.289
+   },
+   "0.5": {
+    "missed_dwp_share": 0.549,
+    "in_class_flip_rate": 0.6902,
+    "coverage": 0.461
+   },
+   "0.7": {
+    "missed_dwp_share": 0.7658,
+    "in_class_flip_rate": 0.6922,
+    "coverage": 0.691
+   }
+  },
+  "win_prob_extremity": {
+   "0.2": {
+    "missed_dwp_share": 0.0321,
+    "in_class_flip_rate": 0.7745,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.0817,
+    "in_class_flip_rate": 0.7634,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.1546,
+    "in_class_flip_rate": 0.7434,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.2376,
+    "in_class_flip_rate": 0.722,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.3524,
+    "in_class_flip_rate": 0.7116,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.4697,
+    "in_class_flip_rate": 0.6983,
+    "coverage": 0.7
+   }
+  },
+  "turn": {
+   "0.2": {
+    "missed_dwp_share": 0.2042,
+    "in_class_flip_rate": 0.6074,
+    "coverage": 0.217
+   },
+   "0.3": {
+    "missed_dwp_share": 0.2489,
+    "in_class_flip_rate": 0.62,
+    "coverage": 0.261
+   },
+   "0.4": {
+    "missed_dwp_share": 0.37,
+    "in_class_flip_rate": 0.6419,
+    "coverage": 0.386
+   },
+   "0.5": {
+    "missed_dwp_share": 0.505,
+    "in_class_flip_rate": 0.6626,
+    "coverage": 0.515
+   },
+   "0.6": {
+    "missed_dwp_share": 0.6247,
+    "in_class_flip_rate": 0.668,
+    "coverage": 0.631
+   },
+   "0.7": {
+    "missed_dwp_share": 0.7238,
+    "in_class_flip_rate": 0.6755,
+    "coverage": 0.722
+   }
+  },
+  "RANDOM_null": {
+   "0.2": {
+    "missed_dwp_share": 0.1894,
+    "in_class_flip_rate": 0.6854,
+    "coverage": 0.196
+   },
+   "0.3": {
+    "missed_dwp_share": 0.3077,
+    "in_class_flip_rate": 0.6927,
+    "coverage": 0.308
+   },
+   "0.4": {
+    "missed_dwp_share": 0.425,
+    "in_class_flip_rate": 0.6952,
+    "coverage": 0.412
+   },
+   "0.5": {
+    "missed_dwp_share": 0.5227,
+    "in_class_flip_rate": 0.6969,
+    "coverage": 0.511
+   },
+   "0.6": {
+    "missed_dwp_share": 0.6163,
+    "in_class_flip_rate": 0.6933,
+    "coverage": 0.602
+   },
+   "0.7": {
+    "missed_dwp_share": 0.7079,
+    "in_class_flip_rate": 0.6892,
+    "coverage": 0.702
+   }
+  },
+  "ORACLE_floor": {
+   "0.2": {
+    "missed_dwp_share": 0.0,
+    "in_class_flip_rate": 0.3801,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.0,
+    "in_class_flip_rate": 0.39,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.0,
+    "in_class_flip_rate": 0.3811,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.0046,
+    "in_class_flip_rate": 0.4621,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.0306,
+    "in_class_flip_rate": 0.5216,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.0905,
+    "in_class_flip_rate": 0.5719,
+    "coverage": 0.7
+   }
+  },
+  "LEARNED_all_features_cv": {
+   "0.2": {
+    "missed_dwp_share": 0.0314,
+    "in_class_flip_rate": 0.7733,
+    "coverage": 0.2
+   },
+   "0.3": {
+    "missed_dwp_share": 0.0828,
+    "in_class_flip_rate": 0.7405,
+    "coverage": 0.3
+   },
+   "0.4": {
+    "missed_dwp_share": 0.1453,
+    "in_class_flip_rate": 0.7242,
+    "coverage": 0.4
+   },
+   "0.5": {
+    "missed_dwp_share": 0.2312,
+    "in_class_flip_rate": 0.7092,
+    "coverage": 0.5
+   },
+   "0.6": {
+    "missed_dwp_share": 0.3284,
+    "in_class_flip_rate": 0.6968,
+    "coverage": 0.6
+   },
+   "0.7": {
+    "missed_dwp_share": 0.4666,
+    "in_class_flip_rate": 0.6954,
+    "coverage": 0.7
+   }
+  }
+ },
+ "combined_rules": [
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 1.01,
+   "coverage": 0.05675892498997192,
+   "in_class_flip_rate": 0.47703180212014135,
+   "in_class_flip_ci": [
+    0.41953613276070767,
+    0.5351426864900565
+   ],
+   "missed_dwp_per_decision": 0.0018380264741275573,
+   "missed_dwp_pp_per_game_40dec": 7.3521058965102295,
+   "missed_dwp_share": 0.04992245578999492,
+   "retained_dividend_share": 0.9500775442100051,
+   "missed_material_5pp_rate": 0.1978798586572438,
+   "concentration": 1.060174356793536,
+   "n_forced": 283
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 1.01,
+   "coverage": 0.060770156438026475,
+   "in_class_flip_rate": 0.48514851485148514,
+   "in_class_flip_ci": [
+    0.42941283955872944,
+    0.5412560658308918
+   ],
+   "missed_dwp_per_decision": 0.002049338146811071,
+   "missed_dwp_pp_per_game_40dec": 8.197352587244284,
+   "missed_dwp_share": 0.05566187129131946,
+   "retained_dividend_share": 0.9443381287086805,
+   "missed_material_5pp_rate": 0.21782178217821782,
+   "concentration": 1.0647021140294683,
+   "n_forced": 303
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 1.01,
+   "coverage": 0.09245888487765744,
+   "in_class_flip_rate": 0.5010845986984815,
+   "in_class_flip_ci": [
+    0.45562158697107696,
+    0.5465296834832024
+   ],
+   "missed_dwp_per_decision": 0.0033661853188929006,
+   "missed_dwp_pp_per_game_40dec": 13.464741275571603,
+   "missed_dwp_share": 0.09142862745931178,
+   "retained_dividend_share": 0.9085713725406882,
+   "missed_material_5pp_rate": 0.22125813449023862,
+   "concentration": 1.101878453038674,
+   "n_forced": 461
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 1.01,
+   "coverage": 0.09626955475330927,
+   "in_class_flip_rate": 0.50625,
+   "in_class_flip_ci": [
+    0.4616510839113691,
+    0.5507496687316445
+   ],
+   "missed_dwp_per_decision": 0.0035774969915764137,
+   "missed_dwp_pp_per_game_40dec": 14.309987966305656,
+   "missed_dwp_share": 0.0971680429606363,
+   "retained_dividend_share": 0.9028319570393637,
+   "missed_material_5pp_rate": 0.23333333333333334,
+   "concentration": 1.1065246338215713,
+   "n_forced": 480
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.48,
+   "coverage": 0.12494985960689932,
+   "in_class_flip_rate": 0.7800963081861958,
+   "in_class_flip_ci": [
+    0.7459102597971768,
+    0.8108492150047507
+   ],
+   "missed_dwp_per_decision": 0.000317729643000401,
+   "missed_dwp_pp_per_game_40dec": 1.2709185720016043,
+   "missed_dwp_share": 0.00862982349772052,
+   "retained_dividend_share": 0.9913701765022794,
+   "missed_material_5pp_rate": 0.009630818619582664,
+   "concentration": 1.1427916571166628,
+   "n_forced": 623
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.48,
+   "coverage": 0.1305655836341757,
+   "in_class_flip_rate": 0.7680491551459293,
+   "in_class_flip_ci": [
+    0.7341103159179174,
+    0.7988429967610571
+   ],
+   "missed_dwp_per_decision": 0.0005700361010830325,
+   "missed_dwp_pp_per_game_40dec": 2.28014440433213,
+   "missed_dwp_share": 0.015482694322194965,
+   "retained_dividend_share": 0.984517305677805,
+   "missed_material_5pp_rate": 0.027649769585253458,
+   "concentration": 1.150173010380623,
+   "n_forced": 651
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 1.01,
+   "coverage": 0.14560770156438027,
+   "in_class_flip_rate": 0.5275482093663911,
+   "in_class_flip_ci": [
+    0.4911826538766686,
+    0.5636237589120789
+   ],
+   "missed_dwp_per_decision": 0.005711271560369033,
+   "missed_dwp_pp_per_game_40dec": 22.84508624147613,
+   "missed_dwp_share": 0.15512328358192692,
+   "retained_dividend_share": 0.844876716418073,
+   "missed_material_5pp_rate": 0.23553719008264462,
+   "concentration": 1.1704225352112676,
+   "n_forced": 726
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 1.01,
+   "coverage": 0.1494183714400321,
+   "in_class_flip_rate": 0.5302013422818792,
+   "in_class_flip_ci": [
+    0.4942992540708194,
+    0.5657935612855923
+   ],
+   "missed_dwp_per_decision": 0.005922583233052547,
+   "missed_dwp_pp_per_game_40dec": 23.69033293221019,
+   "missed_dwp_share": 0.1608626990832515,
+   "retained_dividend_share": 0.8391373009167485,
+   "missed_material_5pp_rate": 0.24295302013422818,
+   "concentration": 1.1756661164819617,
+   "n_forced": 745
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.48,
+   "coverage": 0.1815082230244685,
+   "in_class_flip_rate": 0.6850828729281768,
+   "in_class_flip_ci": [
+    0.654092168078348,
+    0.7145089170832468
+   ],
+   "missed_dwp_per_decision": 0.002154873646209386,
+   "missed_dwp_pp_per_game_40dec": 8.619494584837545,
+   "missed_dwp_share": 0.05852831058212904,
+   "retained_dividend_share": 0.941471689417871,
+   "missed_material_5pp_rate": 0.06850828729281767,
+   "concentration": 1.221759372702769,
+   "n_forced": 905
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.48,
+   "coverage": 0.1851183313277176,
+   "in_class_flip_rate": 0.6847237269772481,
+   "in_class_flip_ci": [
+    0.6540355106248334,
+    0.7138806467854513
+   ],
+   "missed_dwp_per_decision": 0.0023647212194143606,
+   "missed_dwp_pp_per_game_40dec": 9.458884877657441,
+   "missed_dwp_share": 0.06422795982191253,
+   "retained_dividend_share": 0.9357720401780875,
+   "missed_material_5pp_rate": 0.0780065005417118,
+   "concentration": 1.2271720403642628,
+   "n_forced": 923
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.48,
+   "coverage": 0.21540312876052947,
+   "in_class_flip_rate": 0.6629422718808193,
+   "in_class_flip_ci": [
+    0.6341347913065896,
+    0.6905882477744776
+   ],
+   "missed_dwp_per_decision": 0.0036806658644203765,
+   "missed_dwp_pp_per_game_40dec": 14.722663457681506,
+   "missed_dwp_share": 0.09997020254100962,
+   "retained_dividend_share": 0.9000297974589904,
+   "missed_material_5pp_rate": 0.1005586592178771,
+   "concentration": 1.2745398773006136,
+   "n_forced": 1074
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.45,
+   "coverage": 0.21720818291215402,
+   "in_class_flip_rate": 0.778393351800554,
+   "in_class_flip_ci": [
+    0.752697296811825,
+    0.8021213630554455
+   ],
+   "missed_dwp_per_decision": 0.001552486963497794,
+   "missed_dwp_pp_per_game_40dec": 6.209947853991176,
+   "missed_dwp_share": 0.04216694530286911,
+   "retained_dividend_share": 0.9578330546971309,
+   "missed_material_5pp_rate": 0.024007386888273315,
+   "concentration": 1.277478862413528,
+   "n_forced": 1083
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.48,
+   "coverage": 0.2190132370637786,
+   "in_class_flip_rate": 0.663003663003663,
+   "in_class_flip_ci": [
+    0.634439634569593,
+    0.690424834893877
+   ],
+   "missed_dwp_per_decision": 0.003890513437625351,
+   "missed_dwp_pp_per_game_40dec": 15.562053750501404,
+   "missed_dwp_share": 0.1056698517807931,
+   "retained_dividend_share": 0.8943301482192069,
+   "missed_material_5pp_rate": 0.10805860805860806,
+   "concentration": 1.280431432973806,
+   "n_forced": 1092
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.45,
+   "coverage": 0.2222222222222222,
+   "in_class_flip_rate": 0.7734657039711191,
+   "in_class_flip_ci": [
+    0.7478977689107369,
+    0.7971438988951809
+   ],
+   "missed_dwp_per_decision": 0.0018047934215804251,
+   "missed_dwp_pp_per_game_40dec": 7.2191736863217,
+   "missed_dwp_share": 0.04901981612734355,
+   "retained_dividend_share": 0.9509801838726565,
+   "missed_material_5pp_rate": 0.03429602888086643,
+   "concentration": 1.2857142857142856,
+   "n_forced": 1108
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 1.01,
+   "coverage": 0.23746490172482954,
+   "in_class_flip_rate": 0.5591216216216216,
+   "in_class_flip_ci": [
+    0.5306946676360044,
+    0.5871661649867964
+   ],
+   "missed_dwp_per_decision": 0.008731448054552749,
+   "missed_dwp_pp_per_game_40dec": 34.925792218210994,
+   "missed_dwp_share": 0.23715399947813592,
+   "retained_dividend_share": 0.762846000521864,
+   "missed_material_5pp_rate": 0.2170608108108108,
+   "concentration": 1.3114150447133088,
+   "n_forced": 1184
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 1.01,
+   "coverage": 0.24007220216606498,
+   "in_class_flip_rate": 0.5605680868838764,
+   "in_class_flip_ci": [
+    0.5323016660619098,
+    0.5884469822194289
+   ],
+   "missed_dwp_per_decision": 0.008870016044925794,
+   "missed_dwp_pp_per_game_40dec": 35.48006417970318,
+   "missed_dwp_share": 0.24091763099850905,
+   "retained_dividend_share": 0.759082369001491,
+   "missed_material_5pp_rate": 0.22055137844611528,
+   "concentration": 1.3159144893111638,
+   "n_forced": 1197
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.48,
+   "coverage": 0.2669474528680305,
+   "in_class_flip_rate": 0.6461307287753568,
+   "in_class_flip_ci": [
+    0.6200546311058689,
+    0.6713657141995216
+   ],
+   "missed_dwp_per_decision": 0.0060250501403931005,
+   "missed_dwp_pp_per_game_40dec": 24.1002005615724,
+   "missed_dwp_share": 0.16364579264781745,
+   "retained_dividend_share": 0.8363542073521826,
+   "missed_material_5pp_rate": 0.13298271975957926,
+   "concentration": 1.364158686730506,
+   "n_forced": 1331
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.48,
+   "coverage": 0.2705575611712796,
+   "in_class_flip_rate": 0.6464047442550037,
+   "in_class_flip_ci": [
+    0.6205092125857257,
+    0.6714687987350381
+   ],
+   "missed_dwp_per_decision": 0.006234897713598074,
+   "missed_dwp_pp_per_game_40dec": 24.939590854392296,
+   "missed_dwp_share": 0.16934544188760092,
+   "retained_dividend_share": 0.8306545581123991,
+   "missed_material_5pp_rate": 0.13862120088954782,
+   "concentration": 1.3709100907341216,
+   "n_forced": 1349
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.45,
+   "coverage": 0.27095868431608505,
+   "in_class_flip_rate": 0.7157660991857883,
+   "in_class_flip_ci": [
+    0.6911285968225546,
+    0.7391800089952768
+   ],
+   "missed_dwp_per_decision": 0.0033433212996389896,
+   "missed_dwp_pp_per_game_40dec": 13.373285198555958,
+   "missed_dwp_share": 0.09080762008730058,
+   "retained_dividend_share": 0.9091923799126994,
+   "missed_material_5pp_rate": 0.05995558845299778,
+   "concentration": 1.3716643741403027,
+   "n_forced": 1351
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.45,
+   "coverage": 0.2743682310469314,
+   "in_class_flip_rate": 0.7156432748538012,
+   "in_class_flip_ci": [
+    0.6911600239509844,
+    0.7389187839813599
+   ],
+   "missed_dwp_per_decision": 0.003553168872843963,
+   "missed_dwp_pp_per_game_40dec": 14.212675491375853,
+   "missed_dwp_share": 0.09650726932708405,
+   "retained_dividend_share": 0.9034927306729159,
+   "missed_material_5pp_rate": 0.06652046783625731,
+   "concentration": 1.3781094527363185,
+   "n_forced": 1368
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 1.01,
+   "coverage": 0.29663056558363415,
+   "in_class_flip_rate": 0.5807978363759296,
+   "in_class_flip_ci": [
+    0.5554726548311444,
+    0.6057043717642787
+   ],
+   "missed_dwp_per_decision": 0.010863457681508223,
+   "missed_dwp_pp_per_game_40dec": 43.4538307260329,
+   "missed_dwp_share": 0.29506130268825376,
+   "retained_dividend_share": 0.7049386973117462,
+   "missed_material_5pp_rate": 0.22041920216362407,
+   "concentration": 1.421727972626176,
+   "n_forced": 1479
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 1.01,
+   "coverage": 0.2988367428800642,
+   "in_class_flip_rate": 0.5812080536912752,
+   "in_class_flip_ci": [
+    0.555979413335311,
+    0.6060190207690813
+   ],
+   "missed_dwp_per_decision": 0.010957480946650621,
+   "missed_dwp_pp_per_game_40dec": 43.829923786602485,
+   "missed_dwp_share": 0.29761505931982263,
+   "retained_dividend_share": 0.7023849406801774,
+   "missed_material_5pp_rate": 0.2221476510067114,
+   "concentration": 1.4262013729977119,
+   "n_forced": 1490
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.45,
+   "coverage": 0.3036502206177296,
+   "in_class_flip_rate": 0.6968295904887715,
+   "in_class_flip_ci": [
+    0.673202770962793,
+    0.7194600734341454
+   ],
+   "missed_dwp_per_decision": 0.004865202567188126,
+   "missed_dwp_pp_per_game_40dec": 19.460810268752503,
+   "missed_dwp_share": 0.1321432871009687,
+   "retained_dividend_share": 0.8678567128990313,
+   "missed_material_5pp_rate": 0.08388375165125496,
+   "concentration": 1.4360599078341014,
+   "n_forced": 1514
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.45,
+   "coverage": 0.30705976734857604,
+   "in_class_flip_rate": 0.6969301110385369,
+   "in_class_flip_ci": [
+    0.6734392089428624,
+    0.719435208847221
+   ],
+   "missed_dwp_per_decision": 0.005075050140393101,
+   "missed_dwp_pp_per_game_40dec": 20.300200561572407,
+   "missed_dwp_share": 0.1378429363407522,
+   "retained_dividend_share": 0.8621570636592478,
+   "missed_material_5pp_rate": 0.08948399738732854,
+   "concentration": 1.4431259044862517,
+   "n_forced": 1531
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.4,
+   "coverage": 0.34657039711191334,
+   "in_class_flip_rate": 0.7528935185185185,
+   "in_class_flip_ci": [
+    0.7320100822438084,
+    0.7726550095290189
+   ],
+   "missed_dwp_per_decision": 0.00419775371038909,
+   "missed_dwp_pp_per_game_40dec": 16.79101484155636,
+   "missed_dwp_share": 0.11401477452802078,
+   "retained_dividend_share": 0.8859852254719792,
+   "missed_material_5pp_rate": 0.056712962962962965,
+   "concentration": 1.530386740331492,
+   "n_forced": 1728
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.4,
+   "coverage": 0.35038106698756516,
+   "in_class_flip_rate": 0.7510017172295363,
+   "in_class_flip_ci": [
+    0.7301876097322992,
+    0.7707143564992547
+   ],
+   "missed_dwp_per_decision": 0.004432190132370637,
+   "missed_dwp_pp_per_game_40dec": 17.72876052948255,
+   "missed_dwp_share": 0.12038227906437067,
+   "retained_dividend_share": 0.8796177209356293,
+   "missed_material_5pp_rate": 0.06239267315397825,
+   "concentration": 1.5393640012349488,
+   "n_forced": 1747
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.45,
+   "coverage": 0.3527878058563979,
+   "in_class_flip_rate": 0.6776577600909608,
+   "in_class_flip_ci": [
+    0.6554492571157404,
+    0.6990919563432567
+   ],
+   "missed_dwp_per_decision": 0.007201143200962695,
+   "missed_dwp_pp_per_game_40dec": 28.804572803850782,
+   "missed_dwp_share": 0.1955895402747794,
+   "retained_dividend_share": 0.8044104597252206,
+   "missed_material_5pp_rate": 0.1114269471290506,
+   "concentration": 1.5450883173225907,
+   "n_forced": 1759
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.48,
+   "coverage": 0.35298836742880063,
+   "in_class_flip_rate": 0.6329545454545454,
+   "in_class_flip_ci": [
+    0.61016881103759,
+    0.6551611369577401
+   ],
+   "missed_dwp_per_decision": 0.009005455274769356,
+   "missed_dwp_pp_per_game_40dec": 36.02182109907743,
+   "missed_dwp_share": 0.24459628256271224,
+   "retained_dividend_share": 0.7554037174372877,
+   "missed_material_5pp_rate": 0.14886363636363636,
+   "concentration": 1.545567265964042,
+   "n_forced": 1760
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.48,
+   "coverage": 0.3553951062976334,
+   "in_class_flip_rate": 0.6337471783295711,
+   "in_class_flip_ci": [
+    0.6110480135356324,
+    0.6558676843509357
+   ],
+   "missed_dwp_per_decision": 0.009142559165663859,
+   "missed_dwp_pp_per_game_40dec": 36.57023666265544,
+   "missed_dwp_share": 0.24832014782154427,
+   "retained_dividend_share": 0.7516798521784558,
+   "missed_material_5pp_rate": 0.1518058690744921,
+   "concentration": 1.5513378967019291,
+   "n_forced": 1772
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.45,
+   "coverage": 0.3561973525872443,
+   "in_class_flip_rate": 0.6779279279279279,
+   "in_class_flip_ci": [
+    0.655831798930362,
+    0.6992559796674637
+   ],
+   "missed_dwp_per_decision": 0.007410990774167669,
+   "missed_dwp_pp_per_game_40dec": 29.643963096670678,
+   "missed_dwp_share": 0.2012891895145629,
+   "retained_dividend_share": 0.7987108104854371,
+   "missed_material_5pp_rate": 0.11599099099099099,
+   "concentration": 1.5532710280373832,
+   "n_forced": 1776
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 1.01,
+   "coverage": 0.3786602486963498,
+   "in_class_flip_rate": 0.6011652542372882,
+   "in_class_flip_ci": [
+    0.5788937086923756,
+    0.6230259446232087
+   ],
+   "missed_dwp_per_decision": 0.013951383874849578,
+   "missed_dwp_pp_per_game_40dec": 55.8055354993983,
+   "missed_dwp_share": 0.3789321614815275,
+   "retained_dividend_share": 0.6210678385184725,
+   "missed_material_5pp_rate": 0.22351694915254236,
+   "concentration": 1.6094254357650095,
+   "n_forced": 1888
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 1.01,
+   "coverage": 0.38066586442037703,
+   "in_class_flip_rate": 0.6016859852476291,
+   "in_class_flip_ci": [
+    0.5794774002266803,
+    0.6234837717237072
+   ],
+   "missed_dwp_per_decision": 0.014045407139991977,
+   "missed_dwp_pp_per_game_40dec": 56.181628559967905,
+   "missed_dwp_share": 0.38148591811309635,
+   "retained_dividend_share": 0.6185140818869037,
+   "missed_material_5pp_rate": 0.2249736564805058,
+   "concentration": 1.614637305699482,
+   "n_forced": 1898
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.4,
+   "coverage": 0.39310068190934616,
+   "in_class_flip_rate": 0.7168367346938775,
+   "in_class_flip_ci": [
+    0.6964815335484723,
+    0.7363435985803103
+   ],
+   "missed_dwp_per_decision": 0.005932190132370637,
+   "missed_dwp_pp_per_game_40dec": 23.72876052948255,
+   "missed_dwp_share": 0.16112363112815795,
+   "retained_dividend_share": 0.838876368871842,
+   "missed_material_5pp_rate": 0.07755102040816327,
+   "concentration": 1.647719762062128,
+   "n_forced": 1960
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.4,
+   "coverage": 0.39570798235058163,
+   "in_class_flip_rate": 0.7166751140395337,
+   "in_class_flip_ci": [
+    0.6963852687163523,
+    0.7361228290492956
+   ],
+   "missed_dwp_per_decision": 0.006124167669474529,
+   "missed_dwp_pp_per_game_40dec": 24.496670677898113,
+   "missed_dwp_share": 0.16633791407981688,
+   "retained_dividend_share": 0.8336620859201831,
+   "missed_material_5pp_rate": 0.08160162189559048,
+   "concentration": 1.654829074012612,
+   "n_forced": 1973
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.48,
+   "coverage": 0.40894504612916166,
+   "in_class_flip_rate": 0.636096125551741,
+   "in_class_flip_ci": [
+    0.6149748233196008,
+    0.6567055654095104
+   ],
+   "missed_dwp_per_decision": 0.011118692338547934,
+   "missed_dwp_pp_per_game_40dec": 44.474769354191736,
+   "missed_dwp_share": 0.3019937060358103,
+   "retained_dividend_share": 0.6980062939641897,
+   "missed_material_5pp_rate": 0.16184404119666504,
+   "concentration": 1.6918900576857823,
+   "n_forced": 2039
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.48,
+   "coverage": 0.4109506618531889,
+   "in_class_flip_rate": 0.6364080039043436,
+   "in_class_flip_ci": [
+    0.6153420688194895,
+    0.6569634027765656
+   ],
+   "missed_dwp_per_decision": 0.011211251504211792,
+   "missed_dwp_pp_per_game_40dec": 44.845006016847165,
+   "missed_dwp_share": 0.30450769640583814,
+   "retained_dividend_share": 0.6954923035941618,
+   "missed_material_5pp_rate": 0.16349438750610054,
+   "concentration": 1.6976506639427986,
+   "n_forced": 2049
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.4,
+   "coverage": 0.42057761732851984,
+   "in_class_flip_rate": 0.703862660944206,
+   "in_class_flip_ci": [
+    0.6839631655190135,
+    0.7230165896419658
+   ],
+   "missed_dwp_per_decision": 0.007434155635780184,
+   "missed_dwp_pp_per_game_40dec": 29.73662254312074,
+   "missed_dwp_share": 0.2019183680362058,
+   "retained_dividend_share": 0.7980816319637942,
+   "missed_material_5pp_rate": 0.0944206008583691,
+   "concentration": 1.7258566978193146,
+   "n_forced": 2097
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.4,
+   "coverage": 0.4231849177697553,
+   "in_class_flip_rate": 0.7037914691943128,
+   "in_class_flip_ci": [
+    0.683953202033957,
+    0.7228890135795497
+   ],
+   "missed_dwp_per_decision": 0.007626133172884075,
+   "missed_dwp_pp_per_game_40dec": 30.5045326915363,
+   "missed_dwp_share": 0.20713265098786474,
+   "retained_dividend_share": 0.7928673490121353,
+   "missed_material_5pp_rate": 0.0981042654028436,
+   "concentration": 1.7336578581363005,
+   "n_forced": 2110
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.45,
+   "coverage": 0.4318090653830726,
+   "in_class_flip_rate": 0.6590803529958198,
+   "in_class_flip_ci": [
+    0.6387898396229105,
+    0.678804183044308
+   ],
+   "missed_dwp_per_decision": 0.01010371038908945,
+   "missed_dwp_pp_per_game_40dec": 40.4148415563578,
+   "missed_dwp_share": 0.27442588140829216,
+   "retained_dividend_share": 0.7255741185917078,
+   "missed_material_5pp_rate": 0.13005109150023222,
+   "concentration": 1.7599717613836923,
+   "n_forced": 2153
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.45,
+   "coverage": 0.4340152426795026,
+   "in_class_flip_rate": 0.6598890942698706,
+   "in_class_flip_ci": [
+    0.6396608564111037,
+    0.6795506579357011
+   ],
+   "missed_dwp_per_decision": 0.010240814279983955,
+   "missed_dwp_pp_per_game_40dec": 40.963257119935825,
+   "missed_dwp_share": 0.2781497466671243,
+   "retained_dividend_share": 0.7218502533328757,
+   "missed_material_5pp_rate": 0.13262476894639558,
+   "concentration": 1.7668320340184265,
+   "n_forced": 2164
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.4,
+   "coverage": 0.46129161652627354,
+   "in_class_flip_rate": 0.6904347826086956,
+   "in_class_flip_ci": [
+    0.6712360803023462,
+    0.7089983941511059
+   ],
+   "missed_dwp_per_decision": 0.00966476133172884,
+   "missed_dwp_pp_per_game_40dec": 38.65904532691536,
+   "missed_dwp_share": 0.26250362935229477,
+   "retained_dividend_share": 0.7374963706477052,
+   "missed_material_5pp_rate": 0.11434782608695652,
+   "concentration": 1.8562918838421443,
+   "n_forced": 2300
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.4,
+   "coverage": 0.463898916967509,
+   "in_class_flip_rate": 0.6904453091223519,
+   "in_class_flip_ci": [
+    0.6713016087540066,
+    0.7089574473679138
+   ],
+   "missed_dwp_per_decision": 0.009856738868832733,
+   "missed_dwp_pp_per_game_40dec": 39.426955475330935,
+   "missed_dwp_share": 0.2677179123039537,
+   "retained_dividend_share": 0.7322820876960463,
+   "missed_material_5pp_rate": 0.11759619541720709,
+   "concentration": 1.865319865319865,
+   "n_forced": 2313
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.35,
+   "coverage": 0.46971520256718813,
+   "in_class_flip_rate": 0.7305721605465414,
+   "in_class_flip_ci": [
+    0.7122366707474204,
+    0.7481524706166001
+   ],
+   "missed_dwp_per_decision": 0.007829502607300443,
+   "missed_dwp_pp_per_game_40dec": 31.31801042920177,
+   "missed_dwp_share": 0.21265634813891177,
+   "retained_dividend_share": 0.7873436518610882,
+   "missed_material_5pp_rate": 0.09436379163108455,
+   "concentration": 1.8857791225416036,
+   "n_forced": 2342
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.35,
+   "coverage": 0.4733253108704372,
+   "in_class_flip_rate": 0.7296610169491525,
+   "in_class_flip_ci": [
+    0.7113794098740736,
+    0.7471961562721521
+   ],
+   "missed_dwp_per_decision": 0.00806393902928199,
+   "missed_dwp_pp_per_game_40dec": 32.25575611712796,
+   "missed_dwp_share": 0.21902385267526164,
+   "retained_dividend_share": 0.7809761473247383,
+   "missed_material_5pp_rate": 0.09830508474576272,
+   "concentration": 1.8987052551408985,
+   "n_forced": 2360
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.45,
+   "coverage": 0.4831528279181709,
+   "in_class_flip_rate": 0.6575342465753424,
+   "in_class_flip_ci": [
+    0.6383470240673478,
+    0.6762198335332504
+   ],
+   "missed_dwp_per_decision": 0.012185158443642199,
+   "missed_dwp_pp_per_game_40dec": 48.74063377456879,
+   "missed_dwp_share": 0.33095988673697124,
+   "retained_dividend_share": 0.6690401132630288,
+   "missed_material_5pp_rate": 0.14404317144043172,
+   "concentration": 1.9348079161816067,
+   "n_forced": 2409
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.48,
+   "coverage": 0.4839550742077818,
+   "in_class_flip_rate": 0.64235391628678,
+   "in_class_flip_ci": [
+    0.6230169538938345,
+    0.6612383320131939
+   ],
+   "missed_dwp_per_decision": 0.014196931407942238,
+   "missed_dwp_pp_per_game_40dec": 56.78772563176896,
+   "missed_dwp_share": 0.38560145381094246,
+   "retained_dividend_share": 0.6143985461890575,
+   "missed_material_5pp_rate": 0.17654372150849565,
+   "concentration": 1.9378157792460164,
+   "n_forced": 2413
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.45,
+   "coverage": 0.48495788206979545,
+   "in_class_flip_rate": 0.6579818031430935,
+   "in_class_flip_ci": [
+    0.6388359441655124,
+    0.6766264708826065
+   ],
+   "missed_dwp_per_decision": 0.012277717609306057,
+   "missed_dwp_pp_per_game_40dec": 49.110870437224236,
+   "missed_dwp_share": 0.33347387710699905,
+   "retained_dividend_share": 0.666526122893001,
+   "missed_material_5pp_rate": 0.14557485525227462,
+   "concentration": 1.9415887850467293,
+   "n_forced": 2418
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.48,
+   "coverage": 0.48576012835940635,
+   "in_class_flip_rate": 0.6428571428571429,
+   "in_class_flip_ci": [
+    0.6235616609857363,
+    0.6617001631993219
+   ],
+   "missed_dwp_per_decision": 0.014289490573606097,
+   "missed_dwp_pp_per_game_40dec": 57.15796229442439,
+   "missed_dwp_share": 0.38811544418097027,
+   "retained_dividend_share": 0.6118845558190298,
+   "missed_material_5pp_rate": 0.17795210569777042,
+   "concentration": 1.9446177847113888,
+   "n_forced": 2422
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=1.01",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 1.01,
+   "coverage": 0.48957079823505817,
+   "in_class_flip_rate": 0.6333469889389595,
+   "in_class_flip_ci": [
+    0.6140342951697244,
+    0.6522406242360972
+   ],
+   "missed_dwp_per_decision": 0.018392238267148017,
+   "missed_dwp_pp_per_game_40dec": 73.56895306859207,
+   "missed_dwp_share": 0.49954976965529196,
+   "retained_dividend_share": 0.500450230344708,
+   "missed_material_5pp_rate": 0.2290045063498566,
+   "concentration": 1.9591355599214144,
+   "n_forced": 2441
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=1.01",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 1.01,
+   "coverage": 0.4913758523866827,
+   "in_class_flip_rate": 0.6338775510204082,
+   "in_class_flip_ci": [
+    0.6146056760420437,
+    0.6527302432772799
+   ],
+   "missed_dwp_per_decision": 0.018484797432811874,
+   "missed_dwp_pp_per_game_40dec": 73.9391897312475,
+   "missed_dwp_share": 0.5020637600253197,
+   "retained_dividend_share": 0.4979362399746803,
+   "missed_material_5pp_rate": 0.23020408163265307,
+   "concentration": 1.9660883280757098,
+   "n_forced": 2450
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.35,
+   "coverage": 0.5082230244685119,
+   "in_class_flip_rate": 0.7099447513812155,
+   "in_class_flip_ci": [
+    0.6919687372401576,
+    0.7272851673376538
+   ],
+   "missed_dwp_per_decision": 0.009400120336943442,
+   "missed_dwp_pp_per_game_40dec": 37.600481347773766,
+   "missed_dwp_share": 0.2553157413929195,
+   "retained_dividend_share": 0.7446842586070805,
+   "missed_material_5pp_rate": 0.1069455406471981,
+   "concentration": 2.033442088091354,
+   "n_forced": 2534
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.35,
+   "coverage": 0.5108303249097473,
+   "in_class_flip_rate": 0.7098547310561445,
+   "in_class_flip_ci": [
+    0.691923927271985,
+    0.7271534470345968
+   ],
+   "missed_dwp_per_decision": 0.009592097874047332,
+   "missed_dwp_pp_per_game_40dec": 38.368391496189325,
+   "missed_dwp_share": 0.26053002434457845,
+   "retained_dividend_share": 0.7394699756554215,
+   "missed_material_5pp_rate": 0.1099332548095799,
+   "concentration": 2.0442804428044283,
+   "n_forced": 2547
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.35,
+   "coverage": 0.5296831127156036,
+   "in_class_flip_rate": 0.701249526694434,
+   "in_class_flip_ci": [
+    0.6835107350536718,
+    0.7184036933945197
+   ],
+   "missed_dwp_per_decision": 0.01062218210990774,
+   "missed_dwp_pp_per_game_40dec": 42.48872843963096,
+   "missed_dwp_share": 0.28850804068360925,
+   "retained_dividend_share": 0.7114919593163908,
+   "missed_material_5pp_rate": 0.11662249148049982,
+   "concentration": 2.1262260127931767,
+   "n_forced": 2641
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.4,
+   "coverage": 0.5298836742880064,
+   "in_class_flip_rate": 0.6752460257380772,
+   "in_class_flip_ci": [
+    0.6571461681218319,
+    0.6928369903559849
+   ],
+   "missed_dwp_per_decision": 0.012359165663858805,
+   "missed_dwp_pp_per_game_40dec": 49.436662655435214,
+   "missed_dwp_share": 0.3356860796839617,
+   "retained_dividend_share": 0.6643139203160383,
+   "missed_material_5pp_rate": 0.12944738834216502,
+   "concentration": 2.1271331058020477,
+   "n_forced": 2642
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.4,
+   "coverage": 0.5312876052948255,
+   "in_class_flip_rate": 0.6757266893167233,
+   "in_class_flip_ci": [
+    0.6576572167569539,
+    0.6932872195787851
+   ],
+   "missed_dwp_per_decision": 0.012478399518652225,
+   "missed_dwp_pp_per_game_40dec": 49.9135980746089,
+   "missed_dwp_share": 0.33892457865466924,
+   "retained_dividend_share": 0.6610754213453307,
+   "missed_material_5pp_rate": 0.13137032842582105,
+   "concentration": 2.1335044929396663,
+   "n_forced": 2649
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.35,
+   "coverage": 0.5322904131568391,
+   "in_class_flip_rate": 0.70120572720422,
+   "in_class_flip_ci": [
+    0.6835104289671208,
+    0.7183193866245985
+   ],
+   "missed_dwp_per_decision": 0.010814159647011634,
+   "missed_dwp_pp_per_game_40dec": 43.256638588046535,
+   "missed_dwp_share": 0.2937223236352683,
+   "retained_dividend_share": 0.7062776763647317,
+   "missed_material_5pp_rate": 0.11944235116804823,
+   "concentration": 2.1380789022298456,
+   "n_forced": 2654
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.45,
+   "coverage": 0.549338146811071,
+   "in_class_flip_rate": 0.6589996349032493,
+   "in_class_flip_ci": [
+    0.6410346409708826,
+    0.6765192418344531
+   ],
+   "missed_dwp_per_decision": 0.01521774969915764,
+   "missed_dwp_pp_per_game_40dec": 60.870998796630566,
+   "missed_dwp_share": 0.4133277987413161,
+   "retained_dividend_share": 0.5866722012586839,
+   "missed_material_5pp_rate": 0.16137276378240234,
+   "concentration": 2.218958611481976,
+   "n_forced": 2739
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.45,
+   "coverage": 0.5509426393902929,
+   "in_class_flip_rate": 0.6596286858390972,
+   "in_class_flip_ci": [
+    0.6416971733955417,
+    0.6771143495943679
+   ],
+   "missed_dwp_per_decision": 0.015310308864821499,
+   "missed_dwp_pp_per_game_40dec": 61.24123545928599,
+   "missed_dwp_share": 0.4158417891113439,
+   "retained_dividend_share": 0.584158210888656,
+   "missed_material_5pp_rate": 0.1627229705132872,
+   "concentration": 2.226887003126396,
+   "n_forced": 2747
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.35,
+   "coverage": 0.5623746490172483,
+   "in_class_flip_rate": 0.692225392296719,
+   "in_class_flip_ci": [
+    0.6748873667364073,
+    0.7090374244626405
+   ],
+   "missed_dwp_per_decision": 0.012618612113918973,
+   "missed_dwp_pp_per_game_40dec": 50.47444845567589,
+   "missed_dwp_share": 0.34273287912636247,
+   "retained_dividend_share": 0.6572671208736376,
+   "missed_material_5pp_rate": 0.13052781740370897,
+   "concentration": 2.2850595783684695,
+   "n_forced": 2804
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.35,
+   "coverage": 0.5649819494584838,
+   "in_class_flip_rate": 0.6922257720979765,
+   "in_class_flip_ci": [
+    0.6749283642259246,
+    0.7089996096099688
+   ],
+   "missed_dwp_per_decision": 0.012810589651022863,
+   "missed_dwp_pp_per_game_40dec": 51.24235860409145,
+   "missed_dwp_share": 0.3479471620780214,
+   "retained_dividend_share": 0.6520528379219785,
+   "missed_material_5pp_rate": 0.13312034078807242,
+   "concentration": 2.298755186721992,
+   "n_forced": 2817
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.4,
+   "coverage": 0.5728038507821901,
+   "in_class_flip_rate": 0.6726190476190477,
+   "in_class_flip_ci": [
+    0.65518687740931,
+    0.6895874625401474
+   ],
+   "missed_dwp_per_decision": 0.014305415162454874,
+   "missed_dwp_pp_per_game_40dec": 57.2216606498195,
+   "missed_dwp_share": 0.38854797036814304,
+   "retained_dividend_share": 0.611452029631857,
+   "missed_material_5pp_rate": 0.14250700280112044,
+   "concentration": 2.340845070422535,
+   "n_forced": 2856
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.4,
+   "coverage": 0.5738066586442038,
+   "in_class_flip_rate": 0.6728416637539322,
+   "in_class_flip_ci": [
+    0.6554276154610875,
+    0.689792169116182
+   ],
+   "missed_dwp_per_decision": 0.01438010429201765,
+   "missed_dwp_pp_per_game_40dec": 57.5204171680706,
+   "missed_dwp_share": 0.3905765944500463,
+   "retained_dividend_share": 0.6094234055499537,
+   "missed_material_5pp_rate": 0.1436560643131772,
+   "concentration": 2.3463529411764705,
+   "n_forced": 2861
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.3,
+   "coverage": 0.5784195748094665,
+   "in_class_flip_rate": 0.7125520110957004,
+   "in_class_flip_ci": [
+    0.6957602507480672,
+    0.7287782696472344
+   ],
+   "missed_dwp_per_decision": 0.01193533894905736,
+   "missed_dwp_pp_per_game_40dec": 47.74135579622944,
+   "missed_dwp_share": 0.3241745640827857,
+   "retained_dividend_share": 0.6758254359172142,
+   "missed_material_5pp_rate": 0.12274618585298197,
+   "concentration": 2.3720266412940054,
+   "n_forced": 2884
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.48,
+   "coverage": 0.5812274368231047,
+   "in_class_flip_rate": 0.660455486542443,
+   "in_class_flip_ci": [
+    0.6430115966082031,
+    0.6774745388169696
+   ],
+   "missed_dwp_per_decision": 0.01860810268752507,
+   "missed_dwp_pp_per_game_40dec": 74.43241075010027,
+   "missed_dwp_share": 0.5054128418877099,
+   "retained_dividend_share": 0.49458715811229015,
+   "missed_material_5pp_rate": 0.19392684610075914,
+   "concentration": 2.387931034482759,
+   "n_forced": 2898
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.3,
+   "coverage": 0.5816285599679102,
+   "in_class_flip_rate": 0.7120689655172414,
+   "in_class_flip_ci": [
+    0.6953167321206012,
+    0.7282600910780196
+   ],
+   "missed_dwp_per_decision": 0.01215447252306458,
+   "missed_dwp_pp_per_game_40dec": 48.61789009225832,
+   "missed_dwp_share": 0.3301264294745352,
+   "retained_dividend_share": 0.6698735705254648,
+   "missed_material_5pp_rate": 0.12551724137931033,
+   "concentration": 2.3902205177372964,
+   "n_forced": 2900
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.48,
+   "coverage": 0.5830324909747292,
+   "in_class_flip_rate": 0.6608187134502924,
+   "in_class_flip_ci": [
+    0.6434061349286658,
+    0.6778068091216048
+   ],
+   "missed_dwp_per_decision": 0.01870066185318893,
+   "missed_dwp_pp_per_game_40dec": 74.80264741275572,
+   "missed_dwp_share": 0.5079268322577377,
+   "retained_dividend_share": 0.4920731677422623,
+   "missed_material_5pp_rate": 0.19504643962848298,
+   "concentration": 2.398268398268398,
+   "n_forced": 2907
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.3,
+   "coverage": 0.6083032490974729,
+   "in_class_flip_rate": 0.7006264424662051,
+   "in_class_flip_ci": [
+    0.6840816523547053,
+    0.716663648289227
+   ],
+   "missed_dwp_per_decision": 0.01327334536702768,
+   "missed_dwp_pp_per_game_40dec": 53.09338146811072,
+   "missed_dwp_share": 0.36051602444154285,
+   "retained_dividend_share": 0.6394839755584572,
+   "missed_material_5pp_rate": 0.13155291790306628,
+   "concentration": 2.552995391705069,
+   "n_forced": 3033
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.3,
+   "coverage": 0.6105094263939029,
+   "in_class_flip_rate": 0.7007227332457293,
+   "in_class_flip_ci": [
+    0.6842096653531353,
+    0.716729806041966
+   ],
+   "missed_dwp_per_decision": 0.013450020056157242,
+   "missed_dwp_pp_per_game_40dec": 53.800080224628964,
+   "missed_dwp_share": 0.36531466824860126,
+   "retained_dividend_share": 0.6346853317513987,
+   "missed_material_5pp_rate": 0.13370565045992117,
+   "concentration": 2.56745623069001,
+   "n_forced": 3044
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.35,
+   "coverage": 0.6213397513036503,
+   "in_class_flip_rate": 0.6814073595868302,
+   "in_class_flip_ci": [
+    0.6647840304532202,
+    0.6975813462958698
+   ],
+   "missed_dwp_per_decision": 0.015148616125150423,
+   "missed_dwp_pp_per_game_40dec": 60.59446450060169,
+   "missed_dwp_share": 0.41145006855594546,
+   "retained_dividend_share": 0.5885499314440545,
+   "missed_material_5pp_rate": 0.14202711426726922,
+   "concentration": 2.640889830508475,
+   "n_forced": 3098
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.35,
+   "coverage": 0.6227436823104693,
+   "in_class_flip_rate": 0.6818035426731079,
+   "in_class_flip_ci": [
+    0.6652041276160581,
+    0.6979536479360962
+   ],
+   "missed_dwp_per_decision": 0.015267849979943843,
+   "missed_dwp_pp_per_game_40dec": 61.071399919775374,
+   "missed_dwp_share": 0.41468856752665295,
+   "retained_dividend_share": 0.585311432473347,
+   "missed_material_5pp_rate": 0.14363929146537843,
+   "concentration": 2.650717703349282,
+   "n_forced": 3105
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.3,
+   "coverage": 0.6253509827517048,
+   "in_class_flip_rate": 0.6953175112251443,
+   "in_class_flip_ci": [
+    0.6789293353316245,
+    0.7112249889620871
+   ],
+   "missed_dwp_per_decision": 0.01430820296831127,
+   "missed_dwp_pp_per_game_40dec": 57.23281187324508,
+   "missed_dwp_share": 0.38862368968806366,
+   "retained_dividend_share": 0.6113763103119363,
+   "missed_material_5pp_rate": 0.1375881975625401,
+   "concentration": 2.6691648822269807,
+   "n_forced": 3118
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.3,
+   "coverage": 0.6275571600481348,
+   "in_class_flip_rate": 0.6954298497922659,
+   "in_class_flip_ci": [
+    0.6790724279552579,
+    0.711307985787971
+   ],
+   "missed_dwp_per_decision": 0.014484877657440833,
+   "missed_dwp_pp_per_game_40dec": 57.93951062976333,
+   "missed_dwp_share": 0.39342233349512207,
+   "retained_dividend_share": 0.6065776665048779,
+   "missed_material_5pp_rate": 0.13966123362096516,
+   "concentration": 2.6849757673667205,
+   "n_forced": 3129
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.4,
+   "coverage": 0.629562775772162,
+   "in_class_flip_rate": 0.6702771583306786,
+   "in_class_flip_ci": [
+    0.6536316892264308,
+    0.6865063565471775
+   ],
+   "missed_dwp_per_decision": 0.017095868431608506,
+   "missed_dwp_pp_per_game_40dec": 68.38347372643402,
+   "missed_dwp_share": 0.4643391964055658,
+   "retained_dividend_share": 0.5356608035944341,
+   "missed_material_5pp_rate": 0.15801210576616756,
+   "concentration": 2.699512723335138,
+   "n_forced": 3139
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.4,
+   "coverage": 0.6305655836341757,
+   "in_class_flip_rate": 0.6704834605597965,
+   "in_class_flip_ci": [
+    0.6538537408126397,
+    0.6866970670806165
+   ],
+   "missed_dwp_per_decision": 0.017170557561171283,
+   "missed_dwp_pp_per_game_40dec": 68.68223024468513,
+   "missed_dwp_share": 0.46636782048746905,
+   "retained_dividend_share": 0.533632179512531,
+   "missed_material_5pp_rate": 0.15903307888040713,
+   "concentration": 2.7068403908794787,
+   "n_forced": 3144
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.45,
+   "coverage": 0.6357801845166466,
+   "in_class_flip_rate": 0.6706624605678233,
+   "in_class_flip_ci": [
+    0.6541038976385596,
+    0.6868078857346245
+   ],
+   "missed_dwp_per_decision": 0.019502687525070197,
+   "missed_dwp_pp_per_game_40dec": 78.01075010028079,
+   "missed_dwp_share": 0.5297105724326112,
+   "retained_dividend_share": 0.4702894275673888,
+   "missed_material_5pp_rate": 0.18201892744479495,
+   "concentration": 2.745594713656388,
+   "n_forced": 3170
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.45,
+   "coverage": 0.6373846770958684,
+   "in_class_flip_rate": 0.671176840780365,
+   "in_class_flip_ci": [
+    0.6546452420699354,
+    0.6872950983920159
+   ],
+   "missed_dwp_per_decision": 0.019595246690734057,
+   "missed_dwp_pp_per_game_40dec": 78.38098676293623,
+   "missed_dwp_share": 0.532224562802639,
+   "retained_dividend_share": 0.46777543719736103,
+   "missed_material_5pp_rate": 0.1831340465701699,
+   "concentration": 2.7577433628318584,
+   "n_forced": 3178
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.3,
+   "coverage": 0.6528279181708785,
+   "in_class_flip_rate": 0.688479262672811,
+   "in_class_flip_ci": [
+    0.6723549322289515,
+    0.7041592254398348
+   ],
+   "missed_dwp_per_decision": 0.016148656237464903,
+   "missed_dwp_pp_per_game_40dec": 64.59462494985961,
+   "missed_dwp_share": 0.4386120594184212,
+   "retained_dividend_share": 0.5613879405815788,
+   "missed_material_5pp_rate": 0.14746543778801843,
+   "concentration": 2.880415944540728,
+   "n_forced": 3255
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.3,
+   "coverage": 0.6550340954673085,
+   "in_class_flip_rate": 0.6886099203919167,
+   "in_class_flip_ci": [
+    0.6725147807226315,
+    0.704261880263026
+   ],
+   "missed_dwp_per_decision": 0.016325330926594463,
+   "missed_dwp_pp_per_game_40dec": 65.30132370637786,
+   "missed_dwp_share": 0.4434107032254796,
+   "retained_dividend_share": 0.5565892967745204,
+   "missed_material_5pp_rate": 0.1494182486221678,
+   "concentration": 2.898837209302326,
+   "n_forced": 3266
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.35,
+   "coverage": 0.6574408343361412,
+   "in_class_flip_rate": 0.6796827333740085,
+   "in_class_flip_ci": [
+    0.6635070607407515,
+    0.6954377463456113
+   ],
+   "missed_dwp_per_decision": 0.01693140794223827,
+   "missed_dwp_pp_per_game_40dec": 67.72563176895306,
+   "missed_dwp_share": 0.4598723012735554,
+   "retained_dividend_share": 0.5401276987264446,
+   "missed_material_5pp_rate": 0.1525320317266626,
+   "concentration": 2.9192037470725998,
+   "n_forced": 3278
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.35,
+   "coverage": 0.6584436421981549,
+   "in_class_flip_rate": 0.6798659762412428,
+   "in_class_flip_ci": [
+    0.6637049703231767,
+    0.6956065340705856
+   ],
+   "missed_dwp_per_decision": 0.017006097071801046,
+   "missed_dwp_pp_per_game_40dec": 68.02438828720418,
+   "missed_dwp_share": 0.46190092535545874,
+   "retained_dividend_share": 0.5380990746445413,
+   "missed_material_5pp_rate": 0.1535181236673774,
+   "concentration": 2.9277745155607753,
+   "n_forced": 3283
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.25,
+   "coverage": 0.6827115924588849,
+   "in_class_flip_rate": 0.699764982373678,
+   "in_class_flip_ci": [
+    0.6841486916276794,
+    0.7149308900054575
+   ],
+   "missed_dwp_per_decision": 0.016350842358604095,
+   "missed_dwp_pp_per_game_40dec": 65.40336943441638,
+   "missed_dwp_share": 0.4441036167142501,
+   "retained_dividend_share": 0.55589638328575,
+   "missed_material_5pp_rate": 0.14864864864864866,
+   "concentration": 3.151706700379267,
+   "n_forced": 3404
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.25,
+   "coverage": 0.6849177697553149,
+   "in_class_flip_rate": 0.6995607613469985,
+   "in_class_flip_ci": [
+    0.6839672319730018,
+    0.7147058156464022
+   ],
+   "missed_dwp_per_decision": 0.01651997593261131,
+   "missed_dwp_pp_per_game_40dec": 66.07990373044524,
+   "missed_dwp_share": 0.44869743703720644,
+   "retained_dividend_share": 0.5513025629627936,
+   "missed_material_5pp_rate": 0.15021961932650074,
+   "concentration": 3.173774665817951,
+   "n_forced": 3415
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.3,
+   "coverage": 0.6979542719614922,
+   "in_class_flip_rate": 0.6830459770114943,
+   "in_class_flip_ci": [
+    0.6673920510169699,
+    0.6982962167848729
+   ],
+   "missed_dwp_per_decision": 0.01834787404733253,
+   "missed_dwp_pp_per_game_40dec": 73.39149618933013,
+   "missed_dwp_share": 0.49834479745626664,
+   "retained_dividend_share": 0.5016552025437333,
+   "missed_material_5pp_rate": 0.15689655172413794,
+   "concentration": 3.310756972111554,
+   "n_forced": 3480
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.3,
+   "coverage": 0.6991576413959085,
+   "in_class_flip_rate": 0.6833046471600689,
+   "in_class_flip_ci": [
+    0.6676674496346519,
+    0.6985382830266816
+   ],
+   "missed_dwp_per_decision": 0.018452266345768152,
+   "missed_dwp_pp_per_game_40dec": 73.8090653830726,
+   "missed_dwp_share": 0.5011801863784757,
+   "retained_dividend_share": 0.4988198136215243,
+   "missed_material_5pp_rate": 0.15806081468732072,
+   "concentration": 3.324,
+   "n_forced": 3486
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.4,
+   "coverage": 0.7031688728439631,
+   "in_class_flip_rate": 0.6782658300057045,
+   "in_class_flip_ci": [
+    0.6626147718883301,
+    0.6935266562604502
+   ],
+   "missed_dwp_per_decision": 0.02086606498194946,
+   "missed_dwp_pp_per_game_40dec": 83.46425992779784,
+   "missed_dwp_share": 0.5667411330769772,
+   "retained_dividend_share": 0.43325886692302285,
+   "missed_material_5pp_rate": 0.1759840273816315,
+   "concentration": 3.368918918918919,
+   "n_forced": 3506
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.35,
+   "coverage": 0.703971119133574,
+   "in_class_flip_rate": 0.6780626780626781,
+   "in_class_flip_ci": [
+    0.6624183065815508,
+    0.6933177061061013
+   ],
+   "missed_dwp_per_decision": 0.019448957079823505,
+   "missed_dwp_pp_per_game_40dec": 77.79582831929402,
+   "missed_dwp_share": 0.5282512051083849,
+   "retained_dividend_share": 0.47174879489161514,
+   "missed_material_5pp_rate": 0.16467236467236468,
+   "concentration": 3.378048780487805,
+   "n_forced": 3510
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.4,
+   "coverage": 0.7041716807059767,
+   "in_class_flip_rate": 0.6784391911136428,
+   "in_class_flip_ci": [
+    0.6628014058653158,
+    0.6936869206641072
+   ],
+   "missed_dwp_per_decision": 0.020940754111512236,
+   "missed_dwp_pp_per_game_40dec": 83.76301644604894,
+   "missed_dwp_share": 0.5687697571588805,
+   "retained_dividend_share": 0.43123024284111955,
+   "missed_material_5pp_rate": 0.17687268584448876,
+   "concentration": 3.380338983050847,
+   "n_forced": 3511
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.25,
+   "coverage": 0.7043722422783795,
+   "in_class_flip_rate": 0.691628701594533,
+   "in_class_flip_ci": [
+    0.6761522458564435,
+    0.7066863894222335
+   ],
+   "missed_dwp_per_decision": 0.01731532290413157,
+   "missed_dwp_pp_per_game_40dec": 69.26129161652628,
+   "missed_dwp_share": 0.47029977769025577,
+   "retained_dividend_share": 0.5297002223097442,
+   "missed_material_5pp_rate": 0.1534738041002278,
+   "concentration": 3.3826322930800545,
+   "n_forced": 3512
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.35,
+   "coverage": 0.7049739269955877,
+   "in_class_flip_rate": 0.6782361308677098,
+   "in_class_flip_ci": [
+    0.6626050115379039,
+    0.6934780812617265
+   ],
+   "missed_dwp_per_decision": 0.01952364620938628,
+   "missed_dwp_pp_per_game_40dec": 78.09458483754513,
+   "missed_dwp_share": 0.530279829190288,
+   "retained_dividend_share": 0.46972017080971196,
+   "missed_material_5pp_rate": 0.1655761024182077,
+   "concentration": 3.3895309313392255,
+   "n_forced": 3515
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.25,
+   "coverage": 0.7055756117127958,
+   "in_class_flip_rate": 0.6918703808982376,
+   "in_class_flip_ci": [
+    0.676410341726793,
+    0.7069118383508117
+   ],
+   "missed_dwp_per_decision": 0.017441997593261132,
+   "missed_dwp_pp_per_game_40dec": 69.76799037304453,
+   "missed_dwp_share": 0.47374037642852124,
+   "retained_dividend_share": 0.5262596235714787,
+   "missed_material_5pp_rate": 0.15463331438317227,
+   "concentration": 3.396457765667575,
+   "n_forced": 3518
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.25,
+   "coverage": 0.7168070597673486,
+   "in_class_flip_rate": 0.6891438164521545,
+   "in_class_flip_ci": [
+    0.6737730496688482,
+    0.7041084082470083
+   ],
+   "missed_dwp_per_decision": 0.01816488166867228,
+   "missed_dwp_pp_per_game_40dec": 72.65952667468912,
+   "missed_dwp_share": 0.4933745595069419,
+   "retained_dividend_share": 0.5066254404930581,
+   "missed_material_5pp_rate": 0.1575265808617795,
+   "concentration": 3.531161473087819,
+   "n_forced": 3574
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.25,
+   "coverage": 0.7180104292017649,
+   "in_class_flip_rate": 0.6893854748603352,
+   "in_class_flip_ci": [
+    0.6740307252733376,
+    0.704334211391274
+   ],
+   "missed_dwp_per_decision": 0.018291556357801844,
+   "missed_dwp_pp_per_game_40dec": 73.16622543120738,
+   "missed_dwp_share": 0.4968151582452075,
+   "retained_dividend_share": 0.5031848417547925,
+   "missed_material_5pp_rate": 0.15865921787709497,
+   "concentration": 3.546230440967283,
+   "n_forced": 3580
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.3,
+   "coverage": 0.7248295226634577,
+   "in_class_flip_rate": 0.6828998339789707,
+   "in_class_flip_ci": [
+    0.6675405788316167,
+    0.6978706652648634
+   ],
+   "missed_dwp_per_decision": 0.019815142398716405,
+   "missed_dwp_pp_per_game_40dec": 79.26056959486561,
+   "missed_dwp_share": 0.5381971284401221,
+   "retained_dividend_share": 0.46180287155987787,
+   "missed_material_5pp_rate": 0.1640841173215274,
+   "concentration": 3.6341107871720117,
+   "n_forced": 3614
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.3,
+   "coverage": 0.7256317689530686,
+   "in_class_flip_rate": 0.6829740187949144,
+   "in_class_flip_ci": [
+    0.6676242260960368,
+    0.6979356592396444
+   ],
+   "missed_dwp_per_decision": 0.01987498997192138,
+   "missed_dwp_pp_per_game_40dec": 79.49995988768552,
+   "missed_dwp_share": 0.5398226424735268,
+   "retained_dividend_share": 0.46017735752647315,
+   "missed_material_5pp_rate": 0.16473189607517966,
+   "concentration": 3.644736842105263,
+   "n_forced": 3618
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.25,
+   "coverage": 0.7384677095868432,
+   "in_class_flip_rate": 0.6852254209668658,
+   "in_class_flip_ci": [
+    0.6700375814479104,
+    0.700027154920576
+   ],
+   "missed_dwp_per_decision": 0.01978602085840353,
+   "missed_dwp_pp_per_game_40dec": 79.14408343361413,
+   "missed_dwp_share": 0.537406161155771,
+   "retained_dividend_share": 0.462593838844229,
+   "missed_material_5pp_rate": 0.1645844649646931,
+   "concentration": 3.8236196319018405,
+   "n_forced": 3682
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.25,
+   "coverage": 0.7396710790212595,
+   "in_class_flip_rate": 0.6854663774403471,
+   "in_class_flip_ci": [
+    0.6702938915364243,
+    0.7002528838181847
+   ],
+   "missed_dwp_per_decision": 0.019912695547533093,
+   "missed_dwp_pp_per_game_40dec": 79.65078219013238,
+   "missed_dwp_share": 0.5408467598940365,
+   "retained_dividend_share": 0.4591532401059635,
+   "missed_material_5pp_rate": 0.16567245119305857,
+   "concentration": 3.8412942989214174,
+   "n_forced": 3688
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.35,
+   "coverage": 0.7601283594063377,
+   "in_class_flip_rate": 0.6831134564643799,
+   "in_class_flip_ci": [
+    0.6681216593263883,
+    0.6977344164781472
+   ],
+   "missed_dwp_per_decision": 0.022794283995186522,
+   "missed_dwp_pp_per_game_40dec": 91.17713598074609,
+   "missed_dwp_share": 0.6191132995265636,
+   "retained_dividend_share": 0.3808867004734364,
+   "missed_material_5pp_rate": 0.17994722955145118,
+   "concentration": 4.168896321070234,
+   "n_forced": 3790
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.35,
+   "coverage": 0.7611311672683514,
+   "in_class_flip_rate": 0.6832674571805006,
+   "in_class_flip_ci": [
+    0.6682874233487209,
+    0.6978768305122455
+   ],
+   "missed_dwp_per_decision": 0.0228689731247493,
+   "missed_dwp_pp_per_game_40dec": 91.47589249899718,
+   "missed_dwp_share": 0.6211419236084669,
+   "retained_dividend_share": 0.3788580763915331,
+   "missed_material_5pp_rate": 0.18076416337285903,
+   "concentration": 4.18639798488665,
+   "n_forced": 3795
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.3,
+   "coverage": 0.7611311672683514,
+   "in_class_flip_rate": 0.6816864295125165,
+   "in_class_flip_ci": [
+    0.6666883077596776,
+    0.6963170884116184
+   ],
+   "missed_dwp_per_decision": 0.021969314079422382,
+   "missed_dwp_pp_per_game_40dec": 87.87725631768953,
+   "missed_dwp_share": 0.5967063730064438,
+   "retained_dividend_share": 0.4032936269935562,
+   "missed_material_5pp_rate": 0.17417654808959157,
+   "concentration": 4.18639798488665,
+   "n_forced": 3795
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.3,
+   "coverage": 0.7619334135579623,
+   "in_class_flip_rate": 0.6817583574624901,
+   "in_class_flip_ci": [
+    0.6667690416745509,
+    0.6963804515885921
+   ],
+   "missed_dwp_per_decision": 0.022029161652627357,
+   "missed_dwp_pp_per_game_40dec": 88.11664661050942,
+   "missed_dwp_share": 0.5983318870398485,
+   "retained_dividend_share": 0.4016681129601515,
+   "missed_material_5pp_rate": 0.17478283758883917,
+   "concentration": 4.200505475989891,
+   "n_forced": 3799
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.25,
+   "coverage": 0.7693541917368633,
+   "in_class_flip_rate": 0.6824817518248175,
+   "in_class_flip_ci": [
+    0.6675739369289426,
+    0.6970244360872777
+   ],
+   "missed_dwp_per_decision": 0.021506277577216206,
+   "missed_dwp_pp_per_game_40dec": 86.02511030886483,
+   "missed_dwp_share": 0.5841298842365995,
+   "retained_dividend_share": 0.4158701157634005,
+   "missed_material_5pp_rate": 0.17153284671532848,
+   "concentration": 4.3356521739130445,
+   "n_forced": 3836
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.25,
+   "coverage": 0.7697553148816687,
+   "in_class_flip_rate": 0.68264721208963,
+   "in_class_flip_ci": [
+    0.667745210616665,
+    0.6971839421105062
+   ],
+   "missed_dwp_per_decision": 0.021560669875651823,
+   "missed_dwp_pp_per_game_40dec": 86.24267950260729,
+   "missed_dwp_share": 0.5856072280900155,
+   "retained_dividend_share": 0.41439277190998447,
+   "missed_material_5pp_rate": 0.1719645648775404,
+   "concentration": 4.343205574912893,
+   "n_forced": 3838
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.25,
+   "coverage": 0.7888086642599278,
+   "in_class_flip_rate": 0.6824307144673277,
+   "in_class_flip_ci": [
+    0.667709390356716,
+    0.6967960040183079
+   ],
+   "missed_dwp_per_decision": 0.022718070597673487,
+   "missed_dwp_pp_per_game_40dec": 90.87228239069395,
+   "missed_dwp_share": 0.617043274953193,
+   "retained_dividend_share": 0.382956725046807,
+   "missed_material_5pp_rate": 0.17747266717518434,
+   "concentration": 4.735042735042735,
+   "n_forced": 3933
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.25,
+   "coverage": 0.7890092258323306,
+   "in_class_flip_rate": 0.6825114387391967,
+   "in_class_flip_ci": [
+    0.6677929153545332,
+    0.6968738604751497
+   ],
+   "missed_dwp_per_decision": 0.022743561973525877,
+   "missed_dwp_pp_per_game_40dec": 90.97424789410351,
+   "missed_dwp_share": 0.6177356436986546,
+   "retained_dividend_share": 0.38226435630134536,
+   "missed_material_5pp_rate": 0.1776817488561261,
+   "concentration": 4.739543726235743,
+   "n_forced": 3934
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.3,
+   "coverage": 0.8078620136381869,
+   "in_class_flip_rate": 0.6864448857994042,
+   "in_class_flip_ci": [
+    0.671945440590419,
+    0.7005890359624298
+   ],
+   "missed_dwp_per_decision": 0.024927236261532294,
+   "missed_dwp_pp_per_game_40dec": 99.70894504612917,
+   "missed_dwp_share": 0.6770462056721942,
+   "retained_dividend_share": 0.3229537943278058,
+   "missed_material_5pp_rate": 0.18644488579940416,
+   "concentration": 5.204592901878914,
+   "n_forced": 4028
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.3,
+   "coverage": 0.8086642599277978,
+   "in_class_flip_rate": 0.6865079365079365,
+   "in_class_flip_ci": [
+    0.6720164886101574,
+    0.7006443214672253
+   ],
+   "missed_dwp_per_decision": 0.024987083834737266,
+   "missed_dwp_pp_per_game_40dec": 99.94833533894906,
+   "missed_dwp_share": 0.6786717197055989,
+   "retained_dividend_share": 0.3213282802944011,
+   "missed_material_5pp_rate": 0.18700396825396826,
+   "concentration": 5.226415094339621,
+   "n_forced": 4032
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.25,
+   "coverage": 0.8162855996791015,
+   "in_class_flip_rate": 0.682063882063882,
+   "in_class_flip_ci": [
+    0.6675911527277872,
+    0.696193241834829
+   ],
+   "missed_dwp_per_decision": 0.024553489771359807,
+   "missed_dwp_pp_per_game_40dec": 98.21395908543923,
+   "missed_dwp_share": 0.6668949141130462,
+   "retained_dividend_share": 0.33310508588695376,
+   "missed_material_5pp_rate": 0.185012285012285,
+   "concentration": 5.443231441048036,
+   "n_forced": 4070
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.25,
+   "coverage": 0.8164861612515042,
+   "in_class_flip_rate": 0.6821419798575289,
+   "in_class_flip_ci": [
+    0.6676719109857387,
+    0.6962686161748755
+   ],
+   "missed_dwp_per_decision": 0.024578981147212197,
+   "missed_dwp_pp_per_game_40dec": 98.31592458884879,
+   "missed_dwp_share": 0.6675872828585079,
+   "retained_dividend_share": 0.3324127171414921,
+   "missed_material_5pp_rate": 0.18521247850650946,
+   "concentration": 5.449180327868852,
+   "n_forced": 4071
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.25,
+   "coverage": 0.8509827517047733,
+   "in_class_flip_rate": 0.6851284468536413,
+   "in_class_flip_ci": [
+    0.6709906443116317,
+    0.6989313231099928
+   ],
+   "missed_dwp_per_decision": 0.026735258724428404,
+   "missed_dwp_pp_per_game_40dec": 106.94103489771362,
+   "missed_dwp_share": 0.7261537254722518,
+   "retained_dividend_share": 0.27384627452774823,
+   "missed_material_5pp_rate": 0.19231675701154843,
+   "concentration": 6.710632570659487,
+   "n_forced": 4243
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.25,
+   "coverage": 0.8511833132771761,
+   "in_class_flip_rate": 0.6852026390197926,
+   "in_class_flip_ci": [
+    0.6710673421841487,
+    0.6990029542223839
+   ],
+   "missed_dwp_per_decision": 0.026760750100280787,
+   "missed_dwp_pp_per_game_40dec": 107.04300040112315,
+   "missed_dwp_share": 0.7268460942177133,
+   "retained_dividend_share": 0.2731539057822867,
+   "missed_material_5pp_rate": 0.19250706880301602,
+   "concentration": 6.7196765498652296,
+   "n_forced": 4244
+  }
+ ],
+ "combined_pareto": [
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.48,
+   "coverage": 0.12494985960689932,
+   "in_class_flip_rate": 0.7800963081861958,
+   "in_class_flip_ci": [
+    0.7459102597971768,
+    0.8108492150047507
+   ],
+   "missed_dwp_per_decision": 0.000317729643000401,
+   "missed_dwp_pp_per_game_40dec": 1.2709185720016043,
+   "missed_dwp_share": 0.00862982349772052,
+   "retained_dividend_share": 0.9913701765022794,
+   "missed_material_5pp_rate": 0.009630818619582664,
+   "concentration": 1.1427916571166628,
+   "n_forced": 623
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.48",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.48,
+   "coverage": 0.1305655836341757,
+   "in_class_flip_rate": 0.7680491551459293,
+   "in_class_flip_ci": [
+    0.7341103159179174,
+    0.7988429967610571
+   ],
+   "missed_dwp_per_decision": 0.0005700361010830325,
+   "missed_dwp_pp_per_game_40dec": 2.28014440433213,
+   "missed_dwp_share": 0.015482694322194965,
+   "retained_dividend_share": 0.984517305677805,
+   "missed_material_5pp_rate": 0.027649769585253458,
+   "concentration": 1.150173010380623,
+   "n_forced": 651
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.45,
+   "coverage": 0.21720818291215402,
+   "in_class_flip_rate": 0.778393351800554,
+   "in_class_flip_ci": [
+    0.752697296811825,
+    0.8021213630554455
+   ],
+   "missed_dwp_per_decision": 0.001552486963497794,
+   "missed_dwp_pp_per_game_40dec": 6.209947853991176,
+   "missed_dwp_share": 0.04216694530286911,
+   "retained_dividend_share": 0.9578330546971309,
+   "missed_material_5pp_rate": 0.024007386888273315,
+   "concentration": 1.277478862413528,
+   "n_forced": 1083
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.45,
+   "coverage": 0.2222222222222222,
+   "in_class_flip_rate": 0.7734657039711191,
+   "in_class_flip_ci": [
+    0.7478977689107369,
+    0.7971438988951809
+   ],
+   "missed_dwp_per_decision": 0.0018047934215804251,
+   "missed_dwp_pp_per_game_40dec": 7.2191736863217,
+   "missed_dwp_share": 0.04901981612734355,
+   "retained_dividend_share": 0.9509801838726565,
+   "missed_material_5pp_rate": 0.03429602888086643,
+   "concentration": 1.2857142857142856,
+   "n_forced": 1108
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.45,
+   "coverage": 0.27095868431608505,
+   "in_class_flip_rate": 0.7157660991857883,
+   "in_class_flip_ci": [
+    0.6911285968225546,
+    0.7391800089952768
+   ],
+   "missed_dwp_per_decision": 0.0033433212996389896,
+   "missed_dwp_pp_per_game_40dec": 13.373285198555958,
+   "missed_dwp_share": 0.09080762008730058,
+   "retained_dividend_share": 0.9091923799126994,
+   "missed_material_5pp_rate": 0.05995558845299778,
+   "concentration": 1.3716643741403027,
+   "n_forced": 1351
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.45",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.45,
+   "coverage": 0.2743682310469314,
+   "in_class_flip_rate": 0.7156432748538012,
+   "in_class_flip_ci": [
+    0.6911600239509844,
+    0.7389187839813599
+   ],
+   "missed_dwp_per_decision": 0.003553168872843963,
+   "missed_dwp_pp_per_game_40dec": 14.212675491375853,
+   "missed_dwp_share": 0.09650726932708405,
+   "retained_dividend_share": 0.9034927306729159,
+   "missed_material_5pp_rate": 0.06652046783625731,
+   "concentration": 1.3781094527363185,
+   "n_forced": 1368
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.4,
+   "coverage": 0.34657039711191334,
+   "in_class_flip_rate": 0.7528935185185185,
+   "in_class_flip_ci": [
+    0.7320100822438084,
+    0.7726550095290189
+   ],
+   "missed_dwp_per_decision": 0.00419775371038909,
+   "missed_dwp_pp_per_game_40dec": 16.79101484155636,
+   "missed_dwp_share": 0.11401477452802078,
+   "retained_dividend_share": 0.8859852254719792,
+   "missed_material_5pp_rate": 0.056712962962962965,
+   "concentration": 1.530386740331492,
+   "n_forced": 1728
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.4,
+   "coverage": 0.35038106698756516,
+   "in_class_flip_rate": 0.7510017172295363,
+   "in_class_flip_ci": [
+    0.7301876097322992,
+    0.7707143564992547
+   ],
+   "missed_dwp_per_decision": 0.004432190132370637,
+   "missed_dwp_pp_per_game_40dec": 17.72876052948255,
+   "missed_dwp_share": 0.12038227906437067,
+   "retained_dividend_share": 0.8796177209356293,
+   "missed_material_5pp_rate": 0.06239267315397825,
+   "concentration": 1.5393640012349488,
+   "n_forced": 1747
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.4,
+   "coverage": 0.39310068190934616,
+   "in_class_flip_rate": 0.7168367346938775,
+   "in_class_flip_ci": [
+    0.6964815335484723,
+    0.7363435985803103
+   ],
+   "missed_dwp_per_decision": 0.005932190132370637,
+   "missed_dwp_pp_per_game_40dec": 23.72876052948255,
+   "missed_dwp_share": 0.16112363112815795,
+   "retained_dividend_share": 0.838876368871842,
+   "missed_material_5pp_rate": 0.07755102040816327,
+   "concentration": 1.647719762062128,
+   "n_forced": 1960
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.4,
+   "coverage": 0.39570798235058163,
+   "in_class_flip_rate": 0.7166751140395337,
+   "in_class_flip_ci": [
+    0.6963852687163523,
+    0.7361228290492956
+   ],
+   "missed_dwp_per_decision": 0.006124167669474529,
+   "missed_dwp_pp_per_game_40dec": 24.496670677898113,
+   "missed_dwp_share": 0.16633791407981688,
+   "retained_dividend_share": 0.8336620859201831,
+   "missed_material_5pp_rate": 0.08160162189559048,
+   "concentration": 1.654829074012612,
+   "n_forced": 1973
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.4,
+   "coverage": 0.42057761732851984,
+   "in_class_flip_rate": 0.703862660944206,
+   "in_class_flip_ci": [
+    0.6839631655190135,
+    0.7230165896419658
+   ],
+   "missed_dwp_per_decision": 0.007434155635780184,
+   "missed_dwp_pp_per_game_40dec": 29.73662254312074,
+   "missed_dwp_share": 0.2019183680362058,
+   "retained_dividend_share": 0.7980816319637942,
+   "missed_material_5pp_rate": 0.0944206008583691,
+   "concentration": 1.7258566978193146,
+   "n_forced": 2097
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.4",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.4,
+   "coverage": 0.4231849177697553,
+   "in_class_flip_rate": 0.7037914691943128,
+   "in_class_flip_ci": [
+    0.683953202033957,
+    0.7228890135795497
+   ],
+   "missed_dwp_per_decision": 0.007626133172884075,
+   "missed_dwp_pp_per_game_40dec": 30.5045326915363,
+   "missed_dwp_share": 0.20713265098786474,
+   "retained_dividend_share": 0.7928673490121353,
+   "missed_material_5pp_rate": 0.0981042654028436,
+   "concentration": 1.7336578581363005,
+   "n_forced": 2110
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.35,
+   "coverage": 0.46971520256718813,
+   "in_class_flip_rate": 0.7305721605465414,
+   "in_class_flip_ci": [
+    0.7122366707474204,
+    0.7481524706166001
+   ],
+   "missed_dwp_per_decision": 0.007829502607300443,
+   "missed_dwp_pp_per_game_40dec": 31.31801042920177,
+   "missed_dwp_share": 0.21265634813891177,
+   "retained_dividend_share": 0.7873436518610882,
+   "missed_material_5pp_rate": 0.09436379163108455,
+   "concentration": 1.8857791225416036,
+   "n_forced": 2342
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.35,
+   "coverage": 0.4733253108704372,
+   "in_class_flip_rate": 0.7296610169491525,
+   "in_class_flip_ci": [
+    0.7113794098740736,
+    0.7471961562721521
+   ],
+   "missed_dwp_per_decision": 0.00806393902928199,
+   "missed_dwp_pp_per_game_40dec": 32.25575611712796,
+   "missed_dwp_share": 0.21902385267526164,
+   "retained_dividend_share": 0.7809761473247383,
+   "missed_material_5pp_rate": 0.09830508474576272,
+   "concentration": 1.8987052551408985,
+   "n_forced": 2360
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.35,
+   "coverage": 0.5082230244685119,
+   "in_class_flip_rate": 0.7099447513812155,
+   "in_class_flip_ci": [
+    0.6919687372401576,
+    0.7272851673376538
+   ],
+   "missed_dwp_per_decision": 0.009400120336943442,
+   "missed_dwp_pp_per_game_40dec": 37.600481347773766,
+   "missed_dwp_share": 0.2553157413929195,
+   "retained_dividend_share": 0.7446842586070805,
+   "missed_material_5pp_rate": 0.1069455406471981,
+   "concentration": 2.033442088091354,
+   "n_forced": 2534
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.35,
+   "coverage": 0.5108303249097473,
+   "in_class_flip_rate": 0.7098547310561445,
+   "in_class_flip_ci": [
+    0.691923927271985,
+    0.7271534470345968
+   ],
+   "missed_dwp_per_decision": 0.009592097874047332,
+   "missed_dwp_pp_per_game_40dec": 38.368391496189325,
+   "missed_dwp_share": 0.26053002434457845,
+   "retained_dividend_share": 0.7394699756554215,
+   "missed_material_5pp_rate": 0.1099332548095799,
+   "concentration": 2.0442804428044283,
+   "n_forced": 2547
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.35,
+   "coverage": 0.5296831127156036,
+   "in_class_flip_rate": 0.701249526694434,
+   "in_class_flip_ci": [
+    0.6835107350536718,
+    0.7184036933945197
+   ],
+   "missed_dwp_per_decision": 0.01062218210990774,
+   "missed_dwp_pp_per_game_40dec": 42.48872843963096,
+   "missed_dwp_share": 0.28850804068360925,
+   "retained_dividend_share": 0.7114919593163908,
+   "missed_material_5pp_rate": 0.11662249148049982,
+   "concentration": 2.1262260127931767,
+   "n_forced": 2641
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.35",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.35,
+   "coverage": 0.5322904131568391,
+   "in_class_flip_rate": 0.70120572720422,
+   "in_class_flip_ci": [
+    0.6835104289671208,
+    0.7183193866245985
+   ],
+   "missed_dwp_per_decision": 0.010814159647011634,
+   "missed_dwp_pp_per_game_40dec": 43.256638588046535,
+   "missed_dwp_share": 0.2937223236352683,
+   "retained_dividend_share": 0.7062776763647317,
+   "missed_material_5pp_rate": 0.11944235116804823,
+   "concentration": 2.1380789022298456,
+   "n_forced": 2654
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.3,
+   "coverage": 0.5784195748094665,
+   "in_class_flip_rate": 0.7125520110957004,
+   "in_class_flip_ci": [
+    0.6957602507480672,
+    0.7287782696472344
+   ],
+   "missed_dwp_per_decision": 0.01193533894905736,
+   "missed_dwp_pp_per_game_40dec": 47.74135579622944,
+   "missed_dwp_share": 0.3241745640827857,
+   "retained_dividend_share": 0.6758254359172142,
+   "missed_material_5pp_rate": 0.12274618585298197,
+   "concentration": 2.3720266412940054,
+   "n_forced": 2884
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.3,
+   "coverage": 0.5816285599679102,
+   "in_class_flip_rate": 0.7120689655172414,
+   "in_class_flip_ci": [
+    0.6953167321206012,
+    0.7282600910780196
+   ],
+   "missed_dwp_per_decision": 0.01215447252306458,
+   "missed_dwp_pp_per_game_40dec": 48.61789009225832,
+   "missed_dwp_share": 0.3301264294745352,
+   "retained_dividend_share": 0.6698735705254648,
+   "missed_material_5pp_rate": 0.12551724137931033,
+   "concentration": 2.3902205177372964,
+   "n_forced": 2900
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.3,
+   "coverage": 0.6083032490974729,
+   "in_class_flip_rate": 0.7006264424662051,
+   "in_class_flip_ci": [
+    0.6840816523547053,
+    0.716663648289227
+   ],
+   "missed_dwp_per_decision": 0.01327334536702768,
+   "missed_dwp_pp_per_game_40dec": 53.09338146811072,
+   "missed_dwp_share": 0.36051602444154285,
+   "retained_dividend_share": 0.6394839755584572,
+   "missed_material_5pp_rate": 0.13155291790306628,
+   "concentration": 2.552995391705069,
+   "n_forced": 3033
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.3,
+   "coverage": 0.6105094263939029,
+   "in_class_flip_rate": 0.7007227332457293,
+   "in_class_flip_ci": [
+    0.6842096653531353,
+    0.716729806041966
+   ],
+   "missed_dwp_per_decision": 0.013450020056157242,
+   "missed_dwp_pp_per_game_40dec": 53.800080224628964,
+   "missed_dwp_share": 0.36531466824860126,
+   "retained_dividend_share": 0.6346853317513987,
+   "missed_material_5pp_rate": 0.13370565045992117,
+   "concentration": 2.56745623069001,
+   "n_forced": 3044
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.3,
+   "coverage": 0.6253509827517048,
+   "in_class_flip_rate": 0.6953175112251443,
+   "in_class_flip_ci": [
+    0.6789293353316245,
+    0.7112249889620871
+   ],
+   "missed_dwp_per_decision": 0.01430820296831127,
+   "missed_dwp_pp_per_game_40dec": 57.23281187324508,
+   "missed_dwp_share": 0.38862368968806366,
+   "retained_dividend_share": 0.6113763103119363,
+   "missed_material_5pp_rate": 0.1375881975625401,
+   "concentration": 2.6691648822269807,
+   "n_forced": 3118
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.3,
+   "coverage": 0.6275571600481348,
+   "in_class_flip_rate": 0.6954298497922659,
+   "in_class_flip_ci": [
+    0.6790724279552579,
+    0.711307985787971
+   ],
+   "missed_dwp_per_decision": 0.014484877657440833,
+   "missed_dwp_pp_per_game_40dec": 57.93951062976333,
+   "missed_dwp_share": 0.39342233349512207,
+   "retained_dividend_share": 0.6065776665048779,
+   "missed_material_5pp_rate": 0.13966123362096516,
+   "concentration": 2.6849757673667205,
+   "n_forced": 3129
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.3,
+   "coverage": 0.6528279181708785,
+   "in_class_flip_rate": 0.688479262672811,
+   "in_class_flip_ci": [
+    0.6723549322289515,
+    0.7041592254398348
+   ],
+   "missed_dwp_per_decision": 0.016148656237464903,
+   "missed_dwp_pp_per_game_40dec": 64.59462494985961,
+   "missed_dwp_share": 0.4386120594184212,
+   "retained_dividend_share": 0.5613879405815788,
+   "missed_material_5pp_rate": 0.14746543778801843,
+   "concentration": 2.880415944540728,
+   "n_forced": 3255
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.3",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.3,
+   "coverage": 0.6550340954673085,
+   "in_class_flip_rate": 0.6886099203919167,
+   "in_class_flip_ci": [
+    0.6725147807226315,
+    0.704261880263026
+   ],
+   "missed_dwp_per_decision": 0.016325330926594463,
+   "missed_dwp_pp_per_game_40dec": 65.30132370637786,
+   "missed_dwp_share": 0.4434107032254796,
+   "retained_dividend_share": 0.5565892967745204,
+   "missed_material_5pp_rate": 0.1494182486221678,
+   "concentration": 2.898837209302326,
+   "n_forced": 3266
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=99.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 99.0,
+   "wp_t": 0.25,
+   "coverage": 0.6827115924588849,
+   "in_class_flip_rate": 0.699764982373678,
+   "in_class_flip_ci": [
+    0.6841486916276794,
+    0.7149308900054575
+   ],
+   "missed_dwp_per_decision": 0.016350842358604095,
+   "missed_dwp_pp_per_game_40dec": 65.40336943441638,
+   "missed_dwp_share": 0.4441036167142501,
+   "retained_dividend_share": 0.55589638328575,
+   "missed_material_5pp_rate": 0.14864864864864866,
+   "concentration": 3.151706700379267,
+   "n_forced": 3404
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=99.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 99.0,
+   "wp_t": 0.25,
+   "coverage": 0.6849177697553149,
+   "in_class_flip_rate": 0.6995607613469985,
+   "in_class_flip_ci": [
+    0.6839672319730018,
+    0.7147058156464022
+   ],
+   "missed_dwp_per_decision": 0.01651997593261131,
+   "missed_dwp_pp_per_game_40dec": 66.07990373044524,
+   "missed_dwp_share": 0.44869743703720644,
+   "retained_dividend_share": 0.5513025629627936,
+   "missed_material_5pp_rate": 0.15021961932650074,
+   "concentration": 3.173774665817951,
+   "n_forced": 3415
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=6.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 6.0,
+   "wp_t": 0.25,
+   "coverage": 0.7043722422783795,
+   "in_class_flip_rate": 0.691628701594533,
+   "in_class_flip_ci": [
+    0.6761522458564435,
+    0.7066863894222335
+   ],
+   "missed_dwp_per_decision": 0.01731532290413157,
+   "missed_dwp_pp_per_game_40dec": 69.26129161652628,
+   "missed_dwp_share": 0.47029977769025577,
+   "retained_dividend_share": 0.5297002223097442,
+   "missed_material_5pp_rate": 0.1534738041002278,
+   "concentration": 3.3826322930800545,
+   "n_forced": 3512
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=6.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 6.0,
+   "wp_t": 0.25,
+   "coverage": 0.7055756117127958,
+   "in_class_flip_rate": 0.6918703808982376,
+   "in_class_flip_ci": [
+    0.676410341726793,
+    0.7069118383508117
+   ],
+   "missed_dwp_per_decision": 0.017441997593261132,
+   "missed_dwp_pp_per_game_40dec": 69.76799037304453,
+   "missed_dwp_share": 0.47374037642852124,
+   "retained_dividend_share": 0.5262596235714787,
+   "missed_material_5pp_rate": 0.15463331438317227,
+   "concentration": 3.396457765667575,
+   "n_forced": 3518
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=5.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 5.0,
+   "wp_t": 0.25,
+   "coverage": 0.7168070597673486,
+   "in_class_flip_rate": 0.6891438164521545,
+   "in_class_flip_ci": [
+    0.6737730496688482,
+    0.7041084082470083
+   ],
+   "missed_dwp_per_decision": 0.01816488166867228,
+   "missed_dwp_pp_per_game_40dec": 72.65952667468912,
+   "missed_dwp_share": 0.4933745595069419,
+   "retained_dividend_share": 0.5066254404930581,
+   "missed_material_5pp_rate": 0.1575265808617795,
+   "concentration": 3.531161473087819,
+   "n_forced": 3574
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=5.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 5.0,
+   "wp_t": 0.25,
+   "coverage": 0.7180104292017649,
+   "in_class_flip_rate": 0.6893854748603352,
+   "in_class_flip_ci": [
+    0.6740307252733376,
+    0.704334211391274
+   ],
+   "missed_dwp_per_decision": 0.018291556357801844,
+   "missed_dwp_pp_per_game_40dec": 73.16622543120738,
+   "missed_dwp_share": 0.4968151582452075,
+   "retained_dividend_share": 0.5031848417547925,
+   "missed_material_5pp_rate": 0.15865921787709497,
+   "concentration": 3.546230440967283,
+   "n_forced": 3580
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=4.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 4.0,
+   "wp_t": 0.25,
+   "coverage": 0.7384677095868432,
+   "in_class_flip_rate": 0.6852254209668658,
+   "in_class_flip_ci": [
+    0.6700375814479104,
+    0.700027154920576
+   ],
+   "missed_dwp_per_decision": 0.01978602085840353,
+   "missed_dwp_pp_per_game_40dec": 79.14408343361413,
+   "missed_dwp_share": 0.537406161155771,
+   "retained_dividend_share": 0.462593838844229,
+   "missed_material_5pp_rate": 0.1645844649646931,
+   "concentration": 3.8236196319018405,
+   "n_forced": 3682
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=4.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 4.0,
+   "wp_t": 0.25,
+   "coverage": 0.7396710790212595,
+   "in_class_flip_rate": 0.6854663774403471,
+   "in_class_flip_ci": [
+    0.6702938915364243,
+    0.7002528838181847
+   ],
+   "missed_dwp_per_decision": 0.019912695547533093,
+   "missed_dwp_pp_per_game_40dec": 79.65078219013238,
+   "missed_dwp_share": 0.5408467598940365,
+   "retained_dividend_share": 0.4591532401059635,
+   "missed_material_5pp_rate": 0.16567245119305857,
+   "concentration": 3.8412942989214174,
+   "n_forced": 3688
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=3.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 3.0,
+   "wp_t": 0.25,
+   "coverage": 0.7693541917368633,
+   "in_class_flip_rate": 0.6824817518248175,
+   "in_class_flip_ci": [
+    0.6675739369289426,
+    0.6970244360872777
+   ],
+   "missed_dwp_per_decision": 0.021506277577216206,
+   "missed_dwp_pp_per_game_40dec": 86.02511030886483,
+   "missed_dwp_share": 0.5841298842365995,
+   "retained_dividend_share": 0.4158701157634005,
+   "missed_material_5pp_rate": 0.17153284671532848,
+   "concentration": 4.3356521739130445,
+   "n_forced": 3836
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=3.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 3.0,
+   "wp_t": 0.25,
+   "coverage": 0.7697553148816687,
+   "in_class_flip_rate": 0.68264721208963,
+   "in_class_flip_ci": [
+    0.667745210616665,
+    0.6971839421105062
+   ],
+   "missed_dwp_per_decision": 0.021560669875651823,
+   "missed_dwp_pp_per_game_40dec": 86.24267950260729,
+   "missed_dwp_share": 0.5856072280900155,
+   "retained_dividend_share": 0.41439277190998447,
+   "missed_material_5pp_rate": 0.1719645648775404,
+   "concentration": 4.343205574912893,
+   "n_forced": 3838
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 2.5,
+   "wp_t": 0.25,
+   "coverage": 0.7888086642599278,
+   "in_class_flip_rate": 0.6824307144673277,
+   "in_class_flip_ci": [
+    0.667709390356716,
+    0.6967960040183079
+   ],
+   "missed_dwp_per_decision": 0.022718070597673487,
+   "missed_dwp_pp_per_game_40dec": 90.87228239069395,
+   "missed_dwp_share": 0.617043274953193,
+   "retained_dividend_share": 0.382956725046807,
+   "missed_material_5pp_rate": 0.17747266717518434,
+   "concentration": 4.735042735042735,
+   "n_forced": 3933
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 2.5,
+   "wp_t": 0.25,
+   "coverage": 0.7890092258323306,
+   "in_class_flip_rate": 0.6825114387391967,
+   "in_class_flip_ci": [
+    0.6677929153545332,
+    0.6968738604751497
+   ],
+   "missed_dwp_per_decision": 0.022743561973525877,
+   "missed_dwp_pp_per_game_40dec": 90.97424789410351,
+   "missed_dwp_share": 0.6177356436986546,
+   "retained_dividend_share": 0.38226435630134536,
+   "missed_material_5pp_rate": 0.1776817488561261,
+   "concentration": 4.739543726235743,
+   "n_forced": 3934
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=2.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 2.0,
+   "wp_t": 0.25,
+   "coverage": 0.8162855996791015,
+   "in_class_flip_rate": 0.682063882063882,
+   "in_class_flip_ci": [
+    0.6675911527277872,
+    0.696193241834829
+   ],
+   "missed_dwp_per_decision": 0.024553489771359807,
+   "missed_dwp_pp_per_game_40dec": 98.21395908543923,
+   "missed_dwp_share": 0.6668949141130462,
+   "retained_dividend_share": 0.33310508588695376,
+   "missed_material_5pp_rate": 0.185012285012285,
+   "concentration": 5.443231441048036,
+   "n_forced": 4070
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=2.0 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 2.0,
+   "wp_t": 0.25,
+   "coverage": 0.8164861612515042,
+   "in_class_flip_rate": 0.6821419798575289,
+   "in_class_flip_ci": [
+    0.6676719109857387,
+    0.6962686161748755
+   ],
+   "missed_dwp_per_decision": 0.024578981147212197,
+   "missed_dwp_pp_per_game_40dec": 98.31592458884879,
+   "missed_dwp_share": 0.6675872828585079,
+   "retained_dividend_share": 0.3324127171414921,
+   "missed_material_5pp_rate": 0.18521247850650946,
+   "concentration": 5.449180327868852,
+   "n_forced": 4071
+  },
+  {
+   "rule": "n_legal<=1 OR gap>=1.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 1,
+   "gap_t": 1.5,
+   "wp_t": 0.25,
+   "coverage": 0.8509827517047733,
+   "in_class_flip_rate": 0.6851284468536413,
+   "in_class_flip_ci": [
+    0.6709906443116317,
+    0.6989313231099928
+   ],
+   "missed_dwp_per_decision": 0.026735258724428404,
+   "missed_dwp_pp_per_game_40dec": 106.94103489771362,
+   "missed_dwp_share": 0.7261537254722518,
+   "retained_dividend_share": 0.27384627452774823,
+   "missed_material_5pp_rate": 0.19231675701154843,
+   "concentration": 6.710632570659487,
+   "n_forced": 4243
+  },
+  {
+   "rule": "n_legal<=2 OR gap>=1.5 OR |wp-0.5|>=0.25",
+   "n_legal_t": 2,
+   "gap_t": 1.5,
+   "wp_t": 0.25,
+   "coverage": 0.8511833132771761,
+   "in_class_flip_rate": 0.6852026390197926,
+   "in_class_flip_ci": [
+    0.6710673421841487,
+    0.6990029542223839
+   ],
+   "missed_dwp_per_decision": 0.026760750100280787,
+   "missed_dwp_pp_per_game_40dec": 107.04300040112315,
+   "missed_dwp_share": 0.7268460942177133,
+   "retained_dividend_share": 0.2731539057822867,
+   "missed_material_5pp_rate": 0.19250706880301602,
+   "concentration": 6.7196765498652296,
+   "n_forced": 4244
+  }
+ ],
+ "population_coverage": {
+  "gap>=2.0,wp>=0.4": {
+   "coverage_all_decisions": 0.6448937774255282,
+   "coverage_move_selection": 0.6357224169103368
+  },
+  "gap>=2.0,wp>=0.45": {
+   "coverage_all_decisions": 0.5695811022404361,
+   "coverage_move_selection": 0.5560813374701458
+  },
+  "gap>=2.0,wp>=1.01": {
+   "coverage_all_decisions": 0.4079758752005567,
+   "coverage_move_selection": 0.38387535992500166
+  },
+  "gap>=3.0,wp>=0.4": {
+   "coverage_all_decisions": 0.5474473719819837,
+   "coverage_move_selection": 0.535813932724716
+  },
+  "gap>=3.0,wp>=0.45": {
+   "coverage_all_decisions": 0.45576153563627225,
+   "coverage_move_selection": 0.43905269971652416
+  },
+  "gap>=3.0,wp>=1.01": {
+   "coverage_all_decisions": 0.27099804759235274,
+   "coverage_move_selection": 0.24126693600589272
+  },
+  "gap>=4.0,wp>=0.4": {
+   "coverage_all_decisions": 0.4843904042063753,
+   "coverage_move_selection": 0.4725340952210888
+  },
+  "gap>=4.0,wp>=0.45": {
+   "coverage_all_decisions": 0.3826139065550637,
+   "coverage_move_selection": 0.3651257784424455
+  },
+  "gap>=4.0,wp>=1.01": {
+   "coverage_all_decisions": 0.18741180336741992,
+   "coverage_move_selection": 0.15577777281757105
+  }
+ },
+ "noise_control": {
+  "n": 683,
+  "n_errors": 3,
+  "n_seeds": 4,
+  "argmax_unstable_under_reroll": 0.18448023426061494,
+  "argmax_unstable_ci": [
+   0.15718320530367982,
+   0.21530675453567763
+  ],
+  "mean_per_candidate_dice_std_V": 0.712353026156778,
+  "median_top1_top2_V_margin_over_dice_std": 2.847543584523253,
+  "frac_margin_below_1_dice_std": 0.2562225475841874,
+  "flip_rate_1_sample_crn": 0.6925329428989752,
+  "flip_rate_5_sample_dice_mean": 0.6793557833089312
+ },
+ "stratified_by_n_legal_missed_dwp_share_at_cov_0.5": {
+  "n_legal=5": {
+   "n": 425,
+   "wp_extremity": 0.2948,
+   "gap": 0.4505,
+   "top1_prob": 0.4497,
+   "RANDOM_null": 0.5
+  },
+  "n_legal=6": {
+   "n": 597,
+   "wp_extremity": 0.2857,
+   "gap": 0.5272,
+   "top1_prob": 0.5413,
+   "RANDOM_null": 0.5
+  },
+  "n_legal=7": {
+   "n": 855,
+   "wp_extremity": 0.2254,
+   "gap": 0.4987,
+   "top1_prob": 0.5265,
+   "RANDOM_null": 0.5
+  },
+  "n_legal=8": {
+   "n": 1149,
+   "wp_extremity": 0.2313,
+   "gap": 0.5459,
+   "top1_prob": 0.5743,
+   "RANDOM_null": 0.5
+  },
+  "n_legal=9": {
+   "n": 1539,
+   "wp_extremity": 0.2536,
+   "gap": 0.4806,
+   "top1_prob": 0.4773,
+   "RANDOM_null": 0.5
+  }
+ },
+ "external_crosscheck_search_dividend": {
+  "source": "/home/goodlad/dev/gen3ai/tmp/search_dividend/*.jsonl",
+  "note": "n_changed/n_searched from the REAL multi-world alpha-pruned iterative-deepening search battery \u2014 independent machinery, independent runs",
+  "honest_1s": 0.611,
+  "honest_3s": 0.638,
+  "oracle_1s": 0.639,
+  "oracle_3s": 0.602,
+  "rladder_r1..r32_10s": [
+   0.641,
+   0.643,
+   0.643,
+   0.632,
+   0.655,
+   0.646
+  ],
+  "playoff_20s_paired_rollouts": 0.074,
+  "n_searched_total": 40000,
+  "mirror_win_rates_null_is_0.50": {
+   "mirror_base": 0.5,
+   "mirror_honest_1s": 0.292,
+   "mirror_honest_3s": 0.266,
+   "mirror_oracle_1s": 0.317,
+   "mirror_oracle_3s": 0.436,
+   "rladder_oracle_10s_r1..r32": [
+    0.125,
+    0.138,
+    0.263,
+    0.188,
+    0.253,
+    0.203
+   ],
+   "playoff_20s": 0.45
+  },
+  "searched_fraction_of_decisions": {
+   "honest_1s": 0.865,
+   "oracle_1s": 0.874,
+   "rladder": 0.844,
+   "playoff_20s": 0.145
+  }
+ },
+ "operating_frontier": [
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.02",
+   "wp_threshold": 0.02,
+   "coverage_forced": 0.9803449659045327,
+   "n_forced": 4888,
+   "in_class_flip_rate": 0.6939443535188216,
+   "in_class_flip_ci": [
+    0.6808765066683451,
+    0.706707588450352
+   ],
+   "in_class_material_5pp_rate": 0.22319967266775778,
+   "missed_dwp_share": 0.9624339566831016,
+   "retained_dividend_share": 0.03756604331689839,
+   "missed_dwp_pp_per_decision": 3.543453670276775,
+   "concentration_x": 50.87755102040814,
+   "sec_per_contested_decision": 144.44863556851305,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.04",
+   "wp_threshold": 0.04,
+   "coverage_forced": 0.9592860008022462,
+   "n_forced": 4783,
+   "in_class_flip_rate": 0.6937068785281204,
+   "in_class_flip_ci": [
+    0.6804921511886596,
+    0.7066106934093316
+   ],
+   "in_class_material_5pp_rate": 0.21827305038678654,
+   "missed_dwp_share": 0.9131385004415145,
+   "retained_dividend_share": 0.08686149955848554,
+   "missed_dwp_pp_per_decision": 3.361959486562374,
+   "concentration_x": 24.561576354679772,
+   "sec_per_contested_decision": 69.73382406755798,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.06",
+   "wp_threshold": 0.06,
+   "coverage_forced": 0.9404332129963899,
+   "n_forced": 4689,
+   "in_class_flip_rate": 0.6926850074642781,
+   "in_class_flip_ci": [
+    0.6793256032718371,
+    0.7057289444887349
+   ],
+   "in_class_material_5pp_rate": 0.2145446790360418,
+   "missed_dwp_share": 0.877147310030304,
+   "retained_dividend_share": 0.122852689969696,
+   "missed_dwp_pp_per_decision": 3.2294484556758922,
+   "concentration_x": 16.7878787878788,
+   "sec_per_contested_decision": 47.66318614718618,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.08",
+   "wp_threshold": 0.08,
+   "coverage_forced": 0.9195748094665063,
+   "n_forced": 4585,
+   "in_class_flip_rate": 0.6942202835332606,
+   "in_class_flip_ci": [
+    0.680725858078329,
+    0.7073895216288283
+   ],
+   "in_class_material_5pp_rate": 0.2109051254089422,
+   "missed_dwp_share": 0.8434914341838411,
+   "retained_dividend_share": 0.1565085658161589,
+   "missed_dwp_pp_per_decision": 3.1055354993983157,
+   "concentration_x": 12.433915211970083,
+   "sec_per_contested_decision": 35.30166156038477,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.1",
+   "wp_threshold": 0.1,
+   "coverage_forced": 0.8945046129161652,
+   "n_forced": 4460,
+   "in_class_flip_rate": 0.6932735426008969,
+   "in_class_flip_ci": [
+    0.6795783120044473,
+    0.7066361092241197
+   ],
+   "in_class_material_5pp_rate": 0.20448430493273542,
+   "missed_dwp_share": 0.7992718960934824,
+   "retained_dividend_share": 0.20072810390651763,
+   "missed_dwp_pp_per_decision": 2.9427296430004013,
+   "concentration_x": 9.47908745247148,
+   "sec_per_contested_decision": 26.912483432916886,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.12",
+   "wp_threshold": 0.12,
+   "coverage_forced": 0.8700361010830325,
+   "n_forced": 4338,
+   "in_class_flip_rate": 0.6924850161364684,
+   "in_class_flip_ci": [
+    0.678587227464945,
+    0.7060421887717044
+   ],
+   "in_class_material_5pp_rate": 0.1966343937298294,
+   "missed_dwp_share": 0.7517250658730845,
+   "retained_dividend_share": 0.24827493412691548,
+   "missed_dwp_pp_per_decision": 2.767673485760128,
+   "concentration_x": 7.694444444444446,
+   "sec_per_contested_decision": 21.84562698412699,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.15",
+   "wp_threshold": 0.15,
+   "coverage_forced": 0.8345367027677497,
+   "n_forced": 4161,
+   "in_class_flip_rate": 0.6931026195626051,
+   "in_class_flip_ci": [
+    0.6789161439307969,
+    0.7069328641083081
+   ],
+   "in_class_material_5pp_rate": 0.18769526556116317,
+   "missed_dwp_share": 0.6903161526741177,
+   "retained_dividend_share": 0.3096838473258823,
+   "missed_dwp_pp_per_decision": 2.5415804251905336,
+   "concentration_x": 6.043636363636364,
+   "sec_per_contested_decision": 17.158747012987014,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.2",
+   "wp_threshold": 0.2,
+   "coverage_forced": 0.7639390292819895,
+   "n_forced": 3809,
+   "in_class_flip_rate": 0.6941454449986874,
+   "in_class_flip_ci": [
+    0.6793229031527085,
+    0.7085767672663302
+   ],
+   "in_class_material_5pp_rate": 0.16907324757154107,
+   "missed_dwp_share": 0.5616368882736922,
+   "retained_dividend_share": 0.4383631117263078,
+   "missed_dwp_pp_per_decision": 2.0678138788608105,
+   "concentration_x": 4.236193712829226,
+   "sec_per_contested_decision": 12.027159121252577,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.25",
+   "wp_threshold": 0.25,
+   "coverage_forced": 0.6827115924588849,
+   "n_forced": 3404,
+   "in_class_flip_rate": 0.699764982373678,
+   "in_class_flip_ci": [
+    0.6841486916276794,
+    0.7149308900054575
+   ],
+   "in_class_material_5pp_rate": 0.14864864864864866,
+   "missed_dwp_share": 0.4441036167142501,
+   "retained_dividend_share": 0.55589638328575,
+   "missed_dwp_pp_per_decision": 1.6350842358604094,
+   "concentration_x": 3.151706700379267,
+   "sec_per_contested_decision": 8.948145566191078,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.3",
+   "wp_threshold": 0.3,
+   "coverage_forced": 0.5784195748094665,
+   "n_forced": 2884,
+   "in_class_flip_rate": 0.7125520110957004,
+   "in_class_flip_ci": [
+    0.6957602507480672,
+    0.7287782696472344
+   ],
+   "in_class_material_5pp_rate": 0.12274618585298197,
+   "missed_dwp_share": 0.3241745640827857,
+   "retained_dividend_share": 0.6758254359172142,
+   "missed_dwp_pp_per_decision": 1.1935338949057361,
+   "concentration_x": 2.3720266412940054,
+   "sec_per_contested_decision": 6.734522495582437,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.35",
+   "wp_threshold": 0.35,
+   "coverage_forced": 0.46971520256718813,
+   "n_forced": 2342,
+   "in_class_flip_rate": 0.7305721605465414,
+   "in_class_flip_ci": [
+    0.7122366707474204,
+    0.7481524706166001
+   ],
+   "in_class_material_5pp_rate": 0.09436379163108455,
+   "missed_dwp_share": 0.21265634813891177,
+   "retained_dividend_share": 0.7873436518610882,
+   "missed_dwp_pp_per_decision": 0.7829502607300443,
+   "concentration_x": 1.8857791225416036,
+   "sec_per_contested_decision": 5.353996325913118,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.4",
+   "wp_threshold": 0.4,
+   "coverage_forced": 0.34657039711191334,
+   "n_forced": 1728,
+   "in_class_flip_rate": 0.7528935185185185,
+   "in_class_flip_ci": [
+    0.7320100822438084,
+    0.7726550095290189
+   ],
+   "in_class_material_5pp_rate": 0.056712962962962965,
+   "missed_dwp_share": 0.11401477452802078,
+   "retained_dividend_share": 0.8859852254719792,
+   "missed_dwp_pp_per_decision": 0.419775371038909,
+   "concentration_x": 1.530386740331492,
+   "sec_per_contested_decision": 4.344986582478295,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.42",
+   "wp_threshold": 0.42,
+   "coverage_forced": 0.2968311271560369,
+   "n_forced": 1480,
+   "in_class_flip_rate": 0.7635135135135135,
+   "in_class_flip_ci": [
+    0.741199624953852,
+    0.7844629525072461
+   ],
+   "in_class_material_5pp_rate": 0.041891891891891894,
+   "missed_dwp_share": 0.08054792460970504,
+   "retained_dividend_share": 0.9194520753902949,
+   "missed_dwp_pp_per_decision": 0.2965583634175692,
+   "concentration_x": 1.4221334854535082,
+   "sec_per_contested_decision": 4.037640127129003,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.44",
+   "wp_threshold": 0.44,
+   "coverage_forced": 0.24207781789009225,
+   "n_forced": 1207,
+   "in_class_flip_rate": 0.7729908864954432,
+   "in_class_flip_ci": [
+    0.7485138175353108,
+    0.7957357358331894
+   ],
+   "in_class_material_5pp_rate": 0.027340513670256836,
+   "missed_dwp_share": 0.05178820162257241,
+   "retained_dividend_share": 0.9482117983774276,
+   "missed_dwp_pp_per_decision": 0.1906718812675491,
+   "concentration_x": 1.319396665784599,
+   "sec_per_contested_decision": 3.7459556194004455,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.45",
+   "wp_threshold": 0.45,
+   "coverage_forced": 0.21720818291215402,
+   "n_forced": 1083,
+   "in_class_flip_rate": 0.778393351800554,
+   "in_class_flip_ci": [
+    0.752697296811825,
+    0.8021213630554455
+   ],
+   "in_class_material_5pp_rate": 0.024007386888273315,
+   "missed_dwp_share": 0.04216694530286911,
+   "retained_dividend_share": 0.9578330546971309,
+   "missed_dwp_pp_per_decision": 0.1552486963497794,
+   "concentration_x": 1.277478862413528,
+   "sec_per_contested_decision": 3.626944987372351,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.46",
+   "wp_threshold": 0.46,
+   "coverage_forced": 0.1921379863618131,
+   "n_forced": 958,
+   "in_class_flip_rate": 0.7776617954070981,
+   "in_class_flip_ci": [
+    0.7502505512772538,
+    0.8028550744307629
+   ],
+   "in_class_material_5pp_rate": 0.017745302713987474,
+   "missed_dwp_share": 0.027859807041025156,
+   "retained_dividend_share": 0.9721401929589748,
+   "missed_dwp_pp_per_decision": 0.10257320497392697,
+   "concentration_x": 1.2378351539225423,
+   "sec_per_contested_decision": 3.5143908355795146,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.47",
+   "wp_threshold": 0.47,
+   "coverage_forced": 0.16145206578419574,
+   "n_forced": 805,
+   "in_class_flip_rate": 0.782608695652174,
+   "in_class_flip_ci": [
+    0.7528086402193349,
+    0.8097242463186473
+   ],
+   "in_class_material_5pp_rate": 0.013664596273291925,
+   "missed_dwp_share": 0.017131632317877326,
+   "retained_dividend_share": 0.9828683676821227,
+   "missed_dwp_pp_per_decision": 0.0630746089049338,
+   "concentration_x": 1.1925376704137767,
+   "sec_per_contested_decision": 3.3857848088290567,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.48",
+   "wp_threshold": 0.48,
+   "coverage_forced": 0.12494985960689932,
+   "n_forced": 623,
+   "in_class_flip_rate": 0.7800963081861958,
+   "in_class_flip_ci": [
+    0.7459102597971768,
+    0.8108492150047507
+   ],
+   "in_class_material_5pp_rate": 0.009630818619582664,
+   "missed_dwp_share": 0.00862982349772052,
+   "retained_dividend_share": 0.9913701765022794,
+   "missed_dwp_pp_per_decision": 0.031772964300040105,
+   "concentration_x": 1.1427916571166628,
+   "sec_per_contested_decision": 3.2445487705052223,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  },
+  {
+   "rule": "n_legal<=1 OR |win_prob-0.5|>=0.49",
+   "wp_threshold": 0.49,
+   "coverage_forced": 0.07962294424388287,
+   "n_forced": 397,
+   "in_class_flip_rate": 0.7732997481108312,
+   "in_class_flip_ci": [
+    0.7296076704139812,
+    0.8117533060914514
+   ],
+   "in_class_material_5pp_rate": 0.0,
+   "missed_dwp_share": 0.0022339923093139696,
+   "retained_dividend_share": 0.997766007690686,
+   "missed_dwp_pp_per_decision": 0.008225030084235873,
+   "concentration_x": 1.0865112224885596,
+   "sec_per_contested_decision": 3.0847605765339474,
+   "sec_per_decision_if_uniform": 2.839142857142857
+  }
+ ],
+ "budget_model": {
+  "decisions_per_game": 42.0,
+  "base_latency_ms": 18.0,
+  "game_timer_s": 150.0,
+  "timer_margin": 0.2,
+  "usable_think_s": 119.244,
+  "uniform_s_per_decision": 2.839142857142857
+ }
+}
