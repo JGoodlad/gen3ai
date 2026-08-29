@@ -6461,3 +6461,25 @@ data quantity, and factory labels alone won't fix it. The test = offline probe d
 across mixed archs: UNDERPOWERED today. Prerequisite: purpose-harvested cap games at scale
 (bridge self-play, cheap CPU) before the probe is worth running — queued as the head-fix
 program's first step.
+
+### 🔍 THE 0.999 MECHANISM (owner question, 2026-08-29 late) — labels VERIFIED correct; the failure is cliff-vs-slope × gradient economics × joint selection
+
+Code-verified first (win_prob_callback.py + wrappers.py:471-493): **the labels are RIGHT — tie/
+cap forfeits are labeled 0.0 with mask set** (`won = 1.0 iff battle1.won is True`), killing the
+masked-draw/selection-label hypothesis before it was uttered. The three compounding mechanisms
+of record for probe O's 35% residual: **(1) CLIFF vs SLOPE** — "φ=0 at t≥250 regardless of
+position" is a multiplicative VETO; a sigmoid over mostly-additively-combined features builds a
+slope (the clock bought 81%→22%, a huge slope) and a slope cannot zero a 0.999 position prior
+in 5 turns — hence the failures concentrating where the position prior is strongest (CAP_TRADE
+48% overconf). **(2) GRADIENT ECONOMICS** — BCE optimizes the average; cap games' final turns
+are ~epsilon of buffer mass, so confident wrongness there costs ≈nothing in training loss.
+MC labels are unbiased, not influential: absolute-but-rare rules get learned as tendencies.
+(The 14× over-exposure covers heal-war states — which the head reads RIGHT at φ 0.146 — not
+the failing joint.) **(3) JOINT SELECTION** — strong positions finish early, so
+(dominant position × t≈249) barely exists in training; reaching the cap while dominant requires
+a pathologically un-losable opponent, mostly an eval-sentinel phenomenon. All three are
+DATA-SHAPED, not conceptual ⇒ the queued cap-game harvest attacks (2)+(3) directly, and the
+escalation path if a true veto is still needed is a LEARNED multiplicative clock-gate on the
+head — outcome-units, inside the clean worldview. Analogy of record: the strong player who has
+rarely played with a clock — "flag-fall loses" is trivial to state and still takes lived
+instances to become reflex.
