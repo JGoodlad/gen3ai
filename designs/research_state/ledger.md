@@ -6229,3 +6229,31 @@ distinct content; PBRS-φ inverts seniority the day it ships (the win-prob head 
 reward, V becomes its accountant); the annealed endpoint is the AlphaZero configuration —
 one outcome-grounded critic. FP&A-vs-market analogy of record: internal-metrics accounting,
 indispensable while young, designed to merge into outcome units at maturity.
+
+### 🔴 TRANSFER CELL VERDICT: R2 — COMPOUNDING destroys the per-decision gain; τ = 0.17 [−0.34, +0.68], excludes 1.0 (2026-08-29 late)
+
+Record `designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` (landed
+cc12d94; 8,100 games / 4,050 paired units / 200k decisions, zero errors; the design's falsifier
+— zero-overrule pairs must be bit-identical — passed on 2,693 pairs across seven deterministic
+bots). **A−B = +0.0020 [−0.0039,+0.0079]; naive expectation +1.16pp; transfer coefficient
+τ = 0.17 [−0.34,+0.68] — EXCLUDES full transfer.** R1 refuted by construction (the +5–12pp band
+was unreachable: roster saturated at 0.9162, and even full transfer at the measured dose sits
+outside the interval). **Of probe K's three suspects, checkpoint and (the bot half of)
+population are now REMOVED with the dividend still absent — COMPOUNDING is the one left
+standing**, with its signature visible: the overrule-count gradient +3.9 → −2.1 → −8.3pp for
+1/2/3+ overrules (suggestive only — post-treatment conditioning; the ≥1 row is the clean
+contrast). Notable good behavior: **the triage gate auto-scales dose to headroom** — vs
+saturated bots it forced 92.6% and overruled 0.245/game (9× below the mirror), exactly what a
+safe search should do when already winning. **🔧 DEFECT FOUND by the falsifier (2 pairs of
+2,695): `Gen3StallerPlayer`/`V2` flip Protect on the PROCESS-WIDE `random` module**
+(`src/agents/opponents.py`) — cross-arm RNG coupling in every paired eval design; unbiased here
+(3A/1B; dropping both bots: +0.20 → +0.05pp) but a real shared-surface defect of the known
+"two players share global random" class. **QUEUED, deliberately NOT fixed mid-campaign**:
+changing opponent RNG would shift the rev-3 verdict battery's baselines — fix lands AFTER the
+fold verdict, with a per-instance-RNG pattern. Caveats: sentinels not constructible as battery
+opponents (the harder population half untested); box load 20.7/16 entangles the rate-table
+comparison (primary unaffected — arms shared the load). **THE PROGRAM'S SHAPE, pending iter 3's
+final word:** per-decision gains are REAL (+4.7pp, K) and do not compose in play (mirror zero,
+roster τ≈0.17) — if iter 3's rollout-CONFIRMED overrules also net zero, search-as-PLAYER
+dead-ends at these checkpoints and search's value is as TEACHER/data — which is precisely
+where tonight's ai_v12 program (routes 2/E5) already went.
