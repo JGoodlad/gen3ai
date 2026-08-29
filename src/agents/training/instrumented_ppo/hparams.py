@@ -179,6 +179,31 @@ class PpoHyperparameters:
     # use so a seeded run stays reproducible. Not saved (like _noise_ema_*).
     _td_aux_rng = None
 
+    # WIN-PROB PBRS (gen3_winprob_pbrs_v1; ai_v12 route 1 —
+    # designs/ai_v12/design_winprob_behavior_coupling.md). Potential-based reward shaping with
+    # phi(s) = sigmoid(win-prob logit), DETACHED:
+    #     r'(s, a, s') = r(s, a, s') + win_prob_pbrs_coef * ( gamma*phi(s') - phi(s) )
+    # applied to the rollout buffer AFTER collection and BEFORE GAE (`collect_rollouts`), because env
+    # workers hold no model and so cannot shape the reward where it is produced.
+    #
+    # THE POINT: `--win-prob-mode shaping` is REPRESENTATION shaping and carries no behavioral force —
+    # the head's logit is a side readout with no gradient path to the acting head. This is the
+    # reward-level route that gives it force, and it is protected by the potential-based-shaping
+    # invariance theorem (a miscalibrated phi costs SPEED, not correctness). Caveat: our phi is a
+    # LEARNED, DRIFTING head, so exact invariance holds per rollout and degrades to approximate
+    # invariance across them — see winprob_pbrs.py's docstring and the design doc's SS2.4.
+    #
+    # 0.0 = OFF, and not even the module is imported (byte-identical). Requires
+    # --win-prob-mode read_only|shaping (there is no head to read under `none`); a missing head is a
+    # LOUD refusal, never a silent skip. TRAINING-only (it edits the reward stream, never a forward
+    # pass) -> NOT version-locked / NOT in check_compatible; recorded on ModelVersion for provenance +
+    # flagless-resume read-back, like td_aux_coef.
+    win_prob_pbrs_coef: float = 0.0
+    # Set by `collect_rollouts` when the shaping ran; drained into `train/pbrs_*` by train()'s
+    # logging block. Not a knob — and NOT a mutable class default (one dict shared by every
+    # instance is the classic version of this bug); `collect_rollouts` always rebinds a fresh dict.
+    _pbrs_metrics = None
+
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.

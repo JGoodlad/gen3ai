@@ -353,4 +353,11 @@ def _migrate_config(data: dict) -> dict:
                        ("rank_tripwire_drop", 0.20)):
             data.setdefault(_k, _v)
         data["config_version"] = 103
+    # v104 (gen3_winprob_pbrs_v1) — ONE TRAINING-only coefficient ⇒ v97's shape, not v98/v99's:
+    # no gate, no refusal, just a default. 0.0 is the only possible past (the flag did not exist),
+    # and a recorded value migrates untouched. It edits the reward stream rather than the loss,
+    # which changes nothing here — the migration's job is provenance, and nothing version-checks it.
+    if version < 104:
+        data.setdefault("win_prob_pbrs_coef", 0.0)
+        data["config_version"] = 104
     return data

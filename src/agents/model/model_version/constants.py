@@ -128,7 +128,17 @@ from typing import Any, Dict
 #   argparse default — not a guess: "kl" is the one loss every such run trained with, and the
 #   tripwire did not exist. No ARCH_SIGNATURE bump — nothing here touches a forward pass or a
 #   weight shape.
-MODEL_CONFIG_VERSION = 103
+# v104 (gen3_winprob_pbrs_v1; ai_v12 route 1 — designs/ai_v12/design_winprob_behavior_coupling.md):
+#   `win_prob_pbrs_coef` — POTENTIAL-BASED REWARD SHAPING from the win-prob head. Every
+#   transition's reward gains `coef * (gamma*phi(s') - phi(s))`, phi = the DETACHED sigmoid of the
+#   win-prob logit, applied trainer-side to the rollout buffer before GAE. It is the FIRST knob in
+#   this family that edits the REWARD STREAM rather than a loss term — worth saying, because the
+#   provenance class is nevertheless td_aux_coef's exactly: no forward pass reads it, no weight
+#   shape depends on it, so it is recorded for provenance + flagless-resume read-back and never
+#   gated. 0.0 = OFF and the shaping module is not even imported (byte-identical). A pre-v104
+#   config defaults it to 0.0 — not a guess: the flag did not exist, so no run could have used it.
+#   No ARCH_SIGNATURE bump — the reward stream is not the network.
+MODEL_CONFIG_VERSION = 104
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

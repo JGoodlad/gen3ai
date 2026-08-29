@@ -409,6 +409,14 @@ class ModelVersionFields:
     # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field), never compared by check_compatible or any check_*.
     td_aux_coef: float = 0.0
+    # v104 TRAINING-ONLY coefficient (gen3_winprob_pbrs_v1, NOT version-locked; ai_v12 route 1):
+    # the weight on POTENTIAL-BASED REWARD SHAPING from the win-prob head — every transition's
+    # reward gains `coef * (gamma*phi(s') - phi(s))` with phi = the DETACHED sigmoid of the
+    # win-prob logit. 0.0 = OFF (byte-identical; the module is not even imported). It edits the
+    # REWARD STREAM rather than the loss, but the provenance class is td_aux_coef's exactly: it
+    # touches no forward pass and no weight shape, so it is recorded here for PROVENANCE and for
+    # flagless-resume read-back (`_resolve` reads this field), never compared by check_compatible.
+    win_prob_pbrs_coef: float = 0.0
     # v102 TRAINING-ONLY coefficient (gen3_policy_grad_coef_v1, NOT version-locked): the weight on the PPO
     # policy-gradient term itself — `policy_grad_coef * policy_loss` in the loss fold, scaling ONLY the
     # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream

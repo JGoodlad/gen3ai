@@ -55,9 +55,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
-            return collect_rollouts_async(
+            ok = collect_rollouts_async(
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        return super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
+        else:
+            ok = super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
+        # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): add coef·(γ·φ(s′) − φ(s)) to this
+        # rollout's rewards and RE-RUN GAE, with φ = the DETACHED win-prob head. It has to happen HERE
+        # — after collection, before train() — because both collectors compute GAE as their last act
+        # and PopArt reads `returns` at the top of train(), so this is the one window in which the
+        # shaping can land in RAW reward space and still reach the advantages. Env workers hold no
+        # model, so the reward cannot be shaped where it is produced. Covers BOTH collectors
+        # identically (see winprob_pbrs.py on why the φ read is a batched re-forward). At coef 0 —
+        # the default — not even the import runs, so an OFF run is byte-identical.
+        if ok and float(getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0:
+            from agents.training.winprob_pbrs import apply_winprob_pbrs
+            self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
+        return ok
 
     def _annealed_entropy_boost(self, B: float, af: float) -> float:
         """The state-conditioned entropy-boost multiplier at the CURRENT step. Constant `B` if the anneal
@@ -1363,6 +1376,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if win_prob_metrics:
             for _wk, _wvals in win_prob_metrics.items():
                 self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
+
+        # +WIN-PROB PBRS (gen3_winprob_pbrs_v1, ai_v12 route 1): the shaping term's magnitude for THIS
+        # rollout, computed in `collect_rollouts` (not here — the term edits rewards, not the loss, so
+        # it has no per-minibatch existence). Under `train/` deliberately: it is a property of the
+        # reward stream PPO is fitting, not of the win-prob head, and it belongs beside the other
+        # train-loop quantities a reader checks when the loss moves. `pbrs_reward_share` is the one to
+        # watch — the shaping's mean |magnitude| as a fraction of the UNSHAPED reward's, i.e. how much
+        # of the return signal this coefficient has replaced.
+        if self._pbrs_metrics:
+            for _pk, _pv in self._pbrs_metrics.items():
+                self.logger.record(f"train/pbrs_{_pk}", float(_pv))
 
         # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
         # interpretability head's aggregate health, complementing the prober's per-decision histogram).

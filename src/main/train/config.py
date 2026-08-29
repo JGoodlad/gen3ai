@@ -243,6 +243,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like win_prob_coef)
+    _resolve("win_prob_pbrs_coef", 0.0)        # v104 training-only (inherited like td_aux_coef)
     _resolve("policy_grad_coef", 1.0)                   # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
@@ -442,6 +443,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
         # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
         parser.error("--td-aux-coef must be >= 0 (0 = off)")
+    if args.win_prob_pbrs_coef is not None and args.win_prob_pbrs_coef < 0.0:
+        # A negative coef INVERTS the potential — the policy would be rewarded for driving its own
+        # P(win) DOWN. The invariance theorem still holds (φ' = −φ is a valid potential), which is
+        # exactly why this cannot be caught downstream: it would train, converge, and be wrong.
+        parser.error("--win-prob-pbrs-coef must be >= 0 (0 = off)")
+    if args.win_prob_pbrs_coef and args.win_prob_pbrs_coef > 0 and args.win_prob_mode == "none":
+        # The POTENTIAL IS the win-prob head. Under `none` the head is not BUILT, so there is nothing
+        # to read and the shaping would be a silent no-op — the invisible-regression class. Fail at
+        # config time with the fix in the message, not at the first rollout end.
+        parser.error("--win-prob-pbrs-coef > 0 requires --win-prob-mode read_only|shaping — the PBRS "
+                     "potential φ(s) IS the win-prob head's output, and --win-prob-mode none builds "
+                     "no head. Pass a mode, or drop the shaping coefficient.")
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
         # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only

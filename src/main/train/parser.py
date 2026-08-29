@@ -1215,6 +1215,26 @@ def build_parser() -> argparse.ArgumentParser:
                              "(not version-locked; inherited on a flagless resume). Costs one extra "
                              "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
                              "td_aux/resid_mean stay near 0.")
+    parser.add_argument("--win-prob-pbrs-coef", "--win_prob_pbrs_coef", dest="win_prob_pbrs_coef",
+                        type=float, default=None,
+                        help="WIN-PROB PBRS reward shaping (gen3_winprob_pbrs_v1; ai_v12 route 1, "
+                             "designs/ai_v12/design_winprob_behavior_coupling.md). Adds "
+                             "coef * (gamma*phi(s') - phi(s)) to every transition's reward, with "
+                             "phi(s) = sigmoid of the win-prob head's logit, DETACHED. --win-prob-mode "
+                             "'shaping' is REPRESENTATION shaping and carries NO behavioral force (the "
+                             "head is a side readout with no gradient path to the acting head); this is "
+                             "the reward-level route that gives it force, so a whiff that drops the "
+                             "model's own P(win) costs literal reward. Protected by the "
+                             "potential-based-shaping invariance theorem -- a miscalibrated phi costs "
+                             "learning SPEED, not correctness -- but our phi is a LEARNED, DRIFTING "
+                             "head, so that holds exactly per rollout and only approximately across "
+                             "them (prefer a MATURE base; see the doc's SS2.4). 0.0 = OFF, "
+                             "byte-identical (the module is not even imported). REQUIRES "
+                             "--win-prob-mode read_only|shaping. Applied trainer-side to the rollout "
+                             "buffer before GAE (env workers hold no model); covers --async-rollout. "
+                             "TRAINING-only (not version-locked; recorded for provenance and inherited "
+                             "on a flagless resume, the td_aux_coef class). Watch "
+                             "train/pbrs_reward_share -- the shaping's share of the reward stream.")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "

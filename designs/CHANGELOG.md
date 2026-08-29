@@ -5955,3 +5955,88 @@ arithmetic (hand-computed constants + an independently written closed form), eve
 window eviction, kind routing, both rollout paths' locals, and the `OPP_CLASS_SUFFIX` ↔ wrapper-
 constant correspondence — the integer is all that crosses the pipe, so a renumbering there would
 otherwise silently relabel a curve.
+
+---
+
+## v104 — `gen3_winprob_pbrs_v1` (2026-08-29): the win-prob head gets a route to behavior — PBRS reward shaping
+
+**`--win-prob-pbrs-coef`, default `0.0` = OFF and byte-identical (the module is not even imported).
+Nothing has run it; no arm is registered.** ai_v12 route 1 —
+`designs/ai_v12/design_winprob_behavior_coupling.md`.
+
+**The correction this exists to answer.** `--win-prob-mode shaping` has been read for generations as
+"the win-prob objective shapes the policy". It does not. It is **REPRESENTATION** shaping: the BCE
+gradient reaches the shared trunk, subsidising outcome-predictive features there. There is no
+gradient path anywhere from *predicting wins* to *choosing winning actions* — the logit is a SIDE
+readout, never concatenated into pi/vf (leak-safety: its label is the privileged future outcome), so
+the policy may ignore the subsidised features entirely and V compresses to its own target regardless.
+The head is a **BAROMETER, not a coach**. Its labels are self-referential too — outcomes under the
+current policy — so a habitual whiff that still wins 55% teaches it "55%", never "the whiff was the
+mistake". "Shaping is live yet the bait loops persist" was never a dose mystery: the live mode was
+never pointed at behavior.
+
+**What this adds.** With φ(s) = σ(win-prob logit), DETACHED, every transition's reward becomes
+`r + coef·(γ·φ(s′) − φ(s))`. The drop after a whiff is now literal reward the policy gradient must
+answer for. It **suppresses without knowing the alternative** — softmax renormalization redistributes
+the suppressed mass — which is the complement of what a distillation target does.
+
+**The shield, and the caveat it does not cover.** Potential-based shaping leaves the optimal policy
+set unchanged for any *fixed* φ (the shaping telescopes to `γ^T·φ(s_T) − φ(s_0)`, a constant per start
+state), so a miscalibrated φ costs learning SPEED, not correctness. **Our φ is a LEARNED, DRIFTING
+head.** Exact invariance therefore holds **per rollout** — PPO freezes the policy during collection
+and φ is read once, after it, with the collection-time weights — and degrades to **approximate**
+invariance across rollouts, bounded by φ's drift over one credit-assignment window. The lever wants a
+MATURE base; a fresh run tests the shield's worst case. Mitigating: the G0 bias map found the head's
+defect is **RESOLUTION, not offset**, and a blurry potential is a WEAK one, not a wrong one — a φ
+constant over a set of states contributes nothing over that set and cannot mislead within it.
+
+**Where it runs, and why there is only one window.** Env workers hold no model, so the reward cannot
+be shaped where it is produced. `InstrumentedMaskablePPO.collect_rollouts` applies it after collection
+and before `train()`: one batched `no_grad` φ forward over the buffer, the term added to
+`rollout_buffer.rewards` in place, then `compute_returns_and_advantage` RE-RUN. Both collectors
+compute GAE as their last act and PopArt reads `returns` at the top of `train()` — so this is the only
+point at which the shaping can land in **RAW reward space** and still reach the advantages, which is
+the order that keeps the value loss in the units of the stream being optimized.
+
+**`--async-rollout` is COVERED, not documented around** — and the reason is the same one that forced
+`WinProbLabelCallback`'s inline terminal capture. The per-step `last_win_prob_logits` stash is
+readable from `_on_step` on the stock path, but the async collector forwards a *wave* of envs and its
+callback locals cannot recover the env→row mapping. A batched re-forward gives BOTH paths the
+identical quantity for ≈ one forward pass over the rollout (roughly `1/n_epochs` of one epoch), so the
+transport-specific capture was not worth its two implementations.
+
+**The two conventions are NOT the same case, and conflating them is the classic bug in this family.**
+TERMINAL (`episode_starts[t+1] == 1` — the identical test SB3's own GAE uses for `next_non_terminal`,
+so the two notions of "terminal" cannot drift apart): φ(s′) := 0, which is what makes the per-episode
+discounted sum telescope to exactly `−coef·φ(s_0)`. BUFFER-BOUNDARY TRUNCATION (the episode is still
+running when the rollout ends): φ(s′) is the **bootstrap** φ(s_T), not 0 — forcing 0 there charges the
+policy a phantom penalty for the rollout merely ending. `TimeLimit.truncated` arrives as `done=True`
+and takes the terminal branch, which here is arguably correct rather than approximate: the 250-turn
+cap IS the forfeit deadline and the reward manager scores it as a real outcome. Pinned by test either
+way, so a change to the timeout's semantics fails loudly.
+
+**Fail-loud, never a silent no-op.** `> 0` with `--win-prob-mode none` is refused at config time (the
+potential IS the head; under `none` no head is built). A negative coefficient is refused because it
+inverts the potential — and the theorem still holds for `−φ`, so it would train, converge, and be
+wrong. A missing head at runtime raises `WinProbPbrsError`. A shaping term the operator believes is on
+while it does nothing is the invisible-regression class this project keeps eating.
+
+**Metrics** `train/pbrs_{shaping_mean,shaping_absmean,phi_mean,reward_share}`. Under `train/`
+deliberately: this is a property of the reward stream PPO is fitting, not of the head.
+`pbrs_reward_share` — mean |shaping| over mean |UNSHAPED reward| — is the one that says whether a
+coefficient is sane; its denominator is the unshaped stream on purpose, so the ratio does not flatter
+itself as the coefficient rises.
+
+**Provenance.** TRAINING-only, the `td_aux_coef` class exactly: recorded on `ModelVersion` for
+provenance + flagless-resume read-back, never in `check_compatible`, no `ARCH_SIGNATURE` bump. It is
+the first knob in that class to edit the REWARD STREAM rather than a loss term — worth saying, since
+the class was defined by loss coefficients — but the provenance reasoning is unchanged: no forward
+pass reads it, no weight shape depends on it. A pre-v104 config migrates to `0.0`, which is not a
+guess: the flag did not exist.
+
+**Tests** `agents/training/winprob_pbrs_test.py` (22). The telescoping identity on a hand case and
+over 40 random episode layouts; truncation vs terminal; an off-by-one revert-catcher on the
+`episode_starts[t+1]` test; grad-disabled + detached-to-numpy (fails if the `no_grad` is deleted);
+coef-0 buffer identity plus the source contract that the import is local to the non-zero branch; the
+raw-reward / GAE-recompute order; chunk-boundary coverage; the loud-refusal path; both config gates;
+the v104 migration. Three revert-catchers were verified failing on a deliberate revert.
