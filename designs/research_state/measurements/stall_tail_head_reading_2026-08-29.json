@@ -1,0 +1,725 @@
+{
+ "provenance": {
+  "generation": "pooled: gen-11 .. gen-17 + rev-1/R2/R3 era (clock arm) vs ai_v6/v7/v8 (pre-clock arm)",
+  "run": "138 run dirs under models/ carrying eval_traces",
+  "checkpoint": "n/a \u2014 RECORDED values only, no model was loaded",
+  "step": "all retained eval-trace steps per run",
+  "n_states": "4869 battles (135 clock-era cap endings, 242 pre-clock cap endings)",
+  "date": "2026-08-29",
+  "producer": "tmp/probeO_{census,final,meta,vonly}.py (copied here)",
+  "note": "Probe O, registered in ledger 627ab58. Reads only summary.json meta + states.npz {win_probs, values, has_state}. phi = sigmoid(win-prob head logit) as recorded at decision time; V = PopArt-DENORMALIZED critic value (policy.predict_values). No forward passes."
+ },
+ "prereg": {
+  "classes": {
+   "CAP": "turns >= 250 (the MAX_TURNS forfeit deadline; recorded as a LOSS)",
+   "CAP_STALL": "CAP with ZERO faints in the final 20 game-turns",
+   "CAP_TRADE": "CAP with >=1 faint in the final 20 game-turns",
+   "STALL_LOSS": "LOSS, 100<=turns<250, zero faints in the final 20 turns \u2014 EMPTY BY MEASUREMENT (see notes)",
+   "LONG_LOSS_SLOW": "LOSS, 100<=turns<250, <=1 faint in the final 20 turns",
+   "LONG_LOSS_FAST": "LOSS, 100<=turns<250, >1 faint in the final 20 turns",
+   "REG_LOSS": "LOSS, turns < 50",
+   "LONG_WIN": "WIN, turns >= 100"
+  },
+  "eras": {
+   "clock": "ai_v9_13 (gen-11) onward \u2014 deadline clock in obs AND win-prob head on",
+   "preclock": "ai_v6_03 .. ai_v8_20 \u2014 win-prob head on, no clock",
+   "current": "ai_v9_29 (rev-1) onward \u2014 current-arch sub-pool of `clock`"
+  },
+  "metrics": {
+   "detect": "REGISTERED criterion: phi_T <= 0.5 OR phi_T < phi_{T-4}",
+   "detect_le05": "phi_T <= 0.5",
+   "detect_decl": "phi_T < phi_{T-4}",
+   "overconf": "max(phi over last 5) >= 0.70  [C3-comparable]",
+   "c3band": "mean(phi over last 5) in [0.70, 0.98]  [the C3 band]",
+   "vpos": "V > 0 at the final decision  [the 13/14 analogue]"
+  },
+  "predictions": [
+   "P1: improved vs the 13/14 era, but RESIDUAL stall-tail over-confidence",
+   "P2: detection HIGHER on regular losses than on stall/cap endings"
+  ]
+ },
+ "per_class": {
+  "clock": {
+   "CAP_STALL": {
+    "n": 110,
+    "phi_med": [
+     0.20194285362958908,
+     0.1978912502527237,
+     0.21352199465036392,
+     0.19315724819898605,
+     0.14631079882383347
+    ],
+    "phi_T_mean": 0.3088420237972803,
+    "detect": 0.9727272727272728,
+    "detect_le05": 0.6909090909090909,
+    "detect_decl": 0.8272727272727273,
+    "overconf": 0.20909090909090908,
+    "c3band": 0.14545454545454545,
+    "vpos": 0.20909090909090908,
+    "frac_phiT_ge07": 0.18181818181818182,
+    "frac_phiT_ge05": 0.3090909090909091
+   },
+   "CAP_TRADE": {
+    "n": 25,
+    "phi_med": [
+     0.47397753596305847,
+     0.5494870543479919,
+     0.5505068302154541,
+     0.636458694934845,
+     0.6456925868988037
+    ],
+    "phi_T_mean": 0.4886544824391603,
+    "detect": 0.68,
+    "detect_le05": 0.48,
+    "detect_decl": 0.56,
+    "overconf": 0.48,
+    "c3band": 0.28,
+    "vpos": 0.28,
+    "frac_phiT_ge07": 0.48,
+    "frac_phiT_ge05": 0.52
+   },
+   "LONG_LOSS_SLOW": {
+    "n": 69,
+    "phi_med": [
+     0.09950757771730423,
+     0.09003163874149323,
+     0.07401683926582336,
+     0.06671392917633057,
+     0.04745619371533394
+    ],
+    "phi_T_mean": 0.11769905655503111,
+    "detect": 0.9565217391304348,
+    "detect_le05": 0.9420289855072463,
+    "detect_decl": 0.8260869565217391,
+    "overconf": 0.057971014492753624,
+    "c3band": 0.043478260869565216,
+    "vpos": 0.043478260869565216,
+    "frac_phiT_ge07": 0.043478260869565216,
+    "frac_phiT_ge05": 0.057971014492753624
+   },
+   "LONG_LOSS_FAST": {
+    "n": 430,
+    "phi_med": [
+     0.13949036598205566,
+     0.11312445253133774,
+     0.09013603627681732,
+     0.06860250979661942,
+     0.04614243470132351
+    ],
+    "phi_T_mean": 0.12138529688222767,
+    "detect": 0.9697674418604652,
+    "detect_le05": 0.9488372093023256,
+    "detect_decl": 0.8302325581395349,
+    "overconf": 0.1,
+    "c3band": 0.03488372093023256,
+    "vpos": 0.06511627906976744,
+    "frac_phiT_ge07": 0.02558139534883721,
+    "frac_phiT_ge05": 0.05116279069767442
+   },
+   "REG_LOSS": {
+    "n": 1200,
+    "phi_med": [
+     0.29935669898986816,
+     0.23597484827041626,
+     0.16283439099788666,
+     0.09284910559654236,
+     0.060621460899710655
+    ],
+    "phi_T_mean": 0.15245215561565903,
+    "detect": 0.9458333333333333,
+    "detect_le05": 0.9083333333333333,
+    "detect_decl": 0.8691666666666666,
+    "overconf": 0.20666666666666667,
+    "c3band": 0.04083333333333333,
+    "vpos": 0.10916666666666666,
+    "frac_phiT_ge07": 0.041666666666666664,
+    "frac_phiT_ge05": 0.09166666666666666
+   },
+   "LONG_WIN": {
+    "n": 516,
+    "phi_med": [
+     0.973985105752945,
+     0.9770094454288483,
+     0.9802444279193878,
+     0.9826608300209045,
+     0.9858784377574921
+    ],
+    "phi_T_mean": 0.9473504977979401,
+    "detect": 0.25193798449612403,
+    "detect_le05": 0.023255813953488372,
+    "detect_decl": 0.23837209302325582,
+    "overconf": 0.9689922480620154,
+    "c3band": 0.45155038759689925,
+    "vpos": 0.9631782945736435,
+    "frac_phiT_ge07": 0.9631782945736435,
+    "frac_phiT_ge05": 0.9767441860465116
+   }
+  },
+  "preclock": {
+   "CAP_STALL": {
+    "n": 219,
+    "phi_med": [
+     0.029374657198786736,
+     0.02709377184510231,
+     0.027517033740878105,
+     0.02748802676796913,
+     0.02871035411953926
+    ],
+    "phi_T_mean": 0.19887866350708377,
+    "detect": 0.8904109589041096,
+    "detect_le05": 0.8264840182648402,
+    "detect_decl": 0.5205479452054794,
+    "overconf": 0.1141552511415525,
+    "c3band": 0.1004566210045662,
+    "vpos": 0.1461187214611872,
+    "frac_phiT_ge07": 0.1095890410958904,
+    "frac_phiT_ge05": 0.1735159817351598
+   },
+   "CAP_TRADE": {
+    "n": 23,
+    "phi_med": [
+     0.04568083584308624,
+     0.0967215821146965,
+     0.05864716321229935,
+     0.05317807197570801,
+     0.04886071756482124
+    ],
+    "phi_T_mean": 0.2516187153979326,
+    "detect": 0.8695652173913043,
+    "detect_le05": 0.8260869565217391,
+    "detect_decl": 0.34782608695652173,
+    "overconf": 0.21739130434782608,
+    "c3band": 0.17391304347826086,
+    "vpos": 0.17391304347826086,
+    "frac_phiT_ge07": 0.17391304347826086,
+    "frac_phiT_ge05": 0.17391304347826086
+   },
+   "LONG_LOSS_SLOW": {
+    "n": 214,
+    "phi_med": [
+     0.015977450646460056,
+     0.013546532951295376,
+     0.012430065777152777,
+     0.009622945450246334,
+     0.008142706006765366
+    ],
+    "phi_T_mean": 0.05680264905549848,
+    "detect": 0.9906542056074766,
+    "detect_le05": 0.9906542056074766,
+    "detect_decl": 0.7336448598130841,
+    "overconf": 0.03271028037383177,
+    "c3band": 0.02336448598130841,
+    "vpos": 0.004672897196261682,
+    "frac_phiT_ge07": 0.009345794392523364,
+    "frac_phiT_ge05": 0.009345794392523364
+   },
+   "LONG_LOSS_FAST": {
+    "n": 515,
+    "phi_med": [
+     0.10359234362840652,
+     0.08148366957902908,
+     0.05960073694586754,
+     0.0443757101893425,
+     0.027429470792412758
+    ],
+    "phi_T_mean": 0.08555894051725102,
+    "detect": 0.9805825242718447,
+    "detect_le05": 0.9650485436893204,
+    "detect_decl": 0.8660194174757282,
+    "overconf": 0.10097087378640776,
+    "c3band": 0.021359223300970873,
+    "vpos": 0.02912621359223301,
+    "frac_phiT_ge07": 0.017475728155339806,
+    "frac_phiT_ge05": 0.03495145631067961
+   },
+   "REG_LOSS": {
+    "n": 1165,
+    "phi_med": [
+     0.18922986090183258,
+     0.12159492075443268,
+     0.07745826244354248,
+     0.04753091558814049,
+     0.02720317244529724
+    ],
+    "phi_T_mean": 0.09765592321635214,
+    "detect": 0.9759656652360515,
+    "detect_le05": 0.9527896995708155,
+    "detect_decl": 0.8909871244635194,
+    "overconf": 0.1536480686695279,
+    "c3band": 0.02832618025751073,
+    "vpos": 0.04377682403433476,
+    "frac_phiT_ge07": 0.027467811158798282,
+    "frac_phiT_ge05": 0.04721030042918455
+   },
+   "LONG_WIN": {
+    "n": 383,
+    "phi_med": [
+     0.9526078701019287,
+     0.9598132967948914,
+     0.9711414575576782,
+     0.979644775390625,
+     0.9874976873397827
+    ],
+    "phi_T_mean": 0.9274211180136192,
+    "detect": 0.10704960835509138,
+    "detect_le05": 0.028720626631853787,
+    "detect_decl": 0.09660574412532637,
+    "overconf": 0.9556135770234987,
+    "c3band": 0.4412532637075718,
+    "vpos": 0.9608355091383812,
+    "frac_phiT_ge07": 0.9373368146214099,
+    "frac_phiT_ge05": 0.9712793733681462
+   }
+  },
+  "current": {
+   "CAP_STALL": {
+    "n": 11,
+    "phi_med": [
+     0.03455325961112976,
+     0.027385465800762177,
+     0.027764160186052322,
+     0.04240285977721214,
+     0.010947725735604763
+    ],
+    "phi_T_mean": 0.15796200192364102,
+    "detect": 1.0,
+    "detect_le05": 0.8181818181818182,
+    "detect_decl": 0.8181818181818182,
+    "overconf": 0.0,
+    "c3band": 0.0,
+    "vpos": 0.09090909090909091,
+    "frac_phiT_ge07": 0.0,
+    "frac_phiT_ge05": 0.18181818181818182
+   },
+   "CAP_TRADE": {
+    "n": 3,
+    "phi_med": [
+     0.8380514979362488,
+     0.8740028738975525,
+     0.8485105037689209,
+     0.8751975297927856,
+     0.8556337952613831
+    ],
+    "phi_T_mean": 0.6412393425901731,
+    "detect": 0.3333333333333333,
+    "detect_le05": 0.3333333333333333,
+    "detect_decl": 0.0,
+    "overconf": 0.6666666666666666,
+    "c3band": 0.3333333333333333,
+    "vpos": 0.6666666666666666,
+    "frac_phiT_ge07": 0.6666666666666666,
+    "frac_phiT_ge05": 0.6666666666666666
+   },
+   "LONG_LOSS_SLOW": {
+    "n": 22,
+    "phi_med": [
+     0.09402289614081383,
+     0.08653973042964935,
+     0.09783926606178284,
+     0.1519779935479164,
+     0.06916659325361252
+    ],
+    "phi_T_mean": 0.15527589893794025,
+    "detect": 0.9545454545454546,
+    "detect_le05": 0.9090909090909091,
+    "detect_decl": 0.8636363636363636,
+    "overconf": 0.09090909090909091,
+    "c3band": 0.045454545454545456,
+    "vpos": 0.09090909090909091,
+    "frac_phiT_ge07": 0.045454545454545456,
+    "frac_phiT_ge05": 0.09090909090909091
+   },
+   "LONG_LOSS_FAST": {
+    "n": 46,
+    "phi_med": [
+     0.156471386551857,
+     0.14340073615312576,
+     0.08415083214640617,
+     0.06538025289773941,
+     0.03348805382847786
+    ],
+    "phi_T_mean": 0.147403264759898,
+    "detect": 0.8913043478260869,
+    "detect_le05": 0.8913043478260869,
+    "detect_decl": 0.8043478260869565,
+    "overconf": 0.10869565217391304,
+    "c3band": 0.06521739130434782,
+    "vpos": 0.10869565217391304,
+    "frac_phiT_ge07": 0.043478260869565216,
+    "frac_phiT_ge05": 0.10869565217391304
+   },
+   "REG_LOSS": {
+    "n": 516,
+    "phi_med": [
+     0.30091720819473267,
+     0.23354422301054,
+     0.16948895901441574,
+     0.09106041118502617,
+     0.059186387807130814
+    ],
+    "phi_T_mean": 0.14065921472129683,
+    "detect": 0.9496124031007752,
+    "detect_le05": 0.9186046511627907,
+    "detect_decl": 0.8837209302325582,
+    "overconf": 0.19186046511627908,
+    "c3band": 0.031007751937984496,
+    "vpos": 0.06976744186046512,
+    "frac_phiT_ge07": 0.03294573643410853,
+    "frac_phiT_ge05": 0.08139534883720931
+   },
+   "LONG_WIN": {
+    "n": 32,
+    "phi_med": [
+     0.9285210371017456,
+     0.9586113691329956,
+     0.9543054699897766,
+     0.9735186100006104,
+     0.9845008850097656
+    ],
+    "phi_T_mean": 0.9390416238456964,
+    "detect": 0.125,
+    "detect_le05": 0.0625,
+    "detect_decl": 0.125,
+    "overconf": 1.0,
+    "c3band": 0.625,
+    "vpos": 0.9375,
+    "frac_phiT_ge07": 0.9375,
+    "frac_phiT_ge05": 0.9375
+   }
+  }
+ },
+ "contrasts": {
+  "clock_cap_vs_reg_detect": {
+   "diff": -0.027314814814814792,
+   "lo": -0.06917006947194766,
+   "hi": 0.018451941297002967,
+   "n_a": 135,
+   "n_b": 1200,
+   "runs_a": 24,
+   "runs_b": 56
+  },
+  "clock_cap_vs_reg_detect_le05": {
+   "diff": -0.2564814814814814,
+   "lo": -0.3149075832587055,
+   "hi": -0.18527549884472014,
+   "n_a": 135,
+   "n_b": 1200,
+   "runs_a": 24,
+   "runs_b": 56
+  },
+  "clock_cap_vs_reg_overconf": {
+   "diff": 0.05259259259259258,
+   "lo": -0.026881978186812847,
+   "hi": 0.1226160923011264,
+   "n_a": 135,
+   "n_b": 1200,
+   "runs_a": 24,
+   "runs_b": 56
+  },
+  "clock_cap_vs_reg_c3band": {
+   "diff": 0.12953703703703703,
+   "lo": 0.0662954326785966,
+   "hi": 0.18928462950980993,
+   "n_a": 135,
+   "n_b": 1200,
+   "runs_a": 24,
+   "runs_b": 56
+  },
+  "clock_cap_vs_reg_vpos": {
+   "diff": 0.11305555555555555,
+   "lo": 0.024109700498163796,
+   "hi": 0.2209997006656373,
+   "n_a": 135,
+   "n_b": 1200,
+   "runs_a": 24,
+   "runs_b": 56
+  },
+  "preclock_cap_vs_reg_detect": {
+   "diff": -0.08753591316993581,
+   "lo": -0.15945078855212538,
+   "hi": -0.04003749416900976,
+   "n_a": 242,
+   "n_b": 1165,
+   "runs_a": 44,
+   "runs_b": 53
+  },
+  "preclock_cap_vs_reg_detect_le05": {
+   "diff": -0.12634341857907994,
+   "lo": -0.21698896068918652,
+   "hi": -0.06688046813227566,
+   "n_a": 242,
+   "n_b": 1165,
+   "runs_a": 44,
+   "runs_b": 53
+  },
+  "preclock_cap_vs_reg_overconf": {
+   "diff": -0.02968112652076757,
+   "lo": -0.08526533445851302,
+   "hi": 0.042227592822946976,
+   "n_a": 242,
+   "n_b": 1165,
+   "runs_a": 44,
+   "runs_b": 53
+  },
+  "preclock_cap_vs_reg_c3band": {
+   "diff": 0.0791118362714149,
+   "lo": 0.035292835802045765,
+   "hi": 0.14361475699129214,
+   "n_a": 242,
+   "n_b": 1165,
+   "runs_a": 44,
+   "runs_b": 53
+  },
+  "preclock_cap_vs_reg_vpos": {
+   "diff": 0.10498350654417764,
+   "lo": 0.04914686886316704,
+   "hi": 0.19070577036745345,
+   "n_a": 242,
+   "n_b": 1165,
+   "runs_a": 44,
+   "runs_b": 53
+  },
+  "cap_clock_vs_preclock_detect": {
+   "diff": 0.03008876645240277,
+   "lo": -0.031185276259256618,
+   "hi": 0.11035647560102527,
+   "n_a": 135,
+   "n_b": 242
+  },
+  "cap_clock_vs_preclock_detect_le05": {
+   "diff": -0.17459442913988366,
+   "lo": -0.25344397611053543,
+   "hi": -0.06406508149516865,
+   "n_a": 135,
+   "n_b": 242
+  },
+  "cap_clock_vs_preclock_overconf": {
+   "diff": 0.1352923171104989,
+   "lo": 0.03819091869787958,
+   "hi": 0.21726721514795644,
+   "n_a": 135,
+   "n_b": 242
+  },
+  "cap_clock_vs_preclock_c3band": {
+   "diff": 0.06293235384144474,
+   "lo": -0.027029645924994763,
+   "hi": 0.1347634981018925,
+   "n_a": 135,
+   "n_b": 242
+  },
+  "cap_clock_vs_preclock_vpos": {
+   "diff": 0.07346189164370981,
+   "lo": -0.04131921553961898,
+   "hi": 0.19240045670411515,
+   "n_a": 135,
+   "n_b": 242
+  }
+ },
+ "opp_split_clock_cap": {
+  "staller": {
+   "n": 57,
+   "phi_T_mean": 0.38618865902990046,
+   "overconf": 0.2982456140350877,
+   "detect_le05": 0.5964912280701754,
+   "vpos": 0.2982456140350877
+  },
+  "heuristic": {
+   "n": 21,
+   "phi_T_mean": 0.2485274526607966,
+   "overconf": 0.19047619047619047,
+   "detect_le05": 0.7619047619047619,
+   "vpos": 0.09523809523809523
+  },
+  "sentinel": {
+   "n": 17,
+   "phi_T_mean": 0.3286095240208156,
+   "overconf": 0.29411764705882354,
+   "detect_le05": 0.7058823529411765,
+   "vpos": 0.11764705882352941
+  },
+  "random": {
+   "n": 14,
+   "phi_T_mean": 0.26483464234375526,
+   "overconf": 0.14285714285714285,
+   "detect_le05": 0.7857142857142857,
+   "vpos": 0.14285714285714285
+  },
+  "aggressive": {
+   "n": 14,
+   "phi_T_mean": 0.3595561906695366,
+   "overconf": 0.2857142857142857,
+   "detect_le05": 0.6428571428571429,
+   "vpos": 0.21428571428571427
+  },
+  "setup_sweep": {
+   "n": 10,
+   "phi_T_mean": 0.3720885242102668,
+   "overconf": 0.2,
+   "detect_le05": 0.5,
+   "vpos": 0.3
+  },
+  "ext": {
+   "n": 2,
+   "phi_T_mean": 0.4542178977280855,
+   "overconf": 0.5,
+   "detect_le05": 0.5,
+   "vpos": 0.5
+  }
+ },
+ "base_rates": {
+  "clock": {
+   "traced_losses": 21093,
+   "cap_length": 135,
+   "frac": 0.006400227563646707
+  },
+  "preclock": {
+   "traced_losses": 27304,
+   "cap_length": 242,
+   "frac": 0.008863170231467916
+  },
+  "note": "eval traces are QUOTA-sampled (_FORENSIC_LOSS_QUOTA=10 losses, _FORENSIC_WIN_QUOTA=5 wins, per opponent per eval step) \u2014 this is a rate among TRACED losses, NOT the run's true cap rate."
+ },
+ "tail_progress_separation": {
+  "cap_frac_zero_faints_final20": 0.815,
+  "cap_frac_zero_faints_final10": 0.852,
+  "long_noncap_loss_frac_zero_faints_final20": 0.0,
+  "note": "the pre-registered STALL_LOSS class is EMPTY by measurement, not by a coding error: in this corpus a long game with a no-progress tail ALWAYS runs to the cap. 'Stall pattern' and 'cap ending' are the same population."
+ },
+ "v_sign_by_era_family": {
+  "other": {
+   "n": 28,
+   "frac_V_positive": 0.32142857142857145,
+   "mean_V": -23.67630684375763,
+   "median_V": -12.776352882385254
+  },
+  "ai_v6_v7_v8_preclock": {
+   "n": 248,
+   "frac_V_positive": 0.1532258064516129,
+   "mean_V": -52.24394431133424,
+   "median_V": -35.08652687072754
+  },
+  "ai_v9_01-09_preclock": {
+   "n": 612,
+   "frac_V_positive": 0.8120915032679739,
+   "mean_V": 4.75701124372046,
+   "median_V": 10.071385860443115
+  },
+  "ai_v9_10-12_clock_lands": {
+   "n": 27,
+   "frac_V_positive": 0.25925925925925924,
+   "mean_V": -54.1428782498395,
+   "median_V": -19.35662269592285
+  },
+  "ai_v9_13plus_clock": {
+   "n": 135,
+   "frac_V_positive": 0.2222222222222222,
+   "mean_V": -55.871379416077225,
+   "median_V": -28.70547103881836
+  },
+  "_historical_reference": {
+   "ai_v9_09_at_16M_hand_count": "13/14 = 0.929 positive V, mean V +9.33 (CHANGELOG v67 motivation)",
+   "gen13_runbook_spot_check": "2/9 = 0.222 positive V"
+  }
+ },
+ "meta_analysis_within_run_diff": {
+  "clock": {
+   "vpos": {
+    "pooled_within_run_diff": 0.12043355653027064,
+    "ci95": [
+     0.009870668246359423,
+     0.2544583301358131
+    ],
+    "n_runs": 23,
+    "n_cap_games": 134,
+    "n_runs_positive": 11
+   },
+   "detect_le05": {
+    "pooled_within_run_diff": -0.25033935567655674,
+    "ci95": [
+     -0.3235178344457222,
+     -0.18402409948967
+    ],
+    "n_runs": 23,
+    "n_cap_games": 134,
+    "n_runs_positive": 7
+   },
+   "overconf": {
+    "pooled_within_run_diff": 0.06359162318999136,
+    "ci95": [
+     -0.039097626185522975,
+     0.16736606071637702
+    ],
+    "n_runs": 23,
+    "n_cap_games": 134,
+    "n_runs_positive": 9
+   },
+   "c3band": {
+    "pooled_within_run_diff": 0.11407627335189621,
+    "ci95": [
+     0.045964875291496426,
+     0.18069676742987137
+    ],
+    "n_runs": 23,
+    "n_cap_games": 134,
+    "n_runs_positive": 8
+   }
+  },
+  "preclock": {
+   "vpos": {
+    "pooled_within_run_diff": 0.12274213326456374,
+    "ci95": [
+     0.06506540041354165,
+     0.21202828570788004
+    ],
+    "n_runs": 37,
+    "n_cap_games": 220,
+    "n_runs_positive": 19
+   },
+   "detect_le05": {
+    "pooled_within_run_diff": -0.15476781683232413,
+    "ci95": [
+     -0.2521070155982842,
+     -0.09697525237250504
+    ],
+    "n_runs": 37,
+    "n_cap_games": 220,
+    "n_runs_positive": 8
+   },
+   "overconf": {
+    "pooled_within_run_diff": 0.023112532438547505,
+    "ci95": [
+     -0.028236373182140555,
+     0.09615091704166764
+    ],
+    "n_runs": 37,
+    "n_cap_games": 220,
+    "n_runs_positive": 16
+   },
+   "c3band": {
+    "pooled_within_run_diff": 0.09306863297394227,
+    "ci95": [
+     0.0508046544531673,
+     0.16173287161645586
+    ],
+    "n_runs": 37,
+    "n_cap_games": 220,
+    "n_runs_positive": 19
+   }
+  },
+  "note": "the gen14_endofrun_runbook's sanctioned cross-generation operation: pool the per-run DIFFERENCES (cap-length vs ordinary losses), never the raw levels."
+ },
+ "miss_rate": {
+  "clock": {
+   "cap_phiT_ge_05": 0.34814814814814815,
+   "cap_phiT_ge_09": 0.06666666666666667,
+   "cap_phiT_ge_098": 0.044444444444444446,
+   "ordinary_loss_phiT_ge_05": 0.08004708652148322
+  },
+  "preclock": {
+   "cap_phiT_ge_05": 0.17355371900826447,
+   "cap_phiT_ge_09": 0.05785123966942149,
+   "cap_phiT_ge_098": 0.02066115702479339,
+   "ordinary_loss_phiT_ge_05": 0.0395987328405491
+  }
+ }
+}
