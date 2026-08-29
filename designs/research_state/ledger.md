@@ -6275,3 +6275,35 @@ UNDER-taxation. The head as auditor of the owner's priors, with the owner's bles
 sets the prior that the head prices known-bad play well); a NONZERO over-tax set exists (no
 hand-coded tax is perfectly calibrated); the under-tax set is the interesting unknown — no
 prediction, the finding is the finding.
+
+### 🚨 PROBE M VERDICT: the live BIAS term is a de-facto SWITCH TAX the head refutes — and a candidate cause of the under-switching pathology (2026-08-29 late)
+
+Record `designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md` (landed
+0d03e40; 5,035 battles / 147k decisions; exact model-free reconstruction, fold→window
+alignment MEASURED not assumed — the intuitive alignment was wrong, 0/10,442 vs 8,710/10,424).
+**SCOPE COLLAPSE first: of 29 registry BIAS members, `--all-shaping-pbrs` (default-ON since
+2026-08-18) leaves exactly ONE live — production reward = 1 TERMINAL + 7 PBRS + 1 BIAS
+(`no_progress_tax`).** The owner's remembered anti-stall family has not run in months
+(stall_tax zeroed; heal-war grace is a ProgressClock branch, not a reward; draw-penalty is
+TERMINAL). **Scored: (P1 alignment ≥70%) REFUTED — 45.7% vs 44.7% matched control; the tax
+carries NO win-prob information beyond phase and action kind** (matched-control diffs all
+NULL). **(P2 over-tax) HELD, far larger than predicted: 48.5% of charges have Δφ ≥ 0 — and the
+decomposition is behavioral: 73% of voluntary switches are charged vs 6.7% of moves; 79% of
+all charges land on switches; 36% on ZERO-AGENCY post-faint replacements.** Implied
+differential −0.101 reward/decision AGAINST switching while the head rates switching +0.0042
+win-prob BETTER (SIG) — opposite signs; taxed switches are +0.0103 better than untaxed ones.
+**(P3) the exemptions are mostly RIGHT** (in-grace heals gain +1.6pp; the freeze protects
+dice-ruined turns). **Two defects actionable against the rule's OWN intent:** (a) the SITOUT
+guard is off by one window — it exempts the KO turn and charges the replacement (and leaves
+the corpus's costliest class, −5.1pp × 13.2% of decisions, exempt); (b) **no switch can ever
+satisfy `_is_progress`** — the term prices an action KIND, not progress. **HYPOTHESIS
+REGISTERED (not measured causally): the no_progress_tax is a candidate CAUSE of the
+long-standing under-switching pathology** (human-agreement probe: policy switches ~16% vs
+humans ~30%) — a reward term paying −0.101/decision against switching for a whole generation
+is exactly the shape that produces it. **FIX POLICY: reward changes are retrain-class and NOT
+touched mid-campaign** — the SITOUT off-by-one, the switch-progress definition, and a
+no_progress_tax-OFF (or fixed) arm with switch-rate as an endpoint are QUEUED as next-era
+reward-registration items, beside the staller-RNG fix. The answer to the owner's original
+question: the one live bias is NOT annealable scaffolding aligned with the head — the head
+audited it and found an action-kind tax with an off-by-one, which is precisely what the audit
+instrument existed to find.
