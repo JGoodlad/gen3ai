@@ -5775,3 +5775,24 @@ Response exploitation as a second-order lever. **DEFERRED with reasons:** belief
 at our depths; the data to decide exists) and mid-game subgame re-solving (the safe-subgame
 literature says the naive version is wrong). Post-capstone era work; nothing dispatched — the
 box is on rev-3.
+
+### 🔭 LADDER-SEARCH PROGRAM DISPATCHED — three parallel probes/builds, predictions registered (2026-08-28 late, owner: "keep iterating until ≥1 interesting to try")
+
+**Probe G — the SHARED-vs-DIFFERENTIAL bias split (decides the program's ordering):** on real
+recorded decisions with reconstruction records, tight-MC CRN-paired labels for every legal root
+action vs the critic's one-ply values; decompose critic error into per-decision OFFSET (cancels
+in paired comparisons) vs DIFFERENTIAL residual (survives); metrics = rank correlation, argmax
+flip rate, and WIN-PROB REGRET of following the critic's ranking (the decision-relevant loss).
+Registered prediction (from the G0 bias-map verdict "resolution not offset"): the differential
+component is SUBSTANTIAL — pairing alone is not enough and contrastive critic training is the
+lever; offset share large but decision-irrelevant. **Probe H — the TIME-MANAGER triage:**
+forced-vs-contested classifier (masked legal count, masked top-2 logit gap, one-ply V-gap) on
+recorded decisions, validated against where search actually flips the action; ⚠️ logits in
+traces are PRE-MASK (finding #30) — masks must be applied. Registered prediction: ≥60% of
+decisions forced with in-class search-flip <2%, giving ~5–10× budget concentration.
+**Build/probe I — RACING root selection:** successive elimination with CRN-paired difference
+CIs as an adaptive alternative to the battery's fixed K×R sweep; offline A/B vs a high-budget
+gold reference at matched compute. Registered prediction: ≥2× budget reduction at matched
+decision quality. All CPU-only, ≤2 cores each, nice 15 — the box runs rev-3's fleet/admission
+tonight. "Interesting to try" = a concrete intervention with a measured expected benefit ready
+for a live battery/arm; iteration continues until at least one exists.
