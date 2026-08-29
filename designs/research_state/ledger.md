@@ -5819,3 +5819,30 @@ vs the <2% bar — absolutes are at gold resolution; arm-vs-arm differences are 
 quantity). CHAIN: hold for probes G (bias split) + H (triage thresholds), then synthesize the
 composite ladder-search config — racer + futility stop + clock banker — as the "interesting to
 try" candidate.
+
+### 🔴 PROBE H VERDICT: the "forced decisions" premise is REFUTED — search flips 69% of decisions; only the CRITIC knows which flips matter; and search currently NET-LOSES (2026-08-29 early)
+
+Record `designs/research_state/measurements/search_triage_policy_2026-08-28.md` (landed e3c63a3;
+n=4,986 one-ply CRN labels over 51,731 decisions; acid test corr 1.000000; corroborated by the
+battery's own n_changed 60–67% over ~40k real searched decisions; dice control ±1.4pp).
+**Registered reading REFUTED: the marginal search-flip rate is 0.694 [0.681,0.707]** — a
+60%-forced class at <2% flips is arithmetically impossible, and NO cheap policy-confidence
+feature separates flips (gap/entropy/top-1 all at or BELOW the random null; drop-one CV says
+removing the gap IMPROVES the triage). **What IS separable is flip COST: 83% of the dividend
+sits in 22.7% of decisions worth ≥5pp, and only |P(win)−0.5| finds them.** The line of the
+probe: *the policy does not know when search will overrule it; the critic knows when being
+overruled would not matter.* Operating rule shipped: `n_legal≤1 OR |P(win)−0.5|≥0.15` ⇒ play
+immediately — 82.5% forced, 5.7× concentration, 16.2s/contested, 31.0% dividend retained vs
+16.5% random (1.88×). Oracle-triage headroom sized: 91% retention at 70% coverage vs the free
+feature's 53% — 38 points for a costlier signal (the fallback's V-gap, half-vindicated).
+**GOVERNING CONTEXT, banked loudly: the battery's mirror arms show search NET-LOSES today**
+(honest_1s 0.292, oracle_10s 0.125–0.263 vs the mirror's 0.50 null; only playoff at 0.450 is
+non-losing — it searches 14.5% and flips 7.4%, settling by paired rollouts). A 69% flip rate
+against a noisy leaf is DAMAGE, and triage is damage control before it is budget allocation.
+**THE SYNTHESIS FORMING (H×I, G pending): DEFENSIVE SEARCH** — policy by default; overrule
+ONLY when (a) the game is close (wp-extremity gate), (b) racing separates the alternative
+quickly with CRN-paired CIs clearing the leaf-noise floor (I's U-shape: separable = immediate),
+(c) settlement by paired rollouts, not raw leaf V (the only arm that doesn't lose). Caveats:
+Δwp is the critic's CLAIM not realized gain (relative ranking only); ground truth is one-ply
+vs recorded opp move; move_selection only; bot-distribution coverage optimistic, feature
+ordering should transfer.
