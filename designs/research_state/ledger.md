@@ -5753,3 +5753,25 @@ frozen branches); lead candidate for the CTRL−PLAIN gap = the cf-heads config 
 noted on CTRL/ACTION. Pair 3 (R2-PLAIN vs rev-1 h2h, running) decides whether continuation's
 cost is meter-local (drift as REDISTRIBUTION away from pinned-team lines) or general (decay).
 Fleet: F6f closing ~19:00; admission + h2h pair 3 land ~00:20 unattended.
+
+### 🗺️ LADDER-SEARCH ELO-MAXING PROGRAM SKETCHED (owner question, 2026-08-28 late) — "make comparisons fair, not leaves true"
+
+Owner: next steps for ladder search given a biased value function and unmeaningful terminal
+playouts. Program registered, ordered by leverage: **(1) critic repair via the licensed R1 v2
+label factory, made CONTRASTIVE** — paired sibling-state labels attack the bias map's actual
+defect (RESOLUTION, not offset; 39% is the irreducible hidden-info floor); meter =
+sd_true_excess. **(2) Paired evaluation everywhere** — rankings need unbiased DIFFERENCES, not
+unbiased values; shared bias cancels under CRN-paired sibling evaluation; only differential
+bias survives. **(3) Best-arm identification at the root** — successive elimination with
+CRN-paired CIs replacing the fixed K×R grid; adaptive stopping on separation-or-clock.
+**(4) Time manager** — triage (mask size, logit gap, V-gap) plays forced decisions instantly
+and concentrates the 150s clock on the few pivotal turns (falsify/triage data) — ~5–10×
+effective budget, free. **(5) Leaf = 2–4-turn CRN rollout + V hybrid; never terminal** —
+resign-adjudicated rollouts (stop at |V|>0.9 or n turns) if longer grounding wanted. **(6)
+Opponent-marginal recalibration for humans** — α/β trained on our ecology ≠ ladder humans;
+recalibrate on public replays (drift-scan pipeline exists); later, mild Restricted-Nash-
+Response exploitation as a second-order lever. **DEFERRED with reasons:** belief-space search
+(ReBeL-shape — only if the battery's honest-vs-oracle gap shows strategy fusion is first-order
+at our depths; the data to decide exists) and mid-game subgame re-solving (the safe-subgame
+literature says the naive version is wrong). Post-capstone era work; nothing dispatched — the
+box is on rev-3.
