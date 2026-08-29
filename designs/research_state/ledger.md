@@ -6174,3 +6174,22 @@ mature base; winner's curse: `--teacher-confirm-rollouts 0` exists only as E2's 
 training/CLAUDE.md gains a 🚨 correction that `win_prob_mode="shaping"` carries no behavioral
 force. The ai_v12 era is born with its instruments built, its caveats written, and its first
 arm already chosen by measurement — nothing runs until the era registers.
+
+### 💡 THE Q-WIN-PROB AMORTIZATION registered (owner deduction, 2026-08-29) — the convergence point of ai_v12 route 2 and the R1 label factory
+
+Owner asked why per-move win probability isn't trivially available like a teacher's per-action
+distribution, then self-answered correctly: WE HAVE V-ARCHITECTURE, NOT Q — the head evaluates
+states, so per-move requires manufacturing successors = the simulator (11 re-rolls where a
+teacher needs zero forwards). Registered concept: **P(win|s,a) as a per-action readout riding
+the pointer head's own action tokens** — one forward, eleven win probs; poor-man's distillation
+becomes teacher-cheap and the search leaf becomes FREE. **The trap, named: on-policy data
+labels only the taken action, and the starvation number (preferred alternative at p=0.002)
+means a naively-trained Q head is untrained exactly where it matters — confidently wrong on
+the never-tried moves.** The fix is owned machinery: COUNTERFACTUAL labels from the R1 v2
+factory (per-action re-rolls, ~12M/day, the dormant `--cf-winprob-coef` path whose
+label-quality prerequisites were settled in #28) — i.e. **the simulator distilled into a
+forward pass, amortized one-ply search**. Sequencing of record: ai_v12's route 2 (exact,
+expensive, teacher-time) proves the knowledge transfers; the Q head is its SCALING SUCCESSOR
+(approximate, instant, everywhere). This entry connects two previously separate programs —
+the win-prob coupling routes and the licensed R1 factory — into one pipeline; the Q head
+becomes an ai_v12 experiment-ladder candidate (E5) when that era registers.
