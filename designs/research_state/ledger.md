@@ -6257,3 +6257,21 @@ final word:** per-decision gains are REAL (+4.7pp, K) and do not compose in play
 roster τ≈0.17) — if iter 3's rollout-CONFIRMED overrules also net zero, search-as-PLAYER
 dead-ends at these checkpoints and search's value is as TEACHER/data — which is precisely
 where tonight's ai_v12 program (routes 2/E5) already went.
+
+### 🔭 PROBE M DISPATCHED — does the win-prob head ALIGN with the hand-coded BIAS taxes? (owner question, 2026-08-29 late)
+
+Owner: the reward registry's BIAS terms tax trivially-incorrect play known-bad BEFORE the turn
+(the anti-stall family). Question: does the win-prob head already PRICE what the biases tax?
+Probe M measures the alignment cross-tab on recorded battles by re-running the reward
+attribution offline (the registry's per-term decomposition over event logs) and joining it with
+the head's reads at the same decisions. **The instrument cuts BOTH ways, and that is its
+value:** (a) ALIGNMENT — at bias-taxed decisions, is φ already depressed/declining before the
+tax fires? High alignment ⇒ the biases are ANNEALABLE SCAFFOLDING (and a properly-dosed PBRS-φ
+could subsume them); (b) THE AUDIT — bias-taxed actions where the head sees NO outcome cost =
+candidate OVER-taxation (the hand-coded intuition taxing play that doesn't actually cost win
+probability), and untaxed stall-shaped behavior where the head sees real cost =
+UNDER-taxation. The head as auditor of the owner's priors, with the owner's blessing.
+**Registered predictions:** ≥70% alignment on the stall-tax class (probe L's 96% whiff result
+sets the prior that the head prices known-bad play well); a NONZERO over-tax set exists (no
+hand-coded tax is perfectly calibrated); the under-tax set is the interesting unknown — no
+prediction, the finding is the finding.
