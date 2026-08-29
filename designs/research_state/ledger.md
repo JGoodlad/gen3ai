@@ -6548,3 +6548,24 @@ hardest-class problem — and the registered chain solves it indirectly: harvest
 the slide → PBRS-φ meters the terminal badness out along the drag as immediate per-turn
 shaping → the policy's problem reduces to one-step learning.** The value channel carries the
 time structure so the policy channel never has to.
+
+### 🧭 ASYMMETRIC GATING RULING (owner exchange, 2026-08-29 late) — gate-as-CLS-token is legal and standard; TEAM dials must clear the bar that LUT/FiLM failed
+
+Owner asked: can a gate be a learned CLS token, decoupled from the content it gates (FiLM
+dials from our-team/their-team summaries on the value head, to capture exploiter-team value)?
+Banked: **(1) mechanism — YES, standard**: symmetric GLU is the special case; the general
+family f(content) ⊗ g(context) with an attention-pooled (CLS) conditioner is FiLM /
+cross-attention conditioning (diffusion's text-gates-image is the canonical decoupled
+example). Decoupling buys a FACTORIZATION bias (shared-basis content × per-context relevance).
+**(2) application — the TEAM-dial motivation collides with the project's own nulls**: LUT free
+per-team codes +0.024 n.s. ("do NOT climb to LoRA/MoE"); count-dominates-conditioning
+(+0.077 SIG vs +0.027 n.s.); FiLM SNR found 2/3 of conditioning energy in ONE shared direction
+— the network voted for mostly-shared competence. Gates FRAGMENT statistical strength (719
+thin slices — the measured per-condition starvation), and the trunk already attends over both
+teams (no missing signal, only added structure). The sanctioned capture mechanism for
+exploiter-team competence is the FLYWHEEL's distillation into shared weights (DiD-proven) +
+the E5 Q-head. Standing bar re-affirmed: a team dial ships only after the gated quantity is
+shown to PREDICT performance — the exact bar the LUT arm failed. **(3) where the owner's
+construction debuts: the SURVIVAL-CONDITIONED READOUT** — φ = f(position) ⊗ g(CLS over
+temporal context) — the decoupled gate aimed at the one MEASURED multiplicative defect (the
+0.999 tails), semantics-free, slotted as the gated-readout rung of the general program.
