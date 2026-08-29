@@ -42,3 +42,57 @@ def test_the_outcome_vocabulary_is_closed():
     for b in (_Battle(True, True), _Battle(True, False), _Battle(True, None),
               _Battle(False, None), None):
         assert battle_outcome(b) in OUTCOMES
+
+
+# -- the ROOT P(win) the defensive gate reads (see defensive.py) --------------
+
+
+class _Extractor:
+    def __init__(self, logits):
+        self.last_win_prob_logits = logits
+
+
+class _Policy:
+    def __init__(self, logits):
+        self.features_extractor = _Extractor(logits)
+
+
+class _Model:
+    def __init__(self, logits):
+        self.policy = _Policy(logits)
+
+
+def test_the_root_win_prob_is_read_off_the_live_forwards_own_stash():
+    import torch
+
+    from main.search_dividend.player import _safe_win_prob
+
+    assert _safe_win_prob(_Model(torch.tensor([[0.0]]))) == 0.5
+    assert _safe_win_prob(_Model(torch.tensor([[2.0]]))) > 0.88
+
+
+def test_a_run_with_no_win_prob_head_yields_None_never_an_imputed_half():
+    """0.5 is the MOST contested value the gate knows, so imputing it on a missing measurement
+    would route every decision into the searched class. The engine turns this ``None`` into a
+    counted `defensive_no_win_prob` refusal instead."""
+    from main.search_dividend.player import _safe_win_prob
+
+    assert _safe_win_prob(_Model(None)) is None
+
+
+def test_the_search_hop_carries_the_win_prob_through_to_the_engine():
+    """The stash is clobbered by the search's own forwards, so the value has to be captured at the
+    live decision and PASSED. A signature that silently dropped it would leave the gate reading
+    None on every decision — 100% `defensive_no_win_prob`, a cell that measures nothing."""
+    import inspect
+
+    from main.search_dividend.player import SearchDividendPlayer
+    from main.search_dividend.search import SearchEngine
+
+    assert "root_win_prob" in inspect.signature(SearchEngine.choose).parameters
+    assert "root_win_prob" in inspect.signature(SearchDividendPlayer._search).parameters
+    src = inspect.getsource(SearchDividendPlayer.choose_move)
+    assert "_safe_win_prob(self.model)" in src, "read it off the LIVE forward"
+    assert src.index("_safe_win_prob") < src.index("run_in_executor"), \
+        "...and BEFORE the search's own forwards overwrite the stash"
+    assert "root_win_prob=root_win_prob" in inspect.getsource(SearchDividendPlayer._search)

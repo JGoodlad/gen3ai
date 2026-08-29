@@ -118,17 +118,23 @@ class SearchDividendPlayer(RLPlayer):
             return self.choose_default_move()
         # Read α off THIS forward, before any search forward clobbers the stash.
         pub = _safe_alpha(self.model)
+        # ...and P(win) off the SAME forward, for the same reason. It is the defensive gate's only
+        # input, and it must be the ROOT's value — every arm-scoring batch the search runs
+        # overwrites `last_win_prob_logits`, so there is no second chance to read it. In the mirror
+        # both sides share one model object, but the unsearched side forwards on POKE_LOOP and
+        # there is no await between our forward and this read, so nothing can land in between.
+        root_wp = _safe_win_prob(self.model)
 
         history = self._history.setdefault(tag, [])
         if self.engine.cfg.arm == "base":
-            result = self._search(battle, side, builder, history, mask, int(idx), pub)
+            result = self._search(battle, side, builder, history, mask, int(idx), pub, root_wp)
         else:
             # OFF POKE_LOOP. `materialize_branches` drives a replay player THROUGH this loop and
             # blocks on the result, so running it here would deadlock the loop against itself
             # (`obs_materializer._refuse_poke_loop` refuses loudly rather than hanging). Awaiting
             # an executor hands the loop back for exactly the duration of the search.
             result = await asyncio.get_running_loop().run_in_executor(
-                None, self._search, battle, side, builder, history, mask, int(idx), pub)
+                None, self._search, battle, side, builder, history, mask, int(idx), pub, root_wp)
         chosen = int(result.action)
         try:
             order = self.action_to_order(chosen, battle)
@@ -148,7 +154,7 @@ class SearchDividendPlayer(RLPlayer):
         return order
 
     def _search(self, battle, side, builder, history, mask, policy_action,
-                pub) -> DecisionResult:
+                pub, root_win_prob=None) -> DecisionResult:
         from main.search_dividend.budget import RealizedWidths
 
         cfg = self.engine.cfg
@@ -178,7 +184,8 @@ class SearchDividendPlayer(RLPlayer):
         return self.engine.choose(
             record=record, side=side, turn=int(battle.turn), our_history=history,
             our_tokens=tokens, observed_our_lines=builder.our_lines, pub=pub,
-            policy_action=policy_action, opp_true_packed=opp_true)
+            policy_action=policy_action, opp_true_packed=opp_true,
+            root_win_prob=root_win_prob)
 
     def _legal_tokens(self, battle, mask) -> Dict[int, str]:
         """``{action_index: sim choice string}`` for every legal action, via the REAL mapper.
@@ -218,6 +225,25 @@ class SearchDividendPlayer(RLPlayer):
             if err:
                 row["error_detail"] = err
         self.decisions.append(row)
+
+
+def _safe_win_prob(model):
+    """The root P(win) off the CURRENT forward's stash, or ``None`` — never an imputed 0.5.
+
+    Delegates to ``RLPlayer._win_prob``'s reading of ``last_win_prob_logits`` rather than
+    re-deriving it, so a change to how the head publishes reaches both readers at once. ``None``
+    means the run trained no win-prob head (``--win-prob-mode none``), which the defensive gate
+    turns into a counted ``defensive_no_win_prob`` refusal — see :meth:`SearchEngine._gate` for
+    why imputing a mid-range value there would be the most expensive possible reading of a
+    missing measurement.
+    """
+    import torch
+
+    extractor = getattr(model.policy, "features_extractor", None)
+    logits = getattr(extractor, "last_win_prob_logits", None) if extractor is not None else None
+    if logits is None:
+        return None
+    return float(torch.sigmoid(logits[0, 0]).item())
 
 
 def _safe_alpha(model):

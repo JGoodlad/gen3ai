@@ -41,6 +41,7 @@ from typing import List, Optional
 
 from main.search_dividend.battery import MIRROR, Cell, ResultsFile, run_cell
 from main.search_dividend.budget import WidthCaps
+from main.search_dividend.defensive import LEAVES, DefensiveConfig
 from main.search_dividend.playoff import (DEFAULT_ROLLOUTS, DEFAULT_SCREEN_MARGIN, MIN_PAIRS,
                                           SE_MULTIPLE, PlayoffConfig)
 from main.search_dividend.racing import RULES, RacingConfig
@@ -100,7 +101,31 @@ def build_parser() -> argparse.ArgumentParser:
                         "eliminates candidates whose CRN-paired difference CI separates below the "
                         "leader and spends the saved arm evaluations on MORE samples instead; the "
                         "width ORDER is unchanged, and a racing round is depth 1 (racing and "
-                        "iterative deepening are not composed). See racing.py.")
+                        "iterative deepening are not composed). See racing.py. `defensive` is the "
+                        "same race wrapped in two REFUSALS — a triage gate that never searches a "
+                        "decided position, and a futility stop that never overrules without "
+                        "separation. See defensive.py.")
+    p.add_argument("--defensive-leaf", default=DefensiveConfig.leaf, choices=list(LEAVES),
+                   help="which critic readout the race scores on. `winprob` (default) is MEASURED, "
+                        "not preferred: ranking by the one-ply win-prob head beat the played "
+                        "action by +0.0219 [+0.0089,+0.0364] win probability, while the scalar "
+                        "`value` head's +0.0135 [-0.0007,+0.0280] does not clear zero (probe G, "
+                        "317 decisions / 142,208 terminal rollouts). Unlike `--score auto` this "
+                        "never silently falls back — a checkpoint with no win-prob head raises. "
+                        "--root-strategy defensive only.")
+    p.add_argument("--defensive-wp-margin", type=float, default=DefensiveConfig.wp_margin,
+                   help=f"the triage gate: play the policy immediately when n_legal<=1 or "
+                        f"|P(win)-0.5| >= this (default {DefensiveConfig.wp_margin}). Probe H's "
+                        "operating point — 82.5%% of decisions forced, 5.7x budget concentration, "
+                        "31.0%% of the claimed dividend retained vs a random triage's 16.5%%. "
+                        "--root-strategy defensive only.")
+    p.add_argument("--defensive-confirm", type=int, default=DefensiveConfig.confirm_rollouts,
+                   metavar="N",
+                   help="OPT-IN fourth stage (default 0 = off): before acting on an overrule, "
+                        "settle race-winner vs policy action with N PAIRED rollouts to a terminal "
+                        "through the playoff mechanism, and keep the policy's action unless the "
+                        "paired difference clears 2*SE. Off in the first registered cell — one "
+                        "new mechanism at a time. --root-strategy defensive only.")
     p.add_argument("--racing-rule", default=RacingConfig.rule, choices=list(RULES),
                    help="`z` = a one-sided normal test per look (aggressive; the A/B ran on this); "
                         "`seq` inflates the radius by a union bound over rounds and comparisons so "
@@ -320,7 +345,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"[search_dividend] ckpt={ckpt}\n"
           f"  arms={arms} budgets={budgets} opponents={opponents} games={args.games}\n"
           f"  max_depth={args.max_depth} side_swap={'auto' if args.side_swap is None else args.side_swap}\n"
-          f"  pool={len(pool)} teams  impl={args.impl}/search:{args.search_impl}  out={args.out}",
+          f"  pool={len(pool)} teams  impl={args.impl}/search:{args.search_impl}  out={args.out}\n"
+          f"  root_strategy={args.root_strategy}"
+          + (f"  defensive: leaf={args.defensive_leaf} "
+             f"wp_margin={args.defensive_wp_margin:g} confirm={args.defensive_confirm} "
+             f"racing_rule={args.racing_rule} floor="
+             f"{RacingConfig(rule=args.racing_rule, min_samples=args.racing_min_samples).effective_min_samples()}"
+             if args.root_strategy == "defensive" else ""),
           flush=True)
 
     def progress(row: dict) -> None:
@@ -343,7 +374,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                                root_strategy=args.root_strategy,
                                racing=RacingConfig(rule=args.racing_rule, z=args.racing_z,
                                                    delta=args.racing_delta,
-                                                   min_samples=args.racing_min_samples))
+                                                   min_samples=args.racing_min_samples),
+                               defensive=DefensiveConfig(
+                                   wp_margin=args.defensive_wp_margin,
+                                   leaf=args.defensive_leaf,
+                                   confirm_rollouts=args.defensive_confirm))
             for opp in opponents:
                 cell = Cell(arm=arm, budget=budget, opponent=opp)
                 n = asyncio.run(run_cell(

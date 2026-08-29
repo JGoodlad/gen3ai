@@ -1475,15 +1475,31 @@ src/
                      #   `--opponents self` = the MIRROR (same network, search off on one side —
                      #   null 0.50 by construction), `--side-swap` (default on there) plays every
                      #   game in both orientations so the team draw differences out.
-                     #   `--root-strategy {grid,racing}` chooses how the budget is spread across OUR
-                     #   ROOT ACTIONS: `grid` (DEFAULT — the registered fixed sweep, code path
-                     #   untouched) or `racing` (successive elimination on CRN-paired difference
+                     #   `--root-strategy {grid,racing,defensive}` chooses how the budget is spread
+                     #   across OUR ROOT ACTIONS: `grid` (DEFAULT — the registered fixed sweep, code
+                     #   path untouched), `racing` (successive elimination on CRN-paired difference
                      #   CIs; a candidate whose CI separates below the leader stops being scored and
-                     #   the saved arm evaluations buy MORE samples). The width ORDER is inherited
-                     #   unchanged and a racing round is depth 1 — racing and iterative deepening
-                     #   are not composed. racing.py (the pure racer) · ab_racing.py (the offline
-                     #   bank-and-replay A/B; verdict in
+                     #   the saved arm evaluations buy MORE samples), or `defensive`. The width ORDER
+                     #   is inherited unchanged and a racing round is depth 1 — racing and iterative
+                     #   deepening are not composed. racing.py (the pure racer) · ab_racing.py (the
+                     #   offline bank-and-replay A/B; verdict in
                      #   designs/research_state/measurements/racing_root_selection_2026-08-28.md) ·
+                     #   defensive.py = DEFENSIVE PAIRED SEARCH, the G×H×I composite: the policy
+                     #   plays unless the search EARNS the right to interrupt it. (gate, probe H)
+                     #   `n_legal<=1 or |P(win)-0.5| >= --defensive-wp-margin` (0.15) plays the
+                     #   policy instantly — the critic knows when being overruled would not matter,
+                     #   and no policy-confidence feature separates flips at all; (leaf, probe G)
+                     #   `--defensive-leaf winprob` scores on the WIN-PROB head, which beat the
+                     #   played action by +0.0219 [+0.0089,+0.0364] where the scalar value head's
+                     #   +0.0135 [-0.0007,+0.0280] does not clear zero — and unlike `--score auto`
+                     #   it RAISES rather than silently degrading; (futility, probe I) a race that
+                     #   never separates keeps the policy action and banks the clock, because 52.2%
+                     #   of decisions never separate and the separable ones separate immediately;
+                     #   (confirm, OPT-IN) `--defensive-confirm N` settles a proposed overrule with
+                     #   N paired terminal rollouts first. Per-decision provenance
+                     #   (forced/raced/separated/overruled/futility + banked seconds) folds
+                     #   additively into every results row. First cell:
+                     #   designs/research_state/measurements/defensive_search_first_cell_2026-08-29.md ·
                      #   determinize.py (pool-consistent worlds + the prefix byte-identity GATE) ·
                      #   record.py (a ReconstructionRecord for a battle still IN FLIGHT) ·
                      #   alpha.py (the α-consumer contract at the sim's legal surface) ·

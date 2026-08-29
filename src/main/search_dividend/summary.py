@@ -17,6 +17,14 @@ import math
 from collections import defaultdict
 from typing import Dict, List, Optional, Sequence
 
+from main.search_dividend.defensive import defensive_block, fold_defensive
+
+#: The integer counters ``defensive.fold_defensive`` emits per row, pooled here as sums. DERIVED
+#: from the fold's own output rather than hand-copied, so a counter cannot be added in one place
+#: and silently dropped in the other (the `train` CLI's hand-copied edge-family set is the
+#: cautionary case this project already paid for).
+_DEFENSIVE_COUNTS = tuple(k for k in fold_defensive(()) if k != "defensive_banked_s")
+
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple:
     """The Wilson score interval for ``k`` successes in ``n`` trials.
@@ -50,6 +58,9 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         "n_screen_decisive": 0, "n_playoff": 0, "n_playoff_inconclusive": 0,
         "n_playoff_no_budget": 0, "n_playoff_capped": 0, "n_playoff_failed": 0,
         "n_playoff_ran": 0, "playoff_r_total": 0, "playoff_wall_s": 0.0,
+        # `--root-strategy defensive` (see `defensive.py`), pooled as SUMS for the same
+        # exactness reason. Zero on every other strategy, so a mixed file still reads.
+        **{k: 0 for k in _DEFENSIVE_COUNTS}, "defensive_banked_s": 0.0,
         "_m": [], "_k": [], "_r": [], "_arms": [], "_elapsed": [], "_depth": [], "_beam": [],
     })
     for r in rows:
@@ -64,9 +75,10 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
                     "deadline_truncated", "worlds_gate_failed",
                     "n_screen_decisive", "n_playoff", "n_playoff_inconclusive",
                     "n_playoff_no_budget", "n_playoff_capped", "n_playoff_failed",
-                    "n_playoff_ran", "playoff_r_total"):
+                    "n_playoff_ran", "playoff_r_total") + _DEFENSIVE_COUNTS:
             a[key] += int(r.get(key, 0) or 0)
         a["playoff_wall_s"] += float(r.get("playoff_wall_s", 0.0) or 0.0)
+        a["defensive_banked_s"] += float(r.get("defensive_banked_s", 0.0) or 0.0)
         for reason, n in (r.get("fallbacks") or {}).items():
             a["fallbacks"][reason] += int(n)
         rm = r.get("realized_mean") or {}
@@ -99,6 +111,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
             "deadline_truncated": a["deadline_truncated"],
             "worlds_gate_failed": a["worlds_gate_failed"],
             "playoff": _playoff_block(a),
+            "defensive": defensive_block(a),
             "fallbacks": dict(a["fallbacks"]),
             "realized_mean": {
                 "opp_candidates": _mean(a["_m"]), "worlds": _mean(a["_k"]),
@@ -214,6 +227,7 @@ def mirror_report(rows: Sequence[dict]) -> dict:
             "searched": cell["searched"], "decisions": cell["decisions"],
             "fallbacks": cell["fallbacks"],
             "playoff": cell["playoff"],
+            "defensive": cell["defensive"],
             "realized_mean": rm,
         })
     return {
@@ -363,6 +377,24 @@ def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> s
                 # 0, not None: a beam of zero is the honest statement "no ply was ever afforded",
                 # whereas a bare None reads like a missing measurement.
                 f"beam={c['realized_mean']['beam'] or 0}")
+            df = c.get("defensive")
+            if df:
+                # forced / raced / separated / overruled / futility, all against ONE denominator
+                # (the decisions the strategy handled), plus the clock it handed back. The
+                # registered prediction for the first cell is an overrule rate of 0.08-0.17.
+                lines.append(
+                    f"           defensive: forced={df['forced_rate']:.3f} "
+                    f"({df['forced_n_legal']} n_legal + {df['forced_wp']} wp) "
+                    f"raced={df['race_rate']:.3f} "
+                    f"separated={df['separation_rate'] if df['separation_rate'] is not None else '-'} "
+                    f"futility={df['futility_rate'] if df['futility_rate'] is not None else '-'} "
+                    f"OVERRULE={df['overrule_rate']:.4f} "
+                    f"(of raced {df['overrule_rate_raced'] if df['overrule_rate_raced'] is not None else '-'}) "
+                    f"over {df['decisions']} decisions | banked={df['banked_s']:.0f}s "
+                    f"({df['banked_s_per_decision']}s/dec)"
+                    + (f" | confirm played={df['confirmed']} declined={df['confirm_declined']}"
+                       if (df['confirmed'] or df['confirm_declined']) else "")
+                    + (f" | NO-WIN-PROB {df['no_win_prob']}" if df['no_win_prob'] else ""))
             po = c.get("playoff")
             if po:
                 lines.append(

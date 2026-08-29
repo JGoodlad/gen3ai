@@ -416,3 +416,82 @@ def test_rows_played_under_the_DICE_LEAK_announce_themselves_in_the_report():
     report = format_report(old)
     assert "dice-clairvoyance" in report and "4 of 4 rows" in report
     assert "dice-clairvoyance" not in format_report(new)
+
+
+# -- the DEFENSIVE fold (`--root-strategy defensive`; see defensive.py) -------
+
+
+def test_the_defensive_fold_reaches_the_results_row():
+    """The per-decision counters have to survive the hop into the row, or the cell's overrule rate
+    is unreadable from the artifact and has to be re-derived from a log."""
+    from main.search_dividend.defensive import (GATE_WP_EXTREME, VERDICT_FORCED,
+                                                VERDICT_FUTILITY, VERDICT_OVERRULED)
+
+    got = summarize_decisions([
+        {"fallback": "defensive_forced",
+         "widths": {"defensive_verdict": VERDICT_FORCED,
+                    "defensive_gate_reason": GATE_WP_EXTREME, "defensive_banked_s": 1.0}},
+        {"fallback": None, "changed": False,
+         "widths": {"defensive_verdict": VERDICT_FUTILITY, "defensive_banked_s": 0.4,
+                    "opp_candidates": 3, "worlds_gated_ok": 2, "dice": 1, "arms_scored": 20,
+                    "elapsed_s": 0.6, "racing_rounds": 8}},
+        {"fallback": None, "changed": True,
+         "widths": {"defensive_verdict": VERDICT_OVERRULED, "defensive_banked_s": 0.05,
+                    "opp_candidates": 3, "worlds_gated_ok": 2, "dice": 1, "arms_scored": 30,
+                    "elapsed_s": 0.95, "racing_rounds": 5, "racing_resolved": True}},
+    ])
+    assert got["n_defensive"] == 3
+    assert got["n_defensive_forced"] == 1 and got["n_defensive_forced_wp"] == 1
+    assert got["n_defensive_raced"] == 2
+    assert got["n_defensive_futility"] == 1 and got["n_defensive_overruled"] == 1
+    assert got["defensive_banked_s"] == pytest.approx(1.45)
+    # A futility stop is a search VERDICT, so it stays inside `n_searched` and its realized widths
+    # are pooled — which makes `change_rate` over `searched` read as the overrule rate among RACED
+    # decisions, the registered quantity. A gated decision is a counted FALLBACK and is not.
+    assert got["n_searched"] == 2 and got["n_changed"] == 1
+    assert got["fallbacks"] == {"defensive_forced": 1}
+
+
+def test_a_grid_or_racing_row_folds_the_defensive_counters_to_zero():
+    """ADDITIVE, the same rule fold_playoff and fold_racing follow: one schema covers the whole
+    battery and an older file still summarizes."""
+    got = summarize_decisions([{"fallback": None, "changed": True,
+                                "widths": {"opp_candidates": 2, "worlds_gated_ok": 1,
+                                           "dice": 1, "arms_scored": 8, "elapsed_s": 0.3}}])
+    assert got["n_defensive"] == 0 and got["defensive_banked_s"] == 0.0
+
+
+def test_the_summary_reports_the_defensive_rates_and_is_None_without_them():
+    from main.search_dividend.summary import format_report
+
+    plain = per_cell([_row(arm="honest", budget=1.0, opponent="self")])
+    assert plain[0]["defensive"] is None, \
+        "'no defensive stage' and 'the stage ran and never overruled' are opposite findings"
+
+    rows = [_row(arm="honest", budget=1.0, opponent="self", game=g, orientation=o,
+                 won=1 - (g % 2), result="win" if not (g % 2) else "loss",
+                 n_defensive=20, n_defensive_forced=16, n_defensive_forced_wp=16,
+                 n_defensive_raced=4, n_defensive_separated=2, n_defensive_overruled=2,
+                 n_defensive_futility=2, defensive_banked_s=17.0)
+            for g in range(4) for o in (0, 1)]
+    c = per_cell(rows)[0]
+    d = c["defensive"]
+    assert d["decisions"] == 160 and d["forced"] == 128 and d["raced"] == 32
+    assert d["forced_rate"] == 0.8
+    assert d["overrule_rate"] == 0.1            # over EVERY decision the strategy handled
+    assert d["overrule_rate_raced"] == 0.5      # over the raced ones only
+    assert d["futility_rate"] == 0.5
+    assert d["banked_s"] == pytest.approx(136.0)
+    report = format_report(rows)
+    assert "defensive: forced=" in report and "OVERRULE=" in report
+
+
+def test_the_summary_pools_every_defensive_counter_the_fold_emits():
+    """DERIVED, never hand-copied: a counter added to the fold and forgotten in the aggregator
+    would read as a flat zero in every report — the `train` CLI's unlaunchable edge family in
+    miniature."""
+    from main.search_dividend.defensive import fold_defensive
+    from main.search_dividend.summary import _DEFENSIVE_COUNTS
+
+    emitted = set(fold_defensive(())) - {"defensive_banked_s"}
+    assert set(_DEFENSIVE_COUNTS) == emitted

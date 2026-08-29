@@ -5,7 +5,8 @@ from __future__ import annotations
 import pytest
 
 from main.search_dividend.__main__ import DEFAULT_ARMS, _raise_battle_backstop, build_parser
-from main.search_dividend.search import ARMS
+from main.search_dividend.defensive import DefensiveConfig
+from main.search_dividend.search import ARMS, ROOT_STRATEGIES, SearchConfig
 
 
 def test_playoff_is_selectable_but_not_a_default_arm():
@@ -40,6 +41,48 @@ def test_raising_the_battle_bounds_patches_BOTH_and_only_when_asked():
         assert lbr._BATTLE_IDLE_BUDGET == pytest.approx(120.0)
     finally:
         lbr._PER_BATTLE_TIMEOUT, lbr._BATTLE_IDLE_BUDGET = total0, idle0
+
+
+def test_defensive_is_selectable_and_grid_is_still_what_a_flagless_run_gets():
+    p = build_parser()
+    assert "defensive" in ROOT_STRATEGIES
+    assert p.parse_args(["m"]).root_strategy == "grid"
+    assert p.parse_args(["m", "--root-strategy", "defensive"]).root_strategy == "defensive"
+
+
+def test_the_defensive_knobs_default_to_the_probe_measured_operating_point():
+    a = build_parser().parse_args(["m", "--root-strategy", "defensive"])
+    assert a.defensive_leaf == "winprob"          # probe G: the value head does not clear zero
+    assert a.defensive_wp_margin == 0.15          # probe H's chosen frontier point
+    assert a.defensive_confirm == 0               # one new mechanism at a time in the first cell
+
+
+def test_every_defensive_flag_reaches_the_config_it_names():
+    """The CLI-to-config hop is where a flag goes quietly inert (the `train` CLI's unlaunchable
+    edge family), so the whole triple is asserted on the object the engine actually reads."""
+    a = build_parser().parse_args(["m", "--root-strategy", "defensive",
+                                   "--defensive-leaf", "value",
+                                   "--defensive-wp-margin", "0.3",
+                                   "--defensive-confirm", "6"])
+    cfg = SearchConfig(root_strategy=a.root_strategy,
+                       defensive=DefensiveConfig(wp_margin=a.defensive_wp_margin,
+                                                 leaf=a.defensive_leaf,
+                                                 confirm_rollouts=a.defensive_confirm))
+    assert cfg.defensive_cfg() == DefensiveConfig(wp_margin=0.3, leaf="value",
+                                                  confirm_rollouts=6)
+    assert cfg.effective_score() == "value"
+
+
+def test_the_parser_refuses_a_leaf_it_does_not_know():
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["m", "--defensive-leaf", "scalar_v"])
+
+
+def test_every_help_string_renders():
+    """One unescaped ``%`` turns a help string into a format conversion and `--help` raises. That
+    is a shipped failure in this project's history (`checkargs_test`'s guard); the defensive flags
+    quote several percentages, so the parser is rendered here rather than assumed."""
+    assert "defensive" in build_parser().format_help()
 
 
 def test_the_idle_bound_is_read_at_CALL_time_so_patching_it_takes_effect():

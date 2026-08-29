@@ -197,6 +197,25 @@ class RealizedWidths:
     #: Rounds DISCARDED because some live action produced no value. Counted rather than folded in:
     #: on the grid a missing arm dilutes a mean, but a racer would eliminate on it permanently.
     racing_rounds_incomplete: int = 0
+    # DEFENSIVE (`--root-strategy defensive`; see `defensive.py`). All empty/zero on every other
+    # allocator, which is what keeps a mixed results file readable. The three that carry the
+    # finding are kept APART on purpose:
+    #   `defensive_gate_reason`  — why the search never ran (a decided position vs no choice)
+    #   `defensive_verdict`      — forced | futility | kept | overruled; the strategy's own word
+    #   `defensive_banked_s`     — the clock NOT spent, which is what a time manager redistributes
+    # A forced decision and a futility stop both play the policy's action and are OPPOSITE
+    # findings ("the position was decided" vs "the actions were indistinguishable"); folding them
+    # into one counter would hide exactly the thing the strategy is a bet about.
+    defensive_verdict: str = ""
+    defensive_gate_reason: str = ""
+    #: The root P(win) the gate read, or ``-1.0`` when the head published none. A sentinel rather
+    #: than ``None`` so the row's dtype is stable, and NEGATIVE rather than 0.5 so an absent
+    #: measurement can never be mistaken for a maximally-contested one.
+    defensive_root_win_prob: float = -1.0
+    defensive_no_win_prob: bool = False
+    #: The confirm stage's outcome when ``--defensive-confirm`` is on (``""`` when it is off).
+    defensive_confirm_stage: str = ""
+    defensive_banked_s: float = 0.0
     deadline_truncated: bool = False
     elapsed_s: float = 0.0
 
@@ -226,4 +245,11 @@ FALLBACK_REASONS = (
     "playoff_inconclusive",  # the paired difference did not clear 2·SE — the honest refusal
     "playoff_no_budget",     # the deadline bought no pair (or a candidate had no sim token)
     "playoff_error",         # a rollout family raised; counted, never a lost game
+    # --- `--root-strategy defensive` (see `defensive.py`). NOTE only these two are fallbacks: a
+    # FUTILITY stop is a search VERDICT (the race ran and could not tell the actions apart), so it
+    # carries `fallback=None` like the playoff's `screen_decisive` does, keeps the decision inside
+    # `n_searched`, and is counted by `defensive_verdict`. That makes `change_rate` over `searched`
+    # read as exactly the overrule rate among RACED decisions, which is the registered quantity.
+    "defensive_forced",      # the triage gate declined to search (decided position / no choice)
+    "defensive_no_win_prob",  # the checkpoint published no P(win); the gate refuses to impute one
 )

@@ -121,6 +121,10 @@ Modules
 ``alpha`` the opponent-marginalization candidate set (the alpha-consumer contract) ·
 ``budget`` the wall-clock deadline + the width allocator ·
 ``deepen`` the search tree, its max/alpha-weighted backup, and the beam a ply is planned against ·
+``racing`` successive elimination over CRN-paired rounds (``--root-strategy racing``) ·
+``defensive`` the G x H x I composite (``--root-strategy defensive``): a triage gate that never
+searches a decided position, a CRN-paired race on the WIN-PROB leaf, and a futility stop that
+never overrules without separation ·
 ``search`` the search itself — the first ply, then iterative deepening under the clock ·
 ``player`` the search-wrapped eval player ·
 ``battery`` matched-game driver, side-swap pairing, append-only resumable results ·

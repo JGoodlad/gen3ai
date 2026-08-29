@@ -36,6 +36,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from main.search_dividend.defensive import fold_defensive
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
 from main.search_dividend.playoff import PlayoffConfig, PlayoffRunner, fold_playoff
 from main.search_dividend.racing import fold_racing
@@ -247,6 +248,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         # written by any other cell — or by any earlier version of this file — folds identically.
         **fold_playoff(decisions),
         **fold_racing(decisions),
+        **fold_defensive(decisions),
     }
 
 
@@ -312,12 +314,22 @@ def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
     else:
         (_name, opp) = build_eval_opponents(
             LocalhostServerConfiguration, tb, [opponent_name], tag=tag, start_listening=False)[0]
-    # The second-stage scorer exists ONLY on the playoff arm. Building it unconditionally would
-    # be harmless (it is never called) but would misdescribe every other cell's engine.
+    # The second-stage scorer exists ONLY where a second stage runs: the `playoff` ARM, and the
+    # `defensive` ROOT STRATEGY when --defensive-confirm asked for one. Building it
+    # unconditionally would be harmless (it is never called) but would misdescribe every other
+    # cell's engine. The defensive path overrides `rollouts` with its OWN flag, so one runner
+    # cannot silently inherit the playoff arm's much larger R.
     runner = None
+    dcfg = cfg.defensive_cfg()
     if cfg.arm == "playoff":
         runner = PlayoffRunner(model=model, mappings=mappings, battle_format=BATTLE_FORMAT,
                                cfg=playoff_cfg or PlayoffConfig(), tag=tag)
+    elif dcfg is not None and int(dcfg.confirm_rollouts) > 0:
+        from dataclasses import replace as _replace
+        runner = PlayoffRunner(
+            model=model, mappings=mappings, battle_format=BATTLE_FORMAT,
+            cfg=_replace(playoff_cfg or PlayoffConfig(), rollouts=int(dcfg.confirm_rollouts)),
+            tag=tag)
     engine = SearchEngine(model=model, mappings=mappings, cfg=cfg, pool_packed=pool_packed,
                           playoff=runner)
     me = SearchDividendPlayer(
@@ -396,7 +408,11 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 "battle_created": bool(out.get("battle_created", False)),
                 "wall_s": round(time.monotonic() - t0, 3),
                 "seed": seed,
-                "score_mode": cfg.score, "search_impl": cfg.search_impl,
+                # The score mode the search was ASKED for — `effective_score`, not the raw flag,
+                # because `--root-strategy defensive` names its own head and a row recording
+                # "auto" would misdescribe which leaf the cell was measured on.
+                "score_mode": cfg.effective_score(), "search_impl": cfg.search_impl,
+                "root_strategy": cfg.root_strategy,
                 "max_depth": int(getattr(cfg, "max_depth", 1)),
                 "playoff_rollouts": (int(playoff_cfg.rollouts) if playoff_cfg
                                      and cfg.arm == "playoff" else 0),

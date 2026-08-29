@@ -63,6 +63,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from main.search_dividend import defensive as dfn
 from main.search_dividend import determinize as dz
 from main.search_dividend.alpha import (AlphaPublication, build_candidates,
                                         legal_choices_from_request)
@@ -76,9 +77,11 @@ ARMS = ("base", "honest", "oracle", "playoff")
 #: How the budget is allocated ACROSS OUR ROOT ACTIONS. ``grid`` is the registered allocator — a
 #: fixed K x R sweep scoring every action on every sample. ``racing`` is the adaptive alternative
 #: (:mod:`racing`): the same samples, but candidates whose CRN-paired difference CI separates below
-#: the leader stop being scored, and the saved arm evaluations buy more samples instead. ``grid``
-#: is the DEFAULT and its code path is untouched.
-ROOT_STRATEGIES = ("grid", "racing")
+#: the leader stop being scored, and the saved arm evaluations buy more samples instead.
+#: ``defensive`` (:mod:`defensive`) wraps the racer in the two REFUSALS the G/H/I probe trio
+#: measured — a triage gate that never searches a decided position, and a futility stop that never
+#: overrules without separation. ``grid`` is the DEFAULT and its code path is untouched.
+ROOT_STRATEGIES = ("grid", "racing", "defensive")
 
 #: The arms that search the TRUE opponent team. ``playoff`` inherits the oracle's world because its
 #: depth-1 sweep is only a SCREEN — the hidden-information question is deliberately held fixed so
@@ -110,15 +113,39 @@ class SearchConfig:
     # and a ply that does not fit is simply not spent. 3 is the amendment's own example of what an
     # 8 s cell might reach on contenders; raising it costs nothing when the budget is small.
     max_depth: int = 3
-    #: ``grid`` (the registered fixed sweep, DEFAULT) or ``racing``. See :data:`ROOT_STRATEGIES`.
+    #: ``grid`` (the registered fixed sweep, DEFAULT), ``racing`` or ``defensive``.
+    #: See :data:`ROOT_STRATEGIES`.
     root_strategy: str = "grid"
-    #: Only consulted on ``root_strategy="racing"``.
+    #: Consulted on ``root_strategy`` in ``("racing", "defensive")`` — the defensive strategy
+    #: RACES, so it inherits this config rather than carrying a second copy of an elimination
+    #: threshold that could drift from it.
     racing: RacingConfig = field(default_factory=RacingConfig)
+    #: Only consulted on ``root_strategy="defensive"``.
+    defensive: dfn.DefensiveConfig = field(default_factory=dfn.DefensiveConfig)
 
     def __post_init__(self) -> None:
         if self.root_strategy not in ROOT_STRATEGIES:
             raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
                              f"(want one of {ROOT_STRATEGIES})")
+
+    def defensive_cfg(self) -> Optional[dfn.DefensiveConfig]:
+        """The defensive config IF this is a defensive search, else ``None``.
+
+        Every defensive-only rule reads through this rather than testing the strategy string at
+        each site, so a grid/racing run cannot accidentally acquire one of them."""
+        return self.defensive if self.root_strategy == "defensive" else None
+
+    def effective_score(self) -> str:
+        """The leaf mode ``batch_scores`` is actually asked for.
+
+        Identical to ``self.score`` on every strategy but ``defensive``, which names its head
+        EXPLICITLY instead of taking the battery's ``auto`` — because ``auto`` silently degrades
+        to the scalar value head on a checkpoint without a win-prob one, and that is the exact arm
+        probe G measured as NOT beating the played action. See
+        :func:`~main.search_dividend.defensive.resolve_score_mode`.
+        """
+        cfg = self.defensive_cfg()
+        return self.score if cfg is None else dfn.resolve_score_mode(cfg.leaf)
 
     def resolved_caps(self) -> WidthCaps:
         """The ORACLE arm is ONE world by construction (the true state), and the BASE arm has no
@@ -306,13 +333,19 @@ class SearchEngine:
     def choose(self, *, record, side: str, turn: int, our_history: Sequence[int],
                our_tokens: Dict[int, str], observed_our_lines: Sequence[str],
                pub: Optional[AlphaPublication], policy_action: int,
-               opp_true_packed: Optional[str] = None) -> DecisionResult:
+               opp_true_packed: Optional[str] = None,
+               root_win_prob: Optional[float] = None) -> DecisionResult:
         """Run the depth-1 search for ONE decision and return the action to play.
 
         ``our_tokens`` maps each legal action INDEX to its sim choice string, built live from the
         real action mapper — the search never re-derives legality, it inherits it.
         ``opp_true_packed`` is the ORACLE arm's privilege and must be ``None`` on every other arm;
         :meth:`_worlds` raises rather than silently searching the truth.
+
+        ``root_win_prob`` is the win-prob head's read at the LIVE decision, captured off the same
+        forward that produced ``policy_action`` (the search's own forwards clobber that stash, so
+        it cannot be re-read here). It is the defensive gate's only input and is ignored on every
+        other strategy.
         """
         caps = self.cfg.resolved_caps()
         widths = RealizedWidths(planned={}, n_our_actions=len(our_tokens))
@@ -323,6 +356,13 @@ class SearchEngine:
         if not our_tokens:
             return DecisionResult(policy_action, "not_move_selection", widths,
                                   policy_action=policy_action)
+
+        # THE TRIAGE GATE, and it runs BEFORE the clock starts — a gated decision costs nothing at
+        # all, which is what makes the banked seconds real rather than an accounting entry.
+        gated = self._gate(widths, len(our_tokens), root_win_prob)
+        if gated is not None:
+            widths.planned = WidthPlan(0, 0, 0).as_dict()
+            return DecisionResult(policy_action, gated, widths, policy_action=policy_action)
 
         deadline = Deadline(self.cfg.budget_s)
         plan = allocate(self.cfg.budget_s, len(our_tokens), self._cost, caps)
@@ -343,6 +383,16 @@ class SearchEngine:
             return DecisionResult(policy_action, "search_error", widths,
                                   diagnostics={"error": f"{type(e).__name__}: {e}"},
                                   policy_action=policy_action)
+        if self.cfg.defensive_cfg() is not None:
+            if res.fallback is None:
+                res = self._defensive_confirm(res, record=record, turn=turn,
+                                              our_tokens=our_tokens,
+                                              policy_action=policy_action, deadline=deadline)
+            # The clock the strategy handed back. On a futility stop the race stopped early and
+            # this is real time a time manager could move to a contested decision; on an overrule
+            # it is the granularity residual. Recorded either way so the two can be told apart by
+            # the verdict beside it rather than by inference.
+            widths.defensive_banked_s = round(max(0.0, deadline.remaining()), 4)
         if self.cfg.arm == "playoff" and res.fallback is None:
             # THE SECOND STAGE. The sweep above is now only a nomination: it is the same biased
             # critic estimator the R-ladder convicted, so its argmax is deliberately NOT acted on.
@@ -354,6 +404,90 @@ class SearchEngine:
         widths.elapsed_s = round(deadline.elapsed(), 4)
         self._update_cost(widths)
         return res
+
+    def _gate(self, widths: RealizedWidths, n_legal: int,
+              root_win_prob: Optional[float]) -> Optional[str]:
+        """The DEFENSIVE triage gate. ``None`` = search; a string = the counted fallback reason.
+
+        ``None`` on every other strategy, so ``grid`` and ``racing`` never see this at all.
+
+        The two refusals are separate branches because they answer different questions, and the
+        second one is the one probe H's whole sweep was about: `|P(win) - 0.5| >= wp_margin` does
+        NOT claim the search would agree with the policy there (the flip rate is flat at ~0.69
+        everywhere and RISES in the forced class), it claims that being overruled in a decided
+        position is worth almost nothing — 83.0% of the claimed dividend sits in the 22.7% of
+        decisions worth >= 5 pp, and this feature is the only cheap one that finds them.
+
+        A checkpoint with no win-prob head is REFUSED rather than imputed to 0.5. Imputing would
+        route every decision on such a run into the searched class — the most expensive possible
+        reading of a missing measurement, and one that would produce a full set of healthy
+        counters while measuring a different strategy.
+        """
+        cfg = self.cfg.defensive_cfg()
+        if cfg is None:
+            return None
+        if root_win_prob is None:
+            widths.defensive_no_win_prob = True
+            widths.defensive_banked_s = round(float(self.cfg.budget_s), 4)
+            return "defensive_no_win_prob"
+        widths.defensive_root_win_prob = round(float(root_win_prob), 6)
+        reason = dfn.gate(int(n_legal), float(root_win_prob), cfg)
+        if reason == dfn.GATE_SEARCH:
+            return None
+        widths.defensive_gate_reason = reason
+        widths.defensive_verdict = dfn.VERDICT_FORCED
+        # The WHOLE budget, because the gate runs before the clock starts. That is the point of
+        # placing it there: a forced decision costs the policy's own forward and nothing else.
+        widths.defensive_banked_s = round(float(self.cfg.budget_s), 4)
+        return "defensive_forced"
+
+    def _defensive_confirm(self, res: DecisionResult, *, record, turn: int,
+                           our_tokens: Dict[int, str], policy_action: int,
+                           deadline: Deadline) -> DecisionResult:
+        """The OPTIONAL fourth stage: settle a proposed overrule with paired terminal rollouts.
+
+        Off by default (``confirm_rollouts=0``), and the first registered cell runs without it —
+        one new mechanism at a time, so the race's own verdict is measured before a second filter
+        is stacked on it. When on, it reuses the ``playoff`` machinery verbatim rather than
+        reimplementing pairing: the two candidates are rolled out under the SAME post-divergence
+        dice and the same policy-sampling RNG, and the playoff may act only when the paired
+        difference clears ``2·SE`` over ``>= MIN_PAIRS`` pairs. An inconclusive confirm returns the
+        POLICY's action, which is the same refusal the futility stop makes one level up.
+
+        ⚠️ **The screen scores handed to the playoff are NOMINATIONS, not the race's means.** The
+        pair is ``{race_winner: 1.0, policy_action: 0.0}`` because ``top_two`` orders by score and
+        an ELIMINATED action's mean is FROZEN at the round it went out — it can exceed the final
+        leader's mean without ever having dominated it, which would silently swap the pair. The
+        race's real means stay in ``scores``/``diagnostics``; the ``playoff.margin`` field on a
+        confirmed decision is therefore 1.0 by construction and is not a margin.
+        """
+        from main.search_dividend.playoff import STAGE_ERROR, PlayoffResult
+
+        cfg = self.cfg.defensive_cfg()
+        if cfg is None or int(cfg.confirm_rollouts) <= 0 or self.playoff is None:
+            return res
+        if res.widths.defensive_verdict != dfn.VERDICT_OVERRULED:
+            return res
+        a1, a2 = int(res.action), int(policy_action)
+        if a1 not in our_tokens or a2 not in our_tokens:
+            return res
+        try:
+            po = self.playoff.adjudicate(
+                scores={a1: 1.0, a2: 0.0}, policy_action=policy_action, our_tokens=our_tokens,
+                record=record, turn=int(turn), deadline=deadline, rng=self.rng)
+        except Exception as e:                           # noqa: BLE001
+            po = PlayoffResult(int(policy_action), STAGE_ERROR,
+                               error=f"{type(e).__name__}: {e}")
+        action = int(po.action)
+        res.widths.defensive_confirm_stage = po.stage
+        # The verdict follows the ACTION, not the stage: a confirm that declined played the
+        # policy's move, so the decision `kept` it. Which of the two ways it was kept is the
+        # `defensive_confirm_stage` beside it — folded apart, never summed together.
+        res.widths.defensive_verdict = dfn.verdict(True, action, int(policy_action))
+        diag = dict(res.diagnostics or {})
+        diag["playoff"] = po.as_dict()
+        return DecisionResult(action, None, res.widths, diagnostics=diag, scores=res.scores,
+                              policy_action=policy_action, playoff=po.as_dict())
 
     def _adjudicate(self, res: DecisionResult, *, record, turn: int,
                     our_tokens: Dict[int, str], policy_action: int,
@@ -385,13 +519,19 @@ class SearchEngine:
     def _run(self, record, side, turn, our_history, our_tokens, observed_our_lines, pub,
              policy_action, opp_true_packed, plan: WidthPlan, widths: RealizedWidths,
              deadline: Deadline) -> DecisionResult:
-        if self.cfg.root_strategy == "racing":
+        if self.cfg.root_strategy in ("racing", "defensive"):
             # A WHOLE separate allocator, not a mode flag threaded through this one. The grid body
             # below is left byte-identical on purpose: `--root-strategy racing` is an experiment,
             # and an experiment that also perturbs its own control is not one.
-            return self._run_racing(record, side, turn, our_history, our_tokens,
-                                    observed_our_lines, pub, policy_action, opp_true_packed,
-                                    plan, widths, deadline)
+            res = self._run_racing(record, side, turn, our_history, our_tokens,
+                                   observed_our_lines, pub, policy_action, opp_true_packed,
+                                   plan, widths, deadline)
+            # DEFENSIVE is a POST-RULE over the same race, not a third allocator. The race is the
+            # measurement (probe G's pairing + probe I's seq elimination); what defensive adds is
+            # the refusal to act on a race that did not separate. Layering it keeps the racing arm
+            # available unchanged as its own control.
+            return res if self.cfg.defensive_cfg() is None else \
+                self._apply_defensive(res, policy_action)
         other = "p2" if side == "p1" else "p1"
         ss = self.session()
 
@@ -635,6 +775,51 @@ class SearchEngine:
             scores={int(a): round(float(v), 5) for a, v in out.means.items()},
             policy_action=policy_action)
 
+    def _apply_defensive(self, res: DecisionResult, policy_action: int) -> DecisionResult:
+        """THE FUTILITY STOP — the rule that makes this strategy defensive rather than adaptive.
+
+        The racer always HAS a leader (its best empirical mean), and acting on that leader
+        regardless of separation is precisely what every losing arm in this battery did. Probe I
+        measured the separation distribution as U-shaped with an empty middle — **52.2% of root
+        decisions never separate at all** within 32 paired samples, and among those that do the
+        MEDIAN separates at the minimum-samples floor. So "did not separate" is not an unfinished
+        race that more budget would settle; it is the search reporting that it cannot tell these
+        actions apart, and the honest action there is the one the policy already chose.
+
+        A search FAILURE (any counted fallback) is passed through untouched — the strategy has
+        nothing to say about a decision that never produced a race, and re-labelling one would
+        hide a driver problem behind a design choice.
+        """
+        if res.fallback is not None:
+            return res
+        separated = bool(res.widths.racing_resolved)
+        v = dfn.verdict(separated, int(res.action), int(policy_action))
+        res.widths.defensive_verdict = v
+        action = dfn.resolve_action(v, int(res.action), int(policy_action))
+        diag = dict(res.diagnostics or {})
+        diag["defensive"] = {
+            "verdict": v, "separated": separated,
+            "race_action": int(res.action), "policy_action": int(policy_action),
+            "root_win_prob": res.widths.defensive_root_win_prob,
+            "leaf": (self.cfg.defensive.leaf if self.cfg.defensive_cfg() else None),
+        }
+        return DecisionResult(action, None, res.widths, diagnostics=diag, scores=res.scores,
+                              policy_action=policy_action)
+
+    def _score_batch(self, obs: np.ndarray, masks: np.ndarray) -> Tuple[np.ndarray, str]:
+        """THE LEAF SEAM — one place where the scoring head is chosen and then VERIFIED.
+
+        ``batch_scores`` reports the mode it *used*, which may differ from the mode it was
+        *asked for*: with no win-prob head it returns the scalar value readout and no error. On a
+        defensive search that silent substitution swaps the arm probe G measured as beating the
+        played action (+0.0219 [+0.0089, +0.0364]) for the one that does not clear zero (+0.0135
+        [-0.0007, +0.0280]), with every counter in the battery reading identically. So the check
+        happens here, at the return, rather than at the request.
+        """
+        scores, mode_used = batch_scores(self.model, obs, masks, self.cfg.effective_score())
+        dfn.check_leaf(mode_used, self.cfg.defensive_cfg())
+        return scores, mode_used
+
     def _score_world(self, w: dict, ctx: _PlyContext, our_tokens: Dict[int, str],
                      actions: Sequence[int], widths: RealizedWidths,
                      deadline: Deadline, *,
@@ -732,7 +917,7 @@ class SearchEngine:
                                         f"{ctx.other}_action": c.token,
                                         "seed": sd, "label": label})
         if not payload:
-            return {"n_scored": 0, "n_terminal": 0, "score_mode": self.cfg.score}
+            return {"n_scored": 0, "n_terminal": 0, "score_mode": self.cfg.effective_score()}
 
         expanded = self.session().expand_many(payload)
         widths.arms_expanded += len(expanded)
@@ -761,7 +946,7 @@ class SearchEngine:
                                    actions=list(parent.path) + [acts[li]], label=li))
             branch_of.append(li)
 
-        score_mode = self.cfg.score
+        score_mode = self.cfg.effective_score()
         if branches:
             dec_i = ctx.decision_index(ply)
             traces = materialize_branches(
@@ -780,8 +965,7 @@ class SearchEngine:
                 keys.append(li)
                 kept.append(mt)
             if obs_rows:
-                sc, score_mode = batch_scores(self.model, np.stack(obs_rows),
-                                              np.stack(mask_rows), self.cfg.score)
+                sc, score_mode = self._score_batch(np.stack(obs_rows), np.stack(mask_rows))
                 by_label = {int(e.label): e for e in expanded}
                 for li, mt, v in zip(keys, kept, sc):
                     parent = parents[li]
