@@ -5885,3 +5885,26 @@ overrule rate lands near H's contested×separable ≈ 8–17% and the arm does N
 agent dispatched: compose the strategy in search_dividend from the landed racing machinery +
 the H rule + win-prob leaf, tests, then a first mirror cell (~300–400 games, CPU, niced,
 beside rev-3). The 50%-weekly-quota authorization covers continued iteration.
+
+### 🟢 DEFENSIVE SEARCH, FIRST CELL: PRIMARY BAR MET — 0.494 vs honest's 0.293 at the SAME budget; and the miss diagnosis is the next move (2026-08-29)
+
+Record `designs/research_state/measurements/defensive_search_first_cell_2026-08-29.md` (landed
+ded6766+bb0faed; 400 side-swapped mirror games, SAME checkpoint + SAME game seeds as the
+historical arms — 120 literally-identical battles, so the comparison is PAIRED; zero timeouts;
+340 tests incl. the leaf-seam revert-catcher). **Mirror 0.4937 [0.4448,0.5427] (paired 0.4938
+±0.035) vs honest_1s 0.2929 — Δ +0.2008 [+0.1229,+0.2738], and it beats playoff_10s (0.450) at
+ONE TWENTIETH the budget. Search has STOPPED LOSING.** Stretch (CI>0.50) honestly not met —
+point estimate a hair under 0.50 at resolving width: a result, not an n problem. **The
+overrule-rate prediction (8–17%) REFUTED instructively: overrules 1.8%** because the separable
+fraction was 0.157 vs probe I's 0.478 — the counters prove why: mean race 4.61 rounds vs the
+elimination FLOOR of 5, and every futility stop is also deadline_truncated (exact identity).
+**The strategy is BUDGET-LIMITED AT THE FLOOR, not evidence-limited — while BANKING 77% of its
+own budget (0.77 s/decision unspent, 28.8 s/game).** Gate behavior clean (74% forced, all via
+wp-extremity), 1.5% search failures fall back to policy (bias toward null). **ITERATION 2
+DISPATCHED to the same agent (context warm), one change + more games: SPEND THE BANK — raise
+the per-contested-decision deadline to ~3s (total game time stays inside the same envelope:
+~11 contested/game × 3s ≈ the notional uniform budget it already banks), floor and gate
+UNCHANGED; n=800 pairs for stretch resolution (paired CI ~±0.025). Registered predictions:
+separated-of-raced rises from 0.157 toward I's ~0.48 ceiling; overrules 1.8% → 6–12%; win rate
+≥ iteration 1 (no regression is the primary bar); STRETCH resolves only if true rate ≥~0.525 —
+stated in advance so a 0.51 result is read as "real but unresolved", not failure.**
