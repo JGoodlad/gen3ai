@@ -6986,3 +6986,26 @@ sweep is unaffected (width absorbs the budget → depth 1), and every R-ladder v
 Known hole: `search_impl_parity.py`'s golden is a scratch artifact absent everywhere — the new
 two-impl sim test stood in; driver diff is comments-only so driver parity unchanged by
 construction. Suites: routine 8069 green, sim 52, search_dividend 346, three static gates.
+
+### 🛠️ S5 LANDED — `python -m main.promote_teams`: launch day is now a seed and a commit (2026-08-30)
+
+**`c1fdff4` on main.** The random-draw promotion tooling per the owner's 56bfd48 decision:
+exclusions-first (`designs/ai_v12/promotion_exclusions.json` — union 26, eligible 693 of 719;
+`--verify-exclusions` re-derives from run metadata, 11/11 launched runs match, the 3 unlaunched
+rev-4 runs read UNVERIFIABLE rather than mismatching) → seeded shuffle → local validation with
+replacement-not-drop → copy into `data/teams/sample/` → write-once manifest (re-roll under a
+new seed exits 1 without `--force`). Committed dry-run demo at seed 20260830: 40/40 valid,
+0 replacements, composition REPORTED per the ruling (balance 11 / HO 10 / offense 8 /
+semi_stall 7 / stall 4; giraffe 23 — randomness is the point). **The find that shaped the
+design: `TeamLoader` dedupes by resolved PATH, not text — the naive copy+add would list a
+promoted team in BOTH manifests and double its opponent draw weight, recreating the
+yak_attack-66% defect on exactly the 40 fleet teams.** The tool de-lists from the source
+manifest (txt stays on disk ⇒ reversible), adds to sample/ FIRST (crash ⇒ loud duplicate, not
+silent gap), and asserts no sha twice through a real `TeamLoader` re-load — rehearsed on a
+full tree copy (719→719, sample 32→72, zero dupes). Also closed: a broken node bridge returns
+`{"valid": False}` identically to an illegal team, so a positive control rides every batch and
+ABORTS rather than condemning 693 teams. ⚠️ Launch-day footgun banked in `tools/CLAUDE.md`:
+`sample_team_downloader/sync.py` rebuilds `sample/teams.json` from the forum thread alone and
+would silently DROP promoted entries — do not re-sync sample teams after promotion without
+re-promoting. 24 tests (incl. the hashes-stripped-text convention pin), suites + gates green.
+NOT promoted — the real draw happens at fleet launch, training session watching.
