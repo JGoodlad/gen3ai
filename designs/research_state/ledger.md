@@ -7350,3 +7350,31 @@ as oracle input; ceiling on any latent; if the oracle moves nothing the menu is 
 Prior is better than the falsified head's (type-prediction concentrates value where the
 ladder lives, vs action-prediction which equilibrium devalues) — but it buys in with the
 gate, not the story. Era: gen-16+ candidate, post-flywheel-verdicts.
+
+### 🔬 STARMIE/TTAR CONSTRUCTED RISK PROBE — the mask reads the KO boundary at ⅓ amplitude and NEVER flips (2026-08-30)
+
+**`41d2d60` on main — `measurements/starmie_ttar_risk_probe_2026-08-30.{md,json,py}`.**
+Owner-ordered constructed 1v1 endgame (5 faints/side, Starmie vs CB Tyranitar at exactly
+295/342): Surf = 100% acc, KO on exactly 13/16 rolls (81.25% — crit fraction measured 1/16
+exactly); Hydro Pump = natural 80 acc, KO on 255/255 recorded hits. E[KO] 0.824 vs 0.800 —
+the closest gen3's discrete rolls allow, reported as such. **BASE MASK (R3ACTION): Surf
+0.8225 / Pump 0.1775** — near the truth split (0.824/0.800), fine at near-equality.
+**THE HEADLINE — the 17-point HP sweep:** P(Surf) falls MONOTONICALLY 0.880→0.579 as the
+true Surf-KO fraction sweeps 16/16→0/16 — the correct sign at every point, genuinely pricing
+~1% HP steps through the damage machinery — but at **~⅓ the required amplitude with a ~0.58
+Surf floor, and the ARGMAX NEVER FLIPS: at H=337 greedy plays Surf at true value 0.063 over
+Pump at 0.800, donating 74pp of win probability.** The win-prob head compresses the same
+structure ~40× (0.902→0.880). The bait verdict's knows≠uses split, visible inside ONE
+decision: directionally right, magnitude-wrong, greedy amplifies it to catastrophe — and NO
+play-time transform fixes it (any temperature/top-p still plays Surf ≥58%; the defect is
+calibration, not sharpness). **This specimen is the poster child for the per-action Q-label
+program**: the "truth" column WAS a one-ply win-prob reroll — exactly the [B,11] label R3's
+producer emits — so route 2 has a named decision class it should fix, checkable by re-running
+this exact probe post-fold. Secondary: RECOVERABLE variant's mask identical to 3rd decimal
+while V and win-prob both move — the value stack sees stakes change, the action split
+doesn't; rev-1 on identical obs bytes reads 0.981/0.019 (sharper, same argmax). Incidentals
+banked in the record: gen3 Crunch is special-category (CB can't boost it — measured);
+poke-env cannot track duplicate species per side (killed the Shedinja prelude); one
+fail-loud save (the first pump MC arms silently played Surf via default-order fallback —
+asserted, rerun). Cross-refs the risk capstone; the capstone's population curves should be
+read expecting this shape (right sign, compressed amplitude, no flip).
