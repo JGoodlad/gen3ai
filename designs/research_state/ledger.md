@@ -7242,3 +7242,26 @@ opponent is what held defense). Late state: coach phase shrinks as exploitabilit
 accumulated narrow-retiree population DEFINES the equilibrium, and the binding constraint
 shifts from distillation to MATCHMAKING — where PFSP's p(1−p) flatness returns from
 exoneration as the live lever.
+
+### 🎲 REGISTERED EXPECTATIONS for rev-4 (before any rev-4 number exists) + the fallback tree (2026-08-30)
+
+**Session-agent judgment probabilities, banked so rev-4 is graded against stated priors, not
+vibes:** REPRO-1 (untaught gift) **~70%** — the phenomenon is real at both endpoints and
+rev-4 carries BOTH candidate drivers (breadth + 12M forks), so it does not need the
+attribution to succeed; REPRO-3a (disjoint-CI ELO motion) **~45–55%** — no gen-era fold has
+yet moved pool ELO (base rate down) vs both drivers + confirmed extraction headroom (up);
+REPRO-3b (v8-class ≥ +35) **~25%** — the 277M-vs-30M maturity gap should ATTENUATE, not
+abolish (micro-probe: young students absorb 0.756 vs 0.854 ceiling). Note: the anchor branch
+is not a failure branch — if R3-SELF reproduces, the surviving recipe (self-distillation) is
+CHEAPER; every branch terminates in a recipe or a conviction. The owner's one-week-run plan
+buys the maturity ingredient for free over time.
+
+**Fallback tree (owner: "worst case do we just revive v8 and run sweeps?"):** rev-4 passes ⇒
+scale (40-team revolution). Misses ⇒ match maturity/differentiation IN-ERA first (cheaper).
+Those miss ⇒ **revive v8 at the era commit as an ABLATE-DOWN platform** — the only place the
+phenomenon is KNOWN to occur, so every ablation cell has guaranteed signal (e.g. v8_14's fold
+re-run at K=2/teacher: gift disappears ⇒ breadth convicted in situ). Technical path proven by
+probe P (era-pinned load, logit r 0.982; launcher worktree-pinning). Caveats banked: weights
+do NOT come forward (recipe knowledge ports, the artifact does not); era-side training
+telemetry is primitive. Ablating down from a working point beats building up toward one that
+may not work — guaranteed signal per cell.
