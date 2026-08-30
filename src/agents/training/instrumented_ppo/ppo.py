@@ -34,6 +34,7 @@ from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.signal_metrics import advantage_density_metrics
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe
+from agents.training.scaffolding import live_gauge_metrics
 
 
 class InstrumentedMaskablePPO(PpoHyperparameters,
@@ -204,6 +205,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
         win_prob_metrics: dict[str, list[float]] = {}  # +WIN-PROB: per-minibatch diagnostics (dict of lists)
+        # +SCAFFOLDING GAUGE: paired (V, win-prob logit) reads for `train/scaffolding_gauge`. Two
+        # lists, filled ONLY during epoch 0 so the gauge describes ONE policy over the whole
+        # rollout rather than mixing epochs (by epoch 3 the policy that produced the pair is not
+        # the policy the pair is attributed to). Empty when the head is off → nothing published.
+        scaffold_v: list[np.ndarray] = []
+        scaffold_z: list[np.ndarray] = []
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
@@ -226,6 +233,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
             and self.win_prob_coef != 0.0
         )
+        # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone, NOT on `win_prob_coef` — the
+        # gauge is an observability read of whatever the head currently says, and a `read_only`
+        # head at coef 0 still says something worth curving. ALWAYS ON when the head exists;
+        # there is no flag, matching the `signal/` group.
+        scaffolding_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
         # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
         # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
         # input — the loss term is identical. OFF → skipped (loss byte-identical to upstream).
@@ -751,6 +763,26 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         loss = loss + win_prob_term
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
+
+                # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
+                # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in
+                # PopArt units, discounted), the win-prob head estimates the GAME. Their divergence
+                # is the reward scaffolding still doing work, and its trajectory is the registered
+                # signal for when shaping coefficients can begin annealing toward the pure game.
+                # Read here because this is the one place both readouts exist for the SAME states
+                # from the SAME forward: `evaluate_actions` above produced `values` and stashed
+                # `last_win_prob_logits`.
+                # 🚨 RANK FORM ONLY. V is a PopArt-normalized shaped return, so there is no unit
+                # conversion to a probability; the live path additionally has no realized outcome
+                # labels for these states, so the calibrated-affine gauge is OFFLINE by
+                # construction (`python -m main.scaffolding_gauge`). The logit is NOT sigmoided —
+                # the sigmoid is monotone, so the rank correlation is identical and float32 ranks
+                # never saturate. Read-only: detached clones, no gradient path, no RNG.
+                if scaffolding_on and epoch == 0:
+                    _wz = getattr(self.policy.features_extractor, "last_win_prob_logits", None)
+                    if _wz is not None:
+                        scaffold_v.append(values.detach().reshape(-1).cpu().numpy())
+                        scaffold_z.append(_wz.detach().reshape(-1).cpu().numpy())
 
                 # +CF-TWIN, half one of two (gen3_cf_twin_heads_v1): head A's OWN loss, mirrored
                 # onto twins B and C on THIS minibatch. It must run HERE, beside A's fold and
@@ -1329,6 +1361,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # density is the mirror paradox, not health. NaN on a degenerate (constant) rollout.
         for _sk, _sv in signal_metrics.items():
             self.logger.record(f"signal/{_sk}", float(_sv))
+
+        # +SCAFFOLDING GAUGE: `train/scaffolding_gauge` = (1 − Spearman ρ(V, P(win))) / 2 over
+        # epoch 0's paired reads. 0 = the shaped critic and the win-prob head order states
+        # identically (no scaffolding divergence visible in the ordering); 0.5 = independent.
+        # It should SHRINK as a generation matures, and that trajectory is the registered signal
+        # for annealing the shaping coefficients toward the pure game.
+        # ⚠️ ORDERING ONLY — it claims nothing about magnitude, and it goes AMBIGUOUS exactly
+        # where PBRS drives V_shaped toward a constant (the critic then has no variance left to
+        # rank with). Read it beside `train/value_std`; the magnitude question is the offline
+        # `python -m main.scaffolding_gauge`, which fits a per-checkpoint affine V→outcome map on
+        # realized outcomes. NaN on a degenerate rollout, and NO key at all when the run carries
+        # no win-prob head — a run without the head must leave a GAP, not a flat zero.
+        if scaffold_v:
+            for _gk, _gv in live_gauge_metrics(np.concatenate(scaffold_v),
+                                               np.concatenate(scaffold_z)).items():
+                self.logger.record(f"train/{_gk}", float(_gv))
 
         # +NOISE-SCALE: fold this call's two-batch-size sample into the EMAs and log the smoothed
         # McCandlish 'simple' gradient noise scale B_simple = tr(Σ)/|G|² — the critical batch size.

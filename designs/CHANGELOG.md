@@ -6126,3 +6126,93 @@ orders of magnitude** (it had been drafted against an assumed terminal reward of
 scale is `VICTORY_VALUE = 30`, so `{0, 0.1, 0.3}` became `{0, 3, 9}`). `train/pbrs_reward_share`
 is the metric that makes a homeopathic coefficient visible within one rollout rather than after a
 generation.
+
+## `gen3_scaffolding_gauge_v1` (2026-08-29): the shaped-vs-game value gap, live and offline — with two gauges because one number would have been a fabrication
+
+Registered as an instrument by the value-function foundations ruling (ledger 596608e). Nothing here
+changes a weight, an observation or a loss: an offline CLI plus one flagless TensorBoard scalar.
+
+The critic estimates the **shaped** return; the win-prob head estimates the **game**. Neither is a
+repair of the other — the two-head structure is the automatic consequence of choosing shaped
+rewards. Their DIVERGENCE is the reward scaffolding still doing work, and its trajectory is the
+registered signal for when shaping coefficients can begin annealing toward the pure game. That
+divergence had never been computed.
+
+**🚨 UNITS, which is the whole design constraint.** Recorded `V` is a PopArt-normalized shaped
+return: its scale moves over training, its composition is whichever reward terms are on, its
+horizon is `gamma`. **There is no general unit conversion to a win probability**, and under PBRS
+with a good potential there is not even a monotone one to recover — the classic φ=V* result drives
+`V_shaped` toward a CONSTANT (ledger db9bb5c). A single "the gap is X win-percent" number would
+therefore have been a fabrication. So the gauge ships as TWO instruments, each labelled:
+
+* **RANK gauge** — `(1 − Spearman ρ(V, P(win))) / 2`. Unit-free, PopArt-proof, always valid,
+  invariant to any monotone reparameterization of either axis. CAN claim ordering agreement;
+  CANNOT claim anything about magnitude, and goes AMBIGUOUS exactly at the constancy endpoint,
+  where ρ degenerates into noise and a falling curve cannot be told from V running out of variance.
+* **CALIBRATED-AFFINE gauge** — fit `q = clip(a·V+b, 0, 1)` against the REALIZED per-battle
+  outcomes on the same slice, then report `rms|q − P(win)|` in probability units. CAN claim a
+  distance in outcome units, because the fit puts both sides there by construction; CANNOT claim
+  the two are natively commensurable — the map is a per-checkpoint FIT that does not transport.
+  And part of every residual is the **affine family** being a worse outcome predictor rather than
+  the heads disagreeing. That part is separated and shipped as `readout_penalty` (= Brier(readout)
+  − Brier(head)), because a large `rms` with a large penalty is a readout finding, not a divergence
+  finding — and a reader who cannot tell those apart will file the first as the second.
+
+**The offline half:** `python -m main.scaffolding_gauge <run>` — model-FREE (it reads the recorded
+`values` / `win_probs` columns out of `eval_traces`, so it works on a run whose checkpoints no
+longer load), one row per checkpoint step, table + JSON + optional 3-panel PNG. The JSON carries a
+`units` block with a `what` and a `cannot` for every metric, so a reader six months out cannot get
+the number without the caveat.
+
+**Every CI is a CLUSTER bootstrap over BATTLES.** Outcome labels are per-battle and broadcast to
+every state, so an i.i.d. interval over states would be fabricated tightness of roughly
+`sqrt(states-per-battle)` — measured here at ~7× on the fixture. The pooled-correlation Simpson
+trap has cost this tree a finding before.
+
+**A run with no win-prob head REFUSES** with that diagnosis instead of curving zeros. "The two
+readouts agree perfectly" and "there is no second readout" must not render the same.
+
+**The live half:** `train/scaffolding_gauge` (+ `_rho`, `_n`) — always on when the head exists,
+flagless, gated on the head's EXISTENCE rather than on `win_prob_coef` (a `read_only` head at
+coefficient 0 still says something worth curving). RANK FORM ONLY, deliberately: the live path has
+no realized outcome labels for the states it is scoring, so the calibrated gauge is offline by
+construction and publishing a live number labelled as the calibrated one would have been the worse
+error. Read inside the minibatch loop right after the win-prob block — the one place both readouts
+exist for the SAME states from the SAME forward — and **epoch 0 only**, because by epoch 3 the
+policy that produced a pair is not the policy the pair would be attributed to. The logit is not
+sigmoided (monotone ⇒ identical ρ, and float32 ranks never saturate).
+
+**The CONSTANCY sanity row** (the db9bb5c prediction as a checkable one-liner): `v_std` / `v_iqr` /
+`dispersion` plus the within-vs-between-battle split, per checkpoint, `--constancy` for that block
+alone. Under PBRS with a good frozen potential `V_shaped` flattening **CONFIRMS** the theory rather
+than indicting the critic. The split is what separates it from its look-alike: low `v_std` with
+`within_frac ≈ 0` means V became a per-battle matchup lookup, which a raw std cannot distinguish
+from a flattened potential.
+
+Measured on a live run's traces (`ai_v9_69_R3F6CURR_0828`, 358 traces, 3 steps): rank gauge
+0.152 / 0.149 / 0.214, affine rms 0.198 / 0.223 / 0.259 with a **negative** `readout_penalty`
+throughout (the affine readout of V predicts outcomes BETTER than the head does on these slices)
+and a bias of −0.17 to −0.25 (the head reads systematically more optimistic than V-implied outcome).
+Recorded as an observation, not a finding: three points, a moving eval quota, and no control arm.
+
+### Files + tests
+
+New: `agents/training/scaffolding.py` (pure numpy — shared by the live scalar and the offline CLI
+so they cannot drift), `main/scaffolding_gauge.py`. One edit to `instrumented_ppo/ppo.py` (collect
+in the minibatch loop, publish beside the `signal/` group).
+
+`scaffolding_test.py` (31) — the three known regimes come back exactly (monotone ⇒ 0, inverted ⇒ 1,
+independent ⇒ ~0.5), affine-rescale invariance, the constant-axis NaN in every gauge, the
+`readout_penalty` convicting the FAMILY on a constructed step function while a linear control
+collapses it, the cluster bootstrap beating an i.i.d. one, and the live scalar's byte-identity /
+no-key-without-a-head / NaN-safety / epoch-0-only read.
+`main/scaffolding_gauge_test.py` (17) — a constructed three-regime trace tree end to end, the
+all-NaN refusal, the seeded whole-battle cap, a corrupt npz counted rather than fatal.
+
+**One methodology defect found and pinned while writing this.** `instrumented_ppo_test`'s
+`_train_from_init` helper is only deterministic when its init snapshot is taken **before**
+`learn()`: afterwards the optimizer's Adam state is populated, `deepcopy` + `load_state_dict` hands
+back tensors it aliases rather than copies, and the next `train()` mutates the very snapshot it was
+restored from. Two "identical" calls then drift by ~1e-3 and any byte-identity claim built on them
+is vacuous. Measured before the byte-identity test here was believed, and recorded in that test's
+comment.

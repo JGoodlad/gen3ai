@@ -1450,6 +1450,9 @@ src/
                      #   cf_audit.py (offline counterfactual audit: tight-MC value labels + the bias map)
                      #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
                      #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub)
+                     #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
+                     #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
+                     #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
@@ -1525,6 +1528,14 @@ src/
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
+    scaffolding_gauge.py  # SCAFFOLDING GAUGE, offline — divergence between the shaped critic and
+                     #   the win-prob head per checkpoint, over a run's eval_traces. Model-FREE
+                     #   (recorded `values` + `win_probs`), so it works on a run whose checkpoints
+                     #   no longer load. TWO gauges, each labelled with what it cannot claim:
+                     #   RANK (Spearman, unit-free) + CALIBRATED-AFFINE (a per-checkpoint
+                     #   V->outcome fit, probability units) + the db9bb5c constancy sanity row.
+                     #   Cluster-bootstrap CIs over BATTLES. Live half: `train/scaffolding_gauge`.
+                     #   Shared math: agents/training/scaffolding.py
     capacity.py        # CAPACITY-EVAL BATTERY CLI — offline saturation tripwire over one
                      #   checkpoint (~7 s): effective rank, Lyle trainability vs a fresh net,
                      #   probe decodability, per-phase param census. Engine:
