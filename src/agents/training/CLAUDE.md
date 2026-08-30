@@ -1530,6 +1530,32 @@ at the target and it's the only opponent.
   multi-team exploiter (`--trainee-teams` → `pin_multi`) validates EVERY member likewise** (each of the
   N teams must be a sample). Tests: `matchup_spec_test.py::test_exploiter_*sample*` +
   `::test_pin_multi_*` + the e2e FATAL.
+- **Widening the curated set — `python -m main.promote_teams`.** The refusal message above says
+  *"promote this one into the sample set first if it is proven"*; a fleet larger than the curated set
+  (40 teams against 32 curated) is where that stops being hypothetical. The tool is a **seed-recorded
+  UNIFORM RANDOM draw**: exclusions (already-taught ∪ rev-4-pending ∪ the 2 held-out transfer
+  instruments, from `designs/ai_v12/promotion_exclusions.json`) → a `random.Random(seed)` shuffle of
+  the sorted eligible pool → `validate_teams_locally` → copy into `data/teams/sample/` →
+  `PROMOTION_MANIFEST.{md,json}`. **Random rather than ranked is an owner ruling** (ledger
+  2026-08-30): a hand-picked or headroom-ranked fleet makes its own result a selection estimate
+  rather than an unbiased one, so archetype/folder composition is REPORTED, never corrected. A team
+  that fails validation is REPLACED by the next candidate in the same shuffle and recorded — never
+  silently dropped, which would shrink the fleet. `--dry-run` plans, `--draw-only` emits the manifest
+  for review, `--root <copy>` rehearses the whole promotion on a tree copy, `--verify-exclusions`
+  re-derives the exclusions from each run's `metadata.json` (`read_recorded_trainee_teams`).
+
+  ⚠️ **Promotion MOVES a team between manifests; it must not list it in both.** `TeamLoader`'s
+  universe is the `teams.json` files, deduped by resolved *path* rather than by text — so a team in
+  `sample/teams.json` that is still in `others/<author>/teams.json` is loaded twice and drawn as an
+  opponent twice as often. That is the `yak_attack`-66%-of-draws defect, recreated on exactly the
+  teams the fleet measures. The tool therefore de-lists from the source manifest (leaving the `.txt`
+  on disk, so the change is reversible from the manifest alone) and then re-loads through
+  `TeamLoader` to assert the pool total is unchanged and no sha appears twice. Two more traps it
+  closes: `validate_teams_locally` returns the same `{"valid": False}` shape for a broken node bridge
+  as for an illegal team, so a known-good **positive control** rides in every batch and a failure
+  aborts instead of "replacing" the whole pool; and the manifest is **write-once** (a second draw
+  under a different seed is refused without `--force`, so the seed cannot be re-rolled until the
+  composition looks good). Gates: `src/main/promote_teams_test.py` (22 tests, ~0.2 s, no node).
 - **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
   it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
   path before the factories are built. Training-only; not version-locked.

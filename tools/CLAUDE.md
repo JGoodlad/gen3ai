@@ -17,6 +17,16 @@ split.
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
 
+⚠️ **`data/teams/sample/` has a SECOND writer that is not in this table.**
+`python -m main.promote_teams` promotes a seed-recorded random draw of already-downloaded pool teams
+into the curated set, and de-lists each from its source `teams.json` so the pool total is unchanged.
+It is a *promotion* tool, not an acquisition tool — it knows no upstream and downloads nothing —
+which is why it lives in `src/main/` rather than here. The interaction to know about:
+`sample_team_downloader/sync.py` rebuilds `data/teams/sample/teams.json` **from the forum thread
+alone**, so a re-sync would silently drop every promoted entry. Check for
+`data/teams/sample/PROMOTION_MANIFEST.json` before running it, and re-promote from that manifest's
+recorded seed afterwards.
+
 ## `pokemon_data_extractor` — the reference-data extractor
 
 One `--datasets` entry per file (`all` rebuilds every file); each builder is registered in

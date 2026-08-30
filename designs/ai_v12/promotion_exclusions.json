@@ -1,0 +1,335 @@
+{
+  "_meta": {
+    "purpose": "the STANDING exclusion union for `python -m main.promote_teams` \u2014 teams that must never enter a fresh random draw for the 40-team fleet.",
+    "key_convention": "sha1(team_text.strip())[:10] \u2014 agents.training.team_archetypes.team_sha",
+    "generated_at": "2026-08-30T04:01:01+00:00",
+    "git_hash": "56bfd48661419ce958e99461f0add1cc9551aebc",
+    "argv_source": "/home/goodlad/.claude/jobs/1046b1d6/tmp/probes (session-scoped; this artifact is the durable copy)",
+    "verified_against": "models/<run>/metadata.json cli_args.trainee_teams via agents.training.matchup_spec.read_recorded_trainee_teams",
+    "pool_total": 719,
+    "union_total": 26,
+    "eligible_after_exclusions": 693
+  },
+  "categories": {
+    "taught_F5": {
+      "reason": "rev-2 fleet \u2014 5 teachers x 2 teams, already taught",
+      "runs": {
+        "F5a": {
+          "run": "ai_v9_53_R2F5a_0826",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/eccfe630ec08de27.txt",
+            "data/teams/sample/023a2d47648b85e6.txt"
+          ],
+          "shas": [
+            "8aa51ef85c",
+            "fffd943e9e"
+          ]
+        },
+        "F5b": {
+          "run": "ai_v9_54_R2F5b_0826",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/8e768980fc8f3b5f.txt",
+            "data/teams/sample/710d8d529538ff90.txt"
+          ],
+          "shas": [
+            "69af2f1507",
+            "bd4af7191a"
+          ]
+        },
+        "F5c": {
+          "run": "ai_v9_55_R2F5c_0826",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/63eda9d8d491d6a4.txt",
+            "data/teams/sample/f5a4f4f0f5dc49ce.txt"
+          ],
+          "shas": [
+            "01cb64e16c",
+            "e050d23078"
+          ]
+        },
+        "F5d": {
+          "run": "ai_v9_56_R2F5d_0826",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/e541f7be8713393c.txt",
+            "data/teams/sample/9eb3abdc52876a63.txt"
+          ],
+          "shas": [
+            "95e69273f8",
+            "f36747ae7e"
+          ]
+        },
+        "F5e": {
+          "run": "ai_v9_57_R2F5e_0826",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/e0d97b0ed592889d.txt",
+            "data/teams/sample/eccfe630ec08de27.txt"
+          ],
+          "shas": [
+            "f23f64a6b2",
+            "fffd943e9e"
+          ]
+        }
+      },
+      "shas": [
+        "01cb64e16c",
+        "69af2f1507",
+        "8aa51ef85c",
+        "95e69273f8",
+        "bd4af7191a",
+        "e050d23078",
+        "f23f64a6b2",
+        "f36747ae7e",
+        "fffd943e9e"
+      ]
+    },
+    "taught_F6": {
+      "reason": "rev-3 fleet \u2014 6 teachers x 2 teams, already taught",
+      "runs": {
+        "F6a": {
+          "run": "ai_v9_63_R3F6a_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/eccfe630ec08de27.txt",
+            "data/teams/sample/023a2d47648b85e6.txt"
+          ],
+          "shas": [
+            "8aa51ef85c",
+            "fffd943e9e"
+          ]
+        },
+        "F6b": {
+          "run": "ai_v9_64_R3F6b_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/8e768980fc8f3b5f.txt",
+            "data/teams/sample/710d8d529538ff90.txt"
+          ],
+          "shas": [
+            "69af2f1507",
+            "bd4af7191a"
+          ]
+        },
+        "F6c": {
+          "run": "ai_v9_65_R3F6c_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/63eda9d8d491d6a4.txt",
+            "data/teams/sample/f5a4f4f0f5dc49ce.txt"
+          ],
+          "shas": [
+            "01cb64e16c",
+            "e050d23078"
+          ]
+        },
+        "F6d": {
+          "run": "ai_v9_66_R3F6d_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/e541f7be8713393c.txt",
+            "data/teams/sample/9eb3abdc52876a63.txt"
+          ],
+          "shas": [
+            "95e69273f8",
+            "f36747ae7e"
+          ]
+        },
+        "F6e": {
+          "run": "ai_v9_67_R3F6e_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/e0d97b0ed592889d.txt",
+            "data/teams/sample/82e97fe2bfbb6f69.txt"
+          ],
+          "shas": [
+            "c6e5e12614",
+            "f23f64a6b2"
+          ]
+        },
+        "F6f": {
+          "run": "ai_v9_68_R3F6f_0828",
+          "run_dir_present": true,
+          "metadata_verified": true,
+          "teams": [
+            "data/teams/sample/460b8c99ee366f6c.txt",
+            "data/teams/sample/7036a0a1dcb59a19.txt"
+          ],
+          "shas": [
+            "a2d1246e4b",
+            "b08909ab04"
+          ]
+        }
+      },
+      "shas": [
+        "01cb64e16c",
+        "69af2f1507",
+        "8aa51ef85c",
+        "95e69273f8",
+        "a2d1246e4b",
+        "b08909ab04",
+        "bd4af7191a",
+        "c6e5e12614",
+        "e050d23078",
+        "f23f64a6b2",
+        "f36747ae7e",
+        "fffd943e9e"
+      ]
+    },
+    "rev4_pending": {
+      "reason": "rev-4 R4S3a/b/c frozen argvs \u2014 3 x 8. CONDITIONAL and REVERSIBLE: if rev-4 is abandoned or its fleet is not admitted, these 12 return to the pool.",
+      "runs": {
+        "R4S3a": {
+          "run": "ai_v9_73_R4S3a_0829",
+          "run_dir_present": false,
+          "metadata_verified": false,
+          "teams": [
+            "data/teams/sample/eccfe630ec08de27.txt",
+            "data/teams/sample/023a2d47648b85e6.txt",
+            "data/teams/sample/8e768980fc8f3b5f.txt",
+            "data/teams/sample/710d8d529538ff90.txt",
+            "data/teams/sample/a3ca232f030ef625.txt",
+            "data/teams/sample/d4e74946b54f1a4b.txt",
+            "data/teams/sample/9d5f845869e899ee.txt",
+            "data/teams/sample/f6229d2c867e21d6.txt"
+          ],
+          "shas": [
+            "1c4e182530",
+            "41357610f2",
+            "564b9be3ae",
+            "69af2f1507",
+            "8aa51ef85c",
+            "bcd4d09ee9",
+            "bd4af7191a",
+            "fffd943e9e"
+          ]
+        },
+        "R4S3b": {
+          "run": "ai_v9_74_R4S3b_0829",
+          "run_dir_present": false,
+          "metadata_verified": false,
+          "teams": [
+            "data/teams/sample/63eda9d8d491d6a4.txt",
+            "data/teams/sample/f5a4f4f0f5dc49ce.txt",
+            "data/teams/sample/e541f7be8713393c.txt",
+            "data/teams/sample/9eb3abdc52876a63.txt",
+            "data/teams/sample/53f215cb45b7d729.txt",
+            "data/teams/sample/61590463ee85d456.txt",
+            "data/teams/sample/90b94599967c6b77.txt",
+            "data/teams/sample/9283210847f806ee.txt"
+          ],
+          "shas": [
+            "01cb64e16c",
+            "55ff6899a2",
+            "95e69273f8",
+            "a7bb29d48c",
+            "c90e782cad",
+            "e050d23078",
+            "f36747ae7e",
+            "fed4eee838"
+          ]
+        },
+        "R4S3c": {
+          "run": "ai_v9_75_R4S3c_0829",
+          "run_dir_present": false,
+          "metadata_verified": false,
+          "teams": [
+            "data/teams/sample/e0d97b0ed592889d.txt",
+            "data/teams/sample/82e97fe2bfbb6f69.txt",
+            "data/teams/sample/460b8c99ee366f6c.txt",
+            "data/teams/sample/7036a0a1dcb59a19.txt",
+            "data/teams/sample/0972146213a667c9.txt",
+            "data/teams/sample/0fa105ae42dc85ec.txt",
+            "data/teams/sample/6d56d06b9fca508e.txt",
+            "data/teams/sample/8cdc78b2d46f0515.txt"
+          ],
+          "shas": [
+            "45995e432f",
+            "6a49f096f0",
+            "78b3b6f4a6",
+            "a12e56dca3",
+            "a2d1246e4b",
+            "b08909ab04",
+            "c6e5e12614",
+            "f23f64a6b2"
+          ]
+        }
+      },
+      "shas": [
+        "01cb64e16c",
+        "1c4e182530",
+        "41357610f2",
+        "45995e432f",
+        "55ff6899a2",
+        "564b9be3ae",
+        "69af2f1507",
+        "6a49f096f0",
+        "78b3b6f4a6",
+        "8aa51ef85c",
+        "95e69273f8",
+        "a12e56dca3",
+        "a2d1246e4b",
+        "a7bb29d48c",
+        "b08909ab04",
+        "bcd4d09ee9",
+        "bd4af7191a",
+        "c6e5e12614",
+        "c90e782cad",
+        "e050d23078",
+        "f23f64a6b2",
+        "f36747ae7e",
+        "fed4eee838",
+        "fffd943e9e"
+      ]
+    },
+    "held_out_instruments": {
+      "reason": "the 2 off-slice transfer instruments (probes/offpin_{0,1}.txt) \u2014 held out BY DESIGN; teaching either destroys the off-slice transfer measurement.",
+      "runs": {},
+      "shas": [
+        "591321332b",
+        "637cbb13a2"
+      ]
+    }
+  },
+  "union": [
+    "01cb64e16c",
+    "1c4e182530",
+    "41357610f2",
+    "45995e432f",
+    "55ff6899a2",
+    "564b9be3ae",
+    "591321332b",
+    "637cbb13a2",
+    "69af2f1507",
+    "6a49f096f0",
+    "78b3b6f4a6",
+    "8aa51ef85c",
+    "95e69273f8",
+    "a12e56dca3",
+    "a2d1246e4b",
+    "a7bb29d48c",
+    "b08909ab04",
+    "bcd4d09ee9",
+    "bd4af7191a",
+    "c6e5e12614",
+    "c90e782cad",
+    "e050d23078",
+    "f23f64a6b2",
+    "f36747ae7e",
+    "fed4eee838",
+    "fffd943e9e"
+  ]
+}

@@ -1580,6 +1580,12 @@ src/
                      #   local or the official server; refuses ports 8000/8001 in code
     ladder_drift_scan.py  # Pre-flight protocol-drift gate: real public gen3ou replays ->
                      #   Gen3Battle.parse_message; exit 1 on any unclassified keyword
+    promote_teams.py   # TEAM PROMOTION — a seed-recorded UNIFORM RANDOM draw from the validated
+                     #   pool into the curated data/teams/sample/ set (the only legal exploiter
+                     #   trainees). exclusions -> seeded shuffle -> validate -> copy -> manifest.
+                     #   MOVES a team between teams.json manifests (a team listed in both is drawn
+                     #   twice); --dry-run / --draw-only / --root <copy> / --verify-exclusions.
+                     #   Exclusions: designs/ai_v12/promotion_exclusions.json
   poke_env/          # Forked poke-env library
   utils/
     paths.py         # PATH DISCOVERY — the one place that knows the tree depth (see below)

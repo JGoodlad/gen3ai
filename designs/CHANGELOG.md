@@ -6922,3 +6922,68 @@ engaged as designed (18-20 of ~23 searched decisions, realized depth 3, mean 1.8
 deepened arm was scored on a holed replay or dropped, so those numbers are void. At the DEFAULT
 width caps none of this ever reached the shipped sweep: width absorbs the whole budget at every
 swept budget, so the sweep ran at depth 1.
+
+---
+
+## TEAM PROMOTION — `python -m main.promote_teams` (2026-08-30)
+
+The 40-team fleet needs 40 legal exploiter trainees; `--exploiter` refuses any trainee outside
+`data/teams/sample/`, which holds **32**. This is the tool that widens it, and the widening is a
+**seed-recorded UNIFORM RANDOM draw** from the validated pool, per the owner ruling of that day
+(ledger 56bfd48): a hand-picked or headroom-ranked fleet makes its own result a *selection*
+estimate rather than an unbiased estimate of pool-wide transferability. S1's headroom ranking
+(`designs/ai_v12/team_slate_40.md`) is re-scoped to a covariate; its exclusion sets and validation
+machinery carry forward unchanged.
+
+    exclusions  →  random.Random(seed).shuffle(sorted(eligible))  →  validate_teams_locally
+        →  copy into data/teams/sample/  →  PROMOTION_MANIFEST.{md,json}
+
+**Exclusions are a committed artifact, re-verifiable against run metadata.** They were built from
+frozen argv files in a session-scoped job directory that will not outlive the session, so
+`designs/ai_v12/promotion_exclusions.json` is the durable copy: 12 taught (rev-2 F5a–e + rev-3
+F6a–f, which contains the 9 meter teams and the 3 R3-coverage teams), 12 more pending under rev-4's
+frozen R4S3a/b/c argvs (CONDITIONAL and reversible — if rev-4 is abandoned they return to the pool),
+and the 2 held-out off-slice transfer instruments. **Union 26, eligible 693 of 719.**
+`--verify-exclusions` re-derives every category that names a run from that run's own
+`metadata.json` (`matchup_spec.read_recorded_trainee_teams`); the 11 launched runs verify
+2-for-2 each, and the 3 unlaunched rev-4 runs report UNVERIFIABLE rather than mismatching.
+
+### The defect the design is shaped around: promotion MOVES, it does not COPY
+
+`TeamLoader`'s universe is the `teams.json` manifests, deduped by **resolved path** — not by team
+text. So a team copied into `sample/` and listed in `sample/teams.json` while still listed in
+`others/<author>/teams.json` is loaded **twice**, and drawn as an opponent twice as often as its
+neighbours. That is precisely the `yak_attack`-was-66%-of-draws defect the 1601→719 dedupe fixed,
+recreated on exactly the 40 teams the fleet is measuring. The tool therefore de-lists each promoted
+team from its source manifest (leaving the `.txt` on disk, so the change is reversible from the
+manifest alone) and then re-loads through `TeamLoader` and asserts the pool total is unchanged and
+no sha appears twice. Rehearsed on a full copy of the real tree: 719 → 719 total, 32 → 72 sample,
+687 → 647 other, zero duplicates.
+
+### Three more failure modes, each closed by construction rather than by care
+
+* **An invalid team is REPLACED, never dropped** — by the next candidate in the same seeded shuffle,
+  recorded in the manifest with its errors and draw position. Dropping would silently shrink a fleet
+  whose size is the experiment.
+* **A broken validator would condemn the whole pool.** `validate_teams_locally` returns the same
+  `{"valid": False}` shape for a dead node bridge as for an illegal team, so a missing
+  `deps/pokemon-showdown/dist` reads as 693 bad teams. A known-good curated team rides in every
+  batch as a positive control, and infrastructure error strings abort rather than "replace". Same
+  genre as *a timeout is never a semantic outcome*.
+* **The manifest is write-once.** A second draw under a different seed is REFUSED without `--force`
+  — re-rolling the seed until the composition looks acceptable is the selection confound the random
+  draw exists to avoid, and nothing else would have caught it after the fact.
+
+Composition is **REPORTED, never corrected**: a random draw reproduces the pool's own archetype and
+author-folder mix in expectation, and rebalancing it would put the confound back. Keys are
+`sha1(team_text.strip())[:10]` throughout — the strip-normalized convention shared by
+`team_archetypes.team_sha`, `MatchupSpec` pins and `TeamWinRateCallback`; a test fails if this
+module ever hashes raw text, because the unstripped variant is a recorded derived-key defect
+(`coverage_sample.py`, whose tell was every row carrying `"class": "?"`).
+
+Modes: `--dry-run` (plans, writes nothing) · `--draw-only` (manifest for review, no promotion) ·
+`--root <copy>` (rehearse the real promotion on a tree copy) · `--verify-exclusions` · `--force`.
+A committed demo draw at seed 20260830 — 40 teams, 0 replacements, balance 11 / hyper_offense 10 /
+offense 8 / semi_stall 7 / stall 4 — lives at `designs/ai_v12/promotion_dry_run_demo.{md,json}` and
+is re-derived by the test suite on every run. Gates: `src/main/promote_teams_test.py` (22 tests,
+~0.2 s, no node, no models).
