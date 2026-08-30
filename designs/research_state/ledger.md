@@ -6963,3 +6963,26 @@ caveat honest — every cell used the shaped head in the shaped world; the clean
 finds: 88/2,226 confirm stages errored at r=0 (driver/clock, 4.0% — kept out of leaf evidence
 by the verdict-keyed counters, defect-fix #3 earning its build), weak leaf-margin gradient
 (≥0.10: 21–11; <0.02: 3–9, n too small to act on).
+
+### 🔧 TASK #38 CLOSED — the depth-2 replay defect was ONE seam bug, and the filed diagnosis is REFUTED (2026-08-30)
+
+**S4 landed `16b4bf0`.** The "chunk-transport double-encode" theory is refuted — the transport
+round-trips bytes faithfully on both impls. Both filed symptoms (active-mismatch warnings; the
+mojibake `KeyError: 'ptãra'`) were ONE defect: `SearchSession.expand_many` returns the arm's
+OWN ply (a deserialized battle cannot re-emit historical `|request|` lines), but `ExpandedNode`'s
+docstring claimed root→node and `search_dividend/search.py::_expand_ply` believed it — so a
+depth-d successor replayed with plies 1..d−1 MISSING. At depth 1 the readings coincide, which
+is why every gate was green; the two callers that do deepen (`better_line`, clone-parity check
+3) accumulate correctly. A protocol hole is a DIFFERENT battle, not a coarser one: a switch in
+the gap → active-mismatch; a reveal in the gap → a Pokémon whose species is its nickname (the
+mojibake was incidental — pre-existing bad bytes in `data/teams/others/mcmegan/`, ISO-8859-1
+fallback written back as UTF-8; bytes deliberately NOT rewritten since team text is hashed into
+`pin_sha` — downloaders now name encodings + a byte-pin test makes any re-sync visible). Fix:
+`TreeNode` grows root→node `chunks`; revert-verified test + a 3.5 s node+rust sim test.
+**CONSEQUENCE — the 2026-08-23 depth-≥2 search readings (realized depth 3, mean 1.83–2.11) are
+VOID**: every deepened arm was scored on a holed replay or dropped. The shipped default-cap
+sweep is unaffected (width absorbs the budget → depth 1), and every R-ladder verdict
+(iter-1/2/3, playoff) is depth-1 — none of this week's conclusions rested on the void rows.
+Known hole: `search_impl_parity.py`'s golden is a scratch artifact absent everywhere — the new
+two-impl sim test stood in; driver diff is comments-only so driver parity unchanged by
+construction. Suites: routine 8069 green, sim 52, search_dividend 346, three static gates.
