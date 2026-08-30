@@ -1194,6 +1194,33 @@ final once the run is, because BT re-solves every node on every add and the newe
 comparison must be at matched snapshot COUNT, not matched step. The measured drift table and the
 worked example are in `src/agents/training/CLAUDE.md` → *Reading an ELO*.
 
+### Exploitability — the meter a weak opponent cannot inflate (`python -m main.exploitability`)
+
+An ELO says how a generation does against the opponents it was measured on. **Exploitability** says
+how much a BEST RESPONSE scores above it — the one progress meter that cannot be inflated by
+beating weak opponents, and the quantity "the wheel turns twice" is a claim about (the best response
+to generation N+1 should be WEAKER than the best response to generation N). Our exploiters ARE
+best-response computations and the fleet admission table IS an exploitability measurement, so the
+curve is pure bookkeeping over artifacts that already exist:
+
+```bash
+python -m main.exploitability rev-2=fleet_admission.json rev-3=r3_admission.json --md
+```
+
+No battles, no models, no traces. Per generation it emits the best-response **net extraction**
+(mean + max over teachers, CIs carried through from the artifact's own per-arm intervals), the
+target identity, the ceiling/headroom reframe, the meter-vs-coverage team split, the budget/team
+normalization, and a markdown row the ledger can quote. Four caveats ship WITH the number: it is a
+**LOWER BOUND** (a finite-budget fork is an imperfect best responder), the teams are **PINNED** (a
+subgame restriction — two generations compare only at matched team sets, and partial overlap is
+flagged), the **max is selected** and upward-biased, and the two CIs assume different things. A
+delta whose interval straddles zero reads "NO DETECTABLE CHANGE", never a direction.
+
+**Schema drift REFUSES** (exit 2, naming the key), and the `net = teacher − reference =
+ordered − seniority` identity is RECOMPUTED from the artifact's own per-team cells rather than
+trusted — the recorded-vs-derived-key defect class has cost this program dearly enough. Theory
+background: `designs/research_state/learning_notes/2026-08-28_nash_exploitability_psro.md`.
+
 ---
 
 ## Playing / Evaluation — and the LADDER path
@@ -1528,6 +1555,14 @@ src/
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
+    exploitability.py  # GENERATION EXPLOITABILITY CURVE — pure bookkeeping over
+                     #   `fleet_admission`-schema admission artifacts (+ optional run metadata):
+                     #   per generation the best-response net extraction (mean + max over
+                     #   teachers, CIs carried through), target identity, budget/team
+                     #   normalization, the meter/coverage team split, and a ledger markdown row.
+                     #   No battles, no models. Schema drift REFUSES (exit 2) and the
+                     #   `net = teacher - reference = ordered - seniority` identity is RECOMPUTED
+                     #   from the artifact's own per-team cells, never trusted
     scaffolding_gauge.py  # SCAFFOLDING GAUGE, offline — divergence between the shaped critic and
                      #   the win-prob head per checkpoint, over a run's eval_traces. Model-FREE
                      #   (recorded `values` + `win_probs`), so it works on a run whose checkpoints

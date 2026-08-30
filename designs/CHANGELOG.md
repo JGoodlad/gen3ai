@@ -6216,3 +6216,55 @@ back tensors it aliases rather than copies, and the next `train()` mutates the v
 restored from. Two "identical" calls then drift by ~1e-3 and any byte-identity claim built on them
 is vacuous. Measured before the byte-identity test here was believed, and recorded in that test's
 comment.
+
+## `gen3_exploitability_curve_v1` (2026-08-29): `python -m main.exploitability` — the meter a weak opponent cannot inflate, plotted deliberately for the first time
+
+
+The learning note `2026-08-28_nash_exploitability_psro.md` named the machinery this program has
+been reinventing and observed that **our exploiters ARE best-response computations and the
+admission table IS an exploitability measurement** — the one meter a weak opponent cannot inflate,
+and the quantity "the wheel turns twice" is a claim about. It had never been plotted deliberately.
+This is the instrument, and it is pure bookkeeping over `fleet_admission`-schema artifacts that
+already exist: no battles, no models, no traces.
+
+Per generation: the best-response **net extraction** (mean + max over teachers, with the artifact's
+own per-arm intervals carried through), target identity, the ceiling/headroom reframe the rev-3
+admission adopted, the meter-vs-coverage team split (mechanical from the `COV_` prefix), the
+budget/team normalization, consecutive-generation deltas, and a markdown row format the ledger
+quotes directly.
+
+**Two CIs, because they assume different things and neither is universally right.**
+`ci_propagated` combines the per-arm standard errors assuming independence (optimistic — the arms
+share reference cells); `ci_between_teachers` uses only the spread across teachers. On the real
+rev-3 artifact the between-teacher interval is the WIDER one, which is itself the honest reading:
+the six best responses disagree by more than their own sampling error.
+
+**A delta whose interval straddles zero reads "NO DETECTABLE CHANGE", never a direction.** The sign
+of a point estimate is not a finding, and the live rev-2 → rev-3 pair is exactly the case that
+would have been mis-narrated (+0.0185, CI [−0.010, +0.047]).
+
+**Four caveats ship inside the artifact**: it is a LOWER BOUND (a finite-budget fork is an
+imperfect best responder — a falling curve is evidence, a flat one is not proof of Nash); the teams
+are PINNED, a subgame restriction, so two generations compare only at matched team sets and partial
+overlap is flagged with the mixture it introduces; the MAX is selected and upward-biased, its
+interval a CI for that arm and never for the population maximum; and the two intervals' assumptions
+are named.
+
+**SCHEMA DRIFT REFUSES, LOUDLY** — exit 2, naming the offending key, seventeen distinct structural
+checks before any arithmetic. And the `net = teacher − reference = ordered − seniority` identity is
+**RECOMPUTED from the artifact's own per-team win records** rather than trusted; a mismatch refuses
+rather than reading past it, with `--no-verify` printing both columns for the case where the
+convention genuinely changed. This is the recorded-vs-effective/derived-key defect class, whose
+costliest instance was averted only because a harness printed VERIFIED instead of assuming.
+
+Validated against the LEDGER's own published tables: rev-2 reproduces the +0.1165 cluster (sd
+0.0098) and rev-3 the six admitted arms (+0.0988 / +0.0863 / +0.1413 / +0.0700 / +0.1962 / +0.2175)
+with the identity VERIFIED on all eleven, plus the ~0.69 teacher ceiling and the coverage-vs-meter
+headroom split the reframe turns on (coverage target 0.41, headroom 0.26; meter target 0.61,
+headroom 0.09).
+
+### Files + tests
+
+New: `main/exploitability.py`. `main/exploitability_test.py` (35) — the ledger's rev-3 table as the
+fixture, and seventeen parametrized schema refusals each asserting that the message NAMES the
+defect.
