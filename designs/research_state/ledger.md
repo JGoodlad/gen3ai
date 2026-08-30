@@ -6684,3 +6684,24 @@ lesson: waves A and D both took config v105 in parallel; resolved at the landing
 D promoted to 106, migrations stacked, 149 targeted + 2115 training tests green post-merge).
 Future parallel waves get version numbers PRE-ASSIGNED in their briefs.** Remaining in
 flight: B (harvest backbone) + C (Q-head).
+
+### 🟢 WAVE C LANDED (0825f03) — the E5 Q-win-prob head exists, dormant at v107; the producer gap is the named next piece (2026-08-30)
+
+The per-action win-prob readout rides the pointer cell widths, built LAST (append-never-insert
++ it sizes from the cells), `--q-winprob-mode {none, read_only}` — **no shaping value exists:
+every input is detached INSIDE the forward, so trunk exposure is unrepresentable rather than
+defaulted off** (`grad/q_winprob_share` = 0.0 by construction). v106→107 — the agent
+SELF-RESOLVED the parallel-wave version collision (saw upstream at 105/106 mid-rebase,
+renumbered; the pre-assignment rule stands for future waves regardless). No ARCH_SIGNATURE
+(read_only's only output is a stash; pi/vf bit-identical) ⇒ check_compatible's string gate
+added deliberately, since no shape error exists anywhere. **Label contract: additive-optional
+at schema v1, list-of-objects NEVER parallel arrays** — three same-length lists can be written
+in the wrong order and read as valid; a per-action object cannot (the op-move-order lesson
+applied to schemas). ⚠️ **The producer does not yet emit `q_labels`** — documented in three
+places as the next piece; no training pilot possible until it does (cut as instructed).
+6701 tests + gates + a real --debug smoke green (round-trip PASSED, v107 recorded). Two probe
+nuances banked: spearman returns None (not 0.0) on the constant row an untrained head emits —
+"learned nothing" must not merge with "learned something uncorrelated"; and **pred_spread vs
+label_spread is the discriminator between amortizing the SEARCH and amortizing the VALUE** —
+abs_err alone would flatter a head that predicts each state's mean. Wave B (harvest backbone)
+is the last in flight.
