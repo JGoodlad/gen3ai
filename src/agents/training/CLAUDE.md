@@ -314,8 +314,66 @@ names, so a recorded `ModelVersion` can be censused offline without reconstructi
 | config | composition |
 |---|---|
 | **default** | `1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)` |
-| `--no-all-shaping-pbrs` | `1 TERMINAL + 2 PBRS + 26 BIAS` |
+| `--no-all-shaping-pbrs` | `1 TERMINAL + 2 PBRS + 25 BIAS` |
 | `--stall-pbrs` (with the default) | `1 TERMINAL + 8 PBRS + 0 BIAS` — the zero-bias destination |
+| **`--no-hand-shaping`** | `1 TERMINAL + 0 PBRS + 0 BIAS` — the CLEAN WORLD (see below) |
+
+#### The CLEAN-WORLD switches (`gen3_clean_world_config_v1`, config v105)
+
+**Four resume-immutable fields, every default equal to today's behaviour**, so a flagless launch is
+byte-identical. Spec: probe N
+(`designs/research_state/measurements/no_progress_tax_review_2026-08-29.md` §5).
+
+| flag | default | what `false` / the other value does |
+|---|---|---|
+| `--hand-shaping` | ON | **the master.** All EIGHT `_fold_*_pbrs` early-return AND the whole BIAS class is zeroed, `no_progress_tax` included |
+| `--pbrs-material` | ON | drops Φ_mat (the term had NO flag at all before) |
+| `--pbrs-belief` | ON | drops the EMITTED Φ_belief term only — see the mutation note below |
+| `--victory-value` | 30.0 | the ±terminal, promoted off the `reward_weights.VICTORY_VALUE` module constant |
+
+🚨 **Why a master flag rather than "just turn `--all-shaping-pbrs` off": the two halves are
+ANTI-CORRELATED across it.** `all_shaping_pbrs` does two jobs — it folds five potentials *and* it is
+`_bias_term_active`'s master gate — so `--no-all-shaping-pbrs` silences the potentials while
+**reviving 25 BIAS terms**. "No hand PBRS **and** no BIAS" sat in a hole between the two settings and
+no combination of the pre-existing flags could reach it (asserted, in `clean_world_config_test.py`,
+so nobody "simplifies" `hand_shaping` away later).
+
+⚠️ **State this honestly in any write-up.** Every PBRS term is **policy-INVARIANT by construction**
+(`Φ(terminal)=0`, telescoping), so removing them **cannot change the optimal policy** — it changes
+learning dynamics and conceptual complexity. The clean-world claim's real content is "the hand terms
+cost more in interference and tuning than they buy in credit assignment", never "the hand terms bias
+the objective". The only class that biases the objective is BIAS, and that was flag-zeroable before.
+
+🚨 **THE OUTCOME ORDERING is the clean arm's largest hazard.** `draw_penalty = -35 < -30` exists so
+that stalling to the 250-turn cap is strictly worse than losing cleanly. At a ±1 terminal a
+`draw_penalty` of `0.0` **inverts** that: the stall becomes the best non-winning outcome, and with
+`no_progress_tax`, `stall_tax` and Φ_progress all removed, nothing else opposes it. The owner's
+ruling is **draw = loss**. `resolve_config` prints a loud `[Reward] ⚠️ ORDERING` line whenever
+`draw_penalty > -victory_value` — a warning, not an error, because an arm may want it — and
+`--victory-value <= 0` is refused outright. **Register stall rate + mean game length as a PRIMARY
+safety endpoint on this arm, not a secondary one.**
+
+**The clean-world reward flag set, verbatim** (`CLEAN_WORLD_REWARD_FLAGS` in
+`clean_world_config_test.py`; the dense signal is `--win-prob-pbrs-*`, below):
+
+```
+--no-hand-shaping --victory-value 1.0 --draw-penalty -1.0
+```
+
+Two implementation notes worth keeping:
+
+- **`victory_value` covers the PRE-CAP TIE too.** `finished and not won and not lost and turn < cap`
+  shared the decisive-loss branch as a hardcoded `-VICTORY_VALUE`; it now reads the field, so a ±1
+  arm cannot score a rare tie at −30 beside a −1 loss. `MAT_HP_WEIGHT` / `MAT_ALIVE_WEIGHT` are
+  calibrated against the 30 scale — moot under `--no-hand-shaping`, which is the composition the ±1
+  terminal exists for.
+- **`--no-pbrs-belief` gates the EMITTED FIELD ONLY.** `_fold_belief_pbrs` also snapshots the
+  decision-time KO risk and safe-pivot flag, which the belief-scaled BIAS terms read; the manager's
+  standing rule is that a gate skips a COMPUTE, never a cross-turn mutation.
+- **The folds and the census are now ONE declaration.** Every `_fold_*_pbrs` calls
+  `_hand_pbrs_on(name)` → `_pbrs_term_active`, the same predicate `reward_class_composition` reads.
+  They were two hand-maintained copies of the same conditions, which is exactly how a census can
+  advertise a composition the folds do not implement.
 
 **Why it exists.** The v8→v9 drift (`designs/research_state/ledger.md`, 2026-08-18):
 `--all-shaping-pbrs` simply stopped being passed at the fresh-generation boundary, so every
@@ -3580,7 +3638,66 @@ target does — see the design doc's §2.1.
   `episode_starts[t+1]` test; grad-disabled + detached-to-numpy (fails if the `no_grad` is deleted);
   coef-0 buffer identity + the source contract that the import is local to the non-zero branch; the
   raw-reward/GAE-recompute order; chunk-boundary coverage; the loud-refusal path; both config gates; the
-  v104 migration. Three of the revert-catchers were verified failing on a deliberate revert.
+  v104 migration; and the frozen-φ group below. Five revert-catchers verified failing on a
+  deliberate revert.
+
+### FROZEN φ (`--win-prob-pbrs-source <ckpt>`, `gen3_winprob_pbrs_source_v1`, config v105)
+
+**The caveat above, removed.** The invariance theorem assumes φ is a **fixed** function of state;
+ours is a head inside the network being trained. `--win-prob-pbrs-source` points the potential at a
+**frozen foreign checkpoint** instead, so the shield holds exactly rather than approximately.
+Absent (the default) ⇒ the live head, byte-identical to what v104 shipped.
+
+- **One seam, one loader.** Only `winprob_pbrs.phi_model(model)` changes: it returns
+  `model._winprob_phi_source or model`, and `buffer_potentials` / the bootstrap read it. The
+  loading is `--distill-teacher`'s path verbatim — `fixed_opponent_pool._resolve_zip_and_config`
+  → `snapshot.load_foreign_opponent` → `set_training_mode(False)`, in `main/train/model_build.py`.
+  A bad path is `os._exit(FATAL_CONFIG)`, never a crash-restart loop.
+- ⚠️ **A FULL frozen extractor forward is required; there is no head-only shortcut.**
+  `WinProbHead.forward` consumes `value_pooled` — the whole-board value pool produced by *that*
+  network's own trunk with its own weights. Running the frozen head over the LIVE trunk's pooled
+  features computes a function of a representation the head never saw, AND it would drift with the
+  live trunk, destroying the exact property the frozen source buys.
+- **Cost.** The frozen forward **REPLACES** the live-φ one rather than adding to it, so the compute
+  is unchanged (~1/`n_epochs` of one epoch). New: one frozen extractor of memory (the
+  `--distill-teacher` class, which the tree already runs at N ≥ 3) and one load at startup.
+- ⚠️ **Two forwards on the post-rollout obs now, and the split is load-bearing.** `last_values` is
+  the **GAE bootstrap** and must stay the LIVE critic's; φ(s_T) must come from the φ network. With
+  no source the two coincide and it stays ONE forward exactly as before. Frozen φ on the buffer
+  rows with a LIVE φ on the last row would break the telescoping at every truncation boundary.
+- **A prior-generation φ is viable and is the point** (that is where a MATURE potential lives).
+  `load_foreign_opponent` validates the obs FAMILY (`arch_signature`), and `_phi_obs` passes only
+  the keys the source's own space declares — the same filter the distillation teachers use.
+- **`--win-prob-mode` governs the LIVE head only** here, i.e. whether it trains as a diagnostic.
+  `read_only` is the right choice on this arm: risk-free, and it keeps a live φ trajectory to
+  compare against the frozen one — a free measurement of how far the potential has drifted from
+  the run's own beliefs.
+- **`--compile-trainer` interaction: the source is left EAGER, deliberately.** The compile patches
+  the bound `forward` of the LIVE policy's extractor for the per-minibatch train step; the frozen
+  source runs once per **rollout**, so a second Inductor graph would buy a warm-up and nothing else.
+  ⚠️ **UNEXERCISED:** a real CUDA `torch.compile` with a frozen source attached has not been run —
+  `compile_trainer_extractor` refuses a non-cuda device, so the CPU test tier cannot reach it. What
+  IS tested is the seam that makes it safe (the compile module never names `_winprob_phi_source`;
+  replacing the live extractor's bound `forward` with a poisoned callable leaves φ unchanged).
+- **The coefficient carries the [−1,+1] mapping, NOT a `2p−1` spelling of φ.** They are equivalent
+  up to `coef ← 2·coef` plus a per-step constant `coef·b·(γ−1)`, and at `b = −1` that constant is
+  `+1e-4·coef` per step — small, but a wrongly-signed **stall incentive** in an arm that has deleted
+  every anti-stall term. It also breaks `successor_potential`'s `φ(terminal) := 0` convention, which
+  is correct for a [0,1] potential and is the MIDDLE of a [−1,+1] one. Write
+  `--win-prob-pbrs-coef 2c`; keep φ = σ(logit).
+- **Provenance.** Recorded on `ModelVersion` (`win_prob_pbrs_source`) and **inherited on a flagless
+  resume** (`_resolve`), because a resume that silently reverted to live-φ would swap exact
+  invariance for approximate with nothing saying so. Listed in `_excluded_save_params` — a frozen
+  foreign model is never pickled into our checkpoint. Startup prints the resolved zip, its
+  `arch_signature` and its `config_version`: a clean-world run is uninterpretable if the identity
+  of its frozen potential is not pinned.
+- **Config gate.** A source with no positive coefficient is refused — it would load a whole extra
+  network, forward it once per rollout, and multiply the result by zero.
+- **THE correctness test** (`winprob_pbrs_test.py`): point the frozen source at the run's **own
+  current checkpoint**, through the real `load_foreign_opponent`, on a real `Gen3FeaturesExtractor`
+  — every φ must come back **bit-identical** to the live path. A head-only shortcut fails it, and so
+  does any obs-key or eval-mode discrepancy. Its anti-vacuity twin drifts the live weights and
+  requires the frozen φ not to move while the live φ does.
 
 ## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
 

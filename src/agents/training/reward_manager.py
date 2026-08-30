@@ -138,6 +138,38 @@ class RewardConfig:
     #   stall tilt as the single acknowledged BIAS (insurance against stall-regression — watch stall-rate).
     stall_pbrs: bool = False
 
+    # --- gen3_clean_world_config_v1 (ai_v12 build wave A). The three switches the CLEAN-WORLD arm
+    # needs and the flag surface could not express. EVERY default below is today's behaviour, so a
+    # flagless run is byte-identical; the census (`reward_class_composition`) proves it. ---
+    #
+    # `hand_shaping` — the MASTER off-switch for every HAND-DESIGNED dense term. False ⇒ all EIGHT
+    #   `_fold_*_pbrs` early-return (material and belief included) AND the whole BIAS class is
+    #   zeroed, leaving TERMINAL alone. It exists because the two jobs `all_shaping_pbrs` bundles
+    #   are ANTI-CORRELATED: `--no-all-shaping-pbrs` silences five potentials but REVIVES 25 BIAS
+    #   terms, because `asp` is also `_bias_term_active`'s master gate — so "no hand PBRS *and* no
+    #   BIAS" was unreachable by any combination of the pre-existing flags
+    #   (`designs/research_state/measurements/no_progress_tax_review_2026-08-29.md` §5.1).
+    #
+    #   ⚠️ STATE THIS HONESTLY IN ANY WRITE-UP: every PBRS term is policy-INVARIANT by construction
+    #   (Φ(terminal)=0, telescoping), so removing them CANNOT change the optimal policy. It changes
+    #   learning dynamics and conceptual complexity. The clean-world claim's real content is "the
+    #   hand terms cost more in interference and tuning than they buy in credit assignment" — never
+    #   "the hand terms bias the objective". The only class that biases the objective is BIAS.
+    hand_shaping: bool = True
+    # The two potentials that had NO gate at all (`_pbrs_term_active` returned True unconditionally
+    # for them and neither fold had an early return). Deliberately INDEPENDENT of `all_shaping_pbrs`
+    # rather than folded into it — see the anti-correlation note above.
+    pbrs_material: bool = True
+    pbrs_belief: bool = True
+    # The TERMINAL magnitude, promoted from the `reward_weights.VICTORY_VALUE` module constant so a
+    # ±1 terminal is reachable BY FLAG. A win scores +victory_value; a decisive loss AND a rare
+    # pre-cap tie score −victory_value; a 250-turn TIMEOUT scores `draw_penalty` instead.
+    # Default 30.0 == the constant (the two are pinned equal by `reward_defaults_test.py`).
+    # ⚠️ `MAT_HP_WEIGHT` / `MAT_ALIVE_WEIGHT` are calibrated AGAINST the 30 scale, so a ±1 terminal
+    # with Φ_mat still on would make material dwarf the outcome. Moot under `--no-hand-shaping`
+    # (Φ_mat is off there), which is the composition the ±1 terminal exists for.
+    victory_value: float = 30.0
+
     # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
     # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
     # picks it up (no hand-threading), `from_dict` reconstructs it for eval/resume, and the eval
@@ -387,20 +419,30 @@ def _rc(config, name, default):
 
 
 def _pbrs_term_active(config, name: str) -> bool:
-    """Is PBRS term `name` reachable under `config`? Mirrors the `_fold_*_pbrs` early-returns."""
+    """Is PBRS term `name` folded under `config`? THE gate — every `_fold_*_pbrs` calls this through
+    ``Gen3RewardManager._hand_pbrs_on``, so the census below and the folds cannot drift apart (they
+    were two hand-maintained copies of the same conditions until 2026-08-29)."""
+    if not bool(_rc(config, "hand_shaping", True)):
+        return False                   # --no-hand-shaping: every hand potential off, TERMINAL alone
     asp = bool(_rc(config, "all_shaping_pbrs", True))
+    if name == "pbrs_material":        # _fold_material_pbrs — its OWN flag, not asp's (see RewardConfig)
+        return bool(_rc(config, "pbrs_material", True))
+    if name == "pbrs_belief":          # _fold_belief_pbrs — likewise
+        return bool(_rc(config, "pbrs_belief", True))
     if name == "pbrs_status":          # _fold_status_pbrs
         return bool(_rc(config, "bias_redesign", False)) or asp
     if name == "pbrs_progress":        # _fold_progress_pbrs
         return bool(_rc(config, "stall_pbrs", False))
     if name in ("pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"):
         return asp
-    return True                        # pbrs_material / pbrs_belief are unconditional
+    return True
 
 
 def _bias_term_active(config, name: str) -> bool:
     """Is BIAS term `name` reachable under `config`? Mirrors `_apply_pbrs_suppression`,
     `_apply_bias_drops`, `_apply_progress_clock` and the three weight-gated terms."""
+    if not bool(_rc(config, "hand_shaping", True)):
+        return False                   # --no-hand-shaping zeroes the WHOLE BIAS class, tilt included
     asp = bool(_rc(config, "all_shaping_pbrs", True))
     stall = bool(_rc(config, "stall_pbrs", False))
     if name == "no_progress_tax":
@@ -1490,19 +1532,35 @@ class Gen3RewardManager:
         shaped = (PBRS_GAMMA * phi - prev) if prev is not None else 0.0
         return shaped, phi
 
+    def _hand_pbrs_on(self, name: str) -> bool:
+        """Is hand PBRS term `name` folded under this run's config? Delegates to
+        ``_pbrs_term_active`` — the SAME predicate `reward_class_composition` censuses, so a run's
+        advertised PBRS list and the terms it can actually emit are one declaration, not two."""
+        return _pbrs_term_active(self.config, name)
+
     def _fold_material_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Material PBRS Φ_mat (design §2) → ``bd.pbrs_material``. Replaces the old unconditional
-        hp/faint base spine; telescopes to −Φ_mat(s_0) → every win +30, every loss −30."""
+        hp/faint base spine; telescopes to −Φ_mat(s_0) → every win +30, every loss −30.
+        OFF (--no-pbrs-material / --no-hand-shaping) → byte-identical: `_prev_phi_mat` stays None
+        and the field stays 0.0, the same shape every other fold's early return takes."""
+        if not self._hand_pbrs_on("pbrs_material"):
+            return
         bd.pbrs_material, self._prev_phi_mat = self._pbrs_step(
             self._prev_phi_mat, self._compute_phi_mat(live), is_terminal)
 
     def _fold_belief_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Incoming-KO belief PBRS (design_reward_switching.md) → ``bd.pbrs_belief``; also snapshots
         the active KO-risk AND whether a safe bench pivot exists for next turn's escape/stay re-gate
-        (both keyed at decision time — read by `_compute_stay_risk_tax` / `_apply_switch_outcome`)."""
+        (both keyed at decision time — read by `_compute_stay_risk_tax` / `_apply_switch_outcome`).
+
+        ⚠️ The gate wraps the EMITTED FIELD ONLY, never the two snapshots. They are cross-turn
+        MUTATIONS feeding BIAS terms that `--no-pbrs-belief` alone leaves live, and this manager's
+        standing rule is that a gate skips the COMPUTE, never a mutation — a `return` above the
+        snapshots would silently re-price `stay_risk_tax` / `escape_threat_switch`."""
         phi_belief_next, active_risk_next, min_bench_pko_next = self._belief_potential_and_risk(live)
-        bd.pbrs_belief, self._prev_phi_belief = self._pbrs_step(
-            self._prev_phi_belief, phi_belief_next, is_terminal)
+        if self._hand_pbrs_on("pbrs_belief"):
+            bd.pbrs_belief, self._prev_phi_belief = self._pbrs_step(
+                self._prev_phi_belief, phi_belief_next, is_terminal)
         self._prev_active_ko_risk = 0.0 if is_terminal else active_risk_next
         self._prev_safe_pivot = (not is_terminal) and (min_bench_pko_next <= SAFE_PIVOT_PKO_MAX)
 
@@ -1514,7 +1572,7 @@ class Gen3RewardManager:
         standing value was dropped — this restores it as a telescoping, policy-invariant potential.
         Also active under --all-shaping-pbrs (which suppresses the count-diff status BIAS, so Φ_status is
         the only remaining carrier of the tempo-status standing value — no double-count)."""
-        if not (self.config.bias_redesign or self.config.all_shaping_pbrs):
+        if not self._hand_pbrs_on("pbrs_status"):
             return
         bd.pbrs_status, self._prev_phi_status = self._pbrs_step(
             self._prev_phi_status, self._compute_phi_status(live), is_terminal)
@@ -1522,7 +1580,7 @@ class Gen3RewardManager:
     def _fold_progress_pbrs(self, bd: "RewardBreakdown", is_terminal: bool) -> None:
         """Anti-stall PBRS Φ_progress → bd.pbrs_progress. Gated on --stall-pbrs (the "stall" switch; the
         no_progress_tax BIAS otherwise carries the charge). Telescopes via _pbrs_step, Φ(terminal)=0."""
-        if not self.config.stall_pbrs:
+        if not self._hand_pbrs_on("pbrs_progress"):
             return
         bd.pbrs_progress, self._prev_phi_progress = self._pbrs_step(
             self._prev_phi_progress, self._compute_phi_progress(None), is_terminal)
@@ -1530,7 +1588,7 @@ class Gen3RewardManager:
     def _fold_hazard_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Hazard PBRS Φ_hazard (design §2.6) → bd.pbrs_hazard. Gated on all_shaping_pbrs (the
         spikes/futile_spikes BIAS terms are suppressed there). Telescopes, Φ(terminal)=0."""
-        if not self.config.all_shaping_pbrs:
+        if not self._hand_pbrs_on("pbrs_hazard"):
             return
         bd.pbrs_hazard, self._prev_phi_hazard = self._pbrs_step(
             self._prev_phi_hazard, self._compute_phi_hazard(live), is_terminal)
@@ -1538,7 +1596,7 @@ class Gen3RewardManager:
     def _fold_boost_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Stored-boost PBRS Φ_boost → bd.pbrs_boost. Gated on all_shaping_pbrs (boost_utilized/
         futile_setup/setup_low_hp suppressed there). Telescopes, Φ(terminal)=0."""
-        if not self.config.all_shaping_pbrs:
+        if not self._hand_pbrs_on("pbrs_boost"):
             return
         bd.pbrs_boost, self._prev_phi_boost = self._pbrs_step(
             self._prev_phi_boost, self._compute_phi_boost(live), is_terminal)
@@ -1548,7 +1606,7 @@ class Gen3RewardManager:
         """Opp-boost-disruption PBRS Φ_opp_boosts → bd.pbrs_opp_boosts. Gated on all_shaping_pbrs (the
         roar/failed_roar BIAS is suppressed there). Telescopes, Φ(terminal)=0.
         `positive` is the opp-positive-boost Σ shared with `_fold_roar_pbrs` (None recomputes)."""
-        if not self.config.all_shaping_pbrs:
+        if not self._hand_pbrs_on("pbrs_opp_boosts"):
             return
         bd.pbrs_opp_boosts, self._prev_phi_opp_boosts = self._pbrs_step(
             self._prev_phi_opp_boosts, self._compute_phi_opp_boosts(live, positive), is_terminal)
@@ -1559,7 +1617,7 @@ class Gen3RewardManager:
         flag was removed per owner request), so it rides alongside Φ_opp_boosts there — the two STACK (safe,
         both policy-invariant) for a stronger proportional roar-out-boosts shaping. Telescopes via
         _pbrs_step, Φ(terminal)=0. OFF (no all_shaping_pbrs) → byte-identical (prev stays None, field 0.0)."""
-        if not self.config.all_shaping_pbrs:
+        if not self._hand_pbrs_on("pbrs_roar"):
             return
         bd.pbrs_roar, self._prev_phi_roar = self._pbrs_step(
             self._prev_phi_roar, self._compute_phi_roar(live, positive), is_terminal)
@@ -1606,7 +1664,14 @@ class Gen3RewardManager:
           good-outcome bonuses (finishing_blow/explosion_block/status_wasted) are redundant with Φ_mat.
           The bad turn-ramp `stall_tax` is among the zeroed terms (it taxed winning long games).
         --stall-pbrs ("stall"): ZERO `no_progress_tax` + `stall_tax` (Φ_progress, folded above, carries
-          the anti-stall signal policy-invariantly). Both flags on ⇒ the WHOLE BIAS class is zero."""
+          the anti-stall signal policy-invariantly). Both flags on ⇒ the WHOLE BIAS class is zero.
+        --no-hand-shaping (CLEAN WORLD): zero the whole BIAS class outright — `no_progress_tax`
+          included, which is what distinguishes it from --all-shaping-pbrs. The eight potentials
+          never folded at all (every `_fold_*_pbrs` early-returns via `_hand_pbrs_on`), so what
+          survives is TERMINAL plus whatever trainer-side shaping the run asked for."""
+        if not self.config.hand_shaping:
+            for name in bd.registry_fields(RewardClass.BIAS):
+                setattr(bd, name, 0.0)
         if self.config.all_shaping_pbrs:
             # Everything-but-stall → PBRS: zero all BIAS except the kept anti-stall tilt.
             for name in bd.registry_fields(RewardClass.BIAS):
@@ -1644,18 +1709,29 @@ class Gen3RewardManager:
         # reaches into the raw poke-env battle for "what is true now".
         live = battle.live_view()
 
-        # --- TERMINAL: the ±30 win/loss (out of scope; never shaped) ---
+        # --- TERMINAL: the ±victory_value win/loss (out of scope; never shaped) ---
+        # `victory_value` defaults to the `VICTORY_VALUE` module constant (30.0), so this is the
+        # same number it always was; it is a config field so a ±1 terminal is reachable by flag
+        # (gen3_clean_world_config_v1). The constant remains the DEFAULT's single source.
+        victory = float(self.config.victory_value)
         won, lost, finished = self._terminal(live)
         if won:
-            bd.win_loss = VICTORY_VALUE
+            bd.win_loss = victory
         elif finished:
             # Non-win terminal. A no-progress STALL ends with the trainee FORFEITING at the turn cap
             # (gen3_env issues ForfeitBattleOrder at turn>=cap → lost=True, turn>=cap) — NOT a tie — so
             # the timeout is detected by the turn count, not by won/lost. A timeout takes draw_penalty
-            # (set < -VICTORY_VALUE to make a stall strictly worse than a clean loss); a DECISIVE loss
-            # (or rare pre-cap tie) before the cap stays -VICTORY_VALUE.
+            # (set < -victory_value to make a stall strictly worse than a clean loss); a DECISIVE loss
+            # — and the rare PRE-CAP TIE, which shares this branch — stays -victory_value.
+            #
+            # 🚨 THE ORDERING IS THE POINT, not the magnitudes. `draw_penalty = -35 < -30` exists so
+            # that stalling to the cap is strictly worse than losing cleanly. On a ±1 terminal a
+            # `draw_penalty` of 0.0 would INVERT that — a 250-turn stall would become the best
+            # non-winning outcome, and a losing agent's optimal play would be to run out the clock.
+            # The owner's ruling for the clean arm is draw = loss: `--victory-value 1.0
+            # --draw-penalty -1.0`, with stall-rate / mean game length as a PRIMARY safety endpoint.
             timed_out = live.turn >= _TIMEOUT_TURN_CAP
-            bd.win_loss = self.config.draw_penalty if timed_out else -VICTORY_VALUE
+            bd.win_loss = self.config.draw_penalty if timed_out else -victory
         is_terminal = won or lost or finished
 
         # --- Material PBRS Φ_mat (design §2): replaces the unconditional hp/faint base spine ---

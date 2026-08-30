@@ -182,8 +182,33 @@ def _phi_from_logits(logits: Optional[th.Tensor], where: str) -> np.ndarray:
     return th.sigmoid(logits.detach()).reshape(-1).to(th.float64).cpu().numpy()
 
 
+def phi_model(model):
+    """WHICH network supplies φ — the FROZEN source if one was attached, else the live model.
+
+    `--win-prob-pbrs-source <ckpt>` (`gen3_winprob_pbrs_source_v1`) attaches a frozen foreign model
+    at `model._winprob_phi_source`; `main.train.model_build` owns the loading. Absent ⇒ None ⇒ the
+    live model, i.e. the shipped v104 behaviour, byte-identical.
+
+    WHY IT MATTERS: the invariance theorem above assumes φ is a FIXED function of state. Our live
+    head is a module inside the network being trained, so exact invariance holds only WITHIN a
+    rollout and degrades across them. A frozen source removes that caveat entirely — the whole
+    reason the flag exists.
+
+    ⚠️ A FULL frozen forward is REQUIRED; there is no head-only shortcut. `WinProbHead.forward`
+    consumes `value_pooled`, the whole-board value pool produced by that network's OWN trunk with
+    its OWN weights. Running the frozen HEAD over the LIVE trunk's pooled features would compute a
+    function of a representation the head never saw AND would drift with the live trunk, destroying
+    the exact property the frozen source buys. The forward REPLACES the live-φ one rather than
+    adding to it, so the cost is unchanged from the live-φ path (plus one frozen extractor of
+    memory, the `--distill-teacher` class).
+    """
+    return getattr(model, "_winprob_phi_source", None) or model
+
+
 def _forward_phi(model, obs_batch) -> np.ndarray:
     """One `no_grad` extractor forward over ``obs_batch`` (a dict of numpy arrays) → φ [B] float64.
+
+    ``model`` here is the φ NETWORK (`phi_model(...)`'s answer), not necessarily the trainee.
 
     Reads the SIDE stash `features_extractor.last_win_prob_logits` — the same seam
     `search_dividend.search.batch_scores` reads, and the same one the aux BCE reads in `train()`.
@@ -193,6 +218,21 @@ def _forward_phi(model, obs_batch) -> np.ndarray:
         model.policy.predict_values(obs_t)   # runs the extractor; the win-prob logit is a side stash
         fe = getattr(model.policy, "features_extractor", None)
         return _phi_from_logits(getattr(fe, "last_win_prob_logits", None), "buffer forward")
+
+
+def _phi_obs(phi_net, obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    """Restrict ``obs`` to the keys the φ network's observation space declares.
+
+    A frozen source may be a PRIOR-GENERATION checkpoint with an older Dict obs space (that is what
+    makes a mature φ available at all — `load_foreign_opponent` validates the obs FAMILY, not the
+    exact key set). SB3's `preprocess_obs` iterates the passed keys against the space, so an extra
+    key is a KeyError. The identical filter the exploiter-distillation teachers use in `train()`.
+    A live-model φ has its own space by construction, so this is the identity there.
+    """
+    space = getattr(getattr(phi_net, "observation_space", None), "spaces", None)
+    if not space:
+        return obs
+    return {k: v for k, v in obs.items() if k in space}
 
 
 def buffer_potentials(model, rollout_buffer, chunk: int = PHI_FORWARD_CHUNK) -> np.ndarray:
@@ -209,9 +249,10 @@ def buffer_potentials(model, rollout_buffer, chunk: int = PHI_FORWARD_CHUNK) -> 
     out = np.empty(n_steps * n_envs, dtype=np.float64)
     total = n_steps * n_envs
     step = max(1, int(chunk))
+    phi_net = phi_model(model)
     for lo in range(0, total, step):
         hi = min(lo + step, total)
-        out[lo:hi] = _forward_phi(model, {k: flat[k][lo:hi] for k in keys})
+        out[lo:hi] = _forward_phi(phi_net, _phi_obs(phi_net, {k: flat[k][lo:hi] for k in keys}))
     return out.reshape(n_steps, n_envs)
 
 
@@ -244,12 +285,24 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
 
     phi = buffer_potentials(model, rollout_buffer)
 
-    # ONE forward on the post-rollout observation: the GAE bootstrap value AND φ(s_T).
+    # The post-rollout observation gives TWO different things, and WHICH network produces each is
+    # load-bearing: `last_values` is the GAE bootstrap and must come from the LIVE critic (it is the
+    # same call and the same tensor the collector itself used, so the recomputed advantages are the
+    # shaped-stream counterpart of the ones it produced), while φ(s_T) must come from whatever
+    # network supplies φ everywhere else. With no frozen source the two are the same model and this
+    # stays ONE forward, exactly as shipped. With one, the frozen bootstrap gets its own forward —
+    # a frozen φ on the buffer rows and a LIVE φ on the last row would break the telescoping at
+    # every truncation boundary.
+    phi_net = phi_model(model)
     with th.no_grad():
         last_obs_t = obs_as_tensor(model._last_obs, model.device)
         last_values = model.policy.predict_values(last_obs_t)
-        fe = getattr(model.policy, "features_extractor", None)
-        phi_boot = _phi_from_logits(getattr(fe, "last_win_prob_logits", None), "bootstrap forward")
+        if phi_net is model:
+            fe = getattr(model.policy, "features_extractor", None)
+            phi_boot = _phi_from_logits(getattr(fe, "last_win_prob_logits", None),
+                                        "bootstrap forward")
+        else:
+            phi_boot = _forward_phi(phi_net, _phi_obs(phi_net, model._last_obs))
     dones = np.asarray(model._last_episode_starts, dtype=np.float64).reshape(-1)
 
     phi_next = successor_potential(phi, rollout_buffer.episode_starts, phi_boot, dones)

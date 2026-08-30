@@ -371,6 +371,10 @@ class PpoHyperparameters:
         # the projection matrix and the frozen probe batch, so a resume re-inits the canary and its
         # loss/recovery curves restart. Persisting a diagnostic's optimizer into every checkpoint
         # is a worse trade than reading recoveries WITHIN a restart window.
+        # `_winprob_phi_source` (gen3_winprob_pbrs_source_v1) is the `_distill_teacher` genre
+        # exactly: a full frozen FOREIGN model attached at setup and re-loaded from its own path on
+        # resume (`--win-prob-pbrs-source` is inherited on a flagless resume for precisely that
+        # reason). Pickling it would embed another run's weights in every checkpoint of this one.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
-                                                  "_capacity_state"]
+                                                  "_capacity_state", "_winprob_phi_source"]

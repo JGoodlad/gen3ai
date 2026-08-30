@@ -244,7 +244,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
     _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like win_prob_coef)
     _resolve("win_prob_pbrs_coef", 0.0)        # v104 training-only (inherited like td_aux_coef)
-    _resolve("policy_grad_coef", 1.0)                   # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
+    # v105 training-only PATH, inherited WITH the coefficient above: a flagless resume that dropped
+    # it would silently swap the FROZEN potential back to the live, drifting head — a change of
+    # objective mid-run with nothing in any metric saying so.
+    _resolve("win_prob_pbrs_source", None)
+    _resolve("policy_grad_coef", 1.0)                 # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
@@ -455,6 +459,30 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--win-prob-pbrs-coef > 0 requires --win-prob-mode read_only|shaping — the PBRS "
                      "potential φ(s) IS the win-prob head's output, and --win-prob-mode none builds "
                      "no head. Pass a mode, or drop the shaping coefficient.")
+    if getattr(args, "win_prob_pbrs_source", None) and not (
+            args.win_prob_pbrs_coef and args.win_prob_pbrs_coef > 0):
+        # A frozen φ source with no shaping coefficient loads a whole extra network onto the
+        # training device, runs a forward per rollout, and multiplies the result by zero. Nothing
+        # downstream would say so — the same invisible-no-op class the coef/mode gate above guards.
+        parser.error("--win-prob-pbrs-source names the FROZEN potential for the win-prob PBRS, so it "
+                     "requires --win-prob-pbrs-coef > 0. With no coefficient the source would be a "
+                     "frozen network loaded, forwarded once per rollout, and multiplied by zero.")
+    # --- gen3_clean_world_config_v1: the TERMINAL magnitude + the outcome ORDERING it implies ---
+    if getattr(args, "victory_value", 30.0) is not None and args.victory_value <= 0.0:
+        # A non-positive victory value inverts win/loss (or flattens them), which trains correctly
+        # toward the wrong objective and no metric names it.
+        parser.error("--victory-value must be > 0 (a win scores +V, a loss -V; 30.0 = the default, "
+                     "1.0 = the clean-world ±1 terminal)")
+    if (getattr(args, "victory_value", None) is not None
+            and args.draw_penalty is not None and args.draw_penalty > -float(args.victory_value)):
+        # NOT an error — "a draw is better than a loss" is a legitimate thing to want, and a fresh
+        # arm may deliberately choose it. It IS the single largest hazard in the clean-world arm,
+        # so it is stated once, loudly, at launch (probe N §5.2/B3).
+        print(f"[Reward] ⚠️ ORDERING: --draw-penalty {args.draw_penalty:g} is BETTER than a clean "
+              f"loss (-{float(args.victory_value):g}), so running the 250-turn clock out is the best "
+              f"non-winning outcome and a losing agent's optimal play is to stall. The validated "
+              f"composition keeps draw_penalty <= -victory_value. If this is deliberate, make "
+              f"stall rate + mean game length a PRIMARY endpoint.")
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
         # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only

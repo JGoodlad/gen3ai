@@ -225,6 +225,42 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
         emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
              f"(order = teacher-id 1..{len(model._distill_teachers)})")
 
+    # gen3_winprob_pbrs_source_v1: the FROZEN φ for the win-prob PBRS. Absent → the attribute stays
+    # None and `winprob_pbrs` reads the LIVE head exactly as it did at v104 (byte-identical).
+    #
+    # WHY A WHOLE FROZEN MODEL AND NOT JUST THE HEAD: `WinProbHead.forward` consumes `value_pooled`
+    # — the whole-board value pool produced by that network's OWN trunk with its OWN weights. Running
+    # the frozen head over the LIVE trunk's pooled features computes a function of a representation
+    # the head never saw, and it would DRIFT with the live trunk, destroying the one property a
+    # frozen source exists to buy. So the frozen model gets a full `no_grad` extractor forward, and
+    # that forward REPLACES the live-φ one rather than adding to it.
+    #
+    # Loaded EAGER, deliberately: `--compile-trainer` patches the LIVE policy's extractor forward
+    # for the per-minibatch train step, whereas this runs once per ROLLOUT, so a second Inductor
+    # graph would cost a warm-up to save nothing. A bad path FATALs config, never a crash-restart.
+    model._winprob_phi_source = None
+    if getattr(args, "win_prob_pbrs_source", None):
+        from agents.model.snapshot import (
+            current_model_version as _cmv_w, load_foreign_opponent as _lfo_w)
+        from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_w
+        _src = str(args.win_prob_pbrs_source)
+        try:
+            _zip_w, _cfg_w, _ = _rzc_w(_src, None)          # run-dir OR zip → (zip, config)
+            _pm_w, _fv_w = _lfo_w(_zip_w, current_version=_cmv_w(mappings, **_run_arch_toggles(args)),
+                                  device=str(model.device), config_path=_cfg_w)
+            _pm_w.policy.set_training_mode(False)
+            model._winprob_phi_source = _pm_w
+        except Exception as _e_w:  # noqa: BLE001 — bad path / incompatible obs family
+            print(f"\n[WinProbPBRS] FATAL: could not load --win-prob-pbrs-source {_src}: {_e_w}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        # Provenance, printed rather than merely recorded: a clean-world run is uninterpretable if
+        # the identity of its frozen potential is not pinned (probe N §7.8).
+        emit(f"🧊 [WinProbPBRS] frozen φ from {_zip_w} on {model.device} "
+             f"(arch_signature={getattr(_fv_w, 'arch_signature', '?')}, "
+             f"config_version={getattr(_fv_w, 'config_version', '?')}) — the LIVE win-prob head is "
+             f"now a diagnostic only")
+
     if args.search_teacher:
         from agents.training.teacher.buffer import CorrectionBuffer
         model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
@@ -322,6 +358,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
             win_prob_pbrs_coef=args.win_prob_pbrs_coef,
+            win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,
@@ -611,6 +648,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
             win_prob_pbrs_coef=args.win_prob_pbrs_coef,
+            win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,

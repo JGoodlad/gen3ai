@@ -5,6 +5,8 @@ ARCHIVE, not dead prose: it records what each deleted `if version < N` branch in
 which is the only surviving statement of what an archived checkpoint's config meant. It is
 preserved here verbatim and must not be trimmed.
 """
+from typing import Any
+
 from agents.model.model_version.constants import ARCH_SIGNATURE, ModelVersionError
 
 
@@ -360,4 +362,20 @@ def _migrate_config(data: dict) -> dict:
     if version < 104:
         data.setdefault("win_prob_pbrs_coef", 0.0)
         data["config_version"] = 104
+    # v105 (gen3_clean_world_config_v1 + gen3_winprob_pbrs_source_v1) — FIVE keys whose defaults ARE
+    # the pre-v105 behaviour, so this is v100's shape: no gate, no refusal, just the values every
+    # earlier run necessarily trained with. `hand_shaping` / `pbrs_material` / `pbrs_belief` did not
+    # exist and their terms were UNCONDITIONAL, so True is the only possible past; `victory_value`
+    # was the `reward_weights.VICTORY_VALUE` module constant (30.0) in every run ever; and with no
+    # `--win-prob-pbrs-source` flag, φ was always read from the LIVE head ⇒ None.
+    # ⚠️ Four of the five are resume-IMMUTABLE (check_reward_config), so a migrated old config
+    # resumes cleanly against a default launch and mismatches LOUDLY against a clean-world one.
+    # That is the intent, not an accident: a run's reward must never flip underneath it.
+    if version < 105:
+        _v105: "tuple[tuple[str, Any], ...]" = (
+            ("hand_shaping", True), ("pbrs_material", True), ("pbrs_belief", True),
+            ("victory_value", 30.0), ("win_prob_pbrs_source", None))
+        for _k, _v in _v105:
+            data.setdefault(_k, _v)
+        data["config_version"] = 105
     return data

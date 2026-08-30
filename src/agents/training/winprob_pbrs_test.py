@@ -367,10 +367,12 @@ def test_a_pre_v104_config_migrates_to_the_off_default_rather_than_refusing():
     carried."""
     from agents.model.model_version.constants import MODEL_CONFIG_VERSION
     from agents.model.model_version.migrations import _migrate_config
-    assert MODEL_CONFIG_VERSION == 104
+    # The migration chain must carry a pre-v104 config all the way to HEAD, not merely to 104 —
+    # pinning the live constant here would make every later bump a false failure in this file.
+    assert MODEL_CONFIG_VERSION >= 104
     out = _migrate_config({"config_version": 103})
     assert out["win_prob_pbrs_coef"] == 0.0
-    assert out["config_version"] == 104
+    assert out["config_version"] == MODEL_CONFIG_VERSION
     # a recorded value migrates UNTOUCHED
     out2 = _migrate_config({"config_version": 103, "win_prob_pbrs_coef": 0.3})
     assert out2["win_prob_pbrs_coef"] == 0.3
@@ -396,3 +398,300 @@ def test_a_positive_coefficient_with_a_real_mode_is_accepted():
     args = parser.parse_args(["--steps", "1", "--win-prob-pbrs-coef", "0.1",
                               "--win-prob-mode", "shaping"])
     assert args.win_prob_pbrs_coef == 0.1
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+# 8. FROZEN φ (`--win-prob-pbrs-source`, gen3_winprob_pbrs_source_v1)
+#
+# WHY THIS EXISTS. The invariance theorem at the top of this file assumes φ is a FIXED function of
+# state. Ours is a head inside the network being trained, so exact invariance holds only WITHIN a
+# rollout and degrades across them. A frozen source removes the caveat entirely — which makes the
+# correctness bar unusually crisp: pointed at a run's OWN current checkpoint, the frozen path must
+# produce BIT-IDENTICAL shaping to the live path. Anything less means the two forwards differ, and
+# a φ that differs from the head it claims to be is a silently wrong potential.
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+
+def test_with_no_source_phi_comes_from_the_LIVE_model_which_is_the_v104_behaviour():
+    from agents.training.winprob_pbrs import phi_model
+    model, _ = _live_case()
+    assert phi_model(model) is model
+    model._winprob_phi_source = None          # the attribute EXISTING but None must not change it
+    assert phi_model(model) is model
+
+
+def test_a_frozen_source_supplies_phi_for_EVERY_buffer_row():
+    """The routing, at its most visible: a source whose φ is a constant makes φ constant, whatever
+    the live head would have said about the same observations."""
+    from agents.training.winprob_pbrs import phi_model
+    model, buf = _live_case()
+    live_phi = buffer_potentials(model, buf)
+    model._winprob_phi_source = _FakeModel(buf, _FakePolicy(phi_fn=lambda x: th.zeros_like(x)))
+    assert phi_model(model) is model._winprob_phi_source
+    frozen_phi = buffer_potentials(model, buf)
+    assert np.allclose(frozen_phi, 0.5)                 # sigmoid(0)
+    assert not np.allclose(live_phi, frozen_phi)
+
+
+def test_the_BOOTSTRAP_potential_comes_from_the_source_too():
+    """The last row's successor is φ(s_T). A frozen φ on the buffer rows and a LIVE φ on the
+    bootstrap would break the telescoping at every truncation boundary — the classic half-fix."""
+    model, buf = _live_case()
+    model._last_episode_starts = np.zeros(2, dtype=np.float32)   # both episodes still running
+    model._winprob_phi_source = _FakeModel(buf, _FakePolicy(phi_fn=lambda x: th.zeros_like(x)))
+    raw_before = buf.rewards.copy()
+    apply_winprob_pbrs(model, buf)
+    delta = (buf.rewards - raw_before)[-1]
+    # φ(s) == φ(s′) == 0.5 everywhere under the constant source ⇒ shaping = coef·(γ−1)·0.5
+    assert np.allclose(delta, COEF * (GAMMA - 1.0) * 0.5, atol=1e-6)
+
+
+def test_the_GAE_BOOTSTRAP_VALUE_still_comes_from_the_LIVE_critic():
+    """φ and `last_values` are different quantities that happened to share one forward. The value
+    is the collector's own bootstrap and must stay the LIVE critic's, or the recomputed advantages
+    stop being the shaped-stream counterpart of the ones collection produced."""
+    class _Counting(_FakePolicy):
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.calls = 0
+
+        def predict_values(self, obs):
+            self.calls += 1
+            return super().predict_values(obs)
+
+    model, buf = _live_case()
+    live_pol, src_pol = _Counting(), _Counting(phi_fn=lambda x: th.zeros_like(x))
+    model.policy = live_pol
+    model._winprob_phi_source = _FakeModel(buf, src_pol)
+    apply_winprob_pbrs(model, buf)
+    assert live_pol.calls == 1, "the live model may be forwarded ONLY for the GAE bootstrap value"
+    assert src_pol.calls >= 2, "the source must serve every buffer chunk AND the bootstrap φ"
+
+
+def test_a_foreign_obs_space_is_filtered_to_the_keys_the_source_KNOWS():
+    """A prior-generation φ is the point of the flag (that is where a MATURE potential lives), and
+    such a checkpoint has an older Dict obs space. SB3's `preprocess_obs` iterates the keys it is
+    handed against the space, so an extra key is a KeyError — the same filter the exploiter-distill
+    teachers use in `train()`."""
+    from agents.training.winprob_pbrs import _phi_obs
+    class _Sp:
+        spaces = {"observation": None}
+    class _Net:
+        observation_space = _Sp()
+    out = _phi_obs(_Net(), {"observation": np.zeros((2, 1)), "distill_mask": np.zeros((2, 1))})
+    assert set(out) == {"observation"}
+    # A φ network with no declared space (the fakes above) is passed through untouched.
+    assert set(_phi_obs(object(), {"a": 1, "b": 2})) == {"a", "b"}
+
+
+def test_the_frozen_source_is_NEVER_pickled_into_our_checkpoint():
+    """The `_distill_teacher` genre exactly: a full frozen FOREIGN model. Saving it would embed
+    another run's weights in every checkpoint of this one — and `--win-prob-pbrs-source` is
+    inherited on a flagless resume precisely so it is re-loaded from its own path instead."""
+    from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+
+    class _Bare(InstrumentedMaskablePPO):        # the real MRO, no env / no policy construction
+        def __init__(self):
+            pass
+
+    assert "_winprob_phi_source" in _Bare()._excluded_save_params()
+
+
+# ── 8b. THE IDENTITY TEST, on a REAL Gen3 policy through the REAL loader ───────────────────────
+
+def _real_gen3_ppo():
+    """A real `InstrumentedMaskablePPO` on the real `Gen3FeaturesExtractor` with a win-prob head.
+
+    The fakes above pin the ROUTING; only a real extractor can pin that a frozen source reproduces
+    the live φ, because that claim is about `CLSPool.value_cls -> WinProbHead` running over the
+    frozen trunk's own `value_pooled`. ~1.5 s on CPU, no battles, no data beyond the mappings.
+    """
+    import inspect
+    import gymnasium as gym
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    from agents.action.constants import ACTION_SPACE_SIZE
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+
+    class _Env(gym.Env):
+        def __init__(self, dim):
+            self.observation_space = spaces.Dict({
+                "observation": spaces.Box(0.0, 1.0, (dim,), np.float32),
+                "action_mask": spaces.Box(0, 1, (ACTION_SPACE_SIZE,), np.int8)})
+            self.action_space = spaces.Discrete(ACTION_SPACE_SIZE)
+            self._d = dim
+
+        def _o(self):
+            return {"observation": np.zeros(self._d, np.float32),
+                    "action_mask": np.ones(ACTION_SPACE_SIZE, np.int8)}
+
+        def reset(self, **kw):
+            return self._o(), {}
+
+        def step(self, a):
+            return self._o(), 0.0, True, False, {}
+
+        def action_masks(self):
+            return np.ones(ACTION_SPACE_SIZE, bool)
+
+    maps = load_mappings()
+    enc = Gen3ObservationEncoder(maps)
+    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
+    kw = {k: v for k, v in {**enc.get_features_extractor_kwargs(),
+                            "win_prob_mode": "read_only"}.items() if k in sig}
+    th.manual_seed(0)
+    model = InstrumentedMaskablePPO(
+        Gen3DualHeadMaskablePolicy, DummyVecEnv([lambda: _Env(enc.dimension)]),
+        n_steps=8, batch_size=8, n_epochs=1, device="cpu",
+        policy_kwargs={"features_extractor_class": Gen3FeaturesExtractor,
+                       "features_extractor_kwargs": kw,
+                       "net_arch": dict(pi=[64], vf=[64])})
+    return model, maps, enc
+
+
+def _real_buffer(model, enc, n_steps=4, n_envs=2, seed=0):
+    from stable_baselines3.common.buffers import DictRolloutBuffer
+    buf = DictRolloutBuffer(n_steps, model.observation_space, model.action_space,
+                            device="cpu", n_envs=n_envs)
+    buf.pos, buf.full = n_steps, True
+    rng = np.random.default_rng(seed)
+    buf.observations["observation"][:] = rng.random(
+        (n_steps, n_envs, enc.dimension)).astype(np.float32)
+    buf.observations["action_mask"][:] = 1
+    buf.rewards[:] = 0.0
+    buf.episode_starts[:] = 0.0
+    buf.episode_starts[0, :] = 1.0
+    return buf
+
+
+def test_a_frozen_source_that_IS_our_own_checkpoint_reproduces_live_phi_BIT_FOR_BIT(tmp_path):
+    """THE correctness check, and it is as strong as this claim can be made.
+
+    Save the live model, reload it through the REAL `load_foreign_opponent` loader `model_build`
+    uses, attach it as the frozen source — and every φ must come back bit-identical. A head-only
+    shortcut (running the frozen head over the LIVE trunk's `value_pooled`) fails this, and so does
+    any obs-key or eval-mode discrepancy between the two forwards.
+    """
+    import dataclasses
+    import json
+    from agents.model.snapshot import current_model_version, load_foreign_opponent
+
+    model, maps, enc = _real_gen3_ppo()
+    buf = _real_buffer(model, enc)
+    live_phi = buffer_potentials(model, buf)
+
+    mv = current_model_version(maps, win_prob_mode="read_only")
+    zip_path = tmp_path / "ckpt.zip"
+    model.save(str(zip_path))
+    (tmp_path / "model_config.json").write_text(json.dumps(dataclasses.asdict(mv)))
+
+    source, foreign_v = load_foreign_opponent(str(zip_path), current_version=mv, device="cpu")
+    source.policy.set_training_mode(False)
+    assert foreign_v.arch_signature == mv.arch_signature
+    model._winprob_phi_source = source
+
+    frozen_phi = buffer_potentials(model, buf)
+    assert np.array_equal(live_phi, frozen_phi), (
+        "a frozen source that is our own checkpoint must give the identical potential; "
+        f"max|Δ| = {np.abs(live_phi - frozen_phi).max()}")
+
+
+def test_the_frozen_potential_does_NOT_move_when_the_live_network_does(tmp_path):
+    """The property the flag exists to buy, and the anti-vacuity half of the test above: the
+    identity must come from the frozen source genuinely being read, not from the source being
+    ignored. Drift the live weights and the frozen φ must not budge while the live φ does."""
+    import copy
+    model, _maps, enc = _real_gen3_ppo()
+    buf = _real_buffer(model, enc)
+    live_before = buffer_potentials(model, buf)
+
+    model._winprob_phi_source = copy.deepcopy(model)
+    model._winprob_phi_source.policy.set_training_mode(False)
+    frozen_before = buffer_potentials(model, buf)
+
+    with th.no_grad():
+        for p in model.policy.parameters():
+            p.add_(0.05)
+
+    assert np.array_equal(frozen_before, buffer_potentials(model, buf)), "the frozen φ drifted"
+    model._winprob_phi_source = None
+    assert not np.array_equal(live_before, buffer_potentials(model, buf)), (
+        "the live φ did not move, so this test proved nothing about freezing")
+
+
+# ── 8c. `--compile-trainer` × the frozen extractor ────────────────────────────────────────────
+#
+# ⚠️ HONEST SCOPE. `compile_trainer_extractor` REFUSES a non-cuda device by design, so the real
+# Inductor path cannot run in this (CPU-only) tier. What is exercised here is the seam that makes
+# the interaction safe: the compile patches ONE bound method on the LIVE policy and knows nothing
+# about the source, and the source's own forward is a different object that keeps serving φ.
+# WHAT REMAINS UNEXERCISED: a real `torch.compile` on CUDA with a frozen source attached, and
+# whether compiling the SOURCE would pay for itself (it is deliberately left eager — it runs once
+# per rollout, not per minibatch, so a second Inductor graph would buy a warm-up and nothing else).
+
+def test_the_trainer_compile_patches_only_the_LIVE_policy_and_never_the_source():
+    """A source-level statement of scope: the compile module addresses `model.policy` and has no
+    knowledge of `_winprob_phi_source`, so it cannot reach the frozen network by construction."""
+    import inspect as _inspect
+    from agents.model import compile_trainer
+    src = _inspect.getsource(compile_trainer)
+    assert "_winprob_phi_source" not in src
+    assert "policy.features_extractor" in src
+
+
+def test_patching_the_live_extractors_forward_leaves_the_frozen_source_serving_phi():
+    """The behavioural half, with the compile's *effect* (a replaced bound `fe.forward`) simulated
+    on CPU: after the live extractor's forward is swapped for a poisoned one, φ must still come out
+    of the frozen source, unchanged."""
+    import copy
+    model, _maps, enc = _real_gen3_ppo()
+    buf = _real_buffer(model, enc)
+    model._winprob_phi_source = copy.deepcopy(model)
+    model._winprob_phi_source.policy.set_training_mode(False)
+    frozen_before = buffer_potentials(model, buf)
+
+    live_fe = model.policy.features_extractor
+    src_fe = model._winprob_phi_source.policy.features_extractor
+    assert live_fe is not src_fe
+    def _poisoned(*a, **k):
+        raise AssertionError("the LIVE extractor must not be forwarded for φ when a source is set")
+    live_fe.forward = _poisoned                       # exactly what the compile does: bind a new fn
+
+    assert np.array_equal(frozen_before, buffer_potentials(model, buf))
+    # ...and the source's own forward was never touched by the patch.
+    assert getattr(src_fe, "forward").__func__ is type(src_fe).forward
+
+
+# ── 8d. THE FLAG: gates, provenance, resume inheritance ───────────────────────────────────────
+
+def test_the_source_flag_requires_a_positive_coefficient():
+    """A source with no coefficient loads a whole extra network, forwards it once per rollout, and
+    multiplies the result by zero — the same invisible-no-op class the coef/mode gate guards."""
+    from main.train.config import resolve_config
+    from main.train.parser import build_parser
+    parser = build_parser()
+    args = parser.parse_args(["--steps", "1", "--debug", "--win-prob-pbrs-source", "x.zip"])
+    with pytest.raises(SystemExit):
+        resolve_config(args, parser)
+
+
+def test_the_source_is_recorded_on_model_version_for_provenance():
+    """A clean-world run is uninterpretable if the identity of its frozen potential is not pinned."""
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    v = ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}, win_prob_pbrs_coef=0.5,
+        win_prob_pbrs_source="models/rev1/checkpoints/c.zip")
+    assert v.win_prob_pbrs_source == "models/rev1/checkpoints/c.zip"
+    assert ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).win_prob_pbrs_source is None
+
+
+def test_the_source_is_INHERITED_on_a_flagless_resume():
+    """It rides with the coefficient. A resume that silently reverted to live-φ would change the
+    objective mid-run — approximate invariance instead of exact — with nothing saying so."""
+    from main.train import config as _cfg
+    src = inspect.getsource(_cfg)
+    assert '_resolve("win_prob_pbrs_source"' in src

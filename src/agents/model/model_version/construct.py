@@ -32,6 +32,7 @@ class ModelVersionConstruction(ModelVersionFields):
         item_belief_coef: float = 0.0,
         td_aux_coef: float = 0.0,
         win_prob_pbrs_coef: float = 0.0,
+        win_prob_pbrs_source: "str | None" = None,
         policy_grad_coef: float = 1.0,
         intent_label_bot_weight: float = 1.0,
         cf_records: bool = False,
@@ -98,6 +99,12 @@ class ModelVersionConstruction(ModelVersionFields):
             all_shaping_pbrs=bool(getattr(reward_config, "all_shaping_pbrs", True)),
             stall_pbrs=bool(getattr(reward_config, "stall_pbrs", False)),
             no_progress_penalty=float(getattr(reward_config, "no_progress_penalty", 0.15)),
+            # gen3_clean_world_config_v1 — the CLEAN-WORLD switches; the fallbacks track the
+            # RewardConfig defaults, i.e. today's behaviour.
+            hand_shaping=bool(getattr(reward_config, "hand_shaping", True)),
+            pbrs_material=bool(getattr(reward_config, "pbrs_material", True)),
+            pbrs_belief=bool(getattr(reward_config, "pbrs_belief", True)),
+            victory_value=float(getattr(reward_config, "victory_value", 30.0)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -267,6 +274,7 @@ class ModelVersionConstruction(ModelVersionFields):
             item_belief_coef=float(item_belief_coef),
             td_aux_coef=float(td_aux_coef),
             win_prob_pbrs_coef=float(win_prob_pbrs_coef),
+            win_prob_pbrs_source=(str(win_prob_pbrs_source) if win_prob_pbrs_source else None),
             policy_grad_coef=float(policy_grad_coef),
             intent_label_bot_weight=float(intent_label_bot_weight),
             cf_records=bool(cf_records),

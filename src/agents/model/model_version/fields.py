@@ -10,7 +10,7 @@ positional order and `asdict()`'s key order -- so this block is a verbatim move.
 from __future__ import annotations   # field annotations stay STRINGS, as in the pre-split file
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -74,6 +74,18 @@ class ModelVersionFields:
     all_shaping_pbrs: bool = True
     stall_pbrs: bool = False
     no_progress_penalty: float = 0.15
+
+    # v105 (gen3_clean_world_config_v1): the CLEAN-WORLD reward switches. Resume-immutable
+    # VALUE-meaning (check_reward_config), excluded from the weight-shape check; every default
+    # below is today's behaviour. `hand_shaping` False zeroes ALL eight hand PBRS potentials AND
+    # the whole BIAS class — the composition `--no-all-shaping-pbrs` could NOT reach, because that
+    # flag is also `_bias_term_active`'s master gate and disabling it REVIVES 25 BIAS terms.
+    # `pbrs_material` / `pbrs_belief` gate the two potentials that had no flag at all.
+    # `victory_value` promotes the ±30 terminal off a module constant so ±1 is reachable by flag.
+    hand_shaping: bool = True
+    pbrs_material: bool = True
+    pbrs_belief: bool = True
+    victory_value: float = 30.0
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
@@ -417,6 +429,13 @@ class ModelVersionFields:
     # touches no forward pass and no weight shape, so it is recorded here for PROVENANCE and for
     # flagless-resume read-back (`_resolve` reads this field), never compared by check_compatible.
     win_prob_pbrs_coef: float = 0.0
+    # v105 TRAINING-ONLY provenance (gen3_winprob_pbrs_source_v1, NOT version-locked): the path of
+    # the FROZEN checkpoint whose win-prob head supplies φ for the PBRS above. None = read φ from
+    # the LIVE (training, drifting) head, which is the shipped v104 behaviour. Recorded because a
+    # clean-world run is UNINTERPRETABLE if the identity of its frozen potential is not pinned, and
+    # read back on a flagless resume (`_resolve`) — a resume that silently reverted to live-φ would
+    # change the objective mid-run with nothing saying so.
+    win_prob_pbrs_source: Optional[str] = None
     # v102 TRAINING-ONLY coefficient (gen3_policy_grad_coef_v1, NOT version-locked): the weight on the PPO
     # policy-gradient term itself — `policy_grad_coef * policy_loss` in the loss fold, scaling ONLY the
     # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream

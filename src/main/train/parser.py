@@ -315,7 +315,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "non-stall shaping is policy-invariant (the bad turn-ramp stall_tax is zeroed). "
                         "DEFAULT ON = the validated ai_v8 composition (1 TERMINAL + 7 PBRS + 1 BIAS); "
                         "--no-all-shaping-pbrs is the fallback and restores the fully-additive "
-                        "26-term BIAS objective every ai_v9 run drifted into. Pair with --stall-pbrs for "
+                        "25-term BIAS objective every ai_v9 run drifted into. Pair with --stall-pbrs for "
                         "a FULLY-PBRS reward, or use alone to keep the no_progress stall tilt as the one "
                         "acknowledged BIAS. Resume-immutable, value-checked.")
     parser.add_argument("--stall-pbrs", "--stall_pbrs", dest="stall_pbrs",
@@ -326,6 +326,45 @@ def build_parser() -> argparse.ArgumentParser:
                         "zero (TERMINAL + PBRS only); WITHOUT it ⇒ keep the no_progress stall tilt as "
                         "insurance against stall-regression (watch the stall-rate canary). Resume-"
                         "immutable, value-checked.")
+    # --- gen3_clean_world_config_v1 (ai_v12 build wave A): the CLEAN-WORLD reward switches. Every
+    #     default below is today's behaviour, so a flagless launch is byte-identical. ---
+    parser.add_argument("--hand-shaping", "--hand_shaping", dest="hand_shaping",
+                        action=BoolFlag, default=True, help="MASTER switch for every HAND-DESIGNED "
+                        "dense reward term. Default ON = today's reward. --no-hand-shaping is the "
+                        "CLEAN-WORLD composition: all EIGHT PBRS potentials off (material and belief "
+                        "included) AND the WHOLE BIAS class zeroed, no_progress_tax included, leaving "
+                        "1 TERMINAL + 0 PBRS + 0 BIAS. It exists because --no-all-shaping-pbrs cannot "
+                        "get you there: that flag is ALSO the BIAS class's master gate, so disabling "
+                        "it silences 5 potentials while REVIVING 25 BIAS terms. NOTE, and state it in "
+                        "any write-up: every PBRS term is policy-INVARIANT, so removing them cannot "
+                        "change the optimal policy -- it changes learning dynamics and conceptual "
+                        "complexity. Resume-immutable, value-checked.")
+    parser.add_argument("--pbrs-material", "--pbrs_material", dest="pbrs_material",
+                        action=BoolFlag, default=True, help="Fold the material PBRS potential "
+                        "Phi_mat (default ON = today's reward). --no-pbrs-material drops it; the "
+                        "field stays 0.0 and its carry-over stays unset, the same shape every other "
+                        "PBRS fold's off-state takes. INDEPENDENT of --all-shaping-pbrs on purpose "
+                        "(that flag is anti-correlated -- see --hand-shaping). Resume-immutable, "
+                        "value-checked.")
+    parser.add_argument("--pbrs-belief", "--pbrs_belief", dest="pbrs_belief",
+                        action=BoolFlag, default=True, help="Fold the incoming-KO belief PBRS "
+                        "potential Phi_belief (default ON = today's reward). --no-pbrs-belief drops "
+                        "the EMITTED term only: the decision-time KO-risk / safe-pivot snapshots it "
+                        "also computes still run, because the belief-scaled BIAS terms read them and "
+                        "a gate here must skip a compute, never a cross-turn mutation. INDEPENDENT "
+                        "of --all-shaping-pbrs on purpose. Resume-immutable, value-checked.")
+    parser.add_argument("--victory-value", "--victory_value", dest="victory_value", type=float,
+                        default=30.0, help="TERMINAL magnitude: a win scores +V, a decisive loss and "
+                        "a rare pre-cap tie score -V, a 250-turn TIMEOUT scores --draw-penalty. "
+                        "Default 30.0 = the historical reward_weights.VICTORY_VALUE constant. Pass "
+                        "1.0 for the clean-world +-1 terminal. THE OUTCOME ORDERING IS LOAD-BEARING: "
+                        "--draw-penalty must stay <= -V, or a 250-turn stall becomes the best "
+                        "non-winning outcome and a losing agent's optimal play is to run out the "
+                        "clock. Pair --victory-value 1.0 with --draw-penalty -1.0 (draw = loss) and "
+                        "make stall rate + mean game length a PRIMARY endpoint. Note MAT_HP_WEIGHT / "
+                        "MAT_ALIVE_WEIGHT are calibrated against the 30 scale, so a +-1 terminal "
+                        "wants Phi_mat off (--no-hand-shaping does that). Resume-immutable, "
+                        "value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=None,
@@ -1276,6 +1315,25 @@ def build_parser() -> argparse.ArgumentParser:
                              "TRAINING-only (not version-locked; recorded for provenance and inherited "
                              "on a flagless resume, the td_aux_coef class). Watch "
                              "train/pbrs_reward_share -- the shaping's share of the reward stream.")
+    parser.add_argument("--win-prob-pbrs-source", "--win_prob_pbrs_source",
+                        dest="win_prob_pbrs_source", type=str, default=None,
+                        help="FROZEN phi for --win-prob-pbrs-coef (gen3_winprob_pbrs_source_v1): a "
+                             "checkpoint .zip or run dir whose win-prob head supplies the potential, "
+                             "instead of the LIVE (training, drifting) head. This is what makes the "
+                             "PBRS invariance theorem hold EXACTLY rather than approximately -- the "
+                             "theorem assumes phi is a FIXED function of state, and our live head is "
+                             "a module inside the network being trained, so the per-start-state "
+                             "constant moves across rollouts. A frozen mature phi removes that "
+                             "caveat entirely. Costs one extra frozen extractor on the training "
+                             "device (the --distill-teacher class) and one no_grad forward per "
+                             "rollout, which REPLACES the live-phi forward rather than adding to it. "
+                             "Requires --win-prob-pbrs-coef > 0; the source must share our "
+                             "arch_signature (an obs FAMILY check, so a prior-generation phi is "
+                             "viable). Loaded eagerly -- never torch.compile'd, and never pickled "
+                             "into our checkpoint. A bad path is a FATAL_CONFIG exit at startup, "
+                             "never a crash-restart loop. TRAINING-only, recorded for provenance and "
+                             "inherited on a flagless resume (a resume that silently reverted to "
+                             "live-phi would change the objective mid-run with nothing saying so).")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "

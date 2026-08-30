@@ -138,7 +138,16 @@ from typing import Any, Dict
 #   gated. 0.0 = OFF and the shaping module is not even imported (byte-identical). A pre-v104
 #   config defaults it to 0.0 — not a guess: the flag did not exist, so no run could have used it.
 #   No ARCH_SIGNATURE bump — the reward stream is not the network.
-MODEL_CONFIG_VERSION = 104
+# v105 (gen3_clean_world_config_v1 + gen3_winprob_pbrs_source_v1): FIVE keys for the CLEAN-WORLD
+#   arm. Four are resume-immutable VALUE-meaning reward fields — `hand_shaping` (the master
+#   off-switch for all eight hand PBRS potentials AND the whole BIAS class, the composition
+#   `--no-all-shaping-pbrs` could not reach because that flag is ALSO `_bias_term_active`'s master
+#   gate), `pbrs_material` / `pbrs_belief` (the two potentials that had no flag at all) and
+#   `victory_value` (the ±30 terminal, promoted off a module constant so ±1 is reachable by flag).
+#   The fifth, `win_prob_pbrs_source`, is TRAINING-only provenance: the frozen checkpoint whose
+#   win-prob head supplies φ. Every default IS the pre-v105 behaviour, so the migration is a plain
+#   setdefault and a flagless run is byte-identical. No ARCH_SIGNATURE bump — no weight shape moves.
+MODEL_CONFIG_VERSION = 105
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -181,6 +190,11 @@ _REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
     "all_shaping_pbrs": True,
     "stall_pbrs": False,
     "no_progress_penalty": 0.15,
+    # gen3_clean_world_config_v1 — the CLEAN-WORLD switches. Every default is today's behaviour.
+    "hand_shaping": True,
+    "pbrs_material": True,
+    "pbrs_belief": True,
+    "victory_value": 30.0,
 }
 
 # field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
@@ -197,6 +211,10 @@ _REWARD_FIELD_FLAGS: Dict[str, str] = {
     "all_shaping_pbrs": "--all-shaping-pbrs",
     "stall_pbrs": "--stall-pbrs",
     "no_progress_penalty": "--no-progress-penalty",
+    "hand_shaping": "--hand-shaping",
+    "pbrs_material": "--pbrs-material",
+    "pbrs_belief": "--pbrs-belief",
+    "victory_value": "--victory-value",
 }
 
 
