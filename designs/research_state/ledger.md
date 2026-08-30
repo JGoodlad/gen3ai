@@ -7398,3 +7398,24 @@ evidence says credit, not opponent-model, carries much of it); dice share >2%
 variance-MINIMIZATION (you are ahead — the sigmoid's concave side); if the oracle arm wins
 by playing safer rather than by predicting better, that is the risk defect wearing a
 conditioning costume — the probe is told to distinguish.
+
+### 🎓 TAUGHT + NAMED: decision-focused value learning — "close games carry the value function's job" (2026-08-31)
+
+Owner's intuition formalized: value error matters only where it CHANGES a decision ⇒ the
+right objective is INDUCED-POLICY REGRET, not MSE — automatically ~0 in blowouts,
+concentrated at the sigmoid's steep middle (the Starmie 74pp donation lives there).
+Literature map, four levels, all studied: ecology = PFSP p(1−p) (closeness-weighted game
+selection — ours measured near-inert, P2, because flattest where the pool lives); sample =
+prioritized replay (off-policy, limited borrowing under PPO); loss = EMPHATIC TD's interest
+function i(s) (the formal "how much do I care about this state's value" knob; DisCor the
+learned variant; --value-tail-weight our hand-rolled cousin); meta = bilevel learned weights
+(Ren 2018 / Meta-Weight-Net / Xu meta-gradient RL — same machinery as the learned shaping
+weight). **THE TRAP, banked as the design rule: at the boundary, decision-relevance and
+label NOISE arrive together (a 50/50 MC outcome is a coin) — so "care more" must be
+implemented as MORE SAMPLES (re-seed + multi-rollout), never bigger per-sample weights,
+which amplify exactly the noise you can't afford.** Our stack already contains the correct
+instantiation: the HARVEST's Beta-evidence priority is a closeness/uncertainty-weighted
+label ALLOCATOR, and q-labels' --q-top-n sweep selection is a contribution-weighting
+decision. Candidate (era-gated, post-capstone): closeness-weighted label allocation as the
+default harvest policy; the meta-gradient weight-learning version stays on the shelf until
+an interest-function hand rule measurably underperforms.
