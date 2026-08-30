@@ -48,6 +48,9 @@ _REPO_ROOT = _SRC_ROOT.parent
 #: Env var that pins the run archive explicitly, for a checkout whose ``models/`` lives elsewhere.
 MODELS_DIR_ENV_VAR = "GEN3AI_MODELS_DIR"
 
+#: Env var that pins the harvest artifact archive — see :func:`harvest_dir`.
+HARVEST_DIR_ENV_VAR = "GEN3AI_HARVEST_DIR"
+
 
 def repo_root() -> Path:
     """The checkout root — the directory holding ``src/``, ``data/``, ``designs/``, ``deps/``.
@@ -135,6 +138,38 @@ def trace_glob(run_name: str) -> Optional[str]:
     if not run_dir.is_dir():
         return None
     return str(run_dir / "eval_traces" / "**" / "*_states.npz")
+
+
+def harvest_dir(create: bool = False) -> Path:
+    """The run-agnostic archive for HARVEST artifacts — label shards, fine-tuned heads, meters.
+
+    A fourth question, and it is deliberately not any of the three above. Harvest outputs are
+    **generated, large, and belong to no single run**: they are mined from many runs' traces and
+    consumed by tooling that must not write into ``models/`` (an archive that is read-only by
+    convention, so a probe can never corrupt the thing it is probing).
+
+    Unlike :func:`main_models_dir` this **returns a path that need not exist** and never ``None``:
+    a caller here is a producer that is about to create it, not a test that must skip. ``create=True``
+    makes it. It is anchored at the MAIN checkout for the same reason ``models/`` is — a worktree
+    is deleted when its agent finishes, and an hours-long harvest that vanishes with it is worse
+    than one that is merely inconvenient to find. ``$GEN3AI_HARVEST_DIR`` overrides and is
+    AUTHORITATIVE (no quiet fall-back), which is also the seam the tests point at a tmpdir.
+    """
+    override = os.environ.get(HARVEST_DIR_ENV_VAR)
+    if override:
+        cand = Path(override)
+    else:
+        cand = None
+        from utils.git import get_main_repo_root
+        try:
+            cand = Path(get_main_repo_root(cwd=str(_REPO_ROOT))) / "harvest"
+        except Exception:
+            cand = None  # not a git checkout — fall through to this checkout
+        if cand is None:
+            cand = repo_path("harvest")
+    if create:
+        cand.mkdir(parents=True, exist_ok=True)
+    return cand
 
 
 def run_skip_reason(run_name: str) -> str:

@@ -39,3 +39,8 @@ data/pokemon/smogon_stats_monthly/
 # carries ~280 of them). A script a doc cites as a GATE graduates into the tree instead
 # (src/rust_sim/harness/ holds the node-vs-rust parity gates that used to live here).
 tmp/
+
+# Harvest artifacts — label shards, fine-tuned heads, meters. Generated, large, and belonging
+# to no single run, so they live outside models/ (which probes treat as read-only) at the
+# run-agnostic root utils.paths.harvest_dir() resolves. $GEN3AI_HARVEST_DIR overrides.
+harvest/

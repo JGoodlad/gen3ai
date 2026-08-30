@@ -6735,3 +6735,129 @@ rather than supervising the wrong board. `q_amortization_test.py` (6): the shipp
 through both entry points, and `spearman` returning **None** on a constant row — an untrained head
 emits one by construction, and reporting it as rho = 0.0 would merge "has learned nothing" with
 "has learned something uncorrelated", which is the distinction the whole probe exists to make.
+
+## The STALL-TAIL HARVEST pipeline — `main.harvest` / `winprob_finetune` / `main.harvest_meter` (2026-08-29)
+
+**Offline tooling, no architecture change, no flag, no version bump.** Nothing in a training run
+imports any of it; a trained checkpoint is read, never written. Recorded here because it is the
+ai_v12 head-repair backbone and because three of its findings change what a reader should believe
+about the trace corpus.
+
+**What it does.** Three stages, each usable alone. `main.harvest` mines late-game decision states
+from current-arch eval traces, re-scores each through the SUBJECT checkpoint's win-prob and
+evidential heads, ranks them by a declared blend of head-vs-realized gap, confessed Beta
+uncertainty and a doomed-tail bonus, and buys a `k`-of-`n` label per state by picking the recorded
+battle up mid-game through the reconstruction layer and rolling to a terminal `n` times with fresh
+dice. `agents.training.winprob_finetune` fits the `WinProbHead` on those labels with the trunk
+absent (not merely frozen — a cached-`value_pooled` two-phase split), under a binomial likelihood
+and inverse-frequency turn-slice weights. `main.harvest_meter` re-runs probe O's battery PAIRED,
+pre vs post, on a battle-level holdout the producer committed to before buying a single label.
+
+**Why a head fix and why now.** Probe O (`stall_tail_head_reading_2026-08-29.md`) measured the
+win-prob head ending above 0.5 on **34.8%** of the tails of games it loses by construction, 4.3x
+the ordinary-loss rate. Ledger `b63a96f` established the labels are correct and all three
+mechanisms are DATA-shaped, so the defect is a CENSUS problem — missing discrimination mass at the
+late time-slices — not a propagation one. This manufactures the mass; whether that suffices is the
+reducibility question the meter exists to answer.
+
+### Three measurements that changed the design, in the order they forced it
+
+1. **A trace's recorded `win_probs` is not the subject's reading.** Measured up to **0.135** apart
+   on the subject's OWN traces (the trace was written by an earlier checkpoint of the same run). So
+   every candidate is re-scored by a fresh forward, and the rollouts run the subject as trainee via
+   `ckpt_override` — otherwise `k/n` estimates the value of whichever policy happened to record the
+   battle.
+
+2. **Priority alone fills the sample with doomed states** — a 40-state draw came from 4 battles,
+   all losing. A head fit only on those has a trivial perfect solution ("say 0 at every late turn")
+   that is a bias, not a repair, and would destroy what probe O found the head does RIGHT
+   (`LONG_WIN` reads **0.986** at 128 median turns). Hence a capped doomed share.
+
+3. **Capping it was not enough**: the remainder, also ranked by priority, took **1** state of 300
+   from a won battle — `|phi - realized|` is ~0 on a correctly-read win, so the control stratum was
+   selected out of existence by the rule that makes the doomed stratum good. The coverage stratum
+   is therefore balanced on the realized outcome. The meter's long-win control is only an honest
+   falsification because of this, and `verdict_lines` names a detection gain bought with a control
+   collapse a **FAILED RUN** in those words.
+
+### 🚨 THE FAILED PILOT, and the stratum it bought
+
+Pilot 1 ran the whole pipeline end to end — 200 states / 41 battles / **6,281 adjudicated
+rollouts** (31.4 per state, **1.86%** timeouts, label noise floor 0.052) — fitted the head, and
+metered it. The head came out **worse on every population**, and the untouched long-win control is
+what identified why: held-out long losses `phi_T` **0.070 → 0.607** and long-WIN control `phi_T`
+**0.943 → 0.567**, both collapsing toward ≈0.6. The head lost its dynamic range.
+
+Not "late means lost" — that would move the two populations apart, not together. It is regression
+to the SAMPLE mean, from a measured mismatch: the fit set spanned turns **60–152** (p50 90) with a
+mean MC label of **0.621**, while the meter reads turns **96–239**, and **29.3% of eval turns were
+above the harvest's maximum turn**. The head was fit on mid-game positions it wins 62% of the time
+and never shown a losing tail.
+
+Fixed by `--tail-frac` (default 0.5): a reserved share of the doomed budget takes a battle's last
+`TAIL_K = 5` decisions, `TAIL_K` matching the meter's window on purpose. Same region, different
+battles — the battles are held out by the producer, so this is generalization, not leakage.
+`--tail-frac 0` ablates back to the failed behaviour, and `harvest_test` pins the property.
+
+**The durable lesson generalizes past this pipeline: a label factory that never samples the region
+its meter scores is extrapolating, and label QUALITY cannot fix a label-LOCATION problem.** Pilot
+1's labels were excellent; they were labels for the wrong states. And it took the CONTROL to see
+it — every doomed-tail metric alone reads "detection got worse", which is ambiguous with an
+ordinary bad fit; only the control moving the opposite way names the collapse.
+
+### The ANCHOR — `--anchor-coef`, default 0.3, and why a default of 0 would have been wrong
+
+Pilot 2 added the tail stratum and **halved** the damage but did not remove it (control `phi_T`
+−0.165 vs −0.376). The residual is the selection itself: a harvest is chosen where the head is
+wrong, so its label mean is far from the population's, and an unconstrained fit of a 6-parameter
+head lands on the sample mean. The damage scaling with the offset across two independent runs is
+what identifies the mechanism.
+
+`--anchor-coef` adds `c * mean((z − z0)^2)` against the SUBJECT's own logits — a trust region on
+the head's FUNCTION, not on its weights. At **0.3** the control holds (`phi_T` −0.033), every
+categorical metric is unchanged, and cap `phi_T` moves the right way (−0.109, n=3). At 1.0 and 3.0
+the fit does not move at all (best epoch 0), so 0.3 is the largest dose that still lets the labels
+speak. It defaults ON because shipping 0.0 would ship a measured-destructive setting; `0` opts out
+and reproduces the pilots. The anchor is captured before the resume branch — taking it from a
+partially-trained head changes the objective mid-run, and the bitwise resume test caught exactly
+that.
+
+**Honest state after the pilot: the pipeline is complete and non-destructive, and the reducibility
+question is NOT answered.** 359 labelled states across two runs is a smoke of the machinery.
+
+### 🚨 The cap-record finding — the KNOWN rust `forcelose` gap, now quantified
+
+A 250-turn game ends by a forfeit logged as `["forcelose", side]`. Without it the record never
+terminates and BOTH replay impls refuse it in the `replay` verb `materialize_from_record` depends
+on, so **every** model-scored offline path is blocked — not just this pipeline's. Archive-wide:
+**689 cap records, 543 (79%) carry it.** Within the current-arch corpus it is **8 of 48**, split
+*exactly* at the documented 2026-08-24 rust `sim_bridge` fix (runs `_0819`.._0824`: 0 of 40;
+runs `_0825`.._0828`: 8 of 8). The scarcity is therefore **transient** — every post-fix run adds
+replayable caps — but it is why the doomed-tail population is caps PLUS long losses today, and why
+the two are stratified separately and never pooled (the head reads them very differently:
+`detect_le05` 0.652 on caps vs 0.94-0.95 on long losses).
+
+**The missing forfeit is deliberately NOT synthesized.** Appending one would make all 40 replay and
+the battle is a LOSS at exactly 250 turns, so a trainee forfeit is overwhelmingly likely — but
+"overwhelmingly likely" is not a basis on which a label factory may manufacture an ending, and a
+record may lack its terminal because the *opponent* forfeited. Skipped, counted, published.
+
+### Replications worth recording
+
+`STALL_LOSS` is still **empty**: the current-arch corpus holds **zero** non-capping stall losses,
+so probe O's finding that "stall pattern" and "cap ending" are one population reproduces on a
+disjoint slice. And supply is not the constraint anywhere else — 29,655 current-arch traces, **100%
+carrying a reconstruction sibling**, and **54,487** labelable decisions at turn >= 60 across
+**1,404** battles before the cap preflight, **44,558 / 1,364** after it (the difference is exactly
+the 40 unterminated cap battles and their 9,929 decisions).
+
+### Contracts and conventions
+
+The label schema (`agents/training/harvest_schema.py`) is versioned and validated on every write
+AND every read, kept deliberately separate from `cf_audit`'s v1 (which is a single-run bias-map
+contract with a live consumer). `load_obs` is the one resolver both sides call and it verifies
+`obs_sha1` — the check exists because `cf_audit` shipped a bug where `obs_npz` rows ignored
+`decision_idx` and every default-mode label was rejected, with both halves of the contract tested
+and neither running the other's real output. A timed-out rollout is its own bucket, excluded from
+numerator and denominator alike. Artifacts land under `utils.paths.harvest_dir()` (gitignored,
+`$GEN3AI_HARVEST_DIR` overrides), never inside `models/`.

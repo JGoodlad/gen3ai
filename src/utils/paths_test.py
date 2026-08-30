@@ -25,7 +25,9 @@ from _pytest.outcomes import Skipped
 
 from utils.git import get_main_repo_root, get_repo_root
 from utils.paths import (
+    HARVEST_DIR_ENV_VAR,
     MODELS_DIR_ENV_VAR,
+    harvest_dir,
     main_models_dir,
     models_skip_reason,
     repo_path,
@@ -239,3 +241,33 @@ def test_git_root_helpers_accept_a_cwd_and_are_consistent(tmp_path, monkeypatch)
     assert get_repo_root(cwd=str(repo_root())) == str(repo_root())
     with pytest.raises(subprocess.CalledProcessError):
         get_repo_root(cwd=str(tmp_path))  # not a checkout at all
+
+
+# ------------------------------------------------------- 5. harvest_dir — a WRITABLE destination
+
+
+def test_harvest_dir_env_override_wins_and_need_not_exist(tmp_path, monkeypatch):
+    """Unlike ``main_models_dir``, this answers a PRODUCER's question, so a path that does not
+    exist yet is the normal case and ``None`` would be useless. The override is still
+    authoritative — no quiet fall-back to the real archive."""
+    target = tmp_path / "not_yet"
+    monkeypatch.setenv(HARVEST_DIR_ENV_VAR, str(target))
+    assert harvest_dir() == target
+    assert not target.exists()
+
+
+def test_harvest_dir_creates_on_demand(tmp_path, monkeypatch):
+    target = tmp_path / "made"
+    monkeypatch.setenv(HARVEST_DIR_ENV_VAR, str(target))
+    assert harvest_dir(create=True) == target
+    assert target.is_dir()
+    assert harvest_dir(create=True) == target          # idempotent
+
+
+def test_harvest_dir_is_not_inside_models(monkeypatch):
+    """models/ is read-only by convention — a probe must never be able to corrupt the archive it
+    is probing — so the harvest's artifacts live at their own root."""
+    monkeypatch.delenv(HARVEST_DIR_ENV_VAR, raising=False)
+    got = harvest_dir()
+    assert got.name == "harvest"
+    assert "models" not in got.parts
