@@ -17,3 +17,11 @@ played action on 96.4% of immune whiffs (+0.213 over the tightest control, dice-
 the policy samples that alternative at a median p = 0.002. The distillation branch FIRES, so
 **route 2 is the first arm**; route 1's E1 ladder was re-sized by two orders of magnitude in the
 same pass (§7.2). Nothing runs until an era registers arms from §6's ladder.
+
+**CAPSTONE PROBE registered (2026-08-30, owner-ordered):**
+`probe_risk_modulation_capstone.md` — does the win-prob value function buy correct risk
+modulation? Three offline instruments (accuracy-tradeoff curve Surf/Hydro-Pump-class ·
+Explosion timing · CRN-reroll spread curve) + the guess-point entropy companion, with frozen
+per-arm predictions: sparse steepest slope; shaped-world shallowest; a FLAT sparse slope
+falsifies "P(win) buys risk for free" and must be reported as loudly as a pass. Baseline the
+trace-only instruments on gen-15 NOW; full battery runs as the end-of-era capstone.

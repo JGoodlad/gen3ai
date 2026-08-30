@@ -7286,3 +7286,22 @@ verdicts land. Meta-lesson banked with it: engineering trains FAILURE debugging 
 reproducible, binary-searchable); this program is SUCCESS debugging (distributed, interactive,
 regional) — the replacement skillset is experimental science, and the week's discipline
 (frozen tables, registered priors, honest kills) IS that skillset practiced.
+
+### 📚 LEARNING NOTE + 🎯 ai_v12 CAPSTONE REGISTERED — temperature/Nash/risk, and the risk-modulation probe (2026-08-30)
+
+**`designs/learning/temperature_mixing_and_risk.md`** — the pool-session arc as one durable
+concept file: distillation temperature (why our RL teachers' tails measured as poison — the
+entropy-residue theory, T→0 result, top-k ladder as the distinguishing cell), temperature vs
+Nash (indifference principle: mixing RATIOS come from the opponent's payoffs, so no softmax
+temperature can synthesize equilibrium mixing — top-p is the support-shaped repair; the
+flywheel IS fictitious play with the fold as averaging operator; the treadmill = a league
+cycle through the weight-interference channel; Hodge cyclic fraction as the meter), and risk
+awareness (the sigmoid's curvature IS the risk policy; risk-neutral in probability space =
+risk-sensitive in material space; gamble-when-behind is the objective's optimum, not
+psychology). **`designs/ai_v12/probe_risk_modulation_capstone.md`** — owner-ordered capstone,
+predictions FROZEN before any arm trains: accuracy-tradeoff slope (falling = risk-correct),
+Explosion timing, CRN-spread curve, guess-point-selective entropy; sparse arm predicted
+STEEPEST (risk-correct by construction — the clean world is a risk-correctness experiment,
+not only credit assignment), shaped world shallowest; **a flat sparse slope FALSIFIES
+"P(win) buys risk modulation for free" and is to be reported as loudly as a pass.** The
+trace-only instruments get a gen-15 baseline now, pre-drift.
