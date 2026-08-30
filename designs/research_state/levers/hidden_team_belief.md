@@ -1,9 +1,19 @@
 # Lever: Hidden-team belief (in-place belief slots + supervised aux head)
 
 **Bucket:** L3 anticipation (amortized belief over the opponent's UNREVEALED party — NOT runtime search).
-**Status:** 🛠 **BUILT (2026-06-13), NOT YET RUN** — branch `claude/belief-head` (ARCH `gen3_..._v1`,
-`MODEL_CONFIG_VERSION` 16, `--opp-belief-aux-coef`). Falsify-after-build metric named; gated on a fresh
-retrain to know if it HELPS the policy.
+**Status:** ✅ **SHIPPED and LIVE in production — the "BUILT, NOT YET RUN" status this file carried
+until 2026-08-30 was STALE by roughly ten generations.** Per the production flag table in
+[`designs/ARCHITECTURE.md`](../../ARCHITECTURE.md): `opp_belief_aux_coef` **0.05**,
+`opp_belief_cls_k` **6**, `opp_belief_slots` **true**, all ACTIVE, with the `HiddenOppBeliefPool`
+(768 = k=6 × `D_MODEL`) in the live phase chain — **POLICY side only**, because the value-function
+half read dV 0.0000 and was deleted.
+
+> **🔬 The lever's actual open question is unchanged and still unanswered: does it HELP the policy?**
+> It ships, it learns, and no A/B has ever isolated its contribution. Everything below is the
+> pre-ship design record and the learnability evidence; read it as provenance, not as current status.
+> *(Status corrected during the 2026-08-30 research_state sync; the correction came from
+> `ARCHITECTURE.md`, not from a ledger entry — no ledger entry ever retired this file's claim, which
+> is precisely how it went stale.)*
 
 ## Why this lever (provenance)
 When the opponent-ACTION head was FALSIFIED two ways (VoI ≈ 0.03 mon; the trunk already models the
