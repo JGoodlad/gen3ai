@@ -6705,3 +6705,36 @@ nuances banked: spearman returns None (not 0.0) on the constant row an untrained
 label_spread is the discriminator between amortizing the SEARCH and amortizing the VALUE** —
 abs_err alone would flatter a head that predicts each state's mean. Wave B (harvest backbone)
 is the last in flight.
+
+### 🏁 REV-3 RECAP ADJUDICATED — bar MISSED (called honestly), transfer LOCAL+replicated, the TREADMILL named; rev-4 = the shape discriminator; 40-team direction ENDORSED (2026-08-30)
+
+Banked from the training relay (pending R3-SELF ~22:30 as the falsification test): **the §4
+improvement bar MISSES on both arms** (R3-ACTION +0.0174 z=1.29 · HI +0.0211 z=1.57 vs rev-1)
+— and the no-optional-stopping call ("~15% of n from tipping; do NOT add games") is ADOPTED
+with credit. **What is real: +6pp on the 3 coverage teams, z=2.57, REPLICATED at a second dose**
+— transfer works where HEADROOM exists (coverage 25.7pp vs meter 7.7pp); the bar was pointed at
+mined-out teams, which the ceiling account predicted. **Finding (c), the TREADMILL: the fold
+REDISTRIBUTES** — R2-ACTION had lost −5.9pp z=2.5 on the untaught coverage teams while gaining
+on taught; rev-3 recovered it. Each narrow fold damages the uncovered and the next revolution
+repairs the last — the strongest argument FOR high coverage: breadth is the anti-treadmill
+lever, not just an adder. **Scored: F6-CURR NULL (z=−1.40, power rules out >4.5pp only)** — the
+C1 curriculum hypothesis, my top-ranked candidate, killed at measured power at rev-3 scale;
+with budget (z=0.16) and dose (flat, HI bought nothing for 4.5M — carry the CHEAP arm forward)
+also dead, **teams-per-teacher BREADTH is the last untested supply axis, and it is the axis v8
+differs most on** (v8: 23 distinct teams via 3 teachers at 10/3/10; rev-3: 12 via 6 at 2 —
+zero team overlap; caveat honored: "v8 structured differently" is established, "v8 worked
+better" is NOT — different lineage, different meter). Tension noted, not hidden: probe A found
+breadth flat for DIFFERENTIATION (2→9) — a different metric than transfer/coverage pressure;
+the discriminator below adjudicates. **REV-4 REGISTERED (their §5, endorsed): FIXED total
+compute, 3 teachers × 8 teams vs the 6×2 shape, teams drawn from the COVERAGE class (mine
+where the ore is), read TEACHER ABSOLUTE + the coverage cut — never extraction.** **The
+40-TEAM capstone: ENDORSED AS THE DIRECTION, sequenced third**: (1) R3-SELF tonight (if the
+self-anchor reproduces the +6pp, it is folding-plus-steps, not teacher content — nothing
+scales until that reads); (2) rev-4's shape discriminator (~1 day) decides teams-per-teacher
+(the count-dominates result recommended N≤10 and N=2 was BELOW the tested range — 5×8=40 fits
+both the v8 structure and the N≤10 bound); (3) the 40-team revolution in the winning shape,
+teams selected BY HEADROOM (the exploitability CLI's per-class read exists for exactly this).
+Process notes banked: the slice↔recorded VERIFIED guard caught its second would-have-inverted
+defect; the conservative-direction selection-confound reasoning; two self-retractions (ratchet
+completion; the √2 CI double-count); gate on final_model.zip never exit code; --grad-accum-steps
+left alone to preserve comparability (registered as a future-fold question).
