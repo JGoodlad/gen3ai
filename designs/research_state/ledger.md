@@ -6619,3 +6619,23 @@ content is the RESIDUAL — where this generation's learning disagrees with the 
 ancestor's φ — arguably a more interesting diagnostic than the raw value. Clean-world
 endpoint implication: the near-constancy of V_shaped in the frozen-φ arm is itself a
 CHECKABLE PREDICTION of the theory (a cheap sanity row for that arm's battery).
+
+### 🏗️ THE AI_V12 BUILD WAVE — five agents dispatched in parallel (owner order, 2026-08-30)
+
+Covering the fdd2934 gap list, all landable without touching the live campaign: **(A)
+clean-world config B1–B4** — gate the two ungated PBRS terms (NOT via the asp master-gate —
+the anticorrelation trap), VICTORY_VALUE → config (±1 + draw −1 reachable by flags), the
+hardcoded pre-cap tie routed through config, and the frozen-φ `--win-prob-pbrs-source` loader
+(probe N's spec; incl. the frozen-φ ≡ live-φ identity test and the compile-trainer interaction
+check). **(B) THE HARVEST+FACTORY PIPELINE (the backbone)** — mid-game re-seed multi-rollout
+labels via the reconstruction layer, Beta-evidence priority sampling, slice re-weighting, the
+head-only fine-tune consumer, and the probe-O battery as the pre/post reducibility meter; pilot
+harvest included. **(C) E5 Q-win-prob head** — per-action readout on the pointer tokens (OFF,
+zero-init, versioned per the playbook, append-never-insert) + the dormant cf-winprob label
+path as its training route. **(D) flag-gated fixes, defaults = current behavior** — staller
+per-instance RNG (opt-in), SITOUT F1 prev-tense field (clock-only, obs untouched), F2b
+freeze-not-charge (opt-in) — buildable now, enable-able post-verdict. **(E) instruments** —
+scaffolding-gauge offline probe + TB scalar, the `main.exploitability` curve CLI over
+admission artifacts, the V_shaped-constancy sanity row for the frozen-φ arm. Landing order on
+completion: D → A → E → C → B (smallest blast radius first); parser/config append-zone
+conflicts expected and owned by the landing step. All ≤2 cores nice-15 beside rev-3's GPU work.
