@@ -7207,3 +7207,38 @@ length DIRECTIONAL z=2.4). Reproduction does not need the separation; attributio
 length is the ingredient and the sweet spot is a length story in a count costume; (iii) the
 low end resolves on rev-4's floor stratum (REPRO-2). The K=2-long cell is queued BEHIND the
 scorecard, not into it — no new knobs in the reproduction arm.
+
+### 🗺️ THE FOLD-MECHANISM CATEGORY MAP + coach-vs-opponent role theory (2026-08-30)
+
+**Eleven categories for "why does distilling into the generalist work", each with status:**
+(1) student maturity — measured, v8's 277M parent the biggest unmatched ingredient; (2)
+drift-anchoring — R3-SELF deciding; (3) breadth/sweet spot — high end measured, low end
+broken; (4) **content generalizability — the least instrumented: we measure THAT content
+radiates, never WHICH property makes it radiate**; (5) teacher differentiation — geometry
+instrument exists; (6) **fork length — directional z=2.4 where breadth was flat; confounded
+with count in rev-4; K=2-long separating cell queued**; (7) target form — CLOSED
+(action-form); (8) optimizer — 79% Adam overshoot, lr licensing probe planned; (9) value
+channel — 0.0 adopted, value-side anchoring open (critic = main casualty); (10)
+**distill-state distribution — NEVER varied (bias 0.4 on student states in every fold ever
+run) — an invisible constant, the genre where defects live**; (11) fold ecology — exonerated.
+Flagged as obvious-and-uninvestigated beyond the owner's three: #6 and #10; #4 is the deep one.
+
+**Narrower ⇒ further from Nash?** Precise framing: extraction and distance-from-Nash are the
+same purchase (the exploiter sells its own unexploitability). Evidence graded honestly:
+within-era matched = only the top half (20→10 piloting +0.077); below 10 = cross-era hints
+only (TSS 0.75–0.85 vs a WEAKER target · K=2 teacher ceiling 0.69 vs a stronger one — not
+comparable). The clean instrument exists (admission tables = per-team extraction); the
+missing cell is a **matched K-ladder at fixed fork length** — GPU-real, ERA-GATED behind
+rev-4. Cost side measured: the double-sided recipe exists because narrow exploiters lost
+their own defense.
+
+**Coach vs opponent (owner's late-state question):** the two roles want DIFFERENT exploiters.
+Coach value = extraction headroom × transferability — sweet-spot logic, DECAYS to the teacher
+ceiling. Opponent value = the constraint maintained — narrowness is a FEATURE (PSRO: Nash is
+supported on many sharp punishers), does NOT decay; it converts teaching pressure into
+holding pressure. The lifecycle we already half-run: distill while extraction is high →
+retire into the pool (retention ~76% ⇒ retire-as-coach is safe; double-sided ⇒ keep-as-
+opponent is what held defense). Late state: coach phase shrinks as exploitability falls, the
+accumulated narrow-retiree population DEFINES the equilibrium, and the binding constraint
+shifts from distillation to MATCHMAKING — where PFSP's p(1−p) flatness returns from
+exoneration as the live lever.
