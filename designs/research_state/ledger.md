@@ -6786,3 +6786,28 @@ COMPLETE: A(config v105) + B(factory) + C(Q-head v107) + D(fixes v106) + E(instr
 main, all dormant — the fdd2934 gap list is CLOSED except the measurement-gated rungs (gated
 readout/SwiGLU) and the q_labels producer extension.** The era's remaining critical path:
 verdicts + the 5M sparse pre-test + post-fix cap-trace accumulation for the reducibility read.
+
+### 🔭 THE READINESS PROGRAM (owner order, 2026-08-30) — probe Q + three ai_v12 launch agents; target: launch-ready AND adversarially reviewed inside ~2 days
+
+**Flywheel final-call inputs, enumerated:** R3-SELF (tonight, training side — the +6pp
+falsification) · probe P final (the externality sign + off-lineage arm — decides rev-4's fold
+bias design) · rev-4's 3×8 discriminator itself (the shape call) · **and ONE measurable gap:
+rev-3's OWN untaught pull-down was never measured (P3's missing point). PROBE Q dispatched:**
+R3-ACTION vs its parent R2-ACTION (paired seeds) on ~8–10 NEVER-taught pool teams (excluded:
+the 9 meter, all coverage picks incl. the rejected originals, the 2 held-out), plus the
+R3-vs-rev-1 two-hop. **Registered predictions: the share-constant model predicts ≈ rev-2's
+−5.9pp; the content-externality account (breadth-determined) predicts rev-3's narrow 2-team
+fleet ALSO robs (−4..−6); ≈0-or-positive refutes both and reopens the mechanism.** This is
+P3's third point and the treadmill's second in-era measurement. **THE AI_V12 LAUNCH TRIAD:
+(R1) ADVERSARIAL REVIEW** of the five wave landings — diff-level red-team hunting the named
+genres (recorded≠effective, untested INTERSECTIONS — the value_from_dist lesson applies
+directly to clean-world × value_from_dist × compile × distill, composition drift, silent-inert
+flags); every finding LITIGATED in place (failing test + minimal fix, committed).
+**(R2) LAUNCH READINESS** — construct the actual argvs (sparse / self-φ / frozen-φ / the 5M
+pre-test), checkargs, --debug SMOKE each end-to-end (composition banner, round-trip, pbrs
+scalars, frozen-source load); resolve the PopArt-retirement mechanism (does a disable flag
+exist? a named gap if not) and the pbrs_reward_share terminal-only companion metric (probe N
+§7.5); deliverable = `designs/ai_v12/launch_runbook.md` with exact argvs + a verification
+checklist. **(R3) THE q_labels PRODUCER** — close wave C's named gap: extend the cf producer
+to emit per-action labels at schema v1 additive-optional, completing the E5 loop's supply
+side. Probe P continues in parallel.
