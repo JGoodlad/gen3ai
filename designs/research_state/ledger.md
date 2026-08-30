@@ -6919,3 +6919,23 @@ single apply_reward_config did their job); PopArt σ-collapse does NOT reproduce
 vs σ≈0.5–1.0) — the retirement's guard concern measured away. 5/5 revert-verifications
 re-verified; method nugget banked: **a revert that doesn't change the output proves nothing**
 (a non-discriminating revert briefly read as "untested").
+
+### ⚖️ OWNER DECISIONS: the 40-team walls resolved — RANDOM team draw + budget funded to ceiling (2026-08-30)
+
+**(1) Team selection = RANDOM draw from the validated pool** ("pull from teams randomly") —
+not headroom-ranked, not hand-curated. The vetting-criterion gap DISSOLVES: promotion into
+`data/teams/sample/` requires only (a) local validation (`validate_teams_locally`) and (b)
+membership in a seed-fixed random draw with the standing exclusions applied first (the taught
+union incl. the 9 meter teams, the 2 held-out instruments). Consistent with the
+no-hand-picked-signal ruling (07e9a54) and with measurement hygiene: a random fleet makes the
+revolution's result an UNBIASED estimate of pool-wide transferability, immune to the
+selection-confound genre (the withdrawn seniority split; the screen/confirm collapse).
+Archetype composition is REPORTED, never corrected — randomness is the point. S1's slate work
+is re-scoped: the headroom ranking becomes a reference/covariate, not the selector; its
+exclusion sets, validation machinery, and disjoint-seed-family discipline carry forward
+unchanged. **(2) Budget funded: 1.5M steps/team** — the measured ceiling-reaching point (2.5M
+bought +0.0019, z=0.16; 0.75M measurably undershoots) ⇒ **40 teams × 1.5M = 60M fleet
+compute, ~2× rev-3's fleet — approved**. Shape (5×8 vs 20×2 vs 4×10-family) still gated on
+rev-4's discriminator, per the standing sequence. **S5 dispatched:** the promotion tooling —
+a seed-recorded random-draw script (exclusions → validate → promote into sample/ →
+manifest), so launch day is a copy and a commit.
