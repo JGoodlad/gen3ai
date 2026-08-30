@@ -6811,3 +6811,20 @@ exist? a named gap if not) and the pbrs_reward_share terminal-only companion met
 checklist. **(R3) THE q_labels PRODUCER** — close wave C's named gap: extend the cf producer
 to emit per-action labels at schema v1 additive-optional, completing the E5 loop's supply
 side. Probe P continues in parallel.
+
+### 📜 THE V8 NARRATIVE OF RECORD — pre-registered before probe P's final (owner review, 2026-08-30)
+
+Seven accounts eliminated with measurements (rigidity, tails, curriculum, budget, dose,
+ecology/PFSP, + the earlier breadth-for-differentiation form). **The standing chain:
+BREADTH-PER-TEACHER → generalizable content → the fold's externality flips from ROBBERY (our
+−5.9 on untaught; the treadmill) to GIFT (v8's interim +10.4) → compounding = the +69.**
+Prediction table frozen for the four pending measurements: R3-SELF must NOT reproduce the
++6pp; P-final's off-lineage arm must keep v8-untaught ≥0 with the taught control positive;
+probe Q must show rev-3's own untaught pull-down ≈ −4..−6; rev-4's 3×8 must show broad
+teachers at the same ceiling with reduced-or-reversed robbery. Damage conditions stated per
+row. Honest limits: P1's SIGN is load-bearing, its magnitude unattributable (15M-step confound;
+the never-run v8 no-fork control now blocks a third program); "v8 worked better" cross-lineage
+unproven — the reconstruction targets the EXTERNALITY, the transferable part; probe A's
+flat-differentiation tension is the reconciliation bet rev-4 adjudicates. If all four rows
+land: the 40-team revolution launches with a mechanism (broad teachers × headroom-selected
+teams × dividend externality); any failure names its broken link.
