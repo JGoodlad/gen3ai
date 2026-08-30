@@ -289,6 +289,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("cf_evidential_reg", 1e-3)        # v100 training-only
     _resolve("cf_twin_coef", 0.0)              # v100 training-only
     _resolve("cf_shadow_coef", 0.0)            # v100 training-only
+    # gen3_q_winprob_head_v1 (v107) — the per-action Q head. The MODE is structural and
+    # version-checked; the two coefficients are the td_aux_coef class (recorded, never gated) and
+    # are read back here so a flagless resume keeps the arm it was launched as.
+    _resolve("q_winprob_mode", "none")         # v107 structural, version-checked
+    _resolve("q_winprob_coef", 0.0)            # v107 training-only
+    _resolve("q_winprob_onpolicy_coef", 0.0)   # v107 training-only
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
     # recorded for provenance, never gated, and read back here so a flagless resume (or a
     # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.
@@ -580,6 +586,22 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--cf-shadow-coef > 0 requires --cf-shadow-critic — the shadow head is a "
                      "state_dict change (v99, version-gated) and cannot be added to a run that "
                      "did not start with it.")
+    # gen3_q_winprob_head_v1 (v107) — the two coefficients are training-only, so these parser
+    # checks are their ONLY gate. `--q-winprob-mode` itself is version-gated, so only its
+    # cross-flag requirements land here.
+    if args.q_winprob_coef is not None and args.q_winprob_coef < 0.0:
+        parser.error("--q-winprob-coef must be >= 0 (0 = off)")
+    if args.q_winprob_onpolicy_coef is not None and args.q_winprob_onpolicy_coef < 0.0:
+        parser.error("--q-winprob-onpolicy-coef must be >= 0 (0 = off)")
+    _q_live = ((args.q_winprob_coef or 0.0) > 0.0
+               or (args.q_winprob_onpolicy_coef or 0.0) > 0.0)
+    if _q_live and (args.q_winprob_mode in (None, "none")):
+        # Same reasoning as --cf-evidential-coef: the head is a state_dict change (v105,
+        # version-gated), so it cannot be added mid-run to rescue a live coefficient. The mistake
+        # would cost the whole run AND FATAL the resume that tried to fix it.
+        parser.error("--q-winprob-coef / --q-winprob-onpolicy-coef > 0 requires --q-winprob-mode "
+                     "read_only — the term supervises a head that flag BUILDS, and it is a "
+                     "structural (version-gated) toggle that cannot be turned on mid-run.")
     if args.cf_records and not args.use_showdown_bridge:
         # The record is a `__RECON__` frame off the bridge child's stdout; the websocket transport
         # never produces one, so the flag would be a silent no-op.

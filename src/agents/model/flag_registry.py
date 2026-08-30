@@ -454,6 +454,26 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "byte-identical and ON-at-coef-0 is bit-identical in pi/vf. Its coefficient "
                    "(--cf-shadow-coef) is training-only, the --opd-coef class. No `requires`: it "
                    "reads value_pooled, which is unconditional."),
+    ModelFlag("q_winprob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 107,
+              "the PER-ACTION win-probability readout over the pointer head's own action tokens "
+              "(none|read_only) — one forward, eleven P(win|s,a): the amortized one-ply search "
+              "leaf",
+              note="E5 step 1 (ledger 229e9f1 / 5edbd05). STRUCTURAL in the win_prob_mode mould — "
+                   "a Gen3FeaturesExtractor constructor kwarg that builds a MODULE, so its params "
+                   "are the state_dict delta and a bool-ish compare in check_compatible is the "
+                   "only thing that can reject a resume that flips it. TWO values, not three: "
+                   "there is deliberately NO `shaping`, because a per-action readout carrying a "
+                   "COUNTERFACTUAL label is a strictly larger leak surface than a per-state one, "
+                   "so trunk exposure is a later decision that owes its own gate. `read_only` "
+                   "detaches EVERY input (context, tokens and cells alike), so pi/vf are "
+                   "bit-identical at any coefficient; `none` does not build the module at all, so "
+                   "OFF is byte-for-byte the baseline and no earlier module's init RNG draw moves "
+                   "(built LAST). Unlike the four cf readouts the forward DOES call it — eleven Q "
+                   "values are only useful if the forward that chose the action can publish them. "
+                   "Its two coefficients (--q-winprob-coef, --q-winprob-onpolicy-coef) are NOT "
+                   "here: training-only loss weights in the --cf-winprob-coef class. No "
+                   "`requires` — it reads `value_pooled` and `stash.pointer_inputs`, both "
+                   "unconditional."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

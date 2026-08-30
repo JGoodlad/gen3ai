@@ -549,6 +549,21 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "downstream that would catch the mismatch.\n"
                 "Resume with the matching --cf-shadow-critic setting, or start a fresh training run."
             )
+        # gen3_q_winprob_head_v1 (v107): the PER-ACTION win-prob head's params are the state_dict
+        # delta. Unlike the four cf readouts above this one IS called by the forward — but it
+        # writes only a STASH, so a mismatch still produces no shape error anywhere in pi/vf: a
+        # resume that dropped the flag would load "successfully" and quietly stop publishing the
+        # readout (and stop training it), while a resume that ADDED it would supervise a freshly
+        # random head as if it were the run's trained one. A string compare is the only gate.
+        if self.q_winprob_mode != saved.q_winprob_mode:
+            raise ModelVersionError(
+                f"q_winprob_mode mismatch: saved={saved.q_winprob_mode!r}, "
+                f"current={self.q_winprob_mode!r}.\n"
+                "The PER-ACTION win-probability head is fixed for a run's lifetime: building it "
+                "changes the state_dict, and because it only writes a side stash there is no shape "
+                "error downstream that would catch the mismatch.\n"
+                "Resume with the matching --q-winprob-mode setting, or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"

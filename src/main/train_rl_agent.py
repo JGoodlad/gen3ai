@@ -193,11 +193,15 @@ async def main():
     # out-of-process producer left there. Both are None/unused unless the flags ask for them, so a
     # default run creates neither and is FILE-identical to today.
     _cf_records_dir = os.path.join(model_dir, "cf_records") if args.cf_records else None
-    # EITHER consumer wants the buffer: the evidential term reads the same label rows, so gating the
-    # directory on the scalar coefficient alone would silently starve an evidential-only run.
+    # ANY consumer wants the buffer: every one of these terms reads the SAME label rows, so gating
+    # the directory on the scalar coefficient alone would silently starve an evidential-only run —
+    # and, since v105, a Q-head-only one. A term whose coefficient is live but whose buffer was
+    # never created folds nothing, forever, with no error and no counter to say so.
     _cf_labels_dir = (os.path.join(model_dir, "cf_labels")
                       if (args.cf_winprob_coef > 0 or args.cf_evidential_coef > 0
-                          or args.cf_twin_coef > 0 or args.cf_shadow_coef > 0) else None)
+                          or args.cf_twin_coef > 0 or args.cf_shadow_coef > 0
+                          or (args.q_winprob_coef or 0) > 0
+                          or (args.q_winprob_onpolicy_coef or 0) > 0) else None)
     if _cf_records_dir:
         os.makedirs(_cf_records_dir, exist_ok=True)
         emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "

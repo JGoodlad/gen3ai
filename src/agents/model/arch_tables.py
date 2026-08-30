@@ -114,6 +114,12 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "cf_evidential_reg": "cf_evid_head",
     "cf_twin_coef": "cf_twin_head_c",
     "cf_shadow_coef": "cf_shadow_head",
+    # v107 gen3_q_winprob_head_v1 — the per-action Q head's two coefficients. Both are gated by the
+    # SAME module (`--q-winprob-mode`), so naming it is what lets the table mark a live coefficient
+    # with no head as INERT: the on-policy fallback in particular is the one an operator is most
+    # likely to set on a run whose mode is still 'none'.
+    "q_winprob_coef": "q_winprob_head",
+    "q_winprob_onpolicy_coef": "q_winprob_head",
 }
 
 _FALSY_STRINGS = {"none", "off", ""}

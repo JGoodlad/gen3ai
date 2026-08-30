@@ -622,6 +622,39 @@ class ProbeModel:
             return None
         return float(torch.sigmoid(logits[0, 0]).item())
 
+    def q_winprob_at(self, obs: np.ndarray, mask: np.ndarray) -> "np.ndarray | None":
+        """The PER-ACTION head's ``P(win | s, a)`` for an ARBITRARY obs — ``[ACTION_SPACE_SIZE]``.
+
+        One clean forward, then ``sigmoid(last_q_winprob_logits)``. ``None`` when the checkpoint
+        trained no Q head (``--q-winprob-mode none``). Index ``a`` is action ``a`` in the action
+        space, the same index the policy's logits and the mask use.
+
+        This rides ``extract_features``' stash the way :meth:`win_prob_at` does — and CAN, unlike
+        the four cf readouts below, precisely because the extractor forward calls this head. That
+        is the whole design difference: eleven Q values are only useful if the forward that chose
+        the action publishes them.
+
+        The mask matters here in a way it does not for `win_prob_at`: the extractor forward reads
+        only ``"observation"``, so the returned row scores every slot including illegal ones. A
+        caller comparing against a one-ply sweep must restrict to the legal set itself — that is
+        what `main.q_amortization` does, and why this returns the raw row rather than a filtered
+        one.
+        """
+        import torch
+
+        extractor = getattr(self._policy, "features_extractor", None)
+        if extractor is None:
+            return None
+        self._check_obs_dim(obs)
+        ot = torch.as_tensor(obs).unsqueeze(0)
+        mt = torch.as_tensor(mask).unsqueeze(0)
+        with torch.no_grad():
+            self._policy.extract_features({"observation": ot, "action_mask": mt})
+        logits = extractor.last_q_winprob_logits
+        if logits is None:
+            return None
+        return torch.sigmoid(logits[0]).detach().cpu().numpy()
+
     def _value_pooled_batch(self, obs: np.ndarray, masks: "np.ndarray | None" = None):
         """``(value_pooled, vf_features)`` for a BATCH — the shared preamble of every cf readout.
 

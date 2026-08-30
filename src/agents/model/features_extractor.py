@@ -122,6 +122,9 @@ from agents.model.aux_value_heads import (  # noqa: F401
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,
 )
+from agents.model.q_winprob_head import (  # noqa: F401
+    Q_WINPROB_MODES, QWinProbHead,
+)
 from agents.model.value_readouts import UnifiedValueReadout  # noqa: F401
 
 

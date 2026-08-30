@@ -52,6 +52,11 @@ class ExtractorStashes:
     value_pooled: Optional[torch.Tensor] = None        # [B,D_MODEL] the FitNets HINT layer
     win_prob_logits: Optional[torch.Tensor] = None     # [B,1] P(win) logit (aux BCE + prober)
     value_dist_logits: Optional[torch.Tensor] = None   # [B,bins] dist-critic atoms (E[Z] source)
+    # gen3_q_winprob_head_v1: PER-ACTION P(win|s,a) logits, indexed by the ACTION SPACE
+    # ([switch x6, move x4, struggle]) — the amortized one-ply search leaf. A side readout like
+    # every other field here: the aux loss, the offline probe and the prober read it; the forward
+    # never feeds it anywhere.
+    q_winprob_logits: Optional[torch.Tensor] = None    # [B,ACTION_SPACE_SIZE]
     # --- same-forward hand-offs (T0 producer → T1/T2 consumer; internal, no `last_*` name) ----
     t0_species_probs: Optional[torch.Tensor] = None    # T0 species resolve → every T1 pricing site
     entity_latent_table: Optional[torch.Tensor] = None  # LIVE latent table → the E4 seat builder

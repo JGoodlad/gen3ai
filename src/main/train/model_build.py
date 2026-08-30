@@ -58,6 +58,12 @@ def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
     model.cf_evidential_reg = float(args.cf_evidential_reg or 0.0)
     model.cf_twin_coef = float(args.cf_twin_coef or 0.0)
     model.cf_shadow_coef = float(args.cf_shadow_coef or 0.0)
+    # gen3_q_winprob_head_v1 (v107): the per-action Q head's two coefficients. Set on the MODEL
+    # unconditionally, BEFORE the `_cf_labels_dir` early-out, for the reason the block above is
+    # ordered this way: `run_io`/`lifecycle` read them off the model into `model_config.json`, so a
+    # field only argparse knows about would record as its default there.
+    model.q_winprob_coef = float(args.q_winprob_coef or 0.0)
+    model.q_winprob_onpolicy_coef = float(args.q_winprob_onpolicy_coef or 0.0)
     if not _cf_labels_dir:
         return
     from agents.training.cf_label_buffer import CfLabelBuffer
@@ -90,6 +96,13 @@ def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
         emit(f"🩻 [CF] SHADOW critic ON: coef={model.cf_shadow_coef:g} "
              f"(passive mc_return readout — no advantage, no GAE) "
              f"reward_sha1={(_cf_reward_sha1 or '')[:12]} ← {_cf_labels_dir}")
+    if model.q_winprob_coef > 0 or model.q_winprob_onpolicy_coef > 0:
+        emit(f"🎯 [Q] PER-ACTION win-prob head ON: cf_coef={model.q_winprob_coef:g} "
+             f"onpolicy_coef={model.q_winprob_onpolicy_coef:g} (read_only — every input "
+             f"detached) ← {_cf_labels_dir}. Read q_winprob/label_coverage FIRST: a producer "
+             f"shipping no per-action `q_labels` trains the head on nothing, and if the on-policy "
+             f"coefficient is the only live one the head learns ONLY where the policy already "
+             f"goes — the starvation trap (p≈0.002 preferred-alternative rate).")
 
 
 # ── The training-hparam passthroughs: ONE declared table, applied on BOTH build paths ──
@@ -371,6 +384,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_evidential_reg=args.cf_evidential_reg,
             cf_twin_coef=args.cf_twin_coef,
             cf_shadow_coef=args.cf_shadow_coef,
+            q_winprob_coef=args.q_winprob_coef,
+            q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
@@ -661,6 +676,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_evidential_reg=args.cf_evidential_reg,
             cf_twin_coef=args.cf_twin_coef,
             cf_shadow_coef=args.cf_shadow_coef,
+            q_winprob_coef=args.q_winprob_coef,
+            q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,

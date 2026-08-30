@@ -944,6 +944,7 @@ def current_model_version(
     cf_evidential: bool = False,
     cf_twin_heads: bool = False,
     cf_shadow_critic: bool = False,
+    q_winprob_mode: str = "none",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -996,6 +997,10 @@ def current_model_version(
     # opponent's gate must see them or a twin-heads run FATALs loading its OWN sentinels.
     ext_kwargs["cf_twin_heads"] = cf_twin_heads
     ext_kwargs["cf_shadow_critic"] = cf_shadow_critic
+    # gen3_q_winprob_head_v1 (v107): the per-action Q head's params are a state_dict delta whose
+    # ONLY output is a stash, so nothing downstream would fail on a mismatch — a frozen eval/pool
+    # opponent's gate must see the toggle or a Q-head run FATALs loading its OWN sentinels.
+    ext_kwargs["q_winprob_mode"] = q_winprob_mode
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1085,6 +1090,9 @@ def arch_toggles_from_model(model: Any) -> dict:
         # forward, so the recorded toggle is the only thing a load gate can compare.
         "cf_twin_heads": bool(getattr(fe, "cf_twin_heads", False)),
         "cf_shadow_critic": bool(getattr(fe, "cf_shadow_critic", False)),
+        # gen3_q_winprob_head_v1 (v107): same category — params in the state_dict whose only
+        # output is a side stash, so the recorded toggle is all a load gate can compare.
+        "q_winprob_mode": str(getattr(fe, "q_winprob_mode", "none")),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

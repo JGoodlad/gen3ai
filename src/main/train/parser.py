@@ -849,6 +849,46 @@ def build_parser() -> argparse.ArgumentParser:
                              "Requires --cf-shadow-critic. THE METER is cf/shadow_shadow_vs_live_v "
                              "— the signed real-unit gap between the MC-grounded twin and the live "
                              "critic on the same states.")
+    # --- THE PER-ACTION Q WIN-PROB HEAD (gen3_q_winprob_head_v1, v107; ai_v12 E5). Every value
+    # readout in this tree evaluates a STATE, so "my win probability if I click Rock Slide" costs
+    # eleven simulator re-rolls. This head amortizes that: one forward, eleven P(win|s,a), scored
+    # from the pointer head's own action tokens. `--q-winprob-mode` is STRUCTURAL (version-gated,
+    # in flag_registry); the two coefficients are training-only.
+    parser.add_argument("--q-winprob-mode", "--q_winprob_mode", dest="q_winprob_mode",
+                        choices=("none", "read_only"), default=None,
+                        help="BUILD the PER-ACTION win-probability head over the pointer head's "
+                             "action tokens (one shared zero-init readout ⇒ every Q logit is "
+                             "exactly 0 at init ⇒ P=0.5 everywhere, an honest uninformative "
+                             "start). STRUCTURAL and version-gated: its params are in the "
+                             "state_dict and its ONLY output is a stash, so nothing downstream "
+                             "would catch a flipped flag. 'none' (default) does not build it at "
+                             "all — byte-for-byte the baseline. 'read_only' detaches EVERY input, "
+                             "so pi/vf stay bit-identical at any coefficient; there is "
+                             "deliberately no 'shaping' value, because a per-action readout "
+                             "carrying a counterfactual label is a larger leak surface than a "
+                             "per-state one and trunk exposure owes its own gate.")
+    parser.add_argument("--q-winprob-coef", "--q_winprob_coef", dest="q_winprob_coef",
+                        type=float, default=None,
+                        help="Weight on the per-action COUNTERFACTUAL likelihood: the masked "
+                             "binomial NLL over exactly those (state, action) pairs a label row's "
+                             "`q_labels` covers, normalized per rollout like the scalar cf term. "
+                             "Default 0.0 = OFF (the whole block is skipped). Requires "
+                             "--q-winprob-mode read_only and a cf label buffer. Read "
+                             "q_winprob/label_coverage FIRST — a producer shipping no per-action "
+                             "labels trains this head on nothing while every other scalar looks "
+                             "healthy.")
+    parser.add_argument("--q-winprob-onpolicy-coef", "--q_winprob_onpolicy_coef",
+                        dest="q_winprob_onpolicy_coef", type=float, default=None,
+                        help="Weight on the WEAK on-policy fallback: the recorded battle's "
+                             "realized outcome as a single-sample label for the ONE action that "
+                             "was actually taken. Default 0.0 = OFF, and it should usually stay "
+                             "there. ⚠️ BIAS: on-policy data labels 1 action out of 11 and the "
+                             "measured preferred-alternative rate is p≈0.002, so this term teaches "
+                             "the head only where the policy already goes — leaving it "
+                             "confidently wrong on the never-tried moves, which is precisely the "
+                             "starvation failure the counterfactual labels exist to avoid. It is "
+                             "weighted SEPARATELY from --q-winprob-coef so the two can never be "
+                             "confused in a run's provenance.")
     # --- LIVE CAPACITY TELEMETRY (gen3_capacity_telemetry_v1) --------------------------------
     # Three continuous saturation early-warnings that ride the train loop instead of being probed
     # offline: the PLASTICITY CANARY, the HALF-BATCH TRUNK-GRADIENT COSINE, and the FIXED-PROBE

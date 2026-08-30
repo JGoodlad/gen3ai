@@ -6610,3 +6610,128 @@ four `(prev_phase, curr_phase)` combinations, and the encoder's byte-identity wi
 flipped. `opponents_test.py::TestStallerProtectRng` (7) — seeded arms agree under adversarial
 interleaving, with its own revert arm showing unseeded arms diverge. `reward_defaults_test.py` (+3)
 — both new defaults pinned OFF, and the census proven unchanged with either on.
+---
+
+## v107 — `gen3_q_winprob_head_v1` (2026-08-29): a Q head on the pointer's own action tokens
+
+**The gap it closes, stated exactly.** Every value readout this network owns evaluates a STATE —
+`value_net`, `WinProbHead`, `ValueDistHead`, `ShadowValueHead`, the evidential Beta head. So a
+question a search teacher answers for free — *what is my win probability if I click Rock Slide?* —
+costs us eleven simulator re-rolls plus eleven forwards, because the successors have to be
+MANUFACTURED before anything can score them. That is the whole reason probe L's ranking "is not a
+quantity the network computes": it is the head composed with a simulator, and PPO performs no such
+composition (v104's entry, above, records the argument in its original form).
+
+`QWinProbHead` is that composition, amortized. One shared zero-init readout scores each of the
+eleven actions from the token of the entity that action selects — the SAME per-action tokens
+`PointerNativeActionHead` scores, read off `stash.pointer_inputs` — with `value_pooled` as the
+board context, and stashes `last_q_winprob_logits [B, 11]`. One forward, eleven `P(win | s, a)`.
+Ledger 229e9f1 (the route-2 / R1-factory convergence) and 5edbd05 (E5 as a closed loop:
+predict → ground → prioritize → teach → measure) are the design of record; this entry is step 1
+(PREDICT) and step 2 (GROUND) built, with step 5's meter (MEASURE) shipped as a script.
+
+**🚨 The starvation trap is the reason the label plumbing looks the way it does.** On-policy data
+labels exactly ONE action per state, and probe L measured the policy sampling its own
+better-ranked alternative at a median **p = 0.002**. A Q head trained on that stream is untrained
+precisely on the never-tried moves — i.e. confidently wrong on the entire set a per-action readout
+would ever be consulted about, because the shared scorer generalizes the taken-action signal onto
+the unvisited columns with nothing to correct it. So the head's primary labels are
+COUNTERFACTUAL: per-action re-rolls from the R1 factory, carried as an ADDITIVE-OPTIONAL `q_labels`
+field on the existing v1 label row.
+
+**What ships**
+
+*Architecture (STRUCTURAL, `q_winprob_mode`).* `none` builds nothing — byte-for-byte the baseline.
+`read_only` builds the head. There is deliberately NO `shaping` value: a per-action readout
+carrying a counterfactual label is a strictly larger leak surface than a per-state one, so every
+input is detached INSIDE the forward and trunk exposure becomes a later decision that owes its own
+gate. Consequences: `pi`/`vf` are bit-identical whenever the head is built, and
+`grad/q_winprob_share` reads exactly 0.0 by construction rather than by convention.
+
+It differs from the four cf readouts (v98/v99) in one way that is not cosmetic: **the forward DOES
+call it.** Eleven Q values are only useful if the forward that chose the action publishes them —
+a rollout, an eval and the prober all need to read them without a second pass. So the contract is
+not "never runs" but "runs and publishes only", and the tests pin that shape instead.
+
+It is built LAST in `__init__` for the usual reason (SB3 restores optimizer state POSITIONALLY —
+the ai_v6_13 "128 vs 5" crash — and appending leaves every earlier module's init RNG draw
+untouched) **and for a second one that is specific to it**: it sizes its projections from the
+POINTER CELL WIDTHS, so it must be constructed after every module that widens one (the op, the
+intent cells, the pair-outcome cells, the switch branch, the conditional threat).
+
+NO `ARCH_SIGNATURE` bump — `none` is byte-identical and `read_only`'s only output is a stash, so
+`check_compatible`'s string compare is the sole gate, and it has to be: a flipped flag produces no
+shape error anywhere. A resume that dropped it would load "successfully" and quietly stop training
+the head; one that added it would supervise a freshly random head as the run's trained one.
+
+*Labels (ADDITIVE-OPTIONAL at schema v1, not a schema bump).* `q_labels` is a LIST OF OBJECTS —
+`{"action": int, "label": float, "n_rollouts": int}` — never parallel arrays. Three same-length
+lists can be written in the wrong order by a producer and read as valid by the consumer; a
+per-action object cannot, which is the order-mismatch rule applied to a wire format. `taken_action`
+rides beside it, pairing with the existing `outcome_label` for the weak fallback. A malformed entry
+is a counted FIELD skip: the row survives with its other three label streams intact, because a
+producer bug in one stream must not cost the trainer the rest. Two new liveness scalars —
+`cf/q_label_coverage` and, the one that matters, `cf/q_labels_per_row`, which is what separates a
+live counterfactual factory from an on-policy trickle.
+
+*Training (TWO coefficients, and the split is the point).* `--q-winprob-coef` folds a MASKED
+binomial NLL over exactly the labelled `(state, action)` cells, normalized by `Σ(mask·n)` — mean
+NLL per ROLLOUT, so the coefficient keeps its meaning across producers with different R AND across
+minibatches with different label DENSITY. At full coverage it is EXACTLY
+`cf_terms.cf_binomial_nll`, which is pinned rather than claimed. An unlabelled cell contributes
+zero to numerator and denominator alike, never a zero target — a zero-filled absent label is
+indistinguishable from a confident "this action loses".
+
+`--q-winprob-onpolicy-coef` is the weak fallback (recorded outcome, at the taken action, n≡1),
+**default 0.0 and separately weighted so the two can never be confused in a run's provenance**. It
+exists because a starved-factory run should have something to show, not because it substitutes for
+counterfactual labels; its bias is stated at the flag, in the fold's header, in `hparams`, and in
+the launch banner.
+
+Both fold on the SAME sample and the SAME extractor forward every cf term shares. Both re-apply
+the head rather than reading `last_q_winprob_logits`, and the reason is specific: that forward runs
+under `no_grad` whenever nothing downstream of it needs a graph — a condition computed from the
+*scalar* term's settings, which know nothing about this one — so a term folded from the stash would
+train exactly nothing while every metric looked healthy.
+
+*The meter (E5 step 5).* `python -m main.q_amortization` compares the head's per-action row against
+the prober's own one-ply `lookahead` sweep: Spearman, top-1 agreement, and the **amortization
+residual**. Shrinking ⇒ the AlphaZero ratchet (search's value has migrated into the net, and search
+must deepen to add anything); stubbornly large on a class of states ⇒ those are the states that
+genuinely need live search, a triage signal rather than a defect. Two caveats are written into the
+script itself: it is a PREDICTIVE meter and says nothing about behavior (iteration 2's lesson), and
+its ground truth is itself a model read — `lookahead` scores each re-rolled successor with the same
+checkpoint's critic, so a badly calibrated run shows a small residual against a wrong target.
+`--self-check` runs the init-state sanity with no checkpoint, no traces and no simulator, and is
+gated in the suite.
+
+*Metrics.* `q_winprob/*` under its own prefix so a per-ACTION number can never be read as the
+per-state win head's. `label_coverage` / `labels_per_row` are the documented FIRST read. The
+`pred_spread` vs `label_spread` pair is the column that distinguishes a head that amortized the
+SEARCH from one that amortized the VALUE — a head predicting each state's mean scores well on
+`abs_err` and has learned nothing per-action. `train/q_winprob_loss` is ABSENT rather than 0.0 when
+the fold starves, because a defaulted zero is a perfect score for a head that trained on nothing.
+
+**Status: LATENT.** Nothing is enabled. `q_winprob_mode` defaults to `none`, both coefficients to
+0.0, the production config does not carry the flag, and the R1 factory does not yet emit `q_labels`
+— which is the next piece, and the one that decides whether any of this measures anything.
+
+**Tests** `q_winprob_head_test.py` (18): the action-space column order proved from the inside (an
+invalid move slot must zero exactly ITS column); zero-init ⇒ P = 0.5 exactly, asserted on a REAL
+`MaskablePPO` build because SB3's ortho-init clobbers extractor zero-inits and a claim made on a
+bare module is a claim about a path production does not take; OFF byte-identity and ON
+bit-identity in pi/vf; the append-never-insert rule asserted on every PRIOR parameter tensor AND on
+their order, not merely on the forward's output; the state_dict key census in both directions;
+head-only proved by backprop (trunk takes nothing, the head takes something — either failure alone
+is silent); switch-score equivariance under a team permutation, on a head whose scorer has been
+un-zeroed so the property is not trivially true; the stash seam and the pointer-width dependency;
+the v105 gate and migration. `q_winprob_terms_test.py` (21): the masked likelihood equalling the
+scalar one exactly at full coverage; a masked cell taking no gradient at any logit; evidence
+weighting as a 4× gradient ratio; the wire format's action index surviving to its own column
+through non-adjacent out-of-order entries; every malformed-entry class as a FIELD skip;
+duplicate-action keep-last; the fallback needing BOTH halves; an older producer's row supervising
+nothing; the fold's read seam, its published zero-coverage, and a stale pointer stash raising
+rather than supervising the wrong board. `q_amortization_test.py` (6): the shipped self-check
+through both entry points, and `spearman` returning **None** on a constant row — an untrained head
+emits one by construction, and reporting it as rho = 0.0 would merge "has learned nothing" with
+"has learned something uncorrelated", which is the distinction the whole probe exists to make.

@@ -553,3 +553,19 @@ class ModelVersionFields:
     # True is bit-identical in pi/vf; the params are the entire delta. NO ARCH_SIGNATURE bump.
     cf_twin_heads: bool = False
     cf_shadow_critic: bool = False
+    # ---- gen3_q_winprob_head_v1 (config v107) — THE PER-ACTION WIN-PROB READOUT ----------------
+    # v107 STRUCTURAL string (the win_prob_mode pattern, one value short): the Q head over the
+    # pointer head's own action tokens — one forward, eleven P(win|s,a). 'none' = no module
+    # (baseline byte-for-byte). 'read_only' builds a QWinProbHead whose params ARE the state_dict
+    # delta, so a STRING compare in check_compatible is the gate. There is deliberately no
+    # 'shaping' value: every input is detached unconditionally, so no coefficient can make it
+    # shape the trunk and pi/vf are bit-identical whenever it is built. NO ARCH_SIGNATURE bump.
+    q_winprob_mode: str = "none"
+    # v107 TRAINING-only loss coefficients (the cf_winprob_coef class exactly): recorded for
+    # provenance + flagless-resume read-back, NEVER gated. `q_winprob_coef` weights the masked
+    # per-action counterfactual likelihood; `q_winprob_onpolicy_coef` weights the WEAK
+    # taken-action-only fallback and defaults to 0.0 for the reason stated at its flag — an
+    # on-policy Q label covers one action out of eleven and is biased toward the policy's own
+    # choices, which is the starvation trap this head exists to avoid.
+    q_winprob_coef: float = 0.0
+    q_winprob_onpolicy_coef: float = 0.0

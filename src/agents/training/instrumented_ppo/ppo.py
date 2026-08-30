@@ -331,7 +331,23 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             and cf_buffer is not None
             and getattr(self.policy.features_extractor, "cf_shadow_head", None) is not None
         )
-        cf_any_on = cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
+        # +Q-WINPROB (gen3_q_winprob_head_v1, v107): the PER-ACTION win-prob head — the amortized
+        # one-ply search leaf (E5 step 2, GROUND). Two INDEPENDENT coefficients over one head: the
+        # counterfactual per-action likelihood, and the WEAK taken-action fallback whose bias is
+        # documented at its flag. Either being live turns the block on; both zero, no buffer or no
+        # head (`--q-winprob-mode none`) skips it entirely — no sample, no forward, loss
+        # byte-identical.
+        q_head_built = getattr(self.policy.features_extractor, "q_winprob_head", None) is not None
+        q_winprob_on = (
+            float(getattr(self, "q_winprob_coef", 0.0)) != 0.0
+            and cf_buffer is not None and q_head_built
+        )
+        q_onpolicy_on = (
+            float(getattr(self, "q_winprob_onpolicy_coef", 0.0)) != 0.0
+            and cf_buffer is not None and q_head_built
+        )
+        cf_any_on = (cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
+                     or q_winprob_on or q_onpolicy_on)
         if cf_any_on:
             # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
             # its own pace and re-globbing a directory 240 times an update buys nothing.
@@ -340,6 +356,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
         cf_shadow_metrics: dict[str, list[float]] = {}   # +CF-SHADOW (gen3_cf_twin_heads_v1)
+        q_metrics: dict[str, list[float]] = {}           # +Q-WINPROB (gen3_q_winprob_head_v1)
         cf_rows_sampled = 0
 
         continue_training = True
@@ -1041,6 +1058,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 cf_evid_term = None
                 cf_twin_term = None
                 cf_shadow_term = None
+                q_term = None
+                q_op_term = None
                 if cf_any_on:
                     # ONE sample + ONE extractor forward, shared by both readouts (see
                     # `_cf_sample_and_forward`). With the evidential half off this is exactly the
@@ -1085,6 +1104,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             loss = loss + cf_shadow_term
                         for _sk, _sv in _cfsm.items():
                             cf_shadow_metrics.setdefault(_sk, []).append(float(_sv))
+                    # +Q-WINPROB (gen3_q_winprob_head_v1): the PER-ACTION head, on the SAME sample
+                    # and the SAME forward. Both halves collect metrics unconditionally — the
+                    # coverage columns are the starvation tell and must be published even (and
+                    # especially) on a minibatch where the term itself did not fold.
+                    if q_winprob_on:
+                        q_term, _qm = self._q_winprob_term(_cf_ctx)
+                        if q_term is not None:
+                            loss = loss + q_term
+                        for _qk, _qv in _qm.items():
+                            q_metrics.setdefault(_qk, []).append(float(_qv))
+                    if q_onpolicy_on:
+                        q_op_term, _qom = self._q_winprob_onpolicy_term(_cf_ctx)
+                        if q_op_term is not None:
+                            loss = loss + q_op_term
+                        for _qk, _qv in _qom.items():
+                            q_metrics.setdefault(_qk, []).append(float(_qv))
 
                 # Per-term auxiliary pull on the shared trunk, for the grad-balance probe — EVERY
                 # active scaffold competes with policy/value there, so each is broken out INDIVIDUALLY
@@ -1147,6 +1182,16 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if _twin_terms:
                     aux_probe_terms["cf_twin"] = sum(_twin_terms[1:], _twin_terms[0])
                 if cf_shadow_term is not None:     aux_probe_terms["cf_shadow"] = cf_shadow_term
+                # gen3_q_winprob_head_v1: the Q head's inputs are detached INSIDE the extractor
+                # forward (`q_winprob_mode` has no `shaping` value), so `grad/q_winprob_share`
+                # reads exactly 0.0 BY CONSTRUCTION. Registered for the evidential head's reason:
+                # "this readout cannot perturb the policy" is the flag's load-bearing claim, and a
+                # published zero is a live measurement of it where a docstring is not. Both halves
+                # ride ONE entry (they pull the same head) and are summed by the same arity-free
+                # `sum` the twins use.
+                _q_terms = [t for t in (q_term, q_op_term) if t is not None]
+                if _q_terms:
+                    aux_probe_terms["q_winprob"] = sum(_q_terms[1:], _q_terms[0])
                 aux_on = belief_aux_on or move_belief_on or move_latent_on
                 # The belief terms only materialize on a minibatch with scored (believed = HIDDEN) slots;
                 # wait for one so their shares aren't silently dropped from the single per-train() sample.
@@ -1601,6 +1646,33 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             # evidential head's — this head is a promotion PATH, so its passivity is the contract.
             self.logger.record("train/cf_shadow_grad_share",
                                float(grad_balance.get("grad/cf_shadow_share", 0.0)))
+        # +Q-WINPROB (gen3_q_winprob_head_v1) — `q_winprob/*`, its own prefix so the PER-ACTION
+        # head's numbers can never be read as the per-state win head's.
+        #
+        #  * **`label_coverage` and `labels_per_row` are the FIRST read, before any score.** They
+        #    are the starvation tell this head is most exposed to: a producer shipping no
+        #    `q_labels` trains it on nothing, and a producer shipping ONE action per state trains
+        #    it into exactly the on-policy failure it exists to avoid (ledger 229e9f1).
+        #  * `abs_err` / `bias` are the fit on labelled cells. Read them WITH `pred_spread` vs
+        #    `label_spread`: a head that has learned nothing per-ACTION can still score well on
+        #    `abs_err` by predicting each state's mean, and the spread pair is what tells the two
+        #    apart — a `pred_spread` far below `label_spread` is a head that has amortized the
+        #    VALUE and not the SEARCH.
+        #  * `onpolicy_*` are the WEAK fallback's, prefixed apart on purpose (see the flag's
+        #    caveat). They are not evidence about the counterfactual stream.
+        if q_metrics:
+            for _qk2, _qvals in q_metrics.items():
+                self.logger.record(f"q_winprob/{_qk2}", float(np.mean(_qvals)))
+            # ABSENT, never zero — the shadow head's rule for the shadow head's reason: a starved
+            # fold publishes its coverage columns but no `loss`, and a defaulted 0.0 would be a
+            # perfect score for a head that trained on nothing.
+            if "loss" in q_metrics:
+                self.logger.record("train/q_winprob_loss", float(np.mean(q_metrics["loss"])))
+        if q_winprob_on or q_onpolicy_on:
+            # 0.0 by construction (every input detached inside the extractor forward), published
+            # so the "cannot perturb the policy" contract is a measurement, not a claim.
+            self.logger.record("train/q_winprob_grad_share",
+                               float(grad_balance.get("grad/q_winprob_share", 0.0)))
 
         # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1). Read them as TRENDS, never as levels —
         # every one of these is a saturation EARLY WARNING and none has a meaningful absolute value:

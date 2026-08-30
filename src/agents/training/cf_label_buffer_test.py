@@ -259,7 +259,11 @@ def test_stats_publishes_every_scalar_even_when_starving(tmp_path):
                       # producer ships no outcome_label trains head B on nothing, B becomes A, and
                       # C-B silently becomes C-A while every other counter reads healthy.
                       "cf/outcome_label_coverage", "cf/mc_return_coverage",
-                      "cf/labels_mc_return_rejected_total", "cf/labels_field_skipped_total"}
+                      "cf/labels_mc_return_rejected_total", "cf/labels_field_skipped_total",
+                      # gen3_q_winprob_head_v1 — the PER-ACTION stream's liveness. `per_row` is the
+                      # one that separates a live counterfactual factory from an on-policy trickle,
+                      # which is the difference between a trained Q head and a starved one.
+                      "cf/q_label_coverage", "cf/q_labels_per_row"}
     assert s["cf/buffer_fill"] == 0.0 and s["cf/labels_ingested_total"] == 0.0
 
 

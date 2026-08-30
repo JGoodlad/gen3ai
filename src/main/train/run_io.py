@@ -86,6 +86,8 @@ def _model_hparams(model) -> dict:
         "cf_evidential_reg": float(getattr(model, "cf_evidential_reg", 0.0)),
         "cf_twin_coef": float(getattr(model, "cf_twin_coef", 0.0)),
         "cf_shadow_coef": float(getattr(model, "cf_shadow_coef", 0.0)),
+        "q_winprob_coef": float(getattr(model, "q_winprob_coef", 0.0)),
+        "q_winprob_onpolicy_coef": float(getattr(model, "q_winprob_onpolicy_coef", 0.0)),
         "distill_coef": float(getattr(model, "distill_coef", 0.0)),
         "distill_value_coef": float(getattr(model, "distill_value_coef", 0.0)),
         "distill_value_feat_coef": float(getattr(model, "distill_value_feat_coef", 0.0)),

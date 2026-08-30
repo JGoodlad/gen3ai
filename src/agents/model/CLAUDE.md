@@ -162,6 +162,50 @@ rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-id
 — not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
 read: `src/agents/training/CLAUDE.md` → the evidential Beta head.
 
+### `QWinProbHead` (`--q-winprob-mode`, v107) — the one readout that is NOT off `value_pooled`
+
+`gen3_q_winprob_head_v1`. Every other readout in this package evaluates a STATE, which is why "what
+is my win probability if I click Rock Slide?" costs eleven simulator re-rolls rather than a read.
+This head scores each of the eleven actions **from the token of the entity that action selects** —
+the SAME per-action tokens `PointerNativeActionHead` scores, taken off `stash.pointer_inputs` — with
+`value_pooled` as the board CONTEXT, and stashes `last_q_winprob_logits [B, 11]` in action-space
+order. One forward, eleven `P(win|s,a)`: the amortized one-ply search leaf (ledger 229e9f1 /
+5edbd05).
+
+**Four properties, and each one is a constraint rather than a style choice:**
+
+1. **ONE shared scorer** over all eleven slots. Three input projections exist only because the three
+   families carry different WIDTHS; everything after them is shared, so the readout is
+   permutation-equivariant within a family — permute our team and the six switch Q values permute
+   with it. The pointer head's own lesson applies verbatim: a flat `Linear(ctx, 11)` learns "slot 0
+   is usually right" from an ordering that means nothing, and a Q head that did so would be useless
+   as a search leaf. (The pointer head's THREE scorers are correct there, where each family's logit
+   has its own semantics; here every slot answers the same question.)
+2. **ZERO-INIT scorer** (weight and bias) ⇒ every logit exactly 0 ⇒ `P = 0.5` everywhere ⇒ the
+   untrained ranking is a total tie, which is the honest state of knowledge for a head that has seen
+   no label. It is covered by `restore_identity_init`'s by-observation capture set automatically —
+   and `q_winprob_head_test` proves the automatic coverage actually reached it on a REAL
+   `MaskablePPO` build, because "it should be picked up" is what the M1 bug was made of.
+3. **NO `shaping` mode.** Every input is detached INSIDE the forward, so `pi`/`vf` are bit-identical
+   whenever the head is built and `grad/q_winprob_share` reads exactly 0.0 by construction. That is
+   the `CfEvidentialHead` contract rather than `WinProbHead`'s tri-state, deliberately: a per-action
+   readout carrying a COUNTERFACTUAL label is a strictly larger leak surface than a per-state one,
+   so trunk exposure is a later decision that owes its own gate.
+4. **The forward DOES call it** — the one place it departs from the four cf readouts. Eleven Q
+   values are only useful if the forward that chose the action publishes them, so the contract is
+   not "never runs" but "runs and publishes only".
+
+**Built LAST in `__init__` for TWO reasons, and the second is specific to it.** The usual one is the
+append-never-insert rule (SB3 restores optimizer state positionally; appending also leaves every
+earlier module's init RNG draw untouched, which is what makes OFF byte-identical rather than merely
+equal in shape). The specific one: it sizes its projections from `pointer_move_cell_dim` /
+`pointer_switch_cell_dim`, so it must be constructed after every module that widens a pointer cell —
+the op, the intent cells, the pair-outcome cells, the switch branch, the conditional threat.
+
+Its two coefficients (`--q-winprob-coef`, `--q-winprob-onpolicy-coef`) are TRAINING-only and appear
+nowhere in this package; the fold and the starvation caveat that governs the second one live in
+`src/agents/training/CLAUDE.md` → the per-action Q win-prob head.
+
 ### `--belief-grad-mode` — which arrow gets cut (`gen3_belief_grad_mode_v1` / `gen3_belief_label_only_v1`)
 
 **The two non-default modes cut OPPOSITE arrows, and the flag name does not say so** — read this
@@ -349,6 +393,7 @@ table exists to prevent:
 | `team_transformer.py` | `EdgeBias` (+ the `_EDGE_*_CELL` definitions), `BiasedEncoderLayer`, `TeamTransformer`, `EventSeats` |
 | `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
 | `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
+| `q_winprob_head.py` | `QWinProbHead` (v107) + `Q_WINPROB_MODES` — the PER-ACTION `P(win\|s,a)` readout over the pointer head's own action tokens. Its own file rather than a fifth entry in `aux_value_heads.py`, because that file's subject is "readouts off `value_pooled`" and this one's input is the pointer stash; `value_pooled` is only its CONTEXT |
 | `aux_value_heads.py` | `WinProbHead`, `ValueDistHead`, `CfEvidentialHead` (v98), `ShadowValueHead` (v99 — the passive MC-grounded value twin behind `--cf-shadow-critic`; the twin WIN-PROB heads B/C reuse `WinProbHead` unchanged, which is the point: an architecture difference would be a second explanation for a score difference) (v98 — the EVIDENTIAL Beta posterior over P(win\|state); `softplus+1` ⇒ α,β ≥ 1 so the Beta stays unimodal and `Beta(1,1)` is reachable, plus the two closed forms the loss needs: the Beta-Binomial marginal NLL and `KL(·‖Beta(1,1))`. The ONE readout here with no `read_only`/`shaping` split — its input is detached UNCONDITIONALLY and the forward never calls it) |
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |

@@ -19,7 +19,29 @@ The schema (v1), one JSON object per line::
      # -- v1 ADDITIVE-OPTIONAL (gen3_cf_twin_heads_v1); absent on any older producer's rows --
      "outcome_label": <float in [0,1]> | null,      # the RECORDED battle's realized outcome
      "mc_return": float | null, "mc_return_n": int,  # mean realized SHAPED return over R rollouts
-     "reward_sha1": "<sha1 hex of the producing RewardConfig>" | null}
+     "reward_sha1": "<sha1 hex of the producing RewardConfig>" | null,
+     # -- v1 ADDITIVE-OPTIONAL (gen3_q_winprob_head_v1); absent on any older producer's rows --
+     "q_labels": [{"action": int, "label": float in [0,1], "n_rollouts": int}, ...] | null,
+     "taken_action": int | null}
+
+**THE PER-ACTION STREAM (`q_labels`) IS A LIST OF OBJECTS, not parallel arrays, and that is the
+order-mismatch rule applied to a wire format.** Three same-length lists can be written in the wrong
+order by a producer and read as valid by this consumer; a per-action object cannot. Each entry
+names its own ACTION INDEX in the action space (`agents/action/constants.py`:
+``[switch x6, move x4, struggle]``, so the index is the same one the policy's logits and the action
+mask use), its counterfactual win RATIO, and the rollout count behind it — the same
+(ratio, evidence) pair the per-state ``label``/``n_rollouts`` carry, because the Q head's loss is
+the same binomial likelihood restricted to the labelled actions.
+
+An entry whose ``action`` is out of range, whose ``label`` is outside [0, 1], or which is not an
+object is a counted FIELD skip (``q_labels_*``): the ROW survives with its per-state labels intact,
+because a producer bug in one stream must not cost the trainer three others.
+
+``taken_action`` exists ONLY to pair with ``outcome_label`` for the WEAK on-policy fallback term
+(``--q-winprob-onpolicy-coef``, default 0). ⚠️ Read the caveat at that flag before turning it on:
+an on-policy label covers exactly one of eleven actions and is drawn from the policy's own choices,
+so it teaches the head where the policy already goes and leaves it confidently wrong on the moves
+that were never tried — which is the starvation failure the counterfactual stream exists to avoid.
 
 Obs resolution order is ``obs_inline`` > ``obs_npz`` > skip-with-a-counter. An unknown ``kind`` or
 a ``schema`` != 1 is SKIPPED with a counter, never a crash — a producer that ships a v2 row must
@@ -96,9 +118,14 @@ import os
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Sequence
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 import numpy as np
+
+# gen3_q_winprob_head_v1: the width of the per-action label matrix. Imported from the ACTION SPACE
+# rather than hardcoded, because the Q head's column `a` IS action `a` and a private constant here
+# would be a second, silently-drifting definition of the thing that makes them the same index.
+from agents.action.constants import ACTION_SPACE_SIZE
 
 SCHEMA_VERSION = 1
 KIND_MC_WINPROB = "mc_winprob"
@@ -156,6 +183,13 @@ class CfLabel:
     # The producing `RewardConfig`'s digest — carried for the record even when it matched, so a
     # label file is auditable a year later without the run beside it.
     reward_sha1: str = ""
+    # gen3_q_winprob_head_v1: the PER-ACTION stream. `(action_idx, label, n_rollouts)` triples,
+    # already validated (index in range, label in [0,1]) — an empty tuple means the producer
+    # shipped none, which supervises the Q head on nothing rather than on a zero.
+    q_labels: Tuple[Tuple[int, float, int], ...] = ()
+    # The action the recorded policy actually took at this decision. Pairs with `outcome_label`
+    # for the WEAK on-policy fallback; None when the producer did not ship one.
+    taken_action: Optional[int] = None
 
 
 class CfLabelBuffer:
@@ -322,6 +356,8 @@ class CfLabelBuffer:
         # unusable is a counted skip of that FIELD, never a silent zero and never a dropped row.
         outcome = self._parse_outcome(obj)
         mc_return, mc_return_n = self._parse_mc_return(obj)
+        q_labels = self._parse_q_labels(obj)
+        taken_action = self._parse_taken_action(obj)
         self.ingested_total += 1
         return CfLabel(
             obs=obs, label=label, policy_step=policy_step,
@@ -330,7 +366,65 @@ class CfLabelBuffer:
             obs_sha1=_digest(obs),
             outcome_label=outcome, mc_return=mc_return, mc_return_n=mc_return_n,
             reward_sha1=str(obj.get("reward_sha1") or ""),
+            q_labels=q_labels, taken_action=taken_action,
         )
+
+    def _parse_q_labels(self, obj: dict) -> Tuple[Tuple[int, float, int], ...]:
+        """``q_labels`` — the PER-ACTION counterfactual stream (see the module docstring).
+
+        Permissive in the ABSENT direction (an older producer ships none and the Q head is
+        supervised on nothing), strict in the PRESENT-BUT-WRONG direction: a malformed entry is a
+        counted FIELD skip and is dropped individually, never silently coerced and never allowed
+        to take the row's other three label streams down with it.
+
+        DUPLICATE actions are collapsed keep-LAST, for the buffer's own keep-newest reason: two
+        entries for one action are the producer contradicting itself, and summing or averaging
+        them would invent evidence that no rollout supports.
+        """
+        raw = obj.get("q_labels")
+        if raw is None:
+            return ()
+        if not isinstance(raw, (list, tuple)):
+            self._skip_field("q_labels_not_a_list")
+            return ()
+        by_action: "OrderedDict[int, Tuple[int, float, int]]" = OrderedDict()
+        for entry in raw:
+            if not isinstance(entry, dict):
+                self._skip_field("q_labels_entry_not_an_object")
+                continue
+            try:
+                action = int(entry["action"])
+                label = float(entry["label"])
+                n = int(entry.get("n_rollouts", 0) or 0)
+            except (KeyError, TypeError, ValueError):
+                self._skip_field("q_labels_malformed")
+                continue
+            if not (0 <= action < ACTION_SPACE_SIZE):
+                self._skip_field("q_labels_action_range")
+                continue
+            if not np.isfinite(label) or not (0.0 <= label <= 1.0):
+                # The same range contract as `label` / `outcome_label`. A Q head trained on an
+                # out-of-range target is trained on garbage with no tell.
+                self._skip_field("q_labels_label_range")
+                continue
+            by_action.pop(action, None)
+            by_action[action] = (action, label, max(0, n))
+        return tuple(by_action.values())
+
+    def _parse_taken_action(self, obj: dict) -> Optional[int]:
+        """``taken_action`` — the index the recorded policy chose, for the WEAK on-policy term."""
+        raw = obj.get("taken_action")
+        if raw is None:
+            return None
+        try:
+            action = int(raw)
+        except (TypeError, ValueError):
+            self._skip_field("taken_action_malformed")
+            return None
+        if not (0 <= action < ACTION_SPACE_SIZE):
+            self._skip_field("taken_action_range")
+            return None
+        return action
 
     def _parse_outcome(self, obj: dict) -> Optional[float]:
         """``outcome_label`` — head B's SINGLE-OUTCOME stream, or None when the row has none."""
@@ -550,6 +644,13 @@ class CfLabelBuffer:
                 sum(1 for r in rows if r.outcome_label is not None)) / n,
             "cf/mc_return_coverage": float(
                 sum(1 for r in rows if r.mc_return is not None)) / n,
+            # gen3_q_winprob_head_v1: the same launch-window question for the PER-ACTION stream.
+            # `q_label_coverage` is the fraction of resident rows carrying ANY per-action label;
+            # `q_labels_per_row` is how many of the eleven actions an average row covers, which is
+            # the number that separates "the factory is running" from "the factory is running at
+            # one action per state", i.e. from the on-policy starvation this head exists to avoid.
+            "cf/q_label_coverage": float(sum(1 for r in rows if r.q_labels)) / n,
+            "cf/q_labels_per_row": float(sum(len(r.q_labels) for r in rows)) / n,
             "cf/labels_mc_return_rejected_total": float(self.mc_return_rejected_total),
             "cf/labels_field_skipped_total": float(self.field_skipped_total),
         }
@@ -569,6 +670,11 @@ class CfBatch(NamedTuple):
     ``outcome_mask`` [B] 1.0 where ``outcome`` is a real label, 0.0 where the row carried none
     ``mc_return``    [B] the mean realized SHAPED return — the shadow critic's stream (0 where absent)
     ``mc_return_mask`` [B] 1.0 where ``mc_return`` is real
+    ``q_label``      [B, A] the PER-ACTION counterfactual win ratio (0 where unlabelled)
+    ``q_n``          [B, A] the rollout count behind each ``q_label`` (0 where unlabelled)
+    ``q_mask``       [B, A] 1.0 where the (state, action) pair carries a real label
+    ``taken_action`` [B] the recorded policy's action index (0 where absent — read with the mask)
+    ``taken_mask``   [B] 1.0 where BOTH ``taken_action`` and ``outcome`` are real
 
     The MASKS are not decoration. A minibatch mixing rows from two producers (one that ships the new
     streams, one that does not) must supervise each head on exactly the rows that have its label,
@@ -582,6 +688,14 @@ class CfBatch(NamedTuple):
     outcome_mask: "th.Tensor"   # type: ignore[name-defined]  # noqa: F821
     mc_return: "th.Tensor"      # type: ignore[name-defined]  # noqa: F821
     mc_return_mask: "th.Tensor"  # type: ignore[name-defined]  # noqa: F821
+    # gen3_q_winprob_head_v1: the PER-ACTION stream. Defaulted so a caller constructing a CfBatch
+    # positionally (a test double, an older producer path) keeps working and simply supervises the
+    # Q head on nothing — the same absent-is-not-zero discipline the two masks above encode.
+    q_label: "th.Tensor" = None      # type: ignore[assignment,name-defined]  # noqa: F821
+    q_n: "th.Tensor" = None          # type: ignore[assignment,name-defined]  # noqa: F821
+    q_mask: "th.Tensor" = None       # type: ignore[assignment,name-defined]  # noqa: F821
+    taken_action: "th.Tensor" = None  # type: ignore[assignment,name-defined]  # noqa: F821
+    taken_mask: "th.Tensor" = None   # type: ignore[assignment,name-defined]  # noqa: F821
 
 
 def batch_tensors(rows: Sequence[CfLabel], device) -> CfBatch:
@@ -611,7 +725,29 @@ def batch_tensors(rows: Sequence[CfLabel], device) -> CfBatch:
     out_m = np.asarray([0.0 if r.outcome_label is None else 1.0 for r in rows], dtype=np.float32)
     ret = np.asarray([0.0 if r.mc_return is None else r.mc_return for r in rows], dtype=np.float32)
     ret_m = np.asarray([0.0 if r.mc_return is None else 1.0 for r in rows], dtype=np.float32)
+    # gen3_q_winprob_head_v1: the PER-ACTION matrices. Built by SCATTER from each row's
+    # `(action, label, n)` triples rather than by a positional zip, so an action a row does not
+    # cover stays masked-off instead of inheriting a neighbour's column — the wire format names
+    # its own index precisely so this step cannot misalign.
+    A = ACTION_SPACE_SIZE
+    q_lab = np.zeros((len(rows), A), dtype=np.float32)
+    q_n = np.zeros((len(rows), A), dtype=np.float32)
+    q_m = np.zeros((len(rows), A), dtype=np.float32)
+    tak = np.zeros(len(rows), dtype=np.int64)
+    tak_m = np.zeros(len(rows), dtype=np.float32)
+    for i, r in enumerate(rows):
+        for action, value, n_roll in r.q_labels:
+            q_lab[i, action] = value
+            q_n[i, action] = n_roll
+            q_m[i, action] = 1.0
+        # The on-policy fallback needs BOTH halves — an action index and the outcome that action
+        # led to. Either one missing means there is no label, not a label at index 0.
+        if r.taken_action is not None and r.outcome_label is not None:
+            tak[i] = r.taken_action
+            tak_m[i] = 1.0
     t = lambda a: th.as_tensor(a, device=device)                             # noqa: E731
     return CfBatch(obs=t(obs), label=t(lab), n_rollouts=t(n),
                    outcome=t(out), outcome_mask=t(out_m),
-                   mc_return=t(ret), mc_return_mask=t(ret_m))
+                   mc_return=t(ret), mc_return_mask=t(ret_m),
+                   q_label=t(q_lab), q_n=t(q_n), q_mask=t(q_m),
+                   taken_action=t(tak), taken_mask=t(tak_m))

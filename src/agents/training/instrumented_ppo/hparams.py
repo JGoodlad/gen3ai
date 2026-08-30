@@ -338,6 +338,19 @@ class PpoHyperparameters:
     # ROUTE change owes C4), so what it produces is evidence, not a training change to the critic.
     # 0.0 = OFF, whole block skipped. TRAINING-only; the STRUCTURAL half is `cf_shadow_critic` (v99).
     cf_shadow_coef: float = 0.0
+    # ---- gen3_q_winprob_head_v1 — THE PER-ACTION WIN-PROB HEAD (`q_winprob/*`) -----------------
+    # The COUNTERFACTUAL term's weight. Folds
+    #     q_winprob_coef * masked-binomial-NLL( q_head(pointer tokens), q_labels ; Sum(mask*n) )
+    # over the same sampled rows and the same extractor forward as every cf term. 0.0 = OFF, whole
+    # block skipped. TRAINING-only; the STRUCTURAL half is `q_winprob_mode` (v107), which decides
+    # whether the head's params exist at all.
+    q_winprob_coef: float = 0.0
+    # The WEAK on-policy fallback's weight — SEPARATE on purpose. 🚨 It labels ONE action of
+    # eleven, drawn from the policy's own choices (measured preferred-alternative rate p≈0.002), so
+    # it teaches the head where the policy already goes and leaves it confidently wrong on the
+    # never-tried moves. That is the exact failure the counterfactual stream exists to avoid, which
+    # is why this defaults to 0.0 and why one coefficient could never have covered both.
+    q_winprob_onpolicy_coef: float = 0.0
     # ---- gen3_capacity_telemetry_v1 — LIVE CAPACITY TELEMETRY (`capacity/*`) -------------------
     # The master switch for all three probes (plasticity canary / half-batch trunk cosine / feature
     # velocity). TRAINING-only and, uniquely in this file, it is not even that: it folds NO term

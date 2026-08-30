@@ -58,7 +58,7 @@ CTOR_KWARGS_V96 = frozenset({
     "spread_belief", "spread_belief_nature", "t0_species_prior", "threat_prob_outspeed",
     "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
-    "win_prob_mode",
+    "win_prob_mode", "q_winprob_mode",
 })
 
 # The five names MEASURED as uncovered on 2026-08-17, with the run counts that made the case. Pinned

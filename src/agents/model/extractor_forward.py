@@ -734,6 +734,30 @@ class ExtractorForward(ExtractorApi):
         if self.value_dist_head is not None:
             vd_in = value_pooled if self.value_dist_mode == "shaping" else value_pooled.detach()
             self.stash.value_dist_logits = self.value_dist_head(vd_in)
+        # gen3_q_winprob_head_v1: the PER-ACTION win-probability readout — the amortized one-ply
+        # search leaf (E5 step 1). It scores the SAME per-action tokens the pointer head scores, so
+        # it is computed here, AFTER `stash.pointer_inputs` is written and after every value route
+        # has landed in `value_pooled` (the head's context is the FINAL summary, the same tensor
+        # the win head and the dist critic read).
+        #
+        # EVERY input is detached — the tokens, the cells and the context alike. `read_only` is the
+        # only live mode and there is no `shaping` counterpart, so this head trains its own
+        # parameters and provably cannot perturb the trunk: pi/vf are bit-identical at any
+        # coefficient, not merely equal in shape. Computed on every forward (one small MLP over 11
+        # slots) so a rollout, an eval and the prober can all read P(win|s,a) from the forward that
+        # chose the action — which is the entire point of amortizing the search leaf.
+        if self.q_winprob_head is not None:
+            _pi_in = self.stash.pointer_inputs
+            if _pi_in is None:                       # pragma: no cover - structurally unreachable
+                raise RuntimeError(
+                    "q_winprob_head is built but pointer_inputs was not stashed by this forward — "
+                    "the Q head scores the pointer head's own action tokens, so a missing stash "
+                    "means the two are wired to different forwards.")
+            self.stash.q_winprob_logits = self.q_winprob_head(
+                value_pooled.detach(),
+                _pi_in.move_tokens.detach(), _pi_in.move_valid.detach(),
+                _pi_in.team_tokens.detach(), _pi_in.move_cells.detach(),
+                _pi_in.switch_cells.detach())
         out: Tuple[torch.Tensor, torch.Tensor] = self.assembler(
                              our_team_pooled, their_team_pooled, our_active_refined, value_pooled,
                              ctx, belief)

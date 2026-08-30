@@ -134,6 +134,12 @@ TIER_OF: Dict[str, int] = {
     "cf_twin_head_b": 3,
     "cf_twin_head_c": 3,
     "cf_shadow_head": 3,
+    # gen3_q_winprob_head_v1 (v107): the PER-ACTION win-probability readout. T3 DELIVER — it reads
+    # `value_pooled` AND the T2/T3 pointer stash, so it is strictly downstream of both, and it
+    # publishes a readout rather than feeding any consumer. Unlike the four cf heads above the
+    # forward DOES call it, so the tracer sees it, and its entry being T3 is what asserts nothing
+    # earlier can consume its output.
+    "q_winprob_head": 3,
     # gen3_unified_value_readout_v1 (v80): the Stage-3 unified critic entity pool, injected into
     # `value_pooled` through the v89 seam. Since the critic-route deletion wave it is the ONLY
     # member of that seam — and the only DELIVER-stage critic route other than the two `cls_pool`

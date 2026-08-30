@@ -699,6 +699,20 @@ is the primary value loss at `vf_coef` weight, and the scalar `value_net` freeze
 So "the critic" in this config is the *categorical* head, not `value_net`. PopArt is still on
 (`use_popart` true, which forces `--clip-range-vf none`).
 
+**One more readout EXISTS in the code and is OFF here — `q_winprob_mode` (`QWinProbHead`).** It is
+the only member of this family that does not hang off `value_pooled` alone: it scores each of the
+eleven actions from the token of the entity that action selects — the SAME per-action tokens the
+pointer head scores (`stash.pointer_inputs`) — with `value_pooled` as its context, and stashes
+`last_q_winprob_logits [B, 11]`. One forward, eleven `P(win | s, a)`; the point is to amortize the
+eleven simulator re-rolls a per-action win probability otherwise costs (ledger 229e9f1 / 5edbd05).
+It is also the only readout here with no `shaping` value: every input is detached inside the
+forward, so `pi`/`vf` are bit-identical whenever it is built and `grad/q_winprob_share` is 0 by
+construction. **LATENT — not enabled in any run.** The head is a state_dict delta gated by
+`check_compatible`, and its two training coefficients (`--q-winprob-coef`, the per-action
+counterfactual likelihood; `--q-winprob-onpolicy-coef`, the weak and biased taken-action fallback)
+default to 0, so nothing about it is live until a run turns it on. It is absent from §6's table
+because that table is generated from `designs/production_config.json`, which does not carry it.
+
 Belief heads run under `belief_grad_mode` **`label_only`**: their outputs are published stop-grad
 to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the
 belief is trained by its supervised labels alone. The heads' trunk READ stays live, so the label

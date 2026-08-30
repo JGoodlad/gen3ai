@@ -13,6 +13,7 @@ import torch as th
 
 from agents.training import belief_bank as _belief_bank
 from agents.training import cf_terms as _cf
+from agents.training import q_winprob_terms as _q
 
 
 class AuxTerms:
@@ -125,3 +126,14 @@ class AuxTerms:
 
     def _cf_live_values(self, ctx):
         return _cf.cf_live_values(self, ctx)
+
+    # gen3_q_winprob_head_v1: the PER-ACTION head's two folds. Same vertical split as the cf
+    # family and for the same reason — they read the cf sample, apply `q_winprob_head` to the same
+    # forward's pointer stash, and touch the update only through `loss = loss + term`.
+    _q_masked_binomial_nll = staticmethod(_q.q_masked_binomial_nll)
+
+    def _q_winprob_term(self, ctx):
+        return _q.q_winprob_term(self, ctx)
+
+    def _q_winprob_onpolicy_term(self, ctx):
+        return _q.q_winprob_onpolicy_term(self, ctx)

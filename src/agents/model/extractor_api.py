@@ -208,6 +208,8 @@ class ExtractorApi(ExtractorBuild):
     def last_win_prob_logits(self) -> Optional[torch.Tensor]: return self.stash.win_prob_logits
     @property
     def last_value_dist_logits(self) -> Optional[torch.Tensor]: return self.stash.value_dist_logits
+    @property
+    def last_q_winprob_logits(self) -> Optional[torch.Tensor]: return self.stash.q_winprob_logits
     # Private per-forward hand-offs with external test readers keep their names too (same
     # read-only discipline; the T0->T1/T2 contract is documented on the dataclass fields).
     @property

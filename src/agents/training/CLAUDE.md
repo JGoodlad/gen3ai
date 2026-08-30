@@ -41,7 +41,7 @@ only checkable by reading while it stays one straight line. Per minibatch:
    value-feature hint
 6. search-teacher AWR, then OPD
 7. **TD-AUX**
-8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow
+8. **the counterfactual block** — cf-winprob, cf-evidential, cf-twin, cf-shadow, **q-winprob**
 
 **No flag combination reorders these.** Each term is guarded by its own `if <x>_on:`; a term that
 is off contributes nothing and moves no one. **Steps 7 and 8 are last because they each run their
@@ -4443,6 +4443,98 @@ between cycles, the producer reloads it and RE-STAMPS the rows, and the real buf
 vintages at their two different ages — plus a poisoned row (`obs_sha1` disagreeing with its own
 bytes) costing exactly itself beside the good ones. That is the leg the 2026-08-23 R1 composition
 smoke found a live defect in.
+
+### The PER-ACTION Q WIN-PROB HEAD (`--q-winprob-mode` + `--q-winprob-coef` / `--q-winprob-onpolicy-coef`, `gen3_q_winprob_head_v1`, v107)
+
+**The problem, stated as a cost.** Every value readout this tree owns evaluates a STATE, so a
+per-action win probability is not a read — it is eleven simulator re-rolls plus eleven forwards,
+because the successors have to be manufactured first. That is exactly why probe L's ranking "is not
+a quantity the network computes" (it is the head composed with a simulator, and PPO performs no such
+composition). `QWinProbHead` amortizes the composition: one forward, eleven `P(win|s,a)`, scored
+from the pointer head's own action tokens. The architecture half is in
+`src/agents/model/CLAUDE.md` → `QWinProbHead`; this section is the training half.
+
+🚨 **THE STARVATION TRAP — read this before setting either coefficient.** On-policy data labels
+exactly ONE action per state, and probe L measured the policy sampling its own better-ranked
+alternative at a median **p = 0.002**. A Q head trained on that stream is untrained precisely on the
+never-tried moves — i.e. **confidently wrong on the entire set a per-action readout would ever be
+consulted about**, because the shared scorer generalizes the taken-action signal onto the unvisited
+columns with nothing to correct it. The head's primary labels are therefore COUNTERFACTUAL, from the
+same R1 factory the rest of this block feeds on (ledger 229e9f1).
+
+**THE LABEL CONTRACT** is an ADDITIVE-OPTIONAL extension of the existing v1 row — the schema version
+deliberately does NOT move, for the reason stated at `cf_label_buffer`: `schema` is a REFUSAL gate,
+so bumping it would make a new producer's output unreadable by an existing trainer.
+
+```json
+"q_labels": [{"action": 7, "label": 0.62, "n_rollouts": 16}, ...],   // per-ACTION counterfactual
+"taken_action": 7                                                    // for the weak fallback only
+```
+
+`q_labels` is a **list of objects, never parallel arrays**. Three same-length lists can be written in
+the wrong order by a producer and read as valid by the consumer; a per-action object cannot. Each
+entry names its own index in the ACTION SPACE (`[switch x6, move x4, struggle]`) — the same index the
+policy's logits, the action mask and the Q head's column `a` use. A malformed entry is a counted
+FIELD skip (`q_labels_*`), so the row survives with its three other label streams intact: a producer
+bug in one stream must not cost the trainer the rest. Duplicate actions collapse keep-LAST (two
+entries for one action are the producer contradicting itself; summing them would invent evidence).
+
+**THE LOSS** is `q_masked_binomial_nll` — the scalar cf term's likelihood restricted to the labelled
+cells, normalized by `Σ(mask·n)`. Two invariances come out of that normalizer and both are pinned:
+the coefficient's meaning is independent of the producer's R (an R=16 label pulls exactly 4x an R=4
+one — that IS the likelihood of the data, not an emphasis choice) **and** of the minibatch's label
+DENSITY. A whole-grid `Σn` would make the term shrink as coverage fell, which is the opposite of what
+a starving factory should do to a loss. At full coverage the function equals
+`cf_terms.cf_binomial_nll` EXACTLY, which is what makes "the same likelihood, restricted" a fact
+rather than an analogy. **An unlabelled cell contributes zero to numerator and denominator alike** —
+never a zero target, which is indistinguishable from a confident "this action loses".
+
+**TWO COEFFICIENTS, AND THE SPLIT IS THE POINT.** `--q-winprob-coef` weights the counterfactual
+stream. `--q-winprob-onpolicy-coef` weights the WEAK fallback — the recorded battle's realized
+outcome as a single-sample label for the ONE action that was taken, at `n ≡ 1` so its per-row
+gradient magnitude matches a counterfactual row's and only the TARGET differs. It defaults to **0.0**
+and should usually stay there; it exists so a starved-factory run has something to show, not as a
+substitute. Separate coefficients so the two can never be confused in a run's provenance, and its
+metrics carry an `onpolicy_` prefix so its numbers can never be read as the grounded stream's.
+
+**BOTH ARE HEAD-ONLY, STRUCTURALLY.** The head's inputs are detached inside the EXTRACTOR forward
+(`q_winprob_mode` has no `shaping` value), so no coefficient can route a gradient into the trunk and
+`grad/q_winprob_share` reads exactly 0.0 by construction — the verification, not a defect.
+
+**⚠️ Both folds RE-APPLY the head rather than reading `last_q_winprob_logits`, and the reason is not
+the same as `_cf_winprob_term`'s.** That term re-applies its head because `win_prob_mode` governs a
+different decision than `cf_head_only`. This one does it because `cf_sample_and_forward` runs under
+`th.no_grad()` whenever nothing downstream needs a graph — a condition computed from the *scalar*
+term's settings, which know nothing about this one — so a term folded from that stash would train
+**exactly nothing** while every metric looked healthy. It reads the pointer stash from the same
+forward and RAISES on a batch-size disagreement (the `_critic_value` stale-stash precedent):
+structurally impossible, therefore loud rather than degrading.
+
+**METRICS — `q_winprob/*`**, its own prefix so a per-ACTION number can never be read as the per-state
+win head's.
+
+| key | read |
+|---|---|
+| `label_coverage` / `labels_per_row` | **FIRST.** Coverage is "is the factory running"; **`labels_per_row` is "is it running at more than one action per state"** — i.e. the number that separates a real counterfactual stream from the on-policy trickle this head exists to avoid |
+| `loss` · `abs_err` · `bias` | the fit on labelled cells |
+| `pred_spread` vs `label_spread` | **the discriminating pair.** A head that learned nothing per-ACTION still scores well on `abs_err` by predicting each state's mean; a `pred_spread` far below `label_spread` is a head that amortized the VALUE and not the SEARCH. Computed only over rows with ≥2 labelled actions, since a one-action row's spread is 0 by construction |
+| `onpolicy_*` | the weak fallback's, and not evidence about the grounded stream |
+| `train/q_winprob_loss` | **ABSENT, never 0.0, when the fold starves** — a defaulted zero is a perfect score for a head that trained on nothing |
+
+**THE OFFLINE METER (E5 step 5)** is `python -m main.q_amortization <run_dir>`: the head's per-action
+row against the prober's own one-ply `lookahead` sweep — Spearman, top-1 agreement, and the
+**amortization residual**. Shrinking ⇒ the AlphaZero ratchet (search's value has migrated into the
+net; search must deepen to add anything); stubbornly large on a class of states ⇒ those states
+genuinely need live search, a triage signal for the ladder time manager. Two caveats live in the
+script and belong here too: it is a **PREDICTIVE** meter and says nothing about whether the policy
+plays better (iteration 2's lesson — keep it distinct from the behavioral dividend), and its ground
+truth is **itself a model read**, since `lookahead` scores each re-rolled successor with the same
+checkpoint's critic. `--self-check` runs the init-state sanity (zero-init ⇒ P = 0.5 everywhere ⇒ a
+total tie) with no checkpoint, no traces and no simulator; it is gated in the suite.
+
+**Status: LATENT.** Mode `none`, both coefficients 0.0, and **the producer does not yet emit
+`q_labels`** — that is the next piece and the one that decides whether any of this measures
+anything.
 
 ### The label PRODUCER DRIVER (`cf_producer.py`) — the piece that runs the loop
 

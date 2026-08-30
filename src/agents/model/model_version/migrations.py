@@ -386,4 +386,15 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("progress_decision_tense", False)
         data.setdefault("progress_switch_freeze", False)
         data["config_version"] = 106
+    # v107 (gen3_q_winprob_head_v1) — ONE STRUCTURAL mode (v98's shape) plus TWO TRAINING-only
+    # coefficients (v100's). The structural half still DEFAULTS rather than refusing, for v98's
+    # exact reason: a pre-v107 checkpoint could not have built the Q head, so "none" is not a guess
+    # but the only possible past. The refusal direction belongs to check_compatible, which fires
+    # the moment a live run's "read_only" meets a migrated "none". The two coefficients are pure
+    # provenance + flagless-resume read-back and are never gated.
+    if version < 107:
+        data.setdefault("q_winprob_mode", "none")
+        data.setdefault("q_winprob_coef", 0.0)
+        data.setdefault("q_winprob_onpolicy_coef", 0.0)
+        data["config_version"] = 107
     return data

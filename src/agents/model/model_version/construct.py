@@ -56,6 +56,8 @@ class ModelVersionConstruction(ModelVersionFields):
         distill_beta: float = 1.0,
         rank_tripwire: str = "warn",
         rank_tripwire_drop: float = 0.20,
+        q_winprob_coef: float = 0.0,
+        q_winprob_onpolicy_coef: float = 0.0,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -247,6 +249,9 @@ class ModelVersionConstruction(ModelVersionFields):
             cf_shadow_critic=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("cf_shadow_critic", False)
             ),
+            q_winprob_mode=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("q_winprob_mode", "none")
+            ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
             ),
@@ -300,6 +305,8 @@ class ModelVersionConstruction(ModelVersionFields):
             distill_beta=float(distill_beta),
             rank_tripwire=str(rank_tripwire),
             rank_tripwire_drop=float(rank_tripwire_drop),
+            q_winprob_coef=float(q_winprob_coef),
+            q_winprob_onpolicy_coef=float(q_winprob_onpolicy_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),

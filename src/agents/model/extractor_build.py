@@ -45,6 +45,7 @@ from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import CLSPool, HiddenOppBeliefPool
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
+from agents.model.q_winprob_head import Q_WINPROB_MODES, QWinProbHead
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
@@ -103,6 +104,7 @@ class ExtractorBuild(torch.nn.Module):
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  cf_evidential: bool = False,
                  cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
+                 q_winprob_mode: str = "none",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -950,6 +952,38 @@ class ExtractorBuild(torch.nn.Module):
         # critic surgery (which owes C4), not the surgery. See `ShadowValueHead`.
         self.cf_shadow_critic = bool(cf_shadow_critic)
         self.cf_shadow_head = ShadowValueHead() if self.cf_shadow_critic else None
+
+        # gen3_q_winprob_head_v1 (v107): the PER-ACTION win-probability readout — E5 step 1, the
+        # amortized one-ply search leaf (ledger 229e9f1 / 5edbd05). Unlike the four cf readouts
+        # above it IS called by the forward, because eleven Q values are only useful if a rollout
+        # / an eval / the prober can read them from the same forward that chose the action. What it
+        # shares with them is the safety contract: `read_only` is the ONLY live mode, every input
+        # is stop-grad, the logits are stashed and never concatenated into pi/vf, so the forward's
+        # (pi, vf) pair is bit-identical whether or not this is built.
+        #
+        # Built LAST — after every cf head and before the identity snapshot — for the two reasons
+        # this position always carries: SB3 restores optimizer state POSITIONALLY (the ai_v6_13
+        # "128 vs 5" crash), so a module is APPENDED and never inserted; and appending here leaves
+        # every earlier module's initialization RNG draw untouched, which is what makes OFF
+        # byte-identical rather than merely equal in shape.
+        #
+        # It reads the POINTER CELL WIDTHS, so it must be built after every module that widens
+        # them (the op, the intent cells, the pair-outcome cells, the switch branch, the
+        # conditional threat) — which "last" already guarantees, and which is the second reason the
+        # position is not free.
+        if q_winprob_mode not in Q_WINPROB_MODES:
+            raise ValueError(
+                f"q_winprob_mode must be one of {Q_WINPROB_MODES}, got {q_winprob_mode!r}. There "
+                f"is deliberately no 'shaping' value: a per-action readout carrying a "
+                f"counterfactual label is a larger leak surface than a per-state one, so trunk "
+                f"exposure is a separate decision that owes its own gate.")
+        self.q_winprob_mode = str(q_winprob_mode)
+        self.q_winprob_head = (
+            QWinProbHead(move_token_dim=self.pointer_move_token_dim, d_model=D_MODEL,
+                         ctx_dim=D_MODEL,
+                         move_cell_dim=self.pointer_move_cell_dim,
+                         switch_cell_dim=self.pointer_switch_cell_dim)
+            if self.q_winprob_mode != "none" else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

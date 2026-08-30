@@ -153,7 +153,22 @@ from typing import Any, Dict
 #   `check_reward_config`, excluded from the weight-shape check, no ARCH_SIGNATURE bump. A pre-v106
 #   config defaults BOTH to False — not a guess: the flags did not exist, so no run can have used
 #   them, and False reproduces the behaviour every generation through gen-15 trained under.
-MODEL_CONFIG_VERSION = 106
+# v107 (gen3_q_winprob_head_v1; ai_v12 E5 — ledger 229e9f1 / 5edbd05): `q_winprob_mode` plus its
+#   two coefficients `q_winprob_coef` / `q_winprob_onpolicy_coef`. The MODE is STRUCTURAL in the
+#   `win_prob_mode` mould: 'none' builds nothing (byte-for-byte the baseline), 'read_only' builds
+#   a `QWinProbHead` whose params ARE the state_dict delta, and a string compare in
+#   check_compatible is the gate. It differs from `win_prob_mode` in exactly two ways, both
+#   deliberate. (1) There is NO 'shaping' value — every input is detached unconditionally, so no
+#   coefficient can make a per-action readout carrying a COUNTERFACTUAL label reshape the trunk;
+#   trunk exposure is a later decision that owes its own gate. (2) It reads the POINTER stash as
+#   well as `value_pooled`, which is why the module is built LAST in `__init__` (after every
+#   module that widens a pointer cell) and called at the END of the forward.
+#   NO ARCH_SIGNATURE bump: with the mode 'none' the forward is byte-identical, and with it on the
+#   only output is a stash — pi/vf are bit-identical either way. The two coefficients are
+#   TRAINING-only (the `cf_winprob_coef` class): recorded for provenance + flagless-resume
+#   read-back, never gated. A pre-v107 config defaults the mode to 'none' and both coefficients to
+#   0.0 — not a guess: none of the three existed, so that is what every such run ran with.
+MODEL_CONFIG_VERSION = 107
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
