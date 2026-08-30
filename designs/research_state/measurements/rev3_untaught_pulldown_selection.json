@@ -1,0 +1,25 @@
+{
+ "probe": "Q",
+ "registered_at": "2026-08-30",
+ "universe": "data/teams/sample/ (the curated 32 — the LEGAL exploiter universe per validate_exploiter_trainee_is_sample, and the space every taught team is drawn from)",
+ "why_this_universe": "The -5.9pp analogue was measured on the 3 rev-3 coverage teams, which are sample teams. Drawing the untaught set from the same universe keeps the comparison on one scale, gives published archetype+WR labels for stratification, and makes the exclusions exact (every taught team is a sample team).",
+ "excluded": {
+  "taught_union_12": "read at RUN time from the recorded --trainee-teams of F5a-e + F6a-f + F6CURR (never hand-copied); the probe HARD-FAILS if any pick is in it",
+  "coverage_picks": "the 3 rev-3 coverage teams are members of the taught union above, so they are excluded by it",
+  "rejected_original_coverage_picks": "NOT RECORDED anywhere in the tree (ledger 61608ac describes the GIGO but does not name the originals). They were rejected BY the curated-32 constraint, i.e. they were NOT sample teams — so drawing exclusively from sample/ excludes them by construction.",
+  "held_out_2": "the two held-out teams' ids are likewise unrecorded; the rev-2 capstone calls them 'pool teams', i.e. presumptively non-sample. Residual risk accepted and stated: a coincidence would not corrupt the measurement (a held-out team is untaught either way), it would only mean one row doubles as the narrowness instrument.",
+  "prior_era_exploiter_coverage": "every pick below is ALSO uncovered by the E1-E4 substrate exploiters (exploiter_coverage_board.md 'covered by' column = none), so 'never taught' holds across eras, not just across the R2/R3 fleets."
+ },
+ "stratification": "archetype class x pool win-rate spread. Pool WR is the self-play slice of team_win_rates from models/ai_v9_21_gen17_pfspoff_0820/metadata.json as published in exploiter_coverage_board.md.",
+ "known_gap": "hyper_offense CANNOT be represented: all 4 hyper_offense sample teams (ZapDug, Jynx SO, Raikou Celebi, MixZap) are in the taught union. The untaught set is structurally balance/stall-heavy, and the fleet's taught set is offense-heavy. Quoted as a caveat on the pooled number.",
+ "teams": [
+  {"basename": "a04c29cf769e9a11", "sha": "a7406f6c97", "name": "Forretress Gengar Dug", "archetype": "balance", "pool_wr": 0.537, "tags": ["sand", "spikes", "spin", "spinblock", "phaze", "trap", "status_heavy", "wish", "boom", "choice"]},
+  {"basename": "9283210847f806ee", "sha": "55ff6899a2", "name": "Special Wall-less TSS (El clasico)", "archetype": "balance", "pool_wr": 0.736, "tags": ["sand", "spikes", "spinblock", "phaze", "status_heavy", "choice"]},
+  {"basename": "e11829f0561ef5a9", "sha": "3495ef83ef", "name": "MixMence Claydol TSS", "archetype": "balance", "pool_wr": 0.859, "tags": ["sand", "spikes", "spin", "phaze", "boom"]},
+  {"basename": "d4e74946b54f1a4b", "sha": "1c4e182530", "name": "Zapdos + AeroBi Spikes Offense", "archetype": "offense", "pool_wr": 0.740, "tags": ["sand", "spikes", "phaze", "choice"]},
+  {"basename": "9d5f845869e899ee", "sha": "564b9be3ae", "name": "Yama BandMence", "archetype": "semi_stall", "pool_wr": 0.877, "tags": ["spin", "phaze", "wish", "choice"]},
+  {"basename": "b89e1e37caa40e6a", "sha": "21022d30fb", "name": "SkarmMag + Aerodactyl TSS", "archetype": "stall", "pool_wr": 0.774, "tags": ["spikes", "phaze", "trap", "status_heavy", "choice"]},
+  {"basename": "8cdc78b2d46f0515", "sha": "6a49f096f0", "name": "Suicune + MiloDol (Vir5in)", "archetype": "stall", "pool_wr": 0.796, "tags": ["spikes", "spin", "phaze", "trap", "choice"]},
+  {"basename": "9909f2e98e981ccc", "sha": "324235812b", "name": "Zapdos MixMence Forre TSS", "archetype": "stall", "pool_wr": 0.799, "tags": ["sand", "spikes", "spin", "phaze", "status_heavy", "wish"]}
+ ]
+}

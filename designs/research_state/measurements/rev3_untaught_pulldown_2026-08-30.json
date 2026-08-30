@@ -1,0 +1,544 @@
+{
+ "probe": "Q",
+ "generated_at": "2026-08-29T22:26:05",
+ "acid": {
+  "pairwise_max_abs_dp": {
+   "R3ACTION|R2ACTION": 0.005893407855182886,
+   "R3ACTION|REV1": 0.018904253840446472,
+   "R2ACTION|REV1": 0.023451894521713257
+  },
+  "pairwise_param_l2": {
+   "R3ACTION|R2ACTION": 51.83542866673968,
+   "R3ACTION|REV1": 47.1140035132055,
+   "R2ACTION|REV1": 16.548322962652072
+  },
+  "all_distinct": true,
+  "fn_lineage_order_child_nearer_parent": true,
+  "param_lineage_order_child_nearer_parent": false,
+  "obs_dim": 2501
+ },
+ "n_per_cell": 200,
+ "impl": "rust",
+ "ref_opponent": "REV1",
+ "taught_union": [
+  "023a2d47648b85e6",
+  "460b8c99ee366f6c",
+  "63eda9d8d491d6a4",
+  "7036a0a1dcb59a19",
+  "710d8d529538ff90",
+  "82e97fe2bfbb6f69",
+  "8e768980fc8f3b5f",
+  "9eb3abdc52876a63",
+  "e0d97b0ed592889d",
+  "e541f7be8713393c",
+  "eccfe630ec08de27",
+  "f5a4f4f0f5dc49ce"
+ ],
+ "selection": {
+  "probe": "Q",
+  "registered_at": "2026-08-30",
+  "universe": "data/teams/sample/ (the curated 32 \u2014 the LEGAL exploiter universe per validate_exploiter_trainee_is_sample, and the space every taught team is drawn from)",
+  "why_this_universe": "The -5.9pp analogue was measured on the 3 rev-3 coverage teams, which are sample teams. Drawing the untaught set from the same universe keeps the comparison on one scale, gives published archetype+WR labels for stratification, and makes the exclusions exact (every taught team is a sample team).",
+  "excluded": {
+   "taught_union_12": "read at RUN time from the recorded --trainee-teams of F5a-e + F6a-f + F6CURR (never hand-copied); the probe HARD-FAILS if any pick is in it",
+   "coverage_picks": "the 3 rev-3 coverage teams are members of the taught union above, so they are excluded by it",
+   "rejected_original_coverage_picks": "NOT RECORDED anywhere in the tree (ledger 61608ac describes the GIGO but does not name the originals). They were rejected BY the curated-32 constraint, i.e. they were NOT sample teams \u2014 so drawing exclusively from sample/ excludes them by construction.",
+   "held_out_2": "the two held-out teams' ids are likewise unrecorded; the rev-2 capstone calls them 'pool teams', i.e. presumptively non-sample. Residual risk accepted and stated: a coincidence would not corrupt the measurement (a held-out team is untaught either way), it would only mean one row doubles as the narrowness instrument.",
+   "prior_era_exploiter_coverage": "every pick below is ALSO uncovered by the E1-E4 substrate exploiters (exploiter_coverage_board.md 'covered by' column = none), so 'never taught' holds across eras, not just across the R2/R3 fleets."
+  },
+  "stratification": "archetype class x pool win-rate spread. Pool WR is the self-play slice of team_win_rates from models/ai_v9_21_gen17_pfspoff_0820/metadata.json as published in exploiter_coverage_board.md.",
+  "known_gap": "hyper_offense CANNOT be represented: all 4 hyper_offense sample teams (ZapDug, Jynx SO, Raikou Celebi, MixZap) are in the taught union. The untaught set is structurally balance/stall-heavy, and the fleet's taught set is offense-heavy. Quoted as a caveat on the pooled number.",
+  "teams": [
+   {
+    "basename": "a04c29cf769e9a11",
+    "sha": "a7406f6c97",
+    "name": "Forretress Gengar Dug",
+    "archetype": "balance",
+    "pool_wr": 0.537,
+    "tags": [
+     "sand",
+     "spikes",
+     "spin",
+     "spinblock",
+     "phaze",
+     "trap",
+     "status_heavy",
+     "wish",
+     "boom",
+     "choice"
+    ]
+   },
+   {
+    "basename": "9283210847f806ee",
+    "sha": "55ff6899a2",
+    "name": "Special Wall-less TSS (El clasico)",
+    "archetype": "balance",
+    "pool_wr": 0.736,
+    "tags": [
+     "sand",
+     "spikes",
+     "spinblock",
+     "phaze",
+     "status_heavy",
+     "choice"
+    ]
+   },
+   {
+    "basename": "e11829f0561ef5a9",
+    "sha": "3495ef83ef",
+    "name": "MixMence Claydol TSS",
+    "archetype": "balance",
+    "pool_wr": 0.859,
+    "tags": [
+     "sand",
+     "spikes",
+     "spin",
+     "phaze",
+     "boom"
+    ]
+   },
+   {
+    "basename": "d4e74946b54f1a4b",
+    "sha": "1c4e182530",
+    "name": "Zapdos + AeroBi Spikes Offense",
+    "archetype": "offense",
+    "pool_wr": 0.74,
+    "tags": [
+     "sand",
+     "spikes",
+     "phaze",
+     "choice"
+    ]
+   },
+   {
+    "basename": "9d5f845869e899ee",
+    "sha": "564b9be3ae",
+    "name": "Yama BandMence",
+    "archetype": "semi_stall",
+    "pool_wr": 0.877,
+    "tags": [
+     "spin",
+     "phaze",
+     "wish",
+     "choice"
+    ]
+   },
+   {
+    "basename": "b89e1e37caa40e6a",
+    "sha": "21022d30fb",
+    "name": "SkarmMag + Aerodactyl TSS",
+    "archetype": "stall",
+    "pool_wr": 0.774,
+    "tags": [
+     "spikes",
+     "phaze",
+     "trap",
+     "status_heavy",
+     "choice"
+    ]
+   },
+   {
+    "basename": "8cdc78b2d46f0515",
+    "sha": "6a49f096f0",
+    "name": "Suicune + MiloDol (Vir5in)",
+    "archetype": "stall",
+    "pool_wr": 0.796,
+    "tags": [
+     "spikes",
+     "spin",
+     "phaze",
+     "trap",
+     "choice"
+    ]
+   },
+   {
+    "basename": "9909f2e98e981ccc",
+    "sha": "324235812b",
+    "name": "Zapdos MixMence Forre TSS",
+    "archetype": "stall",
+    "pool_wr": 0.799,
+    "tags": [
+     "sand",
+     "spikes",
+     "spin",
+     "phaze",
+     "status_heavy",
+     "wish"
+    ]
+   }
+  ]
+ },
+ "per_team": [
+  {
+   "team": "a04c29cf769e9a11",
+   "archetype": "balance",
+   "tags": [
+    "sand",
+    "spikes",
+    "spin",
+    "spinblock",
+    "phaze",
+    "trap",
+    "status_heavy",
+    "wish",
+    "boom",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.425,
+   "wr_R2ACTION": 0.405,
+   "A_minus_B": {
+    "mean": 0.02,
+    "lo": -0.06672394138904347,
+    "hi": 0.10672394138904348,
+    "z": 0.4520089766694166,
+    "n": 200
+   },
+   "wr_REV1": 0.515,
+   "A_minus_C": {
+    "mean": -0.09,
+    "lo": -0.18340082317005682,
+    "hi": 0.003400823170056827,
+    "z": -1.8886343183381247,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.11,
+    "lo": -0.19873733585064038,
+    "hi": -0.021262664149359622,
+    "z": -2.4296424716073344,
+    "n": 200
+   }
+  },
+  {
+   "team": "9283210847f806ee",
+   "archetype": "balance",
+   "tags": [
+    "sand",
+    "spikes",
+    "spinblock",
+    "phaze",
+    "status_heavy",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.49,
+   "wr_R2ACTION": 0.535,
+   "A_minus_B": {
+    "mean": -0.045,
+    "lo": -0.13851185021511053,
+    "hi": 0.04851185021511052,
+    "z": -0.9431959671112123,
+    "n": 200
+   },
+   "wr_REV1": 0.55,
+   "A_minus_C": {
+    "mean": -0.06,
+    "lo": -0.15488745621384137,
+    "hi": 0.034887456213841386,
+    "z": -1.2393629747537218,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.015,
+    "lo": -0.10555428533738659,
+    "hi": 0.07555428533738659,
+    "z": -0.3246671307764361,
+    "n": 200
+   }
+  },
+  {
+   "team": "e11829f0561ef5a9",
+   "archetype": "balance",
+   "tags": [
+    "sand",
+    "spikes",
+    "spin",
+    "phaze",
+    "boom"
+   ],
+   "wr_R3ACTION": 0.41,
+   "wr_R2ACTION": 0.49,
+   "A_minus_B": {
+    "mean": -0.08,
+    "lo": -0.169355193205341,
+    "hi": 0.009355193205341006,
+    "z": -1.7547944822822859,
+    "n": 200
+   },
+   "wr_REV1": 0.545,
+   "A_minus_C": {
+    "mean": -0.135,
+    "lo": -0.2257672167590863,
+    "hi": -0.04423278324091372,
+    "z": -2.9151494278192915,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.055,
+    "lo": -0.14525533740255056,
+    "hi": 0.03525533740255055,
+    "z": -1.1943891973856124,
+    "n": 200
+   }
+  },
+  {
+   "team": "d4e74946b54f1a4b",
+   "archetype": "offense",
+   "tags": [
+    "sand",
+    "spikes",
+    "phaze",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.46,
+   "wr_R2ACTION": 0.44,
+   "A_minus_B": {
+    "mean": 0.02,
+    "lo": -0.07316283253977506,
+    "hi": 0.11316283253977506,
+    "z": 0.42076865775054556,
+    "n": 200
+   },
+   "wr_REV1": 0.555,
+   "A_minus_C": {
+    "mean": -0.095,
+    "lo": -0.18778649940784387,
+    "hi": -0.0022135005921561507,
+    "z": -2.0067574613582124,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.115,
+    "lo": -0.20838790448188452,
+    "hi": -0.021612095518115493,
+    "z": -2.4135887966489635,
+    "n": 200
+   }
+  },
+  {
+   "team": "9d5f845869e899ee",
+   "archetype": "semi_stall",
+   "tags": [
+    "spin",
+    "phaze",
+    "wish",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.505,
+   "wr_R2ACTION": 0.465,
+   "A_minus_B": {
+    "mean": 0.04,
+    "lo": -0.05610038302780301,
+    "hi": 0.136100383027803,
+    "z": 0.815813605834619,
+    "n": 200
+   },
+   "wr_REV1": 0.605,
+   "A_minus_C": {
+    "mean": -0.1,
+    "lo": -0.18896546673488981,
+    "hi": -0.011034533265110197,
+    "z": -2.203102025913772,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.14,
+    "lo": -0.22681293468222752,
+    "hi": -0.053187065317772494,
+    "z": -3.160819306528704,
+    "n": 200
+   }
+  },
+  {
+   "team": "b89e1e37caa40e6a",
+   "archetype": "stall",
+   "tags": [
+    "spikes",
+    "phaze",
+    "trap",
+    "status_heavy",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.615,
+   "wr_R2ACTION": 0.62,
+   "A_minus_B": {
+    "mean": -0.005,
+    "lo": -0.09557560100538906,
+    "hi": 0.08557560100538905,
+    "z": -0.10819690834198185,
+    "n": 200
+   },
+   "wr_REV1": 0.605,
+   "A_minus_C": {
+    "mean": 0.01,
+    "lo": -0.07786283965912337,
+    "hi": 0.09786283965912336,
+    "z": 0.22307496634573892,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": 0.015,
+    "lo": -0.07555428533738658,
+    "hi": 0.10555428533738657,
+    "z": 0.3246671307764361,
+    "n": 200
+   }
+  },
+  {
+   "team": "8cdc78b2d46f0515",
+   "archetype": "stall",
+   "tags": [
+    "spikes",
+    "spin",
+    "phaze",
+    "trap",
+    "choice"
+   ],
+   "wr_R3ACTION": 0.545,
+   "wr_R2ACTION": 0.47,
+   "A_minus_B": {
+    "mean": 0.075,
+    "lo": -0.007125011950925755,
+    "hi": 0.15712501195092576,
+    "z": 1.789954077423339,
+    "n": 200
+   },
+   "wr_REV1": 0.575,
+   "A_minus_C": {
+    "mean": -0.03,
+    "lo": -0.11777491085084833,
+    "hi": 0.057774910850848335,
+    "z": -0.6698952973010249,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.105,
+    "lo": -0.19546897244290096,
+    "hi": -0.014531027557099035,
+    "z": -2.274813059581169,
+    "n": 200
+   }
+  },
+  {
+   "team": "9909f2e98e981ccc",
+   "archetype": "stall",
+   "tags": [
+    "sand",
+    "spikes",
+    "spin",
+    "phaze",
+    "status_heavy",
+    "wish"
+   ],
+   "wr_R3ACTION": 0.47,
+   "wr_R2ACTION": 0.555,
+   "A_minus_B": {
+    "mean": -0.085,
+    "lo": -0.1748050496056506,
+    "hi": 0.004805049605650591,
+    "z": -1.8551295359400082,
+    "n": 200
+   },
+   "wr_REV1": 0.595,
+   "A_minus_C": {
+    "mean": -0.125,
+    "lo": -0.20594116605170104,
+    "hi": -0.044058833948298945,
+    "z": -3.026889924510188,
+    "n": 200
+   },
+   "B_minus_C": {
+    "mean": -0.04,
+    "lo": -0.12769790082462193,
+    "hi": 0.04769790082462192,
+    "z": -0.8939780686060451,
+    "n": 200
+   }
+  }
+ ],
+ "pooled": {
+  "A_minus_B": {
+   "mean": -0.0075,
+   "lo": -0.045625,
+   "hi": 0.03,
+   "z": -0.3928159736837824,
+   "n_teams": 8
+  },
+  "A_minus_C": {
+   "mean": -0.078125,
+   "lo": -0.108125,
+   "hi": -0.044375,
+   "z": -4.784553705275502,
+   "n_teams": 8
+  },
+  "B_minus_C": {
+   "mean": -0.07062500000000001,
+   "lo": -0.10500000000000001,
+   "hi": -0.03375,
+   "z": -3.85963418580687,
+   "n_teams": 8
+  },
+  "mean_wr": {
+   "R3ACTION": 0.49000000000000005,
+   "R2ACTION": 0.4975,
+   "REV1": 0.568125
+  },
+  "increment_delta_AB_minus_BC": {
+   "mean": 0.06312500000000001,
+   "lo": -0.004999999999999999,
+   "hi": 0.12937500000000002,
+   "z": 1.8760996807839632,
+   "n_teams": 8
+  }
+ },
+ "wall_s": 5.025068998336792,
+ "pairing": {
+  "mean_per_battle_outcome_corr_A_B": 0.14192921749702397,
+  "note": "paired (team, opponent-team, sim-seed) triples; greedy trajectories still diverge after ply 1, so the correlation is modest \u2014 the pairing removes the team-draw and opening-dice terms, not the whole variance"
+ },
+ "p3_row": {
+  "axis_share_is_degenerate": true,
+  "points": [
+   {
+    "revolution": "rev-2 (ai_v9_59 R2-ACTION)",
+    "teachers": 5,
+    "teams_per_teacher": 2,
+    "distinct_taught": 9,
+    "bias": 0.4,
+    "share_taken_from_untaught": 0.395,
+    "own_untaught_pulldown_pp": -7.06,
+    "ci_pp": [
+     -10.56,
+     -3.5
+    ],
+    "source": "THIS probe, 8 never-taught teams",
+    "registered_reference_pp": -5.9,
+    "reference_source": "ledger ade78c1, 3 coverage teams, training-session meter"
+   },
+   {
+    "revolution": "rev-3 (ai_v9_70 R3-ACTION)",
+    "teachers": 6,
+    "teams_per_teacher": 2,
+    "distinct_taught": 12,
+    "bias": 0.4,
+    "share_taken_from_untaught": 0.3933,
+    "own_untaught_pulldown_pp": -0.75,
+    "ci_pp": [
+     -4.56,
+     3.0
+    ],
+    "source": "THIS probe"
+   },
+   {
+    "revolution": "v8 (ai_v8_14 distill3)",
+    "teachers": 3,
+    "teams_per_teacher": 7.67,
+    "distinct_taught": 23,
+    "bias": 0.4,
+    "share_taken_from_untaught": 0.3872,
+    "own_untaught_pulldown_pp": 10.4,
+    "ci_pp": null,
+    "source": "PROBE P INTERIM (ledger 91d5125) \u2014 cited, never re-measured here"
+   }
+  ]
+ }
+}
