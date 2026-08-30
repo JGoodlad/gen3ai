@@ -7086,3 +7086,29 @@ buys nothing**, confirming the fuzz rule's "random.seed(k) is NOT enough" at the
 Three benchmarks were seeding ONE stream across four drawers (now four derived seeds); two
 documented-not-fixed (`aux_terms`, teacher buffer). 47 tests incl. a revert arm on the real
 pre-fix path; routine 8160 green; obs-golden hashes unchanged.
+
+### ⚖️ PROBE Q SCORED — the frozen table's rev-3 row FAILS; the treadmill is SHARPENED, not refuted (2026-08-30)
+
+**On main (from `4aaea6f`) — record `measurements/rev3_untaught_pulldown_2026-08-30.{md,json}`,
+4,800 paired battles, 8 untaught teams × 200, no optional stopping.** Scored against the
+frozen v8 narrative table (`91d5125`): **the "probe Q ≈ −4..−6pp" row FAILS — H3 (≈0)
+selected: rev-3's own one-hop pull-down is −0.75pp [−4.56, +3.00], z=−0.39.** Not a power
+failure: the SAME instrument on the SAME battles reads rev-2's one-hop at **−7.06pp
+[−10.56, −3.50], z=−3.86 — an independent REPLICATION of the registered −5.9pp** (different
+team set, different harness). Two-hop A−C = −7.81pp: rev-3 did NOT repair rev-2's damage on
+these teams — its celebrated +6pp repair landed on the 3 coverage teams it then TAUGHT.
+**Repair follows coverage; it does not radiate.** Named broken link: *narrow-fleet ⇒ robbery*
+— rev-3 is as narrow as rev-2 at an IDENTICAL untaught share (0.393 vs 0.395) and did not
+rob. **The leading alternative, stated not buried: R2-ACTION's mean WR on this set is 0.4975
+≈ the floor — "rev-3 stopped robbing" and "nothing left to rob on this set" predict the same
+number; rev-4's coverage-class teams are the discriminator and must pre-register it.** Also:
+**P3's registered x-axis is DEGENERATE** — all three folds ran bias 0.4 with K≪719, so
+share-from-untaught spans 0.8pp against ~18pp of y; "≈linear in share" is UNIDENTIFIABLE, and
+on the axis that varies (teams/teacher) the two narrow points disagree by +6.3pp, so breadth
+alone does not order the row. Per-team span ±8pp around zero — the fold RESHUFFLES untaught
+competence even where it nets nothing. Bonus (anchoring account): R3-ACTION sits FARTHER from
+its parent R2-ACTION (param L2 51.8) than from grandparent rev-1 (47.1), while R2 is only
+16.5 from rev-1 — part of rev-3's motion was BACK TOWARD rev-1. Honest gaps: the original
+rejected coverage picks and the 2 held-out teams are UNRECORDED anywhere in the tree
+(held-out risk accepted, untaught either way); hyper_offense unrepresentable (all 4 taught);
+8 teams not 10 (budget at load ~31). Pairing efficacy measured: r=0.142.
