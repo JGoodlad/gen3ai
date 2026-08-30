@@ -6762,3 +6762,27 @@ P1-no-regression + P2-signature ⇒ rev-4/40-team designs ADD adaptive team-PFSP
 repair-aware bias) to the fold — the missing ingredient named; P1-regression ⇒ redistribution
 is intrinsic and COVERAGE alone is the lever (the owner's "most obvious lever" reading
 confirmed).
+
+### 🟢 WAVE B LANDED (cd092c4) — the harvest/factory pipeline complete; the pilot's FAILURE is the finding; THE BUILD WAVE IS DONE 5/5 (2026-08-30)
+
+`main.harvest` → `winprob_finetune` → `harvest_meter`, schema pinned + validated on every write
+AND read, artifacts to a proper `harvest_dir()` seam (never models/). Supply census: 54,487
+labelable decisions / 1,404 battles, 100% reconstruction coverage — no fresh self-play needed.
+**The pilot's real result: naive fine-tuning REGRESSED, and only the untouched LONG-WIN control
+caught it** — P1's labels were excellent AND FOR THE WRONG STATES (fit set turns 60–152; 29.3%
+of eval turns beyond its max): **a label factory that never samples the region its meter scores
+is extrapolating**, and every doomed-tail metric alone read ambiguously. Damage scaled with the
+fit-set mean offset across two independent runs (selection bias convicted, not a
+hyperparameter) ⇒ `--anchor-coef` defaults ON because 0.0 was MEASURED destructive; the tail
+stratum + anchor makes the pipeline non-destructive (control ±0). **Reducibility is NOT yet
+answered — and the blocker is quantified: the rust `forcelose` gap (the #37 finding)** — cap
+records carry no terminal pre-2026-08-24 (0/40 before the fix, 8/8 after; 8 of 48 current-arch
+cap battles replayable, n=3 held-out caps). Scarcity is TRANSIENT: every post-fix trace carries
+the terminal, so the rev-4/verdict batteries supply the data by existing. The agent deliberately
+did NOT synthesize the missing forfeits — correct call. Process honesty: a brief
+two-harvests-one-dir collision, killed by PID per the standing rule, ~4 min lost, no corrupt
+output. 84 new tests; fast tier 7,707 + sim 65 + gates green. **THE AI_V12 BUILD WAVE IS
+COMPLETE: A(config v105) + B(factory) + C(Q-head v107) + D(fixes v106) + E(instruments) all on
+main, all dormant — the fdd2934 gap list is CLOSED except the measurement-gated rungs (gated
+readout/SwiGLU) and the q_labels producer extension.** The era's remaining critical path:
+verdicts + the 5M sparse pre-test + post-fix cap-trace accumulation for the reducibility read.
