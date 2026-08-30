@@ -6846,3 +6846,21 @@ their entry refs; the new programs and instruments indexed); append-only discipl
 search-replay chunk-transport double-encode (active-mismatch warnings + the mojibake KeyError
 on non-ASCII nicknames) — a queued real defect in the replay path, now load-bearing again
 since the search program leans on reconstruction. Nine agents live total; all ≤2 cores niced.
+
+### 🟢 S3 LANDED (4602136) — the mutable views synced to the week's ledger; six contradictions resolved, ledger winning each (2026-08-30)
+
+README rebuilt (append-only record vs mutable views separated; the seven-section
+"where the programme is NOW"; the FIVE DEFECT GENRES as a first-class table + two method
+lessons; frontier rows updated); seven new lever files in the template shape;
+measurements/README admits partial coverage honestly rather than implying completeness.
+**The six view-vs-ledger contradictions, resolved:** (1) `hidden_team_belief` claimed "BUILT,
+NOT RUN" while LIVE in production at 0.05 — and no ledger entry ever retired the claim: a
+clean specimen of HOW views go stale (nothing kills the old sentence when reality moves);
+(2) under-switching's prescribed fix superseded by the probes-M/N reward cause + the free
+causal arm; (3) the stall-tail row updated to probe O's 81→22% + the conditional 35%, with
+the 14×-over-exposure figure re-scoped to the heal-war states the head reads RIGHT; (4) the
+substrate-before-flywheel sequencing discharged (shipped, ran); (5) decision-time-search's
+"ruled out" now carries its evidence (stopped losing, dividend zero, τ=0.17); (6)
+de-amortization's "RESOLVED at N≤10" amended — N=2 sat below the tested range, the shape call
+is rev-4's. Deliberately NOT done: backfilling ~44 older measurement index rows — the index
+says partial instead of lying complete.
