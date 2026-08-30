@@ -950,6 +950,9 @@ class SearchEngine:
         username = ctx.record.username(ctx.side)
         branches: List[Branch] = []
         branch_of: List[int] = []
+        #: label -> the cumulative root→child chunks, so the scored child carries what its own
+        #: materialization used rather than re-deriving it a second time.
+        child_chunks: Dict[int, Tuple[str, ...]] = {}
         n_terminal = 0
         n_scored = 0
         for e in expanded:
@@ -964,10 +967,16 @@ class SearchEngine:
                 n_terminal += 1
                 n_scored += 1
                 continue
+            # 🚨 CUMULATIVE, not this ply's suffix. `expand_many` returns the arm's OWN turn only,
+            # so a branch's chunks must be every ply from the root — exactly the plies its
+            # `actions` names. Passing the bare suffix at ply >= 2 replays `prefix` + ply-d with
+            # plies 1..d-1 missing (see `TreeNode.chunks`).
             suffix = e.p1_chunks if ctx.side == "p1" else e.p2_chunks
-            branches.append(Branch(chunks=suffix,
+            chunks = list(parent.chunks) + list(suffix)
+            branches.append(Branch(chunks=chunks,
                                    actions=list(parent.path) + [acts[li]], label=li))
             branch_of.append(li)
+            child_chunks[li] = tuple(chunks)
 
         score_mode = self.cfg.effective_score()
         if branches:
@@ -1004,8 +1013,9 @@ class SearchEngine:
                     parent.add_child(
                         acts[li], weights[li],
                         TreeNode(node_id=e.node_id, ended=False, value=float(v),
-                                 our_tokens=tokens,
-                                 requests=e.requests, path=parent.path + (acts[li],)))
+                                 our_tokens=tokens, requests=e.requests,
+                                 path=parent.path + (acts[li],),
+                                 chunks=child_chunks[li]))
                     n_scored += 1
         widths.arms_scored += n_scored
         if deep:

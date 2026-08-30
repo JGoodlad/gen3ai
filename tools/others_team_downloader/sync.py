@@ -99,6 +99,15 @@ def sync_dump(urls: List[str], output_dir: str, format_id: str = "gen3ou", valid
             print(f"Error fetching dump: {e}")
             continue
         
+        # 🚨 requests falls back to ISO-8859-1 for a text/* response with no charset (RFC 2616),
+        # so `res.text` on a UTF-8 paste decodes `é` as `Ã©` — and the file is then WRITTEN back as
+        # UTF-8, baking the mojibake in permanently. That is not hypothetical: the committed
+        # `data/teams/others/mcmegan/*.txt` hold `PtÃ©ra` where `Ptéra` was meant, which surfaced
+        # years later as a `KeyError: 'ptãra'` in a search replay and was chased as a transport
+        # bug (`gen3_search_depth2_chunk_gap_v1`). A pastebin raw dump is UTF-8; say so.
+        res.encoding = res.encoding or "utf-8"
+        if (res.encoding or "").lower() in ("iso-8859-1", "latin-1", "latin1"):
+            res.encoding = res.apparent_encoding or "utf-8"
         content = res.text
         
         pattern = r"===\s*(?:\[(.*?)\])?\s*(.*?)\s*===\s*\n(.*?)(?=\n===\s*(?:\[.*?\])?\s*.*?\s*===|$)"

@@ -232,6 +232,26 @@ defense-in-depth (loud warning if a manifest references a file twice). Guards:
 changed team pool is a **data-distribution change** (training *and* eval) — land it at a clean
 retrain boundary, never mid-A/B.
 
+### 🚨 Both downloaders NAME their encodings, and the committed data already carries a mojibake
+
+`requests` falls back to **ISO-8859-1** for a `text/*` response with no `charset` (RFC 2616), so
+`res.text` on a UTF-8 PokePaste turns `é` into `Ã©` — and the file is then written back as UTF-8,
+baking it in. `data/teams/others/mcmegan/*.txt` hold the bytes of `PtÃ©ra` where `Ptéra` was meant,
+and that nickname surfaced years later as a `KeyError: 'ptãra'` inside a depth-2 search replay,
+where it was filed as a *chunk-transport double-encode* and chased in the wrong subsystem entirely
+(the real defect was a missing ply — `gen3_search_depth2_chunk_gap_v1` in `designs/CHANGELOG.md`).
+Both syncs now override an ISO-8859-1 guess with `apparent_encoding` and write with an explicit
+`encoding="utf-8"` (a bare `open(..., 'w')` used the LOCALE encoding, so the same download was not
+even reproducible across machines).
+
+**The already-committed bytes are deliberately NOT rewritten.** A team file is hashed into
+`pin_sha` (`MatchupSpec`) and keys `data/teams/gen3_team_archetypes.json`, and the downloaders key
+`teams.json` by `sha256(team_text)` — so "fixing" a nickname re-ids the team, orphans its archetype
+label and breaks every provenance record that named it. A nickname is cosmetic to the model (the
+obs never reads one), so the correction belongs at the next deliberate pool boundary, not as a
+tidy-up. `src/main/search_dividend/depth2_replay_integration_test.py` pins the current bytes so a
+re-sync that changes them is a visible event rather than a silent re-id.
+
 ## Reproducibility is tested
 
 `src/agents/gen3_data/extractor_parity_test.py` re-runs the builders and asserts they reproduce

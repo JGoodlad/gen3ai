@@ -98,7 +98,10 @@ async function openRoot(req) {
 }
 
 // Resolve ONE arm: clone the parent node, apply the joint turn, serialize the
-// child. Returns the child's FULL one-sided chunks + outcome + open requests.
+// child. Returns THIS PLY's one-sided chunks (a suffix — see the baseline slice
+// below) + outcome + open requests. A caller deepening past one ply must
+// accumulate them; the driver cannot, because it never re-emits the historical
+// |request| lines a materializer needs.
 async function expandArm(arm) {
   const node = NODES.get(arm.node_id);
   if (!node) throw new Error(`unknown node ${arm.node_id}`);

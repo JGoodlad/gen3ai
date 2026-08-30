@@ -6861,3 +6861,64 @@ contract with a live consumer). `load_obs` is the one resolver both sides call a
 and neither running the other's real output. A timed-out rollout is its own bucket, excluded from
 numerator and denominator alike. Artifacts land under `utils.paths.harvest_dir()` (gitignored,
 `$GEN3AI_HARVEST_DIR` overrides), never inside `models/`.
+
+## `gen3_search_depth2_chunk_gap_v1` (2026-08-29): the depth-≥2 search replay was fed a protocol with a HOLE in it — and the "chunk-transport double-encode" was never a transport bug
+
+Task #38, filed off the first live depth-≥2 run (2026-08-23) as "chunk-transport double-encode —
+active-mismatch warnings + a mojibake `KeyError` on non-ASCII nicknames". Both symptoms are ONE
+defect, it is in the Python composition rather than the transport, and the encoding half is a red
+herring that a fixed test now pins so the next reader does not re-derive it.
+
+**The defect.** `SearchSession.expand_many` returns the arm's OWN ply — `search_driver.js` slices
+`sess.chunks` at a per-expand baseline, because a deserialized battle cannot re-emit the historical
+`|request|` lines a materializer needs, so composing the replayable protocol is deliberately the
+caller's job. `ExpandedNode`'s docstring said the opposite ("the COMPLETE one-sided view, root →
+this node"), and `main.search_dividend.search._expand_ply` believed it: it passed that bare suffix
+as `Branch.chunks` alongside an `actions` list spanning the whole path. A depth-`d` successor was
+therefore replayed as `prefix` (ending at the ROOT request) followed by ply `d`, with plies
+`1..d-1` missing. **At depth 1 the two readings coincide**, which is exactly why nothing caught it
+for as long as depth 1 was all that ran — and why every existing gate was green: the two callers
+that DO deepen, `main.prober.better_line` (`our_suffixes=parent.our_suffixes + [...]`) and
+`search_clone_parity_fuzz_test` check 3 (`suffix2 = ext.chunks + d2.chunks`), both accumulate
+correctly, so the contract was right everywhere except in the one place the docstring was read.
+
+**A hole is a different battle, not a coarser one.** poke-env keeps applying protocol lines to the
+board it last saw, so the two reported symptoms follow mechanically:
+
+* a switch inside the gap ⇒ every later reference logs `"Message thinks p1: X is active, but it's
+  not"` (measured on a seeded 2-ply fixture: **6 warnings** for the bare-suffix composition, **0**
+  for the cumulative one, and one decision fewer);
+* an opponent REVEAL inside the gap ⇒ the `|switch|` carrying the species never arrives, so a later
+  `|move|p2a: <nick>|…` reaches `get_pokemon` with no `details` and it constructs a Pokémon whose
+  *species* is the NICKNAME ⇒ `KeyError: to_id_str(nickname)`.
+
+**The mojibake is in the TEAM FILE, not the transport, and the KeyError does not need it.**
+`'ptãra'` is `to_id_str("PtÃ©ra")`, and `data/teams/others/mcmegan/*.txt` literally hold the bytes
+`c3 83 c2 a9` where `Ptéra` was meant — a double-encode committed at ACQUISITION time, carried
+faithfully by every layer above (verified on both impls). On the same fixture `'airmure'` and
+`'tyranocif'` raise identically; the only slot that SURVIVED the gap was the one whose nickname
+equals its species (`Jirachi`). So the non-ASCII teams were merely the ones that crashed loudly.
+The team bytes are deliberately **left alone** — team files are hashed into `pin_sha` and into
+`gen3_team_archetypes.json`, so rewriting one is not a cosmetic edit — and the fact is pinned by a
+test instead.
+
+**The fix** is the accumulation the contract always wanted: `TreeNode` gains `chunks`, the
+root→node protocol grown one ply at a time on the same line as `path`, and `_expand_ply` composes
+`parent.chunks + suffix`. `ExpandedNode` / the `SearchSession` header / `search_driver.js`'s
+`expandArm` comment now all state the suffix contract (the driver code is untouched — the JS diff
+is comments only, so node↔rust driver parity is unchanged by construction).
+
+**Gates.** `search_test.py::test_a_deepened_branch_carries_EVERY_ply_from_the_root_not_just_its_own`
+(no sim; VERIFIED failing on revert) plus a depth-3 companion asserting the standing invariant —
+one chunk group per action, in order. `depth2_replay_integration_test.py` (`sim`, ONE battle,
+3.5 s) is the semantics end to end over BOTH impls: it picks a nicknamed benched opponent from the
+request rather than hardcoding a slot, asserts ply 1 reveals it, asserts the driver's contract is
+still per-ply (so a future cumulative driver turns the Python accumulation into a visible
+double-count rather than a silent one), and asserts the cumulative composition replays with zero
+warnings while the shipped one raises `KeyError: <nickname>`.
+
+⚠️ **The first live depth-≥2 readings (2026-08-23) were taken under this defect** — deepening
+engaged as designed (18-20 of ~23 searched decisions, realized depth 3, mean 1.83-2.11) but every
+deepened arm was scored on a holed replay or dropped, so those numbers are void. At the DEFAULT
+width caps none of this ever reached the shipped sweep: width absorbs the whole budget at every
+swept budget, so the sweep ran at depth 1.

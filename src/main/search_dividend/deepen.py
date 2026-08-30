@@ -37,27 +37,36 @@ decision reported depth 1. **The lever that buys depth is therefore ``--max-opp`
 exactly the width-versus-depth trade the sweep exists to price. Reporting the realized depth is
 what makes that visible instead of leaving ``--max-depth 3`` reading like a promise.
 
-🚨 **DEPTH ≥ 2 IS BUILT AND GATED BUT NOT YET TRUSTWORTHY — do not quote a depth-2 number.**
-First live run, 2026-08-23 (oracle mirror, 3 s, ``--max-opp 2 --max-dice 1 --max-worlds 1``):
-deepening engages exactly as designed — 18-20 of ~23 searched decisions deepen, realized depth
-reaches 3, mean realized depth 1.83-2.11 — but the deeper successor REPLAY emits tens of thousands
-of poke-env ``"message thinks p1: X is active, but it's not"`` warnings, and on a pool team
-carrying a non-ASCII nickname (``data/teams/others/`` has them; the top level does not) it raises
-``KeyError: 'ptãra'`` — the mojibake of "Ptéra" — inside ``get_pokemon``. **The depth-1 arm
-produces exactly ZERO of either on the SAME game indices and the same pinned seeds**, so the
-deeper replay is what exposes it. Two things are known and one is not:
+**THE DEPTH-≥2 REPLAY DEFECT IS DIAGNOSED AND FIXED** (``gen3_search_depth2_chunk_gap_v1``). It
+was a CHUNK GAP, not the "chunk-transport double-encode" it was first filed as: ``expand_many``
+returns the arm's OWN ply, while :class:`TreeNode` handed the materializer that bare suffix
+alongside an ``actions`` list spanning the whole path — so at depth d the replay saw ``prefix``
+(ending at the root request) followed by ply d, with plies 1..d-1 missing. The symptoms both
+follow from the hole and both reproduce deterministically at depth 2 on BOTH driver impls
+(``depth2_replay_integration_test``; the composition arithmetic is pinned sim-free by
+``search_test.py::test_a_deepened_branch_carries_EVERY_ply_from_the_root_not_just_its_own``):
 
-* it FAILS SAFE — the exception is caught by :meth:`SearchEngine.choose` and recorded as a counted
-  ``search_error`` fallback, so a degraded decision is visible in the histogram rather than silently
-  scored, and the battle completes normally;
-* it is NOT the forced-switch case — :func:`~main.search_dividend.search.branchable` now applies
-  the root's own "clean move selection only" rule at every ply, and the warning volume did not
-  move, so that hypothesis is CLOSED rather than merely untried;
-* the double-encode point in the search-driver chunk transport is UNDIAGNOSED. Closing it is the
-  first job before any depth-≥2 reading is published.
+* a switch inside the gap ⇒ poke-env keeps applying lines to the board it last saw ⇒ tens of
+  thousands of ``"Message thinks p1: X is active, but it's not"``;
+* an opponent REVEAL inside the gap ⇒ a later reference reaches ``get_pokemon`` with no details
+  and constructs a Pokémon whose *species* is the NICKNAME ⇒ ``KeyError: 'ptãra'``. **The
+  non-ASCII part was a red herring**: ``'airmure'`` and ``'tyranocif'`` raise identically, and the
+  ``Ã©`` is a genuine double-encode that lives in the COMMITTED TEAM FILE
+  (``data/teams/others/mcmegan/*.txt`` hold the bytes of ``PtÃ©ra``), not in the transport, which
+  round-trips it faithfully on BOTH impls. Only a nickname that happens to equal its species
+  survived the gap, which is why the pool teams that carry one were the ones that crashed.
 
-At the DEFAULT width caps this caveat is inert: width absorbs the whole budget at every swept
-value, so the shipped sweep runs at depth 1 and is unaffected.
+The two things that were KNOWN stay true and are worth keeping: it FAILED SAFE (caught by
+:meth:`SearchEngine.choose`, counted as a ``search_error`` fallback, battle completes), and it was
+NOT the forced-switch case (:func:`~main.search_dividend.search.branchable` already applied the
+root's "clean move selection only" rule at every ply, and the warning volume did not move).
+
+⚠️ **The first live depth-≥2 run, 2026-08-23, was taken UNDER the defect — do not quote its
+numbers.** Deepening engaged as designed (18-20 of ~23 searched decisions deepened, realized depth
+reached 3, mean 1.83-2.11), but every deepened arm was scored on a holed replay or dropped.
+
+At the DEFAULT width caps all of this is inert: width absorbs the whole budget at every swept
+value, so the shipped sweep runs at depth 1 and was never affected.
 """
 
 from __future__ import annotations
@@ -93,6 +102,21 @@ class TreeNode:
     #: OUR action indices from the branch decision to here — the ``Branch.actions`` a deeper
     #: materialization needs, accumulated rather than re-derived.
     path: Tuple[int, ...] = ()
+    #: OUR-side protocol chunks from the ROOT to here, accumulated one ply at a time — the
+    #: ``Branch.chunks`` that go with ``path``.
+    #:
+    #: 🚨 THE DRIVER RETURNS ONE PLY, NOT THE PATH. ``expand_many`` hands back only the arm's own
+    #: turn (``search_driver.js`` slices at a per-expand baseline), so a node at depth d must carry
+    #: the d-1 plies before it or its materialization replays a protocol with a HOLE in it —
+    #: ``prefix`` (ends at the root request) followed by ply d's resolution, with plies 1..d-1
+    #: missing. That hole is not a degradation, it is a different battle: poke-env keeps applying
+    #: lines to the board it last saw, so a switch inside the gap yields
+    #: ``"Message thinks p1: X is active, but it's not"`` and an opponent REVEAL inside the gap
+    #: makes a later reference construct a Pokémon whose *species* is the nickname —
+    #: ``KeyError: 'ptãra'`` (``gen3_search_depth2_chunk_gap_v1``; it shipped because
+    #: ``ExpandedNode``'s docstring promised the accumulation the driver never did).
+    #: ``path`` and ``chunks`` must always describe the same plies; they grow on the same line.
+    chunks: Tuple[str, ...] = ()
     children: Dict[int, List[Tuple[float, "TreeNode"]]] = field(default_factory=dict)
 
     @property

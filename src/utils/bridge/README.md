@@ -623,6 +623,18 @@ requests via `getRequests`; PRNG continuity restored from the live counter), at 
 - **`search_session.py`** (`SearchSession`) — the Python wrapper: one process per `better_line` call
   (context-managed), a synchronous request→one-line-response protocol over a background-drained queue
   (a wedged child fails ONE call, never hangs the prober). `open_root` / `expand_many` / `close`.
+
+🚨 **A DEEPENING caller must ACCUMULATE the per-ply suffixes; `expand_many` will not do it.** The
+composition is `root-prefix + ply₁ + … + ply_d` — the same plies the branch's `actions` list names.
+`ExpandedNode`'s docstring used to promise "the COMPLETE one-sided view, root → this node" and the
+search-dividend deepener believed it, so a depth-`d` successor was replayed as `prefix` + ply `d`
+with plies `1..d-1` MISSING (`gen3_search_depth2_chunk_gap_v1`). **At depth 1 the two readings
+coincide**, which is why no gate saw it. A hole is a different battle, not a coarser one: poke-env
+keeps applying lines to the board it last saw, so a switch in the gap logs `"Message thinks p1: X
+is active, but it's not"` and an opponent reveal in the gap makes a later reference construct a
+Pokémon whose *species* is the NICKNAME (`KeyError: 'ptãra'` — reported as an encoding bug, but the
+mojibake is in the committed team file and any nickname raises). Gate:
+`main/search_dividend/depth2_replay_integration_test.py`, over both impls.
 - **`replay_kernels.js`** — the shared sim kernels (`buildSession` / `buildToTurn` / `resolveTurn` /
   `resolveTurnExact` / `recordedQueues` / `randomChoice` / `outcomeOf` / …) lifted out of
   `replay_driver.js` so the replay/re-roll path and the search-server use ONE implementation (no

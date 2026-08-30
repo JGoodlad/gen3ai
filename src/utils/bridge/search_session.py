@@ -28,11 +28,19 @@ Lifecycle (one process per ``better_line`` call; context-managed):
             ...
         ])
 
-The per-side ``p1_chunks`` / ``p2_chunks`` an expand returns are the COMPLETE one-sided
-views (root → that node) — feed them straight to :mod:`agents.training.obs_materializer`,
-no cross-ply threading. ``pre_state`` / ``outcome`` are OMNISCIENT (referee view): they
-drive only the opponent model and the dice, never the obs encoder (the one-sided /
-omniscient wall, identical to the re-roll path).
+🚨 **The per-side ``p1_chunks`` / ``p2_chunks`` an expand returns are THAT ARM'S OWN PLY —
+its one-sided SUFFIX, not the view from the root.** The materializer wants
+``prefix + every ply on the path``, so a caller that deepens MUST accumulate:
+``parent_chunks + e.p1_chunks``, the way :mod:`main.prober.better_line` threads
+``our_suffixes``. This docstring used to promise "the COMPLETE one-sided view (root → that
+node)" and the search-dividend deepener believed it, which is how a depth-2 replay came to be
+fed a protocol with plies 1..d-1 missing (``gen3_search_depth2_chunk_gap_v1`` — see
+:class:`main.search_dividend.deepen.TreeNode`'s ``chunks``). At depth 1 the two readings
+coincide, so nothing caught it for as long as depth 1 was all that ran.
+
+``pre_state`` / ``outcome`` are OMNISCIENT (referee view): they drive only the opponent model
+and the dice, never the obs encoder (the one-sided / omniscient wall, identical to the re-roll
+path).
 
 The protocol is synchronous request → one-line response; calls are strictly sequential
 (a beam expands one batch at a time), so a background reader thread feeds a queue that
@@ -68,7 +76,11 @@ class RootView:
 
 @dataclass(frozen=True)
 class ExpandedNode:
-    """One expanded arm: the child node + its FULL one-sided chunks + outcome."""
+    """One expanded arm: the child node + THIS PLY's one-sided chunks + outcome.
+
+    ``p1_chunks`` / ``p2_chunks`` are the arm's own turn — a SUFFIX. Composing a materializable
+    protocol is the caller's job and is ``prefix + <every ply from the root>``; see the module
+    header."""
 
     label: object
     node_id: Optional[str]    # None when the turn ENDED the battle (terminal — no child)
@@ -77,7 +89,7 @@ class ExpandedNode:
     outcome: dict             # omniscient (referee view)
     requests: Optional[dict]  # the child's open requests (None when ended)
     choices_used: dict
-    p1_chunks: List[str]      # COMPLETE one-sided view, root → this node
+    p1_chunks: List[str]      # THIS PLY's one-sided suffix — NOT root → this node
     p2_chunks: List[str]
 
 

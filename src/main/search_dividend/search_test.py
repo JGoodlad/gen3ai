@@ -379,3 +379,122 @@ def test_a_win_prob_stash_from_a_DIFFERENT_forward_raises_instead_of_scoring_one
     m = _FakeModel(_FakePolicy([0.7, 0.1, 0.2, 0.3], wp=torch.tensor([[10.0]])))
     with pytest.raises(RuntimeError, match="win-prob stash width 1 != scored batch 4"):
         batch_scores(m, obs, mask, "auto")
+
+
+# -- the deepening chunk contract ---------------------------------------------
+# `gen3_search_depth2_chunk_gap_v1`. `expand_many` returns the arm's OWN ply, so a branch at depth
+# d must carry every ply from the root — the same list of plies its `actions` names. Handing the
+# materializer the bare suffix replayed `prefix` + ply d with plies 1..d-1 MISSING, which is a
+# different battle, not a coarser one: poke-env keeps applying lines to the board it last saw, so a
+# switch in the gap logs "Message thinks p1: X is active, but it's not" and an opponent reveal in
+# the gap makes a later reference build a Pokemon whose species is the NICKNAME (KeyError). The
+# end-to-end proof is `depth2_replay_integration_test`; these two pin the arithmetic without a sim.
+
+
+class _PlySession:
+    """A session whose expands are scripted per ply, so a two-ply tree is deterministic."""
+
+    def __init__(self, per_ply):
+        self.per_ply = list(per_ply)
+        self.calls = 0
+
+    def expand_many(self, arms):
+        chunk, node_id = self.per_ply[self.calls]
+        self.calls += 1
+        req = {"p1": {"active": [{"moves": [{"id": "surf"}]}]},
+               "p2": {"active": [{"moves": [{"id": "surf"}]}]}}
+        return [_SimpleNamespace(label=a["label"], node_id=node_id, ended=False, stuck=False,
+                                 outcome={}, requests=req, choices_used={},
+                                 p1_chunks=[chunk], p2_chunks=[chunk])
+                for a in arms]
+
+
+class _SimpleNamespace:
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+
+def _two_ply_engine(monkeypatch, per_ply):
+    """An engine whose sim + materializer + scorer are scripted, returning the captured
+    ``Branch`` list handed to ``materialize_branches`` on each ply."""
+    import numpy as np
+
+    from agents.training import obs_materializer as om
+
+    seen = []
+
+    def _fake_materialize(prefix_chunks, branches, **kw):
+        seen.append((list(prefix_chunks), [list(b.chunks) for b in branches],
+                     [list(b.actions) for b in branches]))
+        dec_i = kw["map_actions_at"]
+        row = _SimpleNamespace(obs=np.zeros(3, dtype=np.float32),
+                               mask=np.ones(4, dtype=np.float32))
+        return [_SimpleNamespace(decisions=[row] * (dec_i + 1),
+                                 action_choices={0: "move surf"}) for _ in branches]
+
+    monkeypatch.setattr(om, "materialize_branches", _fake_materialize)
+    engine = _engine("honest")
+    engine._session = _PlySession(per_ply)
+    monkeypatch.setattr(engine, "_score_batch",
+                        lambda obs, masks: (np.zeros(len(obs), dtype=np.float32), "value"))
+    return engine, seen
+
+
+def _ply_ctx(prefix):
+    from main.search_dividend.search import _PlyContext
+
+    return _PlyContext(side="p1", other="p2", record=RECORD, prefix=list(prefix),
+                       our_history=[3], pub=None, seeds=["1,1,1,1"], m_opp=1)
+
+
+class _Cand:
+    def __init__(self, token="move surf", weight=1.0):
+        self.token, self.weight = token, weight
+
+
+def test_a_deepened_branch_carries_EVERY_ply_from_the_root_not_just_its_own(monkeypatch):
+    """THE REGRESSION. Pre-fix the ply-2 branch's chunks were ``["PLY2"]``; they must be
+    ``["PLY1", "PLY2"]`` — the plies its ``actions`` list names, and nothing else."""
+    from main.search_dividend.budget import RealizedWidths
+    from main.search_dividend.deepen import TreeNode
+
+    engine, seen = _two_ply_engine(monkeypatch, [("PLY1", "n1"), ("PLY2", "n2")])
+    ctx = _ply_ctx(["PREFIX"])
+    widths = RealizedWidths(planned={})
+    root = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=(), chunks=())
+
+    engine._expand_ply(ctx, [(root, [_Cand()])], ply=1, widths=widths, deep=False)
+    child = root.children[0][0][1]
+    assert child.chunks == ("PLY1",), "a depth-1 child is its own ply — unchanged behaviour"
+    assert seen[-1][1] == [["PLY1"]] and seen[-1][2] == [[0]]
+
+    engine._expand_ply(ctx, [(child, [_Cand()])], ply=2, widths=widths, deep=True)
+    grand = child.children[0][0][1]
+    assert seen[-1][0] == ["PREFIX"], "the shared prefix is still the ROOT prefix"
+    assert seen[-1][1] == [["PLY1", "PLY2"]], (
+        "the ply-2 branch replayed with a HOLE where ply 1 should be — "
+        f"got {seen[-1][1]}, the depth-2 chunk-gap defect")
+    assert seen[-1][2] == [[0, 0]], "chunks and actions must name the same plies"
+    assert grand.chunks == ("PLY1", "PLY2")
+    assert grand.path == (0, 0)
+
+
+def test_the_chunks_a_branch_replays_always_name_the_same_plies_as_its_actions(monkeypatch):
+    """The invariant behind the fix, at depth 3 — one chunk group per action, in order. Stated
+    separately because it is the property a future refactor has to preserve, whereas the test
+    above pins the one composition that was wrong."""
+    from main.search_dividend.budget import RealizedWidths
+    from main.search_dividend.deepen import TreeNode
+
+    engine, seen = _two_ply_engine(monkeypatch,
+                                   [("P1", "n1"), ("P2", "n2"), ("P3", "n3")])
+    ctx = _ply_ctx(["PREFIX"])
+    widths = RealizedWidths(planned={})
+    node = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=(), chunks=())
+    for ply in (1, 2, 3):
+        engine._expand_ply(ctx, [(node, [_Cand()])], ply=ply, widths=widths, deep=ply > 1)
+        node = node.children[0][0][1]
+        chunks, actions = seen[-1][1][0], seen[-1][2][0]
+        assert len(chunks) == len(actions) == ply, (
+            f"ply {ply}: {len(chunks)} chunk groups for {len(actions)} actions")
+    assert node.chunks == ("P1", "P2", "P3")

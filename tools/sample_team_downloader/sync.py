@@ -68,7 +68,14 @@ def fetch_and_save_team(meta):
     try:
         res = requests.get(raw_url, timeout=10)
         if res.status_code == 200:
-            with open(filepath, 'w') as f: f.write(res.text)
+            # Both encodings are named on purpose. `requests` falls back to ISO-8859-1 for a
+            # text/* response carrying no charset (RFC 2616), which turns a UTF-8 `é` into `Ã©`;
+            # and a bare `open(..., 'w')` writes in the LOCALE encoding, so the same file is not
+            # even reproducible across machines. `data/teams/others/` already carries the mojibake
+            # this produces — see `others_team_downloader/sync.py`.
+            if (res.encoding or "iso-8859-1").lower() in ("iso-8859-1", "latin-1", "latin1"):
+                res.encoding = res.apparent_encoding or "utf-8"
+            with open(filepath, 'w', encoding="utf-8") as f: f.write(res.text)
             return {
                 **meta, 
                 "id": paste_id, 
