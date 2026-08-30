@@ -113,6 +113,21 @@ mixed content, which equilibrium prices rather than removes — visible as a sta
 `eval/hodge_cyclic_fraction` (growing cyclic fraction = a forgetting channel winning;
 stable floor = correctly priced RPS content).
 
+**The deployment answer ("what T do we play the bot at?").** Not a temperature. Against
+FIXED opponents (bots, eval): T=0 — mixing is a pure tax nobody is watching; greedy is
+already the eval regime. Against ADAPTIVE opponents: "sharpen to undo the entropy coef" is
+the right diagnosis, wrong operator — the contamination is state-dependent (dominated states
+want total sharpening; guess points need their RATIOS preserved, and p^(1/T) renormalization
+distorts ratios: a 60/40 equilibrium mix at T=0.5 becomes ~69/31, away from opponent
+indifference; T→0 is always-rock). One global T does both jobs badly. **Top-p ≈ 0.7–0.9 with
+T=1 inside the nucleus** is the support-shaped repair: collapses dominated states to argmax,
+preserves guess-point ratios, and hedges argmax noise among near-ties. The ideal p is
+measurable, not derivable: the exploiter fleet IS an adaptive-opponent simulator — point an
+exploiter at greedy vs top-p vs T=1 deployments and read the extraction difference (the
+exploitability cost of purity), beside the static half (WR vs fixed bots across the
+transform ladder). Today T=0 probably loses little (the policy barely mixes at guess points —
+bait verdict); the question goes live when the flywheel starts pricing them.
+
 ## 3. Risk awareness: the sigmoid is the risk policy
 
 **The dissolution.** "Humans gamble when behind — intrinsic bias or rational response?" is
