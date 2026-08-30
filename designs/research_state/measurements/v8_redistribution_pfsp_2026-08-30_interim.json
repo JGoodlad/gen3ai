@@ -1,0 +1,201 @@
+{
+ "per_team": [
+  {
+   "team": "a577a735b7",
+   "kind": "untaught",
+   "arch": "balance",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.45,
+   "wr_fold": 0.4292,
+   "delta": -0.0208
+  },
+  {
+   "team": "a6b630e6b4",
+   "kind": "untaught",
+   "arch": "balance",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.3458,
+   "wr_fold": 0.4,
+   "delta": 0.0542
+  },
+  {
+   "team": "c90e782cad",
+   "kind": "untaught",
+   "arch": "balance",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.3292,
+   "wr_fold": 0.45,
+   "delta": 0.1208
+  },
+  {
+   "team": "d0a4d2bcb8",
+   "kind": "untaught",
+   "arch": "balance",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.3375,
+   "wr_fold": 0.3625,
+   "delta": 0.025
+  },
+  {
+   "team": "7c2cb5cec1",
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4208,
+   "wr_fold": 0.5083,
+   "delta": 0.0875
+  },
+  {
+   "team": "9292a21833",
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4833,
+   "wr_fold": 0.5083,
+   "delta": 0.025
+  },
+  {
+   "team": "eaa88395e7",
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4875,
+   "wr_fold": 0.5542,
+   "delta": 0.0667
+  },
+  {
+   "team": "32f549483f",
+   "kind": "untaught",
+   "arch": "offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.3458,
+   "wr_fold": 0.375,
+   "delta": 0.0292
+  },
+  {
+   "team": "593d7fb8a8",
+   "kind": "untaught",
+   "arch": "offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4375,
+   "wr_fold": 0.475,
+   "delta": 0.0375
+  },
+  {
+   "team": "89fcef3b53",
+   "kind": "untaught",
+   "arch": "offense",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.5125,
+   "wr_fold": 0.6,
+   "delta": 0.0875
+  },
+  {
+   "team": "7163ad9387",
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4083,
+   "wr_fold": 0.5208,
+   "delta": 0.1125
+  },
+  {
+   "team": "b26ed9c8e1",
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "n_parent": 30,
+   "n_fold": 30,
+   "wr_parent": 0.0667,
+   "wr_fold": 0.3333,
+   "delta": 0.2667
+  },
+  {
+   "team": "dd460484fc",
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "n_parent": 240,
+   "n_fold": 240,
+   "wr_parent": 0.4792,
+   "wr_fold": 0.5292,
+   "delta": 0.05
+  },
+  {
+   "team": "c84f2b64a2",
+   "kind": "untaught",
+   "arch": "stall",
+   "n_parent": 60,
+   "n_fold": 60,
+   "wr_parent": 0.1667,
+   "wr_fold": 0.1667,
+   "delta": 0.0
+  }
+ ],
+ "groups": {
+  "UNTAUGHT (all)": {
+   "n_teams": 14,
+   "n_parent": 2970,
+   "n_fold": 2970,
+   "wr_parent": 0.4111,
+   "wr_fold": 0.4684,
+   "delta": 0.0572,
+   "z_battle": 4.45,
+   "ci_cluster": [
+    0.035,
+    0.0797
+   ],
+   "mean_team_delta": 0.0673,
+   "t_team": 3.58,
+   "teams_negative": 1,
+   "teams_total": 14
+  },
+  "UNTAUGHT defensive (stall/semi_stall - taught set's archetype)": {
+   "n_teams": 4,
+   "n_parent": 570,
+   "n_fold": 570,
+   "wr_parent": 0.3947,
+   "wr_fold": 0.4772,
+   "delta": 0.0825,
+   "z_battle": 2.82,
+   "ci_cluster": [
+    0.0381,
+    0.1545
+   ],
+   "mean_team_delta": 0.1073,
+   "t_team": 1.85,
+   "teams_negative": 0,
+   "teams_total": 4
+  },
+  "UNTAUGHT non-defensive": {
+   "n_teams": 10,
+   "n_parent": 2400,
+   "n_fold": 2400,
+   "wr_parent": 0.415,
+   "wr_fold": 0.4662,
+   "delta": 0.0513,
+   "z_battle": 3.58,
+   "ci_cluster": [
+    0.0275,
+    0.0754
+   ],
+   "mean_team_delta": 0.0513,
+   "t_team": 3.98,
+   "teams_negative": 1,
+   "teams_total": 10
+  },
+  "TAUGHT (positive control)": {
+   "n_teams": 0,
+   "EMPTY": true
+  }
+ }
+}

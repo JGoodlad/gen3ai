@@ -1,0 +1,163 @@
+{
+ "probe": "P1 v8 redistribution",
+ "date": "2026-08-30",
+ "battles": 10560,
+ "cells": 352,
+ "untaught": {
+  "teams": 16,
+  "parent_wr": 0.3828,
+  "fold_wr": 0.437,
+  "delta_pp": 5.42,
+  "ci_pp": [
+   3.44,
+   7.42
+  ],
+  "z": 4.83
+ },
+ "taught": {
+  "teams": 6,
+  "parent_wr": 0.4306,
+  "fold_wr": 0.6924,
+  "delta_pp": 26.18,
+  "ci_pp": [
+   20.28,
+   32.85
+  ],
+  "z": 14.68
+ },
+ "frozen_table_row": "P-final v8-untaught >= 0: PASS",
+ "per_team": {
+  "a6b630e6b4": {
+   "kind": "untaught",
+   "arch": "balance",
+   "parent_wr": 0.3458,
+   "fold_wr": 0.4
+  },
+  "eaa88395e7": {
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "parent_wr": 0.4875,
+   "fold_wr": 0.5542
+  },
+  "32f549483f": {
+   "kind": "untaught",
+   "arch": "offense",
+   "parent_wr": 0.3458,
+   "fold_wr": 0.375
+  },
+  "dd460484fc": {
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "parent_wr": 0.4792,
+   "fold_wr": 0.5292
+  },
+  "f593373169": {
+   "kind": "untaught",
+   "arch": "stall",
+   "parent_wr": 0.3417,
+   "fold_wr": 0.325
+  },
+  "7594a34f82": {
+   "kind": "taught",
+   "arch": "semi_stall",
+   "parent_wr": 0.5125,
+   "fold_wr": 0.7375
+  },
+  "4771662cf7": {
+   "kind": "taught",
+   "arch": "stall",
+   "parent_wr": 0.4,
+   "fold_wr": 0.625
+  },
+  "c90e782cad": {
+   "kind": "untaught",
+   "arch": "balance",
+   "parent_wr": 0.3292,
+   "fold_wr": 0.45
+  },
+  "9292a21833": {
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "parent_wr": 0.4833,
+   "fold_wr": 0.5083
+  },
+  "89fcef3b53": {
+   "kind": "untaught",
+   "arch": "offense",
+   "parent_wr": 0.5125,
+   "fold_wr": 0.6
+  },
+  "7163ad9387": {
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "parent_wr": 0.4083,
+   "fold_wr": 0.5208
+  },
+  "c84f2b64a2": {
+   "kind": "untaught",
+   "arch": "stall",
+   "parent_wr": 0.2917,
+   "fold_wr": 0.3792
+  },
+  "564b9be3ae": {
+   "kind": "taught",
+   "arch": "semi_stall",
+   "parent_wr": 0.425,
+   "fold_wr": 0.7708
+  },
+  "5c88ff9ca5": {
+   "kind": "taught",
+   "arch": "stall",
+   "parent_wr": 0.3208,
+   "fold_wr": 0.7125
+  },
+  "d0a4d2bcb8": {
+   "kind": "untaught",
+   "arch": "balance",
+   "parent_wr": 0.3375,
+   "fold_wr": 0.3625
+  },
+  "a577a735b7": {
+   "kind": "untaught",
+   "arch": "balance",
+   "parent_wr": 0.45,
+   "fold_wr": 0.4292
+  },
+  "7c2cb5cec1": {
+   "kind": "untaught",
+   "arch": "hyper_offense",
+   "parent_wr": 0.4208,
+   "fold_wr": 0.5083
+  },
+  "593d7fb8a8": {
+   "kind": "untaught",
+   "arch": "offense",
+   "parent_wr": 0.4375,
+   "fold_wr": 0.475
+  },
+  "b26ed9c8e1": {
+   "kind": "untaught",
+   "arch": "semi_stall",
+   "parent_wr": 0.2333,
+   "fold_wr": 0.3208
+  },
+  "048182d1e9": {
+   "kind": "untaught",
+   "arch": "stall",
+   "parent_wr": 0.2208,
+   "fold_wr": 0.2542
+  },
+  "044da80d78": {
+   "kind": "taught",
+   "arch": "stall",
+   "parent_wr": 0.3958,
+   "fold_wr": 0.5583
+  },
+  "45995e432f": {
+   "kind": "taught",
+   "arch": "stall",
+   "parent_wr": 0.5292,
+   "fold_wr": 0.75
+  }
+ }
+}
